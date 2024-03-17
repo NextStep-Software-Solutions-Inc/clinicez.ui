@@ -1,55 +1,8 @@
 import Image from "next/image";
 
-const navLinks = [
-  { name: "Home", href: "/" },
-  { name: "Doctors", href: "/doctors" },
-  { name: "Nurses", href: "/nurses" },
-  { name: "Organizations", href: "/organization" },
-  { name: "Contact Us", href: "/contact-us" },
-];
-
-export default function Home() {
+export default async function HomePage() {
   return (
-    <main className="bg-white">
-      <header className="bg-[#FCF8F1] bg-opacity-30">
-          <div className="px-4 mx-auto sm:px-6 lg:px-8">
-              <div className="flex items-center justify-between h-16 lg:h-20">
-                  <div className="flex-shrink-0">
-                      <a href="/" title="" className="flex">
-                          <Image 
-                            width={100}
-                            height={100}
-                            className="w-auto" 
-                            src="https://i.postimg.cc/VsH4j92b/clinicez-logo.png" alt="" 
-                          />
-                      </a>
-                  </div>
-
-                  <button type="button" className="inline-flex p-2 text-black transition-all duration-200 rounded-md lg:hidden focus:bg-gray-100 hover:bg-gray-100">
-                      {/* <!-- Menu open: "hidden", Menu closed: "block" --> */}
-                      <svg className="block w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"></path>
-                      </svg>
-
-                      {/* <!-- Menu open: "block", Menu closed: "hidden" --> */}
-                      <svg className="hidden w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                      </svg>
-                  </button>
-
-                  <div className="hidden lg:flex lg:items-center lg:justify-center lg:space-x-10">
-                    {
-                      navLinks.map((link) => (
-                        <a key={link.name} href={link.href} title="" className="text-base text-black transition-all duration-200 hover:text-opacity-80">{link.name}</a>
-                      ))
-                    }
-                  </div>
-
-                  <a href="/api/auth/login" title="" className="hidden lg:inline-flex items-center justify-center px-5 py-2.5 text-base transition-all duration-200 hover:bg-teal-400 hover:text-white focus:text-white focus:bg-teal-400 font-semibold text-white bg-teal-600 rounded-full" role="button"> Join Now </a>
-              </div>
-          </div>
-      </header>
-
+    <div className="bg-white">
       <section className="bg-[#FCF8F1] bg-opacity-30 py-10 sm:py-16 lg:py-24">
           <div className="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
               <div className="grid items-center grid-cols-1 gap-12 lg:grid-cols-2">
@@ -61,7 +14,7 @@ export default function Home() {
                       <a href="/api/auth/login" title="" className="inline-flex items-center px-6 py-4 mt-8 font-semibold text-white transition-all duration-200 bg-teal-600 rounded-full lg:mt-16 hover:bg-teal-400 focus:bg-teal-400" role="button">
                           Join for free
                           <svg className="w-6 h-6 ml-8 -mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 9l3 3m0 0l-3 3m3-3H8m13 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M13 9l3 3m0 0l-3 3m3-3H8m13 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
                       </a>
 
@@ -79,6 +32,6 @@ export default function Home() {
               </div>
           </div>
       </section>
-  </main>
+  </div>
   );
 }

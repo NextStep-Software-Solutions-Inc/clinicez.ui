@@ -1,5 +1,5 @@
-import { withMiddlewareAuthRequired } from "@auth0/nextjs-auth0/edge";
+import { withApiAuthRequired } from "@auth0/nextjs-auth0";
 
-export const GET = withMiddlewareAuthRequired(async () => {
+export const GET = withApiAuthRequired(async () => {
     return Response.json(process.env);
 });

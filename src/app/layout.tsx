@@ -22,8 +22,8 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <UserProvider>
-          <RootHeader className="sticky top-0"/>
-          <main className="container mx-auto">
+          <RootHeader className="sticky top-0 z-50"/>
+          <main className="bg-gradient-to-l from-[#6DEBF4] via-[#C3FBFF] to-[#D3FCFF] bg-opacity-30 py-10 sm:py-16 lg:py-24">
             {children}
             <SpeedInsights />
           </main>

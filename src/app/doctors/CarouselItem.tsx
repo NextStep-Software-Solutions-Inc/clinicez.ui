@@ -7,19 +7,17 @@ interface ICarouselItemProps {
         photoUrl: string;
     }
 }
-export default function CarouselItem({item}: ICarouselItemProps) {
-  return (
-    <div className="flex flex-col items-center justify-center">
-        <Image src={item.photoUrl} alt={item.name} width={200} height={200} className="rounded-tl-[20px] rounded-tr-[20px]" />
-        <h1 className="font-bold text-green-500 text-xl">{item.name}</h1>
-        <p className="text-center">{item.specialty}</p>
-    </div>
-    
-    // <div className="w-[459.16px] h-[627px] relative">
-    //             <img className="w-[459.16px] h-[499px] left-0 top-0 absolute rounded-tl-[20px] rounded-tr-[20px]" src="https://via.placeholder.com/459x499" />
-    //             <div className="w-[459.16px] h-[132px] left-0 top-[495px] absolute bg-white rounded-bl-[20px] rounded-br-[20px]" />
-    //             <div className="w-[418.70px] left-[20.23px] top-[538px] absolute text-center text-teal-500 text-2xl font-semibold font-['Hartwell Alt']">Dr. Amelia Jones</div>
-    //             <div className="w-[418.70px] left-[20.23px] top-[570px] absolute text-center text-teal-500 text-xl font-normal font-['Hartwell']">Cardiology</div>
-    //         </div>
-  )
+
+export default function CarouselItem({ item }: ICarouselItemProps) {
+    return (
+        <div className="w-full h-full relative">
+            <Image src={item.photoUrl} alt={item.name} width={100} height={200} className="w-full h-96 object-cover rounded-lg" />
+            <div className="absolute bottom-0 left-0 w-full text-center ">
+                <div className="bg-white p-3 rounded-b-lg ">
+                    <h2 className="text-teal-500 text-xl font-semibold">{item.name}</h2>
+                    <p className="text-teal-500 text-base font-normal">{item.specialty}</p>
+                </div>
+            </div>
+        </div>
+    );
 }

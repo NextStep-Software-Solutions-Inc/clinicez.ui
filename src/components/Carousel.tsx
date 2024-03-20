@@ -24,16 +24,16 @@ export default function Carousel(props: ICarouselProps) {
             <div className='w-full overflow-hidden'>
                 <div className='flex transition-transform duration-500 ease-in-out' style={{ transform: `translateX(-${activeIndex * (100 / perPage)}%)` }}>
                     {React.Children.map(children, (child, index) => (
-                        <div className='w-full flex flex-col items-center justify-center p-4' style={{ flex: `0 0 ${100 / perPage}%` }}>
+                        <div className='w-full flex flex-col items-center justify-center p-5' style={{ flex: `0 0 ${100 / perPage}%` }}>
                             {child}
                         </div>
                     ))}
                 </div>
             </div>
             {showArrows && (
-                <div className='absolute flex mt-4 w-full justify-between items-center'>
-                    <button onClick={prevSlide} className='mx-2 px-4 py-2 btn'>❮</button>
-                    <button onClick={nextSlide} className='mx-2 px-4 py-2 btn'>❯</button>
+                <div className='absolute top-[50%] flex w-full justify-between items-center'>
+                    <button onClick={prevSlide} className='btn btn-ghost text-teal-600 text-2xl'>❮</button>
+                    <button onClick={nextSlide} className='btn btn-ghost text-teal-600 text-2xl'>❯</button>
                 </div>
             )}
         </div>

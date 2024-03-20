@@ -1,4 +1,5 @@
 import Image from "next/image";
+import model from './assets/model.png'
 
 export default async function HomePage() {
 return (
@@ -27,7 +28,7 @@ return (
                             width={500}
                             height={500}
                             className="w-full" 
-                            src="https://i.postimg.cc/d1WGBnfZ/adaptive-icon.png" alt="" 
+                            src="https://i.postimg.cc/d1WGBnfZ/adaptive-icon.png" alt="model" 
                             />
                     </div>
                 </div>

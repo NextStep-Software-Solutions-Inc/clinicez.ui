@@ -9,3 +9,11 @@
     padding: 0;
   }
 }
+
+.btn {
+  background-color: teal;
+  color: white;
+  border-radius: 9999px; /* Use a large value for fully rounded corners */
+   /* Make the button full width */
+}
+

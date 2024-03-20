@@ -1,53 +1,60 @@
-const organizations = [
-    {
-        name: "Healthcare Information and Management System (HIMS) by University of Science and Technology of Southern Philippines (USTP)",
-        description: "The Healthcare Information and Management System (HIMS) is a web-based application that is designed to manage the health records of the patients. It is developed by the University of Science and Technology of Southern Philippines (USTP) in Cagayan de Oro City, Misamis Oriental, Philippines.",
-        url: "https://dev-hims.vercel.app",
-        logo: "https://i.postimg.cc/4yYVQVbG/organization1-logo.png"
-    },
-    {
-        name: "Xavier University - Ateneo de Cagayan",
-        description: "Xavier University - Ateneo de Cagayan is a private Catholic university run by the Philippine Province of the Society of Jesus in Cagayan de Oro City, Misamis Oriental, Philippines.",
-        url: "https://www.xu.edu.ph",
-        logo: "https://i.postimg.cc/7Y1J5h0C/organization2-logo.png"
-    }, 
-    {
-        name: "Misamis Oriental Provincial Hospital",
-        description: "The Misamis Oriental Provincial Hospital is a government-owned hospital in Cagayan de Oro City, Misamis Oriental, Philippines.",
-        url: "https://www.facebook.com/misamisorientalprovincialhospital",
-        logo: "https://i.postimg.cc/3N2W6Z8h/organization3-logo.png"
-    }, 
-    {
-        name: "Northern Mindanao Medical Center",
-        description: "The Northern Mindanao Medical Center is a government-owned hospital in Cagayan de Oro City, Misamis Oriental, Philippines.",
-        url: "https://www.facebook.com/nmmc.doh",
-        logo: "https://i.postimg.cc/7Y1J5h0C/organization2-logo.png"
-    }
-]
-
-export default async function OrganizationsPage() {
+export default async function Organizations() {
     return (
-        <div className="prose mx-auto text-center">
-            <div className="bg-teal-600 pt-5 pb-2">
-                <h1 className="text-white">Clinic EZ Partner Organizations</h1>
-                <p>
-                Select an organization to visit their website and learn more about their services.
-                </p>
+        <div className="w-full max-w-screen-xl mx-auto relative px-10">
+            <div className="w-full text-center text-teal-500 text-3xl mb-5 font-bold">Partner Organizations</div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-3 gap-8 mt-8"> {/* Changed the grid layout */}
+                <OrganizationCard
+                    name="Healthcare Information and Management System (HIMS) by University of Science and Technology of Southern Philippines (USTP)"
+                    imageSrc="https://upload.wikimedia.org/wikipedia/commons/thumb/8/88/Hospital-de-Bellvitge.jpg/640px-Hospital-de-Bellvitge.jpg"
+                    details="The Healthcare Information and Management System (HIMS) is a web-based 
+                    application that is designed to manage the health records of the patients.
+                     It is developed by the University of Science and Technology of Southern Philippines (USTP) 
+                     in Cagayan de Oro City, Misamis Oriental, Philippines."
+                />
+                <OrganizationCard
+                    name="Xavier University - Ateneo de Cagayan"
+                    imageSrc="https://pidswebs.pids.gov.ph/CDN/featured-image/PR_DP2242-2.jpg"
+                    details="Xavier University - Ateneo de Cagayan is a private Catholic university run 
+                    by the Philippine Province of the Society of Jesus in Cagayan de Oro City, 
+                    Misamis Oriental, Philippines."
+                />
+                <OrganizationCard
+                    name="Northern Mindanao Medical Center"
+                    imageSrc="https://i.pinimg.com/736x/ac/6f/5f/ac6f5fe34103c4a8dadcd2375ad3e5eb.jpg"
+                    details="The Northern Mindanao Medical Center is a 
+                    government-owned hospital in Cagayan de Oro City, Misamis Oriental, Philippines."
+                />
+                <OrganizationCard
+                    name="Misamis Oriental Provincial Hospital"
+                    imageSrc="https://www.rappler.com/tachyon/r3-assets/612F469A6EA84F6BAE882D2B94A4B421/img/F3889900C6DE4ECDBD6991E66439D784/cdo-city-hospital-061117-1.jpg"
+                    details="The Misamis Oriental Provincial Hospital is a government-owned hospital in 
+                    Cagayan de Oro City, Misamis Oriental, Philippines."
+                />
             </div>
+        </div>
+    );
+}
 
-        {
-            organizations.map((organization) => (
-                <article className="" key={organization.name}>
-                    <img className="w-full" src={organization.logo} alt={organization.name} />
-                    <h2>{organization.name}</h2>
-                    <p>{organization.description}</p>
-                    <a href={organization.url} title={organization.name}>Visit {organization.name}</a>
-                    <hr className=""/>
-                </article>
-            ))
-        }
+function OrganizationCard({ name, imageSrc, details }: { name: string; imageSrc: string, details: string }) {
+    return (
+        <div className="group bg-white rounded-lg shadow-md overflow-hidden relative">
+            <div className="group bg-white shadow-md overflow-hidden relative">
+                <img src={imageSrc} alt={name} className="w-full h-[25rem]" />
+                <div className="absolute inset-0 bg-teal-700 opacity-0 transition duration-300 ease-in-out group-hover:opacity-50 flex items-center justify-center text-white">
+                    <div>
+                        <p className="text-sm text-center p-2">{details}</p>
+                    </div>
+                </div>
+            </div>
+            <div className="p-4 relative z-10">
+                <h2 className="text-teal-500 text-xl font-semibold mb-2">{name}</h2>
+            </div>
+        </div>
+    );
+}
 
-      </div>
-    )
-  }
-  
+
+
+
+
+

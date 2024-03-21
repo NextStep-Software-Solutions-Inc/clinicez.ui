@@ -9,28 +9,22 @@ export default async function Doctors() {
                 <h1 className="font-bold text-teal-500 text-3xl mb-5 ">Meet our Doctors</h1>
                 <div className='flex flex-col gap-10'>
                     <div>
-                        <a href="/practitioners">
-                            <Banner label='HIMS' />
-                            <CarouselWrapper
-                                items={doctorsData.doctors}
-                            />
-                        </a>
+                        <Banner label='HIMS' />
+                        <CarouselWrapper
+                            items={doctorsData.doctors}
+                        />
                     </div>
                     <div>
-                    <a href="/practitioners">
                         <Banner label='Xavier University' />
                         <CarouselWrapper
                             items={doctorsData.doctors}
                         />
-                        </a>
                     </div>
                     <div>
-                    <a href="/practitioners">
                         <Banner label='Northern Mindanao Medical Center' />
                         <CarouselWrapper
                             items={doctorsData.doctors}
                         />
-                         </a>
                     </div>
                 </div>
             </div>

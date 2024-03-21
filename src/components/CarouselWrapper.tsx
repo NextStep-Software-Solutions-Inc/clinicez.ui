@@ -4,6 +4,7 @@ import React, { useMemo } from "react";
 import Carousel from "./Carousel";
 import CarouselItem, { type ICarouselItemProps} from "./CarouselItem";
 import useBreakpoints from "@hooks/useBreakpoints";
+import Link from "next/link";
 
 const carouselProps = {
     autoPlay: true,
@@ -32,7 +33,9 @@ export default function CarouselWrapper({items}:ICarouselWrapperProps) {
   return (
     <Carousel {...carouselProps} perPage={perPage} >
         {items.map((item, index) => (
-            <CarouselItem key={index} item={item}/>
+            <Link href={`profile/${item.id}`}>
+              <CarouselItem key={index} item={item}/>
+            </Link>
         ))}
     </Carousel>
   )

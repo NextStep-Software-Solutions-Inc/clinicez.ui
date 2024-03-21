@@ -8,6 +8,7 @@ const navLinks = [
     { name: "Nurses", href: "/nurses" },
     { name: "Organizations", href: "/organizations" },
     { name: "Contact Us", href: "/contact-us" }
+    // { name: "Doctors", href: "/practitioners" }
 ];
 
 interface IRootHeaderProps extends DetailedHTMLProps<HTMLAttributes<HTMLElement>, HTMLElement>{}

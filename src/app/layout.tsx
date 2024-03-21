@@ -2,9 +2,11 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { SpeedInsights } from "@vercel/speed-insights/next"
-import RootHeader from "@components/components/RootHeader";
+// import RootHeader from "@components/components/RootHeader";
 import { UserProvider } from "@auth0/nextjs-auth0/client";
-import RootFooter from "@components/components/RootFooter";
+import RootHeader from "@components/RootHeader";
+import RootFooter from "@components/RootFooter";
+// import RootFooter from "@components/components/RootFooter";
 
 const inter = Inter({ subsets: ["latin"] });
 

@@ -3,7 +3,7 @@
 import React, { useMemo } from "react";
 import Carousel from "./Carousel";
 import CarouselItem, { type ICarouselItemProps} from "./CarouselItem";
-import useBreakpoints from "@components/hooks/useBreakpoints";
+import useBreakpoints from "@hooks/useBreakpoints";
 
 const carouselProps = {
     autoPlay: true,

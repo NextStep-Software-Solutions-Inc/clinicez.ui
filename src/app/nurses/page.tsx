@@ -1,7 +1,5 @@
-import Carousel from "@components/components/Carousel";
 import nursesData from '../../../public/nurses.json';
-import CarouselItem from "../nurses/CarouselItem";
-import CarouselWrapper from "@components/components/CarouselWrapper";
+import CarouselWrapper from "@components/CarouselWrapper";
 
 
 
@@ -20,22 +18,28 @@ export default async function Nurses() {
                 <h1 className="font-bold text-teal-500 text-3xl mb-5">Meet our Nurses</h1>
                 <div className='flex flex-col gap-10'>
                     <div>
+                        <a href="/pracN">
                         <Banner label='HIMS'/>
                         <CarouselWrapper
                             items={nursesData.nurses}
                         /> 
+                        </a>
                     </div>
                     <div>
+                    <a href="/pracN">
                         <Banner label='Xavier University'/>
                         <CarouselWrapper
                             items={nursesData.nurses}
                         />
+                         </a>
                     </div>
                     <div>
+                    <a href="/pracN">
                         <Banner label='Northern Mindanao Medical Center'/>
                         <CarouselWrapper
                             items={nursesData.nurses}
                         />
+                         </a>
                     </div>
                 </div>   
             </div>

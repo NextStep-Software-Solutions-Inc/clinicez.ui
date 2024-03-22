@@ -1,59 +1,57 @@
+[
+  {
+    "id": 1,
+    "name": "Mary Cruz",
+    "specialty": "Cardiology",
+    "photoUrl": "https://www.amnhealthcare.com/siteassets/candidate-blog/nursing/travel/nursing_tools-_new_grads.jpg"
+  },
+  {
+    "id": 2,
+    "name": "Jane Dimaguba",
+    "specialty": "Neurology",
+    "photoUrl": "https://res.cloudinary.com/orbis-education/image/fetch/f_auto,q_auto/dpr_auto/https://acceleratednursing.xavier.edu/app/uploads/2023/08/Doctor-vs.-Nurse-1024x683.jpg"
+  },
+  {
+  "id": 3,
+  "name": "John De Rio",
+  "specialty": "Cardiology",
+  "photoUrl": "https://experteducation.com/australia/wp-content/uploads/sites/5/2021/01/OBA-criteria-and-requirements.jpg"
+},
 {
-    "nurses": [
-       {
-         "id": 1,
-         "name": "Mary Cruz",
-         "specialty": "Cardiology",
-         "photoUrl": "https://www.amnhealthcare.com/siteassets/candidate-blog/nursing/travel/nursing_tools-_new_grads.jpg"
-       },
-       {
-         "id": 2,
-         "name": "Jane Dimaguba",
-         "specialty": "Neurology",
-         "photoUrl": "https://res.cloudinary.com/orbis-education/image/fetch/f_auto,q_auto/dpr_auto/https://acceleratednursing.xavier.edu/app/uploads/2023/08/Doctor-vs.-Nurse-1024x683.jpg"
-       },
-       {
-        "id": 3,
-        "name": "John De Rio",
-        "specialty": "Cardiology",
-        "photoUrl": "https://experteducation.com/australia/wp-content/uploads/sites/5/2021/01/OBA-criteria-and-requirements.jpg"
-      },
-      {
-        "id": 4,
-        "name": "Shinny Go",
-        "specialty": "Cardiology",
-        "photoUrl": "https://assets.medpagetoday.net/media/images/96xxx/96113.jpg"
-      },
-      {
-        "id": 5,
-        "name": "Harith Mos",
-        "specialty": "Cardiology",
-        "photoUrl": "https://swanursing.com/wp-content/uploads/2022/08/Untitled-design-2-1024x1024.png"
-      },
-      {
-        "id": 6,
-        "name": "Woody Shin",
-        "specialty": "Cardiology",
-        "photoUrl": "https://online-learning-college.com/wp-content/uploads/2022/05/How-to-Become-a-Nurse-.jpg"
-      },
-      {
-        "id": 7,
-        "name": "Taylor Swift",
-        "specialty": "Cardiology",
-        "photoUrl": "https://winnyimmigration.com/wp-content/uploads/2023/04/UK-Tier-2-Visa-for-nurses-1200x720.jpg"
-      },
-      {
-        "id": 8,
-        "name": "Hatdog Co",
-        "specialty": "Cardiology",
-        "photoUrl": "https://hips.hearstapps.com/hmg-prod/images/portrait-of-a-happy-young-doctor-in-his-clinic-royalty-free-image-1661432441.jpg?crop=0.66698xw:1xh;center,top&resize=1200:*"
-      },
-      {
-        "id": 9,
-        "name": "Johanna Kim",
-        "specialty": "Cardiology",
-        "photoUrl": "https://img.freepik.com/free-photo/healthcare-workers-preventing-virus-quarantine-campaign-concept-cheerful-friendly-asian-female-physician-doctor-with-clipboard-during-daily-checkup-standing-white-background_1258-107867.jpg?size=626&ext=jpg&ga=GA1.1.735520172.1710806400&semt=sph"
-      }
-    ]
-   }
+  "id": 4,
+  "name": "Shinny Go",
+  "specialty": "Cardiology",
+  "photoUrl": "https://assets.medpagetoday.net/media/images/96xxx/96113.jpg"
+},
+{
+  "id": 5,
+  "name": "Harith Mos",
+  "specialty": "Cardiology",
+  "photoUrl": "https://swanursing.com/wp-content/uploads/2022/08/Untitled-design-2-1024x1024.png"
+},
+{
+  "id": 6,
+  "name": "Woody Shin",
+  "specialty": "Cardiology",
+  "photoUrl": "https://online-learning-college.com/wp-content/uploads/2022/05/How-to-Become-a-Nurse-.jpg"
+},
+{
+  "id": 7,
+  "name": "Taylor Swift",
+  "specialty": "Cardiology",
+  "photoUrl": "https://winnyimmigration.com/wp-content/uploads/2023/04/UK-Tier-2-Visa-for-nurses-1200x720.jpg"
+},
+{
+  "id": 8,
+  "name": "Hatdog Co",
+  "specialty": "Cardiology",
+  "photoUrl": "https://hips.hearstapps.com/hmg-prod/images/portrait-of-a-happy-young-doctor-in-his-clinic-royalty-free-image-1661432441.jpg?crop=0.66698xw:1xh;center,top&resize=1200:*"
+},
+{
+  "id": 9,
+  "name": "Johanna Kim",
+  "specialty": "Cardiology",
+  "photoUrl": "https://img.freepik.com/free-photo/healthcare-workers-preventing-virus-quarantine-campaign-concept-cheerful-friendly-asian-female-physician-doctor-with-clipboard-during-daily-checkup-standing-white-background_1258-107867.jpg?size=626&ext=jpg&ga=GA1.1.735520172.1710806400&semt=sph"
+}
+]
    

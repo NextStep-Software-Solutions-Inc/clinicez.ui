@@ -5,17 +5,17 @@
   "lastName": "Jones",
   "middleName": "",
   "suffix": "",
+  "fields": ["Physician", "Specialist"],
   "profilePhoto": "https://www.shutterstock.com/image-photo/profile-photo-attractive-family-doc-600nw-1724693776.jpg",
   "email": "amelia.jones@hospitalname.com",
   "number": "+1 (555) 123-4567",
-  "specialties":["Cardiologist"],
   "user_metadata": {
     "coverPhoto": "https://img.freepik.com/premium-photo/stethoscope-with-heart-beat-isolated-blue-background_750630-647.jpg",
     "address": "St. Joseph's Medical Center 456 Maple Avenue",
     "biography": "Dr. Amelia Jones is a highly respected cardiologist with over 15 years of experience in diagnosing and treating cardiovascular diseases. She is known for her compassionate patient care and her dedication to staying at the forefront of medical advancements in cardiology.",
     "experience": "19 Years",
     "languages": ["English, Cebuano"],
-    "fields": ["Pedia"],
+    "specialties": ["Cardiologist", "Pediatrician", "Family Doctor"],
     "type": "Full Time"
   }
 }

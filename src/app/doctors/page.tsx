@@ -1,4 +1,4 @@
-import doctorsData from '../../../public/doctors.json';
+import doctors from '../../../public/doctors.json';
 import CarouselWrapper from "@components/CarouselWrapper";
 
 export default async function Doctors() {
@@ -11,19 +11,19 @@ export default async function Doctors() {
                     <div>
                         <Banner label='HIMS' />
                         <CarouselWrapper
-                            items={doctorsData.doctors}
+                            items={doctors}
                         />
                     </div>
                     <div>
                         <Banner label='Xavier University' />
                         <CarouselWrapper
-                            items={doctorsData.doctors}
+                            items={doctors}
                         />
                     </div>
                     <div>
                         <Banner label='Northern Mindanao Medical Center' />
                         <CarouselWrapper
-                            items={doctorsData.doctors}
+                            items={doctors}
                         />
                     </div>
                 </div>

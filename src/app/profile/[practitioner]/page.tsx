@@ -4,7 +4,7 @@ import React from "react";
 
 export default function PractitionerPage() {
   return (
-    <div>
+    <div className="container mx-auto">
         <PractitionerDetails
           id={practitionerData.id}
           title={practitionerData.title}
@@ -14,7 +14,7 @@ export default function PractitionerPage() {
           suffix={practitionerData.suffix}
           email={practitionerData.email}
           number={practitionerData.number}
-          specialties={practitionerData.specialties} 
+          fields={practitionerData.fields} 
           profilePhoto={practitionerData.profilePhoto} 
           user_metadata={practitionerData.user_metadata}
         />

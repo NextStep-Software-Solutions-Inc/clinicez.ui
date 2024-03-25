@@ -1,5 +1,4 @@
-"use client"
-
+"use client";
 import React, { useMemo } from "react";
 import Carousel from "./Carousel";
 import CarouselItem, { type ICarouselItemProps} from "./CarouselItem";
@@ -32,9 +31,9 @@ export default function CarouselWrapper({items}:ICarouselWrapperProps) {
 
   return (
     <Carousel {...carouselProps} perPage={perPage} >
-        {items.map((item, index) => (
-            <Link href={`profile/${item.id}`}>
-              <CarouselItem key={index} item={item}/>
+        {items.map((item) => (
+            <Link href={`profile/${item.id}`} key={item.id}>
+              <CarouselItem item={item}/>
             </Link>
         ))}
     </Carousel>

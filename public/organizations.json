@@ -1,0 +1,53 @@
+[
+    {
+        "url": "https://dev-hims.vercel.app",
+        "name": "Healthcare Information and Management System (HIMS) by University of Science and Technology of Southern Philippines (USTP)",
+        "imageSrc": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/88/Hospital-de-Bellvitge.jpg/640px-Hospital-de-Bellvitge.jpg",
+        "details": "The Healthcare Information and Management System (HIMS) is a web-based application that is designed to manage the health records of the patients. It is developed by the University of Science and Technology of Southern Philippines (USTP) in Cagayan de Oro City, Misamis Oriental, Philippines.",
+        "user_metadata": {
+           
+        }
+    },
+    {
+        "url": "https://dev-ustp.vercel.app",
+        "name":"Xavier University - Ateneo de Cagayan",
+        "imageSrc": "https://pidswebs.pids.gov.ph/CDN/featured-image/PR_DP2242-2.jpg",
+        "details": "Xavier University - Ateneo de Cagayan is a private Catholic university run by the Philippine Province of the Society of Jesus in Cagayan de Oro City, Misamis Oriental, Philippines."
+    },
+    {
+        "url": "https://dev-ustp.vercel.app",
+        "name":"Misamis Oriental Provincial Hospital",
+        "imageSrc": "https://pidswebs.pids.gov.ph/CDN/featured-image/PR_DP2242-2.jpg",
+        "details": "Xavier University - Ateneo de Cagayan is a private Catholic university run by the Philippine Province of the Society of Jesus in Cagayan de Oro City, Misamis Oriental, Philippines."
+    },
+    {
+        "url": "https://dev-ustp.vercel.app",
+        "name":"Northern Mindanao Medical Center",
+        "imageSrc": "https://pidswebs.pids.gov.ph/CDN/featured-image/PR_DP2242-2.jpg",
+        "details": "Xavier University - Ateneo de Cagayan is a private Catholic university run by the Philippine Province of the Society of Jesus in Cagayan de Oro City, Misamis Oriental, Philippines."
+    },
+    {
+        "url": "https://dev-hims.vercel.app",
+        "name": "Healthcare Information and Management System (HIMS) by University of Science and Technology of Southern Philippines (USTP)",
+        "imageSrc": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/88/Hospital-de-Bellvitge.jpg/640px-Hospital-de-Bellvitge.jpg",
+        "details": "The Healthcare Information and Management System (HIMS) is a web-based application that is designed to manage the health records of the patients. It is developed by the University of Science and Technology of Southern Philippines (USTP) in Cagayan de Oro City, Misamis Oriental, Philippines."
+    },
+    {
+        "url": "https://dev-ustp.vercel.app",
+        "name":"Xavier University - Ateneo de Cagayan",
+        "imageSrc": "https://pidswebs.pids.gov.ph/CDN/featured-image/PR_DP2242-2.jpg",
+        "details": "Xavier University - Ateneo de Cagayan is a private Catholic university run by the Philippine Province of the Society of Jesus in Cagayan de Oro City, Misamis Oriental, Philippines."
+    },
+    {
+        "url": "https://dev-ustp.vercel.app",
+        "name":"Misamis Oriental Provincial Hospital",
+        "imageSrc": "https://pidswebs.pids.gov.ph/CDN/featured-image/PR_DP2242-2.jpg",
+        "details": "Xavier University - Ateneo de Cagayan is a private Catholic university run by the Philippine Province of the Society of Jesus in Cagayan de Oro City, Misamis Oriental, Philippines."
+    },
+    {
+        "url": "https://dev-ustp.vercel.app",
+        "name":"Northern Mindanao Medical Center",
+        "imageSrc": "https://pidswebs.pids.gov.ph/CDN/featured-image/PR_DP2242-2.jpg",
+        "details": "Xavier University - Ateneo de Cagayan is a private Catholic university run by the Philippine Province of the Society of Jesus in Cagayan de Oro City, Misamis Oriental, Philippines."
+    }
+]

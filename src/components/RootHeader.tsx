@@ -8,6 +8,7 @@ const navLinks = [
     { name: "Nurses", href: "/nurses" },
     { name: "Organizations", href: "/organizations" },
     { name: "Contact Us", href: "/contact-us" }
+    // { name: "Doctors", href: "/practitioners" }
 ];
 
 interface IRootHeaderProps extends DetailedHTMLProps<HTMLAttributes<HTMLElement>, HTMLElement>{}
@@ -42,7 +43,7 @@ export default function RootHeader({...props}: IRootHeaderProps) {
                 <div className="hidden lg:flex lg:items-center lg:justify-center lg:space-x-10">
                 {
                     navLinks.map((link) => (
-                    <a key={link.name} href={link.href} title="" className="text-base text-black transition-all duration-200 hover:text-opacity-80">{link.name}</a>
+                    <a key={link.name} href={link.href} title={link.name} className="text-base text-teal-600 transition-all duration-200 hover:text-opacity-80">{link.name}</a>
                     ))
                 }
                 </div>

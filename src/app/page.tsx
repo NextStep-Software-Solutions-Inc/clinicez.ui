@@ -6,11 +6,11 @@ return (
     <>
         <section>
             <div className="container mx-auto">
-                <div className="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
+                <div className="mx-auto sm:px-6 lg:px-8">
                     <div className="grid items-center grid-cols-1 gap-12 lg:grid-cols-2">
                         <div>
                             <p className="text-base font-semibold tracking-wider text-gray-500 uppercase">Optimized Healthcare Management System</p>
-                            <h1 className="mt-4 text-4xl font-bold text-teal-600 lg:mt-8 sm:text-6xl xl:text-8xl">Revitalize in an <span className="bg-teal-600 text-white rounded-3xl font-extralight text-7xl px-4">ez</span> way.</h1>
+                            <h1 className="mt-4 text-4xl font-bold text-teal-600 lg:mt-8 sm:text-6xl xl:text-8xl">Revitalize in an <span className="bg-teal-600 text-white rounded-3xl font-extralight text-7xl px-4 leading-tight">ez</span> way.</h1>
                             <p className="mt-4 text-base text-gray-600 lg:mt-8 sm:text-xl">Join Health Organization and Manage Your Health Records</p>
 
                             <a href="/api/auth/login" title="" className="inline-flex items-center px-6 py-4 mt-8 font-semibold text-white transition-all duration-200 bg-teal-600 rounded-full lg:mt-16 hover:bg-teal-400 focus:bg-teal-400" role="button">
@@ -27,7 +27,7 @@ return (
                         <Image 
                             width={500}
                             height={500}
-                            className="w-full" 
+                            className="w-full hidden lg:block" 
                             src="https://i.postimg.cc/d1WGBnfZ/adaptive-icon.png" alt="model" 
                             />
                     </div>

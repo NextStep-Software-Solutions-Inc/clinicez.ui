@@ -21,7 +21,7 @@ export default function Carousel(props: ICarouselProps) {
 
     return (
         <div className='flex flex-col items-center relative'>
-            <div className='w-full overflow-hidden'>
+            <div className='w-[90%]  overflow-hidden'>
                 <div className='flex transition-transform duration-500 ease-in-out' style={{ transform: `translateX(-${activeIndex * (100 / perPage)}%)` }}>
                     {React.Children.map(children, (child, index) => (
                         <div className='w-full flex flex-col items-center justify-center p-5' style={{ flex: `0 0 ${100 / perPage}%` }}>

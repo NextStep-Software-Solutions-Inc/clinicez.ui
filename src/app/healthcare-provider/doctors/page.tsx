@@ -1,33 +1,38 @@
-import doctors from '../../../public/doctors.json';
+import doctors from '@public/doctors.json';
 import CarouselWrapper from "@components/CarouselWrapper";
+import JoinAsButton from '@components/JoinAs';
 
 export default async function Doctors() {
-
     return (
         <div className="container mx-auto ">
-            <div className="flex flex-col items-center justify-center min:h-screen">
+            <div className="flex flex-col items-center justify-center min:h-screen relative">
                 <h1 className="font-bold text-teal-500 text-3xl mb-5 ">Meet our Doctors</h1>
                 <div className='flex flex-col gap-10'>
                     <div>
-                        <Banner label='HIMS' />
                         <CarouselWrapper
                             items={doctors}
                         />
                     </div>
                     <div>
-                        <Banner label='Xavier University' />
                         <CarouselWrapper
                             items={doctors}
                         />
                     </div>
                     <div>
-                        <Banner label='Northern Mindanao Medical Center' />
                         <CarouselWrapper
                             items={doctors}
                         />
                     </div>
                 </div>
+                
+                <JoinAsButton href={{
+                    pathname: "/healthcare-provider/register",
+                    query: {
+                        role: "doctor"
+                    }
+                }} />
             </div>
+           
         </div>
 
     );

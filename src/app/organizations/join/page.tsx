@@ -1,8 +1,11 @@
-import { withPageAuthRequired } from "@auth0/nextjs-auth0"
+import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth0"
 
-async function JoinOrganizationPage() {
+async function JoinOrganizationPage(props: AppRouterPageRouteOpts) {
   return (
-    <div>JoinOrganizationPage</div>
+    <div className="container mx=auto">
+      <div>JoinOrganizationPage</div>
+
+    </div>
   )
 }
 

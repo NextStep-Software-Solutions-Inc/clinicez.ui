@@ -22,10 +22,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={montserrat.className} mx-4>
+      <body className={`${montserrat.className} mx-4`} >
         <UserProvider>
           <RootHeader className="sticky top-0 z-50"/>
-          <main className="bg-gradient-to-l from-[#6DEBF4] via-[#C3FBFF] to-[#D3FCFF] bg-opacity-30 py-2 sm:py-16 lg:py-24">
+          <main className="bg-gradient-to-l from-[#6DEBF4] via-[#C3FBFF] to-[#D3FCFF] bg-opacity-30 p-2 sm:py-16 lg:py-24">
             {children}
             <SpeedInsights />
           </main>

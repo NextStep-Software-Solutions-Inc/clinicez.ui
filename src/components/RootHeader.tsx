@@ -4,8 +4,8 @@ import UserAvatar from "./UserAvatar";
 
 const navLinks = [
     { name: "Home", href: "/" },
-    { name: "Doctors", href: "/doctors" },
-    { name: "Nurses", href: "/nurses" },
+    { name: "Doctors", href: "/healthcare-provider/doctors" },
+    { name: "Nurses", href: "/healthcare-provider/nurses" },
     { name: "Organizations", href: "/organizations" },
     { name: "Contact Us", href: "/contact-us" }
     // { name: "Doctors", href: "/practitioners" }

@@ -1,5 +1,7 @@
-import nurses from '../../../public/nurses.json';
+import nurses from '@public/nurses.json';
 import CarouselWrapper from "@components/CarouselWrapper";
+import JoinAsHealthcareProvider from '@components/JoinAs';
+import JoinAsButton from '@components/JoinAs';
 
 
 
@@ -14,28 +16,31 @@ const carouselProps = {
 export default async function Nurses() {
     return (
         <div className="container mx-auto">
-            <div className="flex flex-col items-center justify-center min:h-screen">
+            <div className="flex flex-col items-center justify-center min:h-screen relative">
                 <h1 className="font-bold text-teal-500 text-3xl mb-5">Meet our Nurses</h1>
                 <div className='flex flex-col gap-10'>
                     <div>
-                        <Banner label='HIMS'/>
                         <CarouselWrapper
                             items={nurses}
                         /> 
                     </div>
                     <div>
-                        <Banner label='Xavier University'/>
                         <CarouselWrapper
                             items={nurses}
                         />
                     </div>
                     <div>
-                        <Banner label='Northern Mindanao Medical Center'/>
                         <CarouselWrapper
                             items={nurses}
                         />
                     </div>
-                </div>   
+                </div> 
+                <JoinAsButton href={{
+                    pathname: "/healthcare-provider/register",
+                    query: {
+                        role: "nurse"
+                    }
+                }} />  
             </div>
         </div>
     );

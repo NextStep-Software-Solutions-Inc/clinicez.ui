@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Montserrat } from "next/font/google";
-import "./globals.css";
+import "@styles/globals.css";
 import { SpeedInsights } from "@vercel/speed-insights/next"
 // import RootHeader from "@components/components/RootHeader";
 import { UserProvider } from "@auth0/nextjs-auth0/client";
@@ -21,7 +21,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head />
       <body className={`${montserrat.className} mx-4`} >
         <UserProvider>
           <RootHeader className="sticky top-0 z-50"/>

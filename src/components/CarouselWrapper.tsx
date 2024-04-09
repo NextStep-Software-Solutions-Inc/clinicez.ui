@@ -1,41 +1,41 @@
 "use client";
-import React, { useMemo } from "react";
-import Carousel from "./Carousel";
-import CarouselItem, { type ICarouselItemProps} from "./CarouselItem";
-import useBreakpoints from "@hooks/useBreakpoints";
+import LocalCarouselItem , { type ICarouselItemProps} from "@components/CarouselItem";
 import Link from "next/link";
-
-const carouselProps = {
-    autoPlay: true,
-    autoPlaySpeed: 5000,
-    showArrows: true,
-    infiniteLoop: true,
-    showDots: true,
-    perPage: 3
-}
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@components/ui/carousel"
+import Each from "./utils/Each";
 
 interface ICarouselWrapperProps {
   items: ICarouselItemProps["item"][];
 }
 
 export default function CarouselWrapper({items}:ICarouselWrapperProps) {
-
-  const {sm, md, lg} = useBreakpoints();
-  const perPage = useMemo(() => {
-    if(sm) return 1;
-    if(md) return 2;
-    if(lg) return 3;
-    return 3;
-  }, [sm, md, lg])
-  
-
   return (
-    <Carousel {...carouselProps} perPage={perPage} >
-        {items.map((item) => (
-            <Link href={`profile/${item.id}`} key={item.id}>
-              <CarouselItem item={item}/>
-            </Link>
-        ))}
+    <Carousel
+      opts={{
+        align: "start",
+        loop: true,
+      }}
+      className="w-full"
+    >
+      <CarouselContent>
+        <Each
+          of={items}
+          render={(item, index) => (
+            <CarouselItem className="md:basis-1/2 lg:basis-1/3">
+              <Link href={`profile/${item.id}`} key={item.id}>
+                <LocalCarouselItem item={item}/>
+              </Link>
+            </CarouselItem>)}        
+        />
+      </CarouselContent>
+      <CarouselPrevious />
+      <CarouselNext />
     </Carousel>
   )
 }

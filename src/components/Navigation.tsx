@@ -16,6 +16,7 @@ const navLinks = [
   { name: "Doctors", href: "/healthcare-provider/doctors" },
   { name: "Nurses", href: "/healthcare-provider/nurses" },
   { name: "Organizations", href: "/organizations" },
+  { name: "Pricing", href: "/pricing" },
   { name: "Contact Us", href: "/contact-us" }
   // { name: "Doctors", href: "/practitioners" }
 ];

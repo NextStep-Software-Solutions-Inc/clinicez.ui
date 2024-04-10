@@ -1,40 +1,109 @@
-import { revalidatePath } from 'next/cache';
-import React from 'react';
+"use client"
 
-const plans = ["basic", "small", "large"];
-interface IPlanSelectorProps {
-  defaultPlan?: string;
+import { useFormState } from "react-dom"
+import Each from "@components/utils/Each";
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
+import { z } from "zod"
+
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@components/ui/form"
+import { RadioGroup, RadioGroupItem } from "@components/ui/radio-group"
+import { toast } from "sonner"
+import { submitPlanAction } from "@actions/healthcare-provider";
+import { cn } from "@lib/utils";
+import SubmitAndNext from "@components/SubmitAndNext";
+
+const FormSchema = z.object({
+  plan: z.enum(["basic", "small", "large"], {
+    required_error: "You need to select a plan.",
+    invalid_type_error: "Invalid plan",
+  }),
+})
+
+const formHandler = async (_prevState: any, formData: FormData) => {
+  const res = await submitPlanAction(_prevState, formData)
+  toast("Your selected plan has been submitted.", {
+    action: {
+      label: "Close",
+      onClick: () => console.log("Undo"),
+    },
+    description: JSON.stringify(res.message, null, 2),
+  })
+  return res
 }
 
-const PlanSelector: React.FC<IPlanSelectorProps> = ({ defaultPlan = "" }) => {
+interface IPlanSelectorProps {
+    defaultPlan?: string;
+    plans: string[]
+}
+
+
+export default function PlanSelector({defaultPlan = "", plans = []}: IPlanSelectorProps) {
+  const [state, formAction] = useFormState(formHandler, {
+    message: "",
+    status: false,
+  });
   
-  const handleSubmit = async (formData: FormData) => {
-    "use server"
-    const plan = formData.get("plan");
-    console.log({plan});
-    const res = await fetch("http://localhost:3000/api/register/hp", {method: "POST", body: JSON.stringify({step: "plan"})}); 
-    const data = await res.json();
-        
-    if(data.status) revalidatePath("/healthcare-provider/register", "page")
-    return true;
-  };
+  const form = useForm<z.infer<typeof FormSchema>>({
+    resolver: zodResolver(FormSchema),
+    defaultValues: {
+      plan: defaultPlan as z.infer<typeof FormSchema>["plan"],
+    }
+  })
+
+  const action = async (formData: FormData) => {
+    form.handleSubmit((data: z.infer<typeof FormSchema>) => {
+      formAction(formData)
+    })()
+  }
 
   return (
-    <form action={handleSubmit} className="">
-      <div className="form-control">
-        <label className="label">Plan:</label>
-        <div className="flex gap-2">
-          {plans.map((plan, index) => (
-            <label key={index} className="label cursor-pointer justify-start gap-2">
-              <input type="radio" name="plan" value={plan} className="radio checked:bg-teal-500" defaultChecked={defaultPlan === plan} />
-              <span className="label-text capitalize">{plan}</span>
-            </label>
-          ))}
-        </div>
-      </div>
-      <button className="btn mt-2" type="submit">Submit</button>
-    </form>
+    <Form {...form}>
+      <FormMessage><p className={cn(state.status? "text-green-500": "")}>{state.message}</p></FormMessage>
+      <form 
+        action={action} 
+        className="w-2/3 space-y-6">
+        <FormField
+          control={form.control}
+          name="plan"
+          render={({ field,  }) => (
+            <FormItem className="space-y-3">
+              <FormLabel>Select Plan...</FormLabel>
+              <FormControl>
+                <RadioGroup
+                  name="plan"
+                  onValueChange={field.onChange}
+                  value={field.value}
+                  className="flex flex-col space-y-1"
+                >
+                  <Each
+                    of={plans}
+                    render={(_plan) => (
+                      <FormItem className="flex items-center space-x-3 space-y-0">
+                        <FormControl>
+                          <RadioGroupItem value={_plan}/>
+                        </FormControl>
+                        <FormLabel className="font-normal capitalize">
+                          {_plan}
+                        </FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                </RadioGroup>
+              </FormControl>
+              <FormMessage/>
+            </FormItem>
+          )}
+        />
+        <SubmitAndNext/>
+      </form>
+    </Form>
   );
-};
-
-export default PlanSelector;
+}

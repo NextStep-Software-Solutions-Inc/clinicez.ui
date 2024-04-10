@@ -1,4 +1,5 @@
 "use client";
+
 import {
   Avatar,
   AvatarFallback,
@@ -10,6 +11,7 @@ import {
   LogOut,
   Settings,
   User,
+  Container
 } from "lucide-react"
  
 import {
@@ -18,25 +20,17 @@ import {
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuPortal,
   DropdownMenuSeparator,
-  DropdownMenuShortcut,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@components/ui/dropdown-menu"
-
-import { useUser } from "@auth0/nextjs-auth0/client"
-import Image from "next/image";
+import { useUser } from "@auth0/nextjs-auth0/client";
 
 export default function UserAvatar() {
 
-  const {user} = useUser();
+  const {user, isLoading} = useUser();
 
   if (!user) return <a href="/api/auth/login" title="" className="px-5 py-2.5 text-base transition-all duration-200 hover:bg-teal-400 hover:text-white focus:text-white focus:bg-teal-400 font-semibold text-white bg-teal-600 rounded-lg" role="button"> Sign In</a>
   return (
-
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Avatar className="w-12 h-12">
@@ -60,10 +54,16 @@ export default function UserAvatar() {
           </DropdownMenuItem>
           <DropdownMenuItem>
             <Settings className="mr-2 h-4 w-4" />
-            <span>Settings</span>
+            <a href="/settings">Settings</a>
             {/* <DropdownMenuShortcut>⌘S</DropdownMenuShortcut> */}
           </DropdownMenuItem>
         </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem>
+          <Container className="mr-2 h-4 w-4" />
+          <a href="https://clinic-ez-admin.vercel.app">Admin console</a>
+          {/* <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut> */}
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem>
           <LogOut className="mr-2 h-4 w-4" />
@@ -72,24 +72,5 @@ export default function UserAvatar() {
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
-    // <div className="dropdown dropdown-end">
-    //   <div tabIndex={0} role="button" className="btn btn-ghost btn-circle avatar mx-1 ">
-    //     <div className="w-12 mask mask-squircle">
-    //       <Image width={50} height={50} src={user.picture ?? ""} alt={user.nickname ?? ""}/>
-    //     </div>
-    //   </div>
-    //   <ul tabIndex={0} className="mt-3 z-[1] p-2 shadow menu menu-sm dropdown-content bg-base-100 rounded-box w-52">
-    //     <li>
-    //       <a href="/profile" className="justify-between">
-    //                 Profile
-    //         <span className="badge">New</span>
-    //       </a>
-    //     </li>
-    //     <li><a href="/settings">Settings</a></li>
-    //     <li><a href="https://clinic-ez-admin.vercel.app">Admin Console</a></li>
-    //     <li><a href="/api/auth/logout">Logout</a></li>
-    //   </ul>
-    // </div>
   )
 }
-

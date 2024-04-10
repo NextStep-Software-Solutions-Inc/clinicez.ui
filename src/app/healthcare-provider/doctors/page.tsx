@@ -2,13 +2,13 @@ import doctors from '@public/doctors.json';
 import CarouselWrapper from "@components/CarouselWrapper";
 import JoinAsButton from '@components/JoinAs';
 import { Metadata } from 'next';
-
 export const metadata: Metadata = {
   title: "Doctors",
   description: "Meet our Doctors",
 };
 
 export default async function Doctors() {
+  
   return (
     <div className="container mx-auto ">
       <div className="flex flex-col items-center justify-center min:h-screen relative">
@@ -34,17 +34,12 @@ export default async function Doctors() {
         <JoinAsButton href={{
           pathname: "/healthcare-provider/register",
           query: {
-            role: "doctor"
+            role: "doctor",
+            index: 1  
           }
         }} />
       </div>
-           
     </div>
 
   );
-}
-
-
-const Banner = ({ label }: { label: string }) => {
-  return <div className="bg-white py-2 w-full rounded-full text-center text-xl text-teal-600">{label}</div>
 }

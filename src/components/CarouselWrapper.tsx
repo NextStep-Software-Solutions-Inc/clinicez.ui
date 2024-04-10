@@ -9,12 +9,14 @@ import {
   CarouselPrevious,
 } from "@components/ui/carousel"
 import Each from "./utils/Each";
+import { use } from "react";
+import { delay } from "@lib/wait";
 
 interface ICarouselWrapperProps {
   items: ICarouselItemProps["item"][];
 }
-
 export default function CarouselWrapper({items}:ICarouselWrapperProps) {
+  
   return (
     <Carousel
       opts={{
@@ -31,11 +33,13 @@ export default function CarouselWrapper({items}:ICarouselWrapperProps) {
               <Link href={`profile/${item.id}`} key={item.id}>
                 <LocalCarouselItem item={item}/>
               </Link>
-            </CarouselItem>)}        
+            </CarouselItem>
+          )}        
         />
       </CarouselContent>
       <CarouselPrevious />
       <CarouselNext />
     </Carousel>
+
   )
 }

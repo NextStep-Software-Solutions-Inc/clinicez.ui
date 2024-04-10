@@ -3,8 +3,14 @@ import HealthcareRoleSelector from "@components/HealthcareRoleSelector";
 import PlanSelector from "@components/PlanSelector";
 import StepsIndicator from "@components/StepsIndicator";
 import ConditionalRender from "@components/utils/ConditionalRender";
-import DisableWrapper from "@components/utils/DisableWrapper";
-import React from "react";
+import { Terminal } from "lucide-react"
+
+
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@components/ui/alert"
 
 async function HealthcareProviderRegistrationPage(props: AppRouterPageRouteOpts) {
   const { role, index, plan} = props.searchParams || {};
@@ -24,7 +30,13 @@ async function HealthcareProviderRegistrationPage(props: AppRouterPageRouteOpts)
   return (
     <div className="container mx=auto">
       {/* add alert here to show the the user has already submitted and waiting for approval */}
-      <div className="alert outline-dashed outline-2 mb-5">Your registration is pending approval</div>
+      <Alert className="mb-5">
+        <Terminal className="h-4 w-4" />
+        <AlertTitle>Heads up!</AlertTitle>
+        <AlertDescription>
+        Your registration is pending approval.
+        </AlertDescription>
+      </Alert>
         
       <div className="prose max-w-full">
         <h2>Healthcare Provider Registration</h2>
@@ -33,12 +45,12 @@ async function HealthcareProviderRegistrationPage(props: AppRouterPageRouteOpts)
         <StepsIndicator steps={steps} />
         <ConditionalRender condition={parseInt(index as string) === 1}>
           {/* <DisableWrapper disabled={steps.find(step => step.id === 1)?.completed}> */}
-          <HealthcareRoleSelector defaultRole={state.role as string} />
+          <HealthcareRoleSelector defaultRole={role as string} roles={["doctor", "nurse", "pharmacist", "laboratory", "admin"]} />
           {/* </DisableWrapper> */}
         </ConditionalRender>
         <ConditionalRender condition={parseInt(index as string) === 2}>
           {/* <DisableWrapper disabled={steps.find(step => step.id === 2)?.completed}> */}
-          <PlanSelector defaultPlan={state.plan as string} />
+          <PlanSelector defaultPlan={plan as string} plans={["basic", "small", "large"]} />
           {/* </DisableWrapper> */}
         </ConditionalRender>
         <ConditionalRender condition={parseInt(index as string) === 3}>

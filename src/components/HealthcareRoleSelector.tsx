@@ -1,42 +1,110 @@
-import React from "react";
-import Each from "./utils/Each";
-import { revalidatePath } from "next/cache";
+"use client"
 
-const roles = ["doctor", "nurse", "pharmacist", "laboratory", "admin"];
+import { useFormState } from "react-dom"
+import Each from "./utils/Each";
+
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
+import { z } from "zod"
+
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@components/ui/form"
+import { RadioGroup, RadioGroupItem } from "@components/ui/radio-group"
+import { toast } from "sonner"
+import { submitRoleAction } from "@actions/healthcare-provider";
+import { cn } from "@lib/utils";
+import { useSearchParams } from "next/navigation";
+import SubmitAndNext from "@components/SubmitAndNext";
+
+const FormSchema = z.object({
+  role: z.enum(["doctor", "nurse", "pharmacist", "laboratory", "admin"], {
+    required_error: "You need to select a role.",
+    invalid_type_error: "Invalid role",
+  }),
+})
+
+const formHandler = async (_prevState: any, formData: FormData) => {
+  const res = await submitRoleAction(_prevState, formData);
+  toast("Your selected role has been submitted.", {
+    action: {
+      label: "Close",
+      onClick: () => console.log("Undo"),
+    },
+    description: JSON.stringify(res.message, null, 2),
+  });
+  return res;
+}
 
 interface IHealthcareRoleSelectorProps {
     defaultRole?: string;
+    roles: string[]
 }
 
-export default function HealthcareRoleSelector({defaultRole = ""}: IHealthcareRoleSelectorProps) {
-  const handleSubmit = async (formData: FormData) => {
-    "use server"
-    const role = formData.get("role");
-    console.log({role});
-    const res = await fetch("http://localhost:3000/api/register/hp", {method: "POST", body: JSON.stringify({step: "role"})}); 
-    const data = await res.json();
-    
-    if(data.status) revalidatePath("/healthcare-provider/register", "page")
-    return true;
-  };
+export default function HealthcareRoleSelector({defaultRole = "", roles = []}: IHealthcareRoleSelectorProps) {
+  const searchParams = useSearchParams();
+  
+  const [state, formAction] = useFormState(formHandler, {
+    message: "",
+    status: false,
+  });
+  const form = useForm<z.infer<typeof FormSchema>>({
+    resolver: zodResolver(FormSchema),
+    defaultValues: {
+      role: defaultRole as z.infer<typeof FormSchema>["role"],
+    }
+  })
 
+  const action = async (formData: FormData) => {
+    form.handleSubmit((data: z.infer<typeof FormSchema>) => {
+      formAction(formData)
+    })();
+  }
   return (
-    <form action={handleSubmit} className="">
-      <div className="form-control">
-        <label className="label">Role:</label>
-        <div className="flex gap-2">
-          <Each
-            of={roles}
-            render={(_role) => (
-              <label className="label cursor-pointer justify-start gap-2">
-                <input type="radio" name="role" value={_role} className="radio checked:bg-teal-500" defaultChecked={defaultRole === _role}  />
-                <span className="label-text capitalize">{_role}</span>
-              </label>
-            )}
-          />
-        </div>
-      </div>
-      <button className="btn mt-2" type="submit">Submit</button>
-    </form>
+    <Form {...form}>
+      <FormMessage><p className={cn(state.status? "text-green-500": "")}>{state.message}</p></FormMessage>
+      <form 
+        action={action} 
+        className="w-2/3 space-y-6">
+        <FormField
+          control={form.control}
+          name="role"
+          render={({ field,  }) => (
+            <FormItem className="space-y-3">
+              <FormLabel>Select Role...</FormLabel>
+              <FormControl>
+                <RadioGroup
+                  name="role"
+                  onValueChange={field.onChange}
+                  value={field.value}
+                  className="flex flex-col space-y-1"
+                >
+                  <Each
+                    of={roles}
+                    render={(_role) => (
+                      <FormItem className="flex items-center space-x-3 space-y-0">
+                        <FormControl>
+                          <RadioGroupItem value={_role}/>
+                        </FormControl>
+                        <FormLabel className="font-normal capitalize">
+                          {_role}
+                        </FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                </RadioGroup>
+              </FormControl>
+              <FormMessage/>
+            </FormItem>
+          )}
+        />
+        <SubmitAndNext/>
+      </form>
+    </Form>
   );
 }

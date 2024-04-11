@@ -38,7 +38,8 @@ export default async function Nurses() {
         <JoinAsButton href={{
           pathname: "/healthcare-provider/register",
           query: {
-            role: "nurse"
+            role: "nurse",
+            index: "role"
           }
         }} />  
       </div>

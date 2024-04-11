@@ -35,7 +35,7 @@ export default async function Doctors() {
           pathname: "/healthcare-provider/register",
           query: {
             role: "doctor",
-            index: 1  
+            index: "role"  
           }
         }} />
       </div>

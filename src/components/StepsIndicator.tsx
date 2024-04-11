@@ -4,6 +4,7 @@ import Link from "next/link";
 import React from "react";
 import Each from "./utils/Each";
 import { useSearchParams } from "next/navigation";
+import { TabsList, TabsTrigger } from "@components/ui/tabs";
 
 interface IStepsIndicatorProps {
   steps: {
@@ -17,7 +18,7 @@ export default function StepsIndicator({steps}: IStepsIndicatorProps) {
   const searchParams = Object.fromEntries(useSearchParams());
   
   return (
-    <div className="steps w-full ">
+    <TabsList className={`grid w-full grid-cols-${steps.length}`}>
       <Each
         of={steps}
         render={(step) => {
@@ -25,19 +26,16 @@ export default function StepsIndicator({steps}: IStepsIndicatorProps) {
             <Link href={{
               query: {
                 ...searchParams,
-                index: step.id
+                index: step.label
               }
             }}
-            data-content={step.completed? "O" : "X"}
-            className={`step no-underline ${step.completed? "step-primary" : ""}`}
             >
-              <span className="step-label"style={{textDecoration: "none"}}>{step.label}</span>
+              <TabsTrigger className="w-full capitalize" value={step.label}>{step.label}</TabsTrigger>
             </Link>
           )
         }}
       />
-      {
-      }
-    </div>
+    </TabsList>
+      
   );
 }

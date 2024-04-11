@@ -1,27 +1,27 @@
 [
   {
     "id": 1,
-    "label": "Role",
+    "label": "role",
     "completed": true
   },
   {
     "id": 2,
-    "label": "Plan",
+    "label": "plan",
     "completed": true
   },
   {
     "id": 3,
-    "label": "Profile",
+    "label": "profile",
     "completed": false
   },
   {
     "id": 4,
-    "label": "Payment",
+    "label": "payment",
     "completed": false
   },
   {
     "id": 5,
-    "label": "Confirmation",
+    "label": "confirmation",
     "completed": false
   }
 ]

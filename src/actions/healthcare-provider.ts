@@ -37,6 +37,28 @@ export const submitPlanAction = async (_prevState: any ,formData: FormData) => {
   };
 };
 
+export const submitProfileAction = async (_prevState: any ,formData: FormData) => {
+  const form = Object.fromEntries(formData);
+  
+  formData.forEach((value, key) => {
+    console.log({key, value});
+    
+  });
+  
+  if(!form.title || !form.bio) return {
+    message: "Title and bio are required.",
+    status: false,
+  };
+
+  const data = await postData("plan")
+  if(data.status) revalidatePath("/healthcare-provider/register", "page")
+
+  return {
+    message: "Profile accepted",
+    status: true
+  };
+
+}
 
 export const postData = async (step: string) => {
   await delay(2000);

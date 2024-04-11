@@ -26,10 +26,8 @@ export default function RootLayout({
       <body className={`${montserrat.className} mx-4`} >
         <UserProvider>
           <RootHeader className="sticky top-0 z-50"/>
-          <div className="bg-gradient-to-l from-[#6DEBF4] via-[#C3FBFF] to-[#D3FCFF] bg-opacity-30 p-2 sm:py-16 lg:py-24">
-            {children}
-            <SpeedInsights />
-          </div>
+          {children}
+          <SpeedInsights />
           <Toaster />
           <RootFooter/>
         </UserProvider>

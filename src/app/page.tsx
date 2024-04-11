@@ -2,7 +2,7 @@ import Image from "next/image";
 
 export default async function HomePage() {
   return (
-    <>
+    <div className="bg-gradient-to-l from-[#6DEBF4] via-[#C3FBFF] to-[#D3FCFF] bg-opacity-30 p-2 sm:py-16 lg:py-24">
       <section>
         <div className="container mx-auto">
           <div className="mx-auto sm:px-6 lg:px-8">
@@ -34,6 +34,6 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
-    </>
+    </div>
   );
 }

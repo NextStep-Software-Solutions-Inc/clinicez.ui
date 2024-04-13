@@ -16,7 +16,6 @@ interface IStepsIndicatorProps {
 
 export default function StepsIndicator({steps}: IStepsIndicatorProps) {
   const searchParams = Object.fromEntries(useSearchParams());
-  
   return (
     <TabsList className={`grid w-full grid-cols-${steps.length}`}>
       <Each

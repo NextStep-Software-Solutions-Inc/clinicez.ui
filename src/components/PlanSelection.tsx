@@ -1,8 +1,7 @@
 "use client"
 
 import { useFormState } from "react-dom"
-import Each from "./utils/Each";
-
+import Each from "@components/utils/Each";
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
@@ -10,6 +9,7 @@ import { z } from "zod"
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -17,54 +17,61 @@ import {
 } from "@components/ui/form"
 import { RadioGroup, RadioGroupItem } from "@components/ui/radio-group"
 import { toast } from "sonner"
-import { submitRoleAction } from "@actions/healthcare-provider";
+import { submitPlanAction } from "@actions/healthcare-provider";
 import { cn } from "@lib/utils";
-import { useSearchParams } from "next/navigation";
 import SubmitAndNext from "@components/SubmitAndNext";
+import { useContext } from "react";
+import { HPApplicationDataContext } from "@contexts/hp-application.context";
 
 const FormSchema = z.object({
-  role: z.enum(["doctor", "nurse", "pharmacist", "laboratory", "admin"], {
-    required_error: "You need to select a role.",
-    invalid_type_error: "Invalid role",
+  plan: z.enum(["short-term", "long-term", "lifetime"], {
+    required_error: "You need to select a plan.",
+    invalid_type_error: "Invalid plan",
   }),
 })
 
 const formHandler = async (_prevState: any, formData: FormData) => {
-  const res = await submitRoleAction(_prevState, formData);
-  toast("Your selected role has been submitted.", {
+  const res = await submitPlanAction(_prevState, formData)
+  toast("Your selected plan has been submitted.", {
     action: {
       label: "Close",
       onClick: () => console.log("Undo"),
     },
     description: JSON.stringify(res.message, null, 2),
-  });
-  return res;
+  })
+  return res
+}
+interface IPlanSelectorProps {
+    defaultPlan?: string;
+    plans: {
+        name: string;
+        description: string;
+        price: number;
+    }[]
 }
 
-interface IHealthcareRoleSelectorProps {
-    defaultRole?: string;
-    roles: string[]
-}
 
-export default function HealthcareRoleSelector({defaultRole = "", roles = []}: IHealthcareRoleSelectorProps) {
-  const searchParams = useSearchParams();
-  
+export default function PlanSelector({defaultPlan = "", plans = []}: IPlanSelectorProps) {
+  const {dispatch} = useContext(HPApplicationDataContext);
   const [state, formAction] = useFormState(formHandler, {
     message: "",
     status: false,
   });
+  
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
-      role: defaultRole as z.infer<typeof FormSchema>["role"],
+      plan: defaultPlan as z.infer<typeof FormSchema>["plan"],
     }
   })
 
   const action = async (formData: FormData) => {
     form.handleSubmit((data: z.infer<typeof FormSchema>) => {
       formAction(formData)
-    })();
+      dispatch({selectedPlan: data.plan})
+    })()
   }
+
   return (
     <Form {...form}>
       <FormMessage><p className={cn(state.status? "text-green-500": "")}>{state.message}</p></FormMessage>
@@ -73,27 +80,32 @@ export default function HealthcareRoleSelector({defaultRole = "", roles = []}: I
         className="w-2/3 space-y-6">
         <FormField
           control={form.control}
-          name="role"
+          name="plan"
           render={({ field,  }) => (
             <FormItem className="space-y-3">
-              <FormLabel>Select Role...</FormLabel>
+              <FormLabel>Select Plan...</FormLabel>
               <FormControl>
                 <RadioGroup
-                  name="role"
+                  name="plan"
                   onValueChange={field.onChange}
                   value={field.value}
-                  className="flex flex-col space-y-1"
+                  className="flex flex-row space-x-5"
                 >
                   <Each
-                    of={roles}
-                    render={(_role) => (
-                      <FormItem className="flex items-center space-x-3 space-y-0">
+                    of={plans}
+                    render={(_plan) => (
+                      <FormItem className={`w-full has-[:checked]:bg-teal-50 has-[:checked]:text-teal-900 has-[:checked]:ring-teal-200 flex items-center space-x-5 bg-white shadow-lg rounded-lg p-4 `}>
                         <FormControl>
-                          <RadioGroupItem value={_role}/>
+                          <RadioGroupItem value={_plan.name} />
                         </FormControl>
-                        <FormLabel className="font-normal capitalize">
-                          {_role}
-                        </FormLabel>
+                        <div className="flex flex-col gap-2">
+                          <FormLabel className="font-normal capitalize">
+                            {_plan.name}
+                          </FormLabel>
+                          <FormLabel>
+                            {_plan.description}
+                          </FormLabel>
+                        </div>
                       </FormItem>
                     )}
                   />
@@ -103,7 +115,7 @@ export default function HealthcareRoleSelector({defaultRole = "", roles = []}: I
             </FormItem>
           )}
         />
-        <SubmitAndNext/>
+        <SubmitAndNext nextIndex="profile" prevIndex="role" labels={{submit: "Save"}}/>
       </form>
     </Form>
   );

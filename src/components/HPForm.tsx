@@ -7,13 +7,14 @@ import { Form, FormMessage } from "@components/ui/form";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import HPAddress from "./HPAddress";
+import HPAddress from "@components/HPAddress";
 import HPProfessionalInfo from "./HPProfessionalInfo";
 import { useFormState } from "react-dom";
 import { submitProfileAction } from "@actions/healthcare-provider";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { cn } from "@lib/utils";
+import BackSubmitAndNext from "./SubmitAndNext";
 
 
 export const formSchema = z.object({
@@ -125,7 +126,7 @@ export default function HPForm() {
         <HPAddress form={form}/>
         <h4>Professional Information</h4>
         <HPProfessionalInfo form={form}/>
-        <SubmitAndNext/>
+        <BackSubmitAndNext nextIndex="payment" prevIndex="plan" labels={{submit: "Save"}}/>
       </form>
     </Form>
   );

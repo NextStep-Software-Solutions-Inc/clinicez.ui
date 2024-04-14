@@ -75,6 +75,15 @@ export const submitPaymentAction = async (_prevState: any ,formData: FormData) =
 }
 
 
+export const submitApplication = async (_prevState: any ,formData: FormData) => {
+  const form = Object.fromEntries(formData);
+
+  if(!form.title || !form.bio) return {
+    message: "Title and bio are required.",
+    status: false,
+  };
+}
+
 
 export const postData = async (step: string) => {
   await delay(2000);

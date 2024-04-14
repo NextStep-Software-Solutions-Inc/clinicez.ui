@@ -1,82 +1,76 @@
-"use client"
+"use client";
 
-import { useFormState } from "react-dom"
 import Each from "@components/utils/Each";
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
+import {useForm } from "react-hook-form"
 import { z } from "zod"
 
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@components/ui/form"
 import { RadioGroup, RadioGroupItem } from "@components/ui/radio-group"
-import { toast } from "sonner"
-import { submitPlanAction } from "@actions/healthcare-provider";
-import { cn } from "@lib/utils";
-import SubmitAndNext from "@components/SubmitAndNext";
-import { useContext } from "react";
-import { HPApplicationDataContext } from "@contexts/hp-application.context";
+import { zodResolver } from "@hookform/resolvers/zod";
+import BackSubmitAndNext from "./SubmitAndNext";
+import { useLocalStorage } from "@hooks/useLocalStorage";
 
-const FormSchema = z.object({
-  plan: z.enum(["short-term", "long-term", "lifetime"], {
+const plans = [
+  {
+    name: "short-term",
+    price: 200,
+    description: "1 year subscription",
+  },
+  {
+    name: "long-term",
+    price: 500,
+    description: "3 years subscription",
+  },
+  {
+    name: "lifetime",
+    price: 1000,
+    description: "Lifetime subscription",
+  }
+  
+]
+export const planFormSchema = z.object({
+  plan: z.string({
     required_error: "You need to select a plan.",
     invalid_type_error: "Invalid plan",
+  }).refine(value => ["short-term", "long-term", "lifetime"].includes(value), {
+    message: "Invalid plan",
   }),
 })
 
-const formHandler = async (_prevState: any, formData: FormData) => {
-  const res = await submitPlanAction(_prevState, formData)
-  toast("Your selected plan has been submitted.", {
-    action: {
-      label: "Close",
-      onClick: () => console.log("Undo"),
-    },
-    description: JSON.stringify(res.message, null, 2),
-  })
-  return res
-}
 interface IPlanSelectorProps {
-    defaultPlan?: string;
-    plans: {
-        name: string;
-        description: string;
-        price: number;
-    }[]
+  nextStep?: () => void;
+  prevStep?: () => void;
+  isFirstStep?: boolean;
+  isLastStep?: boolean;
+  totalSteps?: number;
 }
 
 
-export default function PlanSelector({defaultPlan = "", plans = []}: IPlanSelectorProps) {
-  const {dispatch} = useContext(HPApplicationDataContext);
-  const [state, formAction] = useFormState(formHandler, {
-    message: "",
-    status: false,
-  });
-  
-  const form = useForm<z.infer<typeof FormSchema>>({
-    resolver: zodResolver(FormSchema),
+export default function PlanSelector({ nextStep, isFirstStep, isLastStep, prevStep,totalSteps}: IPlanSelectorProps) {
+  const [applicationData,setApplicationData] = useLocalStorage("hp-application", {plan: "short-term"});
+  const form = useForm<z.infer<typeof planFormSchema>>({
+    resolver: zodResolver(planFormSchema),
     defaultValues: {
-      plan: defaultPlan as z.infer<typeof FormSchema>["plan"],
+      plan: applicationData.plan || "short-term",
     }
   })
 
-  const action = async (formData: FormData) => {
-    form.handleSubmit((data: z.infer<typeof FormSchema>) => {
-      formAction(formData)
-      dispatch({selectedPlan: data.plan})
-    })()
+  const onSubmit = async (data: z.infer<typeof planFormSchema>) => {
+    await setApplicationData(data)
+    nextStep?.();
   }
 
   return (
     <Form {...form}>
-      <FormMessage><p className={cn(state.status? "text-green-500": "")}>{state.message}</p></FormMessage>
       <form 
-        action={action} 
+        onSubmit={form.handleSubmit(onSubmit)}
         className="w-2/3 space-y-6">
         <FormField
           control={form.control}
@@ -115,7 +109,23 @@ export default function PlanSelector({defaultPlan = "", plans = []}: IPlanSelect
             </FormItem>
           )}
         />
-        <SubmitAndNext nextIndex="profile" prevIndex="role" labels={{submit: "Save"}}/>
+        <div className="mt-4">
+          <BackSubmitAndNext 
+            labels={{
+              previous: "Back",
+              submit: "Continue",
+              next: "Next",
+            }}
+            disabled={{
+              submit:!form.formState.isValid,
+              previous: isFirstStep,
+              next: !isLastStep,
+            }}
+            actions={{
+              previous: prevStep,
+            }}
+          />
+        </div>
       </form>
     </Form>
   );

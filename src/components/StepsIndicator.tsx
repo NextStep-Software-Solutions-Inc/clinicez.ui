@@ -5,6 +5,7 @@ import React from "react";
 import Each from "./utils/Each";
 import { useSearchParams } from "next/navigation";
 import { TabsList, TabsTrigger } from "@components/ui/tabs";
+import { cn } from "@lib/utils";
 
 interface IStepsIndicatorProps {
   steps: {
@@ -15,9 +16,10 @@ interface IStepsIndicatorProps {
 }
 
 export default function StepsIndicator({steps}: IStepsIndicatorProps) {
+  
   const searchParams = Object.fromEntries(useSearchParams());
   return (
-    <TabsList className={`grid w-full grid-cols-${steps.length}`}>
+    <TabsList className={cn(`grid w-full grid-cols-4`)}>
       <Each
         of={steps}
         render={(step) => {

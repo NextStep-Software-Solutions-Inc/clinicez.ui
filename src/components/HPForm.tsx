@@ -126,7 +126,6 @@ export default function HPForm() {
         <HPAddress form={form}/>
         <h4>Professional Information</h4>
         <HPProfessionalInfo form={form}/>
-        <BackSubmitAndNext nextIndex="payment" prevIndex="plan" labels={{submit: "Save"}}/>
       </form>
     </Form>
   );

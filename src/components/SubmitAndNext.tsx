@@ -12,38 +12,28 @@ type BackSubmitAndNextProps = {
     submit?: boolean;
     next?: boolean;
   }
-  nextIndex?: string;
-  prevIndex?: string;
   labels?: {
     previous?: string;
     submit?: string;
     next?: string;
   }
+  actions?: {
+    next?: () => void;
+    previous?: () => void;
+  }
 }
 
-export default function BackSubmitAndNext({disabled, nextIndex, prevIndex, labels}: BackSubmitAndNextProps) {
+export default function BackSubmitAndNext({disabled, labels, actions}: BackSubmitAndNextProps) {
   const { next = false, submit = false, previous = false} = disabled ?? {}
+  const {next:nextStep, previous: previousStep} = actions ?? {}
   const { previous: prevLabel = "Back", submit: submitLabel = "Submit", next: nextLabel = "Next"} = labels ?? {}
-  const searchParams = useSearchParams();
   const {pending} = useFormStatus()
   
   return (
     <div className="flex gap-2">
-      
-      {!previous ? <Link href={{
-        query: {
-          ...Object.fromEntries(searchParams),
-          index: prevIndex
-        }
-      }}><Button variant="link" type="button">{prevLabel}</Button></Link> : null}
-   
+      {!previous ? <Button variant="outline" onClick={previousStep} type="button">{prevLabel}</Button>: null}
       {!submit ? <Button disabled={pending} type="submit">{submitLabel}</Button>: null}
-      {!next ? <Link href={{
-        query: {
-          ...Object.fromEntries(searchParams),
-          index: nextIndex
-        }
-      }}><Button variant="link" type="button">{nextLabel}</Button></Link> : null}
+      {!next ?<Button variant="outline" onClick={nextStep} type="button">{nextLabel}</Button> : null}
     </div>
   );
 }

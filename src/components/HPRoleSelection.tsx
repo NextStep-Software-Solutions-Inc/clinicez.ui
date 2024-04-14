@@ -1,12 +1,8 @@
 "use client"
 
-import { useFormState } from "react-dom"
 import Each from "./utils/Each";
-
-import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-
 import {
   Form,
   FormControl,
@@ -16,67 +12,45 @@ import {
   FormMessage,
 } from "@components/ui/form"
 import { RadioGroup, RadioGroupItem } from "@components/ui/radio-group"
-import { toast } from "sonner"
-import { submitRoleAction } from "@actions/healthcare-provider";
-import { cn } from "@lib/utils";
-import { useRouter, useSearchParams } from "next/navigation";
-import SubmitAndNext from "@components/SubmitAndNext";
-import { useContext } from "react";
-import { HPApplicationDataContext } from "@contexts/hp-application.context";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useSearchParams } from "next/navigation";
+import BackSubmitAndNext from "./SubmitAndNext";
+import {useLocalStorage} from "@hooks/useLocalStorage";
+const roles = ["doctor", "nurse", "pharmacist", "laboratory", "admin"];
 
-const FormSchema = z.object({
-  role: z.enum(["doctor", "nurse", "pharmacist", "laboratory", "admin"], {
+export const roleFormSchema = z.object({
+  role: z.string({
     required_error: "You need to select a role.",
     invalid_type_error: "Invalid role",
+  }).refine(value => ["doctor", "nurse", "pharmacist", "laboratory", "admin"].includes(value), {
+    message: "Invalid role",
   }),
 })
 
-const formHandler = async (_prevState: any, formData: FormData) => {
-  const res = await submitRoleAction(_prevState, formData);
-  toast("Your selected role has been submitted.", {
-    action: {
-      label: "Close",
-      onClick: () => console.log("Undo"),
-    },
-    description: JSON.stringify(res.message, null, 2),
-  });
-  return res;
-}
-
 interface IHealthcareRoleSelectorProps {
-    defaultRole?: string;
-    roles: string[]
+  nextStep?: () => void;
+  prevStep?: () => void;
+  isFirstStep?: boolean;
+  isLastStep?: boolean;
 }
 
-export default function HealthcareRoleSelector({defaultRole = "", roles = []}: IHealthcareRoleSelectorProps) {
-  const {dispatch} = useContext(HPApplicationDataContext);
-  
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  
-  const [state, formAction] = useFormState(formHandler, {
-    message: "",
-    status: false,
-  });
-  const form = useForm<z.infer<typeof FormSchema>>({
-    resolver: zodResolver(FormSchema),
+export default function HealthcareRoleSelector({nextStep, prevStep, isFirstStep,isLastStep}: IHealthcareRoleSelectorProps) {
+  const role = useSearchParams().get("role")?? "";
+  const [applicationData,setApplicationData] = useLocalStorage("hp-application", {role});
+  const form = useForm<z.infer<typeof roleFormSchema>>({
+    resolver: zodResolver(roleFormSchema),
     defaultValues: {
-      role: defaultRole as z.infer<typeof FormSchema>["role"],
+      role: role || applicationData?.role || "doctor",
     }
   })
 
-  const action = async (formData: FormData) => {
-    form.handleSubmit((data: z.infer<typeof FormSchema>) => {
-      dispatch({selectedRole: data.role})
-      formAction(formData)
-    })();
+  const onSubmit = async (data: z.infer<typeof roleFormSchema>) => {
+    await setApplicationData(data)
+    nextStep?.();
   }
   return (
     <Form {...form}>
-      <FormMessage><p className={cn(state.status? "text-green-500": "")}>{state.message}</p></FormMessage>
-      <form 
-        action={action} 
-        className="w-2/3 space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="w-2/3 space-y-6">
         <FormField
           control={form.control}
           name="role"
@@ -86,10 +60,7 @@ export default function HealthcareRoleSelector({defaultRole = "", roles = []}: I
               <FormControl>
                 <RadioGroup
                   name="role"
-                  onValueChange={(value) => {
-                    field.onChange(value)
-                    router.push(`?${searchParams.toString()}&role=${value}`)
-                  }}
+                  onValueChange={field.onChange}
                   value={field.value}
                   className="flex flex-row space-x-5"
                 >
@@ -112,7 +83,23 @@ export default function HealthcareRoleSelector({defaultRole = "", roles = []}: I
             </FormItem>
           )}
         />
-        <SubmitAndNext nextIndex="plan" labels={{submit: "Save"}} />
+        <div className="mt-4">
+          <BackSubmitAndNext 
+            labels={{
+              previous: "Back",
+              submit: "Continue",
+              next: "Next",
+            }}
+            disabled={{
+              submit:!form.formState.isValid,
+              previous: isFirstStep,
+              next: !isLastStep,
+            }}
+            actions={{
+              previous: prevStep,
+            }}
+          />
+        </div>
       </form>
     </Form>
   );

@@ -32,7 +32,7 @@ export default async function Doctors() {
         </div>
                 
         <JoinAsButton href={{
-          pathname: "/healthcare-provider/register",
+          pathname: "/healthcare-provider/apply",
           query: {
             role: "doctor",
             index: "role"  

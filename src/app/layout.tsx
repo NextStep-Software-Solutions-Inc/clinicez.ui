@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import { Montserrat } from "next/font/google";
-import "./globals.css";
+import "@styles/globals.css";
 import { SpeedInsights } from "@vercel/speed-insights/next"
 // import RootHeader from "@components/components/RootHeader";
 import { UserProvider } from "@auth0/nextjs-auth0/client";
 import RootHeader from "@components/RootHeader";
 import RootFooter from "@components/RootFooter";
-// import RootFooter from "@components/components/RootFooter";
+import { Toaster } from "sonner"
 
 const montserrat = Montserrat({ subsets: ["latin"] });
 
@@ -21,14 +21,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={montserrat.className} mx-4>
+    <html lang="en" suppressHydrationWarning>
+      <head />
+      <body className={`${montserrat.className} mx-4`} >
         <UserProvider>
           <RootHeader className="sticky top-0 z-50"/>
-          <main className="bg-gradient-to-l from-[#6DEBF4] via-[#C3FBFF] to-[#D3FCFF] bg-opacity-30 py-2 sm:py-16 lg:py-24">
-            {children}
-            <SpeedInsights />
-          </main>
+          {children}
+          <SpeedInsights />
+          <Toaster />
           <RootFooter/>
         </UserProvider>
       </body>

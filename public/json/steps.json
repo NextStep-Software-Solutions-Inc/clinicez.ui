@@ -1,0 +1,27 @@
+[
+  {
+    "id": 1,
+    "label": "role",
+    "completed": true
+  },
+  {
+    "id": 2,
+    "label": "plan",
+    "completed": true
+  },
+  {
+    "id": 3,
+    "label": "profile",
+    "completed": false
+  },
+  {
+    "id": 4,
+    "label": "payment",
+    "completed": false
+  },
+  {
+    "id": 5,
+    "label": "confirmation",
+    "completed": false
+  }
+]

@@ -13,6 +13,7 @@ interface ConfirmationFormProps {
   nextStep?: () => void;
   prevStep?: () => void;
   setComplete?: (value?: boolean) => void;
+  startOver?: () => void;
   isComplete?: boolean;
   isFirstStep?: boolean;
   isLastStep?: boolean;
@@ -29,8 +30,8 @@ export const confirmationFormSchema = z.object({
   })
 })
 
-export default function ConfirmationForm({ nextStep, prevStep, isFirstStep, isComplete, setComplete }: ConfirmationFormProps) {
-  const [,setApplicationData] = useLocalStorage("hp-application");
+export default function ConfirmationForm({ nextStep, prevStep, isFirstStep, isComplete, setComplete, startOver }: ConfirmationFormProps) {
+  const [applicationData, setApplicationData] = useLocalStorage("hp-application");
   
   const form = useForm<z.infer<typeof confirmationFormSchema>>({
     resolver: zodResolver(confirmationFormSchema)
@@ -43,6 +44,15 @@ export default function ConfirmationForm({ nextStep, prevStep, isFirstStep, isCo
       setComplete?.();
     })()
   }
+
+  const reset = async () => {
+    await setApplicationData(Object.keys(applicationData as any).reduce((acc: {[key: string]: string}, key) => {
+      acc[key] = "";
+      return acc;
+    }, {}))
+    startOver?.();
+  }
+
   return (
     <Form {...form}>
       <div className="prose max-w-full">
@@ -124,15 +134,15 @@ export default function ConfirmationForm({ nextStep, prevStep, isFirstStep, isCo
               labels={{
                 previous: "Back",
                 submit: "Finish",
-                next: "Next",
+                next: "Start Over",
               }}
               disabled={{
                 submit:!form.formState.isValid || isComplete,
                 previous: isFirstStep || isComplete,
-                next: true,
               }}
               actions={{
                 previous: prevStep,
+                next: reset,
               }}
             />
           </div>

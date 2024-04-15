@@ -11,11 +11,16 @@
   },
   {
     "id": 3,
-    "label": "payment",
+    "label": "profile",
     "completed": false
   },
   {
     "id": 4,
+    "label": "payment",
+    "completed": false
+  },
+  {
+    "id": 5,
     "label": "confirmation",
     "completed": false
   }

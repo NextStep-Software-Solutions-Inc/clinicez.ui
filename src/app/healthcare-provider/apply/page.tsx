@@ -18,6 +18,7 @@ import { Tabs, TabsContent } from "@components/ui/tabs";
 import { Button } from "@components/ui/button";
 import HPApplicationDataProvider from "@contexts/hp-application.context";
 import ApplicationForm from "@components/ApplicationForm";
+import HPForm from "@components/HPForm";
 
 export const metadata: Metadata = {
   title: "Healthcare Provider Registration",
@@ -51,6 +52,7 @@ async function HealthcareProviderRegistrationPage(props: AppRouterPageRouteOpts)
           <ApplicationForm currentStep={1}>
             <HPRoleSelection />
             <PlanSelection/>
+            <HPForm/>
             <PaymentForm />
             <ConfirmationForm />
           </ApplicationForm>

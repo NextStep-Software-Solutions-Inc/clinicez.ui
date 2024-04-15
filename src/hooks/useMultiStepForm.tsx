@@ -5,6 +5,7 @@ type StepPros = {
   nextStep: () => void;
   prevStep: () => void;
   setComplete: (value: boolean) => void;
+  startOver: () => void;
   isComplete: boolean;
   isFirstStep: boolean;
   isLastStep: boolean;
@@ -28,6 +29,10 @@ export function useMultiStepForm({ steps,  currentStep: activeStep = 1} : useMul
     setCurrentStep(currentStep - 1);
   };
   
+  const startOver = () => {
+    setCurrentStep(1);
+  };
+
   const setComplete = (value = true) => {
     setIsComplete(value);
   }
@@ -37,6 +42,7 @@ export function useMultiStepForm({ steps,  currentStep: activeStep = 1} : useMul
   const currentStepComponentClone = React.cloneElement(currentStepComponent, {
     nextStep,
     prevStep,
+    startOver,
     setComplete,
     isComplete,
     isFirstStep,
@@ -48,11 +54,12 @@ export function useMultiStepForm({ steps,  currentStep: activeStep = 1} : useMul
     currentStep,
     nextStep,
     prevStep,
+    startOver,
+    setComplete,
     isFirstStep,
     isLastStep,
     totalSteps,
     isComplete,
-    setComplete,
     currentStepComponent: currentStepComponentClone,
   }
 };

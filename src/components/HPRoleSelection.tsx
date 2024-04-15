@@ -87,7 +87,7 @@ export default function HealthcareRoleSelector({nextStep, prevStep, isFirstStep,
           <BackSubmitAndNext 
             labels={{
               previous: "Back",
-              submit: "Continue",
+              submit: "Save & Continue",
               next: "Next",
             }}
             disabled={{

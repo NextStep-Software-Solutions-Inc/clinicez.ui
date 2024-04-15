@@ -1,7 +1,6 @@
 "use client";
 
-import React from "react";
-import SubmitAndNext from "./SubmitAndNext";
+import React, { useEffect } from "react";
 import HPBasicInfo from "./HPBasicInfo";
 import { Form, FormMessage } from "@components/ui/form";
 import { z } from "zod";
@@ -15,7 +14,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { cn } from "@lib/utils";
 import BackSubmitAndNext from "./SubmitAndNext";
-
+import { useLocalStorage } from "@hooks/useLocalStorage";
 
 export const formSchema = z.object({
   title: z.string().min(2, {
@@ -95,25 +94,47 @@ const handler = async (_prevState: any, formData: FormData) => {
   return res;
 }
 
-export default function HPForm() {
+interface IHPFormProps {
+  nextStep?: () => void;
+  prevStep?: () => void;
+  isFirstStep?: boolean;
+  isLastStep?: boolean;
+  totalSteps?: number;
+}
+export default function HPForm({ nextStep, isFirstStep, isLastStep, prevStep,totalSteps}: IHPFormProps) {
+  const [applicationData,setApplicationData] = useLocalStorage<z.infer<typeof formSchema>>("hp-application");
   const [formState, formAction] = useFormState(handler , {
     message: "",
     status: false
   })
 
+  useEffect(() => {
+    if(formState.status){
+      nextStep?.();
+    }
+  }, [formState.status, nextStep])
+
   // 1. Define your form.
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
+    defaultValues: {
+      ...applicationData, 
+      dob: applicationData?.dob? new Date(applicationData?.dob) : new Date(),
+      licenseIssueDate: applicationData?.licenseIssueDate? new Date(applicationData?.licenseIssueDate) : new Date(), 
+      licenseExpiryDate: applicationData?.licenseExpiryDate? new Date(applicationData?.licenseExpiryDate) : new Date()
+    },
   })
 
   // 2. Define a submit handler.
   const action = async (formData: FormData) => {
-    form.handleSubmit((values: z.infer<typeof formSchema>) => {
+    await (form.handleSubmit(async (values: z.infer<typeof formSchema>) => {
+      await setApplicationData(values)
       formData.append("dob", format(values.dob, "yyyy-MM-dd"))
       formData.append("licenseIssueDate", format(values.licenseIssueDate, "yyyy-MM-dd"))
       formData.append("licenseExpiryDate", format(values.licenseExpiryDate, "yyyy-MM-dd"))
       formAction(formData)
-    })()
+    })())
+    
   }
 
   return(
@@ -126,6 +147,23 @@ export default function HPForm() {
         <HPAddress form={form}/>
         <h4>Professional Information</h4>
         <HPProfessionalInfo form={form}/>
+        <div className="mt-4">
+          <BackSubmitAndNext 
+            labels={{
+              previous: "Back",
+              submit: "Save & Continue",
+              next: "Next",
+            }}
+            disabled={{
+              submit:!form.formState.isValid,
+              previous: isFirstStep,
+              next: !isLastStep,
+            }}
+            actions={{
+              previous: prevStep,
+            }}
+          />
+        </div>
       </form>
     </Form>
   );

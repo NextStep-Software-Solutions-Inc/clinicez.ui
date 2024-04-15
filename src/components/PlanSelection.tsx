@@ -113,7 +113,7 @@ export default function PlanSelector({ nextStep, isFirstStep, isLastStep, prevSt
           <BackSubmitAndNext 
             labels={{
               previous: "Back",
-              submit: "Continue",
+              submit: "Save & Continue",
               next: "Next",
             }}
             disabled={{

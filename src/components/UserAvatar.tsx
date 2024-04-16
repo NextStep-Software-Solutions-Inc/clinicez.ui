@@ -29,11 +29,12 @@ export default function UserAvatar() {
 
   const {user, isLoading} = useUser();
 
+  if(isLoading) return null;
   if (!user) return <a href="/api/auth/login" title="" className="px-5 py-2.5 text-base transition-all duration-200 hover:bg-teal-400 hover:text-white focus:text-white focus:bg-teal-400 font-semibold text-white bg-teal-600 rounded-lg" role="button"> Sign In</a>
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Avatar className="w-12 h-12">
+        <Avatar className="w-10 h-10">
           <AvatarImage src={user.picture ?? ""} alt={user.nickname ?? ""} />
           <AvatarFallback>{user.nickname?.substring(0,2)}</AvatarFallback>
         </Avatar>

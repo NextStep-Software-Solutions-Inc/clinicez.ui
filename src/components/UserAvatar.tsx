@@ -49,7 +49,7 @@ export default function UserAvatar() {
           </DropdownMenuItem>
           <DropdownMenuItem>
             <CreditCard className="mr-2 h-4 w-4" />
-            <a href="billing">Billing</a>
+            <a href="/billing">Billing</a>
             {/* <DropdownMenuShortcut>⌘B</DropdownMenuShortcut> */}
           </DropdownMenuItem>
           <DropdownMenuItem>
@@ -59,6 +59,11 @@ export default function UserAvatar() {
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
+        <DropdownMenuItem>
+          <Container className="mr-2 h-4 w-4" />
+          <a href="/dashboard">Dashboard</a>
+          {/* <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut> */}
+        </DropdownMenuItem>
         <DropdownMenuItem>
           <Container className="mr-2 h-4 w-4" />
           <a href="https://clinic-ez-admin.vercel.app">Admin console</a>

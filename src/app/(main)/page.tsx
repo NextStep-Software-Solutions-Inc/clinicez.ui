@@ -1,9 +1,15 @@
+import { Metadata } from "next";
 import Image from "next/image";
+
+export const metadata: Metadata = {
+  title: "Home | Clinic EZ ",
+  description: "Optimized Healthcare Management System",
+};
 
 export default async function HomePage() {
   return (
-    <div className="bg-gradient-to-l from-[#6DEBF4] via-[#C3FBFF] to-[#D3FCFF] bg-opacity-30 p-2 sm:py-16 lg:py-24">
-      <section>
+    <main className="content">
+      <section className="bg-gradient-to-l from-[#6DEBF4] via-[#C3FBFF] to-[#D3FCFF] bg-opacity-30 p-2 sm:py-16 lg:py-24">
         <div className="container mx-auto">
           <div className="mx-auto sm:px-6 lg:px-8">
             <div className="grid items-center grid-cols-1 gap-12 lg:grid-cols-2">
@@ -34,6 +40,6 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
-    </div>
+    </main>
   );
 }

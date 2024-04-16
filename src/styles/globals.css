@@ -74,3 +74,13 @@
     @apply bg-background text-foreground;
   }
 }
+@layer utilities {
+  .content {
+    min-height: calc(100vh - 70px);
+  }
+}
+
+html,
+body {
+  margin: 0;
+}

@@ -1,3 +1,4 @@
+import "@styles/globals.css";
 import Link from "next/link"
 import {
   Home,
@@ -7,7 +8,9 @@ import {
   Search,
   Settings,
   File,
-  Building
+  Building,
+  Calendar,
+  Archive
 } from "lucide-react"
 
 import { Button } from "@components/ui/button"
@@ -26,26 +29,49 @@ import AvatarDropdown from "@components/dashboard/AvatarDropdown"
 import Breadcrumb from "@components/dashboard/Breadcrumb"
 import Each from "@components/utils/Each"
 import { cn } from "@lib/utils"
-const navList = [
-  {
-    name: "Dashboard",
-    href: "/dashboard",
-    icon: Home,
-  },
-  {
-    name: "My Organizations",
-    href: "/my-organizations",
-    icon: Building,
-  },
-  {
-    name: "EMR",
-    href: "/emr",
-    icon: File,
+import { OrganizationSwitcher } from "@components/dashboard/OrganizationSwitcher"
+
+interface DashboardLayoutProps {
+  children: React.ReactNode
+  params: {
+    organization: string
   }
-]
+}
 
-
-export default function Dashboard({children}: {children: React.ReactNode}) {
+export default function Dashboard({children, params:{organization}}: DashboardLayoutProps) {
+  const navList = [
+    {
+      name: "Dashboard",
+      href: `/${organization}/dashboard`,
+      icon: Home,
+    },
+    {
+      name: "My Organizations",
+      href: `/${organization}/my-organizations`,
+      icon: Building,
+    },
+    {
+      name: "PHR",
+      href: `/${organization}/phr`,
+      icon: Archive,
+    },
+    {
+      name: "Appointments",
+      href: `/${organization}/appointments`,
+      icon: Calendar,
+    },
+    {
+      name: "Consultations",
+      href: `/${organization}/consultations`,
+      icon: Calendar,
+    },
+    {
+      name: "Files",
+      href: `/${organization}/files`,
+      icon: File,
+    }
+  ]
+  
   return (
     <TooltipProvider>
       <div className="flex min-h-screen w-full flex-col bg-muted/40">
@@ -137,6 +163,31 @@ export default function Dashboard({children}: {children: React.ReactNode}) {
                 type="search"
                 placeholder="Search..."
                 className="w-full rounded-lg bg-background pl-8 md:w-[200px] lg:w-[336px]"
+              />
+            </div>
+            <div className="max-w-xs">
+              <OrganizationSwitcher
+                isCollapsed
+                accounts={[
+                  {
+                    uid: "hims",
+                    label: "Health Information Management System",
+                    name: "HIMS",
+                    icon: <Home/>,
+                  },
+                  {
+                    uid: "clinic-ez",
+                    label: "Clinic EZ",
+                    name: "Clinic EZ",
+                    icon: <Home/>,
+                  }, 
+                  {
+                    uid: "my-organization",
+                    label: "My Organization",
+                    name: "My Organization",
+                    icon: <Home/>,
+                  }
+                ]}
               />
             </div>
             <AvatarDropdown/>

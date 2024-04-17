@@ -62,7 +62,7 @@ export default function UserAvatar() {
         <DropdownMenuSeparator />
         <DropdownMenuItem>
           <Container className="mr-2 h-4 w-4" />
-          <a href="/dashboard">Dashboard</a>
+          <a href="/org/dashboard">Dashboard</a>
           {/* <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut> */}
         </DropdownMenuItem>
         <DropdownMenuItem>

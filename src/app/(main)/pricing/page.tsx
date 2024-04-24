@@ -20,7 +20,7 @@ const PricingPage = () => {
   ];
   
   return (
-    <div className="container mx-auto px-4">
+    <div className="content container mx-auto px-4">
       <div className="prose">
         <h2 className="">Pricing</h2>
         <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Rerum dolorem sunt natus sint nostrum ea fuga ex delectus quos, laborum, voluptate, corporis harum sequi impedit accusamus sed corrupti iure atque?</p>

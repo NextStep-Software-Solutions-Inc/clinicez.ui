@@ -6,7 +6,8 @@ import { SpeedInsights } from "@vercel/speed-insights/next"
 import { UserProvider } from "@auth0/nextjs-auth0/client";
 import RootHeader from "@components/RootHeader";
 import RootFooter from "@components/RootFooter";
-import { Toaster } from "sonner"
+import { Toaster } from "@components/ui/sonner";
+// import { Toaster } from "sonner"
 
 const montserrat = Montserrat({ subsets: ["latin"] });
 

@@ -48,15 +48,14 @@ async function HealthcareProviderRegistrationPage(props: AppRouterPageRouteOpts)
             Thank you for your interest in joining our network of healthcare providers! This online application process will
             guide you through the steps of becoming a Clinic EZ provider.
           </p>
-        
-          <ApplicationForm currentStep={1}>
-            <HPRoleSelection />
-            <PlanSelection/>
-            <HPForm/>
-            <PaymentForm />
-            <ConfirmationForm />
-          </ApplicationForm>
         </div>
+        <ApplicationForm currentStep={1}>
+          <HPRoleSelection />
+          <PlanSelection/>
+          <HPForm/>
+          <PaymentForm />
+          <ConfirmationForm />
+        </ApplicationForm>
       </div>
     </HPApplicationDataProvider>
   );

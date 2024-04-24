@@ -7,6 +7,7 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
+  
   return (
     <main className="content">
       <section className="bg-gradient-to-l from-[#6DEBF4] via-[#C3FBFF] to-[#D3FCFF] bg-opacity-30 p-2 sm:py-16 lg:py-24">

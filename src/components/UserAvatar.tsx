@@ -24,10 +24,15 @@ import {
   DropdownMenuTrigger,
 } from "@components/ui/dropdown-menu"
 import { useUser } from "@auth0/nextjs-auth0/client";
+import ConditionalRender from "./utils/ConditionalRender";
 
 export default function UserAvatar() {
 
   const {user, isLoading} = useUser();
+  
+  const isTenantOwner = (user?.["clinic-ez/roles"] as [string])?.includes("tenant-owner")
+  const isHP = (user?.["clinic-ez/roles"] as [string])?.some(role => role.startsWith("hp-"))
+  
 
   if(isLoading) return null;
   if (!user) return <a href="/api/auth/login" title="" className="px-5 py-2.5 text-base transition-all duration-200 hover:bg-teal-400 hover:text-white focus:text-white focus:bg-teal-400 font-semibold text-white bg-teal-600 rounded-lg" role="button"> Sign In</a>
@@ -60,16 +65,20 @@ export default function UserAvatar() {
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>
-          <Container className="mr-2 h-4 w-4" />
-          <a href="/org/dashboard">Dashboard</a>
-          {/* <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut> */}
-        </DropdownMenuItem>
-        <DropdownMenuItem>
-          <Container className="mr-2 h-4 w-4" />
-          <a href="https://clinic-ez-admin.vercel.app">Admin console</a>
-          {/* <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut> */}
-        </DropdownMenuItem>
+        <ConditionalRender condition={isHP} >
+          <DropdownMenuItem>
+            <Container className="mr-2 h-4 w-4" />
+            <a href="/org/dashboard">Dashboard</a>
+            {/* <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut> */}
+          </DropdownMenuItem>
+        </ConditionalRender>
+        <ConditionalRender condition={isTenantOwner}>
+          <DropdownMenuItem>
+            <Container className="mr-2 h-4 w-4" />
+            <a href="https://clinic-ez-admin.vercel.app">Admin console</a>
+            {/* <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut> */}
+          </DropdownMenuItem>
+        </ConditionalRender>
         <DropdownMenuSeparator />
         <DropdownMenuItem>
           <LogOut className="mr-2 h-4 w-4" />

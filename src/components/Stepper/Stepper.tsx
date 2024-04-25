@@ -22,7 +22,7 @@ export default function Stepper({ steps, currentStep, complete = false }: Steppe
           } `}
         >
           <div className="step">
-            {i + 1 < currentStep || complete ? "X" : i + 1}
+            {i + 1 < currentStep || complete ? "✓" : i + 1}
           </div>
           <p className="text-gray-500 capitalize">{step}</p>
         </div>

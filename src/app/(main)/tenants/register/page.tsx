@@ -4,12 +4,12 @@ import TenantPaymentVerification from "@components/TenantPaymentVerification";
 import TenantPlanSelection from "@components/TenantPlanSelection";
 
 async function TenantsRegistrationPage(props: AppRouterPageRouteOpts) {
-  const { role, plan, freq } = (props.searchParams || {}) as {role: string, plan:string, freq: string } 
+  const { role, plan, freq = "yearly" } = (props.searchParams || {}) as {role: string, plan:string, freq: string } 
 
   return (
-    <div className="container mx-auto content">
-      <div className="prose pb-10 max-w-full">
-        <h2 className="text-teal-500">Tenant Subscription</h2>
+    <div className="container mx-auto content mt-10">
+      <div className="prose max-w-full">
+        <h1>Tenant Subscription</h1>
         <p>
           Follow the steps below to complete your subscription.
         </p>

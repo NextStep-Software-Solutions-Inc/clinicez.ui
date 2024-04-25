@@ -43,7 +43,7 @@ async function HealthcareProviderRegistrationPage(props: AppRouterPageRouteOpts)
         </Alert>
         
         <div className="prose max-w-full">
-          <h1>Welcome to the Clinic EZ Healthcare Provider Application Process</h1>
+          <h1>Healthcare Provider Application</h1>
           <p>
             Thank you for your interest in joining our network of healthcare providers! This online application process will
             guide you through the steps of becoming a Clinic EZ provider.

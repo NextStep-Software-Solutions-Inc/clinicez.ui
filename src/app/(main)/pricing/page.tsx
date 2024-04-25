@@ -14,7 +14,7 @@ const PricingPage = (props: PricingPageProps) => {
   return (
     <div className="content container mx-auto px-4 mt-10">
       <div className="prose max-w-full">
-        <h2>Pricing </h2>
+        <h1>Tenant Pricing</h1>
         <p>
           Select the plan that best suits your needs. 
         </p>

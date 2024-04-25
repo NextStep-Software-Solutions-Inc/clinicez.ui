@@ -13,7 +13,7 @@ interface StepperProps {
 export default function Stepper({ steps, currentStep, complete = false }: StepperProps) {
   
   return (
-    <div className="flex items-center justify-between">
+    <div className="flex items-center justify-between my-5">
       {steps?.map((step, i) => (
         <div
           key={i}

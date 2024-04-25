@@ -34,24 +34,24 @@ const PricingPage = () => {
         </p>
       </div>
       <div className="flex justify-end">
-      <Tabs defaultValue="monthly">
-      <TabsList className="rounded-lg">
-        <TabsTrigger
-          value="monthly"
-          onClick={() => setActiveTab("monthly")}
-          style={{ color: activeTab === "monthly" ? 'teal' : 'inherit' }}
-        >
-          Monthly
-        </TabsTrigger>
-        <TabsTrigger
-          value="yearly"
-          onClick={() => setActiveTab("yearly")}
-          style={{ color: activeTab === "yearly" ? 'teal' : 'inherit' }}
-        >
-          Yearly
-        </TabsTrigger>
-      </TabsList>
-    </Tabs>
+        <Tabs defaultValue="monthly">
+          <TabsList className="rounded-lg">
+            <TabsTrigger
+              value="monthly"
+              onClick={() => setActiveTab("monthly")}
+              style={{ color: activeTab === "monthly" ? 'teal' : 'inherit' }}
+            >
+              Monthly
+            </TabsTrigger>
+            <TabsTrigger
+              value="yearly"
+              onClick={() => setActiveTab("yearly")}
+              style={{ color: activeTab === "yearly" ? 'teal' : 'inherit' }}
+            >
+              Yearly
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
       </div>
       <div className="flex flex-wrap justify-center mt-10">
         {plans.map((plan, index) => (

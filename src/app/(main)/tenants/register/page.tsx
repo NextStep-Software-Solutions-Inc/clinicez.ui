@@ -5,7 +5,7 @@ import TenantPlanSelection from "@components/TenantPlanSelection";
 import React from "react";
 
 async function TenantsRegistrationPage(props: AppRouterPageRouteOpts) {
-const { role, plan } = (props.searchParams || {}) as {role: string, plan:string } 
+  const { role, plan } = (props.searchParams || {}) as {role: string, plan:string } 
 
 
   return (
@@ -15,7 +15,7 @@ const { role, plan } = (props.searchParams || {}) as {role: string, plan:string 
       <TenantApplicationWrapper>
         <TenantPlanSelection defaultPlan={plan}/>
         <TenantPaymentVerification />
-        </TenantApplicationWrapper>
+      </TenantApplicationWrapper>
     </div>
   );
 }

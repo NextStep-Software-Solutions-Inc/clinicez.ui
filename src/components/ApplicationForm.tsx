@@ -16,7 +16,7 @@ export default function ApplicationForm({currentStep: cs, children }: Applicatio
     steps: children
   })
   return (
-    <>
+    <div className="my-5">
       <Stepper steps={steps.map(s => s.label)} currentStep={currentStep} complete={isComplete} />
       {!isComplete ? currentStepComponent : (
         <div className="text-center min-w-full mb-10 text-green-400">
@@ -24,6 +24,6 @@ export default function ApplicationForm({currentStep: cs, children }: Applicatio
           <p className="text-lg text-gray-500">Thank you for submitting your application. We will review and get back to you shortly.</p>
         </div>
       )}
-    </>
+    </div>
   );
 }

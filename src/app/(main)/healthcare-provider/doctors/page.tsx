@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 export default async function Doctors() {
   
   return (
-    <div className="container mx-auto ">
+    <div className="container mx-auto">
       <div className="flex flex-col items-center justify-center min:h-screen relative">
         <h1 className="font-bold text-teal-500 text-3xl mb-5 ">Meet our Doctors</h1>
         <div className='flex flex-col gap-10'>

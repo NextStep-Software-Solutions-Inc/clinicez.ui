@@ -25,7 +25,7 @@ const PricingPage = () => {
   ];
 
   return (
-    <div className="container mx-auto px-4">
+    <div className="content container mx-auto px-4">
       <div className="prose">
         <h2 className="text-teal-500">Pricing </h2>
         <p>

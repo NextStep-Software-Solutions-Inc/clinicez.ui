@@ -140,7 +140,7 @@ export default function HPForm({ nextStep, isFirstStep, isLastStep, prevStep,tot
   return(
     <Form {...form}>
       <FormMessage><p className={cn(formState.status? "text-green-500": "")}>{formState.message}</p></FormMessage>
-      <form action={action} className="space-y-8">
+      <form action={action} className="prose max-w-full space-y-8 shadow-lg w-full p-8 bg-white rounded-md">
         <h4>Basic Information</h4>
         <HPBasicInfo form={form}/>
         <h4>Address</h4>

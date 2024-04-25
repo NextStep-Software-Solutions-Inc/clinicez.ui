@@ -55,10 +55,10 @@ export default function ConfirmationForm({ nextStep, prevStep, isFirstStep, isCo
 
   return (
     <Form {...form}>
-      <div className="prose max-w-full">
-        <h2 className="text-lg font-bold">Confirmation</h2>
+      <div className="prose max-w-full shadow-lg w-full p-8 bg-white rounded-md">
+        <h2 className="">Confirmation</h2>
         <p className="mt-2">Your application is ready for submission. Please carefully review all the details you have provided.</p>
-        <form action={action} className="mt-4 flex flex-col gap-2">
+        <form action={action} className="mt-4 flex flex-col gap-2 ">
           <FormField
             control={form.control}
             name="certify"

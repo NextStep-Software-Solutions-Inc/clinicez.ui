@@ -36,7 +36,7 @@ export default function PaymentForm({ nextStep, prevStep, isFirstStep, isLastSte
   const cost = 50;
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="prose max-w-full space-y-6 shadow-lg w-full p-8 bg-white rounded-md">
         <h4>Payment</h4>
         <p>This is a one-time payment of <strong>₱{cost}</strong> for the purpose of verifying your identity. This process helps us ensure the security and authenticity of our users.</p>
         <FormField

@@ -71,7 +71,7 @@ export default function PlanSelector({ nextStep, isFirstStep, isLastStep, prevSt
     <Form {...form}>
       <form 
         onSubmit={form.handleSubmit(onSubmit)}
-        className="w-2/3 space-y-6">
+        className="space-y-6 shadow-lg w-full p-8 bg-white rounded-md">
         <FormField
           control={form.control}
           name="plan"

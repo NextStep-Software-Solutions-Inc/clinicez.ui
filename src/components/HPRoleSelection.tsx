@@ -50,7 +50,7 @@ export default function HealthcareRoleSelector({nextStep, prevStep, isFirstStep,
   }
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="w-2/3 space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 shadow-lg w-full p-8 bg-white rounded-md">
         <FormField
           control={form.control}
           name="role"

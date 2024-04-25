@@ -1,79 +1,59 @@
-"use client";
 import Link from "next/link";
-import { useState } from "react";
-import { Tabs, TabsList, TabsTrigger } from "@components/ui/tabs"; // Assuming TabsList and TabsTrigger are available
+import PricingMode from "@components/PricingMode";
+import Each from "@components/utils/Each";
+import plans from "@public/json/plans.json"
 
-const PricingPage = () => {
-  const [activeTab, setActiveTab] = useState("monthly");
-
-  const plans = [
-    {
-      name: 'Basic',
-      price: '₱500/month',
-      features: ['5 Users', 'Basic Support', '500GB Storage']
-    },
-    {
-      name: 'Small',
-      price: '₱1000/month',
-      features: ['15 Users', 'Priority Support', '1TB Storage', 'Data Backup']
-    },
-    {
-      name: 'Large',
-      price: '₱1500/month',
-      features: ['Unlimited Users', '24/7 Support', 'Unlimited Storage', 'Data Backup', 'Analytics Dashboard']
-    },
-  ];
+interface PricingPageProps {
+  searchParams: {
+    freq: string
+  }
+}
+const PricingPage = (props: PricingPageProps) => {
+  const { freq = "yearly" } = props.searchParams ;
 
   return (
-    <div className="content container mx-auto px-4">
-      <div className="prose">
-        <h2 className="text-teal-500">Pricing </h2>
+    <div className="content container mx-auto px-4 mt-10">
+      <div className="prose max-w-full">
+        <h2>Pricing </h2>
         <p>
-          Lorem ipsum dolor sit amet consectetur adipisicing elit. Rerum dolorem sunt natus sint nostrum ea fuga ex
-          delectus quos, laborum, voluptate, corporis harum sequi impedit accusamus sed corrupti iure atque?
+          Select the plan that best suits your needs. 
         </p>
       </div>
       <div className="flex justify-end">
-        <Tabs defaultValue="monthly">
-          <TabsList className="rounded-lg">
-            <TabsTrigger
-              value="monthly"
-              onClick={() => setActiveTab("monthly")}
-              style={{ color: activeTab === "monthly" ? 'teal' : 'inherit' }}
-            >
-              Monthly
-            </TabsTrigger>
-            <TabsTrigger
-              value="yearly"
-              onClick={() => setActiveTab("yearly")}
-              style={{ color: activeTab === "yearly" ? 'teal' : 'inherit' }}
-            >
-              Yearly
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <PricingMode defaultMode={freq} />
       </div>
-      <div className="flex flex-wrap justify-center mt-10">
-        {plans.map((plan, index) => (
-          activeTab === "monthly" && (
-            <div key={index} className="relative bg-teal-500 opacity-80 max-w-sm w-48 h-96 sm:w-1/2 lg:w-1/3 m-5 shadow-lg shadow-teal-500">
+      <div className="flex flex-wrap justify-between mt-10">
+        <Each
+          of={plans[freq as keyof typeof plans]}
+          render={(plan) => (
+            <div className="relative bg-teal-500 opacity-80 max-w-sm w-48 h-96 sm:w-1/2 lg:w-1/3 m-5 shadow-lg shadow-teal-500">
               <div className="bg-white hover:from-teal-600 hover:to-teal-700 shadow-lg p-8 mr-6 h-80 relative z-10 ">
                 <p className="text-2xl font-bold mb-4">{plan.price}</p>
                 <h2 className="text-xl mb-8 font-bold border-b-2 border-gray-200 pb-2">{plan.name}</h2>
                 <ul className="list-none list-inside text-sm">
-                  {plan.features.map((feature, index) => (
-                    <li key={index} className={index !== 0 ? 'mt-4' : ''}>{feature}</li>
-                  ))}
+                  <Each
+                    of={plan.features}
+                    render={(feature, index) => (
+                      <li className={index !== 0 ? 'mt-4' : ''}>{feature}</li>
+                    )}
+                  />
                 </ul>
               </div>
               <div className="absolute bottom-0 left-0 right-0 p-4">
-                <Link href={{ pathname: "/tenants/register", query: { role: "tenant", plan: plan.name.toLocaleLowerCase() } }}>
+                <Link href={{ 
+                  pathname: "/tenants/register", 
+                  query: { 
+                    role: "tenant",
+                    plan: plan.name.toLocaleLowerCase(),
+                    freq,
+                  } 
+                }}>
                   <button className=" text-white">Choose Plan</button>
                 </Link>
               </div>
             </div>
-          )
-        ))}
+          )}
+        />
       </div>
     </div>
   );

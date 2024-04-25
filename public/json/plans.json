@@ -1,0 +1,36 @@
+{
+    "monthly": [
+      {
+        "name": "Basic",
+        "price": "₱500/month",
+        "features": ["5 Users", "Basic Support", "500GB Storage"]
+      },
+      {
+        "name": "Small",
+        "price": "₱1,000/month",
+        "features": ["15 Users", "Priority Support", "1TB Storage", "Data Backup"]
+      },
+      {
+        "name": "Large",
+        "price": "₱1,500/month",
+        "features": ["Unlimited Users", "24/7 Support", "Unlimited Storage", "Data Backup", "Analytics Dashboard"]
+      }
+    ],
+    "yearly": [
+      {
+        "name": "Basic",
+        "price": "₱5,000/year",
+        "features": ["5 Users", "Basic Support", "500GB Storage"]
+      },
+      {
+        "name": "Small",
+        "price": "₱10,000/year",
+        "features": ["15 Users", "Priority Support", "1TB Storage", "Data Backup"]
+      },
+      {
+        "name": "Large",
+        "price": "₱15,000/year",
+        "features": ["Unlimited Users", "24/7 Support", "Unlimited Storage", "Data Backup", "Analytics Dashboard"]
+      }
+    ]
+  }

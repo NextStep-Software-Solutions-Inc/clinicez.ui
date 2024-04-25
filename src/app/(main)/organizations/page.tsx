@@ -21,7 +21,7 @@ export default async function Organizations() {
         </div>
         <JoinAsButton 
           href={{
-            pathname: "/pricing",
+            pathname: "/tenants/register",
             query: {
               role: "tenant"
             }

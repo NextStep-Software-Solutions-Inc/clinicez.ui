@@ -2,18 +2,21 @@ import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth
 import TenantApplicationWrapper from "@components/TenantApplicationWrapper";
 import TenantPaymentVerification from "@components/TenantPaymentVerification";
 import TenantPlanSelection from "@components/TenantPlanSelection";
-import React from "react";
 
 async function TenantsRegistrationPage(props: AppRouterPageRouteOpts) {
-  const { role, plan } = (props.searchParams || {}) as {role: string, plan:string } 
-
+  const { role, plan, freq = "yearly" } = (props.searchParams || {}) as {role: string, plan:string, freq: string } 
 
   return (
-    <div className="container mx-auto bg-gray-50 p-5">
-      <h3 className="font-bold text-teal-500 text-2xl pb-5"> Get Started as {role} with Clinic EZ</h3>
+    <div className="container mx-auto content mt-10">
+      <div className="prose max-w-full">
+        <h1>Tenant Subscription</h1>
+        <p>
+          Follow the steps below to complete your subscription.
+        </p>
+      </div>
     
       <TenantApplicationWrapper>
-        <TenantPlanSelection defaultPlan={plan}/>
+        <TenantPlanSelection freq={freq} defaultPlan={plan}/>
         <TenantPaymentVerification />
       </TenantApplicationWrapper>
     </div>

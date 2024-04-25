@@ -35,41 +35,45 @@ export default function TenantPaymentVerification({ setComplete, prevStep }: Ten
 
   return (
     <Form {...form}>
-      <div className="prose h-full rounded-lg text-xl font-bold bg-white p-5">Payment
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          <FormField
-            control={form.control}
-            name="receiptNumber"
-            render={({ field }) => (
-              <FormItem className="space-y-3">
-                <FormLabel>Reference Number</FormLabel>
-                <FormControl>
-                  <Input placeholder="OR Number" {...field} />
-                </FormControl>
-                <FormDescription>
-                                    This is the receipt number of your payment from an agent.
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <div className="mt-4">
-            <BackSubmitAndNext
-              labels={{
-                previous: "Back",
-                submit: "Finish",
-              }}
-              disabled={{
-                submit: !form.formState.isValid,
-                next: true,
-              }}
-              actions={{
-                previous: prevStep,
-              }}
-            />
-          </div>
-        </form>
+      <div className="prose max-w-full mt-5">
+        <h3 className="">Payment</h3>
+        <p>
+        Go to your agent and get a receipt number of your payment. Then, enter the receipt number below.
+        </p>
       </div>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 shadow-lg w-full p-8 bg-white rounded-md">
+        <FormField
+          control={form.control}
+          name="receiptNumber"
+          render={({ field }) => (
+            <FormItem className="space-y-3">
+              <FormLabel>Reference Number</FormLabel>
+              <FormControl>
+                <Input placeholder="OR Number" {...field} />
+              </FormControl>
+              <FormDescription>
+                                    This is the receipt number of your payment from an agent.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <div className="mt-4">
+          <BackSubmitAndNext
+            labels={{
+              previous: "Back",
+              submit: "Finish",
+            }}
+            disabled={{
+              submit: !form.formState.isValid,
+              next: true,
+            }}
+            actions={{
+              previous: prevStep,
+            }}
+          />
+        </div>
+      </form>
     </Form>
   )
        

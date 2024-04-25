@@ -29,7 +29,9 @@ export default function Navigation() {
           render={(link) => (
             <NavigationMenuItem>
               <Link href={link.href} legacyBehavior passHref>
-                <NavigationMenuLink className={cn(navigationMenuTriggerStyle(), "text-teal-600")}>
+                <NavigationMenuLink className={cn(navigationMenuTriggerStyle(),
+                  //  "text-teal-600"
+                )}>
                   {link.name}
                 </NavigationMenuLink>
               </Link>

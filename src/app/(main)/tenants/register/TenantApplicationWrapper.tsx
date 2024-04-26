@@ -1,7 +1,7 @@
 "use client";
 import { useMultiStepForm } from "@hooks/useMultiStepForm"
 import { ReactElement } from "react"
-import Stepper from "./Stepper/Stepper"
+import Stepper from "../../../../components/Stepper/Stepper"
 import TenantForm from "./TenantForm";
 
 

@@ -1,8 +1,8 @@
 "use client";
 import React, { useState } from 'react';
 import plans from '@public/json/plans.json';
-import Each from './utils/Each';
-import PricingMode from './PricingMode';
+import Each from '../../../../components/utils/Each';
+import PricingMode from '../../../../components/PricingMode';
 import Link from 'next/link';
 
 interface TenantPlanSelectionProps {

@@ -14,7 +14,7 @@ import {
 } from "@components/ui/form"
 import { RadioGroup, RadioGroupItem } from "@components/ui/radio-group"
 import { zodResolver } from "@hookform/resolvers/zod";
-import BackSubmitAndNext from "./SubmitAndNext";
+import BackSubmitAndNext from "../../../../components/SubmitAndNext";
 import { useLocalStorage } from "@hooks/useLocalStorage";
 
 const plans = [

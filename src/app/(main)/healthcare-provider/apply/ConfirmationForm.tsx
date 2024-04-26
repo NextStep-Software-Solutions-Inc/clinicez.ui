@@ -3,10 +3,10 @@
 import {useForm } from "react-hook-form";
 import { z } from "zod";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@components/ui/form";
-import { Checkbox } from "./ui/checkbox";
+import { Checkbox } from "../../../../components/ui/checkbox";
 import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
-import BackSubmitAndNext from "./SubmitAndNext";
+import BackSubmitAndNext from "../../../../components/SubmitAndNext";
 import { useLocalStorage } from "@hooks/useLocalStorage";
 
 interface ConfirmationFormProps {

@@ -19,7 +19,7 @@ import { CalendarIcon } from "lucide-react"
 import { format } from "date-fns"
 import { cn } from "@lib/utils"
 import { Calendar } from "@components/ui/calendar"
-import { Textarea } from "./ui/textarea"
+import { Textarea } from "../../../../components/ui/textarea"
 
 type HPBasicInfoProps = {
     form: ReturnType<typeof useForm<z.infer<typeof formSchema>>>

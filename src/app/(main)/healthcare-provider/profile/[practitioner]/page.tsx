@@ -1,4 +1,4 @@
-import PractitionerDetails from "@components/PractitionersDetails";
+import PractitionerDetails from "./PractitionersDetails";
 import practitionerData from "@public/practitioner.json";
 import React from "react";
 

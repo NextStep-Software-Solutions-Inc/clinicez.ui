@@ -2,7 +2,7 @@ import { Metadata } from "next"
 import Image from "next/image"
 
 import { Separator } from "@components/ui/separator"
-import { PHRSidebarNav } from "@components/PHRSidebarNav"
+import { PHRSidebarNav } from "@components/SidebarNav"
 
 export const metadata: Metadata = {
   title: "PHR",
@@ -22,23 +22,23 @@ export default function SettingsLayout({ children, params: {organization} }: Set
   const sidebarNavItems = [
     {
       title: "Personal Information",
-      href: `/${organization}/phr`,
+      href: `/phr`,
     },
     {
       title: "Contact",
-      href: `/${organization}/phr/contact-information`,
+      href: `/phr/contact-information`,
     },
     {
       title: "Address",
-      href: `/${organization}/phr/address`,
+      href: `/phr/address`,
     },
     {
       title: "Vaccination & Immunization",
-      href: `/${organization}/phr/vaccination-immunization`,
+      href: `/phr/vaccination-immunization`,
     },
     {
       title: "Disabilities",
-      href: `/${organization}/phr/disabilities`,
+      href: `/phr/disabilities`,
     },
   ]
   

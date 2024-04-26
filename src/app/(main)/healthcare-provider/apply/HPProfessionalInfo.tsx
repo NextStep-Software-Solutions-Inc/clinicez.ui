@@ -13,12 +13,12 @@ import { Input } from "@components/ui/input"
 import { useForm } from "react-hook-form"
 import { formSchema } from "./HPForm"
 import { Select, SelectContent, SelectItem, SelectLabel, SelectTrigger, SelectValue, SelectGroup } from "@components/ui/select"
-import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover"
-import { Button } from "./ui/button"
+import { Popover, PopoverContent, PopoverTrigger } from "../../../../components/ui/popover"
+import { Button } from "../../../../components/ui/button"
 import { cn } from "@lib/utils"
 import { format } from "date-fns"
 import { CalendarIcon } from "lucide-react"
-import { Calendar } from "./ui/calendar"
+import { Calendar } from "../../../../components/ui/calendar"
 
 type HPProfessionalInfoProps = {
     form: ReturnType<typeof useForm<z.infer<typeof formSchema>>>

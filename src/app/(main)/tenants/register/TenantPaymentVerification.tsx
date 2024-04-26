@@ -1,11 +1,11 @@
 "use client";
 import { z } from "zod";
-import BackSubmitAndNext from "./SubmitAndNext";
+import BackSubmitAndNext from "../../../../components/SubmitAndNext";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, } from "react-hook-form";
 import { useLocalStorage } from "@hooks/useLocalStorage";
-import { Form, FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from "./ui/form";
-import { Input } from "./ui/input";
+import { Form, FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from "../../../../components/ui/form";
+import { Input } from "../../../../components/ui/input";
 
 interface TenantPaymentVerificationProps {
     prevStep?: () => void;

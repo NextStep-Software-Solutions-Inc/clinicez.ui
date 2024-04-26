@@ -1,7 +1,7 @@
 import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth0";
-import TenantApplicationWrapper from "@components/TenantApplicationWrapper";
-import TenantPaymentVerification from "@components/TenantPaymentVerification";
-import TenantPlanSelection from "@components/TenantPlanSelection";
+import TenantApplicationWrapper from "./TenantApplicationWrapper";
+import TenantPaymentVerification from "./TenantPaymentVerification";
+import TenantPlanSelection from "./TenantPlanSelection";
 
 async function TenantsRegistrationPage(props: AppRouterPageRouteOpts) {
   const { role, plan, freq = "yearly" } = (props.searchParams || {}) as {role: string, plan:string, freq: string } 

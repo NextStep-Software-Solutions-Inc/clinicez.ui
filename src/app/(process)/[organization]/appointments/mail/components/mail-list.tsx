@@ -6,14 +6,24 @@ import { Badge } from "@components/ui/badge"
 import { ScrollArea } from "@components/ui/scroll-area"
 import { Separator } from "@components/ui/separator"
 import { Mail } from "../data"
-import { useMail } from "../use-mail"
+import { useRouter, useSearchParams } from "next/navigation"
 
 interface MailListProps {
   items: Mail[]
 }
 
 export function MailList({ items }: MailListProps) {
-  const [mail, setMail] = useMail()
+  const searchParams = useSearchParams()
+  const appointmentId = searchParams.get("appointment")
+  console.log({appointmentId});
+  
+  const router = useRouter()
+  
+  const setAppointment = (appointmentId: string) => {
+    const searchParams = new URLSearchParams(window.location.search)
+    searchParams.set("appointment", appointmentId)
+    router.push(`?${searchParams.toString()}`)
+  }
 
   return (
     <ScrollArea className="h-screen">
@@ -23,14 +33,9 @@ export function MailList({ items }: MailListProps) {
             key={item.id}
             className={cn(
               "flex flex-col items-start gap-2 rounded-lg border p-3 text-left text-sm transition-all hover:bg-accent",
-              mail.selected === item.id && "bg-muted"
+              appointmentId === item.id && "bg-muted"
             )}
-            onClick={() =>
-              setMail({
-                ...mail,
-                selected: item.id,
-              })
-            }
+            onClick={() => setAppointment(item.id)}
           >
             <div className="flex w-full flex-col gap-1">
               <div className="flex items-center">
@@ -43,7 +48,7 @@ export function MailList({ items }: MailListProps) {
                 <div
                   className={cn(
                     "ml-auto text-xs",
-                    mail.selected === item.id
+                    appointmentId === item.id
                       ? "text-foreground"
                       : "text-muted-foreground"
                   )}

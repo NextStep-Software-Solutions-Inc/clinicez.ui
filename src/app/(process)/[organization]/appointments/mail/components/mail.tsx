@@ -35,7 +35,6 @@ import { MailDisplay } from "./mail-display"
 import { MailList } from "./mail-list"
 import { Nav } from "./nav"
 import { type Mail } from "../data"
-import { useMail } from "../use-mail"
 import { RoleSwitcher } from "@components/dashboard/RoleSwitcher"
 import { useRouter, useSearchParams } from "next/navigation"
 
@@ -59,19 +58,21 @@ export function Mail({
   navCollapsedSize,
 }: MailProps) {
   const [isCollapsed, setIsCollapsed] = React.useState(defaultCollapsed)
-  const [mail] = useMail()
   const router = useRouter();
   const searchParams = useSearchParams();
   const tab = searchParams.get("tab");
-
+  const appointment = searchParams.get("appointment");
+  
   React.useEffect(() => {
-    if(!tab) router.push("?tab=pending");
+    const searchParams = new URLSearchParams(window.location.search);
+    searchParams.set("tab", tab? tab : "pending");
+    if(!tab) router.push(`?${searchParams.toString()}`);
   }, [router, tab])
   
   const isDefaultVariant = (activeTab: string, ) => {
     return tab === activeTab ? "default" : "ghost"
   }
-  
+
   return (
     <TooltipProvider delayDuration={0}>
       <ResizablePanelGroup
@@ -236,7 +237,7 @@ export function Mail({
         <ResizableHandle withHandle />
         <ResizablePanel defaultSize={defaultLayout[2]}>
           <MailDisplay
-            mail={mails.find((item) => item.id === mail.selected) || null}
+            mail={mails.find((item) => item.id === appointment) || null}
           />
         </ResizablePanel>
       </ResizablePanelGroup>

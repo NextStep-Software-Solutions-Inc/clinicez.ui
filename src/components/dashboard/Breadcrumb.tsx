@@ -14,12 +14,12 @@ export default function Breadcrumb() {
         <BreadcrumbSeparator />
         <BreadcrumbItem>
           <BreadcrumbLink asChild>
-            <Link href="#">Products</Link>
+            <Link href="#">Organization</Link>
           </BreadcrumbLink>
         </BreadcrumbItem>
         <BreadcrumbSeparator />
         <BreadcrumbItem>
-          <BreadcrumbPage>Edit Product</BreadcrumbPage>
+          <BreadcrumbPage>Settings</BreadcrumbPage>
         </BreadcrumbItem>
       </BreadcrumbList>
     </ChadBreadcrumb>

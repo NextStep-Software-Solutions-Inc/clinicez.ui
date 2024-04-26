@@ -33,7 +33,7 @@ export default function AvatarDropdown() {
         <DropdownMenuLabel>My Account</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem>
-          <Link href="/dashboard/settings">
+          <Link href="/settings">
             Settings
           </Link>
         </DropdownMenuItem>

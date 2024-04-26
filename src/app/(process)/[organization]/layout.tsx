@@ -46,11 +46,6 @@ export default function Dashboard({children, params:{organization}}: DashboardLa
       icon: Home,
     },
     {
-      name: "PHR",
-      href: `/${organization}/phr`,
-      icon: Archive,
-    },
-    {
       name: "Appointments",
       href: `/${organization}/appointments`,
       icon: Calendar,

@@ -47,7 +47,7 @@ export default function UserAvatar() {
         <DropdownMenuGroup>
           <DropdownMenuItem>
             <User className="mr-2 h-4 w-4" />
-            <a href="/phr">Personal Health Records</a>
+            <a href={`/user/${user.sub?.split("|")[1]}/phr`}>Personal Health Records</a>
             {/* <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut> */}
           </DropdownMenuItem>
           <DropdownMenuItem>

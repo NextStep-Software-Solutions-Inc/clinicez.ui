@@ -13,32 +13,33 @@ export const metadata: Metadata = {
 interface SettingsLayoutProps {
   children: React.ReactNode
   params: {
-    organization: string
+    organization: string,
+    user: string
   }
 }
 
-export default function SettingsLayout({ children, params: {organization} }: SettingsLayoutProps) {
+export default function SettingsLayout({ children, params: {user} }: SettingsLayoutProps) {
   
   const sidebarNavItems = [
     {
       title: "Personal Information",
-      href: `/phr`,
+      href: `/user/${user}/phr`,
     },
     {
       title: "Contact",
-      href: `/phr/contact-information`,
+      href: `/user/${user}/phr/contact-information`,
     },
     {
       title: "Address",
-      href: `/phr/address`,
+      href: `/user/${user}/phr/address`,
     },
     {
       title: "Vaccination & Immunization",
-      href: `/phr/vaccination-immunization`,
+      href: `/user/${user}/phr/vaccination-immunization`,
     },
     {
       title: "Disabilities",
-      href: `/phr/disabilities`,
+      href: `/user/${user}/phr/disabilities`,
     },
   ]
   

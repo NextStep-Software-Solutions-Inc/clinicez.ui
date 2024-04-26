@@ -51,6 +51,7 @@ interface MailProps {
   navCollapsedSize: number
 }
 
+
 export function Mail({
   mails,
   defaultLayout = [265, 440, 655],
@@ -66,7 +67,11 @@ export function Mail({
   React.useEffect(() => {
     if(!tab) router.push("?tab=pending");
   }, [router, tab])
-
+  
+  const isDefaultVariant = (activeTab: string, ) => {
+    return tab === activeTab ? "default" : "ghost"
+  }
+  
   return (
     <TooltipProvider delayDuration={0}>
       <ResizablePanelGroup
@@ -150,37 +155,42 @@ export function Mail({
                 title: "Pending",
                 label: "128",
                 icon: Inbox,
-                variant: "default",
+                variant: isDefaultVariant("pending"),
               },
               {
                 title: "Received",
                 label: "9",
                 icon: File,
-                variant: "ghost",
+                variant: isDefaultVariant("received"),
+
               },
               {
                 title: "Accepted",
                 label: "",
                 icon: Send,
-                variant: "ghost",
+                variant: isDefaultVariant("accepted"),
+
               },
               {
                 title: "Rejected",
                 label: "",
                 icon: Trash2,
-                variant: "ghost",
+                variant: isDefaultVariant("rejected"),
+
               },
               {
                 title: "Routed",
                 label: "23",
                 icon: ArchiveX,
-                variant: "ghost",
+                variant: isDefaultVariant("routed"),
+
               },
               {
                 title: "Reschedule",
                 label: "",
                 icon: Archive,
-                variant: "ghost",
+                variant: isDefaultVariant("reschedule"),
+
               },
             ]}
           />

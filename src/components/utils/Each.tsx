@@ -6,8 +6,8 @@ interface IEachProps<T> {
     fallback?: React.ReactNode;
 }
 export default function Each<T>({of, render, fallback = <Fallback/>}: IEachProps<T>) {
-  if(!of || !of.length) return fallback;
-  return Children.toArray(of.map(render));
+  if(!of || !of.length) return <>{fallback}</>;
+  return <>{Children.toArray(of.map(render))}</>;
 }
 
 const Fallback = () => <div style={{

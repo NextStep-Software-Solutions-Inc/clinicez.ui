@@ -1,9 +1,8 @@
-"use client";
-import React, { useState } from 'react';
-import plans from '@public/json/plans.json';
-import Each from '../../../../components/utils/Each';
-import PricingMode from '../../../../components/PricingMode';
+import React from 'react';
+import Each from '@components/utils/Each';
+import PricingMode from '@components/PricingMode';
 import Link from 'next/link';
+import { getTenantPlanPackage } from '../../pricing/plans.request';
 
 interface TenantPlanSelectionProps {
   defaultPlan: string;
@@ -11,12 +10,13 @@ interface TenantPlanSelectionProps {
   nextStep?: () => void;
 }
 
-export default function TenantPlanSelection(props: TenantPlanSelectionProps) {
+export default async function TenantPlanSelection(props: TenantPlanSelectionProps) {
+  const tenantPlans = await getTenantPlanPackage()
+  
   const { defaultPlan: initialPlan, freq, nextStep } = props;
   
   return (
     <>
-      
       <div className='flex justify-between mt-5'>
         Select the plan that best suits your needs.
         <PricingMode defaultMode={freq}/>
@@ -25,7 +25,7 @@ export default function TenantPlanSelection(props: TenantPlanSelectionProps) {
         
         {/* Mapping through the plans to display the boxes */}
         <Each
-          of={plans[freq as keyof typeof plans]}
+          of={tenantPlans.response[freq as keyof typeof tenantPlans.response]}
           render={(p) => (
             <Link href={{
               pathname: '/tenants/register',

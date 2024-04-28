@@ -107,7 +107,7 @@ export default function DisabilitiesForm() {
           <Separator/>
         </CardHeader>
         <CardContent className="space-y-2">
-          <AccordionItem value="item-1">
+          <AccordionItem value="disabilities">
             <AccordionTrigger>List of disabilities</AccordionTrigger>
             <AccordionContent>
               <Each
@@ -158,7 +158,7 @@ export default function DisabilitiesForm() {
           <Separator/>
         </CardHeader>
         <CardContent className="space-y-2">
-          <AccordionItem value="item-2">
+          <AccordionItem value="illness">
             <AccordionTrigger>List of illness</AccordionTrigger>
             <AccordionContent>
               <Each

@@ -91,7 +91,10 @@ export default function VaccinationForm() {
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <span>{vaccination.vaccineType}</span>
-                  <Button className="ml-auto">Edit</Button>
+                  <span  className="ml-auto space-x-2">
+                    <Button size="sm" variant="ghost">Edit</Button>
+                    <Button size="sm" variant="destructive">Delete</Button>
+                  </span>
                 </CardTitle>
                 <Separator/>
               </CardHeader>
@@ -122,8 +125,6 @@ export default function VaccinationForm() {
             </Card>
           )}
         />
-        
-
       </CardContent>
       <CardFooter>
         <Button className="">Save</Button>

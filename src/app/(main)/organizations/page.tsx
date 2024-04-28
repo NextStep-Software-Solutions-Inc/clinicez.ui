@@ -2,9 +2,17 @@ import JoinAsButton from '@components/JoinAs';
 import { OrganizationCard } from '@components/OrganizationCard';
 import { getOrganizations } from './organizations.request';
 import Each from '@components/utils/Each';
+import { type Metadata } from 'next';
+import { title } from 'process';
+
+export const metadata: Metadata = {
+  title: "Organizations",
+  description: "Partner Organizations"
+}
 
 export default async function Organizations() {
   const organizations = await getOrganizations()
+  
   return (
     <div className="content container mx-auto">
       <div className="w-full text-center text-teal-500 text-3xl mb-5 font-bold">Partner Organizations</div>

@@ -9,13 +9,6 @@ import { cn } from "@lib/utils"
 import { Button } from "@components/ui/button"
 import { Calendar } from "@components/ui/calendar"
 import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from "@components/ui/command"
-import {
   Form,
   FormControl,
   FormDescription,
@@ -32,37 +25,43 @@ import {
 } from "@components/ui/popover"
 import { toast } from "@components/ui/use-toast"
 import { CalendarIcon, SortAscIcon, CheckIcon } from "lucide-react"
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@components/ui/select"
 
-const languages = [
-  { label: "English", value: "en" },
-  { label: "French", value: "fr" },
-  { label: "German", value: "de" },
-  { label: "Spanish", value: "es" },
-  { label: "Portuguese", value: "pt" },
-  { label: "Russian", value: "ru" },
-  { label: "Japanese", value: "ja" },
-  { label: "Korean", value: "ko" },
-  { label: "Chinese", value: "zh" },
-] as const
 
-const accountFormSchema = z.object({
-  name: z
-    .string()
-    .min(2, {
-      message: "Name must be at least 2 characters.",
-    })
-    .max(30, {
-      message: "Name must not be longer than 30 characters.",
-    }),
+const personalInformationFormSchema = z.object({
+  firstName: z.string().min(2, {
+    message: "Name must be at least 2 characters.",
+  }).max(30, {
+    message: "Name must not be longer than 30 characters.",
+  }),
+  middleName: z.string().min(2, {
+    message: "Name must be at least 2 characters.",
+  }).max(30, {
+    message: "Name must not be longer than 30 characters.",
+  }),
+  lastName: z.string().min(2, {
+    message: "Name must be at least 2 characters.",
+  }).max(30, {
+    message: "Name must not be longer than 30 characters.",
+  }),
+  suffix: z.string().max(10, {
+    message: "Suffix must not be longer than 10 characters.",
+  }),
+  email: z.string().email({
+    message: "Please enter a valid email address.",
+  }),
+  phone: z.string().min(10, {
+    message: "Phone number must be at least 10 characters.",
+  }).max(15, {
+    message: "Phone number must not be longer than 15 characters.",
+  }),
+  gender: z.enum(["Male", "Female"]).refine((val) => {}),
   dob: z.date({
     required_error: "A date of birth is required.",
   }),
-  language: z.string({
-    required_error: "Please select a language.",
-  }),
 })
 
-type PersonalInformationFormValues = z.infer<typeof accountFormSchema>
+type PersonalInformationFormValues = z.infer<typeof personalInformationFormSchema>
 
 // This can come from your database or API.
 const defaultValues: Partial<PersonalInformationFormValues> = {
@@ -72,7 +71,7 @@ const defaultValues: Partial<PersonalInformationFormValues> = {
 
 export function PersonalInformationForm() {
   const form = useForm<PersonalInformationFormValues>({
-    resolver: zodResolver(accountFormSchema),
+    resolver: zodResolver(personalInformationFormSchema),
     defaultValues,
   })
 
@@ -90,18 +89,126 @@ export function PersonalInformationForm() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <div className="flex flex-col md:flex-row gap-2">
+          <FormField
+            control={form.control}
+            name="firstName"
+            render={({ field }) => (
+              <FormItem className="w-full">
+                <FormLabel>First Name</FormLabel>
+                <FormControl>
+                  <Input placeholder="John" {...field} />
+                </FormControl>
+                <FormDescription>
+                This is your public display first name.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="middleName"
+            render={({ field }) => (
+              <FormItem className="w-full">
+                <FormLabel>Middle Name</FormLabel>
+                <FormControl>
+                  <Input placeholder="Micheal" {...field} />
+                </FormControl>
+                <FormDescription>
+                This is your public display middle name.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="lastName"
+            render={({ field }) => (
+              <FormItem className="w-full">
+                <FormLabel>Last Name</FormLabel>
+                <FormControl>
+                  <Input placeholder="Doe" {...field} />
+                </FormControl>
+                <FormDescription>
+                This is your public display last name.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="suffix"
+            render={({ field }) => (
+              <FormItem className="w-1/4">
+                <FormLabel>Suffix</FormLabel>
+                <FormControl>
+                  <Input placeholder="Jr." {...field} />
+                </FormControl>
+                <FormDescription>
+                Jr., Sr., III, etc.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
         <FormField
           control={form.control}
-          name="name"
+          name="email"
           render={({ field }) => (
-            <FormItem>
-              <FormLabel>Name</FormLabel>
+            <FormItem className="w-full">
+              <FormLabel>Email</FormLabel>
               <FormControl>
-                <Input placeholder="Your name" {...field} />
+                <Input placeholder="example@email.com" {...field} />
               </FormControl>
               <FormDescription>
-                This is the name that will be displayed on your profile and in
-                emails.
+                This is your public display email address.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="phone"
+          render={({ field }) => (
+            <FormItem className="w-full">
+              <FormLabel>Phone Number</FormLabel>
+              <FormControl>
+                <Input placeholder="Phone no." {...field} />
+              </FormControl>
+              <FormDescription>
+                This is your public display phone number.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="gender"
+          render={({ field }) => (
+            <FormItem className="w-1/2">
+              <FormLabel>Gender</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value} {...field}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a gender" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectLabel>Select Gender</SelectLabel>
+                    <SelectItem value="Male">Male</SelectItem>
+                    <SelectItem value="Female">Female</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+              <FormDescription>
+                This is your public display gender.
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -134,6 +241,7 @@ export function PersonalInformationForm() {
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
+                  
                     mode="single"
                     selected={field.value}
                     onSelect={field.onChange}
@@ -151,68 +259,7 @@ export function PersonalInformationForm() {
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="language"
-          render={({ field }) => (
-            <FormItem className="flex flex-col">
-              <FormLabel>Language</FormLabel>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <FormControl>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      className={cn(
-                        "w-[200px] justify-between",
-                        !field.value && "text-muted-foreground"
-                      )}
-                    >
-                      {field.value
-                        ? languages.find(
-                          (language) => language.value === field.value
-                        )?.label
-                        : "Select language"}
-                      <SortAscIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </FormControl>
-                </PopoverTrigger>
-                <PopoverContent className="w-[200px] p-0">
-                  <Command>
-                    <CommandInput placeholder="Search language..." />
-                    <CommandEmpty>No language found.</CommandEmpty>
-                    <CommandGroup>
-                      {languages.map((language) => (
-                        <CommandItem
-                          value={language.label}
-                          key={language.value}
-                          onSelect={() => {
-                            form.setValue("language", language.value)
-                          }}
-                        >
-                          <CheckIcon
-                            className={cn(
-                              "mr-2 h-4 w-4",
-                              language.value === field.value
-                                ? "opacity-100"
-                                : "opacity-0"
-                            )}
-                          />
-                          {language.label}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-              <FormDescription>
-                This is the language that will be used in the dashboard.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <Button type="submit">Update account</Button>
+       
       </form>
     </Form>
   )

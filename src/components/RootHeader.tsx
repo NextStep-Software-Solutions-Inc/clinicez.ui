@@ -1,6 +1,6 @@
 
 import Image from "next/image";
-import { DetailedHTMLProps, HTMLAttributes, Suspense, lazy } from "react";
+import { DetailedHTMLProps, HTMLAttributes, Suspense } from "react";
 // import UserAvatar from "@components/UserAvatar";
 import Navigation from "@components/Navigation";
 import dynamic from "next/dynamic";

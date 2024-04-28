@@ -22,14 +22,17 @@ export type DoctorType = {
 }
 
 export const getDoctors = async ()  => {
-  const doctors = await request.get('/api/health-provider', {
+  const response = await request.get('/api/health-provider', {
     params: {
       role: "doctor",
       pageNumber: 1,
       pageSize: 10
     },
-    cache: "no-cache"
   })
-  return await doctors.json() as ResponseType
+  if(!response.ok) {
+    const error = await response.json()
+    throw new Error(JSON.stringify(error, null, 2))
+  }
+  return await response.json() as ResponseType
 }
 

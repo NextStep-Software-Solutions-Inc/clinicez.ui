@@ -1,6 +1,11 @@
 import { Separator } from "@components/ui/separator"
 import { PersonalInformationForm } from "./PersonalInformationForm"
+import { Metadata } from "next"
 
+export const metadata: Metadata = {
+  title: "Basic Information | PHR",
+  description: "Update your basic information to help you identify your account in your organization."
+}
 export default function SettingsAccountPage() {
   return (
     <div className="space-y-6">

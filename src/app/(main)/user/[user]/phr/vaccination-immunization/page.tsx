@@ -1,5 +1,11 @@
 import { Separator } from "@components/ui/separator"
 import { PersonalInformationForm } from "../PersonalInformationForm"
+import { Metadata } from "next"
+
+export const metadata: Metadata = {
+  title: "Vaccination & Immunization | PHR",
+  description: "Update your vaccination and immunization information to help you organization track your vaccination and immunization history."
+}
 
 export default function VaccinationImmunizationPage() {
   return (

@@ -14,9 +14,12 @@ export type PlanType = {
 }
 
 export const getTenantPlanPackage = async ()  => {
-  const tenantPlans = await request.get('/api/plan-package/tenant', {
-    cache: "no-cache"
-  })
-  return await tenantPlans.json() as ResponseType
+  const response = await request.get('/api/plan-package/tenant')
+  
+  if(!response.ok) {
+    const error = await response.json()
+    throw new Error(JSON.stringify(error, null, 2))
+  }
+  return await response.json() as ResponseType
 }
 

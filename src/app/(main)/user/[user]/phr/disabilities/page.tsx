@@ -1,5 +1,11 @@
 import { Separator } from "@components/ui/separator"
 import { PersonalInformationForm } from "../PersonalInformationForm"
+import { Metadata } from "next"
+
+export const metadata: Metadata = {
+  title: "Disabilities | PHR",
+  description: "Update your disability information to help you organization track your disability history."
+}
 
 export default function DisabilitiesPage() {
   return (

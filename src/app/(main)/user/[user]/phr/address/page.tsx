@@ -1,5 +1,11 @@
 import { Separator } from "@components/ui/separator"
-import { PersonalInformationForm } from "../PersonalInformationForm"
+import { Metadata } from "next"
+import AddressFormForm from "./AddressForm"
+
+export const metadata: Metadata = {
+  title: "Address | PHR",
+  description: "Update your address to help you organization locate you."
+}
 
 export default function AddressPage() {
   return (
@@ -11,7 +17,7 @@ export default function AddressPage() {
         </p>
       </div>
       <Separator />
-      <PersonalInformationForm />
+      <AddressFormForm />
     </div>
   )
 }

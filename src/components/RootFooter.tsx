@@ -1,6 +1,6 @@
 const RootFooter = () => {
   return (
-    <footer className="sticky bottom-0 z-[-1] w-full text-teal-600 py-8 px-4 bg-slate-50">
+    <footer className="w-full text-teal-600 py-8 px-4 bg-slate-50">
       <div className="container mx-auto">
         <div className="flex flex-wrap justify-between">
           <div className="w-full md:w-1/4 text-center md:text-left">

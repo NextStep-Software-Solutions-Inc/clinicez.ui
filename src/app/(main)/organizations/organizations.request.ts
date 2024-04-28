@@ -14,9 +14,12 @@ export type OrganizationType = {
 }
 
 export const getOrganizations = async ()  => {
-  const organizations = await request.get('/api/organization', {
-    cache: "no-cache"
-  })
-  return await organizations.json() as ResponseType
+  const response = await request.get('/api/organization')
+  
+  if(!response.ok) {
+    const error = await response.json()
+    throw new Error(JSON.stringify(error, null, 2))
+  }
+  return await response.json() as ResponseType
 }
 

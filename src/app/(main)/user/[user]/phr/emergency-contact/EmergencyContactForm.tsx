@@ -78,6 +78,7 @@ export default function EmergencyContactForm() {
                     <span className="capitalize">{key} Contacts</span>
                     <Button className="capitalize" type="button" onClick={() => append({ isPrimary: key === "primary", name: "", relationship: "", phone: "" })}>Add {key} Contact</Button>
                   </CardTitle>
+                  <Separator />
                 </CardHeader>
                 <CardContent>
                   <Each
@@ -145,7 +146,7 @@ export default function EmergencyContactForm() {
                             </FormItem>
                           )}
                         />
-                        <Button className="flex ml-auto" type="button" variant="destructive" onClick={() => remove(index)}>Remove</Button>
+                        <Button className="flex ml-auto" type="button" variant="destructive" onClick={() => remove(field.index)}>Remove</Button>
                         {index !== contacts[key as keyof typeof contacts].length - 1 && <Separator />}
                       </div> 
                     )}
@@ -154,7 +155,7 @@ export default function EmergencyContactForm() {
               </Card>
             )}
           />
-          <Button>Save</Button>
+          {form.formState.isValid && <Button disabled={form.formState.isLoading}>Save</Button>}
         </form>
       </Form>
     </div>

@@ -92,6 +92,7 @@ export default function AddressFormForm() {
                     <span className="capitalize">{key} Address</span>
                     <Button className="capitalize" type="button" onClick={() => append(defaultValues[key as keyof typeof defaultValues])}>Add {key} Address</Button>
                   </CardTitle>
+                  <Separator />
                 </CardHeader>
                 <CardContent>
                   <Each
@@ -162,7 +163,7 @@ export default function AddressFormForm() {
                             </FormItem>
                           )}
                         />
-                        <Button className="flex ml-auto" type="button" variant="destructive" onClick={() => remove(index)}>Remove</Button>
+                        <Button className="flex ml-auto" type="button" variant="destructive" onClick={() => remove(field.index)}>Remove</Button>
                         {index !== addresses[key as keyof typeof addresses].length - 1 && <Separator />}
                       </div> 
                     )}
@@ -171,7 +172,7 @@ export default function AddressFormForm() {
               </Card>
             )}
           />
-          <Button>Save</Button>
+          {form.formState.isValid && <Button disabled={form.formState.isLoading}>Save</Button>}
         </form>
       </Form>
     </div>

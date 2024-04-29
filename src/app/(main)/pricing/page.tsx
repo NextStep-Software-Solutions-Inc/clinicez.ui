@@ -19,9 +19,11 @@ export default async function PricingPage(props: PricingPageProps) {
         <h1>Tenant Pricing</h1>
         <p>
           Select the plan that best suits your needs. 
+          Select the plan that best suits your needs. 
         </p>
       </div>
       <div className="flex justify-end">
+        <PricingMode defaultMode={freq} />
         <PricingMode defaultMode={freq} />
       </div>
       <div className="flex flex-wrap justify-between mt-10">

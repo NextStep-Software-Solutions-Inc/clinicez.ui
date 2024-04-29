@@ -1,19 +1,20 @@
-import nurses from '@public/nurses.json';
 import CarouselWrapper from "@components/CarouselWrapper";
-import JoinAsHealthcareProvider from '@components/JoinAs';
 import JoinAsButton from '@components/JoinAs';
+import { getNurses } from './nurses.request';
+import { ICarouselItemProps } from '@components/CarouselItem';
 
-
-
-const carouselProps = {
-  autoPlay: true,
-  autoPlaySpeed: 5000,
-  showArrows: true,
-  infiniteLoop: true,
-  showDots: true,
-  perPage: 3
-}
 export default async function Nurses() {
+  const nurses = await getNurses()
+
+  const mappedNurses: ICarouselItemProps["item"][] = nurses.response.map((nurse) => {
+    return {
+      id: nurse.id,
+      name: `${nurse.profile.title} ${nurse.profile.firstName} ${nurse.profile.middleName} ${nurse.profile.lastName} ${nurse.profile.suffix}`,
+      specialty: nurse.profile.fieldOfStudy,
+      photoUrl: nurse.profile.profilePhotoUrl,
+    }
+  })
+
   return (
     <div className="container mx-auto">
       <div className="flex flex-col items-center justify-center min:h-screen relative">
@@ -21,17 +22,17 @@ export default async function Nurses() {
         <div className='flex flex-col gap-10'>
           <div>
             <CarouselWrapper
-              items={nurses}
-            /> 
-          </div>
-          <div>
-            <CarouselWrapper
-              items={nurses}
+              items={mappedNurses}
             />
           </div>
           <div>
             <CarouselWrapper
-              items={nurses}
+              items={mappedNurses}
+            />
+          </div>
+          <div>
+            <CarouselWrapper
+              items={mappedNurses}
             />
           </div>
         </div> 

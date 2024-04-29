@@ -35,7 +35,6 @@ import { MailDisplay } from "./mail-display"
 import { MailList } from "./mail-list"
 import { Nav } from "./nav"
 import { type Mail } from "../data"
-import { useMail } from "../use-mail"
 import { RoleSwitcher } from "@components/dashboard/RoleSwitcher"
 import { useRouter, useSearchParams } from "next/navigation"
 
@@ -51,6 +50,7 @@ interface MailProps {
   navCollapsedSize: number
 }
 
+
 export function Mail({
   mails,
   defaultLayout = [265, 440, 655],
@@ -58,14 +58,20 @@ export function Mail({
   navCollapsedSize,
 }: MailProps) {
   const [isCollapsed, setIsCollapsed] = React.useState(defaultCollapsed)
-  const [mail] = useMail()
   const router = useRouter();
   const searchParams = useSearchParams();
   const tab = searchParams.get("tab");
-
+  const appointment = searchParams.get("appointment");
+  
   React.useEffect(() => {
-    if(!tab) router.push("?tab=pending");
+    const searchParams = new URLSearchParams(window.location.search);
+    searchParams.set("tab", tab? tab : "pending");
+    if(!tab) router.push(`?${searchParams.toString()}`);
   }, [router, tab])
+  
+  const isDefaultVariant = (activeTab: string, ) => {
+    return tab === activeTab ? "default" : "ghost"
+  }
 
   return (
     <TooltipProvider delayDuration={0}>
@@ -150,37 +156,42 @@ export function Mail({
                 title: "Pending",
                 label: "128",
                 icon: Inbox,
-                variant: "default",
+                variant: isDefaultVariant("pending"),
               },
               {
                 title: "Received",
                 label: "9",
                 icon: File,
-                variant: "ghost",
+                variant: isDefaultVariant("received"),
+
               },
               {
                 title: "Accepted",
                 label: "",
                 icon: Send,
-                variant: "ghost",
+                variant: isDefaultVariant("accepted"),
+
               },
               {
                 title: "Rejected",
                 label: "",
                 icon: Trash2,
-                variant: "ghost",
+                variant: isDefaultVariant("rejected"),
+
               },
               {
                 title: "Routed",
                 label: "23",
                 icon: ArchiveX,
-                variant: "ghost",
+                variant: isDefaultVariant("routed"),
+
               },
               {
                 title: "Reschedule",
                 label: "",
                 icon: Archive,
-                variant: "ghost",
+                variant: isDefaultVariant("reschedule"),
+
               },
             ]}
           />
@@ -226,7 +237,7 @@ export function Mail({
         <ResizableHandle withHandle />
         <ResizablePanel defaultSize={defaultLayout[2]}>
           <MailDisplay
-            mail={mails.find((item) => item.id === mail.selected) || null}
+            mail={mails.find((item) => item.id === appointment) || null}
           />
         </ResizablePanel>
       </ResizablePanelGroup>

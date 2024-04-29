@@ -3,10 +3,10 @@
 import { AppRouterPageRouteOpts, withPageAuthRequired, } from "@auth0/nextjs-auth0";
 import { Terminal } from "lucide-react"
 
-import HPRoleSelection from "@components/HPRoleSelection";
-import PlanSelection from "@components/PlanSelection";
-import PaymentForm from "@components/PaymentForm";
-import ConfirmationForm from "@components/ConfirmationForm";
+import HPRoleSelection from "./HPRoleSelection";
+import PlanSelection from "./PlanSelection";
+import PaymentForm from "./PaymentForm";
+import ConfirmationForm from "./ConfirmationForm";
 
 import {
   Alert,
@@ -17,8 +17,8 @@ import { Metadata } from "next";
 import { Tabs, TabsContent } from "@components/ui/tabs";
 import { Button } from "@components/ui/button";
 import HPApplicationDataProvider from "@contexts/hp-application.context";
-import ApplicationForm from "@components/ApplicationForm";
-import HPForm from "@components/HPForm";
+import ApplicationForm from "./ApplicationForm";
+import HPForm from "./HPForm";
 
 export const metadata: Metadata = {
   title: "Healthcare Provider Registration",

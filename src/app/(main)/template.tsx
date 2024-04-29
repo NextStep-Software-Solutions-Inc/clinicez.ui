@@ -11,7 +11,7 @@ export default function RootLayout({
   return (
     <>
       <RootHeader className="sticky top-0 z-50"/>
-      {children}
+      <div className="content">{children}</div>
       <RootFooter/>
     </>
   );

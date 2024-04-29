@@ -30,8 +30,6 @@ import { isHP, isTenantOwner } from "@lib/rbac.helper";
 export default function UserAvatar() {
 
   const {user, isLoading} = useUser();
-  
-
 
   if(isLoading) return null;
   if (!user) return <a href="/api/auth/login" title="" className="px-5 py-2.5 text-base transition-all duration-200 hover:bg-teal-400 hover:text-white focus:text-white focus:bg-teal-400 font-semibold text-white bg-teal-600 rounded-lg" role="button"> Sign In</a>
@@ -49,7 +47,7 @@ export default function UserAvatar() {
         <DropdownMenuGroup>
           <DropdownMenuItem>
             <User className="mr-2 h-4 w-4" />
-            <a href="/profile">Profile</a>
+            <a href={`/user/${user.sub?.split("|")[1]}/phr`}>Personal Health Records</a>
             {/* <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut> */}
           </DropdownMenuItem>
           <DropdownMenuItem>

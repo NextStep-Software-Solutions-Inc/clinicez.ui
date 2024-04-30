@@ -2,6 +2,12 @@ import CarouselWrapper from "@components/CarouselWrapper";
 import JoinAsButton from '@components/JoinAs';
 import { getNurses } from './nurses.request';
 import { ICarouselItemProps } from '@components/CarouselItem';
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Nurses",
+  description: "Meet our Nurses",
+};
 
 export default async function Nurses() {
   const nurses = await getNurses()

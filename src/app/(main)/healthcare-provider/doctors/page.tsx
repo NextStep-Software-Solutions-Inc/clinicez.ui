@@ -3,6 +3,7 @@ import JoinAsButton from '@components/JoinAs';
 import { Metadata } from 'next';
 import { getDoctors } from './doctors.request';
 import { ICarouselItemProps } from "@components/CarouselItem";
+
 export const metadata: Metadata = {
   title: "Doctors",
   description: "Meet our Doctors",

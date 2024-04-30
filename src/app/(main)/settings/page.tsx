@@ -1,6 +1,14 @@
 import { Separator } from "@components/ui/separator"
 import { Suspense } from "react"
 import GeneralSettingsForm from "./GeneralSettingsForm"
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "General Settings | Clinic EZ",
+  description: "General Settings",
+};
+
+
 
 export default function SettingsAccountPage() {
   return (

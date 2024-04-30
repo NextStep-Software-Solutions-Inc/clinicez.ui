@@ -5,7 +5,7 @@ import { getDoctors } from './doctors.request';
 import { ICarouselItemProps } from "@components/CarouselItem";
 
 export const metadata: Metadata = {
-  title: "Doctors",
+  title: "Doctors | Clinic EZ",
   description: "Meet our Doctors",
 };
 

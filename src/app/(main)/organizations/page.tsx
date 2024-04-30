@@ -3,10 +3,9 @@ import { OrganizationCard } from '@components/OrganizationCard';
 import { getOrganizations } from './organizations.request';
 import Each from '@components/utils/Each';
 import { type Metadata } from 'next';
-import { title } from 'process';
 
 export const metadata: Metadata = {
-  title: "Organizations",
+  title: "Organizations | Clinic EZ",
   description: "Partner Organizations"
 }
 

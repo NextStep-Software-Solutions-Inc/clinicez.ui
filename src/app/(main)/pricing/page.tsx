@@ -2,6 +2,12 @@ import Link from "next/link";
 import PricingMode from "@components/PricingMode";
 import Each from "@components/utils/Each";
 import { getTenantPlanPackage } from "./plans.request";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Pricing | Clinic EZ",
+  description: "Compare and select from our competitive pricing",
+};
 
 interface PricingPageProps {
   searchParams: {

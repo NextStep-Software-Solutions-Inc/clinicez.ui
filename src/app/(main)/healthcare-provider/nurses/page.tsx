@@ -5,7 +5,7 @@ import { ICarouselItemProps } from '@components/CarouselItem';
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Nurses",
+  title: "Nurses | Clinic EZ",
   description: "Meet our Nurses",
 };
 

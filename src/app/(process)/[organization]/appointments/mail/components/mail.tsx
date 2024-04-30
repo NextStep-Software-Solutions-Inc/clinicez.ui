@@ -66,7 +66,7 @@ export function Mail({
   React.useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
     searchParams.set("tab", tab? tab : "pending");
-    if(!tab) router.push(`?${searchParams.toString()}`);
+    if(!tab) router.replace(`?${searchParams.toString()}`);
   }, [router, tab])
   
   const isDefaultVariant = (activeTab: string, ) => {

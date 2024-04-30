@@ -4,6 +4,7 @@ import { DetailedHTMLProps, HTMLAttributes, Suspense } from "react";
 // import UserAvatar from "@components/UserAvatar";
 import Navigation from "@components/Navigation";
 import dynamic from "next/dynamic";
+import clinicEZLogo from "@public/assets/clinic-ez_logo.svg";
 
 const UserAvatar = dynamic(() => import("@components/UserAvatar"), {ssr: true});
 
@@ -18,8 +19,8 @@ export default function RootHeader({...props}: IRootHeaderProps) {
               <Image
                 width={100}
                 height={100}
-                className="w-auto" 
-                src="https://i.postimg.cc/VsH4j92b/clinicez-logo.png" alt="" 
+                className="w-auto h-12"
+                src={clinicEZLogo} alt="" 
               />
             </a>
           </div>

@@ -6,9 +6,7 @@ import {
   Package2,
   PanelLeft,
   Search,
-  Settings,
-  File,
-  Calendar
+  Settings
 } from "lucide-react"
 
 import { Button } from "@components/ui/button"
@@ -29,6 +27,7 @@ import Each from "@components/utils/Each"
 import { cn } from "@lib/utils"
 import { OrganizationSwitcher } from "@components/dashboard/OrganizationSwitcher"
 import { navList } from "./nav";
+import SideNav from "./SideNav";
 
 interface DashboardLayoutProps {
   children: React.ReactNode
@@ -50,26 +49,7 @@ export default function DashboardLayout({children, params:{organization}}: Dashb
               <Package2 className="h-4 w-4 transition-all group-hover:scale-110" />
               <span className="sr-only">Clinic EZ</span>
             </Link>
-            <Each
-              of={navList.map((item) => ({...item, href: `/${organization}${item.href}`}))}
-              render={({name, href, icon: Icon}) => (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Link
-                      href={href}
-                      className={cn(
-                        "flex h-9 w-9 items-center justify-center rounded-lg bg-accent text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8",
-                        true && "bg-accent text-accent-foreground"
-                      )}
-                    >
-                      <Icon className="h-5 w-5" />
-                      <span className="sr-only">{name}</span>
-                    </Link>
-                  </TooltipTrigger>
-                  <TooltipContent side="right">{name}</TooltipContent>
-                </Tooltip>
-              )}
-            />
+            <SideNav/>
           </nav>
           <nav className="mt-auto flex flex-col items-center gap-4 px-2 sm:py-5">
             <Tooltip>

@@ -8,7 +8,7 @@ interface Props {
     children: React.ReactNode;
 }
 
-export default function Suspend({ children, errorFallback =  GlobalError, loadingFallback = <div>Loading resources</div> }: Props) {
+export default function Suspend({ children, errorFallback =  GlobalError, loadingFallback = <div>Loading resources...</div> }: Props) {
   return (
     <ErrorBoundary errorComponent={errorFallback}>
       <Suspense fallback={loadingFallback}>

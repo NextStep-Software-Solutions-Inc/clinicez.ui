@@ -8,9 +8,7 @@ import {
   Search,
   Settings,
   File,
-  Building,
-  Calendar,
-  Archive
+  Calendar
 } from "lucide-react"
 
 import { Button } from "@components/ui/button"
@@ -30,6 +28,7 @@ import Breadcrumb from "@components/dashboard/Breadcrumb"
 import Each from "@components/utils/Each"
 import { cn } from "@lib/utils"
 import { OrganizationSwitcher } from "@components/dashboard/OrganizationSwitcher"
+import { navList } from "./nav";
 
 interface DashboardLayoutProps {
   children: React.ReactNode
@@ -38,30 +37,7 @@ interface DashboardLayoutProps {
   }
 }
 
-export default function Dashboard({children, params:{organization}}: DashboardLayoutProps) {
-  const navList = [
-    {
-      name: "Dashboard",
-      href: `/${organization}/dashboard`,
-      icon: Home,
-    },
-    {
-      name: "Appointments",
-      href: `/${organization}/appointments`,
-      icon: Calendar,
-    },
-    {
-      name: "Consultations",
-      href: `/${organization}/consultations`,
-      icon: Calendar,
-    },
-    {
-      name: "Files",
-      href: `/${organization}/files`,
-      icon: File,
-    }
-  ]
-  
+export default function DashboardLayout({children, params:{organization}}: DashboardLayoutProps) {
   return (
     <TooltipProvider>
       <div className="flex min-h-screen w-full flex-col bg-muted/40">
@@ -75,7 +51,7 @@ export default function Dashboard({children, params:{organization}}: DashboardLa
               <span className="sr-only">Clinic EZ</span>
             </Link>
             <Each
-              of={navList}
+              of={navList.map((item) => ({...item, href: `/${organization}${item.href}`}))}
               render={({name, href, icon: Icon}) => (
                 <Tooltip>
                   <TooltipTrigger asChild>

@@ -3,7 +3,7 @@ import { Mail } from "./mail/components/mail";
 import { accounts, mails } from "./mail/data"
 import { cookies } from "next/headers";
 import { Separator } from "@components/ui/separator";
-import { Button } from "@components/ui/button";
+import BookAppointment from "./BookAppointment";
 
 export default function AppointmentsPage() {
   const layout = cookies().get("react-resizable-panels:layout")
@@ -21,7 +21,7 @@ export default function AppointmentsPage() {
               View and respond to appointments.
           </p>
         </div>
-        <Button>Book Appointment</Button>
+        <BookAppointment/>
       </div>
       <Separator />
       <div className="rounded-[0.5rem] border bg-background shadow]">

@@ -14,7 +14,7 @@ const UserAvatar = dynamic(() => import("@components/UserAvatar"), {ssr: true});
 interface IRootHeaderProps extends DetailedHTMLProps<HTMLAttributes<HTMLElement>, HTMLElement>{}
 export default function RootHeader({...props}: IRootHeaderProps) {
   return (
-    <header {...props} className={`bg-[#FCF8F1] bg-opacity-30 ${props.className}`}>
+    <header {...props} className={`bg-[#FCF8F1] bg-opacity-30 backdrop-blur ${props.className}`}>
       <div className="px-4 mx-auto sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 lg:h-20">
           <div className="flex-shrink-0">

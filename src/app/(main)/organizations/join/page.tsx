@@ -9,4 +9,6 @@ async function JoinOrganizationPage(props: AppRouterPageRouteOpts) {
   )
 }
 
-export default withPageAuthRequired(JoinOrganizationPage)
+export default withPageAuthRequired(JoinOrganizationPage, {
+  returnTo: '/organizations/join',
+})

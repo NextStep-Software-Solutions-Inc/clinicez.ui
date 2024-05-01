@@ -102,9 +102,8 @@ export function Mail({
               false
             )}`
           }}
-          className={cn(
-            isCollapsed &&
-              "min-w-[50px] transition-all duration-300 ease-in-out"
+          className={cn("py-1",
+            isCollapsed && "min-w-[50px] transition-all duration-300 ease-in-out"
           )}
         >
           <div

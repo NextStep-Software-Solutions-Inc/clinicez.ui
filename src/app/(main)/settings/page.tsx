@@ -21,3 +21,5 @@ const SettingsPage = async () => {
     </div>
   )
 }
+
+export default withPageAuthRequired(SettingsPage);

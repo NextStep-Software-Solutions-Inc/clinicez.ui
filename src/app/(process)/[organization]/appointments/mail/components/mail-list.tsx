@@ -25,17 +25,6 @@ export function MailList({ items }: MailListProps) {
     searchParams.set("appointment", appointmentId)
     router.push(`?${searchParams.toString()}`)
   }
-  const searchParams = useSearchParams()
-  const appointmentId = searchParams.get("appointment")
-  console.log({appointmentId});
-  
-  const router = useRouter()
-  
-  const setAppointment = (appointmentId: string) => {
-    const searchParams = new URLSearchParams(window.location.search)
-    searchParams.set("appointment", appointmentId)
-    router.push(`?${searchParams.toString()}`)
-  }
 
   return (
     <ScrollArea className="h-screen">

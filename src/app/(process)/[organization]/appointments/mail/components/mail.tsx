@@ -89,10 +89,6 @@ export function Mail({
   const isDefaultVariant = (activeTab: string, ) => {
     return tab === activeTab ? "default" : "ghost"
   }
-  
-  const isDefaultVariant = (activeTab: string, ) => {
-    return tab === activeTab ? "default" : "ghost"
-  }
 
   return (
     <TooltipProvider delayDuration={0}>
@@ -177,52 +173,36 @@ export function Mail({
                 label: "128",
                 icon: Inbox,
                 variant: isDefaultVariant("pending"),
-                variant: isDefaultVariant("pending"),
               },
               {
                 title: "Received",
                 label: "9",
                 icon: File,
                 variant: isDefaultVariant("received"),
-
-                variant: isDefaultVariant("received"),
-
               },
               {
                 title: "Accepted",
                 label: "",
                 icon: Send,
                 variant: isDefaultVariant("accepted"),
-
-                variant: isDefaultVariant("accepted"),
-
               },
               {
                 title: "Rejected",
                 label: "",
                 icon: Trash2,
                 variant: isDefaultVariant("rejected"),
-
-                variant: isDefaultVariant("rejected"),
-
               },
               {
                 title: "Routed",
                 label: "23",
                 icon: ArchiveX,
                 variant: isDefaultVariant("routed"),
-
-                variant: isDefaultVariant("routed"),
-
               },
               {
                 title: "Reschedule",
                 label: "",
                 icon: Archive,
                 variant: isDefaultVariant("reschedule"),
-
-                variant: isDefaultVariant("reschedule"),
-
               },
             ]}
           />
@@ -268,7 +248,6 @@ export function Mail({
         <ResizableHandle withHandle />
         <ResizablePanel defaultSize={defaultLayout[2]}>
           <MailDisplay
-            mail={mails.find((item) => item.id === appointment) || null}
             mail={mails.find((item) => item.id === appointment) || null}
           />
         </ResizablePanel>

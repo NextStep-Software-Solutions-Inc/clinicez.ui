@@ -1,5 +1,8 @@
 import { withPageAuthRequired } from '@auth0/nextjs-auth0';
+import Suspend from '@components/Suspend';
+import { Separator } from '@components/ui/separator';
 import React from 'react';
+import GeneralSettingsForm from './GeneralSettingsForm';
 
 
 const SettingsPage = async () => {
@@ -12,9 +15,9 @@ const SettingsPage = async () => {
         </p>
       </div>
       <Separator />
-      <Suspense fallback={<div>Loading...</div>}>
+      <Suspend>
         <GeneralSettingsForm />
-      </Suspense>
+      </Suspend>
     </div>
   )
 }

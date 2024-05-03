@@ -2,12 +2,10 @@
 
 import * as React from "react"
 import {
-  AlertCircle,
   Archive,
   ArchiveX,
   File,
   Inbox,
-  MessagesSquare,
   Search,
   Send,
   ShoppingCart,

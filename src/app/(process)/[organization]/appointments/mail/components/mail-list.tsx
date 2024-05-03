@@ -94,11 +94,15 @@ export function MailList({ items }: MailListProps) {
 function getBadgeVariantFromLabel(
   label: string
 ): ComponentProps<typeof Badge>["variant"] {
-  if (["work"].includes(label.toLowerCase())) {
+  if (["new"].includes(label.toLowerCase())) {
     return "default"
   }
 
-  if (["personal"].includes(label.toLowerCase())) {
+  if (["emergency"].includes(label.toLowerCase())) {
+    return "destructive"
+  }
+
+  if (["follow-up"].includes(label.toLowerCase())) {
     return "outline"
   }
 

@@ -38,7 +38,7 @@ export default function AppointmentCalendar() {
           close: "bg-muted text-muted-foreground",
           holiday: "bg-slate-300 text-white",
           selected: "bg-green-300 text-white",
-          today: "bg-blue-300 text-white ring-2",
+          today: "bg-blue-300 ring-2",
         }}
         footer={<span className="font-medium text-sm">Select a date to show available time slots</span>}
       />
@@ -46,11 +46,11 @@ export default function AppointmentCalendar() {
       <div className="space-y-2">
         <h3 className="text-md font-semibold mb-2">Legend:</h3>
         <div className="flex flex-row items-center justify-start gap-1 flex-wrap mt-2">
-          <Badge className="bg-white text-black ring-1 ring-black hover:text-white">Available</Badge>
+          <Badge variant="outline" className="bg-white text-black ring-1 ring-black">Available</Badge>
           {/* <Badge className="bg-red-300">Fully Booked</Badge> */}
-          <Badge className="bg-muted text-muted-foreground hover:text-white">Close</Badge>
-          <Badge className="bg-slate-300 text-white">Holiday</Badge>
-          <Badge className="bg-blue-300 text-white">Today</Badge>
+          <Badge variant="outline" className="bg-muted text-muted-foreground">Close</Badge>
+          <Badge variant="outline" className="bg-slate-300 text-white">Holiday</Badge>
+          <Badge variant="outline" className="bg-blue-300 text-white">Today</Badge>
         </div>
         
       </div>

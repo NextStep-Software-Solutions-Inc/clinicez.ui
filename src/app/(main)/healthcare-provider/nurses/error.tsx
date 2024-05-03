@@ -1,5 +1,5 @@
 'use client'
-import GlobalError from "@components/GobalError"
+import GlobalError from "@components/GlobalError"
 // Error components must be Client Components
 
 interface ErrorProps {

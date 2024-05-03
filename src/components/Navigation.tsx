@@ -30,7 +30,7 @@ export default function Navigation() {
             <NavigationMenuItem>
               <Link href={link.href} legacyBehavior passHref>
                 <NavigationMenuLink className={cn(navigationMenuTriggerStyle(),
-                  //  "text-teal-600"
+                  "bg-transparent"
                 )}>
                   {link.name}
                 </NavigationMenuLink>

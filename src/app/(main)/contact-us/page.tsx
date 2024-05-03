@@ -1,3 +1,11 @@
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Contact Us | Clinic EZ",
+  description: "Send us a message and we will get back to you as soon as possible.",
+};
+
+
 export default async function ContactUsPage() {
 
   const handleSubmit = async (form: FormData) => {

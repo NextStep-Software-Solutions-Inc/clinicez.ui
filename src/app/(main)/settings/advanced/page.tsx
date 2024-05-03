@@ -1,6 +1,12 @@
 import { Separator } from "@components/ui/separator";
 import React from "react";
 import AdvancedSettingsForm from "./AdvancedSettingsForm";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Advanced Settings | Clinic EZ",
+  description: "Advanced Settings",
+};
 
 export default function AdvancedPage() {
   return (

@@ -1,41 +1,22 @@
-import CarouselWrapper from "@components/CarouselWrapper";
 import JoinAsButton from '@components/JoinAs';
-import { getNurses } from './nurses.request';
-import { ICarouselItemProps } from '@components/CarouselItem';
+import { Metadata } from "next";
+import Suspend from "@components/Suspend";
+import NurseList from "./NurseList";
+
+export const metadata: Metadata = {
+  title: "Nurses | Clinic EZ",
+  description: "Meet our Nurses",
+};
 
 export default async function Nurses() {
-  const nurses = await getNurses()
-
-  const mappedNurses: ICarouselItemProps["item"][] = nurses.response.map((nurse) => {
-    return {
-      id: nurse.id,
-      name: `${nurse.profile.title} ${nurse.profile.firstName} ${nurse.profile.middleName} ${nurse.profile.lastName} ${nurse.profile.suffix}`,
-      specialty: nurse.profile.fieldOfStudy,
-      photoUrl: nurse.profile.profilePhotoUrl,
-    }
-  })
 
   return (
     <div className="container mx-auto">
       <div className="flex flex-col items-center justify-center min:h-screen relative">
         <h1 className="font-bold text-teal-500 text-3xl mb-5">Meet our Nurses</h1>
-        <div className='flex flex-col gap-10'>
-          <div>
-            <CarouselWrapper
-              items={mappedNurses}
-            />
-          </div>
-          <div>
-            <CarouselWrapper
-              items={mappedNurses}
-            />
-          </div>
-          <div>
-            <CarouselWrapper
-              items={mappedNurses}
-            />
-          </div>
-        </div> 
+        <Suspend>
+          <NurseList />
+        </Suspend>
         <JoinAsButton href={{
           pathname: "/healthcare-provider/apply",
           query: {

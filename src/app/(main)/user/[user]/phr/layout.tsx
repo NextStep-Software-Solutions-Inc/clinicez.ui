@@ -44,7 +44,7 @@ export default function SettingsLayout({ children, params: {user} }: SettingsLay
     {
       title: "Insurances & HMOs",
       href: `/user/${user}/phr/insurances`,
-    },
+    }
   ]
   
   return (

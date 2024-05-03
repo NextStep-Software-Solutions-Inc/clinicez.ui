@@ -4,23 +4,28 @@ import { DetailedHTMLProps, HTMLAttributes, Suspense } from "react";
 // import UserAvatar from "@components/UserAvatar";
 import Navigation from "@components/Navigation";
 import dynamic from "next/dynamic";
+import clinicEZLogo from "@public/assets/clinic-ez_logo.svg";
+
+import { Player, Controls } from '@lottiefiles/react-lottie-player';
+import AnimatedLogo from "./AnimatedLogo";
 
 const UserAvatar = dynamic(() => import("@components/UserAvatar"), {ssr: true});
 
 interface IRootHeaderProps extends DetailedHTMLProps<HTMLAttributes<HTMLElement>, HTMLElement>{}
 export default function RootHeader({...props}: IRootHeaderProps) {
   return (
-    <header {...props} className={`bg-[#FCF8F1] bg-opacity-30 ${props.className}`}>
+    <header {...props} className={`bg-[#FCF8F1] bg-opacity-30 backdrop-blur ${props.className}`}>
       <div className="px-4 mx-auto sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 lg:h-20">
           <div className="flex-shrink-0">
             <a href="/" title="" className="flex">
-              <Image
+              <AnimatedLogo/>
+              {/* <Image
                 width={100}
                 height={100}
-                className="w-auto" 
-                src="https://i.postimg.cc/VsH4j92b/clinicez-logo.png" alt="" 
-              />
+                className="w-auto h-12"
+                src={clinicEZLogo} alt="" 
+              /> */}
             </a>
           </div>
 

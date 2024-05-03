@@ -1,5 +1,6 @@
 import { Metadata } from "next";
 import Image from "next/image";
+import clinicEZMiniLogo from "@public/assets/clinic-ez_mini-logo.svg";
 
 export const metadata: Metadata = {
   title: "Home | Clinic EZ ",
@@ -16,7 +17,10 @@ export default async function HomePage() {
             <div className="grid items-center grid-cols-1 gap-12 lg:grid-cols-2">
               <div>
                 <p className="text-base font-semibold tracking-wider text-gray-500 uppercase">Optimized Healthcare Management System</p>
-                <h1 className="mt-4 text-4xl font-bold text-teal-600 lg:mt-8 sm:text-6xl xl:text-8xl">Revitalize in an <span className="bg-teal-600 text-white rounded-3xl font-extralight text-7xl px-4 leading-tight">ez</span> way.</h1>
+                <h1 className="mt-4 text-4xl font-bold text-teal-600 lg:mt-8 sm:text-6xl xl:text-8xl">Revitalize in an <span className="text-white rounded-3xl font-extralight text-7xl px-4 leading-tight" style={{
+                  background: "linear-gradient(135deg, rgba(62,236,225,1) 0%, rgba(49,205,188,1) 15%, rgba(44,171,152,1) 70%, rgba(7,167,136,1) 100%)",
+                  borderRadius: "34% 66% 69% 31% / 44% 51% 49% 56%"
+                }} >ez</span> way.</h1>
                 <p className="mt-4 text-base text-gray-600 lg:mt-8 sm:text-xl">Join Health Organization and Manage Your Health Records</p>
 
                 <a href="/api/auth/login" title="" className="inline-flex items-center px-6 py-4 mt-8 font-semibold text-white transition-all duration-200 bg-teal-600 rounded-full lg:mt-16 hover:bg-teal-400 focus:bg-teal-400" role="button">
@@ -31,10 +35,10 @@ export default async function HomePage() {
 
               <div>
                 <Image 
-                  width={500}
-                  height={500}
-                  className="w-full hidden lg:block" 
-                  src="https://i.postimg.cc/d1WGBnfZ/adaptive-icon.png" alt="model" 
+                  width={100}
+                  height={100}
+                  className="w-full h-96 hidden lg:block" 
+                  src={clinicEZMiniLogo} alt="clinic-ez-mini-logo" 
                 />
               </div>
             </div>

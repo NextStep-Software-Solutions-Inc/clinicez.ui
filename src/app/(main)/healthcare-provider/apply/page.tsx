@@ -60,4 +60,6 @@ async function HealthcareProviderRegistrationPage(props: AppRouterPageRouteOpts)
     </HPApplicationDataProvider>
   );
 }
-export default withPageAuthRequired(HealthcareProviderRegistrationPage);
+export default withPageAuthRequired(HealthcareProviderRegistrationPage, {
+  returnTo: '/healthcare-provider/apply',
+});

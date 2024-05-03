@@ -1,6 +1,12 @@
 import SecuritySettingsForm from "./SecuritySettingsForm";
 import { Separator } from "@components/ui/separator";
+import { Metadata } from "next";
 import React from "react";
+
+export const metadata: Metadata = {
+  title: "Security Settings | Clinic EZ",
+  description: "Security Settings",
+};
 
 export default function SecurityPage() {
   return (

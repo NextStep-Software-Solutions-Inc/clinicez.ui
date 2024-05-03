@@ -51,6 +51,7 @@ interface MailProps {
 }
 
 
+
 export function Mail({
   mails,
   defaultLayout = [265, 440, 655],
@@ -58,15 +59,31 @@ export function Mail({
   navCollapsedSize,
 }: MailProps) {
   const [isCollapsed, setIsCollapsed] = React.useState(defaultCollapsed)
+
   const router = useRouter();
   const searchParams = useSearchParams();
   const tab = searchParams.get("tab");
   const appointment = searchParams.get("appointment");
+  const [query, setQuery] = React.useState("");
+
+  const filteredMails = React.useMemo(() => {
+    if (!query) return mails;
+    return mails.filter((mail) => {
+      return (
+        mail.subject.toLowerCase().includes(query.toLowerCase()) ||
+        mail.text.toLowerCase().includes(query.toLowerCase())
+      );
+    });
+  },[mails,query])
+
+  const updateQuery = (q: string) => {
+    setQuery(q);
+  }
   
   React.useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
     searchParams.set("tab", tab? tab : "pending");
-    if(!tab) router.push(`?${searchParams.toString()}`);
+    if(!tab) router.replace(`?${searchParams.toString()}`);
   }, [router, tab])
   
   const isDefaultVariant = (activeTab: string, ) => {
@@ -102,9 +119,8 @@ export function Mail({
               false
             )}`
           }}
-          className={cn(
-            isCollapsed &&
-              "min-w-[50px] transition-all duration-300 ease-in-out"
+          className={cn("py-1",
+            isCollapsed && "min-w-[50px] transition-all duration-300 ease-in-out"
           )}
         >
           <div
@@ -163,35 +179,30 @@ export function Mail({
                 label: "9",
                 icon: File,
                 variant: isDefaultVariant("received"),
-
               },
               {
                 title: "Accepted",
                 label: "",
                 icon: Send,
                 variant: isDefaultVariant("accepted"),
-
               },
               {
                 title: "Rejected",
                 label: "",
                 icon: Trash2,
                 variant: isDefaultVariant("rejected"),
-
               },
               {
                 title: "Routed",
                 label: "23",
                 icon: ArchiveX,
                 variant: isDefaultVariant("routed"),
-
               },
               {
                 title: "Reschedule",
                 label: "",
                 icon: Archive,
                 variant: isDefaultVariant("reschedule"),
-
               },
             ]}
           />
@@ -222,15 +233,15 @@ export function Mail({
               <form>
                 <div className="relative">
                   <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input placeholder="Search" className="pl-8" type="search" />
+                  <Input placeholder="Search" className="pl-8" type="search" value={query} onChange={e => updateQuery(e.target.value)} />
                 </div>
               </form>
             </div>
             <TabsContent value="all" className="m-0">
-              <MailList items={mails} />
+              <MailList items={filteredMails} />
             </TabsContent>
             <TabsContent value="unread" className="m-0">
-              <MailList items={mails.filter((item) => !item.read)} />
+              <MailList items={filteredMails.filter((item) => !item.read)} />
             </TabsContent>
           </Tabs>
         </ResizablePanel>

@@ -1,7 +1,8 @@
 import { UserProvider } from "@auth0/nextjs-auth0/client";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Montserrat } from "next/font/google";
-import { Toaster } from "sonner"
+import { Toaster as SonnerToaster } from "sonner"
+import { Toaster } from "@components/ui/toaster"
 import "@styles/globals.css";
 const montserrat = Montserrat({ subsets: ["latin"] });
 
@@ -20,6 +21,7 @@ export default function RootLayout({children}:Props) {
         <UserProvider>
           {children}
           <SpeedInsights />
+          <SonnerToaster />
           <Toaster />
         </UserProvider>
       </body>

@@ -23,4 +23,6 @@ async function TenantsRegistrationPage(props: AppRouterPageRouteOpts) {
   );
 }
 
-export default withPageAuthRequired(TenantsRegistrationPage);
+export default withPageAuthRequired(TenantsRegistrationPage, {
+  returnTo: '/tenants/register',
+});

@@ -1,7 +1,12 @@
 import { Separator } from "@components/ui/separator";
 import React from "react";
 import SubscriptionsList from "./SubscriptionsList";
+import { Metadata } from "next";
 
+export const metadata: Metadata = {
+  title: "Subscriptions | Clinic EZ",
+  description: "List of subscriptions for your account.",
+};
 
 export default function SubscriptionsPage() {
   

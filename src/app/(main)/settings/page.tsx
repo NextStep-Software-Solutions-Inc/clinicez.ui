@@ -1,8 +1,11 @@
-import { Separator } from "@components/ui/separator"
-import { Suspense } from "react"
-import GeneralSettingsForm from "./GeneralSettingsForm"
+import { withPageAuthRequired } from '@auth0/nextjs-auth0';
+import Suspend from '@components/Suspend';
+import { Separator } from '@components/ui/separator';
+import React from 'react';
+import GeneralSettingsForm from './GeneralSettingsForm';
 
-export default function SettingsAccountPage() {
+
+const SettingsPage = async () => {
   return (
     <div className="space-y-6">
       <div>
@@ -12,9 +15,11 @@ export default function SettingsAccountPage() {
         </p>
       </div>
       <Separator />
-      <Suspense fallback={<div>Loading...</div>}>
+      <Suspend>
         <GeneralSettingsForm />
-      </Suspense>
+      </Suspend>
     </div>
   )
 }
+
+export default withPageAuthRequired(SettingsPage);

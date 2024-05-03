@@ -1,6 +1,12 @@
 import { Separator } from "@components/ui/separator";
 import React from "react";
 import OrganizationsSettings from "./OrganizationsSettings";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Manage Organizations | Clinic EZ",
+  description: "Organization Settings",
+};
 
 export default function OrganizationsPage() {
   return (

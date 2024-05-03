@@ -51,6 +51,7 @@ interface MailProps {
 }
 
 
+
 export function Mail({
   mails,
   defaultLayout = [265, 440, 655],
@@ -84,6 +85,10 @@ export function Mail({
     searchParams.set("tab", tab? tab : "pending");
     if(!tab) router.replace(`?${searchParams.toString()}`);
   }, [router, tab])
+  
+  const isDefaultVariant = (activeTab: string, ) => {
+    return tab === activeTab ? "default" : "ghost"
+  }
   
   const isDefaultVariant = (activeTab: string, ) => {
     return tab === activeTab ? "default" : "ghost"
@@ -172,11 +177,14 @@ export function Mail({
                 label: "128",
                 icon: Inbox,
                 variant: isDefaultVariant("pending"),
+                variant: isDefaultVariant("pending"),
               },
               {
                 title: "Received",
                 label: "9",
                 icon: File,
+                variant: isDefaultVariant("received"),
+
                 variant: isDefaultVariant("received"),
 
               },
@@ -186,11 +194,15 @@ export function Mail({
                 icon: Send,
                 variant: isDefaultVariant("accepted"),
 
+                variant: isDefaultVariant("accepted"),
+
               },
               {
                 title: "Rejected",
                 label: "",
                 icon: Trash2,
+                variant: isDefaultVariant("rejected"),
+
                 variant: isDefaultVariant("rejected"),
 
               },
@@ -200,11 +212,15 @@ export function Mail({
                 icon: ArchiveX,
                 variant: isDefaultVariant("routed"),
 
+                variant: isDefaultVariant("routed"),
+
               },
               {
                 title: "Reschedule",
                 label: "",
                 icon: Archive,
+                variant: isDefaultVariant("reschedule"),
+
                 variant: isDefaultVariant("reschedule"),
 
               },
@@ -252,6 +268,7 @@ export function Mail({
         <ResizableHandle withHandle />
         <ResizablePanel defaultSize={defaultLayout[2]}>
           <MailDisplay
+            mail={mails.find((item) => item.id === appointment) || null}
             mail={mails.find((item) => item.id === appointment) || null}
           />
         </ResizablePanel>

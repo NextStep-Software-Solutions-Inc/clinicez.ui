@@ -1,16 +1,8 @@
-import { Separator } from "@components/ui/separator"
-import { Suspense } from "react"
-import GeneralSettingsForm from "./GeneralSettingsForm"
-import { Metadata } from "next";
-
-export const metadata: Metadata = {
-  title: "General Settings | Clinic EZ",
-  description: "General Settings",
-};
+import { withPageAuthRequired } from '@auth0/nextjs-auth0';
+import React from 'react';
 
 
-
-export default function SettingsAccountPage() {
+const SettingsPage = async () => {
   return (
     <div className="space-y-6">
       <div>

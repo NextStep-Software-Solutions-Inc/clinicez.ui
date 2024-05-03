@@ -23,6 +23,7 @@ import {
 } from "@components/ui/select"
 import { toast } from "@components/ui/use-toast"
 import Each from "@components/utils/Each"
+import { useLocalStorage } from "@hooks/useLocalStorage"
 
 const FilterFormSchema = z.object({
   appointmentTypeId: z.string({
@@ -81,13 +82,20 @@ const appointmentTypes = [
 
 
 export default function FilterForm() {
+  const [bookAppointmentForm, setBookAppointmentForm] = useLocalStorage<z.infer<typeof FilterFormSchema>>("book-appointment-form", {
+    appointmentTypeId: '',
+    serviceId: '',
+    doctorId: ''
+  })
   const form = useForm<z.infer<typeof FilterFormSchema>>({
-    resolver: zodResolver(FilterFormSchema)
+    resolver: zodResolver(FilterFormSchema),
+    defaultValues: bookAppointmentForm,
   })
   const services = appointmentTypes.find(type => type.id.toString() === form.watch('appointmentTypeId'))?.services
   const doctors = services?.find(service => service.id.toString() === form.watch('serviceId'))?.doctors
 
-  function onSubmit(data: z.infer<typeof FilterFormSchema>) {
+  async function onSubmit(data: z.infer<typeof FilterFormSchema>) {
+    await setBookAppointmentForm(data)
     toast({
       title: "You submitted the following values:",
       description: (

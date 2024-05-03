@@ -9,11 +9,11 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@components/ui/sheet"
-import FilterForm from "./FilterForm";
-import AppointmentCalendar from "./AppointmentCalendar";
-import VacantTimeSlot from "./VacantTimeSlot";
-import { Separator } from "@components/ui/separator";
 import BookAppointmentStep from "./BookAppointmentStep";
+import SelectTimeSlot from "./SelectTimeSlot";
+import ChiefComplaint from "./ChiefComplaint";
+import ConsentForm from "./ConsentForm";
+import ReviewBooking from "./ReviewBooking";
 
 export default function BookAppointment() {
   return (
@@ -28,24 +28,15 @@ export default function BookAppointment() {
             Filter the calendar to find the best time for your appointment.
           </SheetDescription>
         </SheetHeader>
-        <BookAppointmentStep intialStep={1}>
-          <div className="container flex flex-col gap-4 my-10">
-            <div className="flex lg:flex-row flex-col items-center gap-5 justify-center">
-              <FilterForm/>
-              <AppointmentCalendar/>
-            </div>
-            <Separator/>
-            <VacantTimeSlot/>
-          </div>
-          <div>1</div>
+        <BookAppointmentStep initialStep={1}>
+          <SelectTimeSlot/>
+          <ChiefComplaint/>
+          <ConsentForm/>
+          <ReviewBooking/>
         </BookAppointmentStep>
-        
         <SheetFooter>
           <SheetClose asChild>
-            <Button variant="outline" type="button">Cancel</Button>
-          </SheetClose>
-          <SheetClose asChild>
-            <Button type="submit">Book</Button>
+            <Button variant="outline" type="button">Close</Button>
           </SheetClose>
         </SheetFooter>
       </SheetContent>

@@ -58,10 +58,26 @@ export function Mail({
   navCollapsedSize,
 }: MailProps) {
   const [isCollapsed, setIsCollapsed] = React.useState(defaultCollapsed)
+
   const router = useRouter();
   const searchParams = useSearchParams();
   const tab = searchParams.get("tab");
   const appointment = searchParams.get("appointment");
+  const [query, setQuery] = React.useState("");
+
+  const filteredMails = React.useMemo(() => {
+    if (!query) return mails;
+    return mails.filter((mail) => {
+      return (
+        mail.subject.toLowerCase().includes(query.toLowerCase()) ||
+        mail.text.toLowerCase().includes(query.toLowerCase())
+      );
+    });
+  },[mails,query])
+
+  const updateQuery = (q: string) => {
+    setQuery(q);
+  }
   
   React.useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
@@ -221,15 +237,15 @@ export function Mail({
               <form>
                 <div className="relative">
                   <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input placeholder="Search" className="pl-8" type="search" />
+                  <Input placeholder="Search" className="pl-8" type="search" value={query} onChange={e => updateQuery(e.target.value)} />
                 </div>
               </form>
             </div>
             <TabsContent value="all" className="m-0">
-              <MailList items={mails} />
+              <MailList items={filteredMails} />
             </TabsContent>
             <TabsContent value="unread" className="m-0">
-              <MailList items={mails.filter((item) => !item.read)} />
+              <MailList items={filteredMails.filter((item) => !item.read)} />
             </TabsContent>
           </Tabs>
         </ResizablePanel>

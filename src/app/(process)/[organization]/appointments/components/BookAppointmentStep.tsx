@@ -22,7 +22,7 @@ export default function BookAppointmentStep({ initialStep = 1, children }: BookA
       {!isComplete ? currentStepComponent : (
         <div className="prose max-w-full text-center my-10">
           <h2 className="text-green-500">Congratulations! You had successfully booked your appointment.</h2>
-          <p>Please your line open as you will receive a notification from Clinic EZ after some time.</p>
+          <p>Please keep your line open as you will receive a notification from Clinic EZ when healthcare provider approves you booking.</p>
           <SheetClose asChild>
             <Button>Got it.</Button>
           </SheetClose>

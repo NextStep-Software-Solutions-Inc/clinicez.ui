@@ -3,7 +3,7 @@ import { Mail } from "./mail/components/mail";
 import { accounts, mails } from "./mail/data"
 import { cookies } from "next/headers";
 import { Separator } from "@components/ui/separator";
-import BookAppointment from "./BookAppointment";
+import BookAppointment from "./components/BookAppointment";
 
 export default function AppointmentsPage() {
   const layout = cookies().get("react-resizable-panels:layout")

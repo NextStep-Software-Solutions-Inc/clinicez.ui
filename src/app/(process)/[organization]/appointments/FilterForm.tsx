@@ -41,43 +41,43 @@ const appointmentTypes = [
     id: 1, 
     name: 'Consultation',
     services: [
-      { id: 1, name: 'Dental Cleaning' },
-      { id: 2, name: 'Cavity Filling' },
-      { id: 3, name: 'Root Canal' },
-      { id: 4, name: 'Tooth Extraction' },
-      { id: 5, name: 'Dental Implants' },
-      { id: 6, name: 'Orthodontics' },
-      { id: 7, name: 'Other' },
+      { id: 1, name: 'Dental Cleaning', doctors: [{ id: 1, name: 'Dr. Smith' }, { id: 2, name: 'Dr. Johnson' }] },
+      { id: 2, name: 'Cavity Filling', doctors: [{ id: 2, name: 'Dr. Johnson' }, { id: 3, name: 'Dr. Williams' }] },
+      { id: 3, name: 'Root Canal', doctors: [{ id: 3, name: 'Dr. Williams' }, { id: 4, name: 'Dr. Brown' }] },
+      { id: 4, name: 'Tooth Extraction', doctors: [{ id: 4, name: 'Dr. Brown' }, { id: 5, name: 'Dr. Jones' }] },
+      { id: 5, name: 'Dental Implants', doctors: [{ id: 5, name: 'Dr. Jones' }, { id: 6, name: 'Dr. Davis' }] },
+      { id: 6, name: 'Orthodontics', doctors: [{ id: 6, name: 'Dr. Davis' }, { id: 7, name: 'Dr. Miller' }] },
+      { id: 7, name: 'Other', doctors: [{ id: 7, name: 'Dr. Miller' }] },
     ]
   },
   {
     id: 2,
     name: 'Checkup',
     services: [
-      { id: 8, name: 'Dental Cleaning' },
-      { id: 9, name: 'Cavity Filling' },
-      { id: 10, name: 'Root Canal' },
-      { id: 11, name: 'Tooth Extraction' },
-      { id: 12, name: 'Dental Implants' },
-      { id: 13, name: 'Orthodontics' },
-      { id: 14, name: 'Other' },
+      { id: 8, name: 'Dental Cleaning', doctors: [{ id: 8, name: 'Dr. Wilson' }, { id: 9, name: 'Dr. Moore' }] },
+      { id: 9, name: 'Cavity Filling', doctors: [{ id: 9, name: 'Dr. Moore' }, { id: 10, name: 'Dr. Taylor' }] },
+      { id: 10, name: 'Root Canal', doctors: [{ id: 10, name: 'Dr. Taylor' }, { id: 11, name: 'Dr. Anderson' }] },
+      { id: 11, name: 'Tooth Extraction', doctors: [{ id: 11, name: 'Dr. Anderson' }, { id: 12, name: 'Dr. Thomas' }] },
+      { id: 12, name: 'Dental Implants', doctors: [{ id: 12, name: 'Dr. Thomas' }, { id: 13, name: 'Dr. Jackson' }] },
+      { id: 13, name: 'Orthodontics', doctors: [{ id: 13, name: 'Dr. Jackson' }, { id: 14, name: 'Dr. White' }] },
+      { id: 14, name: 'Other', doctors: [{ id: 14, name: 'Dr. White' }] },
     ]
   },
   {
     id: 3,
     name: 'Procedure',
     services: [
-      { id: 15, name: 'Dental Cleaning' },
-      { id: 16, name: 'Cavity Filling' },
-      { id: 17, name: 'Root Canal' },
-      { id: 18, name: 'Tooth Extraction' },
-      { id: 19, name: 'Dental Implants' },
-      { id: 20, name: 'Orthodontics' },
-      { id: 21, name: 'Other' },
+      { id: 15, name: 'Dental Cleaning', doctors: [{ id: 15, name: 'Dr. Harris' }, { id: 16, name: 'Dr. Martin' }] },
+      { id: 16, name: 'Cavity Filling', doctors: [{ id: 16, name: 'Dr. Martin' }, { id: 17, name: 'Dr. Thompson' }] },
+      { id: 17, name: 'Root Canal', doctors: [{ id: 17, name: 'Dr. Thompson' }, { id: 18, name: 'Dr. Garcia' }] },
+      { id: 18, name: 'Tooth Extraction', doctors: [{ id: 18, name: 'Dr. Garcia' }, { id: 19, name: 'Dr. Martinez' }] },
+      { id: 19, name: 'Dental Implants', doctors: [{ id: 19, name: 'Dr. Martinez' }, { id: 20, name: 'Dr. Robinson' }] },
+      { id: 20, name: 'Orthodontics', doctors: [{ id: 20, name: 'Dr. Robinson' }, { id: 21, name: 'Dr. Clark' }] },
+      { id: 21, name: 'Other', doctors: [{ id: 21, name: 'Dr. Clark' }] },
     ]
   }
 
-]
+];
 
 
 export default function FilterForm() {
@@ -85,6 +85,7 @@ export default function FilterForm() {
     resolver: zodResolver(FilterFormSchema)
   })
   const services = appointmentTypes.find(type => type.id.toString() === form.watch('appointmentTypeId'))?.services
+  const doctors = services?.find(service => service.id.toString() === form.watch('serviceId'))?.doctors
 
   function onSubmit(data: z.infer<typeof FilterFormSchema>) {
     toast({
@@ -177,9 +178,9 @@ export default function FilterForm() {
                   </FormControl>
                   <SelectContent>
                     <Each
-                      of={services ?? []}
-                      render={(service) => (
-                        <SelectItem value={service.id.toString()}>{service.name}</SelectItem>
+                      of={doctors ?? []}
+                      render={(doctor) => (
+                        <SelectItem value={doctor.id.toString()}>{doctor.name}</SelectItem>
                       )}
                     />
                   </SelectContent>

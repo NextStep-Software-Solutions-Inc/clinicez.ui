@@ -1,6 +1,6 @@
 import React from "react";
 import { Mail } from "./mail/components/mail";
-import { accounts, mails } from "@public/json/mail-data"
+import { accounts, appointmentList } from "@public/json/appointment-list"
 import { cookies } from "next/headers";
 import { Separator } from "@components/ui/separator";
 
@@ -22,7 +22,7 @@ export default function ConsultationsPage() {
         <Separator />
         <Mail
           accounts={accounts}
-          mails={mails}
+          mails={appointmentList["pending"]}
           defaultLayout={defaultLayout}
           defaultCollapsed={defaultCollapsed}
           navCollapsedSize={4}

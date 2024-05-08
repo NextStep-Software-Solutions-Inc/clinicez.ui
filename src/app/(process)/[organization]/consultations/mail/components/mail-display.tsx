@@ -39,10 +39,10 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@components/ui/tooltip"
-import { Mail } from "../../../../../../../public/json/mail-data"
+import { Appointment } from "@public/json/appointment-list"
 
 interface MailDisplayProps {
-  mail: Mail | null
+  mail: Appointment | null
 }
 
 export function MailDisplay({ mail }: MailDisplayProps) {
@@ -207,15 +207,15 @@ export function MailDisplay({ mail }: MailDisplayProps) {
                 </div>
               </div>
             </div>
-            {mail.date && (
+            {mail.createdAt && (
               <div className="ml-auto text-xs text-muted-foreground">
-                {format(new Date(mail.date), "PPpp")}
+                {format(new Date(mail.createdAt), "PPpp")}
               </div>
             )}
           </div>
           <Separator />
           <div className="flex-1 whitespace-pre-wrap p-4 text-sm">
-            {mail.text}
+            {mail.complaint}
           </div>
           <Separator className="mt-auto" />
           <div className="p-4">

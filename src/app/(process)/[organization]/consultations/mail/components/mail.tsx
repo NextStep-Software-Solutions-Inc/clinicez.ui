@@ -34,7 +34,7 @@ import { TooltipProvider } from "@components/ui/tooltip"
 import { MailDisplay } from "./mail-display"
 import { MailList } from "./mail-list"
 import { Nav } from "./nav"
-import { type Mail } from "@public/json/mail-data"
+import { type Appointment } from "@public/json/appointment-list"
 import { useMail } from "@hooks/useMail"
 import { RoleSwitcher } from "@components/dashboard/RoleSwitcher"
 

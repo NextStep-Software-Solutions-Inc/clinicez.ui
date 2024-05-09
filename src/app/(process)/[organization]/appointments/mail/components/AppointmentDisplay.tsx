@@ -41,33 +41,38 @@ import Each from "@components/utils/Each"
 import RejectAppointment from "../../components/RejectAppointment"
 import AcceptAppointment from "../../components/AcceptAppointment"
 import ReceiveAppointment from "../../components/ReceiveAppointment"
+import { AppointmentStatus } from "@public/json/appointment-list"
 
 interface AppointmentDisplayProps {
   appointmentId: string | null
+  appointmentStatus: AppointmentStatus
 }
 
-export default async function AppointmentDisplay({ appointmentId }: AppointmentDisplayProps) {
+export default async function AppointmentDisplay({ appointmentId, appointmentStatus }: AppointmentDisplayProps) {
   
   const freshAppointment = await getAppointment(appointmentId ?? "")
   const today = new Date()
 
+  const appointmentToolsPerStatus: Record<AppointmentStatus, React.ReactNode[]> = {
+    pending: [
+      <ReceiveAppointment key="receive" disabled={!freshAppointment}/>,
+      <RejectAppointment key="reject" disabled={!freshAppointment}/>,
+    ],
+    accepted: [
+      <CreateConsultationRecordModal key="create-consultation-record" disabled={!freshAppointment}/>
+    ],
+    rejected: [
+    ],
+    received: [
+      <AcceptAppointment key="accept" disabled={!freshAppointment} />,
+    ],
+    routed: [],
+    reschedule: []
+  }
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center p-2">
         <div className="flex items-center gap-2">
-          <AcceptAppointment disabled={!freshAppointment}/>
-          <RejectAppointment disabled={!freshAppointment}/>
-          <ReceiveAppointment disabled={!freshAppointment}/>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" disabled={!freshAppointment}>
-                <Trash2 className="h-4 w-4" />
-                <span className="sr-only">Move to trash</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Move to trash</TooltipContent>
-          </Tooltip>
-          <Separator orientation="vertical" className="mx-1 h-6" />
           <Tooltip>
             <Popover>
               <PopoverTrigger asChild>
@@ -127,10 +132,12 @@ export default async function AppointmentDisplay({ appointmentId }: AppointmentD
             </Popover>
             <TooltipContent>Reschedule</TooltipContent>
           </Tooltip>
+          <Separator orientation="vertical" className="mx-1 h-6" />
+          {
+            appointmentToolsPerStatus[appointmentStatus]
+          }
         </div>
         <div className="ml-auto flex items-center gap-2">
-          
-          <CreateConsultationRecordModal/>
             
           <Tooltip>
             <TooltipTrigger asChild>

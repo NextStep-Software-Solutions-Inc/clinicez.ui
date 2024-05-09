@@ -426,10 +426,62 @@ export const appointmentList: Record<AppointmentStatus, Appointment[]> = {
       labels: ["medical certificate"],
     },
   ],
-  accepted: [],
-  rejected: [],
-  routed: [],
-  reschedule: [],
+  accepted: [
+    {
+      id: "6c84fb90-12c4-11e1-840d-7b25c5ee775a",
+      name: "William Smith",
+      patientAvatar: "https://github.com/shadcn.png",
+      email: "williamsmith@example.com",
+      subject: "Meeting Tomorrow",
+      complaint: "Hi, let's have a follow-up tomorrow to discuss the project. I've been reviewing the project details and have some ideas I'd like to share. It's crucial that we align on our next steps to ensure the project's success.\n\nPlease come prepared with any questions or insights you may have. Looking forward to our follow-up!\n\nBest regards, William",
+      createdAt: "2023-10-22T09:00:00",
+      bookingDateTime: "2024-05-08T12:00:00",
+      read: true,
+      labels: ["follow-up", "consultation", "emergency"],
+    },
+  ],
+  rejected: [
+    {
+      id: "6c84fb90-12c4-11e1-840d-7b25c5ee775a",
+      name: "William Smith",
+      patientAvatar: "https://github.com/shadcn.png",
+      email: "williamsmith@example.com",
+      subject: "Meeting Tomorrow",
+      complaint: "Hi, let's have a follow-up tomorrow to discuss the project. I've been reviewing the project details and have some ideas I'd like to share. It's crucial that we align on our next steps to ensure the project's success.\n\nPlease come prepared with any questions or insights you may have. Looking forward to our follow-up!\n\nBest regards, William",
+      createdAt: "2023-10-22T09:00:00",
+      bookingDateTime: "2024-05-08T12:00:00",
+      read: true,
+      labels: ["follow-up", "consultation", "emergency"],
+    },
+  ],
+  routed: [
+    {
+      id: "6c84fb90-12c4-11e1-840d-7b25c5ee775a",
+      name: "William Smith",
+      patientAvatar: "https://github.com/shadcn.png",
+      email: "williamsmith@example.com",
+      subject: "Meeting Tomorrow",
+      complaint: "Hi, let's have a follow-up tomorrow to discuss the project. I've been reviewing the project details and have some ideas I'd like to share. It's crucial that we align on our next steps to ensure the project's success.\n\nPlease come prepared with any questions or insights you may have. Looking forward to our follow-up!\n\nBest regards, William",
+      createdAt: "2023-10-22T09:00:00",
+      bookingDateTime: "2024-05-08T12:00:00",
+      read: true,
+      labels: ["follow-up", "consultation", "emergency"],
+    }
+  ],
+  reschedule: [
+    {
+      id: "6c84fb90-12c4-11e1-840d-7b25c5ee775a",
+      name: "William Smith",
+      patientAvatar: "https://github.com/shadcn.png",
+      email: "williamsmith@example.com",
+      subject: "Meeting Tomorrow",
+      complaint: "Hi, let's have a follow-up tomorrow to discuss the project. I've been reviewing the project details and have some ideas I'd like to share. It's crucial that we align on our next steps to ensure the project's success.\n\nPlease come prepared with any questions or insights you may have. Looking forward to our follow-up!\n\nBest regards, William",
+      createdAt: "2023-10-22T09:00:00",
+      bookingDateTime: "2024-05-08T12:00:00",
+      read: true,
+      labels: ["follow-up", "consultation", "emergency"],
+    },
+  ],
 }
 
 export type AppointmentsType = (typeof appointmentList)

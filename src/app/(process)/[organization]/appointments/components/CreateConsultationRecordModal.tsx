@@ -18,7 +18,7 @@ import { useRef } from "react"
 import { toast } from "sonner";
 
 
-export default function CreateConsultationRecordModal() {
+export default function CreateConsultationRecordModal({disabled = false}: {disabled?: boolean}) {
 
   const closeBtnRef = useRef<HTMLInputElement>(null)
   const action = async (formData: FormData) => {
@@ -34,7 +34,7 @@ export default function CreateConsultationRecordModal() {
       <Tooltip>
         <TooltipTrigger asChild>
           <DialogTrigger asChild>
-            <Button variant="ghost" size="icon">
+            <Button variant="ghost" size="icon" disabled={disabled}>
               <ClipboardPlus className="h-4 w-4" />
               <span className="sr-only">Create Consultation Record</span>
             </Button>

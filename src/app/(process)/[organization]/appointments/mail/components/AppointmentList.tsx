@@ -16,13 +16,13 @@ interface AppointmentListProps {
 
 export default function AppointmentList({ items }: AppointmentListProps) {
   const searchParams = useSearchParams()
-  const appointmentId = searchParams.get("appointment")
+  const appointmentId = searchParams.get("_appointment")
   
   const router = useRouter()
   
   const setAppointment = (appointmentId: string) => {
     const searchParams = new URLSearchParams(window.location.search)
-    searchParams.set("appointment", appointmentId)
+    searchParams.set("_appointment", appointmentId)
     router.push(`?${searchParams.toString()}`)
   }
 

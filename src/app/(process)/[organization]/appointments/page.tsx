@@ -48,7 +48,7 @@ async function AppointmentsPage({ searchParams, params }: AppRouterPageRouteOpts
             defaultCollapsed={defaultCollapsed}
             navCollapsedSize={4}
           >
-            <AppointmentDisplay appointmentId={appointmentId || null}/>
+            <AppointmentDisplay appointmentId={appointmentId || null} appointmentStatus={appointmentStatus}/>
           </AppointmentPanel>
         </Suspend>
       </div>

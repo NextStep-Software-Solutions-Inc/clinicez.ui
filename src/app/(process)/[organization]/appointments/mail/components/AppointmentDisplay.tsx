@@ -1,17 +1,9 @@
 
 import {format, addHours, addDays, nextSaturday} from "date-fns"
 import {
-  Send,
-  MailCheck,
-  MailX,
-  MailPlus,
-  Heart,
-  ClipboardPlus,
   Clock,
   Forward,
   MoreVertical,
-  Reply,
-  ReplyAll,
   Trash2,
 } from "lucide-react"
 
@@ -30,23 +22,25 @@ import {
   DropdownMenu,
   DropdownMenuTrigger,
 } from "@components/ui/dropdown-menu"
-import { Label } from "@components/ui/label"
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@components/ui/popover"
 import { Separator } from "@components/ui/separator"
-import { Switch } from "@components/ui/switch"
-import { Textarea } from "@components/ui/textarea"
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@components/ui/tooltip"
-import { getAppointment, sendMsgAction } from "@actions/appointments.action"
-import ActionButton from "@components/ActionButton"
+import { getAppointment } from "@actions/appointments.action"
 import CreateConsultationRecordModal from "../../components/CreateConsultationRecordModal"
+import { ScrollArea } from "@components/ui/scroll-area"
+import Image from "next/image"
+import Each from "@components/utils/Each"
+import RejectAppointment from "../../components/RejectAppointment"
+import AcceptAppointment from "../../components/AcceptAppointment"
+import ReceiveAppointment from "../../components/ReceiveAppointment"
 
 interface AppointmentDisplayProps {
   appointmentId: string | null
@@ -61,33 +55,9 @@ export default async function AppointmentDisplay({ appointmentId }: AppointmentD
     <div className="flex h-full flex-col">
       <div className="flex items-center p-2">
         <div className="flex items-center gap-2">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" disabled={!freshAppointment}>
-                <MailCheck className="h-4 w-4" />
-                <span className="sr-only">Accept</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Accept</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" disabled={!freshAppointment}>
-                <MailX className="h-4 w-4" />
-                <span className="sr-only">Reject</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Reject</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" disabled={!freshAppointment}>
-                <MailPlus className="h-4 w-4" />
-                <span className="sr-only">Receive</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Receive</TooltipContent>
-          </Tooltip>
+          <AcceptAppointment disabled={!freshAppointment}/>
+          <RejectAppointment disabled={!freshAppointment}/>
+          <ReceiveAppointment disabled={!freshAppointment}/>
           <Tooltip>
             <TooltipTrigger asChild>
               <Button variant="ghost" size="icon" disabled={!freshAppointment}>
@@ -212,42 +182,27 @@ export default async function AppointmentDisplay({ appointmentId }: AppointmentD
             </div>
             {freshAppointment.createdAt && (
               <div className="ml-auto text-xs text-muted-foreground">
-                {format(new Date(freshAppointment.createdAt), "PPpp")}
+                {format(new Date(freshAppointment.bookingDateTime), "PPpp")}
               </div>
             )}
           </div>
           <Separator />
-          <div className="flex-1 whitespace-pre-wrap p-4 text-sm">
+          <ScrollArea className="flex-auto whitespace-pre-wrap p-4 text-sm h-[100px]">
             {freshAppointment.complaint}
-          </div>
-          <Separator className="mt-auto" />
-          <div className="p-4">
-            <form action={sendMsgAction}>
-              <div className="grid gap-4">
-                <Textarea
-                  className="p-4"
-                  name="msg"
-                  value="hey"
-                  placeholder={`Reply ${freshAppointment.name}...`}
-                />
-                <div className="flex items-center">
-                  <Label
-                    htmlFor="mute"
-                    className="flex items-center gap-2 text-xs font-normal"
-                  >
-                    <Switch id="mute" aria-label="Mute thread" /> Mute this
-                    thread
-                  </Label>
-                  <ActionButton
-                    size="sm"
-                    className="ml-auto"
-                  >
-                    <Send className="mr-2 h-4 w-4" />Send
-                  </ActionButton>
-                </div>
-              </div>
-            </form>
-          </div>
+            
+            <Separator className="my-2" />
+            <h5>Attachments</h5>
+            <div className="flex flex-wrap gap-2">
+              <Each
+                of={Array(Math.floor(Math.random()*10)).fill(false)}
+                render={() => (
+                  <div className="w-[200px] h-auto">
+                    <Image width={150} height={150} className="rounded w-full" src="https://source.unsplash.com/random" alt="" />
+                  </div>
+                )}
+              />
+            </div>
+          </ScrollArea>
         </div>
       ) : (
         <div className="p-8 text-center text-muted-foreground">

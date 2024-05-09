@@ -35,7 +35,7 @@ export function Nav({ links, isCollapsed }: NavProps) {
                 <Link
                   href={{
                     query: {
-                      tab: link.title.toLowerCase()
+                      _type: link.title.toLowerCase()
                     }
                   }}
                   className={cn(
@@ -63,7 +63,7 @@ export function Nav({ links, isCollapsed }: NavProps) {
               key={index}
               href={{
                 query: {
-                  tab: link.title.toLowerCase()
+                  _type: link.title.toLowerCase()
                 }
               }}
               className={cn(

@@ -29,7 +29,6 @@ import {
   TabsTrigger,
 } from "@components/ui/tabs"
 import { TooltipProvider } from "@components/ui/tooltip"
-import AppointmentDisplay from "./AppointmentDisplay"
 import AppointmentList from "./AppointmentList"
 import { Nav } from "./nav"
 import { RoleSwitcher } from "@components/dashboard/RoleSwitcher"
@@ -60,10 +59,9 @@ export default function AppointmentPanel({
 }: AppointmentPanelProps) {
   const [isCollapsed, setIsCollapsed] = React.useState(defaultCollapsed)
 
-  const router = useRouter();
+  
   const searchParams = useSearchParams();
-  const tab = searchParams.get("tab");
-  const appointmentId = searchParams.get("appointment");
+  const type = searchParams.get("_type");
   const [query, setQuery] = React.useState("");
 
   const filteredAppointments = React.useMemo(() => {
@@ -80,14 +78,8 @@ export default function AppointmentPanel({
     setQuery(q);
   }
   
-  React.useEffect(() => {
-    const searchParams = new URLSearchParams(window.location.search);
-    searchParams.set("tab", tab? tab : "pending");
-    if(!tab) router.replace(`?${searchParams.toString()}`);
-  }, [router, tab])
-  
   const isDefaultVariant = (activeTab: string, ) => {
-    return tab === activeTab ? "default" : "ghost"
+    return type === activeTab ? "default" : "ghost"
   }
 
   return (
@@ -212,7 +204,7 @@ export default function AppointmentPanel({
         <ResizablePanel defaultSize={defaultLayout[1]} minSize={30}>
           <Tabs defaultValue="all">
             <div className="flex items-center px-4 py-2">
-              <h1 className="text-xl font-bold capitalize">{tab}</h1>
+              <h1 className="text-xl font-bold capitalize">{type}</h1>
               <TabsList className="ml-auto">
                 <TabsTrigger
                   value="all"

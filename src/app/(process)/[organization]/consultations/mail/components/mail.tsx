@@ -36,7 +36,7 @@ import { MailList } from "./mail-list"
 import { Nav } from "./nav"
 import { type Appointment } from "@public/json/appointment-list"
 import { useMail } from "@hooks/useMail"
-import { RoleSwitcher } from "@components/dashboard/RoleSwitcher"
+import Switcher from "@components/dashboard/Switcher"
 
 interface MailProps {
   accounts: {
@@ -99,37 +99,37 @@ export function Mail({
               isCollapsed ? "h-[52px]" : "px-2"
             )}
           >
-            <RoleSwitcher
+            <Switcher
               isCollapsed={isCollapsed}
-              accounts={[
+              options={[
                 {
                   label: "Student",
-                  email: "<EMAIL>",
+                  value: "<EMAIL>",
                   icon: <User className="h-4 w-4" />,
                 },
                 {
                   label: "Faculty",
-                  email: "<EMAIL>",
+                  value: "<EMAIL>",
                   icon: <Users2 className="h-4 w-4" />,
                 },
                 {
                   label: "Admin",
-                  email: "<EMAIL>",
+                  value: "<EMAIL>",
                   icon: <Archive className="h-4 w-4" />,
                 }, 
                 {
                   label: "Receptionist",
-                  email: "<EMAIL>",
+                  value: "<EMAIL>",
                   icon: <Trash2 className="h-4 w-4" />,
                 }, 
                 {
                   label: "Doctor",
-                  email: "<EMAIL>",
+                  value: "<EMAIL>",
                   icon: <ShoppingCart className="h-4 w-4" />,
                 },
                 {
                   label: "Nurse",
-                  email: "<EMAIL>",
+                  value: "<EMAIL>",
                   icon: <ShoppingCart className="h-4 w-4" />,
                 }
               ]}/>

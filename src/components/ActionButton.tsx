@@ -11,6 +11,6 @@ interface ActionButtonProps extends ButtonProps {
 export default function ActionButton({children, ...props}: ActionButtonProps) {
   const {pending} = useFormStatus();
   return (
-    <Button disabled={pending} {...props}>{children}</Button>
+    <Button {...props} disabled={pending || props.disabled} >{children}</Button>
   );
 }

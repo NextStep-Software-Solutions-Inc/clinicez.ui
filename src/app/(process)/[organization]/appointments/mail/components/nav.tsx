@@ -42,6 +42,7 @@ export function Nav({ links, isCollapsed }: NavProps) {
                     href={{
                       query: {
                         ...Object.fromEntries((new URLSearchParams(searchParams.toString()))),
+                        _appointment: null,
                         _type: link.title.toLowerCase(),
                       }
                     }}
@@ -70,6 +71,7 @@ export function Nav({ links, isCollapsed }: NavProps) {
                 href={{
                   query: {
                     ...Object.fromEntries((new URLSearchParams(searchParams.toString()))),
+                    _appointment: null,
                     _type: link.title.toLowerCase()
                   }
                 }}

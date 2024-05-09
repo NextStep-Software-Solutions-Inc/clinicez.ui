@@ -8,10 +8,17 @@ import { getAppointments } from "@actions/appointments.action";
 import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth0";
 import { AppointmentStatus } from "@public/json/appointment-list";
 import AppointmentDisplay from "./mail/components/AppointmentDisplay";
+import { redirect } from "next/navigation"
+import Suspend from "@components/Suspend";
 
 async function AppointmentsPage({ searchParams, params }: AppRouterPageRouteOpts ) {
-  const appointmentStatus = searchParams?.tab as AppointmentStatus
-  const appointmentId = searchParams?.appointment as string
+  console.log(searchParams?._type);
+  
+  const appointmentStatus = searchParams?._type as AppointmentStatus
+  const organization = params?.organization as string
+  if(!appointmentStatus) return redirect(`/${organization}/appointments?_type=pending`)
+
+  const appointmentId = searchParams?._appointment as string
   const layout = cookies().get("react-resizable-panels:layout")
   const collapsed = cookies().get("react-resizable-panels:collapsed")
 
@@ -33,15 +40,17 @@ async function AppointmentsPage({ searchParams, params }: AppRouterPageRouteOpts
       </div>
       <Separator />
       <div className="rounded-[0.5rem] border bg-background shadow]">
-        <AppointmentPanel
-          accounts={accounts}
-          appointments={appointments}
-          defaultLayout={defaultLayout}
-          defaultCollapsed={defaultCollapsed}
-          navCollapsedSize={4}
-        >
-          <AppointmentDisplay appointmentId={appointmentId || null}/>
-        </AppointmentPanel>
+        <Suspend>
+          <AppointmentPanel
+            accounts={accounts}
+            appointments={appointments}
+            defaultLayout={defaultLayout}
+            defaultCollapsed={defaultCollapsed}
+            navCollapsedSize={4}
+          >
+            <AppointmentDisplay appointmentId={appointmentId || null}/>
+          </AppointmentPanel>
+        </Suspend>
       </div>
     </div>
   );

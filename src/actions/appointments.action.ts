@@ -3,11 +3,23 @@
 import { delay } from "@lib/wait";
 import { AppointmentStatus, appointmentList } from "@public/json/appointment-list";
 
+export type AppointmentsCountsType = Awaited<ReturnType<typeof getAppointmentCounts>>;
+export const getAppointmentCounts = async () => {
+  return {
+    pending: appointmentList.pending.length,
+    accepted: appointmentList.accepted.length,
+    rejected: appointmentList.rejected.length,
+    received: appointmentList.received.length,
+    routed: appointmentList.routed.length,
+    reschedule: appointmentList.reschedule.length,
+  };
+}
+
 export const getAppointments = async (type: AppointmentStatus) => {
   // check if type is valid
-  if (!Object.keys(appointmentList).includes(type)) {
-    throw new Error(`Invalid appointment type: ${type}`);
-  }
+  // if (!Object.keys(appointmentList).includes(type)) {
+  //   throw new Error(`Invalid appointment type: ${type}`);
+  // }
   const appointment = appointmentList[type];
   return appointment;
 }

@@ -1,10 +1,9 @@
 import React from "react";
 import AppointmentPanel  from "./mail/components/AppointmentPanel";
-import { accounts } from "./mail/data"
 import { cookies } from "next/headers";
 import { Separator } from "@components/ui/separator";
 import BookAppointment from "./components/BookAppointment";
-import { getAppointments } from "@actions/appointments.action";
+import { getAppointmentCounts, getAppointments } from "@actions/appointments.action";
 import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth0";
 import { AppointmentStatus } from "@public/json/appointment-list";
 import AppointmentDisplay from "./mail/components/AppointmentDisplay";
@@ -12,16 +11,17 @@ import { redirect } from "next/navigation"
 import Suspend from "@components/Suspend";
 
 async function AppointmentsPage({ searchParams, params }: AppRouterPageRouteOpts ) {
-  console.log(searchParams?._type);
   
   const appointmentStatus = searchParams?._type as AppointmentStatus
+  const role = searchParams?._role as string
   const organization = params?.organization as string
-  if(!appointmentStatus) return redirect(`/${organization}/appointments?_type=pending`)
+  // if(!appointmentStatus || !role ) return redirect(`/${organization}/appointments?_type=pending&_role=admin`)
 
   const appointmentId = searchParams?._appointment as string
   const layout = cookies().get("react-resizable-panels:layout")
   const collapsed = cookies().get("react-resizable-panels:collapsed")
 
+  const appointmentsCounts = await getAppointmentCounts()
   const appointments = await getAppointments(appointmentStatus)
 
   const defaultLayout = layout ? JSON.parse(layout.value) : undefined
@@ -42,8 +42,8 @@ async function AppointmentsPage({ searchParams, params }: AppRouterPageRouteOpts
       <div className="rounded-[0.5rem] border bg-background shadow]">
         <Suspend>
           <AppointmentPanel
-            accounts={accounts}
-            appointments={appointments}
+            appointmentsCounts={appointmentsCounts}
+            appointments={appointments ?? []}
             defaultLayout={defaultLayout}
             defaultCollapsed={defaultCollapsed}
             navCollapsedSize={4}

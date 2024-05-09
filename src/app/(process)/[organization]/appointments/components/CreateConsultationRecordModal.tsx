@@ -2,15 +2,12 @@
 
 import { createConsultationAction } from "@actions/consulations.action"
 import ActionButton from "@components/ActionButton"
+import CustomModalContent from "@components/CustomModalContent";
 import { Button } from "@components/ui/button"
 import {
   Dialog,
   DialogClose,
-  DialogContent,
-  DialogDescription,
   DialogFooter,
-  DialogHeader,
-  DialogTitle,
   DialogTrigger,
 } from "@components/ui/dialog"
 import { Input } from "@components/ui/input"
@@ -45,13 +42,11 @@ export default function CreateConsultationRecordModal() {
         </TooltipTrigger>
         <TooltipContent>Create Consultation Record</TooltipContent>
       </Tooltip>
-      <DialogContent className="sm:max-w-[525px]">
-        <DialogHeader>
-          <DialogTitle>Create Consultation Record</DialogTitle>
-          <DialogDescription>
-            Fill in the fields below to create a new consultation record.
-          </DialogDescription>
-        </DialogHeader>
+      <CustomModalContent 
+        className="sm:max-w-[525px]"
+        label="Create Consultation Record" 
+        description="Fill in the fields below to create a new consultation record."
+      >
         <form 
           action={action}
           id="consultation-record-form"
@@ -76,7 +71,7 @@ export default function CreateConsultationRecordModal() {
             </ActionButton>
           </DialogFooter>
         </form>
-      </DialogContent>
+      </CustomModalContent>
     </Dialog>
   )
 }

@@ -46,6 +46,7 @@ import {
 } from "@components/ui/tooltip"
 import { getAppointment, sendMsgAction } from "@actions/appointments.action"
 import ActionButton from "@components/ActionButton"
+import CreateConsultationRecordModal from "../../components/CreateConsultationRecordModal"
 
 interface AppointmentDisplayProps {
   appointmentId: string | null
@@ -158,15 +159,9 @@ export default async function AppointmentDisplay({ appointmentId }: AppointmentD
           </Tooltip>
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" disabled={!freshAppointment}>
-                <ClipboardPlus className="h-4 w-4" />
-                <span className="sr-only">Create Consultation Record</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Create Consultation Record</TooltipContent>
-          </Tooltip>
+          
+          <CreateConsultationRecordModal/>
+            
           <Tooltip>
             <TooltipTrigger asChild>
               <Button variant="ghost" size="icon" disabled={!freshAppointment}>

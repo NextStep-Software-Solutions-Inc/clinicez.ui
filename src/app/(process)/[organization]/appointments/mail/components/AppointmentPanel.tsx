@@ -31,16 +31,19 @@ import {
 import { TooltipProvider } from "@components/ui/tooltip"
 import AppointmentList from "./AppointmentList"
 import { Nav } from "./nav"
-import { RoleSwitcher } from "@components/dashboard/RoleSwitcher"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Appointment } from "@public/json/appointment-list"
+import { type AppointmentsCountsType } from "@actions/appointments.action"
+import Switcher from "@components/dashboard/Switcher"
 
+export type UserRoles = "student" | "faculty" | "admin" | "receptionist" | "doctor" | "nurse"
+export type UserSwitcherType = {
+  label: string
+  role: UserRoles
+  icon: React.ReactNode
+}
 interface AppointmentPanelProps {
-  accounts: {
-    label: string
-    email: string
-    icon: React.ReactNode
-  }[]
+  appointmentsCounts: AppointmentsCountsType
   appointments: Appointment[]
   defaultLayout: number[] | undefined
   defaultCollapsed?: boolean
@@ -48,9 +51,8 @@ interface AppointmentPanelProps {
   children: React.ReactNode
 }
 
-
-
 export default function AppointmentPanel({
+  appointmentsCounts,
   appointments,
   defaultLayout = [265, 440, 655],
   defaultCollapsed = false,
@@ -59,9 +61,11 @@ export default function AppointmentPanel({
 }: AppointmentPanelProps) {
   const [isCollapsed, setIsCollapsed] = React.useState(defaultCollapsed)
 
-  
   const searchParams = useSearchParams();
+  const router = useRouter();
+  
   const type = searchParams.get("_type");
+  const role = searchParams.get("_role") as UserRoles;
   const [query, setQuery] = React.useState("");
 
   const filteredAppointments = React.useMemo(() => {
@@ -78,10 +82,117 @@ export default function AppointmentPanel({
     setQuery(q);
   }
   
-  const isDefaultVariant = (activeTab: string, ) => {
+  const isDefaultVariant = (activeTab: string): "default" | "ghost" => {
     return type === activeTab ? "default" : "ghost"
   }
 
+  const sidebarLinksPerRole = {
+    student: [
+      {
+        title: "Pending",
+        label: appointmentsCounts.pending.toString(),
+        icon: Inbox,
+        variant: isDefaultVariant("pending") ,
+      },
+      {
+        title: "Received",
+        label: appointmentsCounts.received.toString(),
+        icon: File,
+        variant: isDefaultVariant("received"),
+      },
+      {
+        title: "Accepted",
+        label: appointmentsCounts.accepted.toString(),
+        icon: Send,
+        variant: isDefaultVariant("accepted"),
+      },
+      {
+        title: "Rejected",
+        label: appointmentsCounts.rejected.toString(),
+        icon: Trash2,
+        variant: isDefaultVariant("rejected"),
+      },
+      {
+        title: "Routed",
+        label: appointmentsCounts.routed.toString(),
+        icon: ArchiveX,
+        variant: isDefaultVariant("routed"),
+      },
+      {
+        title: "Reschedule",
+        label: appointmentsCounts.reschedule.toString(),
+        icon: Archive,
+        variant: isDefaultVariant("reschedule"),
+      },
+    ],
+    admin: [
+      {
+        title: "Pending",
+        label: appointmentsCounts.pending.toString(),
+        icon: Inbox,
+        variant: isDefaultVariant("pending") ,
+      },
+      {
+        title: "Received",
+        label: appointmentsCounts.received.toString(),
+        icon: File,
+        variant: isDefaultVariant("received"),
+      },
+      {
+        title: "Accepted",
+        label: appointmentsCounts.accepted.toString(),
+        icon: Send,
+        variant: isDefaultVariant("accepted"),
+      },
+      {
+        title: "Reschedule",
+        label: appointmentsCounts.reschedule.toString(),
+        icon: Archive,
+        variant: isDefaultVariant("reschedule"),
+      },
+    ]
+  }
+
+  const changeRole = (role: string) => {
+    if(window && role) {
+      const searchParams = new URLSearchParams(window.location.search);
+      searchParams.set("_role", role);
+      router.push(`?${searchParams.toString()}`);
+    }
+  }
+
+  const roles = [
+    {
+      label: "Student",
+      value: "student",
+      icon: <User className="h-4 w-4" />,
+    },
+    {
+      label: "Faculty",
+      value: "faculty",
+      icon: <Users2 className="h-4 w-4" />,
+    },
+    {
+      label: "Admin",
+      value: "admin",
+      icon: <Archive className="h-4 w-4" />,
+    }, 
+    {
+      label: "Receptionist",
+      value: "receptionist",
+      icon: <Trash2 className="h-4 w-4" />,
+    }, 
+    {
+      label: "Doctor",
+      value: "doctor",
+      icon: <ShoppingCart className="h-4 w-4" />,
+    },
+    {
+      label: "Nurse",
+      value: "nurse",
+      icon: <ShoppingCart className="h-4 w-4" />,
+    }
+  ]
   return (
     <TooltipProvider delayDuration={0}>
       <ResizablePanelGroup
@@ -121,82 +232,17 @@ export default function AppointmentPanel({
               isCollapsed ? "h-[52px]" : "px-2"
             )}
           >
-            <RoleSwitcher
+            <Switcher
+              value={role}
               isCollapsed={isCollapsed}
-              accounts={[
-                {
-                  label: "Student",
-                  email: "student@email.com",
-                  icon: <User className="h-4 w-4" />,
-                },
-                {
-                  label: "Faculty",
-                  email: "faculty@email.com",
-                  icon: <Users2 className="h-4 w-4" />,
-                },
-                {
-                  label: "Admin",
-                  email: "admin@email.com",
-                  icon: <Archive className="h-4 w-4" />,
-                }, 
-                {
-                  label: "Receptionist",
-                  email: "receptionist@email.com",
-                  icon: <Trash2 className="h-4 w-4" />,
-                }, 
-                {
-                  label: "Doctor",
-                  email: "doctor@email.com",
-                  icon: <ShoppingCart className="h-4 w-4" />,
-                },
-                {
-                  label: "Nurse",
-                  email: "nurse@email.com",
-                  icon: <ShoppingCart className="h-4 w-4" />,
-                }
-              ]}/>
+              onSwitch={changeRole}
+              options={roles}
+            />
           </div>
           <Separator />
           <Nav
             isCollapsed={isCollapsed}
-            links={[
-              {
-                title: "Pending",
-                label: "128",
-                icon: Inbox,
-                variant: isDefaultVariant("pending"),
-              },
-              {
-                title: "Received",
-                label: "9",
-                icon: File,
-                variant: isDefaultVariant("received"),
-              },
-              {
-                title: "Accepted",
-                label: "",
-                icon: Send,
-                variant: isDefaultVariant("accepted"),
-              },
-              {
-                title: "Rejected",
-                label: "",
-                icon: Trash2,
-                variant: isDefaultVariant("rejected"),
-              },
-              {
-                title: "Routed",
-                label: "23",
-                icon: ArchiveX,
-                variant: isDefaultVariant("routed"),
-              },
-              {
-                title: "Reschedule",
-                label: "",
-                icon: Archive,
-                variant: isDefaultVariant("reschedule"),
-              },
-            ]}
+            links={sidebarLinksPerRole[role as keyof typeof sidebarLinksPerRole] ?? []}
           />
           <Separator />
         </ResizablePanel>

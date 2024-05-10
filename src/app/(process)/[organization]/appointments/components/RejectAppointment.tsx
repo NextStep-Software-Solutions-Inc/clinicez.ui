@@ -31,7 +31,7 @@ export default function RejectAppointment({disabled = false}: {disabled?: boolea
       <Tooltip>
         <TooltipTrigger asChild>
           <PopoverTrigger asChild ref={triggerRef}>
-            <Button variant="ghost" size="icon" disabled={disabled}>
+            <Button variant="destructive" size="icon" disabled={disabled}>
               <MailX className="h-4 w-4" />
               <span className="sr-only">Reject</span>
             </Button>

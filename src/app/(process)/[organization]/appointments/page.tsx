@@ -1,5 +1,5 @@
 import React from "react";
-import AppointmentPanel  from "./mail/components/AppointmentPanel";
+import AppointmentPanel, { UserRoles }  from "./mail/components/AppointmentPanel";
 import { cookies } from "next/headers";
 import { Separator } from "@components/ui/separator";
 import BookAppointment from "./components/BookAppointment";
@@ -48,7 +48,7 @@ async function AppointmentsPage({ searchParams, params }: AppRouterPageRouteOpts
             defaultCollapsed={defaultCollapsed}
             navCollapsedSize={4}
           >
-            <AppointmentDisplay appointmentId={appointmentId || null}/>
+            <AppointmentDisplay appointmentId={appointmentId || null} role={role as UserRoles}/>
           </AppointmentPanel>
         </Suspend>
       </div>

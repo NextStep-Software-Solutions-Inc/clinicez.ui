@@ -57,3 +57,15 @@ export const receiveAppointmentAction = async (formData: FormData) => {
   await delay(1000);
   return true;
 }
+
+export const assignAppointmentAction = async (formData: FormData) => {
+  console.log("Assigning appointment...", Object.fromEntries(formData));
+  await delay(1000);
+  return true;
+}
+
+export const rescheduleAppointmentAction = async (formData: FormData) => {
+  console.log("Reschedule appointment...", Object.fromEntries(formData));
+  await delay(1000);
+  return true;
+}

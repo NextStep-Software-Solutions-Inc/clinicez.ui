@@ -1,10 +1,8 @@
 
-import {format, addHours, addDays, nextSaturday} from "date-fns"
+import {format } from "date-fns"
 import {
-  Clock,
   Forward,
   MoreVertical,
-  Trash2,
 } from "lucide-react"
 
 import {
@@ -17,16 +15,11 @@ import {
   AvatarImage,
 } from "@components/ui/avatar"
 import { Button } from "@components/ui/button"
-import { Calendar } from "@components/ui/calendar"
 import {
   DropdownMenu,
   DropdownMenuTrigger,
 } from "@components/ui/dropdown-menu"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@components/ui/popover"
+
 import { Separator } from "@components/ui/separator"
 import {
   Tooltip,
@@ -42,6 +35,8 @@ import RejectAppointment from "../../components/RejectAppointment"
 import AcceptAppointment from "../../components/AcceptAppointment"
 import ReceiveAppointment from "../../components/ReceiveAppointment"
 import { AppointmentStatus } from "@public/json/appointment-list"
+import AssignAppointment from "../../components/AssignAppointment"
+import RescheduleAppointment from "../../components/RescheduleAppointment"
 
 interface AppointmentDisplayProps {
   appointmentId: string | null
@@ -50,87 +45,36 @@ interface AppointmentDisplayProps {
 export default async function AppointmentDisplay({ appointmentId }: AppointmentDisplayProps) {
   
   const freshAppointment = await getAppointment(appointmentId ?? "")
-  const today = new Date()
+  
 
-  const appointmentToolsPerStatus: Record<AppointmentStatus, React.ReactNode[]> = {
-    pending: [
-      <ReceiveAppointment key="receive" disabled={!freshAppointment}/>,
-      <RejectAppointment key="reject" disabled={!freshAppointment}/>,
-    ],
-    accepted: [
-      <CreateConsultationRecordModal key="create-consultation-record" disabled={!freshAppointment} subject={freshAppointment?.subject ?? ""}/>
-    ],
-    rejected: [
-    ],
-    received: [
-      <AcceptAppointment key="accept" disabled={!freshAppointment} />,
-    ],
-    routed: [],
-    reschedule: []
+  const appointmentToolsPerStatus: Record<AppointmentStatus, React.ReactNode> = {
+    pending: 
+      <>
+        <ReceiveAppointment disabled={!freshAppointment}/>
+        <RejectAppointment disabled={!freshAppointment}/>
+        <AssignAppointment disabled={!freshAppointment}/>
+      </>,
+    accepted: (
+      <>
+        <CreateConsultationRecordModal disabled={!freshAppointment} subject={freshAppointment?.subject ?? ""}/>
+      </>
+    ),
+    rejected: (<></>),
+    received: (
+      <>
+        <AcceptAppointment disabled={!freshAppointment} />
+        <AssignAppointment disabled={!freshAppointment} />
+
+      </>
+    ),
+    routed: (<></>),
+    reschedule: (<></>)
   }
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center p-2">
         <div className="flex items-center gap-2">
-          <Tooltip>
-            <Popover>
-              <PopoverTrigger asChild>
-                <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" disabled={!freshAppointment}>
-                    <Clock className="h-4 w-4" />
-                    <span className="sr-only">Reschedule</span>
-                  </Button>
-                </TooltipTrigger>
-              </PopoverTrigger>
-              <PopoverContent className="flex w-full p-0">
-                <div className="flex flex-col gap-2 border-r px-2 py-4">
-                  <div className="px-4 text-sm font-medium">Reschedule to</div>
-                  <div className="grid min-w-[250px] gap-1">
-                    <Button
-                      variant="ghost"
-                      className="justify-start font-normal"
-                    >
-                      Later today{" "}
-                      <span className="ml-auto text-muted-foreground">
-                        {format(addHours(today, 4), "E, h:m b")}
-                      </span>
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      className="justify-start font-normal"
-                    >
-                      Tomorrow
-                      <span className="ml-auto text-muted-foreground">
-                        {format(addDays(today, 1), "E, h:m b")}
-                      </span>
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      className="justify-start font-normal"
-                    >
-                      This weekend
-                      <span className="ml-auto text-muted-foreground">
-                        {format(nextSaturday(today), "E, h:m b")}
-                      </span>
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      className="justify-start font-normal"
-                    >
-                      Next week
-                      <span className="ml-auto text-muted-foreground">
-                        {format(addDays(today, 7), "E, h:m b")}
-                      </span>
-                    </Button>
-                  </div>
-                </div>
-                <div className="p-2">
-                  <Calendar />
-                </div>
-              </PopoverContent>
-            </Popover>
-            <TooltipContent>Reschedule</TooltipContent>
-          </Tooltip>
+          <RescheduleAppointment disabled={!freshAppointment} bookingDateTime={freshAppointment?.bookingDateTime? new Date(freshAppointment?.bookingDateTime): new Date()}/>
           <Separator orientation="vertical" className="mx-1 h-6" />
           {
             appointmentToolsPerStatus[freshAppointment?.status as AppointmentStatus] ?? []

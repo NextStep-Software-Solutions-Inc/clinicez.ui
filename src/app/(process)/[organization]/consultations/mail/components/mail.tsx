@@ -104,33 +104,33 @@ export function Mail({
               options={[
                 {
                   label: "Student",
-                  value: "<EMAIL>",
-                  icon: <User className="h-4 w-4" />,
+                  value: "student",
+                  icon: User,
                 },
                 {
                   label: "Faculty",
-                  value: "<EMAIL>",
-                  icon: <Users2 className="h-4 w-4" />,
+                  value: "faculty",
+                  icon: User,
                 },
                 {
                   label: "Admin",
-                  value: "<EMAIL>",
-                  icon: <Archive className="h-4 w-4" />,
+                  value: "admin",
+                  icon: User,
                 }, 
                 {
                   label: "Receptionist",
-                  value: "<EMAIL>",
-                  icon: <Trash2 className="h-4 w-4" />,
+                  value: "receptionist",
+                  icon: User,
                 }, 
                 {
                   label: "Doctor",
-                  value: "<EMAIL>",
-                  icon: <ShoppingCart className="h-4 w-4" />,
+                  value: "doctor",
+                  icon: User,
                 },
                 {
                   label: "Nurse",
-                  value: "<EMAIL>",
-                  icon: <ShoppingCart className="h-4 w-4" />,
+                  value: "nurse",
+                  icon: User,
                 }
               ]}/>
           </div>

@@ -19,17 +19,17 @@ export function OrganizationSwitcher({
     {
       value: "hims",
       label: "Health Information Management System",
-      icon: <Home/>,
+      icon: Home,
     },
     {
       value: "clinic-ez",
       label: "Clinic EZ",
-      icon: <Home/>,
+      icon: Home,
     }, 
     {
       value: "my-organization",
       label: "My Organization",
-      icon: <Home/>,
+      icon: Home,
     }
   ]
   

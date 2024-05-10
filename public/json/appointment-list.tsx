@@ -1,4 +1,4 @@
-export type AppointmentStatus = "pending" | "received" | "accepted" | "rejected" | "routed" | "reschedule";
+export type AppointmentStatus = "all" | "pending" | "received" | "accepted" | "rejected" | "routed" | "reschedule";
 
 export type Appointment = {
   id: string;

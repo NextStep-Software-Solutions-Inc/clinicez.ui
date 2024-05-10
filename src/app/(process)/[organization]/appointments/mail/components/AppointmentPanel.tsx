@@ -2,16 +2,15 @@
 
 import * as React from "react"
 import {
-  Archive,
-  ArchiveX,
-  File,
+  Clock,
   Inbox,
+  MailCheck,
+  MailPlus,
+  MailX,
+  Route,
   Search,
-  Send,
-  ShoppingCart,
   Trash2,
   User,
-  Users2,
 } from "lucide-react"
 
 import { cn } from "@lib/utils"
@@ -42,6 +41,57 @@ export type UserSwitcherType = {
   role: UserRoles
   icon: React.ReactNode
 }
+
+const icons = {
+  all: Inbox,
+  pending: Inbox,
+  received: MailPlus,
+  reschedule: Clock,
+  accepted: MailCheck,
+  declined: MailX,
+  rejected: Trash2,
+  routed: Route,
+};
+const roles = [
+  {
+    label: "Student",
+    value: "student",
+    icon: User,
+  },
+  {
+    label: "Faculty",
+    value: "faculty",
+    icon: User,
+  },
+  {
+    label: "Admin",
+    value: "admin",
+    icon: User,
+  }, 
+  {
+    label: "Receptionist",
+    value: "receptionist",
+    icon: User,
+  }, 
+  {
+    label: "Doctor",
+    value: "doctor",
+    icon: User,
+  },
+  {
+    label: "Nurse",
+    value: "nurse",
+    icon: User,
+  }
+]
+const rolesLinks = {
+  student: ["all", "pending", "received", "accepted", "declined", "rejected", "reschedule"],
+  faculty: ["all", "pending", "received", "accepted", "declined", "rejected", "reschedule"],
+  admin: ["pending", "received", "accepted", "declined", "rejected", "routed", "reschedule"],
+  receptionist: ["pending", "received", "rejected", "routed", "reschedule"],
+  doctor: ["pending", "accepted", "declined", "reschedule"],
+  nurse: ["pending", "accepted", "declined", "reschedule"],
+};
 interface AppointmentPanelProps {
   appointmentsCounts: AppointmentsCountsType
   appointments: Appointment[]
@@ -50,6 +100,7 @@ interface AppointmentPanelProps {
   navCollapsedSize: number
   children: React.ReactNode
 }
+
 
 export default function AppointmentPanel({
   appointmentsCounts,
@@ -85,73 +136,24 @@ export default function AppointmentPanel({
   const isDefaultVariant = (activeTab: string): "default" | "ghost" => {
     return type === activeTab ? "default" : "ghost"
   }
+  const link = (title: string, badge: string, icon: any, variant: string) => ({
+    title,
+    label: badge,
+    icon,
+    variant: isDefaultVariant(variant),
+  });
 
-  const sidebarLinksPerRole = {
-    student: [
-      {
-        title: "Pending",
-        label: appointmentsCounts.pending.toString(),
-        icon: Inbox,
-        variant: isDefaultVariant("pending") ,
-      },
-      {
-        title: "Received",
-        label: appointmentsCounts.received.toString(),
-        icon: File,
-        variant: isDefaultVariant("received"),
-      },
-      {
-        title: "Accepted",
-        label: appointmentsCounts.accepted.toString(),
-        icon: Send,
-        variant: isDefaultVariant("accepted"),
-      },
-      {
-        title: "Rejected",
-        label: appointmentsCounts.rejected.toString(),
-        icon: Trash2,
-        variant: isDefaultVariant("rejected"),
-      },
-      {
-        title: "Routed",
-        label: appointmentsCounts.routed.toString(),
-        icon: ArchiveX,
-        variant: isDefaultVariant("routed"),
-      },
-      {
-        title: "Reschedule",
-        label: appointmentsCounts.reschedule.toString(),
-        icon: Archive,
-        variant: isDefaultVariant("reschedule"),
-      },
-    ],
-    admin: [
-      {
-        title: "Pending",
-        label: appointmentsCounts.pending.toString(),
-        icon: Inbox,
-        variant: isDefaultVariant("pending") ,
-      },
-      {
-        title: "Received",
-        label: appointmentsCounts.received.toString(),
-        icon: File,
-        variant: isDefaultVariant("received"),
-      },
-      {
-        title: "Accepted",
-        label: appointmentsCounts.accepted.toString(),
-        icon: Send,
-        variant: isDefaultVariant("accepted"),
-      },
-      {
-        title: "Reschedule",
-        label: appointmentsCounts.reschedule.toString(),
-        icon: Archive,
-        variant: isDefaultVariant("reschedule"),
-      },
-    ]
-  }
+  const sidebarLinksPerRole = Object.fromEntries(
+    Object.entries(rolesLinks).map(([role, statuses]) => [
+      role,
+      statuses.map(status => link(
+        status.charAt(0).toUpperCase() + status.slice(1),
+        appointmentsCounts[status as keyof typeof appointmentsCounts].toString(),
+        icons[status as keyof typeof icons],
+        status
+      )),
+    ])
+  );
 
   const changeRole = (role: string) => {
     if(window && role) {
@@ -160,39 +162,7 @@ export default function AppointmentPanel({
       router.push(`?${searchParams.toString()}`);
     }
   }
-
-  const roles = [
-    {
-      label: "Student",
-      value: "student",
-      icon: <User className="h-4 w-4" />,
-    },
-    {
-      label: "Faculty",
-      value: "faculty",
-      icon: <Users2 className="h-4 w-4" />,
-    },
-    {
-      label: "Admin",
-      value: "admin",
-      icon: <Archive className="h-4 w-4" />,
-    }, 
-    {
-      label: "Receptionist",
-      value: "receptionist",
-      icon: <Trash2 className="h-4 w-4" />,
-    }, 
-    {
-      label: "Doctor",
-      value: "doctor",
-      icon: <ShoppingCart className="h-4 w-4" />,
-    },
-    {
-      label: "Nurse",
-      value: "nurse",
-      icon: <ShoppingCart className="h-4 w-4" />,
-    }
-  ]
+  
   return (
     <TooltipProvider delayDuration={0}>
       <ResizablePanelGroup

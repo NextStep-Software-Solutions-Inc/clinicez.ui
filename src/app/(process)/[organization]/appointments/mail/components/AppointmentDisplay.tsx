@@ -32,27 +32,41 @@ import { ScrollArea } from "@components/ui/scroll-area"
 import Image from "next/image"
 import Each from "@components/utils/Each"
 import RejectAppointment from "../../components/RejectAppointment"
-import AcceptAppointment from "../../components/AcceptAppointment"
+import AcceptAppointmentAssignment from "../../components/AcceptAppointmentAssignment"
 import ReceiveAppointment from "../../components/ReceiveAppointment"
 import { AppointmentStatus } from "@public/json/appointment-list"
 import AssignAppointment from "../../components/AssignAppointment"
 import RescheduleAppointment from "../../components/RescheduleAppointment"
+import DeclineAppointmentAssignment from "../../components/DeclineAppointmentAssignment"
+import { UserRoles } from "./AppointmentPanel"
+import { Badge } from "@components/ui/badge"
 
 interface AppointmentDisplayProps {
   appointmentId: string | null
+  role: UserRoles,
 }
 
-export default async function AppointmentDisplay({ appointmentId }: AppointmentDisplayProps) {
+export default async function AppointmentDisplay({ appointmentId, role }: AppointmentDisplayProps) {
   
   const freshAppointment = await getAppointment(appointmentId ?? "")
   
 
   const appointmentToolsPerStatus: Record<AppointmentStatus, React.ReactNode> = {
+    all: (<></>),
     pending: 
       <>
-        <ReceiveAppointment disabled={!freshAppointment}/>
-        <RejectAppointment disabled={!freshAppointment}/>
-        <AssignAppointment disabled={!freshAppointment}/>
+        {["doctor", "nurse"].includes(role) && (
+          <>
+            <AcceptAppointmentAssignment disabled={!freshAppointment}/> 
+            <DeclineAppointmentAssignment disabled={!freshAppointment}/> 
+          </>
+        )}
+        {["receptionist"].includes(role) && (
+          <>
+            <ReceiveAppointment disabled={!freshAppointment}/>
+            <RejectAppointment disabled={!freshAppointment}/>  
+          </>
+        )}
       </>,
     accepted: (
       <>
@@ -62,9 +76,7 @@ export default async function AppointmentDisplay({ appointmentId }: AppointmentD
     rejected: (<></>),
     received: (
       <>
-        <AcceptAppointment disabled={!freshAppointment} />
         <AssignAppointment disabled={!freshAppointment} />
-
       </>
     ),
     routed: (<></>),
@@ -74,6 +86,7 @@ export default async function AppointmentDisplay({ appointmentId }: AppointmentD
     <div className="flex h-full flex-col">
       <div className="flex items-center p-2">
         <div className="flex items-center gap-2">
+          <Badge variant="default" className="capitalize">{freshAppointment?.status}</Badge>
           <RescheduleAppointment disabled={!freshAppointment} bookingDateTime={freshAppointment?.bookingDateTime? new Date(freshAppointment?.bookingDateTime): new Date()}/>
           <Separator orientation="vertical" className="mx-1 h-6" />
           {

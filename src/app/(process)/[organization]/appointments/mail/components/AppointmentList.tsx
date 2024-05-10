@@ -17,6 +17,7 @@ interface AppointmentListProps {
 export default function AppointmentList({ items }: AppointmentListProps) {
   const searchParams = useSearchParams()
   const appointmentId = searchParams.get("_appointment")
+  const appointmentStatus = searchParams.get("_type")
   
   const router = useRouter()
   
@@ -56,6 +57,7 @@ export default function AppointmentList({ items }: AppointmentListProps) {
                       {!item.read && (
                         <span className="flex h-2 w-2 rounded-full bg-blue-600" />
                       )}
+                      {appointmentStatus === "all" && <Badge variant="default" className="capitalize">{item?.status}</Badge>}
                     </div>
                     <div
                       className={cn(

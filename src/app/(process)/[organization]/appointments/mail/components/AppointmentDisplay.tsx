@@ -45,10 +45,9 @@ import { AppointmentStatus } from "@public/json/appointment-list"
 
 interface AppointmentDisplayProps {
   appointmentId: string | null
-  appointmentStatus: AppointmentStatus
 }
 
-export default async function AppointmentDisplay({ appointmentId, appointmentStatus }: AppointmentDisplayProps) {
+export default async function AppointmentDisplay({ appointmentId }: AppointmentDisplayProps) {
   
   const freshAppointment = await getAppointment(appointmentId ?? "")
   const today = new Date()
@@ -59,7 +58,7 @@ export default async function AppointmentDisplay({ appointmentId, appointmentSta
       <RejectAppointment key="reject" disabled={!freshAppointment}/>,
     ],
     accepted: [
-      <CreateConsultationRecordModal key="create-consultation-record" disabled={!freshAppointment}/>
+      <CreateConsultationRecordModal key="create-consultation-record" disabled={!freshAppointment} subject={freshAppointment?.subject ?? ""}/>
     ],
     rejected: [
     ],
@@ -134,7 +133,7 @@ export default async function AppointmentDisplay({ appointmentId, appointmentSta
           </Tooltip>
           <Separator orientation="vertical" className="mx-1 h-6" />
           {
-            appointmentToolsPerStatus[appointmentStatus]
+            appointmentToolsPerStatus[freshAppointment?.status as AppointmentStatus] ?? []
           }
         </div>
         <div className="ml-auto flex items-center gap-2">

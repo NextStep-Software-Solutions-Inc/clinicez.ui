@@ -5,11 +5,11 @@ import { cn } from "@lib/utils"
 import { Badge } from "@components/ui/badge"
 import { ScrollArea } from "@components/ui/scroll-area"
 import { Separator } from "@components/ui/separator"
-import { Mail } from "../../../../../../../public/json/mail-data"
-import { useMail } from "../../../../../../hooks/useMail"
+import { Appointment } from "@public/json/appointment-list"
+import { useMail } from "@hooks/useMail"
 
 interface MailListProps {
-  items: Mail[]
+  items: Appointment[]
 }
 
 export function MailList({ items }: MailListProps) {
@@ -48,7 +48,7 @@ export function MailList({ items }: MailListProps) {
                       : "text-muted-foreground"
                   )}
                 >
-                  {formatDistanceToNow(new Date(item.date), {
+                  {formatDistanceToNow(new Date(item.createdAt), {
                     addSuffix: true,
                   })}
                 </div>
@@ -56,7 +56,7 @@ export function MailList({ items }: MailListProps) {
               <div className="text-xs font-medium">{item.subject}</div>
             </div>
             <div className="line-clamp-2 text-xs text-muted-foreground">
-              {item.text.substring(0, 300)}
+              {item.complaint.substring(0, 300)}
             </div>
             {item.labels.length ? (
               <div className="flex items-center gap-2">

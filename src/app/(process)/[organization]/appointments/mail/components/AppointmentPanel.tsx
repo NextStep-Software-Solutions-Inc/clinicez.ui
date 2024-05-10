@@ -2,16 +2,15 @@
 
 import * as React from "react"
 import {
-  Archive,
-  ArchiveX,
-  File,
+  Clock,
   Inbox,
+  MailCheck,
+  MailPlus,
+  MailX,
+  Route,
   Search,
-  Send,
-  ShoppingCart,
   Trash2,
   User,
-  Users2,
 } from "lucide-react"
 
 import { cn } from "@lib/utils"
@@ -29,65 +28,141 @@ import {
   TabsTrigger,
 } from "@components/ui/tabs"
 import { TooltipProvider } from "@components/ui/tooltip"
-import { MailDisplay } from "./mail-display"
-import { MailList } from "./mail-list"
+import AppointmentList from "./AppointmentList"
 import { Nav } from "./nav"
-import { type Mail } from "../data"
-import { RoleSwitcher } from "@components/dashboard/RoleSwitcher"
 import { useRouter, useSearchParams } from "next/navigation"
+import { Appointment } from "@public/json/appointment-list"
+import { type AppointmentsCountsType } from "@actions/appointments.action"
+import Switcher from "@components/dashboard/Switcher"
 
-interface MailProps {
-  accounts: {
-    label: string
-    email: string
-    icon: React.ReactNode
-  }[]
-  mails: Mail[]
+export type UserRoles = "student" | "faculty" | "admin" | "receptionist" | "doctor" | "nurse"
+export type UserSwitcherType = {
+  label: string
+  role: UserRoles
+  icon: React.ReactNode
+}
+
+const icons = {
+  all: Inbox,
+  pending: Inbox,
+  received: MailPlus,
+  reschedule: Clock,
+  accepted: MailCheck,
+  declined: MailX,
+  rejected: Trash2,
+  routed: Route,
+};
+const roles = [
+  {
+    label: "Student",
+    value: "student",
+    icon: User,
+  },
+  {
+    label: "Faculty",
+    value: "faculty",
+    icon: User,
+  },
+  {
+    label: "Admin",
+    value: "admin",
+    icon: User,
+  }, 
+  {
+    label: "Receptionist",
+    value: "receptionist",
+    icon: User,
+  }, 
+  {
+    label: "Doctor",
+    value: "doctor",
+    icon: User,
+  },
+  {
+    label: "Nurse",
+    value: "nurse",
+    icon: User,
+  }
+]
+const rolesLinks = {
+  student: ["all", "pending", "received", "accepted", "declined", "rejected", "reschedule"],
+  faculty: ["all", "pending", "received", "accepted", "declined", "rejected", "reschedule"],
+  admin: ["pending", "received", "accepted", "declined", "rejected", "routed", "reschedule"],
+  receptionist: ["pending", "received", "rejected", "routed", "reschedule"],
+  doctor: ["pending", "accepted", "declined", "reschedule"],
+  nurse: ["pending", "accepted", "declined", "reschedule"],
+};
+interface AppointmentPanelProps {
+  appointmentsCounts: AppointmentsCountsType
+  appointments: Appointment[]
   defaultLayout: number[] | undefined
   defaultCollapsed?: boolean
   navCollapsedSize: number
+  children: React.ReactNode
 }
 
 
-
-export function Mail({
-  mails,
+export default function AppointmentPanel({
+  appointmentsCounts,
+  appointments,
   defaultLayout = [265, 440, 655],
   defaultCollapsed = false,
   navCollapsedSize,
-}: MailProps) {
+  children
+}: AppointmentPanelProps) {
   const [isCollapsed, setIsCollapsed] = React.useState(defaultCollapsed)
 
-  const router = useRouter();
   const searchParams = useSearchParams();
-  const tab = searchParams.get("tab");
-  const appointment = searchParams.get("appointment");
+  const router = useRouter();
+  
+  const type = searchParams.get("_type");
+  const role = searchParams.get("_role") as UserRoles;
   const [query, setQuery] = React.useState("");
 
-  const filteredMails = React.useMemo(() => {
-    if (!query) return mails;
-    return mails.filter((mail) => {
+  const filteredAppointments = React.useMemo(() => {
+    if (!query) return appointments;
+    return appointments.filter((appointment) => {
       return (
-        mail.subject.toLowerCase().includes(query.toLowerCase()) ||
-        mail.text.toLowerCase().includes(query.toLowerCase())
+        appointment.subject.toLowerCase().includes(query.toLowerCase()) ||
+        appointment.complaint.toLowerCase().includes(query.toLowerCase())
       );
     });
-  },[mails,query])
+  },[appointments,query])
 
   const updateQuery = (q: string) => {
     setQuery(q);
   }
   
-  React.useEffect(() => {
-    const searchParams = new URLSearchParams(window.location.search);
-    searchParams.set("tab", tab? tab : "pending");
-    if(!tab) router.replace(`?${searchParams.toString()}`);
-  }, [router, tab])
-  
-  const isDefaultVariant = (activeTab: string, ) => {
-    return tab === activeTab ? "default" : "ghost"
+  const isDefaultVariant = (activeTab: string): "default" | "ghost" => {
+    return type === activeTab ? "default" : "ghost"
   }
+  const link = (title: string, badge: string, icon: any, variant: string) => ({
+    title,
+    label: badge,
+    icon,
+    variant: isDefaultVariant(variant),
+  });
 
+  const sidebarLinksPerRole = Object.fromEntries(
+    Object.entries(rolesLinks).map(([role, statuses]) => [
+      role,
+      statuses.map(status => link(
+        status.charAt(0).toUpperCase() + status.slice(1),
+        appointmentsCounts[status as keyof typeof appointmentsCounts].toString(),
+        icons[status as keyof typeof icons],
+        status
+      )),
+    ])
+  );
+
+  const changeRole = (role: string) => {
+    if(window && role) {
+      const searchParams = new URLSearchParams(window.location.search);
+      searchParams.set("_role", role);
+      router.push(`?${searchParams.toString()}`);
+    }
+  }
+  
   return (
     <TooltipProvider delayDuration={0}>
       <ResizablePanelGroup
@@ -127,82 +202,17 @@ export function Mail({
               isCollapsed ? "h-[52px]" : "px-2"
             )}
           >
-            <RoleSwitcher
+            <Switcher
+              value={role}
               isCollapsed={isCollapsed}
-              accounts={[
-                {
-                  label: "Student",
-                  email: "<EMAIL>",
-                  icon: <User className="h-4 w-4" />,
-                },
-                {
-                  label: "Faculty",
-                  email: "<EMAIL>",
-                  icon: <Users2 className="h-4 w-4" />,
-                },
-                {
-                  label: "Admin",
-                  email: "<EMAIL>",
-                  icon: <Archive className="h-4 w-4" />,
-                }, 
-                {
-                  label: "Receptionist",
-                  email: "<EMAIL>",
-                  icon: <Trash2 className="h-4 w-4" />,
-                }, 
-                {
-                  label: "Doctor",
-                  email: "<EMAIL>",
-                  icon: <ShoppingCart className="h-4 w-4" />,
-                },
-                {
-                  label: "Nurse",
-                  email: "<EMAIL>",
-                  icon: <ShoppingCart className="h-4 w-4" />,
-                }
-              ]}/>
+              onSwitch={changeRole}
+              options={roles}
+            />
           </div>
           <Separator />
           <Nav
             isCollapsed={isCollapsed}
-            links={[
-              {
-                title: "Pending",
-                label: "128",
-                icon: Inbox,
-                variant: isDefaultVariant("pending"),
-              },
-              {
-                title: "Received",
-                label: "9",
-                icon: File,
-                variant: isDefaultVariant("received"),
-              },
-              {
-                title: "Accepted",
-                label: "",
-                icon: Send,
-                variant: isDefaultVariant("accepted"),
-              },
-              {
-                title: "Rejected",
-                label: "",
-                icon: Trash2,
-                variant: isDefaultVariant("rejected"),
-              },
-              {
-                title: "Routed",
-                label: "23",
-                icon: ArchiveX,
-                variant: isDefaultVariant("routed"),
-              },
-              {
-                title: "Reschedule",
-                label: "",
-                icon: Archive,
-                variant: isDefaultVariant("reschedule"),
-              },
-            ]}
+            links={sidebarLinksPerRole[role as keyof typeof sidebarLinksPerRole] ?? []}
           />
           <Separator />
         </ResizablePanel>
@@ -210,7 +220,7 @@ export function Mail({
         <ResizablePanel defaultSize={defaultLayout[1]} minSize={30}>
           <Tabs defaultValue="all">
             <div className="flex items-center px-4 py-2">
-              <h1 className="text-xl font-bold capitalize">{tab}</h1>
+              <h1 className="text-xl font-bold capitalize">{type}</h1>
               <TabsList className="ml-auto">
                 <TabsTrigger
                   value="all"
@@ -236,18 +246,16 @@ export function Mail({
               </form>
             </div>
             <TabsContent value="all" className="m-0">
-              <MailList items={filteredMails} />
+              <AppointmentList items={filteredAppointments} />
             </TabsContent>
             <TabsContent value="unread" className="m-0">
-              <MailList items={filteredMails.filter((item) => !item.read)} />
+              <AppointmentList items={filteredAppointments.filter((item) => !item.read)} />
             </TabsContent>
           </Tabs>
         </ResizablePanel>
         <ResizableHandle withHandle />
         <ResizablePanel defaultSize={defaultLayout[2]}>
-          <MailDisplay
-            mail={mails.find((item) => item.id === appointment) || null}
-          />
+          {children}
         </ResizablePanel>
       </ResizablePanelGroup>
     </TooltipProvider>

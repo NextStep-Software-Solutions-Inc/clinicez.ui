@@ -1,13 +1,28 @@
 import React from "react";
-import { Mail } from "./mail/components/mail";
-import { accounts, mails } from "./mail/data"
+import AppointmentPanel, { UserRoles }  from "./mail/components/AppointmentPanel";
 import { cookies } from "next/headers";
 import { Separator } from "@components/ui/separator";
 import BookAppointment from "./components/BookAppointment";
+import { getAppointmentCounts, getAppointments } from "@actions/appointments.action";
+import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth0";
+import { AppointmentStatus } from "@public/json/appointment-list";
+import AppointmentDisplay from "./mail/components/AppointmentDisplay";
+import { redirect } from "next/navigation"
+import Suspend from "@components/Suspend";
 
-export default function AppointmentsPage() {
+async function AppointmentsPage({ searchParams, params }: AppRouterPageRouteOpts ) {
+  
+  const appointmentStatus = searchParams?._type as AppointmentStatus
+  const role = searchParams?._role as string
+  const organization = params?.organization as string
+  // if(!appointmentStatus || !role ) return redirect(`/${organization}/appointments?_type=pending&_role=admin`)
+
+  const appointmentId = searchParams?._appointment as string
   const layout = cookies().get("react-resizable-panels:layout")
   const collapsed = cookies().get("react-resizable-panels:collapsed")
+
+  const appointmentsCounts = await getAppointmentCounts()
+  const appointments = await getAppointments(appointmentStatus)
 
   const defaultLayout = layout ? JSON.parse(layout.value) : undefined
   const defaultCollapsed = collapsed ? JSON.parse(collapsed.value) : undefined
@@ -25,14 +40,25 @@ export default function AppointmentsPage() {
       </div>
       <Separator />
       <div className="rounded-[0.5rem] border bg-background shadow]">
-        <Mail
-          accounts={accounts}
-          mails={mails}
-          defaultLayout={defaultLayout}
-          defaultCollapsed={defaultCollapsed}
-          navCollapsedSize={4}
-        />
+        <Suspend>
+          <AppointmentPanel
+            appointmentsCounts={appointmentsCounts}
+            appointments={appointments ?? []}
+            defaultLayout={defaultLayout}
+            defaultCollapsed={defaultCollapsed}
+            navCollapsedSize={4}
+          >
+            <AppointmentDisplay appointmentId={appointmentId || null} role={role as UserRoles}/>
+          </AppointmentPanel>
+        </Suspend>
       </div>
     </div>
   );
 }
+export default withPageAuthRequired(AppointmentsPage, {
+  returnTo: ({params, searchParams}) => {
+    const organization = params?.organization
+    const newSearchParams = new URLSearchParams(searchParams as Record<string, string>)
+    return `/${organization}/appointments?${newSearchParams.toString()}`
+  }
+});

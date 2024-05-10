@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import React from 'react';
 
 export const CoverProfilePhoto = ({ coverPhoto, profilePhoto }: { coverPhoto: string, profilePhoto: string }) => {
@@ -5,7 +6,7 @@ export const CoverProfilePhoto = ({ coverPhoto, profilePhoto }: { coverPhoto: st
     <div className="w-full h-80 bg-cover bg-center relative rounded-lg" style={{ backgroundImage: `url(${coverPhoto})` }}>
       <div className="absolute bottom-0 left-6 transform translate-y-1/3 z-10">
         <div className="w-[15rem] h-[15rem] bg-white rounded-full overflow-hidden">
-          <img alt='cover-photo' src={profilePhoto} width={100} height={100} className="rounded-full w-full h-full object-cover" />
+          <Image alt='cover-photo' src={profilePhoto} width={100} height={100} className="rounded-full w-full h-full object-cover" />
         </div>
       </div>
     </div>

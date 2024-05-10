@@ -39,6 +39,29 @@ const myOrganizations = [
   }
 ]
 
+const roles = [
+  {
+    id: "1",
+    uid: "admin",
+    name: "Admin",
+  },
+  {
+    id: "2",
+    uid: "doctor",
+    name: "Doctor",
+  },
+  {
+    id: "3",
+    uid: "nurse",
+    name: "Nurse",
+  },
+  {
+    id: "4",
+    uid: "receptionist",
+    name: "Receptionist",
+  },
+
+]
 export default function OrganizationsSettings() {
   
   const form = useForm<GeneraSettingsFormValues>({
@@ -85,6 +108,43 @@ export default function OrganizationsSettings() {
         />
         <Button disabled={!form.formState.isDirty} type="submit">Update</Button>
       </form>
+
+      <Each
+        of={myOrganizations}
+        render={(org) => (
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <FormField
+              control={form.control}
+              name="organizationId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{org.name} Default Role</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select an organization" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <Each
+                        of={roles}
+                        render={({ id, uid, name }) => (
+                          <SelectItem value={id}>{name}</SelectItem>
+                        )}
+                      />
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                This will the default organization that will be used when you open your dashboard.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <Button disabled={!form.formState.isDirty} type="submit">Update</Button>
+          </form>
+        )}
+      />
     </Form>
   )
 }

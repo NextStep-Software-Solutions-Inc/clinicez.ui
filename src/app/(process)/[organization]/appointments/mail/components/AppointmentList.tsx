@@ -1,5 +1,5 @@
 import { ComponentProps } from "react"
-import {formatDistanceToNow} from "date-fns"
+import {formatDistanceToNow, formatDate, formatRelative} from "date-fns"
 
 import { cn } from "@lib/utils"
 import { Badge } from "@components/ui/badge"
@@ -8,21 +8,22 @@ import { Mail } from "../data"
 import { useRouter, useSearchParams } from "next/navigation"
 import Each from "@components/utils/Each"
 import { Avatar, AvatarFallback, AvatarImage } from "@components/ui/avatar"
+import { type Appointment } from "@public/json/appointment-list"
 
-interface MailListProps {
-  items: Mail[]
+interface AppointmentListProps {
+  items: Appointment[]
 }
 
-export function MailList({ items }: MailListProps) {
+export default function AppointmentList({ items }: AppointmentListProps) {
   const searchParams = useSearchParams()
-  const appointmentId = searchParams.get("appointment")
-  console.log({appointmentId});
+  const appointmentId = searchParams.get("_appointment")
+  const appointmentStatus = searchParams.get("_type")
   
   const router = useRouter()
   
   const setAppointment = (appointmentId: string) => {
     const searchParams = new URLSearchParams(window.location.search)
-    searchParams.set("appointment", appointmentId)
+    searchParams.set("_appointment", appointmentId)
     router.push(`?${searchParams.toString()}`)
   }
 
@@ -41,8 +42,13 @@ export function MailList({ items }: MailListProps) {
             >
               <div className="flex items-center gap-2 w-full">
                 <Avatar>
-                  <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
-                  <AvatarFallback>CN</AvatarFallback>
+                  <AvatarImage src={item.patientAvatar} alt={item.name} />
+                  <AvatarFallback>
+                    {item.name
+                      .split(" ")
+                      .map((chunk) => chunk[0])
+                      .join("")}
+                  </AvatarFallback>
                 </Avatar>
                 <div className="flex w-full flex-col gap-1">
                   <div className="flex items-center justify-between">
@@ -51,6 +57,7 @@ export function MailList({ items }: MailListProps) {
                       {!item.read && (
                         <span className="flex h-2 w-2 rounded-full bg-blue-600" />
                       )}
+                      {appointmentStatus === "all" && <Badge variant="default" className="capitalize">{item?.status}</Badge>}
                     </div>
                     <div
                       className={cn(
@@ -60,16 +67,16 @@ export function MailList({ items }: MailListProps) {
                           : "text-muted-foreground"
                       )}
                     >
-                      {formatDistanceToNow(new Date(item.date), {
+                      {formatDistanceToNow(new Date(item.createdAt), {
                         addSuffix: true,
                       })}
                     </div>
                   </div>
-                  <div className="text-xs font-medium">{item.subject}</div>
+                  <div className="text-xs font-medium">{item.subject} (<span>{formatRelative(item.bookingDateTime, new Date())}</span>)</div>
                 </div>
               </div>
               <div className="line-clamp-2 text-xs text-muted-foreground">
-                {item.text.substring(0, 300)}
+                {item.complaint.substring(0, 300)}
               </div>
               {item.labels.length ? (
                 <div className="flex items-center gap-2">

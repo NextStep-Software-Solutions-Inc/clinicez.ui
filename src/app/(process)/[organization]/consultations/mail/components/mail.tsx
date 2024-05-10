@@ -34,9 +34,9 @@ import { TooltipProvider } from "@components/ui/tooltip"
 import { MailDisplay } from "./mail-display"
 import { MailList } from "./mail-list"
 import { Nav } from "./nav"
-import { type Mail } from "@public/json/mail-data"
+import { type Appointment } from "@public/json/appointment-list"
 import { useMail } from "@hooks/useMail"
-import { RoleSwitcher } from "@components/dashboard/RoleSwitcher"
+import Switcher from "@components/dashboard/Switcher"
 
 interface MailProps {
   accounts: {
@@ -44,7 +44,7 @@ interface MailProps {
     email: string
     icon: React.ReactNode
   }[]
-  mails: Mail[]
+  mails: Appointment[]
   defaultLayout: number[] | undefined
   defaultCollapsed?: boolean
   navCollapsedSize: number
@@ -99,38 +99,38 @@ export function Mail({
               isCollapsed ? "h-[52px]" : "px-2"
             )}
           >
-            <RoleSwitcher
+            <Switcher
               isCollapsed={isCollapsed}
-              accounts={[
+              options={[
                 {
                   label: "Student",
-                  email: "<EMAIL>",
-                  icon: <User className="h-4 w-4" />,
+                  value: "student",
+                  icon: User,
                 },
                 {
                   label: "Faculty",
-                  email: "<EMAIL>",
-                  icon: <Users2 className="h-4 w-4" />,
+                  value: "faculty",
+                  icon: User,
                 },
                 {
                   label: "Admin",
-                  email: "<EMAIL>",
-                  icon: <Archive className="h-4 w-4" />,
+                  value: "admin",
+                  icon: User,
                 }, 
                 {
                   label: "Receptionist",
-                  email: "<EMAIL>",
-                  icon: <Trash2 className="h-4 w-4" />,
+                  value: "receptionist",
+                  icon: User,
                 }, 
                 {
                   label: "Doctor",
-                  email: "<EMAIL>",
-                  icon: <ShoppingCart className="h-4 w-4" />,
+                  value: "doctor",
+                  icon: User,
                 },
                 {
                   label: "Nurse",
-                  email: "<EMAIL>",
-                  icon: <ShoppingCart className="h-4 w-4" />,
+                  value: "nurse",
+                  icon: User,
                 }
               ]}/>
           </div>

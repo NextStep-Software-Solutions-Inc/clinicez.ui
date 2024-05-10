@@ -1,8 +1,9 @@
 import React from "react";
 import { Mail } from "./mail/components/mail";
-import { accounts, mails } from "@public/json/mail-data"
+import { accounts, appointmentList } from "@public/json/appointment-list"
 import { cookies } from "next/headers";
 import { Separator } from "@components/ui/separator";
+import Suspend from "@components/Suspend";
 
 export default function ConsultationsPage() {
   const layout = cookies().get("react-resizable-panels:layout")
@@ -20,13 +21,15 @@ export default function ConsultationsPage() {
           </p>
         </div>
         <Separator />
-        <Mail
-          accounts={accounts}
-          mails={mails}
-          defaultLayout={defaultLayout}
-          defaultCollapsed={defaultCollapsed}
-          navCollapsedSize={4}
-        />
+        <Suspend>
+          <Mail
+            accounts={accounts}
+            mails={appointmentList}
+            defaultLayout={defaultLayout}
+            defaultCollapsed={defaultCollapsed}
+            navCollapsedSize={4}
+          />
+        </Suspend>
       </div>
       
     </>

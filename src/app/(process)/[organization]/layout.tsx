@@ -112,29 +112,7 @@ export default function DashboardLayout({children, params:{organization}}: Dashb
               />
             </div>
             <div className="max-w-xs">
-              <OrganizationSwitcher
-                isCollapsed
-                accounts={[
-                  {
-                    uid: "hims",
-                    label: "Health Information Management System",
-                    name: "HIMS",
-                    icon: <Home/>,
-                  },
-                  {
-                    uid: "clinic-ez",
-                    label: "Clinic EZ",
-                    name: "Clinic EZ",
-                    icon: <Home/>,
-                  }, 
-                  {
-                    uid: "my-organization",
-                    label: "My Organization",
-                    name: "My Organization",
-                    icon: <Home/>,
-                  }
-                ]}
-              />
+              <OrganizationSwitcher isCollapsed/>
             </div>
             <AvatarDropdown/>
           </header>

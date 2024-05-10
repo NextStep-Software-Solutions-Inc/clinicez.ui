@@ -15,7 +15,7 @@ export default function GlobalError({ error, reset}: GlobalErrorProps) {
   }, [error])
  
   return (
-    <div className='container mx-auto mt-10'>
+    <div className='container mx-auto my-10'>
       <div className='text-destructive border border-destructive rounded-lg p-5'>
         <h3>{error.name}</h3>
         <div className='prose max-w-full'>

@@ -1,6 +1,6 @@
 import { Metadata } from "next";
 import Image from "next/image";
-import clinicEZMiniLogo from "@public/assets/clinic-ez_mini-logo.svg";
+import clinicEZMiniLogo from "@public/assets/hero-img-1.png";
 
 export const metadata: Metadata = {
   title: "Home | Clinic EZ ",
@@ -11,7 +11,7 @@ export default async function HomePage() {
   
   return (
     <main className="content">
-      <section className="bg-gradient-to-l from-[#6DEBF4] via-[#C3FBFF] to-[#D3FCFF] bg-opacity-30 p-2 sm:py-16 lg:py-24">
+      <section className="relative bg-gradient-to-l from-[#6DEBF4] via-[#C3FBFF] to-[#D3FCFF] bg-opacity-30 p-2 sm:py-16 lg:py-24">
         <div className="container mx-auto">
           <div className="mx-auto sm:px-6 lg:px-8">
             <div className="grid items-center grid-cols-1 gap-12 lg:grid-cols-2">
@@ -33,11 +33,12 @@ export default async function HomePage() {
                 <p className="mt-5 text-gray-600">Already joined us? <a href="/api/auth/login" title="" className="text-black transition-all duration-200 hover:underline">Log in</a></p>
               </div>
 
-              <div>
+              <div className="absolute bottom-0 right-0 w-[40rem]">
+                <div className="bg-clip-content bg-teal-500 rounded-t-full absolute bottom-0 right-0 w-full h-1/2"></div>
                 <Image 
-                  width={100}
-                  height={100}
-                  className="w-full h-96 hidden lg:block" 
+                  width={700}
+                  height={700}
+                  className="w-full max-h-[50rem] hidden lg:block relative" 
                   src={clinicEZMiniLogo} alt="clinic-ez-mini-logo" 
                 />
               </div>

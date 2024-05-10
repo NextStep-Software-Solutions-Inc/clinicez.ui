@@ -18,7 +18,7 @@ import { useRef } from "react"
 import { toast } from "sonner";
 
 
-export default function CreateConsultationRecordModal({disabled = false}: {disabled?: boolean}) {
+export default function CreateConsultationRecordModal({disabled = false, subject}: {disabled?: boolean, subject: string}) {
 
   const closeBtnRef = useRef<HTMLInputElement>(null)
   const action = async (formData: FormData) => {
@@ -58,7 +58,7 @@ export default function CreateConsultationRecordModal({disabled = false}: {disab
             </Label>
             <Input
               id="subject"
-              defaultValue="Consultation Record: [Patient Name]"
+              defaultValue={subject}
               className="col-span-3"
             />
           </div>

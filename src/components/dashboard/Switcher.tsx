@@ -10,11 +10,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@components/ui/select"
+import { LucideIcon, RefreshCw } from "lucide-react"
+import Each from "@components/utils/Each"
 
 export type SwitcherOptionsType = {
   label: string
   value: string
-  icon: React.ReactNode
+  icon: LucideIcon
 }
 
 interface SwitcherProps {
@@ -41,7 +43,7 @@ export  default function Switcher({
     })
     onSwitch?.(option.value)
   }
-
+  const Icon = options.find((option) => option.value === selectedOption)?.icon ?? RefreshCw
   return (
     <Select defaultValue={selectedOption} onValueChange={handleSwitch}>
       <SelectTrigger
@@ -53,7 +55,7 @@ export  default function Switcher({
         aria-label="Select account"
       >
         <SelectValue placeholder="Select an option">
-          {options.find((option) => option.value === selectedOption)?.icon}
+          <Icon className="h-4 w-4" />
           <span className={cn("ml-2", isCollapsed && "hidden")}>
             {
               options.find((option) => option.value === selectedOption)
@@ -63,14 +65,19 @@ export  default function Switcher({
         </SelectValue>
       </SelectTrigger>
       <SelectContent>
-        {options.map((option) => (
-          <SelectItem key={option.label} value={option.value}>
-            <div className="flex items-center gap-3 [&_svg]:h-4 [&_svg]:w-4 [&_svg]:shrink-0 [&_svg]:text-foreground">
-              {option.icon}
-              {option.label}
-            </div>
-          </SelectItem>
-        ))}
+        <Each
+          of={options}
+          render={(option) => {
+            const Icon = option.icon;
+            return (
+              <SelectItem value={option.value}>
+                <div className="flex items-center gap-3 [&_svg]:h-4 [&_svg]:w-4 [&_svg]:shrink-0 [&_svg]:text-foreground">
+                  <Icon className="h-4 w-4" />
+                  {option.label}
+                </div>
+              </SelectItem>
+            )}}
+        />
       </SelectContent>
     </Select>
   )

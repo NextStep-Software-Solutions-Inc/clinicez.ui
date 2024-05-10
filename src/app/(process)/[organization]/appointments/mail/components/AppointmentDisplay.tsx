@@ -114,10 +114,7 @@ export default async function AppointmentDisplay({ appointmentId, role }: Appoin
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem>More Action Here</DropdownMenuItem>
-            <DropdownMenuItem>More Action Here</DropdownMenuItem>
-            <DropdownMenuItem>More Action Here</DropdownMenuItem>
-            <DropdownMenuItem>More Action Here</DropdownMenuItem>
+            <DropdownMenuItem>View Consultation Records</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

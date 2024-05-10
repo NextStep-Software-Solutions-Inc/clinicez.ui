@@ -7,7 +7,7 @@ type Config = {
 }
 
 const configAtom = atom<Config>({
-  selected: appointmentList["pending"][0].id,
+  selected: appointmentList[0].id,
 })
 
 export function useMail() {

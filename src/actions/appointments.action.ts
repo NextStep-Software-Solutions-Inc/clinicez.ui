@@ -6,8 +6,10 @@ import { AppointmentStatus, appointmentList } from "@public/json/appointment-lis
 export type AppointmentsCountsType = Awaited<ReturnType<typeof getAppointmentCounts>>;
 export const getAppointmentCounts = async () => {
   const appointmentsCounts = {
+    all: 0,
     pending: 0,
     accepted: 0,
+    declined: 0,
     rejected: 0,
     received: 0,
     routed: 0,
@@ -16,6 +18,7 @@ export const getAppointmentCounts = async () => {
   appointmentList.forEach((item) => {
     // count each status and increment the count
     appointmentsCounts[item.status]++;
+    appointmentsCounts.all++;
   });
   return appointmentsCounts;
 }
@@ -25,8 +28,7 @@ export const getAppointments = async (type: AppointmentStatus) => {
   // if (!Object.keys(appointmentList).includes(type)) {
   //   throw new Error(`Invalid appointment type: ${type}`);
   // }
-  const appointment = appointmentList.filter((item) => item.status === type);
-  return appointment;
+  return (type === "all")? appointmentList: appointmentList.filter((item) => item.status === type)
 }
 
 export const getAppointment = async (id: string) => {

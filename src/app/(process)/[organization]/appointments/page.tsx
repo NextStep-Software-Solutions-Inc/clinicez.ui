@@ -2,7 +2,7 @@ import React from "react";
 import AppointmentPanel, { UserRoles }  from "./mail/components/AppointmentPanel";
 import { cookies } from "next/headers";
 import { Separator } from "@components/ui/separator";
-import BookAppointment from "./components/BookAppointment";
+import BookAppointmentSheet from "./components/BookAppointmentSheet";
 import { getAppointmentCounts, getAppointments } from "@actions/appointments.action";
 import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth0";
 import { AppointmentStatus } from "@public/json/appointment-list";
@@ -36,7 +36,7 @@ async function AppointmentsPage({ searchParams, params }: AppRouterPageRouteOpts
               View and respond to appointments.
           </p>
         </div>
-        <BookAppointment/>
+        <BookAppointmentSheet/>
       </div>
       <Separator />
       <div className="rounded-[0.5rem] border bg-background shadow]">

@@ -33,7 +33,7 @@ async function AppointmentsPage({ searchParams, params }: AppRouterPageRouteOpts
         <div>
           <h3 className="text-xl font-bold">Appointments</h3>
           <p className="text-sm text-muted-foreground">
-              View and respond to appointments.
+            View and respond to appointments.
           </p>
         </div>
         <BookAppointmentSheet/>
@@ -55,6 +55,7 @@ async function AppointmentsPage({ searchParams, params }: AppRouterPageRouteOpts
     </div>
   );
 }
+
 export default withPageAuthRequired(AppointmentsPage, {
   returnTo: ({params, searchParams}) => {
     const organization = params?.organization

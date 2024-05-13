@@ -15,7 +15,7 @@ import ChiefComplaint from "./ChiefComplaint";
 import ConsentForm from "./ConsentForm";
 import ReviewBooking from "./ReviewBooking";
 
-export default function BookAppointment() {
+export default function BookAppointmentSheet() {
   return (
     <Sheet >
       <SheetTrigger asChild>

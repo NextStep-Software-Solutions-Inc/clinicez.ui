@@ -1,34 +1,39 @@
 import React from "react";
-import { Mail } from "./mail/components/mail";
-import { accounts, appointmentList } from "@public/json/appointment-list"
-import { cookies } from "next/headers";
+import { promises as fs } from "fs"
 import { Separator } from "@components/ui/separator";
 import Suspend from "@components/Suspend";
+import { DataTable } from "./components/data-table";
+import { z } from "zod";
+import path from "path";
+import { consultationRecordSchema } from "./data/schema"
+import { columns } from "./components/columns"
+// Simulate a database read for tasks.
+async function getTasks() {
+  const data = await fs.readFile(
+    path.join(process.cwd(), "src/app/(process)/[organization]/consultations/data/tasks.json")
+  )
 
-export default function ConsultationsPage() {
-  const layout = cookies().get("react-resizable-panels:layout")
-  const collapsed = cookies().get("react-resizable-panels:collapsed")
+  const tasks = JSON.parse(data.toString())
 
-  const defaultLayout = layout ? JSON.parse(layout.value) : undefined
-  const defaultCollapsed = collapsed ? JSON.parse(collapsed.value) : undefined
+  return z.array(consultationRecordSchema).parse(tasks)
+}
+
+
+export default async function ConsultationsPage() {
+  
+  const tasks = await getTasks()
   return (
     <>
       <div className="space-y-6">
         <div>
-          <h3 className="text-xl font-bold">Consultations</h3>
+          <h2 className="text-2xl font-bold tracking-tight">Consultations</h2>
           <p className="text-sm text-muted-foreground">
-            View and respond to consultations.
+            Here&apos;s a list of your consultations.
           </p>
         </div>
         <Separator />
         <Suspend>
-          <Mail
-            accounts={accounts}
-            mails={appointmentList}
-            defaultLayout={defaultLayout}
-            defaultCollapsed={defaultCollapsed}
-            navCollapsedSize={4}
-          />
+          <DataTable data={tasks} columns={columns} />
         </Suspend>
       </div>
       

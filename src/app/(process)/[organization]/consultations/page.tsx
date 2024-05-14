@@ -1,28 +1,20 @@
+import './data/seed'
 import React from "react";
-import { promises as fs } from "fs"
 import { Separator } from "@components/ui/separator";
 import Suspend from "@components/Suspend";
 import { DataTable } from "./components/data-table";
-import { z } from "zod";
-import path from "path";
-import { consultationRecordSchema } from "./data/schema"
 import { columns } from "./components/columns"
 import { withPageAuthRequired } from "@auth0/nextjs-auth0";
-// Simulate a database read for tasks.
-async function getTasks() {
-  const data = await fs.readFile(
-    path.join(process.cwd(), "src/app/(process)/[organization]/consultations/data/tasks.json")
-  )
+import { Metadata } from "next";
+import { getConsultations } from '@actions/consultations.action';
 
-  const tasks = JSON.parse(data.toString())
-
-  return z.array(consultationRecordSchema).parse(tasks)
+export const metadata: Metadata = {
+  title: "Consultations",
+  description: "Consultations of an organization.",
 }
 
-
 async function ConsultationsPage() {
-  
-  const tasks = await getTasks()
+  const consultations = await getConsultations()
   return (
     <>
       <div className="space-y-6">
@@ -34,7 +26,7 @@ async function ConsultationsPage() {
         </div>
         <Separator />
         <Suspend>
-          <DataTable data={tasks} columns={columns} />
+          <DataTable data={consultations} columns={columns} />
         </Suspend>
       </div>
 

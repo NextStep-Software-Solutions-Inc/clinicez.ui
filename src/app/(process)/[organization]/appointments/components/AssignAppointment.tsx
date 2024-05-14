@@ -98,7 +98,7 @@ export default function AssignAppointment({disabled = false}: {disabled?: boolea
                       <Each
                         of={healthcareProviders}
                         render={(hp) => (
-                          <CommandItem className="data-[disabled]:pointer-events-auto data-[disabled]:opacity-100"
+                          <CommandItem
                             value={hp.id}
                             onSelect={(val) => setSelectedHp(prev => healthcareProviders.find(hp => hp.id === val) || null)}
                           >
@@ -114,7 +114,6 @@ export default function AssignAppointment({disabled = false}: {disabled?: boolea
                         of={healthcareProviders}
                         render={(hp) => (
                           <CommandItem 
-                            className="data-[disabled]:pointer-events-auto data-[disabled]:opacity-100"
                             value={hp.id}
                             onSelect={(val) => setSelectedHp(prev => healthcareProviders.find(hp => hp.id === val) || null)}
                           >

@@ -42,6 +42,8 @@ import { UserRoles } from "./AppointmentPanel"
 import { Badge } from "@components/ui/badge"
 import ConsultationRecordSheet from "../../components/ConsultationRecordSheet"
 import { SheetTrigger } from "@components/ui/sheet"
+import { DropdownMenuProvider } from "@components/DropdownMenuProvider"
+import AppointmentMoreAction from "../../components/AppointmentMoreAction"
 
 interface AppointmentDisplayProps {
   appointmentId: string | null
@@ -72,7 +74,7 @@ export default async function AppointmentDisplay({ appointmentId, role }: Appoin
       </>,
     accepted: (
       <>
-        <CreateConsultationRecordModal disabled={!freshAppointment} subject={freshAppointment?.subject ?? ""}/>
+        {["doctor", "nurse"].includes(role) && <CreateConsultationRecordModal disabled={!freshAppointment} subject={freshAppointment?.subject ?? ""}/>}
       </>
     ),
     rejected: (<></>),
@@ -108,24 +110,14 @@ export default async function AppointmentDisplay({ appointmentId, role }: Appoin
           </Tooltip>
         </div>
         <Separator orientation="vertical" className="mx-2 h-6" />
-        <ConsultationRecordSheet>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" disabled={!freshAppointment}>
-                <MoreVertical className="h-4 w-4" />
-                <span className="sr-only">More</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <SheetTrigger asChild>
-                <DropdownMenuItem>
-                  View Consultation Records
-                </DropdownMenuItem>
-              </SheetTrigger>
-
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </ConsultationRecordSheet>
+        <DropdownMenuProvider>
+          <AppointmentMoreAction>
+            <Button variant="ghost" size="icon" disabled={!freshAppointment}>
+              <MoreVertical className="h-4 w-4" />
+              <span className="sr-only">More</span>
+            </Button>
+          </AppointmentMoreAction>
+        </DropdownMenuProvider>
       </div>
       <Separator />
       {freshAppointment ? (

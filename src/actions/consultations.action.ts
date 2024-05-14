@@ -6,3 +6,9 @@ export const createConsultationAction = async (data: FormData) => {
   await delay(3000);
   return true;
 }
+
+export const updateConsultationAction = async (data: FormData) => {
+  console.log("Creating consultation...");
+  await delay(3000);
+  return true;
+}

@@ -7,12 +7,15 @@ import {
   SheetFooter,
   SheetHeader,
   SheetTitle,
+  SheetTrigger,
 } from "@components/ui/sheet"
 import Each from "@components/utils/Each";
 import { format } from "date-fns";
 import Link from "next/link";
 interface ConsultationRecordSheetProps {
   children?: React.ReactNode;
+  onOpenChange? : (open: boolean) => void;
+  onSelect? : (e: Event) => void;
 }
 
 const consultationRecords = [
@@ -48,10 +51,10 @@ const consultationRecords = [
   }
 ]
 
-export default function ConsultationRecordSheet({ children }: ConsultationRecordSheetProps) {
+export default function ConsultationRecordSheet({ children, onOpenChange }: ConsultationRecordSheetProps) {
   return (
-    <Sheet>
-      {children}
+    <Sheet onOpenChange={onOpenChange}>
+      <SheetTrigger asChild>{children}</SheetTrigger>
       <SheetContent side="right">
         <SheetHeader>
           <SheetTitle>Consultation Records</SheetTitle>

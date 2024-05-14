@@ -7,6 +7,7 @@ import { z } from "zod";
 import path from "path";
 import { consultationRecordSchema } from "./data/schema"
 import { columns } from "./components/columns"
+import { withPageAuthRequired } from "@auth0/nextjs-auth0";
 // Simulate a database read for tasks.
 async function getTasks() {
   const data = await fs.readFile(
@@ -19,7 +20,7 @@ async function getTasks() {
 }
 
 
-export default async function ConsultationsPage() {
+async function ConsultationsPage() {
   
   const tasks = await getTasks()
   return (
@@ -36,7 +37,15 @@ export default async function ConsultationsPage() {
           <DataTable data={tasks} columns={columns} />
         </Suspend>
       </div>
-      
+
     </>
   );
 }
+
+export default withPageAuthRequired(ConsultationsPage, {
+  returnTo: ({params, searchParams}) => {
+    const organization = params?.organization
+    const newSearchParams = new URLSearchParams(searchParams as Record<string, string>)
+    return `/${organization}/consultations?${newSearchParams.toString()}`
+  }
+});

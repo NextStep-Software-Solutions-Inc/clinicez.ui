@@ -1,6 +1,6 @@
 "use client";
 
-import { createConsultationAction } from "@actions/consulations.action"
+import { createConsultationAction } from "@actions/consultations.action"
 import ActionButton from "@components/ActionButton"
 import CustomModalContent from "@components/CustomModalContent";
 import { Button } from "@components/ui/button"

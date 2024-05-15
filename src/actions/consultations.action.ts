@@ -19,3 +19,12 @@ export const updateConsultationAction = async (data: FormData) => {
 export const getConsultations = async () => {
   return structuredClone(z.array(consultationRecordSchema).parse(consultations))
 }
+
+
+export const getConsultation = async (id: string) => {
+  const consultation = consultations.find((consultation) => consultation.id === id)
+  if (!consultation) {
+    throw new Error("Consultation not found")
+  }
+  return structuredClone(consultationRecordSchema.parse(consultation))
+}

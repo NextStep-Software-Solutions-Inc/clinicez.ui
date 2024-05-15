@@ -1,7 +1,6 @@
 "use client"
 
 import { DotsHorizontalIcon } from "@radix-ui/react-icons"
-import { Row } from "@tanstack/react-table"
 
 import { Button } from "@components/ui/button"
 import {
@@ -18,21 +17,18 @@ import {
 } from "@components/ui/dropdown-menu"
 
 import { labels } from "../data/data"
-import { consultationRecordSchema } from "../data/schema"
 import ConsultationRecordSettingSheet from "../../appointments/components/ConsultationRecordSettingSheet"
 import EditConsultationRecordModal from "../../appointments/components/EditConsultationRecordModal"
 import React from "react"
 import { useDropdownMenu } from "@components/DropdownMenuProvider"
-
 interface DataTableRowActionsProps<TData> {
-  row: Row<TData>
+  consultation: Consultation
 }
 
 export function DataTableRowActions<TData>({
-  row,
+  consultation,
 }: DataTableRowActionsProps<TData>) {
   const { dropdownOpen, setDropdownOpen, hasOpenDialog, dropdownTriggerRef, handleDialogItemSelect, handleDialogItemOpenChange } = useDropdownMenu()!;
-  const consultationRecord = consultationRecordSchema.parse(row.original)
 
   return (
     <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
@@ -47,8 +43,8 @@ export function DataTableRowActions<TData>({
       </DropdownMenuTrigger>
       <DropdownMenuContent  align="end" className="w-[160px]" hidden={hasOpenDialog}>
         <EditConsultationRecordModal onOpenChange={handleDialogItemOpenChange} record={{
-          id: consultationRecord.id,
-          subject: consultationRecord.subject,
+          id: consultation.id,
+          subject: consultation.subject,
         }}>
           <DropdownMenuItem onSelect={handleDialogItemSelect}>Edit</DropdownMenuItem>
         </EditConsultationRecordModal>
@@ -60,7 +56,7 @@ export function DataTableRowActions<TData>({
         <DropdownMenuSub>
           <DropdownMenuSubTrigger>Labels</DropdownMenuSubTrigger>
           <DropdownMenuSubContent>
-            <DropdownMenuRadioGroup value={consultationRecord.label}>
+            <DropdownMenuRadioGroup value={consultation.label}>
               {labels.map((label) => (
                 <DropdownMenuRadioItem key={label.value} value={label.value}>
                   {label.label}

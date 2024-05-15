@@ -6,11 +6,10 @@ import { Badge } from "@components/ui/badge"
 import { Checkbox } from "@components/ui/checkbox"
 
 import { labels, priorities, statuses } from "../data/data"
-import { ConsultationRecordSchema } from "../data/schema"
+import { ConsultationRecordSchema, consultationRecordSchema } from "../data/schema"
 import { DataTableColumnHeader } from "./data-table-column-header"
 import { DataTableRowActions } from "./data-table-row-actions"
 import Link from "next/link"
-import { Dropdown } from "react-day-picker"
 import { DropdownMenuProvider } from "@components/DropdownMenuProvider"
 
 export const columns: ColumnDef<ConsultationRecordSchema>[] = [
@@ -129,10 +128,15 @@ export const columns: ColumnDef<ConsultationRecordSchema>[] = [
   },
   {
     id: "actions",
-    cell: ({ row }) => (
-      <DropdownMenuProvider>
-        <DataTableRowActions row={row} />
-      </DropdownMenuProvider>
-    )
+    cell: ({ row }) => {
+      const consultationRecord = consultationRecordSchema.parse(row.original)
+      return (
+        (
+          <DropdownMenuProvider>
+            <DataTableRowActions consultation={consultationRecord} />
+          </DropdownMenuProvider>
+        )
+      )
+    }
   },
 ]

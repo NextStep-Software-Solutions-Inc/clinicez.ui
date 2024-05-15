@@ -3,6 +3,7 @@ import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth
 import Suspend from "@components/Suspend";
 import { Separator } from "@components/ui/separator";
 import { Metadata } from "next";
+import ConsultationDetails from "../components/ConsultationDetails";
 
 export const metadata: Metadata = {
   title: "Consultation Details",
@@ -24,9 +25,7 @@ async function ConsultationPage({params}: AppRouterPageRouteOpts) {
       </div>
       <Separator />
       <Suspend>
-        <pre>
-          {JSON.stringify(consultation, null, 2)}
-        </pre>
+        <ConsultationDetails consultation={consultation}/>
       </Suspend>
     </div>
   );

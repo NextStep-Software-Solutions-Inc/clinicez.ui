@@ -1,20 +1,32 @@
+import { getConsultation } from "@actions/consultations.action";
 import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth0";
 import Suspend from "@components/Suspend";
 import { Separator } from "@components/ui/separator";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Consultation Details",
+  description: "Consultation details of a consultation.",
+}
 
 async function ConsultationPage({params}: AppRouterPageRouteOpts) {
-  const consultation = params?.consultation
+  const consultationId = params?.consultation as string
+
+  const consultation = await getConsultation(consultationId)
+
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold tracking-tight">Consultation # {consultation}</h2>
+        <h2 className="text-2xl font-bold tracking-tight">Consultation # {consultationId}</h2>
         <p className="text-sm text-muted-foreground">
-          Consultation details of Consultation # {consultation}
+          Consultation details of Consultation # {consultationId}
         </p>
       </div>
       <Separator />
       <Suspend>
-        Hey
+        <pre>
+          {JSON.stringify(consultation, null, 2)}
+        </pre>
       </Suspend>
     </div>
   );

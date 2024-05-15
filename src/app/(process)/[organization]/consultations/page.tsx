@@ -1,4 +1,4 @@
-import './data/seed'
+// import './data/seed'
 import React from "react";
 import { Separator } from "@components/ui/separator";
 import Suspend from "@components/Suspend";

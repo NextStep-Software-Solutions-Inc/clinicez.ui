@@ -1,0 +1,69 @@
+{
+    "interventions": [
+        {
+            "id": 1,
+            "hpId": 1,
+            "action": "Administered 1st dose of vaccine",
+            "details": "Administered 1st dose of vaccine to patient",
+            "date": "2021-01-01"
+        },
+        {
+            "id": 2,
+            "hpId": 2,
+            "action": "Administered 2nd dose of vaccine",
+            "details": "Administered 2nd dose of vaccine to patient",
+            "date": "2021-01-15"
+        },
+        {
+            "id": 3,
+            "hpId": 3,
+            "action": "Administered 3rd dose of vaccine",
+            "details": "Administered 3rd dose of vaccine to patient",
+            "date": "2021-02-01"
+        },
+        {
+            "id": 4,
+            "hpId": 1,
+            "action": "Administered 4th dose of vaccine",
+            "details": "Administered 4th dose of vaccine to patient",
+            "date": "2021-02-15"
+        },
+        {
+            "id": 5,
+            "hpId": 2,
+            "action": "Administered 5th dose of vaccine",
+            "details": "Administered 5th dose of vaccine to patient",
+            "date": "2021-03-01"
+        },
+        {
+            "id": 6,
+            "hpId": 3,
+            "action": "Administered 6th dose of vaccine",
+            "details": "Administered 6th dose of vaccine to patient",
+            "date": "2021-03-15"
+        }
+    ],
+    "hps": [
+        {
+            "id": 1,
+            "name": "Dr. John Doe",
+            "specialty": "General Practitioner",
+            "location": "123 Main St, Anytown, USA",
+            "phone": "555-555-5555"
+        },
+        {
+            "id": 2,
+            "name": "Dr. Jane Doe",
+            "specialty": "Pediatrician",
+            "location": "456 Elm St, Anytown, USA",
+            "phone": "555-555-5555"
+        },
+        {
+            "id": 3,
+            "name": "Dr. Jim Doe",
+            "specialty": "Dermatologist",
+            "location": "789 Oak St, Anytown, USA",
+            "phone": "555-555-5555"
+        }
+    ]
+}

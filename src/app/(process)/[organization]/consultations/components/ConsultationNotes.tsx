@@ -1,3 +1,4 @@
+import { getConsultationNotes } from "@actions/consultations.action";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@components/ui/accordion";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@components/ui/card";
 
@@ -5,7 +6,8 @@ interface ConsultationNotesProps {
     consultation: Consultation;
 }
 
-export default function ConsultationNotes({ consultation}: ConsultationNotesProps) {
+export default async function ConsultationNotes({ consultation}: ConsultationNotesProps) {
+  const notes = await getConsultationNotes(consultation.id)
   return (
     <Card>
       <CardHeader>
@@ -19,25 +21,25 @@ export default function ConsultationNotes({ consultation}: ConsultationNotesProp
           <AccordionItem value="subjective">
             <AccordionTrigger>Subjective History</AccordionTrigger>
             <AccordionContent>
-            Yes. It adheres to the WAI-ARIA design pattern.
+              {notes.subjective}
             </AccordionContent>
           </AccordionItem>
           <AccordionItem value="objective">
             <AccordionTrigger>Objective History</AccordionTrigger>
             <AccordionContent>
-            Yes. It adheres to the WAI-ARIA design pattern.
+              {notes.objective}
             </AccordionContent>
           </AccordionItem>
           <AccordionItem value="assessment">
             <AccordionTrigger>Assessment</AccordionTrigger>
             <AccordionContent>
-            Yes. It adheres to the WAI-ARIA design pattern.
+              {notes.assessment}
             </AccordionContent>
           </AccordionItem>
           <AccordionItem value="plan">
             <AccordionTrigger>Plan History</AccordionTrigger>
             <AccordionContent>
-            Yes. It adheres to the WAI-ARIA design pattern.
+              {notes.plan}
             </AccordionContent>
           </AccordionItem>
         </Accordion>

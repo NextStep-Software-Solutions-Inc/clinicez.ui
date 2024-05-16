@@ -1,3 +1,4 @@
+import { getNurseAssessment } from "@actions/consultations.action";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@components/ui/accordion";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@components/ui/card";
 
@@ -5,7 +6,8 @@ interface NurseAssessmentProps {
     consultation: Consultation;
 }
 
-export default function NurseAssessment({ consultation}: NurseAssessmentProps) {
+export default async function NurseAssessment({ consultation}: NurseAssessmentProps) {
+  const assessment = await getNurseAssessment(consultation.id)
   return (
     <Card>
       <CardHeader>
@@ -19,19 +21,19 @@ export default function NurseAssessment({ consultation}: NurseAssessmentProps) {
           <AccordionItem value="pre-assessment">
             <AccordionTrigger>Pre-Assessment</AccordionTrigger>
             <AccordionContent>
-            Yes. It adheres to the WAI-ARIA design pattern.
+              {assessment["pre-assessment"]}
             </AccordionContent>
           </AccordionItem>
           <AccordionItem value="instructions">
             <AccordionTrigger>Instructions</AccordionTrigger>
             <AccordionContent>
-            Yes. It adheres to the WAI-ARIA design pattern.
+              {assessment.instructions}
             </AccordionContent>
           </AccordionItem>
           <AccordionItem value="remarks">
             <AccordionTrigger>Remarks</AccordionTrigger>
             <AccordionContent>
-            Yes. It adheres to the WAI-ARIA design pattern.
+              {assessment.remarks}
             </AccordionContent>
           </AccordionItem>
         </Accordion>

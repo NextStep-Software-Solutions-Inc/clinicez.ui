@@ -9,7 +9,6 @@ import Conversation from "./Conversation";
 import VitalSigns from "./VitalSigns";
 import Files from "./Files";
 import { DataTableRowActions } from "./data-table-row-actions";
-import { MoreHorizontal, MoreVertical } from "lucide-react";
 import { DropdownMenuProvider } from "@components/DropdownMenuProvider";
 
 interface ConsultationDetailsProps {

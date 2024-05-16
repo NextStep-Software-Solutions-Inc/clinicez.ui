@@ -4,6 +4,9 @@ import Suspend from "@components/Suspend";
 import { Separator } from "@components/ui/separator";
 import { Metadata } from "next";
 import ConsultationDetails from "../components/ConsultationDetails";
+import { Button } from "@components/ui/button";
+import { ExternalLink } from "lucide-react";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Consultation Details",
@@ -17,11 +20,16 @@ async function ConsultationPage({params}: AppRouterPageRouteOpts) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight">Consultation # {consultationId}</h2>
-        <p className="text-sm text-muted-foreground">
+      <div className="flex">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">Consultation # {consultationId}</h2>
+          <p className="text-sm text-muted-foreground">
           Consultation details of Consultation # {consultationId}
-        </p>
+          </p>
+        </div>
+        <Link className="ml-auto" href={`/${params?.organization}/consultations/${consultationId}/edit`}>
+          <Button variant="default" size="sm">Issue e-Document <ExternalLink className="h-4 w-4 ml-2"/></Button>
+        </Link>
       </div>
       <Separator />
       <Suspend>

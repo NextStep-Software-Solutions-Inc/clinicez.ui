@@ -7,6 +7,10 @@ declare global {
     label: string
     priority: string
   }
+  type Intervention = {
+    id: string
+    action: string
+  }
 }
 
 export default global

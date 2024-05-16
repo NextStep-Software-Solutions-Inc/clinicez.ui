@@ -1,6 +1,7 @@
 import { getNurseAssessment } from "@actions/consultations.action";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@components/ui/accordion";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@components/ui/card";
+import { Textarea } from "@components/ui/textarea";
 
 interface NurseAssessmentProps {
     consultation: Consultation;
@@ -20,20 +21,20 @@ export default async function NurseAssessment({ consultation}: NurseAssessmentPr
         <Accordion type="single" collapsible>
           <AccordionItem value="pre-assessment">
             <AccordionTrigger>Pre-Assessment</AccordionTrigger>
-            <AccordionContent>
-              {assessment["pre-assessment"]}
+            <AccordionContent className="m-1">
+              <Textarea rows={5} defaultValue={assessment["pre-assessment"]} placeholder="Write the remarks here..." />
             </AccordionContent>
           </AccordionItem>
           <AccordionItem value="instructions">
             <AccordionTrigger>Instructions</AccordionTrigger>
-            <AccordionContent>
-              {assessment.instructions}
+            <AccordionContent className="m-1">
+              <Textarea rows={5} defaultValue={assessment.instructions} placeholder="Write the remarks here..." />
             </AccordionContent>
           </AccordionItem>
           <AccordionItem value="remarks">
             <AccordionTrigger>Remarks</AccordionTrigger>
-            <AccordionContent>
-              {assessment.remarks}
+            <AccordionContent className="m-1">
+              <Textarea rows={5} defaultValue={assessment.remarks} placeholder="Write the remarks here..." />
             </AccordionContent>
           </AccordionItem>
         </Accordion>

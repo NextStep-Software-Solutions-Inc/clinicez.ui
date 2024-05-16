@@ -44,6 +44,7 @@ export  default function Switcher({
     onSwitch?.(option.value)
   }
   const Icon = options.find((option) => option.value === selectedOption)?.icon ?? RefreshCw
+  
   return (
     <Select defaultValue={selectedOption} onValueChange={handleSwitch}>
       <SelectTrigger

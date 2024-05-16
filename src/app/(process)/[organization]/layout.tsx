@@ -1,7 +1,6 @@
 import "@styles/globals.css";
 import Link from "next/link"
 import {
-  Home,
   LineChart,
   Package2,
   PanelLeft,

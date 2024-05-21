@@ -8,9 +8,9 @@ interface CustomModalContentProps extends DialogContentProps {
   description?: React.ReactNode;
 }
 
-export default function CustomModalContent({ children, label, description }: CustomModalContentProps) {
+export default function CustomModalContent({ children, label, description,  ...res }: CustomModalContentProps) {
   return (
-    <DialogContent>
+    <DialogContent {...res}>
       <DialogHeader>
         <DialogTitle>{label}</DialogTitle>
         <DialogDescription>

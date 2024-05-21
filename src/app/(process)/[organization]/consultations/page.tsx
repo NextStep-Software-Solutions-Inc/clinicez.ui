@@ -1,37 +1,43 @@
+// import './data/seed'
 import React from "react";
-import { Mail } from "./mail/components/mail";
-import { accounts, appointmentList } from "@public/json/appointment-list"
-import { cookies } from "next/headers";
 import { Separator } from "@components/ui/separator";
 import Suspend from "@components/Suspend";
+import { DataTable } from "./components/data-table";
+import { columns } from "./components/columns"
+import { withPageAuthRequired } from "@auth0/nextjs-auth0";
+import { Metadata } from "next";
+import { getConsultations } from '@actions/consultations.action';
 
-export default function ConsultationsPage() {
-  const layout = cookies().get("react-resizable-panels:layout")
-  const collapsed = cookies().get("react-resizable-panels:collapsed")
+export const metadata: Metadata = {
+  title: "Consultations",
+  description: "Consultations of an organization.",
+}
 
-  const defaultLayout = layout ? JSON.parse(layout.value) : undefined
-  const defaultCollapsed = collapsed ? JSON.parse(collapsed.value) : undefined
+async function ConsultationsPage() {
+  const consultations = await getConsultations()
   return (
     <>
       <div className="space-y-6">
         <div>
-          <h3 className="text-xl font-bold">Consultations</h3>
+          <h2 className="text-2xl font-bold tracking-tight">Consultations</h2>
           <p className="text-sm text-muted-foreground">
-            View and respond to consultations.
+            Here&apos;s a list of your consultations.
           </p>
         </div>
         <Separator />
         <Suspend>
-          <Mail
-            accounts={accounts}
-            mails={appointmentList}
-            defaultLayout={defaultLayout}
-            defaultCollapsed={defaultCollapsed}
-            navCollapsedSize={4}
-          />
+          <DataTable data={consultations} columns={columns} />
         </Suspend>
       </div>
-      
+
     </>
   );
 }
+
+export default withPageAuthRequired(ConsultationsPage, {
+  returnTo: ({params, searchParams}) => {
+    const organization = params?.organization
+    const newSearchParams = new URLSearchParams(searchParams as Record<string, string>)
+    return `/${organization}/consultations?${newSearchParams.toString()}`
+  }
+});

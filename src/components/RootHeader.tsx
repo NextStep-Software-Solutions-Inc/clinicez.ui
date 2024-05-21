@@ -1,18 +1,15 @@
-
-import Image from "next/image";
 import { DetailedHTMLProps, HTMLAttributes, Suspense } from "react";
-// import UserAvatar from "@components/UserAvatar";
 import Navigation from "@components/Navigation";
 import dynamic from "next/dynamic";
-import clinicEZLogo from "@public/assets/clinic-ez_logo.svg";
 
-import { Player, Controls } from '@lottiefiles/react-lottie-player';
 import AnimatedLogo from "./AnimatedLogo";
+import { OrganizationSwitcher } from "./dashboard/OrganizationSwitcher";
 
 const UserAvatar = dynamic(() => import("@components/UserAvatar"), {ssr: true});
 
 interface IRootHeaderProps extends DetailedHTMLProps<HTMLAttributes<HTMLElement>, HTMLElement>{}
 export default function RootHeader({...props}: IRootHeaderProps) {
+  
   return (
     <header {...props} className={`bg-[#FCF8F1] bg-opacity-30 backdrop-blur ${props.className}`}>
       <div className="px-4 mx-auto sm:px-6 lg:px-8">
@@ -20,12 +17,6 @@ export default function RootHeader({...props}: IRootHeaderProps) {
           <div className="flex-shrink-0">
             <a href="/" title="" className="flex">
               <AnimatedLogo/>
-              {/* <Image
-                width={100}
-                height={100}
-                className="w-auto h-12"
-                src={clinicEZLogo} alt="" 
-              /> */}
             </a>
           </div>
 
@@ -44,7 +35,7 @@ export default function RootHeader({...props}: IRootHeaderProps) {
           <div className="hidden lg:flex lg:items-center lg:justify-center lg:space-x-10">
             <Navigation/>
           </div>
-          <div className="hidden lg:inline-flex items-center justify-center">
+          <div className="hidden lg:inline-flex items-center justify-center gap-2">
             <Suspense fallback={<div>Loading</div>}>
               <UserAvatar/>
             </Suspense>

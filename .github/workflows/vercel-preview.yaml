@@ -5,7 +5,7 @@ env:
 on:
   push:
     branches-ignore:
-      - main # Ignore pushes on branch main
+      - master # Ignore pushes on branch main
 jobs:
   Deploy-Preview:
     runs-on: ubuntu-latest

@@ -108,7 +108,7 @@ export default function UploadFileModal({consultation}: UploadFileModalProps) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>File</FormLabel>
-                  <Input id="file" type="file" accept="image/jpeg,image/gif,image/png,application/pdf,image/x-eps"/>
+                  <Input id="file" type="file" accept="image/jpeg,image/gif,image/png,application/pdf,image/x-eps" {...field} />
                   <FormDescription>
                     Select the file to upload.
                   </FormDescription>

@@ -4,8 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@comp
 import { Tooltip, TooltipContent, TooltipTrigger } from "@components/ui/tooltip";
 import Each from "@components/utils/Each";
 import { cn } from "@lib/utils";
-import { Delete, FileText, ImageIcon, Trash, Trash2 } from "lucide-react";
-import { date } from "zod";
+import { FileText, ImageIcon, Trash, Trash2 } from "lucide-react";
 import UploadFileModal from "./UploadFileModal";
 
 interface FilesProps {

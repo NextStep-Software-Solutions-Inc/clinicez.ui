@@ -44,3 +44,15 @@ export const getConsultationNotes = async (id: string) => {
 export const getNurseAssessment = async (id: string) => {
   return nurseAssessment
 }
+
+export const addVitalSignsAction = async (data: FormData) => {
+  console.log("Adding vital signs...", Object.fromEntries(data));
+  await delay(3000);
+  return true;
+}
+
+export const updateVitalSignsAction = async (data: FormData) => {
+  console.log("Updating vital signs...", Object.fromEntries(data));
+  await delay(3000);
+  return true;
+}

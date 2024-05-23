@@ -46,13 +46,15 @@
     "hps": [
         {
             "id": 1,
-            "name": "Dr. John Doe",
+            "avatarUrl": "https://randomuser.me/api/portraits/men/1.jpg",
+            "name": "Nurse John Doe",
             "specialty": "General Practitioner",
             "location": "123 Main St, Anytown, USA",
             "phone": "555-555-5555"
         },
         {
             "id": 2,
+            "avatarUrl": "https://randomuser.me/api/portraits/men/2.jpg",
             "name": "Dr. Jane Doe",
             "specialty": "Pediatrician",
             "location": "456 Elm St, Anytown, USA",
@@ -60,7 +62,8 @@
         },
         {
             "id": 3,
-            "name": "Dr. Jim Doe",
+            "avatarUrl": "https://randomuser.me/api/portraits/men/3.jpg",
+            "name": "Nurse Jim Doe",
             "specialty": "Dermatologist",
             "location": "789 Oak St, Anytown, USA",
             "phone": "555-555-5555"

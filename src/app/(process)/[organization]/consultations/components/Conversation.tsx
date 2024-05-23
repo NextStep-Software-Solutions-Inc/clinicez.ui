@@ -1,42 +1,34 @@
 "use client";
 
+import { getConversationAction } from "@actions/consultations.action";
 import { Button } from "@components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@components/ui/card";
 import { Input } from "@components/ui/input";
-import { Label } from "@components/ui/label";
-import { Textarea } from "@components/ui/textarea";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@components/ui/tooltip";
+import Each from "@components/utils/Each";
 import { cn } from "@lib/utils";
-import { CornerDownLeft, Mic, Paperclip, Send } from "lucide-react"
-import React from "react";
+import { Send } from "lucide-react"
+import React, { use, useEffect } from "react";
 
 interface ConversationProps {
     consultation: Consultation;
 }
 
-
 export default function Conversation({ consultation}: ConversationProps) {
-  
   const [input, setInput] = React.useState("")
   const inputLength = input.trim().length
-  const [messages, setMessages] = React.useState([
-    {
-      role: "agent",
-      content: "Hi, how can I help you today?",
-    },
-    {
-      role: "user",
-      content: "Hey, I'm having trouble with my account.",
-    },
-    {
-      role: "agent",
-      content: "What seems to be the problem?",
-    },
-    {
-      role: "user",
-      content: "I can't log in.",
-    },
-  ])
+  const [messages, setMessages] = React.useState<{
+    senderId: number
+    content: string
+  }[]>()
+
+  useEffect(() => {
+    const fetchConversation = async () => {
+      const convo = await getConversationAction(consultation.id)
+      setMessages(convo)
+    }
+    fetchConversation()
+  }, [consultation.id])
+  
   return (
     <Card>
       <CardHeader>
@@ -47,19 +39,21 @@ export default function Conversation({ consultation}: ConversationProps) {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {messages.map((message, index) => (
-            <div
-              key={index}
-              className={cn(
-                "flex w-max max-w-[75%] flex-col gap-2 rounded-lg px-3 py-2 text-sm",
-                message.role === "user"
-                  ? "ml-auto bg-primary text-primary-foreground"
-                  : "bg-muted"
-              )}
-            >
-              {message.content}
-            </div>
-          ))}
+          <Each
+            of={messages ?? []}
+            render={(message, index) => (
+              <div
+                className={cn(
+                  "flex w-max max-w-[75%] flex-col gap-2 rounded-lg px-3 py-2 text-sm",
+                  message.senderId === 2 //  change to user id
+                    ? "ml-auto bg-primary text-primary-foreground"
+                    : "bg-muted"
+                )}
+              >
+                {message.content}
+              </div>
+            )}
+          />
         </div>
       </CardContent>
       <CardFooter>
@@ -68,9 +62,9 @@ export default function Conversation({ consultation}: ConversationProps) {
             event.preventDefault()
             if (inputLength === 0) return
             setMessages([
-              ...messages,
+              ...messages ?? [],
               {
-                role: "user",
+                senderId: 2, //  change to user id
                 content: input,
               },
             ])

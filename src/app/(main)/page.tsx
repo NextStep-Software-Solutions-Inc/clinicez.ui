@@ -11,8 +11,8 @@ export default async function HomePage() {
   
   return (
     <main className="content">
-      <section className="relative bg-gradient-to-l from-[#6DEBF4] via-[#C3FBFF] to-[#D3FCFF] bg-opacity-30 p-2 sm:py-16 lg:py-24">
-        <div className="container mx-auto">
+      <section className="bg-gradient-to-l from-[#6DEBF4] via-[#C3FBFF] to-[#D3FCFF] bg-opacity-30">
+        <div className="relative container mx-auto p-2 sm:py-16 lg:py-24">
           <div className="mx-auto sm:px-6 lg:px-8">
             <div className="grid items-center grid-cols-1 gap-12 lg:grid-cols-2">
               <div>

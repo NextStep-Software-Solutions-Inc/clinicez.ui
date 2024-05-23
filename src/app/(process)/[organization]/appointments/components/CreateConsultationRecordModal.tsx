@@ -14,11 +14,15 @@ import { Input } from "@components/ui/input"
 import { Label } from "@components/ui/label"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@components/ui/tooltip"
 import { ClipboardPlus } from "lucide-react"
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useRef } from "react"
 import { toast } from "sonner";
 
 
 export default function CreateConsultationRecordModal({disabled = false, subject}: {disabled?: boolean, subject: string}) {
+  const router = useRouter();
+  const params = useParams();
+  const searchParams = useSearchParams();
 
   const closeBtnRef = useRef<HTMLInputElement>(null)
   const action = async (formData: FormData) => {
@@ -26,6 +30,8 @@ export default function CreateConsultationRecordModal({disabled = false, subject
     if (res) {
       toast.success("Consultation record created successfully.")
       closeBtnRef.current?.click()
+
+      router.push(`/${params.organization}/consultations/1099?${searchParams.toString()}`);
     }
   }
 

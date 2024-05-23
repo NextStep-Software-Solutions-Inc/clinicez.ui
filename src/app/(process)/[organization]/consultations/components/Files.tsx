@@ -1,63 +1,20 @@
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@components/ui/accordion";
-import { Button } from "@components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@components/ui/card";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@components/ui/tooltip";
 import Each from "@components/utils/Each";
 import { cn } from "@lib/utils";
-import { Delete, FileText, ImageIcon, Trash, Trash2 } from "lucide-react";
-import { date } from "zod";
+import { FileText, ImageIcon, Trash, Trash2 } from "lucide-react";
 import UploadFileModal from "./UploadFileModal";
+import { getConsultationFilesAction } from "@actions/consultations.action";
+import ConfirmDeleteFile from "./ConfirmDeleteFile";
 
 interface FilesProps {
     consultation: Consultation;
 }
 
-const files = [
-  {
-    type: "document",
-    name: "Consultation Note",
-    description: "Summary of the consultation.",
-    date: "2021-10-01"
-  },
-  {
-    type: "document",
-    name: "Prescription",
-    description: "Medication prescribed to the patient.",
-    date: "2021-10-01"
-  },
-  {
-    type: "document",
-    name: "Lab Results",
-    description: "Results of the lab tests.",
-    date: "2021-10-01"
-  },
-  {
-    type: "image",
-    name: "X-Ray",
-    description: "X-Ray image of the patient.",
-    date: "2021-10-01"
-  },
-  {
-    type: "image",
-    name: "MRI",
-    description: "MRI image of the patient.",
-    date: "2021-10-01"
-  },
-  {
-    type: "image",
-    name: "CT Scan",
-    description: "CT Scan image of the patient.",
-    date: "2021-10-01"
-  },
-  {
-    type: "document",
-    name: "Discharge Summary",
-    description: "Summary of the discharge.",
-    date: "2021-10-01"
-  }
-]
+export default async function Files({ consultation}: FilesProps) {
 
-export default function Files({ consultation}: FilesProps) {
+  const files = await getConsultationFilesAction(consultation.id);
+
   return (
     <Card>
       <CardHeader>
@@ -91,9 +48,7 @@ export default function Files({ consultation}: FilesProps) {
                   </div>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button className="ml-auto" variant="ghost" size="icon">
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                      <ConfirmDeleteFile fileId={file.id}/>
                     </TooltipTrigger>
                     <TooltipContent side="top">Delete</TooltipContent>
                   </Tooltip>

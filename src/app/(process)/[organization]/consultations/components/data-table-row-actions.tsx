@@ -21,6 +21,7 @@ import ConsultationRecordSettingSheet from "../../appointments/components/Consul
 import EditConsultationRecordModal from "../../appointments/components/EditConsultationRecordModal"
 import React from "react"
 import { useDropdownMenu } from "@components/DropdownMenuProvider"
+import { toast } from "sonner"
 interface DataTableRowActionsProps<TData> {
   consultation: Consultation
 }
@@ -30,6 +31,11 @@ export function DataTableRowActions<TData>({
 }: DataTableRowActionsProps<TData>) {
   const { dropdownOpen, setDropdownOpen, hasOpenDialog, dropdownTriggerRef, handleDialogItemSelect, handleDialogItemOpenChange } = useDropdownMenu()!;
 
+  const notImplemented = () => {
+    toast.info("This feature is not implemented yet", {
+      position: "top-center"
+    })
+  }
   return (
     <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
       <DropdownMenuTrigger asChild ref={dropdownTriggerRef}>
@@ -66,7 +72,7 @@ export function DataTableRowActions<TData>({
           </DropdownMenuSubContent>
         </DropdownMenuSub>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>Delete</DropdownMenuItem>
+        <DropdownMenuItem onClick={notImplemented}>Delete</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   )

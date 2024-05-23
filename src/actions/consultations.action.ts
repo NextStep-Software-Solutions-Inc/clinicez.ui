@@ -3,6 +3,7 @@ import { delay } from "@lib/wait";
 import consultations from "@public/json/consultations.json"
 import consultationNotes from "@public/json/consultation-notes.json" 
 import nurseAssessment from "@public/json/nurse-assessment.json" 
+import  conversation from "@public/json/conversation.json"
 import { consultationRecordSchema } from "../app/(process)/[organization]/consultations/data/schema";
 import { z } from "zod";
 
@@ -67,4 +68,10 @@ export const updateNurseAssessmentAction = async (data: FormData) => {
   console.log("Updating nurse assessment...", Object.fromEntries(data));
   await delay(3000);
   return true;
+}
+
+export const getConversationAction = async (id: string) => {
+  console.log("Getting conversation...", id);
+  
+  return conversation.conversation
 }

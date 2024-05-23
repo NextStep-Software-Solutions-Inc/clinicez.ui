@@ -27,7 +27,13 @@ async function ConsultationPage({params}: AppRouterPageRouteOpts) {
           Consultation details of Consultation # {consultationId}
           </p>
         </div>
-        <Link className="ml-auto" href={`/${params?.organization}/consultations/${consultationId}/edit`}>
+        <Link className="ml-auto" href={{
+          pathname: `/${params?.organization}/generate-document`,
+          query: {
+            _consultationId: consultationId,
+            _patientId: consultation.id,
+          }
+        }}>
           <Button variant="default" size="sm">Issue e-Document <ExternalLink className="h-4 w-4 ml-2"/></Button>
         </Link>
       </div>

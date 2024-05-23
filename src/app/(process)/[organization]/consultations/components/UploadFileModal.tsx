@@ -66,7 +66,7 @@ export default function UploadFileModal({consultation}: UploadFileModalProps) {
         <TooltipTrigger asChild>
           <DialogTrigger asChild>
             <Button>
-              <Cloud className="h-4 w-4" />
+              <Cloud className="h-4 w-4 mr-2"/>
               Upload File
             </Button>
           </DialogTrigger>

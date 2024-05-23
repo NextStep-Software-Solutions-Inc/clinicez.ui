@@ -4,6 +4,7 @@ import consultations from "@public/json/consultations.json"
 import consultationNotes from "@public/json/consultation-notes.json" 
 import nurseAssessment from "@public/json/nurse-assessment.json" 
 import  conversation from "@public/json/conversation.json"
+import vitalSigns from "@public/json/vital-signs.json"
 import { consultationRecordSchema } from "../app/(process)/[organization]/consultations/data/schema";
 import interventions from "@public/json/interventions.json"
 import { z } from "zod";
@@ -79,4 +80,9 @@ export const getConversationAction = async (id: string) => {
 export const getInterventionsAction = async (id: string) => {
   console.log("Getting interventions...", id);
   return interventions
+}
+
+export const getVitalSignsAction = async (id: string) => {
+  console.log("Getting vital signs...", id);
+  return vitalSigns
 }

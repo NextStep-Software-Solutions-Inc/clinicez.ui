@@ -11,6 +11,17 @@ declare global {
     id: string
     action: string
   }
+  type VitalSigns = {
+    id: string
+    temperature: number
+    pulse: number
+    respiration: number
+    bloodPressure: string
+    oxygenSaturation: number
+    height: number
+    weight: number
+    bmi: number
+  }
 }
 
 export default global

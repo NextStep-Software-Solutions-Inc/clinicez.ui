@@ -85,7 +85,7 @@ export default function UpdateVitalSignsModal({vitalSigns}: UpdateVitalSignsModa
         <TooltipTrigger asChild>
           <DialogTrigger asChild>
             <Button>
-              <Pencil className="h-4 w-4 mx-2" />
+              <Pencil className="h-4 w-4 mr-2" />
               Update Vital Signs
             </Button>
           </DialogTrigger>

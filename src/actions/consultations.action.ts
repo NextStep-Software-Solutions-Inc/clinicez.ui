@@ -56,3 +56,10 @@ export const updateVitalSignsAction = async (data: FormData) => {
   await delay(3000);
   return true;
 }
+
+export const updateConsultationNotesAction = async (data: FormData) => {
+  console.log("Updating consultation notes...", Object.fromEntries(data));
+  await delay(3000);
+  return true;
+}
+

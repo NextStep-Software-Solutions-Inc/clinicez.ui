@@ -3,6 +3,7 @@ import Each from "@components/utils/Each";
 import { Brain, Gauge, Heart, HeartPulse, PersonStanding, Ruler, Thermometer, Weight } from "lucide-react";
 import AddVitalSignsModal from "./modals/AddVitalSignsModal";
 import UpdateVitalSignsModal from "./modals/UpdateVitalSignsModal";
+import { getVitalSignsAction } from "@actions/consultations.action";
 
 interface VitalSignsProps {
     consultation: Consultation;
@@ -58,18 +59,10 @@ const vitalSigns = [
   }
 ]
 
-const vitalSignsValue: VitalSigns = {
-  id: "1",
-  temperature: 36.5,
-  pulse: 82,
-  respiration: 12,
-  oxygenSaturation: 95,
-  bloodPressure: "120/90",
-  height: 139,
-  weight: 62,
-  bmi: 20
-}
-export default function VitalSigns({ consultation}: VitalSignsProps) {
+export default async function VitalSigns({ consultation}: VitalSignsProps) {
+
+  const vitalSignsValue = await getVitalSignsAction(consultation.id)
+
   return (
     <Card>
       <CardHeader>

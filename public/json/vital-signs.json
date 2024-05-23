@@ -1,0 +1,11 @@
+{
+    "id": "1",
+    "temperature": 36.5,
+    "pulse": 82,
+    "respiration": 12,
+    "oxygenSaturation": 95,
+    "bloodPressure": "120/90",
+    "height": 139,
+    "weight": 62,
+    "bmi": 20
+}

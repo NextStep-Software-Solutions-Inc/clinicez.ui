@@ -3,15 +3,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@comp
 import AddInterventionModal from "./modals/AddInterventionModal";
 import { Badge } from "@components/ui/badge";
 import Each from "@components/utils/Each";
-import interventions from "@public/json/interventions.json"
 import { format } from "date-fns";
 import { Avatar, AvatarFallback, AvatarImage } from "@components/ui/avatar";
+import { getInterventionsAction } from "@actions/consultations.action";
 
 interface InterventionsProps {
     consultation: Consultation;
 }
 
 export default async function Interventions({ consultation}: InterventionsProps) {
+  const interventions = await getInterventionsAction(consultation.id)
+
   return (
     <Card>
       <CardHeader >
@@ -37,28 +39,31 @@ export default async function Interventions({ consultation}: InterventionsProps)
         <Accordion type="multiple">
           <Each
             of={interventions.interventions}
-            render={(intervention) => (
-              <AccordionItem value={intervention.id.toString()}>
-                <AccordionTrigger>
-                  <div className="flex flex-row items-center justify-between">
-                    <span>{intervention.action}</span>
-                    <Badge className="mx-2">{format(intervention.date, "PP")}</Badge>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent >
-                  <div>
-                    <div className="flex items-center gap-1">
-                      <Avatar className="h-8 w-8 object-cover">
-                        <AvatarImage src="https://images.unsplash.com/photo-1716277420481-581a5380c225?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxlZGl0b3JpYWwtZmVlZHwzOHx8fGVufDB8fHx8fA%3D%3D" alt="avatar" />
-                        <AvatarFallback>{interventions.hps.find(hp => hp.id === intervention.hpId)?.name.substring(0,2)}</AvatarFallback>
-                      </Avatar> 
-                      <span className="text-muted-foreground font-semibold">{interventions.hps.find(hp => hp.id === intervention.hpId)?.name}</span>
+            render={(intervention) => {
+              const hp = interventions.hps.find(hp => hp.id === intervention.hpId)
+              return (
+                <AccordionItem value={intervention.id.toString()}>
+                  <AccordionTrigger>
+                    <div className="flex flex-row items-center justify-between">
+                      <span>{intervention.action}</span>
+                      <Badge className="mx-2">{format(intervention.date, "PP")}</Badge>
                     </div>
-                    <p className="ml-9">{intervention.details}</p>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            )}
+                  </AccordionTrigger>
+                  <AccordionContent >
+                    <div>
+                      <div className="flex items-center gap-1">
+                        <Avatar className="h-8 w-8 object-cover">
+                          <AvatarImage src={hp?.avatarUrl} alt="avatar" />
+                          <AvatarFallback>{hp?.name.substring(0,2)}</AvatarFallback>
+                        </Avatar> 
+                        <span className="text-muted-foreground font-semibold">{interventions.hps.find(hp => hp.id === intervention.hpId)?.name}</span>
+                      </div>
+                      <p className="ml-9">{intervention.details}</p>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              )
+            }}
           />
         </Accordion>
       </CardContent>

@@ -5,6 +5,7 @@ import { Badge } from "@components/ui/badge";
 import Each from "@components/utils/Each";
 import interventions from "@public/json/interventions.json"
 import { format } from "date-fns";
+import { Avatar, AvatarFallback, AvatarImage } from "@components/ui/avatar";
 
 interface InterventionsProps {
     consultation: Consultation;
@@ -46,8 +47,14 @@ export default async function Interventions({ consultation}: InterventionsProps)
                 </AccordionTrigger>
                 <AccordionContent >
                   <div>
-                    HP: {interventions.hps.find(hp => hp.id === intervention.hpId)?.name}
-                    <p>{intervention.details}</p>
+                    <div className="flex items-center gap-1">
+                      <Avatar className="h-8 w-8 object-cover">
+                        <AvatarImage src="https://images.unsplash.com/photo-1716277420481-581a5380c225?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxlZGl0b3JpYWwtZmVlZHwzOHx8fGVufDB8fHx8fA%3D%3D" alt="avatar" />
+                        <AvatarFallback>{interventions.hps.find(hp => hp.id === intervention.hpId)?.name.substring(0,2)}</AvatarFallback>
+                      </Avatar> 
+                      <span className="text-muted-foreground font-semibold">{interventions.hps.find(hp => hp.id === intervention.hpId)?.name}</span>
+                    </div>
+                    <p className="ml-9">{intervention.details}</p>
                   </div>
                 </AccordionContent>
               </AccordionItem>

@@ -10,6 +10,7 @@ import VitalSigns from "./VitalSigns";
 import Files from "./Files";
 import { DataTableRowActions } from "./data-table-row-actions";
 import { DropdownMenuProvider } from "@components/DropdownMenuProvider";
+import Suspend from "@components/Suspend";
 
 interface ConsultationDetailsProps {
     consultation: Consultation
@@ -66,7 +67,9 @@ export default async function ConsultationDetails({ consultation }: Consultation
             <Interventions consultation={consultation}/>
           </TabsContent>
           <TabsContent value="conversation">
-            <Conversation consultation={consultation}/>
+            <Suspend>
+              <Conversation consultation={consultation}/>
+            </Suspend>
           </TabsContent>
           <TabsContent value="vital-signs">
             <VitalSigns consultation={consultation}/>

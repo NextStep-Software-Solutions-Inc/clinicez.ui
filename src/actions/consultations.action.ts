@@ -63,3 +63,8 @@ export const updateConsultationNotesAction = async (data: FormData) => {
   return true;
 }
 
+export const updateNurseAssessmentAction = async (data: FormData) => {
+  console.log("Updating nurse assessment...", Object.fromEntries(data));
+  await delay(3000);
+  return true;
+}

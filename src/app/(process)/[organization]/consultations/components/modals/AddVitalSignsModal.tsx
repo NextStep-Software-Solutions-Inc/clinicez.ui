@@ -82,7 +82,7 @@ export default function AddVitalSignsModal({consultation}: AddVitalSignsModalPro
         <TooltipTrigger asChild>
           <DialogTrigger asChild>
             <Button>
-              <Plus className="h-4 w-4 mx-2" />
+              <Plus className="h-4 w-4 mr-2" />
               Add Vital Signs
             </Button>
           </DialogTrigger>

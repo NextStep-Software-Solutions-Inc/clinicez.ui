@@ -1,4 +1,3 @@
-import { Button } from "@components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@components/ui/card";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@components/ui/tooltip";
 import Each from "@components/utils/Each";
@@ -6,6 +5,7 @@ import { cn } from "@lib/utils";
 import { FileText, ImageIcon, Trash, Trash2 } from "lucide-react";
 import UploadFileModal from "./UploadFileModal";
 import { getConsultationFilesAction } from "@actions/consultations.action";
+import ConfirmDeleteFile from "./ConfirmDeleteFile";
 
 interface FilesProps {
     consultation: Consultation;
@@ -48,9 +48,7 @@ export default async function Files({ consultation}: FilesProps) {
                   </div>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button className="ml-auto" variant="ghost" size="icon">
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                      <ConfirmDeleteFile fileId={file.id}/>
                     </TooltipTrigger>
                     <TooltipContent side="top">Delete</TooltipContent>
                   </Tooltip>

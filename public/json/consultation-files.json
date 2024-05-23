@@ -1,0 +1,46 @@
+{
+    "files": [
+        {
+            "type": "document",
+            "name": "Consultation Note",
+            "description": "Summary of the consultation.",
+            "date": "2021-10-01"
+        },
+        {
+            "type": "document",
+            "name": "Prescription",
+            "description": "Medication prescribed to the patient.",
+            "date": "2021-10-01"
+        },
+        {
+            "type": "document",
+            "name": "Lab Results",
+            "description": "Results of the lab tests.",
+            "date": "2021-10-01"
+        },
+        {
+            "type": "image",
+            "name": "X-Ray",
+            "description": "X-Ray image of the patient.",
+            "date": "2021-10-01"
+        },
+        {
+            "type": "image",
+            "name": "MRI",
+            "description": "MRI image of the patient.",
+            "date": "2021-10-01"
+        },
+        {
+            "type": "image",
+            "name": "CT Scan",
+            "description": "CT Scan image of the patient.",
+            "date": "2021-10-01"
+        },
+        {
+            "type": "document",
+            "name": "Discharge Summary",
+            "description": "Summary of the discharge.",
+            "date": "2021-10-01"
+        }
+    ]
+}

@@ -1,64 +1,74 @@
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@components/ui/accordion";
-import { Button } from "@components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@components/ui/card";
 import Each from "@components/utils/Each";
 import { Brain, Gauge, Heart, HeartPulse, PersonStanding, Ruler, Thermometer, Weight } from "lucide-react";
-import AddVitalSignsModal from "./AddVitalSignsModal";
+import AddVitalSignsModal from "./modals/AddVitalSignsModal";
+import UpdateVitalSignsModal from "./modals/UpdateVitalSignsModal";
 
 interface VitalSignsProps {
     consultation: Consultation;
 }
 const vitalSigns = [
   {
+    key: "temperature",
     icon: Thermometer,
     name: "Temperature",
-    value: "36.5°C",
     normalRange: "Normal temperature"
   },
   {
+    key: "pulse",
     icon: HeartPulse,
     name: "Pulse Rate",
-    value: "82 bpm",
     normalRange: "Normal range: 60 - 100"
   },
   {
+    key: "respiration",
     icon: Heart,
     name: "Respiration Rate",
-    value: "12 cpm",
     normalRange: "Normal range: 12 to 16"
   },
   {
+    key: "oxygenSaturation",
     icon: Brain,
     name: "Oxygen Saturation",
-    value: "95 %",
     normalRange: "Normal range: 70-100%"
   },
   {
+    key: "bloodPressure",
     icon: Gauge,
     name: "Blood Pressure",
-    value: "120/90 mmHG",
     normalRange: "Normal range: 70-100%"
   },
   {
+    key: "height",
     icon: Ruler,
     name: "Height",
-    value: "139 cm",
     normalRange: "Normal range: 70-100%"
   },
   {
+    key: "weight",
     icon: Weight,
     name: "Weight",
-    value: "62 kg",
     normalRange: "Normal range: 70-100%"
   },
   {
+    key: "bmi",
     icon: PersonStanding,
     name: "Body Mass Index",
-    value: "0",
     normalRange: "Proportional"
   }
 ]
 
+const vitalSignsValue: VitalSigns = {
+  id: "1",
+  temperature: 36.5,
+  pulse: 82,
+  respiration: 12,
+  oxygenSaturation: 95,
+  bloodPressure: "120/90",
+  height: 139,
+  weight: 62,
+  bmi: 20
+}
 export default function VitalSigns({ consultation}: VitalSignsProps) {
   return (
     <Card>
@@ -70,8 +80,9 @@ export default function VitalSigns({ consultation}: VitalSignsProps) {
             Patients vital signs are recorded here.
             </CardDescription>
           </div>
-          <div className="ml-auto">
+          <div className="ml-auto space-x-1">
             <AddVitalSignsModal consultation={consultation}/>
+            <UpdateVitalSignsModal vitalSigns={vitalSignsValue}/>
           </div>
         </div>
       </CardHeader>
@@ -85,7 +96,7 @@ export default function VitalSigns({ consultation}: VitalSignsProps) {
               return (
                 <Card className="basis-auto grow">
                   <CardHeader>
-                    <CardTitle className="flex gap-1"><Icon />{vital.value}</CardTitle>
+                    <CardTitle className="flex gap-1"><Icon />{vitalSignsValue[vital.key as keyof typeof vitalSignsValue]}</CardTitle>
                     <CardDescription>{vital.normalRange}</CardDescription>
                   </CardHeader>
                   <CardFooter>{vital.name}</CardFooter>

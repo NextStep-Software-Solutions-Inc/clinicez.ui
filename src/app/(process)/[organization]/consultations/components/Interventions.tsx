@@ -1,6 +1,6 @@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@components/ui/accordion";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@components/ui/card";
-import AddInterventionModal from "./AddInterventionModal";
+import AddInterventionModal from "./modals/AddInterventionModal";
 import { Badge } from "@components/ui/badge";
 import Each from "@components/utils/Each";
 import interventions from "@public/json/interventions.json"

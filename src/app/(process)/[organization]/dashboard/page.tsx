@@ -64,12 +64,12 @@ export default function DashboardPage({params: {organization}}:DashboardPageProp
             </TabsList>
             <TabsContent value="overview" className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Card>
+                <Card className="group/icon">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">
                       Appointments
                     </CardTitle>
-                    <Calendar className="text-primary"/>
+                    <Calendar className="text-primary group-hover/icon:scale-150 transition-all"/>
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">12</div>
@@ -78,12 +78,12 @@ export default function DashboardPage({params: {organization}}:DashboardPageProp
                     </p>
                   </CardContent>
                 </Card>
-                <Card>
+                <Card className="group/icon">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">
                       Consultations
                     </CardTitle>
-                    <Stethoscope className="text-primary"/>
+                    <Stethoscope className="text-primary group-hover/icon:scale-150 transition-all"/>
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">190</div>
@@ -92,10 +92,10 @@ export default function DashboardPage({params: {organization}}:DashboardPageProp
                     </p>
                   </CardContent>
                 </Card>
-                <Card>
+                <Card className="group/icon">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Trending Case</CardTitle>
-                    <TrendingUp className="text-primary"/>
+                    <TrendingUp className="text-primary group-hover/icon:scale-150 transition-all"/>
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">Covid-19</div>
@@ -104,12 +104,12 @@ export default function DashboardPage({params: {organization}}:DashboardPageProp
                     </p>
                   </CardContent>
                 </Card>
-                <Card>
+                <Card className="group/icon">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">
                       Patients Visited
                     </CardTitle>
-                    <User className="text-primary"/>
+                    <User className="text-primary group-hover/icon:scale-150 transition-all"/>
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">+573</div>

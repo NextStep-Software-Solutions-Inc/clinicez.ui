@@ -26,11 +26,10 @@ export default async function HomePage() {
                 }} >ez</span> way.</h1>
                 <p className="mt-4 text-base text-gray-600 lg:mt-8 sm:text-xl">Join Health Organization and Manage Your Health Records</p>
                 <Link href="/api/auth/login">
-                  <Button size="lg" className="rounded-full px-6 mt-8">
+                  <Button size="lg" className="rounded-full mt-8">
                   Join for free
                     <ArrowRightCircle className="w-4 h-4 ml-2" />
                   </Button>
-                
                 </Link>
                 <p className="mt-5 text-gray-600">Already joined us? <a href="/api/auth/login" title="" className="text-black transition-all duration-200 hover:underline">Log in</a></p>
               </div>

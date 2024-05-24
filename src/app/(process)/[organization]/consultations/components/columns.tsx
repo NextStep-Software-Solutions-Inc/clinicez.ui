@@ -43,7 +43,7 @@ export const columns: ColumnDef<ConsultationRecordSchema>[] = [
       <DataTableColumnHeader column={column} title="Consultation Record #" />
     ),
     cell: ({ row }) => (
-      <Link className="w-[110px] bg-primary text-white rounded-md px-2 py-1 text-sm font-medium"
+      <Link className="w-[110px] bg-primary text-white rounded-md px-2 py-1 text-sm font-medium hover:bg-slate-500 transition-all"
         href={{
           pathname: `consultations/${row.getValue("id")}`
         }}

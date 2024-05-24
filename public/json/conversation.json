@@ -1,0 +1,20 @@
+{
+    "conversation": [
+        {
+            "senderId": 1,
+            "content": "Hi, how can I help you today?"
+        },
+        {
+            "senderId": 2,
+            "content": "Hey, I'm having trouble with my account."
+        },
+        {
+            "senderId": 1,
+            "content": "What seems to be the problem?"
+        },
+        {
+            "senderId": 2,
+            "content": "I can't log in."
+        }
+    ]
+}

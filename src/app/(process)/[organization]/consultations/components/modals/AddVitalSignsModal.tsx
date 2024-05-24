@@ -1,6 +1,6 @@
 "use client";
 
-import { addInterventionAction } from "@actions/consultations.action"
+import { addVitalSignsAction } from "@actions/consultations.action"
 import ActionButton from "@components/ActionButton"
 import CustomModalContent from "@components/CustomModalContent";
 import { Button } from "@components/ui/button"
@@ -20,9 +20,7 @@ import {
   FormMessage,
 } from "@components/ui/form"
 import { Input } from "@components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@components/ui/select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@components/ui/tooltip"
-import Each from "@components/utils/Each";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {  Plus } from "lucide-react"
 import { useRef } from "react"
@@ -36,25 +34,25 @@ interface AddVitalSignsModalProps {
 }
 
 const AddVitalSignsFormSchema = z.object({
-  temperature: z.string({
+  temperature: z.number({
     required_error: "Please provide the temperature"
   }),
-  pulse: z.string({
+  pulse: z.number({
     required_error: "Please provide the pulse"
   }),
-  respiration: z.string({
+  respiration: z.number({
     required_error: "Please provide the respiration"
   }),
   bloodPressure: z.string({
     required_error: "Please provide the blood pressure"
   }),
-  oxygenSaturation: z.string({
+  oxygenSaturation: z.number({
     required_error: "Please provide the oxygen saturation"
   }),
-  height: z.string({
+  height: z.number({
     required_error: "Please provide the height"
   }),
-  weight: z.string({
+  weight: z.number({
     required_error: "Please provide the weight"
   }),
 })
@@ -70,9 +68,9 @@ export default function AddVitalSignsModal({consultation}: AddVitalSignsModalPro
   const action = async (formData: FormData) => {
     form.handleSubmit(async (data) => {
 
-      const res = await addInterventionAction(formData)
+      const res = await addVitalSignsAction(formData)
       if (res) {
-        toast.success("Intervention added successfully")
+        toast.success("Vital signs added successfully")
         closeBtnRef.current?.click()
       }
     })()
@@ -84,7 +82,7 @@ export default function AddVitalSignsModal({consultation}: AddVitalSignsModalPro
         <TooltipTrigger asChild>
           <DialogTrigger asChild>
             <Button>
-              <Plus className="h-4 w-4" />
+              <Plus className="h-4 w-4 mr-2" />
               Add Vital Signs
             </Button>
           </DialogTrigger>
@@ -99,7 +97,7 @@ export default function AddVitalSignsModal({consultation}: AddVitalSignsModalPro
         <Form {...form}>
           <form 
             action={action}
-            id="add-intervention-form"
+            id="add-vital-signs-form"
             className="grid gap-4 py-4"
           >
             
@@ -115,6 +113,7 @@ export default function AddVitalSignsModal({consultation}: AddVitalSignsModalPro
                       placeholder="Enter the temperature"
                       className="col-span-3"
                       {...field}
+                      onChange={(e) =>  field.onChange(+e.target.value)}
                     />
                     <FormDescription>
                       Example of temperature: 37.5 °C
@@ -134,6 +133,7 @@ export default function AddVitalSignsModal({consultation}: AddVitalSignsModalPro
                       placeholder="Enter the pulse"
                       className="col-span-3"
                       {...field}
+                      onChange={(e) =>  field.onChange(+e.target.value)}
                     />
                     <FormDescription>
                       Example of pulse: 70 bpm
@@ -153,6 +153,7 @@ export default function AddVitalSignsModal({consultation}: AddVitalSignsModalPro
                       placeholder="Enter the respiration"
                       className="col-span-3"
                       {...field}
+                      onChange={(e) =>  field.onChange(+e.target.value)}
                     />
                     <FormDescription>
                       Example of respiration: 12 cpm
@@ -172,6 +173,7 @@ export default function AddVitalSignsModal({consultation}: AddVitalSignsModalPro
                       placeholder="Enter the oxygen saturation"
                       className="col-span-3"
                       {...field}
+                      onChange={(e) =>  field.onChange(+e.target.value)}
                     />
                     <FormDescription>
                       Example of oxygen saturation: 98%
@@ -210,6 +212,7 @@ export default function AddVitalSignsModal({consultation}: AddVitalSignsModalPro
                       placeholder="Enter the height"
                       className="col-span-3"
                       {...field}
+                      onChange={(e) =>  field.onChange(+e.target.value)}
                     />
                     <FormDescription>
                       Example of height: 170 cm
@@ -229,6 +232,7 @@ export default function AddVitalSignsModal({consultation}: AddVitalSignsModalPro
                       placeholder="Enter the weight"
                       className="col-span-3"
                       {...field}
+                      onChange={(e) =>  field.onChange(+e.target.value)}
                     />
                     <FormDescription>
                       Example of weight: 65 kg
@@ -243,7 +247,7 @@ export default function AddVitalSignsModal({consultation}: AddVitalSignsModalPro
               <DialogClose asChild>
                 <input ref={closeBtnRef} type="hidden"  value="ok"/>
               </DialogClose>
-              <ActionButton form="add-intervention-form" type="submit">
+              <ActionButton disabled={form.formState.isSubmitting} form="add-vital-signs-form" type="submit">
                 Add
               </ActionButton>
             </DialogFooter>

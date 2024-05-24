@@ -5,14 +5,19 @@ import Suspend from '@components/Suspend';
 
 export const metadata: Metadata = {
   title: "Doctors | Clinic EZ",
-  description: "Meet our Doctors",
+  description: "Our experienced Doctors are equipped with the latest technology to provide you with the best care possible.",
 };
 
 export default async function Doctors() {
   return (
-    <div className="container mx-auto">
-      <div className="flex flex-col items-center justify-center min:h-screen relative">
-        <h1 className="font-bold text-teal-500 text-3xl mb-5 ">Meet our Doctors</h1>
+    <div className="content container mx-auto mt-10">
+      <div className="prose max-w-full text-center">
+        <h1>Meet our Doctors</h1>
+        <p>
+          Our experienced Doctors are equipped with the latest technology to provide you with the best care possible.
+        </p>
+      </div>
+      <div className="flex flex-col items-center justify-center min:h-screen relative my-5">
         <Suspend>
           <DoctorList />
         </Suspend>

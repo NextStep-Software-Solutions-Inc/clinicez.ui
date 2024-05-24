@@ -34,7 +34,8 @@ export function OrganizationSwitcher({
   ]
   
   const handleChangeOrganization = (newValue: string) => {
-    router.push(pathname.replace(organization, newValue))
+    const searchParams  = new URLSearchParams(window.location.search);
+    router.replace(pathname.replace(organization, newValue).concat("?", searchParams.toString()))
   }
 
   return (

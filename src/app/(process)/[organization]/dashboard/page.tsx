@@ -69,7 +69,7 @@ export default function DashboardPage({params: {organization}}:DashboardPageProp
                     <CardTitle className="text-sm font-medium">
                       Appointments
                     </CardTitle>
-                    <Calendar/>
+                    <Calendar className="text-primary"/>
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">12</div>
@@ -83,7 +83,7 @@ export default function DashboardPage({params: {organization}}:DashboardPageProp
                     <CardTitle className="text-sm font-medium">
                       Consultations
                     </CardTitle>
-                    <Stethoscope/>
+                    <Stethoscope className="text-primary"/>
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">190</div>
@@ -95,7 +95,7 @@ export default function DashboardPage({params: {organization}}:DashboardPageProp
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Trending Case</CardTitle>
-                    <TrendingUp/>
+                    <TrendingUp className="text-primary"/>
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">Covid-19</div>
@@ -109,7 +109,7 @@ export default function DashboardPage({params: {organization}}:DashboardPageProp
                     <CardTitle className="text-sm font-medium">
                       Patients Visited
                     </CardTitle>
-                    <User/>
+                    <User className="text-primary"/>
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">+573</div>

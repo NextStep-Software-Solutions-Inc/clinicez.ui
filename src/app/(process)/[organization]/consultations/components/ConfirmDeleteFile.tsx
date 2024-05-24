@@ -33,8 +33,8 @@ export default function ConfirmDeleteFile({disabled = false, fileId}: ConfirmDel
       <Tooltip>
         <TooltipTrigger asChild>
           <PopoverTrigger asChild ref={triggerRef}>
-            <Button className="ml-auto" variant="ghost" size="icon">
-              <Trash2 className="h-4 w-4 text-destructive" />
+            <Button className="ml-auto group/delete invisible group-hover/item:visible" variant="ghost" size="icon">
+              <Trash2 className="h-4 w-4 text-destructive group-hover/delete:scale-125 transition-all" />
               <span className="sr-only">Delete</span>
             </Button>
           </PopoverTrigger>

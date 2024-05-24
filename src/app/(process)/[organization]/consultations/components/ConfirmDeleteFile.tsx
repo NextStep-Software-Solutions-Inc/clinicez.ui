@@ -6,7 +6,7 @@ import { Button } from "@components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@components/ui/popover";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@components/ui/tooltip";
 import { PopoverClose } from "@radix-ui/react-popover";
-import { MailX, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import React from "react";
 import { useFormState } from "react-dom";
 import { toast } from "sonner";
@@ -33,8 +33,8 @@ export default function ConfirmDeleteFile({disabled = false, fileId}: ConfirmDel
       <Tooltip>
         <TooltipTrigger asChild>
           <PopoverTrigger asChild ref={triggerRef}>
-            <Button className="ml-auto" variant="ghost" size="icon">
-              <Trash2 className="h-4 w-4 text-destructive" />
+            <Button className="ml-auto group/delete invisible group-hover/item:visible" variant="ghost" size="icon">
+              <Trash2 className="h-4 w-4 text-destructive group-hover/delete:scale-125 transition-all" />
               <span className="sr-only">Delete</span>
             </Button>
           </PopoverTrigger>

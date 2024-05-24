@@ -87,9 +87,9 @@ export default async function VitalSigns({ consultation}: VitalSignsProps) {
             render={(vital) => {
               const Icon = vital.icon;
               return (
-                <Card className="basis-auto grow">
+                <Card className="basis-auto grow hover:shadow-xl hover:scale-105 group/icon transition-all">
                   <CardHeader>
-                    <CardTitle className="flex gap-1"><Icon />{vitalSignsValue[vital.key as keyof typeof vitalSignsValue]}</CardTitle>
+                    <CardTitle className="flex gap-1"><Icon className="text-primary mr-2 group-hover/icon:scale-150 transition-all"/>{vitalSignsValue[vital.key as keyof typeof vitalSignsValue]}</CardTitle>
                     <CardDescription>{vital.normalRange}</CardDescription>
                   </CardHeader>
                   <CardFooter>{vital.name}</CardFooter>

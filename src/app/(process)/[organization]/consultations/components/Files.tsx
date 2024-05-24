@@ -37,10 +37,8 @@ export default async function Files({ consultation}: FilesProps) {
           render={(file, index) => {
             const Icon = file.type === "document" ? FileText : ImageIcon;
             return (
-              <div className={cn("-mx-2 flex items-start space-x-4 rounded-md p-2 transition-all hover:bg-accent hover:text-accent-foreground",
-                index % 2 === 0 && "bg-accent text-accent-foreground"
-              )}>
-                <Icon className="mt-px h-5 w-5" />
+              <div className={cn("-mx-2 flex items-start space-x-4 rounded-md p-2 transition-all hover:bg-accent hover:text-accent-foreground odd:bg-accent odd:text-accent-foreground group/item ")}>
+                <Icon className="mt-px h-5 w-5 text-primary"/>
                 <div className="flex w-full">
                   <div className="space-y-1">
                     <p className="text-sm font-medium leading-none">{file.name}</p>

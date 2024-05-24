@@ -5,14 +5,19 @@ import Suspend from '@components/Suspend';
 
 export const metadata: Metadata = {
   title: "Organizations | Clinic EZ",
-  description: "Partner Organizations"
+  description: "Browse our list of partner organizations that you can join or avail of their services."
 }
 
 export default async function Organizations() {
   
   return (
-    <div className="content container mx-auto">
-      <div className="w-full text-center text-teal-500 text-3xl mb-5 font-bold">Partner Organizations</div>
+    <div className="content container mx-auto mt-10">
+      <div className="prose max-w-full text-center">
+        <h1>Partner Organizations</h1>
+        <p>
+          Browse our list of partner organizations that you can join or avail of their services.
+        </p>
+      </div>
       <div className='relative flex flex-col items-center justify-center'>
         <Suspend>
           <OrganizationList/>

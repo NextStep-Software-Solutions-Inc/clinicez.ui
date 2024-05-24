@@ -5,15 +5,20 @@ import NurseList from "./NurseList";
 
 export const metadata: Metadata = {
   title: "Nurses | Clinic EZ",
-  description: "Meet our Nurses",
+  description: "Our Nurses are here to help you with your healthcare needs.",
 };
 
 export default async function Nurses() {
 
   return (
-    <div className="container mx-auto">
-      <div className="flex flex-col items-center justify-center min:h-screen relative">
-        <h1 className="font-bold text-teal-500 text-3xl mb-5">Meet our Nurses</h1>
+    <div className="content container mx-auto mt-10">
+      <div className="prose max-w-full text-center">
+        <h1>Meet our Nurses</h1>
+        <p>
+          Our Nurses are here to help you with your healthcare needs.
+        </p>
+      </div>
+      <div className="flex flex-col items-center justify-center min:h-screen relative my-5">
         <Suspend>
           <NurseList />
         </Suspend>

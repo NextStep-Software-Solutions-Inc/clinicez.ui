@@ -15,8 +15,8 @@ export default function CarouselItem({ item }: ICarouselItemProps) {
       <Image src={item.photoUrl} alt={item.name} width={1000} height={1000} className="w-full h-[90%] object-cover rounded-lg" />
       <div className="absolute bottom-0 left-0 w-full text-center ">
         <div className="bg-white p-3 rounded-b-lg ">
-          <h2 className="text-xl font-semibold">{item.name}</h2>
-          <p className="text-base font-normal">{item.specialty}</p>
+          <h2 className="text-base font-semibold">{item.name}</h2>
+          <p className="text-sm font-normal">{item.specialty}</p>
         </div>
       </div>
     </div>

@@ -1,16 +1,19 @@
-import React from 'react';
+"use client";
+
 import PricingMode from '@components/PricingMode';
 import TenantPlanList from './TenantPlanList';
 import Suspend from '@components/Suspend';
+import BackSubmitAndNext from '@components/SubmitAndNext';
 interface TenantPlanSelectionProps {
   defaultPlan: string;
   freq: string;
   nextStep?: () => void;
+  isFirstStep?: boolean;
 }
 
-export default async function TenantPlanSelection(props: TenantPlanSelectionProps) {
+export default function TenantPlanSelection(props: TenantPlanSelectionProps) {
   
-  const { defaultPlan: initialPlan, freq, nextStep } = props;
+  const { defaultPlan: initialPlan, freq, nextStep, isFirstStep } = props;
   
   return (
     <div>
@@ -21,6 +24,16 @@ export default async function TenantPlanSelection(props: TenantPlanSelectionProp
       <Suspend>
         <TenantPlanList initialPlan={initialPlan} freq={freq} nextStep={nextStep} />
       </Suspend>
+      <BackSubmitAndNext
+        actions={{
+          next: nextStep,
+        }}
+        disabled={{
+          next: !initialPlan,
+          previous: isFirstStep,
+          submit: true,
+        }}
+      />
     </div>
   );
 }

@@ -32,8 +32,8 @@ export default async function ConsultationDetails({ consultation }: Consultation
             </div>
           </div>
           <div className="space-x-2 flex flex-row items-center text-xs capitalize">
-            <span className="ring-1 ring-black p-2 rounded-md">Priority: {consultation.priority}</span>
-            <span className=" bg-black text-white p-2 rounded-md">Status: {consultation.status}</span>
+            <Badge variant="outline" className="  p-2 rounded-md">Priority: {consultation.priority}</Badge>
+            <Badge className="p-2 rounded-md">Status: {consultation.status}</Badge>
             <DropdownMenuProvider>
               <DataTableRowActions consultation={consultation}/>
             </DropdownMenuProvider>

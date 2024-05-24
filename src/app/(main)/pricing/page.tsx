@@ -1,7 +1,7 @@
 import PricingMode from "@components/PricingMode";
 import { Metadata } from "next";
-import PricingList from "./PricingList";
 import Suspend from "@components/Suspend";
+import TenantPlanList from "../tenants/register/TenantPlanList";
 
 export const metadata: Metadata = {
   title: "Pricing | Clinic EZ",
@@ -29,7 +29,7 @@ export default async function PricingPage(props: PricingPageProps) {
         <PricingMode defaultMode={freq} />
       </div>
       <Suspend>
-        <PricingList freq={freq} />
+        <TenantPlanList freq={freq} />
       </Suspend>
     </div>
   );

@@ -1,48 +1,53 @@
-import React from "react";
+"use client";
+
+import React, { use } from "react";
 import { getTenantPlanPackage } from "../../pricing/plans.request";
 import Each from "@components/utils/Each";
 import Link from "next/link";
+import { cn } from "@lib/utils";
 
 interface TenantPlanListProps {
-  freq: string;
-  initialPlan: string;
+  freq?: string;
+  initialPlan?: string;
   nextStep?: () => void;
 }
-
-export default async function TenantPlanList({ freq, initialPlan, nextStep }: TenantPlanListProps) {
-  const tenantPlans = await getTenantPlanPackage()
+const fetchTenantPlans = getTenantPlanPackage()
+export default function TenantPlanList({ freq, initialPlan, nextStep }: TenantPlanListProps) {
+  const tenantPlans = use(fetchTenantPlans);
 
   return (
-    <div className="flex justify-between mt-10">
-      {/* Mapping through the plans to display the boxes */}
+    <div className="flex flex-wrap justify-between my-10 gap-5">
       <Each
         of={tenantPlans.response[freq as keyof typeof tenantPlans.response]}
-        render={(p) => (
-          <Link href={{
-            pathname: '/tenants/register',
-            query: {
-              role: 'tenant',
-              plan: p.name.toLowerCase(),
-              freq,
-            },
-          }}
-          className={`relative bg-teal-500 opacity-80 max-w-sm w-48 h-96 sm:w-1/2 lg:w-1/3 m-5 ${p.name.toLowerCase() === initialPlan ? 'lg:w-2/3 shadow-xl shadow-teal-500' : ''} transition-all duration-300 ease-in-out`}
-          >
-            {/* Updated onClick event to handle plan selection */}
-            <div className={`bg-white hover:from-teal-600 hover:to-teal-700 shadow-md p-8 mr-6 h-80 relative z-10 ${p.name.toLowerCase() === initialPlan ? 'shadow-xl' : ''} transition-all duration-300 ease-in-out`}>
-              <p className="text-2xl font-bold mb-4">{p.price}</p>
-              <h2 className="text-xl mb-8 font-bold border-b-2 border-gray-200 pb-2">{p.name}</h2>
+        render={(plan) => (
+          <div className={cn("relative bg-primary h-96 w-auto flex-grow basis-72 rounded-md  hover:animate-pulse",
+            initialPlan === plan.name.toLowerCase() && "ring-4 ring-primary rounded-ss-none"
+          )}>
+            <div className="bg-background opacity-98 rounded-ee-[5rem]  p-8 mr-6 h-80 ">
+              <p className="text-2xl font-bold mb-4">{plan?.price}</p>
+              <h2 className="text-xl mb-8 font-bold border-b-2 border-gray-200 pb-2">{plan.name}</h2>
               <ul className="list-none list-inside text-sm">
-                {p.features.map((feature, i) => (
-                  <li key={i} className={i !== 0 ? 'mt-4' : ''}>{feature}</li>
-                ))}
+                <Each
+                  of={plan?.features}
+                  render={(feature, index) => (
+                    <li className={index !== 0 ? 'mt-4' : ''}>{feature}</li>
+                  )}
+                />
               </ul>
-              {/* Render the "Next" button only for the selected plan */}
-              {p.name.toLowerCase() === initialPlan && nextStep && (
-                <button onClick={nextStep} className="text-white font-medium absolute bottom-[-50px] mr-6">Next</button>
-              )}
             </div>
-          </Link>
+            <div className="absolute bottom-0 left-0 right-0 p-4">
+              <Link href={{ 
+                pathname: "/tenants/register", 
+                query: { 
+                  role: "tenant",
+                  plan: plan?.name.toLocaleLowerCase(),
+                  freq,
+                } 
+              }}>
+                <button className="text-white hover:scale-105 hover:font-bold transition-all">Choose Plan</button>
+              </Link>
+            </div>
+          </div>
         )}
       />
     </div>

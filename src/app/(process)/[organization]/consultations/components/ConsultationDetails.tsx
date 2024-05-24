@@ -31,21 +31,18 @@ export default async function ConsultationDetails({ consultation }: Consultation
               <span className="text-xs text-muted-foreground">Male/27</span>
             </div>
           </div>
-          <div className="space-x-2 flex flex-row items-center text-xs capitalize">
-            <Badge variant="outline" className="  p-2 rounded-md">Priority: {consultation.priority}</Badge>
-            <Badge className="p-2 rounded-md">Status: {consultation.status}</Badge>
-            <DropdownMenuProvider>
-              <DataTableRowActions consultation={consultation}/>
-            </DropdownMenuProvider>
-          </div>
+          <DropdownMenuProvider>
+            <DataTableRowActions consultation={consultation}/>
+          </DropdownMenuProvider>
         </CardTitle>
         <CardDescription>
           
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Badge variant="destructive" className="capitalize">Label: {consultation.label}</Badge>
-        <div>{consultation.subject}</div>
+        <p>
+          Lorem ipsum dolor sit amet consectetur adipisicing elit. Doloribus voluptas vel dicta excepturi natus officiis accusantium, eum nam eligendi quia deleniti nobis modi fugiat veritatis officia vero. Aliquid vero nobis, molestias praesentium inventore dolor adipisci autem velit aut sit accusantium cumque a amet omnis nisi soluta obcaecati? Vitae eaque dolorem eligendi delectus laborum repudiandae culpa optio fuga omnis inventore corrupti laboriosam iste assumenda quasi sequi, deleniti commodi illum doloribus iusto. Voluptas saepe eaque maiores, velit sed sint quod eveniet cum quibusdam fuga delectus consectetur! Tempora, eaque omnis. Impedit dicta iusto dolorum magni sapiente quasi doloremque. Voluptatum enim iure debitis ab voluptatem consequuntur, expedita, excepturi quae iste nam assumenda, ut eius qui perferendis impedit dolores obcaecati ex unde sint? Voluptate fugiat et vero sed eius consequatur, ex debitis blanditiis. Dolor eius saepe dolore voluptate doloremque reprehenderit. Odit fuga eaque ratione omnis animi perspiciatis repellendus in tempore optio, quod accusamus cupiditate tempora enim incidunt placeat eligendi officiis earum maxime qui at! Asperiores reiciendis, qui labore a autem ratione suscipit illo tenetur ad numquam mollitia et nesciunt consequatur. Sequi similique corrupti dolorum commodi quam sint deserunt libero assumenda, culpa hic exercitationem, incidunt repellat obcaecati. Blanditiis omnis explicabo, eius odio quae perferendis eum excepturi.
+        </p>
       </CardContent>
       <CardFooter>
         <Tabs defaultValue="notes" className="w-full">

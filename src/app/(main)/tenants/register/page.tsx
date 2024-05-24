@@ -8,7 +8,7 @@ async function TenantsRegistrationPage(props: AppRouterPageRouteOpts) {
 
   return (
     <div className="container mx-auto content mt-10">
-      <div className="prose max-w-full">
+      <div className="prose max-w-full text-center">
         <h1>Tenant Subscription</h1>
         <p>
           Follow the steps below to complete your subscription.

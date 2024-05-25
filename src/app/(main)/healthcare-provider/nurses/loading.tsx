@@ -1,5 +1,7 @@
-import React from "react";
+import PageLoading from "@components/PageLoading";
 
 export default function loading() {
-  return <div>loading</div>;
+  return (
+    <PageLoading/>
+  );
 }

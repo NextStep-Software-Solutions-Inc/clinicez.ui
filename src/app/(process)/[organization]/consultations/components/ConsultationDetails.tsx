@@ -69,10 +69,14 @@ export default async function ConsultationDetails({ consultation }: Consultation
             </Suspend>
           </TabsContent>
           <TabsContent value="vital-signs">
-            <VitalSigns consultation={consultation}/>
+            <Suspend>
+              <VitalSigns consultation={consultation}/>
+            </Suspend>
           </TabsContent>
           <TabsContent value="files">
-            <Files consultation={consultation}/>
+            <Suspend>
+              <Files consultation={consultation}/>
+            </Suspend>
           </TabsContent>
         </Tabs>
       </CardFooter>

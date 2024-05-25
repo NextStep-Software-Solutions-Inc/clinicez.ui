@@ -1,11 +1,10 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@components/ui/card";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@components/ui/tooltip";
 import Each from "@components/utils/Each";
-import { cn } from "@lib/utils";
-import { FileText, ImageIcon, Trash, Trash2 } from "lucide-react";
-import UploadFileModal from "./UploadFileModal";
-import { getConsultationFilesAction } from "@actions/consultations.action";
-import ConfirmDeleteFile from "./ConfirmDeleteFile";
+import UploadFileModal from "../../files/components/modals/UploadFileModal";
+import { getFilesAction } from "@actions/file.actions";
+import { faker } from "@faker-js/faker";
+import File from "../../files/components/File";
+import Suspend from "@components/Suspend";
 
 interface FilesProps {
     consultation: Consultation;
@@ -13,7 +12,12 @@ interface FilesProps {
 
 export default async function Files({ consultation}: FilesProps) {
 
-  const files = await getConsultationFilesAction(consultation.id);
+  const files = await getFilesAction(consultation.id);
+  const folder = {
+    id: consultation.id,
+    name: faker.lorem.words(2),
+    description: faker.lorem.sentence(),
+  };
 
   return (
     <Card>
@@ -22,38 +26,19 @@ export default async function Files({ consultation}: FilesProps) {
           <div>
             <CardTitle>Files</CardTitle>
             <CardDescription>
-          Collection of files related to the consultation.
+              Collection of files related to the consultation.
             </CardDescription>
         
           </div>
           <div className="ml-auto">
-            <UploadFileModal consultation={consultation}/>
+            <UploadFileModal folder={folder}/>
           </div>
         </div>
       </CardHeader>
       <CardContent className="grid gap-1">
         <Each
-          of={files}
-          render={(file, index) => {
-            const Icon = file.type === "document" ? FileText : ImageIcon;
-            return (
-              <div className={cn("-mx-2 flex items-start space-x-4 rounded-md p-2 transition-all hover:bg-accent hover:text-accent-foreground odd:bg-accent odd:text-accent-foreground group/item ")}>
-                <Icon className="mt-px h-5 w-5 text-primary"/>
-                <div className="flex w-full">
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium leading-none">{file.name}</p>
-                    <p className="text-sm text-muted-foreground">{file.description}</p>
-                  </div>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <ConfirmDeleteFile fileId={file.id}/>
-                    </TooltipTrigger>
-                    <TooltipContent side="top">Delete</TooltipContent>
-                  </Tooltip>
-                </div>
-              </div>
-            )
-          }}
+          of={files.flatMap((file) => file.files)}
+          render={file => <File file={file}/>}
         />
       </CardContent>
     </Card>

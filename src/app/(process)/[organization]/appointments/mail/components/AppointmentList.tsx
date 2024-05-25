@@ -28,7 +28,7 @@ export default function AppointmentList({ items }: AppointmentListProps) {
   }
 
   return (
-    <ScrollArea className="h-screen">
+    <ScrollArea className="flex-auto h-[100dvh]">
       <div className="flex flex-col gap-2 p-4 pt-0">
         <Each
           of={items}

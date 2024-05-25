@@ -87,14 +87,3 @@ export const getVitalSignsAction = async (id: string) => {
   console.log("Getting vital signs...", id);
   return vitalSigns
 }
-
-export const getConsultationFilesAction = async (id: string) => {
-  console.log("Getting consultation files...", id);
-  return consultationFiles.files
-}
-
-export const deleteConsultationFileAction = async (id: string) => {
-  console.log("Deleting consultation file...", id);
-  await delay(3000);
-  return true;
-}

@@ -6,19 +6,11 @@ import {
 } from "lucide-react"
 
 import {
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from "@components/ui/dropdown-menu"
-import {
   Avatar,
   AvatarFallback,
   AvatarImage,
 } from "@components/ui/avatar"
 import { Button } from "@components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-} from "@components/ui/dropdown-menu"
 
 import { Separator } from "@components/ui/separator"
 import {
@@ -40,8 +32,6 @@ import RescheduleAppointment from "../../components/RescheduleAppointment"
 import DeclineAppointmentAssignment from "../../components/DeclineAppointmentAssignment"
 import { UserRoles } from "./AppointmentPanel"
 import { Badge } from "@components/ui/badge"
-import ConsultationRecordSheet from "../../components/ConsultationRecordSheet"
-import { SheetTrigger } from "@components/ui/sheet"
 import { DropdownMenuProvider } from "@components/DropdownMenuProvider"
 import AppointmentMoreAction from "../../components/AppointmentMoreAction"
 
@@ -148,7 +138,7 @@ export default async function AppointmentDisplay({ appointmentId, role }: Appoin
             )}
           </div>
           <Separator />
-          <ScrollArea className="flex-auto whitespace-pre-wrap p-4 text-sm h-[100px]">
+          <ScrollArea className="flex-auto whitespace-pre-wrap p-4 text-sm  h-0">
             {freshAppointment.complaint}
             
             <Separator className="my-2" />

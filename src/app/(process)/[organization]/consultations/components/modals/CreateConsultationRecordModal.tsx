@@ -58,6 +58,7 @@ export default function CreateConsultationRecordModal({disabled = false, subject
             </Label>
             <Input
               id="subject"
+              name="name"
               defaultValue={subject}
               className="col-span-3"
             />

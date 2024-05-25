@@ -4,7 +4,6 @@ import UploadFileModal from "../../files/components/modals/UploadFileModal";
 import { getFilesAction } from "@actions/file.actions";
 import { faker } from "@faker-js/faker";
 import File from "../../files/components/File";
-import Suspend from "@components/Suspend";
 
 interface FilesProps {
     consultation: Consultation;

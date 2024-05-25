@@ -1,6 +1,6 @@
 "use client";
 
-import { deleteConsultationFileAction } from "@actions/consultations.action";
+import { deleteFileAction } from "@actions/file.actions";
 import ActionButton from "@components/ActionButton";
 import { Button } from "@components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@components/ui/popover";
@@ -20,8 +20,8 @@ export default function ConfirmDeleteFile({disabled = false, fileId}: ConfirmDel
   const triggerRef = React.useRef<HTMLButtonElement>(null);
 
   const actionWrapper = async (prev: any, formData: FormData) => {
-    const res = await deleteConsultationFileAction(fileId);
-    if(res) toast.success("Consultation file deleted successfully.");
+    const res = await deleteFileAction(fileId);
+    if(res) toast.success("File deleted successfully.");
     triggerRef.current?.click();
     return res;
   }
@@ -33,7 +33,7 @@ export default function ConfirmDeleteFile({disabled = false, fileId}: ConfirmDel
       <Tooltip>
         <TooltipTrigger asChild>
           <PopoverTrigger asChild ref={triggerRef}>
-            <Button className="ml-auto group/delete invisible group-hover/item:visible" variant="ghost" size="icon">
+            <Button className="group/delete invisible group-hover/item:visible" variant="ghost" size="icon">
               <Trash2 className="h-4 w-4 text-destructive group-hover/delete:scale-125 transition-all" />
               <span className="sr-only">Delete</span>
             </Button>

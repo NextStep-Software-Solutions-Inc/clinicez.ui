@@ -1,5 +1,5 @@
 
-import {format } from "date-fns"
+import {differenceInCalendarYears, format } from "date-fns"
 import {
   Forward,
   MoreVertical,
@@ -18,7 +18,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@components/ui/tooltip"
-import { getAppointment } from "@actions/appointments.action"
+import { getAppointmentAction } from "@actions/appointments.action"
 import CreateConsultationRecordModal from "../../components/CreateConsultationRecordModal"
 import { ScrollArea } from "@components/ui/scroll-area"
 import Image from "next/image"
@@ -34,6 +34,7 @@ import { UserRoles } from "./AppointmentPanel"
 import { Badge } from "@components/ui/badge"
 import { DropdownMenuProvider } from "@components/DropdownMenuProvider"
 import AppointmentMoreAction from "../../components/AppointmentMoreAction"
+import { getUserAction } from "@actions/user.action"
 
 interface AppointmentDisplayProps {
   appointmentId: string | null
@@ -42,7 +43,8 @@ interface AppointmentDisplayProps {
 
 export default async function AppointmentDisplay({ appointmentId, role }: AppointmentDisplayProps) {
   
-  const freshAppointment = await getAppointment(appointmentId ?? "")
+  const freshAppointment = await getAppointmentAction(appointmentId ?? "")
+  const user = await getUserAction(freshAppointment?.patientId ?? "")
   
 
   const appointmentToolsPerStatus: Record<AppointmentStatus, React.ReactNode> = {
@@ -115,20 +117,21 @@ export default async function AppointmentDisplay({ appointmentId, role }: Appoin
           <div className="flex items-start p-4">
             <div className="flex items-start gap-4 text-sm">
               <Avatar>
-                <AvatarImage src={freshAppointment.patientAvatar} alt={freshAppointment.name} />
+                <AvatarImage src={user.avatar} alt={user.name} />
                 <AvatarFallback>
-                  {freshAppointment.name
+                  {user.name
                     .split(" ")
                     .map((chunk) => chunk[0])
                     .join("")}
                 </AvatarFallback>
               </Avatar>
               <div className="grid gap-1">
-                <div className="font-semibold">{freshAppointment.name}</div>
-                <div className="line-clamp-1 text-xs">{freshAppointment.subject}</div>
+                <div className="font-semibold">{user.name}</div>
                 <div className="line-clamp-1 text-xs">
-                  <span className="font-medium">Email:</span> {freshAppointment.email}
+                  <span className="font-medium">{user.gender}/</span>{differenceInCalendarYears(new Date(), user.dob)}
                 </div>
+                <div className="line-clamp-1 text-xs">{freshAppointment.subject}</div>
+
               </div>
             </div>
             {freshAppointment.createdAt && (

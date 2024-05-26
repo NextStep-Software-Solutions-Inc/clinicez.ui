@@ -20,7 +20,7 @@ export default function TenantPlanList({ freq, initialPlan, nextStep }: TenantPl
       <Each
         of={tenantPlans.response[freq as keyof typeof tenantPlans.response]}
         render={(plan) => (
-          <div className={cn("relative bg-primary h-96 w-auto flex-grow basis-72 rounded-md  hover:animate-pulse",
+          <div className={cn("relative bg-primary h-96 w-auto flex-grow basis-72 rounded-md  hover:animate-pulse shadow-2xl",
             initialPlan === plan.name.toLowerCase() && "ring-4 ring-primary rounded-ss-none"
           )}>
             <div className="bg-background opacity-98 rounded-ee-[5rem]  p-8 mr-6 h-80 ">

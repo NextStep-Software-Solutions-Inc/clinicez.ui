@@ -12,7 +12,7 @@ async function TenantsRegistrationPage(props: AppRouterPageRouteOpts) {
         <h1>Tenant Subscription</h1>
         <p>
           Follow the steps below to complete your subscription.
-        </p>
+        </p>TenantApplicationWrapper
       </div>
     
       <TenantApplicationWrapper>

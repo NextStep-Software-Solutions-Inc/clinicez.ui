@@ -25,7 +25,6 @@ interface UploadFileModalProps {
   }
 }
 
-
 export default function UploadFileModal({folder}: UploadFileModalProps) {
 
   return (

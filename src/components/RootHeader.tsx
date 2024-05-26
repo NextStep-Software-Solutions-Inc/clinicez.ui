@@ -3,7 +3,6 @@ import Navigation from "@components/Navigation";
 import dynamic from "next/dynamic";
 
 import AnimatedLogo from "./AnimatedLogo";
-import { OrganizationSwitcher } from "./dashboard/OrganizationSwitcher";
 
 const UserAvatar = dynamic(() => import("@components/UserAvatar"), {ssr: true});
 
@@ -15,7 +14,7 @@ export default function RootHeader({...props}: IRootHeaderProps) {
       <div className="px-4 mx-auto sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 lg:h-20">
           <div className="flex-shrink-0">
-            <a href="/" title="" className="flex">
+            <a href="/" title="" className="flex h-40">
               <AnimatedLogo/>
             </a>
           </div>

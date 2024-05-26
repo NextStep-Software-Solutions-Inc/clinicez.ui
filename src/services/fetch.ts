@@ -10,7 +10,7 @@ export const createCustomFetch = (options: CreateFetchOptions) => {
   }
 
   type RequestOptionsType = RequestInit & {
-      params?: Record<string, string | number | boolean>
+      params?: Record<string, string | number | boolean | string[] | undefined>
   }
 
   const createSearchParams = (params?: RequestOptionsType["params"]) => {
@@ -18,7 +18,8 @@ export const createCustomFetch = (options: CreateFetchOptions) => {
     if (!params) return "" 
     Object.keys(params).forEach(key => {
       if (params[key]!== undefined) {
-        searchParams.append(key, params[key].toString())
+        const value = params[key]?.toString()
+        searchParams.append(key, value ?? "")
       }
     })
     return `?${searchParams.toString()}`

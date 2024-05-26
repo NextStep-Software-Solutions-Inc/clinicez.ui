@@ -1,8 +1,11 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@components/ui/card";
 import React from "react";
-import UploadFileModal from "./modals/UploadFileModal";
 import Each from "@components/utils/Each";
 import File from "./File";
+import Suspend from "@components/Suspend";
+import dynamic from "next/dynamic"
+
+const UploadFileModal = dynamic(() => import("./modals/UploadFileModal"));
 
 interface FolderProps {
   folder: {
@@ -31,7 +34,9 @@ export default async function Folder({folder}: FolderProps) {
             <CardDescription>{folder.description}</CardDescription>
           </div>
           <div className="ml-auto invisible group-hover/upload:visible transition-all">
-            <UploadFileModal folder={folder}/>
+            <Suspend>
+              <UploadFileModal folder={folder}/>
+            </Suspend>
           </div>
         </div>
       </CardHeader>

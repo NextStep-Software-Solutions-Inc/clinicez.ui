@@ -5,3 +5,8 @@ export const request = createCustomFetch({
   cache: "force-cache"
 })
 
+
+export const self = createCustomFetch({
+  baseUrl: "http://localhost:3000",
+  cache: "force-cache"
+})

@@ -96,7 +96,15 @@ const rolesLinks = {
 };
 interface AppointmentPanelProps {
   appointmentsCounts: AppointmentsCountsType
-  appointments: Appointment[]
+  appointments: (Appointment & {
+    patient: {
+      id: string
+      name: string
+      avatar: string
+      gender: string
+      email: string
+    }
+  })[]
   defaultLayout: number[] | undefined
   defaultCollapsed?: boolean
   navCollapsedSize: number

@@ -8,6 +8,7 @@ export const consultationRecordSchema = z.object({
   status: z.string(),
   label: z.string(),
   priority: z.string(),
+  appointmentId: z.string(),
 })
 
 export type ConsultationRecordSchema = z.infer<typeof consultationRecordSchema>

@@ -9,7 +9,7 @@ export default function AnimatedLogo() {
       autoplay
       loop
       src={logoAnimation}
-      className="h-44 w-auto"
+      className="h-full w-auto"
     />
   );
 }

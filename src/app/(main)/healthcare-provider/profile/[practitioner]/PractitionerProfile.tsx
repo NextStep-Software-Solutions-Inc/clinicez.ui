@@ -93,8 +93,8 @@ export default function PractitionerProfile({profile}: IPractitionerProfileProps
               </ul>
             </div>
             <div>
-              <Label>Contact Information</Label>
-              <div className="space-y-1">
+              <Label className="text-xl font-semibold">Contact Information</Label>
+              <div className="space-y-1 mt-5">
                 <div className="flex items-center gap-2">
                   <MailIcon/>
                   <a href={`mailto:${contactDetails.email}`}>{contactDetails.email}</a>

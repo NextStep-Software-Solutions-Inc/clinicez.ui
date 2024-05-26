@@ -1,5 +1,5 @@
 import Suspend from "@components/Suspend";
-import PractitionerDetails from "./PractitionersDetails";
+import PractitionerProfile from "./PractitionerProfile";
 import React from "react";
 import { getHPAction } from "@actions/hp.actions";
 import { AppRouterPageRouteOpts } from "@auth0/nextjs-auth0";
@@ -12,7 +12,7 @@ export default async function PractitionerPage({params}: AppRouterPageRouteOpts)
   return (
     <div className="container mx-auto">
       <Suspend>
-        <PractitionerDetails profile={hp}/>
+        <PractitionerProfile profile={hp}/>
       </Suspend>
     </div>
   )

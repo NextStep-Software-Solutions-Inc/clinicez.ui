@@ -1,4 +1,5 @@
 "use client";
+
 import {
   Form,
   FormControl,
@@ -11,7 +12,7 @@ import {
 import { Input } from "@components/ui/input"
 import { Popover, PopoverContent, PopoverTrigger } from "@components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@components/ui/select";
-import { uploadFileAction } from "@actions/file.actions";
+import { getAttachmentTypesAction, uploadFileAction } from "@actions/file.actions";
 import ActionButton from "@components/ActionButton"
 import { Button } from "@components/ui/button"
 import { Calendar } from "@components/ui/calendar";
@@ -25,14 +26,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { cn } from "@lib/utils";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react"
-import { useRef } from "react"
+import { use, useRef } from "react"
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
-
-
-const AddInterventionFormSchema = z.object({
+const uploadFileFormSchema = z.object({
   file: z.string({
     required_error: "Please select an action"
   }),
@@ -48,19 +47,15 @@ interface UploadFileFormProps {
     folder: {
         id: string;
     }
-    attachmentTypes: {
-        id: string;
-        name: string;
-        description: string;
-    }[]
 }
 
-
-export default function UploadFileForm({folder, attachmentTypes}: UploadFileFormProps) {
+const fetchAttachmentTypes = getAttachmentTypesAction()
+export default function UploadFileForm({folder}: UploadFileFormProps) {
+  const attachmentTypes = use(fetchAttachmentTypes)
   const closeBtnRef = useRef<HTMLInputElement>(null)
 
-  const form = useForm<z.infer<typeof AddInterventionFormSchema>>({
-    resolver: zodResolver(AddInterventionFormSchema)
+  const form = useForm<z.infer<typeof uploadFileFormSchema>>({
+    resolver: zodResolver(uploadFileFormSchema)
   })
     
   const action = async (formData: FormData) => {
@@ -69,7 +64,7 @@ export default function UploadFileForm({folder, attachmentTypes}: UploadFileForm
       formData.append("dateTaken", format(data.dateTaken, "yyyy-MM-dd"))
       const res = await uploadFileAction(formData)
       if (res) {
-        toast.success("Intervention added successfully")
+        toast.success("File uploaded successfully")
         closeBtnRef.current?.click()
       }
     })()
@@ -89,7 +84,7 @@ export default function UploadFileForm({folder, attachmentTypes}: UploadFileForm
               <FormLabel>File</FormLabel>
               <Input id="file" type="file" accept="image/jpeg,image/gif,image/png,application/pdf,image/x-eps" {...field} value={undefined} />
               <FormDescription>
-                    Select the file to upload.
+                Select the file to upload.
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -102,7 +97,7 @@ export default function UploadFileForm({folder, attachmentTypes}: UploadFileForm
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Attachment Type</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value} {...field}>
+                <Select onValueChange={field.onChange} defaultValue={field.value} name="attachmentType">
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select the appropriate attachment type for this file" />

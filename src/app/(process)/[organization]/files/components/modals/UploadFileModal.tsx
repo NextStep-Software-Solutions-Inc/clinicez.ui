@@ -1,15 +1,21 @@
-import { getAttachmentTypesAction } from "@actions/file.actions";
+"use client";
+
 import CustomModalContent from "@components/CustomModalContent";
+import Suspend from "@components/Suspend";
 import { Alert, AlertDescription, AlertTitle } from "@components/ui/alert";
 import { Button } from "@components/ui/button"
 import {
   Dialog,
   DialogTrigger,
 } from "@components/ui/dialog"
-
 import { Tooltip, TooltipContent, TooltipTrigger } from "@components/ui/tooltip"
 import {  AlertCircle, Cloud } from "lucide-react"
-import UploadFileForm from "../UploadFileForm";
+import dynamic from "next/dynamic";
+
+const UploadFileForm = dynamic(() => import("../UploadFileForm"), {
+  ssr: false,
+  loading: () => <p>Loading form...</p>
+})
 
 interface UploadFileModalProps {
   folder: {
@@ -20,8 +26,7 @@ interface UploadFileModalProps {
 }
 
 
-export default async function UploadFileModal({folder}: UploadFileModalProps) {
-  const attachmentTypes = await getAttachmentTypesAction()
+export default function UploadFileModal({folder}: UploadFileModalProps) {
 
   return (
     <Dialog>
@@ -63,7 +68,9 @@ export default async function UploadFileModal({folder}: UploadFileModalProps) {
             </p>
           </AlertDescription>
         </Alert>
-        <UploadFileForm folder={folder} attachmentTypes={attachmentTypes}/>
+        <Suspend>
+          <UploadFileForm folder={folder} />
+        </Suspend>
       </CustomModalContent>
     </Dialog>
   )

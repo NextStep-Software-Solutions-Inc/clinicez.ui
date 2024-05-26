@@ -6,6 +6,7 @@ declare global {
     status: string
     label: string
     priority: string
+    appointmentId: string
   }
   type Intervention = {
     id: string

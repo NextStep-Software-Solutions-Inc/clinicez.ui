@@ -1,55 +1,174 @@
-import { ContactInfo, CoverProfilePhoto, ProfileInfo, Specialties, Title } from "./PractitionerLayout";
+import { HP } from "@actions/hp.actions";
+import {  CoverProfilePhoto, PersonalDetails } from "./PractitionerLayout";
+import { Badge } from "@components/ui/badge";
+import { Label } from "@components/ui/label";
+import Each from "@components/utils/Each";
+import { EarthIcon, FacebookIcon, LinkedinIcon, MailIcon, PhoneCallIcon, TwitterIcon } from "lucide-react";
+import Suspend from "@components/Suspend";
+import { ar } from "@faker-js/faker";
 
-interface IPractitionerDetailsProps {
-    id: string;
-    title: string;
-    firstName: string;
-    lastName: string;
-    middleName?: string;
-    suffix?: string;
-    profilePhoto: string;
-    email: string;
-    number: string;
-    fields: string[];
-    user_metadata: Record<string, string | number | string[]>;
+interface IPractitionerProfileProps {
+    profile: HP;
 }
 
-export default function PractitionerDetails(props: IPractitionerDetailsProps) {
-  const { id, firstName, lastName, title, middleName, suffix, profilePhoto, fields, email, number, user_metadata } = props;
-  const fullName = `${title} ${firstName} ${middleName} ${lastName} ${suffix ?? ""}`;
+export default function PractitionerProfile({profile}: IPractitionerProfileProps) {
 
-  const coverPhoto = (user_metadata?.["coverPhoto"] ?? "https://art.metro.net/wp-content/uploads/2021/02/placeholder.png") as string;
-  const biography = (user_metadata?.["biography"] ?? "No biography") as string;
-  const address = (user_metadata?.["address"] ?? "No address") as string;
-  const experience = user_metadata?.["experience"] ?? "No experience";
-  const languages = user_metadata?.["languages"] ?? "No languages";
-  const specialties = (user_metadata?.["specialties"] ?? []) as string[];
-  const type = user_metadata?.["type"] ?? "No type";
+  const coverPhoto = (profile.coverPhoto ?? "https://art.metro.net/wp-content/uploads/2021/02/placeholder.png") as string;
+  const philosophy = profile.user_metadata.philosophy
+  const areaOfInterest = profile.user_metadata.areaOfInterest
+  const experience = profile.credentials.experience;
+  const educations = profile.credentials.education;
+  const languages = profile.professionalDetails.languages
+  const specialties = profile.professionalDetails.specialties
+  const affiliations = profile.professionalDetails.affiliations
+  const hobbies = profile.user_metadata.hobbies
+  const links = profile.links 
+  const fields = profile.professionalDetails.fields
+  const alias = profile.name.split(" ").map(name => name[0]).join("")
+
+  const personalDetails = {
+    title: profile.title,
+    name: profile.name,
+    suffix: profile.suffix
+  }
+
+  const contactDetails = {
+    email: profile.email,
+    phone: profile.phone
+  }
 
   return (
-    <div className="w-full relative max-sm:px-1">
+    <div className="mt-5">
       {/* Photos */}
-      <CoverProfilePhoto coverPhoto={coverPhoto}
-        profilePhoto={profilePhoto} />
+      <Suspend>
+        <CoverProfilePhoto 
+          coverPhoto={coverPhoto} 
+          profilePhoto={profile.profilePhoto}
+          alias={alias}
+        />
+      </Suspend>
       {/* Practitioner Details */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 md:gap-8 mt-8">
-        <ProfileInfo fullName={fullName}
-          fields={fields}
-          address={address}
-          biography={biography} />
-        <div className="col-span-1 md:col-span-2 max-md:mt-5">
+      <div className="grid grid-cols-1 lg:grid-cols-2  mt-24 gap-10">
+        <div className="">
+          <PersonalDetails {...personalDetails}/>
+          <div  className="space-y-5">
+            <div className="flex gap-1 flex-wrap mt-2">
+              <Each
+                of={fields}
+                render={field => <Badge >{field}</Badge>}
+              />
+            </div>
+            
+
+            <div >
+              <Label>Philosophy of Care</Label>
+              <p className="indent-5 mt-2">{philosophy}</p>
+            </div>
+
+            {
+              areaOfInterest && (
+                <div >
+                  <Label>Area of Interest</Label>
+                  <p className="">{areaOfInterest}</p>
+                </div>
+              )
+            }
+
+            {
+              hobbies && (
+                <div>
+                  <Label className="">Hobbies</Label>
+                  <p>{hobbies}</p>
+                </div>
+              )
+            }
+            
+            <div>
+              <Label className="">Languages</Label>
+              <ul className="list-disc ml-10">
+                <Each
+                  of={languages}
+                  render={language => <li>{language}</li>}
+                />
+              </ul>
+            </div>
+            <div>
+              <Label>Contact Information</Label>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <MailIcon/>
+                  <a href={`mailto:${contactDetails.email}`}>{contactDetails.email}</a>
+                </div>
+                <div className="flex items-center gap-2">
+                  <PhoneCallIcon/>
+                  <a href={`$tel:{contactDetails.phone}`}>{contactDetails.phone}</a>
+                </div>
+                <div className="flex items-center gap-2">
+                  <EarthIcon/>
+                  <a href={links.website} target="_blank">{links.website}</a>
+                </div>
+                <div className="flex items-center gap-2">
+                  <LinkedinIcon/>
+                  <a href={links.linkedin} target="_blank">{links.linkedin}</a>
+                </div>
+                <div className="flex items-center gap-2">
+                  <FacebookIcon/>
+                  <a href={links.facebook} target="_blank">{links.facebook}</a>
+                </div>
+                <div className="flex items-center gap-2">
+                  <TwitterIcon/>
+                  <a href={links.twitter} target="_blank">{links.twitter}</a>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+        </div>
+        <div className="">
           <div className="flex flex-col gap-5">
-            <Title label='EXPERIENCE'
-              desc={experience} />
-            <Title label='LANGUAGES'
-              desc={languages} />
-            <Title label='TYPE OF EMPLOYMENT'
-              desc={type} />
-            <Specialties specialties={specialties} />
-            <ContactInfo
-              email={email}
-              number={number}
-            />
+            <Label className="text-xl font-semibold">Credentials</Label>
+            <div className="">
+              <Label className="">Education</Label>
+              <ul className="list-disc ml-10">
+                <Each
+                  of={educations}
+                  render={education => <li>{education}</li>}
+                />
+              </ul>
+            </div>
+            <div>
+              <Label className="">Certifications</Label>
+              <ul className="list-disc ml-10">
+                <Each
+                  of={profile.credentials.certifications}
+                  render={certification => <li>{certification}</li>}
+                />
+              </ul>
+            </div>
+            <div>
+              <Label className="">Years of Experience</Label>
+              <p>{experience}</p>
+            </div>
+            
+            <Label className="text-xl font-semibold">Professional Details</Label>
+            <div>
+              <Label className="">Specialties</Label>
+              <ul className="list-disc ml-10">
+                <Each
+                  of={specialties}
+                  render={specialty => <li>{specialty}</li>}
+                />
+              </ul>
+            </div>
+            <div>
+              <Label className="">Affiliations</Label>
+              <ul className="list-disc ml-10">
+                <Each
+                  of={affiliations}
+                  render={affiliation => <li>{affiliation}</li>}
+                />
+              </ul>
+            </div>
           </div>
         </div>
       </div>

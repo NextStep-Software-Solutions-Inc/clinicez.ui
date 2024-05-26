@@ -11,8 +11,8 @@ export interface ICarouselItemProps {
 
 export default function CarouselItem({ item }: ICarouselItemProps) {
   return (
-    <div className="w-full h-[30rem] relative">
-      <Image src={item.photoUrl} alt={item.name} width={1000} height={1000} className="w-full h-[90%] object-cover rounded-lg" />
+    <div className="w-full h-[35rem] relative">
+      <Image src={item.photoUrl} alt={item.name} width={1000} height={1000} className="w-full h-full object-cover rounded-lg" />
       <div className="absolute bottom-0 left-0 w-full text-center ">
         <div className="bg-white p-3 rounded-b-lg ">
           <h2 className="text-base font-semibold">{item.name}</h2>

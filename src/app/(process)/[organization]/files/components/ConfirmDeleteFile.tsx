@@ -47,14 +47,14 @@ export default function ConfirmDeleteFile({disabled = false, fileId}: ConfirmDel
         </p>
         <form 
           action={action}
-          id="delete-consultation-file-form"
+          id="delete-file-form"
           className="flex gap-4 py-4"
         >
           <PopoverClose asChild >
             <Button variant="ghost" type="button">Cancel</Button>
           </PopoverClose>
           <ActionButton 
-            form="delete-consultation-file-form"
+            form="delete-file-form"
             type="submit" 
             variant="destructive"
             className="grow"

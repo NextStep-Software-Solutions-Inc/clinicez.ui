@@ -4,6 +4,7 @@ import Each from "@components/utils/Each";
 import File from "./File";
 import Suspend from "@components/Suspend";
 import dynamic from "next/dynamic"
+import { FolderIcon } from "lucide-react";
 
 const UploadFileModal = dynamic(() => import("./modals/UploadFileModal"));
 
@@ -30,7 +31,7 @@ export default async function Folder({folder}: FolderProps) {
       <CardHeader className="group/upload">
         <div className="flex flex-row">
           <div>
-            <CardTitle>{folder.name}</CardTitle>
+            <CardTitle className="flex items-center gap-2"><FolderIcon/>{folder.name}</CardTitle>
             <CardDescription>{folder.description}</CardDescription>
           </div>
           <div className="ml-auto invisible group-hover/upload:visible transition-all">

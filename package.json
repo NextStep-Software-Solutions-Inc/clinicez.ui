@@ -37,6 +37,7 @@
     "@radix-ui/react-tooltip": "^1.0.7",
     "@tanstack/react-table": "^8.17.0",
     "@vercel/speed-insights": "^1.0.10",
+    "auth0": "^4.4.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
     "cmdk": "^1.0.0",

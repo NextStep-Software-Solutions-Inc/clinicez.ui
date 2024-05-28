@@ -1,5 +1,5 @@
 
-import { ManagementClient, ManagementClientOptionsWithClientSecret, ManagementClientOptionsWithToken } from 'auth0';
+import { ManagementClient, ManagementClientOptionsWithClientSecret } from 'auth0';
 type CreateManagementClientOptions = ManagementClientOptionsWithClientSecret & {
 
 }
@@ -12,8 +12,8 @@ export const createManagementClient = (options: CreateManagementClientOptions) =
 }
 
 export const managementClient = createManagementClient({
-  domain: process.env.AUTH0_ISSUER_BASE_URL?.split('https://').pop() ?? "",
-  clientId: process.env.AUTH0_CLIENT_ID ?? "",
-  clientSecret: process.env.AUTH0_CLIENT_SECRET ?? "",
+  domain: "dev-tk5vlh506xnry060.us.auth0.com",
+  clientId: "A0dSF4f5WKB2unYgy895vEhy61THD1PD",
+  clientSecret: "IG7ZV3-0EK12r4LiBcZH6cw6dO_QH1pCfocU9mbb4-uS8EOfVSJTLTwtYqtZn3Yo",
 });
 

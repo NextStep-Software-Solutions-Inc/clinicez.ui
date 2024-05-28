@@ -1,12 +1,38 @@
+import { Separator } from "@components/ui/separator";
 import { Metadata } from "next";
+import ActivationForm from "./components/ActivationForm";
+import { getRolesAction } from "@actions/user-management.action";
+import { getSession } from "@auth0/nextjs-auth0";
 
 export const metadata: Metadata = {
   title: "User Activation",
   description: "Organization provides a way to activate users aside from the default manual application to become a member.",
 }
 
-export default function ActivatePage() {
+export default async function ActivatePage() {
+  console.log(await getSession());
+  
+  
+  console.log(await getRolesAction());
   return (
-    <div className="container mx-auto py-10">Activate Page</div>
+
+    <div className="container mx-auto my-10 space-y-6">
+
+      <div className="group/upload">
+        <div className="flex items-center">
+          <h2 className="text-2xl font-bold tracking-tight">User Activation</h2>
+        </div>
+        <p className="text-sm text-muted-foreground">
+            Organization provides a way to activate users aside from the default manual application to become a member.
+        </p>
+      </div>
+        
+      <Separator />
+
+      <ActivationForm />
+
+     
+    </div>
+
   );
 }

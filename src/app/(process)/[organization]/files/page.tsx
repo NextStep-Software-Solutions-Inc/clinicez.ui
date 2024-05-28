@@ -21,7 +21,7 @@ export default async function FilesPage({params}: AppRouterPageRouteOpts) {
       <div className="space-y-6">
         <div className="group/upload">
           <div className="flex items-center">
-            <h2 className="text-2xl font-bold tracking-tight">Files</h2>
+            <h2 className="text-2xl font-bold tracking-tight"></h2>
             <CreateFolderModal />
           </div>
           <p className="text-sm text-muted-foreground">

@@ -10,7 +10,7 @@ export default async function PractitionerPage({params}: AppRouterPageRouteOpts)
   const hp = await getHPAction(profileId);
 
   return (
-    <div className="container mx-auto">
+    <div className="container mx-auto my-10">
       <Suspend>
         <PractitionerProfile profile={hp}/>
       </Suspend>

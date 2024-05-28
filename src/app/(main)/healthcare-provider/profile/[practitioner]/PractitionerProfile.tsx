@@ -38,7 +38,7 @@ export default function PractitionerProfile({profile}: IPractitionerProfileProps
   }
 
   return (
-    <div className="mt-5">
+    <div className="">
       {/* Photos */}
       <Suspend>
         <CoverProfilePhoto 

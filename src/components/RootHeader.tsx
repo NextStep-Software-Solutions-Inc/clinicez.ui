@@ -11,7 +11,7 @@ export default function RootHeader({...props}: IRootHeaderProps) {
   
   return (
     <header {...props} className={`bg-[#FCF8F1] bg-opacity-30 backdrop-blur ${props.className}`}>
-      <div className="px-4 mx-auto sm:px-6 lg:px-8">
+      <div className="container mx-auto">
         <div className="flex items-center justify-between h-16 lg:h-20">
           <div className="flex-shrink-0">
             <a href="/" title="" className="flex h-40">

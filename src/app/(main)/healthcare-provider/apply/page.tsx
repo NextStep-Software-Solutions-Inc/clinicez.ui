@@ -31,7 +31,7 @@ async function HealthcareProviderRegistrationPage(props: AppRouterPageRouteOpts)
   
   return (
     <HPApplicationDataProvider>
-      <div className="container mx=auto">
+      <div className="container mx-auto my-10">
         {/* add alert here to show the the user has already submitted and waiting for approval */}
         <Alert className="mb-5">
           <Terminal className="h-4 w-4" />

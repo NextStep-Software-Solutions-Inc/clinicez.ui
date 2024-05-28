@@ -3,8 +3,8 @@ import AnimatedLogo from "./AnimatedLogo";
 const RootFooter = () => {
   return (
     <footer className="container mx-auto py-8 bg-slate-50">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-        <div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 ">
+        <div className="order-1 sm:order-first">
           <a href="/" className="flex h-20">
             <AnimatedLogo/>
           </a>
@@ -14,7 +14,7 @@ const RootFooter = () => {
           </p>
           
         </div>
-        <div className="flex flex-wrap justify-between mt-8">
+        <div className="flex flex-wrap justify-between md:mt-8 ">
           <div className="w-full md:w-1/3 text-center sm:text-left">
             <h5 className="mb-4 font-semibold">Links</h5>
             <ul className="mb-4 ">

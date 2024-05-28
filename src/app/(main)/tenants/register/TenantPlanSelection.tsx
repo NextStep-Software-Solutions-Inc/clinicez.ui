@@ -17,16 +17,16 @@ export default function TenantPlanSelection(props: TenantPlanSelectionProps) {
   
   return (
     <div>
-      <div className="prose max-w-full mt-5">
+      <div className="prose max-w-full mt-5 text-center md:text-left">
         <h3 className="">Choose Plan</h3>
         <p>
           Select the plan that best suits your needs.
         </p>
       </div>
-      <div className='flex justify-end mt-5'>
+      <div className='flex justify-center md:justify-end mt-5'>
         <PricingMode defaultMode={freq}/>
       </div>
-      <div className='shadow-lg w-full p-8 bg-background rounded-md'>
+      <div className='shadow-lg w-full p-4 bg-background rounded-md'>
         <Suspend>
           <TenantPlanList initialPlan={initialPlan} freq={freq} nextStep={nextStep} />
         </Suspend>

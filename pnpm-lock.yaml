@@ -86,6 +86,9 @@ importers:
       '@vercel/speed-insights':
         specifier: ^1.0.10
         version: 1.0.10(next@14.2.3(@babel/core@7.24.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
+      auth0:
+        specifier: ^4.4.0
+        version: 4.4.0
       class-variance-authority:
         specifier: ^0.7.0
         version: 0.7.0
@@ -1538,6 +1541,10 @@ packages:
 
   asynckit@0.4.0:
     resolution: {integrity: sha512-Oei9OH4tRh0YqU3GxhX79dM/mwVgvbZJaSNaRk+bshkj0S5cfHcgYakreBjrHwatXKbz+IoIdYLxrKim2MjW0Q==}
+
+  auth0@4.4.0:
+    resolution: {integrity: sha512-umlAogwQDUYvL1Pd4RnViyps7lkvntZ3+VVDW+/4ML7/GzkJcq6VGJ20Nb60eYosQkxa7up1n9lrA4Of+BZsUg==}
+    engines: {node: '>=18'}
 
   autoprefixer@10.0.1:
     resolution: {integrity: sha512-aQo2BDIsoOdemXUAOBpFv4ZQa2DrOtEufarYhtFsK1088Ca0TUwu/aQWf0M3mrILXZ3mTIVn1lR3hPW8acacsw==}
@@ -3739,6 +3746,10 @@ packages:
   util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
 
+  uuid@9.0.1:
+    resolution: {integrity: sha512-b+1eJOlsR9K8HJpow9Ok3fiWOWSIcIzXodvv0rQjVoOVNpWMpxf1wZNpt4y9h10odCNrqnYp1OBzRktckBe3sA==}
+    hasBin: true
+
   v8-compile-cache-lib@3.0.1:
     resolution: {integrity: sha512-wa7YjyUGfNZngI/vtK0UHAN+lgDCxBPCylVXGp0zu59Fz5aiGtNXaq3DhIov063MorB+VfufLh3JlF2KdTK3xg==}
 
@@ -5424,6 +5435,11 @@ snapshots:
   ast-types-flow@0.0.8: {}
 
   asynckit@0.4.0: {}
+
+  auth0@4.4.0:
+    dependencies:
+      jose: 4.15.5
+      uuid: 9.0.1
 
   autoprefixer@10.0.1(postcss@8.4.31):
     dependencies:
@@ -7985,6 +8001,8 @@ snapshots:
       '@types/react': 18.3.2
 
   util-deprecate@1.0.2: {}
+
+  uuid@9.0.1: {}
 
   v8-compile-cache-lib@3.0.1: {}
 

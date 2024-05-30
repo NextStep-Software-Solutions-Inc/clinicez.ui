@@ -1,5 +1,5 @@
 import "@styles/globals.css";
-import RootHeader from "@components/RootHeader";
+import Header from "./header";
 import RootFooter from "@components/RootFooter";
 
 
@@ -10,7 +10,7 @@ export default function RootLayout({
 }>) {
   return (
     <>
-      <RootHeader className="sticky top-0 z-50"/>
+      <Header className="sticky top-0 z-50"/>
       <div className="content">{children}</div>
       <RootFooter/>
     </>

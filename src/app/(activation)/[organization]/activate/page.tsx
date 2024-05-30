@@ -1,7 +1,6 @@
 import { Separator } from "@components/ui/separator";
 import { Metadata } from "next";
 import ActivationForm from "./components/ActivationForm";
-import { getRolesAction } from "@actions/user-management.action";
 import { AppRouterPageRouteOpts } from "@auth0/nextjs-auth0";
 
 export const metadata: Metadata = {
@@ -11,7 +10,6 @@ export const metadata: Metadata = {
 
 export default async function ActivatePage({params}: AppRouterPageRouteOpts) {
   const organization = params?.organization;
-  console.log(await getRolesAction());
   
   return (
 
@@ -29,8 +27,6 @@ export default async function ActivatePage({params}: AppRouterPageRouteOpts) {
       <Separator />
 
       <ActivationForm />
-
-     
     </div>
 
   );

@@ -57,15 +57,17 @@ export default function ActivationForm() {
 
   const action = async (formData: FormData) => {
     form.handleSubmit(async (data) => {
-      if (user?.user?.sub) {
-        toast.promise(assignRolesAction(user.user.sub, ["rol_h449rSzvU0pyn1Be"]), {
-          success: () => {
-            setActivated(true)
-            return "User activated successfully"
-          },
-          loading: "Activating user...",
-        })
+      if (!user?.user?.sub) {
+        toast.error("You must be logged in to activate a user")
+        return;
       }
+      toast.promise(assignRolesAction(user.user.sub, ["rol_h449rSzvU0pyn1Be"]), {
+        success: () => {
+          setActivated(true)
+          return "User activated successfully"
+        },
+        loading: "Activating user...",
+      })
     })()
   }
 

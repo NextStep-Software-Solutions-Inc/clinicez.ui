@@ -1,5 +1,6 @@
-import { withApiAuthRequired } from "@auth0/nextjs-auth0";
+import { getRolesAction } from "@actions/user-management.action";
 
-export const GET = withApiAuthRequired(async () => {
-  return Response.json(process.env);
-});
+export const GET = async () => {
+  const roles = await getRolesAction();
+  return Response.json(roles);
+};

@@ -89,12 +89,12 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
-      <section className="bg-slate-200 flex-1 flex items-center">
+      <section className="bg-slate-200 flex-1 flex items-center py-5">
         <div className="container flex justify-center flex-wrap gap-5 text-center">
           <Each
             of={topFeature}
             render={(feature) => (
-              <Card className="relative basis-[20rem] flex-grow shadow-xl hover:scale-110 hover:z-50 transition-all rounded-3xl">
+              <Card className="relative basis-[20rem] flex-grow shadow-xl hover:scale-105 hover:z-50 transition-all rounded-3xl">
                 <CardHeader>
                   <CardTitle className="uppercase tracking-wider">{feature.name}</CardTitle>
                   <CardDescription>{feature.description}</CardDescription>
@@ -102,7 +102,7 @@ export default async function HomePage() {
                 <CardContent className="mb-16">{feature.content}</CardContent>
                 <CardFooter className="absolute bottom-0 w-full">
                   <Link href={feature.action.path} className="w-full">
-                    <Button className="w-full shadow-2xl hover:animate-pulse">{feature.action.label}</Button>
+                    <Button className="w-full rounded-full hover:animate-pulse">{feature.action.label}</Button>
                   </Link>
                 </CardFooter>
               </Card>

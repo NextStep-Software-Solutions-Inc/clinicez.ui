@@ -1,24 +1,54 @@
+"use client";
+
+import ActionButton from "@components/ActionButton";
 import { Button } from "@components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@components/ui/card";
 import { Separator } from "@components/ui/separator";
 import Each from "@components/utils/Each";
-import dayjs from "dayjs";
+import { zodResolver } from "@hookform/resolvers/zod";
 import React from "react";
+import { useFieldArray, useForm } from "react-hook-form";
+import { z } from "zod";
+import VaxItem from "./VaxItem";
 
+const vaxSchema = z.object({
+  vaccinations: z.array(z.object({
+    vaccineType: z.string().min(2, {
+      message: "Vaccine type must be at least 2 characters.",
+    }).max(30, {
+      message: "Vaccine type must not be longer than 30 characters.",
+    }),
+    vaccine: z.string().min(2, {
+      message: "Vaccine must be at least 2 characters.",
+    }).max(30, {
+      message: "Vaccine must not be longer than 30 characters.",
+    }),
+    dateGiven: z.date({
+      required_error: "Please select a date.",
+    }),
+    route: z.string().min(2, {
+      message: "Route must be at least 2 characters.",
+    }).max(30, {
+      message: "Route must not be longer than 30 characters.",
+    }),
+    dose: z.string().min(2, {
+      message: "Dose must be at least 2 characters.",
+    }).max(30, {
+      message: "Dose must not be longer than 30 characters.",
+    }),
+    administeredBy: z.string().min(2, {
+      message: "Administered by must be at least 2 characters.",
+    }).max(30, {
+      message: "Administered by must not be longer than 30 characters.",
+    })
+  }))
+})
 
 const vaccinations = [
   {
     vaccineType: "COVID-19",
     vaccine: "Moderna",
-    dateGiven: "12/12/2021",
-    route: "Intramuscular",
-    dose: "1st",
-    administeredBy: "DOH",
-  },
-  {
-    vaccineType: "COVID-19",
-    vaccine: "Pfizer",
-    dateGiven: "12/12/2021",
+    dateGiven: new Date(),
     route: "Intramuscular",
     dose: "1st",
     administeredBy: "DOH",
@@ -26,7 +56,7 @@ const vaccinations = [
   {
     vaccineType: "Polio",
     vaccine: "IPV",
-    dateGiven: "12/12/2021",
+    dateGiven: new Date(),
     route: "Intramuscular",
     dose: "1st",
     administeredBy: "DOH",
@@ -34,7 +64,7 @@ const vaccinations = [
   {
     vaccineType: "Hepatitis B",
     vaccine: "HepB",
-    dateGiven: "12/12/2021",
+    dateGiven: new Date(),
     route: "Intramuscular",
     dose: "1st",
     administeredBy: "DOH",
@@ -42,7 +72,7 @@ const vaccinations = [
   {
     vaccineType: "Flu",
     vaccine: "Flu",
-    dateGiven: "12/12/2021",
+    dateGiven: new Date(),
     route: "Intramuscular",
     dose: "1st",
     administeredBy: "DOH",
@@ -50,7 +80,7 @@ const vaccinations = [
   {
     vaccineType: "Measles",
     vaccine: "Measles",
-    dateGiven: "12/12/2021",
+    dateGiven: new Date(),
     route: "Intramuscular",
     dose: "1st",
     administeredBy: "DOH",
@@ -58,7 +88,7 @@ const vaccinations = [
   {
     vaccineType: "Mumps",
     vaccine: "Mumps",
-    dateGiven: "12/12/2021",
+    dateGiven:new Date(),
     route: "Intramuscular",
     dose: "1st",
     administeredBy: "DOH",
@@ -66,7 +96,7 @@ const vaccinations = [
   {
     vaccineType: "Rubella",
     vaccine: "Rubella",
-    dateGiven: "12/12/2021",
+    dateGiven:new Date(),
     route: "Intramuscular",
     dose: "1st",
     administeredBy: "DOH",
@@ -74,60 +104,47 @@ const vaccinations = [
 ];
 
 export default function VaccinationForm() {
+
+  const form = useForm<z.infer<typeof vaxSchema>>({
+    resolver: zodResolver(vaxSchema),
+    defaultValues: {
+      vaccinations: vaccinations
+    }
+  });
+
+  
+  const {fields, append, remove, update} =  useFieldArray({
+    control: form.control,
+    name: "vaccinations"
+  })
+
+  const initialVaxValues = {
+    vaccineType: "",
+    vaccine: "",
+    dateGiven: new Date(),
+    route: "",
+    dose: "",
+    administeredBy: ""
+  }
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center">
             Recent Vaccinations
-          <Button className="ml-auto">Add Vaccination</Button>
+          <Button className="ml-auto" onClick={() => append(initialVaxValues)}>Add Vaccination</Button>
         </CardTitle>
         <Separator/>
       </CardHeader>
       <CardContent className="space-y-2">
         <Each
-          of={vaccinations}
-          render={(vaccination) => (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <span>{vaccination.vaccineType}</span>
-                  <span  className="ml-auto space-x-2">
-                    <Button size="sm" variant="ghost">Edit</Button>
-                    <Button size="sm" variant="destructive">Delete</Button>
-                  </span>
-                </CardTitle>
-                <Separator/>
-              </CardHeader>
-              <CardContent>
-                <div className="grid sm:grid-cols-2 grid-cols-1 gap-4">
-                  <div>
-                    <div className="font-semibold">Vaccine</div>
-                    <div>{vaccination.vaccine}</div>
-                  </div>
-                  <div>
-                    <div className="font-semibold">Date Given</div>
-                    <div>{dayjs(vaccination.dateGiven).format("DD/MM/YYYY")}</div>
-                  </div>
-                  <div>
-                    <div className="font-semibold">Route</div>
-                    <div>{vaccination.route}</div>
-                  </div>
-                  <div>
-                    <div className="font-semibold">Dose</div>
-                    <div>{vaccination.dose}</div>
-                  </div>
-                  <div>
-                    <div className="font-semibold">Administered By</div>
-                    <div>{vaccination.administeredBy}</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          of={fields}
+          render={(vaccination, index) => <VaxItem vaccination={vaccination} index={index} remove={remove} update={update}/>}
         />
+        <Button onClick={() => append(initialVaxValues)} className="w-full">Add Vaccination</Button>
       </CardContent>
       <CardFooter>
-        <Button className="">Save</Button>
+        <ActionButton disabled={form.formState.isLoading || !form.formState.isValid}>Save Changes</ActionButton>
       </CardFooter>
     </Card>
   );

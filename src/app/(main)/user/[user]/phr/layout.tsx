@@ -41,6 +41,15 @@ export default function SettingsLayout({ children, params: {user} }: SettingsLay
       title: "Disabilities",
       href: `/user/${user}/phr/disabilities`,
     },
+    
+    {
+      title: "Allergies",
+      href: `/user/${user}/phr/allergies`,
+    },
+    {
+      title: "Medications",
+      href: `/user/${user}/phr/medications`,
+    },
     {
       title: "Insurances & HMOs",
       href: `/user/${user}/phr/insurances`,

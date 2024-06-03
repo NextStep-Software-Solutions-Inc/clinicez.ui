@@ -133,9 +133,9 @@ export default function InsurancesForm() {
             render={(insurance) => (
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center">
+                  <CardTitle className="flex items-center group/actions">
                     <span>{insurance.provider}</span>
-                    <span  className="ml-auto space-x-2">
+                    <span  className="ml-auto space-x-2 invisible group-hover/actions:visible transition-all">
                       <Button size="sm" variant="ghost">Edit</Button>
                       <Button size="sm" variant="destructive">Delete</Button>
                     </span>

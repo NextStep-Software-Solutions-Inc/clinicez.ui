@@ -10,6 +10,7 @@ import { Separator } from "@components/ui/separator";
 import { toast } from "@components/ui/use-toast";
 import Each from "@components/utils/Each";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { delay } from "@lib/wait";
 import React from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
@@ -40,12 +41,7 @@ export default function EmergencyContactForm() {
   const form = useForm<z.infer<typeof emergencyContactFormSchema>>({
     resolver: zodResolver(emergencyContactFormSchema),
     defaultValues: {
-      contacts: [{
-        isPrimary: true,
-        name: "",
-        relationship: "",
-        phone: "",
-      }]
+      contacts: []
     }
   });
 
@@ -55,16 +51,6 @@ export default function EmergencyContactForm() {
     name: "contacts",
   });
 
-  function onSubmit(data: z.infer<typeof emergencyContactFormSchema>) {
-    toast({
-      title: "You submitted the following values:",
-      description: (
-        <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-          <code className="text-white">{JSON.stringify(data, null, 2)}</code>
-        </pre>
-      ),
-    })
-  }
 
   const indexedFields = fields.map((field, index) => ({ ...field, index}));
 
@@ -73,14 +59,25 @@ export default function EmergencyContactForm() {
     secondary: indexedFields.filter(field => !field.isPrimary),
   };
 
-  const action = async (formData: FormData) => {
-    form.handleSubmit(onSubmit)()
+  const handleSaveChanges = async (formData: FormData) => {
+    await delay(1000);
+    form.handleSubmit((data) => {
+      form.reset(data)
+      toast({
+        title: "You submitted the following values:",
+        description: (
+          <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
+            <code className="text-white">{JSON.stringify(data, null, 2)}</code>
+          </pre>
+        ),
+      })
+    })()
   }
 
   return (
     <div>
       <Form {...form}>
-        <form action={action} className="space-y-8">
+        <form action={handleSaveChanges} className="space-y-8">
           <Each
             of={Object.keys(contacts)}
             render={(key) => (
@@ -167,8 +164,7 @@ export default function EmergencyContactForm() {
               </Card>
             )}
           />
-          <ActionButton disabled={form.formState.isLoading || !form.formState.isValid}>Save</ActionButton>
-          
+          { form.formState.isDirty && <ActionButton disabled={form.formState.isLoading || !form.formState.isValid}>Save Changes</ActionButton> }
         </form>
       </Form>
     </div>

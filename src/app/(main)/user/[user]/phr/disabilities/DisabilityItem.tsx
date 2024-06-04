@@ -49,7 +49,6 @@ export default function DisabilityItem({disability, index, remove, update}: Disa
   });
   
   const handleDoneEditing = async (formData: FormData) => {
-    
     form.handleSubmit((data) => {
       update(index, data);
       setIsEditing(false);
@@ -117,7 +116,7 @@ export default function DisabilityItem({disability, index, remove, update}: Disa
                       </FormItem>
                     )}
                   />
-                  <span  className="ml-auto space-x-2 invisible group-hover/actions:visible transition-all">
+                  <span  className="ml-auto space-x-2 group-hover/actions:visible transition-all">
                     <ActionButton size="sm" variant="ghost" >Done Editing</ActionButton>
                     <Button size="sm" variant="destructive" type="button" onClick={() => remove(index)}>Delete</Button>
                   </span>

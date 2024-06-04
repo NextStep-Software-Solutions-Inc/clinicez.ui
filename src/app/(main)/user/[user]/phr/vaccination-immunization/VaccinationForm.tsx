@@ -10,6 +10,10 @@ import React from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 import VaxItem from "./VaxItem";
+import { toast } from "@components/ui/use-toast";
+import { delay } from "@lib/wait";
+import { Badge } from "@components/ui/badge";
+import { Plus } from "lucide-react";
 
 const vaxSchema = z.object({
   vaccinations: z.array(z.object({
@@ -127,11 +131,27 @@ export default function VaccinationForm() {
     administeredBy: ""
   }
 
+ 
+  const handleSaveChanges = async() => {
+    await delay(1000);
+    form.handleSubmit((data) => {
+      toast({
+        title: "Vaccinations Updated",
+        description: (
+          <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
+            <code className="text-white">{JSON.stringify(data, null, 2)}</code>
+          </pre>
+        )
+      })
+      form.reset(data)
+    })()
+  };
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center">
-            Recent Vaccinations
+            Recent Vaccinations <Badge className="ml-2">{fields.length}</Badge>
           <Button className="ml-auto" onClick={() => append(initialVaxValues)}>Add Vaccination</Button>
         </CardTitle>
         <Separator/>
@@ -141,10 +161,13 @@ export default function VaccinationForm() {
           of={fields}
           render={(vaccination, index) => <VaxItem vaccination={vaccination} index={index} remove={remove} update={update}/>}
         />
-        <Button onClick={() => append(initialVaxValues)} className="w-full">Add Vaccination</Button>
+        <Button variant="ghost" onClick={() => append(initialVaxValues)} className="w-full"><Plus className="mr-2 h-4 w-4"/>Add Vaccination</Button>
       </CardContent>
       <CardFooter>
-        <ActionButton disabled={form.formState.isLoading || !form.formState.isValid}>Save Changes</ActionButton>
+        <form action={handleSaveChanges}>
+          {form.formState.isDirty && <ActionButton disabled={form.formState.isLoading || !form.formState.isValid}>Save Changes</ActionButton>}
+        </form>
+
       </CardFooter>
     </Card>
   );

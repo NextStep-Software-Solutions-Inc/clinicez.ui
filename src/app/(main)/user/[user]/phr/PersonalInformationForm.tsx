@@ -27,6 +27,7 @@ import { toast } from "@components/ui/use-toast"
 import { CalendarIcon, SortAscIcon, CheckIcon } from "lucide-react"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@components/ui/select"
 import ActionButton from "@components/ActionButton"
+import { delay } from "@lib/wait"
 
 
 const personalInformationFormSchema = z.object({
@@ -81,24 +82,24 @@ export function PersonalInformationForm() {
     defaultValues,
   })
 
-  function onSubmit(data: PersonalInformationFormValues) {
-    toast({
-      title: "You submitted the following values:",
-      description: (
-        <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-          <code className="text-white">{JSON.stringify(data, null, 2)}</code>
-        </pre>
-      ),
-    })
-  }
-
-  const action = async (formData: FormData) => {
-    form.handleSubmit(onSubmit)()
+  const handleSaveChanges = async (formData: FormData) => {
+    await delay(1000);
+    form.handleSubmit(data => {
+      form.reset(data)
+      toast({
+        title: "You submitted the following values:",
+        description: (
+          <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
+            <code className="text-white">{JSON.stringify(data, null, 2)}</code>
+          </pre>
+        ),
+      })
+    })()
   }
 
   return (
     <Form {...form}>
-      <form action={action} className="space-y-8">
+      <form action={handleSaveChanges} className="space-y-8">
         <div className="flex flex-col md:flex-row gap-2">
           <FormField
             control={form.control}
@@ -269,9 +270,7 @@ export function PersonalInformationForm() {
             </FormItem>
           )}
         />
-        <ActionButton disabled={form.formState.isLoading || !form.formState.isValid}>
-          Save
-        </ActionButton>
+        {form.formState.isDirty && <ActionButton disabled={form.formState.isLoading || !form.formState.isValid}>Save Changes</ActionButton>}
       </form>
     </Form>
   )

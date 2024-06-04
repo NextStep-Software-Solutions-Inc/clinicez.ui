@@ -12,6 +12,9 @@ import { z } from "zod";
 import DisabilityItem, { disabilitySchema } from "./DisabilityItem";
 import ActionButton from "@components/ActionButton";
 import { toast } from "@components/ui/use-toast";
+import { delay } from "@lib/wait";
+import { Badge } from "@components/ui/badge";
+import { Plus } from "lucide-react";
 
 const disabilitiesSchema = z.object({
   disabilities: z.array(disabilitySchema)
@@ -95,9 +98,9 @@ export default function DisabilitiesForm() {
   }
 
   const action = async (formData: FormData) => {
-    console.log("sdklkk");
-    
+    await delay(1000);
     form.handleSubmit((data) => {
+      form.reset(data)
       toast({
         title: "Disabilities Updated",
         description: (
@@ -114,7 +117,7 @@ export default function DisabilitiesForm() {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center">
-            Disabilities
+            Disabilities <Badge className="ml-2">{fields.length}</Badge>
           <Button className="ml-auto" onClick={() => append(disabilityInitialValues)}>Add Disability</Button>
         </CardTitle>
         <Separator/>
@@ -128,16 +131,17 @@ export default function DisabilitiesForm() {
                 of={fields}
                 render={(disability, index) => <DisabilityItem disability={disability} index={index} remove={remove} update={update}/>}
               />
-              <Button className="w-full" onClick={() => append(disabilityInitialValues)}>Add Disability</Button>
-
+              <Button variant="ghost" className="w-full" onClick={() => append(disabilityInitialValues)}><Plus className="mr-2 h-4 w-4"/>Add Disability</Button>
             </AccordionContent>
           </AccordionItem>
         </Accordion>
       </CardContent>
       <CardFooter>
-        <ActionButton onClick={form.handleSubmit((data) => {
-          console.log(data)
-        })} disabled={form.formState.isLoading}>Save</ActionButton>
+        <form action={action}>
+          {
+            form.formState.isDirty && <ActionButton disabled={form.formState.isLoading || !form.formState.isValid}>Save Changes</ActionButton>
+          }
+        </form>
       </CardFooter>
     </Card>
   );

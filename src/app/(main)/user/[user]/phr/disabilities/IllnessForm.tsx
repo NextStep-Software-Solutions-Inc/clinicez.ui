@@ -10,6 +10,11 @@ import React from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 import IllnessItem from "./IllnessItem";
+import ActionButton from "@components/ActionButton";
+import { toast } from "@components/ui/use-toast";
+import { delay } from "@lib/wait";
+import { Badge } from "@components/ui/badge";
+import { Plus } from "lucide-react";
 
 const illnessSchema = z.object({
   type: z.string().min(2, {
@@ -87,11 +92,26 @@ export default function IllnessesForm() {
     notes: "",
   }
 
+  const handleSaveChanges = async (formData: FormData) => {
+    await delay(1000);
+    form.handleSubmit((data) => {
+      form.reset(data);
+      toast({
+        title: "Changes saved successfully!",
+        description: (
+          <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
+            <code className="text-white">{JSON.stringify(data, null, 2)}</code>
+          </pre>
+        )
+      })
+    })();
+  }
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center">
-          Illness
+          Illness <Badge className="ml-2">{fields.length}</Badge>
           <Button className="ml-auto" onClick={() => append(illnessInitialValues)}>Add Illness</Button>
         </CardTitle>
         <Separator/>
@@ -105,14 +125,15 @@ export default function IllnessesForm() {
                 of={fields}
                 render={(illness, index) => <IllnessItem key={index} index={index} illness={illness} remove={remove} update={update} />}
               />
+              <Button variant="ghost" className="w-full" onClick={() => append(illnessInitialValues)}><Plus className="mr-2 h-4 w-4"/>Add Illness</Button>
             </AccordionContent>
           </AccordionItem>
         </Accordion>
-        <Button className="w-full" onClick={() => append(illnessInitialValues)}>Add Illness</Button>
-
       </CardContent>
       <CardFooter>
-        <Button>Save</Button>
+        <form action={handleSaveChanges}>
+          {form.formState.isDirty && <ActionButton disabled={form.formState.isLoading || !form.formState.isValid}>Save Changes</ActionButton>}
+        </form>
       </CardFooter>
     </Card>
   );

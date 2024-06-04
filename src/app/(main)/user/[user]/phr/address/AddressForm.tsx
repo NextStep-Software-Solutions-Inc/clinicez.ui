@@ -9,6 +9,7 @@ import { Separator } from "@components/ui/separator";
 import { toast } from "@components/ui/use-toast";
 import Each from "@components/utils/Each";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { delay } from "@lib/wait";
 import React from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
@@ -19,18 +20,18 @@ const addressFormSchema = z.object({
     isPrimary: z.boolean(),
     address: z.string().min(2, {
       message: "Name must be at least 2 characters.",
-    }).max(30, {
-      message: "Name must not be longer than 30 characters.",
+    }).max(255, {
+      message: "Name must not be longer than 255 characters.",
     }),
     city: z.string().min(2, {
       message: "City must be at least 2 characters.",
-    }).max(30, {
-      message: "City must not be longer than 30 characters.",
+    }).max(255, {
+      message: "City must not be longer than 255 characters.",
     }),
     state: z.string().min(2, {
       message: "State must be at least 2 characters.",
-    }).max(30, {
-      message: "State must not be longer than 30 characters.",
+    }).max(255, {
+      message: "State must not be longer than 255 characters.",
     }),
     zip: z.string().min(2, {
       message: "Zip must be at least 2 characters.",
@@ -43,26 +44,16 @@ const addressFormSchema = z.object({
 export default function AddressFormForm() {
   const form = useForm<z.infer<typeof addressFormSchema>>({
     resolver: zodResolver(addressFormSchema),
+    defaultValues: {
+      addresses: [],
+    }
   });
-
 
   const {fields, append, remove} = useFieldArray({
     control: form.control,
     name: "addresses",
   });
 
-  function onSubmit(data: z.infer<typeof addressFormSchema>) {
-    toast({
-      title: "You submitted the following values:",
-      description: (
-        <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-          <code className="text-white">{JSON.stringify(data, null, 2)}</code>
-        </pre>
-      ),
-    })
-  }
-
-  
   const indexedFields = fields.map((field, index) => ({ ...field, index}));
 
   const addresses = {
@@ -70,7 +61,7 @@ export default function AddressFormForm() {
     secondary: indexedFields.filter(field => !field.isPrimary),
   };
 
-  const defaultValues = {
+  const initialAddressValues = {
     primary: {
       isPrimary: true,
       address: "",
@@ -86,10 +77,26 @@ export default function AddressFormForm() {
       zip: "",
     },
   }
+
+  const handleSaveChanges = async (formData: FormData) => {
+    await delay(1000);
+    form.handleSubmit((data) => {
+      form.reset(data);
+      toast({
+        title: "You submitted the following values:",
+        description: (
+          <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
+            <code className="text-white">{JSON.stringify(data, null, 2)}</code>
+          </pre>
+        ),
+      })
+    })();
+  };
+
   return (
     <div>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <form action={handleSaveChanges} className="space-y-8">
           <Each
             of={Object.keys(addresses)}
             render={(key) => (
@@ -97,7 +104,7 @@ export default function AddressFormForm() {
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
                     <span className="capitalize">{key} Address</span>
-                    <Button className="capitalize" type="button" onClick={() => append(defaultValues[key as keyof typeof defaultValues])}>Add {key} Address</Button>
+                    <Button className="capitalize" type="button" onClick={() => append(initialAddressValues[key as keyof typeof initialAddressValues])}>Add {key} Address</Button>
                   </CardTitle>
                   <Separator />
                 </CardHeader>
@@ -179,7 +186,7 @@ export default function AddressFormForm() {
               </Card>
             )}
           />
-          <ActionButton disabled={form.formState.isLoading || !form.formState.isValid}>Save</ActionButton>
+          {form.formState.isDirty && <ActionButton disabled={form.formState.isLoading || !form.formState.isValid}>Save Changes</ActionButton>}
         </form>
       </Form>
     </div>

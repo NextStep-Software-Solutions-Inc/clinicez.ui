@@ -93,7 +93,7 @@ export default function EmergencyContactForm() {
                   <Each
                     of={contacts[key as keyof typeof contacts]}
                     render={(field, index) => (
-                      <div className="space-y-3">
+                      <div className="space-y-3" key={field.id}>
                         <FormField
                           control={form.control}
                           name={`contacts.${field.index}.relationship`}

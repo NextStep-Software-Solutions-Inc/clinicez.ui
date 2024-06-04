@@ -8,6 +8,7 @@ import { Input } from "@components/ui/input";
 import { Separator } from "@components/ui/separator";
 import { toast } from "@components/ui/use-toast";
 import Each from "@components/utils/Each";
+import { faker } from "@faker-js/faker";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { delay } from "@lib/wait";
 import React from "react";
@@ -17,6 +18,7 @@ import { z } from "zod";
 
 const addressFormSchema = z.object({
   addresses: z.array(z.object({
+    id: z.number(),
     isPrimary: z.boolean(),
     address: z.string().min(2, {
       message: "Name must be at least 2 characters.",
@@ -52,6 +54,7 @@ export default function AddressFormForm() {
   const {fields, append, remove} = useFieldArray({
     control: form.control,
     name: "addresses",
+    keyName: "fieldId"
   });
 
   const indexedFields = fields.map((field, index) => ({ ...field, index}));
@@ -61,22 +64,14 @@ export default function AddressFormForm() {
     secondary: indexedFields.filter(field => !field.isPrimary),
   };
 
-  const initialAddressValues = {
-    primary: {
-      isPrimary: true,
-      address: "",
-      city: "",
-      state: "",
-      zip: "",
-    },
-    secondary: {
-      isPrimary: false,
-      address: "",
-      city: "",
-      state: "",
-      zip: "",
-    },
-  }
+  const initialAddressValues = (key: "primary" | "secondary") => ({
+    id: faker.number.int(),
+    isPrimary: key === "primary",
+    address: "",
+    city: "",
+    state: "",
+    zip: "",
+  });
 
   const handleSaveChanges = async (formData: FormData) => {
     await delay(1000);
@@ -104,18 +99,18 @@ export default function AddressFormForm() {
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
                     <span className="capitalize">{key} Address</span>
-                    <Button className="capitalize" type="button" onClick={() => append(initialAddressValues[key as keyof typeof initialAddressValues])}>Add {key} Address</Button>
+                    <Button className="capitalize" type="button" onClick={() => append(initialAddressValues(key as "primary" | "secondary"))}>Add {key} Address</Button>
                   </CardTitle>
                   <Separator />
                 </CardHeader>
                 <CardContent>
                   <Each
                     of={addresses[key as keyof typeof addresses]}
-                    render={(field, index) => (
-                      <div className="space-y-3">
+                    render={(_field, index) => (
+                      <div className="space-y-3" key={_field.id}>
                         <FormField
                           control={form.control}
-                          name={`addresses.${field.index}.address`}
+                          name={`addresses.${_field.index}.address`}
                           render={({ field }) => (
                             <FormItem className="w-full">
                               <FormLabel>Address</FormLabel>
@@ -131,7 +126,7 @@ export default function AddressFormForm() {
                         />
                         <FormField
                           control={form.control}
-                          name={`addresses.${field.index}.state`}
+                          name={`addresses.${_field.index}.state`}
                           render={({ field }) => (
                             <FormItem className="w-full">
                               <FormLabel>State or Province</FormLabel>
@@ -147,7 +142,7 @@ export default function AddressFormForm() {
                         />
                         <FormField
                           control={form.control}
-                          name={`addresses.${field.index}.city`}
+                          name={`addresses.${_field.index}.city`}
                           render={({ field }) => (
                             <FormItem className="w-full">
                               <FormLabel>City</FormLabel>
@@ -163,7 +158,7 @@ export default function AddressFormForm() {
                         />
                         <FormField
                           control={form.control}
-                          name={`addresses.${field.index}.zip`}
+                          name={`addresses.${_field.index}.zip`}
                           render={({ field }) => (
                             <FormItem className="w-full">
                               <FormLabel>Zip Code</FormLabel>
@@ -177,7 +172,7 @@ export default function AddressFormForm() {
                             </FormItem>
                           )}
                         />
-                        <Button className="flex ml-auto" type="button" variant="destructive" onClick={() => remove(field.index)}>Remove</Button>
+                        <Button className="flex ml-auto" type="button" variant="destructive" onClick={() => remove(_field.index)}>Remove</Button>
                         {index !== addresses[key as keyof typeof addresses].length - 1 && <Separator />}
                       </div> 
                     )}

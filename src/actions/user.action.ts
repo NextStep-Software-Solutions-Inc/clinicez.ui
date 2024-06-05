@@ -1,6 +1,8 @@
 "use server";
 
 import { faker } from "@faker-js/faker";
+import prisma from "@lib/prisma";
+import { Prisma, User } from "@prisma/client";
 import { cache } from "react";
 import 'server-only'
 
@@ -17,11 +19,27 @@ const generateRandomUser = () => {
 }
 
 export const getUsersAction = cache(async () => {
-  console.log("Getting users...ewe");
-  return Array.from({ length: faker.number.int({min: 5, max:15}) }, generateRandomUser);
+  const users = await prisma.user.findMany({
+    where: {
+      isActive: true
+    }
+  });
+  return users;
 })
 
 export const getUserAction = cache(async (id: string) => {
   console.log("Getting user...", id);
   return {...generateRandomUser(), id};
 })
+
+
+export const createUserAction = async (data: Prisma.UserCreateArgs["data"]) => {
+
+  const newUser = await prisma.user.create({
+    data: { 
+      ...data
+    }
+  });
+
+  return newUser;
+}

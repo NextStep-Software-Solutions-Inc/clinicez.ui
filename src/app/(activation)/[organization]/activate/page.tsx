@@ -1,7 +1,7 @@
 import { Separator } from "@components/ui/separator";
 import { Metadata } from "next";
 import ActivationForm from "./components/ActivationForm";
-import { AppRouterPageRouteOpts } from "@auth0/nextjs-auth0";
+import { AppRouterPageRouteOpts, getSession } from "@auth0/nextjs-auth0";
 
 export const metadata: Metadata = {
   title: "User Activation",
@@ -10,6 +10,11 @@ export const metadata: Metadata = {
 
 export default async function ActivatePage({params}: AppRouterPageRouteOpts) {
   const organization = params?.organization;
+
+  const session = await getSession();
+
+  console.log({session});
+  
   
   return (
 

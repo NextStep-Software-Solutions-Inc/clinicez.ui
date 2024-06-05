@@ -45,6 +45,7 @@ const topFeature = [
   }
 ]
 export default async function HomePage() {
+  
   const session = await getSession();
   const authenticated = !!session  
   return (

@@ -8,7 +8,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { getSession } from "@auth0/nextjs-auth0";
 import ConditionalRender from "@components/utils/ConditionalRender";
 import Each from "@components/utils/Each";
-import { getUsersAction } from "@actions/user.action";
 
 export const metadata: Metadata = {
   title: "Home | Clinic EZ ",
@@ -46,9 +45,6 @@ const topFeature = [
   }
 ]
 export default async function HomePage() {
-
-  const users = await getUsersAction()
-  console.log({users});
   
   const session = await getSession();
   const authenticated = !!session  

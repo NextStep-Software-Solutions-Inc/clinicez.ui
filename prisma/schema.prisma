@@ -8,9 +8,192 @@ datasource db {
   directUrl = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
 }
 
+model Tenant {
+  id                Int                 @id @default(autoincrement())
+  tenantId          String              @unique // friendly name
+  ownerId           Int
+  name              String
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  deletedAt         DateTime?
+  isActive          Boolean             @default(true)
+  Owner             User                @relation(fields: [ownerId], references: [id])
+  Organization      Organization[]
+  UserDefaultTenant UserDefaultTenant[]
+}
+
 model User {
-  id     Int     @id @default(autoincrement())
-  userId String  @unique
-  email  String  @unique
-  name   String?
+  id                      Int                      @id @default(autoincrement())
+  userId                  String                   @unique // this is from auth0 user_id
+  email                   String                   @unique
+  name                    String?
+  picture                 String?
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @default(now()) @updatedAt
+  deletedAt               DateTime?
+  isActive                Boolean                  @default(true)
+  Tenant                  Tenant[]
+  Membership              Membership[]
+  UserSubsciption         UserSubsciption[]
+  UserDefaultOrganization UserDefaultOrganization?
+  UserDefaultTenant       UserDefaultTenant?
+}
+
+model Organization {
+  id                      Int                       @id @default(autoincrement())
+  tenantId                Int
+  orgId                   String                    @unique // friendly name
+  name                    String
+  description             String?
+  picture                 String?
+  cover                   String?
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime                  @updatedAt
+  deletedAt               DateTime?
+  isActive                Boolean                   @default(true)
+  Tenant                  Tenant                    @relation(fields: [tenantId], references: [id])
+  Membership              Membership[]
+  UserDefaultOrganization UserDefaultOrganization[]
+}
+
+// This is for user to join an organization e.g. as a member, admin, healthcare provider, etc.
+model Membership {
+  id             Int          @id @default(autoincrement())
+  userId         Int
+  organizationId Int
+  role           String
+  user           User         @relation(fields: [userId], references: [id])
+  organization   Organization @relation(fields: [organizationId], references: [id])
+}
+
+model TenantPlan {
+  id              Int               @id @default(autoincrement())
+  planId          String            @unique // friendly name
+  price           Float
+  name            String
+  description     String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  deletedAt       DateTime?
+  isActive        Boolean           @default(true)
+  Feature         Feature[]
+  UserSubsciption UserSubsciption[]
+}
+
+model Feature {
+  id           Int        @id @default(autoincrement())
+  tenantPlanId Int
+  name         String
+  description  String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  deletedAt    DateTime?
+  isActive     Boolean    @default(true)
+  TenantPlan   TenantPlan @relation(fields: [tenantPlanId], references: [id])
+}
+
+model UserSubsciption {
+  id           Int        @id @default(autoincrement())
+  userId       Int
+  tenantPlanId Int
+  startDate    DateTime
+  endDate      DateTime
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  deletedAt    DateTime?
+  isActive     Boolean    @default(true)
+  User         User       @relation(fields: [userId], references: [id])
+  TenantPlan   TenantPlan @relation(fields: [tenantPlanId], references: [id])
+}
+
+enum SubscriptionType {
+  TENANT
+  HEALTHCARE_PROVIDER
+}
+
+// This is for user that are healthcare provider which maybe a doctor or nurse or other type of healthcare provider
+model HealthcareProvider {
+  id            Int                    @id @default(autoincrement())
+  userId        Int
+  type          HealthcareProviderType
+  description   String?
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+  deletedAt     DateTime?
+  isActive      Boolean                @default(true)
+  DoctorProfile DoctorProfile?
+  NurseProfile  NurseProfile?
+}
+
+enum HealthcareProviderType {
+  DOCTOR
+  NURSE
+  LAB_TECHNICIAN
+  PHARMACIST
+  RADIOLOGIST
+  PHYSIOTHERAPIST
+  OCCUPATIONAL_THERAPIST
+  SPEECH_THERAPIST
+  DIETITIAN
+  SOCIAL_WORKER
+  PSYCHOLOGIST
+  PSYCHIATRIST
+  DENTIST
+  OPTOMETRIST
+  CHIROPRACTOR
+  PODIATRIST
+}
+
+model DoctorProfile {
+  id                   Int                @id @default(autoincrement())
+  healthcareProviderId Int                @unique
+  title                String
+  name                 String
+  suffix               String?
+  picture              String?
+  cover                String?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  deletedAt            DateTime?
+  isActive             Boolean            @default(true)
+  HealthcareProvider   HealthcareProvider @relation(fields: [healthcareProviderId], references: [id])
+}
+
+model NurseProfile {
+  id                   Int                @id @default(autoincrement())
+  healthcareProviderId Int                @unique
+  title                String
+  name                 String
+  suffix               String?
+  picture              String?
+  cover                String?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  deletedAt            DateTime?
+  isActive             Boolean            @default(true)
+  HealthcareProvider   HealthcareProvider @relation(fields: [healthcareProviderId], references: [id])
+}
+
+model UserDefaultOrganization {
+  id             Int          @id @default(autoincrement())
+  userId         Int          @unique
+  organizationId Int
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  deletedAt      DateTime?
+  isActive       Boolean      @default(true)
+  User           User         @relation(fields: [userId], references: [id])
+  Organization   Organization @relation(fields: [organizationId], references: [id])
+}
+
+model UserDefaultTenant {
+  id        Int       @id @default(autoincrement())
+  userId    Int       @unique
+  tenantId  Int
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+  isActive  Boolean   @default(true)
+  User      User      @relation(fields: [userId], references: [id])
+  Tenant    Tenant    @relation(fields: [tenantId], references: [id])
 }

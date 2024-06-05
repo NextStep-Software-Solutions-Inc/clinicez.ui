@@ -1,5 +1,3 @@
-import next from 'next'
-
 type CreateFetchOptions = RequestInit & {
   baseUrl: string
 }
@@ -51,7 +49,3 @@ export const createCustomFetch = (options: CreateFetchOptions) => {
     delete: delete_,
   }
 }
-
-const re = createCustomFetch({
-  baseUrl: 'http://localhost:3000',
-})

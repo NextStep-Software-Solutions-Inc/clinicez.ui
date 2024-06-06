@@ -17,6 +17,7 @@
     "prisma:generate": "npx dotenv -e .env.development.local -- prisma generate",
     "prisma:studio": "npx dotenv -e .env.development.local -- prisma studio",
     "production:build": "npx prisma generate && npx prisma migrate deploy && next build"
+    "test:watch": "jest --watch",
   },
   "dependencies": {
     "@auth0/nextjs-auth0": "^3.5.0",

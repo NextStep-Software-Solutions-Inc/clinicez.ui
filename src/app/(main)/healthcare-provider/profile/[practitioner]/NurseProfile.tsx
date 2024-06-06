@@ -112,7 +112,7 @@ export default async function NurseProfile({profileId}: INurseProfileProps) {
                 </div>
                 <div className="flex items-center gap-2">
                   <PhoneCallIcon/>
-                  <a href={`$tel:{contactDetails.phone}`}>{contactDetails.phone}</a>
+                  <a href={`tel:${contactDetails.phone}`}>{contactDetails.phone}</a>
                 </div>
                 <div className="flex items-center gap-2">
                   <EarthIcon/>

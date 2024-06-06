@@ -111,7 +111,7 @@ export default async function DoctorProfile({profileId}: IDoctorProfileProps) {
                 </div>
                 <div className="flex items-center gap-2">
                   <PhoneCallIcon/>
-                  <a href={`$tel:{contactDetails.phone}`}>{contactDetails.phone}</a>
+                  <a href={`tel:${contactDetails.phone}`}>{contactDetails.phone}</a>
                 </div>
                 <div className="flex items-center gap-2">
                   <EarthIcon/>

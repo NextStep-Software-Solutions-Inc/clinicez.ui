@@ -1,16 +1,16 @@
 import { ICarouselItemProps } from "@components/CarouselItem";
-import { getNurses } from "./nurses.request";
 import CarouselWrapper from "@components/CarouselWrapper";
+import { getNursesAction } from "@actions/nurse.action";
 
 export default  async function NurseList() {
-  const nurses = await getNurses();
+  const nurses = await getNursesAction();
   
-  const mappedNurses: ICarouselItemProps["item"][] = nurses.response.map((nurse) => {
+  const mappedNurses: ICarouselItemProps["item"][] = nurses.map((nurse) => {
     return {
       id: nurse.id,
-      name: `${nurse.profile.title} ${nurse.profile.firstName} ${nurse.profile.middleName} ${nurse.profile.lastName} ${nurse.profile.suffix}`,
-      specialty: nurse.profile.fieldOfStudy,
-      photoUrl: nurse.profile.profilePhotoUrl,
+      name: `${nurse.title} ${nurse.name} ${nurse.suffix}`,
+      fields: nurse.fields,
+      photoUrl: nurse.picture ?? "https://via.placeholder.com/1000",
     }
   })
   return (

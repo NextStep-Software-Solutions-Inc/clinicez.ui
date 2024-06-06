@@ -28,7 +28,7 @@ export default function CarouselWrapper({items}:ICarouselWrapperProps) {
         <Each
           of={items}
           render={(item, index) => (
-            <CarouselItem className="md:basis-1/2 lg:basis-1/3">
+            <CarouselItem className={`flex-grow ${items.length < 3 ? 'basis-full' : 'md:basis-1/2 lg:basis-1/3'}`}>
               <Link href={`profile/${item.id}`} key={item.id}>
                 <LocalCarouselItem item={item}/>
               </Link>

@@ -4,7 +4,7 @@ export interface ICarouselItemProps {
     item: {
         id: number;
         name: string;
-        specialty: string;
+        fields: string[];
         photoUrl: string;
     }
 }
@@ -16,7 +16,7 @@ export default function CarouselItem({ item }: ICarouselItemProps) {
       <div className="absolute bottom-0 left-0 w-full text-center ">
         <div className="bg-white p-3 rounded-b-lg ">
           <h2 className="text-base font-semibold">{item.name}</h2>
-          <p className="text-sm font-normal">{item.specialty}</p>
+          <p className="text-sm font-normal">{item.fields.join(", ")}</p>
         </div>
       </div>
     </div>

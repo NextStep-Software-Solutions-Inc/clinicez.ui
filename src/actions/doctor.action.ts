@@ -16,6 +16,17 @@ export const getDoctorAction = async (hpId: number) => {
     where: {
       isActive: true,
       healthcareProviderId: hpId
+    },
+    include: {
+      HealthcareProvider: {
+        select: {
+          User: {
+            select: {
+              SocialLink: true,
+            }
+          }
+        }
+      }
     }
   })
   return doctor;

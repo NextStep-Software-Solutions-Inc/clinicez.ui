@@ -11,6 +11,7 @@ export default async function DoctorList() {
       name: `${doctor.title} ${doctor.name} ${doctor.suffix}`,
       fields: doctor.fields,
       photoUrl: doctor.picture ?? "https://via.placeholder.com/1000",
+      type: "DOCTOR"
     }
   })
   return (

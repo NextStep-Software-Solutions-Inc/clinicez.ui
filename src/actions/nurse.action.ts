@@ -16,6 +16,17 @@ export const getNurseAction = async (hpId: number) => {
     where: {
       isActive: true,
       healthcareProviderId: hpId
+    },
+    include: {
+      HealthcareProvider: {
+        include: {
+          User: {
+            include: {
+              SocialLink: true
+            }
+          }
+        }
+      }
     }
   })
   return nurse;

@@ -1,28 +1,31 @@
 import Suspend from "@components/Suspend";
 import React from "react";
-import { getHPAction } from "@actions/hp.actions";
 import { AppRouterPageRouteOpts } from "@auth0/nextjs-auth0";
 import DoctorProfile from "./DoctorProfile";
 import NurseProfile from "./NurseProfile";
+import ProfileNotFound from "../../ProfileNotFound";
+import { Metadata } from "next";
 
-export default async function PractitionerPage({params}: AppRouterPageRouteOpts) {
+export const metadata: Metadata = {
+  title: "Health Provider Profile | Clinic EZ",
+  description: "View the profile of a healthcare provider.",
+}
 
-  const profileId = parseInt((params?.practitioner ?? "") as string);
-  const hp = await getHPAction(profileId);
+export default async function PractitionerPage({params, searchParams}: AppRouterPageRouteOpts) {
 
-  const type = hp?.type as keyof typeof profile;
-  const doctorProfile = hp?.DoctorProfile;
-  const nurseProfile = hp?.NurseProfile;
-
-  const profile = {
-    DOCTOR: <DoctorProfile profile={doctorProfile!} />,
-    NURSE: <NurseProfile profile={nurseProfile!} />
+  const hpId = parseInt((params?.practitioner ?? "") as string);
+  const profileComponent = {
+    DOCTOR: DoctorProfile,
+    NURSE: NurseProfile,
   }
+  const hpType = (searchParams?._type as string)?.toUpperCase() as keyof typeof profileComponent
 
+  const Profile = profileComponent[hpType];
+  if (!Profile) return <ProfileNotFound/>
   return (
     <div className="container mx-auto my-10">
       <Suspend>
-        {profile[type]}
+        <Profile profileId={hpId} />
       </Suspend>
     </div>
   )

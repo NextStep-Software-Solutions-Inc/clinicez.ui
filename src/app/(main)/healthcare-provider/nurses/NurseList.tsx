@@ -11,20 +11,11 @@ export default  async function NurseList() {
       name: `${nurse.title} ${nurse.name} ${nurse.suffix}`,
       fields: nurse.fields,
       photoUrl: nurse.picture ?? "https://via.placeholder.com/1000",
+      type: "NURSE"
     }
   })
   return (
     <div className='flex flex-col gap-10'>
-      <div>
-        <CarouselWrapper
-          items={mappedNurses}
-        />
-      </div>
-      <div>
-        <CarouselWrapper
-          items={mappedNurses}
-        />
-      </div>
       <div>
         <CarouselWrapper
           items={mappedNurses}

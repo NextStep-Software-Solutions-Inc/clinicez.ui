@@ -9,7 +9,7 @@ import {
   CarouselPrevious,
 } from "@components/ui/carousel"
 import Each from "./utils/Each";
-import { ReactElement } from "react";
+import { cn } from "@lib/utils";
 
 interface ICarouselWrapperProps {
   items: ICarouselItemProps["item"][];
@@ -28,8 +28,12 @@ export default function CarouselWrapper({items}:ICarouselWrapperProps) {
         <Each
           of={items}
           render={(item, index) => (
-            <CarouselItem className={`flex-grow ${items.length < 3 ? 'basis-full' : 'md:basis-1/2 lg:basis-1/3'}`}>
-              <Link href={`profile/${item.id}`} key={item.id}>
+            <CarouselItem className={cn("flex-grow",
+              items.length > 1 && "md:basis-1/2",
+              items.length > 2 && "lg:basis-1/3",
+
+            )}>
+              <Link href={`profile/${item.id}?_type=${item.type}`} key={item.id}>
                 <LocalCarouselItem item={item}/>
               </Link>
             </CarouselItem> 

@@ -4,13 +4,15 @@ import { Label } from "@components/ui/label";
 import Each from "@components/utils/Each";
 import { EarthIcon, FacebookIcon, LinkedinIcon, MailIcon, PhoneCallIcon, TwitterIcon } from "lucide-react";
 import Suspend from "@components/Suspend";
-import { DoctorProfile as DoctorProfileType } from "@prisma/client";
+import { getDoctorAction } from "@actions/doctor.action";
 
 interface IDoctorProfileProps {
-    profile: DoctorProfileType
+    profileId: number;
 }
 
-export default function DoctorProfile({profile}: IDoctorProfileProps) {
+export default async function DoctorProfile({profileId}: IDoctorProfileProps) {
+  const profile = await getDoctorAction(profileId);
+  if (!profile) throw new Error("Doctor Profile not found");
   
   const cover = profile.cover ?? "https://art.metro.net/wp-content/uploads/2021/02/placeholder.png";
   const picture = profile.picture ?? "";
@@ -25,12 +27,13 @@ export default function DoctorProfile({profile}: IDoctorProfileProps) {
   const fields = profile.fields;
   const alias = profile.name?.split(" ").map(name => name[0]).join("") ?? "";
 
-  const links = {
-    website: "",
-    linkedin: "",
-    facebook: "",
-    twitter: "",
-  };
+  const links =  {
+    website: profile?.HealthcareProvider.User.SocialLink?.website ?? "",
+    linkedin: profile?.HealthcareProvider.User.SocialLink?.linkedin ?? "",
+    facebook: profile?.HealthcareProvider.User.SocialLink?.facebook ?? "",
+    twitter: profile?.HealthcareProvider.User.SocialLink?.twitter ?? "",
+    tiktok: profile?.HealthcareProvider.User.SocialLink?.tiktok ?? "",
+  }
 
   const personalDetails = {
     name: profile.name,
@@ -112,19 +115,19 @@ export default function DoctorProfile({profile}: IDoctorProfileProps) {
                 </div>
                 <div className="flex items-center gap-2">
                   <EarthIcon/>
-                  <a href={links.website} target="_blank">{links.website}</a>
+                  <a href={links?.website} target="_blank">{links.website}</a>
                 </div>
                 <div className="flex items-center gap-2">
                   <LinkedinIcon/>
-                  <a href={links.linkedin} target="_blank">{links.linkedin}</a>
+                  <a href={links?.linkedin} target="_blank">{links.linkedin}</a>
                 </div>
                 <div className="flex items-center gap-2">
                   <FacebookIcon/>
-                  <a href={links.facebook} target="_blank">{links.facebook}</a>
+                  <a href={links?.facebook} target="_blank">{links.facebook}</a>
                 </div>
                 <div className="flex items-center gap-2">
                   <TwitterIcon/>
-                  <a href={links.twitter} target="_blank">{links.twitter}</a>
+                  <a href={links?.twitter} target="_blank">{links.twitter}</a>
                 </div>
               </div>
             </div>

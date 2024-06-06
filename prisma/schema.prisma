@@ -226,22 +226,13 @@ model UserDefaultTenant {
 }
 
 model SocialLink {
-  id        Int            @id @default(autoincrement())
-  userId    Int            @unique
-  type      SocialLinkType
-  url       String
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
-  deletedAt DateTime?
-  isActive  Boolean        @default(true)
-  User      User           @relation(fields: [userId], references: [id])
-}
-
-enum SocialLinkType {
-  WEBSITE
-  FACEBOOK
-  TWITTER
-  LINKEDIN
-  INSTAGRAM
-  TIKTOK
+  id        Int     @id @default(autoincrement())
+  userId    Int     @unique
+  website   String?
+  facebook  String?
+  twitter   String?
+  linkedin  String?
+  instagram String?
+  tiktok    String?
+  User      User    @relation(fields: [userId], references: [id])
 }

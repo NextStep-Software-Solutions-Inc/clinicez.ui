@@ -4,14 +4,17 @@ import { Label } from "@components/ui/label";
 import Each from "@components/utils/Each";
 import { EarthIcon, FacebookIcon, LinkedinIcon, MailIcon, PhoneCallIcon, TwitterIcon } from "lucide-react";
 import Suspend from "@components/Suspend";
-import { NurseProfile as NurseProfileType } from "@prisma/client";
+import { getNurseAction } from "@actions/nurse.action";
 
 interface INurseProfileProps {
-    profile: NurseProfileType
+    profileId: number;
 }
 
-export default function NurseProfile({profile}: INurseProfileProps) {
+export default async function NurseProfile({profileId}: INurseProfileProps) {
   
+  const profile = await getNurseAction(profileId);
+  if(!profile) throw new Error("Nurse Profile not found");
+
   const cover = profile.cover ?? "https://art.metro.net/wp-content/uploads/2021/02/placeholder.png";
   const picture = profile.picture ?? "";
   const philosophy = profile.philosophy;
@@ -25,12 +28,13 @@ export default function NurseProfile({profile}: INurseProfileProps) {
   const fields = profile.fields;
   const alias = profile.name?.split(" ").map(name => name[0]).join("") ?? "";
 
-  const links = {
-    website: "",
-    linkedin: "",
-    facebook: "",
-    twitter: "",
-  };
+  const links =  {
+    website: profile?.HealthcareProvider.User.SocialLink?.website ?? "",
+    linkedin: profile?.HealthcareProvider.User.SocialLink?.linkedin ?? "",
+    facebook: profile?.HealthcareProvider.User.SocialLink?.facebook ?? "",
+    twitter: profile?.HealthcareProvider.User.SocialLink?.twitter ?? "",
+    tiktok: profile?.HealthcareProvider.User.SocialLink?.tiktok ?? "",
+  }
 
   const personalDetails = {
     name: profile.name,

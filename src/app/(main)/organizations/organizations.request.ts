@@ -1,20 +1,14 @@
-import { request } from "@services/request"
+import { Organization } from "@prisma/client"
+import { self } from "@services/request"
 
 type ResponseType = {
-    response: OrganizationType[]
+    response: Organization[]
 }
 
-export type OrganizationType = {
-    id: number,
-    url: string,
-    coverPhoto: string,
-    uid: string,
-    name: string,
-    bio: string
-}
+
 
 export const getOrganizations = async ()  => {
-  const response = await request.get('/api/organization')
+  const response = await self.get('/api/organizations')
   
   if(!response.ok) {
     const error = await response.json()

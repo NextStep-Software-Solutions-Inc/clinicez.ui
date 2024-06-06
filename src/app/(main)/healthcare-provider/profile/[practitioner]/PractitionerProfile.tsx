@@ -13,7 +13,7 @@ interface IPractitionerProfileProps {
 
 export default function PractitionerProfile({profile}: IPractitionerProfileProps) {
 
-  const coverPhoto = (profile.coverPhoto ?? "https://art.metro.net/wp-content/uploads/2021/02/placeholder.png") as string;
+  const coverPhoto = (profile.cover ?? "https://art.metro.net/wp-content/uploads/2021/02/placeholder.png") as string;
   const philosophy = profile.user_metadata.philosophy
   const areaOfInterest = profile.user_metadata.areaOfInterest
   const experience = profile.credentials.experience;
@@ -43,7 +43,7 @@ export default function PractitionerProfile({profile}: IPractitionerProfileProps
       <Suspend>
         <CoverProfilePhoto 
           coverPhoto={coverPhoto} 
-          profilePhoto={profile.profilePhoto}
+          profilePhoto={profile.picture}
           alias={alias}
         />
       </Suspend>

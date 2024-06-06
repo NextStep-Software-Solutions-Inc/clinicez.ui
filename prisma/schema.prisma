@@ -37,6 +37,8 @@ model User {
   UserSubsciption         UserSubsciption[]
   UserDefaultOrganization UserDefaultOrganization?
   UserDefaultTenant       UserDefaultTenant?
+  HealthcareProvider      HealthcareProvider?
+  SocialLink              SocialLink?
 }
 
 model Organization {
@@ -114,13 +116,14 @@ enum SubscriptionType {
 // This is for user that are healthcare provider which maybe a doctor or nurse or other type of healthcare provider
 model HealthcareProvider {
   id            Int                    @id @default(autoincrement())
-  userId        Int
+  userId        Int                    @unique
   type          HealthcareProviderType
   description   String?
   createdAt     DateTime               @default(now())
   updatedAt     DateTime               @updatedAt
   deletedAt     DateTime?
   isActive      Boolean                @default(true)
+  User          User                   @relation(fields: [userId], references: [id])
   DoctorProfile DoctorProfile?
   NurseProfile  NurseProfile?
 }
@@ -150,8 +153,20 @@ model DoctorProfile {
   title                String
   name                 String
   suffix               String?
+  workEmail            String?
+  workPhone            String?
   picture              String?
   cover                String?
+  experience           String?
+  education            String[]           @default([])
+  fields               String[]           @default([])
+  specialties          String[]           @default([])
+  certifications       String[]           @default([])
+  languages            String[]           @default([])
+  affiliations         String[]           @default([])
+  philosophy           String?            @db.Text
+  areaOfInterest       String?            @db.Text
+  hobbies              String?
   createdAt            DateTime           @default(now())
   updatedAt            DateTime           @updatedAt
   deletedAt            DateTime?
@@ -165,8 +180,20 @@ model NurseProfile {
   title                String
   name                 String
   suffix               String?
+  workEmail            String?
+  workPhone            String?
   picture              String?
   cover                String?
+  experience           String?
+  education            String[]           @default([])
+  fields               String[]           @default([])
+  specialties          String[]           @default([])
+  certifications       String[]           @default([])
+  languages            String[]           @default([])
+  affiliations         String[]           @default([])
+  philosophy           String?            @db.Text
+  areaOfInterest       String?            @db.Text
+  hobbies              String?
   createdAt            DateTime           @default(now())
   updatedAt            DateTime           @updatedAt
   deletedAt            DateTime?
@@ -196,4 +223,25 @@ model UserDefaultTenant {
   isActive  Boolean   @default(true)
   User      User      @relation(fields: [userId], references: [id])
   Tenant    Tenant    @relation(fields: [tenantId], references: [id])
+}
+
+model SocialLink {
+  id        Int            @id @default(autoincrement())
+  userId    Int            @unique
+  type      SocialLinkType
+  url       String
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  deletedAt DateTime?
+  isActive  Boolean        @default(true)
+  User      User           @relation(fields: [userId], references: [id])
+}
+
+enum SocialLinkType {
+  WEBSITE
+  FACEBOOK
+  TWITTER
+  LINKEDIN
+  INSTAGRAM
+  TIKTOK
 }

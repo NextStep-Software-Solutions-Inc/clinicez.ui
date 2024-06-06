@@ -10,13 +10,7 @@ export default async function OrganizationList() {
       <Each
         of={organizations.response}
         render={(organization, index) => (
-          <OrganizationCard
-            key={index}
-            url={organization.url}
-            name={organization.name}
-            imageSrc={organization.coverPhoto}
-            details={organization.bio}
-          />
+          <OrganizationCard organization={organization}/>
         )}
       />
     </div>

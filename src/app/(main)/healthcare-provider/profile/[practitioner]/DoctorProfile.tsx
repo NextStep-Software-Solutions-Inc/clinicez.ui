@@ -1,40 +1,47 @@
-import { HP } from "@actions/hp.actions";
 import {  CoverProfilePhoto, PersonalDetails } from "./PractitionerLayout";
 import { Badge } from "@components/ui/badge";
 import { Label } from "@components/ui/label";
 import Each from "@components/utils/Each";
 import { EarthIcon, FacebookIcon, LinkedinIcon, MailIcon, PhoneCallIcon, TwitterIcon } from "lucide-react";
 import Suspend from "@components/Suspend";
-import { ar } from "@faker-js/faker";
+import { DoctorProfile as DoctorProfileType } from "@prisma/client";
 
-interface IPractitionerProfileProps {
-    profile: HP;
+interface IDoctorProfileProps {
+    profile: DoctorProfileType
 }
 
-export default function PractitionerProfile({profile}: IPractitionerProfileProps) {
+export default function DoctorProfile({profile}: IDoctorProfileProps) {
+  
+  const cover = profile.cover ?? "https://art.metro.net/wp-content/uploads/2021/02/placeholder.png";
+  const picture = profile.picture ?? "";
+  const philosophy = profile.philosophy;
+  const areaOfInterest = profile.areaOfInterest;
+  const experience = profile.experience;
+  const educations = profile.education;
+  const languages = profile.languages;
+  const specialties = profile.specialties;
+  const affiliations = profile.affiliations;
+  const hobbies = profile.hobbies;
+  const fields = profile.fields;
+  const alias = profile.name?.split(" ").map(name => name[0]).join("") ?? "";
 
-  const coverPhoto = (profile.cover ?? "https://art.metro.net/wp-content/uploads/2021/02/placeholder.png") as string;
-  const philosophy = profile.user_metadata.philosophy
-  const areaOfInterest = profile.user_metadata.areaOfInterest
-  const experience = profile.credentials.experience;
-  const educations = profile.credentials.education;
-  const languages = profile.professionalDetails.languages
-  const specialties = profile.professionalDetails.specialties
-  const affiliations = profile.professionalDetails.affiliations
-  const hobbies = profile.user_metadata.hobbies
-  const links = profile.links 
-  const fields = profile.professionalDetails.fields
-  const alias = profile.name.split(" ").map(name => name[0]).join("")
+  const links = {
+    website: "",
+    linkedin: "",
+    facebook: "",
+    twitter: "",
+  };
 
   const personalDetails = {
-    title: profile.title,
     name: profile.name,
-    suffix: profile.suffix
-  }
+    title: profile.title,
+    suffix: profile.suffix ?? "",
+    fields: profile.fields,
+  };
 
   const contactDetails = {
-    email: profile.email,
-    phone: profile.phone
+    email: profile?.workEmail ?? "",
+    phone: profile?.workPhone ?? "",
   }
 
   return (
@@ -42,8 +49,8 @@ export default function PractitionerProfile({profile}: IPractitionerProfileProps
       {/* Photos */}
       <Suspend>
         <CoverProfilePhoto 
-          coverPhoto={coverPhoto} 
-          profilePhoto={profile.picture}
+          coverPhoto={cover} 
+          profilePhoto={picture}
           alias={alias}
         />
       </Suspend>
@@ -140,7 +147,7 @@ export default function PractitionerProfile({profile}: IPractitionerProfileProps
               <Label className="">Certifications</Label>
               <ul className="list-disc ml-10">
                 <Each
-                  of={profile.credentials.certifications}
+                  of={profile.certifications}
                   render={certification => <li>{certification}</li>}
                 />
               </ul>

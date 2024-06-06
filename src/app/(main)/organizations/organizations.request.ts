@@ -5,8 +5,6 @@ type ResponseType = {
     response: Organization[]
 }
 
-
-
 export const getOrganizations = async ()  => {
   const response = await self.get('/api/organizations')
   

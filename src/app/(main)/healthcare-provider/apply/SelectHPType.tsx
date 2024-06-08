@@ -50,13 +50,16 @@ export default function SelectHPType({nextStep, prevStep, isFirstStep,isLastStep
     }
   })
 
-  const onSubmit = async (data: z.infer<typeof roleFormSchema>) => {
-    await setApplicationData(data)
-    nextStep?.();
+  const action = async (formData: FormData) => {
+    form.handleSubmit(async (data: z.infer<typeof roleFormSchema>) => {
+      await setApplicationData(data)
+      nextStep?.();
+    })()
   }
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 shadow-lg w-full p-8 bg-white rounded-md">
+      <form action={action} className="space-y-6 shadow-lg w-full p-8 bg-white rounded-md">
         <FormField
           control={form.control}
           name="role"

@@ -4,6 +4,8 @@ import prisma from "@lib/prisma";
 
 import { cache } from "react";
 import { HealthcareProviderType, Prisma } from "@prisma/client";
+import { assignRolesAction } from "./user-management.action";
+// import { self } from "@services/request";
 
 
 export const getHPsActions = cache(async (type?: HealthcareProviderType) => {
@@ -38,12 +40,14 @@ export const getHPsActions = cache(async (type?: HealthcareProviderType) => {
   return hps;
 })
 
-export const getHPAction = cache(async (id: number) => {
+export const getHPAction = cache(async ({id, userId}:{id?: number, userId?: string}) => {
 
-  const hp = prisma.healthcareProvider.findUnique({
+  const hp = prisma.healthcareProvider.findFirst({
     where: {
       isActive: true,
-      id
+      User: {
+        userId
+      }
     },
     include: {
       DoctorProfile: true,
@@ -63,4 +67,29 @@ export const createHpAction = async (hp: Prisma.HealthcareProviderCreateArgs["da
   })
 
   return newHp;
+}
+
+
+export const submitHPApplicationAction = async ({
+  hp, userId, roleId
+}: {
+  hp: Prisma.HealthcareProviderCreateArgs["data"],
+  userId: string,
+  roleId: string
+}) => {
+
+  const res = await prisma.$transaction(async (prisma) => {
+    await prisma.healthcareProvider.create({
+      data: {
+        ...hp
+      }
+    });
+    await assignRolesAction(userId, [roleId]);
+    
+    // const token = await self.get("/api/auth/refresh-token");
+    return true
+  })
+
+  return res;
+
 }

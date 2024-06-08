@@ -3,8 +3,8 @@
 import { AppRouterPageRouteOpts, getAccessToken, getSession, updateSession, withPageAuthRequired, } from "@auth0/nextjs-auth0";
 import { Terminal } from "lucide-react"
 
-import HPRoleSelection from "./SelectHPType";
-import PlanSelection from "./PlanSelection";
+import SelectHPType from "./SelectHPType";
+import SelectPlan from "./SelectPlan";
 import PaymentForm from "./PaymentForm";
 import ConfirmationForm from "./ConfirmationForm";
 
@@ -63,10 +63,10 @@ async function HealthcareProviderRegistrationPage(props: AppRouterPageRouteOpts)
           </p>
         </div>
         <ApplicationForm currentStep={1} >
-          <HPRoleSelection {
+          <SelectHPType {
             ...(hp?.type ? { activeRole: [hp.type] } : {})
           }/>
-          <PlanSelection/>
+          <SelectPlan/>
           <PaymentForm />
           <ConfirmationForm />
         </ApplicationForm>

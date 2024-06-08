@@ -1,4 +1,4 @@
-import { createDoctorAction, getDoctorAction, getDoctorsAction } from "@actions/doctor.action";
+import { createDoctorAction, getDoctorsAction } from "@actions/doctor.action";
 import { withJwtAuth } from "@middlewares/withJwtAuth";
 import { NextResponse } from "next/server";
 import { z } from "zod";

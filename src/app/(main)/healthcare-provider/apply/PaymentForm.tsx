@@ -7,36 +7,57 @@ import { useForm, } from "react-hook-form";
 import { z } from "zod";
 import BackSubmitAndNext from "@components/SubmitAndNext";
 import { useLocalStorage } from "@hooks/useLocalStorage";
+import { getPlansAction } from "@actions/plan.action";
+import { use } from "react";
 interface PaymentFormProps {
   nextStep?: () => void;
   prevStep?: () => void;
   isFirstStep?: boolean;
   isLastStep?: boolean;
 }
-export const applicationFormSchema = z.object({
-  receiptNumber : z.string().min(1, {
-    message: "Receipt number is required",
-  }),
-})
+
+const fetchPlans = getPlansAction()
 
 export default function PaymentForm({ nextStep, prevStep, isFirstStep, isLastStep}: PaymentFormProps) {
-  const [applicationData,setApplicationData] = useLocalStorage("hp-application", {receiptNumber: ""});
-  const form = useForm<z.infer<typeof applicationFormSchema>>({
+
+  const hpPlans = use(fetchPlans)
+  const [applicationData,setApplicationData] = useLocalStorage<{
+    plan?: string;
+    receiptNumber?: string;
+  }>("hp-application", {receiptNumber: ""});
+
+  const selectedPlan = hpPlans.find(plan => plan.planUid === applicationData.plan) ?? { price: 0};
+  const cost = selectedPlan.price;
+
+  const applicationFormSchema = z.object({
+    receiptNumber : z.string().refine(value => value.length === 4 || cost  === 0, {
+      message: "Receipt number is required"
+    }).optional(),
+  })
+
+  type formType = z.infer<typeof applicationFormSchema>;
+  const form = useForm<formType>({
     resolver: zodResolver(applicationFormSchema),
     defaultValues: {
       receiptNumber: applicationData?.receiptNumber,
     }
   })
 
-  const onSubmit = async (data: z.infer<typeof applicationFormSchema>) => {
-    await setApplicationData(data)
-    nextStep?.();
+  const action = async (formData: FormData) => {
+    form.handleSubmit(async (data: formType) => {
+      await setApplicationData(data)
+      nextStep?.();
+    })();
   }
+
   
-  const cost = 0;
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="prose max-w-full space-y-6 shadow-lg w-full p-8 bg-white rounded-md">
+      <form 
+        action={action} 
+        className="prose max-w-full space-y-6 shadow-lg w-full p-8 bg-white rounded-md"
+      >
         <h4>Payment</h4>
         <p>This is a one-time payment of <strong>₱{cost}</strong> for the purpose of verifying your identity. This process helps us ensure the security and authenticity of our users.</p>
         <FormField

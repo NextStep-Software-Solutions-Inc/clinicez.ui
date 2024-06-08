@@ -51,16 +51,19 @@ export default async function HomePage() {
   return (
     <main className="content flex flex-col">
       <section className="bg-gradient-to-l from-[#6DEBF4] via-[#C3FBFF] to-[#D3FCFF] bg-opacity-30">
-        <div className="relative container mx-auto p-2 sm:py-16 lg:py-32">
+        <div className="relative container mx-auto p-4 sm:py-16 lg:py-32">
           <div className="mx-auto sm:px-6 lg:px-8">
             <div className="grid items-center grid-cols-1 gap-12 lg:grid-cols-2">
               <div>
                 <p className="text-base font-semibold tracking-wider text-gray-500 uppercase">Optimized Healthcare Management System</p>
-                <h1 className="mt-4 text-4xl font-bold text-primary lg:mt-8 sm:text-6xl xl:text-8xl">Revitalize in an <span className="text-white rounded-3xl font-extralight text-7xl px-4 leading-tight" style={{
-                  background: "linear-gradient(135deg, rgba(62,236,225,1) 0%, rgba(49,205,188,1) 15%, rgba(44,171,152,1) 70%, rgba(7,167,136,1) 100%)",
-                  borderRadius: "34% 66% 69% 31% / 44% 51% 49% 56%"
-                }} >ez</span> way.</h1>
-                <p className="mt-4 text-base text-gray-600 lg:mt-8 sm:text-xl">Join Health Organization and Manage Your Health Records</p>
+                <h1 className="animate-pulse fill-mode-forwards repeat-[2] mt-4 text-4xl font-bold text-transparent bg-gradient-to-r from-primary to-slate-500 bg-clip-text lg:mt-8 sm:text-6xl xl:text-8xl">Welcome to Clinic 
+                  {" "}<span className="text-white rounded-3xl font-extralight text-7xl px-4 leading-tight " style={{
+                    background: "linear-gradient(135deg, rgba(62,236,225,1) 0%, rgba(49,205,188,1) 15%, rgba(44,171,152,1) 70%, rgba(7,167,136,1) 100%)",
+                    borderRadius: "34% 66% 69% 31% / 44% 51% 49% 56%"
+                  }}>ez</span>
+                </h1>
+                <p className="mt-4 text-base text-gray-600 lg:mt-8 sm:text-lg">
+                  The innovative platform revolutionizing healthcare connections.<br/>Our user-friendly interface empowers healthcare providers to streamline appointment management, while giving patients effortless access to book consultations with their preferred professionals. Experience the future of healthcare with Clinic EZ — where convenience meets care.</p>
                 <ConditionalRender condition={!authenticated}>
                   <Link href="/api/auth/login">
                     <Button size="lg" className="rounded-full mt-8">
@@ -97,10 +100,10 @@ export default async function HomePage() {
             render={(feature) => (
               <Card className="relative basis-[20rem] flex-grow shadow-xl hover:scale-105 hover:z-50 transition-all rounded-3xl">
                 <CardHeader>
-                  <CardTitle className="uppercase tracking-wider">{feature.name}</CardTitle>
-                  <CardDescription>{feature.description}</CardDescription>
+                  <CardTitle className="uppercase tracking-wider text-primary">{feature.name}</CardTitle>
+                  <CardDescription className="">{feature.description}</CardDescription>
                 </CardHeader>
-                <CardContent className="mb-16">{feature.content}</CardContent>
+                <CardContent className="mb-16 text-gray-600">{feature.content}</CardContent>
                 <CardFooter className="absolute bottom-0 w-full">
                   <Link href={feature.action.path} className="w-full">
                     <Button className="w-full rounded-full hover:animate-pulse">{feature.action.label}</Button>

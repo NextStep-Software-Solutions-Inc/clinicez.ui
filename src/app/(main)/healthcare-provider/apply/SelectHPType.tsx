@@ -6,6 +6,7 @@ import { z } from "zod"
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -16,31 +17,36 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useSearchParams } from "next/navigation";
 import BackSubmitAndNext from "../../../../components/SubmitAndNext";
 import {useLocalStorage} from "@hooks/useLocalStorage";
-const roles = ["doctor", "nurse", "pharmacist", "laboratory", "admin"];
+import { $Enums, HealthcareProviderType } from "@prisma/client";
 
-export const roleFormSchema = z.object({
-  role: z.string({
-    required_error: "You need to select a role.",
-    invalid_type_error: "Invalid role",
-  }).refine(value => ["doctor", "nurse", "pharmacist", "laboratory", "admin"].includes(value), {
-    message: "Invalid role",
-  }),
-})
+const hpTypes = Object.values($Enums.HealthcareProviderType);
+const hpTypesSchema = z.nativeEnum($Enums.HealthcareProviderType);
 
-interface IHealthcareRoleSelectorProps {
+interface ISelectHPTypeProps {
+  activeRole?: typeof hpTypes;
   nextStep?: () => void;
   prevStep?: () => void;
   isFirstStep?: boolean;
   isLastStep?: boolean;
-}
+} 
 
-export default function HealthcareRoleSelector({nextStep, prevStep, isFirstStep,isLastStep}: IHealthcareRoleSelectorProps) {
-  const role = useSearchParams().get("role")?? "";
+export default function SelectHPType({nextStep, prevStep, isFirstStep,isLastStep, activeRole}: ISelectHPTypeProps) {
+  
+  const roleFormSchema = z.object({
+    role: hpTypesSchema.refine(value => hpTypes.includes(value) , {
+      message: "Invalid role",
+    }).refine(value => !activeRole?.includes(value), (value) => ({
+      message: `You have already possessed ${value} role. Please select a different role.`,
+    })),
+  })
+  
+  const role = useSearchParams().get("_role")?.toLowerCase() as HealthcareProviderType | undefined;
   const [applicationData,setApplicationData] = useLocalStorage("hp-application", {role});
   const form = useForm<z.infer<typeof roleFormSchema>>({
     resolver: zodResolver(roleFormSchema),
+    mode: "all",
     defaultValues: {
-      role: role || applicationData?.role || "doctor",
+      role: role || applicationData?.role,
     }
   })
 
@@ -56,23 +62,23 @@ export default function HealthcareRoleSelector({nextStep, prevStep, isFirstStep,
           name="role"
           render={({ field,  }) => (
             <FormItem className="space-y-3">
-              <FormLabel>Select Role...</FormLabel>
+              <FormLabel>Select Role</FormLabel>
               <FormControl>
                 <RadioGroup
                   name="role"
                   onValueChange={field.onChange}
                   value={field.value}
-                  className="flex flex-row space-x-5"
+                  className="flex flex-wrap gap-5"
                 >
                   <Each
-                    of={roles}
-                    render={(_role) => (
+                    of={hpTypes}
+                    render={(type) => (
                       <FormItem className="flex items-center space-x-3 space-y-0">
                         <FormControl>
-                          <RadioGroupItem value={_role}/>
+                          <RadioGroupItem value={type} onClick={() => form.trigger()}/>
                         </FormControl>
                         <FormLabel className="font-normal capitalize">
-                          {_role}
+                          {type}
                         </FormLabel>
                       </FormItem>
                     )}

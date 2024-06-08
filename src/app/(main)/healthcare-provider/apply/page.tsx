@@ -1,9 +1,9 @@
 
 
-import { AppRouterPageRouteOpts, withPageAuthRequired, } from "@auth0/nextjs-auth0";
+import { AppRouterPageRouteOpts, getAccessToken, getSession, updateSession, withPageAuthRequired, } from "@auth0/nextjs-auth0";
 import { Terminal } from "lucide-react"
 
-import HPRoleSelection from "./HPRoleSelection";
+import HPRoleSelection from "./SelectHPType";
 import PlanSelection from "./PlanSelection";
 import PaymentForm from "./PaymentForm";
 import ConfirmationForm from "./ConfirmationForm";
@@ -14,11 +14,11 @@ import {
   AlertTitle,
 } from "@components/ui/alert"
 import { Metadata } from "next";
-import { Tabs, TabsContent } from "@components/ui/tabs";
 import { Button } from "@components/ui/button";
 import HPApplicationDataProvider from "@contexts/hp-application.context";
 import ApplicationForm from "./ApplicationForm";
-import HPForm from "./HPForm";
+import React from "react";
+import { getHPAction } from "@actions/hp.actions";
 
 export const metadata: Metadata = {
   title: "Healthcare Provider Registration",
@@ -27,7 +27,20 @@ export const metadata: Metadata = {
 
 
 async function HealthcareProviderRegistrationPage(props: AppRouterPageRouteOpts) {
-  const { role, index = "1"} =( props.searchParams || {} ) as { role: string, index: string };
+  const session = await getSession();
+  await updateSession({
+    ...session,
+    user: {
+      ...session?.user,
+      metadata: {
+        role: "healthcare-provider"
+      }
+    }
+  });
+
+  console.log({session});
+  
+  const hp = await getHPAction({userId: session?.user.sub});
   
   return (
     <HPApplicationDataProvider>
@@ -43,16 +56,17 @@ async function HealthcareProviderRegistrationPage(props: AppRouterPageRouteOpts)
         </Alert>
         
         <div className="prose max-w-full">
-          <h1>Healthcare Provider Application</h1>
+          <h1>Healthcare Provider Application Process</h1>
           <p>
             Thank you for your interest in joining our network of healthcare providers! This online application process will
             guide you through the steps of becoming a Clinic EZ provider.
           </p>
         </div>
-        <ApplicationForm currentStep={1}>
-          <HPRoleSelection />
+        <ApplicationForm currentStep={1} >
+          <HPRoleSelection {
+            ...(hp?.type ? { activeRole: [hp.type] } : {})
+          }/>
           <PlanSelection/>
-          <HPForm/>
           <PaymentForm />
           <ConfirmationForm />
         </ApplicationForm>

@@ -51,43 +51,52 @@ export default function UserAvatar() {
         <DropdownMenuLabel>My Account</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem>
-            <User className="mr-2 h-4 w-4" />
-            <a href={`/user/${user.sub?.split("|")[1]}/phr`}>Personal Health Records</a>
-            {/* <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut> */}
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            <CreditCard className="mr-2 h-4 w-4" />
-            <a href="/billing">Billing</a>
-            {/* <DropdownMenuShortcut>⌘B</DropdownMenuShortcut> */}
-          </DropdownMenuItem>
+          <a href={`/user/${user.sub?.split("|")[1]}/phr`}>
+            <DropdownMenuItem>
+              <User className="mr-2 h-4 w-4" />
+                Personal Health Records
+              {/* <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut> */}
+            </DropdownMenuItem>
+          </a>
+          <a href="/settings">
+            <DropdownMenuItem>
+              <CreditCard className="mr-2 h-4 w-4" />
+                Billing
+              {/* <DropdownMenuShortcut>⌘B</DropdownMenuShortcut> */}
+            </DropdownMenuItem></a>
           <DropdownMenuItem>
             <Settings className="mr-2 h-4 w-4" />
-            <a href="/settings">Settings</a>
+              Settings
             {/* <DropdownMenuShortcut>⌘S</DropdownMenuShortcut> */}
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <ConditionalRender condition={isHP(user)} >
-          <DropdownMenuItem>
-            <Container className="mr-2 h-4 w-4" />
-            <a href="/org/dashboard">Dashboard</a>
-            {/* <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut> */}
-          </DropdownMenuItem>
+          <a  href="/org/dashboard">
+            <DropdownMenuItem>
+              <Container className="mr-2 h-4 w-4" />
+            Dashboard
+              {/* <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut> */}
+            </DropdownMenuItem>
+          </a>
         </ConditionalRender>
         <ConditionalRender condition={isTenantOwner(user)}>
-          <DropdownMenuItem>
-            <Container className="mr-2 h-4 w-4" />
-            <a href="https://clinic-ez-admin.vercel.app">Admin console</a>
-            {/* <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut> */}
-          </DropdownMenuItem>
+          <a href="https://clinic-ez-admin.vercel.app">
+            <DropdownMenuItem>
+              <Container className="mr-2 h-4 w-4" />
+                Admin console
+              {/* <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut> */}
+            </DropdownMenuItem>
+          </a>
         </ConditionalRender>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>
-          <LogOut className="mr-2 h-4 w-4" />
-          <a href="/api/auth/logout">Log out</a>
-          {/* <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut> */}
-        </DropdownMenuItem>
+        <a href="/api/auth/logout">
+          <DropdownMenuItem>
+            <LogOut className="mr-2 h-4 w-4" />
+              Log out
+            {/* <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut> */}
+          </DropdownMenuItem>
+        </a>
       </DropdownMenuContent>
     </DropdownMenu>
   )

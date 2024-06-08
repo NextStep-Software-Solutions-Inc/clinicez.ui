@@ -8,6 +8,9 @@ import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
 import BackSubmitAndNext from "../../../../components/SubmitAndNext";
 import { useLocalStorage } from "@hooks/useLocalStorage";
+import { createHpAction, submitHPApplicationAction } from "@actions/hp.actions";
+import { useUser } from "@auth0/nextjs-auth0/client";
+import { toast } from "sonner";
 
 interface ConfirmationFormProps {
   nextStep?: () => void;
@@ -32,6 +35,7 @@ export const confirmationFormSchema = z.object({
 
 export default function ConfirmationForm({ nextStep, prevStep, isFirstStep, isComplete, setComplete, startOver }: ConfirmationFormProps) {
   const [applicationData, setApplicationData] = useLocalStorage("hp-application");
+  const {user} = useUser();
   
   const form = useForm<z.infer<typeof confirmationFormSchema>>({
     resolver: zodResolver(confirmationFormSchema)
@@ -40,8 +44,29 @@ export default function ConfirmationForm({ nextStep, prevStep, isFirstStep, isCo
 
   const action = (formData: FormData) => {
     form.handleSubmit(async (data: z.infer<typeof confirmationFormSchema>) => {
+      
       await setApplicationData({...data, complete: true})
-      setComplete?.();
+      try {
+        const res = await submitHPApplicationAction({
+          hp: {
+            type: "DOCTOR",
+            User: {
+              connect: {
+                userId: user?.sub ?? ""
+              }
+            }
+          },
+          roleId: "rol_Pkzy6pVQmFktmbh0",
+          userId: user?.sub ?? ""
+        });
+        setComplete?.(res);
+        toast.success("Application submitted successfully");
+
+      } catch (error) {
+        console.log({error});
+        
+        toast.error("An error occurred while submitting your application. Please try again later.");
+      }
     })()
   }
 

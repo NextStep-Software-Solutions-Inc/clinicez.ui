@@ -33,7 +33,7 @@ export default function PaymentForm({ nextStep, prevStep, isFirstStep, isLastSte
     nextStep?.();
   }
   
-  const cost = 50;
+  const cost = 0;
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="prose max-w-full space-y-6 shadow-lg w-full p-8 bg-white rounded-md">

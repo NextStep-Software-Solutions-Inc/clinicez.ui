@@ -28,10 +28,22 @@ import ConditionalRender from "./utils/ConditionalRender";
 import { isHP, isTenantOwner } from "@lib/rbac.helper";
 import Link from "next/link";
 import { Button } from "./ui/button";
+import Each from "./utils/Each";
+import { useEffect, useState } from "react";
+import { getHPsActions } from "@actions/hp.actions";
 
 export default function UserAvatar() {
 
+  const [hpProfiles, setHpProfiles] = useState<Awaited<ReturnType<typeof getHPsActions>>>([]);
+  
   const {user, isLoading} = useUser();
+
+  useEffect(() => {
+    (async () => {
+      setHpProfiles(await getHPsActions({userId: user?.sub ?? ""}))
+    })()
+  },[user?.sub])
+
 
   if(isLoading) return null;
   if (!user) return (
@@ -51,13 +63,26 @@ export default function UserAvatar() {
         <DropdownMenuLabel>My Account</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <a href={`/user/${user.sub?.split("|")[1]}/phr`}>
+          <a href={`/user/${user.sub}/phr`}>
             <DropdownMenuItem>
               <User className="mr-2 h-4 w-4" />
                 Personal Health Records
               {/* <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut> */}
             </DropdownMenuItem>
           </a>
+          <Each
+            of={hpProfiles}
+            render={(item) => (
+              <a href={`/hp/profile/${item.id}/editor?_type=${item.type}`}>
+                <DropdownMenuItem>
+                  <User className="mr-2 h-4 w-4" />
+                  <span className="capitalize">My {item.type.replaceAll("_", " ").toLowerCase()} Profile</span>
+                  {/* <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut> */}
+                </DropdownMenuItem>
+              </a>
+            )}
+            fallback={null}
+          />
           <a href="/settings">
             <DropdownMenuItem>
               <CreditCard className="mr-2 h-4 w-4" />
@@ -75,7 +100,7 @@ export default function UserAvatar() {
           <a  href="/org/dashboard">
             <DropdownMenuItem>
               <Container className="mr-2 h-4 w-4" />
-            Dashboard
+                Dashboard
               {/* <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut> */}
             </DropdownMenuItem>
           </a>

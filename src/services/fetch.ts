@@ -1,5 +1,4 @@
 type CustomRequestInit = RequestInit | {
-  headers?: HeadersInit | (() => HeadersInit) | (() => Promise<HeadersInit>);
 }
 
 type CreateFetchOptions = CustomRequestInit & {
@@ -13,7 +12,6 @@ export const createCustomFetch = (options: CreateFetchOptions) => {
 
   type RequestOptionsType = RequestInit & {
       params?: Record<string, string | number | boolean | string[] | undefined>
-      headers?: HeadersInit | (() => HeadersInit) | (() => Promise<HeadersInit>);
   }
 
   const createSearchParams = (params?: RequestOptionsType["params"]) => {
@@ -29,16 +27,12 @@ export const createCustomFetch = (options: CreateFetchOptions) => {
   }
 
   const customFetch = async (url: string, init?: RequestOptionsType) => {
-    let headers = init?.headers;
-    if (typeof headers === 'function') {
-      headers = await headers();
-    }
-  
     const mergedOptions = {
       ...options,
       ...init,
-      headers,
     }
+
+    
 
     const urlWithParams = `${options.baseUrl}${url}${createSearchParams(init?.params)}`
 

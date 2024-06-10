@@ -1,3 +1,5 @@
+"use server";
+
 import prisma from "@lib/prisma";
 import { Prisma } from "@prisma/client";
 
@@ -39,5 +41,9 @@ export const createDoctorAction = async (doctor: Prisma.DoctorProfileCreateArgs[
       ...doctor
     }
   })
+  return newDoctor;
+}
+export const upsertDoctorAction = async (payload: Prisma.DoctorProfileUpsertArgs) => {
+  const newDoctor = await prisma.doctorProfile.upsert(payload)
   return newDoctor;
 }

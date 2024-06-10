@@ -1,6 +1,4 @@
-import { getAccessToken } from "@auth0/nextjs-auth0";
 import { createCustomFetch } from "./fetch";
-import { headers } from "next/headers";
 
 export const request = createCustomFetch({
   baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL ?? "",
@@ -11,10 +9,5 @@ export const request = createCustomFetch({
 export const self =  createCustomFetch({
   baseUrl: process.env.AUTH0_BASE_URL ?? "",
   cache: "force-cache",
-  headers: async () => {
-    return ({
-      "Authorization": `Bearer ${""}`,
-    })
-  }
 })
 

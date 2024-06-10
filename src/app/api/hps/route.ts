@@ -32,7 +32,7 @@ export const POST = withJwtAuth(async (req) => {
 export const GET = withJwtAuth(async (req) => {
   const type = req.nextUrl.searchParams.get('type') as HealthcareProviderType
     
-  const hps = await getHPsActions(type)
+  const hps = await getHPsActions({ type })
 
   return NextResponse.json({
     success: true,

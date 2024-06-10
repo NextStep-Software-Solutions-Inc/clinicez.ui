@@ -1,6 +1,5 @@
 "use client"
 
-import { z } from "zod"
 import {
   FormControl,
   FormDescription,
@@ -11,11 +10,11 @@ import {
 } from "@components/ui/form"
 import { Input } from "@components/ui/input"
 import { useForm } from "react-hook-form"
-import { formSchema } from "../../profile/[practitioner]/editor/HPForm"
 import { Select, SelectContent, SelectItem, SelectLabel, SelectTrigger, SelectValue, SelectGroup } from "@components/ui/select"
+import { ProfileFormType } from "../../profile/[practitioner]/editor/hp-form.schema"
 
 type HPAddressProps = {
-    form: ReturnType<typeof useForm<z.infer<typeof formSchema>>>
+    form: ReturnType<typeof useForm<ProfileFormType>>
 }
 
 export default function HPAddress({ form }: HPAddressProps) {
@@ -28,7 +27,7 @@ export default function HPAddress({ form }: HPAddressProps) {
           render={({ field }) => (
             <FormItem className="w-full">
               <FormLabel>Country</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value} {...field}>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select a country to display" />

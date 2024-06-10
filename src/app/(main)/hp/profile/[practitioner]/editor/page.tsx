@@ -1,8 +1,10 @@
 import { AppRouterPageRouteOpts } from "@auth0/nextjs-auth0";
 import { getDoctorAction } from "@actions/doctor.action";
 import { getNurseAction } from "@actions/nurse.action";
-import { ProfileFormType } from "./hp-form.schema";
-import HPForm from "./HPForm";
+import HPProfile from "../../../apply/components/HPProfile";
+import HPProfessionalInfo from "../../../apply/components/HPProfessionalInfo";
+import { HPProfileType } from "./hp-form.schema";
+import Suspend from "@components/Suspend";
 
 export default  async function EditorPage({params, searchParams}: AppRouterPageRouteOpts) {
   const hpId = parseInt(params?.practitioner as string);
@@ -16,7 +18,7 @@ export default  async function EditorPage({params, searchParams}: AppRouterPageR
   const action = actions[type as keyof typeof actions];
   const profile = (await action(hpId));
   
-  const mappedProfile: ProfileFormType = {
+  const mappedProfile: HPProfileType = {
     id: profile?.id ?? 0,
     title: profile?.title ?? "",
     name: profile?.name ?? "",
@@ -42,7 +44,14 @@ export default  async function EditorPage({params, searchParams}: AppRouterPageR
             Thank you for your interest in joining our network of healthcare providers! Fill-up the form below to complete your profile.
         </p>
       </div>
-      <HPForm profile={mappedProfile}/>
+      <div className="space-y-10">
+        <Suspend>
+          <HPProfile profile={mappedProfile}/>
+        </Suspend>
+        <Suspend>
+          <HPProfessionalInfo hpId={hpId}/>
+        </Suspend>
+      </div>
     </div>
   );
 }

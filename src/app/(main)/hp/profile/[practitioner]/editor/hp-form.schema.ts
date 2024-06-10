@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const formSchema = z.object({
+export const profileSchema = z.object({
   id: z.number().optional(),
   title: z.string().min(2, {
     message: "Title must be at least 2 characters.",
@@ -74,21 +74,23 @@ export const formSchema = z.object({
       message: "Affiliation must be at least 2 characters.",
     })
   })),
-    
-  
-  // Professional Information
-  // licenseNumber: z.string().min(2, {
-  //   message: "License number must be at least 2 characters.",
-  // }),
-  // licenseIssueDate: z.date(),
-  // licenseExpiryDate: z.date(),
-  // ptrNumber: z.string().min(2, {
-  //   message: "PTR number must be at least 2 characters.",
-  // }),
-  // taxNumber: z.string().min(2, {
-  //   message: "Tax number must be at least 2 characters.",
-  // }),
 })
   
-export type ProfileFormType = z.infer<typeof formSchema>;
+export type HPProfileType = z.infer<typeof profileSchema>;
   
+
+export const professionalDetailsSchema = z.object({
+  licenseNumber: z.string().min(2, {
+    message: "License number must be at least 2 characters.",
+  }),
+  licenseIssueDate: z.date(),
+  licenseExpiryDate: z.date(),
+  ptrNumber: z.string().min(2, {
+    message: "PTR number must be at least 2 characters.",
+  }),
+  taxNumber: z.string().min(2, {
+    message: "Tax number must be at least 2 characters.",
+  }),
+})
+
+export type ProfessionalDetailsFormType = z.infer<typeof professionalDetailsSchema>;

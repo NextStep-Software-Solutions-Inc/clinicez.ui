@@ -1,10 +1,11 @@
 import { AppRouterPageRouteOpts } from "@auth0/nextjs-auth0";
 import { getDoctorAction } from "@actions/doctor.action";
 import { getNurseAction } from "@actions/nurse.action";
-import HPProfile from "../../../apply/components/HPProfile";
-import HPProfessionalInfo from "../../../apply/components/HPProfessionalInfo";
+import HPProfile from "./components/HPProfile";
+import HPProfessionalInfo from "./components/HPProfessionalInfo";
 import { HPProfileType } from "./hp-form.schema";
 import Suspend from "@components/Suspend";
+import { getProfessionalDetailsAction } from "@actions/hp.actions";
 
 export default  async function EditorPage({params, searchParams}: AppRouterPageRouteOpts) {
   const hpId = parseInt(params?.practitioner as string);
@@ -16,7 +17,7 @@ export default  async function EditorPage({params, searchParams}: AppRouterPageR
   }
 
   const action = actions[type as keyof typeof actions];
-  const profile = (await action(hpId));
+  const profile = await action(hpId);
   
   const mappedProfile: HPProfileType = {
     id: profile?.id ?? 0,
@@ -35,6 +36,8 @@ export default  async function EditorPage({params, searchParams}: AppRouterPageR
     fields: profile?.fields.map((lang) => ({name: lang})) ?? [],
     affiliations: profile?.affiliations.map((lang) => ({name: lang})) ?? [],
   }
+  
+  const professionalDetails = await getProfessionalDetailsAction(hpId);
 
   return (
     <div className="container mx-auto my-10">
@@ -49,7 +52,7 @@ export default  async function EditorPage({params, searchParams}: AppRouterPageR
           <HPProfile profile={mappedProfile}/>
         </Suspend>
         <Suspend>
-          <HPProfessionalInfo hpId={hpId}/>
+          <HPProfessionalInfo professionalDetails={professionalDetails}/>
         </Suspend>
       </div>
     </div>

@@ -73,3 +73,18 @@ export const createHpAction = async (hp: Prisma.HealthcareProviderCreateArgs["da
 
   return newHp;
 }
+
+export const getProfessionalDetailsAction = async (hpId: number) => {
+  const hp = prisma.professionalDetails.findFirst({
+    where: {
+      healthcareProverId: hpId
+    }
+  })
+  return hp;
+
+}
+
+export const upsertProfessionalDetailsAction = async (payload: Prisma.ProfessionalDetailsUpsertArgs) => {
+  const hp = await prisma.professionalDetails.upsert(payload)
+  return hp;
+}

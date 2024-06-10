@@ -80,11 +80,12 @@ export type HPProfileType = z.infer<typeof profileSchema>;
   
 
 export const professionalDetailsSchema = z.object({
+  id: z.number().optional(),
   licenseNumber: z.string().min(2, {
     message: "License number must be at least 2 characters.",
   }),
-  licenseIssueDate: z.date(),
-  licenseExpiryDate: z.date(),
+  licenseIssued: z.date(),
+  licenseExpires: z.date(),
   ptrNumber: z.string().min(2, {
     message: "PTR number must be at least 2 characters.",
   }),

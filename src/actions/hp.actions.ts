@@ -1,9 +1,11 @@
 "use server";
 
 import prisma from "@lib/prisma";
+import { put } from "@vercel/blob"
 
 import { cache } from "react";
 import { HealthcareProviderType, Prisma } from "@prisma/client";
+import { revalidatePath } from "next/cache";
 
 type HPFilters = {
   type?: HealthcareProviderType,
@@ -87,4 +89,13 @@ export const getProfessionalDetailsAction = async (hpId: number) => {
 export const upsertProfessionalDetailsAction = async (payload: Prisma.ProfessionalDetailsUpsertArgs) => {
   const hp = await prisma.professionalDetails.upsert(payload)
   return hp;
+}
+
+export const uploadMediaAction = async (formData: FormData) => {
+  const media = formData.get("media") as File;
+  const data = await put(media.name, media, {
+    access: "public",
+  })
+  revalidatePath('/')
+  return data
 }

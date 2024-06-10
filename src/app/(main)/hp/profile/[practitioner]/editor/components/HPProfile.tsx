@@ -54,9 +54,11 @@ export default function HPProfile({ profile }: HPProfileProps) {
     defaultValues: hpProfile,
   })
     
-  const action = async () => {
+  const action = async (formData: FormData) => {
+
     await (form.handleSubmit(async (values: HPProfileType) => {
       await setHpProfile(values) // save to local storage
+      
       const mappedData = {
         title: values.title,
         name: values.name,
@@ -76,10 +78,8 @@ export default function HPProfile({ profile }: HPProfileProps) {
       
         healthcareProviderId: practitioner,
       
-        // dob: format(data.dob, "yyyy-MM-dd"),
-        // licenseIssueDate: format(data.licenseIssueDate, "yyyy-MM-dd"),
-        // licenseExpiryDate: format(data.licenseExpiryDate, "yyyy-MM-dd"),
       }
+      
       const latestProfile = await actions[_type as keyof typeof actions]({
         where: { id: profileId },
         create: mappedData,

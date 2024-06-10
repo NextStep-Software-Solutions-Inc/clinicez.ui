@@ -6,6 +6,7 @@ import HPProfessionalInfo from "./components/HPProfessionalInfo";
 import { HPProfileType } from "./hp-form.schema";
 import Suspend from "@components/Suspend";
 import { getProfessionalDetailsAction } from "@actions/hp.actions";
+import HPPhoto from "./components/HPPhoto";
 
 export default  async function EditorPage({params, searchParams}: AppRouterPageRouteOpts) {
   const hpId = parseInt(params?.practitioner as string);
@@ -21,6 +22,8 @@ export default  async function EditorPage({params, searchParams}: AppRouterPageR
   
   const mappedProfile: HPProfileType = {
     id: profile?.id ?? 0,
+    picture: profile?.picture ?? "",
+    cover: profile?.cover ?? "",
     title: profile?.title ?? "",
     name: profile?.name ?? "",
     suffix: profile?.suffix ?? "",
@@ -36,7 +39,7 @@ export default  async function EditorPage({params, searchParams}: AppRouterPageR
     fields: profile?.fields.map((lang) => ({name: lang})) ?? [],
     affiliations: profile?.affiliations.map((lang) => ({name: lang})) ?? [],
   }
-  
+
   const professionalDetails = await getProfessionalDetailsAction(hpId);
 
   return (
@@ -48,6 +51,9 @@ export default  async function EditorPage({params, searchParams}: AppRouterPageR
         </p>
       </div>
       <div className="space-y-10">
+        <Suspend>
+          <HPPhoto profile={mappedProfile}/>
+        </Suspend>
         <Suspend>
           <HPProfile profile={mappedProfile}/>
         </Suspend>

@@ -12,14 +12,14 @@ import {
 import { Input } from "@components/ui/input"
 import { useForm } from "react-hook-form"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@components/ui/select"
-import { Textarea } from "../../../../../components/ui/textarea"
+import { Textarea } from "../../../../../../../components/ui/textarea"
 import { Affiliations } from "./Affiliations"
 import { Certifications } from "./Certifications"
 import { Fields } from "./Fields"
 import { Education } from "./Education"
 import { Specialties } from "./Specialties"
 import { Languages } from "./Languages"
-import { HPProfileType, profileSchema } from "../../profile/[practitioner]/editor/hp-form.schema"
+import { HPProfileType, profileSchema } from "../hp-form.schema"
 import { toast } from "sonner"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useLocalStorage } from "@hooks/useLocalStorage"
@@ -42,7 +42,7 @@ const actions = {
 
 export default function HPProfile({ profile }: HPProfileProps) {
   const params = useParams() as { practitioner: string }
-  const [profileId, setProfileId] = React.useState<number | undefined>(profile?.id)
+  const [profileId, setProfileId] = React.useState<number | undefined>(profile.id)
   const searchParams = useSearchParams();
   const practitioner = parseInt(params.practitioner)
   const _type = searchParams.get("_type") as HealthcareProviderType

@@ -11,21 +11,21 @@ import { Input } from "@components/ui/input";
 import { useFieldArray, useForm } from "react-hook-form";
 import { Button } from "@components/ui/button";
 import Each from "@components/utils/Each";
-import { HPProfileType } from "../../profile/[practitioner]/editor/hp-form.schema";
+import { HPProfileType } from "../hp-form.schema";
 
-export const Affiliations = ({ form }: { form: ReturnType<typeof useForm<HPProfileType>>; }) => {
+export const Certifications = ({ form }: { form: ReturnType<typeof useForm<HPProfileType>>; }) => {
   const { fields, remove, append, update } = useFieldArray({
     control: form.control,
-    name: "affiliations"
+    name: "certifications"
   });
   return (
     <FormField
       control={form.control}
-      name="affiliations"
+      name="certifications"
       render={({ field }) => (
         <FormItem className="w-full">
-          <FormLabel>Affiliations</FormLabel>
-          <FormControl>
+          <FormLabel>Certifications</FormLabel>
+          <div className="flex flex-wrap gap-2">
             <Each
               of={fields}
               render={(_field, index) => {
@@ -33,12 +33,12 @@ export const Affiliations = ({ form }: { form: ReturnType<typeof useForm<HPProfi
                   <FormField
                     key={_field.id}
                     control={form.control}
-                    name={`affiliations.${index}.name`}
+                    name={`certifications.${index}.name`}
                     render={({ field }) => (
-                      <FormItem>
+                      <FormItem className="flex-grow">
                         <FormControl>
                           <div className="flex gap-2">
-                            <Input placeholder="Enter affiliation" {...field} />
+                            <Input placeholder="Enter acquired certificate" {...field} />
                             <Button type="button" variant="destructive" size="sm" onClick={() => remove(index)}>Remove</Button>
                           </div>
                         </FormControl>
@@ -47,12 +47,12 @@ export const Affiliations = ({ form }: { form: ReturnType<typeof useForm<HPProfi
                     )} />
                 );
               }} />
-          </FormControl>
+          </div>
           <FormDescription>
             This will reflect in you public profile.
           </FormDescription>
           <FormMessage />
-          <Button type="button" onClick={() => append({ name: "" })}>Add Affiliation</Button>
+          <Button type="button" onClick={() => append({ name: "" })}>Add Certification</Button>
         </FormItem>
       )} />
   );

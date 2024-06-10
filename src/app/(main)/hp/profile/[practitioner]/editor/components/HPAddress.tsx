@@ -11,10 +11,10 @@ import {
 import { Input } from "@components/ui/input"
 import { useForm } from "react-hook-form"
 import { Select, SelectContent, SelectItem, SelectLabel, SelectTrigger, SelectValue, SelectGroup } from "@components/ui/select"
-import { ProfileFormType } from "../../profile/[practitioner]/editor/hp-form.schema"
+import { HPProfileType } from "../hp-form.schema"
 
 type HPAddressProps = {
-    form: ReturnType<typeof useForm<ProfileFormType>>
+    form: ReturnType<typeof useForm>
 }
 
 export default function HPAddress({ form }: HPAddressProps) {

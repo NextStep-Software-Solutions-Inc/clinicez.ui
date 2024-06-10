@@ -11,29 +11,48 @@ import {
 } from "@components/ui/form"
 import { Input } from "@components/ui/input"
 import {  useForm } from "react-hook-form"
-import { Popover, PopoverContent, PopoverTrigger } from "../../../../../components/ui/popover"
-import { Button } from "../../../../../components/ui/button"
+import { Popover, PopoverContent, PopoverTrigger } from "../../../../../../../components/ui/popover"
+import { Button } from "../../../../../../../components/ui/button"
 import { cn } from "@lib/utils"
 import { format } from "date-fns"
 import { CalendarIcon } from "lucide-react"
-import { Calendar } from "../../../../../components/ui/calendar"
-import { ProfessionalDetailsFormType, professionalDetailsSchema } from "../../profile/[practitioner]/editor/hp-form.schema"
+import { Calendar } from "../../../../../../../components/ui/calendar"
+import { ProfessionalDetailsFormType, professionalDetailsSchema } from "../hp-form.schema"
 import { zodResolver } from "@hookform/resolvers/zod"
 import ActionButton from "@components/ActionButton"
+import { upsertProfessionalDetailsAction } from "@actions/hp.actions"
+import { toast } from "sonner"
+import React from "react"
+import { useParams } from "next/navigation"
 
 type HPProfessionalInfoProps = {
-  hpId: number
+  professionalDetails: ProfessionalDetailsFormType | null
 }
 
-export default function HPProfessionalInfo({ hpId }: HPProfessionalInfoProps) {
-
+export default function HPProfessionalInfo({ professionalDetails }: HPProfessionalInfoProps) {
+  const params = useParams() as { practitioner: string }
+  const [professionalDetailsId, setProfessionalDetailsId] = React.useState<number | undefined>(professionalDetails?.id ?? 0)
+  const practitioner = parseInt(params.practitioner)
   const form = useForm<ProfessionalDetailsFormType>({
     resolver: zodResolver(professionalDetailsSchema),
+    defaultValues: professionalDetails || {},
   })
 
   const action = async () => {
     form.handleSubmit(async (data) => {
-      // Do something with the data
+
+      const payload = {
+        ...data,
+        healthcareProverId: practitioner
+      }
+      const latestProfDetails = await upsertProfessionalDetailsAction({
+        where: {id: professionalDetailsId},
+        create: payload,
+        update: payload,
+      })
+      setProfessionalDetailsId(latestProfDetails.id)
+      form.reset(data)
+      toast.success("Professional Details updated successfully")
     })()
   }
 
@@ -42,8 +61,8 @@ export default function HPProfessionalInfo({ hpId }: HPProfessionalInfoProps) {
       <form action={action} className="prose max-w-full space-y-8 shadow-2xl w-full p-8 bg-white rounded-md">
         <h4>Professional Information <span className="text-xs italic">(Private)</span></h4>
         <p className="text-sm italic">
-            Please ensure that you are providing accurate information for validation. 
-            Your information will be verified before your profile is published.
+          Please ensure that you are providing accurate information for validation. 
+          Your information will be verified before your profile is published.
         </p>
         <FormField
           control={form.control}
@@ -55,7 +74,7 @@ export default function HPProfessionalInfo({ hpId }: HPProfessionalInfoProps) {
                 <Input placeholder="Your License Number" {...field} />
               </FormControl>
               <FormDescription>
-            This is going to be used internally (Private).
+                This is going to be used internally (Private).
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -65,7 +84,7 @@ export default function HPProfessionalInfo({ hpId }: HPProfessionalInfoProps) {
         <div className="flex gap-2">
           <FormField
             control={form.control}
-            name="licenseIssueDate"
+            name="licenseIssued"
             render={({ field }) => (
               <FormItem className="flex flex-col">
                 <FormLabel>License Issued Date</FormLabel>
@@ -101,7 +120,7 @@ export default function HPProfessionalInfo({ hpId }: HPProfessionalInfoProps) {
                   </PopoverContent>
                 </Popover>
                 <FormDescription>
-              This is going to be used internally (Private).
+                  This is going to be used internally (Private).
                 </FormDescription>
                 <FormMessage />
               </FormItem>
@@ -109,7 +128,7 @@ export default function HPProfessionalInfo({ hpId }: HPProfessionalInfoProps) {
           />
           <FormField
             control={form.control}
-            name="licenseExpiryDate"
+            name="licenseExpires"
             render={({ field }) => (
               <FormItem className="flex flex-col">
                 <FormLabel>License Expiry  Date</FormLabel>
@@ -145,7 +164,7 @@ export default function HPProfessionalInfo({ hpId }: HPProfessionalInfoProps) {
                   </PopoverContent>
                 </Popover>
                 <FormDescription>
-              This is going to be used internally (Private).
+                  This is going to be used internally (Private).
                 </FormDescription>
                 <FormMessage />
               </FormItem>

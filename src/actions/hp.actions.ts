@@ -4,16 +4,21 @@ import prisma from "@lib/prisma";
 
 import { cache } from "react";
 import { HealthcareProviderType, Prisma } from "@prisma/client";
-import { assignRolesAction } from "./user-management.action";
-// import { self } from "@services/request";
 
+type HPFilters = {
+  type?: HealthcareProviderType,
+  userId?: string
+  id?: number
+}
 
-export const getHPsActions = cache(async (type?: HealthcareProviderType) => {
-
+export const getHPsActions = cache(async (filters?:HPFilters) => {
+  const {type, userId, id} = filters || {};
   const hps = prisma.healthcareProvider.findMany({
     where: {
       isActive: true,
-      ...(type && { type })
+      ...(id && { id }),
+      ...(type && { type }),
+      ...(userId && { User: { userId } })
     },
     include: {
       DoctorProfile: {
@@ -40,14 +45,14 @@ export const getHPsActions = cache(async (type?: HealthcareProviderType) => {
   return hps;
 })
 
-export const getHPAction = cache(async ({id, userId}:{id?: number, userId?: string}) => {
+export const getHPAction = cache(async ({id, userId, type}:HPFilters) => {
 
   const hp = prisma.healthcareProvider.findFirst({
     where: {
       isActive: true,
-      User: {
-        userId
-      }
+      ...(id && { id }),
+      ...(type && { type }),
+      ...(userId && { User: { userId } })
     },
     include: {
       DoctorProfile: true,
@@ -67,29 +72,4 @@ export const createHpAction = async (hp: Prisma.HealthcareProviderCreateArgs["da
   })
 
   return newHp;
-}
-
-
-export const submitHPApplicationAction = async ({
-  hp, userId, roleId
-}: {
-  hp: Prisma.HealthcareProviderCreateArgs["data"],
-  userId: string,
-  roleId: string
-}) => {
-
-  const res = await prisma.$transaction(async (prisma) => {
-    await prisma.healthcareProvider.create({
-      data: {
-        ...hp
-      }
-    });
-    await assignRolesAction(userId, [roleId]);
-    
-    // const token = await self.get("/api/auth/refresh-token");
-    return true
-  })
-
-  return res;
-
 }

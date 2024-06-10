@@ -1,3 +1,5 @@
+"use server";
+
 import prisma from "@lib/prisma";
 import { Prisma } from "@prisma/client";
 
@@ -39,5 +41,10 @@ export const createNurseAction = async (nurse: Prisma.NurseProfileCreateArgs["da
       ...nurse
     }
   })
+  return newNurse;
+}
+
+export const upsertNurseAction = async (payload: Prisma.NurseProfileUpsertArgs) => {
+  const newNurse = await prisma.nurseProfile.upsert(payload)
   return newNurse;
 }

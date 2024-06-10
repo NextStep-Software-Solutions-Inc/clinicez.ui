@@ -1,5 +1,4 @@
 "use client";
-import { z } from "zod";
 import {
   FormControl,
   FormDescription,
@@ -10,11 +9,11 @@ import {
 } from "@components/ui/form";
 import { Input } from "@components/ui/input";
 import { useFieldArray, useForm } from "react-hook-form";
-import { formSchema } from "../../profile/[practitioner]/editor/HPForm";
 import { Button } from "@components/ui/button";
 import Each from "@components/utils/Each";
+import { HPProfileType } from "../../profile/[practitioner]/editor/hp-form.schema";
 
-export const Certifications = ({ form }: { form: ReturnType<typeof useForm<z.infer<typeof formSchema>>>; }) => {
+export const Certifications = ({ form }: { form: ReturnType<typeof useForm<HPProfileType>>; }) => {
   const { fields, remove, append, update } = useFieldArray({
     control: form.control,
     name: "certifications"

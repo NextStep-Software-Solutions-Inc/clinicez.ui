@@ -116,17 +116,18 @@ model UserPlan {
 
 // This is for user that are healthcare provider which maybe a doctor or nurse or other type of healthcare provider
 model HealthcareProvider {
-  id            Int                    @id @default(autoincrement())
-  userId        Int                    @unique
-  type          HealthcareProviderType
-  description   String?
-  createdAt     DateTime               @default(now())
-  updatedAt     DateTime               @updatedAt
-  deletedAt     DateTime?
-  isActive      Boolean                @default(true)
-  User          User                   @relation(fields: [userId], references: [id])
-  DoctorProfile DoctorProfile?
-  NurseProfile  NurseProfile?
+  id                  Int                    @id @default(autoincrement())
+  userId              Int                    @unique
+  type                HealthcareProviderType
+  description         String?
+  createdAt           DateTime               @default(now())
+  updatedAt           DateTime               @updatedAt
+  deletedAt           DateTime?
+  isActive            Boolean                @default(true)
+  User                User                   @relation(fields: [userId], references: [id])
+  DoctorProfile       DoctorProfile?
+  NurseProfile        NurseProfile?
+  ProfessionalDetails ProfessionalDetails?
 }
 
 enum HealthcareProviderType {
@@ -200,6 +201,17 @@ model NurseProfile {
   deletedAt            DateTime?
   isActive             Boolean            @default(true)
   HealthcareProvider   HealthcareProvider @relation(fields: [healthcareProviderId], references: [id])
+}
+
+model ProfessionalDetails {
+  id                 Int                @id @default(autoincrement())
+  healthcareProverId Int                @unique
+  licenseNumber      String
+  licenseIssued      DateTime
+  licenseExpires     DateTime
+  ptrNumber          String
+  taxNumber          String
+  HealthCareProvider HealthcareProvider @relation(fields: [healthcareProverId], references: [id])
 }
 
 model UserDefaultOrganization {

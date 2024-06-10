@@ -1,22 +1,15 @@
 
 
-import { AppRouterPageRouteOpts, getAccessToken, getSession, updateSession, withPageAuthRequired, } from "@auth0/nextjs-auth0";
-import { Terminal } from "lucide-react"
+import { AppRouterPageRouteOpts, getSession, withPageAuthRequired, } from "@auth0/nextjs-auth0";
 
-import SelectHPType from "./SelectHPType";
-import SelectPlan from "./SelectPlan";
-import PaymentForm from "./PaymentForm";
-import ConfirmationForm from "./ConfirmationForm";
+import SelectHPType from "./components/SelectHPType";
+import SelectPlan from "./components/SelectPlan";
+import PaymentForm from "./components/PaymentForm";
+import ConfirmationForm from "./components/ConfirmationForm";
 
-import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-} from "@components/ui/alert"
 import { Metadata } from "next";
-import { Button } from "@components/ui/button";
 import HPApplicationDataProvider from "@contexts/hp-application.context";
-import ApplicationForm from "./ApplicationForm";
+import ApplicationForm from "./components/ApplicationForm";
 import React from "react";
 import { getHPAction } from "@actions/hp.actions";
 
@@ -28,33 +21,12 @@ export const metadata: Metadata = {
 
 async function HealthcareProviderRegistrationPage(props: AppRouterPageRouteOpts) {
   const session = await getSession();
-  await updateSession({
-    ...session,
-    user: {
-      ...session?.user,
-      metadata: {
-        role: "healthcare-provider"
-      }
-    }
-  });
-
-  console.log({session});
   
   const hp = await getHPAction({userId: session?.user.sub});
   
   return (
     <HPApplicationDataProvider>
       <div className="container mx-auto my-10">
-        {/* add alert here to show the the user has already submitted and waiting for approval */}
-        <Alert className="mb-5">
-          <Terminal className="h-4 w-4" />
-          <AlertTitle>Heads up!</AlertTitle>
-          <AlertDescription className="flex justify-between">
-            <span>You have already submitted your application and are waiting for approval.</span>
-            <Button size={"sm"} variant="ghost">Cancel</Button>
-          </AlertDescription>
-        </Alert>
-        
         <div className="prose max-w-full">
           <h1>Healthcare Provider Application Process</h1>
           <p>
@@ -75,5 +47,5 @@ async function HealthcareProviderRegistrationPage(props: AppRouterPageRouteOpts)
   );
 }
 export default withPageAuthRequired(HealthcareProviderRegistrationPage, {
-  returnTo: '/healthcare-provider/apply',
+  returnTo: '/hp/apply',
 });

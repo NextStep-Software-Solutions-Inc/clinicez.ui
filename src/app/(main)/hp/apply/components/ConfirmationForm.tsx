@@ -3,14 +3,15 @@
 import {useForm } from "react-hook-form";
 import { z } from "zod";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@components/ui/form";
-import { Checkbox } from "../../../../components/ui/checkbox";
+import { Checkbox } from "../../../../../components/ui/checkbox";
 import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
-import BackSubmitAndNext from "../../../../components/SubmitAndNext";
+import BackSubmitAndNext from "../../../../../components/SubmitAndNext";
 import { useLocalStorage } from "@hooks/useLocalStorage";
-import { createHpAction, submitHPApplicationAction } from "@actions/hp.actions";
+import { createHpAction } from "@actions/hp.actions";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import { toast } from "sonner";
+import { HealthcareProviderType } from "@prisma/client";
 
 interface ConfirmationFormProps {
   nextStep?: () => void;
@@ -33,48 +34,45 @@ export const confirmationFormSchema = z.object({
   })
 })
 
+type formType = z.infer<typeof confirmationFormSchema>
 export default function ConfirmationForm({ nextStep, prevStep, isFirstStep, isComplete, setComplete, startOver }: ConfirmationFormProps) {
-  const [applicationData, setApplicationData] = useLocalStorage("hp-application");
+  const [applicationData, setApplicationData] = useLocalStorage<formType & {
+    role: HealthcareProviderType;
+    complete: boolean;
+  }>("hp-application");
   const {user} = useUser();
   
-  const form = useForm<z.infer<typeof confirmationFormSchema>>({
+  const form = useForm<formType>({
     resolver: zodResolver(confirmationFormSchema)
-    
   })
 
   const action = (formData: FormData) => {
-    form.handleSubmit(async (data: z.infer<typeof confirmationFormSchema>) => {
+    form.handleSubmit(async (data) => {
       
-      await setApplicationData({...data, complete: true})
+      await setApplicationData({...data, complete: true, role: applicationData?.role})
       try {
-        const res = await submitHPApplicationAction({
-          hp: {
-            type: "DOCTOR",
-            User: {
-              connect: {
-                userId: user?.sub ?? ""
-              }
+        const res = await createHpAction({
+          type: applicationData.role,
+          User: {
+            connect: {
+              userId: user?.sub ?? ""
             }
-          },
-          roleId: "rol_Pkzy6pVQmFktmbh0",
-          userId: user?.sub ?? ""
+          }
         });
-        setComplete?.(res);
+        setComplete?.(!!res);
         toast.success("Application submitted successfully");
-
       } catch (error) {
-        console.log({error});
-        
         toast.error("An error occurred while submitting your application. Please try again later.");
       }
     })()
   }
 
   const reset = async () => {
-    await setApplicationData(Object.keys(applicationData as any).reduce((acc: {[key: string]: string}, key) => {
+    const i = Object.entries(applicationData).reduce((acc, [key, value]) => {
       acc[key] = "";
       return acc;
-    }, {}))
+    }, {} as any);
+    await setApplicationData(i)
     startOver?.();
   }
 
@@ -158,7 +156,7 @@ export default function ConfirmationForm({ nextStep, prevStep, isFirstStep, isCo
             <BackSubmitAndNext 
               labels={{
                 previous: "Back",
-                submit: "Finish",
+                submit: "Submit",
                 next: "Start Over",
               }}
               disabled={{

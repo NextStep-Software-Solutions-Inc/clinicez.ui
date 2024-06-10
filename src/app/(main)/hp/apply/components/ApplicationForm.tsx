@@ -6,6 +6,7 @@ import {useMultiStepForm} from "@hooks/useMultiStepForm";
 import { Button } from "@components/ui/button";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
+import Suspend from "@components/Suspend";
 
 const steps = ["Role Selection", "Plan Selection", "Payment", "Confirmation"];
 interface ApplicationFormProps {
@@ -21,7 +22,7 @@ export default function ApplicationForm({currentStep: cs, children }: Applicatio
   return (
     <div className="my-5 content">
       <Stepper steps={steps} currentStep={currentStep} complete={isComplete } />
-      {!isComplete ? currentStepComponent : (
+      {!isComplete ? <Suspend>{currentStepComponent}</Suspend> : (
         <div className="rounded overflow-hidden shadow-lg my-16 py-16">
           <div className="text-center min-w-full space-y-5">
             <h1 className="text-green-600 text-3xl font-bold">Application Complete 🎉</h1>

@@ -11,13 +11,13 @@ import {
 } from "@components/ui/form"
 import { Input } from "@components/ui/input"
 import { useForm } from "react-hook-form"
-import { formSchema } from "./HPForm"
-import { Popover, PopoverContent, PopoverTrigger } from "../../../../components/ui/popover"
-import { Button } from "../../../../components/ui/button"
+import { formSchema } from "../../profile/[practitioner]/editor/HPForm"
+import { Popover, PopoverContent, PopoverTrigger } from "../../../../../components/ui/popover"
+import { Button } from "../../../../../components/ui/button"
 import { cn } from "@lib/utils"
 import { format } from "date-fns"
 import { CalendarIcon } from "lucide-react"
-import { Calendar } from "../../../../components/ui/calendar"
+import { Calendar } from "../../../../../components/ui/calendar"
 
 type HPProfessionalInfoProps = {
     form: ReturnType<typeof useForm<z.infer<typeof formSchema>>>
@@ -26,22 +26,6 @@ type HPProfessionalInfoProps = {
 export default function HPProfessionalInfo({ form }: HPProfessionalInfoProps) {
   return (
     <>
-      <FormField
-        control={form.control}
-        name="fieldOfPractice"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Field of Practice</FormLabel>
-            <FormControl>
-              <Input placeholder="Your field of practice" {...field} />
-            </FormControl>
-            <FormDescription>
-                This is your public display of your field of practice.
-            </FormDescription>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
       <FormField
         control={form.control}
         name="licenseNumber"

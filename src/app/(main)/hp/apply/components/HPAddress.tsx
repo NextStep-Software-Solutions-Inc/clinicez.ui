@@ -11,7 +11,7 @@ import {
 } from "@components/ui/form"
 import { Input } from "@components/ui/input"
 import { useForm } from "react-hook-form"
-import { formSchema } from "./HPForm"
+import { formSchema } from "../../profile/[practitioner]/editor/HPForm"
 import { Select, SelectContent, SelectItem, SelectLabel, SelectTrigger, SelectValue, SelectGroup } from "@components/ui/select"
 
 type HPAddressProps = {

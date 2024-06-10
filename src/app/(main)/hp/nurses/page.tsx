@@ -23,7 +23,7 @@ export default async function Nurses() {
           <NurseList />
         </Suspend>
         <JoinAsButton href={{
-          pathname: "/healthcare-provider/apply",
+          pathname: "/hp/apply",
           query: {
             role: "nurse",
           }

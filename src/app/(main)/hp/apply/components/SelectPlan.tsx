@@ -14,7 +14,7 @@ import {
 } from "@components/ui/form"
 import { RadioGroup, RadioGroupItem } from "@components/ui/radio-group"
 import { zodResolver } from "@hookform/resolvers/zod";
-import BackSubmitAndNext from "../../../../components/SubmitAndNext";
+import BackSubmitAndNext from "../../../../../components/SubmitAndNext";
 import { useLocalStorage } from "@hooks/useLocalStorage";
 import { getPlansAction } from "@actions/plan.action";
 import { use } from "react";
@@ -23,6 +23,8 @@ export const planFormSchema = z.object({
   plan: z.string({
     required_error: "You need to select a plan.",
     invalid_type_error: "Invalid plan",
+  }).min(1, {
+    message: "You need to select a plan.",
   }),
 })
 
@@ -46,7 +48,7 @@ export default function SelectPlan({ nextStep, isFirstStep, isLastStep, prevStep
   //   })()
   // },[])
   
-  const [applicationData,setApplicationData] = useLocalStorage("hp-application", {plan: hpPlans[0]?.planUid});
+  const [applicationData,setApplicationData] = useLocalStorage("hp-application", {plan: ""});
 
   const form = useForm<z.infer<typeof planFormSchema>>({
     resolver: zodResolver(planFormSchema),

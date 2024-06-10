@@ -1,6 +1,6 @@
 "use client"
 
-import Each from "../../../../components/utils/Each";
+import Each from "../../../../../components/utils/Each";
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import {
@@ -15,7 +15,7 @@ import {
 import { RadioGroup, RadioGroupItem } from "@components/ui/radio-group"
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useSearchParams } from "next/navigation";
-import BackSubmitAndNext from "../../../../components/SubmitAndNext";
+import BackSubmitAndNext from "../../../../../components/SubmitAndNext";
 import {useLocalStorage} from "@hooks/useLocalStorage";
 import { $Enums, HealthcareProviderType } from "@prisma/client";
 

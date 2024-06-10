@@ -36,7 +36,7 @@ export default function HPBasicInfo({ form }: HPBasicInfoProps) {
           render={({ field }) => (
             <FormItem className="basis-1/4 flex-grow">
               <FormLabel>Title</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value} {...field}>
+              <Select onValueChange={field.onChange} defaultValue={field.value} >
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select a title to display" />

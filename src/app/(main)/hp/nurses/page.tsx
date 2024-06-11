@@ -22,12 +22,6 @@ export default async function Nurses() {
         <Suspend>
           <NurseList />
         </Suspend>
-        <JoinAsButton href={{
-          pathname: "/hp/apply",
-          query: {
-            role: "nurse",
-          }
-        }} />  
       </div>
     </div>
   );

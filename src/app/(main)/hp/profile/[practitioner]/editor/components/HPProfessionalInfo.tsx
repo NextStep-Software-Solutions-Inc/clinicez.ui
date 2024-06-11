@@ -81,12 +81,12 @@ export default function HPProfessionalInfo({ professionalDetails }: HPProfession
           )}
         />
       
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <FormField
             control={form.control}
             name="licenseIssued"
             render={({ field }) => (
-              <FormItem className="flex flex-col">
+              <FormItem className="flex-grow flex flex-col">
                 <FormLabel>License Issued Date</FormLabel>
                 <Popover>
                   <PopoverTrigger asChild>
@@ -94,7 +94,7 @@ export default function HPProfessionalInfo({ professionalDetails }: HPProfession
                       <Button
                         variant={"outline"}
                         className={cn(
-                          "w-[240px] pl-3 text-left font-normal",
+                          "pl-3 text-left font-normal",
                           !field.value && "text-muted-foreground"
                         )}
                       >
@@ -130,7 +130,7 @@ export default function HPProfessionalInfo({ professionalDetails }: HPProfession
             control={form.control}
             name="licenseExpires"
             render={({ field }) => (
-              <FormItem className="flex flex-col">
+              <FormItem className="flex-grow flex flex-col">
                 <FormLabel>License Expiry  Date</FormLabel>
                 <Popover>
                   <PopoverTrigger asChild>
@@ -138,7 +138,7 @@ export default function HPProfessionalInfo({ professionalDetails }: HPProfession
                       <Button
                         variant={"outline"}
                         className={cn(
-                          "w-[240px] pl-3 text-left font-normal",
+                          "pl-3 text-left font-normal",
                           !field.value && "text-muted-foreground"
                         )}
                       >

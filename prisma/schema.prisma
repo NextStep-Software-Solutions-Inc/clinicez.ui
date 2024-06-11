@@ -101,17 +101,27 @@ model Feature {
 }
 
 model UserPlan {
-  id        Int       @id @default(autoincrement())
+  id        Int            @id @default(autoincrement())
   userId    Int
   planId    Int
+  status    UserPlanStatus
   startDate DateTime
   endDate   DateTime
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
   deletedAt DateTime?
-  isActive  Boolean   @default(true)
-  User      User      @relation(fields: [userId], references: [id])
-  Plan      Plan      @relation(fields: [planId], references: [id])
+  isActive  Boolean        @default(true)
+  User      User           @relation(fields: [userId], references: [id])
+  Plan      Plan           @relation(fields: [planId], references: [id])
+}
+
+enum UserPlanStatus {
+  ACTIVE
+  INACTIVE
+  ON_HOLD
+  CANCELLED
+  EXPIRED
+  PENDING
 }
 
 // This is for user that are healthcare provider which maybe a doctor or nurse or other type of healthcare provider

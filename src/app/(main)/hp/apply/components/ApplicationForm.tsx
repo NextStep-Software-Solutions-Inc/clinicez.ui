@@ -8,7 +8,7 @@ import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import Suspend from "@components/Suspend";
 
-const steps = ["Role Selection", "Plan Selection", "Payment", "Confirmation"];
+const steps = ["Role", "Plan", "Payment", "Confirmation"];
 interface ApplicationFormProps {
     currentStep: number;
     children: React.ReactElement[];

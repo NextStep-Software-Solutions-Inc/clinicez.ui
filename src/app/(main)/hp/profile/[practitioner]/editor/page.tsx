@@ -7,6 +7,9 @@ import { HPProfileType } from "./hp-form.schema";
 import Suspend from "@components/Suspend";
 import { getProfessionalDetailsAction } from "@actions/hp.actions";
 import HPPhoto from "./components/HPPhoto";
+import { Button } from "@components/ui/button";
+import { ExternalLink } from "lucide-react";
+import Link from "next/link";
 
 export default  async function EditorPage({params, searchParams}: AppRouterPageRouteOpts) {
   const hpId = parseInt(params?.practitioner as string);
@@ -43,9 +46,14 @@ export default  async function EditorPage({params, searchParams}: AppRouterPageR
   const professionalDetails = await getProfessionalDetailsAction(hpId);
 
   return (
-    <div className="container mx-auto my-10">
+    <div className="container mx-auto my-10 relative">
       <div className="prose max-w-full mb-5">
-        <h1 className="capitalize">My {type.replaceAll("_", " ").toLowerCase()} Profile</h1>
+        <div className="flex">
+          <h1 className="capitalize flex-1">My {type.replaceAll("_", " ").toLowerCase()} Profile</h1>
+          <Link href={`/hp/profile/${hpId}?_type=${type}`}>
+            <Button className="fixed top-30 -right-[7rem] mr-2 hover:-right-[20] transition-all"><ExternalLink size={20} className="mr-2"/>View profile</Button>
+          </Link>
+        </div>
         <p>
             Thank you for your interest in joining our network of healthcare providers! Fill-up the form below to complete your profile.
         </p>

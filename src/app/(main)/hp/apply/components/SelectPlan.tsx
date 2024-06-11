@@ -18,9 +18,13 @@ import BackSubmitAndNext from "../../../../../components/SubmitAndNext";
 import { useLocalStorage } from "@hooks/useLocalStorage";
 import { getPlansAction } from "@actions/plan.action";
 import { use } from "react";
+import { createUserPlanAction } from "@actions/user-plan.action";
+import { toast } from "sonner";
+import { getUserAction } from "@actions/user.action";
+import { useUser } from "@auth0/nextjs-auth0/client";
 
 export const planFormSchema = z.object({
-  plan: z.string({
+  plan: z.number({
     required_error: "You need to select a plan.",
     invalid_type_error: "Invalid plan",
   }).min(1, {
@@ -39,6 +43,7 @@ interface ISelectPlanProps {
 const fetchPlans = getPlansAction()
 export default function SelectPlan({ nextStep, isFirstStep, isLastStep, prevStep,totalSteps}: ISelectPlanProps) {
   const hpPlans = use(fetchPlans)
+  const user = useUser();
   // const [hpPlans, setHpPlans] = useState<Awaited<ReturnType<typeof getPlansAction>>| []>([]);
   
   // useEffect(() => {
@@ -48,7 +53,7 @@ export default function SelectPlan({ nextStep, isFirstStep, isLastStep, prevStep
   //   })()
   // },[])
   
-  const [applicationData,setApplicationData] = useLocalStorage("hp-application", {plan: ""});
+  const [applicationData,setApplicationData] = useLocalStorage("hp-application", {plan: 0});
 
   const form = useForm<z.infer<typeof planFormSchema>>({
     resolver: zodResolver(planFormSchema),
@@ -57,9 +62,11 @@ export default function SelectPlan({ nextStep, isFirstStep, isLastStep, prevStep
     }
   })
 
-  const action = async (formData: FormData) => {
-    form.handleSubmit(async (data: z.infer<typeof planFormSchema>) => {
+  const action = async () => {
+    form.handleSubmit(async (data) => {
       await setApplicationData(data)
+      const dbUser = await getUserAction(user.user?.sub ?? "")
+      await createUserPlanAction(data.plan, dbUser.id)
       nextStep?.();
     })()
   }
@@ -72,14 +79,19 @@ export default function SelectPlan({ nextStep, isFirstStep, isLastStep, prevStep
         <FormField
           control={form.control}
           name="plan"
-          render={({ field,  }) => (
+          render={({ field }) => (
             <FormItem className="space-y-3">
               <FormLabel>Select Plan...</FormLabel>
               <FormControl>
                 <RadioGroup
                   name="plan"
-                  onValueChange={field.onChange}
-                  value={field.value}
+                  onValueChange={(value) => field.onChange({
+                    target: {
+                      name: field.name,
+                      value: parseInt(value),
+                    }
+                  })}
+                  value={field.value.toString()}
                   className="flex flex-wrap flex-row"
                 >
                   <Each
@@ -87,7 +99,7 @@ export default function SelectPlan({ nextStep, isFirstStep, isLastStep, prevStep
                     render={(_plan) => (
                       <FormItem className={`flex-1 has-[:checked]:bg-teal-50 has-[:checked]:text-teal-900 has-[:checked]:ring-teal-200 flex items-center space-x-5 bg-white shadow-lg rounded-lg p-4 `}>
                         <FormControl>
-                          <RadioGroupItem value={_plan.planUid} />
+                          <RadioGroupItem value={_plan.id.toString()} />
                         </FormControl>
                         <div className="flex items-center gap-5">
                           <span className="font-bold text-2xl">₱{_plan.price}</span>

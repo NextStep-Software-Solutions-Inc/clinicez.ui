@@ -9,6 +9,8 @@ import BackSubmitAndNext from "@components/SubmitAndNext";
 import { useLocalStorage } from "@hooks/useLocalStorage";
 import { getPlansAction } from "@actions/plan.action";
 import { use } from "react";
+import { setUserPlanStatusAction } from "@actions/user-plan.action";
+import { toast } from "sonner";
 interface PaymentFormProps {
   nextStep?: () => void;
   prevStep?: () => void;
@@ -30,7 +32,7 @@ export default function PaymentForm({ nextStep, prevStep, isFirstStep, isLastSte
   const cost = selectedPlan.price;
 
   const applicationFormSchema = z.object({
-    receiptNumber : z.string().refine(value => value.length === 4 || cost  === 0, {
+    receiptNumber : z.string().refine(value => value.length > 4 || cost  === 0, {
       message: "Receipt number is required"
     }).optional(),
   })
@@ -46,6 +48,8 @@ export default function PaymentForm({ nextStep, prevStep, isFirstStep, isLastSte
   const action = async (formData: FormData) => {
     form.handleSubmit(async (data: formType) => {
       await setApplicationData(data)
+      await setUserPlanStatusAction(1, "ACTIVE")
+      toast.success("User plan activated!")
       nextStep?.();
     })();
   }

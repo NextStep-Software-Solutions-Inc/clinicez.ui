@@ -16,7 +16,7 @@ export default async function NurseProfile({profileId}: INurseProfileProps) {
   if(!profile) throw new Error("Nurse Profile not found");
 
   const cover = profile.cover ?? "https://art.metro.net/wp-content/uploads/2021/02/placeholder.png";
-  const picture = profile.picture ?? "";
+  const picture = profile.picture ?? "https://integratedmedfl.com/wp-content/uploads/2023/08/dr.png";
   const philosophy = profile.philosophy;
   const areaOfInterest = profile.areaOfInterest;
   const experience = profile.experience;
@@ -71,18 +71,18 @@ export default async function NurseProfile({profileId}: INurseProfileProps) {
             </div>
             
 
-            <div >
-              <Label>Philosophy of Care</Label>
-              <p className="indent-5 mt-2">{philosophy}</p>
-            </div>
-
-            {
-              areaOfInterest && (
-                <div >
-                  <Label>Area of Interest</Label>
-                  <p className="">{areaOfInterest}</p>
-                </div>
-              )
+            { philosophy && (
+              <div >
+                <Label>Philosophy of Care</Label>
+                <p className="indent-5 mt-2">{philosophy}</p>
+              </div>
+            )}
+            { areaOfInterest && (
+              <div >
+                <Label>Area of Interest</Label>
+                <p className="">{areaOfInterest}</p>
+              </div>
+            )
             }
 
             {
@@ -96,7 +96,7 @@ export default async function NurseProfile({profileId}: INurseProfileProps) {
             
             <div>
               <Label className="">Languages</Label>
-              <ul className="list-disc ml-10">
+              <ul className="list-disc ml-5">
                 <Each
                   of={languages}
                   render={language => <li>{language}</li>}
@@ -140,7 +140,7 @@ export default async function NurseProfile({profileId}: INurseProfileProps) {
             <Label className="text-xl font-semibold">Credentials</Label>
             <div className="">
               <Label className="">Education</Label>
-              <ul className="list-disc ml-10">
+              <ul className="list-disc ml-5">
                 <Each
                   of={educations}
                   render={education => <li>{education}</li>}
@@ -149,7 +149,7 @@ export default async function NurseProfile({profileId}: INurseProfileProps) {
             </div>
             <div>
               <Label className="">Certifications</Label>
-              <ul className="list-disc ml-10">
+              <ul className="list-disc ml-5">
                 <Each
                   of={profile.certifications}
                   render={certification => <li>{certification}</li>}
@@ -164,7 +164,7 @@ export default async function NurseProfile({profileId}: INurseProfileProps) {
             <Label className="text-xl font-semibold">Professional Details</Label>
             <div>
               <Label className="">Specialties</Label>
-              <ul className="list-disc ml-10">
+              <ul className="list-disc ml-5">
                 <Each
                   of={specialties}
                   render={specialty => <li>{specialty}</li>}
@@ -173,7 +173,7 @@ export default async function NurseProfile({profileId}: INurseProfileProps) {
             </div>
             <div>
               <Label className="">Affiliations</Label>
-              <ul className="list-disc ml-10">
+              <ul className="list-disc ml-5">
                 <Each
                   of={affiliations}
                   render={affiliation => <li>{affiliation}</li>}

@@ -1,4 +1,3 @@
-import JoinAsButton from '@components/JoinAs';
 import { Metadata } from 'next';
 import DoctorList from "./components/DoctorList";
 import Suspend from '@components/Suspend';
@@ -21,14 +20,7 @@ export default async function Doctors() {
         <Suspend>
           <DoctorList />
         </Suspend>
-        <JoinAsButton href={{
-          pathname: "/hp/apply",
-          query: {
-            role: "doctor",
-          }
-        }} />
       </div>
     </div>
-
   );
 }

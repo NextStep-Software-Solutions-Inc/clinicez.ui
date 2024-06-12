@@ -3,14 +3,24 @@ import AppointmentPanel, { UserRoles }  from "./mail/components/AppointmentPanel
 import { cookies } from "next/headers";
 import { Separator } from "@components/ui/separator";
 import BookAppointmentSheet from "./components/BookAppointmentSheet";
-import { getAppointmentCounts, getAppointments } from "@actions/appointments.action";
+import { getAppointmentCounts, getAppointmentsAction } from "@actions/appointments.action";
 import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth0";
 import { AppointmentStatus } from "@public/json/appointment-list";
 import AppointmentDisplay from "./mail/components/AppointmentDisplay";
 import { redirect } from "next/navigation"
 import Suspend from "@components/Suspend";
+import { self } from "@services/request";
 
 async function AppointmentsPage({ searchParams, params }: AppRouterPageRouteOpts ) {
+  // const data = await self.get("/api/appointments", {
+  //   params: {
+  //     _type: searchParams?._type,
+  //     _role: searchParams?._role,
+  //   },
+  //   next: {
+  //     revalidate: 10
+  //   }
+  // })
   
   const appointmentStatus = searchParams?._type as AppointmentStatus
   const role = searchParams?._role as string
@@ -22,7 +32,7 @@ async function AppointmentsPage({ searchParams, params }: AppRouterPageRouteOpts
   const collapsed = cookies().get("react-resizable-panels:collapsed")
 
   const appointmentsCounts = await getAppointmentCounts()
-  const appointments = await getAppointments(appointmentStatus)
+  const appointments = await getAppointmentsAction(appointmentStatus)
 
   const defaultLayout = layout ? JSON.parse(layout.value) : undefined
   const defaultCollapsed = collapsed ? JSON.parse(collapsed.value) : undefined

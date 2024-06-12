@@ -22,12 +22,12 @@ export const updateConsultationAction = async (data: FormData) => {
   return true;
 }
 
-export const getConsultations = async () => {
+export const getConsultationsActions = async () => {
   return structuredClone(z.array(consultationRecordSchema).parse(consultations))
 }
 
 
-export const getConsultation = async (id: string) => {
+export const getConsultationAction = async (id: string) => {
   const consultation = consultations.find((consultation) => consultation.id === id)
   if (!consultation) {
     throw new Error("Consultation not found")
@@ -86,15 +86,4 @@ export const getInterventionsAction = async (id: string) => {
 export const getVitalSignsAction = async (id: string) => {
   console.log("Getting vital signs...", id);
   return vitalSigns
-}
-
-export const getConsultationFilesAction = async (id: string) => {
-  console.log("Getting consultation files...", id);
-  return consultationFiles.files
-}
-
-export const deleteConsultationFileAction = async (id: string) => {
-  console.log("Deleting consultation file...", id);
-  await delay(3000);
-  return true;
 }

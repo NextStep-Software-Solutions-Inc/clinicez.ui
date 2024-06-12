@@ -6,7 +6,7 @@ import { DataTable } from "./components/data-table";
 import { columns } from "./components/columns"
 import { withPageAuthRequired } from "@auth0/nextjs-auth0";
 import { Metadata } from "next";
-import { getConsultations } from '@actions/consultations.action';
+import { getConsultationsActions } from '@actions/consultations.action';
 
 export const metadata: Metadata = {
   title: "Consultations",
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 }
 
 async function ConsultationsPage() {
-  const consultations = await getConsultations()
+  const consultations = await getConsultationsActions()
   return (
     <>
       <div className="space-y-6">

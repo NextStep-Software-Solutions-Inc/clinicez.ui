@@ -1,17 +1,19 @@
 import { ComponentProps } from "react"
-import {formatDistanceToNow, formatDate, formatRelative} from "date-fns"
+import {formatDistanceToNow, formatRelative} from "date-fns"
 
 import { cn } from "@lib/utils"
 import { Badge } from "@components/ui/badge"
 import { ScrollArea } from "@components/ui/scroll-area"
-import { Mail } from "../data"
 import { useRouter, useSearchParams } from "next/navigation"
 import Each from "@components/utils/Each"
 import { Avatar, AvatarFallback, AvatarImage } from "@components/ui/avatar"
 import { type Appointment } from "@public/json/appointment-list"
+import { User } from "@prisma/client"
 
 interface AppointmentListProps {
-  items: Appointment[]
+  items: (Appointment & {
+    patient: User
+  })[]
 }
 
 export default function AppointmentList({ items }: AppointmentListProps) {
@@ -24,11 +26,11 @@ export default function AppointmentList({ items }: AppointmentListProps) {
   const setAppointment = (appointmentId: string) => {
     const searchParams = new URLSearchParams(window.location.search)
     searchParams.set("_appointment", appointmentId)
-    router.push(`?${searchParams.toString()}`)
+    router.replace(`?${searchParams.toString()}`)
   }
 
   return (
-    <ScrollArea className="h-screen">
+    <ScrollArea className="flex-auto h-[100dvh]">
       <div className="flex flex-col gap-2 p-4 pt-0">
         <Each
           of={items}
@@ -42,18 +44,20 @@ export default function AppointmentList({ items }: AppointmentListProps) {
             >
               <div className="flex items-center gap-2 w-full">
                 <Avatar>
-                  <AvatarImage src={item.patientAvatar} alt={item.name} />
+                  <AvatarImage src={item.patient.picture ?? ""} alt={item.patient.name ?? ""}/>
                   <AvatarFallback>
-                    {item.name
-                      .split(" ")
-                      .map((chunk) => chunk[0])
-                      .join("")}
+                    {
+                      item.patient.name
+                        ?.split(" ")
+                        .map((chunk) => chunk[0])
+                        .join("")
+                    }
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex w-full flex-col gap-1">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <div className="font-semibold">{item.name}</div>
+                      <div className="font-semibold">{item.patient.name}</div>
                       {!item.read && (
                         <span className="flex h-2 w-2 rounded-full bg-blue-600" />
                       )}

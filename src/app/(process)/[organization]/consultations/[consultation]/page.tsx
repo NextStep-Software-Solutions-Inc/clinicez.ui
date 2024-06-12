@@ -1,4 +1,4 @@
-import { getConsultation } from "@actions/consultations.action";
+import { getConsultationAction } from "@actions/consultations.action";
 import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth0";
 import Suspend from "@components/Suspend";
 import { Separator } from "@components/ui/separator";
@@ -17,11 +17,11 @@ export const metadata: Metadata = {
 async function ConsultationPage({params}: AppRouterPageRouteOpts) {
   const consultationId = params?.consultation as string
 
-  const consultation = await getConsultation(consultationId)
+  const consultation = await getConsultationAction(consultationId)
 
   return (
     <div className="space-y-6">
-      <div className="group/issue flex sticky top-10 z-10 bg-opacity-30 backdrop-blur p-2 on">
+      <div className="group/issue flex sticky top-10 z-10 bg-opacity-30 backdrop-blur p-2 items-center">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">{consultation.subject}</h2>
           <div className="flex h-5 items-center gap-2 mt-3 capitalize">
@@ -32,7 +32,7 @@ async function ConsultationPage({params}: AppRouterPageRouteOpts) {
             <Badge variant="outline">{consultation.status}</Badge>
           </div>
         </div>
-        <Link className="ml-auto invisible group-hover/issue:visible" href={{
+        <Link className="ml-auto invisible group-hover/issue:visible transition-all" href={{
           pathname: `/${params?.organization}/generate-document`,
           query: {
             _consultationId: consultationId,

@@ -1,24 +1,16 @@
 
-import {format } from "date-fns"
+import {differenceInCalendarYears, format } from "date-fns"
 import {
   Forward,
   MoreVertical,
 } from "lucide-react"
 
 import {
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from "@components/ui/dropdown-menu"
-import {
   Avatar,
   AvatarFallback,
   AvatarImage,
 } from "@components/ui/avatar"
 import { Button } from "@components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-} from "@components/ui/dropdown-menu"
 
 import { Separator } from "@components/ui/separator"
 import {
@@ -26,7 +18,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@components/ui/tooltip"
-import { getAppointment } from "@actions/appointments.action"
+import { getAppointmentAction } from "@actions/appointments.action"
 import CreateConsultationRecordModal from "../../components/CreateConsultationRecordModal"
 import { ScrollArea } from "@components/ui/scroll-area"
 import Image from "next/image"
@@ -40,10 +32,10 @@ import RescheduleAppointment from "../../components/RescheduleAppointment"
 import DeclineAppointmentAssignment from "../../components/DeclineAppointmentAssignment"
 import { UserRoles } from "./AppointmentPanel"
 import { Badge } from "@components/ui/badge"
-import ConsultationRecordSheet from "../../components/ConsultationRecordSheet"
-import { SheetTrigger } from "@components/ui/sheet"
 import { DropdownMenuProvider } from "@components/DropdownMenuProvider"
 import AppointmentMoreAction from "../../components/AppointmentMoreAction"
+import { getUserAction } from "@actions/user.action"
+import { th } from "@faker-js/faker"
 
 interface AppointmentDisplayProps {
   appointmentId: string | null
@@ -52,9 +44,10 @@ interface AppointmentDisplayProps {
 
 export default async function AppointmentDisplay({ appointmentId, role }: AppointmentDisplayProps) {
   
-  const freshAppointment = await getAppointment(appointmentId ?? "")
+  const freshAppointment = await getAppointmentAction(appointmentId ?? "")
+  const user = await getUserAction(freshAppointment?.patientId ?? "")
+  if (!user) throw new Error("User not found")
   
-
   const appointmentToolsPerStatus: Record<AppointmentStatus, React.ReactNode> = {
     all: (<></>),
     pending: 
@@ -125,20 +118,21 @@ export default async function AppointmentDisplay({ appointmentId, role }: Appoin
           <div className="flex items-start p-4">
             <div className="flex items-start gap-4 text-sm">
               <Avatar>
-                <AvatarImage src={freshAppointment.patientAvatar} alt={freshAppointment.name} />
+                <AvatarImage src={user.picture ?? ""} alt={user.name ?? ""} />
                 <AvatarFallback>
-                  {freshAppointment.name
-                    .split(" ")
+                  {user.name
+                    ?.split(" ")
                     .map((chunk) => chunk[0])
                     .join("")}
                 </AvatarFallback>
               </Avatar>
               <div className="grid gap-1">
-                <div className="font-semibold">{freshAppointment.name}</div>
-                <div className="line-clamp-1 text-xs">{freshAppointment.subject}</div>
+                <div className="font-semibold">{user?.name}</div>
                 <div className="line-clamp-1 text-xs">
-                  <span className="font-medium">Email:</span> {freshAppointment.email}
+                  <span className="font-medium">{"Male"}/</span>{differenceInCalendarYears(new Date(), new Date())}
                 </div>
+                <div className="line-clamp-1 text-xs">{freshAppointment.subject}</div>
+
               </div>
             </div>
             {freshAppointment.createdAt && (
@@ -148,7 +142,7 @@ export default async function AppointmentDisplay({ appointmentId, role }: Appoin
             )}
           </div>
           <Separator />
-          <ScrollArea className="flex-auto whitespace-pre-wrap p-4 text-sm h-[100px]">
+          <ScrollArea className="flex-auto whitespace-pre-wrap p-4 text-sm  h-0">
             {freshAppointment.complaint}
             
             <Separator className="my-2" />

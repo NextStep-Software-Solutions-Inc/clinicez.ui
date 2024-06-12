@@ -1,7 +1,8 @@
-import next from 'next'
+type CustomRequestInit = RequestInit | {
+}
 
-type CreateFetchOptions = RequestInit & {
-  baseUrl: string
+type CreateFetchOptions = CustomRequestInit & {
+  baseUrl: string;
 }
 
 export const createCustomFetch = (options: CreateFetchOptions) => {
@@ -10,7 +11,7 @@ export const createCustomFetch = (options: CreateFetchOptions) => {
   }
 
   type RequestOptionsType = RequestInit & {
-      params?: Record<string, string | number | boolean>
+      params?: Record<string, string | number | boolean | string[] | undefined>
   }
 
   const createSearchParams = (params?: RequestOptionsType["params"]) => {
@@ -18,18 +19,20 @@ export const createCustomFetch = (options: CreateFetchOptions) => {
     if (!params) return "" 
     Object.keys(params).forEach(key => {
       if (params[key]!== undefined) {
-        searchParams.append(key, params[key].toString())
+        const value = params[key]?.toString()
+        searchParams.append(key, value ?? "")
       }
     })
     return `?${searchParams.toString()}`
   }
 
-  const customFetch = (url: string, init?: RequestOptionsType) => {
-      
+  const customFetch = async (url: string, init?: RequestOptionsType) => {
     const mergedOptions = {
       ...options,
       ...init,
     }
+
+    
 
     const urlWithParams = `${options.baseUrl}${url}${createSearchParams(init?.params)}`
 
@@ -50,7 +53,3 @@ export const createCustomFetch = (options: CreateFetchOptions) => {
     delete: delete_,
   }
 }
-
-const re = createCustomFetch({
-  baseUrl: 'http://localhost:3000',
-})

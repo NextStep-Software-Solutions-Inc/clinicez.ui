@@ -10,7 +10,7 @@ import {
   Route,
   Search,
   Trash2,
-  User,
+  UserIcon,
 } from "lucide-react"
 
 import { cn } from "@lib/utils"
@@ -34,6 +34,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { Appointment } from "@public/json/appointment-list"
 import { type AppointmentsCountsType } from "@actions/appointments.action"
 import Switcher from "@components/dashboard/Switcher"
+import { User } from "@prisma/client"
 
 export type UserRoles = "student" | "faculty" | "admin" | "receptionist" | "doctor" | "nurse"
 export type UserSwitcherType = {
@@ -56,32 +57,32 @@ const roles = [
   {
     label: "Student",
     value: "student",
-    icon: User,
+    icon: UserIcon,
   },
   {
     label: "Faculty",
     value: "faculty",
-    icon: User,
+    icon: UserIcon,
   },
   {
     label: "Admin",
     value: "admin",
-    icon: User,
+    icon: UserIcon,
   }, 
   {
     label: "Receptionist",
     value: "receptionist",
-    icon: User,
+    icon: UserIcon,
   }, 
   {
     label: "Doctor",
     value: "doctor",
-    icon: User,
+    icon: UserIcon,
   },
   {
     label: "Nurse",
     value: "nurse",
-    icon: User,
+    icon: UserIcon,
   }
 ]
 const rolesLinks = {
@@ -94,7 +95,9 @@ const rolesLinks = {
 };
 interface AppointmentPanelProps {
   appointmentsCounts: AppointmentsCountsType
-  appointments: Appointment[]
+  appointments: (Appointment & {
+    patient: User
+  })[]
   defaultLayout: number[] | undefined
   defaultCollapsed?: boolean
   navCollapsedSize: number
@@ -166,13 +169,14 @@ export default function AppointmentPanel({
   return (
     <TooltipProvider delayDuration={0}>
       <ResizablePanelGroup
+        autoSaveId="appointment-panel"
         direction="horizontal"
         onLayout={(sizes: number[]) => {
           document.cookie = `react-resizable-panels:layout=${JSON.stringify(
             sizes
           )}`
         }}
-        className="h-full max-h-[80dvh] items-stretch"
+        className="h-full max-h-[85dvh] items-stretch"
       >
         <ResizablePanel
           defaultSize={defaultLayout[0]}
@@ -192,7 +196,7 @@ export default function AppointmentPanel({
               false
             )}`
           }}
-          className={cn("py-1",
+          className={cn("py-1 h-[100dvh]",
             isCollapsed && "min-w-[50px] transition-all duration-300 ease-in-out"
           )}
         >
@@ -217,8 +221,8 @@ export default function AppointmentPanel({
           <Separator />
         </ResizablePanel>
         <ResizableHandle withHandle />
-        <ResizablePanel defaultSize={defaultLayout[1]} minSize={30}>
-          <Tabs defaultValue="all">
+        <ResizablePanel className="" defaultSize={defaultLayout[1]} minSize={30}>
+          <Tabs defaultValue="all" className="flex h-full flex-col">
             <div className="flex items-center px-4 py-2">
               <h1 className="text-xl font-bold capitalize">{type}</h1>
               <TabsList className="ml-auto">
@@ -245,13 +249,14 @@ export default function AppointmentPanel({
                 </div>
               </form>
             </div>
-            <TabsContent value="all" className="m-0">
+            <TabsContent value="all" asChild>
               <AppointmentList items={filteredAppointments} />
             </TabsContent>
-            <TabsContent value="unread" className="m-0">
+            <TabsContent value="unread" asChild>
               <AppointmentList items={filteredAppointments.filter((item) => !item.read)} />
             </TabsContent>
           </Tabs>
+          <AppointmentList items={filteredAppointments} />
         </ResizablePanel>
         <ResizableHandle withHandle />
         <ResizablePanel defaultSize={defaultLayout[2]}>

@@ -25,7 +25,8 @@
       "@styles/*": ["./src/styles/*"],
       "@actions/*": ["./src/actions/*"],
       "@contexts/*": ["./src/contexts/*"],
-      "@services/*": ["./src/services/*"]
+      "@services/*": ["./src/services/*"],
+      "@middlewares/*": ["./src/middlewares/*"]
     }
   },
   "include": [

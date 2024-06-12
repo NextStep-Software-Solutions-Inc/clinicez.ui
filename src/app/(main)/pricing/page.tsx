@@ -18,14 +18,14 @@ export default async function PricingPage(props: PricingPageProps) {
   const { freq = "yearly" } = props.searchParams ;
 
   return (
-    <div className="content container mx-auto mt-10">
+    <div className="content container mx-auto my-10">
       <div className="prose max-w-full text-center">
         <h1>Tenant Pricing</h1>
         <p>
           Select the plan that best suits your needs. 
         </p>
       </div>
-      <div className="flex justify-end">
+      <div className="flex justify-center">
         <PricingMode defaultMode={freq} />
       </div>
       <Suspend>

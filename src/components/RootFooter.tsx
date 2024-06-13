@@ -3,7 +3,7 @@ import AnimatedLogo from "./AnimatedLogo";
 const RootFooter = () => {
   return (
     <footer className="container mx-auto py-8 bg-slate-50">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 ">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 ~text-sm/base">
         <div className="order-1 sm:order-first">
           <a href="/" className="flex h-20">
             <AnimatedLogo/>

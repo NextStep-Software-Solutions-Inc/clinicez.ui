@@ -1,4 +1,4 @@
-import { request } from "../../../../services/request";
+import { self } from "../../../../services/request";
 
 type ResponseType = {
     response: NurseType[]
@@ -22,7 +22,7 @@ export type NurseType = {
 }
 
 export const getNurses = async ()  => {
-  const response = await request.get('/api/health-provider', {
+  const response = await self.get('/api/health-provider', {
     params: {
       role: "nurse",
       pageNumber: 1,

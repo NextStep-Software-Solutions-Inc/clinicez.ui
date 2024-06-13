@@ -1,13 +1,15 @@
-type CustomRequestInit = RequestInit | {
-}
-
+type CustomRequestInit = RequestInit
 type CreateFetchOptions = CustomRequestInit & {
   baseUrl: string;
 }
 
 export const createCustomFetch = (options: CreateFetchOptions) => {
+
+  console.log(options.baseUrl);
+  
   if (!options.baseUrl) {
-    throw new Error('baseUrl is required')
+    console.log(!options.baseUrl);
+    throw new Error('baseUrl is required losidosidpo')
   }
 
   type RequestOptionsType = RequestInit & {

@@ -7,7 +7,6 @@ export const metadata: Metadata = {
   title: "Pricing | Clinic EZ",
   description: "Compare and select from our competitive pricing",
 };
-
 interface PricingPageProps {
   searchParams: {
     freq: string

@@ -1,4 +1,4 @@
-import { request } from "../../../../services/request";
+import { self } from "@services/request"
 
 type ResponseType = {
     response: DoctorType[]
@@ -22,7 +22,7 @@ export type DoctorType = {
 }
 
 export const getDoctors = async ()  => {
-  const response = await request.get('/api/health-provider', {
+  const response = await self.get('/api/health-provider', {
     params: {
       role: "doctor",
       pageNumber: 1,

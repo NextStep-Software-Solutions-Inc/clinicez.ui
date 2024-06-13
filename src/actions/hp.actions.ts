@@ -13,7 +13,7 @@ type HPFilters = {
   id?: number
 }
 
-export const getHPsActions = cache(async (filters?:HPFilters) => {
+export const getHPsActions = (async (filters?:HPFilters) => {
   const {type, userId, id} = filters || {};
   const hps = prisma.healthcareProvider.findMany({
     where: {

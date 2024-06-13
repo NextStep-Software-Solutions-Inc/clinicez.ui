@@ -91,7 +91,7 @@ export default function SelectPlan({ nextStep, isFirstStep, isLastStep, prevStep
                       value: parseInt(value),
                     }
                   })}
-                  value={field.value.toString()}
+                  value={field?.value?.toString()}
                   className="flex flex-wrap flex-row"
                 >
                   <Each

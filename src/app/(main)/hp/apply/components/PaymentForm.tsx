@@ -28,7 +28,7 @@ export default function PaymentForm({ nextStep, prevStep, isFirstStep, isLastSte
     receiptNumber?: string;
   }>("hp-application", {receiptNumber: ""});
 
-  const selectedPlan = hpPlans.find(plan => plan.planUid === applicationData.plan) ?? { price: 0};
+  const selectedPlan = hpPlans.find(plan => plan.id === parseInt(applicationData.plan ?? "")) ?? { price: 0};
   const cost = selectedPlan.price;
 
   const applicationFormSchema = z.object({

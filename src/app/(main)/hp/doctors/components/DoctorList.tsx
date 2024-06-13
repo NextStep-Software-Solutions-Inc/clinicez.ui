@@ -17,11 +17,11 @@ export default async function DoctorList() {
     }
   })
   return (
-    <div className='flex flex-wrap gap-5'>
+    <div className='flex flex-wrap justify-center gap-5'>
       <Each
         of={mappedDoctor}
         render={(item) => (
-          <Link href={`/hp/profile/${item.id}?_type=${item.type}`} className="mx-auto h-[20rem] aspect-square relative">
+          <Link href={`/hp/profile/${item.id}?_type=${item.type}`} className="h-[20rem] aspect-square relative">
             <Image src={item.photoUrl} alt={item.name} width={1000} height={1000} className="w-full h-full object-cover rounded-lg" />
             <div className="absolute bottom-0 left-0 w-full text-center ">
               <div className="bg-white opacity-75 p-3 rounded-b-lg ">

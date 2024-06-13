@@ -48,7 +48,7 @@ export default function UserAvatar() {
   if(isLoading) return null;
   if (!user) return (
     <Link href="/api/auth/login">
-      <Button>Sign In</Button>
+      <Button className="mx-auto ~text-xs/sm ~h-8/10">Sign In</Button>
     </Link>
   )
   return (

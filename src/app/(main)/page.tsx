@@ -63,19 +63,21 @@ export default async function HomePage() {
                     borderRadius: "34% 66% 69% 31% / 44% 51% 49% 56%"
                   }}>ez</span>
                 </h1>
-                <p className="relative z-10 text-center md:text-left ~text-sm/base mt-4  text-gray-600 lg:mt-8">
+                <p className="relative z-10 text-center md:text-left ~text-sm/base mt-4 text-gray-600 lg:mt-8">
                   The innovative platform revolutionizing healthcare connections.<br/>Our user-friendly interface empowers healthcare providers to streamline appointment management, while giving patients effortless access to book consultations with their preferred professionals. Experience the future of healthcare with Clinic EZ — where convenience meets care.
                 </p>
                 <ConditionalRender condition={!authenticated}>
-                  <Link href="/api/auth/login">
-                    <Button size="lg" className="rounded-full mt-8">
-                      Join for free
-                      <ArrowRightCircle className="w-4 h-4 ml-2" />
-                    </Button>
-                  </Link>
-                  <p className="mt-5 text-gray-600">Already joined us?
-                    <Link href="/api/auth/login" title="" className="text-black  hover:underline">Log in</Link>
-                  </p>
+                  <div className="flex md:block items-center flex-col">
+                    <Link href="/api/auth/login">
+                      <Button size="lg" className="rounded-full mt-8 mx-auto ~text-xs/sm ~h-8/10">
+                        Join for free
+                        <ArrowRightCircle className="w-4 h-4 ml-2" />
+                      </Button>
+                    </Link>
+                    <p className="mt-5 ~text-sm/base text-gray-600">Already joined us?
+                      <Link href="/api/auth/login" title="" className="text-black hover:underline">Log in</Link>
+                    </p>
+                  </div>
                 </ConditionalRender>
                 <ConditionalRender condition={authenticated}>
                   <div className="flex md:block">
@@ -102,7 +104,7 @@ export default async function HomePage() {
           <Each
             of={topFeature}
             render={(feature) => (
-              <Card className="relative basis-[20rem] flex-grow shadow-xl hover:scale-105 hover:z-50 transition-all rounded-2xl">
+              <Card className="relative basis-[20rem] flex-grow shadow-xl hover:scale-105 hover:z-10 transition-all rounded-2xl">
                 <CardHeader>
                   <CardTitle className="~text-sm/xl uppercase tracking-wider text-primary">{feature.name}</CardTitle>
                   <CardDescription className="~text-xs/sm">{feature.description}</CardDescription>

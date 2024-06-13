@@ -23,7 +23,7 @@ export const POST = withUnkey(async (req) => {
     return new NextResponse('unauthorized', { status: 401 });
   }
 
-  if (!req.unkey?.permissions?.includes('create:user')) {
+  if (!req.unkey?.permissions?.includes('user:create')) {
     return new NextResponse('unauthorized', { status: 403 });
   }
 

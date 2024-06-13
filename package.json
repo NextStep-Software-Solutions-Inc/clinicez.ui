@@ -10,6 +10,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "vercel-build": "prisma generate && prisma migrate deploy && next build",
+    "postinstall": "prisma generate",
     "migrate:dev": "npx dotenv -e .env.development.local -- prisma migrate dev",
     "db:push": "npx dotenv -e .env.development.local -- prisma db push",
     "migrate:reset": "npx dotenv -e .env.development.local -- prisma migrate reset",

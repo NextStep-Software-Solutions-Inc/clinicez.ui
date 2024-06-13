@@ -20,12 +20,10 @@ export default function RootLayout({
             <Separator orientation="vertical"/>
             <Link href="/tenants/register">Become a Tenant</Link>
           </div>
-
         </div>
-      
       </div>
       <RootHeader className="sticky top-0 z-50"/>
-      <div className="content">{children}</div>
+      <div className="">{children}</div>
       <RootFooter/>
     </>
   );

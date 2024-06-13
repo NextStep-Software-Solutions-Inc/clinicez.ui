@@ -10,17 +10,15 @@ interface OrganizationCardProps {
 export function OrganizationCard({ organization }: OrganizationCardProps) {
   const {orgId, name, description, picture} = organization;
   return (
-    <Link href={`/${orgId}`} className=" rounded-lg shadow-md  ">
-      <div className="group bg-white overflow-hidden relative rounded-t-lg">
-        <Image src={picture ?? organizationPlaceholder} alt={name} width={1000} height={1000} objectFit="cover" className="w-full aspect-video" />
-        <div className="absolute inset-0 bg-teal-700 opacity-0 transition duration-300 ease-in-out group-hover:opacity-70 flex items-center justify-center text-white">
-          <div>
-            <p className="text-sm text-center p-2">{description}</p>
-          </div>
+    <Link href={`/${orgId}`} className="">
+      <div className="group overflow-hidden relative h-[15rem] aspect-video rounded-lg shadow-2xl ">
+        <Image src={picture ?? organizationPlaceholder} alt={name} fill className="object-cover rounded-lg" />
+        <div className="absolute bottom-0 h-20 w-full bg-white bg-opacity-90 px-4 flex items-center justify-center">
+          <p className="mb-2 text-center line-clamp-3 text-sm font-semibold" title={name}>{name}</p>
         </div>
-      </div>
-      <div className="p-3 flex items-center justify-center">
-        <p className="mb-2 text-center line-clamp-2" title={name}>{name}</p>
+        <div className="absolute inset-0 items-center bg-teal-700 opacity-0 transition duration-300 ease-in-out group-hover:opacity-70 flex text-white">
+          <p className="text-sm w-full text-center p-2 ">{description}</p>
+        </div>
       </div>
     </Link>
   );

@@ -23,11 +23,11 @@ export default function TenantPlanList({ freq, initialPlan, nextStep }: TenantPl
 
 
   return (
-    <div className="flex flex-wrap justify-between my-10 gap-5">
+    <div className="flex flex-wrap justify-center my-10 gap-5">
       <Each
         of={tenantPlans}
         render={(plan) => (
-          <div className={cn("relative bg-primary flex-grow max-w-sm h-96 mx-auto basis-72 rounded-md  hover:animate-pulse shadow-2xl",
+          <div className={cn("relative bg-primary flex-grow max-w-sm h-96 basis-72 rounded-md  hover:animate-pulse shadow-2xl",
             initialPlan === plan.name.toLowerCase() && "ring-4 ring-primary rounded-ss-none"
           )}>
             <div className="bg-background opacity-98 rounded-ee-[5rem]  p-8 mr-6 h-80 ">

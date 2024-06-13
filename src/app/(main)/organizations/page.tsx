@@ -22,15 +22,14 @@ export default async function Organizations() {
         <Suspend>
           <OrganizationList/>
         </Suspend>
-        <JoinAsButton 
+        {/* <JoinAsButton 
           href={{
             pathname: "/tenants/register",
             query: {
               role: "tenant"
             }
           }}
-        /> 
-            
+        />  */}
       </div>
     </div>
   );

@@ -8,9 +8,9 @@ import { z } from "zod";
 import BackSubmitAndNext from "@components/SubmitAndNext";
 import { useLocalStorage } from "@hooks/useLocalStorage";
 import { getPlansAction } from "@actions/plan.action";
-import { use } from "react";
-import { setUserPlanStatusAction } from "@actions/user-plan.action";
+import { use, useState } from "react";
 import { toast } from "sonner";
+import { Button } from "@components/ui/button";
 interface PaymentFormProps {
   nextStep?: () => void;
   prevStep?: () => void;
@@ -22,22 +22,25 @@ const fetchPlans = getPlansAction()
 
 export default function PaymentForm({ nextStep, prevStep, isFirstStep, isLastStep}: PaymentFormProps) {
 
+  const [paymentVerified, setPaymentVerified] = useState(false);
   const hpPlans = use(fetchPlans)
+
   const [applicationData,setApplicationData] = useLocalStorage<{
     plan?: string;
     receiptNumber?: string;
   }>("hp-application", {receiptNumber: ""});
 
-  const selectedPlan = hpPlans.find(plan => plan.id === parseInt(applicationData.plan ?? "")) ?? { price: 0};
-  const cost = selectedPlan.price;
+  const selectedPlan = hpPlans.find(plan => plan.id === parseInt(applicationData.plan ?? "0"));
+  const cost = selectedPlan?.price ?? 0;
 
   const applicationFormSchema = z.object({
     receiptNumber : z.string().refine(value => value.length > 4 || cost  === 0, {
       message: "Receipt number is required"
-    }).optional(),
+    }),
   })
 
   type formType = z.infer<typeof applicationFormSchema>;
+
   const form = useForm<formType>({
     resolver: zodResolver(applicationFormSchema),
     defaultValues: {
@@ -45,16 +48,18 @@ export default function PaymentForm({ nextStep, prevStep, isFirstStep, isLastSte
     }
   })
 
-  const action = async (formData: FormData) => {
+
+  const action = async () => {
     form.handleSubmit(async (data: formType) => {
       await setApplicationData(data)
-      await setUserPlanStatusAction(1, "ACTIVE")
-      toast.success("User plan activated!")
       nextStep?.();
     })();
   }
 
-  
+  const handleVerify = () => {
+    setPaymentVerified(true);
+    toast.success("Payment verified. You can now proceed to the next step.");
+  }
 
   return (
     <Form {...form}>
@@ -64,22 +69,25 @@ export default function PaymentForm({ nextStep, prevStep, isFirstStep, isLastSte
       >
         <h4>Payment</h4>
         <p>This is a one-time payment of <strong>₱{cost}</strong> for the purpose of verifying your identity. This process helps us ensure the security and authenticity of our users.</p>
-        <FormField
-          control={form.control}
-          name="receiptNumber"
-          render={({ field }) => (
-            <FormItem className="space-y-3">
-              <FormLabel>Receipt Number</FormLabel>
-              <FormControl>
-                <Input placeholder="OR Number" {...field} />
-              </FormControl>
-              <FormDescription>
+        <div className="flex items-center gap-2">
+          <FormField
+            control={form.control}
+            name="receiptNumber"
+            render={({ field }) => (
+              <FormItem className="flex-1">
+                <FormLabel>Receipt Number</FormLabel>
+                <FormControl>
+                  <Input placeholder="OR Number" {...field}/>
+                </FormControl>
+                <FormDescription>
                 This is the receipt number of your payment from an agent.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <Button onClick={handleVerify} disabled={!form.formState.isValid || paymentVerified} type="button">Verify</Button>
+        </div>
         <div className="mt-4">
           <BackSubmitAndNext 
             labels={{
@@ -88,7 +96,7 @@ export default function PaymentForm({ nextStep, prevStep, isFirstStep, isLastSte
               next: "Next",
             }}
             disabled={{
-              submit:!form.formState.isValid,
+              submit:!paymentVerified,
               previous: isFirstStep,
               next: true,
             }}

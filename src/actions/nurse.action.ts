@@ -6,9 +6,11 @@ import { Prisma } from "@prisma/client";
 export const getNursesAction = async () => {
   const nurses = await prisma.nurseProfile.findMany({
     where: {
-      isActive: true
+      isActive: true,
+      HealthcareProvider: {
+        isPublished: true
+      }
     },
-    
   })
   return nurses;
 }
@@ -21,7 +23,8 @@ export const getNurseAction = async (hpId: number) => {
     },
     include: {
       HealthcareProvider: {
-        include: {
+        select: {
+          isPublished: true,
           User: {
             include: {
               SocialLink: true

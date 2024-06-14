@@ -1,12 +1,17 @@
 import Suspend from "@components/Suspend";
 import React from "react";
-import { AppRouterPageRouteOpts } from "@auth0/nextjs-auth0";
+import { AppRouterPageRouteOpts, getSession } from "@auth0/nextjs-auth0";
 import DoctorProfile from "./DoctorProfile";
 import NurseProfile from "./NurseProfile";
 import ProfileNotFound from "../../ProfileNotFound";
 import { Metadata, ResolvingMetadata } from "next";
 import { getDoctorAction } from "@actions/doctor.action";
 import { getNurseAction } from "@actions/nurse.action";
+import Link from "next/link";
+import { Button } from "@components/ui/button";
+import { Pencil } from "lucide-react";
+import { getHPAction } from "@actions/hp.actions";
+import ConditionalRender from "@components/utils/ConditionalRender";
 
 type Props = {
   params: { practitioner: string }
@@ -58,16 +63,29 @@ export async function generateMetadata({ params, searchParams }: Props, parent: 
 export default async function PractitionerPage({params, searchParams}: AppRouterPageRouteOpts) {
 
   const hpId = parseInt((params?.practitioner ?? "") as string);
+  const session = await getSession()
+  const myHp = await getHPAction({
+    userId: session?.user.sub
+  })
  
   const hpType = (searchParams?._type as string)?.toUpperCase() as keyof typeof profileComponent
 
   const Profile = profileComponent[hpType];
   if (!Profile) return <ProfileNotFound/>
   return (
-    <div className="container mx-auto my-10">
+    <div className="container mx-auto my-10 relative">
+      <ConditionalRender condition={myHp?.id === hpId}>
+        <div className="flex">
+          <Link href={`/hp/profile/${hpId}/editor?_type=${hpType}`}>
+            <Button className="z-10 fixed -right-[6.5rem] mr-2 hover:-right-[20px] transition-all"><Pencil size={20} className="mr-2"/>Edit profile</Button>
+          </Link>
+        </div>
+      </ConditionalRender>
       <Suspend>
         <Profile profileId={hpId} />
       </Suspend>
     </div>
   )
 }
+
+

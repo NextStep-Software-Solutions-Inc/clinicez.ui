@@ -31,23 +31,27 @@ import { Button } from "./ui/button";
 import Each from "./utils/Each";
 import { useEffect, useState } from "react";
 import { getHPsActions } from "@actions/hp.actions";
+import { usePathname, useSearchParams } from "next/navigation";
 
 export default function UserAvatar() {
 
   const [hpProfiles, setHpProfiles] = useState<Awaited<ReturnType<typeof getHPsActions>>>([]);
+  // get current path with query params
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const currentPath = `${pathname}${searchParams ? `?${searchParams.toString()}` : ""}`;
   
   const {user, isLoading} = useUser();
 
   useEffect(() => {
     (async () => {
-      setHpProfiles(await getHPsActions({userId: user?.sub ?? ""}))
+      if(user?.sub) setHpProfiles(await getHPsActions({userId: user?.sub ?? ""}))
     })()
   },[user?.sub])
 
-
   if(isLoading) return null;
   if (!user) return (
-    <Link href="/api/auth/login">
+    <Link href={`/api/auth/login?returnTo=${currentPath}`}>
       <Button className="mx-auto ~text-xs/sm ~h-8/10">Sign In</Button>
     </Link>
   )
@@ -73,7 +77,7 @@ export default function UserAvatar() {
           <Each
             of={hpProfiles}
             render={(item) => (
-              <a href={`/hp/profile/${item.id}/editor?_type=${item.type}`}>
+              <a href={`/hp/profile/${item.id}?_type=${item.type}`}>
                 <DropdownMenuItem>
                   <User className="mr-2 h-4 w-4" />
                   <span className="capitalize">My {item.type.replaceAll("_", " ").toLowerCase()} Profile</span>
@@ -83,17 +87,19 @@ export default function UserAvatar() {
             )}
             fallback={null}
           />
-          <a href="/settings">
+          <a href="/billing">
             <DropdownMenuItem>
               <CreditCard className="mr-2 h-4 w-4" />
                 Billing
               {/* <DropdownMenuShortcut>⌘B</DropdownMenuShortcut> */}
             </DropdownMenuItem></a>
-          <DropdownMenuItem>
-            <Settings className="mr-2 h-4 w-4" />
+          <a href="/settings">
+            <DropdownMenuItem>
+              <Settings className="mr-2 h-4 w-4" />
               Settings
-            {/* <DropdownMenuShortcut>⌘S</DropdownMenuShortcut> */}
-          </DropdownMenuItem>
+              {/* <DropdownMenuShortcut>⌘S</DropdownMenuShortcut> */}
+            </DropdownMenuItem>
+          </a>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <ConditionalRender condition={isHP(user)} >

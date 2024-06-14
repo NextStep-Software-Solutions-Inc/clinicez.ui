@@ -1,8 +1,8 @@
+"use client";
+
 import "@styles/globals.css";
 import Link from "next/link"
 import {
-  LineChart,
-  Package2,
   PanelLeft,
   Search,
   Settings
@@ -13,6 +13,7 @@ import { Button } from "@components/ui/button"
 import { Input } from "@components/ui/input"
 
 import { Sheet, SheetContent, SheetTrigger } from "@components/ui/sheet"
+import { navList } from "./nav"
 
 import {
   Tooltip,
@@ -22,11 +23,9 @@ import {
 } from "@components/ui/tooltip"
 import AvatarDropdown from "@components/dashboard/AvatarDropdown"
 import Breadcrumb from "@components/dashboard/Breadcrumb"
-import Each from "@components/utils/Each"
-import { cn } from "@lib/utils"
 import { OrganizationSwitcher } from "@components/dashboard/OrganizationSwitcher"
-import { navList } from "./nav";
 import SideNav from "./SideNav";
+import DrawerNav from "./DrawerNav";
 
 interface DashboardLayoutProps {
   children: React.ReactNode
@@ -34,6 +33,8 @@ interface DashboardLayoutProps {
     organization: string
   }
 }
+import ClinicEzMiniLogo from "@public/assets/clinic-ez_mini-logo.svg"
+import Image from "next/image";
 
 export default function DashboardLayout({children, params:{organization}}: DashboardLayoutProps) {
   return (
@@ -43,9 +44,9 @@ export default function DashboardLayout({children, params:{organization}}: Dashb
           <nav className="flex flex-col items-center gap-4 px-2 sm:py-5">
             <Link
               href="/"
-              className="group flex h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:h-8 md:w-8 md:text-base"
+              className="flex h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full ring-primary ring-2 text-lg font-semibold md:h-8 md:w-8 md:text-base transition-all hover:scale-125"
             >
-              <Package2 className="h-4 w-4 transition-all group-hover:scale-110" />
+              <Image src={ClinicEzMiniLogo} width={100} height={100} alt="mini-logo"  className="h-5 w-5" />
               <span className="sr-only">Clinic EZ</span>
             </Link>
             <SideNav/>
@@ -76,26 +77,12 @@ export default function DashboardLayout({children, params:{organization}}: Dashb
               </SheetTrigger>
               <SheetContent side="left" className="sm:max-w-xs">
                 <nav className="grid gap-6 text-lg font-medium">
-                  <Each
-                    of={navList}
-                    render={({name, href, icon:Icon}) => (
-                      <Link
-                        href={href}
-                        className={cn(
-                          "flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground",
-                          true && "text-foreground"
-                        )}
-                      >
-                        <Icon className="h-5 w-5" />
-                        {name}
-                      </Link>
-                    )}
-                  />
+                  <DrawerNav navItems={navList.map((item) => ({...item, href: `/${organization}${item.href}`}))}/>
                   <Link
                     href="/dashboard/settings"
-                    className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
+                    className="mt-auto flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
                   >
-                    <LineChart className="h-5 w-5" />
+                    <Settings className="h-5 w-5" />
                     Settings
                   </Link>
                 </nav>

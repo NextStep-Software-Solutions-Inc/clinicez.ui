@@ -8,17 +8,11 @@ import { useRouter, useSearchParams } from "next/navigation"
 import Each from "@components/utils/Each"
 import { Avatar, AvatarFallback, AvatarImage } from "@components/ui/avatar"
 import { type Appointment } from "@public/json/appointment-list"
-import Image from "next/image"
+import { User } from "@prisma/client"
 
 interface AppointmentListProps {
   items: (Appointment & {
-    patient: {
-      id: string
-      name: string
-      avatar: string
-      gender: string
-      email: string
-    }
+    patient: User
   })[]
 }
 
@@ -50,11 +44,11 @@ export default function AppointmentList({ items }: AppointmentListProps) {
             >
               <div className="flex items-center gap-2 w-full">
                 <Avatar>
-                  <AvatarImage src={item.patient.avatar} alt={item.patient.name}/>
+                  <AvatarImage src={item.patient.picture ?? ""} alt={item.patient.name ?? ""}/>
                   <AvatarFallback>
                     {
                       item.patient.name
-                        .split(" ")
+                        ?.split(" ")
                         .map((chunk) => chunk[0])
                         .join("")
                     }

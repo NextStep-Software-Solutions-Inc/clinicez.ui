@@ -35,6 +35,7 @@ import { Badge } from "@components/ui/badge"
 import { DropdownMenuProvider } from "@components/DropdownMenuProvider"
 import AppointmentMoreAction from "../../components/AppointmentMoreAction"
 import { getUserAction } from "@actions/user.action"
+import { th } from "@faker-js/faker"
 
 interface AppointmentDisplayProps {
   appointmentId: string | null
@@ -45,8 +46,8 @@ export default async function AppointmentDisplay({ appointmentId, role }: Appoin
   
   const freshAppointment = await getAppointmentAction(appointmentId ?? "")
   const user = await getUserAction(freshAppointment?.patientId ?? "")
+  if (!user) throw new Error("User not found")
   
-
   const appointmentToolsPerStatus: Record<AppointmentStatus, React.ReactNode> = {
     all: (<></>),
     pending: 
@@ -117,18 +118,18 @@ export default async function AppointmentDisplay({ appointmentId, role }: Appoin
           <div className="flex items-start p-4">
             <div className="flex items-start gap-4 text-sm">
               <Avatar>
-                <AvatarImage src={user.avatar} alt={user.name} />
+                <AvatarImage src={user.picture ?? ""} alt={user.name ?? ""} />
                 <AvatarFallback>
                   {user.name
-                    .split(" ")
+                    ?.split(" ")
                     .map((chunk) => chunk[0])
                     .join("")}
                 </AvatarFallback>
               </Avatar>
               <div className="grid gap-1">
-                <div className="font-semibold">{user.name}</div>
+                <div className="font-semibold">{user?.name}</div>
                 <div className="line-clamp-1 text-xs">
-                  <span className="font-medium">{user.gender}/</span>{differenceInCalendarYears(new Date(), user.dob)}
+                  <span className="font-medium">{"Male"}/</span>{differenceInCalendarYears(new Date(), new Date())}
                 </div>
                 <div className="line-clamp-1 text-xs">{freshAppointment.subject}</div>
 

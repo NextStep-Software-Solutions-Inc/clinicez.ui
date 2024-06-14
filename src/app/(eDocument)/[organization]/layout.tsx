@@ -2,7 +2,6 @@ import "@styles/globals.css";
 import Link from "next/link"
 import {
   LineChart,
-  Package2,
   PanelLeft,
   Search,
   Settings
@@ -23,13 +22,14 @@ import {
 import AvatarDropdown from "@components/dashboard/AvatarDropdown"
 import Breadcrumb from "@components/dashboard/Breadcrumb"
 import { OrganizationSwitcher } from "@components/dashboard/OrganizationSwitcher"
-
+import Image from "next/image";
 interface DashboardLayoutProps {
   children: React.ReactNode
   params: {
     organization: string
   }
 }
+import ClinicEzMiniLogo from "@public/assets/clinic-ez_mini-logo.svg"
 
 export default function DashboardLayout({children, params:{organization}}: DashboardLayoutProps) {
   return (
@@ -39,9 +39,9 @@ export default function DashboardLayout({children, params:{organization}}: Dashb
           <nav className="flex flex-col items-center gap-4 px-2 sm:py-5">
             <Link
               href="/"
-              className="group flex h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:h-8 md:w-8 md:text-base"
+              className="flex h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full ring-primary ring-2 text-lg font-semibold md:h-8 md:w-8 md:text-base transition-all hover:scale-125"
             >
-              <Package2 className="h-4 w-4 transition-all group-hover:scale-110" />
+              <Image src={ClinicEzMiniLogo} width={100} height={100} alt="mini-logo"  className="h-5 w-5" />
               <span className="sr-only">Clinic EZ</span>
             </Link>
             {/* <SideNav/> */}

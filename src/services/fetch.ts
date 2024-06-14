@@ -1,12 +1,15 @@
-import next from 'next'
-
-type CreateFetchOptions = RequestInit & {
-  baseUrl: string
+type CustomRequestInit = RequestInit
+type CreateFetchOptions = CustomRequestInit & {
+  baseUrl: string;
 }
 
 export const createCustomFetch = (options: CreateFetchOptions) => {
+
+  console.log(options.baseUrl);
+  
   if (!options.baseUrl) {
-    throw new Error('baseUrl is required')
+    console.log(!options.baseUrl);
+    throw new Error('baseUrl is required losidosidpo')
   }
 
   type RequestOptionsType = RequestInit & {
@@ -25,12 +28,13 @@ export const createCustomFetch = (options: CreateFetchOptions) => {
     return `?${searchParams.toString()}`
   }
 
-  const customFetch = (url: string, init?: RequestOptionsType) => {
-      
+  const customFetch = async (url: string, init?: RequestOptionsType) => {
     const mergedOptions = {
       ...options,
       ...init,
     }
+
+    
 
     const urlWithParams = `${options.baseUrl}${url}${createSearchParams(init?.params)}`
 
@@ -51,7 +55,3 @@ export const createCustomFetch = (options: CreateFetchOptions) => {
     delete: delete_,
   }
 }
-
-const re = createCustomFetch({
-  baseUrl: 'http://localhost:3000',
-})

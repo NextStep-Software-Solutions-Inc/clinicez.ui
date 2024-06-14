@@ -9,7 +9,7 @@ import { Button } from "@components/ui/button";
 interface TenantApplicationWrapperProps{
 children:ReactElement[]
 }
-const steps = ["Chosen Plan", "Set up Payment Method"];
+const steps = ["Choose Plan", "Payment Settlement"];
 
 export default function TenantApplicationWrapper(props:TenantApplicationWrapperProps ){
   const {currentStep, currentStepComponent, isComplete} = useMultiStepForm({

@@ -19,17 +19,17 @@ export default async function FilesPage({params}: AppRouterPageRouteOpts) {
   return (
     <>
       <div className="space-y-6">
-        <div className="flex items-center group/upload">
-          <div>
+        <div className="group/upload">
+          <div className="flex items-center">
             <h2 className="text-2xl font-bold tracking-tight">Files</h2>
-            <p className="text-sm text-muted-foreground">
+            <CreateFolderModal />
+          </div>
+          <p className="text-sm text-muted-foreground">
             Manage and organize your files. All files are private by default and only accessible to you. 
             You can share files with other users by sharing the link or allowing healthcare professionals to access the file.
-            </p>
-          </div>
-          <CreateFolderModal />
-          
+          </p>
         </div>
+          
         
         <Separator />
         <Suspend>

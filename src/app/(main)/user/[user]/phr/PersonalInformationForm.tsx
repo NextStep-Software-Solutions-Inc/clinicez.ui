@@ -26,6 +26,8 @@ import {
 import { toast } from "@components/ui/use-toast"
 import { CalendarIcon, SortAscIcon, CheckIcon } from "lucide-react"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@components/ui/select"
+import ActionButton from "@components/ActionButton"
+import { delay } from "@lib/wait"
 
 
 const personalInformationFormSchema = z.object({
@@ -34,11 +36,9 @@ const personalInformationFormSchema = z.object({
   }).max(30, {
     message: "Name must not be longer than 30 characters.",
   }),
-  middleName: z.string().min(2, {
-    message: "Name must be at least 2 characters.",
-  }).max(30, {
-    message: "Name must not be longer than 30 characters.",
-  }),
+  middleName: z.string().max(30, {
+    message: "Middle name must not be longer than 30 characters.",
+  }).optional(),
   lastName: z.string().min(2, {
     message: "Name must be at least 2 characters.",
   }).max(30, {
@@ -46,7 +46,7 @@ const personalInformationFormSchema = z.object({
   }),
   suffix: z.string().max(10, {
     message: "Suffix must not be longer than 10 characters.",
-  }),
+  }).optional(),
   email: z.string().email({
     message: "Please enter a valid email address.",
   }),
@@ -55,7 +55,14 @@ const personalInformationFormSchema = z.object({
   }).max(15, {
     message: "Phone number must not be longer than 15 characters.",
   }),
-  gender: z.enum(["Male", "Female"]).refine((val) => {}),
+  gender: z.enum(["Male", "Female"]).refine((val) => {
+    if (val === "Male" || val === "Female") {
+      return true
+    }
+    return false
+  }, {
+    message: "Please select a gender.",
+  }),
   dob: z.date({
     required_error: "A date of birth is required.",
   }),
@@ -75,20 +82,24 @@ export function PersonalInformationForm() {
     defaultValues,
   })
 
-  function onSubmit(data: PersonalInformationFormValues) {
-    toast({
-      title: "You submitted the following values:",
-      description: (
-        <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-          <code className="text-white">{JSON.stringify(data, null, 2)}</code>
-        </pre>
-      ),
-    })
+  const handleSaveChanges = async (formData: FormData) => {
+    await delay(1000);
+    form.handleSubmit(data => {
+      form.reset(data)
+      toast({
+        title: "You submitted the following values:",
+        description: (
+          <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
+            <code className="text-white">{JSON.stringify(data, null, 2)}</code>
+          </pre>
+        ),
+      })
+    })()
   }
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      <form action={handleSaveChanges} className="space-y-8">
         <div className="flex flex-col md:flex-row gap-2">
           <FormField
             control={form.control}
@@ -259,7 +270,7 @@ export function PersonalInformationForm() {
             </FormItem>
           )}
         />
-       
+        {form.formState.isDirty && <ActionButton disabled={form.formState.isLoading || !form.formState.isValid}>Save Changes</ActionButton>}
       </form>
     </Form>
   )

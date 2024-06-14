@@ -19,11 +19,7 @@ interface RootDrawerProps extends DialogProps {
   children?: React.ReactNode;
 }
 export default function RootDrawer({ children, ...res }: RootDrawerProps) {
-  
-  const action = async (formData: FormData) => {
-    console.log(Object.fromEntries(formData));
-    
-  }
+ 
   return (
     <Sheet {...res}>
       <SheetTrigger asChild>{children}</SheetTrigger>

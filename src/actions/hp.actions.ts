@@ -92,7 +92,6 @@ export const upsertProfessionalDetailsAction = async (payload: Prisma.Profession
 }
 
 export const setIsPublishAction = async (hpId: number, isPublished: boolean) => {
-  console.log({hpId, isPublished});
   
   const hp = await prisma.healthcareProvider.update({
     where: { id: hpId },

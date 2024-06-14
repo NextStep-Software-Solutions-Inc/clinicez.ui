@@ -26,7 +26,6 @@ export const getAppointmentCounts = async () => {
 }
 
 export const getAppointmentsAction = async (status: AppointmentStatus) => {
-  console.log({status});
   
   // check if type is valid
   // if (!Object.keys(appointmentList).includes(type)) {

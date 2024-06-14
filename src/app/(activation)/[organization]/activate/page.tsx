@@ -13,8 +13,6 @@ export default async function ActivatePage({params}: AppRouterPageRouteOpts) {
 
   const session = await getSession();
 
-  console.log({session});
-  
   
   return (
 

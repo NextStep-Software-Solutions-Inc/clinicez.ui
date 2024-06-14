@@ -1,10 +1,9 @@
 import { DetailedHTMLProps, HTMLAttributes, Suspense } from "react";
-import dynamic from "next/dynamic";
 
 import AnimatedLogo from "@components/AnimatedLogo";
 import { OrganizationSwitcher } from "@components/dashboard/OrganizationSwitcher";
+import { UserAvatarWrapper } from "@components/UserAvatarWrapper";
 
-const UserAvatar = dynamic(() => import("@components/UserAvatar"), {ssr: true});
 
 interface IHeaderProps extends DetailedHTMLProps<HTMLAttributes<HTMLElement>, HTMLElement>{}
 export default function Header({...props}: IHeaderProps) {
@@ -22,7 +21,7 @@ export default function Header({...props}: IHeaderProps) {
           <div className="inline-flex items-center justify-center gap-2">
             <OrganizationSwitcher isCollapsed/>
             <Suspense fallback={<div>Loading</div>}>
-              <UserAvatar/>
+              <UserAvatarWrapper/>
             </Suspense>
           </div>
         </div>

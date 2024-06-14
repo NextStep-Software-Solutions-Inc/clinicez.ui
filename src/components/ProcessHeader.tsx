@@ -1,9 +1,8 @@
 
 import Image from "next/image";
 import { DetailedHTMLProps, HTMLAttributes, Suspense, lazy } from "react";
-import dynamic from "next/dynamic";
+import { UserAvatarWrapper } from "./UserAvatarWrapper";
 
-const UserAvatar = dynamic(() => import("@components/UserAvatar"), {ssr: true});
 
 interface IProcessHeaderProps extends DetailedHTMLProps<HTMLAttributes<HTMLElement>, HTMLElement>{}
 export default function ProcessHeader({...props}: IProcessHeaderProps) {
@@ -39,7 +38,7 @@ export default function ProcessHeader({...props}: IProcessHeaderProps) {
           </div>
           <div className="hidden lg:inline-flex items-center justify-center">
             <Suspense fallback={<div>Loading</div>}>
-              <UserAvatar/>
+              <UserAvatarWrapper/>
             </Suspense>
           </div>
         </div>

@@ -5,10 +5,7 @@ type CreateFetchOptions = CustomRequestInit & {
 
 export const createCustomFetch = (options: CreateFetchOptions) => {
 
-  console.log(options.baseUrl);
-  
   if (!options.baseUrl) {
-    console.log(!options.baseUrl);
     throw new Error('baseUrl is required losidosidpo')
   }
 

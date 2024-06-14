@@ -12,7 +12,7 @@ type HPFilters = {
   isPublished?: boolean
 }
 
-export const getHPsActions = (async (filters?:HPFilters) => {
+export const getHPsActions = cache(async (filters?:HPFilters) => {
   const {type, userId, id, isPublished} = filters || {};
   const hps = prisma.healthcareProvider.findMany({
     where: {

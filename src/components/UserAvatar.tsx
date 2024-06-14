@@ -31,12 +31,15 @@ import { Button } from "./ui/button";
 import Each from "./utils/Each";
 import { useEffect, useState } from "react";
 import { getHPsActions } from "@actions/hp.actions";
+import { usePathname, useSearchParams } from "next/navigation";
 
 export default function UserAvatar() {
 
   const [hpProfiles, setHpProfiles] = useState<Awaited<ReturnType<typeof getHPsActions>>>([]);
   // get current path with query params
-  const currentPath = window.location.pathname + window.location.search;
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const currentPath = `${pathname}${searchParams ? `?${searchParams.toString()}` : ""}`;
   
   const {user, isLoading} = useUser();
 

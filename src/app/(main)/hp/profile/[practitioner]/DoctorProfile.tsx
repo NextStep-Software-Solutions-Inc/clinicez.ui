@@ -5,6 +5,7 @@ import Each from "@components/utils/Each";
 import { EarthIcon, FacebookIcon, LinkedinIcon, MailIcon, PhoneCallIcon, TwitterIcon } from "lucide-react";
 import Suspend from "@components/Suspend";
 import { getDoctorAction } from "@actions/doctor.action";
+import { notFound } from "next/navigation";
 
 interface IDoctorProfileProps {
     profileId: number;
@@ -12,7 +13,7 @@ interface IDoctorProfileProps {
 
 export default async function DoctorProfile({profileId}: IDoctorProfileProps) {
   const profile = await getDoctorAction(profileId);
-  if (!profile) throw new Error("Doctor Profile not found");
+  if (!profile) return notFound();
   
   const cover = profile.cover ?? "https://art.metro.net/wp-content/uploads/2021/02/placeholder.png";
   const picture = profile.picture ?? "https://integratedmedfl.com/wp-content/uploads/2023/08/dr.png";

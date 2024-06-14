@@ -43,7 +43,6 @@ interface ISelectPlanProps {
 const fetchPlans = getPlansAction()
 export default function SelectPlan({ nextStep, isFirstStep, isLastStep, prevStep,totalSteps}: ISelectPlanProps) {
   const hpPlans = use(fetchPlans)
-  const user = useUser();
   // const [hpPlans, setHpPlans] = useState<Awaited<ReturnType<typeof getPlansAction>>| []>([]);
   
   // useEffect(() => {
@@ -65,8 +64,6 @@ export default function SelectPlan({ nextStep, isFirstStep, isLastStep, prevStep
   const action = async () => {
     form.handleSubmit(async (data) => {
       await setApplicationData(data)
-      const dbUser = await getUserAction(user.user?.sub ?? "")
-      await createUserPlanAction(data.plan, dbUser.id)
       nextStep?.();
     })()
   }

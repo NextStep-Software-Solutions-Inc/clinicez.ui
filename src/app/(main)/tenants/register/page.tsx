@@ -2,8 +2,7 @@ import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth
 import TenantApplicationWrapper from "./TenantApplicationWrapper";
 import TenantPaymentVerification from "./TenantPaymentVerification";
 import TenantPlanSelection from "./TenantPlanSelection";
-import { Alert, AlertDescription, AlertTitle } from "@components/ui/alert";
-import { RocketIcon } from "lucide-react";
+;
 
 async function TenantsRegistrationPage(props: AppRouterPageRouteOpts) {
   const { role, plan, freq = "yearly" } = (props.searchParams || {}) as {role: string, plan:string, freq: string } 
@@ -17,16 +16,16 @@ async function TenantsRegistrationPage(props: AppRouterPageRouteOpts) {
         </p>TenantApplicationWrapper
       </div>
       {/* Page Under development */}
-      <div className="text-5xl text-center my-10">
+      {/* <div className="text-5xl text-center my-10">
         <h5>Page Not Available!</h5>
         <p className="text-2xl">
           This page is currently under development. Please check back later.
         </p>
-      </div>
-      {/* <TenantApplicationWrapper>
+      </div> */}
+      <TenantApplicationWrapper>
         <TenantPlanSelection freq={freq} defaultPlan={plan}/>
         <TenantPaymentVerification />
-      </TenantApplicationWrapper> */}
+      </TenantApplicationWrapper>
     </div>
   );
 }

@@ -2,7 +2,6 @@
 
 import prisma from "@lib/prisma";
 
-import { cache } from "react";
 import { HealthcareProviderType, Prisma } from "@prisma/client";
 
 type HPFilters = {
@@ -12,7 +11,7 @@ type HPFilters = {
   isPublished?: boolean
 }
 
-export const getHPsActions = (async (filters?:HPFilters) => {
+export const getHPsActions = async (filters?:HPFilters) => {
   const {type, userId, id, isPublished} = filters || {};
   const hps = prisma.healthcareProvider.findMany({
     where: {
@@ -45,9 +44,9 @@ export const getHPsActions = (async (filters?:HPFilters) => {
   })
 
   return hps;
-})
+}
 
-export const getHPAction = cache(async ({id, userId, type, isPublished}:HPFilters) => {
+export const getHPAction = async ({id, userId, type, isPublished}:HPFilters) => {
 
   const hp = prisma.healthcareProvider.findFirst({
     where: {
@@ -64,7 +63,7 @@ export const getHPAction = cache(async ({id, userId, type, isPublished}:HPFilter
   })
 
   return hp;
-})
+}
 
 export const createHpAction = async (hp: Prisma.HealthcareProviderCreateArgs["data"]) => {
 

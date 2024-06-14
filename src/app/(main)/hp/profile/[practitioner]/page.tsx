@@ -12,6 +12,7 @@ import { Button } from "@components/ui/button";
 import { Pencil } from "lucide-react";
 import { getHPAction } from "@actions/hp.actions";
 import ConditionalRender from "@components/utils/ConditionalRender";
+import { notFound } from "next/navigation";
 
 type Props = {
   params: { practitioner: string }
@@ -34,6 +35,7 @@ export async function generateMetadata({ params, searchParams }: Props, parent: 
 
   // fetch data
   const profile = await action(hpId)
+  if(!profile) return notFound()
 
   const site = process.env.AUTH0_BASE_URL?.split("//").pop() ?? ""
   const title = `${profile?.title} ${profile?.name} ${profile?.suffix} | ${profile?.fields.join(", ")}`
@@ -71,9 +73,10 @@ export default async function PractitionerPage({params, searchParams}: AppRouter
   const hpType = (searchParams?._type as string)?.toUpperCase() as keyof typeof profileComponent
 
   const Profile = profileComponent[hpType];
+
   if (!Profile) return <ProfileNotFound/>
   return (
-    <div className="container mx-auto my-10 relative">
+    <div className="content container mx-auto my-10 relative">
       <ConditionalRender condition={myHp?.id === hpId}>
         <div className="flex">
           <Link href={`/hp/profile/${hpId}/editor?_type=${hpType}`}>

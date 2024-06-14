@@ -1,21 +1,31 @@
-import { AppRouterPageRouteOpts } from "@auth0/nextjs-auth0";
+import { AppRouterPageRouteOpts, getSession, withPageAuthRequired } from "@auth0/nextjs-auth0";
 import { getDoctorAction } from "@actions/doctor.action";
 import { getNurseAction } from "@actions/nurse.action";
 import HPProfile from "./components/HPProfile";
 import HPProfessionalInfo from "./components/HPProfessionalInfo";
 import { HPProfileType } from "./hp-form.schema";
 import Suspend from "@components/Suspend";
-import { getProfessionalDetailsAction, setIsPublishAction } from "@actions/hp.actions";
+import { getHPsActions, getProfessionalDetailsAction, setIsPublishAction } from "@actions/hp.actions";
 import HPPhoto from "./components/HPPhoto";
 import { Button } from "@components/ui/button";
 import { ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import ActionButton from "@components/ActionButton";
+import { notFound, redirect } from "next/navigation";
 
-export default  async function EditorPage({params, searchParams}: AppRouterPageRouteOpts) {
+async function EditorPage({params, searchParams}: AppRouterPageRouteOpts) {
   const hpId = parseInt(params?.practitioner as string);
   const type = searchParams?._type as string;
+
+  const session = await getSession();
+  if(!session) return redirect("/api/auth/login");
+  
+  const myHps = await getHPsActions({
+    userId: session.user.sub,
+  });
+  const isMyHp = myHps.some((hp) => hp.id === hpId);
+  if(!isMyHp) return notFound();
 
   const actions = {
     NURSE: getNurseAction,
@@ -84,3 +94,11 @@ export default  async function EditorPage({params, searchParams}: AppRouterPageR
     </div>
   );
 }
+
+
+export default withPageAuthRequired(EditorPage, {
+  returnTo({params, searchParams}) {
+    const searchStr = Object.entries(searchParams ?? {}).map(([key, value]) => `${key}=${value}`).join("&");
+    return `/hp/profile/${params?.practitioner}?${searchStr}`;
+  },
+});

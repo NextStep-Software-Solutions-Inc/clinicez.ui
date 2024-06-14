@@ -10,17 +10,19 @@ import { revalidatePath } from "next/cache";
 type HPFilters = {
   type?: HealthcareProviderType,
   userId?: string
-  id?: number
+  id?: number,
+  isPublished?: boolean
 }
 
 export const getHPsActions = (async (filters?:HPFilters) => {
-  const {type, userId, id} = filters || {};
+  const {type, userId, id, isPublished} = filters || {};
   const hps = prisma.healthcareProvider.findMany({
     where: {
       isActive: true,
       ...(id && { id }),
       ...(type && { type }),
-      ...(userId && { User: { userId } })
+      ...(userId && { User: { userId } }),
+      ...(isPublished && { isPublished })
     },
     include: {
       DoctorProfile: {
@@ -47,14 +49,15 @@ export const getHPsActions = (async (filters?:HPFilters) => {
   return hps;
 })
 
-export const getHPAction = cache(async ({id, userId, type}:HPFilters) => {
+export const getHPAction = cache(async ({id, userId, type, isPublished}:HPFilters) => {
 
   const hp = prisma.healthcareProvider.findFirst({
     where: {
       isActive: true,
       ...(id && { id }),
       ...(type && { type }),
-      ...(userId && { User: { userId } })
+      ...(userId && { User: { userId } }),
+      ...(isPublished && { isPublished })
     },
     include: {
       DoctorProfile: true,
@@ -91,11 +94,12 @@ export const upsertProfessionalDetailsAction = async (payload: Prisma.Profession
   return hp;
 }
 
-export const uploadMediaAction = async (formData: FormData) => {
-  const media = formData.get("media") as File;
-  const data = await put(media.name, media, {
-    access: "public",
+export const setIsPublishAction = async (hpId: number, isPublished: boolean) => {
+  console.log({hpId, isPublished});
+  
+  const hp = await prisma.healthcareProvider.update({
+    where: { id: hpId },
+    data: { isPublished }
   })
-  revalidatePath('/')
-  return data
+  return hp;
 }

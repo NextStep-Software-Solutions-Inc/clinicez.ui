@@ -1,6 +1,5 @@
 "use server";
 
-import { cache } from 'react';
 import { delay } from "@lib/wait";
 import { AppointmentStatus, appointmentList } from "@public/json/appointment-list";
 import { getUserAction } from "./user.action";
@@ -26,7 +25,7 @@ export const getAppointmentCounts = async () => {
   return appointmentsCounts;
 }
 
-export const getAppointmentsAction = cache(async (status: AppointmentStatus) => {
+export const getAppointmentsAction = async (status: AppointmentStatus) => {
   console.log({status});
   
   // check if type is valid
@@ -44,12 +43,12 @@ export const getAppointmentsAction = cache(async (status: AppointmentStatus) => 
   })
   );
   return appointmentsWithPatient;
-})
+}
 
-export const getAppointmentAction = cache(async (id: string) => {
+export const getAppointmentAction = async (id: string) => {
   const appointment = Object.values(appointmentList).flatMap((list) => list).find((item) => item.id === id);
   return appointment;
-})
+}
 
 export const sendMsgAction = async(formData: FormData) => {
   await new Promise((resolve) => setTimeout(resolve, 1000));

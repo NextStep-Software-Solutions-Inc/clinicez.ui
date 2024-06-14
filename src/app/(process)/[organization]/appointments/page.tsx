@@ -7,9 +7,7 @@ import { getAppointmentCounts, getAppointmentsAction } from "@actions/appointmen
 import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth0";
 import { AppointmentStatus } from "@public/json/appointment-list";
 import AppointmentDisplay from "./mail/components/AppointmentDisplay";
-import { redirect } from "next/navigation"
 import Suspend from "@components/Suspend";
-import { self } from "@services/request";
 
 async function AppointmentsPage({ searchParams, params }: AppRouterPageRouteOpts ) {
   // const data = await self.get("/api/appointments", {

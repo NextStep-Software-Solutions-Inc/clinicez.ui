@@ -11,6 +11,7 @@ import { Button } from "@components/ui/button";
 import { ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
+import ActionButton from "@components/ActionButton";
 
 export default  async function EditorPage({params, searchParams}: AppRouterPageRouteOpts) {
   const hpId = parseInt(params?.practitioner as string);
@@ -59,7 +60,7 @@ export default  async function EditorPage({params, searchParams}: AppRouterPageR
         <div className="flex">
           <h1 className="capitalize flex-1">{type.replaceAll("_", " ").toLowerCase()} Profile Editor</h1>
           <form action={handleTogglePublish}>
-            <Button variant={isPublished? "destructive": "default"}>{isPublished ? "Unpublish": "Publish"}</Button>
+            <ActionButton variant={isPublished? "destructive": "default"}>{isPublished ? "Unpublish": "Publish"}</ActionButton>
           </form>
           <Link href={`/hp/profile/${hpId}?_type=${type}`}>
             <Button className="fixed top-44 -right-[7rem] mr-2 hover:-right-[20px] transition-all"><ExternalLink size={20} className="mr-2"/>View profile</Button>

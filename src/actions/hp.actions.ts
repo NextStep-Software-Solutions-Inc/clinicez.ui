@@ -1,11 +1,9 @@
 "use server";
 
 import prisma from "@lib/prisma";
-import { put } from "@vercel/blob"
 
 import { cache } from "react";
 import { HealthcareProviderType, Prisma } from "@prisma/client";
-import { revalidatePath } from "next/cache";
 
 type HPFilters = {
   type?: HealthcareProviderType,

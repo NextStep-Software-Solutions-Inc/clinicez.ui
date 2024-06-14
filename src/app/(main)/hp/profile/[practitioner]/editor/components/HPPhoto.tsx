@@ -1,7 +1,6 @@
 "use client";
 
 import { upsertDoctorAction } from "@actions/doctor.action";
-import { uploadMediaAction } from "@actions/hp.actions";
 import { upsertNurseAction } from "@actions/nurse.action";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@components/ui/form";
 import { Input } from "@components/ui/input";
@@ -12,6 +11,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { HPProfileType } from "../hp-form.schema";
 import ActionButton from "@components/ActionButton";
+import { uploadMediaAction } from "@actions/blob.action";
 
 const actions = {
   LAB_TECHNICIAN: upsertNurseAction,

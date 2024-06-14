@@ -8,12 +8,13 @@ import { useLocalStorage } from "@hooks/useLocalStorage";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from "../../../../components/ui/form";
 import { Input } from "../../../../components/ui/input";
 import { Button } from "@components/ui/button";
-import { useState } from "react";
+import { use, useState } from "react";
 import { createUserPlanAction } from "@actions/user-plan.action";
 import { toast } from "sonner";
 import { useSearchParams } from "next/navigation";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import { getUserAction } from "@actions/user.action";
+import { getPlansAction } from "@actions/plan.action";
 
 interface TenantPaymentVerificationProps {
     prevStep?: () => void;
@@ -22,16 +23,26 @@ interface TenantPaymentVerificationProps {
     isFirstStep?: boolean;
     isLastStep?: boolean;
 }
-export const paymentConfirmationFormSchema = z.object({
-  receiptNumber: z.string().min(5, {
-    message: "Receipt number is required",
-  }),
-})
+
+
+const fetchPlans = getPlansAction()
 export default function TenantPaymentVerification({ setComplete, prevStep }: TenantPaymentVerificationProps) {
   const [paymentData, setPaymentData] = useLocalStorage("tenant-application", { receiptNumber: "" });
-
+  const plans = use(fetchPlans)
   const searchParams = useSearchParams();
   const user = useUser();
+
+  const selectedPlan = plans.find(plan => plan.id === parseInt(searchParams.get("plan") ?? "0"));
+  const cost = selectedPlan?.price ?? 0;
+
+
+  console.log({selectedPlan, paymentData, cost});
+  
+  const paymentConfirmationFormSchema = z.object({
+    receiptNumber: z.string().refine((value) => value.length >=5 || cost === 0, {
+      message: "Receipt number must be at least 5 characters long."
+    })
+  })
 
   const [paymentVerified, setPaymentVerified] = useState(false);
   const form = useForm<z.infer<typeof paymentConfirmationFormSchema>>({
@@ -40,8 +51,6 @@ export default function TenantPaymentVerification({ setComplete, prevStep }: Ten
       receiptNumber: paymentData?.receiptNumber,
     }
   })
-
-
 
   const action = async () =>{
     form.handleSubmit(async (data) => {
@@ -107,5 +116,4 @@ export default function TenantPaymentVerification({ setComplete, prevStep }: Ten
       </form>
     </Form>
   )
-       
 }

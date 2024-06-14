@@ -130,6 +130,7 @@ model HealthcareProvider {
   id                  Int                    @id @default(autoincrement())
   userId              Int                    @unique
   type                HealthcareProviderType
+  isPublished         Boolean                @default(false)
   description         String?
   createdAt           DateTime               @default(now())
   updatedAt           DateTime               @updatedAt

@@ -35,7 +35,9 @@ export async function generateMetadata({ params, searchParams }: Props, parent: 
 
   // fetch data
   const profile = await action(hpId)
-  if(!profile) return notFound()
+  if(!profile) return {
+    title: "404 • Profile Not Found"
+  }
 
   const site = process.env.AUTH0_BASE_URL?.split("//").pop() ?? ""
   const title = `${profile?.title} ${profile?.name} ${profile?.suffix} | ${profile?.fields.join(", ")}`
@@ -74,7 +76,6 @@ export default async function PractitionerPage({params, searchParams}: AppRouter
 
   const Profile = profileComponent[hpType];
 
-  if (!Profile) return <ProfileNotFound/>
   return (
     <div className="content container mx-auto my-10 relative">
       <ConditionalRender condition={myHp?.id === hpId}>
@@ -85,7 +86,7 @@ export default async function PractitionerPage({params, searchParams}: AppRouter
         </div>
       </ConditionalRender>
       <Suspend>
-        <Profile profileId={hpId} />
+        {!!Profile ? <Profile profileId={hpId} /> : <ProfileNotFound/>}
       </Suspend>
     </div>
   )

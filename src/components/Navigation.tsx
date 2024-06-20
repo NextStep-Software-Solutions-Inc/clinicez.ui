@@ -10,15 +10,15 @@ import {
 import Link from "next/link";
 import Each from "./utils/Each";
 import { cn } from "@lib/utils";
+import { Building, Coins, Contact, Home, Users } from "lucide-react";
   
-const navLinks = [
-  { name: "Home", href: "/" },
-  { name: "Doctors", href: "/healthcare-provider/doctors" },
-  { name: "Nurses", href: "/healthcare-provider/nurses" },
-  { name: "Organizations", href: "/organizations" },
-  { name: "Pricing", href: "/pricing" },
-  { name: "Contact Us", href: "/contact-us" }
-  // { name: "Doctors", href: "/practitioners" }
+export const navLinks = [
+  { name: "Home", href: "/", icon: Home },
+  { name: "Doctors", href: "/hp/doctors", icon: Users  },
+  { name: "Nurses", href: "/hp/nurses", icon: Users  },
+  { name: "Organizations", href: "/organizations", icon: Building  },
+  { name: "Pricing", href: "/pricing", icon: Coins  },
+  { name: "Contact Us", href: "/contact-us", icon: Contact  }
 ];
 export default function Navigation() {
   return (

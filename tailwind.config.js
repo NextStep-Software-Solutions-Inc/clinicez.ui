@@ -1,16 +1,22 @@
 /** @type {import('tailwindcss').Config} */
 import tailwindTypography from '@tailwindcss/typography'
+import fluid, { extract, screens, fontSize } from 'fluid-tailwind'
 
 module.exports = {
   darkMode: ["class"],
-  content: [
-    './pages/**/*.{ts,tsx}',
-    './components/**/*.{ts,tsx}',
-    './app/**/*.{ts,tsx}',
-    './src/**/*.{ts,tsx}',
-  ],
+  content: {
+    files: [
+      './pages/**/*.{ts,tsx}',
+      './components/**/*.{ts,tsx}',
+      './app/**/*.{ts,tsx}',
+      './src/**/*.{ts,tsx}',
+    ],
+    extract
+  },
   prefix: "",
   theme: {
+    screens,
+    fontSize,
     container: {
       center: true,
       padding: "1rem",
@@ -75,5 +81,5 @@ module.exports = {
       },
     },
   },
-  plugins: [require("tailwindcss-animate"), tailwindTypography],
+  plugins: [fluid, require("tailwindcss-animate"), tailwindTypography],
 }

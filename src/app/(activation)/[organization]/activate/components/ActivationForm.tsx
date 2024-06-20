@@ -1,6 +1,7 @@
 "use client";
 
-import { assignRolesAction, getRolesAction } from "@actions/user-management.action";
+import { assignRolesAction } from "@actions/user-management.action";
+import { createUserAction } from "@actions/user.action";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import ActionButton from "@components/ActionButton";
 import { Button } from "@components/ui/button";
@@ -61,7 +62,7 @@ export default function ActivationForm() {
         toast.error("You must be logged in to activate a user")
         return;
       }
-      toast.promise(assignRolesAction(user.user.sub, ["rol_h449rSzvU0pyn1Be"]), {
+      toast.promise(assignRolesAction(user.user.sub, ["rol_b6qG22YUOZdfqb1T"]), {
         success: () => {
           setActivated(true)
           return "User activated successfully"
@@ -79,7 +80,12 @@ export default function ActivationForm() {
   }
 
   const migrateAction = async () => {
-    toast.promise(delay(5000), {
+    
+    toast.promise(createUserAction({
+      email: "",
+      name: "",
+      userId: "",
+    }), {
       success: "User migrated successfully",
       loading: "Migrating user...",
     })

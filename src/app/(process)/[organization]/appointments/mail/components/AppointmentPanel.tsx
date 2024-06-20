@@ -10,7 +10,7 @@ import {
   Route,
   Search,
   Trash2,
-  User,
+  UserIcon,
 } from "lucide-react"
 
 import { cn } from "@lib/utils"
@@ -34,8 +34,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { Appointment } from "@public/json/appointment-list"
 import { type AppointmentsCountsType } from "@actions/appointments.action"
 import Switcher from "@components/dashboard/Switcher"
-import { Badge } from "@components/ui/badge"
-import { ScrollArea } from "@components/ui/scroll-area"
+import { User } from "@prisma/client"
 
 export type UserRoles = "student" | "faculty" | "admin" | "receptionist" | "doctor" | "nurse"
 export type UserSwitcherType = {
@@ -58,32 +57,32 @@ const roles = [
   {
     label: "Student",
     value: "student",
-    icon: User,
+    icon: UserIcon,
   },
   {
     label: "Faculty",
     value: "faculty",
-    icon: User,
+    icon: UserIcon,
   },
   {
     label: "Admin",
     value: "admin",
-    icon: User,
+    icon: UserIcon,
   }, 
   {
     label: "Receptionist",
     value: "receptionist",
-    icon: User,
+    icon: UserIcon,
   }, 
   {
     label: "Doctor",
     value: "doctor",
-    icon: User,
+    icon: UserIcon,
   },
   {
     label: "Nurse",
     value: "nurse",
-    icon: User,
+    icon: UserIcon,
   }
 ]
 const rolesLinks = {
@@ -97,13 +96,7 @@ const rolesLinks = {
 interface AppointmentPanelProps {
   appointmentsCounts: AppointmentsCountsType
   appointments: (Appointment & {
-    patient: {
-      id: string
-      name: string
-      avatar: string
-      gender: string
-      email: string
-    }
+    patient: User
   })[]
   defaultLayout: number[] | undefined
   defaultCollapsed?: boolean

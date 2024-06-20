@@ -1,21 +1,25 @@
+import { Organization } from "@prisma/client";
 import Image from "next/image";
+import organizationPlaceholder from "@public/assets/organization_placeholder.jpg";
+import Link from "next/link";
 
-export function OrganizationCard({ name, imageSrc, details, url }: { name: string; imageSrc: string, details: string, url: string }) {
+interface OrganizationCardProps {
+  organization: Organization
+}
+
+export function OrganizationCard({ organization }: OrganizationCardProps) {
+  const {orgId, name, description, picture} = organization;
   return (
-    <div className="group bg-white rounded-lg shadow-md overflow-hidden relative">
-      <a href={url}>
-        <div className="group bg-white shadow-md overflow-hidden relative">
-          <Image src={imageSrc} alt={name} width={1000} height={1000} className="w-full aspect-video" />
-          <div className="absolute inset-0 bg-teal-700 opacity-0 transition duration-300 ease-in-out group-hover:opacity-70 flex items-center justify-center text-white">
-            <div>
-              <p className="text-sm text-center p-2">{details}</p>
-            </div>
-          </div>
+    <Link href={`/${orgId}`} className="">
+      <div className="group overflow-hidden relative h-[15rem] aspect-video rounded-lg shadow-2xl ">
+        <Image src={picture ?? organizationPlaceholder} alt={name} fill className="object-cover rounded-lg" />
+        <div className="absolute bottom-0 h-20 w-full bg-white bg-opacity-90 px-4 flex items-center justify-center">
+          <p className="mb-2 text-center line-clamp-3 text-sm font-semibold" title={name}>{name}</p>
         </div>
-        <div className="p-4 relative z-10">
-          <h2 className="font-medium mb-2">{name}</h2>
+        <div className="absolute inset-0 items-center bg-teal-700 opacity-0 transition duration-300 ease-in-out group-hover:opacity-70 flex text-white">
+          <p className="text-sm w-full text-center p-2 ">{description}</p>
         </div>
-      </a>
-    </div>
+      </div>
+    </Link>
   );
 }

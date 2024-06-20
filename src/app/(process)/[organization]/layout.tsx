@@ -1,3 +1,5 @@
+"use client";
+
 import "@styles/globals.css";
 import Link from "next/link"
 import {
@@ -11,6 +13,7 @@ import { Button } from "@components/ui/button"
 import { Input } from "@components/ui/input"
 
 import { Sheet, SheetContent, SheetTrigger } from "@components/ui/sheet"
+import { navList } from "./nav"
 
 import {
   Tooltip,
@@ -74,7 +77,7 @@ export default function DashboardLayout({children, params:{organization}}: Dashb
               </SheetTrigger>
               <SheetContent side="left" className="sm:max-w-xs">
                 <nav className="grid gap-6 text-lg font-medium">
-                  <DrawerNav/>
+                  <DrawerNav navItems={navList.map((item) => ({...item, href: `/${organization}${item.href}`}))}/>
                   <Link
                     href="/dashboard/settings"
                     className="mt-auto flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"

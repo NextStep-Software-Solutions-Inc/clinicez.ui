@@ -5,6 +5,7 @@ import Each from "@components/utils/Each";
 import { EarthIcon, FacebookIcon, LinkedinIcon, MailIcon, PhoneCallIcon, TwitterIcon } from "lucide-react";
 import Suspend from "@components/Suspend";
 import { getNurseAction } from "@actions/nurse.action";
+import { notFound } from "next/navigation";
 
 interface INurseProfileProps {
     profileId: number;
@@ -13,7 +14,7 @@ interface INurseProfileProps {
 export default async function NurseProfile({profileId}: INurseProfileProps) {
   
   const profile = await getNurseAction(profileId);
-  if(!profile) throw new Error("Nurse Profile not found");
+  if (!profile) throw new Error("Nurse Profile not found");
 
   const cover = profile.cover ?? "https://art.metro.net/wp-content/uploads/2021/02/placeholder.png";
   const picture = profile.picture ?? "https://integratedmedfl.com/wp-content/uploads/2023/08/dr.png";

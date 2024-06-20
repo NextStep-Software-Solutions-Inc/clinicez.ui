@@ -6,17 +6,23 @@ import { DropdownMenuItem } from "./ui/dropdown-menu";
 import { User } from "lucide-react";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import { getHPsActions } from "@actions/hp.actions";
+import { Skeleton } from "./ui/skeleton";
 
 export default function HPProfilesLink() {
   const [hpProfiles, setHpProfiles] = useState<Awaited<ReturnType<typeof getHPsActions>>>([]);
-  const { user } = useUser();
+  const { user, isLoading } = useUser();
+  const [loadingHPs, setLoadingHPs] = useState(true)
   
   useEffect(() => {
     (async () => {
-      if(user?.sub) setHpProfiles(await getHPsActions({userId: user?.sub ?? ""}))
+      if(user?.sub) {
+        setHpProfiles(await getHPsActions({userId: user?.sub ?? ""}));
+        setLoadingHPs(false)
+      }
     })()
   },[user?.sub])
 
+  if (isLoading || loadingHPs) return <Skeleton className="h-6 mx-2 my-1 bg-slate-400" />;
   return (
     <Each
       of={hpProfiles}

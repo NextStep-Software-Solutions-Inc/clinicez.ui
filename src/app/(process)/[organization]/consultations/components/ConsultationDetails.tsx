@@ -33,7 +33,7 @@ export default async function ConsultationDetails({ consultation }: Consultation
               <AvatarFallback>{consultation.subject[0]}</AvatarFallback>
             </Avatar>
             <div className="flex flex-col">
-              <span className="text-sm font-semibold">{user.name}</span>
+              <span className="text-sm font-semibold">{user.firstName} {user.lastName}</span>
               <div className="text-xs text-muted-foreground"><span>{"Male"}</span> / <span>{differenceInCalendarYears(new Date(), new Date())}</span></div>
             </div>
           </div>

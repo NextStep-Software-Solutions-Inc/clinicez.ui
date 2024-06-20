@@ -1,8 +1,7 @@
 "use client";
 
 import { getPatient } from "@actions/hims-migration.action";
-import { assignRolesAction } from "@actions/user-management.action";
-import { createUserAction, updateUserAction } from "@actions/user.action";
+import { updateUserAction } from "@actions/user.action";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import ActionButton from "@components/ActionButton";
 import { Button } from "@components/ui/button";
@@ -15,7 +14,6 @@ import ConditionalRender from "@components/utils/ConditionalRender";
 import Each from "@components/utils/Each";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { delay } from "@lib/wait";
-import { set } from "date-fns";
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -94,7 +92,16 @@ export default function ActivationForm() {
     }
     toast.promise(updateUserAction(user.user?.sub, {
       email: json.email,
-      name: `${json.first_name ?? ""} ${json.middle_name ?? ""} ${json.last_name ?? ""}`,
+      firstName: json.first_name,
+      middleName: json.middle_name,
+      lastName: json.last_name,
+      dob: json.dob,
+      religion: json.religion,
+      nationality: json.nationality,
+      telephone: json.tel_no,
+      mobile: json.mobile,
+      picture: `https://hims.ustp.edu.ph/apis/storage/${json.picture}`,
+
     }), {
       success: "User's data migrated successfully",
       loading: "Migrating user's data...",

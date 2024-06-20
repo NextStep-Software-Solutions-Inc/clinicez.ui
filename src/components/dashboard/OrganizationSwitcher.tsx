@@ -1,37 +1,35 @@
 "use client"
 import { useParams, usePathname, useRouter } from "next/navigation"
-import Switcher from "./Switcher"
-import { Home } from "lucide-react"
+import Switcher, { SwitcherOptionsType } from "./Switcher"
+import { Building, Home } from "lucide-react"
+import { getMyDefaultOrganizationAction, getOrganizationsAction } from "@actions/organization.action"
+import { useEffect, useState } from "react"
+import { useUser } from "@auth0/nextjs-auth0/client"
 
 interface OrganizationSwitcherProps {
   isCollapsed: boolean
 }
 
-export function OrganizationSwitcher({
-  isCollapsed,
-  
-}: OrganizationSwitcherProps) {
+
+export function OrganizationSwitcher({isCollapsed,}: OrganizationSwitcherProps) {
   const {organization} = useParams() as { organization: string }
   const router = useRouter();
   const pathname = usePathname();
+  const [myOrgs, setMyOrgs] = useState<Awaited<ReturnType<typeof getOrganizationsAction>>>([])
+  
 
-  const orgs = [
-    {
-      value: "hims",
-      label: "Health Information Management System",
-      icon: Home,
-    },
-    {
-      value: "clinic-ez",
-      label: "Clinic EZ",
-      icon: Home,
-    }, 
-    {
-      value: "my-organization",
-      label: "My Organization",
-      icon: Home,
-    }
-  ]
+  useEffect(() => {
+    (async () => {
+      setMyOrgs(await getOrganizationsAction())
+    })()
+  }, [])
+
+  const orgs: SwitcherOptionsType[] = myOrgs.map(org => ({
+    label: org.name,
+    value: org.orgId,
+    icon: Building
+  }))
+   
   
   const handleChangeOrganization = (newValue: string) => {
     const searchParams  = new URLSearchParams(window.location.search);

@@ -35,3 +35,11 @@ export const createUserAction = async (data: Prisma.UserCreateArgs["data"]) => {
 
   return newUser;
 }
+
+export const updateUserAction = async (userId: string, data: Prisma.UserUpdateArgs["data"]) => {
+  const updatedUser = await prisma.user.update({
+    where: { userId },
+    data: { ...data }
+  });
+  return updatedUser;
+}

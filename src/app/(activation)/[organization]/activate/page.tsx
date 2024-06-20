@@ -10,9 +10,6 @@ export const metadata: Metadata = {
 
 export default async function ActivatePage({params}: AppRouterPageRouteOpts) {
   const organization = params?.organization;
-
-  const session = await getSession();
-
   
   return (
 

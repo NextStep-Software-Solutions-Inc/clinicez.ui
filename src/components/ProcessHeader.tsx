@@ -1,7 +1,7 @@
 
 import Image from "next/image";
 import { DetailedHTMLProps, HTMLAttributes, Suspense, lazy } from "react";
-import { UserAvatarWrapper } from "./UserAvatarWrapper";
+import UserAvatarWrapper from "./UserAvatarWrapper";
 
 
 interface IProcessHeaderProps extends DetailedHTMLProps<HTMLAttributes<HTMLElement>, HTMLElement>{}

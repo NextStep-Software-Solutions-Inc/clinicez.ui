@@ -2,7 +2,7 @@ import { DetailedHTMLProps, HTMLAttributes, Suspense } from "react";
 
 import AnimatedLogo from "@components/AnimatedLogo";
 import { OrganizationSwitcher } from "@components/dashboard/OrganizationSwitcher";
-import { UserAvatarWrapper } from "@components/UserAvatarWrapper";
+import UserAvatarWrapper from "@components/UserAvatarWrapper";
 
 
 interface IHeaderProps extends DetailedHTMLProps<HTMLAttributes<HTMLElement>, HTMLElement>{}

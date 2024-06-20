@@ -1,7 +1,8 @@
 "use client";
 
+import { getPatient } from "@actions/hims-migration.action";
 import { assignRolesAction } from "@actions/user-management.action";
-import { createUserAction } from "@actions/user.action";
+import { createUserAction, updateUserAction } from "@actions/user.action";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import ActionButton from "@components/ActionButton";
 import { Button } from "@components/ui/button";
@@ -14,17 +15,12 @@ import ConditionalRender from "@components/utils/ConditionalRender";
 import Each from "@components/utils/Each";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { delay } from "@lib/wait";
+import { set } from "date-fns";
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
-
-const dummyJson: Record<string, string> = {
-  firstName: "John",
-  lastName: "Doe",
-  middleName: "Smith",
-}
 
 const activationFormSchema = z.object({
   activationCode: z.string({
@@ -33,9 +29,9 @@ const activationFormSchema = z.object({
 })
 
 export default function ActivationForm() {
-  const [activated, setActivated] = useState(false);
-  const [json, setJson] = useState(dummyJson);
-  const [inputValues, setInputValues] = useState(dummyJson);
+  const [ready, setReady] = useState(false);
+  const [json, setJson] = useState<Record<string, any>>({});
+  const [inputValues, setInputValues] = useState<Record<string, any>>({});
   const user = useUser()
   const form = useForm<z.infer<typeof activationFormSchema>>({
     resolver: zodResolver(activationFormSchema),
@@ -58,17 +54,28 @@ export default function ActivationForm() {
 
   const action = async (formData: FormData) => {
     form.handleSubmit(async (data) => {
-      if (!user?.user?.sub) {
+      if (!user?.user?.sub || !user?.user?.email) {
         toast.error("You must be logged in to activate a user")
         return;
       }
-      toast.promise(assignRolesAction(user.user.sub, ["rol_b6qG22YUOZdfqb1T"]), {
-        success: () => {
-          setActivated(true)
-          return "User activated successfully"
+
+      toast.promise(getPatient(user.user.email), {
+        success: (data) => {
+          console.log(data)
+          setReady(true)
+          setInputValues(data as Record<string, any>)
+          return "Users data found!"
         },
-        loading: "Activating user...",
+        loading: "Looking the email from the database...",
       })
+
+      // toast.promise(assignRolesAction(user.user.sub, ["rol_b6qG22YUOZdfqb1T"]), {
+      //   success: () => {
+      //     setReady(true)
+      //     return "User ready successfully"
+      //   },
+      //   loading: "Activating user...",
+      // })
     })()
   }
 
@@ -80,19 +87,22 @@ export default function ActivationForm() {
   }
 
   const migrateAction = async () => {
-    
-    toast.promise(createUserAction({
-      email: "",
-      name: "",
-      userId: "",
+
+    if (!user?.user?.sub) {
+      toast.error("You must be logged in to migrate a user")
+      return;
+    }
+    toast.promise(updateUserAction(user.user?.sub, {
+      email: json.email,
+      name: `${json.first_name ?? ""} ${json.middle_name ?? ""} ${json.last_name ?? ""}`,
     }), {
-      success: "User migrated successfully",
-      loading: "Migrating user...",
+      success: "User's data migrated successfully",
+      loading: "Migrating user's data...",
     })
   }
   return (
     <>
-      <ConditionalRender condition={!activated}>
+      <ConditionalRender condition={!ready}>
         <div className="max-w-md mx-auto">
           <Form {...form}>
             <form action={action} className="space-y-6">
@@ -114,11 +124,11 @@ export default function ActivationForm() {
               />
               <div className="flex items-center h-6 space-x-4">
                 <ActionButton disabled={!form.formState.isValid}>
-                Activate
+                  Activate
                 </ActionButton>
                 <Separator orientation="vertical"/> 
                 <Button formAction={getActivationCodeAction} variant="link" className="text-sm">
-                Get Activation Code
+                  Get Activation Code
                 </Button>
               </div>
             </form>
@@ -127,12 +137,12 @@ export default function ActivationForm() {
         </div>
       </ConditionalRender>
 
-      <ConditionalRender condition={activated}>
+      <ConditionalRender condition={ready}>
         <form action={migrateAction}>
           <div className="flex gap-5 flex-wrap">
-            <div className="flex-grow">
+            <div className="flex-grow overflow-y-scroll h-[50rem]">
               <Each
-                of={Object.entries(dummyJson)}
+                of={Object.entries(inputValues)}
                 render={([key]) => (
                   <div className="space-y-2 flex items-center gap-2">
                     <Checkbox 
@@ -152,9 +162,11 @@ export default function ActivationForm() {
               />
             
             </div>
-            <div className="prose flex-1">
-              <pre className="whitespace-pre-wrap">{JSON.stringify(json, null, 2)}</pre>
-            </div>
+            <ConditionalRender condition={Object.keys(json).length > 0}>
+              <div className="prose flex-1 overflow-auto h-[50rem]">
+                <pre className="whitespace-pre-wrap">{JSON.stringify(json, null, 2)}</pre>
+              </div>
+            </ConditionalRender>
           </div>
           <ActionButton className="block w-full mt-5">Migrate now</ActionButton>
         </form>
@@ -164,12 +176,3 @@ export default function ActivationForm() {
 
   ;
 }
-
-
-interface ExampleProps {
-  value: string;
-  dataType: string;
-  age: number;
-}
-
-

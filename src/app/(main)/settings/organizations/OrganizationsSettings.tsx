@@ -19,25 +19,17 @@ import {
 import {toast} from "sonner"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@components/ui/select"
 import Each from "@components/utils/Each"
+import { getMyDefaultOrganizationAction, getOrganizationsAction, setMyDefaultOrganizationAction } from "@actions/organization.action"
+import { use, useCallback, useEffect, useState } from "react"
+import { useUser } from "@auth0/nextjs-auth0/client"
+import ActionButton from "@components/ActionButton"
 
 const organizationFormSchema = z.object({
-  organizationId: z.string(),
+  defaultOrgUid: z.string(),
+  defaultRole: z.string(),
 })
 
 type GeneraSettingsFormValues = z.infer<typeof organizationFormSchema>
-
-const myOrganizations = [
-  {
-    id: "1",
-    uid: "hims",
-    name: "Healthcare Information Management System",
-  },
-  {
-    id: "2",
-    uid: "cums",
-    name: "Capitol University Medical Center",
-  }
-]
 
 const roles = [
   {
@@ -60,66 +52,86 @@ const roles = [
     uid: "receptionist",
     name: "Receptionist",
   },
-
 ]
 export default function OrganizationsSettings() {
+  const [myOrgs, setMyOrgs] = useState<Awaited<ReturnType<typeof getOrganizationsAction>>>([])
+  const [defaultOrg, setDefaultOrg] = useState<Awaited<ReturnType<typeof getMyDefaultOrganizationAction>>>(null)
+  const user = useUser();
   
+  useEffect(() => {
+    (async () => {
+      if(!user.user?.sub) return
+      await setMyOrgs(await getOrganizationsAction())
+      await setDefaultOrg(await getMyDefaultOrganizationAction(user.user.sub))
+    })()
+  }, [user?.user?.sub])
+
   const form = useForm<GeneraSettingsFormValues>({
     resolver: zodResolver(organizationFormSchema),
-    defaultValues: {
-      organizationId: myOrganizations[0].id,
+    values: {
+      defaultOrgUid: defaultOrg?.Organization?.orgId ?? "",
+      defaultRole: ""
     }
   })
 
-  function onSubmit(data: GeneraSettingsFormValues) {
-    toast("You submitted the following values")
-  }
+
+  async function action(){
+    form.handleSubmit(async (data)  => {
+      if(!user.user?.sub) return;
+      await setMyDefaultOrganizationAction(defaultOrg?.id ?? 0, data.defaultOrgUid, user.user.sub)
+      toast.success("Default organization updated successfully")
+      form.reset(data)
+    })()
+  } 
+
+  const onSubmit = async (data: GeneraSettingsFormValues) => {}
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      <form action={action} className="space-y-8">
         <FormField
           control={form.control}
-          name="organizationId"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Default Organization</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select an organization" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <Each
-                    of={myOrganizations}
-                    render={({ id, uid, name }) => (
-                      <SelectItem value={id}>{name}</SelectItem>
-                    )}
-                  />
-                </SelectContent>
-              </Select>
-              <FormDescription>
+          name="defaultOrgUid"
+          render={({ field }) => {
+            return (
+              <FormItem>
+                <FormLabel>Default Organization</FormLabel>
+                <Select name="defaultOrgUid" onValueChange={field.onChange} value={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select an organization" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <Each
+                      of={myOrgs}
+                      render={({ id, orgId, name }) => (
+                        <SelectItem value={orgId}>{name}</SelectItem>
+                      )}
+                    />
+                  </SelectContent>
+                </Select>
+                <FormDescription>
                 This will the default organization that will be used when you open your dashboard.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}}
         />
-        <Button disabled={!form.formState.isDirty} type="submit">Update</Button>
+        <ActionButton disabled={!form.formState.isDirty} type="submit">Update</ActionButton>
       </form>
 
       <Each
-        of={myOrganizations}
+        of={myOrgs}
         render={(org) => (
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             <FormField
               control={form.control}
-              name="organizationId"
+              name="defaultRole"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>{org.name} Default Role</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select an organization" />
@@ -135,13 +147,13 @@ export default function OrganizationsSettings() {
                     </SelectContent>
                   </Select>
                   <FormDescription>
-                This will the default organization that will be used when you open your dashboard.
+                  This will the default organization that will be used when you open your dashboard.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <Button disabled={!form.formState.isDirty} type="submit">Update</Button>
+            <Button disabled type="submit">Update</Button>
           </form>
         )}
       />

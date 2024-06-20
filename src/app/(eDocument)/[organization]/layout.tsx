@@ -30,8 +30,10 @@ interface DashboardLayoutProps {
   }
 }
 import ClinicEzMiniLogo from "@public/assets/clinic-ez_mini-logo.svg"
+import { protectOrg } from "@lib/protect-org";
 
-export default function DashboardLayout({children, params:{organization}}: DashboardLayoutProps) {
+export default async function DashboardLayout({children, params:{organization}}: DashboardLayoutProps) {
+  await protectOrg(organization)// Check if user is a member of the organization they are trying to access
   return (
     <TooltipProvider>
       <div className="flex min-h-screen w-full flex-col bg-muted/40">

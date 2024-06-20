@@ -49,8 +49,27 @@ export const hpApplicationTransactionAction = async ({
       }
     }),
     await prisma.healthcareProvider.create({
-      data: {...hpPayload }
+      data: {
+        ...hpPayload, 
+        ...hpPayload.type === "DOCTOR" && {
+          DoctorProfile: {
+            create: {
+              name: "",
+              title: "",
+            }
+          }
+        },
+        ...hpPayload.type === "NURSE" && {
+          NurseProfile: {
+            create: {
+              name: "",
+              title: "",
+            }
+          }
+        }
+      }
     })
+
     return true;
   })
   return success;

@@ -4,7 +4,7 @@ import Navigation from "@components/Navigation";
 import AnimatedLogo from "./AnimatedLogo";
 import RootDrawer from "./RootDrawer";
 import { Button } from "./ui/button";
-import { UserAvatarWrapper } from "./UserAvatarWrapper";
+import UserAvatarWrapper from "./UserAvatarWrapper";
 
 
 interface IRootHeaderProps extends DetailedHTMLProps<HTMLAttributes<HTMLElement>, HTMLElement>{}

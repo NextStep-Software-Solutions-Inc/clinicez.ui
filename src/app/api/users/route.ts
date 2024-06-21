@@ -13,7 +13,10 @@ const newUserSchema = z.object({
   }).email({
     message: "Invalid email address",
   }),
-  name: z.string().nullable(),
+  firstName: z.string().nullable(),
+  middleName: z.string().nullable(),
+  lastName: z.string().nullable(),
+  nickname: z.string().nullable(),
   picture: z.string().nullable(),
 })
 
@@ -27,9 +30,9 @@ export const POST = withUnkey(async (req) => {
     return new NextResponse('unauthorized', { status: 403 });
   }
 
-
   const response = new NextResponse()
   const body = await req.json();
+  
   const newUser = newUserSchema.parse(body);
   const res = await createUserAction(newUser);
   return NextResponse.json({

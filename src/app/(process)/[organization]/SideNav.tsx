@@ -7,6 +7,7 @@ import { useParams, usePathname } from "next/navigation";
 import React from "react";
 import { navList } from "./nav";
 import { cn } from "@lib/utils";
+import Icon from "@components/Icon";
 
 export default function SideNav() {
   const { organization } = useParams() as { organization: string };
@@ -15,7 +16,7 @@ export default function SideNav() {
   return (
     <Each
       of={navList.map((item) => ({...item, href: `/${organization}${item.href}`}))}
-      render={({name, href, icon: Icon}) => (
+      render={({name, href, icon}) => (
         <Tooltip>
           <TooltipTrigger asChild>
             <Link
@@ -25,7 +26,7 @@ export default function SideNav() {
                 href === pathname && "bg-accent text-accent-foreground"
               )}
             >
-              <Icon className="h-5 w-5" />
+              <Icon name={icon} className="h-5 w-5" />
               <span className="sr-only">{name}</span>
             </Link>
           </TooltipTrigger>

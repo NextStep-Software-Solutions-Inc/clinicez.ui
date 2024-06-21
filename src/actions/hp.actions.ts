@@ -1,26 +1,25 @@
 "use server";
 
 import prisma from "@lib/prisma";
-import { put } from "@vercel/blob"
 
-import { cache } from "react";
 import { HealthcareProviderType, Prisma } from "@prisma/client";
-import { revalidatePath } from "next/cache";
 
 type HPFilters = {
   type?: HealthcareProviderType,
   userId?: string
-  id?: number
+  id?: number,
+  isPublished?: boolean
 }
 
-export const getHPsActions = (async (filters?:HPFilters) => {
-  const {type, userId, id} = filters || {};
+export const getHPsActions = async (filters?:HPFilters) => {
+  const {type, userId, id, isPublished} = filters || {};
   const hps = prisma.healthcareProvider.findMany({
     where: {
       isActive: true,
       ...(id && { id }),
       ...(type && { type }),
-      ...(userId && { User: { userId } })
+      ...(userId && { User: { userId } }),
+      ...(isPublished && { isPublished })
     },
     include: {
       DoctorProfile: {
@@ -45,16 +44,17 @@ export const getHPsActions = (async (filters?:HPFilters) => {
   })
 
   return hps;
-})
+}
 
-export const getHPAction = cache(async ({id, userId, type}:HPFilters) => {
+export const getHPAction = async ({id, userId, type, isPublished}:HPFilters) => {
 
   const hp = prisma.healthcareProvider.findFirst({
     where: {
       isActive: true,
       ...(id && { id }),
       ...(type && { type }),
-      ...(userId && { User: { userId } })
+      ...(userId && { User: { userId } }),
+      ...(isPublished && { isPublished })
     },
     include: {
       DoctorProfile: true,
@@ -63,7 +63,7 @@ export const getHPAction = cache(async ({id, userId, type}:HPFilters) => {
   })
 
   return hp;
-})
+}
 
 export const createHpAction = async (hp: Prisma.HealthcareProviderCreateArgs["data"]) => {
 
@@ -91,11 +91,11 @@ export const upsertProfessionalDetailsAction = async (payload: Prisma.Profession
   return hp;
 }
 
-export const uploadMediaAction = async (formData: FormData) => {
-  const media = formData.get("media") as File;
-  const data = await put(media.name, media, {
-    access: "public",
+export const setIsPublishAction = async (hpId: number, isPublished: boolean) => {
+  
+  const hp = await prisma.healthcareProvider.update({
+    where: { id: hpId },
+    data: { isPublished }
   })
-  revalidatePath('/')
-  return data
+  return hp;
 }

@@ -1,28 +1,28 @@
-import {
-  Home,
-  File,
-  Calendar
-} from "lucide-react"
+import dynamicIconImports from "lucide-react/dynamicIconImports";
 
-export const navList = [
+export const navList: {
+  name: string;
+  href: string;
+  icon: keyof typeof dynamicIconImports;
+}[] = [
   {
     name: "Dashboard",
     href: `/dashboard`,
-    icon: Home,
+    icon: "home",
   },
   {
     name: "Appointments",
     href: `/appointments`,
-    icon: Calendar,
+    icon: "calendar",
   },
   {
     name: "Consultations",
     href: `/consultations`,
-    icon: Calendar,
+    icon: "calendar",
   },
   {
     name: "Files",
     href: `/files`,
-    icon: File,
+    icon: "file",
   }
 ]

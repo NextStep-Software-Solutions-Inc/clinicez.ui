@@ -8,10 +8,11 @@ import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
 import BackSubmitAndNext from "../../../../../components/SubmitAndNext";
 import { useLocalStorage } from "@hooks/useLocalStorage";
-import { createHpAction } from "@actions/hp.actions";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import { toast } from "sonner";
 import { HealthcareProviderType } from "@prisma/client";
+import { getUserAction } from "@actions/user.action";
+import { hpApplicationTransactionAction } from "@actions/user-plan.action";
 
 interface ConfirmationFormProps {
   nextStep?: () => void;
@@ -35,32 +36,46 @@ export const confirmationFormSchema = z.object({
 })
 
 type formType = z.infer<typeof confirmationFormSchema>
+
 export default function ConfirmationForm({ nextStep, prevStep, isFirstStep, isComplete, setComplete, startOver }: ConfirmationFormProps) {
   const [applicationData, setApplicationData] = useLocalStorage<formType & {
     role: HealthcareProviderType;
+    plan: string;
     complete: boolean;
   }>("hp-application");
+
   const {user} = useUser();
   
   const form = useForm<formType>({
     resolver: zodResolver(confirmationFormSchema)
   })
 
-  const action = (formData: FormData) => {
+  const action = () => {
     form.handleSubmit(async (data) => {
-      
-      await setApplicationData({...data, complete: true, role: applicationData?.role})
       try {
-        const res = await createHpAction({
-          type: applicationData.role,
-          User: {
-            connect: {
-              userId: user?.sub ?? ""
+
+        await setApplicationData({...data, complete: true, role: applicationData?.role, plan: applicationData?.plan})
+
+        const dbUser = await getUserAction(user?.sub ?? "")
+        const userId = dbUser.id  
+        const planId = parseInt(applicationData.plan)
+  
+        if(!userId || !planId) return toast.error("An error occurred. Please try again later.");
+  
+        // transaction method
+        const res = await hpApplicationTransactionAction({
+          planPayload: {planId, userId, status : "ACTIVE"},
+          hpPayload: {
+            type: applicationData.role,
+            User: {
+              connect: {
+                userId: user?.sub ?? ""
+              }
             }
           }
-        });
-        setComplete?.(!!res);
-        toast.success("Application submitted successfully");
+        })
+        setComplete?.(res);
+        toast.success("Healthcare Provider registration successful!");
       } catch (error) {
         toast.error("An error occurred while submitting your application. Please try again later.");
       }

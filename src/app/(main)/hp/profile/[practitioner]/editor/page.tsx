@@ -1,19 +1,31 @@
-import { AppRouterPageRouteOpts } from "@auth0/nextjs-auth0";
+import { AppRouterPageRouteOpts, getSession, withPageAuthRequired } from "@auth0/nextjs-auth0";
 import { getDoctorAction } from "@actions/doctor.action";
 import { getNurseAction } from "@actions/nurse.action";
 import HPProfile from "./components/HPProfile";
 import HPProfessionalInfo from "./components/HPProfessionalInfo";
 import { HPProfileType } from "./hp-form.schema";
 import Suspend from "@components/Suspend";
-import { getProfessionalDetailsAction } from "@actions/hp.actions";
+import { getHPsActions, getProfessionalDetailsAction, setIsPublishAction } from "@actions/hp.actions";
 import HPPhoto from "./components/HPPhoto";
 import { Button } from "@components/ui/button";
 import { ExternalLink } from "lucide-react";
 import Link from "next/link";
+import { revalidatePath } from "next/cache";
+import ActionButton from "@components/ActionButton";
+import { notFound, redirect } from "next/navigation";
 
-export default  async function EditorPage({params, searchParams}: AppRouterPageRouteOpts) {
+async function EditorPage({params, searchParams}: AppRouterPageRouteOpts) {
   const hpId = parseInt(params?.practitioner as string);
   const type = searchParams?._type as string;
+
+  const session = await getSession();
+  if(!session) return redirect("/api/auth/login");
+  
+  const myHps = await getHPsActions({
+    userId: session.user.sub,
+  });
+  const isMyHp = myHps.some((hp) => hp.id === hpId);
+  if(!isMyHp) return notFound();
 
   const actions = {
     NURSE: getNurseAction,
@@ -45,13 +57,23 @@ export default  async function EditorPage({params, searchParams}: AppRouterPageR
 
   const professionalDetails = await getProfessionalDetailsAction(hpId);
 
+  const isPublished = profile?.HealthcareProvider.isPublished;
+  const handleTogglePublish = async () => {
+    "use server"
+    await setIsPublishAction(hpId, !isPublished);
+    revalidatePath(`/hp/profile/${hpId}?_type=${type}`);
+  }
+
   return (
     <div className="container mx-auto my-10 relative">
       <div className="prose max-w-full mb-5">
         <div className="flex">
-          <h1 className="capitalize flex-1">My {type.replaceAll("_", " ").toLowerCase()} Profile</h1>
+          <h1 className="capitalize flex-1">{type.replaceAll("_", " ").toLowerCase()} Profile Editor</h1>
+          <form action={handleTogglePublish}>
+            <ActionButton variant={isPublished? "destructive": "default"}>{isPublished ? "Unpublish": "Publish"}</ActionButton>
+          </form>
           <Link href={`/hp/profile/${hpId}?_type=${type}`}>
-            <Button className="fixed top-30 -right-[7rem] mr-2 hover:-right-[20] transition-all"><ExternalLink size={20} className="mr-2"/>View profile</Button>
+            <Button className="fixed top-44 -right-[7rem] mr-2 hover:-right-[20px] transition-all"><ExternalLink size={20} className="mr-2"/>View profile</Button>
           </Link>
         </div>
         <p>
@@ -72,3 +94,11 @@ export default  async function EditorPage({params, searchParams}: AppRouterPageR
     </div>
   );
 }
+
+
+export default withPageAuthRequired(EditorPage, {
+  returnTo({params, searchParams}) {
+    const searchStr = Object.entries(searchParams ?? {}).map(([key, value]) => `${key}=${value}`).join("&");
+    return `/hp/profile/${params?.practitioner}?${searchStr}`;
+  },
+});

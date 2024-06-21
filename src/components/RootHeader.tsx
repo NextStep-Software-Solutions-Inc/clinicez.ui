@@ -1,12 +1,11 @@
 import { DetailedHTMLProps, HTMLAttributes, Suspense } from "react";
 import Navigation from "@components/Navigation";
-import dynamic from "next/dynamic";
 
 import AnimatedLogo from "./AnimatedLogo";
 import RootDrawer from "./RootDrawer";
 import { Button } from "./ui/button";
+import UserAvatarWrapper from "./UserAvatarWrapper";
 
-const UserAvatar = dynamic(() => import("@components/UserAvatar"), {ssr: true});
 
 interface IRootHeaderProps extends DetailedHTMLProps<HTMLAttributes<HTMLElement>, HTMLElement>{}
 export default function RootHeader({...props}: IRootHeaderProps) {
@@ -39,7 +38,7 @@ export default function RootHeader({...props}: IRootHeaderProps) {
           </div>
           <div className=" lg:inline-flex items-center justify-center gap-2">
             <Suspense fallback={<div>Loading</div>}>
-              <UserAvatar/>
+              <UserAvatarWrapper/>
             </Suspense>
           </div>
         </div>
@@ -47,3 +46,5 @@ export default function RootHeader({...props}: IRootHeaderProps) {
     </header>
   )
 }
+
+

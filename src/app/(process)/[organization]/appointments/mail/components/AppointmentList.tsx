@@ -44,20 +44,15 @@ export default function AppointmentList({ items }: AppointmentListProps) {
             >
               <div className="flex items-center gap-2 w-full">
                 <Avatar>
-                  <AvatarImage src={item.patient.picture ?? ""} alt={item.patient.name ?? ""}/>
+                  <AvatarImage src={item.patient.picture ?? ""} alt={item.patient.nickname ?? ""}/>
                   <AvatarFallback>
-                    {
-                      item.patient.name
-                        ?.split(" ")
-                        .map((chunk) => chunk[0])
-                        .join("")
-                    }
+                    {item.patient.firstName?.charAt(0) } {item.patient.lastName?.charAt(0)}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex w-full flex-col gap-1">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <div className="font-semibold">{item.patient.name}</div>
+                      <div className="font-semibold">{item.patient.firstName} {item.patient.lastName}</div>
                       {!item.read && (
                         <span className="flex h-2 w-2 rounded-full bg-blue-600" />
                       )}

@@ -118,16 +118,13 @@ export default async function AppointmentDisplay({ appointmentId, role }: Appoin
           <div className="flex items-start p-4">
             <div className="flex items-start gap-4 text-sm">
               <Avatar>
-                <AvatarImage src={user.picture ?? ""} alt={user.name ?? ""} />
+                <AvatarImage src={user.picture ?? ""} alt={user.nickname ?? ""} />
                 <AvatarFallback>
-                  {user.name
-                    ?.split(" ")
-                    .map((chunk) => chunk[0])
-                    .join("")}
+                  {user.firstName?.charAt(0)} {user.lastName?.charAt(0)}
                 </AvatarFallback>
               </Avatar>
               <div className="grid gap-1">
-                <div className="font-semibold">{user?.name}</div>
+                <div className="font-semibold">{user.firstName} {user.lastName}</div>
                 <div className="line-clamp-1 text-xs">
                   <span className="font-medium">{"Male"}/</span>{differenceInCalendarYears(new Date(), new Date())}
                 </div>

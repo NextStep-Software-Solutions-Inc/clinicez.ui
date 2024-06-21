@@ -5,6 +5,7 @@ import Each from "@components/utils/Each";
 import { EarthIcon, FacebookIcon, LinkedinIcon, MailIcon, PhoneCallIcon, TwitterIcon } from "lucide-react";
 import Suspend from "@components/Suspend";
 import { getDoctorAction } from "@actions/doctor.action";
+import { notFound } from "next/navigation";
 
 interface IDoctorProfileProps {
     profileId: number;

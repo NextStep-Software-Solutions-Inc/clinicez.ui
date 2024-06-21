@@ -27,7 +27,19 @@ model User {
   id                      Int                      @id @default(autoincrement())
   userId                  String                   @unique // this is from auth0 user_id
   email                   String                   @unique
-  name                    String?
+  firstName               String?
+  middleName              String?
+  lastName                String?
+  suffix                  String?
+  nickname                String?
+  gender                  Gender?
+  dob                     DateTime?                @db.Date
+  civilStatus             CivilStatus?
+  religion                String?
+  nationality             String?
+  telephone               String?
+  mobile                  String?
+  bloodType               BloodType?
   picture                 String?
   createdAt               DateTime                 @default(now())
   updatedAt               DateTime                 @default(now()) @updatedAt
@@ -40,6 +52,32 @@ model User {
   UserDefaultTenant       UserDefaultTenant?
   HealthcareProvider      HealthcareProvider?
   SocialLink              SocialLink?
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum CivilStatus {
+  SINGLE
+  MARRIED
+  DIVORCED
+  WIDOWED
+  SEPARATED
+}
+
+enum BloodType {
+  A_POSITIVE
+  A_NEGATIVE
+  B_POSITIVE
+  B_NEGATIVE
+  AB_POSITIVE
+  AB_NEGATIVE
+  O_POSITIVE
+  O_NEGATIVE
+  RH_POSITIVE
+  RH_NEGATIVE
 }
 
 model Organization {
@@ -130,6 +168,7 @@ model HealthcareProvider {
   id                  Int                    @id @default(autoincrement())
   userId              Int                    @unique
   type                HealthcareProviderType
+  isPublished         Boolean                @default(false)
   description         String?
   createdAt           DateTime               @default(now())
   updatedAt           DateTime               @updatedAt

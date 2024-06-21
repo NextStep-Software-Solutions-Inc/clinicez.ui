@@ -19,7 +19,7 @@ const topFeature = [
   {
     name: "⏰ Appointment Booking",
     description: "Book appointments from anywhere, anytime. It's that easy!",
-    content: "Gone are the days of waiting on hold or juggling schedules.  Clinic EZ allows you to book appointments with your doctor 24/7, from the comfort of your own home or on the go.  Simply choose a time that works for you and confirm your appointment in just a few clicks.",
+    content: "Skip the wait, see your doctor anytime. Book appointments 24/7 with Clinic EZ.",
     action: {
       label: "Schedule Appointment ➡️",
       path: ""
@@ -28,7 +28,7 @@ const topFeature = [
   {
     name: "⚙️ Dynamic Workflow",
     description: "Tailor your clinic, your way.",
-    content: "Clinic EZ understands that every organization has its own unique needs.  Our dynamic workflow feature empowers you to customize your clinic's appointment flow, from scheduling preferences to intake forms.  This flexibility allows you to streamline your operations and provide a seamless experience for both your staff and patients.",
+    content: "Perfect matches for patients & providers. Build trust, customize workflows, streamline care.",
     action: {
       label: "Learn More About Customization ✏️",
       path: ""
@@ -37,7 +37,7 @@ const topFeature = [
   {
     name: "🤩 Showcase Your Expertise",
     description: "Build your profile and connect with patients.",
-    content: "Clinic EZ doesn't just connect patients with appointments – it connects them with the right healthcare providers.   Build a comprehensive professional profile that showcases your expertise, experience, and qualifications.  Let potential patients discover you and get the care they deserve.",
+    content: "Matching patients with the perfect fit. Build your trusted profile & connect with patients seeking your expertise.",
     action: {
       label: "Join Clinic EZ ✅",
       path: ""
@@ -99,8 +99,8 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
-      <section className="bg-slate-200 flex-1 flex items-center ~py-2/5">
-        <div className="p-2 container flex justify-center flex-wrap gap-2 text-center">
+      <section className="bg-slate-100 flex-1 flex items-center ~py-2/16">
+        <div className="p-2 container flex justify-center flex-wrap ~gap-5/16 text-center">
           <Each
             of={topFeature}
             render={(feature) => (

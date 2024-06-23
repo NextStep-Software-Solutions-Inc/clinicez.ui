@@ -1,8 +1,10 @@
-import { UserRoles } from './../app/(process)/[organization]/appointments/mail/components/AppointmentPanel';
 "use server";
 
+import { getSession } from '@auth0/nextjs-auth0';
 import prisma from "@lib/prisma";
-import { Prisma } from "@prisma/client";
+import { Prisma, UserOrganizationStatus } from "@prisma/client";
+import { stat } from 'fs';
+import { revalidatePath } from 'next/cache';
 
 export const createOrganizationAction = async (data: Prisma.OrganizationCreateArgs["data"]) => {
 
@@ -51,17 +53,58 @@ export const getOrganizationAction = async (id: number) => {
   return organization;
 }
 
-export const getUserOrganizationsAction = async (userId: string) => {
+type FilterType = {
+  userId?: string;
+  orgId?: string;
+  status?: UserOrganizationStatus;
+  roleId?: number;
+}
+
+export const getUserOrganizationsAction = async (filter?: FilterType) => {
+  const { userId, orgId, status, roleId } = filter || {};
   const organizations = await prisma.userOrganization.findMany({
     where: {
-      User: {
-        isActive: true,
-        userId
+      ...roleId && { roleId },
+      ...status && { status },
+      ...orgId && {
+        Organization: {
+          orgId
+        }
+      },
+      ...userId && {
+        User: {
+          isActive: true,
+          userId
+        }
       }
     },
     select: {
+      id: true,
+      createdAt: true,
+      User: {
+        select: {
+          id: true,
+          userId: true,
+          firstName: true,
+          lastName: true
+        }
+      },
+      AcceptedBy: {
+        select: {
+          id: true,
+          userId: true,
+          firstName: true,
+          lastName: true
+        }
+      },
       status: true,
       role: true,
+      UserRole: {
+        select: {
+          id: true,
+          name: true,
+        }
+      },
       Organization: {
         select: {
           name: true,
@@ -146,4 +189,23 @@ export const getOrganizationRolesAction = async (orgId: string) => {
     }
   })
   return roles;
+}
+
+export const setMembershipRequestStatusAction = async (id: number, status: UserOrganizationStatus) => {
+  const session = await getSession();
+  const request = await prisma.userOrganization.update({
+    where: { id },
+    data: {
+      status,
+      ...status === "ACTIVE" && {
+        AcceptedBy: {
+          connect: {
+            userId: session?.user.sub
+          }
+        }
+      }
+    }
+  })
+  revalidatePath(`/[organization]/membership`, "page")
+  return request;
 }

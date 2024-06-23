@@ -34,7 +34,7 @@ export const metadata: Metadata = {
 async function DashboardPage({}: AppRouterPageRouteOpts) {
   const session = await getSession()
   if (!session) return redirect("/api/auth/login")
-  const myOrgs = await getUserOrganizationsAction(session.user.sub)
+  const myOrgs = await getUserOrganizationsAction({userId: session.user.sub})
 
   return (
     <div className="rounded-[0.5rem] border bg-background shadow]">

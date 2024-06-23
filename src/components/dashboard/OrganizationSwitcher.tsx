@@ -22,15 +22,25 @@ export function OrganizationSwitcher({isCollapsed,}: OrganizationSwitcherProps) 
   useEffect(() => {
     (async () => {
       if (!user.user?.sub) return
-      setMyOrgs(await getUserOrganizationsAction(user.user?.sub))
+      setMyOrgs(await getUserOrganizationsAction({userId: user.user?.sub}))
     })()
   }, [user.user?.sub])
 
-  const orgs: SwitcherOptionsType[] = myOrgs.filter(o => ["ACTIVE"].includes(o.status)).map(org => ({
-    label: org.Organization.name,
-    value: org.Organization.orgId,
-    icon: Building
-  }))
+  const orgs: SwitcherOptionsType[] = myOrgs
+    .filter(o => ["ACTIVE"].includes(o.status))
+    .map(org => ({
+      label: org.Organization.name,
+      value: org.Organization.orgId,
+      icon: Building
+    }))
+    .reduce((acc: SwitcherOptionsType[], current) => {
+      const x = acc.find(item => item.value === current.value);
+      if (!x) {
+        return acc.concat([current]);
+      } else {
+        return acc;
+      }
+    }, []);
    
   
   const handleChangeOrganization = (newValue: string) => {

@@ -62,7 +62,7 @@ export const JoinOrgForm = () => {
   useEffect(() => {
     (async () => {
       if (!user?.user?.sub) return;
-      setMyOrgs(await getUserOrganizationsAction(user.user.sub));
+      setMyOrgs(await getUserOrganizationsAction({userId: user.user.sub}));
     })();
   }, [user?.user?.sub]);
   

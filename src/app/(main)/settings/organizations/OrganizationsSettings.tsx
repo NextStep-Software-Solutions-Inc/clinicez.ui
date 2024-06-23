@@ -33,11 +33,22 @@ export default function OrganizationsSettings() {
   const [myOrgs, setMyOrgs] = useState<Awaited<ReturnType<typeof getUserOrganizationsAction>>>([])
   const [defaultOrg, setDefaultOrg] = useState<Awaited<ReturnType<typeof getMyDefaultOrganizationAction>>>(null)
   const user = useUser();
-  
+
   useEffect(() => {
     (async () => {
       if(!user.user?.sub) return
-      await setMyOrgs((await getUserOrganizationsAction(user.user.sub)).filter(o => ["ACTIVE"].includes(o.status)))
+      const orgs = (await getUserOrganizationsAction({userId: user.user.sub})).filter(o => ["ACTIVE"].includes(o.status))
+      
+      const distinctOrgs = orgs.reduce((acc: typeof orgs, current) => {
+        const x = acc.find(item => item.Organization.orgId === current.Organization.orgId)
+        if(!x) {
+          return acc.concat([current])
+        } else {
+          return acc
+        }
+      }, [])
+
+      await setMyOrgs(distinctOrgs)
       await setDefaultOrg(await getMyDefaultOrganizationAction(user.user.sub))
     })()
   }, [user?.user?.sub])

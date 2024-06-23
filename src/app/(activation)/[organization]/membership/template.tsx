@@ -1,6 +1,6 @@
 import "@styles/globals.css";
 import RootFooter from "@components/RootFooter";
-import Header from "../activate/Header";
+import ActivationHeader from "../activate/ActivationHeader";
 
 
 export default function RootLayout({
@@ -10,7 +10,7 @@ export default function RootLayout({
 }>) {
   return (
     <>
-      <Header className="sticky top-0 z-50"/>
+      <ActivationHeader className="sticky top-0 z-50"/>
       <div className="content">{children}</div>
       <RootFooter/>
     </>

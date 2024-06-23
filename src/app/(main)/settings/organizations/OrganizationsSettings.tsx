@@ -4,8 +4,6 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 
-import { Button } from "@components/ui/button"
-
 import {
   Form,
   FormControl,
@@ -20,39 +18,17 @@ import {toast} from "sonner"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@components/ui/select"
 import Each from "@components/utils/Each"
 import { getMyDefaultOrganizationAction, getUserOrganizationsAction, setMyDefaultOrganizationAction } from "@actions/organization.action"
-import { use, useCallback, useEffect, useState } from "react"
+import { useEffect, useState } from "react"
 import { useUser } from "@auth0/nextjs-auth0/client"
 import ActionButton from "@components/ActionButton"
+import { OrgDefaultRoleForm } from "./OrgDefaultRoleForm"
 
 const organizationFormSchema = z.object({
   defaultOrgUid: z.string(),
-  defaultRole: z.string(),
 })
 
-type GeneraSettingsFormValues = z.infer<typeof organizationFormSchema>
+type DefaultOrgFormSchema = z.infer<typeof organizationFormSchema>
 
-const roles = [
-  {
-    id: "1",
-    uid: "admin",
-    name: "Admin",
-  },
-  {
-    id: "2",
-    uid: "doctor",
-    name: "Doctor",
-  },
-  {
-    id: "3",
-    uid: "nurse",
-    name: "Nurse",
-  },
-  {
-    id: "4",
-    uid: "receptionist",
-    name: "Receptionist",
-  },
-]
 export default function OrganizationsSettings() {
   const [myOrgs, setMyOrgs] = useState<Awaited<ReturnType<typeof getUserOrganizationsAction>>>([])
   const [defaultOrg, setDefaultOrg] = useState<Awaited<ReturnType<typeof getMyDefaultOrganizationAction>>>(null)
@@ -66,14 +42,12 @@ export default function OrganizationsSettings() {
     })()
   }, [user?.user?.sub])
 
-  const form = useForm<GeneraSettingsFormValues>({
+  const form = useForm<DefaultOrgFormSchema>({
     resolver: zodResolver(organizationFormSchema),
     values: {
       defaultOrgUid: defaultOrg?.Organization?.orgId ?? "",
-      defaultRole: ""
     }
   })
-
 
   async function action(){
     form.handleSubmit(async (data)  => {
@@ -83,8 +57,6 @@ export default function OrganizationsSettings() {
       form.reset(data)
     })()
   } 
-
-  const onSubmit = async (data: GeneraSettingsFormValues) => {}
 
   return (
     <Form {...form}>
@@ -123,39 +95,7 @@ export default function OrganizationsSettings() {
 
       <Each
         of={myOrgs}
-        render={(org) => (
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            <FormField
-              control={form.control}
-              name="defaultRole"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel><span className="font-bold">{org.Organization.name}</span> Default Role</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select an organization" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <Each
-                        of={roles}
-                        render={({ id, uid, name }) => (
-                          <SelectItem value={id}>{name}</SelectItem>
-                        )}
-                      />
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>
-                  This will the default organization that will be used when you open your dashboard.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Button disabled type="submit">Update</Button>
-          </form>
-        )}
+        render={(org) => <OrgDefaultRoleForm org={org}/>}
       />
     </Form>
   )

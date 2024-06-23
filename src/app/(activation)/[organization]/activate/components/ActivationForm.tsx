@@ -110,7 +110,7 @@ export default function ActivationForm() {
   return (
     <>
       <ConditionalRender condition={!ready}>
-        <div className="max-w-md mx-auto">
+        <div className="max-w-md">
           <Form {...form}>
             <form action={action} className="space-y-6">
               <FormField

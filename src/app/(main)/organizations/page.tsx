@@ -1,4 +1,3 @@
-import JoinAsButton from '@components/JoinAs';
 import { type Metadata } from 'next';
 import OrganizationList from './OrganizationList';
 import Suspend from '@components/Suspend';

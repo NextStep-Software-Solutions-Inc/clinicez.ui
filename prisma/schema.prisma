@@ -24,34 +24,35 @@ model Tenant {
 }
 
 model User {
-  id                      Int                      @id @default(autoincrement())
-  userId                  String                   @unique // this is from auth0 user_id
-  email                   String                   @unique
-  firstName               String?
-  middleName              String?
-  lastName                String?
-  suffix                  String?
-  nickname                String?
-  gender                  Gender?
-  dob                     DateTime?                @db.Date
-  civilStatus             CivilStatus?
-  religion                String?
-  nationality             String?
-  telephone               String?
-  mobile                  String?
-  bloodType               BloodType?
-  picture                 String?
-  createdAt               DateTime                 @default(now())
-  updatedAt               DateTime                 @default(now()) @updatedAt
-  deletedAt               DateTime?
-  isActive                Boolean                  @default(true)
-  Tenants                 Tenant[]
-  Organizations           UserOrganization[]
-  Plans                   UserPlan[]
-  UserDefaultOrganization UserDefaultOrganization?
-  UserDefaultTenant       UserDefaultTenant?
-  HealthcareProvider      HealthcareProvider?
-  SocialLink              SocialLink?
+  id                              Int                      @id @default(autoincrement())
+  userId                          String                   @unique // this is from auth0 user_id
+  email                           String                   @unique
+  firstName                       String?
+  middleName                      String?
+  lastName                        String?
+  suffix                          String?
+  nickname                        String?
+  gender                          Gender?
+  dob                             DateTime?                @db.Date
+  civilStatus                     CivilStatus?
+  religion                        String?
+  nationality                     String?
+  telephone                       String?
+  mobile                          String?
+  bloodType                       BloodType?
+  picture                         String?
+  createdAt                       DateTime                 @default(now())
+  updatedAt                       DateTime                 @default(now()) @updatedAt
+  deletedAt                       DateTime?
+  isActive                        Boolean                  @default(true)
+  Tenants                         Tenant[]
+  Organizations                   UserOrganization[]       @relation("User")
+  Plans                           UserPlan[]
+  UserDefaultOrganization         UserDefaultOrganization?
+  UserDefaultTenant               UserDefaultTenant?
+  HealthcareProvider              HealthcareProvider?
+  SocialLink                      SocialLink?
+  AcceptedOrganizationApplication UserOrganization[]       @relation("AcceptedBy")
 }
 
 enum Gender {
@@ -95,16 +96,44 @@ model Organization {
   Tenant                   Tenant                    @relation(fields: [tenantId], references: [id])
   Users                    UserOrganization[]
   UserDefaultOrganizations UserDefaultOrganization[]
+  Roles                    UserOrganizationRole[]
 }
 
 // This is for user to join an organization e.g. as a member, admin, healthcare provider, etc.
 model UserOrganization {
-  id             Int          @id @default(autoincrement())
+  id             Int                    @id @default(autoincrement())
   userId         Int
   organizationId Int
-  role           String
-  user           User         @relation(fields: [userId], references: [id])
-  organization   Organization @relation(fields: [organizationId], references: [id])
+  role           Int
+  status         UserOrganizationStatus @default(PENDING)
+  acceptedAt     DateTime?              @db.Date
+  acceptedBy     Int?
+  createdAt      DateTime               @default(now())
+  User           User                   @relation("User", fields: [userId], references: [id])
+  AcceptedBy     User?                  @relation("AcceptedBy", fields: [acceptedBy], references: [id])
+  Organization   Organization           @relation(fields: [organizationId], references: [id])
+  UserRole       UserOrganizationRole   @relation(fields: [role], references: [id])
+
+  @@unique([userId, organizationId, role], name: "unique_user_organization_role")
+}
+
+model UserOrganizationRole {
+  id                Int                @id @default(autoincrement())
+  orgId             Int
+  name              String
+  description       String?
+  isActive          Boolean            @default(true)
+  Organization      Organization       @relation(fields: [orgId], references: [id])
+  UserOrganizations UserOrganization[]
+
+  @@unique([orgId, name], name: "unique_organization_role")
+}
+
+enum UserOrganizationStatus {
+  ACTIVE
+  INACTIVE
+  PENDING
+  SUSPENDED
 }
 
 model Plan {

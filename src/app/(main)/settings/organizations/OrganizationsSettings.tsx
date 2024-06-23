@@ -19,7 +19,7 @@ import {
 import {toast} from "sonner"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@components/ui/select"
 import Each from "@components/utils/Each"
-import { getMyDefaultOrganizationAction, getOrganizationsAction, setMyDefaultOrganizationAction } from "@actions/organization.action"
+import { getMyDefaultOrganizationAction, getUserOrganizationsAction, setMyDefaultOrganizationAction } from "@actions/organization.action"
 import { use, useCallback, useEffect, useState } from "react"
 import { useUser } from "@auth0/nextjs-auth0/client"
 import ActionButton from "@components/ActionButton"
@@ -54,14 +54,14 @@ const roles = [
   },
 ]
 export default function OrganizationsSettings() {
-  const [myOrgs, setMyOrgs] = useState<Awaited<ReturnType<typeof getOrganizationsAction>>>([])
+  const [myOrgs, setMyOrgs] = useState<Awaited<ReturnType<typeof getUserOrganizationsAction>>>([])
   const [defaultOrg, setDefaultOrg] = useState<Awaited<ReturnType<typeof getMyDefaultOrganizationAction>>>(null)
   const user = useUser();
   
   useEffect(() => {
     (async () => {
       if(!user.user?.sub) return
-      await setMyOrgs(await getOrganizationsAction())
+      await setMyOrgs((await getUserOrganizationsAction(user.user.sub)).filter(o => ["ACTIVE"].includes(o.status)))
       await setDefaultOrg(await getMyDefaultOrganizationAction(user.user.sub))
     })()
   }, [user?.user?.sub])
@@ -105,7 +105,7 @@ export default function OrganizationsSettings() {
                   <SelectContent>
                     <Each
                       of={myOrgs}
-                      render={({ id, orgId, name }) => (
+                      render={({ Organization: {id, orgId, name} }) => (
                         <SelectItem value={orgId}>{name}</SelectItem>
                       )}
                     />
@@ -130,7 +130,7 @@ export default function OrganizationsSettings() {
               name="defaultRole"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{org.name} Default Role</FormLabel>
+                  <FormLabel><span className="font-bold">{org.Organization.name}</span> Default Role</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>

@@ -19,6 +19,11 @@ import { MainNav } from "./components/main-nav"
 import { Overview } from "./components/overview"
 import { RecentSales } from "./components/recent-sales"
 import { Calendar, Stethoscope, TrendingUp, User } from "lucide-react"
+import { AppRouterPageRouteOpts, getSession, withPageAuthRequired } from "@auth0/nextjs-auth0"
+import { getUserOrganizationsAction } from "@actions/organization.action"
+import { redirect } from "next/navigation"
+import ConditionalRender from "@components/utils/ConditionalRender"
+import { isHP, isMember } from "@lib/protect-org"
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -26,12 +31,11 @@ export const metadata: Metadata = {
 }
 
 
-interface DashboardPageProps {
-  params: {
-    organization: string
-  }
-}
-export default function DashboardPage({params: {organization}}:DashboardPageProps) {
+async function DashboardPage({}: AppRouterPageRouteOpts) {
+  const session = await getSession()
+  if (!session) return redirect("/api/auth/login")
+  const myOrgs = await getUserOrganizationsAction(session.user.sub)
+
   return (
     <div className="rounded-[0.5rem] border bg-background shadow]">
       <div className="flex-col flex">
@@ -44,10 +48,12 @@ export default function DashboardPage({params: {organization}}:DashboardPageProp
         <div className="flex-1 space-y-4 p-8 pt-6">
           <div className="flex items-center justify-between space-y-2">
             <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
-            <div className="flex items-center space-x-2">
-              <CalendarDateRangePicker />
-              <Button>Download PDF</Button>
-            </div>
+            <ConditionalRender condition={await isMember() && await isHP()}>
+              <div className="flex items-center space-x-2">
+                <CalendarDateRangePicker />
+                <Button>Download PDF</Button>
+              </div>
+            </ConditionalRender>
           </div>
           <Tabs defaultValue="overview" className="space-y-4">
             <TabsList>
@@ -64,7 +70,7 @@ export default function DashboardPage({params: {organization}}:DashboardPageProp
             </TabsList>
             <TabsContent value="overview" className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Card className="group/icon">
+                <Card className="group/icon ">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">
                       Appointments
@@ -72,9 +78,9 @@ export default function DashboardPage({params: {organization}}:DashboardPageProp
                     <Calendar className="text-primary group-hover/icon:scale-150 transition-all"/>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">12</div>
+                    <div className="text-2xl font-bold">0</div>
                     <p className="text-xs text-muted-foreground">
-                      +120% from last month
+                      0% from last month
                     </p>
                   </CardContent>
                 </Card>
@@ -86,63 +92,67 @@ export default function DashboardPage({params: {organization}}:DashboardPageProp
                     <Stethoscope className="text-primary group-hover/icon:scale-150 transition-all"/>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">190</div>
+                    <div className="text-2xl font-bold">0</div>
                     <p className="text-xs text-muted-foreground">
-                      +180% from last month
+                      0% from last month
                     </p>
                   </CardContent>
                 </Card>
-                <Card className="group/icon">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Trending Case</CardTitle>
-                    <TrendingUp className="text-primary group-hover/icon:scale-150 transition-all"/>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">Covid-19</div>
-                    <p className="text-xs text-muted-foreground">
+                <ConditionalRender condition={await isMember() && await isHP()}>
+                  <Card className="group/icon">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Trending Case</CardTitle>
+                      <TrendingUp className="text-primary group-hover/icon:scale-150 transition-all"/>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">Covid-19</div>
+                      <p className="text-xs text-muted-foreground">
                       +200% from last month
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card className="group/icon">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">
+                      </p>
+                    </CardContent>
+                  </Card>
+                  <Card className="group/icon">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">
                       Patients Visited
-                    </CardTitle>
-                    <User className="text-primary group-hover/icon:scale-150 transition-all"/>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">+573</div>
-                    <p className="text-xs text-muted-foreground">
+                      </CardTitle>
+                      <User className="text-primary group-hover/icon:scale-150 transition-all"/>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">+573</div>
+                      <p className="text-xs text-muted-foreground">
                       +201 since last hour
-                    </p>
-                  </CardContent>
-                </Card>
+                      </p>
+                    </CardContent>
+                  </Card>
+                </ConditionalRender>
               </div>
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-                <Card className="col-span-2 lg:col-span-4">
-                  <CardHeader>
-                    <CardTitle>Appointment Overview</CardTitle>
-                    <CardDescription>
+              <ConditionalRender condition={await isMember() && await isHP()}>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+                  <Card className="col-span-2 lg:col-span-4">
+                    <CardHeader>
+                      <CardTitle>Appointment Overview</CardTitle>
+                      <CardDescription>
                       Monthly counts of appointments.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="pl-2">
-                    <Overview />
-                  </CardContent>
-                </Card>
-                <Card className="col-span-2 lg:col-span-3">
-                  <CardHeader>
-                    <CardTitle>Recent Appointments</CardTitle>
-                    <CardDescription>
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="pl-2">
+                      <Overview />
+                    </CardContent>
+                  </Card>
+                  <Card className="col-span-2 lg:col-span-3">
+                    <CardHeader>
+                      <CardTitle>Recent Appointments</CardTitle>
+                      <CardDescription>
                       You made 12 appointments this month.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <RecentSales />
-                  </CardContent>
-                </Card>
-              </div>
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <RecentSales />
+                    </CardContent>
+                  </Card>
+                </div>
+              </ConditionalRender>
             </TabsContent>
           </Tabs>
         </div>
@@ -150,3 +160,9 @@ export default function DashboardPage({params: {organization}}:DashboardPageProp
     </div>
   )
 }
+
+
+export default withPageAuthRequired(DashboardPage, {
+  returnTo: ""
+
+})

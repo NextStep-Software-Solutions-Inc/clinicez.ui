@@ -1,5 +1,5 @@
 import "@styles/globals.css";
-import Header from "./header";
+import Header from "./Header";
 import RootFooter from "@components/RootFooter";
 
 

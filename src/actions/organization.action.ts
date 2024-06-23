@@ -1,3 +1,4 @@
+import { UserRoles } from './../app/(process)/[organization]/appointments/mail/components/AppointmentPanel';
 "use server";
 
 import prisma from "@lib/prisma";
@@ -26,7 +27,7 @@ export const getOrganizationsAction = async (filters?: FiltersType) => {
       ...(userId && {
         Users: {
           every: {
-            user: {
+            User: {
               userId
             }
           }
@@ -45,9 +46,33 @@ export const getOrganizationAction = async (id: number) => {
     where: {
       id: id
     }
-  });
+  });``
 
   return organization;
+}
+
+export const getUserOrganizationsAction = async (userId: string) => {
+  const organizations = await prisma.userOrganization.findMany({
+    where: {
+      User: {
+        isActive: true,
+        userId
+      }
+    },
+    select: {
+      status: true,
+      role: true,
+      Organization: {
+        select: {
+          name: true,
+          orgId: true,
+          id: true
+        }
+      }
+    }
+  });
+  return organizations;
+
 }
 
 export const getMyDefaultOrganizationAction = async (userId: string) => {
@@ -92,4 +117,33 @@ export const setMyDefaultOrganizationAction = async (id: number, orgId: string, 
     }
   })
   return org;
+}
+
+export const joinOrganizationAction = async ({ orgId, userId, roleId}:{
+  orgId: string, userId: string, roleId: number
+}) => {
+  const org = await prisma.userOrganization.create({
+    data: {
+      UserRole: {
+        connect: { id: roleId  }
+      },
+      User: {
+        connect: { userId }
+      },
+      Organization: {
+        connect: { orgId }
+      }
+    }
+  })
+  return org;
+}
+
+export const getOrganizationRolesAction = async (orgId: string) => {
+  const roles = await prisma.userOrganizationRole.findMany({
+    where: {
+      isActive: true,
+      Organization: { orgId }
+    }
+  })
+  return roles;
 }

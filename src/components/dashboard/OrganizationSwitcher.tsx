@@ -1,8 +1,8 @@
 "use client"
 import { useParams, usePathname, useRouter } from "next/navigation"
 import Switcher, { SwitcherOptionsType } from "./Switcher"
-import { Building, Home } from "lucide-react"
-import { getMyDefaultOrganizationAction, getOrganizationsAction } from "@actions/organization.action"
+import { Building } from "lucide-react"
+import { getUserOrganizationsAction } from "@actions/organization.action"
 import { useEffect, useState } from "react"
 import { useUser } from "@auth0/nextjs-auth0/client"
 
@@ -15,18 +15,20 @@ export function OrganizationSwitcher({isCollapsed,}: OrganizationSwitcherProps) 
   const {organization} = useParams() as { organization: string }
   const router = useRouter();
   const pathname = usePathname();
-  const [myOrgs, setMyOrgs] = useState<Awaited<ReturnType<typeof getOrganizationsAction>>>([])
+  const user = useUser()
+  const [myOrgs, setMyOrgs] = useState<Awaited<ReturnType<typeof getUserOrganizationsAction>>>([])
   
 
   useEffect(() => {
     (async () => {
-      setMyOrgs(await getOrganizationsAction())
+      if (!user.user?.sub) return
+      setMyOrgs(await getUserOrganizationsAction(user.user?.sub))
     })()
-  }, [])
+  }, [user.user?.sub])
 
-  const orgs: SwitcherOptionsType[] = myOrgs.map(org => ({
-    label: org.name,
-    value: org.orgId,
+  const orgs: SwitcherOptionsType[] = myOrgs.filter(o => ["ACTIVE"].includes(o.status)).map(org => ({
+    label: org.Organization.name,
+    value: org.Organization.orgId,
     icon: Building
   }))
    

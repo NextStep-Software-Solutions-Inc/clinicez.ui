@@ -53,6 +53,7 @@ model User {
   HealthcareProvider              HealthcareProvider?
   SocialLink                      SocialLink?
   AcceptedOrganizationApplication UserOrganization[]       @relation("AcceptedBy")
+  ReceiptCodeClaim                ReceiptCodeClaim[]
 }
 
 enum Gender {
@@ -327,4 +328,44 @@ model SocialLink {
   instagram String?
   tiktok    String?
   User      User    @relation(fields: [userId], references: [id])
+}
+
+model ReceiptCode {
+  id               Int                @id @default(autoincrement())
+  coverage         Coverage
+  code             String             @unique
+  amount           Float
+  status           ReceiptCodeStatus  @default(UNUSED)
+  maxUses          Int                @default(1)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  deletedAt        DateTime?
+  isActive         Boolean            @default(true)
+  ReceiptCodeClaim ReceiptCodeClaim[]
+}
+
+enum Coverage {
+  ALL
+  TENANT
+  HEALTHCARE_PROVIDER
+}
+
+enum ReceiptCodeStatus {
+  UNUSED
+  USED
+  EXPIRED
+}
+
+model ReceiptCodeClaim {
+  id            Int         @id @default(autoincrement())
+  userId        Int
+  receiptCodeId Int
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  deletedAt     DateTime?
+  isActive      Boolean     @default(true)
+  User          User        @relation(fields: [userId], references: [id])
+  ReceiptCode   ReceiptCode @relation(fields: [receiptCodeId], references: [id])
+
+  @@unique([userId, receiptCodeId], name: "unique_user_receipt_code")
 }

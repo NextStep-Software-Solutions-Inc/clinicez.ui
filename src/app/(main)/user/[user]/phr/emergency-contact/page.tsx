@@ -1,6 +1,7 @@
 import { Separator } from "@components/ui/separator"
 import EmergencyContactForm from "./EmergencyContactForm"
 import { Metadata } from "next"
+import UnderConstruction from "@components/UnderConstruction"
 
 export const metadata: Metadata = {
   title: "Emergency Contact | PHR",
@@ -17,7 +18,8 @@ export default function ContactInformationPage() {
         </p>
       </div>
       <Separator />
-      <EmergencyContactForm />
+      <UnderConstruction/>
+      {/* <EmergencyContactForm /> */}
     </div>
   )
 }

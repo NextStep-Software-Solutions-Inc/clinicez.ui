@@ -1,8 +1,9 @@
 import { Metadata } from "next"
-import Image from "next/image"
 
 import { Separator } from "@components/ui/separator"
 import SidebarNav from "@components/SidebarNav"
+import ConditionalRender from "@components/utils/ConditionalRender"
+import { isUserOwner } from "@lib/protect-org"
 
 export const metadata: Metadata = {
   title: "PHR",
@@ -18,7 +19,7 @@ interface SettingsLayoutProps {
   }
 }
 
-export default function SettingsLayout({ children, params: {user} }: SettingsLayoutProps) {
+export default async function SettingsLayout({ children, params: {user} }: SettingsLayoutProps) {
   
   const sidebarNavItems = [
     {
@@ -59,7 +60,12 @@ export default function SettingsLayout({ children, params: {user} }: SettingsLay
   return (
     <div className="space-y-6 p-10 pb-16">
       <div className="space-y-0.5">
-        <h2 className="text-2xl font-bold tracking-tight">Personal Health Record</h2>
+        <h2 className="text-2xl font-bold tracking-tight">
+          Personal Health Record 
+          <ConditionalRender condition={!await isUserOwner(decodeURI(user))}>
+            <span className="text-primary text-base italic mx-2">(View Only)</span>
+          </ConditionalRender>
+        </h2>
         <p className="text-muted-foreground">
             Manage your personal health record and track your health.
         </p>

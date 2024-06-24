@@ -12,6 +12,11 @@ export const protectOrg = async (orgUid: string) => {
     return notFound()
   }
 }
+export const isUserOwner = async (userId: string) => {
+  const session = await getSession();
+  if(!session) throw new Error("No session found");
+  return session.user.sub === userId;
+}
 
 export const isMember = async () => {
   const session = await getSession();

@@ -17,7 +17,6 @@ function Calendar({
 }: CalendarProps) {
   return (
     <DayPicker
-      showOutsideDays={showOutsideDays}
       className={cn("p-3", className)}
       classNames={{
         months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",

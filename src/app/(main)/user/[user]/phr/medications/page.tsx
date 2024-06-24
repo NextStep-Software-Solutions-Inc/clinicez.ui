@@ -1,6 +1,7 @@
 import { Separator } from "@components/ui/separator"
 import { Metadata } from "next"
 import AllergiesForm from "./MedicationsForm"
+import UnderConstruction from "@components/UnderConstruction"
 
 export const metadata: Metadata = {
   title: "Medications | PHR",
@@ -17,7 +18,8 @@ export default function MedicationsPage() {
         </p>
       </div>
       <Separator />
-      <AllergiesForm />
+      <UnderConstruction/>
+      {/* <AllergiesForm /> */}
     </div>
   )
 }

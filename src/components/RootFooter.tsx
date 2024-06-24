@@ -2,8 +2,8 @@ import AnimatedLogo from "./AnimatedLogo";
 
 const RootFooter = () => {
   return (
-    <footer className="container mx-auto py-8 bg-slate-50">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 ~text-sm/base">
+    <footer className="py-8 bg-slate-50">
+      <div className="container mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 ~text-sm/base">
         <div className="order-1 sm:order-first">
           <a href="/" className="flex h-20">
             <AnimatedLogo/>
@@ -12,7 +12,6 @@ const RootFooter = () => {
             <strong>Clinic EZ</strong> is a platform that connects healthcare providers with patients. We provide a platform for healthcare providers to manage their appointments and patients to book appointments with their healthcare providers.
             Join our platform and be part of the future of healthcare.
           </p>
-          
         </div>
         <div className="flex flex-wrap justify-between md:mt-8 ">
           <div className="w-full md:w-1/3 text-center sm:text-left">

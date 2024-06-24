@@ -23,12 +23,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@components/ui/popover"
-import { toast } from "@components/ui/use-toast"
-import { CalendarIcon, SortAscIcon, CheckIcon } from "lucide-react"
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@components/ui/select"
+import { CalendarIcon } from "lucide-react"
 import ActionButton from "@components/ActionButton"
-import { delay } from "@lib/wait"
-
+import { toast } from "sonner"
+import { updateUserAction } from "@actions/user.action"
+import { BloodType, CivilStatus, Gender, User } from "@prisma/client"
+import Each from "@components/utils/Each"
+import { RadioGroup, RadioGroupItem } from "@components/ui/radio-group"
+import { useUser } from "@auth0/nextjs-auth0/client"
 
 const personalInformationFormSchema = z.object({
   firstName: z.string().min(2, {
@@ -46,53 +48,59 @@ const personalInformationFormSchema = z.object({
   }),
   suffix: z.string().max(10, {
     message: "Suffix must not be longer than 10 characters.",
-  }).optional(),
-  email: z.string().email({
-    message: "Please enter a valid email address.",
+  }).optional().nullable(),
+  nickname: z.string().max(30, {
+    message: "Nickname must not be longer than 30 characters.",
   }),
-  phone: z.string().min(10, {
+  religion: z.string().max(30, {
+    message: "Religion must not be longer than 30 characters.",
+  }),
+  nationality: z.string().max(30, {
+    message: "Nationality must not be longer than 30 characters.",
+  }),
+  telephone: z.string().max(30, {
+    message: "Telephone number must not be longer than 30 characters.",
+  }),
+  mobile: z.string().min(10, {
     message: "Phone number must be at least 10 characters.",
   }).max(15, {
     message: "Phone number must not be longer than 15 characters.",
   }),
-  gender: z.enum(["Male", "Female"]).refine((val) => {
-    if (val === "Male" || val === "Female") {
-      return true
-    }
-    return false
-  }, {
-    message: "Please select a gender.",
-  }),
+  gender: z.nativeEnum(Gender),
+  bloodType: z.nativeEnum(BloodType),
+  civilStatus: z.nativeEnum(CivilStatus),
   dob: z.date({
     required_error: "A date of birth is required.",
   }),
 })
 
 type PersonalInformationFormValues = z.infer<typeof personalInformationFormSchema>
-
-// This can come from your database or API.
-const defaultValues: Partial<PersonalInformationFormValues> = {
-  // name: "Your name",
-  // dob: new Date("2023-01-23"),
+interface PersonalInformationFormProps {
+  user: User
 }
 
-export function PersonalInformationForm() {
+export function PersonalInformationForm(props: PersonalInformationFormProps) {
+
+  const user = useUser();
   const form = useForm<PersonalInformationFormValues>({
     resolver: zodResolver(personalInformationFormSchema),
-    defaultValues,
+    defaultValues: personalInformationFormSchema.parse(props.user),
   })
 
-  const handleSaveChanges = async (formData: FormData) => {
-    await delay(1000);
+  const handleSaveChanges = async () => {
+    const userId = user?.user?.sub
+    if(!userId) return toast.error("User not found.")
+
     form.handleSubmit(data => {
-      form.reset(data)
-      toast({
-        title: "You submitted the following values:",
-        description: (
-          <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-            <code className="text-white">{JSON.stringify(data, null, 2)}</code>
-          </pre>
-        ),
+      console.log({data});
+      
+      toast.promise(updateUserAction(userId, data), {
+        loading: "Saving changes...",
+        success: () => {
+          form.reset(data)
+          return "Changes saved successfully."
+        },
+        error: "Failed to save changes.",
       })
     })()
   }
@@ -156,7 +164,7 @@ export function PersonalInformationForm() {
               <FormItem className="w-1/4">
                 <FormLabel>Suffix</FormLabel>
                 <FormControl>
-                  <Input placeholder="Jr." {...field} />
+                  <Input placeholder="Jr." {...field} value={field.value ?? ""} />
                 </FormControl>
                 <FormDescription>
                 Jr., Sr., III, etc.
@@ -168,63 +176,21 @@ export function PersonalInformationForm() {
         </div>
         <FormField
           control={form.control}
-          name="email"
+          name="nickname"
           render={({ field }) => (
             <FormItem className="w-full">
-              <FormLabel>Email</FormLabel>
+              <FormLabel>Nickname</FormLabel>
               <FormControl>
-                <Input placeholder="example@email.com" {...field} />
+                <Input placeholder="Nickname" {...field} />
               </FormControl>
               <FormDescription>
-                This is your public display email address.
+                This is your public display nickname.
               </FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="phone"
-          render={({ field }) => (
-            <FormItem className="w-full">
-              <FormLabel>Phone Number</FormLabel>
-              <FormControl>
-                <Input placeholder="Phone no." {...field} />
-              </FormControl>
-              <FormDescription>
-                This is your public display phone number.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="gender"
-          render={({ field }) => (
-            <FormItem className="w-1/2">
-              <FormLabel>Gender</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value} {...field}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a gender" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectLabel>Select Gender</SelectLabel>
-                    <SelectItem value="Male">Male</SelectItem>
-                    <SelectItem value="Female">Female</SelectItem>
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-              <FormDescription>
-                This is your public display gender.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+
         <FormField
           control={form.control}
           name="dob"
@@ -252,7 +218,7 @@ export function PersonalInformationForm() {
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
-                  
+                    defaultMonth={new Date("2000-01-01")}
                     mode="single"
                     selected={field.value}
                     onSelect={field.onChange}
@@ -270,6 +236,168 @@ export function PersonalInformationForm() {
             </FormItem>
           )}
         />
+
+        <FormField
+          control={form.control}
+          name="gender"
+          render={({ field }) => (
+            <FormItem className="space-y-3">
+              <FormLabel>Gender</FormLabel>
+              <FormControl>
+                <RadioGroup
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                  className="flex flex-row gap-5 flex-wrap"
+                >
+                  <Each
+                    of={Object.values(Gender).map(g => ({name: g.toLowerCase(), value:g}))}
+                    render={(gender) => (
+                      <FormItem className="flex items-center space-x-3 space-y-0">
+                        <FormControl>
+                          <RadioGroupItem value={gender.value} />
+                        </FormControl>
+                        <FormLabel className="font-normal capitalize">
+                          {gender.name}
+                        </FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                </RadioGroup>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="civilStatus"
+          render={({ field }) => (
+            <FormItem className="space-y-3">
+              <FormLabel>Civil Status</FormLabel>
+              <FormControl>
+                <RadioGroup
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                  className="flex flex-row gap-5 flex-wrap"
+                >
+                  <Each
+                    of={Object.values(CivilStatus).map(c => ({name: c.toLowerCase(), value:c}))}
+                    render={(cs) => (
+                      <FormItem className="flex items-center space-x-3 space-y-0">
+                        <FormControl>
+                          <RadioGroupItem value={cs.value} />
+                        </FormControl>
+                        <FormLabel className="font-normal capitalize">
+                          {cs.name}
+                        </FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                </RadioGroup>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="bloodType"
+          render={({ field }) => (
+            <FormItem className="space-y-3">
+              <FormLabel>Blood Type</FormLabel>
+              <FormControl>
+                <RadioGroup
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                  className="flex flex-row gap-5 flex-wrap"
+                >
+                  <Each
+                    of={Object.values(BloodType).map(b => ({name: b.split("_").join(" ").toLowerCase(), value:b}))}
+                    render={(b) => (
+                      <FormItem className="flex items-center space-x-3 space-y-0">
+                        <FormControl>
+                          <RadioGroupItem value={b.value} />
+                        </FormControl>
+                        <FormLabel className="font-normal capitalize">
+                          {b.name}
+                        </FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                </RadioGroup>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <FormField
+          control={form.control}
+          name="telephone"
+          render={({ field }) => (
+            <FormItem className="w-full">
+              <FormLabel>Telephone Number</FormLabel>
+              <FormControl>
+                <Input placeholder="Telephone no." {...field} />
+              </FormControl>
+              <FormDescription>
+                This is your public display telephone number.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="mobile"
+          render={({ field }) => (
+            <FormItem className="w-full">
+              <FormLabel>Phone Number</FormLabel>
+              <FormControl>
+                <Input placeholder="Phone no." {...field} />
+              </FormControl>
+              <FormDescription>
+                This is your public display phone number.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="religion"
+          render={({ field }) => (
+            <FormItem className="w-full">
+              <FormLabel>Religion</FormLabel>
+              <FormControl>
+                <Input placeholder="Religion" {...field} />
+              </FormControl>
+              <FormDescription>
+                This is your public display religion.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="nationality"
+          render={({ field }) => (
+            <FormItem className="w-full">
+              <FormLabel>Nationality</FormLabel>
+              <FormControl>
+                <Input placeholder="Nationality" {...field} />
+              </FormControl>
+              <FormDescription>
+                This is your public display nationality.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      
         {form.formState.isDirty && <ActionButton disabled={form.formState.isLoading || !form.formState.isValid}>Save Changes</ActionButton>}
       </form>
     </Form>

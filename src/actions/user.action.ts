@@ -24,13 +24,10 @@ export const getUserAction = async (userId: string) => {
   return user;
 }
 
-
 export const createUserAction = async (data: Prisma.UserCreateArgs["data"]) => {
 
   const newUser = await prisma.user.create({
-    data: { 
-      ...data
-    }
+    data
   });
 
   return newUser;
@@ -39,7 +36,7 @@ export const createUserAction = async (data: Prisma.UserCreateArgs["data"]) => {
 export const updateUserAction = async (userId: string, data: Prisma.UserUpdateArgs["data"]) => {
   const updatedUser = await prisma.user.update({
     where: { userId },
-    data: { ...data }
+    data
   });
   return updatedUser;
 }

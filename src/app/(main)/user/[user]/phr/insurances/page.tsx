@@ -2,6 +2,7 @@ import { Separator } from "@components/ui/separator"
 import { Metadata } from "next"
 import InsurancesForm from "./InsurancesForm"
 import HMOsForm from "./HMOsForm"
+import UnderConstruction from "@components/UnderConstruction"
 
 export const metadata: Metadata = {
   title: "Insurances & HMOs | PHR",
@@ -18,8 +19,9 @@ export default function InsurancesPage() {
         </p>
       </div>
       <Separator />
-      <InsurancesForm />
-      <HMOsForm />
+      <UnderConstruction/>
+      {/* <InsurancesForm />
+      <HMOsForm /> */}
     </div>
   )
 }

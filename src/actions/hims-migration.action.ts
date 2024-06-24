@@ -98,10 +98,10 @@ export const sendActivationCodeAction = async (email: string, code: string) => {
   });
 }
 
-export const startMigrationTransactionAction = async ({userId, data, orgUid}: {
+export const startMigrationTransactionAction = async ({userId, data, orgId}: {
     userId: string,
-     data: Prisma.UserUpdateArgs["data"]
-     orgUid: string
+    data: Prisma.UserUpdateArgs["data"]
+    orgId: string
 }) => {
 
   await prisma.$transaction(async (prisma) => {
@@ -109,7 +109,7 @@ export const startMigrationTransactionAction = async ({userId, data, orgUid}: {
     // check user if already migrated
     const userMigration = await prisma.userMigration.findFirst({
       where: {
-        Organization: { orgId: orgUid },
+        Organization: { orgId },
         User: { userId },
       }
     })
@@ -125,7 +125,7 @@ export const startMigrationTransactionAction = async ({userId, data, orgUid}: {
     await prisma.userMigration.create({
       data: {
         Organization: {
-          connect: {orgId: orgUid}
+          connect: {orgId: orgId}
         },
         User: {
           connect : { userId }

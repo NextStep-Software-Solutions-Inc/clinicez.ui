@@ -33,8 +33,9 @@ export default function ActivationForm() {
   const [inputValues, setInputValues] = useState<Record<string, any>>({});
   const user = useUser()
   const params = useParams();
-  const organization = params.organization as string;
-  const email = "wacanam20@gmail.com"
+  const orgId = params.organization as string;
+  const email = user?.user?.email;
+  const userId = user?.user?.sub;
 
   const form = useForm<z.infer<typeof activationFormSchema>>({
     resolver: zodResolver(activationFormSchema),
@@ -108,7 +109,7 @@ export default function ActivationForm() {
 
   const migrateAction = async () => {
 
-    if (!user?.user?.sub) {
+    if (!userId) {
       toast.error("You must be logged in to migrate a user")
       return;
     }
@@ -117,8 +118,8 @@ export default function ActivationForm() {
     const civilStatus = json?.civil_status?.toUpperCase() in CivilStatus ? json?.civil_status?.toUpperCase() : null
 
     toast.promise(startMigrationTransactionAction({
-      userId: user.user?.sub, 
-      orgUid: organization,
+      userId, 
+      orgId,
       data: {
         email: json.email,
         firstName: json.first_name,

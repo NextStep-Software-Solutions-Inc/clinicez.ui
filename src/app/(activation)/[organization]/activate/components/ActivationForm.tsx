@@ -1,10 +1,10 @@
 "use client";
 
-import { getPatient } from "@actions/hims-migration.action";
+import { createActivationCodeAction, verifyActivationCodeAction } from "@actions/activation.action";
+import { sendActivationCodeAction, getPatientAction, startMigrationTransactionAction } from "@actions/hims-migration.action";
 import { updateUserAction } from "@actions/user.action";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import ActionButton from "@components/ActionButton";
-import { Button } from "@components/ui/button";
 import { Checkbox } from "@components/ui/checkbox";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@components/ui/form";
 import { Input } from "@components/ui/input";
@@ -13,7 +13,8 @@ import { Separator } from "@components/ui/separator";
 import ConditionalRender from "@components/utils/ConditionalRender";
 import Each from "@components/utils/Each";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { delay } from "@lib/wait";
+import { BloodType, CivilStatus, Gender } from "@prisma/client";
+import { useParams } from "next/navigation";
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -23,7 +24,7 @@ import { z } from "zod";
 const activationFormSchema = z.object({
   activationCode: z.string({
     required_error: "Please enter your activation code",
-  }).min(6).max(6)
+  }).min(6)
 })
 
 export default function ActivationForm() {
@@ -31,6 +32,11 @@ export default function ActivationForm() {
   const [json, setJson] = useState<Record<string, any>>({});
   const [inputValues, setInputValues] = useState<Record<string, any>>({});
   const user = useUser()
+  const params = useParams();
+  const orgId = params.organization as string;
+  const email = user?.user?.email;
+  const userId = user?.user?.sub;
+
   const form = useForm<z.infer<typeof activationFormSchema>>({
     resolver: zodResolver(activationFormSchema),
   })
@@ -50,58 +56,87 @@ export default function ActivationForm() {
     }
   };
 
-  const action = async (formData: FormData) => {
+  const activate = async () => {
     form.handleSubmit(async (data) => {
-      if (!user?.user?.sub || !user?.user?.email) {
+      if (!email) {
         toast.error("You must be logged in to activate a user")
         return;
       }
 
-      toast.promise(getPatient(user.user.email), {
-        success: (data) => {
-          console.log(data)
-          setReady(true)
-          setInputValues(data as Record<string, any>)
-          return "Users data found!"
+      toast.promise(verifyActivationCodeAction(email, data.activationCode), {
+        loading: "Verifying activation code...",
+        success: () => {
+          toast.promise(getPatientAction(email), {
+            success: (data) => {
+              setReady(true)
+              setInputValues(data as Record<string, any>)
+              return "Users data found!"
+            },
+            loading: "Finding your email in the old server...",
+            error: (err) => {
+              return `User not found in the old server. Error: ${err}`
+            }
+          })
+          return "Activation code verified"
         },
-        loading: "Looking the email from the database...",
+        error: "Invalid activation code"  
       })
 
-      // toast.promise(assignRolesAction(user.user.sub, ["rol_b6qG22YUOZdfqb1T"]), {
-      //   success: () => {
-      //     setReady(true)
-      //     return "User ready successfully"
-      //   },
-      //   loading: "Activating user...",
-      // })
     })()
   }
 
-  const getActivationCodeAction = async () => {
-    toast.promise(delay(5000), {
-      success: "Activation code sent to your email",
-      loading: "Sending activation code...",
+  const getActivationCode = async () => {
+
+    if (!email) {
+      toast.error("You must be logged in to get an activation code")
+      return;
+    }
+
+    toast.promise(createActivationCodeAction(email), {
+      loading: "Creating activation code...",
+      success: (code) => {
+        if(!code) return toast.error("Failed to generate activation code")
+        toast.promise(sendActivationCodeAction(email, code),  {
+          success: "Activation code sent to your email",
+          loading: "Sending activation code...",
+          error: "Failed to send activation code"
+        })
+        return "Activation code generated. Valid for 5 minutes."
+      },
+      error: (error) => `Error generating activation code. Please try again later. Error: ${error}`
     })
   }
 
   const migrateAction = async () => {
 
-    if (!user?.user?.sub) {
+    if (!userId) {
       toast.error("You must be logged in to migrate a user")
       return;
     }
-    toast.promise(updateUserAction(user.user?.sub, {
-      email: json.email,
-      firstName: json.first_name,
-      middleName: json.middle_name,
-      lastName: json.last_name,
-      dob: json.dob,
-      religion: json.religion,
-      nationality: json.nationality,
-      telephone: json.tel_no,
-      mobile: json.mobile,
-      picture: `https://hims.ustp.edu.ph/apis/storage/${json.picture}`,
+    const gender = json?.gender?.toUpperCase() in Gender ? json?.gender?.toUpperCase() : null
+    const bloodType = json?.blood_type?.toUpperCase() in BloodType ? json?.blood_type?.toUpperCase() : null
+    const civilStatus = json?.civil_status?.toUpperCase() in CivilStatus ? json?.civil_status?.toUpperCase() : null
 
+    toast.promise(startMigrationTransactionAction({
+      userId, 
+      orgId,
+      data: {
+        email: json.email,
+        firstName: json.first_name,
+        middleName: json.middle_name,
+        lastName: json.last_name,
+        dob: json.dob,
+        religion: json.religion,
+        nationality: json.nationality,
+        telephone: json.tel_no,
+        mobile: json.mobile,
+  
+        bloodType,
+        civilStatus,
+        gender,
+  
+        picture: `https://hims.ustp.edu.ph/apis/storage/${json.picture}`,
+      }
     }), {
       success: "User's data migrated successfully",
       loading: "Migrating user's data...",
@@ -112,7 +147,7 @@ export default function ActivationForm() {
       <ConditionalRender condition={!ready}>
         <div className="max-w-md">
           <Form {...form}>
-            <form action={action} className="space-y-6">
+            <form action={activate} className="space-y-6">
               <FormField
                 control={form.control}
                 name="activationCode"
@@ -134,9 +169,9 @@ export default function ActivationForm() {
                   Activate
                 </ActionButton>
                 <Separator orientation="vertical"/> 
-                <Button formAction={getActivationCodeAction} variant="link" className="text-sm">
+                <ActionButton formAction={getActivationCode} variant="link" className="text-sm">
                   Get Activation Code
-                </Button>
+                </ActionButton>
               </div>
             </form>
           </Form>

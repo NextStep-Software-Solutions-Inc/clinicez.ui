@@ -18,7 +18,7 @@ model Tenant {
   updatedAt          DateTime            @updatedAt
   deletedAt          DateTime?
   isActive           Boolean             @default(true)
-  Owner              User                @relation(fields: [ownerId], references: [id])
+  Owner              User                @relation(fields: [ownerId], references: [id], onUpdate: NoAction, onDelete: NoAction)
   Organizations      Organization[]
   UserDefaultTenants UserDefaultTenant[]
 }
@@ -54,6 +54,8 @@ model User {
   SocialLink                      SocialLink?
   AcceptedOrganizationApplication UserOrganization[]       @relation("AcceptedBy")
   ReceiptCodeClaim                ReceiptCodeClaim[]
+  UserMigration                   UserMigration?
+  ActivationCodes                 ActivationCode[]
 }
 
 enum Gender {
@@ -94,10 +96,11 @@ model Organization {
   updatedAt                DateTime                  @updatedAt
   deletedAt                DateTime?
   isActive                 Boolean                   @default(true)
-  Tenant                   Tenant                    @relation(fields: [tenantId], references: [id])
+  Tenant                   Tenant                    @relation(fields: [tenantId], references: [id], onUpdate: NoAction, onDelete: NoAction)
   Users                    UserOrganization[]
   UserDefaultOrganizations UserDefaultOrganization[]
   Roles                    UserOrganizationRole[]
+  UserMigration            UserMigration[]
 }
 
 // This is for user to join an organization e.g. as a member, admin, healthcare provider, etc.
@@ -110,10 +113,10 @@ model UserOrganization {
   acceptedAt     DateTime?              @db.Date
   acceptedBy     Int?
   createdAt      DateTime               @default(now())
-  User           User                   @relation("User", fields: [userId], references: [id])
-  AcceptedBy     User?                  @relation("AcceptedBy", fields: [acceptedBy], references: [id])
-  Organization   Organization           @relation(fields: [organizationId], references: [id])
-  UserRole       UserOrganizationRole   @relation(fields: [role], references: [id])
+  User           User                   @relation("User", fields: [userId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  AcceptedBy     User?                  @relation("AcceptedBy", fields: [acceptedBy], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  Organization   Organization           @relation(fields: [organizationId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  UserRole       UserOrganizationRole   @relation(fields: [role], references: [id], onUpdate: NoAction, onDelete: NoAction)
 
   @@unique([userId, organizationId, role], name: "unique_user_organization_role")
 }
@@ -124,7 +127,7 @@ model UserOrganizationRole {
   name              String
   description       String?
   isActive          Boolean            @default(true)
-  Organization      Organization       @relation(fields: [orgId], references: [id])
+  Organization      Organization       @relation(fields: [orgId], references: [id], onUpdate: NoAction, onDelete: NoAction)
   UserOrganizations UserOrganization[]
 
   @@unique([orgId, name], name: "unique_organization_role")
@@ -166,7 +169,7 @@ model Feature {
   updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?
   isActive    Boolean   @default(true)
-  Plan        Plan      @relation(fields: [planId], references: [id])
+  Plan        Plan      @relation(fields: [planId], references: [id], onUpdate: NoAction, onDelete: NoAction)
 }
 
 model UserPlan {
@@ -180,8 +183,8 @@ model UserPlan {
   updatedAt DateTime       @updatedAt
   deletedAt DateTime?
   isActive  Boolean        @default(true)
-  User      User           @relation(fields: [userId], references: [id])
-  Plan      Plan           @relation(fields: [planId], references: [id])
+  User      User           @relation(fields: [userId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  Plan      Plan           @relation(fields: [planId], references: [id], onUpdate: NoAction, onDelete: NoAction)
 }
 
 enum UserPlanStatus {
@@ -204,7 +207,7 @@ model HealthcareProvider {
   updatedAt           DateTime               @updatedAt
   deletedAt           DateTime?
   isActive            Boolean                @default(true)
-  User                User                   @relation(fields: [userId], references: [id])
+  User                User                   @relation(fields: [userId], references: [id], onUpdate: NoAction, onDelete: NoAction)
   DoctorProfile       DoctorProfile?
   NurseProfile        NurseProfile?
   ProfessionalDetails ProfessionalDetails?
@@ -253,7 +256,7 @@ model DoctorProfile {
   updatedAt            DateTime           @updatedAt
   deletedAt            DateTime?
   isActive             Boolean            @default(true)
-  HealthcareProvider   HealthcareProvider @relation(fields: [healthcareProviderId], references: [id])
+  HealthcareProvider   HealthcareProvider @relation(fields: [healthcareProviderId], references: [id], onUpdate: NoAction, onDelete: NoAction)
 }
 
 model NurseProfile {
@@ -280,7 +283,7 @@ model NurseProfile {
   updatedAt            DateTime           @updatedAt
   deletedAt            DateTime?
   isActive             Boolean            @default(true)
-  HealthcareProvider   HealthcareProvider @relation(fields: [healthcareProviderId], references: [id])
+  HealthcareProvider   HealthcareProvider @relation(fields: [healthcareProviderId], references: [id], onUpdate: NoAction, onDelete: NoAction)
 }
 
 model ProfessionalDetails {
@@ -291,7 +294,7 @@ model ProfessionalDetails {
   licenseExpires     DateTime
   ptrNumber          String
   taxNumber          String
-  HealthCareProvider HealthcareProvider @relation(fields: [healthcareProverId], references: [id])
+  HealthCareProvider HealthcareProvider @relation(fields: [healthcareProverId], references: [id], onUpdate: NoAction, onDelete: NoAction)
 }
 
 model UserDefaultOrganization {
@@ -302,8 +305,8 @@ model UserDefaultOrganization {
   updatedAt      DateTime     @updatedAt
   deletedAt      DateTime?
   isActive       Boolean      @default(true)
-  User           User         @relation(fields: [userId], references: [id])
-  Organization   Organization @relation(fields: [organizationId], references: [id])
+  User           User         @relation(fields: [userId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  Organization   Organization @relation(fields: [organizationId], references: [id], onUpdate: NoAction, onDelete: NoAction)
 }
 
 model UserDefaultTenant {
@@ -314,8 +317,8 @@ model UserDefaultTenant {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
   isActive  Boolean   @default(true)
-  User      User      @relation(fields: [userId], references: [id])
-  Tenant    Tenant    @relation(fields: [tenantId], references: [id])
+  User      User      @relation(fields: [userId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  Tenant    Tenant    @relation(fields: [tenantId], references: [id], onUpdate: NoAction, onDelete: NoAction)
 }
 
 model SocialLink {
@@ -327,7 +330,7 @@ model SocialLink {
   linkedin  String?
   instagram String?
   tiktok    String?
-  User      User    @relation(fields: [userId], references: [id])
+  User      User    @relation(fields: [userId], references: [id], onUpdate: NoAction, onDelete: NoAction)
 }
 
 model ReceiptCode {
@@ -364,8 +367,35 @@ model ReceiptCodeClaim {
   updatedAt     DateTime    @updatedAt
   deletedAt     DateTime?
   isActive      Boolean     @default(true)
-  User          User        @relation(fields: [userId], references: [id])
-  ReceiptCode   ReceiptCode @relation(fields: [receiptCodeId], references: [id])
+  User          User        @relation(fields: [userId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  ReceiptCode   ReceiptCode @relation(fields: [receiptCodeId], references: [id], onUpdate: NoAction, onDelete: NoAction)
 
   @@unique([userId, receiptCodeId], name: "unique_user_receipt_code")
+}
+
+model UserMigration {
+  id           Int          @id @default(autoincrement())
+  userId       Int          @unique
+  orgId        Int
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  deletedAt    DateTime?
+  isActive     Boolean      @default(true)
+  User         User         @relation(fields: [userId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  Organization Organization @relation(fields: [orgId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+
+  @@unique([userId, orgId], name: "unique_user_migration")
+}
+
+model ActivationCode {
+  id        Int       @id @default(autoincrement())
+  code      String    @unique
+  userId    Int
+  expiresAt DateTime
+  isUsed    Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+  isActive  Boolean   @default(true)
+  User      User      @relation(fields: [userId], references: [id], onUpdate: NoAction, onDelete: NoAction)
 }

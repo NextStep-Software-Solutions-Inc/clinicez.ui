@@ -8,7 +8,7 @@ export const metadata = {
 
 export default async function MainLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
-  if (!session) redirect("/api/auth/login", RedirectType.push)
+  // if (!session) redirect("/api/auth/login", RedirectType.push)
   return (
     <>
       {children}

@@ -1,8 +1,11 @@
 import { Separator } from "@components/ui/separator"
 import { PersonalInformationForm } from "./PersonalInformationForm"
 import { Metadata } from "next"
-import { AppRouterPageRouteOpts, getSession, withPageAuthRequired } from "@auth0/nextjs-auth0"
+import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth0"
 import { getUserAction } from "@actions/user.action"
+import Suspend from "@components/Suspend"
+import { Picture } from "./Picture"
+import { isUserOwner } from "@lib/protect-org"
 
 export const metadata: Metadata = {
   title: "Basic Information | PHR",
@@ -24,6 +27,9 @@ async function PHRPage({ params, searchParams }: AppRouterPageRouteOpts) {
         </p>
       </div>
       <Separator />
+      <Suspend>
+        <Picture user={user} disabled={!await isUserOwner(userId)}/>
+      </Suspend>
       <PersonalInformationForm  user={user} />
     </div>
   )
@@ -35,3 +41,4 @@ export default withPageAuthRequired(PHRPage, {
     return `/user/${params?.organization}/phr?${searchStr}`;
   }
 })
+

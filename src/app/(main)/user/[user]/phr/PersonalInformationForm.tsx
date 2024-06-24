@@ -31,19 +31,18 @@ import { BloodType, CivilStatus, Gender, User } from "@prisma/client"
 import Each from "@components/utils/Each"
 import { RadioGroup, RadioGroupItem } from "@components/ui/radio-group"
 import { useUser } from "@auth0/nextjs-auth0/client"
+import ConditionalRender from "@components/utils/ConditionalRender"
+import { isUserOwner } from "@lib/protect-org"
+import { useEffect, useState } from "react"
 
 const personalInformationFormSchema = z.object({
-  firstName: z.string().min(2, {
-    message: "Name must be at least 2 characters.",
-  }).max(30, {
+  firstName: z.string().max(30, {
     message: "Name must not be longer than 30 characters.",
-  }),
+  }).nullable(),
   middleName: z.string().max(30, {
     message: "Middle name must not be longer than 30 characters.",
-  }).optional(),
-  lastName: z.string().min(2, {
-    message: "Name must be at least 2 characters.",
-  }).max(30, {
+  }).optional().nullable(),
+  lastName: z.string().max(30, {
     message: "Name must not be longer than 30 characters.",
   }),
   suffix: z.string().max(10, {
@@ -54,24 +53,24 @@ const personalInformationFormSchema = z.object({
   }),
   religion: z.string().max(30, {
     message: "Religion must not be longer than 30 characters.",
-  }),
+  }).nullable(),
   nationality: z.string().max(30, {
     message: "Nationality must not be longer than 30 characters.",
-  }),
+  }).nullable(),
   telephone: z.string().max(30, {
     message: "Telephone number must not be longer than 30 characters.",
-  }),
+  }).nullable(),
   mobile: z.string().min(10, {
     message: "Phone number must be at least 10 characters.",
   }).max(15, {
     message: "Phone number must not be longer than 15 characters.",
-  }),
-  gender: z.nativeEnum(Gender),
-  bloodType: z.nativeEnum(BloodType),
-  civilStatus: z.nativeEnum(CivilStatus),
+  }).nullable(),
+  gender: z.nativeEnum(Gender).nullable(),
+  bloodType: z.nativeEnum(BloodType).nullable(),
+  civilStatus: z.nativeEnum(CivilStatus).nullable(),
   dob: z.date({
     required_error: "A date of birth is required.",
-  }),
+  }).nullable(),
 })
 
 type PersonalInformationFormValues = z.infer<typeof personalInformationFormSchema>
@@ -82,6 +81,8 @@ interface PersonalInformationFormProps {
 export function PersonalInformationForm(props: PersonalInformationFormProps) {
 
   const user = useUser();
+  const [isOwn, setIsOwn] = useState<boolean>(false)
+  
   const form = useForm<PersonalInformationFormValues>({
     resolver: zodResolver(personalInformationFormSchema),
     defaultValues: personalInformationFormSchema.parse(props.user),
@@ -92,8 +93,6 @@ export function PersonalInformationForm(props: PersonalInformationFormProps) {
     if(!userId) return toast.error("User not found.")
 
     form.handleSubmit(data => {
-      console.log({data});
-      
       toast.promise(updateUserAction(userId, data), {
         loading: "Saving changes...",
         success: () => {
@@ -105,18 +104,25 @@ export function PersonalInformationForm(props: PersonalInformationFormProps) {
     })()
   }
 
+  useEffect(() => {
+    (async () => {
+      setIsOwn(await isUserOwner(props.user.userId))
+    })()
+  }, [props.user.userId])
+
   return (
     <Form {...form}>
       <form action={handleSaveChanges} className="space-y-8">
         <div className="flex flex-col md:flex-row gap-2">
           <FormField
+            disabled={!isOwn}
             control={form.control}
             name="firstName"
             render={({ field }) => (
               <FormItem className="w-full">
                 <FormLabel>First Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="John" {...field} />
+                  <Input placeholder="John" {...field} value={field.value ?? ""} />
                 </FormControl>
                 <FormDescription>
                 This is your public display first name.
@@ -126,13 +132,14 @@ export function PersonalInformationForm(props: PersonalInformationFormProps) {
             )}
           />
           <FormField
+            disabled={!isOwn}
             control={form.control}
             name="middleName"
             render={({ field }) => (
               <FormItem className="w-full">
                 <FormLabel>Middle Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="Micheal" {...field} />
+                  <Input placeholder="Micheal" {...field} value={field.value ?? ""} />
                 </FormControl>
                 <FormDescription>
                 This is your public display middle name.
@@ -142,6 +149,7 @@ export function PersonalInformationForm(props: PersonalInformationFormProps) {
             )}
           />
           <FormField
+            disabled={!isOwn}
             control={form.control}
             name="lastName"
             render={({ field }) => (
@@ -158,6 +166,7 @@ export function PersonalInformationForm(props: PersonalInformationFormProps) {
             )}
           />
           <FormField
+            disabled={!isOwn}
             control={form.control}
             name="suffix"
             render={({ field }) => (
@@ -175,6 +184,7 @@ export function PersonalInformationForm(props: PersonalInformationFormProps) {
           />
         </div>
         <FormField
+          disabled={!isOwn}
           control={form.control}
           name="nickname"
           render={({ field }) => (
@@ -192,6 +202,7 @@ export function PersonalInformationForm(props: PersonalInformationFormProps) {
         />
 
         <FormField
+          disabled={!isOwn}
           control={form.control}
           name="dob"
           render={({ field }) => (
@@ -220,7 +231,7 @@ export function PersonalInformationForm(props: PersonalInformationFormProps) {
                   <Calendar
                     defaultMonth={new Date("2000-01-01")}
                     mode="single"
-                    selected={field.value}
+                    {...field.value && { selected: field.value }}
                     onSelect={field.onChange}
                     disabled={(date) =>
                       date > new Date() || date < new Date("1900-01-01")
@@ -238,6 +249,7 @@ export function PersonalInformationForm(props: PersonalInformationFormProps) {
         />
 
         <FormField
+          disabled={!isOwn}
           control={form.control}
           name="gender"
           render={({ field }) => (
@@ -245,8 +257,9 @@ export function PersonalInformationForm(props: PersonalInformationFormProps) {
               <FormLabel>Gender</FormLabel>
               <FormControl>
                 <RadioGroup
+                  disabled={!isOwn}
                   onValueChange={field.onChange}
-                  defaultValue={field.value}
+                  {...field.value && { defaultValue: field.value }}
                   className="flex flex-row gap-5 flex-wrap"
                 >
                   <Each
@@ -270,6 +283,7 @@ export function PersonalInformationForm(props: PersonalInformationFormProps) {
         />
 
         <FormField
+          disabled={!isOwn}
           control={form.control}
           name="civilStatus"
           render={({ field }) => (
@@ -277,8 +291,9 @@ export function PersonalInformationForm(props: PersonalInformationFormProps) {
               <FormLabel>Civil Status</FormLabel>
               <FormControl>
                 <RadioGroup
+                  disabled={!isOwn}
                   onValueChange={field.onChange}
-                  defaultValue={field.value}
+                  {...field.value && { defaultValue: field.value }}
                   className="flex flex-row gap-5 flex-wrap"
                 >
                   <Each
@@ -302,6 +317,7 @@ export function PersonalInformationForm(props: PersonalInformationFormProps) {
         />
 
         <FormField
+          disabled={!isOwn}
           control={form.control}
           name="bloodType"
           render={({ field }) => (
@@ -309,8 +325,9 @@ export function PersonalInformationForm(props: PersonalInformationFormProps) {
               <FormLabel>Blood Type</FormLabel>
               <FormControl>
                 <RadioGroup
+                  disabled={!isOwn}
                   onValueChange={field.onChange}
-                  defaultValue={field.value}
+                  {...field.value && { defaultValue: field.value }}
                   className="flex flex-row gap-5 flex-wrap"
                 >
                   <Each
@@ -334,13 +351,14 @@ export function PersonalInformationForm(props: PersonalInformationFormProps) {
         />
         
         <FormField
+          disabled={!isOwn}
           control={form.control}
           name="telephone"
           render={({ field }) => (
             <FormItem className="w-full">
               <FormLabel>Telephone Number</FormLabel>
               <FormControl>
-                <Input placeholder="Telephone no." {...field} />
+                <Input placeholder="Telephone no." {...field} value={field.value ?? ""}/>
               </FormControl>
               <FormDescription>
                 This is your public display telephone number.
@@ -350,13 +368,14 @@ export function PersonalInformationForm(props: PersonalInformationFormProps) {
           )}
         />
         <FormField
+          disabled={!isOwn}
           control={form.control}
           name="mobile"
           render={({ field }) => (
             <FormItem className="w-full">
               <FormLabel>Phone Number</FormLabel>
               <FormControl>
-                <Input placeholder="Phone no." {...field} />
+                <Input placeholder="Phone no." {...field} value={field.value ?? ""} />
               </FormControl>
               <FormDescription>
                 This is your public display phone number.
@@ -366,13 +385,14 @@ export function PersonalInformationForm(props: PersonalInformationFormProps) {
           )}
         />
         <FormField
+          disabled={!isOwn}
           control={form.control}
           name="religion"
           render={({ field }) => (
             <FormItem className="w-full">
               <FormLabel>Religion</FormLabel>
               <FormControl>
-                <Input placeholder="Religion" {...field} />
+                <Input placeholder="Religion" {...field} value={field.value ?? ""} />
               </FormControl>
               <FormDescription>
                 This is your public display religion.
@@ -382,13 +402,14 @@ export function PersonalInformationForm(props: PersonalInformationFormProps) {
           )}
         />
         <FormField
+          disabled={!isOwn}
           control={form.control}
           name="nationality"
           render={({ field }) => (
             <FormItem className="w-full">
               <FormLabel>Nationality</FormLabel>
               <FormControl>
-                <Input placeholder="Nationality" {...field} />
+                <Input placeholder="Nationality" {...field} value={field.value ?? ""} />
               </FormControl>
               <FormDescription>
                 This is your public display nationality.
@@ -398,7 +419,9 @@ export function PersonalInformationForm(props: PersonalInformationFormProps) {
           )}
         />
       
-        {form.formState.isDirty && <ActionButton disabled={form.formState.isLoading || !form.formState.isValid}>Save Changes</ActionButton>}
+        <ConditionalRender condition={isOwn}>
+          {form.formState.isDirty && <ActionButton disabled={form.formState.isLoading || !form.formState.isValid}>Save Changes</ActionButton>}
+        </ConditionalRender>
       </form>
     </Form>
   )

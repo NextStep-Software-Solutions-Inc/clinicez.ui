@@ -10,15 +10,21 @@ import {
 import Link from "next/link";
 import Each from "./utils/Each";
 import { cn } from "@lib/utils";
+import { Building, Coins, Contact, Home, Users } from "lucide-react";
+import dynamicIconImports from "lucide-react/dynamicIconImports";
   
-const navLinks = [
-  { name: "Home", href: "/" },
-  { name: "Doctors", href: "/healthcare-provider/doctors" },
-  { name: "Nurses", href: "/healthcare-provider/nurses" },
-  { name: "Organizations", href: "/organizations" },
-  { name: "Pricing", href: "/pricing" },
-  { name: "Contact Us", href: "/contact-us" }
-  // { name: "Doctors", href: "/practitioners" }
+export const navLinks: {
+  name: string;
+  href: string;
+  icon: keyof typeof dynamicIconImports;
+}[]
+= [
+  { name: "Home", href: "/", icon: "home" },
+  { name: "Doctors", href: "/hp/doctors", icon: "users"  },
+  { name: "Nurses", href: "/hp/nurses", icon: "users"  },
+  { name: "Organizations", href: "/organizations", icon: "building"  },
+  { name: "Pricing", href: "/pricing", icon: "coins"  },
+  { name: "Contact Us", href: "/contact-us", icon: "contact"  }
 ];
 export default function Navigation() {
   return (

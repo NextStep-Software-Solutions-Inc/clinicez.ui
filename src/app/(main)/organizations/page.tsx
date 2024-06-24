@@ -1,4 +1,3 @@
-import JoinAsButton from '@components/JoinAs';
 import { type Metadata } from 'next';
 import OrganizationList from './OrganizationList';
 import Suspend from '@components/Suspend';
@@ -22,15 +21,14 @@ export default async function Organizations() {
         <Suspend>
           <OrganizationList/>
         </Suspend>
-        <JoinAsButton 
+        {/* <JoinAsButton 
           href={{
             pathname: "/tenants/register",
             query: {
               role: "tenant"
             }
           }}
-        /> 
-            
+        />  */}
       </div>
     </div>
   );

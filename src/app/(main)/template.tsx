@@ -13,19 +13,17 @@ export default function RootLayout({
   return (
     <>
       <div className="bg-primary text-primary-foreground py-2">
-        <div className="container flex items-center text-sm">
+        <div className="container flex items-center ~text-xs/sm">
           <span className="flex-1"></span>
           <div className="flex h-5 items-center space-x-4">
             <Link href="mailto:info@clinicez.com">info@clinicez.com</Link>
             <Separator orientation="vertical"/>
             <Link href="/tenants/register">Become a Tenant</Link>
           </div>
-
         </div>
-      
       </div>
       <RootHeader className="sticky top-0 z-50"/>
-      <div className="content">{children}</div>
+      <div className="">{children}</div>
       <RootFooter/>
     </>
   );

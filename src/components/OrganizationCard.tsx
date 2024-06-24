@@ -1,21 +1,34 @@
+import { Organization } from "@prisma/client";
 import Image from "next/image";
+import organizationPlaceholder from "@public/assets/organization_placeholder.jpg";
+import Link from "next/link";
+import ActionButton from "./ActionButton";
 
-export function OrganizationCard({ name, imageSrc, details, url }: { name: string; imageSrc: string, details: string, url: string }) {
+interface OrganizationCardProps {
+  organization: Organization
+}
+
+export async function OrganizationCard({ organization }: OrganizationCardProps) {
+  const {orgId, name, description, picture} = organization;
+
+  const action = async () => {
+    "use server";
+    console.log("Joining organization");
+  }
+
   return (
-    <div className="group bg-white rounded-lg shadow-md overflow-hidden relative">
-      <a href={url}>
-        <div className="group bg-white shadow-md overflow-hidden relative">
-          <Image src={imageSrc} alt={name} width={1000} height={1000} className="w-full aspect-video" />
-          <div className="absolute inset-0 bg-teal-700 opacity-0 transition duration-300 ease-in-out group-hover:opacity-70 flex items-center justify-center text-white">
-            <div>
-              <p className="text-sm text-center p-2">{details}</p>
-            </div>
+    <div className="relative group/join hover:scale-105 transition-all">
+      <Link href={`/${orgId}`}>
+        <div className=" overflow-hidden relative h-[15rem] aspect-video rounded-lg shadow-2xl ">
+          <Image src={picture ?? organizationPlaceholder} alt={name} fill className="object-cover rounded-lg" />
+          <div className="absolute bottom-0 h-20 w-full bg-white bg-opacity-90 px-4 flex items-center justify-center">
+            <p className="mb-2 text-center line-clamp-3 text-sm font-semibold" title={name}>{name}</p>
           </div>
         </div>
-        <div className="p-4 relative z-10">
-          <h2 className="font-medium mb-2">{name}</h2>
-        </div>
-      </a>
+      </Link>
+      <Link href={`/${orgId}/join`} className="hidden group-hover/join:flex">
+        <ActionButton size="sm" className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2">Join</ActionButton>
+      </Link>
     </div>
   );
 }

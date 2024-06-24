@@ -7,6 +7,7 @@ import { columns } from "./components/columns"
 import { withPageAuthRequired } from "@auth0/nextjs-auth0";
 import { Metadata } from "next";
 import { getConsultationsActions } from '@actions/consultations.action';
+import UnderConstruction from "@components/UnderConstruction";
 
 export const metadata: Metadata = {
   title: "Consultations",
@@ -26,7 +27,8 @@ async function ConsultationsPage() {
         </div>
         <Separator />
         <Suspend>
-          <DataTable data={consultations} columns={columns} />
+          <UnderConstruction/>
+          {/* <DataTable data={consultations} columns={columns} /> */}
         </Suspend>
       </div>
 

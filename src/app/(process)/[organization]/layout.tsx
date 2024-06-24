@@ -23,6 +23,7 @@ import Breadcrumb from "@components/dashboard/Breadcrumb"
 import { OrganizationSwitcher } from "@components/dashboard/OrganizationSwitcher"
 import SideNav from "./SideNav";
 import DrawerNav from "./DrawerNav";
+import { navList } from "./nav";
 
 interface DashboardLayoutProps {
   children: React.ReactNode
@@ -32,8 +33,11 @@ interface DashboardLayoutProps {
 }
 import ClinicEzMiniLogo from "@public/assets/clinic-ez_mini-logo.svg"
 import Image from "next/image";
+import { protectOrg } from "@lib/protect-org";
 
-export default function DashboardLayout({children, params:{organization}}: DashboardLayoutProps) {
+export default async function DashboardLayout({children, params:{organization}}: DashboardLayoutProps) {
+  await protectOrg(organization)// Check if user is a member of the organization they are trying to access
+
   return (
     <TooltipProvider>
       <div className="flex min-h-screen w-full flex-col bg-muted/40">
@@ -74,7 +78,7 @@ export default function DashboardLayout({children, params:{organization}}: Dashb
               </SheetTrigger>
               <SheetContent side="left" className="sm:max-w-xs">
                 <nav className="grid gap-6 text-lg font-medium">
-                  <DrawerNav/>
+                  <DrawerNav navItems={navList}/>
                   <Link
                     href="/dashboard/settings"
                     className="mt-auto flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"

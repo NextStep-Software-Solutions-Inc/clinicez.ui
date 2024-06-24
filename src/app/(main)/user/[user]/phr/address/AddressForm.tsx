@@ -46,9 +46,7 @@ const addressFormSchema = z.object({
 export default function AddressFormForm() {
   const form = useForm<z.infer<typeof addressFormSchema>>({
     resolver: zodResolver(addressFormSchema),
-    defaultValues: {
-      addresses: [],
-    }
+    
   });
 
   const {fields, append, remove} = useFieldArray({

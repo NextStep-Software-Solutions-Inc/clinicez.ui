@@ -1,5 +1,6 @@
 import { labels } from './src/app/(process)/[organization]/consultations/data/data';
 declare global {
+  var prisma: PrismaClient;
   type Consultation =  {
     id: string
     subject: string
@@ -7,6 +8,27 @@ declare global {
     label: string
     priority: string
     appointmentId: string
+  }
+  type ApplicationRequest = {
+    id: number
+    role: {
+      id: number
+      name: string
+    }
+    status: string
+    createdAt: Date,
+    User: {
+      id: number
+      userId: string
+      firstName: string | null
+      lastName: string | null
+    }
+    AcceptedBy: {
+      id: number
+      userId: string
+      firstName: string | null
+      lastName: string | null
+    } | null
   }
   type Intervention = {
     id: string

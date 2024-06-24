@@ -14,7 +14,6 @@ import { faker } from "@faker-js/faker";
 import { getAppointmentAction } from "@actions/appointments.action";
 import { getUserAction } from "@actions/user.action";
 import { differenceInCalendarYears } from "date-fns";
-import { cache } from "react";
 
 interface ConsultationDetailsProps {
     consultation: Consultation
@@ -30,12 +29,12 @@ export default async function ConsultationDetails({ consultation }: Consultation
         <CardTitle className="flex justify-between items-center">
           <div className="flex gap-2">
             <Avatar>
-              <AvatarImage className="object-cover" src={user.avatar}/>
+              <AvatarImage className="object-cover" src={user.picture ?? ""}/>
               <AvatarFallback>{consultation.subject[0]}</AvatarFallback>
             </Avatar>
             <div className="flex flex-col">
-              <span className="text-sm font-semibold">{user.name}</span>
-              <div className="text-xs text-muted-foreground"><span>{user.gender}</span> / <span>{differenceInCalendarYears(new Date(), user.dob)}</span></div>
+              <span className="text-sm font-semibold">{user.firstName} {user.lastName}</span>
+              <div className="text-xs text-muted-foreground"><span>{"Male"}</span> / <span>{differenceInCalendarYears(new Date(), new Date())}</span></div>
             </div>
           </div>
           <DropdownMenuProvider>

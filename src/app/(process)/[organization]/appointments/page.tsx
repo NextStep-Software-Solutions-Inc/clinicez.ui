@@ -7,9 +7,8 @@ import { getAppointmentCounts, getAppointmentsAction } from "@actions/appointmen
 import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth0";
 import { AppointmentStatus } from "@public/json/appointment-list";
 import AppointmentDisplay from "./mail/components/AppointmentDisplay";
-import { redirect } from "next/navigation"
 import Suspend from "@components/Suspend";
-import { self } from "@services/request";
+import UnderConstruction from "@components/UnderConstruction";
 
 async function AppointmentsPage({ searchParams, params }: AppRouterPageRouteOpts ) {
   // const data = await self.get("/api/appointments", {
@@ -51,7 +50,8 @@ async function AppointmentsPage({ searchParams, params }: AppRouterPageRouteOpts
       <Separator />
       <div className="rounded-[0.5rem] border bg-background shadow]">
         <Suspend>
-          <AppointmentPanel
+          <UnderConstruction/>
+          {/* <AppointmentPanel
             appointmentsCounts={appointmentsCounts}
             appointments={appointments ?? []}
             defaultLayout={defaultLayout}
@@ -59,7 +59,7 @@ async function AppointmentsPage({ searchParams, params }: AppRouterPageRouteOpts
             navCollapsedSize={4}
           >
             <AppointmentDisplay appointmentId={appointmentId || null} role={role as UserRoles}/>
-          </AppointmentPanel>
+          </AppointmentPanel> */}
         </Suspend>
       </div>
     </div>

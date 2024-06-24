@@ -17,7 +17,8 @@ interface PictureProps {
 }
 
 export const Picture = async ({ user, disabled = true }: PictureProps) => {
-
+  console.log({user});
+  
   const action = async (formData: FormData) => {
     toast.promise(uploadMediaAction(formData), {
       loading: "Uploading...",

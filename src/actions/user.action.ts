@@ -38,7 +38,5 @@ export const updateUserAction = async (userId: string, data: Prisma.UserUpdateAr
     where: { userId },
     data
   });
-  console.log({updatedUser});
-  
   return updatedUser;
 }

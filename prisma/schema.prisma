@@ -92,6 +92,7 @@ model Organization {
   description              String?
   picture                  String?
   cover                    String?
+  customUrl                String?
   createdAt                DateTime                  @default(now())
   updatedAt                DateTime                  @updatedAt
   deletedAt                DateTime?

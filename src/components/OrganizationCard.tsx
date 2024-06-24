@@ -9,16 +9,11 @@ interface OrganizationCardProps {
 }
 
 export async function OrganizationCard({ organization }: OrganizationCardProps) {
-  const {orgId, name, description, picture} = organization;
-
-  const action = async () => {
-    "use server";
-    console.log("Joining organization");
-  }
+  const {orgId, name, description, picture, customUrl} = organization;
 
   return (
     <div className="relative group/join hover:scale-105 transition-all">
-      <Link href={`/${orgId}`}>
+      <Link href={customUrl ? customUrl: `/${orgId}`}>
         <div className=" overflow-hidden relative h-[15rem] aspect-video rounded-lg shadow-2xl ">
           <Image src={picture ?? organizationPlaceholder} alt={name} fill className="object-cover rounded-lg" />
           <div className="absolute bottom-0 h-20 w-full bg-white bg-opacity-90 px-4 flex items-center justify-center">

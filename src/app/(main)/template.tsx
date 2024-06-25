@@ -4,6 +4,7 @@ import RootFooter from "@components/RootFooter";
 import Link from "next/link";
 import { Separator } from "@components/ui/separator";
 
+const APP_EMAIL = process.env.NEXT_PUBLIC_APP_EMAIL;
 
 export default function RootLayout({
   children,
@@ -16,7 +17,7 @@ export default function RootLayout({
         <div className="container flex items-center ~text-xs/sm">
           <span className="flex-1"></span>
           <div className="flex h-5 items-center space-x-4">
-            <Link href="mailto:info@clinicez.com">info@clinicez.com</Link>
+            <Link href={`mailto:${APP_EMAIL}`}>{APP_EMAIL}</Link>
             <Separator orientation="vertical"/>
             <Link href="/tenants/register">Become a Tenant</Link>
           </div>

@@ -4,43 +4,46 @@ import { deleteFileAction } from "@actions/file.actions";
 import ActionButton from "@components/ActionButton";
 import { Button } from "@components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@components/ui/popover";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@components/ui/tooltip";
 import { PopoverClose } from "@radix-ui/react-popover";
 import { Trash2 } from "lucide-react";
 import React from "react";
-import { useFormState } from "react-dom";
 import { toast } from "sonner";
 
 interface ConfirmDeleteFileProps {
   disabled?: boolean
-  fileId: string
+  fileId: number
 }
 
 export default function ConfirmDeleteFile({disabled = false, fileId}: ConfirmDeleteFileProps) {
   const triggerRef = React.useRef<HTMLButtonElement>(null);
 
-  const actionWrapper = async (prev: any, formData: FormData) => {
-    const res = await deleteFileAction(fileId);
-    if(res) toast.success("File deleted successfully.");
-    triggerRef.current?.click();
-    return res;
+  const action = async () => {
+    toast.promise(deleteFileAction(fileId), {
+      loading: "Deleting file...",
+      success: () => {
+        return "File deleted successfully."
+      },
+      error: "Error deleting file."
+    });
   }
-  const [state, action] = useFormState(actionWrapper, false);
 
 
   return (
     <Popover>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <PopoverTrigger asChild ref={triggerRef}>
-            <Button className="group/delete invisible group-hover/item:visible" variant="ghost" size="icon">
-              <Trash2 className="h-4 w-4 text-destructive group-hover/delete:scale-125 transition-all" />
-              <span className="sr-only">Delete</span>
-            </Button>
-          </PopoverTrigger>
-        </TooltipTrigger>
-        <TooltipContent>Delete</TooltipContent>
-      </Tooltip>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <PopoverTrigger asChild ref={triggerRef}>
+              <Button className="group/delete invisible group-hover/item:visible" variant="ghost" size="icon">
+                <Trash2 className="h-4 w-4 text-destructive group-hover/delete:scale-125 transition-all" />
+                <span className="sr-only">Delete</span>
+              </Button>
+            </PopoverTrigger>
+          </TooltipTrigger>
+          <TooltipContent>Delete</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
       <PopoverContent className="w-96">
         <p>
             Are you sure you want to delete this file?

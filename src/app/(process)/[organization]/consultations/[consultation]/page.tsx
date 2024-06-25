@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 }
 
 async function ConsultationPage({params}: AppRouterPageRouteOpts) {
-  const consultationId = params?.consultation as string
+  const consultationId = parseInt(params?.consultation as string)
 
   const consultation = await getConsultationAction(consultationId)
 

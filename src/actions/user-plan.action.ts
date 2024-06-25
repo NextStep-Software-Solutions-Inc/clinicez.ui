@@ -124,6 +124,10 @@ export const hpApplicationTransactionAction = async ({
     })
     // Return true if all transactions are successful
     return true;
+  }, {
+    maxWait: 5000,
+    timeout: 10000,
+    isolationLevel: Prisma.TransactionIsolationLevel.Serializable
   })
   return success;
 }

@@ -8,7 +8,7 @@ import {
   Dialog,
   DialogTrigger,
 } from "@components/ui/dialog"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@components/ui/tooltip"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@components/ui/tooltip"
 import {  AlertCircle, Cloud } from "lucide-react"
 import dynamic from "next/dynamic";
 
@@ -19,9 +19,9 @@ const UploadFileForm = dynamic(() => import("../UploadFileForm"), {
 
 interface UploadFileModalProps {
   folder: {
-    id: string;
+    id: number;
     name: string;
-    description: string;
+    description?: string;
   }
 }
 
@@ -29,17 +29,19 @@ export default function UploadFileModal({folder}: UploadFileModalProps) {
 
   return (
     <Dialog>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <DialogTrigger asChild>
-            <Button>
-              <Cloud className="h-4 w-4 mr-2"/>
-              Upload File
-            </Button>
-          </DialogTrigger>
-        </TooltipTrigger>
-        <TooltipContent>Upload File</TooltipContent>
-      </Tooltip>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <DialogTrigger asChild>
+              <Button>
+                <Cloud className="h-4 w-4 mr-2"/>
+                  Upload File
+              </Button>
+            </DialogTrigger>
+          </TooltipTrigger>
+          <TooltipContent>Upload File</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
       <CustomModalContent 
         className="sm:max-w-[625px]"
         label="Upload File" 

@@ -85,7 +85,7 @@ export const JoinOrgForm = () => {
                   <RadioGroup
                     onValueChange={field.onChange}
                     defaultValue={field.value?.toString()}
-                    className="flex flex-col space-y-2"
+                    className="flex flex-row flex-wrap gap-5"
                   >
                     <Each
                       of={orgRoles}

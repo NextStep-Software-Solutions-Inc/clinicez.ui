@@ -24,38 +24,39 @@ model Tenant {
 }
 
 model User {
-  id                              Int                      @id @default(autoincrement())
-  userId                          String                   @unique // this is from auth0 user_id
-  email                           String                   @unique
-  firstName                       String?
-  middleName                      String?
-  lastName                        String?
-  suffix                          String?
-  nickname                        String?
-  gender                          Gender?
-  dob                             DateTime?                @db.Date
-  civilStatus                     CivilStatus?
-  religion                        String?
-  nationality                     String?
-  telephone                       String?
-  mobile                          String?
-  bloodType                       BloodType?
-  picture                         String?
-  createdAt                       DateTime                 @default(now())
-  updatedAt                       DateTime                 @default(now()) @updatedAt
-  deletedAt                       DateTime?
-  isActive                        Boolean                  @default(true)
-  Tenants                         Tenant[]
-  Organizations                   UserOrganization[]       @relation("User")
-  Plans                           UserPlan[]
-  UserDefaultOrganization         UserDefaultOrganization?
-  UserDefaultTenant               UserDefaultTenant?
-  HealthcareProvider              HealthcareProvider?
-  SocialLink                      SocialLink?
-  AcceptedOrganizationApplication UserOrganization[]       @relation("AcceptedBy")
-  ReceiptCodeClaim                ReceiptCodeClaim[]
-  UserMigration                   UserMigration?
-  ActivationCodes                 ActivationCode[]
+  id                               Int                      @id @default(autoincrement())
+  userId                           String                   @unique // this is from auth0 user_id
+  email                            String                   @unique
+  firstName                        String?
+  middleName                       String?
+  lastName                         String?
+  suffix                           String?
+  nickname                         String?
+  gender                           Gender?
+  dob                              DateTime?                @db.Date
+  civilStatus                      CivilStatus?
+  religion                         String?
+  nationality                      String?
+  telephone                        String?
+  mobile                           String?
+  bloodType                        BloodType?
+  picture                          String?
+  createdAt                        DateTime                 @default(now())
+  updatedAt                        DateTime                 @default(now()) @updatedAt
+  deletedAt                        DateTime?
+  isActive                         Boolean                  @default(true)
+  Tenants                          Tenant[]
+  Organizations                    UserOrganization[]       @relation("User")
+  Plans                            UserPlan[]
+  UserDefaultOrganization          UserDefaultOrganization?
+  UserDefaultTenant                UserDefaultTenant?
+  HealthcareProvider               HealthcareProvider?
+  SocialLink                       SocialLink?
+  AcceptedOrganizationApplications UserOrganization[]       @relation("AcceptedBy")
+  ReceiptCodeClaims                ReceiptCodeClaim[]
+  UserMigration                    UserMigration?
+  ActivationCodes                  ActivationCode[]
+  Folders                          Folder[]
 }
 
 enum Gender {
@@ -90,6 +91,7 @@ model Organization {
   orgId                    String                    @unique // friendly name
   name                     String
   description              String?
+  email                    String?
   picture                  String?
   cover                    String?
   customUrl                String?
@@ -101,7 +103,8 @@ model Organization {
   Users                    UserOrganization[]
   UserDefaultOrganizations UserDefaultOrganization[]
   Roles                    UserOrganizationRole[]
-  UserMigration            UserMigration[]
+  UserMigrations           UserMigration[]
+  ScopeFolders             FolderSetting[]
 }
 
 // This is for user to join an organization e.g. as a member, admin, healthcare provider, etc.
@@ -399,4 +402,79 @@ model ActivationCode {
   deletedAt DateTime?
   isActive  Boolean   @default(true)
   User      User      @relation(fields: [userId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+}
+
+model Folder {
+  id            Int            @id @default(autoincrement())
+  userId        Int
+  name          String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  deletedAt     DateTime?
+  isActive      Boolean        @default(true)
+  User          User           @relation(fields: [userId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  Files         File[]
+  FolderSetting FolderSetting?
+
+  @@unique([userId, name], name: "unique_user_folder")
+}
+
+model FolderSetting {
+  id           Int           @id @default(autoincrement())
+  folderId     Int           @unique
+  scopeOrgId   Int?
+  isPublic     Boolean       @default(false)
+  Folder       Folder        @relation(fields: [folderId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  Organization Organization? @relation(fields: [scopeOrgId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+}
+
+model File {
+  id          Int          @id @default(autoincrement())
+  folderId    Int
+  fileTypeId  Int
+  name        String
+  size        Int
+  url         String
+  dateTaken   DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  deletedAt   DateTime?
+  isActive    Boolean      @default(true)
+  Folder      Folder       @relation(fields: [folderId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  FileType    FileType     @relation(fields: [fileTypeId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  FileSetting FileSetting?
+
+  @@unique([folderId, name], name: "unique_folder_file")
+}
+
+model FileSetting {
+  id       Int     @id @default(autoincrement())
+  fileId   Int     @unique
+  isPublic Boolean @default(false)
+  File     File    @relation(fields: [fileId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+}
+
+model FileType {
+  id                 Int                 @id @default(autoincrement())
+  name               String
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  deletedAt          DateTime?
+  isActive           Boolean             @default(true)
+  Files              File[]
+  FileTypeAttributes FileTypeAttribute[]
+}
+
+model FileTypeAttribute {
+  id         Int       @id @default(autoincrement())
+  fileTypeId Int
+  name       String
+  type       String
+  required   Boolean   @default(false)
+  validUntil DateTime? @db.Date
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  deletedAt  DateTime?
+  isActive   Boolean   @default(true)
+  FileType   FileType  @relation(fields: [fileTypeId], references: [id], onUpdate: NoAction, onDelete: NoAction)
 }

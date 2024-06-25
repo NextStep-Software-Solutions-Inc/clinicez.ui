@@ -67,7 +67,7 @@ export const JoinOrgForm = () => {
   
   useEffect(() => {
     (async () => {
-      setOrgRoles(await getOrganizationRolesAction(organization));
+      setOrgRoles(await getOrganizationRolesAction({orgId: organization}));
     })();
   }, [organization]);
 

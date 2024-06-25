@@ -4,8 +4,8 @@ import React from "react";
 
 import HotjarClient from '@hotjar/browser';
 
-const siteId = 5036459;
-const hotjarVersion = 6;
+const siteId = parseInt(process.env.NEXT_PUBLIC_HOTJAR_SITE_ID!);
+const hotjarVersion = parseInt(process.env.NEXT_PUBLIC_HOTJAR_VERSION!);
 
 export default function Hotjar() {
   

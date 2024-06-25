@@ -6,10 +6,10 @@ import { Label } from "@components/ui/label";
 import { Input } from "@components/ui/input";
 import ActionButton from "@components/ActionButton";
 import { updateUserAction } from "@actions/user.action";
-import { uploadMediaAction } from "@actions/blob.action";
 import { toast } from "sonner";
 import { revalidatePath } from "@actions/cache.action";
 import ConditionalRender from "@components/utils/ConditionalRender";
+import { uploadFile } from "@services/azure-blob";
 
 interface PictureProps {
   user: User;
@@ -17,10 +17,10 @@ interface PictureProps {
 }
 
 export const Picture = async ({ user, disabled = true }: PictureProps) => {
-  console.log({user});
   
   const action = async (formData: FormData) => {
-    toast.promise(uploadMediaAction(formData), {
+
+    toast.promise(uploadFile(formData), {
       loading: "Uploading...",
       success: ({url}) => {
         return toast.promise(updateUserAction(user.userId, { picture: url }), {

@@ -41,6 +41,7 @@ export default function ConfirmationForm({ nextStep, prevStep, isFirstStep, isCo
   const [applicationData, setApplicationData] = useLocalStorage<formType & {
     role: HealthcareProviderType;
     plan: string;
+    receiptCode: string;
     complete: boolean;
   }>("hp-application");
 
@@ -52,33 +53,34 @@ export default function ConfirmationForm({ nextStep, prevStep, isFirstStep, isCo
 
   const action = () => {
     form.handleSubmit(async (data) => {
-      try {
 
-        await setApplicationData({...data, complete: true, role: applicationData?.role, plan: applicationData?.plan})
+      await setApplicationData({...data, complete: true, role: applicationData?.role, plan: applicationData?.plan, receiptCode: applicationData?.receiptCode})
 
-        const dbUser = await getUserAction(user?.sub ?? "")
-        const userId = dbUser.id  
-        const planId = parseInt(applicationData.plan)
+      const dbUser = await getUserAction(user?.sub ?? "")
+      const userId = dbUser.id  
+      const planId = parseInt(applicationData.plan)
   
-        if(!userId || !planId) return toast.error("An error occurred. Please try again later.");
-  
-        // transaction method
-        const res = await hpApplicationTransactionAction({
-          planPayload: {planId, userId, status : "ACTIVE"},
-          hpPayload: {
-            type: applicationData.role,
-            User: {
-              connect: {
-                userId: user?.sub ?? ""
-              }
+      if(!userId || !planId) return toast.error("An error occurred. Please try again later.");
+      
+      // transaction method
+      toast.promise(hpApplicationTransactionAction({
+        planPayload: {planId, userId, status : "ACTIVE"},
+        hpPayload: {
+          type: applicationData.role,
+          User: {
+            connect: {
+              userId: user?.sub ?? ""
             }
           }
-        })
-        setComplete?.(res);
-        toast.success("Healthcare Provider registration successful!");
-      } catch (error) {
-        toast.error("An error occurred while submitting your application. Please try again later.");
-      }
+        }, code: applicationData.receiptCode
+      }), {
+        loading: "Submitting application...",
+        success: () => {
+          setComplete?.(true);
+          return "Healthcare Provider registration successful!";
+        },
+        error: (error) => `An error occurred while submitting your application. Please try again later. Error: ${error}`,
+      });
     })()
   }
 

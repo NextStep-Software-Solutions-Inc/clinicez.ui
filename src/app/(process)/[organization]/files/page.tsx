@@ -7,6 +7,7 @@ import { Metadata } from "next";
 import { getFilesAction } from "@actions/file.actions";
 import { AppRouterPageRouteOpts } from "@auth0/nextjs-auth0";
 import CreateFolderModal from "./components/modals/CreateFolderModal";
+import UnderConstruction from "@components/UnderConstruction";
 
 export const metadata: Metadata = {
   title: "Files",
@@ -32,14 +33,15 @@ export default async function FilesPage({params}: AppRouterPageRouteOpts) {
           
         
         <Separator />
-        <Suspend>
+        {/* <Suspend>
           <AlertBanner/>
-        </Suspend>
+        </Suspend> */}
         <Suspend>
-          <Each
+          <UnderConstruction/>
+          {/* <Each
             of={folders}
             render={folder=> <Folder folder={folder} />}
-          />
+          /> */}
         </Suspend>
       </div>
     

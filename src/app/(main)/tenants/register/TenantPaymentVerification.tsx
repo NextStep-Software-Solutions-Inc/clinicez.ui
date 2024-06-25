@@ -15,6 +15,7 @@ import { useSearchParams } from "next/navigation";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import { getUserAction } from "@actions/user.action";
 import { getPlansAction } from "@actions/plan.action";
+import { getReceiptCodeAction } from "@actions/reciept-code.action";
 
 interface TenantPaymentVerificationProps {
     prevStep?: () => void;
@@ -27,7 +28,7 @@ interface TenantPaymentVerificationProps {
 
 const fetchPlans = getPlansAction()
 export default function TenantPaymentVerification({ setComplete, prevStep }: TenantPaymentVerificationProps) {
-  const [paymentData, setPaymentData] = useLocalStorage("tenant-application", { receiptNumber: "" });
+  const [paymentData, setPaymentData] = useLocalStorage("tenant-application", { receiptCode: "" });
   const plans = use(fetchPlans)
   const searchParams = useSearchParams();
   const user = useUser();
@@ -39,7 +40,7 @@ export default function TenantPaymentVerification({ setComplete, prevStep }: Ten
   console.log({selectedPlan, paymentData, cost});
   
   const paymentConfirmationFormSchema = z.object({
-    receiptNumber: z.string().refine((value) => value.length >=5 || cost === 0, {
+    receiptCode: z.string().refine((value) => value.length >=5 || cost === 0, {
       message: "Receipt number must be at least 5 characters long."
     })
   })
@@ -48,7 +49,7 @@ export default function TenantPaymentVerification({ setComplete, prevStep }: Ten
   const form = useForm<z.infer<typeof paymentConfirmationFormSchema>>({
     resolver: zodResolver(paymentConfirmationFormSchema),
     defaultValues: {
-      receiptNumber: paymentData?.receiptNumber,
+      receiptCode: paymentData?.receiptCode,
     }
   })
 
@@ -65,9 +66,19 @@ export default function TenantPaymentVerification({ setComplete, prevStep }: Ten
     })()
   } 
 
-  const handleVerify = () => {
-    setPaymentVerified(true);
-    toast.success("Payment verified. You can now submit your application");
+  const handleVerify = (code: string) => {
+
+    toast.promise(getReceiptCodeAction(code), {
+      loading: "Verifying code...",
+      success: () => {
+        setPaymentVerified(true);
+        return "Code verified. You can now submit your application.";
+      },
+      error: "Invalid Code. Please try again or use different code.",
+    
+    })
+
+   
   }
 
   return (
@@ -82,7 +93,7 @@ export default function TenantPaymentVerification({ setComplete, prevStep }: Ten
         <div className="flex items-center gap-2">
           <FormField
             control={form.control}
-            name="receiptNumber"
+            name="receiptCode"
             render={({ field }) => (
               <FormItem className="space-y-3 flex-1">
                 <FormLabel>Reference Number</FormLabel>
@@ -96,7 +107,7 @@ export default function TenantPaymentVerification({ setComplete, prevStep }: Ten
               </FormItem>
             )}
           />
-          <Button disabled={!form.formState.isValid || paymentVerified} onClick={handleVerify} type="button">Verify</Button>
+          <Button disabled={!form.formState.isValid || paymentVerified} onClick={() => handleVerify(form.watch("receiptCode"))} type="button">Verify</Button>
         </div>
         <div className="mt-4">
           <BackSubmitAndNext

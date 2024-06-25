@@ -5,8 +5,8 @@ import { OrganizationSwitcher } from "@components/dashboard/OrganizationSwitcher
 import UserAvatarWrapper from "@components/UserAvatarWrapper";
 
 
-interface IHeaderProps extends DetailedHTMLProps<HTMLAttributes<HTMLElement>, HTMLElement>{}
-export default function Header({...props}: IHeaderProps) {
+interface IActivationHeaderProps extends DetailedHTMLProps<HTMLAttributes<HTMLElement>, HTMLElement>{}
+export default function ActivationHeader({...props}: IActivationHeaderProps) {
   
   return (
     <header {...props} className={`bg-[#FCF8F1] bg-opacity-30 backdrop-blur ${props.className}`}>

@@ -1,7 +1,10 @@
 "use server";
 
+import { getSession } from '@auth0/nextjs-auth0';
 import prisma from "@lib/prisma";
-import { Prisma } from "@prisma/client";
+import { Prisma, UserOrganizationStatus } from "@prisma/client";
+import { stat } from 'fs';
+import { revalidatePath } from 'next/cache';
 
 export const createOrganizationAction = async (data: Prisma.OrganizationCreateArgs["data"]) => {
 
@@ -26,7 +29,7 @@ export const getOrganizationsAction = async (filters?: FiltersType) => {
       ...(userId && {
         Users: {
           every: {
-            user: {
+            User: {
               userId
             }
           }
@@ -45,9 +48,74 @@ export const getOrganizationAction = async (id: number) => {
     where: {
       id: id
     }
-  });
+  });``
 
   return organization;
+}
+
+type FilterType = {
+  userId?: string;
+  orgId?: string;
+  status?: UserOrganizationStatus;
+  roleId?: number;
+}
+
+export const getUserOrganizationsAction = async (filter?: FilterType) => {
+  const { userId, orgId, status, roleId } = filter || {};
+  const organizations = await prisma.userOrganization.findMany({
+    where: {
+      ...roleId && { roleId },
+      ...status && { status },
+      ...orgId && {
+        Organization: {
+          orgId
+        }
+      },
+      ...userId && {
+        User: {
+          isActive: true,
+          userId
+        }
+      }
+    },
+    select: {
+      id: true,
+      createdAt: true,
+      User: {
+        select: {
+          id: true,
+          userId: true,
+          firstName: true,
+          lastName: true
+        }
+      },
+      AcceptedBy: {
+        select: {
+          id: true,
+          userId: true,
+          firstName: true,
+          lastName: true
+        }
+      },
+      status: true,
+      role: true,
+      UserRole: {
+        select: {
+          id: true,
+          name: true,
+        }
+      },
+      Organization: {
+        select: {
+          name: true,
+          orgId: true,
+          id: true
+        }
+      }
+    }
+  });
+  return organizations;
+
 }
 
 export const getMyDefaultOrganizationAction = async (userId: string) => {
@@ -92,4 +160,52 @@ export const setMyDefaultOrganizationAction = async (id: number, orgId: string, 
     }
   })
   return org;
+}
+
+export const joinOrganizationAction = async ({ orgId, userId, roleId}:{
+  orgId: string, userId: string, roleId: number
+}) => {
+  const org = await prisma.userOrganization.create({
+    data: {
+      UserRole: {
+        connect: { id: roleId  }
+      },
+      User: {
+        connect: { userId }
+      },
+      Organization: {
+        connect: { orgId }
+      }
+    }
+  })
+  return org;
+}
+
+export const getOrganizationRolesAction = async (orgId: string) => {
+  const roles = await prisma.userOrganizationRole.findMany({
+    where: {
+      isActive: true,
+      Organization: { orgId }
+    }
+  })
+  return roles;
+}
+
+export const setMembershipRequestStatusAction = async (id: number, status: UserOrganizationStatus) => {
+  const session = await getSession();
+  const request = await prisma.userOrganization.update({
+    where: { id },
+    data: {
+      status,
+      ...status === "ACTIVE" && {
+        AcceptedBy: {
+          connect: {
+            userId: session?.user.sub
+          }
+        }
+      }
+    }
+  })
+  revalidatePath(`/[organization]/membership`, "page")
+  return request;
 }

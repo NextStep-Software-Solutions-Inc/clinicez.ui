@@ -1,6 +1,7 @@
 import { Separator } from "@components/ui/separator"
 import { Metadata } from "next"
 import AddressFormForm from "./AddressForm"
+import UnderConstruction from "@components/UnderConstruction"
 
 export const metadata: Metadata = {
   title: "Address | PHR",
@@ -17,7 +18,9 @@ export default function AddressPage() {
         </p>
       </div>
       <Separator />
-      <AddressFormForm />
+      <UnderConstruction/>
+
+      {/* <AddressFormForm /> */}
     </div>
   )
 }

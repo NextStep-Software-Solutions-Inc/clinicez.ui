@@ -228,6 +228,9 @@ export const joinOrganizationAction = async ({ orgId, userId, roleId}:{
 
 export const getOrganizationRolesAction = async (orgId: string) => {
   const roles = await prisma.userOrganizationRole.findMany({
+    orderBy: {
+      name: "asc"
+    },
     where: {
       isActive: true,
       Organization: { orgId }

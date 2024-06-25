@@ -62,7 +62,7 @@ export const columns: ColumnDef<MembershipRequestSchema>[] = [
       <DataTableColumnHeader column={column} title="Application Date" />
     ),
     cell: ({ row }) => {
-      const dateApplied = format(row.original.createdAt, "PP")
+      const dateApplied = format(row.original.createdAt, "PPp")
 
       if (!dateApplied) {
         return null
@@ -156,13 +156,15 @@ export const columns: ColumnDef<MembershipRequestSchema>[] = [
       if (!status) {
         return null
       }
+      const PendingBadge = <Badge variant="secondary" className="bg-blue-500 text-white">{status.label}</Badge>
       const SuspendedBadge = <Badge variant="destructive">{status.label}</Badge>
       const ActiveBadge = <Badge variant="secondary" className="bg-green-500 text-white">{status.label}</Badge>
       return (
         <div className="flex items-center">
-          {!["ACTIVE", "SUSPENDED"].includes(status.value) && status.label}
+          {!["ACTIVE", "SUSPENDED", "PENDING"].includes(status.value) && status.label}
           {status.value === "ACTIVE" && ActiveBadge}
           {status.value === "SUSPENDED" && SuspendedBadge}
+          {status.value === "PENDING" && PendingBadge}
         </div>
       )
     },

@@ -29,7 +29,7 @@ export const JoinOrgForm = () => {
     }).refine((role) => {
       return !existingRoles.includes(role);
     }, (value) => ({
-      message: `Role ${value} already exists in the organization. Please select another role.`
+      message: `Role already exists in the organization. Please select another role.`
     }))
   })
 
@@ -44,16 +44,15 @@ export const JoinOrgForm = () => {
     if (!userId) return;
 
     form.handleSubmit(async (values) => {
-      try {
-        await joinOrganizationAction({
-          orgId: organization,
-          roleId: values.roleId,
-          userId
-        });
-        toast.success("You have successfully joined the organization, please wait for the admin to approve your request.");
-      } catch (error) {
-        toast.error(`Something went wrong while joining the organization. Please try again later.`);
-      }
+      toast.promise(joinOrganizationAction({
+        orgId: organization,
+        roleId: values.roleId,
+        userId
+      }), {
+        loading: "Joining organization...",
+        success: "You have successfully joined the organization, please wait for the admin to approve your request.",
+        error: "Something went wrong while joining the organization. Please try again later."
+      })
     }, (error) => {
       toast.error(`Form error: ${error.roleId?.message}`)
     })()

@@ -4,8 +4,6 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 
-import { Button } from "@components/ui/button"
-
 import {
   Form,
   FormControl,
@@ -18,22 +16,45 @@ import {
 import { Input } from "@components/ui/input"
 
 import {toast} from "sonner"
+import ActionButton from "@components/ActionButton"
+import { resetPasswordAction } from "@actions/user.action"
+import { useUser } from "@auth0/nextjs-auth0/client"
+import { useRouter } from "next/navigation"
 
 const accountFormSchema = z.object({
-  oldPassword: z.string().min(6),
-  newPassword: z.string().min(6)
+  password: z.string().min(6),
+  confirmPassword: z.string().min(6)
+}).refine(data => data.password === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"]
 })
 
 type GeneraSettingsFormValues = z.infer<typeof accountFormSchema>
 
 export default function SecuritySettingsForm() {
+  const user = useUser()
+  const router = useRouter()
   
   const form = useForm<GeneraSettingsFormValues>({
-    resolver: zodResolver(accountFormSchema)
+    resolver: zodResolver(accountFormSchema),
+    mode: "onChange"
   })
 
-  function onSubmit(data: GeneraSettingsFormValues) {
-    toast("You submitted the following values")
+  const action = async () => {
+    form.handleSubmit(async (values) => {
+      const userId = user?.user?.sub
+      if (!userId) return toast.error("User not found");
+
+      toast.promise(resetPasswordAction(userId, values.password), {
+        loading: "Updating password...",
+        success: () => {
+          form.reset(values);
+          router.replace("/api/auth/logout");
+          return "Password updated successfully. Please login again for security reasons."
+        },
+        error: (error) => `Failed to update password. Error: ${error}`
+      })
+    })()
   }
 
   return (
@@ -43,26 +64,10 @@ export default function SecuritySettingsForm() {
       </div>
       <Form {...form}>
         
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <form action={action} className="space-y-8">
           <FormField
             control={form.control}
-            name="oldPassword"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Old Password</FormLabel>
-                <FormControl>
-                  <Input placeholder="Your old password" {...field} type="password" />
-                </FormControl>
-                <FormDescription>
-                The old password you use to login.
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="newPassword"
+            name="password"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>New Password</FormLabel>
@@ -76,8 +81,24 @@ export default function SecuritySettingsForm() {
               </FormItem>
             )}
           />
+          <FormField
+            control={form.control}
+            name="confirmPassword"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Confirmation Password</FormLabel>
+                <FormControl>
+                  <Input placeholder="Confirm your password" {...field} type="password" />
+                </FormControl>
+                <FormDescription>
+                Confirm your new password.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         
-          <Button disabled={!form.formState.isDirty} type="submit">Update</Button>
+          {form.formState.isDirty && <ActionButton disabled={form.formState.isLoading} type="submit">Update</ActionButton>}
         </form>
       </Form>
     </div>

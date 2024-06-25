@@ -5,7 +5,6 @@ import consultationNotes from "@public/json/consultation-notes.json"
 import nurseAssessment from "@public/json/nurse-assessment.json" 
 import  conversation from "@public/json/conversation.json"
 import vitalSigns from "@public/json/vital-signs.json"
-import consultationFiles from "@public/json/consultation-files.json"
 import { consultationRecordSchema } from "../app/(process)/[organization]/consultations/data/schema";
 import interventions from "@public/json/interventions.json"
 import { z } from "zod";
@@ -27,7 +26,7 @@ export const getConsultationsActions = async () => {
 }
 
 
-export const getConsultationAction = async (id: string) => {
+export const getConsultationAction = async (id: number) => {
   const consultation = consultations.find((consultation) => consultation.id === id)
   if (!consultation) {
     throw new Error("Consultation not found")
@@ -41,11 +40,11 @@ export const addInterventionAction = async (data: FormData) => {
   return true;
 }
 
-export const getConsultationNotes = async (id: string) => {
+export const getConsultationNotes = async (id: number) => {
   return consultationNotes
 }
 
-export const getNurseAssessment = async (id: string) => {
+export const getNurseAssessment = async (id: number) => {
   return nurseAssessment
 }
 
@@ -73,17 +72,17 @@ export const updateNurseAssessmentAction = async (data: FormData) => {
   return true;
 }
 
-export const getConversationAction = async (id: string) => {
+export const getConversationAction = async (id: number) => {
   console.log("Getting conversation...", id);
   return conversation.conversation
 }
 
-export const getInterventionsAction = async (id: string) => {
+export const getInterventionsAction = async (id: number) => {
   console.log("Getting interventions...", id);
   return interventions
 }
 
-export const getVitalSignsAction = async (id: string) => {
+export const getVitalSignsAction = async (id: number) => {
   console.log("Getting vital signs...", id);
   return vitalSigns
 }

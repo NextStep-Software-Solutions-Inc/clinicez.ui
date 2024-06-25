@@ -2,7 +2,7 @@ import { labels } from './src/app/(process)/[organization]/consultations/data/da
 declare global {
   var prisma: PrismaClient;
   type Consultation =  {
-    id: string
+    id: number
     subject: string
     status: string
     label: string

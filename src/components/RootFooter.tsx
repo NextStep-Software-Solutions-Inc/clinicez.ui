@@ -17,7 +17,7 @@ const RootFooter = () => {
           <p className="space-x-2 my-5">
             <span className="font-bold">&copy; {fullYear}</span> 
             <span className="font-bold text-primary">PointersBit Inc.</span>,
-             All right reserved.</p>
+             All rights reserved.</p>
         </div>
         <div className="flex flex-wrap justify-between md:mt-8 ">
           <div className="w-full md:w-1/3 text-center sm:text-left">

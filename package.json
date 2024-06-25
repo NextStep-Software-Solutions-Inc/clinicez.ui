@@ -23,6 +23,7 @@
     "@auth0/nextjs-auth0": "^3.5.0",
     "@faker-js/faker": "^8.4.1",
     "@hookform/resolvers": "^3.3.4",
+    "@hotjar/browser": "^1.0.9",
     "@lottiefiles/react-lottie-player": "^3.5.3",
     "@prisma/client": "5.15.0",
     "@radix-ui/react-accordion": "^1.1.2",

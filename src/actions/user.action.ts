@@ -1,9 +1,8 @@
 "use server";
-
+import 'server-only'
 import prisma from "@lib/prisma";
 import { Prisma } from "@prisma/client";
 import { managementClient } from "@services/auth0/management-client";
-import 'server-only'
 
 
 export const getUsersAction = async () => {

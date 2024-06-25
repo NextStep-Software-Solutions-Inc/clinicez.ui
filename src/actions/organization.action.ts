@@ -226,14 +226,27 @@ export const joinOrganizationAction = async ({ orgId, userId, roleId}:{
   return request;
 }
 
-export const getOrganizationRolesAction = async (orgId: string) => {
+
+export const getOrganizationRolesAction = async (filter?: Pick<FilterType, 'orgId' | "userId" | "status">) => {
+  const {userId, orgId, status} = filter || { status: "ACTIVE"};
   const roles = await prisma.userOrganizationRole.findMany({
     orderBy: {
       name: "asc"
     },
     where: {
       isActive: true,
-      Organization: { orgId }
+      ...orgId && { Organization: { orgId } },
+      ...userId && { 
+        UserOrganizations: {
+          some: {
+            status,
+            User: {
+              userId
+            }
+          }
+        
+        }
+      }
     }
   })
   return roles;

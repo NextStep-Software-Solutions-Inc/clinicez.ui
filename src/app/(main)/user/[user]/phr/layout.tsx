@@ -54,6 +54,10 @@ export default async function SettingsLayout({ children, params: {user} }: Setti
     {
       title: "Insurances & HMOs",
       href: `/user/${user}/phr/insurances`,
+    },
+    {
+      title: "Files",
+      href: `/user/${user}/phr/files`,
     }
   ]
   

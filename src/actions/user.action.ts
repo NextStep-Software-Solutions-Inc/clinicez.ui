@@ -2,6 +2,7 @@
 
 import prisma from "@lib/prisma";
 import { Prisma } from "@prisma/client";
+import { managementClient } from "@services/auth0/management-client";
 import 'server-only'
 
 
@@ -39,4 +40,11 @@ export const updateUserAction = async (userId: string, data: Prisma.UserUpdateAr
     data
   });
   return updatedUser;
+}
+
+export const resetPasswordAction = async (userId: string, password: string) => {
+  const res = await managementClient.users.update({id: userId}, {
+    password
+  })
+  return [200, 201, 200].includes(res.status);
 }

@@ -6,10 +6,10 @@ import { Label } from "@components/ui/label";
 import { Input } from "@components/ui/input";
 import ActionButton from "@components/ActionButton";
 import { updateUserAction } from "@actions/user.action";
+import { uploadMediaAction } from "@actions/blob.action";
 import { toast } from "sonner";
 import { revalidatePath } from "@actions/cache.action";
 import ConditionalRender from "@components/utils/ConditionalRender";
-import { uploadFile } from "@services/azure-blob";
 
 interface PictureProps {
   user: User;
@@ -19,18 +19,18 @@ interface PictureProps {
 export const Picture = async ({ user, disabled = true }: PictureProps) => {
   
   const action = async (formData: FormData) => {
-
-    toast.promise(uploadFile(formData), {
+    toast.promise(uploadMediaAction(formData), {
       loading: "Uploading...",
       success: ({url}) => {
-        return toast.promise(updateUserAction(user.userId, { picture: url }), {
-          loading: "Saving progress...",
+        toast.promise(updateUserAction(user.userId, { picture: url }), {
+          loading: "Saving...",
           success: () => {
             revalidatePath(`/user/${user.userId}/phr`, "page");
             return "Saved successfully";
           },
           error: "Uploaded to server but failed to save in database"
         })
+        return "Uploaded successfully";
       },
       error: "Failed to upload"
     });

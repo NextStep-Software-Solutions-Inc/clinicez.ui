@@ -38,10 +38,7 @@ async function getFile(blobName: string): Promise<Buffer | null> {
   }
 }
 
-async function uploadFile(formData: FormData): Promise<{url: string}> {
-  const file = formData.get('media') as File;
-  const blobName = file.name;
-  const data = await file.arrayBuffer();
+async function uploadFile(blobName: string, data: ArrayBuffer): Promise<{url: string}> {
   const blobClient = containerClient.getBlockBlobClient(blobName);
 
   try {

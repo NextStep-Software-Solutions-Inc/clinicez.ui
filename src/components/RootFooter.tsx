@@ -43,8 +43,8 @@ const RootFooter = () => {
           </div>
           <div className="w-full md:w-1/3 text-center sm:text-left">
             <h5 className="mb-4 font-semibold">Contact</h5>
-            <p><a href={`mailto:info@clinicez.com`} className="mb-6">info@clinicez.com</a></p>
-            <p><a href={`tel:09123456789`} className="mb-6">09123456789</a></p>
+            <p><a href={`mailto:info@clinicez.com`} className="mb-6">clinicez.official@gmail.com</a></p>
+            {/* <p><a href={`tel:09123456789`} className="mb-6">09123456789</a></p> */}
           </div>
         </div>
       </div>

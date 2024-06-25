@@ -79,7 +79,7 @@ export default function ConfirmationForm({ nextStep, prevStep, isFirstStep, isCo
           setComplete?.(true);
           return "Healthcare Provider registration successful!";
         },
-        error: "An error occurred while submitting your application. Please try again later.",
+        error: (error) => `An error occurred while submitting your application. Please try again later. Error: ${error}`,
       });
     })()
   }

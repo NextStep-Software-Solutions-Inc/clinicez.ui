@@ -283,7 +283,7 @@ export const setMembershipRequestStatusAction = async (id: number, status: UserO
     }
   })
   if(!request) throw new Error("Error updating membership request status");
-  const emailTemplate = await fs.readFile("src/email-templates/org-membership-update.html", "utf-8");
+  const emailTemplate = await fs.readFile("./src/email-templates/org-membership-update.html", "utf-8");
   const userName = `${request.User.firstName} ${request.User.lastName}`;
   const appName = process.env.NEXT_PUBLIC_APP_NAME!;
   const html = emailTemplate.replace("@{userName}", userName).replace("@{status}", status).replace("@{appName}", appName)
@@ -302,7 +302,7 @@ export const setMembershipRequestStatusAction = async (id: number, status: UserO
 
 
 const notifyAdmins = async (receiver: string[], orgName: string) => {
-  const emailTemplate = await fs.readFile("src/email-templates/org-membership-application.html", "utf-8");
+  const emailTemplate = await fs.readFile("./src/email-templates/org-membership-application.html", "utf-8");
   const appName = process.env.NEXT_PUBLIC_APP_NAME!;
   const html = emailTemplate.replaceAll("@{orgName}", orgName).replaceAll("@{appName}", appName)
   const subject = `New membership application to ${orgName}`;
@@ -316,7 +316,7 @@ const notifyAdmins = async (receiver: string[], orgName: string) => {
 }
 
 const notifyUser = async (receiver: string[], orgName: string, userName: string) => {
-  const emailTemplate = await fs.readFile("src/email-templates/org-membership-request.html", "utf-8");
+  const emailTemplate = await fs.readFile("./src/email-templates/org-membership-request.html", "utf-8");
   const appName = process.env.NEXT_PUBLIC_APP_NAME!;
   const html = emailTemplate.replaceAll("@{userName}", userName).replaceAll("@{appName}", appName).replaceAll("@{orgName}", orgName)
   const subject = `Membership application to ${orgName}`;

@@ -87,7 +87,7 @@ export const getPatientAction = async (email: string) => {
 
 export const sendActivationCodeAction = async (email: string, code: string) => {
     
-  const body = await fs.readFile("src/email-templates/activation.html", "utf-8");
+  const body = await fs.readFile("./src/email-templates/activation.html", "utf-8");
   const content = body.replaceAll("@{code}", code);
 
   return await sendMail({

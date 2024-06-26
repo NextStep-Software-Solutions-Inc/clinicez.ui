@@ -1,8 +1,10 @@
 import AnimatedLogo from "./AnimatedLogo";
 
+const fullYear = new Date().getFullYear();
+const appEmail = process.env.NEXT_PUBLIC_APP_EMAIL;
 const RootFooter = () => {
 
-  const fullYear = new Date().getFullYear();
+  
   return (
     <footer className="py-8 bg-slate-50">
       <div className="container mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 ~text-sm/base">
@@ -49,7 +51,7 @@ const RootFooter = () => {
           </div>
           <div className="w-full md:w-1/3 text-center sm:text-left">
             <h5 className="mb-4 font-semibold">Contact</h5>
-            <p><a href={`mailto:info@clinicez.com`} className="mb-6">clinicez.official@gmail.com</a></p>
+            <p><a href={`mailto:${appEmail}`} className="mb-6">{appEmail}</a></p>
             {/* <p><a href={`tel:09123456789`} className="mb-6">09123456789</a></p> */}
           </div>
         </div>

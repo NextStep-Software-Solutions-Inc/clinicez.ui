@@ -5,9 +5,9 @@ import { mySQLConnection } from "@lib/myslq";
 import { RowDataPacket } from "mysql2";
 import { sendMail } from "./email.action";
 import fs from "fs/promises";
+import path from "path";
 import { Prisma } from "@prisma/client";
 import prisma from "@lib/prisma";
-import { connect } from "http2";
 
 export const getPatientAction = async (email: string) => {
   const conn = await mySQLConnection();   
@@ -86,8 +86,9 @@ export const getPatientAction = async (email: string) => {
 }
 
 export const sendActivationCodeAction = async (email: string, code: string) => {
-    
-  const body = await fs.readFile("./src/email-templates/activation.html", "utf-8");
+  const filePath = path.join(process.cwd(), "src/actions/email-templates/activation.html");
+
+  const body = await fs.readFile(filePath, "utf-8");
   const content = body.replaceAll("@{code}", code);
 
   return await sendMail({

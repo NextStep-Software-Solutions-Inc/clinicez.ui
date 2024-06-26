@@ -17,20 +17,20 @@ interface PictureProps {
 }
 
 export const Picture = async ({ user, disabled = true }: PictureProps) => {
-  console.log({user});
   
   const action = async (formData: FormData) => {
     toast.promise(uploadMediaAction(formData), {
       loading: "Uploading...",
       success: ({url}) => {
-        return toast.promise(updateUserAction(user.userId, { picture: url }), {
-          loading: "Saving progress...",
+        toast.promise(updateUserAction(user.userId, { picture: url }), {
+          loading: "Saving...",
           success: () => {
             revalidatePath(`/user/${user.userId}/phr`, "page");
             return "Saved successfully";
           },
           error: "Uploaded to server but failed to save in database"
         })
+        return "Uploaded successfully";
       },
       error: "Failed to upload"
     });

@@ -3,7 +3,7 @@ import Each from "@components/utils/Each";
 import UploadFileModal from "../../files/components/modals/UploadFileModal";
 import { getFilesAction } from "@actions/file.actions";
 import { faker } from "@faker-js/faker";
-import File from "../../files/components/File";
+import File from "../../../../../components/File";
 
 interface FilesProps {
     consultation: Consultation;
@@ -11,7 +11,7 @@ interface FilesProps {
 
 export default async function Files({ consultation}: FilesProps) {
 
-  const files = await getFilesAction(consultation.id);
+  // const files = await getFilesAction(consultation.id);
   const folder = {
     id: consultation.id,
     name: faker.lorem.words(2),
@@ -35,10 +35,10 @@ export default async function Files({ consultation}: FilesProps) {
         </div>
       </CardHeader>
       <CardContent className="grid gap-1">
-        <Each
+        {/* <Each
           of={files.flatMap((file) => file.files)}
           render={file => <File file={file}/>}
-        />
+        /> */}
       </CardContent>
     </Card>
   );

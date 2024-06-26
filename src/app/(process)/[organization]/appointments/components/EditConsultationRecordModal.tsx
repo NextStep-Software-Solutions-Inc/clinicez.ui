@@ -17,7 +17,7 @@ import { toast } from "sonner";
 
 interface EditConsultationRecordModalProps extends DialogProps {
   record: {
-    id: string,
+    id: number,
     subject: string,
   }
   children: React.ReactNode

@@ -1,67 +1,88 @@
 "use server";
+import prisma from "@lib/prisma";
+import { revalidatePath } from "next/cache";
 
-import { faker } from "@faker-js/faker";
-import { delay } from "@lib/wait";
-
-export const uploadFileAction = async (data: FormData) => {
-  console.log("Uploading file...", Object.fromEntries(data));
-  await delay(3000);
-  return true;
+type CreateFileType = {
+  name: string;
+  folderId: number;
+  size: number;
+  url: string;
+  fileTypeId: number;
+  dateTaken?: Date;
 }
 
-export const getFilesAction = async (id: string) => {
-  console.log("Getting files...", id);
-  const createFiles = () => {
-    const files = []
-    const numberOfFiles = faker.number.int({ min: 2, max: 20 })
-    for (let i = 0; i < numberOfFiles; i++) {
-      const file = {
-        id: faker.string.uuid(),
-        name: faker.word.adjective() + " " + faker.word.noun(),
-        description: faker.lorem.sentence(),
-        type: faker.helpers.arrayElement(["document", "image"]),
-        date: faker.date.past(),
-        url: faker.image.url(),
+export const createFileAction = async ({ name, folderId, size, fileTypeId, url, dateTaken }:CreateFileType) => {
+  const file = await prisma.file.create({
+    data: {
+      name,
+      folderId,
+      size,
+      url,
+      fileTypeId,
+      dateTaken,
+      FileSetting: {
+        create: {
+          isPublic: true
+        }
       }
-      files.push(file)
-    }
-    return files
-  }
-  const createFolder = () => {
-    const folder = {
-      id: faker.string.uuid(),
-      name: faker.word.adjective() + " " + faker.word.noun(),
-      description: faker.lorem.sentence(),
-      files: createFiles()
-    }
-    return folder
-  }
-
-  await delay(3000);
-  return Array.from({ length: faker.number.int({min: 5, max:15}) }, createFolder);
-}
-
-export const createFolderAction = async (data: FormData) => {
-  console.log("Creating folder...", Object.fromEntries(data));
-  await delay(3000);
-  return true;
-}
-
-
-export const deleteFileAction = async (id: string) => {
-  console.log("Deleting file...", id);
-  await delay(3000);
-  return true;
-}
-
-export const getAttachmentTypesAction = async () => {
-  console.log("Getting attachment types...");
-  await delay(3000);
-  return Array.from({ length: faker.number.int({min: 5, max:15}) }, () => {
-    return {
-      id: faker.string.uuid(),
-      name: faker.lorem.words(2),
-      description: faker.lorem.sentence(),
     }
   });
+  revalidatePath('/', "page");
+  return file;
+}
+
+
+export const getFilesAction = async (userId: string) => {
+  const files = await prisma.file.findMany({
+    where: {
+      isActive: true,
+      Folder: {
+        User: {
+          userId
+        }
+      }
+    },
+    select: {
+      id: true,
+      name: true,
+      url: true,
+      size: true,
+      updatedAt: true,
+      FileType: {
+        select: {
+          name: true
+        }
+      
+      }
+    }
+  });
+  return files;
+}
+
+export const updateFileAction = async (fileId: number, name: string) => {
+  const file = await prisma.file.update({
+    where: {
+      id: fileId
+    },
+    data: {
+      name
+    }
+  });
+  revalidatePath('/', "page");
+  return file;
+}
+
+
+export const deleteFileAction = async (fileId: number) => {
+  const file = await prisma.file.update({
+    where: {
+      id: fileId
+    },
+    data: {
+      isActive: false
+    }
+  });
+
+  revalidatePath('/', "page");
+  return file;
 }

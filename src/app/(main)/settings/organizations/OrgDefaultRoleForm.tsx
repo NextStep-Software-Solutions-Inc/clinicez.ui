@@ -35,15 +35,14 @@ export const OrgDefaultRoleForm = ({ org }: OrgDefaultRoleFormProps) => {
 
   const action = async () => {
     form.handleSubmit(async (data) => {
-      console.log(data);
     })();
   };
 
   useEffect(() => {
     (async () => {
-      setOrgRoles(await getOrganizationRolesAction(org.Organization.orgId));
+      setOrgRoles(await getOrganizationRolesAction({ orgId: org.Organization.orgId, userId: org.User.userId}));
     })();
-  }, [org.Organization.orgId]);
+  }, [org.Organization.orgId, org.User.userId]);
 
   return (
     <form action={action} className="space-y-8">

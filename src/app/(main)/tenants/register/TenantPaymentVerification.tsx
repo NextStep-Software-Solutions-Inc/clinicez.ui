@@ -36,9 +36,6 @@ export default function TenantPaymentVerification({ setComplete, prevStep }: Ten
   const selectedPlan = plans.find(plan => plan.id === parseInt(searchParams.get("plan") ?? "0"));
   const cost = selectedPlan?.price ?? 0;
 
-
-  console.log({selectedPlan, paymentData, cost});
-  
   const paymentConfirmationFormSchema = z.object({
     receiptCode: z.string().refine((value) => value.length >=5 || cost === 0, {
       message: "Receipt number must be at least 5 characters long."

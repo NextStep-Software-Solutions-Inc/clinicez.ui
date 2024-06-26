@@ -1,6 +1,7 @@
 "use client";
 
-import { createFolderAction } from "@actions/file.actions";
+import { createFolderAction } from "@actions/folder.action";
+import { useUser } from "@auth0/nextjs-auth0/client";
 import ActionButton from "@components/ActionButton"
 import CustomModalContent from "@components/CustomModalContent";
 import { Button } from "@components/ui/button"
@@ -12,33 +13,42 @@ import {
 } from "@components/ui/dialog"
 import { Input } from "@components/ui/input"
 import { Label } from "@components/ui/label"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@components/ui/tooltip"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@components/ui/tooltip"
 import { FolderIcon } from "lucide-react"
 import { useRef } from "react"
 import { toast } from "sonner";
 
 
 export default function CreateFolderModal({disabled = false}: {disabled?: boolean}) {
+  const user = useUser()
+  const userId = user?.user?.sub
 
   const closeBtnRef = useRef<HTMLInputElement>(null)
   const action = async (formData: FormData) => {
-    const res = await createFolderAction(formData)
-    if (res) {
-      toast.success("Folder created successfully.")
-      closeBtnRef.current?.click()
-    }
+    if(!userId) throw new Error("User ID is required to create a folder.")
+    const name = formData.get("name") as string
+    toast.promise(createFolderAction(name, userId), {
+      loading: "Creating folder...",
+      success: (res) => {
+        closeBtnRef.current?.click()
+        return "Folder created successfully"
+      },
+      error: "Failed to create folder"
+    })
   }
 
   return (
     <Dialog>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <DialogTrigger asChild>
-            <Button disabled={disabled} variant="default" size="sm" className="ml-auto invisible group-hover/upload:visible transition-all"><FolderIcon className="h-4 w-4 mr-2"/> Create Folder</Button>
-          </DialogTrigger>
-        </TooltipTrigger>
-        <TooltipContent>Create Folder</TooltipContent>
-      </Tooltip>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <DialogTrigger asChild>
+              <Button disabled={disabled} variant="default" size="sm" className="ml-auto invisible group-hover/create-folder:visible transition-all"><FolderIcon className="h-4 w-4 mr-2"/> Create Folder</Button>
+            </DialogTrigger>
+          </TooltipTrigger>
+          <TooltipContent>Create Folder</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
       <CustomModalContent 
         className="sm:max-w-[525px]"
         label="Create a Folder" 

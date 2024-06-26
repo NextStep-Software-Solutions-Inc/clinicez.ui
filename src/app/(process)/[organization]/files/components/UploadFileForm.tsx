@@ -12,7 +12,7 @@ import {
 import { Input } from "@components/ui/input"
 import { Popover, PopoverContent, PopoverTrigger } from "@components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@components/ui/select";
-import { getAttachmentTypesAction, uploadFileAction } from "@actions/file.actions";
+import { createFileAction } from "@actions/file.actions";
 import ActionButton from "@components/ActionButton"
 import { Button } from "@components/ui/button"
 import { Calendar } from "@components/ui/calendar";
@@ -30,28 +30,34 @@ import { use, useRef } from "react"
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+import { uploadMediaAction } from "@actions/blob.action";
+import { useUser } from "@auth0/nextjs-auth0/client";
+import { getFileTypesAction } from "@actions/file-type.action";
 
 const uploadFileFormSchema = z.object({
-  file: z.string({
+  media: z.string({
     required_error: "Please select an action"
   }),
   dateTaken: z.date({
     required_error: "Please select a date"
   }), 
-  attachmentType: z.string({
+  fileType: z.coerce.number({
     required_error: "Please select an attachment type"
   }),
 })
 
 interface UploadFileFormProps {
     folder: {
-        id: string;
+      id: number;
     }
 }
 
-const fetchAttachmentTypes = getAttachmentTypesAction()
+const fetchFileTypes = getFileTypesAction()
 export default function UploadFileForm({folder}: UploadFileFormProps) {
-  const attachmentTypes = use(fetchAttachmentTypes)
+  
+  const user = useUser()
+  const userId = user?.user?.sub
+  const fileTypes = use(fetchFileTypes)
   const closeBtnRef = useRef<HTMLInputElement>(null)
 
   const form = useForm<z.infer<typeof uploadFileFormSchema>>({
@@ -60,13 +66,33 @@ export default function UploadFileForm({folder}: UploadFileFormProps) {
     
   const action = async (formData: FormData) => {
     form.handleSubmit(async (data) => {
-      formData.append("folderId", folder.id)
-      formData.append("dateTaken", format(data.dateTaken, "yyyy-MM-dd"))
-      const res = await uploadFileAction(formData)
-      if (res) {
-        toast.success("File uploaded successfully")
-        closeBtnRef.current?.click()
-      }
+      if(!userId) throw new Error("User ID is required to upload a file")
+
+      toast.promise(uploadMediaAction(formData), {
+        loading: "Uploading...",
+        success: ({url}) => {
+          const file = formData.get("media") as File
+          toast.promise(createFileAction({
+            fileTypeId: data.fileType,
+            dateTaken: data.dateTaken,
+            folderId: folder.id,
+            name: file.name as string,
+            size: file.size as number,
+            url,
+          }), {
+            loading: "Saving file...",
+            success: (res) => {
+              closeBtnRef.current?.click()
+              return "File created successfully"
+            },
+            error: "Failed to create file"
+          })
+          return "File Uploaded"
+        },
+        error: "Failed to upload file"
+      })
+
+     
     })()
   }
   return (
@@ -78,7 +104,7 @@ export default function UploadFileForm({folder}: UploadFileFormProps) {
       >
         <FormField
           control={form.control}
-          name="file"
+          name="media"
           render={({ field }) => (
             <FormItem>
               <FormLabel>File</FormLabel>
@@ -93,25 +119,25 @@ export default function UploadFileForm({folder}: UploadFileFormProps) {
         <div className="flex items-baseline gap-2">
           <FormField
             control={form.control}
-            name="attachmentType"
+            name="fileType"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Attachment Type</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value} name="attachmentType">
+                <Select onValueChange={field.onChange} defaultValue={field.value?.toString()} name="fileType">
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select the appropriate attachment type for this file" />
+                      <SelectValue placeholder="Select the appropriate file type for this file" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
                     <Each
-                      of={attachmentTypes}
-                      render={item => <SelectItem value={item.id} className="cursor-pointer">{item.name} &bull; {item.description}</SelectItem>}
+                      of={fileTypes}
+                      render={item => <SelectItem value={item.id?.toString()} className="cursor-pointer">{item.name}</SelectItem>}
                     />
                   </SelectContent>
                 </Select>
                 <FormDescription>
-                      Select the attachment type.
+                  Select the file type.
                 </FormDescription>
                 <FormMessage />
               </FormItem>
@@ -156,7 +182,7 @@ export default function UploadFileForm({folder}: UploadFileFormProps) {
                   </PopoverContent>
                 </Popover>
                 <FormDescription>
-                      Select the date the file was taken.
+                  Select the date the file was taken.
                 </FormDescription>
                 <FormMessage />
               </FormItem>

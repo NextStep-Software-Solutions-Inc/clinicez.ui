@@ -1,6 +1,6 @@
 import Suspend from "@components/Suspend";
 import { Separator } from "@components/ui/separator";
-import Folder from "./components/Folder";
+import Folder from "../../../../components/Folder";
 import Each from "@components/utils/Each";
 import AlertBanner from "./components/AlertBanner";
 import { Metadata } from "next";
@@ -20,7 +20,7 @@ export default async function FilesPage({params}: AppRouterPageRouteOpts) {
   return (
     <>
       <div className="space-y-6">
-        <div className="group/upload">
+        <div className="group/create-folder">
           <div className="flex items-center">
             <h2 className="text-2xl font-bold tracking-tight">Files</h2>
             <CreateFolderModal />

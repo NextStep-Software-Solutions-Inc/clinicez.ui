@@ -4,8 +4,9 @@ import { Montserrat } from "next/font/google";
 import { Toaster as SonnerToaster } from "sonner"
 import { Toaster } from "@components/ui/toaster"
 import "@styles/globals.css";
-const montserrat = Montserrat({ subsets: ["latin"] });
+import Hotjar from "@components/Hotjar";
 
+const montserrat = Montserrat({ subsets: ["latin"] });
 
 export const metadata = {
   title: 'Clinic EZ',
@@ -17,6 +18,7 @@ interface Props {
 export default function RootLayout({children}:Props) {
   return (
     <html lang="en">
+      <Hotjar/>
       <body className={`${montserrat.className}`}>
         <UserProvider>
           {children}

@@ -43,7 +43,7 @@ export default function CreateFolderModal({disabled = false}: {disabled?: boolea
         <Tooltip>
           <TooltipTrigger asChild>
             <DialogTrigger asChild>
-              <Button disabled={disabled} variant="default" size="sm" className="ml-auto invisible group-hover/create-folder:visible transition-all"><FolderIcon className="h-4 w-4 mr-2"/> Create Folder</Button>
+              <Button disabled={disabled} variant="default" size="sm" className="ml-auto group-hover/create-folder:visible transition-all"><FolderIcon className="h-4 w-4 mr-2"/> Create Folder</Button>
             </DialogTrigger>
           </TooltipTrigger>
           <TooltipContent>Create Folder</TooltipContent>

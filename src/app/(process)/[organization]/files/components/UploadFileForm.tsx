@@ -122,7 +122,7 @@ export default function UploadFileForm({folder}: UploadFileFormProps) {
             name="fileType"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Attachment Type</FormLabel>
+                <FormLabel>File Type</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value?.toString()} name="fileType">
                   <FormControl>
                     <SelectTrigger>
@@ -136,9 +136,9 @@ export default function UploadFileForm({folder}: UploadFileFormProps) {
                     />
                   </SelectContent>
                 </Select>
-                <FormDescription>
+                {/* <FormDescription>
                   Select the file type.
-                </FormDescription>
+                </FormDescription> */}
                 <FormMessage />
               </FormItem>
             )}
@@ -181,9 +181,9 @@ export default function UploadFileForm({folder}: UploadFileFormProps) {
                     />
                   </PopoverContent>
                 </Popover>
-                <FormDescription>
+                {/* <FormDescription>
                   Select the date the file was taken.
-                </FormDescription>
+                </FormDescription> */}
                 <FormMessage />
               </FormItem>
             )}

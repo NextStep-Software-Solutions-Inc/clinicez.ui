@@ -38,7 +38,7 @@ export default async function Folder({folder, readOnly}: FolderProps) {
             </CardTitle>
             <CardDescription>{folder?.description}</CardDescription>
           </div>
-          <div className="ml-auto invisible group-hover/upload:visible transition-all">
+          <div className="ml-auto group-hover/upload:visible transition-all">
             <Suspend>
               <ConditionalRender condition={!readOnly}>
                 <div className="flex items-center gap-2">

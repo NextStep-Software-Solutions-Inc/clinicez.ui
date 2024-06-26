@@ -52,6 +52,7 @@ export default function HPProfile({ profile }: HPProfileProps) {
   const form = useForm<HPProfileType>({
     resolver: zodResolver(profileSchema),
     defaultValues: hpProfile,
+    mode: "all"
   })
     
   const action = async (formData: FormData) => {
@@ -115,12 +116,13 @@ export default function HPProfile({ profile }: HPProfileProps) {
                       <SelectItem value="Mrs.">Mrs.</SelectItem>
                       <SelectItem value="Ms.">Ms.</SelectItem>
                       <SelectItem value="Dr.">Dr.</SelectItem>
+                      <SelectItem value="Dra.">Dra.</SelectItem>
                       <SelectItem value="Prof.">Prof.</SelectItem>
                     </SelectGroup>
                   </SelectContent>
                 </Select>
                 <FormDescription>
-                This is your public display title.
+                  This will display as your title in your public profile.
                 </FormDescription>
                 <FormMessage />
               </FormItem>
@@ -136,7 +138,7 @@ export default function HPProfile({ profile }: HPProfileProps) {
                   <Input placeholder="John Doe Dao" {...field} />
                 </FormControl>
                 <FormDescription>
-                This is your public display name.
+                  This will display as your name in your public profile.
                 </FormDescription>
                 <FormMessage />
               </FormItem>
@@ -152,7 +154,7 @@ export default function HPProfile({ profile }: HPProfileProps) {
                   <Input placeholder="Jr." {...field} />
                 </FormControl>
                 <FormDescription>
-                Jr., Sr., III, etc.
+                Jr., Sr., III, etc. 
                 </FormDescription>
                 <FormMessage />
               </FormItem>
@@ -214,7 +216,7 @@ export default function HPProfile({ profile }: HPProfileProps) {
                 <Input placeholder="example@email.com" {...field} />
               </FormControl>
               <FormDescription>
-              This will reflect in you public profile.
+                It can be used to contact you.
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -230,7 +232,7 @@ export default function HPProfile({ profile }: HPProfileProps) {
                 <Input placeholder="Phone no." {...field} />
               </FormControl>
               <FormDescription>
-              This will reflect in you public profile.
+                It can be used to contact you by your potential clients.
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -246,7 +248,7 @@ export default function HPProfile({ profile }: HPProfileProps) {
                 <Textarea placeholder="" {...field}/>
               </FormControl>
               <FormDescription>
-              This will reflect in you public profile.
+                Describes your philosophy of care.
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -262,7 +264,7 @@ export default function HPProfile({ profile }: HPProfileProps) {
                 <Textarea placeholder="" {...field}/>
               </FormControl>
               <FormDescription>
-              This will reflect in you public profile.
+                In which area you are more interested?
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -278,7 +280,7 @@ export default function HPProfile({ profile }: HPProfileProps) {
                 <Input placeholder="You earned experience" {...field} />
               </FormControl>
               <FormDescription>
-              This is your public experiences.
+                Let us know about your experiences. How many years of experience you have?
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -296,7 +298,7 @@ export default function HPProfile({ profile }: HPProfileProps) {
 
         <Affiliations form={form}/>
         <div className="mt-4">
-          {form.formState.isDirty && <ActionButton className="w-full" disabled={!form.formState.isValid}>Save Changes</ActionButton>}
+          <ActionButton className="w-full" disabled={form.formState.isLoading}>Save Changes</ActionButton>
         </div>
       </form>
     </Form>

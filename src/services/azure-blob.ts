@@ -38,13 +38,13 @@ async function getFile(blobName: string): Promise<Buffer | null> {
   }
 }
 
-async function uploadFile(blobName: string, data: ArrayBuffer): Promise<{url: string}> {
+async function uploadFile(blobName: string, data: ArrayBuffer, fileType?: string): Promise<{url: string}> {
   const blobClient = containerClient.getBlockBlobClient(blobName);
 
   try {
     await blobClient.uploadData(data, {
       blobHTTPHeaders: {
-        blobContentType: 'application/octet-stream' // Replace with the appropriate content type if known
+        blobContentType: fileType || 'application/octet-stream' // Replace with the appropriate content type if known
       }
     });
     return {url: blobClient.url};

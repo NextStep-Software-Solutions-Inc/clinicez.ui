@@ -17,25 +17,6 @@ export const profileSchema = z.object({
   workPhone: z.string().min(10, {
     message: "Please enter a valid phone number.",
   }),
-  // dob: z.date(),
-  // Address
-  // address1: z.string().min(2, {
-  //   message: "Address must be at least 2 characters.",
-  // }),
-  // address2: z.string().optional(),
-  // city: z.string().min(2, {
-  //   message: "City must be at least 2 characters.",
-  // }),
-  // state: z.string().min(2, {
-  //   message: "State must be at least 2 characters.",
-  // }),
-  // zip: z.string().min(4, {
-  //   message: "Zip code must be at least 5 characters.",
-  // }),
-  // country: z.string().min(2, {
-  //   message: "Country must be at least 2 characters.",
-  // }),
-    
   // Professional Information
   philosophy: z.string().min(2, {
     message: "Bio must be at least 2 characters.",
@@ -79,7 +60,6 @@ export const profileSchema = z.object({
 })
   
 export type HPProfileType = z.infer<typeof profileSchema>;
-  
 
 export const professionalDetailsSchema = z.object({
   id: z.number().optional(),

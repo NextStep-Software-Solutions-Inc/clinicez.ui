@@ -36,6 +36,7 @@ export default function HPProfessionalInfo({ professionalDetails }: HPProfession
   const form = useForm<ProfessionalDetailsFormType>({
     resolver: zodResolver(professionalDetailsSchema),
     defaultValues: professionalDetails || {},
+    mode: "all",
   })
 
   const action = async () => {
@@ -156,9 +157,6 @@ export default function HPProfessionalInfo({ professionalDetails }: HPProfession
                       mode="single"
                       selected={field.value}
                       onSelect={field.onChange}
-                      disabled={(date) =>
-                        date > new Date() || date < new Date("1900-01-01")
-                      }
                       initialFocus
                     />
                   </PopoverContent>
@@ -203,7 +201,7 @@ export default function HPProfessionalInfo({ professionalDetails }: HPProfession
             </FormItem>
           )}
         />
-        {form.formState.isDirty && <ActionButton className="w-full" disabled={!form.formState.isValid}>Save Changes</ActionButton>}
+        <ActionButton className="w-full" disabled={form.formState.isLoading}>Save Changes</ActionButton>
       </form>
     </Form>
   )

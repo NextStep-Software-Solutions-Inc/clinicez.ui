@@ -89,9 +89,12 @@ export const getUserOrganizationsAction = async (filter?: FilterType) => {
       User: {
         select: {
           id: true,
+          picture: true,
           userId: true,
           firstName: true,
-          lastName: true
+          lastName: true,
+          gender: true,
+          dob: true,
         }
       },
       AcceptedBy: {

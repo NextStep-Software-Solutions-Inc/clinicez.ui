@@ -13,10 +13,11 @@ import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import ActionButton from "@components/ActionButton";
 import { notFound, redirect } from "next/navigation";
+import { HealthcareProviderType } from "@prisma/client";
 
 async function EditorPage({params, searchParams}: AppRouterPageRouteOpts) {
   const hpId = parseInt(params?.practitioner as string);
-  const type = searchParams?._type as string;
+  const type = searchParams?._type as HealthcareProviderType;
 
   const session = await getSession();
   if(!session) return redirect("/api/auth/login");
@@ -37,8 +38,6 @@ async function EditorPage({params, searchParams}: AppRouterPageRouteOpts) {
   
   const mappedProfile: HPProfileType = {
     id: profile?.id ?? 0,
-    picture: profile?.picture ?? "",
-    cover: profile?.cover ?? "",
     title: profile?.title ?? "",
     name: profile?.name ?? "",
     suffix: profile?.suffix ?? "",
@@ -82,7 +81,7 @@ async function EditorPage({params, searchParams}: AppRouterPageRouteOpts) {
       </div>
       <div className="space-y-10">
         <Suspend>
-          <HPPhoto profile={mappedProfile}/>
+          <HPPhoto profile={mappedProfile} type={type} hpId={hpId}/>
         </Suspend>
         <Suspend>
           <HPProfile profile={mappedProfile}/>

@@ -40,7 +40,7 @@ export const Picture = async ({ user, disabled = true }: PictureProps) => {
   return (
     <div className="flex flex-wrap items-center gap-5">
       <Avatar className="rounded w-48 h-48">
-        <AvatarImage src={user?.picture || "https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png"} />
+        <AvatarImage className="object-contain" src={user?.picture || "https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png"} />
         <AvatarFallback> ME</AvatarFallback>
       </Avatar>
       <ConditionalRender condition={!disabled}>

@@ -85,7 +85,7 @@ export function PersonalInformationForm(props: PersonalInformationFormProps) {
   
   const form = useForm<PersonalInformationFormValues>({
     resolver: zodResolver(personalInformationFormSchema),
-    defaultValues: personalInformationFormSchema.parse(props.user),
+    defaultValues: personalInformationFormSchema.safeParse(props.user).data,
   })
 
   const handleSaveChanges = async () => {

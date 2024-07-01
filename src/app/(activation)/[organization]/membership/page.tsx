@@ -8,10 +8,12 @@ import { columns } from "./components/columns";
 import Suspend from "@components/Suspend";
 import { getUserOrganizationsAction } from "@actions/organization.action";
 
+export const maxDuration = 30; // page timeout in seconds
+
 async function MembershipPage({params}: AppRouterPageRouteOpts) {
   const membershipRequests = await getUserOrganizationsAction({orgId: params?.organization as string});
 
-  const mappedMembershipRequests: ApplicationRequest[] = membershipRequests.filter(mr => mr).map((request) => ({
+  const mappedMembershipRequests: ApplicationRequest[] = membershipRequests.map((request) => ({
     id: request.id,
     role: {
       id: request.role,
@@ -21,9 +23,12 @@ async function MembershipPage({params}: AppRouterPageRouteOpts) {
     createdAt: request.createdAt,
     User: {
       id: request.User.id,
+      picture: request.User.picture,
       userId: request.User.userId,
       firstName: request.User?.firstName ?? "",
-      lastName: request.User?.lastName ?? ""
+      lastName: request.User?.lastName ?? "",
+      gender: request.User.gender,
+      dob: request.User.dob
     },
     AcceptedBy: request.AcceptedBy ? {
       id: request.AcceptedBy?.id,
@@ -62,6 +67,6 @@ async function MembershipPage({params}: AppRouterPageRouteOpts) {
 export default withPageAuthRequired(MembershipPage, {
   returnTo: ({params, searchParams}) => {
     const searchStr = Object.entries(searchParams ?? {}).map(([key, value]) => `${key}=${value}`).join("&");
-    return `/${params?.organization}/join?${searchStr}`;
+    return `/${params?.organization}/membership?${searchStr}`;
   }
 });

@@ -13,7 +13,7 @@ export const maxDuration = 30; // page timeout in seconds
 async function MembershipPage({params}: AppRouterPageRouteOpts) {
   const membershipRequests = await getUserOrganizationsAction({orgId: params?.organization as string});
 
-  const mappedMembershipRequests: ApplicationRequest[] = membershipRequests.filter(mr => mr).map((request) => ({
+  const mappedMembershipRequests: ApplicationRequest[] = membershipRequests.map((request) => ({
     id: request.id,
     role: {
       id: request.role,

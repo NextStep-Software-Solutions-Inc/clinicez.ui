@@ -5,14 +5,16 @@ import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@components/ui/badge"
 import { Checkbox } from "@components/ui/checkbox"
 
-import { labels, priorities, statuses } from "../data/data"
+import { statuses } from "../data/data"
 import { MembershipRequestSchema, membershipRequestSchema } from "../data/schema"
 import { DataTableColumnHeader } from "./data-table-column-header"
 import { DataTableRowActions } from "./data-table-row-actions"
 import Link from "next/link"
 import { DropdownMenuProvider } from "@components/DropdownMenuProvider"
-import { format } from "date-fns"
+import { format, differenceInCalendarYears } from "date-fns"
 import { ExternalLink } from "lucide-react"
+import { Avatar, AvatarFallback, AvatarImage } from "@components/ui/avatar"
+import ConditionalRender from "@components/utils/ConditionalRender"
 
 export const columns: ColumnDef<MembershipRequestSchema>[] = [
   {
@@ -57,7 +59,7 @@ export const columns: ColumnDef<MembershipRequestSchema>[] = [
   //   enableHiding: false,
   // },
   {
-    accessorKey: "Application Date",
+    accessorKey: "application-date",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Application Date" />
     ),
@@ -80,6 +82,10 @@ export const columns: ColumnDef<MembershipRequestSchema>[] = [
   },
   {
     accessorKey: "role",
+    accessorFn: (row) => row.role.name,
+    filterFn: (row, id, value) => {
+      return value.includes(row.getValue(id))
+    },
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Role" />
     ),
@@ -96,33 +102,48 @@ export const columns: ColumnDef<MembershipRequestSchema>[] = [
     },
   },
   {
-    accessorKey: "User",
+    accessorKey: "user",
+    accessorFn: (row) => `${row.User?.firstName} ${row.User?.lastName}`,
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="User" />
     ),
     cell: ({ row }) => {
-      const user = `${row.original.User?.firstName ?? "-"} ${row.original.User?.lastName ?? "-"}`
+      const user = `${row.original.User?.firstName} ${row.original.User?.lastName}`
       
       if (!user) {
         return null
       }
 
+      const dob = row.original.User.dob
+      const gender = row.original.User.gender
       return (
-        <div className="flex items-center">
-          <Link 
-            target="_blank"
-            href={`/user/${row.original.User?.userId}/phr`} 
-            className="flex gap-2 items-center hover:underline cursor-pointer"
-          >{user}<ExternalLink className="w-4 h-4"/></Link>
+        <div className="flex items-center gap-2">
+          <ConditionalRender condition={!!row.original.User.picture || !!user.trim()}>
+            <Avatar>
+              <AvatarImage className="object-contain" src={row.original.User?.picture ?? ""} alt={user} />
+              <AvatarFallback>{user.split(" ").map(n => n.charAt(0)).join("")}</AvatarFallback>
+            </Avatar>
+
+          </ConditionalRender>
+          <div>
+            <Link 
+              target="_blank"
+              href={`/user/${row.original.User?.userId}/phr`} 
+              className="flex gap-2 items-center hover:underline cursor-pointer"
+            >
+              {user} <ExternalLink className="w-4 h-4"/>
+            </Link>
+            <ConditionalRender condition={!!gender && !!dob}>
+              <span className="text-xs text-gray-400">{gender && gender.charAt(0)} / {dob && differenceInCalendarYears(new Date(), dob)}</span>
+            </ConditionalRender>
+          </div>
+          
         </div>
       )
-    },
-    filterFn: (row, id, value) => {
-      return value.includes(row.getValue(id))
-    },
+    }
   },
   {
-    accessorKey: "Accepted By",
+    accessorKey: "accepted-by",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Accepted By" />
     ),

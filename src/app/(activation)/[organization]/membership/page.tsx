@@ -8,6 +8,8 @@ import { columns } from "./components/columns";
 import Suspend from "@components/Suspend";
 import { getUserOrganizationsAction } from "@actions/organization.action";
 
+export const maxDuration = 30; // page timeout in seconds
+
 async function MembershipPage({params}: AppRouterPageRouteOpts) {
   const membershipRequests = await getUserOrganizationsAction({orgId: params?.organization as string});
 
@@ -21,9 +23,12 @@ async function MembershipPage({params}: AppRouterPageRouteOpts) {
     createdAt: request.createdAt,
     User: {
       id: request.User.id,
+      picture: request.User.picture,
       userId: request.User.userId,
       firstName: request.User?.firstName ?? "",
-      lastName: request.User?.lastName ?? ""
+      lastName: request.User?.lastName ?? "",
+      gender: request.User.gender,
+      dob: request.User.dob
     },
     AcceptedBy: request.AcceptedBy ? {
       id: request.AcceptedBy?.id,

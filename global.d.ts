@@ -19,6 +19,7 @@ declare global {
     createdAt: Date,
     User: {
       id: number
+      picture: string | null
       userId: string
       firstName: string | null
       lastName: string | null

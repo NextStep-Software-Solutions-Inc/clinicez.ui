@@ -16,7 +16,6 @@ import { useDropdownMenu } from "@components/DropdownMenuProvider"
 import { toast } from "sonner"
 import { setMembershipRequestStatusAction } from "@actions/organization.action"
 import { UserOrganizationStatus } from "@prisma/client"
-import { revalidatePath } from "next/cache"
 import Each from "@components/utils/Each"
 interface DataTableRowActionsProps<TData> {
   applicationRequest: ApplicationRequest

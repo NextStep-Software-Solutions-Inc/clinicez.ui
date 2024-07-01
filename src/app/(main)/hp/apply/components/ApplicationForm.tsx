@@ -1,12 +1,14 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Stepper from "@components/Stepper/Stepper";
 import {useMultiStepForm} from "@hooks/useMultiStepForm";
 import { Button } from "@components/ui/button";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import Suspend from "@components/Suspend";
+import { getHPAction } from "@actions/hp.actions";
+import { useUser } from "@auth0/nextjs-auth0/client";
 
 const steps = ["Role", "Plan", "Payment", "Confirmation"];
 interface ApplicationFormProps {
@@ -27,12 +29,28 @@ export default function ApplicationForm({currentStep: cs, children }: Applicatio
           <div className="text-center min-w-full space-y-5">
             <h1 className="text-green-600 text-3xl font-bold">Application Complete 🎉</h1>
             <p className=" text-gray-500">Thank you for submitting your application. We will review and get back to you shortly.</p>
-            <Link href="/org/dashboard" >
-              <Button className="mt-5">Go to Dashboard <ArrowRight/></Button>
-            </Link>
+            <GotoHpProfile/>
           </div>
         </div>
       )}
     </div>
   );
+}
+
+
+export const GotoHpProfile = () => {
+  const user = useUser()
+  const [hp, setHp] = useState<Awaited<ReturnType<typeof getHPAction>>>()
+  useEffect(() => {
+    (async () => {
+      setHp(await getHPAction({userId: user.user?.sub ?? ""}))
+    })()
+  }, [])
+
+  if (!hp) return null;
+  return (
+    <Link href={`/hp/profile/${hp.id}?_type=${hp.type}`}>
+      <Button className="mt-5">Go to Profile <ArrowRight/></Button>
+    </Link>
+  )
 }

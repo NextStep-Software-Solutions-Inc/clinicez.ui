@@ -38,14 +38,11 @@ const uploadFileFormSchema = z.object({
   media: z.string({
     required_error: "Please select an action"
   }),
-  dateTaken: z.date({
-    required_error: "Please select a date"
-  }), 
+  dateTaken: z.date().optional(), 
   fileType: z.coerce.number({
     required_error: "Please select an attachment type"
   }),
 })
-
 interface UploadFileFormProps {
     folder: {
       id: number;
@@ -74,7 +71,7 @@ export default function UploadFileForm({folder}: UploadFileFormProps) {
           const file = formData.get("media") as File
           toast.promise(createFileAction({
             fileTypeId: data.fileType,
-            dateTaken: data.dateTaken,
+            ...data.dateTaken ? {dateTaken: data.dateTaken} : {},
             folderId: folder.id,
             name: file.name as string,
             size: file.size as number,

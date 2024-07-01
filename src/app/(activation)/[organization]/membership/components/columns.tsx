@@ -120,7 +120,7 @@ export const columns: ColumnDef<MembershipRequestSchema>[] = [
         <div className="flex items-center gap-2">
           <ConditionalRender condition={!!row.original.User.picture || !!user.trim()}>
             <Avatar>
-              <AvatarImage className="object-contain" src={row.original.User?.picture ?? ""} alt={user} />
+              <AvatarImage className="object-cover" src={row.original.User?.picture ?? ""} alt={user} />
               <AvatarFallback>{user.split(" ").map(n => n.charAt(0)).join("")}</AvatarFallback>
             </Avatar>
 

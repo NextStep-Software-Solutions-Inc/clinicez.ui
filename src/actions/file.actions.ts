@@ -50,7 +50,14 @@ export const getFilesAction = async (userId: string) => {
       updatedAt: true,
       FileType: {
         select: {
-          name: true
+          name: true,
+          FileTypeAttribute: {
+            select: {
+              required: true,
+              validUntil: true,
+              scopeOrgId: true
+            }
+          }
         }
       
       }

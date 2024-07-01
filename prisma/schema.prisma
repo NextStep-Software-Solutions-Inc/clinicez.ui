@@ -105,6 +105,7 @@ model Organization {
   Roles                    UserOrganizationRole[]
   UserMigrations           UserMigration[]
   ScopeFolders             FolderSetting[]
+  FileTypeAttribute        FileTypeAttribute[]
 }
 
 // This is for user to join an organization e.g. as a member, admin, healthcare provider, etc.
@@ -455,26 +456,28 @@ model FileSetting {
 }
 
 model FileType {
-  id                 Int                 @id @default(autoincrement())
-  name               String
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
-  deletedAt          DateTime?
-  isActive           Boolean             @default(true)
-  Files              File[]
-  FileTypeAttributes FileTypeAttribute[]
+  id                Int                @id @default(autoincrement())
+  name              String
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  deletedAt         DateTime?
+  isActive          Boolean            @default(true)
+  Files             File[]
+  FileTypeAttribute FileTypeAttribute?
 }
 
 model FileTypeAttribute {
-  id         Int       @id @default(autoincrement())
-  fileTypeId Int
-  name       String
-  type       String
-  required   Boolean   @default(false)
-  validUntil DateTime? @db.Date
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  deletedAt  DateTime?
-  isActive   Boolean   @default(true)
-  FileType   FileType  @relation(fields: [fileTypeId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  id           Int           @id @default(autoincrement())
+  fileTypeId   Int           @unique
+  required     Boolean       @default(false)
+  validUntil   Int           @default(0)
+  scopeOrgId   Int?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  deletedAt    DateTime?
+  isActive     Boolean       @default(true)
+  FileType     FileType      @relation(fields: [fileTypeId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  Organization Organization? @relation(fields: [scopeOrgId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+
+  @@unique([fileTypeId, scopeOrgId], name: "unique_file_type_attribute")
 }

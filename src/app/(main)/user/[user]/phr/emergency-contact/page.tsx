@@ -1,14 +1,24 @@
 import { Separator } from "@components/ui/separator"
 import EmergencyContactForm from "./EmergencyContactForm"
 import { Metadata } from "next"
-import UnderConstruction from "@components/UnderConstruction"
+import { AppRouterPageRouteOpts, getSession, withPageAuthRequired } from "@auth0/nextjs-auth0"
+import { redirect } from "next/navigation"
+import Suspend from "@components/Suspend"
+import { getEmergencyContactsAction } from "@actions/emergency-contact.action"
+import { isUserOwner } from "@lib/protect-org"
 
 export const metadata: Metadata = {
   title: "Emergency Contact | PHR",
   description: "Update your emergency contact information to help you in case of emergency."
 }
 
-export default function ContactInformationPage() {
+async function ContactInformationPage({params}:AppRouterPageRouteOpts) {
+  const session = await getSession()
+  const userId = decodeURI(params?.user as string)
+  if(!session) return redirect("/api/auth/login")
+  const owner = await isUserOwner(userId);
+  const contacts = await getEmergencyContactsAction(session.user.sub)
+
   return (
     <div className="space-y-6">
       <div>
@@ -18,8 +28,16 @@ export default function ContactInformationPage() {
         </p>
       </div>
       <Separator />
-      <UnderConstruction/>
-      {/* <EmergencyContactForm /> */}
+      <Suspend>
+        <EmergencyContactForm readOnly={!owner} userId={session.user.sub} contacts={contacts} />
+      </Suspend>
     </div>
   )
 }
+
+export default withPageAuthRequired(ContactInformationPage, {
+  returnTo: ({params, searchParams}) => {
+    const searchStr = Object.entries(searchParams ?? {}).map(([key, value]) => `${key}=${value}`).join("&");
+    return `/user/${params?.user}/phr.emergency-contact?${searchStr}`;
+  }
+});

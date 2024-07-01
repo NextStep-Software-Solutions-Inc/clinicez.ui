@@ -57,6 +57,7 @@ model User {
   UserMigration                    UserMigration?
   ActivationCodes                  ActivationCode[]
   Folders                          Folder[]
+  UserEmergencyContacts            UserEmergencyContact[]
 }
 
 enum Gender {
@@ -480,4 +481,18 @@ model FileTypeAttribute {
   Organization Organization? @relation(fields: [scopeOrgId], references: [id], onUpdate: NoAction, onDelete: NoAction)
 
   @@unique([fileTypeId, scopeOrgId], name: "unique_file_type_attribute")
+}
+
+model UserEmergencyContact {
+  id           Int       @id @default(autoincrement())
+  userId       Int
+  isPrimary    Boolean   @default(true)
+  name         String
+  relationship String
+  phone        String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+  isActive     Boolean   @default(true)
+  User         User      @relation(fields: [userId], references: [id], onUpdate: NoAction, onDelete: NoAction)
 }

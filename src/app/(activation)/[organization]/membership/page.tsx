@@ -67,6 +67,6 @@ async function MembershipPage({params}: AppRouterPageRouteOpts) {
 export default withPageAuthRequired(MembershipPage, {
   returnTo: ({params, searchParams}) => {
     const searchStr = Object.entries(searchParams ?? {}).map(([key, value]) => `${key}=${value}`).join("&");
-    return `/${params?.organization}/join?${searchStr}`;
+    return `/${params?.organization}/membership?${searchStr}`;
   }
 });

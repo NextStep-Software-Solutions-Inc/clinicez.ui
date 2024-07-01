@@ -48,7 +48,14 @@ export const getFoldersAction = async (userId: string) => {
           dateTaken: true,
           FileType: {
             select: {
-              name: true
+              name: true,
+              FileTypeAttribute: {
+                select: {
+                  required: true,
+                  validUntil: true,
+                  scopeOrgId: true
+                }
+              }
             }
           },
           FileSetting: {

@@ -95,8 +95,9 @@ export default  function FileSettingSheet({ children, record, ...res }: FileSett
                       <FormItem className="flex items-center justify-between space-x-2">
                         <Label htmlFor={`folder-${record.id}-${field.name}`} className="flex flex-col space-y-1">
                           <span>Public</span>
-                          <span className="font-normal leading-snug text-muted-foreground">
-                            Allow everyone to view this file
+                          <span className="font-light leading-snug text-muted-foreground">
+                            Allow everyone to view this file. <br/>
+                            Organization healthcare providers can view the file when file type is coupled with the organization.
                           </span>
                         </Label>
                         <Switch id={`folder-${record.id}-${field.name}`} onCheckedChange={field.onChange} checked={field.value} />

@@ -102,7 +102,7 @@ export const ContactItem = ({ contact, readOnly }: {
                   className="flex space-y-1"
                 >
                   <Each
-                    of={["parent", "sibling", "relative", "others"]}
+                    of={["spouse", "parent", "sibling", "relative", "others"]}
                     render={(value) => (
                       <FormItem className="flex items-center space-x-3 space-y-0">
                         <FormControl>

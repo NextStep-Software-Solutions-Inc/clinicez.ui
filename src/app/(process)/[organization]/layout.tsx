@@ -34,6 +34,8 @@ interface DashboardLayoutProps {
 import ClinicEzMiniLogo from "@public/assets/clinic-ez_mini-logo.svg"
 import Image from "next/image";
 import { protectOrg } from "@lib/protect-org";
+import { Suspense } from "react";
+import UserAvatarWrapper from "@components/UserAvatarWrapper";
 
 export default async function DashboardLayout({children, params:{organization}}: DashboardLayoutProps) {
   await protectOrg(organization)// Check if user is a member of the organization they are trying to access
@@ -101,7 +103,9 @@ export default async function DashboardLayout({children, params:{organization}}:
             <div className="max-w-xs">
               <OrganizationSwitcher isCollapsed/>
             </div>
-            <AvatarDropdown/>
+            <Suspense fallback={<div>Loading</div>}>
+              <UserAvatarWrapper/>
+            </Suspense>
           </header>
           <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
             {children}

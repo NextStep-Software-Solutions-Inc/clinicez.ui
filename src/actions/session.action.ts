@@ -1,6 +1,6 @@
 "use server";
 
-import { getSession } from "@auth0/nextjs-auth0/edge";
+import { getSession } from "@auth0/nextjs-auth0";
 import { cache } from "react";
 
 export const getCachedSession = cache(async () => {

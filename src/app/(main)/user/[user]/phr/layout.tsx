@@ -3,7 +3,7 @@ import { Metadata } from "next"
 import { Separator } from "@components/ui/separator"
 import SidebarNav from "@components/SidebarNav"
 import ConditionalRender from "@components/utils/ConditionalRender"
-import { isOrgAdmin, isUserOwner } from "@lib/protect-org"
+import { isHP, isOrgAdmin, isSameOrg, isUserOwner } from "@lib/protect-org"
 import { redirect } from "next/navigation"
 import { getCachedSession } from "@actions/session.action"
 import { UnauthorizedWarning } from "../../../../(activation)/[organization]/membership/UnauthorizedWarning"
@@ -12,24 +12,27 @@ export const metadata: Metadata = {
   title: "PHR",
   description: "Personal Health Record",
 }
-
-interface SettingsLayoutProps {
+interface PHRLayoutProps {
   children: React.ReactNode
   params: {
-    organization: string,
     user: string
   }
 }
 
-export default async function SettingsLayout({ children, params: {user} }: SettingsLayoutProps) {
+export default async function PHRLayout({ children, params: {user} }: PHRLayoutProps) {
 
   const session = await getCachedSession();
   if(!session) return redirect("/api/auth/login");
   const orgAdmin = await isOrgAdmin();
-  const userOwner = await isUserOwner(decodeURI(user));
-  
-  if(!orgAdmin && !userOwner) return <UnauthorizedWarning />
-  
+  const phrOwnerId = decodeURI(user);
+  const userOwner = await isUserOwner(phrOwnerId);
+  const hp = await isHP();
+  const sameOrg = await isSameOrg(phrOwnerId);
+
+  // Allow access if user is the owner, or if user is a HP or an org admin from the same org
+  if (!(userOwner || (hp && sameOrg) || (orgAdmin && sameOrg))) {
+    return <UnauthorizedWarning />;
+  }
   const sidebarNavItems = [
     {
       title: "Personal Information",

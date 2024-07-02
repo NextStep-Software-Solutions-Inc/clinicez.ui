@@ -1,3 +1,5 @@
+import { User } from 'lucide-react';
+import { Users } from 'lucide-react';
 "use server";
 
 import prisma from "@lib/prisma";
@@ -7,6 +9,7 @@ import { revalidatePath } from 'next/cache';
 import { sendMail } from './email.action';
 import path from 'path';
 import { getCachedSession } from './session.action';
+import { cache } from "react";
 
 export const createOrganizationAction = async (data: Prisma.OrganizationCreateArgs["data"]) => {
 
@@ -62,7 +65,7 @@ type FilterType = {
   roleId?: number;
 }
 
-export const getUserOrganizationsAction = async (filter?: FilterType) => {
+export const getUserOrganizationsAction = cache(async (filter?: FilterType) => {
   const { userId, orgId, status, roleId } = filter || {};
   const organizations = await prisma.userOrganization.findMany({
     orderBy: {
@@ -117,14 +120,24 @@ export const getUserOrganizationsAction = async (filter?: FilterType) => {
         select: {
           name: true,
           orgId: true,
-          id: true
+          id: true,
+          Users: {
+            select: {
+              User: {
+                select: {
+                  userId: true,
+                },
+              },
+            }
+          }
         }
       }
     }
   });
+  organizations[0].Organization.Users[0].User.userId
   return organizations;
 
-}
+})
 
 export const getMyDefaultOrganizationAction = async (userId: string) => {
   const org = await prisma.userDefaultOrganization.findFirst({

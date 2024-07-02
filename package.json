@@ -26,6 +26,7 @@
     "@hookform/resolvers": "^3.3.4",
     "@hotjar/browser": "^1.0.9",
     "@lottiefiles/react-lottie-player": "^3.5.3",
+    "@next/bundle-analyzer": "^14.2.4",
     "@prisma/client": "5.16.1",
     "@radix-ui/react-accordion": "^1.1.2",
     "@radix-ui/react-avatar": "^1.0.4",

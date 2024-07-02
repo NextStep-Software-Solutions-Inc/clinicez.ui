@@ -3,15 +3,15 @@ import { Metadata } from "next"
 import { Separator } from "@components/ui/separator"
 import SidebarNav from "@components/SidebarNav"
 import ConditionalRender from "@components/utils/ConditionalRender"
-import { isUserOwner } from "@lib/protect-org"
+import { isOrgAdmin, isUserOwner } from "@lib/protect-org"
 import { redirect } from "next/navigation"
 import { getCachedSession } from "@actions/session.action"
+import { UnauthorizedWarning } from "../../../../(activation)/[organization]/membership/UnauthorizedWarning"
 
 export const metadata: Metadata = {
   title: "PHR",
   description: "Personal Health Record",
 }
-
 
 interface SettingsLayoutProps {
   children: React.ReactNode
@@ -25,6 +25,10 @@ export default async function SettingsLayout({ children, params: {user} }: Setti
 
   const session = await getCachedSession();
   if(!session) return redirect("/api/auth/login");
+  const orgAdmin = await isOrgAdmin();
+  const userOwner = await isUserOwner(decodeURI(user));
+  
+  if(!orgAdmin && !userOwner) return <UnauthorizedWarning />
   
   const sidebarNavItems = [
     {
@@ -71,7 +75,7 @@ export default async function SettingsLayout({ children, params: {user} }: Setti
       <div className="space-y-0.5">
         <h2 className="text-2xl font-bold tracking-tight">
           Personal Health Record 
-          <ConditionalRender condition={!await isUserOwner(decodeURI(user))}>
+          <ConditionalRender condition={!userOwner}>
             <span className="text-primary text-base italic mx-2">(View Only)</span>
           </ConditionalRender>
         </h2>

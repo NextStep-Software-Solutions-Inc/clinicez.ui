@@ -1,12 +1,12 @@
 "use server";
 
-import { getSession } from '@auth0/nextjs-auth0';
 import prisma from "@lib/prisma";
 import { Prisma, UserOrganizationStatus } from "@prisma/client";
 import fs from 'fs/promises';
 import { revalidatePath } from 'next/cache';
 import { sendMail } from './email.action';
 import path from 'path';
+import { getCachedSession } from './session.action';
 
 export const createOrganizationAction = async (data: Prisma.OrganizationCreateArgs["data"]) => {
 
@@ -257,7 +257,7 @@ export const getOrganizationRolesAction = async (filter?: Pick<FilterType, 'orgI
 }
 
 export const setMembershipRequestStatusAction = async (id: number, status: UserOrganizationStatus) => {
-  const session = await getSession();
+  const session = await getCachedSession();
 
   const request = await prisma.userOrganization.update({
     where: { id },

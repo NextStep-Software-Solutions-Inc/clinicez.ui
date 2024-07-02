@@ -19,12 +19,13 @@ import { MainNav } from "./components/main-nav"
 import { Overview } from "./components/overview"
 import { RecentSales } from "./components/recent-sales"
 import { Calendar, Stethoscope, TrendingUp } from "lucide-react"
-import { AppRouterPageRouteOpts, getSession, withPageAuthRequired } from "@auth0/nextjs-auth0"
+import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth0"
 import { getUserOrganizationsAction } from "@actions/organization.action"
 import { redirect } from "next/navigation"
 import ConditionalRender from "@components/utils/ConditionalRender"
 import { isHP, isMember } from "@lib/protect-org"
 import { DashboardStats } from "./DashboardStats"
+import { getCachedSession } from "@actions/session.action"
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -34,7 +35,7 @@ export const metadata: Metadata = {
 
 async function DashboardPage({params, searchParams}: AppRouterPageRouteOpts) {
   const orgId = params?.organization as string
-  const session = await getSession()
+  const session = await getCachedSession()
   if (!session) return redirect("/api/auth/login")
   const userId = session.user.sub
 

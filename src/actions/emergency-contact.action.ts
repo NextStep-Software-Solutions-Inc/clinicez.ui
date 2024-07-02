@@ -75,7 +75,6 @@ export const upsertEmergencyContactAction = async (userId: string, data: {
     phone: string;
     isPrimary: boolean;
 }) => {
-  console.log({ data , userId });
   
   const res = await prisma.userEmergencyContact.upsert({
     where: {

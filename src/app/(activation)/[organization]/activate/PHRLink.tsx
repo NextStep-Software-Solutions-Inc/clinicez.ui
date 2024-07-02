@@ -1,10 +1,10 @@
 import { DropdownMenuItem } from "@components/ui/dropdown-menu";
 import { User } from "lucide-react";
-import { getSession } from "@auth0/nextjs-auth0";
+import { getCachedSession } from "@actions/session.action";
 
 
 export default async function PHRLink() {
-  const session = await getSession();
+  const session = await getCachedSession();
   if (!session) return null;
   return (
     <a href={`/user/${session.user.sub}/phr`}>

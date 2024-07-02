@@ -7,15 +7,19 @@ import AdminConsoleLink from "../app/(activation)/[organization]/activate/AdminC
 import UserAvatarDropdown from "./UserAvatarDropdown";
 import Suspend from "./Suspend";
 import { Skeleton } from "./ui/skeleton";
+import { getCachedSession } from "@actions/session.action";
 
 export default async function UserAvatarWrapper() {
+  const session = await getCachedSession();
+  const userId = session?.user.sub;
+  
   return (
     <UserAvatarDropdown>
       <DropdownMenuLabel>My Account</DropdownMenuLabel>
       <DropdownMenuSeparator />
       <DropdownMenuGroup>
         <PHRLink />
-        <HPProfilesLink />
+        <HPProfilesLink userId={userId}/>
         <a href="/billing">
           <DropdownMenuItem>
             <CreditCard className="mr-2 h-4 w-4" />

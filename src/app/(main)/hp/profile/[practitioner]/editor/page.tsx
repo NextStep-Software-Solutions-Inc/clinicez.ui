@@ -1,4 +1,4 @@
-import { AppRouterPageRouteOpts, getSession, withPageAuthRequired } from "@auth0/nextjs-auth0";
+import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth0";
 import { getDoctorAction } from "@actions/doctor.action";
 import { getNurseAction } from "@actions/nurse.action";
 import HPProfile from "./components/HPProfile";
@@ -14,12 +14,13 @@ import { revalidatePath } from "next/cache";
 import ActionButton from "@components/ActionButton";
 import { notFound, redirect } from "next/navigation";
 import { HealthcareProviderType } from "@prisma/client";
+import { getCachedSession } from "@actions/session.action";
 
 async function EditorPage({params, searchParams}: AppRouterPageRouteOpts) {
   const hpId = parseInt(params?.practitioner as string);
   const type = searchParams?._type as HealthcareProviderType;
 
-  const session = await getSession();
+  const session = await getCachedSession();
   if(!session) return redirect("/api/auth/login");
   
   const myHps = await getHPsActions({

@@ -1,6 +1,6 @@
 
 
-import { AppRouterPageRouteOpts, getSession, withPageAuthRequired, } from "@auth0/nextjs-auth0";
+import { AppRouterPageRouteOpts, withPageAuthRequired, } from "@auth0/nextjs-auth0";
 
 import SelectHPType from "./components/SelectHPType";
 import SelectPlan from "./components/SelectPlan";
@@ -12,6 +12,7 @@ import HPApplicationDataProvider from "@contexts/hp-application.context";
 import ApplicationForm from "./components/ApplicationForm";
 import React from "react";
 import { getHPAction } from "@actions/hp.actions";
+import { getCachedSession } from "@actions/session.action";
 
 export const metadata: Metadata = {
   title: "Healthcare Provider Registration",
@@ -20,7 +21,7 @@ export const metadata: Metadata = {
 
 
 async function HealthcareProviderRegistrationPage(props: AppRouterPageRouteOpts) {
-  const session = await getSession();
+  const session = await getCachedSession();
   
   const hp = await getHPAction({userId: session?.user.sub});
   

@@ -4,8 +4,8 @@ import { Separator } from "@components/ui/separator"
 import SidebarNav from "@components/SidebarNav"
 import ConditionalRender from "@components/utils/ConditionalRender"
 import { isUserOwner } from "@lib/protect-org"
-import { getSession } from "@auth0/nextjs-auth0"
 import { redirect } from "next/navigation"
+import { getCachedSession } from "@actions/session.action"
 
 export const metadata: Metadata = {
   title: "PHR",
@@ -23,7 +23,7 @@ interface SettingsLayoutProps {
 
 export default async function SettingsLayout({ children, params: {user} }: SettingsLayoutProps) {
 
-  const session = await getSession();
+  const session = await getCachedSession();
   if(!session) return redirect("/api/auth/login");
   
   const sidebarNavItems = [

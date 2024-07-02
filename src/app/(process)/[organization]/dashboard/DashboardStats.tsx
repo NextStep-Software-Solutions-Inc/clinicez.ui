@@ -5,7 +5,7 @@ import {
 } from "@components/ui/card";
 import { Files, User } from "lucide-react";
 import ConditionalRender from "@components/utils/ConditionalRender";
-import { isHP, isMember } from "@lib/protect-org";
+import { isHP, isMember, isOrgAdmin } from "@lib/protect-org";
 import { getDashboardData } from "@actions/dashboard.actions";
 import { UserOrganizationStatus } from "@prisma/client";
 import Link from "next/link";
@@ -26,6 +26,10 @@ export const DashboardStats = async ({ userId, orgId }: DashboardStatsProps) => 
   const { files, memberships } = stats;
   const pendingCount = memberships.find(m => m.status === UserOrganizationStatus.PENDING)?._count || 0;
   const membershipSum = memberships.reduce((acc, m) => acc + m._count, 0);
+
+  const member = await isMember();
+  const hp = await isHP();
+  const orgAdmin = await isOrgAdmin();
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -57,7 +61,7 @@ export const DashboardStats = async ({ userId, orgId }: DashboardStatsProps) => 
                 </p>
               </CardContent>
             </Card> */}
-      <ConditionalRender condition={await isMember() && await isHP()}>
+      <ConditionalRender condition={member && (hp || orgAdmin)}>
         <Link href={`/${orgId}/membership`}>
           <Card className="group/icon">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

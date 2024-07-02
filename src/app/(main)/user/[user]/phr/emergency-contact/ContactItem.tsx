@@ -58,7 +58,6 @@ export const ContactItem = ({ contact, readOnly }: {
   
   const saveChangesAction = async () => {
     form.handleSubmit(async (data) => {
-      console.log({data});
         
       toast.promise(updateEmergencyContactAction(contact.id, data), {
         loading: "Saving changes...",

@@ -82,8 +82,7 @@ export const AddressItem = ({ address, readOnly }: AddressItemProps) => {
         },
         error: "An error occurred while saving changes.",
       })
-    }, console.log
-    )();
+    })();
   }
 
   const deleteAction = async () => {

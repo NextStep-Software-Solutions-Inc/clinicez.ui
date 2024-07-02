@@ -5,9 +5,9 @@ import { Button } from "@components/ui/button";
 import { ArrowRightCircle, Rocket } from "lucide-react";
 import Link from "next/link";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@components/ui/card";
-import { getSession } from "@auth0/nextjs-auth0";
 import ConditionalRender from "@components/utils/ConditionalRender";
 import Each from "@components/utils/Each";
+import { getCachedSession } from "@actions/session.action";
 
 export const metadata: Metadata = {
   title: "Home | Clinic EZ ",
@@ -46,7 +46,7 @@ const topFeature = [
 ]
 export default async function HomePage() {
   
-  const session = await getSession();
+  const session = await getCachedSession();
   const authenticated = !!session  
   return (
     <main className="flex flex-col">

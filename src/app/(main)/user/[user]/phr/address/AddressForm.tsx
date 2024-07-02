@@ -9,6 +9,7 @@ import { AddressItem, AddressItemProps } from "./AddressItem";
 import { toast } from "sonner";
 import { createAddressAction } from "@actions/address.action";
 import { revalidatePath } from "@actions/cache.action";
+import ConditionalRender from "@components/utils/ConditionalRender";
 
 const initialAddressValues = (key: "primary" | "secondary") => ({
   isPrimary: key === "primary",
@@ -50,17 +51,24 @@ export default function AddressFormForm(props: {
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span className="capitalize">Primary Address</span>
-            <form action={action} className="space-y-8">
-              <ActionButton name="isPrimary" value="true" className="capitalize">Add Primary Address</ActionButton>
-            </form>
+            <ConditionalRender condition={!readOnly}>
+              <form action={action} className="space-y-8">
+                <ActionButton name="isPrimary" value="true" className="capitalize">Add Primary Address</ActionButton>
+              </form>
+            </ConditionalRender>
           </CardTitle>
           <Separator />
         </CardHeader>
         <CardContent>
           <Each
             of={addresses.primary}
-            render={(address) => (
-              <AddressItem key={address.id} readOnly={readOnly} address={address} />
+            render={(address, index) => (
+              <>
+                <AddressItem key={address.id} readOnly={readOnly} address={address} />
+                {addresses.primary.filter(a => a.isPrimary).length - 1 !== index && (
+                  <Separator className="my-5 h-1" />
+                )}
+              </>
             )}
           />
         </CardContent>
@@ -69,17 +77,24 @@ export default function AddressFormForm(props: {
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span className="capitalize">Secondary Address</span>
-            <form action={action} className="space-y-8">
-              <ActionButton name="isPrimary" value="false" className="capitalize">Add Secondary Address</ActionButton>
-            </form>
+            <ConditionalRender condition={!readOnly}>
+              <form action={action} className="space-y-8">
+                <ActionButton name="isPrimary" value="false" className="capitalize">Add Secondary Address</ActionButton>
+              </form>
+            </ConditionalRender>
           </CardTitle>
           <Separator />
         </CardHeader>
         <CardContent>
           <Each
             of={addresses.secondary}
-            render={(address) => (
-              <AddressItem key={address.id} readOnly={readOnly} address={address} />
+            render={(address, index) => (
+              <>
+                <AddressItem key={address.id} readOnly={readOnly} address={address} />
+                {addresses.secondary.filter(a => a.isPrimary).length - 1 !== index && (
+                  <Separator className="my-5 h-1" />
+                )}
+              </>
             )}
           />
         </CardContent>

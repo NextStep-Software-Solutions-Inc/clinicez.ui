@@ -15,8 +15,7 @@ export const metadata: Metadata = {
 async function PHRPage({ params, searchParams }: AppRouterPageRouteOpts) {
   const userId = decodeURI(params?.user as string) 
   if(!userId) throw new Error("User ID is required to view this page.")
-
-  const user = await getUserAction(userId);
+  const userOwner = await isUserOwner(userId)
 
   return (
     <div className="space-y-6">
@@ -28,9 +27,11 @@ async function PHRPage({ params, searchParams }: AppRouterPageRouteOpts) {
       </div>
       <Separator />
       <Suspend>
-        <Picture user={user} disabled={!await isUserOwner(userId)}/>
+        <PictureWrapper userId={userId} readOnly={!userOwner}/>
       </Suspend>
-      <PersonalInformationForm  user={user} />
+      <Suspend>
+        <PHR userId={userId} readOnly={!userOwner} />
+      </Suspend>
     </div>
   )
 }
@@ -42,3 +43,22 @@ export default withPageAuthRequired(PHRPage, {
   }
 })
 
+
+interface PHRProps {
+  userId: string
+  readOnly?: boolean;
+}
+
+export const PHR = async ({userId, readOnly = true}:PHRProps) => {
+  const user = await getUserAction(userId);
+  return (
+    <PersonalInformationForm user={user} readOnly={readOnly} />
+  )
+}
+
+export const PictureWrapper = async ({userId, readOnly}:PHRProps) => {
+  const user = await getUserAction(userId);
+  return (
+    <Picture user={user} readOnly={readOnly} />
+  )
+}

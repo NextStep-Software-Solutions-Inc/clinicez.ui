@@ -13,10 +13,10 @@ import ConditionalRender from "@components/utils/ConditionalRender";
 
 interface PictureProps {
   user: User;
-  disabled?: boolean;
+  readOnly?: boolean;
 }
 
-export const Picture = async ({ user, disabled = true }: PictureProps) => {
+export const Picture = async ({ user, readOnly = true }: PictureProps) => {
   
   const action = async (formData: FormData) => {
     toast.promise(uploadMediaAction(formData), {
@@ -43,7 +43,7 @@ export const Picture = async ({ user, disabled = true }: PictureProps) => {
         <AvatarImage className="object-cover" src={user?.picture || "https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png"} />
         <AvatarFallback> ME</AvatarFallback>
       </Avatar>
-      <ConditionalRender condition={!disabled}>
+      <ConditionalRender condition={!readOnly}>
         <form action={action}>
           <div className="grid w-full max-w-sm items-center gap-1.5">
             <Label htmlFor="picture">Picture</Label>

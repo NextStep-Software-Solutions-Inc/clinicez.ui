@@ -18,7 +18,6 @@ async function AddressPage({params}: AppRouterPageRouteOpts) {
   const userId = decodeURI(params?.user as string)
   if(!session) return redirect("/api/auth/login")
   const owner = await isUserOwner(userId);
-  const addresses = await getAddressesAction(userId)
 
   return (
     <div className="space-y-6">
@@ -29,9 +28,8 @@ async function AddressPage({params}: AppRouterPageRouteOpts) {
         </p>
       </div>
       <Separator />
-
       <Suspend>
-        <AddressFormForm readOnly={!owner} addresses={addresses} sessionUserId={session.user.sub} />
+        <Addresses readOnly={!owner} sessionUserId={session.user.sub} userId={userId}  />
       </Suspend>
     </div>
   )
@@ -44,3 +42,18 @@ export default withPageAuthRequired(AddressPage, {
     return `/user/${params?.user}/phr/address?${searchStr}`;
   }
 })
+
+interface AddressFormProps {
+  sessionUserId: string
+  readOnly?: boolean;
+  userId: string;
+}
+
+export const Addresses = async ({ userId, ...props }: AddressFormProps) => {
+  
+  const addresses = await getAddressesAction(userId)
+
+  return (
+    <AddressFormForm {...props} addresses={addresses}  />
+  )
+}

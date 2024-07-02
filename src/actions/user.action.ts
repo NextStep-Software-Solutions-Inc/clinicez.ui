@@ -3,6 +3,7 @@ import 'server-only'
 import prisma from "@lib/prisma";
 import { Prisma } from "@prisma/client";
 import { managementClient } from "@services/auth0/management-client";
+import { cache } from 'react';
 
 
 export const getUsersAction = async () => {
@@ -14,7 +15,7 @@ export const getUsersAction = async () => {
   return users;
 }
 
-export const getUserAction = async (userId: string) => {
+export const getUserAction = cache(async (userId: string) => {
   const user = await prisma.user.findUniqueOrThrow({ 
     where: { 
       isActive: true,
@@ -22,7 +23,7 @@ export const getUserAction = async (userId: string) => {
     } 
   }); 
   return user;
-}
+})
 
 export const createUserAction = async (data: Prisma.UserCreateArgs["data"]) => {
 

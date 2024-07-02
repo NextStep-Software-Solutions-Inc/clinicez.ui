@@ -18,7 +18,6 @@ async function ContactInformationPage({params}:AppRouterPageRouteOpts) {
   if(!session) return redirect("/api/auth/login")
   const userId = decodeURI(params?.user as string)
   const owner = await isUserOwner(userId);
-  const contacts = await getEmergencyContactsAction(userId)
 
   return (
     <div className="space-y-6">
@@ -30,7 +29,7 @@ async function ContactInformationPage({params}:AppRouterPageRouteOpts) {
       </div>
       <Separator />
       <Suspend>
-        <EmergencyContactForm readOnly={!owner} sessionUserId={session.user.sub} contacts={contacts} />
+        <EmergencyContacts sessionUserId={session.user.sub} readOnly={!owner} userId={userId}/>
       </Suspend>
     </div>
   )
@@ -42,3 +41,16 @@ export default withPageAuthRequired(ContactInformationPage, {
     return `/user/${params?.user}/phr.emergency-contact?${searchStr}`;
   }
 });
+
+interface EmergencyContactFormProps {
+  sessionUserId: string
+  readOnly?: boolean;
+  userId: string;
+}
+
+export const EmergencyContacts = async ({ userId, ...props}:EmergencyContactFormProps) => {
+  const contacts = await getEmergencyContactsAction(userId)
+  return (
+    <EmergencyContactForm {...props} contacts={contacts} />
+  )
+}

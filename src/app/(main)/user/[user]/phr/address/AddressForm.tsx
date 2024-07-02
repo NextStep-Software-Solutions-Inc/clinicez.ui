@@ -20,11 +20,13 @@ const initialAddressValues = (key: "primary" | "secondary") => ({
   country: "",
 });
 
-export default function AddressFormForm(props: {
-  readOnly?: boolean;
+interface AddressFormProps {
   sessionUserId: string;
-  addresses: AddressItemProps["address"][]
-}) {
+  addresses: AddressItemProps["address"][];
+  readOnly?: boolean;
+}
+
+export default function AddressForm(props: AddressFormProps) {
   const { readOnly = true, sessionUserId } = props;
 
   const addresses = {

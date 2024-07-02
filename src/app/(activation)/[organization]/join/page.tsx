@@ -21,7 +21,7 @@ async function JoinOrgPage({params}: AppRouterPageRouteOpts) {
       <Separator />
       <Alert variant="default">
         <AlertTriangle className="h-4 w-4"/>
-        <AlertTitle>Waring</AlertTitle>
+        <AlertTitle>Warning</AlertTitle>
         <AlertDescription>
           Spamming the organizations with join requests will result in a ban from the organization.
         </AlertDescription>

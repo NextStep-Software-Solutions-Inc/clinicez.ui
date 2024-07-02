@@ -22,7 +22,7 @@ const topFeature = [
     content: "Skip the wait, see your doctor anytime. Book appointments 24/7 with Clinic EZ.",
     action: {
       label: "Schedule Appointment ➡️",
-      path: ""
+      path: "/contact-us"
     }
   },
   {
@@ -31,7 +31,7 @@ const topFeature = [
     content: "Perfect matches for patients & providers. Build trust, customize workflows, streamline care.",
     action: {
       label: "Learn More About Customization ✏️",
-      path: ""
+      path: "/contact-us"
     }
   },
   {
@@ -40,7 +40,7 @@ const topFeature = [
     content: "Matching patients with the perfect fit. Build your trusted profile & connect with patients seeking your expertise.",
     action: {
       label: "Join Clinic EZ ✅",
-      path: ""
+      path: "/contact-us"
     }
   }
 ]

@@ -1,12 +1,11 @@
 import { Separator } from "@components/ui/separator"
 import { Metadata } from "next"
-import AddressFormForm from "./AddressForm"
 import Suspend from "@components/Suspend"
 import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth0"
 import { redirect } from "next/navigation"
 import { isUserOwner } from "@lib/protect-org"
-import { getAddressesAction } from "@actions/address.action"
 import { getCachedSession } from "@actions/session.action"
+import { Addresses } from "./Addresses"
 export const metadata: Metadata = {
   title: "Address | PHR",
   description: "Update your address to help you organization locate you."
@@ -42,18 +41,3 @@ export default withPageAuthRequired(AddressPage, {
     return `/user/${params?.user}/phr/address?${searchStr}`;
   }
 })
-
-interface AddressFormProps {
-  sessionUserId: string
-  readOnly?: boolean;
-  userId: string;
-}
-
-export const Addresses = async ({ userId, ...props }: AddressFormProps) => {
-  
-  const addresses = await getAddressesAction(userId)
-
-  return (
-    <AddressFormForm {...props} addresses={addresses}  />
-  )
-}

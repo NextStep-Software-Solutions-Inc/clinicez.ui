@@ -1,7 +1,7 @@
 import { Separator } from "@components/ui/separator"
 import { Metadata } from "next"
 import VaccinationForm from "./VaccinationForm"
-import Suspend from "@components/Suspend"
+import UnderConstruction from "@components/UnderConstruction"
 
 export const metadata: Metadata = {
   title: "Vaccination & Immunization | PHR",
@@ -18,9 +18,8 @@ export default function VaccinationImmunizationPage() {
         </p>
       </div>
       <Separator />
-      <Suspend>
-        <VaccinationForm />
-      </Suspend>
+      <UnderConstruction/>
+      {/* <VaccinationForm /> */}
     </div>
   )
 }

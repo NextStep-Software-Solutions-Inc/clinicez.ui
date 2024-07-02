@@ -1,12 +1,11 @@
 import { Separator } from "@components/ui/separator"
-import EmergencyContactForm from "./EmergencyContactForm"
 import { Metadata } from "next"
 import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth0"
 import { redirect } from "next/navigation"
 import Suspend from "@components/Suspend"
-import { getEmergencyContactsAction } from "@actions/emergency-contact.action"
 import { isUserOwner } from "@lib/protect-org"
 import { getCachedSession } from "@actions/session.action"
+import { EmergencyContacts } from "./EmergencyContacts"
 
 export const metadata: Metadata = {
   title: "Emergency Contact | PHR",
@@ -41,16 +40,3 @@ export default withPageAuthRequired(ContactInformationPage, {
     return `/user/${params?.user}/phr.emergency-contact?${searchStr}`;
   }
 });
-
-interface EmergencyContactFormProps {
-  sessionUserId: string
-  readOnly?: boolean;
-  userId: string;
-}
-
-export const EmergencyContacts = async ({ userId, ...props}:EmergencyContactFormProps) => {
-  const contacts = await getEmergencyContactsAction(userId)
-  return (
-    <EmergencyContactForm {...props} contacts={contacts} />
-  )
-}

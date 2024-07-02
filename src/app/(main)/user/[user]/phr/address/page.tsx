@@ -18,7 +18,7 @@ async function AddressPage({params}: AppRouterPageRouteOpts) {
   const userId = decodeURI(params?.user as string)
   if(!session) return redirect("/api/auth/login")
   const owner = await isUserOwner(userId);
-  const addresses = await getAddressesAction(session.user.sub)
+  const addresses = await getAddressesAction(userId)
 
   return (
     <div className="space-y-6">
@@ -31,7 +31,7 @@ async function AddressPage({params}: AppRouterPageRouteOpts) {
       <Separator />
 
       <Suspend>
-        <AddressFormForm readOnly={!owner} addresses={addresses} userId={userId} />
+        <AddressFormForm readOnly={!owner} addresses={addresses} sessionUserId={session.user.sub} />
       </Suspend>
     </div>
   )

@@ -22,10 +22,10 @@ const initialAddressValues = (key: "primary" | "secondary") => ({
 
 export default function AddressFormForm(props: {
   readOnly?: boolean;
-  userId: string;
+  sessionUserId: string;
   addresses: AddressItemProps["address"][]
 }) {
-  const { readOnly = true, userId } = props;
+  const { readOnly = true, sessionUserId } = props;
 
   const addresses = {
     primary: props.addresses.filter(a => a.isPrimary),
@@ -35,7 +35,7 @@ export default function AddressFormForm(props: {
   const action = async (formData: FormData) => {
     const isPrimary = formData.get("isPrimary") === "true";
     const address = initialAddressValues(isPrimary ? "primary": "secondary");
-    toast.promise(createAddressAction(userId, address), {
+    toast.promise(createAddressAction(sessionUserId, address), {
       loading: `Adding ${isPrimary ? "Primary": "Secondary"} address...`,
       success: () => {
         revalidatePath("/user/[user]/phr/address", "page");

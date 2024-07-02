@@ -6,7 +6,7 @@ import { Separator } from "@components/ui/separator";
 import Each from "@components/utils/Each";
 import React from "react";
 import { toast } from "sonner";
-import { ContactItem, emergencyContactFormSchema } from "./ContactItem";
+import { ContactItem } from "./ContactItem";
 import ActionButton from "@components/ActionButton";
 import { z } from "zod";
 import { UserEmergencyContact } from "@prisma/client";
@@ -15,16 +15,16 @@ import ConditionalRender from "@components/utils/ConditionalRender";
 
 interface EmergencyContactFormProps {
   contacts: UserEmergencyContact[];
-  userId: string
+  sessionUserId: string
   readOnly?: boolean;
 }
 
-export default function EmergencyContactForm({contacts, userId, readOnly = true}: EmergencyContactFormProps) {
+export default function EmergencyContactForm({contacts, sessionUserId, readOnly = true}: EmergencyContactFormProps) {
 
   const addContactAction = async (formData: FormData) => {
     const isPrimary = formData.get("isPrimary") === "true"
     const contact = { isPrimary, name: "", relationship: "", phone: ""}
-    toast.promise(createEmergencyContactAction(userId, contact), {
+    toast.promise(createEmergencyContactAction(sessionUserId, contact), {
       loading: `Adding ${isPrimary ? "Primary": "Secondary"} contact...`,
       success: () => {
         revalidatePath("/user/[user]/phr/emergency-contact")

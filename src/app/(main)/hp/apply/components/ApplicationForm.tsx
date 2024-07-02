@@ -43,9 +43,10 @@ export const GotoHpProfile = () => {
   const [hp, setHp] = useState<Awaited<ReturnType<typeof getHPAction>>>()
   useEffect(() => {
     (async () => {
+      if(!user.user?.sub) return;
       setHp(await getHPAction({userId: user.user?.sub ?? ""}))
     })()
-  }, [])
+  }, [user.user?.sub])
 
   if (!hp) return null;
   return (

@@ -1,187 +1,89 @@
 "use client";
 
 import ActionButton from "@components/ActionButton";
-import { Button } from "@components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@components/ui/card";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@components/ui/form";
-import { Input } from "@components/ui/input";
 import { Separator } from "@components/ui/separator";
-import { toast } from "@components/ui/use-toast";
 import Each from "@components/utils/Each";
-import { faker } from "@faker-js/faker";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { delay } from "@lib/wait";
 import React from "react";
-import { useFieldArray, useForm } from "react-hook-form";
-import { z } from "zod";
+import { AddressItem, AddressItemProps } from "./AddressItem";
+import { toast } from "sonner";
+import { createAddressAction } from "@actions/address.action";
+import { revalidatePath } from "@actions/cache.action";
 
+const initialAddressValues = (key: "primary" | "secondary") => ({
+  isPrimary: key === "primary",
+  address: "",
+  city: "",
+  state: "",
+  zipCode: "",
+  country: "",
+});
 
-const addressFormSchema = z.object({
-  addresses: z.array(z.object({
-    id: z.number(),
-    isPrimary: z.boolean(),
-    address: z.string().min(2, {
-      message: "Name must be at least 2 characters.",
-    }).max(255, {
-      message: "Name must not be longer than 255 characters.",
-    }),
-    city: z.string().min(2, {
-      message: "City must be at least 2 characters.",
-    }).max(255, {
-      message: "City must not be longer than 255 characters.",
-    }),
-    state: z.string().min(2, {
-      message: "State must be at least 2 characters.",
-    }).max(255, {
-      message: "State must not be longer than 255 characters.",
-    }),
-    zip: z.string().min(2, {
-      message: "Zip must be at least 2 characters.",
-    }).max(30, {
-      message: "Zip must not be longer than 30 characters.",
-    }),
-  })),
-})
-
-export default function AddressFormForm() {
-  const form = useForm<z.infer<typeof addressFormSchema>>({
-    resolver: zodResolver(addressFormSchema),
-    
-  });
-
-  const {fields, append, remove} = useFieldArray({
-    control: form.control,
-    name: "addresses",
-    keyName: "fieldId"
-  });
-
-  const indexedFields = fields.map((field, index) => ({ ...field, index}));
+export default function AddressFormForm(props: {
+  readOnly?: boolean;
+  userId: string;
+  addresses: AddressItemProps["address"][]
+}) {
+  const { readOnly = true, userId } = props;
 
   const addresses = {
-    primary: indexedFields.filter(field => field.isPrimary),
-    secondary: indexedFields.filter(field => !field.isPrimary),
+    primary: props.addresses.filter(a => a.isPrimary),
+    secondary: props.addresses.filter(a => !a.isPrimary),
   };
 
-  const initialAddressValues = (key: "primary" | "secondary") => ({
-    id: faker.number.int(),
-    isPrimary: key === "primary",
-    address: "",
-    city: "",
-    state: "",
-    zip: "",
-  });
-
-  const handleSaveChanges = async (formData: FormData) => {
-    await delay(1000);
-    form.handleSubmit((data) => {
-      form.reset(data);
-      toast({
-        title: "You submitted the following values:",
-        description: (
-          <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-            <code className="text-white">{JSON.stringify(data, null, 2)}</code>
-          </pre>
-        ),
-      })
-    })();
+  const action = async (formData: FormData) => {
+    const isPrimary = formData.get("isPrimary") === "true";
+    const address = initialAddressValues(isPrimary ? "primary": "secondary");
+    toast.promise(createAddressAction(userId, address), {
+      loading: `Adding ${isPrimary ? "Primary": "Secondary"} address...`,
+      success: () => {
+        revalidatePath("/user/[user]/phr/address", "page");
+        return `${isPrimary ? "Primary": "Secondary"} address added successfully.`
+      },
+      error: "An error occurred while adding address.",
+    })
   };
 
   return (
-    <div>
-      <Form {...form}>
-        <form action={handleSaveChanges} className="space-y-8">
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span className="capitalize">Primary Address</span>
+            <form action={action} className="space-y-8">
+              <ActionButton name="isPrimary" value="true" className="capitalize">Add Primary Address</ActionButton>
+            </form>
+          </CardTitle>
+          <Separator />
+        </CardHeader>
+        <CardContent>
           <Each
-            of={Object.keys(addresses)}
-            render={(key) => (
-              <Card key={key}>
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <span className="capitalize">{key} Address</span>
-                    <Button className="capitalize" type="button" onClick={() => append(initialAddressValues(key as "primary" | "secondary"))}>Add {key} Address</Button>
-                  </CardTitle>
-                  <Separator />
-                </CardHeader>
-                <CardContent>
-                  <Each
-                    of={addresses[key as keyof typeof addresses]}
-                    render={(_field, index) => (
-                      <div className="space-y-3" key={_field.id}>
-                        <FormField
-                          control={form.control}
-                          name={`addresses.${_field.index}.address`}
-                          render={({ field }) => (
-                            <FormItem className="w-full">
-                              <FormLabel>Address</FormLabel>
-                              <FormControl>
-                                <Input placeholder="Your location" {...field} />
-                              </FormControl>
-                              <FormDescription>
-                                House number, street name, Village or Town, etc. 
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name={`addresses.${_field.index}.state`}
-                          render={({ field }) => (
-                            <FormItem className="w-full">
-                              <FormLabel>State or Province</FormLabel>
-                              <FormControl>
-                                <Input placeholder="Your State or Province" {...field} />
-                              </FormControl>
-                              <FormDescription>
-                                Municipality or State or Province that you belong to.
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name={`addresses.${_field.index}.city`}
-                          render={({ field }) => (
-                            <FormItem className="w-full">
-                              <FormLabel>City</FormLabel>
-                              <FormControl>
-                                <Input placeholder="City here.." {...field} />
-                              </FormControl>
-                              <FormDescription>
-                                City or Town that you belong to.
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name={`addresses.${_field.index}.zip`}
-                          render={({ field }) => (
-                            <FormItem className="w-full">
-                              <FormLabel>Zip Code</FormLabel>
-                              <FormControl>
-                                <Input placeholder="9000" {...field} type="number" inputMode="tel" />
-                              </FormControl>
-                              <FormDescription>
-                                Postal code of your area.
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <Button className="flex ml-auto" type="button" variant="destructive" onClick={() => remove(_field.index)}>Remove</Button>
-                        {index !== addresses[key as keyof typeof addresses].length - 1 && <Separator />}
-                      </div> 
-                    )}
-                  />
-                </CardContent>
-              </Card>
+            of={addresses.primary}
+            render={(address) => (
+              <AddressItem key={address.id} readOnly={readOnly} address={address} />
             )}
           />
-          {form.formState.isDirty && <ActionButton disabled={form.formState.isLoading || !form.formState.isValid}>Save Changes</ActionButton>}
-        </form>
-      </Form>
-    </div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span className="capitalize">Secondary Address</span>
+            <form action={action} className="space-y-8">
+              <ActionButton name="isPrimary" value="false" className="capitalize">Add Secondary Address</ActionButton>
+            </form>
+          </CardTitle>
+          <Separator />
+        </CardHeader>
+        <CardContent>
+          <Each
+            of={addresses.secondary}
+            render={(address) => (
+              <AddressItem key={address.id} readOnly={readOnly} address={address} />
+            )}
+          />
+        </CardContent>
+      </Card>
+    </>
   );
 }

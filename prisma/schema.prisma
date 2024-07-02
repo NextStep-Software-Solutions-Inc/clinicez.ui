@@ -58,6 +58,7 @@ model User {
   ActivationCodes                  ActivationCode[]
   Folders                          Folder[]
   UserEmergencyContacts            UserEmergencyContact[]
+  UserAddresses                    UserAddress[]
 }
 
 enum Gender {
@@ -495,4 +496,20 @@ model UserEmergencyContact {
   deletedAt    DateTime?
   isActive     Boolean   @default(true)
   User         User      @relation(fields: [userId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+}
+
+model UserAddress {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  isPrimary Boolean   @default(true)
+  address   String
+  city      String
+  state     String
+  zipCode   String
+  country   String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+  isActive  Boolean   @default(true)
+  User      User      @relation(fields: [userId], references: [id], onUpdate: NoAction, onDelete: NoAction)
 }

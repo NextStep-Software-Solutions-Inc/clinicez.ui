@@ -18,12 +18,13 @@ import { CalendarDateRangePicker } from "./components/date-range-picker"
 import { MainNav } from "./components/main-nav"
 import { Overview } from "./components/overview"
 import { RecentSales } from "./components/recent-sales"
-import { Calendar, Stethoscope, TrendingUp, User } from "lucide-react"
+import { Calendar, Stethoscope, TrendingUp } from "lucide-react"
 import { AppRouterPageRouteOpts, getSession, withPageAuthRequired } from "@auth0/nextjs-auth0"
 import { getUserOrganizationsAction } from "@actions/organization.action"
 import { redirect } from "next/navigation"
 import ConditionalRender from "@components/utils/ConditionalRender"
 import { isHP, isMember } from "@lib/protect-org"
+import { DashboardStats } from "./DashboardStats"
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -31,10 +32,11 @@ export const metadata: Metadata = {
 }
 
 
-async function DashboardPage({}: AppRouterPageRouteOpts) {
+async function DashboardPage({params, searchParams}: AppRouterPageRouteOpts) {
+  const orgId = params?.organization as string
   const session = await getSession()
   if (!session) return redirect("/api/auth/login")
-  const myOrgs = await getUserOrganizationsAction({userId: session.user.sub})
+  const userId = session.user.sub
 
   return (
     <div className="rounded-[0.5rem] border bg-background shadow]">
@@ -48,12 +50,12 @@ async function DashboardPage({}: AppRouterPageRouteOpts) {
         <div className="flex-1 space-y-4 p-8 pt-6">
           <div className="flex items-center justify-between space-y-2">
             <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
-            <ConditionalRender condition={await isMember() && await isHP()}>
+            {/* <ConditionalRender condition={await isMember() && await isHP()}>
               <div className="flex items-center space-x-2">
                 <CalendarDateRangePicker />
                 <Button>Download PDF</Button>
               </div>
-            </ConditionalRender>
+            </ConditionalRender> */}
           </div>
           <Tabs defaultValue="overview" className="space-y-4">
             <TabsList>
@@ -69,65 +71,8 @@ async function DashboardPage({}: AppRouterPageRouteOpts) {
               </TabsTrigger>
             </TabsList>
             <TabsContent value="overview" className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Card className="group/icon ">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">
-                      Appointments
-                    </CardTitle>
-                    <Calendar className="text-primary group-hover/icon:scale-150 transition-all"/>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">0</div>
-                    <p className="text-xs text-muted-foreground">
-                      0% from last month
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card className="group/icon">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">
-                      Consultations
-                    </CardTitle>
-                    <Stethoscope className="text-primary group-hover/icon:scale-150 transition-all"/>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">0</div>
-                    <p className="text-xs text-muted-foreground">
-                      0% from last month
-                    </p>
-                  </CardContent>
-                </Card>
-                <ConditionalRender condition={await isMember() && await isHP()}>
-                  <Card className="group/icon">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Trending Case</CardTitle>
-                      <TrendingUp className="text-primary group-hover/icon:scale-150 transition-all"/>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">Covid-19</div>
-                      <p className="text-xs text-muted-foreground">
-                      +200% from last month
-                      </p>
-                    </CardContent>
-                  </Card>
-                  <Card className="group/icon">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">
-                      Patients Visited
-                      </CardTitle>
-                      <User className="text-primary group-hover/icon:scale-150 transition-all"/>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">+573</div>
-                      <p className="text-xs text-muted-foreground">
-                      +201 since last hour
-                      </p>
-                    </CardContent>
-                  </Card>
-                </ConditionalRender>
-              </div>
-              <ConditionalRender condition={await isMember() && await isHP()}>
+              <DashboardStats userId={userId} orgId={orgId}/>
+              {/* <ConditionalRender condition={await isMember() && await isHP()}>
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
                   <Card className="col-span-2 lg:col-span-4">
                     <CardHeader>
@@ -152,7 +97,7 @@ async function DashboardPage({}: AppRouterPageRouteOpts) {
                     </CardContent>
                   </Card>
                 </div>
-              </ConditionalRender>
+              </ConditionalRender> */}
             </TabsContent>
           </Tabs>
         </div>
@@ -164,5 +109,4 @@ async function DashboardPage({}: AppRouterPageRouteOpts) {
 
 export default withPageAuthRequired(DashboardPage, {
   returnTo: ""
-
 })

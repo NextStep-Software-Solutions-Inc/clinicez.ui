@@ -63,11 +63,15 @@ type FilterType = {
   orgId?: string;
   status?: UserOrganizationStatus;
   roleId?: number;
+  pageNumber?: number;
+  pageSize?: number;
 }
 
 export const getUserOrganizationsAction = cache(async (filter?: FilterType) => {
-  const { userId, orgId, status, roleId } = filter || {};
+  const { userId, orgId, status, roleId, pageNumber, pageSize } = filter || {};
   const organizations = await prisma.userOrganization.findMany({
+    take: pageSize ? pageSize : 1000,
+    skip: pageNumber ? (pageNumber - 1) * (pageSize || 10) : 0,
     orderBy: {
       createdAt: "desc"
     },
@@ -244,7 +248,7 @@ export const joinOrganizationAction = async ({ orgId, userId, roleId}:{
 }
 
 
-export const getOrganizationRolesAction = async (filter?: Pick<FilterType, 'orgId' | "userId" | "status">) => {
+export const getOrganizationRolesAction = cache(async (filter?: Pick<FilterType, 'orgId' | "userId" | "status">) => {
   const {userId, orgId, status} = filter || { status: "ACTIVE"};
   const roles = await prisma.userOrganizationRole.findMany({
     orderBy: {
@@ -267,7 +271,7 @@ export const getOrganizationRolesAction = async (filter?: Pick<FilterType, 'orgI
     }
   })
   return roles;
-}
+})
 
 export const setMembershipRequestStatusAction = async (id: number, status: UserOrganizationStatus) => {
   const session = await getCachedSession();

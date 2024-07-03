@@ -3,6 +3,7 @@
 import prisma from "@lib/prisma";
 import { Prisma, UserPlanStatus } from "@prisma/client";
 import dayjs from "dayjs";
+import { cache } from "react";
 
 export const createUserPlanAction = async (planId: number, userId: number, status: UserPlanStatus = "PENDING") => {
   const userPlan = await prisma.userPlan.create({
@@ -132,7 +133,7 @@ export const hpApplicationTransactionAction = async ({
   return success;
 }
 
-export const getUserPlansAction = async (userId: string) => {
+export const getUserPlansAction = cache(async (userId: string) => {
   const userPlans = await prisma.userPlan.findMany({
     where: {
       User: {
@@ -150,4 +151,4 @@ export const getUserPlansAction = async (userId: string) => {
     }
   });
   return userPlans;
-}
+})

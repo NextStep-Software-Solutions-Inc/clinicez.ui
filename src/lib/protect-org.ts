@@ -1,6 +1,6 @@
 "use server";
 
-import { getOrganizationsAction, getUserOrganizationsAction } from "@actions/organization.action"
+import { getUserOrganizationsAction } from "@actions/organization.action"
 import { getCachedSession } from "@actions/session.action";
 import { getUserPlansAction } from "@actions/user-plan.action";
 import { notFound } from "next/navigation";

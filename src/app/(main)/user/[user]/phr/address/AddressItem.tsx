@@ -108,9 +108,9 @@ export const AddressItem = ({ address, readOnly }: AddressItemProps) => {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Country</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select disabled={readOnly} onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
-                    <SelectTrigger>
+                    <SelectTrigger disabled={readOnly}>
                       <SelectValue placeholder="Select a country" />
                     </SelectTrigger>
                   </FormControl>

@@ -23,7 +23,12 @@ type Stats = {
   }[];
 }
 export const DashboardStats = async ({ userId, orgId }: DashboardStatsProps) => {
-  const [stats, member, hp, orgAdmin] = await Promise.all([await getDashboardData(userId) as Stats , isMember(), isHP(), isOrgAdmin()]);
+  const [stats, member, hp, orgAdmin] = await Promise.all([
+    await getDashboardData(userId) as Stats,
+    isMember(),
+    isHP(),
+    isOrgAdmin()
+  ]);
 
   const { files, memberships } = stats;
   const pendingCount = memberships.find(m => m.status === UserOrganizationStatus.PENDING)?._count || 0;

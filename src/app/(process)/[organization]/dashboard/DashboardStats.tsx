@@ -15,21 +15,20 @@ interface DashboardStatsProps {
   orgId: string;
 }
 
+type Stats = {
+  files: { _count: 0; _sum: { size: 0; }; };
+  memberships: {
+    _count: 0;
+    status: UserOrganizationStatus;
+  }[];
+}
 export const DashboardStats = async ({ userId, orgId }: DashboardStatsProps) => {
-  const stats = (await getDashboardData(userId)) as unknown as {
-    files: { _count: 0; _sum: { size: 0; }; };
-    memberships: {
-      _count: 0;
-      status: UserOrganizationStatus;
-    }[];
-  };
+  const [stats, member, hp, orgAdmin] = await Promise.all([await getDashboardData(userId) as Stats , isMember(), isHP(), isOrgAdmin()]);
+
   const { files, memberships } = stats;
   const pendingCount = memberships.find(m => m.status === UserOrganizationStatus.PENDING)?._count || 0;
   const membershipSum = memberships.reduce((acc, m) => acc + m._count, 0);
 
-  const member = await isMember();
-  const hp = await isHP();
-  const orgAdmin = await isOrgAdmin();
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

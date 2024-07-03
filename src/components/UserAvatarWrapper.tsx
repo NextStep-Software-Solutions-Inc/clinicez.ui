@@ -15,7 +15,12 @@ export default async function UserAvatarWrapper() {
   
   return (
     <UserAvatarDropdown>
-      <DropdownMenuLabel>My Account</DropdownMenuLabel>
+      <DropdownMenuLabel>
+        My Account
+        <br />
+        <span className="text-xs text-muted-foreground">{session?.user.email}</span>
+      </DropdownMenuLabel>
+
       <DropdownMenuSeparator />
       <DropdownMenuGroup>
         <PHRLink />

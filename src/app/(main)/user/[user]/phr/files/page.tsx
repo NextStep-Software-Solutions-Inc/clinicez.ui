@@ -14,7 +14,6 @@ export const metadata: Metadata = {
 
 async function PHRPage({ params, searchParams }: AppRouterPageRouteOpts) {
   const userId = decodeURI(params?.user as string) 
-  if(!userId) throw new Error("User ID is required to view this page.")
   const owner = await isUserOwner(userId);
     
   return (

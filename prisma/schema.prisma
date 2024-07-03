@@ -5,60 +5,513 @@ generator client {
 
 datasource db {
   provider  = "postgresql"
-  url       = env("POSTGRES_PRISMA_URL") // uses connection pooling
-  directUrl = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
+  url       = env("POSTGRES_PRISMA_URL")
+  directUrl = env("POSTGRES_URL_NON_POOLING")
 }
 
 model Tenant {
   id                 Int                 @id @default(autoincrement())
-  tenantId           String              @unique // friendly name
+  tenantId           String              @unique
   ownerId            Int
   name               String
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
   deletedAt          DateTime?
   isActive           Boolean             @default(true)
-  Owner              User                @relation(fields: [ownerId], references: [id], onUpdate: NoAction, onDelete: NoAction)
   Organizations      Organization[]
+  Owner              User                @relation(fields: [ownerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   UserDefaultTenants UserDefaultTenant[]
 }
 
 model User {
-  id                               Int                      @id @default(autoincrement())
-  userId                           String                   @unique // this is from auth0 user_id
-  email                            String                   @unique
-  firstName                        String?
-  middleName                       String?
-  lastName                         String?
-  suffix                           String?
-  nickname                         String?
-  gender                           Gender?
-  dob                              DateTime?                @db.Date
-  civilStatus                      CivilStatus?
-  religion                         String?
-  nationality                      String?
-  telephone                        String?
-  mobile                           String?
-  bloodType                        BloodType?
+  id                               Int                           @id @default(autoincrement())
+  userId                           String                        @unique
+  email                            String                        @unique
   picture                          String?
-  createdAt                        DateTime                 @default(now())
-  updatedAt                        DateTime                 @default(now()) @updatedAt
+  createdAt                        DateTime                      @default(now())
   deletedAt                        DateTime?
-  isActive                         Boolean                  @default(true)
-  Tenants                          Tenant[]
-  Organizations                    UserOrganization[]       @relation("User")
-  Plans                            UserPlan[]
-  UserDefaultOrganization          UserDefaultOrganization?
-  UserDefaultTenant                UserDefaultTenant?
-  HealthcareProvider               HealthcareProvider?
-  SocialLink                       SocialLink?
-  AcceptedOrganizationApplications UserOrganization[]       @relation("AcceptedBy")
-  ReceiptCodeClaims                ReceiptCodeClaim[]
-  UserMigration                    UserMigration?
+  isActive                         Boolean                       @default(true)
+  updatedAt                        DateTime                      @default(now()) @updatedAt
+  bloodType                        BloodType?
+  civilStatus                      CivilStatus?
+  dob                              DateTime?                     @db.Date
+  firstName                        String?
+  gender                           Gender?
+  lastName                         String?
+  middleName                       String?
+  mobile                           String?
+  nationality                      String?
+  nickname                         String?
+  religion                         String?
+  suffix                           String?
+  telephone                        String?
   ActivationCodes                  ActivationCode[]
   Folders                          Folder[]
-  UserEmergencyContacts            UserEmergencyContact[]
+  HealthcareProvider               HealthcareProvider?
+  ReceiptCodeClaims                ReceiptCodeClaim[]
+  SocialLink                       SocialLink?
+  Tenants                          Tenant[]
   UserAddresses                    UserAddress[]
+  UserDefaultOrganization          UserDefaultOrganization?
+  UserDefaultTenant                UserDefaultTenant?
+  UserEmergencyContacts            UserEmergencyContact[]
+  UserMigration                    UserMigration?
+  AcceptedOrganizationApplications UserOrganization[]            @relation("AcceptedBy")
+  Organizations                    UserOrganization[]            @relation("User")
+  Plans                            UserPlan[]
+  UserVaccination                  UserVaccination[]
+  UserDefaultOrganizationRoles     UserDefaultOrganizationRole[]
+}
+
+model Organization {
+  id                           Int                           @id @default(autoincrement())
+  tenantId                     Int
+  orgId                        String                        @unique
+  name                         String
+  description                  String?
+  picture                      String?
+  cover                        String?
+  createdAt                    DateTime                      @default(now())
+  updatedAt                    DateTime                      @updatedAt
+  deletedAt                    DateTime?
+  isActive                     Boolean                       @default(true)
+  customUrl                    String?
+  email                        String?
+  FileTypeAttribute            FileTypeAttribute[]
+  ScopeFolders                 FolderSetting[]
+  Tenant                       Tenant                        @relation(fields: [tenantId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  UserDefaultOrganizations     UserDefaultOrganization[]
+  UserMigrations               UserMigration[]
+  Users                        UserOrganization[]
+  Roles                        UserOrganizationRole[]
+  UserDefaultOrganizationRolea UserDefaultOrganizationRole[]
+}
+
+model UserOrganization {
+  id             Int                    @id @default(autoincrement())
+  userId         Int
+  organizationId Int
+  acceptedAt     DateTime?              @db.Date
+  acceptedBy     Int?
+  createdAt      DateTime               @default(now())
+  status         UserOrganizationStatus @default(PENDING)
+  role           Int
+  AcceptedBy     User?                  @relation("AcceptedBy", fields: [acceptedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Organization   Organization           @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  UserRole       UserOrganizationRole   @relation(fields: [role], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  User           User                   @relation("User", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([userId, organizationId, role], name: "unique_user_organization_role")
+}
+
+model UserOrganizationRole {
+  id                           Int                           @id @default(autoincrement())
+  orgId                        Int
+  name                         String
+  description                  String?
+  isActive                     Boolean                       @default(true)
+  UserOrganizations            UserOrganization[]
+  Organization                 Organization                  @relation(fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  UserDefaultOrganizationRoles UserDefaultOrganizationRole[]
+
+  @@unique([orgId, name], name: "unique_organization_role")
+}
+
+model Plan {
+  id          Int        @id @default(autoincrement())
+  planUid     String     @unique
+  price       Float
+  name        String
+  type        PlanType
+  description String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  deletedAt   DateTime?
+  isActive    Boolean    @default(true)
+  Features    Feature[]
+  Users       UserPlan[]
+}
+
+model Feature {
+  id          Int       @id @default(autoincrement())
+  name        String
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  isActive    Boolean   @default(true)
+  planId      Int
+  Plan        Plan      @relation(fields: [planId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model UserPlan {
+  id        Int            @id @default(autoincrement())
+  userId    Int
+  planId    Int
+  startDate DateTime
+  endDate   DateTime
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  deletedAt DateTime?
+  isActive  Boolean        @default(true)
+  status    UserPlanStatus
+  Plan      Plan           @relation(fields: [planId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  User      User           @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model HealthcareProvider {
+  id                  Int                    @id @default(autoincrement())
+  userId              Int                    @unique
+  type                HealthcareProviderType
+  description         String?
+  createdAt           DateTime               @default(now())
+  updatedAt           DateTime               @updatedAt
+  deletedAt           DateTime?
+  isActive            Boolean                @default(true)
+  isPublished         Boolean                @default(false)
+  DoctorProfile       DoctorProfile?
+  User                User                   @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  NurseProfile        NurseProfile?
+  ProfessionalDetails ProfessionalDetails?
+}
+
+model DoctorProfile {
+  id                   Int                @id @default(autoincrement())
+  healthcareProviderId Int                @unique
+  title                String
+  name                 String
+  suffix               String?
+  picture              String?
+  cover                String?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  deletedAt            DateTime?
+  isActive             Boolean            @default(true)
+  affiliations         String[]           @default([])
+  areaOfInterest       String?
+  certifications       String[]           @default([])
+  experience           String?
+  fields               String[]           @default([])
+  hobbies              String?
+  languages            String[]           @default([])
+  philosophy           String?
+  specialties          String[]           @default([])
+  workEmail            String?
+  workPhone            String?
+  education            String[]           @default([])
+  HealthcareProvider   HealthcareProvider @relation(fields: [healthcareProviderId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model NurseProfile {
+  id                   Int                @id @default(autoincrement())
+  healthcareProviderId Int                @unique
+  title                String
+  name                 String
+  suffix               String?
+  picture              String?
+  cover                String?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  deletedAt            DateTime?
+  isActive             Boolean            @default(true)
+  affiliations         String[]           @default([])
+  areaOfInterest       String?
+  certifications       String[]           @default([])
+  experience           String?
+  fields               String[]           @default([])
+  hobbies              String?
+  languages            String[]           @default([])
+  philosophy           String?
+  specialties          String[]           @default([])
+  workEmail            String?
+  workPhone            String?
+  education            String[]           @default([])
+  HealthcareProvider   HealthcareProvider @relation(fields: [healthcareProviderId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model ProfessionalDetails {
+  id                 Int                @id @default(autoincrement())
+  healthcareProverId Int                @unique
+  licenseNumber      String
+  licenseIssued      DateTime
+  licenseExpires     DateTime
+  ptrNumber          String
+  taxNumber          String
+  HealthCareProvider HealthcareProvider @relation(fields: [healthcareProverId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model UserDefaultOrganization {
+  id             Int          @id @default(autoincrement())
+  userId         Int          @unique
+  organizationId Int
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  deletedAt      DateTime?
+  isActive       Boolean      @default(true)
+  Organization   Organization @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  User           User         @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model UserDefaultOrganizationRole {
+  id             Int                  @id @default(autoincrement())
+  userId         Int
+  organizationId Int
+  roleId         Int
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  deletedAt      DateTime?
+  isActive       Boolean              @default(true)
+  User           User                 @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Organization   Organization         @relation(fields: [organizationId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  UserRole       UserOrganizationRole @relation(fields: [roleId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+
+  @@unique([userId, organizationId, roleId], name: "unique_user_organization_role")
+}
+
+model UserDefaultTenant {
+  id        Int       @id @default(autoincrement())
+  userId    Int       @unique
+  tenantId  Int
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+  isActive  Boolean   @default(true)
+  Tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  User      User      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model SocialLink {
+  id        Int     @id @default(autoincrement())
+  userId    Int     @unique
+  facebook  String?
+  instagram String?
+  linkedin  String?
+  tiktok    String?
+  twitter   String?
+  website   String?
+  User      User    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model ReceiptCode {
+  id               Int                @id @default(autoincrement())
+  coverage         Coverage
+  code             String             @unique
+  amount           Float
+  status           ReceiptCodeStatus  @default(UNUSED)
+  maxUses          Int                @default(1)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  deletedAt        DateTime?
+  isActive         Boolean            @default(true)
+  ReceiptCodeClaim ReceiptCodeClaim[]
+}
+
+model ReceiptCodeClaim {
+  id            Int         @id @default(autoincrement())
+  userId        Int
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  deletedAt     DateTime?
+  isActive      Boolean     @default(true)
+  receiptCodeId Int
+  ReceiptCode   ReceiptCode @relation(fields: [receiptCodeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  User          User        @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([userId, receiptCodeId], name: "unique_user_receipt_code")
+}
+
+model UserMigration {
+  id           Int          @id @default(autoincrement())
+  userId       Int          @unique
+  orgId        Int
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  deletedAt    DateTime?
+  isActive     Boolean      @default(true)
+  Organization Organization @relation(fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  User         User         @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([userId, orgId], name: "unique_user_migration")
+}
+
+model ActivationCode {
+  id        Int       @id @default(autoincrement())
+  code      String    @unique
+  userId    Int
+  expiresAt DateTime
+  isUsed    Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+  isActive  Boolean   @default(true)
+  User      User      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model Folder {
+  id            Int            @id @default(autoincrement())
+  userId        Int
+  name          String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  deletedAt     DateTime?
+  isActive      Boolean        @default(true)
+  Files         File[]
+  User          User           @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  FolderSetting FolderSetting?
+
+  @@unique([userId, name], name: "unique_user_folder")
+}
+
+model FolderSetting {
+  id           Int           @id @default(autoincrement())
+  folderId     Int           @unique
+  scopeOrgId   Int?
+  isPublic     Boolean       @default(false)
+  Folder       Folder        @relation(fields: [folderId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Organization Organization? @relation(fields: [scopeOrgId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model File {
+  id          Int          @id @default(autoincrement())
+  folderId    Int
+  fileTypeId  Int
+  name        String
+  size        Int
+  url         String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  deletedAt   DateTime?
+  isActive    Boolean      @default(true)
+  dateTaken   DateTime?
+  FileType    FileType     @relation(fields: [fileTypeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Folder      Folder       @relation(fields: [folderId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  FileSetting FileSetting?
+
+  @@unique([folderId, name], name: "unique_folder_file")
+}
+
+model FileSetting {
+  id       Int     @id @default(autoincrement())
+  fileId   Int     @unique
+  isPublic Boolean @default(false)
+  File     File    @relation(fields: [fileId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model FileType {
+  id                Int                @id @default(autoincrement())
+  name              String
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  deletedAt         DateTime?
+  isActive          Boolean            @default(true)
+  Files             File[]
+  FileTypeAttribute FileTypeAttribute?
+}
+
+model FileTypeAttribute {
+  id           Int           @id @default(autoincrement())
+  fileTypeId   Int           @unique
+  required     Boolean       @default(false)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  deletedAt    DateTime?
+  isActive     Boolean       @default(true)
+  scopeOrgId   Int?
+  validUntil   Int           @default(0)
+  FileType     FileType      @relation(fields: [fileTypeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Organization Organization? @relation(fields: [scopeOrgId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([fileTypeId, scopeOrgId], name: "unique_file_type_attribute")
+}
+
+model UserEmergencyContact {
+  id           Int       @id @default(autoincrement())
+  userId       Int
+  isPrimary    Boolean   @default(true)
+  name         String
+  relationship String
+  phone        String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+  isActive     Boolean   @default(true)
+  User         User      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model UserAddress {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  isPrimary Boolean   @default(true)
+  address   String
+  city      String
+  state     String
+  zipCode   String
+  country   String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+  isActive  Boolean   @default(true)
+  User      User      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model Vaccine {
+  id               Int               @id @default(autoincrement())
+  name             String
+  description      String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  deletedAt        DateTime?
+  isActive         Boolean           @default(true)
+  UserVaccinations UserVaccination[]
+  VaccineAttritube VaccineAttritube?
+  VaccineDoses     VaccineDose[]
+  VaccineRoutes    VaccineRoute[]
+}
+
+model VaccineAttritube {
+  id          Int     @id @default(autoincrement())
+  vaccineId   Int     @unique
+  effectivity Int
+  Vaccine     Vaccine @relation(fields: [vaccineId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model VaccineRoute {
+  id               Int               @id @default(autoincrement())
+  vaccineId        Int?
+  route            String
+  description      String?
+  isActive         Boolean           @default(true)
+  UserVaccinations UserVaccination[]
+  Vaccine          Vaccine?          @relation(fields: [vaccineId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model VaccineDose {
+  id               Int               @id @default(autoincrement())
+  vaccineId        Int?
+  dose             String
+  description      String?
+  isActive         Boolean           @default(true)
+  UserVaccinations UserVaccination[]
+  Vaccine          Vaccine?          @relation(fields: [vaccineId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model UserVaccination {
+  id             Int          @id @default(autoincrement())
+  userId         Int
+  vaccineId      Int
+  doseId         Int
+  routeId        Int
+  dateGiven      DateTime
+  notes          String?
+  administeredBy String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  deletedAt      DateTime?
+  isActive       Boolean      @default(true)
+  VaccineDose    VaccineDose  @relation(fields: [doseId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  VaccineRoute   VaccineRoute @relation(fields: [routeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  User           User         @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Vaccine        Vaccine      @relation(fields: [vaccineId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 enum Gender {
@@ -87,59 +540,6 @@ enum BloodType {
   RH_NEGATIVE
 }
 
-model Organization {
-  id                       Int                       @id @default(autoincrement())
-  tenantId                 Int
-  orgId                    String                    @unique // friendly name
-  name                     String
-  description              String?
-  email                    String?
-  picture                  String?
-  cover                    String?
-  customUrl                String?
-  createdAt                DateTime                  @default(now())
-  updatedAt                DateTime                  @updatedAt
-  deletedAt                DateTime?
-  isActive                 Boolean                   @default(true)
-  Tenant                   Tenant                    @relation(fields: [tenantId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-  Users                    UserOrganization[]
-  UserDefaultOrganizations UserDefaultOrganization[]
-  Roles                    UserOrganizationRole[]
-  UserMigrations           UserMigration[]
-  ScopeFolders             FolderSetting[]
-  FileTypeAttribute        FileTypeAttribute[]
-}
-
-// This is for user to join an organization e.g. as a member, admin, healthcare provider, etc.
-model UserOrganization {
-  id             Int                    @id @default(autoincrement())
-  userId         Int
-  organizationId Int
-  role           Int
-  status         UserOrganizationStatus @default(PENDING)
-  acceptedAt     DateTime?              @db.Date
-  acceptedBy     Int?
-  createdAt      DateTime               @default(now())
-  User           User                   @relation("User", fields: [userId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-  AcceptedBy     User?                  @relation("AcceptedBy", fields: [acceptedBy], references: [id], onUpdate: NoAction, onDelete: NoAction)
-  Organization   Organization           @relation(fields: [organizationId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-  UserRole       UserOrganizationRole   @relation(fields: [role], references: [id], onUpdate: NoAction, onDelete: NoAction)
-
-  @@unique([userId, organizationId, role], name: "unique_user_organization_role")
-}
-
-model UserOrganizationRole {
-  id                Int                @id @default(autoincrement())
-  orgId             Int
-  name              String
-  description       String?
-  isActive          Boolean            @default(true)
-  Organization      Organization       @relation(fields: [orgId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-  UserOrganizations UserOrganization[]
-
-  @@unique([orgId, name], name: "unique_organization_role")
-}
-
 enum UserOrganizationStatus {
   ACTIVE
   INACTIVE
@@ -147,51 +547,9 @@ enum UserOrganizationStatus {
   SUSPENDED
 }
 
-model Plan {
-  id          Int        @id @default(autoincrement())
-  planUid     String     @unique // friendly name
-  price       Float
-  name        String
-  type        PlanType
-  description String?
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  deletedAt   DateTime?
-  isActive    Boolean    @default(true)
-  Features    Feature[]
-  Users       UserPlan[]
-}
-
 enum PlanType {
   TENANT
   HEALTHCARE_PROVIDER
-}
-
-model Feature {
-  id          Int       @id @default(autoincrement())
-  planId      Int
-  name        String
-  description String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime?
-  isActive    Boolean   @default(true)
-  Plan        Plan      @relation(fields: [planId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-}
-
-model UserPlan {
-  id        Int            @id @default(autoincrement())
-  userId    Int
-  planId    Int
-  status    UserPlanStatus
-  startDate DateTime
-  endDate   DateTime
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
-  deletedAt DateTime?
-  isActive  Boolean        @default(true)
-  User      User           @relation(fields: [userId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-  Plan      Plan           @relation(fields: [planId], references: [id], onUpdate: NoAction, onDelete: NoAction)
 }
 
 enum UserPlanStatus {
@@ -201,23 +559,6 @@ enum UserPlanStatus {
   CANCELLED
   EXPIRED
   PENDING
-}
-
-// This is for user that are healthcare provider which maybe a doctor or nurse or other type of healthcare provider
-model HealthcareProvider {
-  id                  Int                    @id @default(autoincrement())
-  userId              Int                    @unique
-  type                HealthcareProviderType
-  isPublished         Boolean                @default(false)
-  description         String?
-  createdAt           DateTime               @default(now())
-  updatedAt           DateTime               @updatedAt
-  deletedAt           DateTime?
-  isActive            Boolean                @default(true)
-  User                User                   @relation(fields: [userId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-  DoctorProfile       DoctorProfile?
-  NurseProfile        NurseProfile?
-  ProfessionalDetails ProfessionalDetails?
 }
 
 enum HealthcareProviderType {
@@ -239,121 +580,6 @@ enum HealthcareProviderType {
   PODIATRIST
 }
 
-model DoctorProfile {
-  id                   Int                @id @default(autoincrement())
-  healthcareProviderId Int                @unique
-  title                String
-  name                 String
-  suffix               String?
-  workEmail            String?
-  workPhone            String?
-  picture              String?
-  cover                String?
-  experience           String?
-  education            String[]           @default([])
-  fields               String[]           @default([])
-  specialties          String[]           @default([])
-  certifications       String[]           @default([])
-  languages            String[]           @default([])
-  affiliations         String[]           @default([])
-  philosophy           String?            @db.Text
-  areaOfInterest       String?            @db.Text
-  hobbies              String?
-  createdAt            DateTime           @default(now())
-  updatedAt            DateTime           @updatedAt
-  deletedAt            DateTime?
-  isActive             Boolean            @default(true)
-  HealthcareProvider   HealthcareProvider @relation(fields: [healthcareProviderId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-}
-
-model NurseProfile {
-  id                   Int                @id @default(autoincrement())
-  healthcareProviderId Int                @unique
-  title                String
-  name                 String
-  suffix               String?
-  workEmail            String?
-  workPhone            String?
-  picture              String?
-  cover                String?
-  experience           String?
-  education            String[]           @default([])
-  fields               String[]           @default([])
-  specialties          String[]           @default([])
-  certifications       String[]           @default([])
-  languages            String[]           @default([])
-  affiliations         String[]           @default([])
-  philosophy           String?            @db.Text
-  areaOfInterest       String?            @db.Text
-  hobbies              String?
-  createdAt            DateTime           @default(now())
-  updatedAt            DateTime           @updatedAt
-  deletedAt            DateTime?
-  isActive             Boolean            @default(true)
-  HealthcareProvider   HealthcareProvider @relation(fields: [healthcareProviderId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-}
-
-model ProfessionalDetails {
-  id                 Int                @id @default(autoincrement())
-  healthcareProverId Int                @unique
-  licenseNumber      String
-  licenseIssued      DateTime
-  licenseExpires     DateTime
-  ptrNumber          String
-  taxNumber          String
-  HealthCareProvider HealthcareProvider @relation(fields: [healthcareProverId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-}
-
-model UserDefaultOrganization {
-  id             Int          @id @default(autoincrement())
-  userId         Int          @unique
-  organizationId Int
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  deletedAt      DateTime?
-  isActive       Boolean      @default(true)
-  User           User         @relation(fields: [userId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-  Organization   Organization @relation(fields: [organizationId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-}
-
-model UserDefaultTenant {
-  id        Int       @id @default(autoincrement())
-  userId    Int       @unique
-  tenantId  Int
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-  isActive  Boolean   @default(true)
-  User      User      @relation(fields: [userId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-  Tenant    Tenant    @relation(fields: [tenantId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-}
-
-model SocialLink {
-  id        Int     @id @default(autoincrement())
-  userId    Int     @unique
-  website   String?
-  facebook  String?
-  twitter   String?
-  linkedin  String?
-  instagram String?
-  tiktok    String?
-  User      User    @relation(fields: [userId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-}
-
-model ReceiptCode {
-  id               Int                @id @default(autoincrement())
-  coverage         Coverage
-  code             String             @unique
-  amount           Float
-  status           ReceiptCodeStatus  @default(UNUSED)
-  maxUses          Int                @default(1)
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
-  deletedAt        DateTime?
-  isActive         Boolean            @default(true)
-  ReceiptCodeClaim ReceiptCodeClaim[]
-}
-
 enum Coverage {
   ALL
   TENANT
@@ -364,152 +590,4 @@ enum ReceiptCodeStatus {
   UNUSED
   USED
   EXPIRED
-}
-
-model ReceiptCodeClaim {
-  id            Int         @id @default(autoincrement())
-  userId        Int
-  receiptCodeId Int
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  deletedAt     DateTime?
-  isActive      Boolean     @default(true)
-  User          User        @relation(fields: [userId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-  ReceiptCode   ReceiptCode @relation(fields: [receiptCodeId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-
-  @@unique([userId, receiptCodeId], name: "unique_user_receipt_code")
-}
-
-model UserMigration {
-  id           Int          @id @default(autoincrement())
-  userId       Int          @unique
-  orgId        Int
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-  deletedAt    DateTime?
-  isActive     Boolean      @default(true)
-  User         User         @relation(fields: [userId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-  Organization Organization @relation(fields: [orgId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-
-  @@unique([userId, orgId], name: "unique_user_migration")
-}
-
-model ActivationCode {
-  id        Int       @id @default(autoincrement())
-  code      String    @unique
-  userId    Int
-  expiresAt DateTime
-  isUsed    Boolean   @default(false)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-  isActive  Boolean   @default(true)
-  User      User      @relation(fields: [userId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-}
-
-model Folder {
-  id            Int            @id @default(autoincrement())
-  userId        Int
-  name          String
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  deletedAt     DateTime?
-  isActive      Boolean        @default(true)
-  User          User           @relation(fields: [userId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-  Files         File[]
-  FolderSetting FolderSetting?
-
-  @@unique([userId, name], name: "unique_user_folder")
-}
-
-model FolderSetting {
-  id           Int           @id @default(autoincrement())
-  folderId     Int           @unique
-  scopeOrgId   Int?
-  isPublic     Boolean       @default(false)
-  Folder       Folder        @relation(fields: [folderId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-  Organization Organization? @relation(fields: [scopeOrgId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-}
-
-model File {
-  id          Int          @id @default(autoincrement())
-  folderId    Int
-  fileTypeId  Int
-  name        String
-  size        Int
-  url         String
-  dateTaken   DateTime?
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  deletedAt   DateTime?
-  isActive    Boolean      @default(true)
-  Folder      Folder       @relation(fields: [folderId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-  FileType    FileType     @relation(fields: [fileTypeId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-  FileSetting FileSetting?
-
-  @@unique([folderId, name], name: "unique_folder_file")
-}
-
-model FileSetting {
-  id       Int     @id @default(autoincrement())
-  fileId   Int     @unique
-  isPublic Boolean @default(false)
-  File     File    @relation(fields: [fileId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-}
-
-model FileType {
-  id                Int                @id @default(autoincrement())
-  name              String
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-  deletedAt         DateTime?
-  isActive          Boolean            @default(true)
-  Files             File[]
-  FileTypeAttribute FileTypeAttribute?
-}
-
-model FileTypeAttribute {
-  id           Int           @id @default(autoincrement())
-  fileTypeId   Int           @unique
-  required     Boolean       @default(false)
-  validUntil   Int           @default(0)
-  scopeOrgId   Int?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  deletedAt    DateTime?
-  isActive     Boolean       @default(true)
-  FileType     FileType      @relation(fields: [fileTypeId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-  Organization Organization? @relation(fields: [scopeOrgId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-
-  @@unique([fileTypeId, scopeOrgId], name: "unique_file_type_attribute")
-}
-
-model UserEmergencyContact {
-  id           Int       @id @default(autoincrement())
-  userId       Int
-  isPrimary    Boolean   @default(true)
-  name         String
-  relationship String
-  phone        String
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  deletedAt    DateTime?
-  isActive     Boolean   @default(true)
-  User         User      @relation(fields: [userId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-}
-
-model UserAddress {
-  id        Int       @id @default(autoincrement())
-  userId    Int
-  isPrimary Boolean   @default(true)
-  address   String
-  city      String
-  state     String
-  zipCode   String
-  country   String
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-  isActive  Boolean   @default(true)
-  User      User      @relation(fields: [userId], references: [id], onUpdate: NoAction, onDelete: NoAction)
 }

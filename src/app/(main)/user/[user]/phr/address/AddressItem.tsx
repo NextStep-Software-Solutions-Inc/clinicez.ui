@@ -102,6 +102,7 @@ export const AddressItem = ({ address, readOnly }: AddressItemProps) => {
         <input type="checkbox"  {...form.register("isPrimary")} hidden />
         <div className="space-y-3">
           <FormField
+            disabled={readOnly}
             control={form.control}
             name={`country`}
             render={({ field }) => (
@@ -130,6 +131,7 @@ export const AddressItem = ({ address, readOnly }: AddressItemProps) => {
             )}
           />
           <FormField
+            disabled={readOnly}
             control={form.control}
             name={`address`}
             render={({ field }) => (
@@ -146,6 +148,7 @@ export const AddressItem = ({ address, readOnly }: AddressItemProps) => {
             )}
           />
           <FormField
+            disabled={readOnly}
             control={form.control}
             name={`state`}
             render={({ field }) => (
@@ -162,6 +165,7 @@ export const AddressItem = ({ address, readOnly }: AddressItemProps) => {
             )}
           />
           <FormField
+            disabled={readOnly}
             control={form.control}
             name={`city`}
             render={({ field }) => (
@@ -178,6 +182,7 @@ export const AddressItem = ({ address, readOnly }: AddressItemProps) => {
             )}
           />
           <FormField
+            disabled={readOnly}
             control={form.control}
             name={`zipCode`}
             render={({ field }) => (

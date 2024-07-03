@@ -5,6 +5,9 @@ import { AddressItemProps } from "../app/(main)/user/[user]/phr/address/AddressI
 
 export const getAddressesAction = async (userId: string) => {
   return await prisma.userAddress.findMany({
+    orderBy: {
+      createdAt: "desc"
+    },
     where: {
       isActive: true,
       User: {

@@ -26,6 +26,7 @@ import ConditionalRender from "@components/utils/ConditionalRender"
 import { isHP, isMember } from "@lib/protect-org"
 import { DashboardStats } from "./DashboardStats"
 import { getCachedSession } from "@actions/session.action"
+import Suspend from "@components/Suspend"
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -72,7 +73,9 @@ async function DashboardPage({params, searchParams}: AppRouterPageRouteOpts) {
               </TabsTrigger>
             </TabsList>
             <TabsContent value="overview" className="space-y-4">
-              <DashboardStats userId={userId} orgId={orgId}/>
+              <Suspend>
+                <DashboardStats userId={userId} orgId={orgId}/>
+              </Suspend>
               {/* <ConditionalRender condition={await isMember() && await isHP()}>
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
                   <Card className="col-span-2 lg:col-span-4">

@@ -6,13 +6,13 @@ import { getUserPlansAction } from "@actions/user-plan.action";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 
-export const protectOrg = async (orgUid: string) => {
+export const protectOrg = cache(async (orgUid: string) => {
   const session = await getCachedSession()
   const myOrgs = await getUserOrganizationsAction({userId: session?.user.sub})
   if (!myOrgs.map(org => org.Organization.orgId).includes(orgUid)) {
     return notFound()
   }
-}
+})
 export const isUserOwner = cache(async (userId: string) => {
   const session = await getCachedSession();
   if(!session) throw new Error("No session found");
@@ -33,17 +33,20 @@ export const isHP = cache(async () => {
   return userPlans.some((plan) => plan.Plan.type === "HEALTHCARE_PROVIDER" && !["ON_HOLD", "PENDING", "EXPIRED"].includes(plan.status));
 })
 
-export const isTenantOwner = cache(async () => {
+export const isTenant = cache(async () => {
   const session = await getCachedSession();
   if(!session) throw new Error("No session found");
   const userPlans = await getUserPlansAction(session.user.sub);
   return userPlans.some((plan) => plan.Plan.type === "TENANT" && !["ON_HOLD", "PENDING", "EXPIRED"].includes(plan.status));
 })
 
-export const isOrgAdmin = cache(async () => {
+export const isOrgAdmin = cache(async (orgId:string) => {
   const session = await getCachedSession();
   if(!session) throw new Error("No session found");
-  const myOrgs = await getUserOrganizationsAction({userId: session.user.sub});
+  const myOrgs = await getUserOrganizationsAction({
+    userId: session.user.sub,
+    orgId
+  });
   return myOrgs.some((org) => ["ACTIVE"].includes(org.status) && org.UserRole.name.toUpperCase() === "ADMIN");
 })
 

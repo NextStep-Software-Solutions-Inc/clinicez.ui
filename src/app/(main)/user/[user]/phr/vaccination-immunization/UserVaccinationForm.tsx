@@ -12,15 +12,21 @@ export const vaccinationFormSchema = z.object({
   dateGiven: z.date({
     required_error: "Date Given is required"
   }),
-  administeredBy: z.string(),
+  administeredBy: z.string({
+    required_error: "Administered By is required or Put N/A if not applicable",
+    invalid_type_error: "Administered By is invalid"
+  }),
   vaccineId: z.coerce.number({
-    required_error: "Vaccine is required"
+    required_error: "Vaccine is required",
+    invalid_type_error: "Vaccine is invalid",
   }),
   routeId: z.coerce.number({
-    required_error: "Route is required"
+    required_error: "Route is required",
+    invalid_type_error: "Route is invalid"
   }),
   doseId: z.coerce.number({
-    required_error: "Dose is required"
+    required_error: "Dose is required",
+    invalid_type_error: "Dose is invalid"
   })
 });
 export type VaccinationForm = z.infer<typeof vaccinationFormSchema>;

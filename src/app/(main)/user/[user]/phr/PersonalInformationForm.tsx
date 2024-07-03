@@ -75,14 +75,14 @@ const personalInformationFormSchema = z.object({
 
 type PersonalInformationFormValues = z.infer<typeof personalInformationFormSchema>
 interface PersonalInformationFormProps {
-  user: User
+  user: User,
+  readOnly?: boolean
 }
 
-export function PersonalInformationForm(props: PersonalInformationFormProps) {
+export function PersonalInformationForm({readOnly, ...props}: PersonalInformationFormProps) {
 
   const user = useUser();
-  const [isOwn, setIsOwn] = useState<boolean>(false)
-  
+
   const form = useForm<PersonalInformationFormValues>({
     resolver: zodResolver(personalInformationFormSchema),
     defaultValues: personalInformationFormSchema.safeParse(props.user).data,
@@ -104,18 +104,14 @@ export function PersonalInformationForm(props: PersonalInformationFormProps) {
     })()
   }
 
-  useEffect(() => {
-    (async () => {
-      setIsOwn(await isUserOwner(props.user.userId))
-    })()
-  }, [props.user.userId])
+
 
   return (
     <Form {...form}>
       <form action={handleSaveChanges} className="space-y-8">
         <div className="flex flex-col md:flex-row gap-2">
           <FormField
-            disabled={!isOwn}
+            disabled={readOnly}
             control={form.control}
             name="firstName"
             render={({ field }) => (
@@ -132,7 +128,7 @@ export function PersonalInformationForm(props: PersonalInformationFormProps) {
             )}
           />
           <FormField
-            disabled={!isOwn}
+            disabled={readOnly}
             control={form.control}
             name="middleName"
             render={({ field }) => (
@@ -149,7 +145,7 @@ export function PersonalInformationForm(props: PersonalInformationFormProps) {
             )}
           />
           <FormField
-            disabled={!isOwn}
+            disabled={readOnly}
             control={form.control}
             name="lastName"
             render={({ field }) => (
@@ -166,7 +162,7 @@ export function PersonalInformationForm(props: PersonalInformationFormProps) {
             )}
           />
           <FormField
-            disabled={!isOwn}
+            disabled={readOnly}
             control={form.control}
             name="suffix"
             render={({ field }) => (
@@ -184,7 +180,7 @@ export function PersonalInformationForm(props: PersonalInformationFormProps) {
           />
         </div>
         <FormField
-          disabled={!isOwn}
+          disabled={readOnly}
           control={form.control}
           name="nickname"
           render={({ field }) => (
@@ -202,16 +198,18 @@ export function PersonalInformationForm(props: PersonalInformationFormProps) {
         />
 
         <FormField
-          disabled={!isOwn}
+          disabled={readOnly}
           control={form.control}
           name="dob"
           render={({ field }) => (
-            <FormItem className="flex flex-col">
+            <FormItem 
+              className="flex flex-col">
               <FormLabel>Date of birth</FormLabel>
               <Popover>
                 <PopoverTrigger asChild>
                   <FormControl>
                     <Button
+                      disabled={readOnly}
                       variant={"outline"}
                       className={cn(
                         "w-[240px] pl-3 text-left font-normal",
@@ -249,7 +247,7 @@ export function PersonalInformationForm(props: PersonalInformationFormProps) {
         />
 
         <FormField
-          disabled={!isOwn}
+          disabled={readOnly}
           control={form.control}
           name="gender"
           render={({ field }) => (
@@ -257,7 +255,7 @@ export function PersonalInformationForm(props: PersonalInformationFormProps) {
               <FormLabel>Gender</FormLabel>
               <FormControl>
                 <RadioGroup
-                  disabled={!isOwn}
+                  disabled={readOnly}
                   onValueChange={field.onChange}
                   {...field.value && { defaultValue: field.value }}
                   className="flex flex-row gap-5 flex-wrap"
@@ -283,7 +281,7 @@ export function PersonalInformationForm(props: PersonalInformationFormProps) {
         />
 
         <FormField
-          disabled={!isOwn}
+          disabled={readOnly}
           control={form.control}
           name="civilStatus"
           render={({ field }) => (
@@ -291,7 +289,7 @@ export function PersonalInformationForm(props: PersonalInformationFormProps) {
               <FormLabel>Civil Status</FormLabel>
               <FormControl>
                 <RadioGroup
-                  disabled={!isOwn}
+                  disabled={readOnly}
                   onValueChange={field.onChange}
                   {...field.value && { defaultValue: field.value }}
                   className="flex flex-row gap-5 flex-wrap"
@@ -317,7 +315,7 @@ export function PersonalInformationForm(props: PersonalInformationFormProps) {
         />
 
         <FormField
-          disabled={!isOwn}
+          disabled={readOnly}
           control={form.control}
           name="bloodType"
           render={({ field }) => (
@@ -325,7 +323,7 @@ export function PersonalInformationForm(props: PersonalInformationFormProps) {
               <FormLabel>Blood Type</FormLabel>
               <FormControl>
                 <RadioGroup
-                  disabled={!isOwn}
+                  disabled={readOnly}
                   onValueChange={field.onChange}
                   {...field.value && { defaultValue: field.value }}
                   className="flex flex-row gap-5 flex-wrap"
@@ -351,7 +349,7 @@ export function PersonalInformationForm(props: PersonalInformationFormProps) {
         />
         
         <FormField
-          disabled={!isOwn}
+          disabled={readOnly}
           control={form.control}
           name="telephone"
           render={({ field }) => (
@@ -368,7 +366,7 @@ export function PersonalInformationForm(props: PersonalInformationFormProps) {
           )}
         />
         <FormField
-          disabled={!isOwn}
+          disabled={readOnly}
           control={form.control}
           name="mobile"
           render={({ field }) => (
@@ -385,7 +383,7 @@ export function PersonalInformationForm(props: PersonalInformationFormProps) {
           )}
         />
         <FormField
-          disabled={!isOwn}
+          disabled={readOnly}
           control={form.control}
           name="religion"
           render={({ field }) => (
@@ -402,7 +400,7 @@ export function PersonalInformationForm(props: PersonalInformationFormProps) {
           )}
         />
         <FormField
-          disabled={!isOwn}
+          disabled={readOnly}
           control={form.control}
           name="nationality"
           render={({ field }) => (
@@ -419,7 +417,7 @@ export function PersonalInformationForm(props: PersonalInformationFormProps) {
           )}
         />
       
-        <ConditionalRender condition={isOwn}>
+        <ConditionalRender condition={!readOnly}>
           {form.formState.isDirty && <ActionButton disabled={form.formState.isLoading || !form.formState.isValid}>Save Changes</ActionButton>}
         </ConditionalRender>
       </form>

@@ -1,18 +1,12 @@
 import { DropdownMenuItem } from "@components/ui/dropdown-menu";
 import { Container } from "lucide-react";
 import ConditionalRender from "@components/utils/ConditionalRender";
-import { getSession } from "@auth0/nextjs-auth0";
-import { getUserPlansAction } from "@actions/user-plan.action";
+import { isTenant } from "@lib/protect-org";
 
 export default async function AdminConsoleLink() {
-  const session = await getSession();
-  if(!session) return null;
-  const userPlans = await getUserPlansAction(session.user.sub);
-
-  const isTenant = userPlans.some((plan) => plan.Plan.type === "TENANT" && !["ON_HOLD", "PENDING", "EXPIRED"].includes(plan.status));
-  
+  const tenant = await isTenant();
   return (
-    <ConditionalRender condition={isTenant}>
+    <ConditionalRender condition={tenant}>
       <a href="https://clinic-ez-admin.vercel.app">
         <DropdownMenuItem>
           <Container className="mr-2 h-4 w-4" />

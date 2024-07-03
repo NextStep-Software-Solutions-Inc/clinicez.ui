@@ -1,12 +1,15 @@
+import { User } from 'lucide-react';
+import { Users } from 'lucide-react';
 "use server";
 
-import { getSession } from '@auth0/nextjs-auth0';
 import prisma from "@lib/prisma";
 import { Prisma, UserOrganizationStatus } from "@prisma/client";
 import fs from 'fs/promises';
 import { revalidatePath } from 'next/cache';
 import { sendMail } from './email.action';
 import path from 'path';
+import { getCachedSession } from './session.action';
+import { cache } from "react";
 
 export const createOrganizationAction = async (data: Prisma.OrganizationCreateArgs["data"]) => {
 
@@ -60,11 +63,15 @@ type FilterType = {
   orgId?: string;
   status?: UserOrganizationStatus;
   roleId?: number;
+  pageNumber?: number;
+  pageSize?: number;
 }
 
-export const getUserOrganizationsAction = async (filter?: FilterType) => {
-  const { userId, orgId, status, roleId } = filter || {};
+export const getUserOrganizationsAction = cache(async (filter?: FilterType) => {
+  const { userId, orgId, status, roleId, pageNumber, pageSize } = filter || {};
   const organizations = await prisma.userOrganization.findMany({
+    ... pageSize && { take: pageSize },
+    skip: pageNumber ? (pageNumber - 1) * (pageSize || 10) : 0,
     orderBy: {
       createdAt: "desc"
     },
@@ -117,14 +124,24 @@ export const getUserOrganizationsAction = async (filter?: FilterType) => {
         select: {
           name: true,
           orgId: true,
-          id: true
+          id: true,
+          Users: {
+            select: {
+              User: {
+                select: {
+                  userId: true,
+                },
+              },
+            }
+          }
         }
       }
     }
   });
+  organizations[0].Organization.Users[0].User.userId
   return organizations;
 
-}
+})
 
 export const getMyDefaultOrganizationAction = async (userId: string) => {
   const org = await prisma.userDefaultOrganization.findFirst({
@@ -231,7 +248,7 @@ export const joinOrganizationAction = async ({ orgId, userId, roleId}:{
 }
 
 
-export const getOrganizationRolesAction = async (filter?: Pick<FilterType, 'orgId' | "userId" | "status">) => {
+export const getOrganizationRolesAction = cache(async (filter?: Pick<FilterType, 'orgId' | "userId" | "status">) => {
   const {userId, orgId, status} = filter || { status: "ACTIVE"};
   const roles = await prisma.userOrganizationRole.findMany({
     orderBy: {
@@ -254,10 +271,10 @@ export const getOrganizationRolesAction = async (filter?: Pick<FilterType, 'orgI
     }
   })
   return roles;
-}
+})
 
 export const setMembershipRequestStatusAction = async (id: number, status: UserOrganizationStatus) => {
-  const session = await getSession();
+  const session = await getCachedSession();
 
   const request = await prisma.userOrganization.update({
     where: { id },

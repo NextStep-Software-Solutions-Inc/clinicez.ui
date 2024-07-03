@@ -3,42 +3,15 @@ import { Separator } from "@components/ui/separator";
 import { isOrgAdmin } from "@lib/protect-org";
 import React from "react";
 import { UnauthorizedWarning } from "./UnauthorizedWarning";
-import { DataTable } from "./components/data-table";
-import { columns } from "./components/columns";
 import Suspend from "@components/Suspend";
-import { getUserOrganizationsAction } from "@actions/organization.action";
+import { MembershipTable } from "./MembershipTable";
 
 export const maxDuration = 30; // page timeout in seconds
 
 async function MembershipPage({params}: AppRouterPageRouteOpts) {
-  const membershipRequests = await getUserOrganizationsAction({orgId: params?.organization as string});
-
-  const mappedMembershipRequests: ApplicationRequest[] = membershipRequests.map((request) => ({
-    id: request.id,
-    role: {
-      id: request.role,
-      name: request.UserRole.name
-    },
-    status: request.status.toString(),
-    createdAt: request.createdAt,
-    User: {
-      id: request.User.id,
-      picture: request.User.picture,
-      userId: request.User.userId,
-      firstName: request.User?.firstName ?? "",
-      lastName: request.User?.lastName ?? "",
-      gender: request.User.gender,
-      dob: request.User.dob
-    },
-    AcceptedBy: request.AcceptedBy ? {
-      id: request.AcceptedBy?.id,
-      userId: request.AcceptedBy?.userId,
-      firstName: request.AcceptedBy?.firstName,
-      lastName: request.AcceptedBy?.lastName
-    } : null,
-  }))
-  
-  if(!(await isOrgAdmin())) {
+  const orgId = params?.organization as string;
+  const orgAdmin = await isOrgAdmin(orgId);
+  if(!orgAdmin) {
     return <UnauthorizedWarning />;
   }
 
@@ -57,7 +30,7 @@ async function MembershipPage({params}: AppRouterPageRouteOpts) {
       <Separator />
    
       <Suspend>
-        <DataTable data={mappedMembershipRequests} columns={columns} />
+        <MembershipTable orgId={orgId}/>
       </Suspend>
   
     </div>

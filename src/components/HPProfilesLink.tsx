@@ -4,25 +4,21 @@ import React, { useEffect, useState } from "react";
 import Each from "./utils/Each";
 import { DropdownMenuItem } from "./ui/dropdown-menu";
 import { User } from "lucide-react";
-import { useUser } from "@auth0/nextjs-auth0/client";
 import { getHPsActions } from "@actions/hp.actions";
 import { Skeleton } from "./ui/skeleton";
 
-export default function HPProfilesLink() {
+export default function HPProfilesLink({userId}: {userId: string}) {
   const [hpProfiles, setHpProfiles] = useState<Awaited<ReturnType<typeof getHPsActions>>>([]);
-  const { user, isLoading } = useUser();
   const [loadingHPs, setLoadingHPs] = useState(true)
   
   useEffect(() => {
     (async () => {
-      if(user?.sub) {
-        setHpProfiles(await getHPsActions({userId: user?.sub ?? ""}));
-        setLoadingHPs(false)
-      }
+      setHpProfiles(await getHPsActions({userId}));
+      setLoadingHPs(false)
     })()
-  },[user?.sub])
+  },[userId])
 
-  if (isLoading || loadingHPs) return <Skeleton className="h-6 mx-2 my-1 bg-slate-400" />;
+  if (loadingHPs) return <Skeleton className="h-6 mx-2 my-1 bg-slate-400" />;
   return (
     <Each
       of={hpProfiles}

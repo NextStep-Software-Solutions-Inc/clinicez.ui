@@ -1,10 +1,10 @@
-import { getSession } from "@auth0/nextjs-auth0";
 import Folder, { FolderProps } from "../../../../../../components/Folder";
 import { getFoldersAction } from "@actions/folder.action";
 import { format } from "date-fns";
 import Each from "@components/utils/Each";
 import { getUserOrganizationsAction } from "@actions/organization.action";
 import dayjs from "dayjs";
+import { getCachedSession } from "@actions/session.action";
 
 interface FilesFormProps {
   readOnly: boolean;
@@ -12,7 +12,7 @@ interface FilesFormProps {
 }
 
 export const FilesForm = async ({ readOnly = true, userId }:FilesFormProps) => {
-  const session = await getSession();
+  const session = await getCachedSession();
   const folders = await getFoldersAction(userId);
   const userOrgs= await getUserOrganizationsAction({
     userId: session?.user.sub

@@ -22,6 +22,7 @@ import { useEffect, useState } from "react"
 import { useUser } from "@auth0/nextjs-auth0/client"
 import ActionButton from "@components/ActionButton"
 import { OrgDefaultRoleForm } from "./OrgDefaultRoleForm"
+import ConditionalRender from "@components/utils/ConditionalRender"
 
 const organizationFormSchema = z.object({
   defaultOrgUid: z.string(),
@@ -33,25 +34,29 @@ export default function OrganizationsSettings() {
   const [myOrgs, setMyOrgs] = useState<Awaited<ReturnType<typeof getUserOrganizationsAction>>>([])
   const [defaultOrg, setDefaultOrg] = useState<Awaited<ReturnType<typeof getMyDefaultOrganizationAction>>>(null)
   const user = useUser();
+  const userId = user?.user?.sub
 
   useEffect(() => {
     (async () => {
-      if(!user.user?.sub) return
-      const orgs = (await getUserOrganizationsAction({userId: user.user.sub})).filter(o => ["ACTIVE"].includes(o.status))
+      if(!userId) return
+
+      const [orgs, defaultOrg] = await Promise.all([
+        getUserOrganizationsAction({userId}),
+        getMyDefaultOrganizationAction(userId)
+      ])
       
-      const distinctOrgs = orgs.reduce((acc: typeof orgs, current) => {
+      await setDefaultOrg(defaultOrg)
+      await setMyOrgs(() => orgs.filter(o => ["ACTIVE"].includes(o.status)).reduce((acc: typeof orgs, current) => {
         const x = acc.find(item => item.Organization.orgId === current.Organization.orgId)
         if(!x) {
           return acc.concat([current])
         } else {
           return acc
         }
-      }, [])
-
-      await setMyOrgs(distinctOrgs)
-      await setDefaultOrg(await getMyDefaultOrganizationAction(user.user.sub))
+      }, []))
     })()
-  }, [user?.user?.sub])
+
+  }, [userId])
 
   const form = useForm<DefaultOrgFormSchema>({
     resolver: zodResolver(organizationFormSchema),
@@ -62,10 +67,15 @@ export default function OrganizationsSettings() {
 
   async function action(){
     form.handleSubmit(async (data)  => {
-      if(!user.user?.sub) return;
-      await setMyDefaultOrganizationAction(defaultOrg?.id ?? 0, data.defaultOrgUid, user.user.sub)
-      toast.success("Default organization updated successfully")
-      form.reset(data)
+      if(!userId) return;
+      toast.promise(setMyDefaultOrganizationAction(defaultOrg?.id ?? 0, data.defaultOrgUid, userId), {
+        loading: "Updating default organization...",
+        success: () => {
+          form.reset(data)
+          return "Default organization updated successfully"
+        },
+        error: "An error occurred while updating default organization."
+      })
     })()
   } 
 
@@ -101,9 +111,10 @@ export default function OrganizationsSettings() {
               </FormItem>
             )}}
         />
-        <ActionButton disabled={!form.formState.isDirty} type="submit">Update</ActionButton>
+        <ConditionalRender condition={form.formState.isDirty}>
+          <ActionButton disabled={form.formState.isLoading} type="submit">Update</ActionButton>
+        </ConditionalRender>
       </form>
-
       <Each
         of={myOrgs}
         render={(org) => <OrgDefaultRoleForm org={org}/>}

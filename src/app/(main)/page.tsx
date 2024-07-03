@@ -5,9 +5,9 @@ import { Button } from "@components/ui/button";
 import { ArrowRightCircle, Rocket } from "lucide-react";
 import Link from "next/link";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@components/ui/card";
-import { getSession } from "@auth0/nextjs-auth0";
 import ConditionalRender from "@components/utils/ConditionalRender";
 import Each from "@components/utils/Each";
+import { getCachedSession } from "@actions/session.action";
 
 export const metadata: Metadata = {
   title: "Home | Clinic EZ ",
@@ -22,7 +22,7 @@ const topFeature = [
     content: "Skip the wait, see your doctor anytime. Book appointments 24/7 with Clinic EZ.",
     action: {
       label: "Schedule Appointment ➡️",
-      path: ""
+      path: "/contact-us"
     }
   },
   {
@@ -31,7 +31,7 @@ const topFeature = [
     content: "Perfect matches for patients & providers. Build trust, customize workflows, streamline care.",
     action: {
       label: "Learn More About Customization ✏️",
-      path: ""
+      path: "/contact-us"
     }
   },
   {
@@ -40,13 +40,13 @@ const topFeature = [
     content: "Matching patients with the perfect fit. Build your trusted profile & connect with patients seeking your expertise.",
     action: {
       label: "Join Clinic EZ ✅",
-      path: ""
+      path: "/contact-us"
     }
   }
 ]
 export default async function HomePage() {
   
-  const session = await getSession();
+  const session = await getCachedSession();
   const authenticated = !!session  
   return (
     <main className="flex flex-col">

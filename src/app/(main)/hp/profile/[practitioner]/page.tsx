@@ -1,6 +1,6 @@
 import Suspend from "@components/Suspend";
 import React from "react";
-import { AppRouterPageRouteOpts, getSession } from "@auth0/nextjs-auth0";
+import { AppRouterPageRouteOpts } from "@auth0/nextjs-auth0";
 import dynamic from "next/dynamic";
 import ProfileNotFound from "../../ProfileNotFound";
 import { Metadata, ResolvingMetadata } from "next";
@@ -12,6 +12,7 @@ import { Pencil } from "lucide-react";
 import { getHPAction } from "@actions/hp.actions";
 import ConditionalRender from "@components/utils/ConditionalRender";
 import { notFound } from "next/navigation";
+import { getCachedSession } from "@actions/session.action";
 
 type Props = {
   params: { practitioner: string }
@@ -52,7 +53,7 @@ export async function generateMetadata({ params, searchParams }: Props, parent: 
 export default async function PractitionerPage({params, searchParams}: AppRouterPageRouteOpts) {
 
   const hpId = parseInt((params?.practitioner ?? "") as string);
-  const session = await getSession()
+  const session = await getCachedSession()
   const myHp = await getHPAction({
     userId: session?.user.sub
   })

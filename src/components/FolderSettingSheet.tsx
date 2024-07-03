@@ -30,6 +30,7 @@ import ActionButton from "./ActionButton"
 import { toast } from "sonner"
 import { updateFolderSettingAction } from "@actions/folder-setting.action"
 import ConditionalRender from "./utils/ConditionalRender"
+import { deleteFolderAction } from "@actions/folder.action"
 interface FolderSettingSheetProps extends DialogProps {
   children?: React.ReactNode;
   record: {
@@ -60,6 +61,15 @@ export default  function FolderSettingSheet({ children, record, ...res }: Folder
         error: "Failed to save settings"
       })
     })()
+  }
+  const deleteFolder = async () => {
+    toast.promise(deleteFolderAction(record.id), {
+      loading: "Deleting...",
+      success: () => {
+        return "Folder deleted"
+      },
+      error: "Failed to delete folder"
+    })
   }
 
   const form = useForm<PrivacySchema>({
@@ -116,8 +126,24 @@ export default  function FolderSettingSheet({ children, record, ...res }: Folder
             </CardFooter>
           </Card>
         </form>
+
+        <form action={deleteFolder}>
+          <Card>
+            <CardHeader>
+              <CardTitle>Delete Folder</CardTitle>
+              <CardDescription>
+                Deleting this folder will permanently remove it from the system.
+              </CardDescription>
+            </CardHeader>
+            <CardFooter>
+              <ActionButton  type="submit" disabled={form.formState.isLoading || !form.formState.isValid} variant="destructive" className="w-full">
+                Delete Folder
+              </ActionButton>
+            </CardFooter>
+          </Card>
+        </form>
         
-        <SheetFooter>
+        <SheetFooter className="mt-5">
           <SheetClose asChild>
             <Button variant="outline" type="button">Close</Button>
           </SheetClose>

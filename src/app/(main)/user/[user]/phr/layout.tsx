@@ -3,29 +3,51 @@ import { Metadata } from "next"
 import { Separator } from "@components/ui/separator"
 import SidebarNav from "@components/SidebarNav"
 import ConditionalRender from "@components/utils/ConditionalRender"
-import { isUserOwner } from "@lib/protect-org"
-import { getSession } from "@auth0/nextjs-auth0"
+import { isHP, isOrgAdmin, isSameOrg, isUserOwner } from "@lib/protect-org"
 import { redirect } from "next/navigation"
+import { getCachedSession } from "@actions/session.action"
+import { UnauthorizedWarning } from "../../../../(activation)/[organization]/membership/UnauthorizedWarning"
 
 export const metadata: Metadata = {
   title: "PHR",
   description: "Personal Health Record",
 }
-
-
-interface SettingsLayoutProps {
+interface PHRLayoutProps {
   children: React.ReactNode
   params: {
-    organization: string,
     user: string
   }
 }
 
-export default async function SettingsLayout({ children, params: {user} }: SettingsLayoutProps) {
-
-  const session = await getSession();
+export default async function PHRLayout({ children, params: {user} }: PHRLayoutProps) {
+  const phrOwnerId = decodeURI(user)
+  const [session, userOwner] = await Promise.all([
+    getCachedSession(),
+    isUserOwner(phrOwnerId)
+  ]);
+  
   if(!session) return redirect("/api/auth/login");
   
+  try {
+    // Check if the user is the owner of the PHR
+    if (!userOwner) {
+      const sameOrg = await isSameOrg(phrOwnerId);
+      // Check if the user is same org as the PHR owner
+      if (!sameOrg) throw new Error("You must be same organization as the PHR owner to view this page.");
+      else {
+        const [orgAdmin, hp] = await Promise.all([
+          isOrgAdmin(sameOrg?.Organization.orgId),
+          isHP()
+        ]);
+        if (!orgAdmin && !hp) throw new Error("You must be an organization admin or healthcare provider to view this page.");
+      }
+    }
+  }
+  catch (e) {
+    console.error(e);
+    return <UnauthorizedWarning  />;
+  }
+
   const sidebarNavItems = [
     {
       title: "Personal Information",
@@ -43,23 +65,23 @@ export default async function SettingsLayout({ children, params: {user} }: Setti
       title: "Vaccination & Immunization",
       href: `/user/${user}/phr/vaccination-immunization`,
     },
-    {
-      title: "Disabilities",
-      href: `/user/${user}/phr/disabilities`,
-    },
+    // {
+    //   title: "Disabilities",
+    //   href: `/user/${user}/phr/disabilities`,
+    // },
     
-    {
-      title: "Allergies",
-      href: `/user/${user}/phr/allergies`,
-    },
-    {
-      title: "Medications",
-      href: `/user/${user}/phr/medications`,
-    },
-    {
-      title: "Insurances & HMOs",
-      href: `/user/${user}/phr/insurances`,
-    },
+    // {
+    //   title: "Allergies",
+    //   href: `/user/${user}/phr/allergies`,
+    // },
+    // {
+    //   title: "Medications",
+    //   href: `/user/${user}/phr/medications`,
+    // },
+    // {
+    //   title: "Insurances & HMOs",
+    //   href: `/user/${user}/phr/insurances`,
+    // },
     {
       title: "Files",
       href: `/user/${user}/phr/files`,
@@ -71,7 +93,7 @@ export default async function SettingsLayout({ children, params: {user} }: Setti
       <div className="space-y-0.5">
         <h2 className="text-2xl font-bold tracking-tight">
           Personal Health Record 
-          <ConditionalRender condition={!await isUserOwner(decodeURI(user))}>
+          <ConditionalRender condition={!userOwner}>
             <span className="text-primary text-base italic mx-2">(View Only)</span>
           </ConditionalRender>
         </h2>

@@ -1,11 +1,10 @@
 import { Separator } from "@components/ui/separator"
-import { PersonalInformationForm } from "./PersonalInformationForm"
 import { Metadata } from "next"
 import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth0"
-import { getUserAction } from "@actions/user.action"
 import Suspend from "@components/Suspend"
-import { Picture } from "./Picture"
 import { isUserOwner } from "@lib/protect-org"
+import { PictureWrapper } from "./PictureWrapper"
+import { PHR } from "./PHR"
 
 export const metadata: Metadata = {
   title: "Basic Information | PHR",
@@ -15,8 +14,7 @@ export const metadata: Metadata = {
 async function PHRPage({ params, searchParams }: AppRouterPageRouteOpts) {
   const userId = decodeURI(params?.user as string) 
   if(!userId) throw new Error("User ID is required to view this page.")
-
-  const user = await getUserAction(userId);
+  const userOwner = await isUserOwner(userId)
 
   return (
     <div className="space-y-6">
@@ -28,9 +26,11 @@ async function PHRPage({ params, searchParams }: AppRouterPageRouteOpts) {
       </div>
       <Separator />
       <Suspend>
-        <Picture user={user} disabled={!await isUserOwner(userId)}/>
+        <PictureWrapper userId={userId} readOnly={!userOwner}/>
       </Suspend>
-      <PersonalInformationForm  user={user} />
+      <Suspend>
+        <PHR userId={userId} readOnly={!userOwner} />
+      </Suspend>
     </div>
   )
 }
@@ -41,4 +41,3 @@ export default withPageAuthRequired(PHRPage, {
     return `/user/${params?.organization}/phr?${searchStr}`;
   }
 })
-

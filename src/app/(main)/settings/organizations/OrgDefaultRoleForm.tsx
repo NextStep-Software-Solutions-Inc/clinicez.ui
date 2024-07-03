@@ -16,6 +16,9 @@ import Each from "@components/utils/Each";
 import { getOrganizationRolesAction, getUserOrganizationsAction } from "@actions/organization.action";
 import { useEffect, useState } from "react";
 import ActionButton from "@components/ActionButton";
+import { toast } from "sonner";
+import { getDefaultOrgRoleAction, setDefaultOrgRoleAction } from "@actions/user-default-organization.action";
+import ConditionalRender from "@components/utils/ConditionalRender";
 
 interface OrgDefaultRoleFormProps {
   org: Awaited<ReturnType<typeof getUserOrganizationsAction>>[number];
@@ -29,18 +32,40 @@ type OrgDefaultRoleFormSchema = z.infer<typeof orgDefaultRoleFormSchema>;
 
 export const OrgDefaultRoleForm = ({ org }: OrgDefaultRoleFormProps) => {
   const [orgRoles, setOrgRoles] = useState<Awaited<ReturnType<typeof getOrganizationRolesAction>>>([]);
+  const [defaultRole, setDefaultRole] = useState<Awaited<ReturnType<typeof getDefaultOrgRoleAction>>>(null);
   const form = useForm<OrgDefaultRoleFormSchema>({
     resolver: zodResolver(orgDefaultRoleFormSchema),
+    values: {
+      defaultRole: defaultRole?.UserRole.id ?? 0
+    }
   });
 
   const action = async () => {
     form.handleSubmit(async (data) => {
+      toast.promise(setDefaultOrgRoleAction({
+        id: defaultRole?.id,
+        userId: org.User.userId,
+        orgId: org.Organization.orgId,
+        roleId: data.defaultRole
+      }) , {
+        loading: "Updating default role...",
+        success: () => {
+          form.reset(data);
+          return "Default role updated successfully";
+        },
+        error: "Failed to update default role"
+      })
     })();
   };
 
   useEffect(() => {
     (async () => {
-      setOrgRoles(await getOrganizationRolesAction({ orgId: org.Organization.orgId, userId: org.User.userId}));
+      const [orgRoles, defaultRole] = await Promise.all([
+        getOrganizationRolesAction({ orgId: org.Organization.orgId, userId: org.User.userId}),
+        getDefaultOrgRoleAction(org.User.userId)
+      ]);
+      await setOrgRoles(() => orgRoles);
+      await setDefaultRole(() => defaultRole);
     })();
   }, [org.Organization.orgId, org.User.userId]);
 
@@ -55,7 +80,7 @@ export const OrgDefaultRoleForm = ({ org }: OrgDefaultRoleFormProps) => {
             <Select onValueChange={field.onChange} value={field.value?.toString()}>
               <FormControl>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select an organization" />
+                  <SelectValue placeholder="Select a role" />
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
@@ -67,12 +92,15 @@ export const OrgDefaultRoleForm = ({ org }: OrgDefaultRoleFormProps) => {
               </SelectContent>
             </Select>
             <FormDescription>
-              This will the default organization that will be used when you open your dashboard.
+              This will the default organization role that will be used when you open your dashboard.
             </FormDescription>
             <FormMessage />
           </FormItem>
-        )} />
-      <ActionButton disabled={!form.formState.isDirty} type="submit">Update</ActionButton>
+        )} 
+      />
+      <ConditionalRender condition={form.formState.isDirty}>
+        <ActionButton disabled={!form.formState.isDirty} type="submit">Update</ActionButton>
+      </ConditionalRender>
     </form>
   );
 };

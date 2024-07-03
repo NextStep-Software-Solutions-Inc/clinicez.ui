@@ -41,23 +41,6 @@ export const columns: ColumnDef<MembershipRequestSchema>[] = [
     enableSorting: false,
     enableHiding: false,
   },
-  // {
-  //   accessorKey: "id",
-  //   header: ({ column }) => (
-  //     <DataTableColumnHeader column={column} title="Application #" />
-  //   ),
-  //   cell: ({ row }) => (
-  //     <Link className="w-[110px] bg-primary text-white rounded-md px-2 py-1 text-sm font-medium hover:bg-slate-500 transition-all"
-  //       href={{
-  //         pathname: `consultations/${row.getValue("id")}`
-  //       }}
-  //     >
-  //       APP-{row.getValue("id")}
-  //     </Link>
-  //   ),
-  //   enableSorting: false,
-  //   enableHiding: false,
-  // },
   {
     accessorKey: "application-date",
     header: ({ column }) => (

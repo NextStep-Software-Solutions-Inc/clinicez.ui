@@ -22,6 +22,7 @@ import { useEffect, useState } from "react"
 import { useUser } from "@auth0/nextjs-auth0/client"
 import ActionButton from "@components/ActionButton"
 import { OrgDefaultRoleForm } from "./OrgDefaultRoleForm"
+import ConditionalRender from "@components/utils/ConditionalRender"
 
 const organizationFormSchema = z.object({
   defaultOrgUid: z.string(),
@@ -110,9 +111,10 @@ export default function OrganizationsSettings() {
               </FormItem>
             )}}
         />
-        <ActionButton disabled={!form.formState.isDirty} type="submit">Update</ActionButton>
+        <ConditionalRender condition={form.formState.isDirty}>
+          <ActionButton disabled={form.formState.isLoading} type="submit">Update</ActionButton>
+        </ConditionalRender>
       </form>
-
       <Each
         of={myOrgs}
         render={(org) => <OrgDefaultRoleForm org={org}/>}

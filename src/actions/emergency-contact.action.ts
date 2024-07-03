@@ -4,6 +4,9 @@ import prisma from "@lib/prisma";
 
 export async function getEmergencyContactsAction(userId: string) {
   return await prisma.userEmergencyContact.findMany({
+    orderBy: {
+      createdAt: "desc"
+    },
     where: {
       isActive: true,
       User: {

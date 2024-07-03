@@ -55,7 +55,7 @@ export const OrgDefaultRoleForm = ({ org }: OrgDefaultRoleFormProps) => {
             <Select onValueChange={field.onChange} value={field.value?.toString()}>
               <FormControl>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select an organization" />
+                  <SelectValue placeholder="Select a role" />
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
@@ -67,7 +67,7 @@ export const OrgDefaultRoleForm = ({ org }: OrgDefaultRoleFormProps) => {
               </SelectContent>
             </Select>
             <FormDescription>
-              This will the default organization that will be used when you open your dashboard.
+              This will the default organization role that will be used when you open your dashboard.
             </FormDescription>
             <FormMessage />
           </FormItem>

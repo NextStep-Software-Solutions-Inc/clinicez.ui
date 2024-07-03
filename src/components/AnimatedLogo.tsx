@@ -23,8 +23,6 @@ export default function AnimatedLogo() {
     })();
   }, []);
 
-  console.log("Rendering AnimatedLogo");
-  
   
   return (
     <ConditionalRender condition={!loading}>

@@ -3,10 +3,9 @@ import Suspend from "@components/Suspend";
 import { Alert, AlertDescription, AlertTitle } from "@components/ui/alert"
 import { Separator } from "@components/ui/separator"
 import { AlertTriangle } from "lucide-react"
-import { JoinOrgForm } from "./JoinOrgForm";
-import { getOrganizationRolesAction, getUserOrganizationsAction } from "@actions/organization.action";
 import { getCachedSession } from "@actions/session.action";
 import { redirect } from "next/navigation";
+import { JoinOrg } from "./JoinOrg";
 
 async function JoinOrgPage({params}: AppRouterPageRouteOpts) {
   const session = await getCachedSession();
@@ -49,21 +48,3 @@ export default  withPageAuthRequired(JoinOrgPage, {
     return `/${params?.organization}/join?${searchStr}`;
   }
 });
-
-
-interface JoinOrgProps {
-  orgId: string;
-  userId: string;
-}
-
-export const JoinOrg = async ({orgId, userId}: JoinOrgProps) => {
-  const [myOrgs, orgRoles] = await Promise.all([
-    getUserOrganizationsAction({userId}),
-    getOrganizationRolesAction({orgId})
-  ]);
-  const existingRoles = myOrgs.map(org => org.role);
-  
-  return (
-    <JoinOrgForm userId={userId} orgId={orgId} orgRoles={orgRoles} existingRoles={existingRoles}  />
-  )
-}

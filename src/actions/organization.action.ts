@@ -239,11 +239,14 @@ export const joinOrganizationAction = async ({ orgId, userId, roleId}:{
 
   const userName = `${request.User.firstName} ${request.User.lastName}`;
   const receiver = request.User.email;
-  await Promise.all([
-    notifyUser([receiver], request.Organization.name, userName),
-    notifyAdmins([...adminEmails], request.Organization.name)
-  ])
-  
+  try {
+    await Promise.all([
+      notifyUser([receiver], request.Organization.name, userName),
+      notifyAdmins([...adminEmails], request.Organization.name)
+    ])
+  } catch (error) {
+    console.error(error);
+  }
   return request;
 }
 
@@ -313,12 +316,16 @@ export const setMembershipRequestStatusAction = async (id: number, status: UserO
   const html = emailTemplate.replace("@{userName}", userName).replace("@{status}", status).replace("@{appName}", appName)
   const receiver = request.User.email;
   
-  await sendMail({
-    subject: `Membership Request to ${request.Organization.name} Status Update`,
-    to: receiver,
-    text: html,
-    html
-  })
+  try {
+    await sendMail({
+      subject: `Membership Request to ${request.Organization.name} Status Update`,
+      to: receiver,
+      text: html,
+      html
+    })
+  } catch (error) {
+    console.error(error);
+  }
 
   revalidatePath(`/[organization]/membership`, "page")
   return request;

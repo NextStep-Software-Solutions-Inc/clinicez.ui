@@ -205,39 +205,16 @@ export function PersonalInformationForm({readOnly, ...props}: PersonalInformatio
             <FormItem 
               className="flex flex-col">
               <FormLabel>Date of birth</FormLabel>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <FormControl>
-                    <Button
-                      disabled={readOnly}
-                      variant={"outline"}
-                      className={cn(
-                        "w-[240px] pl-3 text-left font-normal",
-                        !field.value && "text-muted-foreground"
-                      )}
-                    >
-                      {field.value ? (
-                        format(field.value, "PPP")
-                      ) : (
-                        <span>Pick a date</span>
-                      )}
-                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                    </Button>
-                  </FormControl>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    defaultMonth={new Date("2000-01-01")}
-                    mode="single"
-                    {...field.value && { selected: field.value }}
-                    onSelect={field.onChange}
-                    disabled={(date) =>
-                      date > new Date() || date < new Date("1900-01-01")
-                    }
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+              <FormControl>
+                <Input
+                  disabled={readOnly}
+                  name={field.name}
+                  onChange={e => field.onChange(new Date(e.target.value))}
+                  defaultValue={field.value ? format(field.value, "yyyy-MM-dd") : ""}
+                  type="date"
+                  placeholder="Select date" 
+                />
+              </FormControl>
               <FormDescription>
                 Your date of birth is used to calculate your age.
               </FormDescription>
@@ -245,7 +222,6 @@ export function PersonalInformationForm({readOnly, ...props}: PersonalInformatio
             </FormItem>
           )}
         />
-
         <FormField
           disabled={readOnly}
           control={form.control}

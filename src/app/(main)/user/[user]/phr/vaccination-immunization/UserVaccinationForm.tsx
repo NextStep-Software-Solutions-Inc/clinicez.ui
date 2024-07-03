@@ -143,7 +143,8 @@ export const UserVaccinationForm = ({vaccines, form}:UserVaccinationFormProps) =
               onChange={e => field.onChange(new Date(e.target.value))}
               defaultValue={field.value ? format(field.value, "yyyy-MM-dd") : ""}
               type="date"
-              placeholder="Select date" />
+              placeholder="Select date" 
+            />
             <FormDescription>
                 Enter the date the vaccine was administered.
             </FormDescription>

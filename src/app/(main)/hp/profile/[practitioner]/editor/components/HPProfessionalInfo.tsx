@@ -89,37 +89,15 @@ export default function HPProfessionalInfo({ professionalDetails }: HPProfession
             render={({ field }) => (
               <FormItem className="flex-grow flex flex-col">
                 <FormLabel>License Issued Date</FormLabel>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <FormControl>
-                      <Button
-                        variant={"outline"}
-                        className={cn(
-                          "pl-3 text-left font-normal",
-                          !field.value && "text-muted-foreground"
-                        )}
-                      >
-                        {field.value ? (
-                          format(field.value, "PPP")
-                        ) : (
-                          <span>Pick a date</span>
-                        )}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                      </Button>
-                    </FormControl>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={field.value}
-                      onSelect={field.onChange}
-                      disabled={(date) =>
-                        date > new Date() || date < new Date("1900-01-01")
-                      }
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
+                <FormControl>
+                  <Input
+                    name={field.name}
+                    onChange={e => field.onChange(new Date(e.target.value))}
+                    defaultValue={field.value ? format(field.value, "yyyy-MM-dd") : ""}
+                    type="date"
+                    placeholder="Select date" 
+                  />
+                </FormControl>
                 <FormDescription>
                   This is going to be used internally (Private).
                 </FormDescription>
@@ -133,34 +111,15 @@ export default function HPProfessionalInfo({ professionalDetails }: HPProfession
             render={({ field }) => (
               <FormItem className="flex-grow flex flex-col">
                 <FormLabel>License Expiry  Date</FormLabel>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <FormControl>
-                      <Button
-                        variant={"outline"}
-                        className={cn(
-                          "pl-3 text-left font-normal",
-                          !field.value && "text-muted-foreground"
-                        )}
-                      >
-                        {field.value ? (
-                          format(field.value, "PPP")
-                        ) : (
-                          <span>Pick a date</span>
-                        )}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                      </Button>
-                    </FormControl>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={field.value}
-                      onSelect={field.onChange}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
+                <FormControl>
+                  <Input
+                    name={field.name}
+                    onChange={e => field.onChange(new Date(e.target.value))}
+                    defaultValue={field.value ? format(field.value, "yyyy-MM-dd") : ""}
+                    type="date"
+                    placeholder="Select date" 
+                  />
+                </FormControl>
                 <FormDescription>
                   This is going to be used internally (Private).
                 </FormDescription>

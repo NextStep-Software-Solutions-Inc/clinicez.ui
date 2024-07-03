@@ -138,7 +138,6 @@ export const getUserOrganizationsAction = cache(async (filter?: FilterType) => {
       }
     }
   });
-  organizations[0].Organization.Users[0].User.userId
   return organizations;
 
 })

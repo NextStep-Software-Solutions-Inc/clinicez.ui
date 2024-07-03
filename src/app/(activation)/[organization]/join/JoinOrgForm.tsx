@@ -13,11 +13,10 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
-
-
 export const JoinOrgForm = () => {
     
   const user = useUser();
+  const userId = user?.user?.sub;
   const {organization} = useParams<{organization: string}>();
   const [myOrgs, setMyOrgs] = useState<Awaited<ReturnType<typeof getUserOrganizationsAction>>>([]);
   const [orgRoles, setOrgRoles] = useState<Awaited<ReturnType<typeof getOrganizationRolesAction>>>([]);
@@ -40,7 +39,6 @@ export const JoinOrgForm = () => {
   });
 
   const action = async () => {
-    const userId = user?.user?.sub;
     if (!userId) return;
 
     form.handleSubmit(async (values) => {
@@ -60,16 +58,18 @@ export const JoinOrgForm = () => {
 
   useEffect(() => {
     (async () => {
-      if (!user?.user?.sub) return;
-      setMyOrgs(await getUserOrganizationsAction({userId: user.user.sub}));
+      if (!userId || !organization) return;
+      const [myOrgs, orgRoles] = await Promise.all([
+        getUserOrganizationsAction({userId}),
+        getOrganizationRolesAction({orgId: organization})
+      ])
+      await setMyOrgs(() => myOrgs);
+      await setOrgRoles(() => orgRoles);
+
+
     })();
-  }, [user?.user?.sub]);
+  }, [organization, userId]);
   
-  useEffect(() => {
-    (async () => {
-      setOrgRoles(await getOrganizationRolesAction({orgId: organization}));
-    })();
-  }, [organization]);
 
   return (
     <Form {...form}>

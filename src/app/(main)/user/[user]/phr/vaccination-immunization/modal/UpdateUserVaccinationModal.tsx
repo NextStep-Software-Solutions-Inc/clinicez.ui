@@ -34,7 +34,7 @@ export default async function UpdateUserVaccinationModal({vaccination}:UpdateUse
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Warning!</AlertTitle>
           <AlertDescription>
-            Ensure that you have the correct information before adding a new vaccination record.
+            Make sure to update the vaccination record correctly. Incorrect information may lead to confusion.
           </AlertDescription>
         </Alert>
         <Suspend>

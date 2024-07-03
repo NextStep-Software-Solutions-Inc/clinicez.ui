@@ -70,7 +70,7 @@ type FilterType = {
 export const getUserOrganizationsAction = cache(async (filter?: FilterType) => {
   const { userId, orgId, status, roleId, pageNumber, pageSize } = filter || {};
   const organizations = await prisma.userOrganization.findMany({
-    take: pageSize ? pageSize : 1000,
+    ... pageSize && { take: pageSize },
     skip: pageNumber ? (pageNumber - 1) * (pageSize || 10) : 0,
     orderBy: {
       createdAt: "desc"

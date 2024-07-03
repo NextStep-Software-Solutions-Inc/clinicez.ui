@@ -3,9 +3,16 @@ import Suspend from "@components/Suspend";
 import { Alert, AlertDescription, AlertTitle } from "@components/ui/alert"
 import { Separator } from "@components/ui/separator"
 import { AlertTriangle } from "lucide-react"
-import { JoinOrgForm } from "./JoinOrgForm";
+import { getCachedSession } from "@actions/session.action";
+import { redirect } from "next/navigation";
+import { JoinOrg } from "./JoinOrg";
 
 async function JoinOrgPage({params}: AppRouterPageRouteOpts) {
+  const session = await getCachedSession();
+  if(!session) return redirect("/api/auth/login");
+  const userId = session?.user.sub;
+  const orgId = params?.organization as string;
+
   return (
     <div className="container mx-auto my-10 space-y-6">
 
@@ -28,7 +35,7 @@ async function JoinOrgPage({params}: AppRouterPageRouteOpts) {
       </Alert>
 
       <Suspend>
-        <JoinOrgForm/>
+        <JoinOrg orgId={orgId} userId={userId}/>
       </Suspend>
     
     </div>

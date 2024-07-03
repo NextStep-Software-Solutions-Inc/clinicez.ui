@@ -1,26 +1,29 @@
 "use client";
 
-import { getOrganizationRolesAction, getUserOrganizationsAction, joinOrganizationAction } from "@actions/organization.action";
-import { useUser } from "@auth0/nextjs-auth0/client";
+import { joinOrganizationAction } from "@actions/organization.action";
 import ActionButton from "@components/ActionButton";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@components/ui/form";
 import { RadioGroup, RadioGroupItem } from "@components/ui/radio-group";
 import Each from "@components/utils/Each";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
-export const JoinOrgForm = () => {
-    
-  const user = useUser();
-  const userId = user?.user?.sub;
-  const {organization} = useParams<{organization: string}>();
-  const [myOrgs, setMyOrgs] = useState<Awaited<ReturnType<typeof getUserOrganizationsAction>>>([]);
-  const [orgRoles, setOrgRoles] = useState<Awaited<ReturnType<typeof getOrganizationRolesAction>>>([]);
-  const existingRoles = myOrgs.map(org => org.role);
+interface JoinOrgFormProps {
+  orgId: string
+  userId: string
+  orgRoles: {
+    id: number;
+    orgId: number;
+    name: string;
+    description: string | null;
+    isActive: boolean;
+  }[]
+  existingRoles: number[]
+}
+
+export const JoinOrgForm = ({existingRoles, orgRoles, userId, orgId}:JoinOrgFormProps) => {
 
   const joinOrgSchema = z.object({
     roleId: z.coerce.number({
@@ -39,13 +42,12 @@ export const JoinOrgForm = () => {
   });
 
   const action = async () => {
-    if (!userId) return;
-
+    
     form.handleSubmit(async (values) => {
       toast.promise(joinOrganizationAction({
-        orgId: organization,
-        roleId: values.roleId,
-        userId
+        orgId,
+        userId,
+        roleId: values.roleId
       }), {
         loading: "Joining organization...",
         success: "You have successfully joined the organization, please wait for the admin to approve your request.",
@@ -55,21 +57,6 @@ export const JoinOrgForm = () => {
       toast.error(`Form error: ${error.roleId?.message}`)
     })()
   }
-
-  useEffect(() => {
-    (async () => {
-      if (!userId || !organization) return;
-      const [myOrgs, orgRoles] = await Promise.all([
-        getUserOrganizationsAction({userId}),
-        getOrganizationRolesAction({orgId: organization})
-      ])
-      await setMyOrgs(() => myOrgs);
-      await setOrgRoles(() => orgRoles);
-
-
-    })();
-  }, [organization, userId]);
-  
 
   return (
     <Form {...form}>

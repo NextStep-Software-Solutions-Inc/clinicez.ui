@@ -20,19 +20,34 @@ interface PHRLayoutProps {
 }
 
 export default async function PHRLayout({ children, params: {user} }: PHRLayoutProps) {
-
-  const session = await getCachedSession();
+  const phrOwnerId = decodeURI(user)
+  const [session, userOwner] = await Promise.all([
+    getCachedSession(),
+    isUserOwner(phrOwnerId)
+  ]);
+  
   if(!session) return redirect("/api/auth/login");
-  const orgAdmin = await isOrgAdmin();
-  const phrOwnerId = decodeURI(user);
-  const userOwner = await isUserOwner(phrOwnerId);
-  const hp = await isHP();
-  const sameOrg = await isSameOrg(phrOwnerId);
-
-  // Allow access if user is the owner, or if user is a HP or an org admin from the same org
-  if (!(userOwner || (hp && sameOrg) || (orgAdmin && sameOrg))) {
-    return <UnauthorizedWarning />;
+  
+  try {
+    // Check if the user is the owner of the PHR
+    if (!userOwner) {
+      const sameOrg = await isSameOrg(phrOwnerId);
+      // Check if the user is same org as the PHR owner
+      if (!sameOrg) throw new Error("You must be same organization as the PHR owner to view this page.");
+      else {
+        const [orgAdmin, hp] = await Promise.all([
+          isOrgAdmin(sameOrg?.Organization.orgId),
+          isHP()
+        ]);
+        if (!orgAdmin && !hp) throw new Error("You must be an organization admin or healthcare provider to view this page.");
+      }
+    }
   }
+  catch (e) {
+    console.error(e);
+    return <UnauthorizedWarning  />;
+  }
+
   const sidebarNavItems = [
     {
       title: "Personal Information",

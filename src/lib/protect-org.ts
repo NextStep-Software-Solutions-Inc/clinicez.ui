@@ -40,7 +40,7 @@ export const isTenant = cache(async () => {
   return userPlans.some((plan) => plan.Plan.type === "TENANT" && !["ON_HOLD", "PENDING", "EXPIRED"].includes(plan.status));
 })
 
-export const isOrgAdmin = cache(async (orgId:string) => {
+export const isOrgAdmin = cache(async (orgId?:string) => {
   const session = await getCachedSession();
   if(!session) throw new Error("No session found");
   const myOrgs = await getUserOrganizationsAction({
@@ -54,5 +54,5 @@ export const isSameOrg = cache(async (userId: string) => {
   const session = await getCachedSession();
   if(!session) throw new Error("No session found");
   const orgs = await getUserOrganizationsAction({userId: session.user.sub});
-  return orgs.some((org) => org.Organization.Users.some((user) => user.User.userId === userId));
+  return orgs.find((org) => org.Organization.Users.some((user) => user.User.userId === userId));
 });

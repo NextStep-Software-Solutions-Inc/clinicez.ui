@@ -1,41 +1,29 @@
-"use client"
-
-
-import { useUser } from "@auth0/nextjs-auth0/client"
-import { Button } from "@components/ui/button"
+import { getUserPlansAction } from "@actions/user-plan.action"
 import Each from "@components/utils/Each"
-import exp from "constants"
+import { format, formatDistanceToNow } from "date-fns"
+import { ChangePlan } from "./ChangePlan"
 
-const mySubscriptions = [
-  {
-    id: "1",
-    plan: "Basic",
-    name: "Healthcare Provider",
-    expiry: "12/12/2021",
-  },
-  {
-    id: "2",
-    plan: "Large",
-    name: "Tenant Owner",
-    expiry: "12/12/2021",
-  }
-]
+interface SubscriptionsListProps {
+  userId: string
+}
 
-
-export default function SubscriptionsList() {
+export default async function SubscriptionsList({userId}:SubscriptionsListProps) {
+  const myPlans = await getUserPlansAction(userId)
   
   return (
     <>
       <Each
-        of={mySubscriptions}
+        of={myPlans.filter(plan => plan.status === "ACTIVE")}
         render={subscription => (
           <div key={subscription.id} className="flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-bold">{subscription.name}</h3>
-              <p className="text-sm text-gray-500">{subscription.plan}</p>
-              <p className="text-sm text-gray-500">Expires on {subscription.expiry}</p>
+              <h3 className="text-lg font-bold capitalize">{subscription.Plan.type.split("_").map(t => t.toLowerCase()).join(" ")}</h3>
+              <p className="text-sm text-gray-500">{subscription.Plan.name}</p>
+              <p className="text-sm text-gray-500">Expires {formatDistanceToNow(subscription.endDate, {
+                addSuffix: true
+              })} on {format(subscription.endDate, "P")} - </p>
             </div>
-            <Button size="sm" variant="outline">Change</Button>
+            <ChangePlan/>
           </div>
         )}
       />

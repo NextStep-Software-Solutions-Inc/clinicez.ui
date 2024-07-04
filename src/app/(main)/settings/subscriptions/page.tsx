@@ -2,13 +2,17 @@ import { Separator } from "@components/ui/separator";
 import React from "react";
 import SubscriptionsList from "./SubscriptionsList";
 import { Metadata } from "next";
+import { getCachedSession } from "@actions/session.action";
+import { withPageAuthRequired } from "@auth0/nextjs-auth0";
 
 export const metadata: Metadata = {
   title: "Subscriptions | Clinic EZ",
   description: "List of subscriptions for your account.",
 };
 
-export default function SubscriptionsPage() {
+async function SubscriptionsPage() {
+  const session = await getCachedSession();
+  const userId = session?.user.sub;
   
   return (
     <div className="space-y-6">
@@ -19,7 +23,9 @@ export default function SubscriptionsPage() {
         </p>
       </div>
       <Separator />
-      <SubscriptionsList />
+      <SubscriptionsList userId={userId} />
     </div>
   )
 }
+
+export default withPageAuthRequired(SubscriptionsPage);

@@ -18,7 +18,7 @@ export default function VaxItem({vaccination, readOnly = true}: VaxItemProps){
       <CardHeader>
         <CardTitle className="flex items-center group/actions">
           <span>{vaccination.Vaccine.type}</span>
-          <ConditionalRender condition={readOnly}>
+          <ConditionalRender condition={!readOnly}>
             <span className="ml-auto flex space-x-2 invisible group-hover/actions:visible transition-all">
               <UpdateUserVaccinationModal vaccination={vaccination} />
               <DeleteVaccinationForm vaccinationId={vaccination.id}/>

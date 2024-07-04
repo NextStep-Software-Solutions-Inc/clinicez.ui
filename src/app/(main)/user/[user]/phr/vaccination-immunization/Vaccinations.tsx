@@ -7,6 +7,8 @@ import VaxItem from "./VaxItem";
 import AddUserVaccination from "./modal/AddUserVaccinationModal";
 import { Badge } from "@components/ui/badge";
 import { Separator } from "@components/ui/separator";
+import { isUserOwner } from "@lib/protect-org";
+import ConditionalRender from "@components/utils/ConditionalRender";
 interface VaccinationProps {
   userId: string;
 }
@@ -15,21 +17,26 @@ export type UserVaccinationType = Awaited<ReturnType<typeof getUserVaccinationsA
 
 export default async function Vaccinations({userId}: VaccinationProps) {
 
-  const userVax = await getUserVaccinationsAction(userId);
-
+  const [userVax, ownerUser] = await Promise.all([
+    getUserVaccinationsAction(userId),
+    isUserOwner(userId)
+  ]);
+  
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <span className="flex items-center">Recent Vaccinations <Badge className="ml-2">{userVax.length}</Badge></span>
-          <AddUserVaccination/>
+          <ConditionalRender condition={ownerUser}>
+            <AddUserVaccination/>
+          </ConditionalRender>
         </CardTitle>
         <Separator/>
       </CardHeader>
       <CardContent className="space-y-2">
         <Each
           of={userVax}
-          render={(vaccination) => <VaxItem key={vaccination.id} vaccination={vaccination}/>}
+          render={(vaccination) => <VaxItem key={vaccination.id} readOnly={!ownerUser} vaccination={vaccination}/>}
         />
       </CardContent>
       <CardFooter>

@@ -457,46 +457,71 @@ model UserAddress {
 model Vaccine {
   id               Int               @id @default(autoincrement())
   name             String
+  type             String
   description      String?
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
   deletedAt        DateTime?
   isActive         Boolean           @default(true)
   UserVaccinations UserVaccination[]
-  VaccineAttritube VaccineAttritube?
-  VaccineDoses     VaccineDose[]
+  VaccineAttribute VaccineAttribute?
   VaccineRoutes    VaccineRoute[]
+  VaccineDoses     VaccineDose[]
 }
 
-model VaccineAttritube {
+model VaccineAttribute {
   id          Int     @id @default(autoincrement())
   vaccineId   Int     @unique
   effectivity Int
   Vaccine     Vaccine @relation(fields: [vaccineId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
-model VaccineRoute {
+model Route {
   id               Int               @id @default(autoincrement())
-  vaccineId        Int?
   route            String
   description      String?
   isActive         Boolean           @default(true)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  deletedAt        DateTime?
+  VaccineRoutes    VaccineRoute[]
   UserVaccinations UserVaccination[]
-  Vaccine          Vaccine?          @relation(fields: [vaccineId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
-model VaccineDose {
+model Dose {
   id               Int               @id @default(autoincrement())
-  vaccineId        Int?
   dose             String
   description      String?
   isActive         Boolean           @default(true)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  deletedAt        DateTime?
+  VaccineDoses     VaccineDose[]
   UserVaccinations UserVaccination[]
-  Vaccine          Vaccine?          @relation(fields: [vaccineId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model VaccineRoute {
+  id        Int     @id @default(autoincrement())
+  vaccineId Int
+  routeId   Int
+  Route     Route   @relation(fields: [routeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Vaccine   Vaccine @relation(fields: [vaccineId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([vaccineId, routeId], name: "unique_vaccine_route")
+}
+
+model VaccineDose {
+  id        Int     @id @default(autoincrement())
+  vaccineId Int
+  doseId    Int
+  Dose      Dose    @relation(fields: [doseId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Vaccine   Vaccine @relation(fields: [vaccineId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([vaccineId, doseId], name: "unique_vaccine_dose")
 }
 
 model UserVaccination {
-  id             Int          @id @default(autoincrement())
+  id             Int       @id @default(autoincrement())
   userId         Int
   vaccineId      Int
   doseId         Int
@@ -504,14 +529,14 @@ model UserVaccination {
   dateGiven      DateTime
   notes          String?
   administeredBy String?
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
   deletedAt      DateTime?
-  isActive       Boolean      @default(true)
-  VaccineDose    VaccineDose  @relation(fields: [doseId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  VaccineRoute   VaccineRoute @relation(fields: [routeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  User           User         @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  Vaccine        Vaccine      @relation(fields: [vaccineId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  isActive       Boolean   @default(true)
+  User           User      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Vaccine        Vaccine   @relation(fields: [vaccineId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Dose           Dose      @relation(fields: [doseId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Route          Route     @relation(fields: [routeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 enum Gender {

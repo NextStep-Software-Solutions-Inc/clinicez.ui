@@ -72,39 +72,41 @@ export const ContactUsForm = () => {
         </Alert>
       </ConditionalRender>
       <form action={action}>
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Name</FormLabel>
-              <FormControl>
-                <Input placeholder="Your Name" {...field} />
-              </FormControl>
-              <FormDescription>
-              </FormDescription>
-              <FormMessage/>
-            </FormItem>
+        <div className="flex flex-wrap gap-5">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem className="flex-grow">
+                <FormLabel>Name</FormLabel>
+                <FormControl>
+                  <Input placeholder="Your Name" {...field} />
+                </FormControl>
+                <FormDescription>
+                </FormDescription>
+                <FormMessage/>
+              </FormItem>
            
-          )}
-        />
+            )}
+          />
 
-        <FormField
-          control={form.control}
-          name="email"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Input placeholder="Your Email address" {...field} />
-              </FormControl>
-              <FormDescription>
-              </FormDescription>
-              <FormMessage/>
-            </FormItem>
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem className="flex-grow">
+                <FormLabel>Email</FormLabel>
+                <FormControl>
+                  <Input placeholder="Your Email address" {...field} />
+                </FormControl>
+                <FormDescription>
+                </FormDescription>
+                <FormMessage/>
+              </FormItem>
            
-          )}
-        />
+            )}
+          />
+        </div>
         <FormField
           control={form.control}
           name="message"

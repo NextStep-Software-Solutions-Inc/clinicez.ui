@@ -17,7 +17,7 @@ export default async function PricingPage(props: PricingPageProps) {
   const { freq = "yearly" } = props.searchParams ;
 
   return (
-    <div className="content container mx-auto my-10">
+    <div className="container mx-auto my-10">
       <div className="prose max-w-full text-center">
         <h1>Tenant Pricing</h1>
         <p>

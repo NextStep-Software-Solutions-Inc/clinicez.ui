@@ -135,6 +135,9 @@ export const hpApplicationTransactionAction = async ({
 
 export const getUserPlansAction = cache(async (userId: string) => {
   const userPlans = await prisma.userPlan.findMany({
+    orderBy: {
+      endDate: "desc"
+    },
     where: {
       User: {
         userId: userId

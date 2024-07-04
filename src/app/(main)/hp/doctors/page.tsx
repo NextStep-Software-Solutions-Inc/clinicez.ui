@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default async function Doctors() {
   return (
-    <div className="content container mx-auto my-10">
+    <div className="container mx-auto my-10">
       <div className="prose max-w-full text-center">
         <h1>Meet our Doctors</h1>
         <p>

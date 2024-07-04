@@ -9,12 +9,10 @@ export const metadata: Metadata = {
 export default async function ContactUsPage() {
 
   return (
-    <div className="flex items-center justify-center h-screen">
-      <div className="bg-white p-8 rounded-lg shadow-xl w-1/2">
+    <div className="container mx-auto my-10">
+      <div className="bg-white p-8 rounded-lg shadow-xl w-full">
         <h2 className="text-2xl font-bold mb-6 text-primary border-b pb-2">Contact Us</h2>
-
         <ContactUsForm/>
-        
       </div>
     </div>
   );

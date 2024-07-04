@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 export default async function Organizations() {
   
   return (
-    <div className="content container mx-auto my-10">
+    <div className="container mx-auto my-10">
       <div className="prose max-w-full text-center">
         <h1>Partner Organizations</h1>
         <p>
@@ -21,14 +21,6 @@ export default async function Organizations() {
         <Suspend>
           <OrganizationList/>
         </Suspend>
-        {/* <JoinAsButton 
-          href={{
-            pathname: "/tenants/register",
-            query: {
-              role: "tenant"
-            }
-          }}
-        />  */}
       </div>
     </div>
   );

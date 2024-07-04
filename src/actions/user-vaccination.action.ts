@@ -21,10 +21,10 @@ export const createUserVaccinationAction = async ({userId, vaccineId, routeId, d
       Vaccine: {
         connect: { id: vaccineId }
       },
-      VaccineRoute: {
+      Route: {
         connect: { id: routeId }
       },
-      VaccineDose: {
+      Dose: {
         connect: { id: doseId }
       },
       dateGiven,
@@ -53,13 +53,13 @@ export const getUserVaccinationsAction = cache(async (userId: string) => {
           name: true
         }
       },
-      VaccineRoute: {
+      Route: {
         select: {
           id: true,
           route: true
         }
       },
-      VaccineDose: {
+      Dose: {
         select: {
           id: true,
           dose: true
@@ -78,10 +78,10 @@ export const updateUserVaccinationAction = async (id: number, {vaccineId, routeI
       Vaccine: {
         connect: { id: vaccineId }
       },
-      VaccineRoute: {
+      Route: {
         connect: { id: routeId }
       },
-      VaccineDose: {
+      Dose: {
         connect: { id: doseId }
       },
       dateGiven,

@@ -98,7 +98,7 @@ export const UserVaccinationForm = ({vaccines, form}:UserVaccinationFormProps) =
                 <SelectContent>
                   <Each
                     of={vaccines.find(v => v.id === vaccineId)?.VaccineRoutes ?? []}
-                    render={item => <SelectItem value={item.id.toString()} className="cursor-pointer">{item.route}</SelectItem>} />
+                    render={item => <SelectItem value={item.Route.id.toString()} className="cursor-pointer">{item.Route.route}</SelectItem>} />
                 </SelectContent>
               </Select>
               <FormDescription>
@@ -122,7 +122,7 @@ export const UserVaccinationForm = ({vaccines, form}:UserVaccinationFormProps) =
                 <SelectContent>
                   <Each
                     of={vaccines.find(v => v.id === vaccineId)?.VaccineDoses ?? []}
-                    render={item => <SelectItem value={item.id.toString()} className="cursor-pointer">{item.dose}</SelectItem>} />
+                    render={item => <SelectItem value={item.Dose.id.toString()} className="cursor-pointer">{item.Dose.dose}</SelectItem>} />
                 </SelectContent>
               </Select>
               <FormDescription>

@@ -51,8 +51,8 @@ export const UpdateVaccinationForm = ({ vaccines, vaccination }: UpdateVaccinati
       administeredBy: vaccination.administeredBy || "",
       dateGiven: vaccination.dateGiven,
       vaccineId: vaccination.Vaccine.id,
-      routeId: vaccination.VaccineRoute.id,
-      doseId: vaccination.VaccineDose.id,
+      routeId: vaccination.Route.id,
+      doseId: vaccination.Dose.id,
     }
   });
 

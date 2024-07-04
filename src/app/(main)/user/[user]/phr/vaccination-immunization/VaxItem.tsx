@@ -34,11 +34,11 @@ export default function VaxItem({vaccination}: VaxItemProps){
             <div>Date received</div>
           </div>
           <div>
-            <div className="font-bold">{vaccination.VaccineRoute.route}</div>
+            <div className="font-bold">{vaccination.Route.route}</div>
             <div>Route</div>
           </div>
           <div>
-            <div className="font-bold">{vaccination.VaccineDose.dose}</div>
+            <div className="font-bold">{vaccination.Dose.dose}</div>
             <div>Dose</div>
           </div>
           <div>

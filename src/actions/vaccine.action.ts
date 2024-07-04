@@ -11,21 +11,29 @@ export const getVaccinesAction = async () => {
     select: {
       id: true,
       name: true,
+      VaccineAttribute: {
+        select: {
+          effectivity: true
+        }
+      },
       VaccineDoses: {
         select: {
-          id: true,
-          dose: true
+          Dose: {
+            select: {
+              id: true,
+              dose: true,
+            }
+          }
         }
       },
       VaccineRoutes: {
         select: {
-          id: true,
-          route: true
-        }
-      },
-      VaccineAttritube: {
-        select: {
-          effectivity: true
+          Route: {
+            select: {
+              id: true,
+              route: true,
+            }
+          }
         }
       }
     }

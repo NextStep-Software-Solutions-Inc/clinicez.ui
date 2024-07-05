@@ -10,6 +10,9 @@ import { AllergenComboBox } from "./AllergenComboBox";
 import { z } from "zod";
 import DeleteAllergyButton from "./DeleteAllergyButton";
 import DoneEditingButton from "./DoneEditingButton";
+import { ComboBox } from "@components/ComboBox";
+import { useEffect, useState } from "react";
+import { getAllergensAction } from "@actions/allergen.action";
 
 export const allergySchema = z.object({
   id: z.number(),
@@ -37,11 +40,20 @@ interface AllergyFormProps {
   
 export const EditAllergyForm = ({allergy, index, onUpdate, remove}: AllergyFormProps) => {
     
+  const [allergens, setAllergens] = useState<string[]>([])
+
   const form = useForm<Allergy>({
     resolver: zodResolver(allergySchema),
     defaultValues: allergy
   })
   
+  useEffect(() => {
+    (async () => {
+      const allergens = await getAllergensAction()
+      await setAllergens(() => allergens.map(({name}) => name))
+    })()
+  }, [])
+
   return (
     <Form {...form}>
       <Card className="ring-2 m-1">
@@ -57,7 +69,8 @@ export const EditAllergyForm = ({allergy, index, onUpdate, remove}: AllergyFormP
               render={({ field }) => (
                 <FormItem className="flex-1 flex flex-col w-full">
                   <FormLabel>Allergen</FormLabel>
-                  <AllergenComboBox
+                  <ComboBox
+                    options={allergens}
                     value={field.value}
                     onChange={(value) => form.setValue("allergen", value)}
                   />

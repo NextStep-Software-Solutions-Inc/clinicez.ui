@@ -1,15 +1,21 @@
 import { Separator } from "@components/ui/separator"
 import { Metadata } from "next"
-import DisabilitiesForm from "./DisabilitiesForm"
-import IllnessesForm from "./IllnessForm"
-import UnderConstruction from "@components/UnderConstruction"
+import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth0"
+import { isUserOwner } from "@lib/protect-org"
+import { DisabilityList } from "./DisabilityList"
+import { IllnessList } from "./IllnessList"
+import Suspend from "@components/Suspend"
 
 export const metadata: Metadata = {
   title: "Disabilities | PHR",
   description: "Update your disabilities and illnesses information to help your organization track your health history."
 }
 
-export default function DisabilitiesPage() {
+async function DisabilitiesPage({params}: AppRouterPageRouteOpts) {
+
+  const userId = decodeURI(params?.user as string)
+  const ownerUser = await isUserOwner(userId)
+
   return (
     <div className="space-y-6">
       <div>
@@ -19,9 +25,13 @@ export default function DisabilitiesPage() {
         </p>
       </div>
       <Separator />
-      <UnderConstruction/>
-      {/* <DisabilitiesForm />
-      <IllnessesForm /> */}
+      <Suspend>
+        <DisabilityList readOnly={!ownerUser} userId={userId}/>
+      </Suspend>
+      <Suspend>
+        <IllnessList userId={userId} readOnly={!ownerUser}/>
+      </Suspend>
     </div>
   )
 }
+export default withPageAuthRequired(DisabilitiesPage)

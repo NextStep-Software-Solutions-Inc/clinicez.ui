@@ -15,7 +15,7 @@ export default function GlobalError({ error, reset}: GlobalErrorProps) {
   }, [error])
  
   return (
-    <Button variant="link" className='container mx-auto my-10 text-xs text-wrap' 
+    <Button variant="link" className='container mx-auto my-10 text-xs text-destructive  text-wrap' 
       onClick={
       // Attempt to recover by trying to re-render the segment
         () => reset()

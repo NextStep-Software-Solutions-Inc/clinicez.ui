@@ -65,11 +65,10 @@ export default async function PHRLayout({ children, params: {user} }: PHRLayoutP
       title: "Vaccination & Immunization",
       href: `/user/${user}/phr/vaccination-immunization`,
     },
-    // {
-    //   title: "Disabilities",
-    //   href: `/user/${user}/phr/disabilities`,
-    // },
-    
+    {
+      title: "Disabilities & Illnesses",
+      href: `/user/${user}/phr/disabilities`,
+    },
     {
       title: "Allergies",
       href: `/user/${user}/phr/allergies`,

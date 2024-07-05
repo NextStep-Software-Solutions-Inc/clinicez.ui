@@ -61,6 +61,7 @@ model User {
   Plans                            UserPlan[]
   UserVaccination                  UserVaccination[]
   UserDefaultOrganizationRoles     UserDefaultOrganizationRole[]
+  UserAllergies                    UserAllergy[]
 }
 
 model Organization {
@@ -537,6 +538,28 @@ model UserVaccination {
   Vaccine        Vaccine   @relation(fields: [vaccineId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   Dose           Dose      @relation(fields: [doseId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   Route          Route     @relation(fields: [routeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model Allergen {
+  id            Int           @id @default(autoincrement())
+  name          String        @unique
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  deletedAt     DateTime?
+  isActive      Boolean       @default(true)
+  UserAllergies UserAllergy[]
+}
+
+model UserAllergy {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  allergenId Int
+  reaction   String
+  notes      String?
+  User       User     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Allergen   Allergen @relation(fields: [allergenId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([userId, allergenId], name: "unique_user_allergy")
 }
 
 enum Gender {

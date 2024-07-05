@@ -1,132 +1,66 @@
-import ActionButton from "@components/ActionButton";
+"use client";
+
 import { Button } from "@components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@components/ui/card";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@components/ui/form";
-import { Input } from "@components/ui/input";
 import { Separator } from "@components/ui/separator";
 import ConditionalRender from "@components/utils/ConditionalRender";
-import { zodResolver } from "@hookform/resolvers/zod";
-import React from "react";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-
-
-export const allergySchema = z.object({
-  id: z.number(),
-  allergen: z.string().min(2, {
-    message: "Allergen must be at least 2 characters.",
-  }).max(255, {
-    message: "Allergen must not be longer than 30 characters.",
-  }),
-  reaction: z.string().min(2, {
-    message: "Reaction must be at least 2 characters.",
-  }).max(255, {
-    message: "Reaction must not be longer than 30 characters.",
-  })
-})
-
-type Allergy = z.infer<typeof allergySchema>;
+import { useState } from "react";
+import { Allergy, EditAllergyForm } from "./EditAllergyForm";
+import DeleteAllergyButton from "./DeleteAllergyButton";
 
 interface AllergyItemProps {
   allergy: Allergy;
   index: number;
   remove: (index: number) => void;
-  update: (index: number, data: Allergy) => void;
+  update: (index: number, value: Allergy) => void;
+  readOnly?: boolean;
 }
 
-export default function AllergyItem({allergy, index, remove, update}: AllergyItemProps) {
-  const [isEditing, setIsEditing] = React.useState(allergy.allergen === "");
+export default function AllergyItem({allergy, remove, update, index, readOnly}: AllergyItemProps) {
 
-  const form = useForm<Allergy>({
-    resolver: zodResolver(allergySchema),
-    defaultValues: allergy
-  })
+  const [isEditing, setIsEditing] = useState(allergy.allergen === "");
 
-  const handleDoneEditing = () => {
-    form.handleSubmit((data) => {
-      update(index, data);
-      setIsEditing(false);
-    })();
-  };
-  
+  const onUpdate = (index: number, value: Allergy) => {
+    update(index, value);
+    setIsEditing(false);
+  }
+
   return (
     <>
       <ConditionalRender condition={!isEditing}>
-        <Card>
+        <Card className="group/actions">
           <CardHeader>
-            <CardTitle className="flex items-center group/actions">
+            <CardTitle className="flex items-center">
               <span>{allergy.allergen}</span>
-              <span  className="ml-auto space-x-2 invisible group-hover/actions:visible transition-all">
-                <Button size="sm" variant="ghost" onClick={() => setIsEditing(true)}>Edit</Button>
-                <Button size="sm" variant="destructive" onClick={() => remove(index)}>Delete</Button>
-              </span>
+              <ConditionalRender condition={!readOnly}>
+                <span className="ml-auto flex space-x-2 invisible group-hover/actions:visible transition-all">
+                  <Button size="sm" variant="ghost" onClick={() => setIsEditing(true)}>Edit</Button>
+                  <DeleteAllergyButton id={allergy.id} index={index} remove={remove}/>
+                </span>
+              </ConditionalRender>
             </CardTitle>
             <Separator />
           </CardHeader>
           <CardContent>
             <section>
-              <div className="grid sm:grid-cols-2 grid-cols-1 gap-4">
+              <div className="flex flex-col gap-4">
                 <div>
                   <div className="font-semibold">Reaction</div>
                   <div>{allergy.reaction}</div>
                 </div>
+                <ConditionalRender condition={!!allergy.notes}>
+                  <div>
+                    <div className="font-semibold">Notes</div>
+                    <div>{allergy.notes}</div>
+                  </div>
+                </ConditionalRender>
               </div>
             </section>
           </CardContent>
         </Card>
       </ConditionalRender>
       <ConditionalRender condition={isEditing}>
-        <Form {...form}>
-          <form action={handleDoneEditing}>
-            <Card className="ring-2 m-1">
-              <CardHeader>
-                <CardTitle className="flex items-center group/actions gap-2">
-                  <FormField
-                    control={form.control}
-                    name="allergen"
-                    render={({ field }) => (
-                      <FormItem className="flex-1">
-                        <FormLabel>Allergen</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter allergen" {...field}  />
-                        </FormControl>
-                        <FormDescription>
-                          What food or medicine you are allergic to?
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <span  className="ml-auto space-x-2 group-hover/actions:visible transition-all">
-                    <ActionButton size="sm" variant="ghost" >Done Editing</ActionButton>
-                    <Button size="sm" variant="destructive" type="button" onClick={() => remove(index)}>Delete</Button>
-                  </span>
-                </CardTitle>
-                <Separator/>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <FormField
-                    control={form.control}
-                    name="reaction"
-                    render={({ field }) => (
-                      <FormItem className="w-full">
-                        <FormLabel>Reaction</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Itchiness" {...field}  />
-                        </FormControl>
-                        <FormDescription>
-                          What reaction usually happen?
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          </form>
-        </Form>
+        <EditAllergyForm allergy={allergy} index={index} remove={remove} onUpdate={onUpdate}/>
       </ConditionalRender>
     </>
   );

@@ -70,10 +70,10 @@ export default async function PHRLayout({ children, params: {user} }: PHRLayoutP
     //   href: `/user/${user}/phr/disabilities`,
     // },
     
-    // {
-    //   title: "Allergies",
-    //   href: `/user/${user}/phr/allergies`,
-    // },
+    {
+      title: "Allergies",
+      href: `/user/${user}/phr/allergies`,
+    },
     // {
     //   title: "Medications",
     //   href: `/user/${user}/phr/medications`,

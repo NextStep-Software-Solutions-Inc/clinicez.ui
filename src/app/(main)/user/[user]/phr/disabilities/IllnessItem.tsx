@@ -1,205 +1,86 @@
-import ActionButton from "@components/ActionButton";
 import { Button } from "@components/ui/button";
-import { Calendar } from "@components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@components/ui/card";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@components/ui/form";
-import { Input } from "@components/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@components/ui/popover";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@components/ui/select";
 import { Separator } from "@components/ui/separator";
 import ConditionalRender from "@components/utils/ConditionalRender";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { cn } from "@lib/utils";
-import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
 import React from "react";
-import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { Severity } from "@prisma/client";
+import { format } from "date-fns";
+import DeleteIllnessButton from "./DeleteIllnessButton";
+import EditIllnessForm from "./EditIllnessForm";
 
 export const illnessSchema = z.object({
-  type: z.string().min(2, {
-    message: "Type must be at least 2 characters.",
-  }).max(30, {
-    message: "Type must not be longer than 30 characters.",
+  id: z.number(),
+  illness: z.string({
+    required_error: "Illness is required.",
+    message: "Please select a illness.",
+  }).refine(value => value.trim().length > 0, {
+    message: "Illness is required.",
   }),
   dateDiagnosed: z.date({
-    required_error: "Please select a date.",
-  }),
-  severity: z.string().min(2, {
-    message: "Severity must be at least 2 characters.",
-  }).max(30, {
-    message: "Severity must not be longer than 30 characters.",
+    message: "Invalid date."
+  }).optional(),
+  severity: z.nativeEnum(Severity, {
+    required_error: "Severity is required.",
+    message: "Please select a severity level.",
   }),
   notes: z.string().optional(),
 })
 
+export type Illness = z.infer<typeof illnessSchema>;
+
 interface IllnessItemProps {
-  illness: z.infer<typeof illnessSchema>;
+  readOnly?: boolean;
+  illness: Illness;
   index: number;
   remove: (index: number) => void;
-  update: (index: number, value: z.infer<typeof illnessSchema>) => void;
+  update: (index: number, value: Illness) => void;
 }
   
-export default function IllnessItem({illness, index, remove, update}: IllnessItemProps){
+export default function IllnessItem({illness, index, remove, update, readOnly = true}: IllnessItemProps){
+  
   const [isEditing, setIsEditing] = React.useState(false);
-  
-  const form = useForm<z.infer<typeof illnessSchema>>({
-    resolver: zodResolver(illnessSchema),
-    defaultValues: illness
-  });
-  
-  const handleDoneEditing = (formData: FormData) => {
-    form.handleSubmit((data) => {
-      update(index, data);
-      setIsEditing(false);
-    })()
+  const handleOnUpdate = (index: number, value: Illness) => {
+    update(index, value);
+    setIsEditing(false);
   }
-    
   
   return (
     <>
-      <ConditionalRender condition={!isEditing && !!illness.type}>
-        <Card>
+      <ConditionalRender condition={!isEditing && !!illness.illness}>
+        <Card className="group/actions">
           <CardHeader>
-            <CardTitle className="flex items-center group/actions">
-              <span>{illness.type}</span>
-              <span  className="ml-auto space-x-2 invisible group-hover/actions:visible transition-all">
-                <Button size="sm" variant="ghost" onClick={() => setIsEditing(true)}>Edit</Button>
-                <Button size="sm" variant="destructive" onClick={() => remove(index)}>Delete</Button>
-              </span>
+            <CardTitle className="flex items-center">
+              <span>{illness.illness}</span>
+              <ConditionalRender condition={!readOnly}>
+                <span className="ml-auto flex space-x-2 invisible group-hover/actions:visible transition-all">
+                  <Button size="sm" variant="ghost" onClick={() => setIsEditing(true)}>Edit</Button>
+                  <DeleteIllnessButton illnessId={illness.id} remove={remove} index={index}/>
+                </span>
+              </ConditionalRender>
             </CardTitle>
             <Separator/>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              <div>
-                <span>Date Diagnosed: {illness.dateDiagnosed.toString()}</span>
-              </div>
-              <div>
-                <span>Severity: {illness.severity}</span>
-              </div>
-              <div>
-                <span>Notes: {illness.notes}</span>
-              </div>
+              {illness.dateDiagnosed && <div>Date Diagnosed: {format(illness.dateDiagnosed, "PP")}</div>}
+              <div className="capitalize">Severity: {illness.severity.toLowerCase()}</div>
+              <ConditionalRender condition={!!illness.notes}>
+                <div>Notes: {illness.notes}</div>
+              </ConditionalRender>
             </div>
           </CardContent>
         </Card>
       </ConditionalRender>
-      <ConditionalRender condition={isEditing || !illness.type}>
-        <Form {...form}>
-          <form action={handleDoneEditing}>
-            <Card className="ring-2">
-              <CardHeader>
-                <CardTitle className="flex items-center group/actions gap-2">
-                  <FormField
-                    control={form.control}
-                    name="type"
-                    render={({ field }) => (
-                      <FormItem className="flex-1">
-                        <FormLabel>Type</FormLabel>
-                        <FormControl>
-                          <Select name="vaccine" onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select Type"/>
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="asthma">Asthma</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </FormControl>
-                        <FormDescription>
-                        Enter the type of illness.
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <span  className="ml-auto space-x-2 group-hover/actions:visible transition-all">
-                    <ActionButton size="sm" variant="ghost" >Done Editing</ActionButton>
-                    <Button size="sm" variant="destructive" onClick={() => remove(index)}>Delete</Button>
-                  </span>
-                </CardTitle>
-                <Separator/>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <FormField
-                    control={form.control}
-                    name="dateDiagnosed"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-col">
-                        <FormLabel>Date Diagnosed</FormLabel>
-                        <FormControl>
-                          <Input
-                            name={field.name}
-                            onChange={e => field.onChange(new Date(e.target.value))}
-                            defaultValue={field.value ? format(field.value, "yyyy-MM-dd") : ""}
-                            type="date"
-                            placeholder="Select date" 
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          Date the patient was diagnosed with the condition
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="severity"
-                    render={({ field }) => (
-                      <FormItem className="w-full">
-                        <FormLabel>Severity</FormLabel>
-                        <FormControl>
-                          <Select name="vaccine" onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select Severity"/>
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="mild">Mild</SelectItem>
-                              <SelectItem value="moderate">Moderate</SelectItem>
-                              <SelectItem value="severe">Severe</SelectItem>
-                              <SelectItem value="critical">Critical</SelectItem>
-                              <SelectItem value="profound">Profound</SelectItem>
-                              <SelectItem value="unknown">Unknown</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </FormControl>
-                        <FormDescription>
-                          Severity of the condition.
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                 
-                  <FormField
-                    control={form.control}
-                    name="notes"
-                    render={({ field }) => (
-                      <FormItem className="w-full">
-                        <FormLabel>Notes</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Add notes here..." {...field}  />
-                        </FormControl>
-                        <FormDescription>
-                          Additional notes about the condition.
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          </form>
-        </Form>
+      <ConditionalRender condition={isEditing || !illness.illness}>
+        <EditIllnessForm
+          index={index}
+          remove={remove}
+          onUpdate={handleOnUpdate}
+          illness={illness}
+        />
       </ConditionalRender>
     </>
   )
 }
+

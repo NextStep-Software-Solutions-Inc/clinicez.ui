@@ -62,6 +62,8 @@ model User {
   UserVaccination                  UserVaccination[]
   UserDefaultOrganizationRoles     UserDefaultOrganizationRole[]
   UserAllergies                    UserAllergy[]
+  UserHealthConditions             UserHealthCondition[]
+  UserDisabilities                 UserDisability[]
 }
 
 model Organization {
@@ -560,6 +562,61 @@ model UserAllergy {
   Allergen   Allergen @relation(fields: [allergenId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@unique([userId, allergenId], name: "unique_user_allergy")
+}
+
+model HealthCondition {
+  id                   Int                   @id @default(autoincrement())
+  name                 String                @unique
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  deletedAt            DateTime?
+  isActive             Boolean               @default(true)
+  UserHealthConditions UserHealthCondition[]
+}
+
+model UserHealthCondition {
+  id                Int             @id @default(autoincrement())
+  userId            Int
+  healthConditionId Int
+  dateDiagnosed     DateTime?
+  severity          Severity
+  notes             String?
+  User              User            @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  HealthCondition   HealthCondition @relation(fields: [healthConditionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([userId, healthConditionId], name: "unique_user_health_condition")
+}
+
+model Disablity {
+  id               Int              @id @default(autoincrement())
+  name             String           @unique
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  deletedAt        DateTime?
+  isActive         Boolean          @default(true)
+  UserDisabilities UserDisability[]
+}
+
+model UserDisability {
+  id            Int       @id @default(autoincrement())
+  userId        Int
+  disabilityId  Int
+  dateDiagnosed DateTime?
+  severity      Severity
+  notes         String?
+  User          User      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Disability    Disablity @relation(fields: [disabilityId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([userId, disabilityId], name: "unique_user_disability")
+}
+
+enum Severity {
+  MILD
+  MODERATE
+  SEVERE
+  CRITICAL
+  PROFOUND
+  UNKNOWN
 }
 
 enum Gender {

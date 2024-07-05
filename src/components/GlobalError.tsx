@@ -32,7 +32,7 @@ export default function GlobalError({ error, reset}: GlobalErrorProps) {
             () => reset()
           }>Try Again</Button>
       </div> */}
-      {error.name}. Try again.
+      {error.message}. Try again.
     </Button>
   )
 }

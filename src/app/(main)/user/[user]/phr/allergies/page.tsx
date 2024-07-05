@@ -1,14 +1,19 @@
 import { Separator } from "@components/ui/separator"
 import { Metadata } from "next"
-import AllergiesForm from "./AllergiesForm"
-import UnderConstruction from "@components/UnderConstruction"
+import Suspend from "@components/Suspend"
+import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth0"
+import { AllergyList } from "./AllergyList"
+import { isUserOwner } from "@lib/protect-org"
 
 export const metadata: Metadata = {
   title: "Allergies | PHR",
   description: "Update your allergy information for your healthcare providers to better understand your health."
 }
 
-export default function AllergiesPage() {
+async function AllergiesPage({ params }: AppRouterPageRouteOpts) {
+  const userId = decodeURI(params?.user as string)
+  const ownerUser = await isUserOwner(userId)
+
   return (
     <div className="space-y-6">
       <div>
@@ -18,8 +23,15 @@ export default function AllergiesPage() {
         </p>
       </div>
       <Separator />
-      <UnderConstruction/>
-      {/* <AllergiesForm /> */}
+      <Suspend>
+        <AllergyList readOnly={!ownerUser} userId={userId} />
+      </Suspend>
     </div>
   )
 }
+
+export default withPageAuthRequired(AllergiesPage, {
+  returnTo: ({ params }) => {
+    return `/user/${params?.user}/phr`;
+  }
+})

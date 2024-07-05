@@ -10,74 +10,27 @@ import React from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 import DisabilityItem, { disabilitySchema } from "./DisabilityItem";
-import ActionButton from "@components/ActionButton";
-import { toast } from "@components/ui/use-toast";
-import { delay } from "@lib/wait";
 import { Badge } from "@components/ui/badge";
 import { Plus } from "lucide-react";
+import { Severity } from "@prisma/client";
+import ConditionalRender from "@components/utils/ConditionalRender";
 
 const disabilitiesSchema = z.object({
   disabilities: z.array(disabilitySchema)
 })
 
-const disabilities = [
-  {
-    type: "Blind",
-    dateDiagnosed: new Date(),
-    severity: "Severe",
-    notes: "Notes",
-  },
-  {
-    type: "Deaf",
-    dateDiagnosed: new Date(),
-    severity: "Severe",
-    notes: "Notes",
-  },
-  {
-    type: "Mute",
-    dateDiagnosed: new Date(),
-    severity: "Severe",
-    notes: "Notes",
-  },
-  {
-    type: "Paralyzed",
-    dateDiagnosed: new Date(),
-    severity: "Severe",
-    notes: "Notes",
-  },
-  {
-    type: "Amputee",
-    dateDiagnosed: new Date(),
-    severity: "Severe",
-    notes: "Notes",
-  },
-  {
-    type: "Cognitive Disability",
-    dateDiagnosed: new Date(),
-    severity: "Severe",
-    notes: "Notes",
-  },
-  {
-    type: "Physical Disability",
-    dateDiagnosed: new Date(),
-    severity: "Severe",
-    notes: "Notes",
-  },
-  {
-    type: "Developmental Disability",
-    dateDiagnosed: new Date(),
-    severity: "Severe",
-    notes: "Notes",
-  },
-  {
-    type: "Learning Disability",
-    dateDiagnosed: new Date(),
-    severity: "Severe",
-    notes: "Notes",
-  }
-]
+export interface DisabilitiesFormProps {
+  readOnly?: boolean,
+  disabilities: {
+    id: number,
+    disability: string,
+    notes?: string,
+    severity: Severity
+    dateDiagnosed?: Date,
+  }[]
+}
 
-export default function DisabilitiesForm() {
+export default function DisabilitiesForm({disabilities, readOnly = true}:DisabilitiesFormProps) {
   const form = useForm<z.infer<typeof disabilitiesSchema>>({
     resolver: zodResolver(disabilitiesSchema),
     defaultValues: {
@@ -87,38 +40,24 @@ export default function DisabilitiesForm() {
 
   const {fields, append, remove, update} = useFieldArray({
     control: form.control,
-    name: "disabilities"
+    name: "disabilities",
+    keyName: "fieldId"
   })
 
   const disabilityInitialValues = {
-    type: "",
-    dateDiagnosed: new Date,
-    severity: "",
-    notes: "",
+    id: 0,
+    disability: "",
+    severity: Severity.MILD,
   }
-
-  const action = async (formData: FormData) => {
-    await delay(1000);
-    form.handleSubmit((data) => {
-      form.reset(data)
-      toast({
-        title: "Disabilities Updated",
-        description: (
-          <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-            <code className="text-white">{JSON.stringify(data, null, 2)}</code>
-          </pre>
-        )
-      })
-    })()
-  }
-
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center">
             Disabilities <Badge className="ml-2">{fields.length}</Badge>
-          <Button className="ml-auto" onClick={() => append(disabilityInitialValues)}>Add Disability</Button>
+          <ConditionalRender condition={!readOnly}>
+            <Button className="ml-auto" onClick={() => append(disabilityInitialValues)}>Add Disability</Button>
+          </ConditionalRender>
         </CardTitle>
         <Separator/>
       </CardHeader>
@@ -129,19 +68,16 @@ export default function DisabilitiesForm() {
             <AccordionContent className="p-5 space-y-2">
               <Each
                 of={fields}
-                render={(disability, index) => <DisabilityItem disability={disability} index={index} remove={remove} update={update}/>}
+                render={(disability, index) => <DisabilityItem readOnly={readOnly} disability={disability} index={index} remove={remove} update={update}/>}
               />
-              <Button variant="ghost" className="w-full" onClick={() => append(disabilityInitialValues)}><Plus className="mr-2 h-4 w-4"/>Add Disability</Button>
+              <ConditionalRender condition={!readOnly}>
+                <Button variant="ghost" className="w-full" onClick={() => append(disabilityInitialValues)}><Plus className="mr-2 h-4 w-4"/>Add Disability</Button>
+              </ConditionalRender>
             </AccordionContent>
           </AccordionItem>
         </Accordion>
       </CardContent>
       <CardFooter>
-        <form action={action}>
-          {
-            form.formState.isDirty && <ActionButton disabled={form.formState.isLoading || !form.formState.isValid}>Save Changes</ActionButton>
-          }
-        </form>
       </CardFooter>
     </Card>
   );

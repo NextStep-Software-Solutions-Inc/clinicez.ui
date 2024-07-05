@@ -1,7 +1,6 @@
 "use client";
 
 import ActionButton from "@components/ActionButton";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@components/ui/accordion";
 import Each from "@components/utils/Each";
 import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";

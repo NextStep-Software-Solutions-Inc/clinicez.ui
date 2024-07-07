@@ -73,10 +73,10 @@ export default async function PHRLayout({ children, params: {user} }: PHRLayoutP
       title: "Allergies",
       href: `/user/${user}/phr/allergies`,
     },
-    // {
-    //   title: "Medications",
-    //   href: `/user/${user}/phr/medications`,
-    // },
+    {
+      title: "Medications",
+      href: `/user/${user}/phr/medications`,
+    },
     // {
     //   title: "Insurances & HMOs",
     //   href: `/user/${user}/phr/insurances`,

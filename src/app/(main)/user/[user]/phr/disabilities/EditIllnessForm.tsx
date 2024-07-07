@@ -1,8 +1,6 @@
 "use client";
 
 import { useForm } from "react-hook-form";
-import { Illness, illnessSchema } from "./IllnessItem";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { Card, CardContent, CardHeader, CardTitle } from "@components/ui/card";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@components/ui/form";
 import DoneEditingIllnessButton from "./DoneEditingIllnessButton";
@@ -16,6 +14,7 @@ import { Input } from "@components/ui/input";
 import { format } from "date-fns";
 import { useEffect, useState } from "react";
 import { getHealthConditionsAction } from "@actions/health-condition.action";
+import { Illness } from "./IllnessList";
 
 interface EditIllnessFormProps {
     index: number;
@@ -29,7 +28,6 @@ export default function EditIllnessForm({ illness, index, remove, onUpdate}:Edit
   const [conditions, setConditions] = useState<string[]>([])
 
   const form = useForm<Illness>({
-    resolver: zodResolver(illnessSchema),
     defaultValues: illness
   });
 
@@ -50,8 +48,11 @@ export default function EditIllnessForm({ illness, index, remove, onUpdate}:Edit
           </span>
           <CardTitle className="flex items-center group/actions gap-2">
             <FormField
+              rules={{
+                required: "Illness name is required"
+              }}
               control={form.control}
-              name="illness"
+              name="HealthCondition.name"
               render={({ field }) => (
                 <FormItem className="flex-1">
                   <FormLabel>Illness</FormLabel>

@@ -5,34 +5,21 @@ import { Button } from "@components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@components/ui/card";
 import { Separator } from "@components/ui/separator";
 import Each from "@components/utils/Each";
-import { zodResolver } from "@hookform/resolvers/zod";
-import React from "react";
 import { useFieldArray, useForm } from "react-hook-form";
-import { z } from "zod";
-import DisabilityItem, { disabilitySchema } from "./DisabilityItem";
+import DisabilityItem  from "./DisabilityItem";
 import { Badge } from "@components/ui/badge";
 import { Plus } from "lucide-react";
 import { Severity } from "@prisma/client";
 import ConditionalRender from "@components/utils/ConditionalRender";
-
-const disabilitiesSchema = z.object({
-  disabilities: z.array(disabilitySchema)
-})
+import { Disability } from "./DisabilityList";
 
 export interface DisabilitiesFormProps {
   readOnly?: boolean,
-  disabilities: {
-    id: number,
-    disability: string,
-    notes?: string,
-    severity: Severity
-    dateDiagnosed?: Date,
-  }[]
+  disabilities: Disability[]
 }
 
 export default function DisabilitiesForm({disabilities, readOnly = true}:DisabilitiesFormProps) {
-  const form = useForm<z.infer<typeof disabilitiesSchema>>({
-    resolver: zodResolver(disabilitiesSchema),
+  const form = useForm<{disabilities: Disability[]}>({
     defaultValues: {
       disabilities: disabilities
     }
@@ -44,17 +31,22 @@ export default function DisabilitiesForm({disabilities, readOnly = true}:Disabil
     keyName: "fieldId"
   })
 
-  const disabilityInitialValues = {
+  const disabilityInitialValues: Disability = {
     id: 0,
-    disability: "",
+    Disability: {
+      name: ""
+    },
     severity: Severity.MILD,
+    dateDiagnosed: null,
+    notes: null,
+    isManaged: false 
   }
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center">
-            Disabilities <Badge className="ml-2">{fields.length}</Badge>
+            Disabilities <Badge variant="destructive" className="ml-2">{fields.length}</Badge>
           <ConditionalRender condition={!readOnly}>
             <Button className="ml-auto" onClick={() => append(disabilityInitialValues)}>Add Disability</Button>
           </ConditionalRender>

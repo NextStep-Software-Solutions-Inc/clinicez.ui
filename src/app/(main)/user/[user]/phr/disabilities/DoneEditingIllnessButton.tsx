@@ -4,8 +4,8 @@ import { upsertUserIllnessAction } from "@actions/user-illness.action";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import ActionButton from "@components/ActionButton";
 import { toast } from "sonner";
-import { Illness } from "./IllnessItem";
 import { useForm } from "react-hook-form";
+import { Illness } from "./IllnessList";
 
 interface DoneEditingIllnessButtonProps {
     onUpdate: (index: number, illness: Illness) => void;
@@ -19,8 +19,16 @@ export default function DoneEditingIllnessButton({index, form, onUpdate}:DoneEdi
   
   const handleDoneEditing = async () => {
     form.handleSubmit((data) => {
+
       if(!userId) return toast.error("User not found");
-      toast.promise(upsertUserIllnessAction({...data, userId,}), {
+      toast.promise(upsertUserIllnessAction({
+        id: data.id,
+        userId,
+        illness: data.HealthCondition.name.trim(),
+        severity: data.severity,
+        notes: data.notes,
+        ...data.dateDiagnosed && {dateDiagnosed: data.dateDiagnosed}
+      }), {
         loading: "Saving...",
         success: (res) =>{
           onUpdate(index, {...data, id: res.id});
@@ -29,6 +37,7 @@ export default function DoneEditingIllnessButton({index, form, onUpdate}:DoneEdi
         error: "Failed to update illness, Check if duplicate entry"
       })
     })()
+    
   }
   return (
     <form action={handleDoneEditing}>

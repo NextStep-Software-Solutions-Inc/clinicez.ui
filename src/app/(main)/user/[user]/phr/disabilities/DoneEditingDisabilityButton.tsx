@@ -4,8 +4,8 @@ import { upsertUserDisabilityAction } from "@actions/user-disability.action";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import ActionButton from "@components/ActionButton";
 import { toast } from "sonner";
-import { Disability } from "./DisabilityItem";
 import { useForm } from "react-hook-form";
+import { Disability } from "./DisabilityList";
 
 interface DoneEditingDisabilityButtonProps {
     onUpdate: (index: number, disability: Disability) => void;
@@ -19,8 +19,18 @@ export default function DoneEditingDisabilityButton({index, form, onUpdate}:Done
   
   const handleDoneEditing = async () => {
     form.handleSubmit((data) => {
+      console.log({data});
+      
       if(!userId) return toast.error("User not found");
-      toast.promise(upsertUserDisabilityAction({...data, userId,}), {
+      toast.promise(upsertUserDisabilityAction({
+        id: data.id,
+        userId,
+        disability: data.Disability.name.trim(),
+        severity: data.severity,
+        notes: data.notes,
+        ...data.dateDiagnosed ? {dateDiagnosed: data.dateDiagnosed} : {},
+        ...data.isManaged ? {isManaged: data.isManaged} : {},
+      }), {
         loading: "Saving...",
         success: (res) =>{
           onUpdate(index, {...data, id: res.id});
@@ -30,6 +40,7 @@ export default function DoneEditingDisabilityButton({index, form, onUpdate}:Done
       })
     })()
   }
+  
   return (
     <form action={handleDoneEditing}>
       <ActionButton size="sm" variant="ghost">Done Editing</ActionButton>

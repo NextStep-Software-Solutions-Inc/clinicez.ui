@@ -9,14 +9,16 @@ export const addUserDisabilityAction = async (payload: {
     disability: string;
     severity: Severity,
     notes?: string | null,
+    isManaged?: boolean,
     dateDiagnosed: Date
 }) => {
-  const { userId, disability, severity, notes, dateDiagnosed } = payload;
+  const { userId, disability, severity, notes, dateDiagnosed, isManaged } = payload;
   return await prisma.userDisability.create({
     data: {
       severity,
       notes: notes,
       dateDiagnosed,
+      ...isManaged ? { isManage: true } : {},
       User: {
         connect: {
           userId
@@ -47,6 +49,8 @@ export const getUserDisabilitiesAction = cache(async (userId: string) => {
       severity: true,
       notes: true,
       dateDiagnosed: true,
+      
+      isManaged: true,
       Disability: {
         select: {
           name: true
@@ -85,9 +89,10 @@ export const upsertUserDisabilityAction = async (payload: {
     disability: string,
     severity: Severity,
     notes?: string | null,
+    isManaged?: boolean,
     dateDiagnosed?: Date
 }) => {
-  const { id, userId, disability, severity, notes, dateDiagnosed } = payload;
+  const { id, userId, disability, severity, notes, dateDiagnosed, isManaged } = payload;
   
   return await prisma.userDisability.upsert({
     where: { id },
@@ -95,6 +100,7 @@ export const upsertUserDisabilityAction = async (payload: {
       notes,
       severity,
       dateDiagnosed,
+      ...isManaged ? { isManaged: true } : {},
       Disability: {
         connectOrCreate: {
           where: { name: disability },
@@ -111,6 +117,7 @@ export const upsertUserDisabilityAction = async (payload: {
       severity: "MILD",
       notes: "",
       dateDiagnosed,
+      ...isManaged ? { isManaged: true } : {},
       Disability: {
         connectOrCreate: {
           where: { name: disability },
@@ -128,6 +135,15 @@ export const upsertUserDisabilityAction = async (payload: {
           name: true
         }
       }
+    }
+  })
+}
+
+export const setIsManagedAction = async (id: number, isManaged: boolean) => {
+  return await prisma.userDisability.update({
+    where: { id },
+    data: {
+      isManaged
     }
   })
 }

@@ -2,8 +2,6 @@
 
 
 import { useForm } from "react-hook-form";
-import { Disability, disabilitySchema } from "./DisabilityItem";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { Card, CardContent, CardHeader, CardTitle } from "@components/ui/card";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@components/ui/form";
 import DoneEditingDisabilityButton from "./DoneEditingDisabilityButton";
@@ -16,30 +14,29 @@ import { Severity } from "@prisma/client";
 import { Input } from "@components/ui/input";
 import { format } from "date-fns";
 import { useEffect, useState } from "react";
-import { getHealthConditionsAction } from "@actions/health-condition.action";
+import { Disability } from "./DisabilityList";
+import { getDisabilityAction } from "@actions/disability.action";
 
 interface EditDisabilityFormProps {
-    index: number;
-    disability: Disability
-    remove: (index: number) => void;
-    onUpdate: (index: number, value: Disability) => void;
-  }
+  index: number;
+  disability: Disability
+  remove: (index: number) => void;
+  onUpdate: (index: number, value: Disability) => void;
+}
   
 export default function EditDisabilityForm({ disability, index, remove, onUpdate}:EditDisabilityFormProps ) {
-  const [conditions, setConditions] = useState<string[]>([])
+  const [disabilities, setDisabilities] = useState<string[]>([])
 
   const form = useForm<Disability>({
-    resolver: zodResolver(disabilitySchema),
     defaultValues: disability
   });
 
   useEffect(() => {
     (async () => {
-      const conditions = await getHealthConditionsAction()
-      await setConditions(() => conditions.map(({name}) => name))
+      const disabilities = await getDisabilityAction()
+      await setDisabilities(() => disabilities.map(({name}) => name))
     })()
   }, [])
-
   
   return (
     <Form {...form}>
@@ -51,17 +48,20 @@ export default function EditDisabilityForm({ disability, index, remove, onUpdate
           </span>
           <CardTitle className="flex items-center group/actions gap-2">
             <FormField
+              rules={{
+                required: "Disability name is required"
+              }}
               control={form.control}
-              name="disability"
+              name="Disability.name"
               render={({ field }) => (
                 <FormItem className="flex-1">
                   <FormLabel>Disability</FormLabel>
                   <ComboBox 
-                    options={conditions}
+                    options={disabilities}
                     value={field.value} onChange={field.onChange}
                   />
                   <FormDescription>
-                      Enter the name of disability
+                    Enter the name of disability
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -100,7 +100,7 @@ export default function EditDisabilityForm({ disability, index, remove, onUpdate
                     </RadioGroup>
                   </FormControl>
                   <FormDescription>
-                            Severity of the condition.
+                    Severity of the condition.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -122,7 +122,7 @@ export default function EditDisabilityForm({ disability, index, remove, onUpdate
                     />
                   </FormControl>
                   <FormDescription>
-                          Date the patient was diagnosed with the condition
+                    Date the patient was diagnosed with the condition
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -138,7 +138,7 @@ export default function EditDisabilityForm({ disability, index, remove, onUpdate
                     <Input placeholder="Add notes here..." {...field} value={field.value ?? ""}  />
                   </FormControl>
                   <FormDescription>
-                      Additional notes about the condition.
+                    Additional notes about the condition.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

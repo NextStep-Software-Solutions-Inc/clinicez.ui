@@ -5,35 +5,23 @@ import { Button } from "@components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@components/ui/card";
 import { Separator } from "@components/ui/separator";
 import Each from "@components/utils/Each";
-import { zodResolver } from "@hookform/resolvers/zod";
 import React from "react";
 import { useFieldArray, useForm } from "react-hook-form";
-import { z } from "zod";
-import IllnessItem, { illnessSchema } from "./IllnessItem";
+
+import IllnessItem from "./IllnessItem";
 import { Badge } from "@components/ui/badge";
 import { Plus } from "lucide-react";
 import { Severity } from "@prisma/client";
 import ConditionalRender from "@components/utils/ConditionalRender";
+import { Illness } from "./IllnessList";
 
-const illnessesSchema = z.object({
-  illnesses: z.array(illnessSchema)
-})
-
-type Illnesses = z.infer<typeof illnessesSchema>;
 export interface IllnessesFormProps {
   readOnly?: boolean
-  illnesses: {
-    id: number,
-    illness: string,
-    notes?: string,
-    severity: Severity
-    dateDiagnosed?: Date,
-  }[]
+  illnesses: Illness[]
 }
 
 export default function IllnessesForm({illnesses, readOnly = true}:IllnessesFormProps) {
-  const form = useForm<Illnesses>({
-    resolver: zodResolver(illnessesSchema),
+  const form = useForm<{illnesses: Illness[]}>({
     defaultValues: {
       illnesses: illnesses
     }
@@ -45,17 +33,26 @@ export default function IllnessesForm({illnesses, readOnly = true}:IllnessesForm
     keyName: "fieldId"
   })
 
-  const illnessInitialValues = {
+  const illnessInitialValues: Illness = {
     id: 0,
-    illness: "",
+    HealthCondition: {
+      name: ""
+    },
     severity: Severity.MILD,
+    status: null,
+    notes: null,
+    dateDiagnosed: null,
+    dateResolved: null,
+    DiagnosedBy: null,
+    ResolvedBy: null,
   }
+  
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center">
-            Illnesses <Badge className="ml-2">{fields.length}</Badge>
+            Illnesses <Badge variant="destructive" className="ml-2">{fields.length}</Badge>
           <ConditionalRender condition={!readOnly}>
             <Button className="ml-auto" onClick={() => append(illnessInitialValues)}>Add Illness</Button>
           </ConditionalRender>

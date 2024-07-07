@@ -1,7 +1,7 @@
 "use server";
 
 import prisma from "@lib/prisma";
-import { Severity } from "@prisma/client";
+import { HealthConditionStatus, Severity, User } from "@prisma/client";
 import { cache } from "react";
 
 export const addUserIllnessAction = async (payload: {
@@ -9,9 +9,9 @@ export const addUserIllnessAction = async (payload: {
     illness: string;
     severity: Severity,
     notes?: string,
-    dateDiagnosed?: Date
+    dateDiagnosed?: Date,
 }) => {
-  const { userId, illness, severity, notes, dateDiagnosed } = payload;
+  const { userId, illness, severity, notes, dateDiagnosed} = payload;
   return await prisma.userHealthCondition.create({
     data: {
       severity,
@@ -32,14 +32,16 @@ export const addUserIllnessAction = async (payload: {
   })
 };
 
-export const getUserIllnessesAction = cache(async (userId: string) => {
+export const getUserIllnessesAction = cache(async (userId?: string) => {
   return await prisma.userHealthCondition.findMany({
     orderBy: {
       dateDiagnosed: "desc"
     },
-    where:{
-      User: {
-        userId
+    ...userId && {
+      where:{
+        User: {
+          userId
+        }
       }
     },
     select: {
@@ -47,6 +49,26 @@ export const getUserIllnessesAction = cache(async (userId: string) => {
       severity: true,
       notes: true,
       dateDiagnosed: true,
+      dateResolved: true,
+      status: true,
+      ResolvedBy: {
+        select: {
+          id: true,
+          userId: true,
+          picture: true,
+          firstName: true,
+          lastName: true
+        }
+      },
+      DiagnosedBy: {
+        select: {
+          id: true,
+          userId: true,
+          picture: true,
+          firstName: true,
+          lastName: true
+        },
+      },
       HealthCondition: {
         select: {
           name: true
@@ -60,7 +82,7 @@ export const updateUserIllnessAction = async (payload: {
     id: number
     severity: Severity,
     notes?: string,
-    dateDiagnosed: Date
+    dateDiagnosed: Date,
 }) => {
   const { id, severity, notes, dateDiagnosed } = payload;
   return await prisma.userHealthCondition.update({
@@ -85,7 +107,7 @@ export const upsertUserIllnessAction = async (payload: {
     illness: string,
     severity: Severity,
     notes?: string | null,
-    dateDiagnosed?: Date
+    dateDiagnosed?: Date,
 }) => {
   const { id, userId, illness, severity, notes, dateDiagnosed } = payload;
   return await prisma.userHealthCondition.upsert({
@@ -94,7 +116,7 @@ export const upsertUserIllnessAction = async (payload: {
       notes,
       severity,
       dateDiagnosed,
-      HealthCondition: {
+      HealthCondition: { 
         connectOrCreate: {
           where: { name: illness },
           create: { name: illness }
@@ -107,7 +129,7 @@ export const upsertUserIllnessAction = async (payload: {
       }
     },
     update: {
-      severity: "MILD",
+      severity,
       notes: "",
       dateDiagnosed,
       HealthCondition: {
@@ -122,6 +144,8 @@ export const upsertUserIllnessAction = async (payload: {
       severity: true,
       notes: true,
       dateDiagnosed: true,
+      dateResolved: true,
+      status: true,
       HealthCondition: {
         select: {
           name: true
@@ -129,4 +153,27 @@ export const upsertUserIllnessAction = async (payload: {
       }
     }
   })
+}
+
+
+type RESOLVED = typeof HealthConditionStatus.RESOLVED
+export function setUserIllnessStatusAction(id: number, status: RESOLVED, userId: string): Promise<boolean>;
+export function setUserIllnessStatusAction(id: number, status: Exclude<HealthConditionStatus, RESOLVED>): Promise<boolean>;
+
+export async function setUserIllnessStatusAction(id: number, status: HealthConditionStatus, userId?: string): Promise<boolean> {
+  await prisma.userHealthCondition.update({
+    where: { id },
+    data: { 
+      status,
+      ...status === "RESOLVED" && userId ? {
+        dateResolved: new Date(),
+        ResolvedBy: {
+          connect: {
+            userId
+          }
+        }
+      } : {}
+    }
+  })
+  return true
 }

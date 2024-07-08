@@ -34,7 +34,9 @@ export default function IllnessItem({illness, index, remove, update, readOnly = 
             <CardTitle className="flex items-center">
               <span>{illness.HealthCondition.name}</span>
               <Badge variant="destructive" className="ml-2">{illness.severity}</Badge>
-              <Badge variant="secondary" className="ml-2">{illness.status}</Badge>
+              <ConditionalRender condition={!!illness.status}>
+                <Badge variant="secondary" className="ml-2">{illness.status}</Badge>
+              </ConditionalRender>
               <ConditionalRender condition={!readOnly}>
                 <span className="ml-auto flex space-x-2 invisible group-hover/actions:visible transition-all">
                   <Button size="sm" variant="ghost" onClick={() => setIsEditing(true)}>Edit</Button>

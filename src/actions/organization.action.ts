@@ -1,6 +1,6 @@
-import { User } from 'lucide-react';
-import { Users } from 'lucide-react';
 "use server";
+
+import { isOrgAdmin } from '@lib/protect-org';
 
 import prisma from "@lib/prisma";
 import { Prisma, UserOrganizationStatus } from "@prisma/client";
@@ -244,7 +244,7 @@ export const joinOrganizationAction = async ({ orgId, userId, roleId}:{
       notifyAdmins([...adminEmails], request.Organization.name)
     ])
   } catch (error) {
-    console.error(error);
+    console.error(JSON.stringify(error, null, 2));
   }
   return request;
 }
@@ -276,7 +276,13 @@ export const getOrganizationRolesAction = cache(async (filter?: Pick<FilterType,
 })
 
 export const setMembershipRequestStatusAction = async (id: number, status: UserOrganizationStatus) => {
-  const session = await getCachedSession();
+  const [session, orgAdmin] = await Promise.all([
+    getCachedSession(),
+    isOrgAdmin()
+  ]);
+  const userId = session?.user.sub;
+  if(!userId) throw new Error("No session found");
+  if(!orgAdmin) throw new Error("Unauthorized");
 
   const request = await prisma.userOrganization.update({
     where: { id },
@@ -285,7 +291,7 @@ export const setMembershipRequestStatusAction = async (id: number, status: UserO
       ...status === "ACTIVE" && {
         AcceptedBy: {
           connect: {
-            userId: session?.user.sub
+            userId
           }
         }
       }

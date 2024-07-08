@@ -56,7 +56,11 @@ export default function DisabilitiesForm({disabilities, readOnly = true}:Disabil
       <CardContent className="space-y-2">
         <Accordion type="multiple" className="w-full space-y-5">
           <AccordionItem value="disabilities">
-            <AccordionTrigger>List of disabilities</AccordionTrigger>
+            <AccordionTrigger>
+              <div>
+                List of disabilities <span className="italic font-light">(click to expand)</span>
+              </div>
+            </AccordionTrigger>
             <AccordionContent className="p-5 space-y-2">
               <Each
                 of={fields}

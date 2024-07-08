@@ -62,7 +62,11 @@ export default function IllnessesForm({illnesses, readOnly = true}:IllnessesForm
       <CardContent className="space-y-2">
         <Accordion type="multiple" className="w-full space-y-5">
           <AccordionItem value="illnesses">
-            <AccordionTrigger>List of illnesses</AccordionTrigger>
+            <AccordionTrigger>
+              <div>
+                List of illnesses <span className="italic font-light">(click to expand)</span>
+              </div>
+            </AccordionTrigger>
             <AccordionContent className="p-5 space-y-2">
               <Each
                 of={fields}

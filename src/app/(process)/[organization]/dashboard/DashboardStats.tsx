@@ -24,7 +24,7 @@ type Stats = {
 }
 export const DashboardStats = async ({ userId, orgId }: DashboardStatsProps) => {
   const [stats, member, hp, orgAdmin] = await Promise.all([
-    await getDashboardData(userId) as Stats,
+    await getDashboardData(orgId) as Stats,
     isMember(),
     isHP(),
     isOrgAdmin()

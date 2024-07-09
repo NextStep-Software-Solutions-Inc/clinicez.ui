@@ -1,4 +1,3 @@
-import { mails } from './../../app/(process)/[organization]/appointments/mail/data';
 "use server";
 
 import prisma from "@lib/prisma";
@@ -7,11 +6,16 @@ import prisma from "@lib/prisma";
 export const getAnalyticsData = async (orgUid: string) => {
   const [userHealthCondition, userDisability] = await Promise.all([
     prisma.healthCondition.findMany({
-      distinct: ['name'],
       take: 10,
+      distinct: "name",
+      orderBy: {
+        UserHealthConditions: {
+          _count: "desc"
+        }
+      }, 
       where: {
         isActive: true,
-        UserHealthConditions:{
+        UserHealthConditions: {
           some: {
             User: {
               Organizations: {
@@ -27,7 +31,7 @@ export const getAnalyticsData = async (orgUid: string) => {
       },
       select: {
         name: true,
-        UserHealthConditions: { 
+        UserHealthConditions: {
           where: {
             User: {
               Organizations: {
@@ -36,13 +40,13 @@ export const getAnalyticsData = async (orgUid: string) => {
                     orgId: orgUid
                   }
                 }
-              } 
+              }
             }
           },
           select: {
-            User: {
+            User:{
               select: {
-                gender: true,
+                gender: true
               }
             }
           }
@@ -64,11 +68,16 @@ export const getAnalyticsData = async (orgUid: string) => {
             }
           }
         }
-      },
+      }
     }),
     prisma.disability.findMany({
-      distinct: ['name'],
       take: 10,
+      distinct: ["name"],
+      orderBy: {
+        UserDisabilities: {
+          _count: 'desc'
+        }
+      },
       where: {
         isActive: true,
         UserDisabilities:{

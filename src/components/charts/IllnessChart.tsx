@@ -23,7 +23,7 @@ import {
 
 const chartConfig = {
   count: {
-    label: "Male",
+    label: "Count",
     color: "hsl(var(--chart-2))",
   },
   
@@ -43,7 +43,7 @@ export default function IllnessChart({ chartData }: IllnessChartProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Top {chartData.length} Illness</CardTitle>
+        <CardTitle>Top {chartData.length} Patient Illness</CardTitle>
         {/* <CardDescription>January - June 2024</CardDescription> */}
       </CardHeader>
       <CardContent>

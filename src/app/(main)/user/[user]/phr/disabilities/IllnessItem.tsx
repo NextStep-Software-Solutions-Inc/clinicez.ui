@@ -1,3 +1,5 @@
+"use client";
+
 import { Button } from "@components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@components/ui/card";
 import { Separator } from "@components/ui/separator";
@@ -8,6 +10,10 @@ import DeleteIllnessButton from "./DeleteIllnessButton";
 import EditIllnessForm from "./EditIllnessForm";
 import { Illness } from "./IllnessList";
 import { Badge } from "@components/ui/badge";
+import { toast } from "sonner";
+import { setUserIllnessStatusAction } from "@actions/user-illness.action";
+import { useUser } from "@auth0/nextjs-auth0/client";
+import { Check } from "lucide-react";
 
 
 interface IllnessItemProps {
@@ -20,10 +26,28 @@ interface IllnessItemProps {
   
 export default function IllnessItem({illness, index, remove, update, readOnly = true}: IllnessItemProps){
   
+  const user = useUser()
+  const userId = user.user?.sub
   const [isEditing, setIsEditing] = React.useState(false);
   const handleOnUpdate = (index: number, value: Illness) => {
     update(index, value);
     setIsEditing(false);
+  }
+
+  const handleSetAsResolved = () => {
+    if(!userId) {
+      toast.error("You are not authorized to perform this action")
+      return
+    }
+    const status = "RESOLVED"
+    toast.promise(setUserIllnessStatusAction(illness.id, status, userId), {
+      loading: "Setting as resolved...",
+      success: () => {
+        update(index, {...illness, status });
+        return "Illness is now set as resolved";
+      },
+      error: (error) => `Failed to set as resolved Error: ${error.message}`
+    })
   }
   
   return (
@@ -37,12 +61,13 @@ export default function IllnessItem({illness, index, remove, update, readOnly = 
               <ConditionalRender condition={!!illness.status}>
                 <Badge variant="secondary" className="ml-2">{illness.status}</Badge>
               </ConditionalRender>
-              <ConditionalRender condition={!readOnly}>
-                <span className="ml-auto flex space-x-2 invisible group-hover/actions:visible transition-all">
+              <span className="ml-auto flex space-x-2 invisible group-hover/actions:visible transition-all">
+                <ConditionalRender condition={!readOnly}>
                   <Button size="sm" variant="ghost" onClick={() => setIsEditing(true)}>Edit</Button>
                   <DeleteIllnessButton illnessId={illness.id} remove={remove} index={index}/>
-                </span>
-              </ConditionalRender>
+                </ConditionalRender>
+                <Button size="sm" onClick={() => handleSetAsResolved()}><Check className="mr-1 w-4 h-4"/> Set as Resolved</Button>
+              </span>
             </CardTitle>
             <Separator/>
           </CardHeader>

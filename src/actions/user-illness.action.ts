@@ -1,6 +1,7 @@
 "use server";
 
 import prisma from "@lib/prisma";
+import { isHP } from "@lib/protect-org";
 import { HealthConditionStatus, Severity, User } from "@prisma/client";
 import { cache } from "react";
 
@@ -161,6 +162,8 @@ export function setUserIllnessStatusAction(id: number, status: RESOLVED, userId:
 export function setUserIllnessStatusAction(id: number, status: Exclude<HealthConditionStatus, RESOLVED>): Promise<boolean>;
 
 export async function setUserIllnessStatusAction(id: number, status: HealthConditionStatus, userId?: string): Promise<boolean> {
+  const hp = await isHP()
+  if(!hp) throw new Error("You are not authorized to perform this action, only healthcare providers can resolve illnesses.")
   await prisma.userHealthCondition.update({
     where: { id },
     data: { 

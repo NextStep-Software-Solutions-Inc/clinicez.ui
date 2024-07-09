@@ -3,19 +3,16 @@
 import prisma from "@lib/prisma";
 
 
-export const getDashboardData = async (userId: string) => {
+export const getDashboardData = async (orgUid: string) => {
 
   const files = await prisma.file.aggregate({
     where: {
       isActive: true,
-      Folder: {
-        User: {
-          userId
-        },
-      },
       FileType: {
         FileTypeAttribute: {
-          scopeOrgId: 1
+          Organization: {
+            orgId: orgUid
+          } 
         }
       }
     },
@@ -29,7 +26,7 @@ export const getDashboardData = async (userId: string) => {
     by: ["status"],
     where: {
       Organization: {
-        orgId: "ustp-hims"
+        orgId: orgUid
       },
     },
     _count: true,

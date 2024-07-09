@@ -1,6 +1,7 @@
 "use client";
 
 import { joinOrganizationAction } from "@actions/organization.action";
+import { useUser } from "@auth0/nextjs-auth0/client";
 import ActionButton from "@components/ActionButton";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@components/ui/form";
 import { RadioGroup, RadioGroupItem } from "@components/ui/radio-group";
@@ -24,6 +25,7 @@ interface JoinOrgFormProps {
 }
 
 export const JoinOrgForm = ({existingRoles, orgRoles, userId, orgId}:JoinOrgFormProps) => {
+  const user = useUser();
 
   const joinOrgSchema = z.object({
     roleId: z.coerce.number({
@@ -44,6 +46,7 @@ export const JoinOrgForm = ({existingRoles, orgRoles, userId, orgId}:JoinOrgForm
   const action = async () => {
     
     form.handleSubmit(async (values) => {
+      if(!user.user?.email_verified) return toast.error("Please verify your email before joining an organization.")
       toast.promise(joinOrganizationAction({
         orgId,
         userId,

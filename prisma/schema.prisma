@@ -52,16 +52,21 @@ model User {
   SocialLink                       SocialLink?
   Tenants                          Tenant[]
   UserAddresses                    UserAddress[]
+  UserAllergies                    UserAllergy[]
   UserDefaultOrganization          UserDefaultOrganization?
+  UserDefaultOrganizationRoles     UserDefaultOrganizationRole[]
   UserDefaultTenant                UserDefaultTenant?
+  DiagnosedUserDisabilities        UserDisability[]              @relation("DiagnosedUserDisability")
+  UserDisabilities                 UserDisability[]              @relation("UserDisability")
   UserEmergencyContacts            UserEmergencyContact[]
+  DiagnosedUserHealthConditions    UserHealthCondition[]         @relation("DiagnosedUserHealthCondition")
+  ResolvedUserHealthConditions     UserHealthCondition[]         @relation("ResolvedUserHealthCondition")
+  UserHealthConditions             UserHealthCondition[]         @relation("HealthCondition")
   UserMigration                    UserMigration?
   AcceptedOrganizationApplications UserOrganization[]            @relation("AcceptedBy")
   Organizations                    UserOrganization[]            @relation("User")
   Plans                            UserPlan[]
   UserVaccination                  UserVaccination[]
-  UserDefaultOrganizationRoles     UserDefaultOrganizationRole[]
-  UserAllergies                    UserAllergy[]
 }
 
 model Organization {
@@ -82,10 +87,10 @@ model Organization {
   ScopeFolders                 FolderSetting[]
   Tenant                       Tenant                        @relation(fields: [tenantId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   UserDefaultOrganizations     UserDefaultOrganization[]
+  UserDefaultOrganizationRolea UserDefaultOrganizationRole[]
   UserMigrations               UserMigration[]
   Users                        UserOrganization[]
   Roles                        UserOrganizationRole[]
-  UserDefaultOrganizationRolea UserDefaultOrganizationRole[]
 }
 
 model UserOrganization {
@@ -111,9 +116,9 @@ model UserOrganizationRole {
   name                         String
   description                  String?
   isActive                     Boolean                       @default(true)
+  UserDefaultOrganizationRoles UserDefaultOrganizationRole[]
   UserOrganizations            UserOrganization[]
   Organization                 Organization                  @relation(fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  UserDefaultOrganizationRoles UserDefaultOrganizationRole[]
 
   @@unique([orgId, name], name: "unique_organization_role")
 }
@@ -262,9 +267,9 @@ model UserDefaultOrganizationRole {
   updatedAt      DateTime             @updatedAt
   deletedAt      DateTime?
   isActive       Boolean              @default(true)
+  Organization   Organization         @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  UserRole       UserOrganizationRole @relation(fields: [roleId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   User           User                 @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  Organization   Organization         @relation(fields: [organizationId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-  UserRole       UserOrganizationRole @relation(fields: [roleId], references: [id], onUpdate: NoAction, onDelete: NoAction)
 
   @@unique([userId, organizationId, roleId], name: "unique_user_organization_role")
 }
@@ -458,16 +463,16 @@ model UserAddress {
 model Vaccine {
   id               Int               @id @default(autoincrement())
   name             String
-  type             String
   description      String?
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
   deletedAt        DateTime?
   isActive         Boolean           @default(true)
+  type             String
   UserVaccinations UserVaccination[]
   VaccineAttribute VaccineAttribute?
-  VaccineRoutes    VaccineRoute[]
   VaccineDoses     VaccineDose[]
+  VaccineRoutes    VaccineRoute[]
 }
 
 model VaccineAttribute {
@@ -485,8 +490,8 @@ model Route {
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
   deletedAt        DateTime?
-  VaccineRoutes    VaccineRoute[]
   UserVaccinations UserVaccination[]
+  VaccineRoutes    VaccineRoute[]
 }
 
 model Dose {
@@ -497,8 +502,8 @@ model Dose {
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
   deletedAt        DateTime?
-  VaccineDoses     VaccineDose[]
   UserVaccinations UserVaccination[]
+  VaccineDoses     VaccineDose[]
 }
 
 model VaccineRoute {
@@ -534,10 +539,10 @@ model UserVaccination {
   updatedAt      DateTime  @updatedAt
   deletedAt      DateTime?
   isActive       Boolean   @default(true)
-  User           User      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  Vaccine        Vaccine   @relation(fields: [vaccineId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   Dose           Dose      @relation(fields: [doseId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   Route          Route     @relation(fields: [routeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  User           User      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Vaccine        Vaccine   @relation(fields: [vaccineId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model Allergen {
@@ -553,13 +558,83 @@ model Allergen {
 model UserAllergy {
   id         Int      @id @default(autoincrement())
   userId     Int
-  allergenId Int
   reaction   String
   notes      String?
-  User       User     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  allergenId Int
   Allergen   Allergen @relation(fields: [allergenId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  User       User     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@unique([userId, allergenId], name: "unique_user_allergy")
+}
+
+model HealthCondition {
+  id                   Int                   @id @default(autoincrement())
+  name                 String                @unique
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  deletedAt            DateTime?
+  isActive             Boolean               @default(true)
+  UserHealthConditions UserHealthCondition[] @relation("UserHealthCondition")
+}
+
+model UserHealthCondition {
+  id                Int                    @id @default(autoincrement())
+  userId            Int
+  healthConditionId Int
+  dateDiagnosed     DateTime?
+  severity          Severity
+  notes             String?
+  dateResolved      DateTime?
+  diagnosedBy       Int?
+  resolvedBy        Int?
+  status            HealthConditionStatus? @default(UNRESOLVED)
+  DiagnosedBy       User?                  @relation("DiagnosedUserHealthCondition", fields: [diagnosedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  HealthCondition   HealthCondition        @relation("UserHealthCondition", fields: [healthConditionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  ResolvedBy        User?                  @relation("ResolvedUserHealthCondition", fields: [resolvedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  User              User                   @relation("HealthCondition", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([userId, healthConditionId], name: "unique_user_health_condition")
+}
+
+model Disability {
+  id               Int              @id @default(autoincrement())
+  name             String           @unique
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  deletedAt        DateTime?
+  isActive         Boolean          @default(true)
+  UserDisabilities UserDisability[]
+}
+
+model UserDisability {
+  id            Int        @id @default(autoincrement())
+  userId        Int
+  disabilityId  Int
+  dateDiagnosed DateTime?
+  severity      Severity
+  notes         String?
+  isManaged     Boolean?   @default(false)
+  reason        String?
+  diagnosedBy   Int?
+  Disability    Disability @relation(fields: [disabilityId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  DiagnosedBy   User?      @relation("DiagnosedUserDisability", fields: [diagnosedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  User          User       @relation("UserDisability", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([userId, disabilityId], name: "unique_user_disability")
+}
+
+enum HealthConditionStatus {
+  RESOLVED
+  UNRESOLVED
+}
+
+enum Severity {
+  MILD
+  MODERATE
+  SEVERE
+  CRITICAL
+  PROFOUND
+  UNKNOWN
 }
 
 enum Gender {

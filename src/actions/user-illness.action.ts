@@ -157,13 +157,17 @@ export const upsertUserIllnessAction = async (payload: {
 }
 
 
+type ResponseType = {status: boolean, message: string}
 type RESOLVED = typeof HealthConditionStatus.RESOLVED
-export function setUserIllnessStatusAction(id: number, status: RESOLVED, userId: string): Promise<boolean>;
-export function setUserIllnessStatusAction(id: number, status: Exclude<HealthConditionStatus, RESOLVED>): Promise<boolean>;
+export function setUserIllnessStatusAction(id: number, status: RESOLVED, userId: string): Promise<ResponseType>;
+export function setUserIllnessStatusAction(id: number, status: Exclude<HealthConditionStatus, RESOLVED>): Promise<ResponseType>;
 
-export async function setUserIllnessStatusAction(id: number, status: HealthConditionStatus, userId?: string): Promise<boolean> {
+export async function setUserIllnessStatusAction(id: number, status: HealthConditionStatus, userId?: string): Promise<ResponseType> {
   const hp = await isHP()
-  if(!hp) throw new Error("You are not authorized to perform this action, only healthcare providers can resolve illnesses.")
+  if(!hp) return {
+    status: false,
+    message: "You are not authorized to perform this action. Only Health Professionals can perform this action."
+  }
   await prisma.userHealthCondition.update({
     where: { id },
     data: { 
@@ -178,5 +182,8 @@ export async function setUserIllnessStatusAction(id: number, status: HealthCondi
       } : {}
     }
   })
-  return true
+  return {
+    status: true,
+    message: "Illness is now set as resolved"
+  }
 }

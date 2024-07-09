@@ -68,7 +68,9 @@ export default function IllnessItem({illness, index, remove, update, readOnly = 
                   <Button size="sm" variant="ghost" onClick={() => setIsEditing(true)}>Edit</Button>
                   <DeleteIllnessButton illnessId={illness.id} remove={remove} index={index}/>
                 </ConditionalRender>
-                <Button size="sm" onClick={() => handleSetAsResolved()}><Check className="mr-1 w-4 h-4"/> Set as Resolved</Button>
+                <ConditionalRender condition={illness.status !== "RESOLVED"}>
+                  <Button size="sm" onClick={() => handleSetAsResolved()}><Check className="mr-1 w-4 h-4"/> Set as Resolved</Button>
+                </ConditionalRender>
               </span>
             </CardTitle>
             <Separator/>

@@ -6,7 +6,7 @@ import {
 import { Files, User } from "lucide-react";
 import ConditionalRender from "@components/utils/ConditionalRender";
 import { isHP, isMember, isOrgAdmin } from "@lib/protect-org";
-import { getDashboardData } from "@actions/dashboard.actions";
+import { getDashboardData } from "@actions/dashboard/overview.actions";
 import { UserOrganizationStatus } from "@prisma/client";
 import Link from "next/link";
 

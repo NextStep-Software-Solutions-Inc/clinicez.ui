@@ -27,6 +27,7 @@ import { isHP, isMember } from "@lib/protect-org"
 import { DashboardStats } from "./DashboardStats"
 import { getCachedSession } from "@actions/session.action"
 import Suspend from "@components/Suspend"
+import { PatientHealthAnalytics } from "./PatientHealthAnalytics"
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -103,6 +104,37 @@ async function DashboardPage({params, searchParams}: AppRouterPageRouteOpts) {
                 </div>
               </ConditionalRender> */}
             </TabsContent>
+            <TabsContent value="analytics" className="space-y-4">
+              <Suspend>
+                <PatientHealthAnalytics orgId={orgId}/>
+              </Suspend>
+              {/* <ConditionalRender condition={await isMember() && await isHP()}>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+                  <Card className="col-span-2 lg:col-span-4">
+                    <CardHeader>
+                      <CardTitle>Appointment Overview</CardTitle>
+                      <CardDescription>
+                      Monthly counts of appointments.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="pl-2">
+                      <Overview />
+                    </CardContent>
+                  </Card>
+                  <Card className="col-span-2 lg:col-span-3">
+                    <CardHeader>
+                      <CardTitle>Recent Appointments</CardTitle>
+                      <CardDescription>
+                      You made 12 appointments this month.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <RecentSales />
+                    </CardContent>
+                  </Card>
+                </div>
+              </ConditionalRender> */}
+            </TabsContent>
           </Tabs>
         </div>
       </div>
@@ -112,5 +144,8 @@ async function DashboardPage({params, searchParams}: AppRouterPageRouteOpts) {
 
 
 export default withPageAuthRequired(DashboardPage, {
-  returnTo: ""
+  returnTo: ({params, searchParams}) => {
+    const searchStr = Object.entries(searchParams ?? {}).map(([key, value]) => `${key}=${value}`).join("&");
+    return `/${params?.organization}/dashboard?${searchStr}`;
+  }
 })

@@ -48,7 +48,7 @@ async function AppointmentsPage({ searchParams, params }: AppRouterPageRouteOpts
         <BookAppointmentSheet/>
       </div>
       <Separator />
-      <div className="rounded-[0.5rem] border bg-background shadow]">
+      <div className="rounded-[0.5rem] border bg-background shadow">
         <Suspend>
           <UnderConstruction/>
           {/* <AppointmentPanel

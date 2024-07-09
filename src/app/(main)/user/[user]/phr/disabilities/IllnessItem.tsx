@@ -42,9 +42,11 @@ export default function IllnessItem({illness, index, remove, update, readOnly = 
     const status = "RESOLVED"
     toast.promise(setUserIllnessStatusAction(illness.id, status, userId), {
       loading: "Setting as resolved...",
-      success: () => {
-        update(index, {...illness, status });
-        return "Illness is now set as resolved";
+      success: (res) => {
+        if(res.status) {
+          update(index, {...illness, status})
+        }
+        return res.message;
       },
       error: (error) => `Failed to set as resolved Error: ${error.message}`
     })

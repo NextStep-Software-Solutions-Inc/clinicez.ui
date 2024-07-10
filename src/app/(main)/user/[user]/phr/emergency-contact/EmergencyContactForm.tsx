@@ -27,7 +27,7 @@ export default function EmergencyContactForm({contacts, sessionUserId, readOnly 
     toast.promise(createEmergencyContactAction(sessionUserId, contact), {
       loading: `Adding ${isPrimary ? "Primary": "Secondary"} contact...`,
       success: () => {
-        revalidatePath("/user/[user]/phr/emergency-contact")
+        revalidatePath("/user/[user]/phr/emergency-contact", "page")
         return `${isPrimary ? "Primary": "Secondary"} contact added successfully.`
       },
       error: "An error occurred while adding contact.",

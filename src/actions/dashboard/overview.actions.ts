@@ -27,7 +27,10 @@ export const getDashboardData = async (orgUid: string) => {
           orgId: orgUid
         },
       },
-      _count: true,
+      _count: {
+        status: true,
+        _all: true
+      },
     })
   ])
 

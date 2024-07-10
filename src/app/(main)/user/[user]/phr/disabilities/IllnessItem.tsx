@@ -64,7 +64,7 @@ export default function IllnessItem({illness, index, remove, update, readOnly = 
                 <Badge variant="secondary" className="ml-2">{illness.status}</Badge>
               </ConditionalRender>
               <span className="ml-auto flex space-x-2 invisible group-hover/actions:visible transition-all">
-                <ConditionalRender condition={!readOnly}>
+                <ConditionalRender condition={!readOnly && illness.status !== "RESOLVED"}>
                   <Button size="sm" variant="ghost" onClick={() => setIsEditing(true)}>Edit</Button>
                   <DeleteIllnessButton illnessId={illness.id} remove={remove} index={index}/>
                 </ConditionalRender>

@@ -60,13 +60,32 @@ export function GenderChart({ chartData }: GenderChartProps) {
               cursor={false}
               content={<ChartTooltipContent hideLabel />}
             />
-            <ChartLegend content={<ChartLegendContent />} />
+            <ChartLegend 
+              content={<ChartLegendContent />} 
+              className="-translate-y-2 flex-wrap gap-2 [&>*]:basis-1/4 [&>*]:justify-center"
+            />
             <Pie
               data={chartData}
               dataKey="count"
               nameKey="gender"
               innerRadius={60}
               strokeWidth={5}
+              labelLine={false}
+              label={({ payload, ...props }) => {
+                return (
+                  <text
+                    cx={props.cx}
+                    cy={props.cy}
+                    x={props.x}
+                    y={props.y}
+                    textAnchor={props.textAnchor}
+                    dominantBaseline={props.dominantBaseline}
+                    fill="hsla(var(--foreground))"
+                  >
+                    {payload.count}
+                  </text>
+                )
+              }}
             >
               <Label
                 content={({ viewBox }) => {

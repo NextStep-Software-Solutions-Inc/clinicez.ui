@@ -15,24 +15,17 @@ interface DashboardStatsProps {
   orgId: string;
 }
 
-type Stats = {
-  files: { _count: 0; _sum: { size: 0; }; };
-  memberships: {
-    _count: 0;
-    status: UserOrganizationStatus;
-  }[];
-}
 export const DashboardStats = async ({ userId, orgId }: DashboardStatsProps) => {
   const [stats, member, hp, orgAdmin] = await Promise.all([
-    await getDashboardData(orgId) as Stats,
+    getDashboardData(orgId),
     isMember(),
     isHP(),
     isOrgAdmin()
   ]);
 
   const { files, memberships } = stats;
-  const pendingCount = memberships.find(m => m.status === UserOrganizationStatus.PENDING)?._count || 0;
-  const membershipSum = memberships.reduce((acc, m) => acc + m._count, 0);
+  const pendingCount = memberships.find(m => m.status === UserOrganizationStatus.PENDING)?._count.status || 0;
+  const membershipSum = memberships.reduce((acc, m) => acc + m._count._all, 0);
 
 
   return (
@@ -89,7 +82,7 @@ export const DashboardStats = async ({ userId, orgId }: DashboardStatsProps) => 
           <CardContent>
             <div className="text-2xl font-bold">{files._count}</div>
             <p className="text-xs text-muted-foreground">
-              {(files._sum.size * 0.000001).toFixed(2)} MB total used
+              {((files?._sum?.size ?? 0) * 0.000001).toFixed(2)} MB total used
             </p>
           </CardContent>
         </Card>

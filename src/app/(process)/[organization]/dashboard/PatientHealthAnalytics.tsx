@@ -1,4 +1,4 @@
-import { getAnalyticsData } from "@actions/dashboard/analytics.action";
+import { getHealthAnalyticsData } from "@actions/dashboard/analytics.action";
 import DisabilityChart from "@components/charts/DisabilityChart";
 import IllnessChart from "@components/charts/IllnessChart";
 
@@ -7,7 +7,7 @@ interface PatientHealthAnalyticsProps {
 }
 
 export const PatientHealthAnalytics = async ({ orgId }: PatientHealthAnalyticsProps) => {
-  const data = await getAnalyticsData(orgId);
+  const data = await getHealthAnalyticsData(orgId);
   const illnesses: { illness: string; count: number; }[] = data.illness.map(item => ({
     illness: item.name,
     count: item._count.UserHealthConditions

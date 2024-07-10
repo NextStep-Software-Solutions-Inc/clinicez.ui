@@ -31,6 +31,7 @@ export async function createEmergencyContactAction(userId: string, data: {
     relationship: string;
     phone: string;
     isPrimary: boolean;
+    address: string | null;
 }) {
   return await prisma.userEmergencyContact.create({
     data: {
@@ -50,6 +51,7 @@ export async function updateEmergencyContactAction(emergencyContactId: number, d
     relationship: string;
     phone: string;
     isPrimary: boolean;
+    address: string | null;
 }) {
   return await prisma.userEmergencyContact.update({
     where: {
@@ -77,6 +79,7 @@ export const upsertEmergencyContactAction = async (userId: string, data: {
     relationship: string;
     phone: string;
     isPrimary: boolean;
+    address: string | null;
 }) => {
   
   const res = await prisma.userEmergencyContact.upsert({
@@ -88,6 +91,7 @@ export const upsertEmergencyContactAction = async (userId: string, data: {
       name: data.name,
       isPrimary: data.isPrimary,
       relationship: data.relationship,
+      address: data.address,
       User: {
         connect: {
           userId,

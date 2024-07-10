@@ -23,7 +23,7 @@ export default function EmergencyContactForm({contacts, sessionUserId, readOnly 
 
   const addContactAction = async (formData: FormData) => {
     const isPrimary = formData.get("isPrimary") === "true"
-    const contact = { isPrimary, name: "", relationship: "", phone: ""}
+    const contact = { isPrimary, name: "", relationship: "", phone: "", address: ""}
     toast.promise(createEmergencyContactAction(sessionUserId, contact), {
       loading: `Adding ${isPrimary ? "Primary": "Secondary"} contact...`,
       success: () => {

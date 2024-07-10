@@ -33,18 +33,20 @@ export const emergencyContactFormSchema = z.object({
   }).max(15, {
     message: "Phone number must not be longer than 15 characters.",
   }),
+  address: z.string().nullable()
 });
 
 type EmergencyContactForm = z.infer<typeof emergencyContactFormSchema>;
 
 export const ContactItem = ({ contact, readOnly }: {
-    readOnly?: boolean;
+  readOnly?: boolean;
   contact: {
     id: number;
     name: string;
     relationship: string;
     phone: string;
     isPrimary: boolean;
+    address: string | null;
   };
 }) => {
   
@@ -143,6 +145,22 @@ export const ContactItem = ({ contact, readOnly }: {
               </FormControl>
               <FormDescription>
               The phone number of the person you want to be contacted in case of emergency.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )} />
+        <FormField
+          disabled={readOnly}
+          control={form.control}
+          name={`address`}
+          render={({ field }) => (
+            <FormItem className="w-full">
+              <FormLabel>Address</FormLabel>
+              <FormControl>
+                <Input placeholder="Enter their address" type="text"  {...field} value={field.value ?? ""}/>
+              </FormControl>
+              <FormDescription>
+              The address of the person you want to be contacted in case of emergency.
               </FormDescription>
               <FormMessage />
             </FormItem>

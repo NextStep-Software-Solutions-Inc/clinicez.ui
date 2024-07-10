@@ -65,7 +65,7 @@ export const ContactItem = ({ contact, readOnly }: {
         loading: "Saving changes...",
         success: () => {
           form.reset(data);
-          revalidatePath("/user/[user]/phr/emergency-contact")
+          revalidatePath("/user/[user]/phr/emergency-contact", "page")
           return "Changes saved successfully."
         },
         error: "An error occurred while saving changes.",
@@ -77,7 +77,7 @@ export const ContactItem = ({ contact, readOnly }: {
     toast.promise(deleteEmergencyContactAction(contact.id), {
       loading: "Deleting contact...",
       success: () => {
-        revalidatePath("/user/[user]/phr/emergency-contact")
+        revalidatePath("/user/[user]/phr/emergency-contact", "page")
         return "Contact deleted successfully."
       },
       error: "An error occurred while deleting contact.",

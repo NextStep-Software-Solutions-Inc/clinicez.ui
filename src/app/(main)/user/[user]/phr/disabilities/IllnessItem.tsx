@@ -78,6 +78,8 @@ export default function IllnessItem({illness, index, remove, update, readOnly = 
           <CardContent>
             <div className="space-y-3">
               {illness.dateDiagnosed && <div>Date Diagnosed: {format(illness.dateDiagnosed, "PP")}</div>}
+              {illness.dateResolved && <div>Date Resolved: {format(illness.dateResolved, "PP")}</div>}
+              {illness.dateResolved && <div>Resolved by: {illness.ResolvedBy?.firstName} {illness.ResolvedBy?.lastName}</div>}
               <div>Notes: {illness.notes}</div>
             </div>
           </CardContent>

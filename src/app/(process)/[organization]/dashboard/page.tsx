@@ -28,6 +28,7 @@ import { DashboardStats } from "./DashboardStats"
 import { getCachedSession } from "@actions/session.action"
 import Suspend from "@components/Suspend"
 import { PatientHealthAnalytics } from "./PatientHealthAnalytics"
+import { PatientsAnalytics } from "./PatientsAnalytics"
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -107,6 +108,9 @@ async function DashboardPage({params, searchParams}: AppRouterPageRouteOpts) {
             <TabsContent value="analytics" className="space-y-4">
               <Suspend>
                 <PatientHealthAnalytics orgId={orgId}/>
+              </Suspend>
+              <Suspend>
+                <PatientsAnalytics orgId={orgId}/>
               </Suspend>
               {/* <ConditionalRender condition={await isMember() && await isHP()}>
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">

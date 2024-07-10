@@ -3,7 +3,7 @@
 import prisma from "@lib/prisma";
 
 
-export const getAnalyticsData = async (orgUid: string) => {
+export const getHealthAnalyticsData = async (orgUid: string) => {
   const [userHealthCondition, userDisability] = await Promise.all([
     prisma.healthCondition.findMany({
       take: 10,
@@ -140,5 +140,65 @@ export const getAnalyticsData = async (orgUid: string) => {
   return {
     illness: userHealthCondition,
     disability: userDisability
+  }
+}
+
+
+export const getPatientAnalyticsData = async (orgUid: string) => {
+  const [genderStats, bloodTypeStats, civilStatusStats] = await Promise.all([
+    prisma.user.groupBy({
+      by: "gender",
+      where: {
+        Organizations: {
+          some: {
+            Organization: {
+              orgId: orgUid
+            }
+          }
+        }
+      },
+      _count: {
+        gender: true,
+        _all: true
+      }
+    }),
+    prisma.user.groupBy({
+      by: "bloodType",
+      where: {
+        Organizations: {
+          some: {
+            Organization: {
+              orgId: orgUid
+            }
+          }
+        }
+      },
+      _count: {
+        bloodType: true,
+        _all: true
+      }
+    }),
+    prisma.user.groupBy({
+      by: "civilStatus",
+      where: {
+        Organizations: {
+          some: {
+            Organization: {
+              orgId: orgUid
+            }
+          }
+        }
+      },
+      _count: {
+        civilStatus: true,
+        _all: true
+      }
+    })
+  ])
+  
+  return {
+    genderStats,
+    bloodTypeStats,
+    civilStatusStats
   }
 }

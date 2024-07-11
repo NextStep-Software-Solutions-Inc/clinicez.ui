@@ -21,7 +21,7 @@ async function DisabilitiesPage({params}: AppRouterPageRouteOpts) {
       <div>
         <h3 className="text-lg font-medium">Disabilities and Illnesses</h3>
         <p className="text-sm text-muted-foreground">
-          Update your disabilities and illnesses information to help your organization track your health history.
+          Enter your current or former disabilities and illnesses information to help your organization track your health history.
         </p>
       </div>
       <Separator />

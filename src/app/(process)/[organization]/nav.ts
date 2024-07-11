@@ -11,6 +11,11 @@ export const navList: {
     icon: "home",
   },
   {
+    name: "Patient List",
+    href: `/patients`,
+    icon: "users",
+  },
+  {
     name: "Appointments",
     href: `/appointments`,
     icon: "calendar",
@@ -18,7 +23,7 @@ export const navList: {
   {
     name: "Consultations",
     href: `/consultations`,
-    icon: "calendar",
+    icon: "stethoscope",
   },
   {
     name: "Files",

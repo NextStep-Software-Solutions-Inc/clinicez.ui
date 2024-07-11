@@ -19,7 +19,6 @@ interface JoinOrgFormProps {
     orgId: number;
     name: string;
     description: string | null;
-    isActive: boolean;
   }[]
   existingRoles: number[]
 }

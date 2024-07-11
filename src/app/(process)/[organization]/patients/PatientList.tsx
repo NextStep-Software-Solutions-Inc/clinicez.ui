@@ -12,7 +12,7 @@ interface PatientListProps {
 }
 
 export const PatientList = async ({orgId, search, page = 1}:PatientListProps) => {
-  const pageSize = 5;
+  const pageSize = 100;
   const [patients, total] = await getUsersAction({orgId, search, page, pageSize})
   return (
     <>

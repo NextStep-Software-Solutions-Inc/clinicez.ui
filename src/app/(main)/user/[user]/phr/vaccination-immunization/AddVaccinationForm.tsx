@@ -39,7 +39,7 @@ export const AddUserVaccinationForm = ({ vaccines }: AddUserVaccinationFormProps
         loading: "Saving...",
         success: () => {
           closeBtnRef.current?.click();
-          revalidatePath(`/user/[user]/phr/vaccination-immunization`, "page");
+          revalidatePath(`/user/[user]/phr/vaccination-immunization`);
           return "Vaccination Added";
         },
         error: "Failed to add vaccination"

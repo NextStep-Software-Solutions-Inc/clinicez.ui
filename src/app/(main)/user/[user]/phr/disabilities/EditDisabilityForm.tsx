@@ -40,7 +40,7 @@ export default function EditDisabilityForm({ disability, index, remove, onUpdate
   
   return (
     <Form {...form}>
-      <Card className="ring-2 basis-full">
+      <Card className="ring-2">
         <CardHeader>
           <span className="ml-auto flex space-x-2 group-hover/actions:visible transition-all">
             <DoneEditingDisabilityButton form={form} index={index} onUpdate={onUpdate}/>

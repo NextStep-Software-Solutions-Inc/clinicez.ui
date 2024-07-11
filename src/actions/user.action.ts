@@ -6,51 +6,13 @@ import { managementClient } from "@services/auth0/management-client";
 import { cache } from 'react';
 
 
-type FiltersType = {
-  orgId?: string;
-  search?: string;
-  page?: number
-  pageSize?: number
-}
-
-export const getUsersAction = async (filter?:FiltersType) => {
-  const { orgId, search, page = 1, pageSize = 100 } = filter || {};
-  const query: Prisma.UserFindManyArgs = {
-    orderBy: {
-      lastName: 'asc'
-    },
-    take: pageSize,
-    skip: (page - 1) * pageSize,
+export const getUsersAction = async () => {
+  const users = await prisma.user.findMany({
     where: {
-      ...orgId ? { 
-        Organizations: { 
-          some: { 
-            Organization: {
-              orgId
-            } 
-          }
-        } 
-      } : {},
-      ...search ? {
-        OR: [
-          { firstName: { mode: "insensitive", contains: search } },
-          { lastName: { mode: "insensitive", contains: search } },
-          { middleName: { mode: "insensitive", contains: search } },
-          { email: { mode: "insensitive", contains: search } }
-        ]
-      }: {},
       isActive: true
     }
-  }
-  return await prisma.$transaction(async (prisma) => {
-    const users = await prisma.user.findMany(query)
-    const total = await prisma.user.count({ where: query.where })
-    return [ users, total ] as const;
-  }, {
-    timeout: 10000,
-    maxWait: 5000,
-    isolationLevel: Prisma.TransactionIsolationLevel.Serializable, // optional, default defined by database configuration
   });
+  return users;
 }
 
 export const getUserAction = cache(async (userId: string) => {

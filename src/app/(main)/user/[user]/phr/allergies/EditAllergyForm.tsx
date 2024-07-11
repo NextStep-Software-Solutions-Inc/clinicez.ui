@@ -56,7 +56,7 @@ export const EditAllergyForm = ({allergy, index, onUpdate, remove}: AllergyFormP
 
   return (
     <Form {...form}>
-      <Card className="ring-2 m-1 basis-full">
+      <Card className="ring-2 m-1">
         <CardHeader>
           <CardTitle className="flex flex-col group/actions gap-2">
             <div className="ml-auto flex space-x-2 group-hover/actions:visible transition-all">

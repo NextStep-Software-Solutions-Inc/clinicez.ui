@@ -67,7 +67,7 @@ export default function IllnessesForm({illnesses, readOnly = true}:IllnessesForm
                 List of illnesses <span className="italic font-light">(click to expand)</span>
               </div>
             </AccordionTrigger>
-            <AccordionContent className="p-5 flex flex-wrap gap-2">
+            <AccordionContent className="p-5 space-y-2">
               <Each
                 of={fields}
                 render={(illness, index) => <IllnessItem readOnly={readOnly} illness={illness} index={index} remove={remove} update={update}/>}

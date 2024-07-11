@@ -16,7 +16,7 @@ interface PictureProps {
   readOnly?: boolean;
 }
 
-export const Picture = ({ user, readOnly = true }: PictureProps) => {
+export const Picture = async ({ user, readOnly = true }: PictureProps) => {
   
   const action = async (formData: FormData) => {
     toast.promise(uploadMediaAction(formData), {

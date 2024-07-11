@@ -14,7 +14,7 @@ export default function MedicationsPage() {
       <div>
         <h3 className="text-lg font-medium">Medications</h3>
         <p className="text-sm text-muted-foreground">
-          Enter your medication record for your healthcare providers to better understand your health history.
+          Update your medication information for your healthcare providers to better understand your health.
         </p>
       </div>
       <Separator />

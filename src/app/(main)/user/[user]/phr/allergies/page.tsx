@@ -19,7 +19,7 @@ async function AllergiesPage({ params }: AppRouterPageRouteOpts) {
       <div>
         <h3 className="text-lg font-medium">Allergies</h3>
         <p className="text-sm text-muted-foreground">
-          Enter your allergy record for your healthcare providers to better understand your health history.
+          Update your allergy information for your healthcare providers to better understand your health.
         </p>
       </div>
       <Separator />

@@ -47,30 +47,25 @@ export default function AllergiesForm({allergies, readOnly}:AllergiesFormProps) 
 
   return (
     <>
-      <div className="flex gap-2 flex-wrap">
-        <Each
-          of={fields}
-          render={(allergy, index) => (
-            <AllergyItem 
-              readOnly={readOnly}
-              key={allergy.id} 
-              index={index} 
-              allergy={allergy} 
-              remove={remove}
-              update={update}
-            />)
-          }
-        />
-     
-      </div>
+      <Each
+        of={fields}
+        render={(allergy, index) => (
+          <AllergyItem 
+            readOnly={readOnly}
+            key={allergy.id} 
+            index={index} 
+            allergy={allergy} 
+            remove={remove}
+            update={update}
+          />)
+        }
+      />
       <ConditionalRender  condition={!readOnly}>
         <ActionButton 
           onClick={() => append(initialAllergy)}
           variant="ghost" 
           className="w-full"
-        >
-          <Plus className="mr-2 h-4 w-4"/>Add Known Allergy
-        </ActionButton>
+        ><Plus className="mr-2 h-4 w-4"/>Add Known Allergy</ActionButton>
       </ConditionalRender>
     </>
   );

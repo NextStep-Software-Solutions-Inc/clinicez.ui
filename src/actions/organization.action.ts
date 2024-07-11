@@ -270,12 +270,6 @@ export const getOrganizationRolesAction = cache(async (filter?: Pick<FilterType,
         
         }
       }
-    },
-    select: {
-      id: true,
-      orgId: true,
-      name: true,
-      description: true,
     }
   })
   return roles;

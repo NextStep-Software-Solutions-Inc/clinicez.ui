@@ -61,7 +61,7 @@ export default function DisabilitiesForm({disabilities, readOnly = true}:Disabil
                 List of disabilities <span className="italic font-light">(click to expand)</span>
               </div>
             </AccordionTrigger>
-            <AccordionContent className="p-5 flex flex-wrap gap-2">
+            <AccordionContent className="p-5 space-y-2">
               <Each
                 of={fields}
                 render={(disability, index) => <DisabilityItem readOnly={readOnly} disability={disability} index={index} remove={remove} update={update}/>}

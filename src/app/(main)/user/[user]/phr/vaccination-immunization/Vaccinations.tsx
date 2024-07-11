@@ -2,12 +2,13 @@
 
 import { getUserVaccinationsAction } from "@actions/user-vaccination.action";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@components/ui/card";
+import Each from "@components/utils/Each";
+import VaxItem from "./VaxItem";
 import AddUserVaccination from "./modal/AddUserVaccinationModal";
 import { Badge } from "@components/ui/badge";
 import { Separator } from "@components/ui/separator";
 import { isUserOwner } from "@lib/protect-org";
 import ConditionalRender from "@components/utils/ConditionalRender";
-import { VaccinationForm } from "./VaccinationForm";
 interface VaccinationProps {
   userId: string;
 }
@@ -33,10 +34,14 @@ export default async function Vaccinations({userId}: VaccinationProps) {
         <Separator/>
       </CardHeader>
       <CardContent className="space-y-2">
-        <VaccinationForm vaccinations={userVax} readOnly={!ownerUser}/>
+        <Each
+          of={userVax}
+          render={(vaccination) => <VaxItem key={vaccination.id} readOnly={!ownerUser} vaccination={vaccination}/>}
+        />
       </CardContent>
       <CardFooter>
       </CardFooter>
     </Card>
   );
 };
+

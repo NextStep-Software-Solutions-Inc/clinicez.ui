@@ -55,7 +55,7 @@ export default function IllnessItem({illness, index, remove, update, readOnly = 
   return (
     <>
       <ConditionalRender condition={!isEditing && !!illness.HealthCondition.name}>
-        <Card className="group/actions basis-64 flex-grow">
+        <Card className="group/actions">
           <CardHeader>
             <CardTitle className="flex items-center">
               <span>{illness.HealthCondition.name}</span>

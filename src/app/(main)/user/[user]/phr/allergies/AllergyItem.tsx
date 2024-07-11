@@ -28,7 +28,7 @@ export default function AllergyItem({allergy, remove, update, index, readOnly}: 
   return (
     <>
       <ConditionalRender condition={!isEditing}>
-        <Card className="group/actions">
+        <Card className="group/actions flex-grow basis-52">
           <CardHeader>
             <CardTitle className="flex items-center">
               <span>{allergy.allergen}</span>

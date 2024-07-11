@@ -28,7 +28,7 @@ export default function DisabilityItem({disability, index, remove, update, readO
   return (
     <>
       <ConditionalRender condition={!isEditing && !!disability.Disability.name}>
-        <Card className="group/actions">
+        <Card className="group/actions basis-64 flex-grow">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <span>{disability.Disability.name}</span>

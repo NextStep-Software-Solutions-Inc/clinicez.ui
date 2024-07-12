@@ -30,11 +30,11 @@ export default function AllergyItem({allergy, remove, update, index, readOnly}: 
       <ConditionalRender condition={!isEditing}>
         <Card className="group/actions flex-grow basis-52">
           <CardHeader>
-            <CardTitle className="flex items-center">
+            <CardTitle className="flex  gap-2 items-center">
               <span>{allergy.allergen}</span>
               <ConditionalRender condition={!readOnly}>
                 <span className="ml-auto flex space-x-2 invisible group-hover/actions:visible transition-all">
-                  <Button size="sm" variant="ghost" onClick={() => setIsEditing(true)}>Edit</Button>
+                  <Button className="w-full" size="sm" variant="ghost" onClick={() => setIsEditing(true)}>Edit</Button>
                   <DeleteAllergyButton id={allergy.id} index={index} remove={remove}/>
                 </span>
               </ConditionalRender>

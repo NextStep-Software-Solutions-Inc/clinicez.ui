@@ -11,6 +11,7 @@ interface PatientListProps {
   page?: number
 }
 
+export type PatientsType = Awaited<ReturnType<typeof getUsersAction>>[0] 
 export const PatientList = async ({orgId, search, page = 1}:PatientListProps) => {
   const pageSize = 100;
   const [patients, total] = await getUsersAction({orgId, search, page, pageSize})

@@ -15,9 +15,9 @@ type FiltersType = {
 
 export const getUsersAction = async (filter?:FiltersType) => {
   const { orgId, search, page = 1, pageSize = 100 } = filter || {};
-  const query: Prisma.UserFindManyArgs = {
+  const query = {
     orderBy: {
-      lastName: 'asc'
+      updatedAt: 'desc'
     },
     take: pageSize,
     skip: (page - 1) * pageSize,
@@ -40,11 +40,82 @@ export const getUsersAction = async (filter?:FiltersType) => {
         ]
       }: {},
       isActive: true
+    },
+    include: {
+      Organizations: {
+        distinct: "organizationId",
+        where: {
+          Organization: {
+            orgId
+          }
+        },
+        select: {
+          status: true,
+        }
+      }
     }
   }
   return await prisma.$transaction(async (prisma) => {
-    const users = await prisma.user.findMany(query)
-    const total = await prisma.user.count({ where: query.where })
+    const users = await prisma.user.findMany({
+      orderBy: {
+        updatedAt: 'desc'
+      },
+      take: pageSize,
+      skip: (page - 1) * pageSize,
+      where: {
+        ...orgId ? { 
+          Organizations: { 
+            some: { 
+              Organization: {
+                orgId
+              } 
+            }
+          } 
+        } : {},
+        ...search ? {
+          OR: [
+            { firstName: { mode: "insensitive", contains: search } },
+            { lastName: { mode: "insensitive", contains: search } },
+            { middleName: { mode: "insensitive", contains: search } },
+            { email: { mode: "insensitive", contains: search } }
+          ]
+        }: {},
+        isActive: true
+      },
+      include: {
+        Organizations: {
+          distinct: "organizationId",
+          where: {
+            Organization: {
+              orgId
+            }
+          },
+          select: {
+            status: true,
+          }
+        }
+      }
+    })
+    const total = await prisma.user.count({ where: {
+      ...orgId ? { 
+        Organizations: { 
+          some: { 
+            Organization: {
+              orgId
+            } 
+          }
+        } 
+      } : {},
+      ...search ? {
+        OR: [
+          { firstName: { mode: "insensitive", contains: search } },
+          { lastName: { mode: "insensitive", contains: search } },
+          { middleName: { mode: "insensitive", contains: search } },
+          { email: { mode: "insensitive", contains: search } }
+        ]
+      }: {},
+      isActive: true
+    } })
     return [ users, total ] as const;
   }, {
     timeout: 10000,

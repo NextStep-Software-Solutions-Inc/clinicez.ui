@@ -28,34 +28,33 @@ export default async function Folder({folder, readOnly}: FolderProps) {
   
   return (
     <Card>
-      <CardHeader className="group/upload">
-        <div className="flex flex-row">
+      <CardHeader className="">
+        <div className="flex flex-wrap gap-2 items-center">
           <div>
-            <CardTitle className="flex items-center gap-3 text-lg "><FolderIcon className="text-primary"/>{folder.name} 
+            <CardTitle className="flex items-center gap-3 text-lg ">
+              <FolderIcon className="text-primary"/>{folder.name} 
               <ConditionalRender condition={!readOnly}>
                 <UpdateFolderModal folderId={folder.id} folderName={folder.name}/>
               </ConditionalRender>
             </CardTitle>
             <CardDescription>{folder?.description}</CardDescription>
           </div>
-          <div className="ml-auto group-hover/upload:visible transition-all">
-            <Suspend>
-              <ConditionalRender condition={!readOnly}>
-                <div className="flex items-center gap-2">
-                  <UploadFileModal folder={folder}/>
-                  <FolderSettingSheet record={{
-                    id: folder.id,
-                    subject: folder.name,
-                    settings: {
-                      isPublic: folder.isPublic ?? false
-                    }
-                  }} >
-                    <Button size="icon" variant="ghost"><MoreVertical/></Button>
-                  </FolderSettingSheet>
-                </div>
-              </ConditionalRender>
-            </Suspend>
-          </div>
+          <ConditionalRender condition={!readOnly}>
+            <div className="ml-auto flex flex-grow sm:flex-grow-0 items-center gap-2">
+              <Suspend>
+                <UploadFileModal folder={folder}/>
+                <FolderSettingSheet record={{
+                  id: folder.id,
+                  subject: folder.name,
+                  settings: {
+                    isPublic: folder.isPublic ?? false
+                  }
+                }} >
+                  <Button size="icon" variant="ghost"><MoreVertical/></Button>
+                </FolderSettingSheet>
+              </Suspend>
+            </div>
+          </ConditionalRender>
         </div>
       </CardHeader>
       <CardContent className="grid gap-1">

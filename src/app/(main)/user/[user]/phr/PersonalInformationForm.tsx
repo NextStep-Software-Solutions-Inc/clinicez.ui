@@ -70,7 +70,7 @@ export function PersonalInformationForm({readOnly, ...props}: PersonalInformatio
 
   return (
     <Form {...form}>
-      <form action={handleSaveChanges} className="space-y-8">
+      <form action={handleSaveChanges} className="space-y-8 flex flex-col">
         <div className="flex flex-col md:flex-row gap-2">
           <FormField
             disabled={readOnly}
@@ -366,7 +366,7 @@ export function PersonalInformationForm({readOnly, ...props}: PersonalInformatio
         />
       
         <ConditionalRender condition={!readOnly}>
-          <ActionButton disabled={form.formState.isLoading}>Save Changes</ActionButton>
+          <ActionButton disabled={form.formState.isLoading} className="flex-shrink sm:flex-shrink-0">Save Changes</ActionButton>
         </ConditionalRender>
       </form>
     </Form>

@@ -25,8 +25,8 @@ export default function DeleteAllergyButton({remove, index, id}: DeleteAllergyBu
   }
   
   return (
-    <form action={action}>
-      <ActionButton size="sm" variant="destructive">Delete</ActionButton>
+    <form action={action} className="w-full">
+      <ActionButton className="w-full" size="sm" variant="destructive">Delete</ActionButton>
     </form>
   )
 }

@@ -23,7 +23,7 @@ export default async function UpdateUserVaccinationModal({vaccination}:UpdateUse
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button size="sm" variant="ghost">Edit</Button>
+        <Button size="sm" variant="ghost" className="flex-grow">Edit</Button>
       </DialogTrigger>
       <CustomModalContent 
         className="sm:max-w-[625px]"

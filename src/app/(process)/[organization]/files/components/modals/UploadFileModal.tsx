@@ -33,7 +33,7 @@ export default function UploadFileModal({folder}: UploadFileModalProps) {
         <Tooltip>
           <TooltipTrigger asChild>
             <DialogTrigger asChild>
-              <Button>
+              <Button className="w-full">
                 <Cloud className="h-4 w-4 mr-2"/>
                   Upload File
               </Button>
@@ -43,7 +43,7 @@ export default function UploadFileModal({folder}: UploadFileModalProps) {
         </Tooltip>
       </TooltipProvider>
       <CustomModalContent 
-        className="sm:max-w-[625px]"
+        className="sm:max-w-[625px] overflow-scroll max-h-[100vh] no-scrollbar"
         label="Upload File" 
         description={(
           <>

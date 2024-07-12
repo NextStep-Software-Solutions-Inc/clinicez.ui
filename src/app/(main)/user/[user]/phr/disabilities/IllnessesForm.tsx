@@ -51,10 +51,10 @@ export default function IllnessesForm({illnesses, readOnly = true}:IllnessesForm
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center">
+        <CardTitle className="flex flex-wrap gap-2 items-center">
             Illnesses <Badge variant="destructive" className="ml-2">{fields.length}</Badge>
           <ConditionalRender condition={!readOnly}>
-            <Button className="ml-auto" onClick={() => append(illnessInitialValues)}>Add Illness</Button>
+            <Button className="ml-auto flex-grow sm:flex-grow-0" onClick={() => append(illnessInitialValues)}>Add Illness</Button>
           </ConditionalRender>
         </CardTitle>
         <Separator/>

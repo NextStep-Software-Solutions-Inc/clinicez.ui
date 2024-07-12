@@ -100,7 +100,7 @@ export const ContactItem = ({ contact, readOnly }: {
                   disabled={readOnly}
                   onValueChange={field.onChange}
                   defaultValue={field.value}
-                  className="flex space-y-1"
+                  className="flex flex-wrap gap-2"
                 >
                   <Each
                     of={["spouse", "parent", "sibling", "relative", "others"]}
@@ -166,9 +166,9 @@ export const ContactItem = ({ contact, readOnly }: {
             </FormItem>
           )} />
         <ConditionalRender condition={!readOnly}>
-          <div className="flex gap-2 justify-end">
-            {form.formState.isDirty &&  <ActionButton formAction={saveChangesAction} variant="default">Save Changes</ActionButton>}
-            <ActionButton formAction={deleteAction} variant="destructive">Remove</ActionButton>
+          <div className="flex flex-wrap gap-2 justify-end">
+            {form.formState.isDirty &&  <ActionButton formAction={saveChangesAction} variant="default" className="flex-grow sm:flex-grow-0">Save Changes</ActionButton>}
+            <ActionButton formAction={deleteAction} variant="destructive" className="flex-grow sm:flex-grow-0">Remove</ActionButton>
           </div>
         </ConditionalRender>
       </form>

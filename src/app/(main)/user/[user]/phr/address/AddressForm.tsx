@@ -51,11 +51,11 @@ export default function AddressForm(props: AddressFormProps) {
     <>
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center justify-between">
+          <CardTitle className="flex flex-wrap gap-2 items-center justify-between">
             <span className="capitalize">Primary Address</span>
             <ConditionalRender condition={!readOnly}>
-              <form action={action} className="space-y-8">
-                <ActionButton name="isPrimary" value="true" className="capitalize">Add Primary Address</ActionButton>
+              <form action={action} className="space-y-8 flex-grow sm:flex-grow-0">
+                <ActionButton name="isPrimary" value="true" className="w-full">Add Primary Address</ActionButton>
               </form>
             </ConditionalRender>
           </CardTitle>
@@ -77,11 +77,11 @@ export default function AddressForm(props: AddressFormProps) {
       </Card>
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center justify-between">
+          <CardTitle className="flex flex-wrap gap-2 items-center justify-between">
             <span className="capitalize">Secondary Address</span>
             <ConditionalRender condition={!readOnly}>
-              <form action={action} className="space-y-8">
-                <ActionButton name="isPrimary" value="false" className="capitalize">Add Secondary Address</ActionButton>
+              <form action={action} className="space-y-8 flex-grow sm:flex-grow-0">
+                <ActionButton name="isPrimary" value="false" className="w-full">Add Secondary Address</ActionButton>
               </form>
             </ConditionalRender>
           </CardTitle>

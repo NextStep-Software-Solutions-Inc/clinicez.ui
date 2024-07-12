@@ -28,16 +28,18 @@ export default function DisabilityItem({disability, index, remove, update, readO
   return (
     <>
       <ConditionalRender condition={!isEditing && !!disability.Disability.name}>
-        <Card className="group/actions">
+        <Card className="group/actions basis-64 flex-grow">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <span>{disability.Disability.name}</span>
-              <ConditionalRender condition={!!disability.isManaged}>
-                <Badge variant="secondary">Managed</Badge>
-              </ConditionalRender>
+            <CardTitle className="flex flex-wrap gap-2 items-center">
+              <div className="flex-grow sm:flex-grow-0 flex gap-2 items-center">
+                <span>{disability.Disability.name}</span>
+                <ConditionalRender condition={!disability.isManaged}>
+                  <Badge variant="secondary" className="w-full sm:w-auto">Managed</Badge>
+                </ConditionalRender>
+              </div>
               <ConditionalRender condition={!readOnly}>
-                <span className="ml-auto flex space-x-2 invisible group-hover/actions:visible transition-all">
-                  <Button size="sm" variant="ghost" onClick={() => setIsEditing(true)}>Edit</Button>
+                <span className="ml-auto flex-grow md:flex-grow-0 flex space-x-2 invisible group-hover/actions:visible transition-all">
+                  <Button className="w-full" size="sm" variant="ghost" onClick={() => setIsEditing(true)}>Edit</Button>
                   <DeleteDisabilityButton disabilityId={disability.id} remove={remove} index={index}/>
                 </span>
               </ConditionalRender>

@@ -45,10 +45,10 @@ export default function DisabilitiesForm({disabilities, readOnly = true}:Disabil
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center">
+        <CardTitle className="flex flex-wrap gap-2 items-center">
             Disabilities <Badge variant="destructive" className="ml-2">{fields.length}</Badge>
           <ConditionalRender condition={!readOnly}>
-            <Button className="ml-auto" onClick={() => append(disabilityInitialValues)}>Add Disability</Button>
+            <Button className="ml-auto flex-grow sm:flex-grow-0" onClick={() => append(disabilityInitialValues)}>Add Disability</Button>
           </ConditionalRender>
         </CardTitle>
         <Separator/>
@@ -61,7 +61,7 @@ export default function DisabilitiesForm({disabilities, readOnly = true}:Disabil
                 List of disabilities <span className="italic font-light">(click to expand)</span>
               </div>
             </AccordionTrigger>
-            <AccordionContent className="p-5 space-y-2">
+            <AccordionContent className="p-5 flex flex-wrap gap-2">
               <Each
                 of={fields}
                 render={(disability, index) => <DisabilityItem readOnly={readOnly} disability={disability} index={index} remove={remove} update={update}/>}

@@ -23,8 +23,8 @@ export default function DeleteIllnessButton({remove, index, illnessId}:DeleteIll
     })
   }
   return (
-    <form action={action}>
-      <ActionButton size="sm" variant="destructive">Delete</ActionButton>
+    <form action={action} className="flex-grow">
+      <ActionButton className="w-full" size="sm" variant="destructive">Delete</ActionButton>
     </form>
   )
 }

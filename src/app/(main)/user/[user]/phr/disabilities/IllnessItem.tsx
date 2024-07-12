@@ -55,21 +55,23 @@ export default function IllnessItem({illness, index, remove, update, readOnly = 
   return (
     <>
       <ConditionalRender condition={!isEditing && !!illness.HealthCondition.name}>
-        <Card className="group/actions">
+        <Card className="group/actions basis-64 flex-grow">
           <CardHeader>
-            <CardTitle className="flex items-center">
-              <span>{illness.HealthCondition.name}</span>
-              <Badge variant="destructive" className="ml-2">{illness.severity}</Badge>
-              <ConditionalRender condition={!!illness.status}>
-                <Badge variant="secondary" className="ml-2">{illness.status}</Badge>
-              </ConditionalRender>
-              <span className="ml-auto flex space-x-2 invisible group-hover/actions:visible transition-all">
+            <CardTitle className="flex flex-wrap gap-2 items-center">
+              <div className="flex items-center gap-1 flex-wrap">
+                <span>{illness.HealthCondition.name}</span>
+                <Badge variant="destructive" className="ml-2">{illness.severity}</Badge>
+                <ConditionalRender condition={!!illness.status}>
+                  <Badge variant="secondary" className="ml-2">{illness.status}</Badge>
+                </ConditionalRender>
+              </div>
+              <span className="ml-auto flex-grow sm:flex-grow-0 flex flex-wrap gap-2 invisible group-hover/actions:visible transition-all">
                 <ConditionalRender condition={!readOnly && illness.status !== "RESOLVED"}>
-                  <Button size="sm" variant="ghost" onClick={() => setIsEditing(true)}>Edit</Button>
+                  <Button className="flex-grow" size="sm" variant="ghost" onClick={() => setIsEditing(true)}>Edit</Button>
                   <DeleteIllnessButton illnessId={illness.id} remove={remove} index={index}/>
                 </ConditionalRender>
                 <ConditionalRender condition={illness.status !== "RESOLVED"}>
-                  <Button size="sm" onClick={() => handleSetAsResolved()}><Check className="mr-1 w-4 h-4"/> Set as Resolved</Button>
+                  <Button className="flex-grow" size="sm" onClick={() => handleSetAsResolved()}><Check className="mr-1 w-4 h-4"/> Set as Resolved</Button>
                 </ConditionalRender>
               </span>
             </CardTitle>

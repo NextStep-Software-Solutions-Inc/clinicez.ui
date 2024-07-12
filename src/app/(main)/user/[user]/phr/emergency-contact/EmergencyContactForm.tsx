@@ -39,11 +39,11 @@ export default function EmergencyContactForm({contacts, sessionUserId, readOnly 
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center justify-between">
+          <CardTitle className="flex flex-wrap gap-2 items-center justify-between">
             <span className="capitalize">Primary Contacts</span>
             <ConditionalRender condition={!readOnly}>
-              <form action={addContactAction} className="space-y-8">
-                <ActionButton name="isPrimary" value="true" className="capitalize" >Add Primary Contact</ActionButton>
+              <form action={addContactAction} className="space-y-8 flex-grow sm:flex-grow-0">
+                <ActionButton name="isPrimary" value="true" className="w-full" >Add Primary Contact</ActionButton>
               </form>
             </ConditionalRender>
           </CardTitle>
@@ -65,11 +65,11 @@ export default function EmergencyContactForm({contacts, sessionUserId, readOnly 
       </Card>
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center justify-between">
+          <CardTitle className="flex flex-wrap gap-2 items-center justify-between">
             <span className="capitalize">Secondary Contacts</span>
             <ConditionalRender condition={!readOnly}>
-              <form action={addContactAction} className="space-y-8">
-                <ActionButton name="isPrimary" value="false" className="capitalize" >Add Secondary Contact</ActionButton>
+              <form action={addContactAction} className="space-y-8 flex-grow sm:flex-grow-0">
+                <ActionButton name="isPrimary" value="false" className="w-full" >Add Secondary Contact</ActionButton>
               </form>
             </ConditionalRender>
           </CardTitle>

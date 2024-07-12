@@ -17,7 +17,9 @@ export default function CustomModalContent({ children, label, description,  ...r
           {description}
         </DialogDescription>
       </DialogHeader>
-      {children}
+      <div className="overflow-scroll max-h-[90vh] no-scrollbar px-1">
+        {children}
+      </div>
     </DialogContent>
   );
 }

@@ -26,7 +26,8 @@
       "@actions/*": ["./src/actions/*"],
       "@contexts/*": ["./src/contexts/*"],
       "@services/*": ["./src/services/*"],
-      "@middlewares/*": ["./src/middlewares/*"]
+      "@middlewares/*": ["./src/middlewares/*"],
+      "@schemas/*": ["./src/schemas/*"]
     }
   },
   "include": [

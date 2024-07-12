@@ -19,10 +19,10 @@ export default async function AddUserVaccinationModal({}:AddUserVaccinationModal
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button>Add Vaccination</Button>
+        <Button className="flex-grow sm:flex-grow-0">Add Vaccination</Button>
       </DialogTrigger>
       <CustomModalContent 
-        className="sm:max-w-[625px]"
+        className="sm:max-w-[625px] overflow-scroll max-h-[100vh] no-scrollbar"
         label="Add Vaccination" 
         description="Add a new vaccination record."
       >

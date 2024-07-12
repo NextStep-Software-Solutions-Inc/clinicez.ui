@@ -64,7 +64,7 @@ export const UpdateVaccinationForm = ({ vaccines, vaccination }: UpdateVaccinati
         loading: "Saving...",
         success: () => {
           closeBtnRef.current?.click();
-          revalidatePath(`/user/[user]/phr/vaccination-immunization`);
+          revalidatePath(`/user/[user]/phr/vaccination-immunization`, "page");
           return "Vaccination Updated";
         },
         error: "Failed to update vaccination"

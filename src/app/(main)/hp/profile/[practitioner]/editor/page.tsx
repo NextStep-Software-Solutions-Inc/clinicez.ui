@@ -61,7 +61,7 @@ async function EditorPage({params, searchParams}: AppRouterPageRouteOpts) {
   const handleTogglePublish = async () => {
     "use server"
     await setIsPublishAction(hpId, !isPublished);
-    revalidatePath(`/hp/profile/${hpId}?_type=${type}`);
+    revalidatePath(`/hp/profile/${hpId}?_type=${type}`,  "page");
   }
 
   return (

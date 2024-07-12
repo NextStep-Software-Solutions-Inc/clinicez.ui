@@ -129,13 +129,17 @@ export default function UploadFileForm({folder}: UploadFileFormProps) {
                   <SelectContent>
                     <Each
                       of={fileTypes}
-                      render={item => <SelectItem value={item.id?.toString()} className="cursor-pointer">{item.name}</SelectItem>}
+                      render={item => (
+                        <SelectItem value={item.id?.toString()} className="cursor-pointer">
+                          {item.name} {item.FileTypeAttribute?.Organization?.orgId && `- (${item.FileTypeAttribute?.Organization?.orgId })`}
+                        </SelectItem>
+                      )}
                     />
                   </SelectContent>
                 </Select>
-                {/* <FormDescription>
-                  Select the file type.
-                </FormDescription> */}
+                <FormDescription>
+                  Select the appropriate file type. Some of the file types are specific to the organization.
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}

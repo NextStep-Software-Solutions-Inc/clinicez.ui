@@ -24,7 +24,7 @@ export default async function Vaccinations({userId}: VaccinationProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center justify-between">
+        <CardTitle className="flex flex-wrap gap-2 items-center justify-between">
           <span className="flex items-center">Recent Vaccinations <Badge className="ml-2">{userVax.length}</Badge></span>
           <ConditionalRender condition={ownerUser}>
             <AddUserVaccination/>

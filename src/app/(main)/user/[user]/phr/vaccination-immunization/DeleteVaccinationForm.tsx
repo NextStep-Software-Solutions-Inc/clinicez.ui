@@ -20,8 +20,8 @@ export const DeleteVaccinationForm = ({ vaccinationId }: { vaccinationId: number
   };
 
   return (
-    <form action={deleteVaccination}>
-      <ActionButton size="sm" variant="destructive">Delete</ActionButton>
+    <form action={deleteVaccination}  className="flex-grow">
+      <ActionButton size="sm" variant="destructive"  className="w-full">Delete</ActionButton>
     </form>
   );
 };

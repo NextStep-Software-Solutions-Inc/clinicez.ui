@@ -12,6 +12,7 @@ export const VaccinationForm = ({ vaccinations, readOnly }: VaccinationFormProps
   return (
     <Each
       of={vaccinations}
-      render={(vaccination) => <VaxItem key={vaccination.id} readOnly={readOnly} vaccination={vaccination} />} />
+      render={(vaccination) => <VaxItem key={vaccination.id} readOnly={readOnly} vaccination={vaccination} />} 
+    />
   );
 };

@@ -200,9 +200,9 @@ export const AddressItem = ({ address, readOnly }: AddressItemProps) => {
           />
         </div> 
         <ConditionalRender condition={!readOnly}>
-          <div className="flex gap-2 justify-end">
-            {form.formState.isDirty &&  <ActionButton formAction={saveChangesAction} variant="default">Save Changes</ActionButton>}
-            <ActionButton formAction={deleteAction} variant="destructive">Remove</ActionButton>
+          <div className="flex flex-wrap gap-2 justify-end">
+            {form.formState.isDirty &&  <ActionButton formAction={saveChangesAction} variant="default" className="flex-grow sm:flex-grow-0">Save Changes</ActionButton>}
+            <ActionButton formAction={deleteAction} variant="destructive" className="flex-grow sm:flex-grow-0">Remove</ActionButton>
           </div>
         </ConditionalRender>
       </form>

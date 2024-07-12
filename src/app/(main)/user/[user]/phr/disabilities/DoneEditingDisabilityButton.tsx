@@ -19,8 +19,6 @@ export default function DoneEditingDisabilityButton({index, form, onUpdate}:Done
   
   const handleDoneEditing = async () => {
     form.handleSubmit((data) => {
-      console.log({data});
-      
       if(!userId) return toast.error("User not found");
       toast.promise(upsertUserDisabilityAction({
         id: data.id,

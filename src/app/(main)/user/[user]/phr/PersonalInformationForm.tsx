@@ -3,11 +3,6 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { format } from "date-fns"
 import { useForm } from "react-hook-form"
-import { z } from "zod"
-
-import { cn } from "@lib/utils"
-import { Button } from "@components/ui/button"
-import { Calendar } from "@components/ui/calendar"
 import {
   Form,
   FormControl,
@@ -18,12 +13,6 @@ import {
   FormMessage,
 } from "@components/ui/form"
 import { Input } from "@components/ui/input"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@components/ui/popover"
-import { CalendarIcon } from "lucide-react"
 import ActionButton from "@components/ActionButton"
 import { toast } from "sonner"
 import { updateUserAction } from "@actions/user.action"
@@ -32,48 +21,8 @@ import Each from "@components/utils/Each"
 import { RadioGroup, RadioGroupItem } from "@components/ui/radio-group"
 import { useUser } from "@auth0/nextjs-auth0/client"
 import ConditionalRender from "@components/utils/ConditionalRender"
-import { isUserOwner } from "@lib/protect-org"
-import { useEffect, useState } from "react"
+import { personalInformationFormSchema, PersonalInformationFormValues } from "@schemas/personal-information.schema"
 
-const personalInformationFormSchema = z.object({
-  firstName: z.string().max(30, {
-    message: "Name must not be longer than 30 characters.",
-  }).nullable(),
-  middleName: z.string().max(30, {
-    message: "Middle name must not be longer than 30 characters.",
-  }).optional().nullable(),
-  lastName: z.string().max(30, {
-    message: "Name must not be longer than 30 characters.",
-  }),
-  suffix: z.string().max(10, {
-    message: "Suffix must not be longer than 10 characters.",
-  }).optional().nullable(),
-  nickname: z.string().max(30, {
-    message: "Nickname must not be longer than 30 characters.",
-  }),
-  religion: z.string().max(30, {
-    message: "Religion must not be longer than 30 characters.",
-  }).nullable(),
-  nationality: z.string().max(30, {
-    message: "Nationality must not be longer than 30 characters.",
-  }).nullable(),
-  telephone: z.string().max(30, {
-    message: "Telephone number must not be longer than 30 characters.",
-  }).nullable(),
-  mobile: z.string().min(10, {
-    message: "Phone number must be at least 10 characters.",
-  }).max(15, {
-    message: "Phone number must not be longer than 15 characters.",
-  }).nullable(),
-  gender: z.nativeEnum(Gender).nullable(),
-  bloodType: z.nativeEnum(BloodType).nullable(),
-  civilStatus: z.nativeEnum(CivilStatus).nullable(),
-  dob: z.date({
-    required_error: "A date of birth is required.",
-  }).nullable(),
-})
-
-type PersonalInformationFormValues = z.infer<typeof personalInformationFormSchema>
 interface PersonalInformationFormProps {
   user: User,
   readOnly?: boolean
@@ -85,7 +34,22 @@ export function PersonalInformationForm({readOnly, ...props}: PersonalInformatio
 
   const form = useForm<PersonalInformationFormValues>({
     resolver: zodResolver(personalInformationFormSchema),
-    defaultValues: personalInformationFormSchema.safeParse(props.user).data,
+    defaultValues: {
+      firstName: props.user.firstName ?? "",
+      middleName: props.user.middleName,
+      lastName: props.user.lastName ?? "",
+      suffix: props.user.suffix,
+      nickname: props.user.nickname ?? "",
+      nationality: props.user.nationality ?? "",
+      telephone: props.user.telephone,
+      ...props.user.religion? {religion: props.user.religion} : {},
+      ...props.user.bloodType? {bloodType: props.user.bloodType} : {},
+      ...props.user.civilStatus? {civilStatus: props.user.civilStatus} : {},
+      ...props.user.gender? {gender: props.user.gender} : {},
+      ...props.user.dob? {dob: props.user.dob} : {},
+      ...props.user.mobile? {mobile: props.user.mobile} : {},
+    },
+    mode: "all"
   })
 
   const handleSaveChanges = async () => {
@@ -104,8 +68,6 @@ export function PersonalInformationForm({readOnly, ...props}: PersonalInformatio
     })()
   }
 
-
-
   return (
     <Form {...form}>
       <form action={handleSaveChanges} className="space-y-8">
@@ -121,7 +83,7 @@ export function PersonalInformationForm({readOnly, ...props}: PersonalInformatio
                   <Input placeholder="John" {...field} value={field.value ?? ""} />
                 </FormControl>
                 <FormDescription>
-                This is your public display first name.
+                  Your first name is used for identification purposes.
                 </FormDescription>
                 <FormMessage />
               </FormItem>
@@ -138,7 +100,7 @@ export function PersonalInformationForm({readOnly, ...props}: PersonalInformatio
                   <Input placeholder="Micheal" {...field} value={field.value ?? ""} />
                 </FormControl>
                 <FormDescription>
-                This is your public display middle name.
+                  Your middle name is used for identification purposes.
                 </FormDescription>
                 <FormMessage />
               </FormItem>
@@ -155,7 +117,7 @@ export function PersonalInformationForm({readOnly, ...props}: PersonalInformatio
                   <Input placeholder="Doe" {...field} />
                 </FormControl>
                 <FormDescription>
-                This is your public display last name.
+                  Your last name is used for identification purposes.
                 </FormDescription>
                 <FormMessage />
               </FormItem>
@@ -190,7 +152,7 @@ export function PersonalInformationForm({readOnly, ...props}: PersonalInformatio
                 <Input placeholder="Nickname" {...field} />
               </FormControl>
               <FormDescription>
-                This is your public display nickname.
+                We love to call you by the name you prefer.
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -228,7 +190,7 @@ export function PersonalInformationForm({readOnly, ...props}: PersonalInformatio
           name="gender"
           render={({ field }) => (
             <FormItem className="space-y-3">
-              <FormLabel>Gender</FormLabel>
+              <FormLabel>Gender at Birth</FormLabel>
               <FormControl>
                 <RadioGroup
                   disabled={readOnly}
@@ -251,6 +213,9 @@ export function PersonalInformationForm({readOnly, ...props}: PersonalInformatio
                   />
                 </RadioGroup>
               </FormControl>
+              <FormDescription>
+                Your gender identity is used for medical purposes.
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -285,6 +250,9 @@ export function PersonalInformationForm({readOnly, ...props}: PersonalInformatio
                   />
                 </RadioGroup>
               </FormControl>
+              <FormDescription>
+                {`Healthcare providers may ask for your civil status for medical purposes.`}
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -319,28 +287,15 @@ export function PersonalInformationForm({readOnly, ...props}: PersonalInformatio
                   />
                 </RadioGroup>
               </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <FormField
-          disabled={readOnly}
-          control={form.control}
-          name="telephone"
-          render={({ field }) => (
-            <FormItem className="w-full">
-              <FormLabel>Telephone Number</FormLabel>
-              <FormControl>
-                <Input placeholder="Telephone no." {...field} value={field.value ?? ""}/>
-              </FormControl>
               <FormDescription>
-                This is your public display telephone number.
+                {`Your blood type is used for medical purposes. If you don't know your blood type, you can select "Unknown".`}
               </FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
+        
+        
         <FormField
           disabled={readOnly}
           control={form.control}
@@ -352,7 +307,24 @@ export function PersonalInformationForm({readOnly, ...props}: PersonalInformatio
                 <Input placeholder="Phone no." {...field} value={field.value ?? ""} />
               </FormControl>
               <FormDescription>
-                This is your public display phone number.
+                Your mobile number is used for account recovery and notifications purposes.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          disabled={readOnly}
+          control={form.control}
+          name="telephone"
+          render={({ field }) => (
+            <FormItem className="w-full">
+              <FormLabel>Alternative Number</FormLabel>
+              <FormControl>
+                <Input placeholder="Contact no." {...field} value={field.value ?? ""}/>
+              </FormControl>
+              <FormDescription>
+                {`We can contact you through this number if we can't reach you on your mobile number.`}
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -369,7 +341,7 @@ export function PersonalInformationForm({readOnly, ...props}: PersonalInformatio
                 <Input placeholder="Religion" {...field} value={field.value ?? ""} />
               </FormControl>
               <FormDescription>
-                This is your public display religion.
+                What group or belief do you belong to?
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -386,7 +358,7 @@ export function PersonalInformationForm({readOnly, ...props}: PersonalInformatio
                 <Input placeholder="Nationality" {...field} value={field.value ?? ""} />
               </FormControl>
               <FormDescription>
-                This is your public display nationality.
+                Tell us your nationality or citizenship.
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -394,7 +366,7 @@ export function PersonalInformationForm({readOnly, ...props}: PersonalInformatio
         />
       
         <ConditionalRender condition={!readOnly}>
-          {form.formState.isDirty && <ActionButton disabled={form.formState.isLoading || !form.formState.isValid}>Save Changes</ActionButton>}
+          <ActionButton disabled={form.formState.isLoading}>Save Changes</ActionButton>
         </ConditionalRender>
       </form>
     </Form>

@@ -157,7 +157,7 @@ export const DashboardStats = async ({ userId, orgId }: DashboardStatsProps) => 
                 return (
                   <Card key={role.id} className="group/icon hover:ring-1">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">{role.name} Members</CardTitle>
+                      <CardTitle className="text-sm font-medium">{role.name}</CardTitle>
                       <Users className="text-primary group-hover/icon:scale-150 transition-all" />
                     </CardHeader>
                     <CardContent>

@@ -14,8 +14,6 @@ import {
 import {
   ChartConfig,
   ChartContainer,
-  ChartLegend,
-  ChartLegendContent,
   ChartTooltip,
   ChartTooltipContent,
 } from "@components/ui/chart"
@@ -82,8 +80,8 @@ export default function IllnessChart({ chartData }: IllnessChartProps) {
                 dataKey="illness"
                 position="insideLeft"
                 offset={8}
-                className="fill-[--color-label]"
-                fontSize={12}
+                className="fill-[--color-label] truncate"
+                fontSize={10}
               />
               <LabelList
                 position="right"

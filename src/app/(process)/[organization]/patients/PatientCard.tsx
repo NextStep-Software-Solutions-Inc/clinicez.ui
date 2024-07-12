@@ -4,11 +4,11 @@ import { Badge } from "@components/ui/badge";
 import { Button } from "@components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@components/ui/card";
 import ConditionalRender from "@components/utils/ConditionalRender";
-import { User } from "@prisma/client";
 import { differenceInCalendarYears, format } from "date-fns";
+import { PatientsType } from "./PatientList";
 
 interface PatientCardProps {
-    patient: User & {
+    patient: PatientsType[number] & {
       immunocompromised?: boolean;
     }
 }
@@ -21,9 +21,9 @@ export const PatientCard = async ({patient}: PatientCardProps) => {
   return (
     <Card className="shadow-2xl select-none flex-grow lg:flex-grow-0 basis-[35rem]">
       <CardHeader>
-        <CardTitle>{name}</CardTitle>
+        <CardTitle className="line-clamp-2">{name}</CardTitle>
         <CardDescription>
-        Last consult: {format("2022-01-01", "PP")}
+        Last update: {format(patient.updatedAt, "PPp")}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -36,6 +36,7 @@ export const PatientCard = async ({patient}: PatientCardProps) => {
             <div className="">
               <p className="text-sm text-muted-foreground italic font-medium truncate overflow-hidden capitalize">{gender?.toLowerCase()} / {dob && `${differenceInCalendarYears(new Date(), dob)} years old`}</p>
               <p className="text-sm text-muted-foreground italic font-medium capitalize">{patient.bloodType?.split("_").join(" ").toLowerCase()}</p>
+              <Badge variant="default" className="capitalize">{patient.Organizations[0].status.toLowerCase()}</Badge>
             </div>
             <div className="flex gap-2 flex-wrap">
               <ConditionalRender condition={immunocompromised ?? false}>

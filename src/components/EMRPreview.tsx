@@ -52,7 +52,7 @@ export default function EMRPreview({patientId}: EMRPreviewProps) {
   if(loading) return <PageLoading label="Loading Records ..."/>
   const name = `${patient?.lastName || "-"}, ${patient?.firstName || "-"} ${patient?.middleName ?? ""} ${patient?.suffix ?? ""}`
   return (
-    <div className="space-y-5 my-5 overflow-auto h-screen no-scrollbar">
+    <div className="space-y-5 my-5 overflow-auto h-[calc(100vh-15%)] no-scrollbar">
       <div className="flex gap-5">
         <Picture readOnly user={patient!}/>
         <div className="">

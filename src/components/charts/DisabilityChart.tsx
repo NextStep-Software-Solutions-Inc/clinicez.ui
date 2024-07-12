@@ -81,8 +81,8 @@ export default function DisabilityChart({ chartData }: DisabilityChartProps) {
                 dataKey="disability"
                 position="insideLeft"
                 offset={8}
-                className="fill-[--color-label]"
-                fontSize={12}
+                className="fill-[--color-label] truncate"
+                fontSize={10}
               />
               <LabelList
                 position="right"

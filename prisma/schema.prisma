@@ -21,6 +21,16 @@ model Tenant {
   Organizations      Organization[]
   Owner              User                @relation(fields: [ownerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   UserDefaultTenants UserDefaultTenant[]
+  TenantSetting      TenantSetting?
+}
+
+model TenantSetting {
+  id                      Int     @id @default(autoincrement())
+  tenantId                Int     @unique
+  onPremise               Boolean @default(false)
+  storageConnectionString String?
+  dbConnectionString      String?
+  Tenant                  Tenant  @relation(fields: [tenantId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model User {
@@ -91,6 +101,16 @@ model Organization {
   UserMigrations               UserMigration[]
   Users                        UserOrganization[]
   Roles                        UserOrganizationRole[]
+  OrganizationSetting          OrganizationSetting?
+}
+
+model OrganizationSetting {
+  id                    Int          @id @default(autoincrement())
+  orgId                 Int          @unique
+  isPublic              Boolean      @default(false)
+  sendEmailNotification Boolean      @default(true)
+  emailToOrgOnly        Boolean      @default(false)
+  Organization          Organization @relation(fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model UserOrganization {
@@ -662,6 +682,7 @@ enum BloodType {
   O_NEGATIVE
   RH_POSITIVE
   RH_NEGATIVE
+  UNKNOWN
 }
 
 enum UserOrganizationStatus {

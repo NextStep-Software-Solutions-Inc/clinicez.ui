@@ -45,10 +45,10 @@ export default function DisabilitiesForm({disabilities, readOnly = true}:Disabil
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center">
+        <CardTitle className="flex flex-wrap gap-2 items-center">
             Disabilities <Badge variant="destructive" className="ml-2">{fields.length}</Badge>
           <ConditionalRender condition={!readOnly}>
-            <Button className="ml-auto" onClick={() => append(disabilityInitialValues)}>Add Disability</Button>
+            <Button className="ml-auto flex-grow sm:flex-grow-0" onClick={() => append(disabilityInitialValues)}>Add Disability</Button>
           </ConditionalRender>
         </CardTitle>
         <Separator/>

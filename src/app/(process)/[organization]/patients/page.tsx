@@ -6,6 +6,7 @@ import { PatientList } from "./PatientList";
 import { isHP } from "@lib/protect-org";
 import { UnauthorizedWarning } from "../../../(activation)/[organization]/membership/UnauthorizedWarning";
 import SearchBar from "../dashboard/components/SearchBar";
+import PageLoading from "@components/PageLoading";
 
 export const metadata: Metadata = {
   title: "Patients List",
@@ -40,7 +41,7 @@ async function PatientsPage({params, searchParams}: AppRouterPageRouteOpts) {
         <div className="px-5 pt-5 flex justify-end">
           <SearchBar placeholder="Search for patient name of email"/>
         </div>
-        <Suspend>
+        <Suspend loadingFallback={<PageLoading label="Loading Records ..."/>}>
           <PatientList orgId={orgId} search={search} page={page}/>
         </Suspend>
       </div>

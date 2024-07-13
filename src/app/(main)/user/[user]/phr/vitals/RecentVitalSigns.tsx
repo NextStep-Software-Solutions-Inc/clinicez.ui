@@ -6,14 +6,17 @@ import { getVitalSignsAction } from "@actions/vitals.action";
 import VitalSign from "./VitalSign";
 import Suspend from "@components/Suspend";
 import { format } from "date-fns";
+import { VitalChartInteractive } from "@components/charts/VitalChartInteractive";
+import ChangeViewMode from "./ChangeViewMode";
 
 interface RecentVitalSignsProps {
   readOnly?: boolean;
   userId: string;
+  viewMode?: "chart" | "tile";
 }
 
 export type VitalSignsType = Awaited<ReturnType<typeof getVitalSignsAction>>
-export default async function RecentVitalSigns({readOnly = true, userId}: RecentVitalSignsProps) {
+export default async function RecentVitalSigns({readOnly = true, userId, viewMode}: RecentVitalSignsProps) {
 
   const vitalSigns = await getVitalSignsAction(userId);
   const latestVitalSign = vitalSigns.length > 0 ? vitalSigns[vitalSigns.length - 1] : null;
@@ -30,18 +33,25 @@ export default async function RecentVitalSigns({readOnly = true, userId}: Recent
             </CardDescription>
           </ConditionalRender>
         </div>
-        <ConditionalRender condition={!readOnly}>
-          <AddVitalSignsModal userId={userId}/>
-        </ConditionalRender>
+        <div className="ml-auto flex-grow sm:flex-grow-0 flex flex-wrap items-center justify-end gap-2">
+          <ChangeViewMode/>
+          <ConditionalRender condition={!readOnly} fallback="">
+            <AddVitalSignsModal userId={userId}/>
+          </ConditionalRender>
+        </div>
       </CardHeader>
       <CardContent>
-        <ConditionalRender condition={!!latestVitalSign} fallback="No recent vital signs record">
-          <VitalSign vitalSign={latestVitalSign!} readOnly={readOnly}/>
+        <ConditionalRender condition={viewMode === "tile"}
+          fallback={<VitalChartInteractive vitalSigns={vitalSigns}/>}
+        >
+          <ConditionalRender condition={!!latestVitalSign} fallback="No recent vital signs record">
+            <VitalSign vitalSign={latestVitalSign!} readOnly={readOnly}/>
+          </ConditionalRender>
         </ConditionalRender>
       </CardContent>
       <CardFooter>
         <Suspend>
-          <ConditionalRender condition>
+          <ConditionalRender condition={!!restVitalSigns && viewMode === "tile"} fallback="">
             <MoreVitals readOnly={readOnly} vitalSigns={restVitalSigns}/>
           </ConditionalRender>
         </Suspend>
@@ -49,3 +59,5 @@ export default async function RecentVitalSigns({readOnly = true, userId}: Recent
     </Card>
   )
 }
+
+

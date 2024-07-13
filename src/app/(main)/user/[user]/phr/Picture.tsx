@@ -10,6 +10,7 @@ import { uploadMediaAction } from "@actions/blob.action";
 import { toast } from "sonner";
 import { revalidatePath } from "@actions/cache.action";
 import ConditionalRender from "@components/utils/ConditionalRender";
+import { useState } from "react";
 
 interface PictureProps {
   user: User;
@@ -17,7 +18,12 @@ interface PictureProps {
 }
 
 export const Picture = ({ user, readOnly = true }: PictureProps) => {
-  
+  const [fileSelected, setFileSelected] = useState(false);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFileSelected(!!e.target.files?.length);
+  }
+
   const action = async (formData: FormData) => {
     toast.promise(uploadMediaAction(formData), {
       loading: "Uploading...",
@@ -34,7 +40,6 @@ export const Picture = ({ user, readOnly = true }: PictureProps) => {
       },
       error: "Failed to upload"
     });
-    
   }
 
   return (
@@ -47,9 +52,9 @@ export const Picture = ({ user, readOnly = true }: PictureProps) => {
         <form action={action}>
           <div className="grid w-full max-w-sm items-center gap-1.5">
             <Label htmlFor="picture">Picture</Label>
-            <Input name="media" id="picture" type="file" accept="image/jpeg,image/png" />
+            <Input onChange={handleFileChange} name="media" id="picture" type="file" accept="image/jpeg,image/png" />
           </div>
-          <ActionButton className="my-5">Upload</ActionButton>
+          <ActionButton disabled={!fileSelected} className="my-5">Upload</ActionButton>
         </form>
       </ConditionalRender>
     </div>

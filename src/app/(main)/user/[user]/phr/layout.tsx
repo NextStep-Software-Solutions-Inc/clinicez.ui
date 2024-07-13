@@ -74,6 +74,10 @@ export default async function PHRLayout({ children, params: {user} }: PHRLayoutP
       href: `/user/${user}/phr/allergies`,
     },
     {
+      title: "Vital Signs & Anthropometric Measurements",
+      href: `/user/${user}/phr/vitals`,
+    },
+    {
       title: "Medications",
       href: `/user/${user}/phr/medications`,
     },

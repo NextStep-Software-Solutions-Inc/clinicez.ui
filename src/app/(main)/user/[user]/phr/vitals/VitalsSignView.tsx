@@ -1,9 +1,7 @@
 "use client";
 
-import { VitalChartInteractive } from "@components/charts/VitalChartInteractive";
 import ConditionalRender from "@components/utils/ConditionalRender";
 import React from "react";
-import { VitalSignsType } from "./RecentVitalSigns";
 import { useSearchParams } from "next/navigation";
 
 interface VitalsSignViewProps {

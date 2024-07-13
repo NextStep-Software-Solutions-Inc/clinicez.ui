@@ -9,7 +9,8 @@ export const metadata = {
   description: "Track your vital signs and anthropometric measurements."
 }
 
-async function VitalsPage({params}: AppRouterPageRouteOpts) {
+async function VitalsPage({params, searchParams}: AppRouterPageRouteOpts) {
+  const viewMode = (searchParams?.view_mode as "chart" | "tile") || "tile";
   const userId = decodeURI(params?.user as string);
   const userOwner = await isUserOwner(userId);
 
@@ -23,7 +24,7 @@ async function VitalsPage({params}: AppRouterPageRouteOpts) {
       </div>
       <Separator />
       <Suspend>
-        <RecentVitalSigns readOnly={!userOwner} userId={userId}/>
+        <RecentVitalSigns readOnly={!userOwner} userId={userId} viewMode={viewMode}/>
       </Suspend>
     </div>
   );

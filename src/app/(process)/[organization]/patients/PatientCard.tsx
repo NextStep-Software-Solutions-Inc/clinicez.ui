@@ -29,6 +29,7 @@ export const PatientCard = async ({patient}: PatientCardProps) => {
             year:"numeric",
             hour:"numeric",
             minute:"numeric",
+            timeZone: "Asia/Manila"
           })}
         </CardDescription>
       </CardHeader>

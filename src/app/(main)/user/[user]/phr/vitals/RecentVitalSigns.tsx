@@ -21,18 +21,19 @@ export default async function RecentVitalSigns({readOnly = true, userId, viewMod
 
   const vitalSigns = await getVitalSignsAction(userId);
   const latestVitalSign = vitalSigns.length > 0 ? vitalSigns[vitalSigns.length - 1] : null;
-  const restVitalSigns = vitalSigns.slice(0, vitalSigns.length - 1);
+  const restVitalSigns = vitalSigns.length > 0 ? vitalSigns.slice(0, vitalSigns.length - 1) : [];
 
   return (
     <Card>
       <CardHeader className="flex flex-row flex-wrap gap-2 items-center">
         <div>
           <CardTitle>Recent Vitals</CardTitle>
-          <ConditionalRender condition={!!latestVitalSign} fallback="">
+          {latestVitalSign && (
             <CardDescription>
-              Your most recent vital record was taken on {format(latestVitalSign!.dateTaken, "PPp")}
+              Your most recent vital record was taken on {format(latestVitalSign.dateTaken, "PPp")}
             </CardDescription>
-          </ConditionalRender>
+          )}
+          
         </div>
         <div className="ml-auto flex-grow sm:flex-grow-0 flex flex-wrap items-center justify-end gap-2">
           <ChangeViewMode/>

@@ -3,11 +3,12 @@ import AddVitalSignsModal from "./AddVitalSignsModal";
 import MoreVitals from "./MoreVitals";
 import ConditionalRender from "@components/utils/ConditionalRender";
 import { getVitalSignsAction } from "@actions/vitals.action";
-import VitalSign from "./VitalSign";
 import Suspend from "@components/Suspend";
 import { format } from "date-fns";
-import { VitalChartInteractive } from "@components/charts/VitalChartInteractive";
 import ChangeViewMode from "./ChangeViewMode";
+import VitalsSignView from "./VitalsSignView";
+import { VitalChartInteractive } from "@components/charts/VitalChartInteractive";
+import VitalSign from "./VitalSign";
 
 interface RecentVitalSignsProps {
   readOnly?: boolean;
@@ -41,20 +42,20 @@ export default async function RecentVitalSigns({readOnly = true, userId, viewMod
         </div>
       </CardHeader>
       <CardContent>
-        <ConditionalRender condition={viewMode === "tile"}
-          fallback={<VitalChartInteractive vitalSigns={vitalSigns}/>}
-        >
+        <VitalsSignView fallback={<VitalChartInteractive vitalSigns={vitalSigns}/>}>
           <ConditionalRender condition={!!latestVitalSign} fallback="No recent vital signs record">
             <VitalSign vitalSign={latestVitalSign!} readOnly={readOnly}/>
           </ConditionalRender>
-        </ConditionalRender>
+        </VitalsSignView>
       </CardContent>
       <CardFooter>
-        <Suspend>
-          <ConditionalRender condition={!!restVitalSigns && viewMode === "tile"} fallback="">
-            <MoreVitals readOnly={readOnly} vitalSigns={restVitalSigns}/>
-          </ConditionalRender>
-        </Suspend>
+        <VitalsSignView fallback={null}>
+          <Suspend>
+            <ConditionalRender condition={!!restVitalSigns && viewMode === "tile"} fallback="">
+              <MoreVitals readOnly={readOnly} vitalSigns={restVitalSigns}/>
+            </ConditionalRender>
+          </Suspend>
+        </VitalsSignView>
       </CardFooter>
     </Card>
   )

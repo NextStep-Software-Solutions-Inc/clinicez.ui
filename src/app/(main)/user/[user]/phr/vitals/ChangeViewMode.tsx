@@ -10,9 +10,11 @@ export default function ChangeViewMode() {
   const viewMode = searchParams.get("view_mode") || "tile";
 
   const handleChangeTab = (value: string) => {
+    const history = window.history;
     const newSearchParams = new URLSearchParams(searchParams);
     newSearchParams.set("view_mode", value);
-    router.replace(`${pathname}?${newSearchParams.toString()}`);
+    history.pushState({}, "", `${pathname}?${newSearchParams.toString()}`);
+    // router.replace(`${pathname}?${newSearchParams.toString()}`);
   }
   return (
     <Tabs className="flex-grow" defaultValue={viewMode} onValueChange={handleChangeTab} >

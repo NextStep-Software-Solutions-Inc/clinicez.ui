@@ -33,6 +33,6 @@ const ConditionalRender: React.FC<ConditionalRenderProps> = ({
 };
 
 // Default fallback component
-const Fallback = () => <div>No content provided</div>;
+const Fallback = () => null;
 
 export default ConditionalRender;

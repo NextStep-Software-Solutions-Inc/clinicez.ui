@@ -10,7 +10,7 @@ export default async function AddVitalSignsModal({userId}: {userId: string}) {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button className="ml-auto flex-grow sm:flex-grow-0">Add Vitals</Button>
+        <Button className="flex-grow sm:flex-grow-0">Add Vitals</Button>
       </DialogTrigger>
       <CustomModalContent 
         className="sm:max-w-[625px] overflow-scroll max-h-[100vh] no-scrollbar"

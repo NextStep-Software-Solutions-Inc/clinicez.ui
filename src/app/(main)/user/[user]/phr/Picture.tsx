@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { revalidatePath } from "@actions/cache.action";
 import ConditionalRender from "@components/utils/ConditionalRender";
 import { useState } from "react";
+import Image from "next/image";
 
 interface PictureProps {
   user: User;
@@ -45,7 +46,7 @@ export const Picture = ({ user, readOnly = true }: PictureProps) => {
   return (
     <div className="flex flex-wrap items-center gap-5">
       <Avatar className="rounded w-48 h-48">
-        <AvatarImage className="object-cover" src={user?.picture || "https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png"} />
+        <Image fill className="object-cover" src={user?.picture || "https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png"} alt=""/>
         <AvatarFallback> ME</AvatarFallback>
       </Avatar>
       <ConditionalRender condition={!readOnly}>

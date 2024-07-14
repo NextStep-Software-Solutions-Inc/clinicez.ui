@@ -16,9 +16,11 @@ export default function SearchBar({placeholder}: SearchBarProps) {
   const debounceValue = useDebounce(search, 200)
 
   useEffect(() => { 
-    const searchParams = new URLSearchParams()
-    searchParams.set("search", debounceValue)
-    router.push(`?${searchParams.toString()}`)
+    if(debounceValue){
+      const searchParams = new URLSearchParams()
+      searchParams.set("search", debounceValue)
+      router.push(`?${searchParams.toString()}`)
+    }
   }, [debounceValue, router])
 
   return (

@@ -1,6 +1,6 @@
-import { withJwtAuth } from '@middlewares/withJwtAuth';
 "use server";
 import 'server-only'
+import { withJwtAuth } from '@middlewares/withJwtAuth';
 
 import { NextRequest, NextResponse } from "next/server";
 import { getUserIllnessesAction } from '@actions/user-illness.action';

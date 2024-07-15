@@ -4,7 +4,7 @@ import { HealthcareProviderType } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
 
-export const GET = (async (req:NextRequest) => {
+export const GET = withJwtAuth(async (req:NextRequest) => {
   const searchParams = req.nextUrl.searchParams
   const type = searchParams.get('type') as HealthcareProviderType;
   const userId = searchParams.get('userId');

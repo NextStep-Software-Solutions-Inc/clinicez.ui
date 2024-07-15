@@ -5,7 +5,7 @@ import 'server-only'
 
 export const dynamic = 'force-dynamic' // defaults to auto
 
-export const GET = (async (req:Request,  {params}: { params: { userId: string } }) => {
+export const GET = withJwtAuth(async (req:Request,  {params}: { params: { userId: string } }) => {
   
   const userId = params.userId
   const response = new NextResponse()

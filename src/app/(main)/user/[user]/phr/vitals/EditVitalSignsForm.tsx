@@ -13,8 +13,10 @@ import { VitalSignsType } from "./RecentVitalSigns";
 import { updateVitalSignAction } from "@actions/vitals.action";
 import { usePathname } from "next/navigation";
 import { revalidatePath } from "@actions/cache.action";
+import { useRef } from "react";
 
 export default function EditVitalSignsForm({vitalSign}: {vitalSign: VitalSignsType[number]}){
+  const closeBtnRef = useRef<HTMLButtonElement>(null);
   const pathname = usePathname()
   const form = useForm<VitalSignsTypeSchema>({
     resolver: zodResolver(vitalSignsSchema),
@@ -40,6 +42,7 @@ export default function EditVitalSignsForm({vitalSign}: {vitalSign: VitalSignsTy
         success: () => {
           form.reset(data)
           revalidatePath(pathname, "page")
+          closeBtnRef.current?.click();
           return "Vital Signs Updated"
         },
         error: "Failed to update vital signs"
@@ -52,7 +55,7 @@ export default function EditVitalSignsForm({vitalSign}: {vitalSign: VitalSignsTy
         <VitalSignsFields form={form}/>
         <DialogFooter >
           <DialogClose asChild>
-            <Button type="button"variant="ghost">Close</Button>
+            <Button ref={closeBtnRef} type="button"variant="ghost">Close</Button>
           </DialogClose>
           <ConditionalRender condition={form.formState.isDirty} fallback="">
             <ActionButton type="submit">Save Changes</ActionButton>

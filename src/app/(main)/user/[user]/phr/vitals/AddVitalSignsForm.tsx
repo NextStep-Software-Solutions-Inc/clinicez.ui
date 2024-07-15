@@ -7,13 +7,14 @@ import ActionButton from "@components/ActionButton";
 import { Button } from "@components/ui/button";
 import { DialogClose, DialogFooter } from "@components/ui/dialog";
 import { toast } from "sonner";
-import ConditionalRender from "@components/utils/ConditionalRender";
 import {  createVitalSignAction } from "@actions/vitals.action";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { usePathname } from "next/navigation";
 import { revalidatePath } from "@actions/cache.action";
+import { useRef } from "react";
 
 export default function AddVitalSignsForm({userId}: {userId: string}) {
+  const closeBtnRef = useRef<HTMLButtonElement>(null);
   const pathname = usePathname()
   const form = useForm<VitalSignsType>({
     resolver: zodResolver(vitalSignsSchema),
@@ -39,6 +40,7 @@ export default function AddVitalSignsForm({userId}: {userId: string}) {
         loading: "Saving...",
         success: () => {
           form.reset(data)
+          closeBtnRef.current?.click();
           revalidatePath(pathname, "page")
           return "Vital Signs Updated"
         },
@@ -54,7 +56,7 @@ export default function AddVitalSignsForm({userId}: {userId: string}) {
         <VitalSignsFields form={form}/>
         <DialogFooter >
           <DialogClose asChild>
-            <Button type="button"variant="ghost">Close</Button>
+            <Button ref={closeBtnRef} type="button"variant="ghost">Close</Button>
           </DialogClose>
           <ActionButton type="submit">Add Vital Signs</ActionButton>
         </DialogFooter>

@@ -5,6 +5,7 @@ import { withUnkey } from '@unkey/nextjs';
 import { createUserAction, getUsersAction } from "@actions/user.action";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { withJwtAuth } from '@middlewares/withJwtAuth';
 
 const newUserSchema = z.object({
   userId: z.string({
@@ -43,7 +44,7 @@ export const POST = withUnkey(async (req) => {
   }, response);
 })
 
-export const GET = (async (req: NextRequest) => {
+export const GET = withJwtAuth(async (req: NextRequest) => {
   const searchParams = req.nextUrl.searchParams
   const orgId = searchParams.get('orgId');
   

@@ -16,7 +16,7 @@ export function OrganizationSwitcher({isCollapsed,}: OrganizationSwitcherProps) 
   const pathname = usePathname();
   const user = useUser()
   const {data: myOrgs} = useUserOrganization({userId: user.user?.sub}, !!user.user?.sub)  
-
+  
   const orgs: SwitcherOptionsType[] = (myOrgs ?? []).filter(o => ["ACTIVE"].includes(o.status))
     .map(org => ({
       label: org.Organization.name,
@@ -31,7 +31,6 @@ export function OrganizationSwitcher({isCollapsed,}: OrganizationSwitcherProps) 
         return acc;
       }
     }, []);
-   
   
   const handleChangeOrganization = (newValue: string) => {
     const searchParams  = new URLSearchParams(window.location.search);

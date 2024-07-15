@@ -1,5 +1,4 @@
 import jwt from 'jsonwebtoken';
-import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 
 const cert = `-----BEGIN CERTIFICATE-----
@@ -24,7 +23,7 @@ BJU9ybdnl2wSWMtuZ7Y6jeI=
 
 export const withJwtAuth = (handler: (req: NextRequest, ...rest: any) => Promise<NextResponse>) => {
 
-  return async (req: NextRequest) => {
+  return async (req: NextRequest, ...rest: any) => {
     const authHeader = req.headers.get('Authorization');
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -43,6 +42,6 @@ export const withJwtAuth = (handler: (req: NextRequest, ...rest: any) => Promise
       });
     }
 
-    return handler(req);
+    return handler(req, ...rest);
   };
 };

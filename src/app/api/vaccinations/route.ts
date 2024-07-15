@@ -1,12 +1,12 @@
 "use server";
 import 'server-only'
 
-import { withUnkey } from '@unkey/nextjs';
 import { NextRequest, NextResponse } from "next/server";
 import { getUserVaccinationsAction } from '@actions/user-vaccination.action';
+import { withJwtAuth } from '@middlewares/withJwtAuth';
 
 
-export const GET = (async (req: NextRequest) => {
+export const GET = withJwtAuth(async (req: NextRequest) => {
   const searchParams = req.nextUrl.searchParams
   const userId = searchParams.get('userId');
 

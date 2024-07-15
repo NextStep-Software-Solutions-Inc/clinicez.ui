@@ -1,13 +1,13 @@
 "use server";
 import 'server-only'
 
-import { withUnkey } from '@unkey/nextjs';
 import { NextRequest, NextResponse } from "next/server";
 import { getUserOrganizationsAction } from '@actions/organization.action';
 import { UserOrganizationStatus } from '@prisma/client';
+import { withJwtAuth } from '@middlewares/withJwtAuth';
 
 
-export const GET = (async (req: NextRequest) => {
+export const GET = withJwtAuth(async (req: NextRequest) => {
   const searchParams = req.nextUrl.searchParams
   const userId = searchParams.get('userId');
   const orgId = searchParams.get('organizationId');

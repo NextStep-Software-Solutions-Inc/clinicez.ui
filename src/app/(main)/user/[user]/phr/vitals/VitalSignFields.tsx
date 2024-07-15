@@ -3,6 +3,8 @@ import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessa
 import { Input } from "@components/ui/input"
 import { Separator } from "@components/ui/separator"
 import { Textarea } from "@components/ui/textarea"
+import { formatDate } from "date-fns"
+import dayjs from "dayjs"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 
@@ -165,7 +167,7 @@ export default function VitalSignsFields({form}: VitalSignsFieldsProps){
             <FormItem className="flex-grow">
               <FormLabel>Date Taken</FormLabel>
               <FormControl>
-                <Input type="datetime-local" placeholder="Enter spo2 readings here" onChange={field.onChange} name={field.name} onBlur={field.onBlur} value={(field.value as unknown as string) ?? ""}  />
+                <Input type="datetime-local" placeholder="Enter spo2 readings here" onChange={field.onChange} name={field.name} onBlur={field.onBlur} value={dayjs(field.value).format("YYYY-MM-DDTHH:mm")}  />
               </FormControl>
               <FormDescription>Specify the date and time when was vitals taken.</FormDescription>
               <FormMessage />

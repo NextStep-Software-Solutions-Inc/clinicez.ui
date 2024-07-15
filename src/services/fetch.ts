@@ -1,10 +1,12 @@
+import { refreshTokensAction } from "@actions/auth.action";
+import { authAtom, jotaiStore } from "../state/auth";
+
 type CustomRequestInit = RequestInit
 type CreateFetchOptions = CustomRequestInit & {
   baseUrl: string;
 }
 
 export const createCustomFetch = (options: CreateFetchOptions) => {
-
   if (!options.baseUrl) {
     throw new Error('baseUrl is required')
   }
@@ -26,16 +28,57 @@ export const createCustomFetch = (options: CreateFetchOptions) => {
   }
 
   const customFetch = async <T>(url: string, init?: RequestOptionsType): Promise<T> => {
+    const { type, token} = jotaiStore.get(authAtom)
     const mergedOptions = {
       ...options,
       ...init,
+      headers:{
+        ...options.headers,
+        Authorization: `${type} ${token}`
+      }
     }
     const urlWithParams = `${options.baseUrl}${url}${createSearchParams(init?.params)}`
+    const res = await fetchWithAutoRefresh(urlWithParams, mergedOptions)
+    if(!res.ok) {
+      throw new Error(`Failed to fetch ${urlWithParams}`)
+    } else {
+      return await res.json() as T
+    }
+  }
+  let refreshTokenInProgress: Promise<string> | null = null;
 
-    return (await fetch(urlWithParams, mergedOptions)).json() as T
-    
+  async function refreshAuthTokenIfNeeded(): Promise<string> {
+    if (!refreshTokenInProgress) {
+      const url = new URL(window.location.href);
+      refreshTokenInProgress = refreshTokensAction(url.pathname).then(token => {
+        jotaiStore.set(authAtom, (prev) => ({ ...prev, token: token.accessToken ?? "" }));
+        return token.accessToken ?? "";
+      }).finally(() => {
+        refreshTokenInProgress = null; // Reset after completion
+      });
+    }
+    return refreshTokenInProgress;
   }
 
+  async function fetchWithAutoRefresh(url: string, options: RequestInit): Promise<Response> {
+    const response = await fetch(url, options);
+  
+    if (response.status === 401) {
+      // Wait for token refresh if it's already in progress or trigger a new one
+      const newToken = await refreshAuthTokenIfNeeded();
+  
+      // Update the Authorization header with the new token
+      const newHeaders = new Headers(options.headers);
+      newHeaders.set('Authorization', `Bearer ${newToken}`);
+  
+      // Clone the original request with updated headers and retry
+      const newOptions = { ...options, headers: newHeaders };
+      return fetch(url, newOptions); // Retry the request with the new token
+    }
+  
+    return response; // Return the original response if status is not 401
+  }
+  
   const get = <T>(url: string, init?: RequestOptionsType) => customFetch<T>(url, { ...init, method: 'GET' })
   const post = (url: string, init?: RequestOptionsType ) => customFetch(url, { ...init, method: 'POST' })
   const put = (url: string, init?: RequestOptionsType) => customFetch(url, { ...init, method: 'PUT' })

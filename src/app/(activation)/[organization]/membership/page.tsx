@@ -7,6 +7,7 @@ import Suspend from "@components/Suspend";
 import { MembershipTable } from "./MembershipTable";
 
 export const maxDuration = 30; // page timeout in seconds
+export const revalidate  = 60; // revalidation interval in seconds
 
 async function MembershipPage({params}: AppRouterPageRouteOpts) {
   const orgId = params?.organization as string;

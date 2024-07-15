@@ -4,7 +4,7 @@ import { Input } from "@components/ui/input"
 import { useDebounce } from "@hooks/useDebounce";
 import { SearchIcon } from "lucide-react"
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface SearchBarProps {
   placeholder?: string
@@ -13,16 +13,18 @@ interface SearchBarProps {
 export default function SearchBar({placeholder}: SearchBarProps) {
   const [search, setSearch] = useState("")
   const router = useRouter()
-  const debounceValue = useDebounce(search, 200)
+  const debounceValue = useDebounce(search, 500)
+  const isMountedRef = useRef(false);
 
-  useEffect(() => { 
-    if(debounceValue){
-      const searchParams = new URLSearchParams()
-      searchParams.set("search", debounceValue)
-      router.push(`?${searchParams.toString()}`)
+  useEffect(() => {
+    if (isMountedRef.current  || debounceValue) {
+      isMountedRef.current = true;
+      const searchParams = new URLSearchParams();
+      searchParams.set("search", debounceValue);
+      router.push(`?${searchParams.toString()}`);
     }
-  }, [debounceValue, router])
-
+  }, [debounceValue, router]);
+  
   return (
     <div className="relative ml-auto flex-1 md:grow-0">
       <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />

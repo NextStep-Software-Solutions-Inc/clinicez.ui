@@ -124,7 +124,8 @@ export const getUsersAction = async (filter?:FiltersType) => {
   });
 }
 
-export const getUserAction = cache(async (userId: string) => {
+export type GetUser = Awaited<ReturnType<typeof getUserAction>>
+export const getUserAction = cache(async (userId: string)=> {
   const user = await prisma.user.findUniqueOrThrow({ 
     where: { 
       isActive: true,

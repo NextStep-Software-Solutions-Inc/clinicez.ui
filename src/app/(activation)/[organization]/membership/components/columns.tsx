@@ -47,7 +47,14 @@ export const columns: ColumnDef<MembershipRequestSchema>[] = [
       <DataTableColumnHeader column={column} title="Application Date" />
     ),
     cell: ({ row }) => {
-      const dateApplied = format(row.original.createdAt, "PPp")
+      const dateApplied = row.original.createdAt.toLocaleDateString("en-PH", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        hour: "numeric",
+        minute: "numeric",
+        timeZone: "Asia/Manila"
+      })
 
       if (!dateApplied) {
         return null

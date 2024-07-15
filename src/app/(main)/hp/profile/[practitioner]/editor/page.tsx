@@ -5,7 +5,7 @@ import HPProfile from "./components/HPProfile";
 import HPProfessionalInfo from "./components/HPProfessionalInfo";
 import { HPProfileType } from "./hp-form.schema";
 import Suspend from "@components/Suspend";
-import { getHPsActions, getProfessionalDetailsAction, setIsPublishAction } from "@actions/hp.actions";
+import { getHPsAction, getProfessionalDetailsAction, setIsPublishAction } from "@actions/hp.actions";
 import HPPhoto from "./components/HPPhoto";
 import { Button } from "@components/ui/button";
 import { ExternalLink } from "lucide-react";
@@ -23,7 +23,7 @@ async function EditorPage({params, searchParams}: AppRouterPageRouteOpts) {
   const session = await getCachedSession();
   if(!session) return redirect("/api/auth/login");
   
-  const myHps = await getHPsActions({
+  const myHps = await getHPsAction({
     userId: session.user.sub,
   });
   const isMyHp = myHps.some((hp) => hp.id === hpId);

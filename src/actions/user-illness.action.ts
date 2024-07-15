@@ -33,6 +33,7 @@ export const addUserIllnessAction = async (payload: {
   })
 };
 
+export type GetUserIllnesses = Awaited<ReturnType<typeof getUserIllnessesAction>>
 export const getUserIllnessesAction = cache(async (userId?: string) => {
   return await prisma.userHealthCondition.findMany({
     orderBy: {

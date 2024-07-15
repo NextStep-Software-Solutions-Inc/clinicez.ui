@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 
 const cert = `-----BEGIN CERTIFICATE-----
@@ -21,7 +22,8 @@ jAcjFoXc8zqMoPA9UUBAzl9jMHX3okepqqubWnAZs1GN9nHM+JORqT/YzUNfwhEB
 BJU9ybdnl2wSWMtuZ7Y6jeI=
 -----END CERTIFICATE-----`;
 
-export const withJwtAuth = (handler: (req: NextRequest) => Promise<NextResponse>) => {
+export const withJwtAuth = (handler: (req: NextRequest, ...rest: any) => Promise<NextResponse>) => {
+
   return async (req: NextRequest) => {
     const authHeader = req.headers.get('Authorization');
     

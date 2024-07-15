@@ -1,55 +1,33 @@
 "use client";
 
-import { getUserAllergiesAction } from "@actions/user-allergy.action";
-import { getUserDisabilitiesAction } from "@actions/user-disability.action";
-import { getUserIllnessesAction } from "@actions/user-illness.action";
-import { getUserVaccinationsAction } from "@actions/user-vaccination.action";
-import { getUserAction } from "@actions/user.action";
-import { useEffect, useState } from "react";
+import { memo } from "react";
 import { Picture } from "../app/(main)/user/[user]/phr/Picture";
 import { Separator } from "./ui/separator";
 import { differenceInCalendarYears } from "date-fns";
-import Suspend from "./Suspend";
 import AllergiesForm from "../app/(main)/user/[user]/phr/allergies/AllergiesForm";
 import { VaccinationForm } from "../app/(main)/user/[user]/phr/vaccination-immunization/VaccinationForm";
 import DisabilitiesForm from "../app/(main)/user/[user]/phr/disabilities/DisabilitiesForm";
 import IllnessesForm from "../app/(main)/user/[user]/phr/disabilities/IllnessesForm";
 import PageLoading from "./PageLoading";
 import { LabelValue } from "./LabelValue";
+import { useUser } from "@hooks/useUser";
+import { useAllergy } from "@hooks/useAllergy";
+import { useDisability } from "@hooks/useDisability";
+import { useIllness } from "@hooks/useIllness";
+import { useVaccination } from "@hooks/useVaccination";
 
 interface EMRPreviewProps {
     patientId: string;
   }
-export default function EMRPreview({patientId}: EMRPreviewProps) {
-  const [loading, setLoading] = useState(true)
-  const [patient, setPatient] = useState<Awaited<ReturnType<typeof getUserAction>>>()
-  const [allergies, setAllergies] = useState<Awaited<ReturnType<typeof getUserAllergiesAction>>>()
-  const [vaccinations, setVaccinations] = useState<Awaited<ReturnType<typeof getUserVaccinationsAction>>>()
-  const [disabilities, setDisabilities] = useState<Awaited<ReturnType<typeof getUserDisabilitiesAction>>>()
-  const [illnesses, setIllnesses] = useState<Awaited<ReturnType<typeof getUserIllnessesAction>>>()
+function EMRPreview({patientId}: EMRPreviewProps) {
+
+  const { data: patient, isLoading } = useUser(patientId)
+  const { data: allergies, } = useAllergy(patientId)
+  const { data: disabilities } = useDisability(patientId)
+  const { data: illnesses } = useIllness(patientId)
+  const { data: vaccinations } = useVaccination(patientId)
   
-  
-  useEffect(() => {
-    (async () => {
-      setLoading(true)
-      const [patient, allergies, vaccinations, disabilities, illnesses] = await Promise.all([
-        getUserAction(patientId),
-        getUserAllergiesAction(patientId),
-        getUserVaccinationsAction(patientId),
-        getUserDisabilitiesAction(patientId),
-        getUserIllnessesAction(patientId)
-      ])
-        
-      await setPatient(() => patient)
-      await setAllergies(() => allergies)
-      await setVaccinations(() => vaccinations)
-      await setDisabilities(() => disabilities)
-      await setIllnesses(() => illnesses)
-      setLoading(false)
-    })()
-  }, [patientId])
-  
-  if(loading) return <PageLoading label="Loading Records ..."/>
+  if(isLoading) return <PageLoading label="Loading Records ..."/>
   const name = `${patient?.lastName || "-"}, ${patient?.firstName || "-"} ${patient?.middleName ?? ""} ${patient?.suffix ?? ""}`
   return (
     <div className="space-y-5 my-5 overflow-auto h-[calc(100vh-15%)] no-scrollbar">
@@ -82,23 +60,15 @@ export default function EMRPreview({patientId}: EMRPreviewProps) {
         
       <Separator/>
       <h3 className="text-xl">Allergies</h3>
-      <Suspend>
-        <AllergiesForm readOnly allergies={allergies ?? []} />
-      </Suspend>
+      <AllergiesForm readOnly allergies={allergies ?? []} />
   
       <Separator/>
       <h3 className="text-xl">Vaccination & Immunization</h3>
-      <Suspend>
-        <VaccinationForm readOnly vaccinations={vaccinations ?? []} />
-      </Suspend>
+      <VaccinationForm readOnly vaccinations={vaccinations ?? []} />
       <Separator/>
       <h3 className="text-xl">Personal & Social History</h3>
-      <Suspend>
-        <DisabilitiesForm readOnly disabilities={disabilities ?? []} />
-      </Suspend>
-      <Suspend>
-        <IllnessesForm readOnly illnesses={illnesses ?? []} />
-      </Suspend>
+      <DisabilitiesForm readOnly disabilities={disabilities ?? []} />
+      <IllnessesForm readOnly illnesses={illnesses ?? []} />
       <Separator/>
       <h3 className="text-xl">Family History</h3>
         
@@ -121,3 +91,4 @@ export default function EMRPreview({patientId}: EMRPreviewProps) {
   );
 }
   
+export default memo(EMRPreview)

@@ -18,9 +18,8 @@ async function PatientsPage({params, searchParams}: AppRouterPageRouteOpts) {
   const orgId = params?.organization as string;
   const search = searchParams?.search as string;
   const page = parseInt(searchParams?.page as string) || 1;
-  const [hp] = await Promise.all([
-    isHP()
-  ])
+
+  const [hp] = await Promise.all([isHP()])
 
   if(!hp) {
     return <UnauthorizedWarning/>

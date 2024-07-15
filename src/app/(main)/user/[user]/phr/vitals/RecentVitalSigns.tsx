@@ -30,7 +30,14 @@ export default async function RecentVitalSigns({readOnly = true, userId, viewMod
           <CardTitle>Recent Vitals</CardTitle>
           {latestVitalSign && (
             <CardDescription>
-              Your most recent vital record was taken on {format(latestVitalSign.dateTaken, "PPp")}
+              Your most recent vital record was taken on {latestVitalSign.dateTaken.toLocaleDateString("en-PH", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+                hour: "numeric",
+                minute: "numeric",
+                timeZone: "Asia/Manila"
+              })}
             </CardDescription>
           )}
           

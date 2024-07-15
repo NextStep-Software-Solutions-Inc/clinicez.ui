@@ -25,20 +25,18 @@ export const createCustomFetch = (options: CreateFetchOptions) => {
     return `?${searchParams.toString()}`
   }
 
-  const customFetch = async (url: string, init?: RequestOptionsType) => {
+  const customFetch = async <T>(url: string, init?: RequestOptionsType): Promise<T> => {
     const mergedOptions = {
       ...options,
       ...init,
     }
-
-    
-
     const urlWithParams = `${options.baseUrl}${url}${createSearchParams(init?.params)}`
 
-    return fetch(urlWithParams, mergedOptions)
+    return (await fetch(urlWithParams, mergedOptions)).json() as T
+    
   }
 
-  const get = (url: string, init?: RequestOptionsType) => customFetch(url, { ...init, method: 'GET' })
+  const get = <T>(url: string, init?: RequestOptionsType) => customFetch<T>(url, { ...init, method: 'GET' })
   const post = (url: string, init?: RequestOptionsType ) => customFetch(url, { ...init, method: 'POST' })
   const put = (url: string, init?: RequestOptionsType) => customFetch(url, { ...init, method: 'PUT' })
   const patch = (url: string, init?: RequestOptionsType) => customFetch(url, { ...init, method: 'PATCH' })

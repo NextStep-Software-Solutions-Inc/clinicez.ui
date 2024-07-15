@@ -1,41 +1,24 @@
-import { createHpAction, getHPsActions } from "@actions/hp.actions";
+import { getHPsAction } from "@actions/hp.actions";
 import { withJwtAuth } from "@middlewares/withJwtAuth";
 import { HealthcareProviderType } from "@prisma/client";
-import { NextResponse } from "next/server";
-import { z } from "zod";
-
-const response = new NextResponse()
-
-const createHPSchema = z.object({
-  userId: z.number({
-    required_error: "User id is required"
-  }),
-  type: z.nativeEnum(HealthcareProviderType, {
-    required_error: "Type is required"
-  }),
-  description: z.string().optional().nullable(),
-})
-
-export const POST = withJwtAuth(async (req) => {
-
-  const body = await req.json()
-  const newHp = createHPSchema.parse(body)
-  const hp = await createHpAction(newHp)
-
-  return NextResponse.json({
-    success: true,
-    response: hp
-  }, response)
-})
+import { NextRequest, NextResponse } from "next/server";
 
 
-export const GET = withJwtAuth(async (req) => {
-  const type = req.nextUrl.searchParams.get('type') as HealthcareProviderType
-    
-  const hps = await getHPsActions({ type })
+export const GET = (async (req:NextRequest) => {
+  const searchParams = req.nextUrl.searchParams
+  const type = searchParams.get('type') as HealthcareProviderType;
+  const userId = searchParams.get('userId');
+  const id = searchParams.get('id');
+  const isPublished = searchParams.get('isPublished');
 
-  return NextResponse.json({
-    success: true,
-    response: hps
-  }, response)
+  const filters = {
+    ...type ? { type } : {},
+    ...userId ? { userId } : {},
+    ...id ? { id: parseInt(id) } : {},
+    ...isPublished ? { isPublished: isPublished === 'true' } : {},
+  }
+
+  const hps = await getHPsAction(filters)
+
+  return NextResponse.json(hps, {status: 200})
 })

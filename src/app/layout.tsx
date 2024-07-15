@@ -5,6 +5,7 @@ import { Toaster as SonnerToaster } from "sonner"
 import { Toaster } from "@components/ui/toaster"
 import "@styles/globals.css";
 import Hotjar from "@components/Hotjar";
+import { SWRProvider } from "../provider/swr-provider";
 
 const montserrat = Montserrat({ subsets: ["latin"] });
 
@@ -20,12 +21,14 @@ export default function RootLayout({children}:Props) {
     <html lang="en">
       <Hotjar/>
       <body className={`${montserrat.className}`}>
-        <UserProvider>
-          {children}
-          <SpeedInsights />
-          <SonnerToaster />
-          <Toaster />
-        </UserProvider>
+        <SWRProvider>
+          <UserProvider>
+            {children}
+            <SpeedInsights />
+            <SonnerToaster />
+            <Toaster />
+          </UserProvider>
+        </SWRProvider>
       </body>
     </html>
   )

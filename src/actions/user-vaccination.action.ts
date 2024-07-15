@@ -33,6 +33,7 @@ export const createUserVaccinationAction = async ({userId, vaccineId, routeId, d
   });
 }
 
+export type GetUserVaccinations = Awaited<ReturnType<typeof getUserVaccinationsAction>>
 export const getUserVaccinationsAction = cache(async (userId: string) => {
   return await prisma.userVaccination.findMany({
     orderBy: {

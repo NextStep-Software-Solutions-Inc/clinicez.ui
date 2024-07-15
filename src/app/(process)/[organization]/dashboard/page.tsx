@@ -35,6 +35,7 @@ export const metadata: Metadata = {
   description: "Example dashboard app built using the components.",
 }
 
+export const revalidate  = 60; // revalidation interval in seconds
 
 async function DashboardPage({params, searchParams}: AppRouterPageRouteOpts) {
   const orgId = params?.organization as string

@@ -1,8 +1,10 @@
+"use server";
+import 'server-only'
+
 import { withUnkey } from '@unkey/nextjs';
 import { createUserAction, getUsersAction } from "@actions/user.action";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { withJwtAuth } from "@middlewares/withJwtAuth";
 
 const newUserSchema = z.object({
   userId: z.string({
@@ -41,9 +43,16 @@ export const POST = withUnkey(async (req) => {
   }, response);
 })
 
-export const GET = withJwtAuth(async (req) => {
+export const GET = (async (req: NextRequest) => {
+  const searchParams = req.nextUrl.searchParams
+  const orgId = searchParams.get('orgId');
+  
+  const filter = {
+    ...orgId ? { orgId } : {}
+  }
+  
   const response = new NextResponse()
-  const users = await getUsersAction();
+  const users = await getUsersAction(filter);
   return NextResponse.json({
     success: true,
     response: users

@@ -12,10 +12,6 @@ export const refreshTokensAction = async (currentPath:string) => {
     return token;
   } catch (error) {
     console.error(error);
-    try {
-      redirect(`/api/auth/login?returnTo=${currentPath}`, RedirectType.push)
-    } catch (error) {
-      console.error(error);
-    }
+    redirect(`/api/auth/login?returnTo=${currentPath}`, RedirectType.push)
   }
 }

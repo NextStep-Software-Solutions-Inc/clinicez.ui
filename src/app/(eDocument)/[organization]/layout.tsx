@@ -33,7 +33,7 @@ import ClinicEzMiniLogo from "@public/assets/clinic-ez_mini-logo.svg"
 import { protectOrg } from "@lib/protect-org";
 
 export default async function EDocLayout({children, params:{organization}}: EDocLayoutProps) {
-  await protectOrg(organization, "edoc layout")// Check if user is a member of the organization they are trying to access
+  await protectOrg(organization)// Check if user is a member of the organization they are trying to access
   
   return (
     <TooltipProvider>

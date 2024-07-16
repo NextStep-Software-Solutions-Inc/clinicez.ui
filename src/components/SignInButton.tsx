@@ -11,7 +11,7 @@ export const SignInButton = () => {
   const currentPath = `${pathname}${searchParams ? `?${searchParams.toString()}` : ""}`;
 
   return (
-    <Link href={`/api/auth/login?returnTo=${currentPath}`}>
+    <Link href={`/api/auth/login`}>
       <Button className="mx-auto ~text-xs/sm ~h-8/10">Sign In</Button>
     </Link>
   );

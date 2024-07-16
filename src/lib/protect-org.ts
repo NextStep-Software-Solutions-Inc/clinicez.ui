@@ -10,6 +10,7 @@ export const protectOrg = cache(async (orgUid: string) => {
   const session = await getCachedSession()
   const myOrgs = await getUserOrganizationsAction({userId: session?.user.sub})
   if (!myOrgs.map(org => org.Organization.orgId).includes(orgUid)) {
+    console.log("Not found");
     return notFound()
   }
 })

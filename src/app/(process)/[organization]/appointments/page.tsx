@@ -11,16 +11,6 @@ import Suspend from "@components/Suspend";
 import UnderConstruction from "@components/UnderConstruction";
 
 async function AppointmentsPage({ searchParams, params }: AppRouterPageRouteOpts ) {
-  // const data = await self.get("/api/appointments", {
-  //   params: {
-  //     _type: searchParams?._type,
-  //     _role: searchParams?._role,
-  //   },
-  //   next: {
-  //     revalidate: 10
-  //   }
-  // })
-  
   const appointmentStatus = searchParams?._type as AppointmentStatus
   const role = searchParams?._role as string
   const organization = params?.organization as string

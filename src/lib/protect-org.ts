@@ -6,7 +6,7 @@ import { getUserPlansAction } from "@actions/user-plan.action";
 import { permanentRedirect } from "next/navigation";
 import { cache } from "react";
 
-export const protectOrg = cache(async (orgUid: string, from: string) => {
+export const protectOrg = cache(async (orgUid: string) => {
   const session = await getCachedSession()
   const myOrgs = await getUserOrganizationsAction({userId: session?.user.sub})
   if (!myOrgs.map(org => org.Organization.orgId).includes(orgUid)) {

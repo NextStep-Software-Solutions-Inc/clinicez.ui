@@ -37,7 +37,7 @@ import { Suspense } from "react";
 import UserAvatarWrapper from "@components/UserAvatarWrapper";
 
 export default async function ProcessLayout({children, params:{organization}}: ProcessLayoutProps) {
-  await protectOrg(organization, "process layout")// Check if user is a member of the organization they are trying to access
+  await protectOrg(organization)// Check if user is a member of the organization they are trying to access
   
   return (
     <TooltipProvider>

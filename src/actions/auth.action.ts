@@ -12,6 +12,6 @@ export const refreshTokensAction = async (currentPath:string) => {
     return token;
   } catch (error) {
     console.error(error);
-    permanentRedirect(`/api/auth/login?returnTo=${currentPath}`, RedirectType.push)
+    permanentRedirect(`/api/auth/login`)
   }
 }

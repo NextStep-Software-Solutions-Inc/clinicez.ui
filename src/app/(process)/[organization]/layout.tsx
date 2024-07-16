@@ -18,14 +18,13 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@components/ui/tooltip"
-import AvatarDropdown from "@components/dashboard/AvatarDropdown"
 import Breadcrumb from "@components/dashboard/Breadcrumb"
 import { OrganizationSwitcher } from "@components/dashboard/OrganizationSwitcher"
 import SideNav from "./SideNav";
 import DrawerNav from "./DrawerNav";
 import { navList } from "./nav";
 
-interface DashboardLayoutProps {
+interface ProcessLayoutProps {
   children: React.ReactNode
   params: {
     organization: string
@@ -37,9 +36,9 @@ import { protectOrg } from "@lib/protect-org";
 import { Suspense } from "react";
 import UserAvatarWrapper from "@components/UserAvatarWrapper";
 
-export default async function DashboardLayout({children, params:{organization}}: DashboardLayoutProps) {
-  await protectOrg(organization)// Check if user is a member of the organization they are trying to access
-
+export default async function ProcessLayout({children, params:{organization}}: ProcessLayoutProps) {
+  await protectOrg(organization, "process layout")// Check if user is a member of the organization they are trying to access
+  
   return (
     <TooltipProvider>
       <div className="flex min-h-screen w-full flex-col bg-muted/40">

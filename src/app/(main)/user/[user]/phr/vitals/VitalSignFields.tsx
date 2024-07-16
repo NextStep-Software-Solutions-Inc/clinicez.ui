@@ -43,7 +43,7 @@ export default function VitalSignsFields({form}: VitalSignsFieldsProps){
             <FormItem className="flex-grow">
               <FormLabel>Height</FormLabel>
               <FormControl>
-                <Input type="number" inputMode="numeric" placeholder="Enter height in centimeter" {...field} />
+                <Input type="number" inputMode="numeric" placeholder="Enter height in centimeter" {...field} onFocus={el => el.target.select()} />
               </FormControl>
               <FormDescription>Height in cm</FormDescription>
               <FormMessage />
@@ -57,7 +57,7 @@ export default function VitalSignsFields({form}: VitalSignsFieldsProps){
             <FormItem className="flex-grow">
               <FormLabel>Weight</FormLabel>
               <FormControl>
-                <Input type="number" inputMode="numeric" placeholder="Enter weight in kilograms" {...field} />
+                <Input type="number" inputMode="numeric" placeholder="Enter weight in kilograms" {...field} onFocus={el => el.target.select()}  />
               </FormControl>
               <FormDescription>Weight in kilograms</FormDescription>
               <FormMessage />
@@ -72,7 +72,7 @@ export default function VitalSignsFields({form}: VitalSignsFieldsProps){
           <FormItem className="flex-grow">
             <FormLabel>Temperature</FormLabel>
             <FormControl>
-              <Input type="number" inputMode="numeric" placeholder="Enter temperature in celsius" {...field} />
+              <Input type="number" inputMode="numeric" placeholder="Enter temperature in celsius" {...field} onFocus={el => el.target.select()}  />
             </FormControl>
             <FormDescription>Body temperature from forehead of armpit</FormDescription>
             <FormMessage />
@@ -87,7 +87,7 @@ export default function VitalSignsFields({form}: VitalSignsFieldsProps){
             <FormItem className="flex-grow">
               <FormLabel>Pulse Rate</FormLabel>
               <FormControl>
-                <Input type="number" inputMode="numeric" placeholder="Enter pulse rate" {...field} />
+                <Input type="number" inputMode="numeric" placeholder="Enter pulse rate" {...field} onFocus={el => el.target.select()} />
               </FormControl>
               <FormDescription>You can use Pulse oximeter or manual counting.</FormDescription>
               <FormMessage />
@@ -101,7 +101,7 @@ export default function VitalSignsFields({form}: VitalSignsFieldsProps){
             <FormItem className="flex-grow">
               <FormLabel>Respiratory Rate</FormLabel>
               <FormControl>
-                <Input type="number" inputMode="numeric" placeholder="Enter the rate breathing here" {...field} />
+                <Input type="number" inputMode="numeric" placeholder="Enter the rate breathing here" {...field} onFocus={el => el.target.select()} />
               </FormControl>
               <FormDescription>You can observe the chest movements</FormDescription>
               <FormMessage />
@@ -117,7 +117,7 @@ export default function VitalSignsFields({form}: VitalSignsFieldsProps){
             <FormItem className="flex-grow">
               <FormLabel>BP Systolic</FormLabel>
               <FormControl>
-                <Input type="number" inputMode="numeric" placeholder="Enter value here" {...field} />
+                <Input type="number" inputMode="numeric" placeholder="Enter value here" {...field} onFocus={el => el.target.select()} />
               </FormControl>
               <FormDescription></FormDescription>
               <FormMessage />
@@ -132,7 +132,7 @@ export default function VitalSignsFields({form}: VitalSignsFieldsProps){
             <FormItem className="flex-grow">
               <FormLabel>BP Diastolic</FormLabel>
               <FormControl>
-                <Input type="number" inputMode="numeric" placeholder="Enter value here" {...field} />
+                <Input type="number" inputMode="numeric" placeholder="Enter value here" {...field} onFocus={el => el.target.select()} />
               </FormControl>
               <FormDescription></FormDescription>
               <FormMessage />
@@ -147,7 +147,7 @@ export default function VitalSignsFields({form}: VitalSignsFieldsProps){
           <FormItem className="flex-grow">
             <FormLabel>Oxygen Saturation (spo2)</FormLabel>
             <FormControl>
-              <Input type="number" inputMode="numeric" placeholder="Enter spo2 readings here" {...field} />
+              <Input type="number" inputMode="numeric" placeholder="Enter spo2 readings here" {...field} onFocus={el => el.target.select()} />
             </FormControl>
             <FormDescription>Use the Pulse oximeter or other medical device to measure oxygen level of your blood.</FormDescription>
             <FormMessage />

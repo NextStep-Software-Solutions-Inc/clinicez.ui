@@ -4,9 +4,9 @@ import { Separator } from "@components/ui/separator";
 import { Metadata } from "next";
 import { PatientList } from "./PatientList";
 import { isHP } from "@lib/protect-org";
-import { UnauthorizedWarning } from "../../../(activation)/[organization]/membership/UnauthorizedWarning";
 import SearchBar from "../dashboard/components/SearchBar";
 import PageLoading from "@components/PageLoading";
+import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
   title: "Patients List",
@@ -22,7 +22,7 @@ async function PatientsPage({params, searchParams}: AppRouterPageRouteOpts) {
   const [hp] = await Promise.all([isHP()])
 
   if(!hp) {
-    return <UnauthorizedWarning/>
+    redirect("/unauthorized");
   }
   
   return (

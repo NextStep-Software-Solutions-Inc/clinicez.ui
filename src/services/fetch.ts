@@ -1,5 +1,6 @@
 import { refreshTokensAction } from "@actions/auth.action";
 import { authAtom, jotaiStore } from "../state/auth";
+import { navigateAction } from "@actions/navigate.action";
 
 type CustomRequestInit = RequestInit
 type CreateFetchOptions = CustomRequestInit & {
@@ -50,8 +51,12 @@ export const createCustomFetch = (options: CreateFetchOptions) => {
   async function refreshAuthTokenIfNeeded(): Promise<string> {
     if (!refreshTokenInProgress) {
       const url = new URL(window.location.href);
-      refreshTokenInProgress = refreshTokensAction(url.pathname).then(token => {
-        jotaiStore.set(authAtom, (prev) => ({ ...prev, token: token?.accessToken ?? "" }));
+      refreshTokenInProgress = refreshTokensAction().then(async token => {
+        if(token === null) {
+          window.open(`/api/auth/login?returnTo=${url.pathname}`, "_self")
+        } else {
+          jotaiStore.set(authAtom, (prev) => ({ ...prev, token: token?.accessToken ?? "" }));
+        }
         return token?.accessToken ?? "";
       }).finally(() => {
         refreshTokenInProgress = null; // Reset after completion

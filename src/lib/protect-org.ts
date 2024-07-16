@@ -10,7 +10,7 @@ export const protectOrg = cache(async (orgUid: string, from: string) => {
   const session = await getCachedSession()
   const myOrgs = await getUserOrganizationsAction({userId: session?.user.sub})
   if (!myOrgs.map(org => org.Organization.orgId).includes(orgUid)) {
-    console.log(`not found ${from}`);
+    console.log(`no org found - ${from}`);
     // permanentRedirect("/unauthorized")
   }
 })

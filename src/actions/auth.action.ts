@@ -1,7 +1,7 @@
 "use server";
 
 import { getAccessToken } from "@auth0/nextjs-auth0";
-import { permanentRedirect, RedirectType } from "next/navigation";
+import { redirect, RedirectType } from "next/navigation";
 
 
 export const refreshTokensAction = async (currentPath:string) => {
@@ -12,6 +12,6 @@ export const refreshTokensAction = async (currentPath:string) => {
     return token;
   } catch (error) {
     console.error(error);
-    permanentRedirect(`/api/auth/login`)
+    redirect(`/api/auth/login?returnTo=${currentPath}`, RedirectType.push)
   }
 }

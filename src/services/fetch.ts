@@ -51,8 +51,8 @@ export const createCustomFetch = (options: CreateFetchOptions) => {
     if (!refreshTokenInProgress) {
       const url = new URL(window.location.href);
       refreshTokenInProgress = refreshTokensAction(url.pathname).then(token => {
-        jotaiStore.set(authAtom, (prev) => ({ ...prev, token: token.accessToken ?? "" }));
-        return token.accessToken ?? "";
+        jotaiStore.set(authAtom, (prev) => ({ ...prev, token: token?.accessToken ?? "" }));
+        return token?.accessToken ?? "";
       }).finally(() => {
         refreshTokenInProgress = null; // Reset after completion
       });

@@ -6,7 +6,6 @@ import ConditionalRender from "@components/utils/ConditionalRender"
 import { isHP, isOrgAdmin, isSameOrg, isUserOwner } from "@lib/protect-org"
 import { redirect } from "next/navigation"
 import { getCachedSession } from "@actions/session.action"
-import { UnauthorizedWarning } from "../../../../(activation)/[organization]/membership/UnauthorizedWarning"
 
 export const metadata: Metadata = {
   title: "PHR",
@@ -45,7 +44,7 @@ export default async function PHRLayout({ children, params: {user} }: PHRLayoutP
   }
   catch (e) {
     console.error(e);
-    return <UnauthorizedWarning  />;
+    redirect("/unauthorized");
   }
 
   const sidebarNavItems = [

@@ -1,10 +1,10 @@
 import jwt from 'jsonwebtoken';
 import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
-const prodCert = fs.readFileSync('./certificates/clinic-ez.pem');
-const devCert = fs.readFileSync('./certificates/dev-clinicez.pem');
+const prodCert = fs.readFileSync('../certificates/clinic-ez.pem');
+const devCert = fs.readFileSync('../certificates/dev-clinicez.pem');
 
-const cert = process.env.NODE_ENV === 'production' ? prodCert : devCert;
+const cert = process.env.NEXT_PUBLIC_BUILD_ENV === 'production' ? prodCert : devCert;
 
 export const withJwtAuth = (handler: (req: NextRequest, ...rest: any) => Promise<NextResponse>) => {
 

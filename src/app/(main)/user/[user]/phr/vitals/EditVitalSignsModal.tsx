@@ -6,9 +6,9 @@ import { Dialog, DialogTrigger } from "@components/ui/dialog"
 import { AlertCircle } from "lucide-react"
 import EditVitalSignsForm from "./EditVitalSignsForm"
 import { Button } from "@components/ui/button"
-import { VitalSignsType } from "./RecentVitalSigns"
+import { GetUserVitalSignsType } from "@actions/vitals.action";
 
-export default function EditVitalSignsModal({vitalSign}: {vitalSign: VitalSignsType[number]}) {
+export default function EditVitalSignsModal({vitalSign}: {vitalSign: GetUserVitalSignsType[number]}) {
     
   return (
     <Dialog>

@@ -2,13 +2,13 @@ import { Activity, Brain, Cross, Gauge, HeartPulse, Ruler, Thermometer, Weight }
 import VitalCard from "./VitalCard";
 import {  DeleteVitals } from "./DeleteVitals";
 import ConditionalRender from "@components/utils/ConditionalRender";
-import { VitalSignsType } from "./RecentVitalSigns";
 import EditVitalSignsModal from "./EditVitalSignsModal";
 import { LabelValue } from "@components/LabelValue";
+import { GetUserVitalSignsType } from "@actions/vitals.action";
 
 interface VitalSignProps {
     readOnly: boolean;
-    vitalSign: VitalSignsType[number];
+    vitalSign: GetUserVitalSignsType[number];
 }
 
 export default function VitalSign({readOnly, vitalSign}:VitalSignProps){

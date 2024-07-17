@@ -26,7 +26,8 @@ export const getNurseAction = async (hpId: number) => {
         select: {
           isPublished: true,
           User: {
-            include: {
+            select: {
+              id: true,
               SocialLink: true
             }
           }

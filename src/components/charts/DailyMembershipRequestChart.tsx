@@ -39,19 +39,24 @@ interface DailyMembershipRequestChartProps {
         date: string;
         request: number;
     }[];
+    onChangeDate?: (date: DateRange) => void;
+    dateRange?: DateRange;
 }
-export function DailyMembershipRequestChart({ chartData }: DailyMembershipRequestChartProps) {
+export function DailyMembershipRequestChart({ chartData, onChangeDate, dateRange }: DailyMembershipRequestChartProps) {
 
-  const [date, setDate] = React.useState<DateRange | undefined>({
-    from: dayjs().subtract(30, "day").toDate(),
-    to: dayjs().toDate(),
-  })
+  const [date, setDate] = React.useState<DateRange | undefined>(dateRange)
 
   const filteredData = React.useMemo(() => chartData.filter((item) => {
     const itemDate = new Date(item.date)
     if(!date?.from || !date?.to) return true
     return isBefore(itemDate, date.to) && isBefore(date.from, itemDate)
   }), [chartData, date])
+
+
+  const handleDateChange = (date: DateRange | undefined) => {
+    setDate(date)
+    if(date) onChangeDate?.(date)
+  }
 
   return (
     <Card>
@@ -93,10 +98,11 @@ export function DailyMembershipRequestChart({ chartData }: DailyMembershipReques
               mode="range"
               defaultMonth={date?.from}
               selected={date}
-              onSelect={setDate}
+              onSelect={handleDateChange}
               numberOfMonths={2}
               disabled={{
                 after: new Date(),
+                before: dayjs().startOf("year").toDate(),
               }}
             />
           </PopoverContent>
@@ -127,6 +133,7 @@ export function DailyMembershipRequestChart({ chartData }: DailyMembershipReques
                 return date.toLocaleDateString("en-US", {
                   month: "short",
                   day: "numeric",
+                  year: "numeric",
                 })
               }}
             />

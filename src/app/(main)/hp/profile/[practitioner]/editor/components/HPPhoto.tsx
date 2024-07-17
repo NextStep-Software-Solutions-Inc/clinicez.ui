@@ -10,6 +10,7 @@ import { HPProfileType } from "../hp-form.schema";
 import ActionButton from "@components/ActionButton";
 import { uploadMediaAction } from "@actions/blob.action";
 import { Label } from "@components/ui/label";
+import { useUser } from "@auth0/nextjs-auth0/client";
 
 const actions = {
   LAB_TECHNICIAN: upsertNurseAction,
@@ -17,13 +18,14 @@ const actions = {
   DOCTOR: upsertDoctorAction,
 }
 interface HPPhotoProps {
-  userId: number
   profile: HPProfileType
   hpId: number
   type: HealthcareProviderType
 }
 
-export default function HPPhoto({profile, hpId, type, userId}: HPPhotoProps) {
+export default function HPPhoto({profile, hpId, type}: HPPhotoProps) {
+  const user = useUser()
+  const userId = user?.user?.sub
     
   const action = async (formData: FormData) => {
     
@@ -35,7 +37,7 @@ export default function HPPhoto({profile, hpId, type, userId}: HPPhotoProps) {
         if (!picture.size) return profile.picture
         const form = new FormData()
         form.append("media", picture)
-        form.append("directory", userId.toString())
+        form.append("directory", userId ?? "")
         const { url } = await uploadMediaAction(form);
         return url
       })(),
@@ -43,7 +45,7 @@ export default function HPPhoto({profile, hpId, type, userId}: HPPhotoProps) {
         if (!cover.size) return profile.cover
         const form = new FormData()
         form.append("media", cover)
-        form.append("directory", userId.toString())
+        form.append("directory", userId ?? "")
         const { url } = await uploadMediaAction(form);
         return url
       })()

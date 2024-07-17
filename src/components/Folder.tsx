@@ -27,8 +27,8 @@ export interface FolderProps {
 export default async function Folder({folder, readOnly}: FolderProps) {
   
   return (
-    <Card>
-      <CardHeader className="">
+    <Card className="group/folder">
+      <CardHeader>
         <div className="flex flex-wrap gap-2 items-center">
           <div>
             <CardTitle className="flex items-center gap-3 text-lg ">

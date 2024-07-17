@@ -9,6 +9,8 @@ export const self = createCustomFetch({
   // cache: "force-cache",
   headers: {
     Authorization: `${type} ${token}`,
+    "Content-Type": "application/json",
+    "Allow-Control-Allow-Origin": "*",
   },
   next: {
     revalidate: 30,

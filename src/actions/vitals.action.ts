@@ -21,7 +21,7 @@ type BaseVitalSign = {
     bpDiastolic?: number;
     notes?: string;
 }
-export const createVitalSignAction = async (payload: BaseVitalSign & { userId: string }) => {
+export const createUserVitalSignAction = async (payload: BaseVitalSign & { userId: string }) => {
   const {userId, ...res} = payload;
   return await prisma.vitalSign.create({
     data: {
@@ -37,7 +37,8 @@ export const createVitalSignAction = async (payload: BaseVitalSign & { userId: s
 }
 
 
-export const getVitalSignsAction = cache(async (userId: string) => {
+export type GetUserVitalSignsType = Awaited<ReturnType<typeof getUserVitalSignsAction>>;
+export const getUserVitalSignsAction = cache(async (userId: string) => {
   return await prisma.vitalSign.findMany({
     orderBy: {
       createdAt: "asc"
@@ -51,7 +52,7 @@ export const getVitalSignsAction = cache(async (userId: string) => {
   });
 })
 
-export const getVitalSignAction = cache(async (vitalsId: number) => {
+export const getUserVitalSignAction = cache(async (vitalsId: number) => {
   return await prisma.vitalSign.findUnique({
     where: {
       isActive: true,
@@ -60,7 +61,7 @@ export const getVitalSignAction = cache(async (vitalsId: number) => {
   });
 })
 
-export const updateVitalSignAction = async (vitalsId: number, payload: BaseVitalSign) => {
+export const updateUserVitalSignAction = async (vitalsId: number, payload: BaseVitalSign) => {
   return await prisma.vitalSign.update({
     where: {
       isActive: true,
@@ -73,7 +74,7 @@ export const updateVitalSignAction = async (vitalsId: number, payload: BaseVital
   });
 }
 
-export const deleteVitalSignAction = async (vitalsId: number) => {
+export const deleteUserVitalSignAction = async (vitalsId: number) => {
   return await prisma.vitalSign.update({
     where: {
       isActive: true,

@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import ConditionalRender from "@components/utils/ConditionalRender";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { VitalSignsType } from "./RecentVitalSigns";
-import { updateVitalSignAction } from "@actions/vitals.action";
+import { updateUserVitalSignAction } from "@actions/vitals.action";
 import { usePathname } from "next/navigation";
 import { revalidatePath } from "@actions/cache.action";
 import { useRef } from "react";
@@ -37,7 +37,7 @@ export default function EditVitalSignsForm({vitalSign}: {vitalSign: VitalSignsTy
 
   const action = async () => {
     form.handleSubmit(async (data) => {
-      toast.promise(updateVitalSignAction(vitalSign.id, data), {
+      toast.promise(updateUserVitalSignAction(vitalSign.id, data), {
         loading: "Saving...",
         success: () => {
           form.reset(data)

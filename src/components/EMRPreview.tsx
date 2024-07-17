@@ -15,6 +15,9 @@ import { useAllergy } from "@hooks/useAllergy";
 import { useDisability } from "@hooks/useDisability";
 import { useIllness } from "@hooks/useIllness";
 import { useVaccination } from "@hooks/useVaccination";
+import VitalSign from "../app/(main)/user/[user]/phr/vitals/VitalSign";
+import RecentVitalSigns from "../app/(main)/user/[user]/phr/vitals/RecentVitalSigns";
+import { useUserVitalSign } from "@hooks/useUserVitalSign";
 
 interface EMRPreviewProps {
     patientId: string;
@@ -26,6 +29,7 @@ function EMRPreview({patientId}: EMRPreviewProps) {
   const { data: disabilities } = useDisability(patientId)
   const { data: illnesses } = useIllness(patientId)
   const { data: vaccinations } = useVaccination(patientId)
+  const { data: vitalSigns } = useUserVitalSign(patientId)
   
   if(isLoading) return <PageLoading label="Loading Records ..."/>
   const name = `${patient?.lastName || "-"}, ${patient?.firstName || "-"} ${patient?.middleName ?? ""} ${patient?.suffix ?? ""}`
@@ -79,7 +83,8 @@ function EMRPreview({patientId}: EMRPreviewProps) {
       <h3 className="text-xl">Obstetric History</h3>
         
       <Separator/>
-      <h3 className="text-xl">Latest Vitals</h3>
+      <h3 className="text-xl">Vital Signs & Anthropometric Measurements</h3>
+      <RecentVitalSigns readOnly vitalSigns={vitalSigns ?? []} userId={patient?.userId ?? ""}/>
         
       <Separator/>
       <h3 className="text-xl">Organs / Systems</h3>

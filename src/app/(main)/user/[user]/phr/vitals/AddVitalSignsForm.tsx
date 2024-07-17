@@ -7,7 +7,7 @@ import ActionButton from "@components/ActionButton";
 import { Button } from "@components/ui/button";
 import { DialogClose, DialogFooter } from "@components/ui/dialog";
 import { toast } from "sonner";
-import {  createVitalSignAction } from "@actions/vitals.action";
+import {  createUserVitalSignAction } from "@actions/vitals.action";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { usePathname } from "next/navigation";
 import { revalidatePath } from "@actions/cache.action";
@@ -36,7 +36,7 @@ export default function AddVitalSignsForm({userId}: {userId: string}) {
   const action = async () => {
     form.handleSubmit(async (data) => {
       if(!userId) return toast.error("User not found")
-      toast.promise(createVitalSignAction({...data, userId}), {
+      toast.promise(createUserVitalSignAction({...data, userId}), {
         loading: "Saving...",
         success: () => {
           form.reset(data)

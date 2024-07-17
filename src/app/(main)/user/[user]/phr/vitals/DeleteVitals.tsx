@@ -1,7 +1,7 @@
 "use client";
 
 import { revalidatePath } from "@actions/cache.action";
-import { deleteVitalSignAction } from "@actions/vitals.action";
+import { deleteUserVitalSignAction } from "@actions/vitals.action";
 import ActionButton from "@components/ActionButton";
 import { usePathname } from "next/navigation";
 import { toast } from "sonner";
@@ -10,7 +10,7 @@ export const DeleteVitals = ({ id }: { id: number; }) => {
   const pathname = usePathname()
 
   const action = async () => {
-    toast.promise(deleteVitalSignAction(id), {
+    toast.promise(deleteUserVitalSignAction(id), {
       loading: "Deleting...",
       success: () => {
         revalidatePath(pathname, "page");

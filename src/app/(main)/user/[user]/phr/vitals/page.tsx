@@ -1,8 +1,8 @@
 import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth0";
 import Suspend from "@components/Suspend";
 import { Separator } from "@components/ui/separator";
-import RecentVitalSigns from "./RecentVitalSigns";
 import { isUserOwner } from "@lib/protect-org";
+import VitalSignsSSRWrapper from "./VitalSignsSSRWrapper";
 
 export const metadata = {
   title: "Vital Signs & Anthropometric Measurements | PHR",
@@ -24,7 +24,7 @@ async function VitalsPage({params, searchParams}: AppRouterPageRouteOpts) {
       </div>
       <Separator />
       <Suspend>
-        <RecentVitalSigns readOnly={!userOwner} userId={userId} viewMode={viewMode}/>
+        <VitalSignsSSRWrapper readOnly={!userOwner} userId={userId} viewMode={viewMode}/>
       </Suspend>
     </div>
   );

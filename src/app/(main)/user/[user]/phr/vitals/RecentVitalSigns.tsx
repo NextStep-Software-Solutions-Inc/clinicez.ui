@@ -2,42 +2,35 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import AddVitalSignsModal from "./AddVitalSignsModal";
 import MoreVitals from "./MoreVitals";
 import ConditionalRender from "@components/utils/ConditionalRender";
-import { getVitalSignsAction } from "@actions/vitals.action";
 import Suspend from "@components/Suspend";
-import { format } from "date-fns";
 import ChangeViewMode from "./ChangeViewMode";
 import VitalsSignView from "./VitalsSignView";
 import { VitalChartInteractive } from "@components/charts/VitalChartInteractive";
 import VitalSign from "./VitalSign";
-
+import { GetUserVitalSignsType } from "@actions/vitals.action";
+import dayjs from "dayjs";
+import localizedFormat from 'dayjs/plugin/localizedFormat'
+dayjs.extend(localizedFormat)
 interface RecentVitalSignsProps {
   readOnly?: boolean;
   userId: string;
   viewMode?: "chart" | "tile";
+  vitalSigns: GetUserVitalSignsType
 }
 
-export type VitalSignsType = Awaited<ReturnType<typeof getVitalSignsAction>>
-export default async function RecentVitalSigns({readOnly = true, userId, viewMode}: RecentVitalSignsProps) {
+export default function RecentVitalSigns({readOnly = true, userId, viewMode, vitalSigns}: RecentVitalSignsProps) {
 
-  const vitalSigns = await getVitalSignsAction(userId);
   const latestVitalSign = vitalSigns.length > 0 ? vitalSigns[vitalSigns.length - 1] : null;
   const restVitalSigns = vitalSigns.length > 0 ? vitalSigns.slice(0, vitalSigns.length - 1) : [];
-
+  
   return (
     <Card>
       <CardHeader className="flex flex-row flex-wrap gap-2 items-center">
         <div>
           <CardTitle>Recent Vitals</CardTitle>
-          {latestVitalSign && (
+          {!!latestVitalSign && (
             <CardDescription>
-              Your most recent vital record was taken on {latestVitalSign.dateTaken.toLocaleDateString("en-PH", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-                hour: "numeric",
-                minute: "numeric",
-                timeZone: "Asia/Manila"
-              })}
+              Most recent vital record was taken last {dayjs(latestVitalSign?.dateTaken).format("llll")}
             </CardDescription>
           )}
           
@@ -59,7 +52,7 @@ export default async function RecentVitalSigns({readOnly = true, userId, viewMod
       <CardFooter>
         <VitalsSignView fallback={null}>
           <Suspend>
-            <ConditionalRender condition={!!restVitalSigns && viewMode === "tile"} fallback="">
+            <ConditionalRender condition={!!restVitalSigns} fallback="">
               <MoreVitals readOnly={readOnly} vitalSigns={restVitalSigns}/>
             </ConditionalRender>
           </Suspend>

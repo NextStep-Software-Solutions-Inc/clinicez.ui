@@ -18,7 +18,7 @@ import {
 } from "@components/ui/chart"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@components/ui/select"
 import Each from "@components/utils/Each"
-import { VitalSignsType } from "../../app/(main)/user/[user]/phr/vitals/RecentVitalSigns"
+import { GetUserVitalSignsType } from "@actions/vitals.action"
 
 const chartConfig = {
   views: {
@@ -63,12 +63,12 @@ const chartConfig = {
 } satisfies ChartConfig
 
 interface VitalChartInteractiveProps {
-  vitalSigns: VitalSignsType
+  vitalSigns: GetUserVitalSignsType
 }
 
 export function VitalChartInteractive({vitalSigns}: VitalChartInteractiveProps) {
 
-  const groupVitalsByDate = (vitals: VitalSignsType) => {
+  const groupVitalsByDate = (vitals: GetUserVitalSignsType) => {
     const data = []
     for (const vital of vitals) {
       const date = new Date(vital.dateTaken).toISOString()
@@ -97,7 +97,7 @@ export function VitalChartInteractive({vitalSigns}: VitalChartInteractiveProps) 
         <div className="flex flex-1 flex-col justify-center gap-1 px-6 py-5 sm:py-6">
           <CardTitle>Vitals Chart</CardTitle>
           <CardDescription>
-            Select data sets to view in the chart
+            Select dataset to view in the chart
           </CardDescription>
         </div>
         <div className="flex items-center mx-5 pb-5">
@@ -107,7 +107,7 @@ export function VitalChartInteractive({vitalSigns}: VitalChartInteractiveProps) 
             </SelectTrigger>
             <SelectContent>
               <SelectGroup>
-                <SelectLabel>Data sets</SelectLabel>
+                <SelectLabel>Dataset</SelectLabel>
                 <Each
                   of={["temp", "spo2", "pulseRate", "respRate", "height", "weight", "bmi", "bpSystolic", "bpDiastolic"]}
                   render={(value) => {

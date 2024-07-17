@@ -1,8 +1,11 @@
 import jwt from 'jsonwebtoken';
 import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
-const prodCert = fs.readFileSync('../certificates/clinic-ez.pem');
-const devCert = fs.readFileSync('../certificates/dev-clinicez.pem');
+import path from 'path';
+
+
+const prodCert = fs.readFileSync(path.join(process.cwd(), "certificates/clinic-ez.pem"));
+const devCert = fs.readFileSync(path.join(process.cwd(), "certificates/dev-clinicez.pem"));
 
 const cert = process.env.NEXT_PUBLIC_BUILD_ENV === 'production' ? prodCert : devCert;
 

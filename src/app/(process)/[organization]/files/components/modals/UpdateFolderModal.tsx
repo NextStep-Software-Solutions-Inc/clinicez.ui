@@ -1,6 +1,6 @@
 "use client";
 
-import { createFolderAction, updateFolderAction } from "@actions/folder.action";
+import { updateFolderAction } from "@actions/folder.action";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import ActionButton from "@components/ActionButton"
 import CustomModalContent from "@components/CustomModalContent";
@@ -21,11 +21,10 @@ import { toast } from "sonner";
 interface UpdateFolderModalProps {
   folderId: number;
   folderName: string;
-  disabled?: boolean;
 }
 
 
-export default function UpdateFolderModal({disabled = false, folderId, folderName}:UpdateFolderModalProps) {
+export default function UpdateFolderModal({folderId, folderName}:UpdateFolderModalProps) {
   const user = useUser()
   const userId = user?.user?.sub
 
@@ -49,7 +48,7 @@ export default function UpdateFolderModal({disabled = false, folderId, folderNam
         <Tooltip>
           <TooltipTrigger asChild>
             <DialogTrigger asChild>
-              <Button variant="ghost" size="icon" className="w-5 h-5 text-gray-400 invisible group-hover/upload:visible transition-all">
+              <Button variant="ghost" size="icon" className="w-5 h-5 text-gray-400 invisible group-hover/folder:visible transition-all">
                 <Pencil className="w-5 h-5 text-gray-500"/>
               </Button>
             </DialogTrigger>

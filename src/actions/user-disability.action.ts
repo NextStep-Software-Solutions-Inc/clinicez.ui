@@ -1,3 +1,4 @@
+import { GetUser } from './user.action';
 "use server";
 
 import prisma from "@lib/prisma";
@@ -34,6 +35,8 @@ export const addUserDisabilityAction = async (payload: {
   })
 };
 
+
+export type GetUserDisabilities = Awaited<ReturnType<typeof getUserDisabilitiesAction>>
 export const getUserDisabilitiesAction = cache(async (userId: string) => {
   return await prisma.userDisability.findMany({
     orderBy: {

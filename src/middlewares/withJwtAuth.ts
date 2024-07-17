@@ -21,8 +21,9 @@ jAcjFoXc8zqMoPA9UUBAzl9jMHX3okepqqubWnAZs1GN9nHM+JORqT/YzUNfwhEB
 BJU9ybdnl2wSWMtuZ7Y6jeI=
 -----END CERTIFICATE-----`;
 
-export const withJwtAuth = (handler: (req: NextRequest) => Promise<NextResponse>) => {
-  return async (req: NextRequest) => {
+export const withJwtAuth = (handler: (req: NextRequest, ...rest: any) => Promise<NextResponse>) => {
+
+  return async (req: NextRequest, ...rest: any) => {
     const authHeader = req.headers.get('Authorization');
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -41,6 +42,6 @@ export const withJwtAuth = (handler: (req: NextRequest) => Promise<NextResponse>
       });
     }
 
-    return handler(req);
+    return handler(req, ...rest);
   };
 };

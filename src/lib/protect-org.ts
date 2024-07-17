@@ -3,14 +3,14 @@
 import { getUserOrganizationsAction } from "@actions/organization.action"
 import { getCachedSession } from "@actions/session.action";
 import { getUserPlansAction } from "@actions/user-plan.action";
-import { notFound } from "next/navigation";
+import { permanentRedirect } from "next/navigation";
 import { cache } from "react";
 
 export const protectOrg = cache(async (orgUid: string) => {
   const session = await getCachedSession()
   const myOrgs = await getUserOrganizationsAction({userId: session?.user.sub})
   if (!myOrgs.map(org => org.Organization.orgId).includes(orgUid)) {
-    return notFound()
+    permanentRedirect("/unauthorized")
   }
 })
 export const isUserOwner = cache(async (userId: string) => {

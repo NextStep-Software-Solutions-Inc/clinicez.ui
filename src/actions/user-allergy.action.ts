@@ -32,6 +32,7 @@ export const createUserAllergyAction = async (payload: {
 }
 
 
+export type GetUserAllergies = Awaited<ReturnType<typeof getUserAllergiesAction>>
 export const getUserAllergiesAction = cache(async (userId: string) => {
   return await prisma.userAllergy.findMany({
     where: { 

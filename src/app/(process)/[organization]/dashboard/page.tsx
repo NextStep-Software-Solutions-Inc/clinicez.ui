@@ -29,12 +29,14 @@ import { getCachedSession } from "@actions/session.action"
 import Suspend from "@components/Suspend"
 import { PatientHealthAnalytics } from "./PatientHealthAnalytics"
 import { PatientsAnalytics } from "./PatientsAnalytics"
+import OrgAnalytics from "./components/OrgAnalytics"
 
 export const metadata: Metadata = {
   title: "Dashboard",
   description: "Example dashboard app built using the components.",
 }
 
+export const revalidate  = 60; // revalidation interval in seconds
 
 async function DashboardPage({params, searchParams}: AppRouterPageRouteOpts) {
   const orgId = params?.organization as string
@@ -111,6 +113,9 @@ async function DashboardPage({params, searchParams}: AppRouterPageRouteOpts) {
               </Suspend>
               <Suspend>
                 <PatientsAnalytics orgId={orgId}/>
+              </Suspend>
+              <Suspend>
+                <OrgAnalytics orgId={orgId}/>
               </Suspend>
               {/* <ConditionalRender condition={await isMember() && await isHP()}>
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">

@@ -21,7 +21,7 @@ export default async function UserAvatarDropdown({children}: {children: React.Re
   const session = await getCachedSession();
   if(!session) return <SignInButton />;
   const user = await getUserAction(session.user.sub);
-
+  
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>

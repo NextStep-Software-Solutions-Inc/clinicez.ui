@@ -2,17 +2,18 @@ import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth
 import { Separator } from "@components/ui/separator";
 import { isOrgAdmin } from "@lib/protect-org";
 import React from "react";
-import { UnauthorizedWarning } from "./UnauthorizedWarning";
 import Suspend from "@components/Suspend";
 import { MembershipTable } from "./MembershipTable";
+import { redirect } from "next/navigation";
 
 export const maxDuration = 30; // page timeout in seconds
+export const revalidate  = 60; // revalidation interval in seconds
 
 async function MembershipPage({params}: AppRouterPageRouteOpts) {
   const orgId = params?.organization as string;
   const orgAdmin = await isOrgAdmin(orgId);
   if(!orgAdmin) {
-    return <UnauthorizedWarning />;
+    redirect("/unauthorized");
   }
 
   return (

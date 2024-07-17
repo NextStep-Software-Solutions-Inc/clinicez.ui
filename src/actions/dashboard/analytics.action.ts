@@ -202,3 +202,25 @@ export const getPatientAnalyticsData = async (orgUid: string) => {
     civilStatusStats
   }
 }
+
+export const getDailyOrgMembershipRequest = async (orgUid: string) => {
+  const dailyMembershipRequest = await prisma.userOrganization.groupBy({
+    by: ["createdAt"],
+    orderBy: {
+      createdAt: "asc"
+    },
+    where: {
+      // status: {
+      //   notIn: ["PENDING"]
+      // },
+      Organization: {
+        orgId: orgUid,
+      }
+    },
+    _count: {
+      _all: true,
+    }
+  })
+
+  return dailyMembershipRequest
+}

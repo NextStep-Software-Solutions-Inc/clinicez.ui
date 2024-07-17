@@ -16,9 +16,6 @@ import { revalidatePath } from "@actions/cache.action";
 import { VaccineType } from "./modal/AddUserVaccinationModal";
 import { UserVaccinationForm, VaccinationForm, vaccinationFormSchema } from "./UserVaccinationForm";
 
-
-
-
 interface AddUserVaccinationFormProps {
   vaccines: VaccineType[];
 }

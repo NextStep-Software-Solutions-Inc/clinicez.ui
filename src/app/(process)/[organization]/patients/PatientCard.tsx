@@ -23,7 +23,14 @@ export const PatientCard = async ({patient}: PatientCardProps) => {
       <CardHeader>
         <CardTitle className="line-clamp-2">{name}</CardTitle>
         <CardDescription>
-        Last update: {format(patient.updatedAt, "PPp")}
+        Last update: {new Date(patient.updatedAt).toLocaleDateString("en-PH", {
+            month:"short",
+            day:"numeric",
+            year:"numeric",
+            hour:"numeric",
+            minute:"numeric",
+            timeZone: "Asia/Manila"
+          })}
         </CardDescription>
       </CardHeader>
       <CardContent>

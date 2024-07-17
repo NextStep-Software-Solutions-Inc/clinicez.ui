@@ -6,7 +6,6 @@ import ConditionalRender from "@components/utils/ConditionalRender"
 import { isHP, isOrgAdmin, isSameOrg, isUserOwner } from "@lib/protect-org"
 import { redirect } from "next/navigation"
 import { getCachedSession } from "@actions/session.action"
-import { UnauthorizedWarning } from "../../../../(activation)/[organization]/membership/UnauthorizedWarning"
 
 export const metadata: Metadata = {
   title: "PHR",
@@ -33,19 +32,20 @@ export default async function PHRLayout({ children, params: {user} }: PHRLayoutP
     if (!userOwner) {
       const sameOrg = await isSameOrg(phrOwnerId);
       // Check if the user is same org as the PHR owner
+      
       if (!sameOrg) throw new Error("You must be same organization as the PHR owner to view this page.");
       else {
         const [orgAdmin, hp] = await Promise.all([
           isOrgAdmin(sameOrg?.Organization.orgId),
           isHP()
         ]);
-        if (!orgAdmin && !hp) throw new Error("You must be an organization admin or healthcare provider to view this page.");
+        if (!orgAdmin && !hp) throw new Error("You must be an organization admin and healthcare provider to view this page.");
       }
     }
   }
   catch (e) {
     console.error(e);
-    return <UnauthorizedWarning  />;
+    redirect("/unauthorized");
   }
 
   const sidebarNavItems = [
@@ -72,6 +72,10 @@ export default async function PHRLayout({ children, params: {user} }: PHRLayoutP
     {
       title: "Allergies",
       href: `/user/${user}/phr/allergies`,
+    },
+    {
+      title: "Vital Signs & Anthropometric Measurements",
+      href: `/user/${user}/phr/vitals`,
     },
     {
       title: "Medications",

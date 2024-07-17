@@ -21,11 +21,10 @@ async function EditorPage({params, searchParams}: AppRouterPageRouteOpts) {
   const type = searchParams?._type as HealthcareProviderType;
 
   const session = await getCachedSession();
-  if(!session) return redirect("/api/auth/login");
+  const userId = session?.user.sub
+  if(!userId) return redirect("/api/auth/login");
   
-  const myHps = await getHPsAction({
-    userId: session.user.sub,
-  });
+  const myHps = await getHPsAction({ userId });
   const isMyHp = myHps.some((hp) => hp.id === hpId);
   if(!isMyHp) return notFound();
 
@@ -82,7 +81,7 @@ async function EditorPage({params, searchParams}: AppRouterPageRouteOpts) {
       </div>
       <div className="space-y-10">
         <Suspend>
-          <HPPhoto profile={mappedProfile} type={type} hpId={hpId}/>
+          <HPPhoto userId={profile?.HealthcareProvider.User.id ?? 0} profile={mappedProfile} type={type} hpId={hpId}/>
         </Suspend>
         <Suspend>
           <HPProfile profile={mappedProfile}/>

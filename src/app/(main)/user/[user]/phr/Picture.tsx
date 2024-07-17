@@ -26,6 +26,7 @@ export const Picture = ({ user, readOnly = true }: PictureProps) => {
   }
 
   const action = async (formData: FormData) => {
+    formData.append("directory", user.id.toString());
     toast.promise(uploadMediaAction(formData), {
       loading: "Uploading...",
       success: ({url}) => {

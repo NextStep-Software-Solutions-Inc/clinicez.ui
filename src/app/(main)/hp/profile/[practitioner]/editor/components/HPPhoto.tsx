@@ -17,12 +17,13 @@ const actions = {
   DOCTOR: upsertDoctorAction,
 }
 interface HPPhotoProps {
-    profile: HPProfileType
-    hpId: number
-    type: HealthcareProviderType
+  userId: number
+  profile: HPProfileType
+  hpId: number
+  type: HealthcareProviderType
 }
 
-export default function HPPhoto({profile, hpId, type}: HPPhotoProps) {
+export default function HPPhoto({profile, hpId, type, userId}: HPPhotoProps) {
     
   const action = async (formData: FormData) => {
     
@@ -30,17 +31,19 @@ export default function HPPhoto({profile, hpId, type}: HPPhotoProps) {
     const cover = formData.get("cover") as File
     
     const [pictureUrl, coverUrl] = await Promise.all([
-      await (async () => {
+      (async () => {
         if (!picture.size) return profile.picture
         const form = new FormData()
         form.append("media", picture)
+        form.append("directory", userId.toString())
         const { url } = await uploadMediaAction(form);
         return url
       })(),
-      await (async () => {
+      (async () => {
         if (!cover.size) return profile.cover
         const form = new FormData()
         form.append("media", cover)
+        form.append("directory", userId.toString())
         const { url } = await uploadMediaAction(form);
         return url
       })()

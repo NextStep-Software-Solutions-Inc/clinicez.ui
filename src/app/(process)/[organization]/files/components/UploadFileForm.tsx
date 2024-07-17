@@ -46,6 +46,7 @@ const uploadFileFormSchema = z.object({
 interface UploadFileFormProps {
     folder: {
       id: number;
+      name: string
     }
 }
 
@@ -64,7 +65,7 @@ export default function UploadFileForm({folder}: UploadFileFormProps) {
   const action = async (formData: FormData) => {
     form.handleSubmit(async (data) => {
       if(!userId) throw new Error("User ID is required to upload a file")
-
+      formData.append("directory", `${userId}/${folder.name}`)
       toast.promise(uploadMediaAction(formData), {
         loading: "Uploading...",
         success: ({url}) => {

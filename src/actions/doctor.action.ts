@@ -28,6 +28,7 @@ export const getDoctorAction = async (hpId: number) => {
           isPublished: true,
           User: {
             select: {
+              id: true,
               SocialLink: true,
             }
           }

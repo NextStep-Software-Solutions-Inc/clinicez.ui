@@ -81,7 +81,7 @@ async function EditorPage({params, searchParams}: AppRouterPageRouteOpts) {
       </div>
       <div className="space-y-10">
         <Suspend>
-          <HPPhoto userId={profile?.HealthcareProvider.User.id ?? 0} profile={mappedProfile} type={type} hpId={hpId}/>
+          <HPPhoto profile={mappedProfile} type={type} hpId={hpId}/>
         </Suspend>
         <Suspend>
           <HPProfile profile={mappedProfile}/>

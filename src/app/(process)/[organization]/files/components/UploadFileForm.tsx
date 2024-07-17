@@ -23,9 +23,7 @@ import {
 
 import Each from "@components/utils/Each";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { cn } from "@lib/utils";
 import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react"
 import { use, useRef } from "react"
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -65,7 +63,7 @@ export default function UploadFileForm({folder}: UploadFileFormProps) {
   const action = async (formData: FormData) => {
     form.handleSubmit(async (data) => {
       if(!userId) throw new Error("User ID is required to upload a file")
-      formData.append("directory", `${userId}/${folder.name}`)
+      formData.append("directory", `${userId}`)
       toast.promise(uploadMediaAction(formData), {
         loading: "Uploading...",
         success: ({url}) => {

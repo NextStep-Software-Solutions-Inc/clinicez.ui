@@ -1,7 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@components/ui/card";
-import Each from "@components/utils/Each";
 import UploadFileModal from "../../files/components/modals/UploadFileModal";
-import { getFilesAction } from "@actions/file.actions";
 import { faker } from "@faker-js/faker";
 import File from "../../../../../components/File";
 

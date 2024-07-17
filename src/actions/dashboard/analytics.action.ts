@@ -1,6 +1,7 @@
 "use server";
 
 import prisma from "@lib/prisma";
+import { Prisma } from "@prisma/client";
 
 
 export const getHealthAnalyticsData = async (orgUid: string) => {
@@ -203,24 +204,26 @@ export const getPatientAnalyticsData = async (orgUid: string) => {
   }
 }
 
-export const getDailyOrgMembershipRequest = async (orgUid: string) => {
-  const dailyMembershipRequest = await prisma.userOrganization.groupBy({
-    by: ["createdAt"],
-    orderBy: {
-      createdAt: "asc"
-    },
-    where: {
-      // status: {
-      //   notIn: ["PENDING"]
-      // },
-      Organization: {
-        orgId: orgUid,
-      }
-    },
-    _count: {
-      _all: true,
-    }
-  })
-
-  return dailyMembershipRequest
+export type GetDailyOrgMembershipRequest = Awaited<ReturnType<typeof getDailyOrgMembershipRequestAction>>;
+export const getDailyOrgMembershipRequestAction = async (orgUid: string, startDate:string, endDate: string) => {
+  const query = Prisma.sql`
+    SELECT
+      DATE_TRUNC('day', uo."createdAt") as date,
+      COUNT(*) as total_requests
+    FROM
+      "UserOrganization" uo
+    INNER JOIN 
+      "Organization" o ON uo."organizationId" = o."id"
+    WHERE
+      o."orgId" = ${Prisma.raw(`'${orgUid}'`)} -- Correctly parameterized
+        AND uo."createdAt" >= ${Prisma.raw(`'${startDate}'`)} -- Start date filter
+        AND uo."createdAt" <= ${Prisma.raw(`'${endDate}'`)} -- End date filter
+      -- AND uo."status" NOT IN ('PENDING') -- Uncomment if needed
+    GROUP BY
+      DATE_TRUNC('day', uo."createdAt")
+    ORDER BY
+      date ASC;
+  `;
+  const dailyMembershipRequest = await prisma.$queryRaw(query, orgUid);
+  return dailyMembershipRequest as { date: Date, total_requests: BigInt }[];
 }

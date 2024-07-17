@@ -52,7 +52,7 @@ export default function RecentVitalSigns({readOnly = true, userId, viewMode, vit
       <CardFooter>
         <VitalsSignView fallback={null}>
           <Suspend>
-            <ConditionalRender condition={!!restVitalSigns} fallback="">
+            <ConditionalRender condition={restVitalSigns.length > 0} fallback="">
               <MoreVitals readOnly={readOnly} vitalSigns={restVitalSigns}/>
             </ConditionalRender>
           </Suspend>

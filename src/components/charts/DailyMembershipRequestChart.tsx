@@ -46,6 +46,7 @@ export function DailyMembershipRequestChart({ chartData }: DailyMembershipReques
     from: dayjs().subtract(30, "day").toDate(),
     to: dayjs().toDate(),
   })
+  
 
   const filteredData = React.useMemo(() => chartData.filter((item) => {
     const itemDate = new Date(item.date)
@@ -127,6 +128,7 @@ export function DailyMembershipRequestChart({ chartData }: DailyMembershipReques
                 return date.toLocaleDateString("en-US", {
                   month: "short",
                   day: "numeric",
+                  year: "numeric",
                 })
               }}
             />

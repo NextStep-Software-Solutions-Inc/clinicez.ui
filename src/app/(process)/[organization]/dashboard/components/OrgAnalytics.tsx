@@ -1,18 +1,18 @@
-"use server";
+"use client";
 
-import { getDailyOrgMembershipRequest } from "@actions/dashboard/analytics.action";
 import { DailyMembershipRequestChart } from "@components/charts/DailyMembershipRequestChart";
+import { useDailyOrgMembership } from "@hooks/useDailyOrgMembership";
 import dayjs from "dayjs";
-import React from "react";
-
+import React, {  useMemo } from "react";
   
-export default async function OrgAnalytics({ orgId }: { orgId: string; }) {
-  const data = await getDailyOrgMembershipRequest(orgId)
-  const chartData = data.map((item) => ({
-    date: dayjs(item.createdAt).format("YYYY-MM-DD"),
-    request: item._count._all,
-  }))
-    
+export default function OrgAnalytics({ orgId }: { orgId: string; }) {
+  const {data} = useDailyOrgMembership(orgId, dayjs().startOf("month").format("YYYY-MM-DD"), dayjs().format("YYYY-MM-DD"));
+
+  const chartData = useMemo(() => (data ?? []).map((item) => ({
+    date: dayjs(item.date).format("YYYY-MM-DD"),
+    request: Number(item.total_requests),
+  })), [data]);
+
   return (
     <div className="grid gap-2 grid-cols-1">
       <DailyMembershipRequestChart chartData={chartData} />

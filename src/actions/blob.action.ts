@@ -10,7 +10,7 @@ export const uploadMediaAction = async (formData: FormData) => {
   if (size > 10) {
     throw new Error("File size should not exceed 10MB");
   }
-  const data = await uploadFile(`${directory}/${media.name}-${Date.now()}`, await media.arrayBuffer(), media.type);
+  const data = await uploadFile(`${directory}/${media.name}`, await media.arrayBuffer(), media.type);
 
   // const data = await put(media.name, media, {
   //   access: "public",

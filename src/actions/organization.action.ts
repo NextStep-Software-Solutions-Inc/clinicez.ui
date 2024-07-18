@@ -320,7 +320,7 @@ export const setMembershipRequestStatusAction = async (id: number, status: UserO
   })
   if(!request) throw new Error("Error updating membership request status");
 
-  const filePath = path.join(process.cwd(), "src/actions/email-templates/org-membership-update.html");
+  const filePath = path.join(process.cwd(), "email-templates/org-membership-update.html");
   
   const emailTemplate = await fs.readFile(filePath, "utf-8");
   const userName = `${request.User.firstName} ${request.User.lastName}`;
@@ -345,7 +345,7 @@ export const setMembershipRequestStatusAction = async (id: number, status: UserO
 
 
 const notifyAdmins = async (receiver: string[], orgName: string) => {
-  const filePath = path.join(process.cwd(), "src/actions/email-templates/org-membership-application.html");
+  const filePath = path.join(process.cwd(), "email-templates/org-membership-application.html");
 
   const emailTemplate = await fs.readFile(filePath, "utf-8");
   const appName = process.env.NEXT_PUBLIC_APP_NAME!;
@@ -361,7 +361,7 @@ const notifyAdmins = async (receiver: string[], orgName: string) => {
 }
 
 const notifyUser = async (receiver: string[], orgName: string, userName: string) => {
-  const filePath = path.join(process.cwd(), "src/actions/email-templates/org-membership-request.html");
+  const filePath = path.join(process.cwd(), "email-templates/org-membership-request.html");
   const emailTemplate = await fs.readFile(filePath, "utf-8");
   const appName = process.env.NEXT_PUBLIC_APP_NAME!;
   const html = emailTemplate.replaceAll("@{userName}", userName).replaceAll("@{appName}", appName).replaceAll("@{orgName}", orgName)

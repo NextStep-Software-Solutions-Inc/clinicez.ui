@@ -11,7 +11,7 @@ export const useDailyOrgMembership = (userId: string, {startDate, endDate}:UseDa
   const fetcher = (...args:any) => self.get<GetDailyOrgMembershipRequest>(args)
   const searParams = new URLSearchParams()
   searParams.set('orgId', userId)
-  searParams.set('startDate', dayjs(startDate).format('YYYY-MM-DD'))
-  searParams.set('endDate', dayjs(endDate).format('YYYY-MM-DD'))
+  searParams.set('startDate', dayjs(startDate).format('YYYY-MM-DDTHH:mm:ss.SSSZ'))
+  searParams.set('endDate', dayjs(endDate).format('YYYY-MM-DDTHH:mm:ss.SSSZ'))
   return useSWR(`/api/analytics?${searParams.toString()}`, fetcher)
 }

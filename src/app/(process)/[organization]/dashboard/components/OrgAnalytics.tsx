@@ -13,10 +13,10 @@ export default function OrgAnalytics({ orgId }: { orgId: string; }) {
   })
   
   const {data} = useDailyOrgMembership(orgId, {
-    startDate: dayjs(date?.from).format("YYYY-MM-DDTHH:mm:ss.SSSZ"),
-    endDate: dayjs(date?.to).format("YYYY-MM-DDTHH:mm:ss.SSSZ")
+    startDate: dayjs(date?.from).startOf("day").format("YYYY-MM-DDTHH:mm:ss.SSSZ"),
+    endDate: dayjs(date?.to).endOf("day").format("YYYY-MM-DDTHH:mm:ss.SSSZ")
   });
-
+  
   const chartData = useMemo(() => (data ?? []).map((item) => ({
     date: dayjs(item.date).format("YYYY-MM-DDTHH:mm:ss.SSSZ"),
     request: Number(item.total_requests),

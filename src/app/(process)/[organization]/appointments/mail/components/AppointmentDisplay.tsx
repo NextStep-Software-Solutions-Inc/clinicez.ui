@@ -46,7 +46,7 @@ export default async function AppointmentDisplay({ appointmentId, role }: Appoin
   
   const freshAppointment = await getAppointmentAction(appointmentId ?? "")
   const user = await getUserAction(freshAppointment?.patientId ?? "")
-  if (!user) throw new Error("User not found")
+  if (!user) return new Error("Select an appointment to view");
   
   const appointmentToolsPerStatus: Record<AppointmentStatus, React.ReactNode> = {
     all: (<></>),

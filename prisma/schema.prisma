@@ -146,6 +146,7 @@ model UserOrganizationRole {
   orgId                        Int
   name                         String
   description                  String?
+  requirements                 String[]                      @default([])
   isActive                     Boolean                       @default(true)
   UserDefaultOrganizationRoles UserDefaultOrganizationRole[]
   UserOrganizations            UserOrganization[]

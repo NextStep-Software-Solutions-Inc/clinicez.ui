@@ -7,6 +7,7 @@ export const SWRProvider = ({ children }: {
   return (
     <SWRConfig value={{
       dedupingInterval: 1000 * 10,
+      refreshInterval: 1000 * 60,
     }}>
       {children}
     </SWRConfig>

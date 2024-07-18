@@ -9,12 +9,16 @@ import { DateRange } from "react-day-picker";
 export default function OrgAnalytics({ orgId }: { orgId: string; }) {
   const [date, setDate] = React.useState<DateRange | undefined>({
     from: dayjs().startOf("month").toDate(),
-    to: dayjs().toDate(),
+    to: dayjs().endOf("day").toDate(),
   })
-  const {data} = useDailyOrgMembership(orgId, dayjs(date?.from).startOf("month").format("YYYY-MM-DD"), dayjs(date?.to).format("YYYY-MM-DD"));
-
+  
+  const {data} = useDailyOrgMembership(orgId, {
+    startDate: dayjs(date?.from).startOf("day").format("YYYY-MM-DDTHH:mm:ss.SSSZ"),
+    endDate: dayjs(date?.to).endOf("day").format("YYYY-MM-DDTHH:mm:ss.SSSZ")
+  });
+  
   const chartData = useMemo(() => (data ?? []).map((item) => ({
-    date: dayjs(item.date).format("YYYY-MM-DD"),
+    date: dayjs(item.date).format("YYYY-MM-DDTHH:mm:ss.SSSZ"),
     request: Number(item.total_requests),
   })), [data]);
 

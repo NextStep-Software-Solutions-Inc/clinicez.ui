@@ -18,7 +18,7 @@ import {
 } from "@components/ui/chart"
 
 import { DateRange } from "react-day-picker"
-import { format, isBefore, isWithinInterval } from "date-fns"
+import { format } from "date-fns"
 import { Popover, PopoverContent, PopoverTrigger } from "@components/ui/popover"
 import { Button } from "@components/ui/button"
 import { cn } from "@lib/utils"
@@ -45,13 +45,6 @@ interface DailyMembershipRequestChartProps {
 export function DailyMembershipRequestChart({ chartData, onChangeDate, dateRange }: DailyMembershipRequestChartProps) {
 
   const [date, setDate] = React.useState<DateRange | undefined>(dateRange)
-
-  const filteredData = React.useMemo(() => chartData.filter((item) => {
-    const itemDate = new Date(item.date)
-    if(!date?.from || !date?.to) return true
-    return isWithinInterval(itemDate, { start: date.from, end: date.to })
-  }), [chartData, date])
-
 
   const handleDateChange = (date: DateRange | undefined) => {
     setDate(date)
@@ -115,7 +108,7 @@ export function DailyMembershipRequestChart({ chartData, onChangeDate, dateRange
         >
           <BarChart
             accessibilityLayer
-            data={filteredData}
+            data={chartData}
             margin={{
               left: 12,
               right: 12,

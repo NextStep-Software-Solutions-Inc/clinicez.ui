@@ -3,7 +3,11 @@ import { self } from "@services/request"
 import dayjs from "dayjs"
 import useSWR from "swr"
 
-export const useDailyOrgMembership = (userId: string, startDate: string, endDate:string) => {
+type UseDailyOrgMembership = {
+  startDate: string
+  endDate: string
+}
+export const useDailyOrgMembership = (userId: string, {startDate, endDate}:UseDailyOrgMembership) => {
   const fetcher = (...args:any) => self.get<GetDailyOrgMembershipRequest>(args)
   const searParams = new URLSearchParams()
   searParams.set('orgId', userId)

@@ -5,7 +5,7 @@ import { Separator } from "@components/ui/separator"
 import { AlertTriangle } from "lucide-react"
 import { getCachedSession } from "@actions/session.action";
 import { redirect } from "next/navigation";
-import { JoinOrg } from "./JoinOrg";
+import OrganizationSteps from "./OrganizationSteps";
 
 async function JoinOrgPage({params}: AppRouterPageRouteOpts) {
   const session = await getCachedSession();
@@ -30,12 +30,12 @@ async function JoinOrgPage({params}: AppRouterPageRouteOpts) {
         <AlertTriangle className="h-4 w-4"/>
         <AlertTitle>Warning</AlertTitle>
         <AlertDescription>
-          Spamming the organizations with join requests will result in a ban from the organization.
+          Spamming join requests will result in a ban from the organization.
         </AlertDescription>
       </Alert>
 
       <Suspend>
-        <JoinOrg orgId={orgId} userId={userId}/>
+        <OrganizationSteps orgId={orgId} userId={userId}/>
       </Suspend>
     
     </div>

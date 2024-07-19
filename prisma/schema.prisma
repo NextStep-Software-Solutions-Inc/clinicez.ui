@@ -870,17 +870,17 @@ model UserEmploymentRecord {
   employeeId         String                  @unique
   position           String
   designation        String?
-  department         Int?
-  office             Int?
-  college            Int?
+  departmentId       Int?
+  officeId           Int?
+  collegeId          Int?
   createdAt          DateTime                @default(now())
   updatedAt          DateTime                @updatedAt
   deletedAt          DateTime?
   isActive           Boolean                 @default(true)
   User               User                    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  Department         OrganizationDepartment? @relation(fields: [department], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  Office             OrganizationOffice?     @relation(fields: [office], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  College            OrganizationCollege?    @relation(fields: [college], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Department         OrganizationDepartment? @relation(fields: [departmentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Office             OrganizationOffice?     @relation(fields: [officeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  College            OrganizationCollege?    @relation(fields: [collegeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   Organization       Organization            @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   OrganizationRole   UserOrganizationRole    @relation(fields: [organizationRoleId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 

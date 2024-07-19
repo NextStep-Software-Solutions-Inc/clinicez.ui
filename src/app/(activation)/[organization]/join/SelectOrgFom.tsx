@@ -1,68 +1,59 @@
 "use client";
 
-import { joinOrganizationAction } from "@actions/organization.action";
-import { useUser } from "@auth0/nextjs-auth0/client";
-import ActionButton from "@components/ActionButton";
+import { GetOrganizationRoles } from "@actions/organization.action";
+import BackSubmitAndNext from "@components/SubmitAndNext";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@components/ui/form";
 import { RadioGroup, RadioGroupItem } from "@components/ui/radio-group";
 import Each from "@components/utils/Each";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { toast } from "sonner";
-import { z } from "zod";
+import { useLocalStorage } from "@hooks/useLocalStorage";
 
-interface JoinOrgFormProps {
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { EmployeeRecordType } from "./EmployeeRecordForm";
+import { OrganizationApplicationData } from "./OrganizationSteps";
+
+interface SelectOrgFormProps {
   orgId: string
-  userId: string
-  orgRoles: {
-    id: number;
-    orgId: number;
-    name: string;
-    description: string | null;
-  }[]
+  orgRoles: GetOrganizationRoles
   existingRoles: number[]
+  isFirstStep?: boolean;
+  isLastStep?: boolean;
+  nextStep?: () => void;
 }
 
-export const JoinOrgForm = ({existingRoles, orgRoles, userId, orgId}:JoinOrgFormProps) => {
-  const user = useUser();
 
-  const joinOrgSchema = z.object({
+export const SelectOrgForm = ({existingRoles, orgRoles, orgId, nextStep, isFirstStep, isLastStep}:SelectOrgFormProps) => {
+  const setOrgApplication = useLocalStorage<OrganizationApplicationData>(`${orgId}_application`, {orgId})[1];
+  
+  const selectRoleSchema = z.object({
     roleId: z.coerce.number({
       required_error: "Please select your role"
-    }).refine((role) => {
-      return !existingRoles.includes(role);
-    }, (value) => ({
+    }).refine((role) => !existingRoles.includes(role), (value) => ({
       message: `Role already exists in the organization. Please select another role.`
     }))
   })
 
-  type RolesType = z.infer<typeof joinOrgSchema>;
+  type SelectRoleType = z.infer<typeof selectRoleSchema>;
   
-  const form = useForm<RolesType>({
-    resolver: zodResolver(joinOrgSchema),
+  const form = useForm<SelectRoleType>({
+    resolver: zodResolver(selectRoleSchema),
+    mode: "all"
   });
 
-  const action = async () => {
-    
+  const handleNext = () => {
     form.handleSubmit(async (values) => {
-      if(!user.user?.email_verified) return toast.error("Please verify your email before joining an organization.")
-      toast.promise(joinOrganizationAction({
-        orgId,
-        userId,
-        roleId: values.roleId
-      }), {
-        loading: "Joining organization...",
-        success: "You have successfully joined the organization, please wait for the admin to approve your request.",
-        error: "Something went wrong while joining the organization. Please try again later."
-      })
-    }, (error) => {
-      toast.error(`Form error: ${error.roleId?.message}`)
-    })()
+      await setOrgApplication({
+        roleId: values.roleId, 
+        roleRequirements: orgRoles.find(role => role.id === values.roleId)?.requirements ?? []
+      });
+      nextStep?.();
+    })();
   }
 
   return (
     <Form {...form}>
-      <form action={action} className="shadow-xl p-5 rounded-sm">
+      <form className="shadow-xl p-5 rounded-sm">
         <FormField
           control={form.control}
           name="roleId"
@@ -96,7 +87,17 @@ export const JoinOrgForm = ({existingRoles, orgRoles, userId, orgId}:JoinOrgForm
             )
           }}
         />
-        <ActionButton className="my-10">Submit</ActionButton>
+        <div className="mt-10">
+          <BackSubmitAndNext 
+            actions={{
+              next:handleNext,
+            }}
+            disabled={{
+              next: !form.formState.isValid,
+              previous: isFirstStep,
+              submit: !isLastStep
+            }}/>
+        </div>
       </form>
     </Form>
   );

@@ -6,7 +6,6 @@ import { Prisma } from "@prisma/client";
 
 export type CreateUserStudentRecord = {
   studentId: string;
-  orgRoleId: number
   levelId: number
   userId: string
   orgId: string
@@ -19,7 +18,7 @@ export type CreateUserStudentRecord = {
 
 
 export const createStudentRecordAction = async (payload:CreateUserStudentRecord ) => {
-  const { userId, orgId, studentId, lrn, orgRoleId, departmentId, programId, collegeId, levelId, yearLevelId } = payload
+  const { userId, orgId, studentId, lrn, departmentId, programId, collegeId, levelId, yearLevelId } = payload
   const User: Prisma.UserStudentRecordCreateInput["User"] = {
     connect: {
       userId
@@ -28,11 +27,6 @@ export const createStudentRecordAction = async (payload:CreateUserStudentRecord 
   const Organization: Prisma.UserStudentRecordCreateInput["Organization"] = {
     connect: {
       orgId
-    }
-  }
-  const OrganizationRole: Prisma.UserStudentRecordCreateInput["OrganizationRole"] = {
-    connect: {
-      id: orgRoleId
     }
   }
   const Level: Prisma.UserStudentRecordCreateInput["Level"] =  {
@@ -70,7 +64,6 @@ export const createStudentRecordAction = async (payload:CreateUserStudentRecord 
       studentId,
       User,
       Organization,
-      OrganizationRole,
       Level,
       lrn,
       ...departmentId ? Department : {},

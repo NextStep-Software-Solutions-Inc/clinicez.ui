@@ -152,8 +152,8 @@ model UserOrganizationRole {
   UserDefaultOrganizationRoles UserDefaultOrganizationRole[]
   UserOrganizations            UserOrganization[]
   Organization                 Organization                  @relation(fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  UserStudentRecords           UserStudentRecord[]
-  UserEmploymentRecords        UserEmploymentRecord[]
+  UserStudentRecord            UserStudentRecord[]
+  UserEmploymentRecord         UserEmploymentRecord[]
 
   @@unique([orgId, name], name: "unique_organization_role")
 }
@@ -836,29 +836,29 @@ model OrgYearLevel {
 }
 
 model UserStudentRecord {
-  id                 Int                     @id @default(autoincrement())
-  userId             Int
-  organizationRoleId Int
-  organizationId     Int
-  studentId          String                  @unique
-  lrn                String?                 @unique
-  level              Int
-  yearLevel          Int?
-  programId          Int?
-  departmentId       Int?
-  collegeId          Int?
-  createdAt          DateTime                @default(now())
-  updatedAt          DateTime                @updatedAt
-  deletedAt          DateTime?
-  isActive           Boolean                 @default(true)
-  User               User                    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  YearLevel          OrgYearLevel?           @relation(fields: [yearLevel], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  Level              StudentLevel            @relation(fields: [level], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  Program            OrganizationProgram?    @relation(fields: [programId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  Department         OrganizationDepartment? @relation(fields: [departmentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  College            OrganizationCollege?    @relation(fields: [collegeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  Organization       Organization            @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  OrganizationRole   UserOrganizationRole    @relation(fields: [organizationRoleId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id                     Int                     @id @default(autoincrement())
+  userId                 Int
+  organizationId         Int
+  studentId              String                  @unique
+  lrn                    String?                 @unique
+  level                  Int
+  yearLevel              Int?
+  programId              Int?
+  departmentId           Int?
+  collegeId              Int?
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  deletedAt              DateTime?
+  isActive               Boolean                 @default(true)
+  User                   User                    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  YearLevel              OrgYearLevel?           @relation(fields: [yearLevel], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Level                  StudentLevel            @relation(fields: [level], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Program                OrganizationProgram?    @relation(fields: [programId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Department             OrganizationDepartment? @relation(fields: [departmentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  College                OrganizationCollege?    @relation(fields: [collegeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Organization           Organization            @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  UserOrganizationRole   UserOrganizationRole?   @relation(fields: [userOrganizationRoleId], references: [id])
+  userOrganizationRoleId Int?
 
   @@unique([userId, organizationId], name: "unique_user_student_record")
 }
@@ -877,26 +877,26 @@ model OrganizationOffice {
 }
 
 model UserEmploymentRecord {
-  id                 Int                     @id @default(autoincrement())
-  userId             Int
-  organizationId     Int
-  organizationRoleId Int
-  employeeId         String                  @unique
-  position           String
-  designation        String?
-  departmentId       Int?
-  officeId           Int?
-  collegeId          Int?
-  createdAt          DateTime                @default(now())
-  updatedAt          DateTime                @updatedAt
-  deletedAt          DateTime?
-  isActive           Boolean                 @default(true)
-  User               User                    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  Department         OrganizationDepartment? @relation(fields: [departmentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  Office             OrganizationOffice?     @relation(fields: [officeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  College            OrganizationCollege?    @relation(fields: [collegeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  Organization       Organization            @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  OrganizationRole   UserOrganizationRole    @relation(fields: [organizationRoleId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id                     Int                     @id @default(autoincrement())
+  userId                 Int
+  organizationId         Int
+  employeeId             String                  @unique
+  position               String
+  designation            String?
+  departmentId           Int?
+  officeId               Int?
+  collegeId              Int?
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  deletedAt              DateTime?
+  isActive               Boolean                 @default(true)
+  User                   User                    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Department             OrganizationDepartment? @relation(fields: [departmentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Office                 OrganizationOffice?     @relation(fields: [officeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  College                OrganizationCollege?    @relation(fields: [collegeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Organization           Organization            @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  UserOrganizationRole   UserOrganizationRole?   @relation(fields: [userOrganizationRoleId], references: [id])
+  userOrganizationRoleId Int?
 
   @@unique([userId, organizationId], name: "unique_user_employment")
 }

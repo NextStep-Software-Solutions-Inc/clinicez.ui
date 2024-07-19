@@ -82,11 +82,6 @@ export async function joinOrganizationAction(payload: JoinOrganizationPayload) {
         orgId
       }
     }
-    const OrganizationRole: Prisma.UserStudentRecordCreateInput["OrganizationRole"] = {
-      connect: {
-        id: userOrganization.role
-      }
-    }
     const Level: Prisma.UserStudentRecordCreateInput["Level"] =  {
       connect: {
         id: levelId
@@ -129,7 +124,6 @@ export async function joinOrganizationAction(payload: JoinOrganizationPayload) {
             studentId,
             User,
             Organization,
-            OrganizationRole,
             Level,
             lrn,
             ...departmentId ? {Department} : {},
@@ -141,7 +135,6 @@ export async function joinOrganizationAction(payload: JoinOrganizationPayload) {
             studentId,
             User,
             Organization,
-            OrganizationRole,
             Level,
             lrn,
             ...departmentId ? {Department} : {},
@@ -168,7 +161,6 @@ export async function joinOrganizationAction(payload: JoinOrganizationPayload) {
             position,
             User,
             Organization,
-            OrganizationRole,
             ...departmentId ? {Department} : {},
             ...collegeId ? {College} : {},
           },
@@ -178,7 +170,6 @@ export async function joinOrganizationAction(payload: JoinOrganizationPayload) {
             position,
             User,
             Organization,
-            OrganizationRole,
             ...departmentId ? {Department} : {},
             ...collegeId ? {College} : {},
           }

@@ -8,7 +8,6 @@ export type CreateUserEmploymentRecord = {
   employeeId: string;
   position: string
   designation: string
-  orgRoleId: number
   userId: string
   orgId: string
   departmentId?: number
@@ -16,7 +15,7 @@ export type CreateUserEmploymentRecord = {
 }
 
 export const createStudentRecordAction = async (payload:CreateUserEmploymentRecord ) => {
-  const { employeeId, position, designation, userId, orgId, orgRoleId, departmentId, collegeId } = payload
+  const { employeeId, position, designation, userId, orgId, departmentId, collegeId } = payload
   const User: Prisma.UserEmploymentRecordCreateInput["User"] = {
     connect: {
       userId
@@ -27,12 +26,6 @@ export const createStudentRecordAction = async (payload:CreateUserEmploymentReco
       orgId
     }
   }
-  const OrganizationRole: Prisma.UserEmploymentRecordCreateInput["OrganizationRole"] = {
-    connect: {
-      id: orgRoleId
-    }
-  }
-
   const Department: Prisma.UserEmploymentRecordCreateInput["Department"] =  {
     connect: {
       id: departmentId
@@ -54,7 +47,6 @@ export const createStudentRecordAction = async (payload:CreateUserEmploymentReco
       position,
       designation,
       Organization,
-      OrganizationRole,
       ...departmentId ? Department : {},
       ...collegeId ? College : {},
     }

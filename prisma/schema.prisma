@@ -113,6 +113,7 @@ model Organization {
   Offices                      OrganizationOffice[]
   UserStudentRecords           UserStudentRecord[]
   UserEmployments              UserEmploymentRecord[]
+  OrgYearLevel                 OrgYearLevel[]
 }
 
 model OrganizationSetting {
@@ -822,6 +823,18 @@ model StudentLevel {
   StudentRecords UserStudentRecord[]
 }
 
+model OrgYearLevel {
+  id                 Int                 @id @default(autoincrement())
+  organizationId     Int
+  name               String              @unique
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  deletedAt          DateTime?
+  isActive           Boolean             @default(true)
+  Organization       Organization        @relation(fields: [organizationId], references: [id])
+  UserStudentRecords UserStudentRecord[]
+}
+
 model UserStudentRecord {
   id                 Int                     @id @default(autoincrement())
   userId             Int
@@ -839,6 +852,7 @@ model UserStudentRecord {
   deletedAt          DateTime?
   isActive           Boolean                 @default(true)
   User               User                    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  YearLevel          OrgYearLevel?           @relation(fields: [yearLevel], references: [id], onDelete: NoAction, onUpdate: NoAction)
   Level              StudentLevel            @relation(fields: [level], references: [id], onDelete: NoAction, onUpdate: NoAction)
   Program            OrganizationProgram?    @relation(fields: [programId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   Department         OrganizationDepartment? @relation(fields: [departmentId], references: [id], onDelete: NoAction, onUpdate: NoAction)

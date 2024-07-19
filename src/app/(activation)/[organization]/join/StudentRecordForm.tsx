@@ -14,6 +14,11 @@ import { z } from "zod";
 import { OrganizationApplicationData } from "./OrganizationSteps";
 import { useSetAtom } from "jotai";
 import { additionalInfoValidAtom } from "./AdditionalInformationStep";
+import { useOrgYearLevel } from "@hooks/useOrgYearLevel";
+import { useStudentLevel } from "@hooks/useStudentLevel";
+import { useOrgProgram } from "@hooks/useOrgProgram";
+import { useOrgCollege } from "@hooks/useOrgCollege";
+import { useOrgDepartment } from "@hooks/useOrgDepartment";
 
 
 const employeeRecordSchema = z.object({
@@ -45,6 +50,12 @@ export default function StudentRecordForm({orgId} : {orgId: string}) {
 
   const setAdditionalInfoValidAtom = useSetAtom(additionalInfoValidAtom)
   const [orgApplication, setOrgApplication] = useLocalStorage<OrganizationApplicationData>(`${orgId}_application`)
+  const {data: orgYearLevels} = useOrgYearLevel(orgId)
+  const {data: studentLevels} = useStudentLevel()
+  const {data: orgPrograms} = useOrgProgram(orgId)
+  const {data: orgColleges} = useOrgCollege(orgId)
+  const {data: orgDepartment} = useOrgDepartment(orgId)
+
 
   const form = useForm<StudentRecordType>({
     resolver: zodResolver(employeeRecordSchema),
@@ -118,12 +129,9 @@ export default function StudentRecordForm({orgId} : {orgId: string}) {
                       </FormControl>
                       <SelectContent>
                         <Each
-                          of={[{
-                            id: 1,
-                            name: "College 1"
-                          }]}
-                          render={(college) => (
-                            <SelectItem key={college.id} value={college.id.toString()}>{college.name}</SelectItem>
+                          of={studentLevels ?? []}
+                          render={(level) => (
+                            <SelectItem key={level.id} value={level.id.toString()}>{level.name}</SelectItem>
                           ) }
                         />
                       </SelectContent>
@@ -156,10 +164,7 @@ export default function StudentRecordForm({orgId} : {orgId: string}) {
                       </FormControl>
                       <SelectContent>
                         <Each
-                          of={[{
-                            id: 1,
-                            name: "Year 1"
-                          }]}
+                          of={orgYearLevels ?? []}
                           render={(college) => (
                             <SelectItem key={college.id} value={college.id.toString()}>{college.name}</SelectItem>
                           ) }
@@ -190,12 +195,9 @@ export default function StudentRecordForm({orgId} : {orgId: string}) {
                       </FormControl>
                       <SelectContent>
                         <Each
-                          of={[{
-                            id: 1,
-                            name: "Program 1"
-                          }]}
-                          render={(college) => (
-                            <SelectItem key={college.id} value={college.id.toString()}>{college.name}</SelectItem>
+                          of={orgPrograms ?? []}
+                          render={(program) => (
+                            <SelectItem key={program.id} value={program.id.toString()}>{program.name}</SelectItem>
                           ) }
                         />
                       </SelectContent>
@@ -246,10 +248,7 @@ export default function StudentRecordForm({orgId} : {orgId: string}) {
                       </FormControl>
                       <SelectContent>
                         <Each
-                          of={[{
-                            id: 1,
-                            name: "College 1"
-                          }]}
+                          of={orgColleges ?? []}
                           render={(college) => (
                             <SelectItem key={college.id} value={college.id.toString()}>{college.name}</SelectItem>
                           ) }
@@ -279,12 +278,9 @@ export default function StudentRecordForm({orgId} : {orgId: string}) {
                       </FormControl>
                       <SelectContent>
                         <Each
-                          of={[{
-                            id: 1,
-                            name: "Department 1"
-                          }]}
-                          render={(college) => (
-                            <SelectItem key={college.id} value={college.id.toString()}>{college.name}</SelectItem>
+                          of={orgDepartment ?? []}
+                          render={(department) => (
+                            <SelectItem key={department.id} value={department.id.toString()}>{department.name}</SelectItem>
                           ) }
                         />
                       </SelectContent>

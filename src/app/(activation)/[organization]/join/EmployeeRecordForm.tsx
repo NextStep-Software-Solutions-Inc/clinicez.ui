@@ -14,6 +14,9 @@ import { z } from "zod";
 import { OrganizationApplicationData } from "./OrganizationSteps";
 import { useSetAtom } from "jotai";
 import { additionalInfoValidAtom } from "./AdditionalInformationStep";
+import { useOrgCollege } from "@hooks/useOrgCollege";
+import { useOrgDepartment } from "@hooks/useOrgDepartment";
+import { useOrgOffice } from "@hooks/useOrgOffice";
 
 
 const employeeRecordSchema = z.object({
@@ -45,6 +48,10 @@ export type EmployeeRecordType = z.infer<typeof employeeRecordSchema>;
 export default function EmployeeRecordForm({orgId} : {orgId: string}) {
   const setAdditionalInfoValidAtom = useSetAtom(additionalInfoValidAtom)
   const [orgApplication, setOrgApplication] = useLocalStorage<OrganizationApplicationData>(`${orgId}_application`)
+  const {data: orgColleges} = useOrgCollege(orgId)
+  const {data: orgDepartments} = useOrgDepartment(orgId)
+  const {data: orgOffices} = useOrgOffice(orgId)
+  
 
   const form = useForm<EmployeeRecordType>({
     resolver: zodResolver(employeeRecordSchema),
@@ -140,12 +147,9 @@ export default function EmployeeRecordForm({orgId} : {orgId: string}) {
                       </FormControl>
                       <SelectContent>
                         <Each
-                          of={[{
-                            id: 1,
-                            name: "Office 1"
-                          }]}
-                          render={(college) => (
-                            <SelectItem key={college.id} value={college.id.toString()}>{college.name}</SelectItem>
+                          of={orgOffices ?? []}
+                          render={(office) => (
+                            <SelectItem key={office.id} value={office.id.toString()}>{office.name}</SelectItem>
                           ) }
                         />
                       </SelectContent>
@@ -174,12 +178,9 @@ export default function EmployeeRecordForm({orgId} : {orgId: string}) {
                       </FormControl>
                       <SelectContent>
                         <Each
-                          of={[{
-                            id: 1,
-                            name: "Department 1"
-                          }]}
-                          render={(college) => (
-                            <SelectItem key={college.id} value={college.id.toString()}>{college.name}</SelectItem>
+                          of={orgDepartments ?? []}
+                          render={(department) => (
+                            <SelectItem key={department.id} value={department.id.toString()}>{department.name}</SelectItem>
                           ) }
                         />
                       </SelectContent>
@@ -230,10 +231,7 @@ export default function EmployeeRecordForm({orgId} : {orgId: string}) {
                       </FormControl>
                       <SelectContent>
                         <Each
-                          of={[{
-                            id: 1,
-                            name: "College 1"
-                          }]}
+                          of={orgColleges ?? []}
                           render={(college) => (
                             <SelectItem key={college.id} value={college.id.toString()}>{college.name}</SelectItem>
                           ) }

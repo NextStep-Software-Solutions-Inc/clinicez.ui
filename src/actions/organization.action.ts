@@ -1,15 +1,14 @@
 "use server";
 
-import { isOrgAdmin } from '@lib/protect-org';
-
 import prisma from "@lib/prisma";
 import { Prisma, UserOrganizationStatus } from "@prisma/client";
-import fs from 'fs/promises';
-import { revalidatePath } from 'next/cache';
-import { sendMail } from './email.action';
-import path from 'path';
-import { getCachedSession } from './session.action';
 import { cache } from "react";
+import { sendMail } from "./email.action";
+import path from "path";
+import { revalidatePath } from "next/cache";
+import { getCachedSession } from "./session.action";
+import { isOrgAdmin } from "@lib/protect-org";
+import fs from "fs/promises";
 
 export const createOrganizationAction = async (data: Prisma.OrganizationCreateArgs["data"]) => {
 
@@ -187,68 +186,6 @@ export const setMyDefaultOrganizationAction = async (id: number, orgId: string, 
   return org;
 }
 
-export const joinOrganizationAction = async ({ orgId, userId, roleId}:{
-  orgId: string, userId: string, roleId: number
-}) => {
-  const request = await prisma.userOrganization.create({
-    data: {
-      UserRole: {
-        connect: { id: roleId  }
-      },
-      User: {
-        connect: { userId }
-      },
-      Organization: {
-        connect: { orgId }
-      }
-    },
-    include: {
-      User: {
-        select: {
-          firstName: true,
-          lastName: true,
-          email: true
-        }
-      },
-      Organization: {
-        select: {
-          name: true,
-          Users: {
-            select: {
-              User: {
-                select: {
-                  email: true
-                }
-              },
-              status: true,
-              UserRole: {
-                select: {
-                  name: true,
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  })
-
-  if(!request) throw new Error("Error sending membership request");
-
-  const adminEmails = request.Organization.Users.filter(u => u.UserRole.name.toUpperCase() === "ADMIN" && u.status === "ACTIVE").map(u => u.User.email);
-
-  const userName = `${request.User.firstName} ${request.User.lastName}`;
-  const receiver = request.User.email;
-  try {
-    await Promise.all([
-      notifyUser([receiver], request.Organization.name, userName),
-      notifyAdmins([...adminEmails], request.Organization.name)
-    ])
-  } catch (error) {
-    console.error(JSON.stringify(error, null, 2));
-  }
-  return request;
-}
 
 
 export type GetOrganizationRoles = Awaited<ReturnType<typeof getOrganizationRolesAction>>
@@ -343,36 +280,4 @@ export const setMembershipRequestStatusAction = async (id: number, status: UserO
 
   revalidatePath(`/[organization]/membership`, "page")
   return request;
-}
-
-
-const notifyAdmins = async (receiver: string[], orgName: string) => {
-  const filePath = path.join(process.cwd(), "email-templates/org-membership-application.html");
-
-  const emailTemplate = await fs.readFile(filePath, "utf-8");
-  const appName = process.env.NEXT_PUBLIC_APP_NAME!;
-  const html = emailTemplate.replaceAll("@{orgName}", orgName).replaceAll("@{appName}", appName)
-  const subject = `New membership application to ${orgName}`;
-
-  await sendMail({
-    subject,
-    to: receiver,
-    text: html,
-    html
-  })
-}
-
-const notifyUser = async (receiver: string[], orgName: string, userName: string) => {
-  const filePath = path.join(process.cwd(), "email-templates/org-membership-request.html");
-  const emailTemplate = await fs.readFile(filePath, "utf-8");
-  const appName = process.env.NEXT_PUBLIC_APP_NAME!;
-  const html = emailTemplate.replaceAll("@{userName}", userName).replaceAll("@{appName}", appName).replaceAll("@{orgName}", orgName)
-  const subject = `Membership application to ${orgName}`;
-  
-  await sendMail({
-    subject,
-    to: receiver,
-    text: html,
-    html
-  })
 }

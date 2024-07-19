@@ -9,6 +9,7 @@ import { SWRProvider } from "../provider/swr-provider";
 import JotaiProvider from "../provider/JotaiProvider";
 import SyncToken from "@components/SyncToken";
 import { getCachedSession } from "@actions/session.action";
+import BypassAutoplay from "@components/BypassAutoplay";
 
 const montserrat = Montserrat({ subsets: ["latin"] });
 
@@ -24,9 +25,11 @@ export default async function RootLayout({children}:Props) {
   const session = await getCachedSession();
   
   return (
+
     <html lang="en">
       <Hotjar/>
       <body className={`${montserrat.className}`}>
+        <BypassAutoplay/>
         <JotaiProvider>
           <SyncToken token={{
             type: session?.token_type,

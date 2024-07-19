@@ -53,7 +53,10 @@ export const SelectOrgForm = ({existingRoles, orgRoles, orgId, nextStep, isFirst
 
   return (
     <Form {...form}>
-      <form className="shadow-xl p-5 rounded-sm">
+      <form className="shadow-xl p-10 rounded-sm">
+
+        <h2 className="my-5 text-lg font-semibold">Select Organization Role</h2>
+        
         <FormField
           control={form.control}
           name="roleId"

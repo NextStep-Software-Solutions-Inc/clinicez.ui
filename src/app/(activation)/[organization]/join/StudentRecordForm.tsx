@@ -12,6 +12,8 @@ import React from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { OrganizationApplicationData } from "./OrganizationSteps";
+import { useSetAtom } from "jotai";
+import { additionalInfoValidAtom } from "./AdditionalInformationStep";
 
 
 const employeeRecordSchema = z.object({
@@ -21,35 +23,45 @@ const employeeRecordSchema = z.object({
     message: "Minimum of 1 character"
   }),
   lrn: z.string({
-    required_error: "Position is required"
+    message: "Learner Ref. Number must be a string"
   }).optional(),
   level: z.coerce.number({
     required_error: "School level is required"
   }),
   yearLevel: z.coerce.number({
-    required_error: "Year level is required"
+    required_error: "Year level/Grade is required"
+  }),
+  programId: z.coerce.number({
+    required_error: "Program/Strand is required"
   }),
   isCollege : z.boolean().optional().default(false),
   collegeId: z.coerce.number().optional(),
+  departmentId: z.coerce.number().optional(),
 })
 
 export type StudentRecordType = z.infer<typeof employeeRecordSchema>;
 
 export default function StudentRecordForm({orgId} : {orgId: string}) {
+
+  const setAdditionalInfoValidAtom = useSetAtom(additionalInfoValidAtom)
   const [orgApplication, setOrgApplication] = useLocalStorage<OrganizationApplicationData>(`${orgId}_application`)
 
   const form = useForm<StudentRecordType>({
     resolver: zodResolver(employeeRecordSchema),
     mode: "all",
     defaultValues: {
-      ...orgApplication.employee_record
+      ...orgApplication.student_record
     }
   })
 
   const action = async () => {
     form.handleSubmit(async (values) => {
+      setAdditionalInfoValidAtom((prev) => ({
+        ...prev,
+        student_record: true
+      }))
       await setOrgApplication({
-        employee_record: values
+        student_record: values
       })
     })()
   }
@@ -60,15 +72,15 @@ export default function StudentRecordForm({orgId} : {orgId: string}) {
         <div className="flex flex-wrap gap-2 items-start">
           <FormField
             control={form.control}
-            name="employeeId"
+            name="studentId"
             render={({ field }) => {
               return (
                 <FormItem className="flex-grow md:flex-grow-0">
-                  <FormLabel htmlFor="employeeId">Employee ID</FormLabel>
+                  <FormLabel htmlFor="studentId">Student ID</FormLabel>
                   <FormControl>
-                    <Input id="employeeId" {...field} />
+                    <Input id="studentId" {...field} />
                   </FormControl>
-                  <FormDescription>Enter the employee ID</FormDescription>
+                  <FormDescription>Enter your student ID</FormDescription>
                   <FormMessage/>
                 </FormItem>
               )
@@ -76,15 +88,15 @@ export default function StudentRecordForm({orgId} : {orgId: string}) {
           />
           <FormField
             control={form.control}
-            name="position"
+            name="lrn"
             render={({ field }) => {
               return (
                 <FormItem className="flex-grow md:flex-grow-0">
-                  <FormLabel htmlFor="position">Position</FormLabel>
+                  <FormLabel htmlFor="lrn">Learner Ref. Number (if applicable)</FormLabel>
                   <FormControl>
-                    <Input id="position" {...field} />
+                    <Input id="lrn" {...field} />
                   </FormControl>
-                  <FormDescription>Enter your compony position</FormDescription>
+                  <FormDescription>Enter your learner reference number</FormDescription>
                   <FormMessage/>
                 </FormItem>
               )
@@ -92,15 +104,32 @@ export default function StudentRecordForm({orgId} : {orgId: string}) {
           />
           <FormField
             control={form.control}
-            name="designation"
+            name="level"
             render={({ field }) => {
               return (
-                <FormItem className="flex-grow md:flex-grow-0">
-                  <FormLabel htmlFor="designation">Designation (optional)</FormLabel>
+                <FormItem className="">
+                  <FormLabel htmlFor="level">Student Level</FormLabel>
                   <FormControl>
-                    <Input id="designation" {...field} />
+                    <Select onValueChange={field.onChange} defaultValue={field.value?.toString()}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a level" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <Each
+                          of={[{
+                            id: 1,
+                            name: "College 1"
+                          }]}
+                          render={(college) => (
+                            <SelectItem key={college.id} value={college.id.toString()}>{college.name}</SelectItem>
+                          ) }
+                        />
+                      </SelectContent>
+                    </Select>
                   </FormControl>
-                  <FormDescription>Enter your compony designation</FormDescription>
+                  <FormDescription>Select your current student level</FormDescription>
                   <FormMessage/>
                 </FormItem>
               )
@@ -113,23 +142,23 @@ export default function StudentRecordForm({orgId} : {orgId: string}) {
         <div className="flex flex-wrap gap-2 items-start">
           <FormField
             control={form.control}
-            name="officeId"
+            name="yearLevel"
             render={({ field }) => {
               return (
                 <FormItem className="flex-grow">
-                  <FormLabel htmlFor="officeId">Office</FormLabel>
+                  <FormLabel htmlFor="yearLevel">Year/Grade Level</FormLabel>
                   <FormControl>
                     <Select onValueChange={field.onChange} defaultValue={field.value?.toString()}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select an office" />
+                          <SelectValue placeholder="Select a year/grade level" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
                         <Each
                           of={[{
                             id: 1,
-                            name: "Office 1"
+                            name: "Year 1"
                           }]}
                           render={(college) => (
                             <SelectItem key={college.id} value={college.id.toString()}>{college.name}</SelectItem>
@@ -138,7 +167,7 @@ export default function StudentRecordForm({orgId} : {orgId: string}) {
                       </SelectContent>
                     </Select>
                   </FormControl>
-                  <FormDescription>Select the office you belong</FormDescription>
+                  <FormDescription>Select your current year/grade level</FormDescription>
                   <FormMessage/>
                 </FormItem>
               )
@@ -147,23 +176,23 @@ export default function StudentRecordForm({orgId} : {orgId: string}) {
 
           <FormField
             control={form.control}
-            name="departmentId"
+            name="programId"
             render={({ field }) => {
               return (
                 <FormItem className="flex-grow">
-                  <FormLabel htmlFor="departmentId">Department</FormLabel>
+                  <FormLabel htmlFor="programId">Program</FormLabel>
                   <FormControl>
                     <Select onValueChange={field.onChange} defaultValue={field.value?.toString()}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select a department" />
+                          <SelectValue placeholder="Select a program" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
                         <Each
                           of={[{
                             id: 1,
-                            name: "Department 1"
+                            name: "Program 1"
                           }]}
                           render={(college) => (
                             <SelectItem key={college.id} value={college.id.toString()}>{college.name}</SelectItem>
@@ -172,7 +201,7 @@ export default function StudentRecordForm({orgId} : {orgId: string}) {
                       </SelectContent>
                     </Select>
                   </FormControl>
-                  <FormDescription>Select the department you belong</FormDescription>
+                  <FormDescription>Select the progmam that you belong.</FormDescription>
                   <FormMessage/>
                 </FormItem>
               )
@@ -193,7 +222,7 @@ export default function StudentRecordForm({orgId} : {orgId: string}) {
                   <FormLabel 
                     htmlFor="collegeId"
                     className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >Do you work in a College/University institution?</FormLabel>
+                  >I am a college student.</FormLabel>
                 </div>
                 <FormMessage/>
               </FormItem>
@@ -228,14 +257,47 @@ export default function StudentRecordForm({orgId} : {orgId: string}) {
                       </SelectContent>
                     </Select>
                   </FormControl>
-                  <FormDescription>Select the college you belong</FormDescription>
+                  <FormDescription>Select the college that you belong.</FormDescription>
+                  <FormMessage/>
+                </FormItem>
+              )
+            }}
+          />
+          <FormField
+            control={form.control}
+            name="departmentId"
+            render={({ field }) => {
+              return (
+                <FormItem className="flex-grow">
+                  <FormLabel htmlFor="departmentId">Department</FormLabel>
+                  <FormControl>
+                    <Select onValueChange={field.onChange} defaultValue={field.value?.toString()}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a department" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <Each
+                          of={[{
+                            id: 1,
+                            name: "Department 1"
+                          }]}
+                          render={(college) => (
+                            <SelectItem key={college.id} value={college.id.toString()}>{college.name}</SelectItem>
+                          ) }
+                        />
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormDescription>Select the department that you belong.</FormDescription>
                   <FormMessage/>
                 </FormItem>
               )
             }}
           />
         </ConditionalRender>
-        <ActionButton className="mt-10">Save</ActionButton>
+        <ActionButton disabled={form.formState.isLoading || !form.formState.isValid} className="mt-10">Save</ActionButton>
       </form>
     </Form>
   );

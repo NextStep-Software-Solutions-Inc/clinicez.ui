@@ -6,11 +6,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocalStorage } from "@hooks/useLocalStorage";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { OrganizationApplicationData } from "./SelectOrgFom";
 import BackSubmitAndNext from "@components/SubmitAndNext";
 import { Checkbox } from "@components/ui/checkbox";
 import Link from "next/link";
 import ConditionalRender from "@components/utils/ConditionalRender";
+import { OrganizationApplicationData } from "./OrganizationSteps";
+import { toast } from "sonner";
+import { useSound } from "use-sound";
 
 interface ConfirmationAndReviewStepProps {
   orgId: string
@@ -20,6 +22,7 @@ interface ConfirmationAndReviewStepProps {
   nextStep?: () => void;
   prevStep?: () => void;
   startOver?: () => void;
+  setComplete?: (value: boolean) => void;
 }
 
 export const confirmationFormSchema = z.object({
@@ -34,10 +37,13 @@ export const confirmationFormSchema = z.object({
   })
 })
 
-export default function ConfirmationAndReviewStep({ orgId, isComplete, isFirstStep, isLastStep, nextStep, prevStep, startOver }:ConfirmationAndReviewStepProps) {
+export default function ConfirmationAndReviewStep({ orgId, isComplete, isFirstStep, isLastStep, nextStep, prevStep, startOver, setComplete }:ConfirmationAndReviewStepProps) {
   const user = useUser();
-  console.log({isComplete});
-  
+  const [play] = useSound("/audio/success-1.mp3", {
+    // `interrupt` ensures that if the sound starts again before it's
+    // ended, it will truncate it. Otherwise, the sound can overlap.
+    interrupt: true,
+  });
   const [orgApplication, setOrgApplication] = useLocalStorage<OrganizationApplicationData>(`${orgId}_application`);
   
   const form = useForm<z.infer<typeof confirmationFormSchema>>({
@@ -56,33 +62,17 @@ export default function ConfirmationAndReviewStep({ orgId, isComplete, isFirstSt
   const action = async () => {
     form.handleSubmit(async (data) => {
 
-      // await setApplicationData({...data, complete: true, role: applicationData?.role, plan: applicationData?.plan, receiptCode: applicationData?.receiptCode})
+      await setOrgApplication({ complete: true})
 
-      // const dbUser = await getUserAction(user?.sub ?? "")
-      // const userId = dbUser.id  
-      // const planId = parseInt(applicationData.plan)
-  
-      // if(!userId || !planId) return toast.error("An error occurred. Please try again later.");
-      
-      // // transaction method
-      // toast.promise(hpApplicationTransactionAction({
-      //   planPayload: {planId, userId, status : "ACTIVE"},
-      //   hpPayload: {
-      //     type: applicationData.role,
-      //     User: {
-      //       connect: {
-      //         userId: user?.sub ?? ""
-      //       }
-      //     }
-      //   }, code: applicationData.receiptCode
-      // }), {
-      //   loading: "Submitting application...",
-      //   success: () => {
-      //     setComplete?.(true);
-      //     return "Healthcare Provider registration successful!";
-      //   },
-      //   error: (error) => `An error occurred while submitting your application. Please try again later. Error: ${error}`,
-      // });
+      toast.promise(async () => {}, {
+        loading: "Submitting application...",
+        success: () => {
+          setComplete?.(true);
+          play()
+          return `Appliction to ${orgId} was successfully sent. Please wait for the approval from the organization.`
+        },
+        error: (error) => `An error occurred while submitting your application. Error: ${error}`,
+      });
     })()
   }
 
@@ -90,8 +80,8 @@ export default function ConfirmationAndReviewStep({ orgId, isComplete, isFirstSt
 
   return (
     <Form {...form}>
-      <div className="prose max-w-full shadow-lg w-full p-8 bg-white rounded-md">
-        <h2 className="">Confirmation</h2>
+      <div className="shadow-lg w-full p-8 bg-white rounded-md">
+        <h2 className="text-lg font-semibold">Confirmation</h2>
         <p className="mt-2">
           Please review the information you have entered and certify that it is accurate
         </p>

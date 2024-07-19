@@ -8,10 +8,12 @@ import ConditionalRender from "@components/utils/ConditionalRender";
 import Each from "@components/utils/Each";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocalStorage } from "@hooks/useLocalStorage";
-import React from "react";
+import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { OrganizationApplicationData } from "./OrganizationSteps";
+import { useSetAtom } from "jotai";
+import { additionalInfoValidAtom } from "./AdditionalInformationStep";
 
 
 const employeeRecordSchema = z.object({
@@ -41,6 +43,7 @@ const employeeRecordSchema = z.object({
 export type EmployeeRecordType = z.infer<typeof employeeRecordSchema>;
 
 export default function EmployeeRecordForm({orgId} : {orgId: string}) {
+  const setAdditionalInfoValidAtom = useSetAtom(additionalInfoValidAtom)
   const [orgApplication, setOrgApplication] = useLocalStorage<OrganizationApplicationData>(`${orgId}_application`)
 
   const form = useForm<EmployeeRecordType>({
@@ -53,6 +56,11 @@ export default function EmployeeRecordForm({orgId} : {orgId: string}) {
 
   const action = async () => {
     form.handleSubmit(async (values) => {
+      setAdditionalInfoValidAtom((prev) => ({
+        ...prev,
+        employee_record: true
+      }))
+      form.reset(values)
       await setOrgApplication({
         employee_record: values
       })
@@ -73,7 +81,7 @@ export default function EmployeeRecordForm({orgId} : {orgId: string}) {
                   <FormControl>
                     <Input id="employeeId" {...field} />
                   </FormControl>
-                  <FormDescription>Enter the employee ID</FormDescription>
+                  <FormDescription>Enter your employee ID</FormDescription>
                   <FormMessage/>
                 </FormItem>
               )
@@ -89,7 +97,7 @@ export default function EmployeeRecordForm({orgId} : {orgId: string}) {
                   <FormControl>
                     <Input id="position" {...field} />
                   </FormControl>
-                  <FormDescription>Enter your compony position</FormDescription>
+                  <FormDescription>Enter your company position</FormDescription>
                   <FormMessage/>
                 </FormItem>
               )
@@ -105,7 +113,7 @@ export default function EmployeeRecordForm({orgId} : {orgId: string}) {
                   <FormControl>
                     <Input id="designation" {...field} />
                   </FormControl>
-                  <FormDescription>Enter your compony designation</FormDescription>
+                  <FormDescription>Enter your company designation</FormDescription>
                   <FormMessage/>
                 </FormItem>
               )
@@ -143,7 +151,7 @@ export default function EmployeeRecordForm({orgId} : {orgId: string}) {
                       </SelectContent>
                     </Select>
                   </FormControl>
-                  <FormDescription>Select the office you belong</FormDescription>
+                  <FormDescription>Select the office that you belong.</FormDescription>
                   <FormMessage/>
                 </FormItem>
               )
@@ -177,7 +185,7 @@ export default function EmployeeRecordForm({orgId} : {orgId: string}) {
                       </SelectContent>
                     </Select>
                   </FormControl>
-                  <FormDescription>Select the department you belong</FormDescription>
+                  <FormDescription>Select the department that you belong.</FormDescription>
                   <FormMessage/>
                 </FormItem>
               )
@@ -198,7 +206,7 @@ export default function EmployeeRecordForm({orgId} : {orgId: string}) {
                   <FormLabel 
                     htmlFor="collegeId"
                     className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >Do you work in a College/University institution?</FormLabel>
+                  >I work in a College/University institution.</FormLabel>
                 </div>
                 <FormMessage/>
               </FormItem>
@@ -233,14 +241,14 @@ export default function EmployeeRecordForm({orgId} : {orgId: string}) {
                       </SelectContent>
                     </Select>
                   </FormControl>
-                  <FormDescription>Select the college you belong</FormDescription>
+                  <FormDescription>Select the college that you belong.</FormDescription>
                   <FormMessage/>
                 </FormItem>
               )
             }}
           />
         </ConditionalRender>
-        <ActionButton className="mt-10">Save</ActionButton>
+        <ActionButton disabled={form.formState.isLoading || !form.formState.isValid} className="mt-10">Save</ActionButton>
       </form>
     </Form>
   );

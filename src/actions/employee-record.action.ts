@@ -7,23 +7,23 @@ import { Prisma } from "@prisma/client";
 export type CreateUserEmploymentRecord = {
   employeeId: string;
   position: string
-  designation: string
-  userId: string
-  orgId: string
+  designation?: string
+  userId: number
+  orgId: number
   departmentId?: number
   collegeId?: number
 }
 
-export const createStudentRecordAction = async (payload:CreateUserEmploymentRecord ) => {
+export const createEmploymentRecordAction = async (payload:CreateUserEmploymentRecord ) => {
   const { employeeId, position, designation, userId, orgId, departmentId, collegeId } = payload
   const User: Prisma.UserEmploymentRecordCreateInput["User"] = {
     connect: {
-      userId
+      id: userId
     }
   }
   const Organization: Prisma.UserEmploymentRecordCreateInput["Organization"] = {
     connect: {
-      orgId
+      id: orgId
     }
   }
   const Department: Prisma.UserEmploymentRecordCreateInput["Department"] =  {
@@ -31,16 +31,12 @@ export const createStudentRecordAction = async (payload:CreateUserEmploymentReco
       id: departmentId
     }
   }
-
-  
   const College: Prisma.UserEmploymentRecordCreateInput["College"] =  {
     connect: {
       id: collegeId
     }
   }
-
-
-  const studentRecord = await prisma.userEmploymentRecord.create({
+  const employeeRecord = await prisma.userEmploymentRecord.create({
     data: {
       employeeId,
       User,
@@ -51,5 +47,36 @@ export const createStudentRecordAction = async (payload:CreateUserEmploymentReco
       ...collegeId ? College : {},
     }
   });
-  return studentRecord;
+  return employeeRecord;
+}
+
+export const upsertEmploymentRecordAction = async (payload:CreateUserEmploymentRecord ) => {
+  const { employeeId, position, designation, userId, orgId, departmentId, collegeId } = payload
+  const employeeRecord = await prisma.userEmploymentRecord.upsert({
+    where: {
+      unique_user_employment: {
+        userId,
+        organizationId: orgId
+      }
+    },
+    create: {
+      employeeId,
+      userId,
+      position,
+      designation,
+      organizationId: orgId,
+      departmentId,
+      collegeId,
+    },
+    update: {
+      employeeId,
+      userId,
+      position,
+      designation,
+      organizationId: orgId,
+      departmentId,
+      collegeId,
+    }
+  });
+  return employeeRecord;
 }

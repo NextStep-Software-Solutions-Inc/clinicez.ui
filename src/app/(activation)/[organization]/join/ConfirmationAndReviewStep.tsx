@@ -13,10 +13,7 @@ import ConditionalRender from "@components/utils/ConditionalRender";
 import { OrganizationApplicationData } from "./OrganizationSteps";
 import { toast } from "sonner";
 import { useSound } from "use-sound";
-import { CreateUserStudentRecord } from "@actions/student-record.action";
-import { Button } from "@components/ui/button";
 import { joinOrganizationAction, JoinOrganizationPayload } from "@actions/join-organization.action";
-import { CreateUserEmploymentRecord } from "@actions/employee-record.action";
 
 interface ConfirmationAndReviewStepProps {
   orgId: string
@@ -42,21 +39,14 @@ export const confirmationFormSchema = z.object({
 })
 
 export default function ConfirmationAndReviewStep({ orgId, isComplete, isFirstStep, isLastStep, nextStep, prevStep, startOver, setComplete }:ConfirmationAndReviewStepProps) {
-  const user = useUser();
-  const userId = user.user?.sub
-
+  const [orgApplication, setOrgApplication] = useLocalStorage<OrganizationApplicationData>(`${orgId}_application`);
   const [playSuccess] = useSound("/audio/success-1.mp3", {
-    // `interrupt` ensures that if the sound starts again before it's
-    // ended, it will truncate it. Otherwise, the sound can overlap.
     interrupt: true,
   });
   const [playError] = useSound("/audio/error-call-to-attention.mp3", {
-    // `interrupt` ensures that if the sound starts again before it's
-    // ended, it will truncate it. Otherwise, the sound can overlap.
     interrupt: true,
   });
-  const [orgApplication, setOrgApplication] = useLocalStorage<OrganizationApplicationData>(`${orgId}_application`);
-  
+
   const form = useForm<z.infer<typeof confirmationFormSchema>>({
     resolver: zodResolver(confirmationFormSchema)
   })
@@ -71,27 +61,17 @@ export default function ConfirmationAndReviewStep({ orgId, isComplete, isFirstSt
   }
 
   const action = async () => {
-    form.handleSubmit(async (data) => {
+    form.handleSubmit(async () => {
 
-      if(!(orgApplication.roleId && orgApplication.student_record?.studentId && userId  && orgApplication.orgId)) {
-        toast.error("Role or Student ID  or User ID or Org ID is missing!")
+      if(!(orgApplication.roleId  && orgApplication.userId  && orgApplication.orgId)) {
+        toast.error("Role or User ID or Org ID is missing!")
         return;
       }
       
       const payload: JoinOrganizationPayload = {
-        userId,
+        userId: orgApplication.userId,
         orgId: orgApplication.orgId,
         orgRoleId: orgApplication.roleId,
-        lrn: orgApplication.student_record?.lrn,
-        studentId: orgApplication.student_record?.studentId,
-        employeeId: orgApplication.employee_record?.employeeId,
-        designation: orgApplication.employee_record?.designation,
-        position: orgApplication.employee_record?.position,
-        levelId: orgApplication.student_record?.level,
-        collegeId: orgApplication.student_record?.collegeId,
-        departmentId: orgApplication.student_record?.departmentId,
-        programId: orgApplication.student_record?.programId,
-        yearLevelId: orgApplication.student_record?.yearLevel,
       }
       
       toast.promise(joinOrganizationAction(payload), {

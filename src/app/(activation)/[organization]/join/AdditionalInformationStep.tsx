@@ -7,15 +7,14 @@ import EmployeeRecordForm from "./EmployeeRecordForm";
 import ConditionalRender from "@components/utils/ConditionalRender";
 import { OrganizationApplicationData } from "./OrganizationSteps";
 import StudentRecordForm from "./StudentRecordForm";
-import { Separator } from "@components/ui/separator";
 import { atom, useAtomValue } from "jotai";
 
 interface OrganizationStepProps {
-    orgId: string;
-    isFirstStep?: boolean;
-    isLastStep?: boolean;
-    nextStep?: () => void;
-    prevStep?: () => void;
+  orgId: string;
+  isFirstStep?: boolean;
+  isLastStep?: boolean;
+  nextStep?: () => void;
+  prevStep?: () => void;
 }
 
 export const additionalInfoValidAtom = atom({
@@ -28,7 +27,6 @@ export default function AdditionalInformationStep({ orgId, isLastStep, isFirstSt
   const additionalInfoValidValue = useAtomValue(additionalInfoValidAtom)
   const [orgApplication] = useLocalStorage<OrganizationApplicationData>(`${orgId}_application`);
   const requirements = orgApplication.roleRequirements ?? [];
-
   const isValid = requirements.every(requirement => additionalInfoValidValue[requirement as keyof typeof additionalInfoValidValue])
 
   return (

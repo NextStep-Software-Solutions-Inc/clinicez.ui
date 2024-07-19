@@ -1,5 +1,4 @@
 import ActionButton from "@components/ActionButton";
-import { ComboBox } from "@components/ComboBox";
 import { Checkbox } from "@components/ui/checkbox";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@components/ui/form";
 import { Input } from "@components/ui/input";
@@ -8,16 +7,18 @@ import ConditionalRender from "@components/utils/ConditionalRender";
 import Each from "@components/utils/Each";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocalStorage } from "@hooks/useLocalStorage";
-import React, { useEffect } from "react";
+import React from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { OrganizationApplicationData } from "./OrganizationSteps";
-import { useSetAtom } from "jotai";
+import { useAtom } from "jotai";
 import { additionalInfoValidAtom } from "./AdditionalInformationStep";
 import { useOrgCollege } from "@hooks/useOrgCollege";
 import { useOrgDepartment } from "@hooks/useOrgDepartment";
 import { useOrgOffice } from "@hooks/useOrgOffice";
-
+import { toast } from "sonner";
+import { upsertEmploymentRecordAction } from "@actions/employee-record.action";
+import { useUser } from "@hooks/useUser";
 
 const employeeRecordSchema = z.object({
   employeeId: z.string({
@@ -34,8 +35,8 @@ const employeeRecordSchema = z.object({
     message: "What is your designation?"
   }).optional(),
   departmentId: z.coerce.number({
-    required_error: "Department is required"
-  }),
+    message: "Your office department"
+  }).optional(),
   officeId: z.coerce.number({
     required_error: "Office is required"
   }),
@@ -46,12 +47,12 @@ const employeeRecordSchema = z.object({
 export type EmployeeRecordType = z.infer<typeof employeeRecordSchema>;
 
 export default function EmployeeRecordForm({orgId} : {orgId: string}) {
-  const setAdditionalInfoValidAtom = useSetAtom(additionalInfoValidAtom)
+  const [additionalInfoValid, setAdditionalInfoValid] = useAtom(additionalInfoValidAtom)
   const [orgApplication, setOrgApplication] = useLocalStorage<OrganizationApplicationData>(`${orgId}_application`)
   const {data: orgColleges} = useOrgCollege(orgId)
   const {data: orgDepartments} = useOrgDepartment(orgId)
   const {data: orgOffices} = useOrgOffice(orgId)
-  
+  const {data: user } = useUser(orgApplication.userId)
 
   const form = useForm<EmployeeRecordType>({
     resolver: zodResolver(employeeRecordSchema),
@@ -63,13 +64,25 @@ export default function EmployeeRecordForm({orgId} : {orgId: string}) {
 
   const action = async () => {
     form.handleSubmit(async (values) => {
-      setAdditionalInfoValidAtom((prev) => ({
-        ...prev,
-        employee_record: true
-      }))
-      form.reset(values)
-      await setOrgApplication({
-        employee_record: values
+      const orgId = orgOffices?.[0].organizationId ?? 0
+      const userId = user?.id ?? 0
+
+      console.log({values, orgId, userId});
+      
+      toast.promise(upsertEmploymentRecordAction({...values, orgId, userId,}), {
+        loading: "Saving...",
+        success: async () => {
+          setAdditionalInfoValid((prev) => ({
+            ...prev,
+            employee_record: true
+          }))
+          form.reset(values)
+          await setOrgApplication({
+            employee_record: values
+          })
+          return "Employee record saved"
+        },
+        error: "An error occurred"
       })
     })()
   }
@@ -168,7 +181,7 @@ export default function EmployeeRecordForm({orgId} : {orgId: string}) {
             render={({ field }) => {
               return (
                 <FormItem className="flex-grow">
-                  <FormLabel htmlFor="departmentId">Department</FormLabel>
+                  <FormLabel htmlFor="departmentId">Department (if applicable)</FormLabel>
                   <FormControl>
                     <Select onValueChange={field.onChange} defaultValue={field.value?.toString()}>
                       <FormControl>
@@ -246,7 +259,9 @@ export default function EmployeeRecordForm({orgId} : {orgId: string}) {
             }}
           />
         </ConditionalRender>
-        <ActionButton disabled={form.formState.isLoading || !form.formState.isValid} className="mt-10">Save</ActionButton>
+        <ConditionalRender condition={form.formState.isDirty || !additionalInfoValid.employee_record}>
+          <ActionButton disabled={form.formState.isLoading || !form.formState.isValid} className="mt-10">Save</ActionButton>
+        </ConditionalRender>
       </form>
     </Form>
   );

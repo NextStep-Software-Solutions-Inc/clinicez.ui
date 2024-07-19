@@ -14,6 +14,7 @@ import { EmployeeRecordType } from "./EmployeeRecordForm";
 import { OrganizationApplicationData } from "./OrganizationSteps";
 
 interface SelectOrgFormProps {
+  userId: string
   orgId: string
   orgRoles: GetOrganizationRoles
   existingRoles: number[]
@@ -23,8 +24,8 @@ interface SelectOrgFormProps {
 }
 
 
-export const SelectOrgForm = ({existingRoles, orgRoles, orgId, nextStep, isFirstStep, isLastStep}:SelectOrgFormProps) => {
-  const setOrgApplication = useLocalStorage<OrganizationApplicationData>(`${orgId}_application`, {orgId})[1];
+export const SelectOrgForm = ({existingRoles, orgRoles, orgId, userId, nextStep, isFirstStep, isLastStep}:SelectOrgFormProps) => {
+  const setOrgApplication = useLocalStorage<OrganizationApplicationData>(`${orgId}_application`)[1];
   
   const selectRoleSchema = z.object({
     roleId: z.coerce.number({

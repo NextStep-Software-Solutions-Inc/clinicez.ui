@@ -8,17 +8,20 @@ import ConditionalRender from "@components/utils/ConditionalRender";
 import Each from "@components/utils/Each";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocalStorage } from "@hooks/useLocalStorage";
-import React from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { OrganizationApplicationData } from "./OrganizationSteps";
-import { useSetAtom } from "jotai";
+import { useAtom, useSetAtom } from "jotai";
 import { additionalInfoValidAtom } from "./AdditionalInformationStep";
 import { useOrgYearLevel } from "@hooks/useOrgYearLevel";
 import { useStudentLevel } from "@hooks/useStudentLevel";
 import { useOrgProgram } from "@hooks/useOrgProgram";
 import { useOrgCollege } from "@hooks/useOrgCollege";
 import { useOrgDepartment } from "@hooks/useOrgDepartment";
+import { toast } from "sonner";
+import { upsertStudentRecordAction } from "@actions/student-record.action";
+import { useUser } from "@hooks/useUser";
 
 
 const employeeRecordSchema = z.object({
@@ -30,7 +33,7 @@ const employeeRecordSchema = z.object({
   lrn: z.string({
     message: "Learner Ref. Number must be a string"
   }).optional(),
-  level: z.coerce.number({
+  levelId: z.coerce.number({
     required_error: "School level is required"
   }),
   yearLevel: z.coerce.number({
@@ -48,14 +51,14 @@ export type StudentRecordType = z.infer<typeof employeeRecordSchema>;
 
 export default function StudentRecordForm({orgId} : {orgId: string}) {
 
-  const setAdditionalInfoValidAtom = useSetAtom(additionalInfoValidAtom)
+  const [additionalInfoValid, setAdditionalInfoValid] = useAtom(additionalInfoValidAtom)
   const [orgApplication, setOrgApplication] = useLocalStorage<OrganizationApplicationData>(`${orgId}_application`)
   const {data: orgYearLevels} = useOrgYearLevel(orgId)
   const {data: studentLevels} = useStudentLevel()
   const {data: orgPrograms} = useOrgProgram(orgId)
   const {data: orgColleges} = useOrgCollege(orgId)
   const {data: orgDepartment} = useOrgDepartment(orgId)
-
+  const {data: user } = useUser(orgApplication.userId)
 
   const form = useForm<StudentRecordType>({
     resolver: zodResolver(employeeRecordSchema),
@@ -67,13 +70,24 @@ export default function StudentRecordForm({orgId} : {orgId: string}) {
 
   const action = async () => {
     form.handleSubmit(async (values) => {
-      setAdditionalInfoValidAtom((prev) => ({
-        ...prev,
-        student_record: true
-      }))
-      await setOrgApplication({
-        student_record: values
+      const orgId = orgPrograms?.[0].organizationId ?? 0
+      const userId = user?.id ?? 0
+
+      toast.promise(upsertStudentRecordAction({...values, orgId, userId}), {
+        loading: "Saving student record...",
+        success: async () => {
+          setAdditionalInfoValid((prev) => ({
+            ...prev,
+            student_record: true
+          }))
+          await setOrgApplication({
+            student_record: values
+          })
+          return "Student record saved successfully"
+        },
+        error: "Failed to save student record"
       })
+      
     })()
   }
 
@@ -115,11 +129,11 @@ export default function StudentRecordForm({orgId} : {orgId: string}) {
           />
           <FormField
             control={form.control}
-            name="level"
+            name="levelId"
             render={({ field }) => {
               return (
                 <FormItem className="">
-                  <FormLabel htmlFor="level">Student Level</FormLabel>
+                  <FormLabel htmlFor="levelId">Student Level</FormLabel>
                   <FormControl>
                     <Select onValueChange={field.onChange} defaultValue={field.value?.toString()}>
                       <FormControl>
@@ -293,7 +307,9 @@ export default function StudentRecordForm({orgId} : {orgId: string}) {
             }}
           />
         </ConditionalRender>
-        <ActionButton disabled={form.formState.isLoading || !form.formState.isValid} className="mt-10">Save</ActionButton>
+        <ConditionalRender condition={form.formState.isDirty || !additionalInfoValid.student_record}>
+          <ActionButton disabled={form.formState.isLoading || !form.formState.isValid} className="mt-10">Save</ActionButton>
+        </ConditionalRender>
       </form>
     </Form>
   );

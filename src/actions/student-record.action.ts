@@ -1,14 +1,12 @@
 "use server";
 
 import prisma from "@lib/prisma";
-import { Prisma } from "@prisma/client";
-
 
 export type CreateUserStudentRecord = {
   studentId: string;
   levelId: number
-  userId: string
-  orgId: string
+  userId: number
+  orgId: number
   lrn?: string;
   departmentId?: number
   programId?: number
@@ -16,60 +14,57 @@ export type CreateUserStudentRecord = {
   yearLevelId?: number
 }
 
-
 export const createStudentRecordAction = async (payload:CreateUserStudentRecord ) => {
   const { userId, orgId, studentId, lrn, departmentId, programId, collegeId, levelId, yearLevelId } = payload
-  const User: Prisma.UserStudentRecordCreateInput["User"] = {
-    connect: {
-      userId
-    }
-  }
-  const Organization: Prisma.UserStudentRecordCreateInput["Organization"] = {
-    connect: {
-      orgId
-    }
-  }
-  const Level: Prisma.UserStudentRecordCreateInput["Level"] =  {
-    connect: {
-      id: levelId
-    }
-  }
-
-  const Department: Prisma.UserStudentRecordCreateInput["Department"] =  {
-    connect: {
-      id: departmentId
-    }
-  }
-
-  const Program: Prisma.UserStudentRecordCreateInput["Program"] =  {
-    connect: {
-      id: programId
-    }
-  }
-
-  const College: Prisma.UserStudentRecordCreateInput["College"] =  {
-    connect: {
-      id: collegeId
-    }
-  }
-
-  const YearLevel: Prisma.UserStudentRecordCreateInput["YearLevel"] =  {
-    connect: {
-      id: yearLevelId
-    }
-  }
 
   const studentRecord = await prisma.userStudentRecord.create({
     data: {
       studentId,
-      User,
-      Organization,
-      Level,
+      userId,
+      organizationId: orgId,
+      level: levelId,
       lrn,
-      ...departmentId ? Department : {},
-      ...programId ? Program : {}, 
-      ...collegeId ? College : {},
-      ...yearLevelId ? YearLevel :{}
+      departmentId,
+      programId, 
+      collegeId,
+      yearLevel: yearLevelId
+    }
+  });
+  return studentRecord;
+}
+
+
+export const upsertStudentRecordAction = async (payload:CreateUserStudentRecord ) => {
+  const { userId, orgId, studentId, lrn, departmentId, programId, collegeId, levelId, yearLevelId } = payload
+  
+  const studentRecord = await prisma.userStudentRecord.upsert({
+    where: {
+      unique_user_student_record: {
+        userId,
+        organizationId: orgId
+      }
+    },
+    create: {
+      studentId,
+      userId,
+      organizationId: orgId,
+      level: levelId,
+      lrn,
+      departmentId,
+      programId, 
+      collegeId,
+      yearLevel: yearLevelId
+    },
+    update: {
+      studentId,
+      userId,
+      organizationId: orgId,
+      level: levelId,
+      lrn,
+      departmentId,
+      programId, 
+      collegeId,
+      yearLevel: yearLevelId
     }
   });
   return studentRecord;

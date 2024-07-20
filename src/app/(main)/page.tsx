@@ -40,7 +40,7 @@ const topFeature = [
     content: "Matching patients with the perfect fit. Build your trusted profile & connect with patients seeking your expertise.",
     action: {
       label: "Join Clinic EZ ✅",
-      path: "/contact-us"
+      path: "/hp/apply"
     }
   }
 ]

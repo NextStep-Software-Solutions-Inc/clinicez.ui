@@ -27,7 +27,7 @@ export default function AdditionalInformationStep({ orgId, isLastStep, isFirstSt
   const additionalInfoValidValue = useAtomValue(additionalInfoValidAtom)
   const [orgApplication] = useLocalStorage<OrganizationApplicationData>(`${orgId}_application`);
   const requirements = orgApplication.roleRequirements ?? [];
-  const isValid = requirements.every(requirement => additionalInfoValidValue[requirement as keyof typeof additionalInfoValidValue])
+  const isValid = [].every(requirement => additionalInfoValidValue[requirement as keyof typeof additionalInfoValidValue])
 
   return (
     <div className="shadow-2xl p-10 rounded-sm">

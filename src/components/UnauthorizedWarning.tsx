@@ -2,7 +2,7 @@ import { Button } from "@components/ui/button";
 import { ShieldAlert } from "lucide-react";
 import Link from "next/link";
 
-export const UnauthorizedWarning = () => {
+export default function UnauthorizedWarning() {
   return (
     <div className="container h-screen flex items-center justify-center">
       <div className="text-center space-y-6">

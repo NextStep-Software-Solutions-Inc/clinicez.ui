@@ -44,7 +44,7 @@ export default function SettingsLayout({ children, params: {organization} }: Set
   
   return (
     <>
-      <div className="container space-y-6 p-2 md:p-10 pb-16">
+      <div className="container space-y-6 p-5 md:p-10 pb-16">
         <div className="space-y-0.5">
           <h2 className="text-2xl font-bold tracking-tight">Settings</h2>
           <p className="text-muted-foreground">

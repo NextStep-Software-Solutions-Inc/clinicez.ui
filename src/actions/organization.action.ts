@@ -69,7 +69,7 @@ export type GetUserOrgFilterType = {
 export type GetUserOrganizations = Awaited<ReturnType<typeof getUserOrganizationsAction>>
 export const getUserOrganizationsAction = cache(async (filter?: GetUserOrgFilterType) => {
   const { userId, orgId, status, roleId, pageNumber, pageSize } = filter || {};
-  const organizations = await prisma.userOrganization.findMany({
+  const userOrganizations = await prisma.userOrganization.findMany({
     ... pageSize && { take: pageSize },
     skip: pageNumber ? (pageNumber - 1) * (pageSize || 10) : 0,
     orderBy: {
@@ -102,6 +102,75 @@ export const getUserOrganizationsAction = cache(async (filter?: GetUserOrgFilter
           lastName: true,
           gender: true,
           dob: true,
+          ...orgId ? {
+            StudentRecords: {
+              where: {
+                isActive: true,
+                Organization: {
+                  orgId: orgId
+                }
+              },
+              select: {
+                studentId: true,
+                lrn: true,
+                Level: {
+                  select: {
+                    name: true
+                  }
+                },
+                YearLevel: {
+                  select: {
+                    name: true
+                  }
+                },
+                Program: {
+                  select: {
+                    name: true
+                  }
+                },
+                Department: {
+                  select: {
+                    name: true
+                  }
+                },
+                College: {
+                  select: {
+                    name: true
+                  }
+                }
+              }
+            }
+          } : {},
+          ...orgId ? {
+            UserEmployments: {
+              where: {
+                isActive: true,
+                Organization: {
+                  orgId: orgId
+                }
+              },
+              select: {
+                employeeId: true,
+                position: true,
+                designation: true,
+                Office: {
+                  select: {
+                    name: true
+                  }
+                },
+                Department: {
+                  select: {
+                    name: true
+                  }
+                },
+                College: {
+                  select: {
+                    name: true
+                  }
+                }
+              }
+            }
+          } : {}
         }
       },
       AcceptedBy: {
@@ -118,6 +187,7 @@ export const getUserOrganizationsAction = cache(async (filter?: GetUserOrgFilter
         select: {
           id: true,
           name: true,
+          requirements: true
         }
       },
       Organization: {
@@ -138,8 +208,7 @@ export const getUserOrganizationsAction = cache(async (filter?: GetUserOrgFilter
       }
     }
   });
-  return organizations;
-
+  return userOrganizations;
 })
 
 export const getMyDefaultOrganizationAction = async (userId: string) => {

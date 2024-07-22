@@ -10,6 +10,7 @@ export type CreateUserEmploymentRecord = {
   designation?: string
   userId: number
   orgId: number
+  officeId?: number
   departmentId?: number
   collegeId?: number
 }
@@ -51,7 +52,7 @@ export const createEmploymentRecordAction = async (payload:CreateUserEmploymentR
 }
 
 export const upsertEmploymentRecordAction = async (payload:CreateUserEmploymentRecord ) => {
-  const { employeeId, position, designation, userId, orgId, departmentId, collegeId } = payload
+  const { employeeId, position, designation, userId, orgId, officeId, departmentId, collegeId } = payload
   const employeeRecord = await prisma.userEmploymentRecord.upsert({
     where: {
       unique_user_employment: {
@@ -65,6 +66,7 @@ export const upsertEmploymentRecordAction = async (payload:CreateUserEmploymentR
       position,
       designation,
       organizationId: orgId,
+      officeId,
       departmentId,
       collegeId,
     },
@@ -74,6 +76,7 @@ export const upsertEmploymentRecordAction = async (payload:CreateUserEmploymentR
       position,
       designation,
       organizationId: orgId,
+      officeId,
       departmentId,
       collegeId,
     }

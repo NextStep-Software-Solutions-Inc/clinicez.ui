@@ -1,3 +1,5 @@
+import { UserStudentRecord, UserEmploymentRecord, Gender } from '@prisma/client';
+import { StudentRecordType } from './../../../../(activation)/[organization]/join/StudentRecordForm';
 import { Pi } from "lucide-react"
 import { z } from "zod"
 
@@ -17,8 +19,10 @@ export const membershipRequestSchema = z.object({
     userId: z.string(),
     firstName: z.string().nullable(),
     lastName: z.string().nullable(),
-    gender: z.string().optional().nullable(),
-    dob: z.date().optional().nullable(),
+    gender: z.nativeEnum(Gender).nullable(),
+    dob: z.date().nullable(),
+    StudentRecords: z.array(z.any({})),
+    UserEmployments: z.array(z.any({}))
   }),
   AcceptedBy: z.object({
     id: z.number(),

@@ -26,7 +26,9 @@ export const MembershipTable = async ({ orgId }: MembershipTableProps) => {
       firstName: request.User?.firstName ?? "",
       lastName: request.User?.lastName ?? "",
       gender: request.User.gender,
-      dob: request.User.dob
+      dob: request.User.dob,
+      StudentRecords: request.User.StudentRecords,
+      UserEmployments: request.User.UserEmployments
     },
     AcceptedBy: request.AcceptedBy ? {
       id: request.AcceptedBy?.id,

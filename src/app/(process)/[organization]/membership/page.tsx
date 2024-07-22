@@ -15,27 +15,21 @@ async function MembershipPage({params}: AppRouterPageRouteOpts) {
   if(!orgAdmin) {
     redirect("/unauthorized");
   }
-
   return (
-    <div className="container mx-auto my-10 space-y-6">
-
-      <div className="group/upload">
-        <div className="flex items-center">
-          <h2 className="text-2xl font-bold tracking-tight"><code className="bg-slate-200 py-1 px-4 rounded">{params?.organization}</code> Membership Application Request</h2>
+    <>
+      <div className="space-y-6">
+        <div className="group/create-folder">
+          <h2 className="text-2xl font-bold tracking-tight">Membership Application Request</h2>
+          <p className="text-sm text-muted-foreground">
+            View and manage membership application requests for your organization. (Only available to organization administrators)
+          </p>
         </div>
-        <p className="text-sm text-muted-foreground">
-          {`You are about to join an organization as a member. Please be aware that you will be able to access the organization's resources and services once you are accepted.`}
-        </p>
+        <Separator />
+        <Suspend>
+          <MembershipTable orgId={orgId}/>
+        </Suspend>
       </div>
-    
-      <Separator />
-   
-      <Suspend>
-        <MembershipTable orgId={orgId}/>
-      </Suspend>
-  
-    </div>
-
+    </>
   );
 }
 export default withPageAuthRequired(MembershipPage, {

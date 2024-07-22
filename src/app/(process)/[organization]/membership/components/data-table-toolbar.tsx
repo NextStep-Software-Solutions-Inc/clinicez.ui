@@ -9,8 +9,9 @@ import { DataTableViewOptions } from "./data-table-view-options"
 
 import { DataTableFacetedFilter } from "./data-table-faceted-filter"
 import { $Enums } from "@prisma/client"
-import { getOrganizationRolesAction } from "@actions/organization.action"
-import React, { useEffect } from "react"
+import React from "react"
+import { useOrgRole } from "@hooks/useOrgRole"
+import { useParams } from "next/navigation"
 
 interface DataTableToolbarProps<TData> {
   table: Table<TData>
@@ -19,23 +20,13 @@ interface DataTableToolbarProps<TData> {
 export function DataTableToolbar<TData>({
   table,
 }: DataTableToolbarProps<TData>) {
-  const [orgRoles, setOrgRoles] = React.useState<{label: string, value: string}[]>([])
   const isFiltered = table.getState().columnFilters.length > 0
   const membershipStatuses = Object.values($Enums.UserOrganizationStatus).map((status) => ({
     label: status.split("").map((char, index) => (index === 0 ? char : char.toLowerCase())).join(""),
     value: status,
   }))
-
-  useEffect(() => {
-    (async () => {
-      const roles = await getOrganizationRolesAction()
-      setOrgRoles(roles.map(role => ({
-        label: role.name,
-        value: role.name,
-      })))
-    })()
-  }, [])
-
+  const params = useParams<{organization: string}>()
+  const {data: orgRoles } = useOrgRole(params.organization)
   
   return (
     <div className="flex items-center justify-between">
@@ -52,7 +43,10 @@ export function DataTableToolbar<TData>({
           <DataTableFacetedFilter
             column={table.getColumn("role")}
             title="Role"
-            options={orgRoles}
+            options={(orgRoles?? []).map(role => ({
+              label: role.name,
+              value: role.name,
+            }))}
           />
         )}
         {table.getColumn("status") && (

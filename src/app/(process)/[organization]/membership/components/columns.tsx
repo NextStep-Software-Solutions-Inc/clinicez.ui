@@ -12,9 +12,10 @@ import { DataTableRowActions } from "./data-table-row-actions"
 import Link from "next/link"
 import { DropdownMenuProvider } from "@components/DropdownMenuProvider"
 import { format, differenceInCalendarYears } from "date-fns"
-import { ExternalLink } from "lucide-react"
+import { ChevronDown, ChevronRight, ExternalLink } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@components/ui/avatar"
 import ConditionalRender from "@components/utils/ConditionalRender"
+import { Button } from "@components/ui/button"
 
 export const columns: ColumnDef<MembershipRequestSchema>[] = [
   {
@@ -30,19 +31,30 @@ export const columns: ColumnDef<MembershipRequestSchema>[] = [
         className="translate-y-[2px]"
       />
     ),
-    cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label="Select row"
-        className="translate-y-[2px]"
-      />
+    cell: ({ row, getValue }) => (
+      <div className="flex gap-2 items-center">
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+          className="translate-y-[2px]"
+        />
+        {
+          <Button 
+            onClick={() => row.toggleExpanded()}
+            size="icon" variant="ghost"
+          >{row.getIsExpanded()? <ChevronDown size={20}/>:<ChevronRight size={20}/>}
+          </Button>
+        }
+      </div>
     ),
     enableSorting: false,
     enableHiding: false,
+    footer: props => props.column.id,
   },
   {
     accessorKey: "application-date",
+    size: 50,
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Application Date" />
     ),
@@ -68,27 +80,6 @@ export const columns: ColumnDef<MembershipRequestSchema>[] = [
     },
     filterFn: (row, id, value) => {
       return value.includes(row.getValue(id))
-    },
-  },
-  {
-    accessorKey: "role",
-    accessorFn: (row) => row.role.name,
-    filterFn: (row, id, value) => {
-      return value.includes(row.getValue(id))
-    },
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Role" />
-    ),
-    cell: ({ row }) => {
-      const label = row.original.role.name
-
-      return (
-        <div className="flex space-x-2">
-          <span className="max-w-[500px] truncate font-medium">
-            {label}
-          </span>
-        </div>
-      )
     },
   },
   {
@@ -152,6 +143,27 @@ export const columns: ColumnDef<MembershipRequestSchema>[] = [
     },
     filterFn: (row, id, value) => {
       return value.includes(row.getValue(id))
+    },
+  },
+  {
+    accessorKey: "role",
+    accessorFn: (row) => row.role.name,
+    filterFn: (row, id, value) => {
+      return value.includes(row.getValue(id))
+    },
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Role" />
+    ),
+    cell: ({ row }) => {
+      const label = row.original.role.name
+
+      return (
+        <div className="flex space-x-2">
+          <span className="max-w-[500px] truncate font-medium">
+            {label}
+          </span>
+        </div>
+      )
     },
   },
   {

@@ -450,17 +450,18 @@ model FileType {
 }
 
 model FileTypeAttribute {
-  id           Int           @id @default(autoincrement())
-  fileTypeId   Int           @unique
-  required     Boolean       @default(false)
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  deletedAt    DateTime?
-  isActive     Boolean       @default(true)
-  scopeOrgId   Int?
-  validUntil   Int           @default(0)
-  FileType     FileType      @relation(fields: [fileTypeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  Organization Organization? @relation(fields: [scopeOrgId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id                Int           @id @default(autoincrement())
+  fileTypeId        Int           @unique
+  required          Boolean       @default(false)
+  dateTakenRequired Boolean       @default(true)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  deletedAt         DateTime?
+  isActive          Boolean       @default(true)
+  scopeOrgId        Int?
+  validUntil        Int           @default(0)
+  FileType          FileType      @relation(fields: [fileTypeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Organization      Organization? @relation(fields: [scopeOrgId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@unique([fileTypeId, scopeOrgId], name: "unique_file_type_attribute")
 }

@@ -75,7 +75,10 @@ export default function StudentRecordForm({orgId} : {orgId: string}) {
 
       toast.promise(upsertStudentRecordAction({...values, orgId, userId}), {
         loading: "Saving student record...",
-        success: async () => {
+        success: async (res) => {
+          if(!res.success) {
+            return `An error occurred: ${res?.message}`
+          }
           setAdditionalInfoValid((prev) => ({
             ...prev,
             student_record: true
@@ -83,9 +86,9 @@ export default function StudentRecordForm({orgId} : {orgId: string}) {
           await setOrgApplication({
             student_record: values
           })
-          return "Student record saved successfully"
+          return res.message
         },
-        error: "Failed to save student record"
+        error: (error) => `An error occurred: Error ${error}`
       })
       
     })()

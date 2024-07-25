@@ -66,12 +66,12 @@ export default function EmployeeRecordForm({orgId} : {orgId: string}) {
     form.handleSubmit(async (values) => {
       const orgId = orgOffices?.[0].organizationId ?? 0
       const userId = user?.id ?? 0
-
-      console.log({values, orgId, userId});
-      
       toast.promise(upsertEmploymentRecordAction({...values, orgId, userId,}), {
         loading: "Saving...",
-        success: async () => {
+        success: async (res) => {
+          if(!res?.success) {
+            return `An error occurred: ${res?.message}`
+          }
           setAdditionalInfoValid((prev) => ({
             ...prev,
             employee_record: true
@@ -80,9 +80,9 @@ export default function EmployeeRecordForm({orgId} : {orgId: string}) {
           await setOrgApplication({
             employee_record: values
           })
-          return "Employee record saved"
+          return res.message
         },
-        error: "An error occurred"
+        error: (error) => `An error occurred: Error ${error}`
       })
     })()
   }

@@ -4,5 +4,5 @@ import useSWR from "swr"
 
 export const useStudentLevel = () => {
   const fetcher = (...args: any) => self.get<GetStudentLevels>(args)
-  return useSWR(`/api/student-level`, fetcher)
+  return useSWR(`/api/student-levels`, fetcher)
 }

@@ -4,5 +4,5 @@ import useSWR from "swr"
 
 export const useOrgYearLevel = (orgId: string) => {
   const fetcher = (...args: any) => self.get<GetOrgYearLevels>(args)
-  return useSWR(`/api/org-year-level?orgId=${orgId}`, fetcher)
+  return useSWR(`/api/org-year-levels?orgId=${orgId}`, fetcher)
 }

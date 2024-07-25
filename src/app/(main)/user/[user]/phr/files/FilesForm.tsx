@@ -2,9 +2,9 @@ import Folder, { FolderProps } from "../../../../../../components/Folder";
 import { getFoldersAction } from "@actions/folder.action";
 import { format } from "date-fns";
 import Each from "@components/utils/Each";
-import { getUserOrganizationsAction } from "@actions/organization.action";
 import dayjs from "dayjs";
 import { getCachedSession } from "@actions/session.action";
+import { getUserOrganizationsAction } from "@actions/user-organization.action";
 
 interface FilesFormProps {
   readOnly: boolean;

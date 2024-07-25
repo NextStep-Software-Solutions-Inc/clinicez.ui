@@ -1,6 +1,5 @@
 "use client";
 
-import { GetOrganizationRoles } from "@actions/organization.action";
 import BackSubmitAndNext from "@components/SubmitAndNext";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@components/ui/form";
 import { RadioGroup, RadioGroupItem } from "@components/ui/radio-group";
@@ -10,8 +9,8 @@ import { useLocalStorage } from "@hooks/useLocalStorage";
 
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { EmployeeRecordType } from "./EmployeeRecordForm";
 import { OrganizationApplicationData } from "./OrganizationSteps";
+import { GetOrganizationRoles } from "@actions/organization-role.action";
 
 interface SelectOrgFormProps {
   userId: string

@@ -14,9 +14,12 @@ import {
 import React from "react"
 import { useDropdownMenu } from "@components/DropdownMenuProvider"
 import { toast } from "sonner"
-import { setMembershipRequestStatusAction } from "@actions/organization.action"
 import { UserOrganizationStatus } from "@prisma/client"
 import Each from "@components/utils/Each"
+import { Trash } from "lucide-react"
+import { setMembershipRequestStatusAction } from "@actions/user-organization.action"
+import { revalidatePath } from "@actions/cache.action"
+import ConfirmDeleteMembership from "./ConfirmDeleteMembership"
 interface DataTableRowActionsProps<TData> {
   applicationRequest: ApplicationRequest
 }
@@ -29,7 +32,10 @@ export function DataTableRowActions<TData>({
   const setStatus = async (status: UserOrganizationStatus) => {
     toast.promise(setMembershipRequestStatusAction(applicationRequest.id, status), {
       loading: "Updating status...",
-      success: `Status set to ${status} successfully!`,
+      success: () => {
+        revalidatePath(`/[organization]/membership`, "page")
+        return `Status set to ${status} successfully!`
+      },
       error: "Failed to update status",
       position: "top-center",
     })
@@ -62,11 +68,12 @@ export function DataTableRowActions<TData>({
                 <DropdownMenuItem onClick={() => setStatus(option.status as UserOrganizationStatus)}>
                   {option.label}
                 </DropdownMenuItem>
-                {index < statusOptions.length - 1 && <DropdownMenuSeparator />}
+                {index === statusOptions.length - 1 && <DropdownMenuSeparator />}
               </React.Fragment>
             )
           )}
         />
+        <ConfirmDeleteMembership userOrganizationId={applicationRequest.id}/>
       </DropdownMenuContent>
     </DropdownMenu>
   )

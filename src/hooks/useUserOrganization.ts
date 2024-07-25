@@ -1,4 +1,4 @@
-import { GetUserOrganizations, GetUserOrgFilterType } from "@actions/organization.action"
+import { GetUserOrganizations, GetUserOrgFilterType } from "@actions/user-organization.action"
 import { self } from "@services/request"
 import useSWR from "swr"
 

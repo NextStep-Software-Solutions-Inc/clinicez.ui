@@ -1,7 +1,7 @@
 import React from "react";
 import { DataTable } from "./components/data-table";
 import { columns } from "./components/columns";
-import { getUserOrganizationsAction } from "@actions/organization.action";
+import { getUserOrganizationsAction } from "@actions/user-organization.action";
 
 interface MembershipTableProps {
   orgId: string;

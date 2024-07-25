@@ -1,6 +1,6 @@
-import { getUserOrganizationsAction, getOrganizationRolesAction } from "@actions/organization.action";
+import { getOrganizationRolesAction } from "@actions/organization-role.action";
+import { getUserOrganizationsAction } from "@actions/user-organization.action";
 import { SelectOrgForm } from "./SelectOrgFom";
-
 interface SelectOrgRoleStepProps {
   orgId: string;
   userId: string;

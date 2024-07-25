@@ -1,4 +1,4 @@
-import { GetOrganizationRoles } from "@actions/organization.action"
+import { GetOrganizationRoles } from "@actions/organization-role.action"
 import { self } from "@services/request"
 import useSWR from "swr"
 

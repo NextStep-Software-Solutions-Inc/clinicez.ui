@@ -31,6 +31,9 @@ export const getOrganizationsAction = async (filters?: FiltersType) => {
 
   const { userId } = filters || {};
   const organizations = await prisma.organization.findMany({
+    orderBy: {
+      name: "asc"
+    },
     where: {
       ...(userId && {
         Users: {

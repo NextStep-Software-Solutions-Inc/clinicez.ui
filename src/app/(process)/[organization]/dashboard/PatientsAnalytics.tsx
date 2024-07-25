@@ -2,10 +2,16 @@ import { getPatientAnalyticsData } from "@actions/dashboard/analytics.action";
 import { BloodTypeChart } from "@components/charts/BloodTypeChart";
 import { CivilStatusChart } from "@components/charts/CivilStatusChart";
 import { GenderChart } from "@components/charts/GenderChart";
+import ConditionalRender from "@components/utils/ConditionalRender";
+import { isMember, isOrgAdmin } from "@lib/protect-org";
 
 export const PatientsAnalytics = async ({ orgId }: { orgId: string; }) => {
-  const data = await getPatientAnalyticsData(orgId);
-  const { genderStats, bloodTypeStats, civilStatusStats } = data;
+  const [stats, member, orgAdmin] = await Promise.all([
+    getPatientAnalyticsData(orgId),
+    isMember(),
+    isOrgAdmin()
+  ]);
+  const { genderStats, bloodTypeStats, civilStatusStats } = stats;
 
   const genderChartData = genderStats.map(g => ({ 
     gender: g.gender ?? "UNKNOWN",
@@ -30,10 +36,12 @@ export const PatientsAnalytics = async ({ orgId }: { orgId: string; }) => {
   
   
   return (
-    <div className="grid gap-2 grid-cols-1 lg:grid-cols-3">
-      <GenderChart chartData={genderChartData} />
-      <BloodTypeChart chartData={bloodTypeChartData} />
-      <CivilStatusChart chartData={civilStatusChartData} />
-    </div>
+    <ConditionalRender condition={member && orgAdmin}>
+      <div className="grid gap-2 grid-cols-1 lg:grid-cols-3">
+        <GenderChart chartData={genderChartData} />
+        <BloodTypeChart chartData={bloodTypeChartData} />
+        <CivilStatusChart chartData={civilStatusChartData} />
+      </div>
+    </ConditionalRender>
   );
 };

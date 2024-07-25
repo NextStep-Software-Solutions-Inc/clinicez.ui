@@ -29,7 +29,7 @@ import { getCachedSession } from "@actions/session.action"
 import Suspend from "@components/Suspend"
 import { PatientHealthAnalytics } from "./PatientHealthAnalytics"
 import { PatientsAnalytics } from "./PatientsAnalytics"
-import OrgAnalytics from "./components/OrgAnalytics"
+import { OrgMembershipAnalytics } from "./OrgMembershipAnalytics"
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -114,7 +114,9 @@ async function DashboardPage({params, searchParams}: AppRouterPageRouteOpts) {
               <Suspend>
                 <PatientsAnalytics orgId={orgId}/>
               </Suspend>
-              <OrgAnalytics orgId={orgId}/>
+              <Suspend>
+                <OrgMembershipAnalytics orgId={orgId}/>
+              </Suspend>
             </TabsContent>
           </Tabs>
         </div>

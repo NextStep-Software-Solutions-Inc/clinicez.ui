@@ -25,6 +25,8 @@ export const createOrganizationAction = async (data: Prisma.OrganizationCreateAr
 type FiltersType = {
   userId?: string;
 }
+
+export type GetOrganizations = Awaited<ReturnType<typeof getOrganizationsAction>>
 export const getOrganizationsAction = async (filters?: FiltersType) => {
 
   const { userId } = filters || {};

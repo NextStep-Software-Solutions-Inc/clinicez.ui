@@ -2,6 +2,7 @@
 
 import prisma from "@lib/prisma";
 
+export type GetFileTypes = Awaited<ReturnType<typeof getFileTypesAction>>
 export const getFileTypesAction = async () => {
   const fileTypes = await prisma.fileType.findMany({
     where: {
@@ -12,8 +13,11 @@ export const getFileTypesAction = async () => {
       name: true,
       FileTypeAttribute: {
         select: {
+          dateTakenRequired: true,
+          required: true,
           Organization: {
             select: {
+              id: true,
               orgId: true
             }
           }

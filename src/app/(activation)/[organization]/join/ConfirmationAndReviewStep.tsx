@@ -84,6 +84,7 @@ export default function ConfirmationAndReviewStep({ orgId, isComplete, isFirstSt
           await setOrgApplication({ complete: true})
           setComplete?.(true);
           playSuccess()
+          localStorage.removeItem(`${orgId}_application`)
           return res.message
         },
         error: (error) => {

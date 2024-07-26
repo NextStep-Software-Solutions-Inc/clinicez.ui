@@ -24,7 +24,7 @@ interface SelectOrgFormProps {
 
 
 export const SelectOrgForm = ({existingRoles, orgRoles, orgId, userId, nextStep, isFirstStep, isLastStep}:SelectOrgFormProps) => {
-  const setOrgApplication = useLocalStorage<OrganizationApplicationData>(`${orgId}_application`, {userId})[1];
+  const setOrgApplication = useLocalStorage<OrganizationApplicationData>(`${orgId}_application`, {userId, orgId})[1];
   
   const selectRoleSchema = z.object({
     roleId: z.coerce.number({

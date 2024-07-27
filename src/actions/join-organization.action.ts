@@ -7,6 +7,7 @@ import { sendMail } from './email.action';
 import path from 'path';
 import { CreateUserStudentRecord } from './student-record.action';
 import { CreateUserEmploymentRecord } from './employee-record.action';
+import { capitalize } from "@lib/utils";
 
 export type JoinOrganizationPayload = {
   userId: string;
@@ -69,10 +70,11 @@ export async function joinOrganizationAction(payload: JoinOrganizationPayload) {
   const adminEmails = userOrganization.Organization.Users.filter(u => u.UserRole.name.toUpperCase() === "ADMIN" && u.status === "ACTIVE").map(u => u.User.email);
   const userName = `${userOrganization.User.firstName} ${userOrganization.User.lastName}`;
   const applicantEmail = userOrganization.User.email;
+  const applicantName = capitalize(`${userOrganization.User.firstName} ${userOrganization.User.lastName}`);
   try {
     await Promise.all([
       notifyApplicant([applicantEmail], userOrganization.Organization.name, userName),
-      notifyAdmins([...adminEmails], userOrganization.Organization.name)
+      notifyAdmins([...adminEmails], userOrganization.Organization.name, applicantName)
     ])
   } catch (error) {
     console.error(JSON.stringify(error, null, 2));
@@ -85,13 +87,13 @@ export async function joinOrganizationAction(payload: JoinOrganizationPayload) {
   }
 }
 
-const notifyAdmins = async (applicantEmail: string[], orgName: string) => {
+const notifyAdmins = async (applicantEmail: string[], orgName: string, applicant: string) => {
   const filePath = path.join(process.cwd(), "email-templates/org-membership-application.html");
 
   const emailTemplate = await fs.readFile(filePath, "utf-8");
   const appName = process.env.NEXT_PUBLIC_APP_NAME!;
-  const html = emailTemplate.replaceAll("@{orgName}", orgName).replaceAll("@{appName}", appName)
-  const subject = `New membership application to ${orgName}`;
+  const html = emailTemplate.replaceAll("@{orgName}", orgName).replaceAll("@{appName}", appName).replaceAll("@{applicant}", applicant)
+  const subject = `${applicant} wants to join ${orgName}`;
 
   await sendMail({
     subject,

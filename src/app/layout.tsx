@@ -3,14 +3,15 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Montserrat } from "next/font/google";
 import { Toaster as SonnerToaster } from "sonner"
 import { Toaster } from "@components/ui/toaster"
-import "@styles/globals.css";
-import Hotjar from "@components/Hotjar";
 import { SWRProvider } from "../provider/swr-provider";
 import JotaiProvider from "../provider/JotaiProvider";
 import SyncToken from "@components/SyncToken";
 import { getCachedSession } from "@actions/session.action";
 import BypassAutoplay from "@components/BypassAutoplay";
+import dynamic from "next/dynamic";
+import "@styles/globals.css";
 
+const Hotjar = dynamic(() => import("@components/Hotjar"), { ssr: false });
 const montserrat = Montserrat({ subsets: ["latin"] });
 
 export const metadata = {
@@ -41,7 +42,6 @@ export default async function RootLayout({children}:Props) {
               <SpeedInsights />
               <SonnerToaster />
               <Toaster />
-              
             </UserProvider>
           </SWRProvider>
         </JotaiProvider>

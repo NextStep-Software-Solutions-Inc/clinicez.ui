@@ -7,7 +7,7 @@ const middleware = new MiddlewareStack();
 
 middleware.use(maintenanceCheck);
 
-export default (async function m(req: NextRequest, event: NextFetchEvent)  {
+export default (async function m(req: NextRequest, event: NextFetchEvent) {
   return middleware.execute(req, event);
 });
   

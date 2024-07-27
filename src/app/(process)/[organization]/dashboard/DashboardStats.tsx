@@ -5,11 +5,12 @@ import {
 } from "@components/ui/card";
 import { CircleDashed, CircleOff, Files, User, UserCheck, Users, UserXIcon } from "lucide-react";
 import ConditionalRender from "@components/utils/ConditionalRender";
-import { isHP, isMember, isOrgAdmin } from "@lib/protect-org";
+import { isMember, isOrgAdmin } from "@lib/protect-org";
 import { getDashboardData } from "@actions/dashboard/overview.actions";
 import { UserOrganizationStatus } from "@prisma/client";
 import Link from "next/link";
 import Each from "@components/utils/Each";
+// import MyMemberships from "./components/MyMemberships";
 
 interface DashboardStatsProps {
   userId: string;
@@ -17,10 +18,9 @@ interface DashboardStatsProps {
 }
 
 export const DashboardStats = async ({ userId, orgId }: DashboardStatsProps) => {
-  const [stats, member, hp, orgAdmin] = await Promise.all([
+  const [stats, member, orgAdmin] = await Promise.all([
     getDashboardData(orgId),
     isMember(),
-    isHP(),
     isOrgAdmin()
   ]);
 
@@ -43,10 +43,13 @@ export const DashboardStats = async ({ userId, orgId }: DashboardStatsProps) => 
 
   return (
     <>
-      <div>
-        <h3 className="text-lg font-medium mb-2 ml-1">Overall</h3>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <ConditionalRender condition={member && (hp || orgAdmin)}>
+      {/* <ConditionalRender condition>
+        <MyMemberships userId={userId}/>
+      </ConditionalRender> */}
+      <ConditionalRender condition={member && orgAdmin}>
+        <div>
+          <h3 className="text-lg font-medium mb-2 ml-1">Organization Overview</h3>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Link href={`/${orgId}/membership`}>
               <Card className="group/icon hover:ring-1">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -75,8 +78,6 @@ export const DashboardStats = async ({ userId, orgId }: DashboardStatsProps) => 
                 </p>
               </CardContent>
             </Card>
-          </ConditionalRender>
-          <ConditionalRender condition={member && (hp || orgAdmin)}>
             <Card className="group/icon hover:ring-1">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
@@ -91,13 +92,14 @@ export const DashboardStats = async ({ userId, orgId }: DashboardStatsProps) => 
                 </p>
               </CardContent>
             </Card>
-          </ConditionalRender>
+          </div>
         </div>
-      </div>
-      <div>
-        <h3 className="text-lg font-medium mb-2 ml-1">Membership Statuses</h3>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {/* <Card className="group/icon ">
+      </ConditionalRender>
+      <ConditionalRender condition={member && orgAdmin}>
+        <div>
+          <h3 className="text-lg font-medium mb-2 ml-1">Membership Statuses</h3>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {/* <Card className="group/icon ">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
                             Appointments
@@ -125,32 +127,33 @@ export const DashboardStats = async ({ userId, orgId }: DashboardStatsProps) => 
                 </p>
               </CardContent>
             </Card> */}
-          <Each
-            of={membershipStatuses}
-            render={(status) => {
-              const Icon = membershipIcons[status.status];
-              return (
-                <Card key={status.status} className="group/icon hover:ring-1">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium capitalize">{status.status.toLowerCase()} Membership</CardTitle>
-                    <Icon className="text-primary group-hover/icon:scale-150 transition-all" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{status._count}</div>
-                    <p className="text-xs text-muted-foreground">
+            <Each
+              of={membershipStatuses}
+              render={(status) => {
+                const Icon = membershipIcons[status.status];
+                return (
+                  <Card key={status.status} className="group/icon hover:ring-1">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium capitalize">{status.status.toLowerCase()} Membership</CardTitle>
+                      <Icon className="text-primary group-hover/icon:scale-150 transition-all" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{status._count}</div>
+                      <p className="text-xs text-muted-foreground">
                       Out of {membershipSum} membership
-                    </p>
-                  </CardContent>
-                </Card>
-              )
-            }}
-          />
+                      </p>
+                    </CardContent>
+                  </Card>
+                )
+              }}
+            />
+          </div>
         </div>
-      </div>
-      <div>
-        <h3 className="text-lg font-medium mb-2 ml-1">Organization Roles</h3>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <ConditionalRender condition={member && (hp || orgAdmin)}>
+      </ConditionalRender>
+      <ConditionalRender condition={member && orgAdmin}>
+        <div>
+          <h3 className="text-lg font-medium mb-2 ml-1">Organization Roles</h3>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Each
               of={roles}
               render={(role, index) => {
@@ -170,9 +173,9 @@ export const DashboardStats = async ({ userId, orgId }: DashboardStatsProps) => 
                 )
               }}
             />
-          </ConditionalRender>
+          </div>
         </div>
-      </div>
+      </ConditionalRender>
     </>
   );
 };

@@ -14,8 +14,8 @@ export type Appointment = {
 
 export const appointmentList:Appointment[] = [
   {
-    id: "6c84fb90-12c4-11e1-840d-7b25c5ee775a",
-    patientId: "6c84fb90-12c4-11e1-840d-7b25c5ee775a",
+    id: "auth0|668c3bcfb6e20bb732dc87a8",
+    patientId: "auth0|668c3bcfb6e20bb732dc87a8",
     status: "pending",
     subject: "Meeting Tomorrow",
     complaint: "Hi, let's have a follow-up tomorrow to discuss the project. I've been reviewing the project details and have some ideas I'd like to share. It's crucial that we align on our next steps to ensure the project's success.\n\nPlease come prepared with any questions or insights you may have. Looking forward to our follow-up!\n\nBest regards, William",
@@ -26,7 +26,7 @@ export const appointmentList:Appointment[] = [
   },
   {
     id: "110e8400-e29b-11d4-a716-446655440000",
-    patientId: "23ae3e4d-9e0b-43f7-8f7f-7b25c5ee775a",
+    patientId: "auth0|668c3bcfb6e20bb732dc87a8",
     status: "received",
     subject: "Re: Project Update",
     complaint: "Thank you for the project update. It looks great! I've gone through the report, and the progress is impressive. The team has done a fantastic job, and I appreciate the hard consultation everyone has put in.\n\nI have a few minor suggestions that I'll include in the attached document.\n\nLet's discuss these during our next follow-up. Keep up the excellent consultation!\n\nBest regards, Alice",
@@ -37,7 +37,7 @@ export const appointmentList:Appointment[] = [
   },
   {
     id: "3e7c3f6d-bdf5-46ae-8d90-171300f27ae2",
-    patientId: "52e7e3d4-9e0b-43f7-8f7f-7b25c5ee7241",
+    patientId: "auth0|668c3bcfb6e20bb732dc87a8",
     status: "pending",
     subject: "Weekend Plans",
     complaint: "Any plans for the weekend? I was thinking of going hiking in the nearby mountains. It's been a while since we had some outdoor fun.\n\nIf you're interested, let me know, and we can plan the details. It'll be a great way to unwind and enjoy nature.\n\nLooking forward to your response!\n\nBest, Bob",
@@ -48,7 +48,7 @@ export const appointmentList:Appointment[] = [
   },
   {
     id: "61c35085-72d7-42b4-8d62-738f700d4b92",
-    patientId: "263f3e4d-9e0b-43f7-8f7f-7b25c5ee775a",
+    patientId: "auth0|668c3bcfb6e20bb732dc87a8",
     status: "accepted",
     subject: "Re: Question about Budget",
     complaint: "I have a question about the laboratory for the upcoming project. It seems like there's a discrepancy in the allocation of resources.\n\nI've reviewed the laboratory report and identified a few areas where we might be able to optimize our spending without compromising the project's quality.\n\nI've attached a detailed analysis for your reference. Let's discuss this further in our next follow-up.\n\nThanks, Emily",
@@ -59,7 +59,7 @@ export const appointmentList:Appointment[] = [
   },
   {
     id: "8f7b5db9-d935-4e42-8e05-1f1d0a3dfb97",
-    patientId: "2134189d-9e0b-43f7-8f7f-7b25c5ee775a",
+    patientId: "auth0|668c3bcfb6e20bb732dc87a8",
     status: "received",
     subject: "Important Announcement",
     complaint: "I have an emergency announcement to make during our team follow-up. It pertains to a strategic shift in our approach to the upcoming product launch. We've received valuable feedback from our beta testers, and I believe it's time to make some adjustments to better meet our customers' needs.\n\nThis change is crucial to our success, and I look forward to discussing it with the team. Please be prepared to share your insights during the follow-up.\n\nRegards, Michael",
@@ -70,7 +70,7 @@ export const appointmentList:Appointment[] = [
   },
   {
     id: "1f0f2c02-e299-40de-9b1d-86ef9e42126b",
-    patientId: "9083102d-9e0b-43f7-8f7f-7b25c5ee775a",
+    patientId: "auth0|668c3bcfb6e20bb732dc87a8",
     status: "rejected",
     subject: "Re: Feedback on Proposal",
     complaint: "Thank you for your feedback on the proposal. It looks great! I'm pleased to hear that you found it promising. The team consultation diligently to address all the key points you raised, and I believe we now have a strong foundation for the project.\n\nI've attached the revised proposal for your review.\n\nPlease let me know if you have any further comments or suggestions. Looking forward to your response.\n\nBest regards, Sarah",
@@ -81,7 +81,7 @@ export const appointmentList:Appointment[] = [
   },
   {
     id: "17c0a96d-4415-42b1-8b4f-764efab57f66",
-    patientId: "3213102d-9e0b-43f7-8f7f-7b25c5ee775a",
+    patientId: "auth0|668c3bcfb6e20bb732dc87a8",
     status: "reschedule",
     subject: "New Project Idea",
     complaint: "I have an exciting consultation project idea to discuss with you. It involves expanding our services to target a niche market that has shown considerable growth in recent months.\n\nI've prepared a detailed proposal outlining the potential benefits and the strategy for execution.\n\nThis project has the potential to significantly impact our business positively. Let's set up a follow-up to dive into the details and determine if it aligns with our current goals.\n\nBest regards, David",
@@ -92,7 +92,7 @@ export const appointmentList:Appointment[] = [
   },
   {
     id: "2f0130cb-39fc-44c4-bb3c-0a4337edaaab",
-    patientId: "6c84fb90-12c4-11e1-840d-7b12c5ee775a",
+    patientId: "auth0|668c3bcfb6e20bb732dc87a8",
     status: "routed",
     subject: "Vacation Plans",
     complaint: "Let's plan our vacation for next month. What do you think? I've been thinking of visiting a tropical paradise, and I've put together some destination options.\n\nI believe it's time for us to unwind and recharge. Please take a look at the options and let me know your preferences.\n\nWe can start making arrangements to ensure a smooth and enjoyable trip.\n\nExcited to hear your thoughts! Olivia",
@@ -103,7 +103,7 @@ export const appointmentList:Appointment[] = [
   },
   {
     id: "de305d54-75b4-431b-adb2-eb6b9e546014",
-    patientId: "6c84fb90-12c4-11e1-840d-7b25342e775a",
+    patientId: "auth0|668c3bcfb6e20bb732dc87a8",
     status: "accepted",
     subject: "Re: Conference Registration",
     complaint: "I've completed the registration for the new next month. The event promises to be a great  consultation opportunity, and I'm looking forward to attending the various sessions and connecting with industry experts.\n\nI've also attached the new schedule for your reference.\n\nIf there are any specific topics or sessions you'd like me to explore, please let me know. It's an exciting event, and I'll make the most of it.\n\nBest regards, James",
@@ -114,7 +114,7 @@ export const appointmentList:Appointment[] = [
   },
   {
     id: "7dd90c63-00f6-40f3-bd87-5060a24e8ee7",
-    patientId: "6c84fb90-12c4-11e1-840d-3242",
+    patientId: "auth0|668c3bcfb6e20bb732dc87a8",
     status: "rejected",
     
     subject: "Team Dinner",
@@ -126,7 +126,7 @@ export const appointmentList:Appointment[] = [
   },
   {
     id: "99a88f78-3eb4-4d87-87b7-7b15a49a0a05",
-    patientId: "6c84fb90-12c4-11e1-840d-7b25c5ee775a",
+    patientId: "auth0|668c3bcfb6e20bb732dc87a8",
     status: "routed",
     subject: "Feedback Request",
     complaint: "I'd like your feedback on the latest project deliverables. We've made significant progress, and I value your input to ensure we're on the right track.\n\nI've attached the deliverables for your review, and I'm particularly interested in any areas where you think we can further enhance the quality or efficiency.\n\nYour feedback is invaluable, and I appreciate your time and expertise. Let's consultation together to make this project a success.\n\nRegards, Daniel",
@@ -137,7 +137,7 @@ export const appointmentList:Appointment[] = [
   },
   {
     id: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
-    patientId: "6c84fb90-12c4-11e1-840d-7b25c5ee775a",
+    patientId: "auth0|668c3bcfb6e20bb732dc87a8",
     status: "reschedule",
     subject: "Re: Meeting Agenda",
     complaint: "Here's the agenda for our follow-up next week. I've included all the topics we need to cover, as well as time allocations for each.\n\nIf you have any additional items to discuss or any specific points to address, please let me know, and we can integrate them into the agenda.\n\nIt's essential that our follow-up is productive and addresses all relevant matters.\n\nLooking forward to our follow-up! Ava",
@@ -148,7 +148,7 @@ export const appointmentList:Appointment[] = [
   },
   {
     id: "c1a0ecb4-2540-49c5-86f8-21e5ce79e4e6",
-    patientId: "6c84fb90-12c4-11e1-840d-7b25c5ee775a",
+    patientId: "auth0|668c3bcfb6e20bb732dc87a8",
     status: "rejected",
     subject: "Product Launch Update",
     complaint: "The product launch is on track. I'll provide an update during our call. We've made substantial progress in the development and marketing of our consultation product.\n\nI'm excited to share the latest updates with you during our upcoming call. It's crucial that we coordinate our efforts to ensure a successful launch. Please come prepared with any questions or insights you may have.\n\nLet's make this product launch a resounding success!\n\nBest regards, William",
@@ -159,7 +159,7 @@ export const appointmentList:Appointment[] = [
   },
   {
     id: "ba54eefd-4097-4949-99f2-2a9ae4d1a836",
-    patientId: "6c84fb90-12c4-11e1-840d-7b25c5ee775a",
+    patientId: "auth0|668c3bcfb6e20bb732dc87a8",
     status: "routed",
     subject: "Re: Travel Itinerary",
     complaint: "I've received the vaccination itinerary. It looks great! Thank you for your prompt assistance in arranging the details. I've reviewed the schedule and the accommodations, and everything seems to be in order. I'm looking forward to the trip, and I'm confident it'll be a smooth and enjoyable experience.\n\nIf there are any specific activities or attractions you recommend at our destination, please feel free to share your suggestions.\n\nExcited for the trip! Mia",
@@ -170,7 +170,7 @@ export const appointmentList:Appointment[] = [
   },
   {
     id: "df09b6ed-28bd-4e0c-85a9-9320ec5179aa",
-    patientId: "6c84fb90-12c4-11e1-840d-7b25c5ee775a",
+    patientId: "auth0|668c3bcfb6e20bb732dc87a8",
     status: "accepted",
     subject: "Team Building Event",
     complaint: "Let's plan a team-building event for our department. Team cohesion and morale are vital to our success, and I believe a well-organized team-building event can be incredibly beneficial. I've done some research and have a few ideas for fun and engaging activities.\n\nPlease let me know your thoughts and availability. We want this event to be both enjoyable and productive.\n\nTogether, we'll strengthen our team and boost our performance.\n\nRegards, Ethan",
@@ -181,7 +181,7 @@ export const appointmentList:Appointment[] = [
   },
   {
     id: "d67c1842-7f8b-4b4b-9be1-1b3b1ab4611d",
-    patientId: "6c84fb90-12c4-11e1-840d-7b25c5ee775a",
+    patientId: "auth0|668c3bcfb6e20bb732dc87a8",
     status: "pending",
     subject: "Re: Budget Approval",
     complaint: "The laboratory has been approved. We can proceed with the project. I'm delighted to inform you that our laboratory proposal has received the green light from the finance department. This is a significant milestone, and it means we can move forward with the project as planned.\n\nI've attached the finalized laboratory for your reference. Let's ensure that we stay on track and deliver the project on time and within laboratory.\n\nIt's an exciting time for us! Chloe",
@@ -192,7 +192,7 @@ export const appointmentList:Appointment[] = [
   },
   {
     id: "6c9a7f94-8329-4d70-95d3-51f68c186ae1",
-    patientId: "6c84fb90-12c4-11e1-840d-7b25c5ee775a",
+    patientId: "auth0|668c3bcfb6e20bb732dc87a8",
     status: "pending",
     subject: "Weekend Hike",
     complaint: "Who's up for a weekend hike in the mountains? I've been craving some outdoor adventure, and a hike in the mountains sounds like the perfect escape. If you're up for the challenge, we can explore some scenic trails and enjoy the beauty of nature.\n\nI've done some research and have a few routes in mind.\n\nLet me know if you're interested, and we can plan the details.\n\nIt's sure to be a memorable experience! Samuel",

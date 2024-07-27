@@ -1,10 +1,10 @@
+"use server";
+
 import { createOrganizationAction, getOrganizationsAction } from "@actions/organization.action";
-import { de } from "@faker-js/faker";
 import { withJwtAuth } from "@middlewares/withJwtAuth";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
-const response = new NextResponse()
 
 const createOrganizationSchema = z.object({
   orgId: z.string({
@@ -25,18 +25,12 @@ export const POST = withJwtAuth(async (req: NextRequest) => {
   const newOrganization = createOrganizationSchema.parse(body);
   const organization = await createOrganizationAction(newOrganization)
 
-  return NextResponse.json({
-    success: true,
-    response: organization
-  }, response);
+  return NextResponse.json(organization, {status: 201});
 });
 
 export const GET = withJwtAuth(async (req: NextRequest) => {
 
   const organizations = await getOrganizationsAction();
-  return NextResponse.json({
-    success: true,
-    response: organizations
-  }, response);
+  return NextResponse.json(organizations, {status: 200});
 });
   

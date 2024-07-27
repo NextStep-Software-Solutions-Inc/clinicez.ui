@@ -86,7 +86,7 @@ export const getPatientAction = async (email: string) => {
 }
 
 export const sendActivationCodeAction = async (email: string, code: string) => {
-  const filePath = path.join(process.cwd(), "src/actions/email-templates/activation.html");
+  const filePath = path.join(process.cwd(), "email-templates/activation.html");
 
   const body = await fs.readFile(filePath, "utf-8");
   const content = body.replaceAll("@{code}", code);

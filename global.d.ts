@@ -1,4 +1,9 @@
+import { User } from '@prisma/client';
+import { EmployeeRecordType } from './src/app/(activation)/[organization]/join/EmployeeRecordForm';
+import { StudentRecordType } from './src/app/(activation)/[organization]/join/StudentRecordForm';
+import { Gender, UserEmploymentRecord, UserStudentRecord } from '@prisma/client';
 import { labels } from './src/app/(process)/[organization]/consultations/data/data';
+import { GetUserOrganizations } from '@actions/user-organization.action';
 declare global {
   var prisma: PrismaClient;
   type Consultation =  {
@@ -8,28 +13,6 @@ declare global {
     label: string
     priority: string
     appointmentId: string
-  }
-  type ApplicationRequest = {
-    id: number
-    role: {
-      id: number
-      name: string
-    }
-    status: string
-    createdAt: Date,
-    User: {
-      id: number
-      picture: string | null
-      userId: string
-      firstName: string | null
-      lastName: string | null
-    }
-    AcceptedBy: {
-      id: number
-      userId: string
-      firstName: string | null
-      lastName: string | null
-    } | null
   }
   type Intervention = {
     id: string

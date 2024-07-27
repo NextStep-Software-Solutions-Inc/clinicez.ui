@@ -20,7 +20,6 @@ import { Overview } from "./components/overview"
 import { RecentSales } from "./components/recent-sales"
 import { Calendar, Stethoscope, TrendingUp } from "lucide-react"
 import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth0"
-import { getUserOrganizationsAction } from "@actions/organization.action"
 import { redirect } from "next/navigation"
 import ConditionalRender from "@components/utils/ConditionalRender"
 import { isHP, isMember } from "@lib/protect-org"
@@ -29,14 +28,14 @@ import { getCachedSession } from "@actions/session.action"
 import Suspend from "@components/Suspend"
 import { PatientHealthAnalytics } from "./PatientHealthAnalytics"
 import { PatientsAnalytics } from "./PatientsAnalytics"
-import OrgAnalytics from "./components/OrgAnalytics"
+import { OrgMembershipAnalytics } from "./OrgMembershipAnalytics"
 
-export const metadata: Metadata = {
-  title: "Dashboard",
-  description: "Example dashboard app built using the components.",
-}
-
+export const maxDuration = 30; // page timeout in seconds
 export const revalidate  = 60; // revalidation interval in seconds
+export const metadata: Metadata = {
+  title: "Dashboard | Clinic EZ",
+  description: "Overview of your organization's activities and analytics."
+}
 
 async function DashboardPage({params, searchParams}: AppRouterPageRouteOpts) {
   const orgId = params?.organization as string
@@ -114,7 +113,9 @@ async function DashboardPage({params, searchParams}: AppRouterPageRouteOpts) {
               <Suspend>
                 <PatientsAnalytics orgId={orgId}/>
               </Suspend>
-              <OrgAnalytics orgId={orgId}/>
+              <Suspend>
+                <OrgMembershipAnalytics orgId={orgId}/>
+              </Suspend>
             </TabsContent>
           </Tabs>
         </div>

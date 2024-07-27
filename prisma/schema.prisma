@@ -76,8 +76,10 @@ model User {
   AcceptedOrganizationApplications UserOrganization[]            @relation("AcceptedBy")
   Organizations                    UserOrganization[]            @relation("User")
   Plans                            UserPlan[]
-  UserVaccination                  UserVaccination[]
+  UserVaccinations                 UserVaccination[]
   VitalSigns                       VitalSign[]
+  StudentRecords                   UserStudentRecord[]
+  UserEmployments                  UserEmploymentRecord[]
 }
 
 model Organization {
@@ -94,15 +96,24 @@ model Organization {
   isActive                     Boolean                       @default(true)
   customUrl                    String?
   email                        String?
-  FileTypeAttribute            FileTypeAttribute[]
+  FileTypeAttributes           FileTypeAttribute[]
   ScopeFolders                 FolderSetting[]
   Tenant                       Tenant                        @relation(fields: [tenantId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   UserDefaultOrganizations     UserDefaultOrganization[]
-  UserDefaultOrganizationRolea UserDefaultOrganizationRole[]
+  UserDefaultOrganizationRoles UserDefaultOrganizationRole[]
   UserMigrations               UserMigration[]
   Users                        UserOrganization[]
   Roles                        UserOrganizationRole[]
   OrganizationSetting          OrganizationSetting?
+  Departments                  OrganizationDepartment[]
+  Programs                     OrganizationProgram[]
+  Services                     OrganizationService[]
+  ServiceCategories            OrganizationServiceCategory[]
+  Colleges                     OrganizationCollege[]
+  Offices                      OrganizationOffice[]
+  UserStudentRecords           UserStudentRecord[]
+  UserEmployments              UserEmploymentRecord[]
+  OrgYearLevel                 OrgYearLevel[]
 }
 
 model OrganizationSetting {
@@ -136,10 +147,13 @@ model UserOrganizationRole {
   orgId                        Int
   name                         String
   description                  String?
+  requirements                 String[]                      @default([])
   isActive                     Boolean                       @default(true)
   UserDefaultOrganizationRoles UserDefaultOrganizationRole[]
   UserOrganizations            UserOrganization[]
   Organization                 Organization                  @relation(fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  UserStudentRecord            UserStudentRecord[]
+  UserEmploymentRecord         UserEmploymentRecord[]
 
   @@unique([orgId, name], name: "unique_organization_role")
 }
@@ -225,7 +239,7 @@ model DoctorProfile {
   specialties          String[]           @default([])
   workEmail            String?
   workPhone            String?
-  education            String[]           @default([])
+  educations           String[]           @default([])
   HealthcareProvider   HealthcareProvider @relation(fields: [healthcareProviderId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
@@ -252,7 +266,7 @@ model NurseProfile {
   specialties          String[]           @default([])
   workEmail            String?
   workPhone            String?
-  education            String[]           @default([])
+  educations           String[]           @default([])
   HealthcareProvider   HealthcareProvider @relation(fields: [healthcareProviderId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
@@ -320,17 +334,17 @@ model SocialLink {
 }
 
 model ReceiptCode {
-  id               Int                @id @default(autoincrement())
-  coverage         Coverage
-  code             String             @unique
-  amount           Float
-  status           ReceiptCodeStatus  @default(UNUSED)
-  maxUses          Int                @default(1)
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
-  deletedAt        DateTime?
-  isActive         Boolean            @default(true)
-  ReceiptCodeClaim ReceiptCodeClaim[]
+  id                Int                @id @default(autoincrement())
+  coverage          Coverage
+  code              String             @unique
+  amount            Float
+  status            ReceiptCodeStatus  @default(UNUSED)
+  maxUses           Int                @default(1)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  deletedAt         DateTime?
+  isActive          Boolean            @default(true)
+  ReceiptCodeClaims ReceiptCodeClaim[]
 }
 
 model ReceiptCodeClaim {
@@ -436,17 +450,18 @@ model FileType {
 }
 
 model FileTypeAttribute {
-  id           Int           @id @default(autoincrement())
-  fileTypeId   Int           @unique
-  required     Boolean       @default(false)
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  deletedAt    DateTime?
-  isActive     Boolean       @default(true)
-  scopeOrgId   Int?
-  validUntil   Int           @default(0)
-  FileType     FileType      @relation(fields: [fileTypeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  Organization Organization? @relation(fields: [scopeOrgId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id                Int           @id @default(autoincrement())
+  fileTypeId        Int           @unique
+  required          Boolean       @default(false)
+  dateTakenRequired Boolean       @default(true)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  deletedAt         DateTime?
+  isActive          Boolean       @default(true)
+  scopeOrgId        Int?
+  validUntil        Int           @default(0)
+  FileType          FileType      @relation(fields: [fileTypeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Organization      Organization? @relation(fields: [scopeOrgId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@unique([fileTypeId, scopeOrgId], name: "unique_file_type_attribute")
 }
@@ -757,4 +772,159 @@ model VitalSign {
   deletedAt   DateTime?
   isActive    Boolean   @default(true)
   User        User      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model OrganizationDepartment {
+  id                    Int                    @id @default(autoincrement())
+  organizationId        Int
+  name                  String
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  deletedAt             DateTime?
+  isActive              Boolean                @default(true)
+  StudentRecords        UserStudentRecord[]
+  Organization          Organization?          @relation(fields: [organizationId], references: [id])
+  UserEmploymentRecords UserEmploymentRecord[]
+}
+
+model OrganizationProgram {
+  id             Int                 @id @default(autoincrement())
+  organizationId Int
+  name           String
+  description    String?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  deletedAt      DateTime?
+  isActive       Boolean             @default(true)
+  StudentRecords UserStudentRecord[]
+  Organization   Organization?       @relation(fields: [organizationId], references: [id])
+}
+
+model OrganizationCollege {
+  id                    Int                    @id @default(autoincrement())
+  organizationId        Int
+  name                  String
+  description           String?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  deletedAt             DateTime?
+  isActive              Boolean                @default(true)
+  Organization          Organization?          @relation(fields: [organizationId], references: [id])
+  UserEmploymentRecords UserEmploymentRecord[]
+  UserStudentRecords    UserStudentRecord[]
+}
+
+model StudentLevel {
+  id             Int                 @id @default(autoincrement())
+  name           String              @unique
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  deletedAt      DateTime?
+  isActive       Boolean             @default(true)
+  StudentRecords UserStudentRecord[]
+}
+
+model OrgYearLevel {
+  id                 Int                 @id @default(autoincrement())
+  organizationId     Int
+  name               String              @unique
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  deletedAt          DateTime?
+  isActive           Boolean             @default(true)
+  Organization       Organization        @relation(fields: [organizationId], references: [id])
+  UserStudentRecords UserStudentRecord[]
+}
+
+model UserStudentRecord {
+  id                     Int                     @id @default(autoincrement())
+  userId                 Int
+  organizationId         Int
+  studentId              String                  @unique
+  lrn                    String?                 @unique
+  level                  Int
+  yearLevel              Int?
+  programId              Int?
+  departmentId           Int?
+  collegeId              Int?
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  deletedAt              DateTime?
+  isActive               Boolean                 @default(true)
+  User                   User                    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  YearLevel              OrgYearLevel?           @relation(fields: [yearLevel], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Level                  StudentLevel            @relation(fields: [level], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Program                OrganizationProgram?    @relation(fields: [programId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Department             OrganizationDepartment? @relation(fields: [departmentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  College                OrganizationCollege?    @relation(fields: [collegeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Organization           Organization            @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  UserOrganizationRole   UserOrganizationRole?   @relation(fields: [userOrganizationRoleId], references: [id])
+  userOrganizationRoleId Int?
+
+  @@unique([userId, organizationId], name: "unique_user_student_record")
+}
+
+model OrganizationOffice {
+  id                    Int                    @id @default(autoincrement())
+  organizationId        Int
+  name                  String
+  description           String?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  deletedAt             DateTime?
+  isActive              Boolean                @default(true)
+  Organization          Organization           @relation(fields: [organizationId], references: [id])
+  UserEmploymentRecords UserEmploymentRecord[]
+}
+
+model UserEmploymentRecord {
+  id                     Int                     @id @default(autoincrement())
+  userId                 Int
+  organizationId         Int
+  employeeId             String                  @unique
+  position               String
+  designation            String?
+  departmentId           Int?
+  officeId               Int?
+  collegeId              Int?
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  deletedAt              DateTime?
+  isActive               Boolean                 @default(true)
+  User                   User                    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Department             OrganizationDepartment? @relation(fields: [departmentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Office                 OrganizationOffice?     @relation(fields: [officeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  College                OrganizationCollege?    @relation(fields: [collegeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Organization           Organization            @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  UserOrganizationRole   UserOrganizationRole?   @relation(fields: [userOrganizationRoleId], references: [id])
+  userOrganizationRoleId Int?
+
+  @@unique([userId, organizationId], name: "unique_user_employment")
+}
+
+model OrganizationService {
+  id             Int                         @id @default(autoincrement())
+  organizationId Int
+  category       Int
+  name           String
+  description    String?
+  createdAt      DateTime                    @default(now())
+  updatedAt      DateTime                    @updatedAt
+  deletedAt      DateTime?
+  isActive       Boolean                     @default(true)
+  Organization   Organization                @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Category       OrganizationServiceCategory @relation(fields: [category], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model OrganizationServiceCategory {
+  id                   Int                   @id @default(autoincrement())
+  organizationId       Int
+  name                 String
+  description          String?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  deletedAt            DateTime?
+  isActive             Boolean               @default(true)
+  Organization         Organization          @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  OrganizationServices OrganizationService[]
 }

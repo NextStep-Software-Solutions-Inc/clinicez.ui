@@ -1,11 +1,16 @@
-import { MiddlewareConfig, NextResponse } from "next/server";
-import {withMiddlewareAuthRequired} from "@auth0/nextjs-auth0/edge"
+import maintenanceCheck from '@middlewares/maintenanceCheck';
+import { withMiddlewareAuthRequired } from '@auth0/nextjs-auth0/edge';
+import { MiddlewareConfig, NextFetchEvent, NextRequest } from "next/server";
+import { MiddlewareStack } from '@middlewares/stackMiddleware';
 
-export default withMiddlewareAuthRequired(async function middleware(req) {
-  const res = NextResponse.next();
-  return res;
-})
+const middleware = new MiddlewareStack();
 
+middleware.use(maintenanceCheck);
+
+export default withMiddlewareAuthRequired(async function m(req: NextRequest, event: NextFetchEvent)  {
+  return middleware.execute(req, event);
+});
+  
 export const config: MiddlewareConfig = {
-  matcher: []
+  matcher: ['/:path*'],
 }

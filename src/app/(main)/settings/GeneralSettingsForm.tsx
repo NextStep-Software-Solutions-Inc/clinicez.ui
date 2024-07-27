@@ -65,7 +65,7 @@ export default function GeneralSettingsForm() {
                 <Input placeholder="Your name" {...field}  readOnly/>
               </FormControl>
               <FormDescription>
-                This is you unique ID.
+                This is your unique ID.
               </FormDescription>
               <FormMessage />
             </FormItem>

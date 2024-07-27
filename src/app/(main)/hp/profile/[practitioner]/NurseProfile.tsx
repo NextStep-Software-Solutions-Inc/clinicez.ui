@@ -14,14 +14,14 @@ interface INurseProfileProps {
 export default async function NurseProfile({profileId}: INurseProfileProps) {
   
   const profile = await getNurseAction(profileId);
-  if (!profile) throw new Error("Nurse Profile not found");
+  if (!profile) notFound();
 
   const cover = profile.cover ?? "https://art.metro.net/wp-content/uploads/2021/02/placeholder.png";
   const picture = profile.picture ?? "https://integratedmedfl.com/wp-content/uploads/2023/08/dr.png";
   const philosophy = profile.philosophy;
   const areaOfInterest = profile.areaOfInterest;
   const experience = profile.experience;
-  const educations = profile.education;
+  const educations = profile.educations;
   const languages = profile.languages;
   const specialties = profile.specialties;
   const affiliations = profile.affiliations;

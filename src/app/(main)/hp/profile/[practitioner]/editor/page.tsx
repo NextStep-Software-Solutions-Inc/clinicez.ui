@@ -47,11 +47,11 @@ async function EditorPage({params, searchParams}: AppRouterPageRouteOpts) {
     areaOfInterest: profile?.areaOfInterest ?? "",
     experience: profile?.experience ?? "",
     languages: profile?.languages.map((lang) => ({name: lang})) ?? [],
-    specialties: profile?.specialties.map((lang) => ({name: lang})) ?? [],
-    education: profile?.education.map((lang) => ({name: lang})) ?? [],
-    certifications: profile?.certifications.map((lang) => ({name: lang})) ?? [],
-    fields: profile?.fields.map((lang) => ({name: lang})) ?? [],
-    affiliations: profile?.affiliations.map((lang) => ({name: lang})) ?? [],
+    specialties: profile?.specialties.map((specialty) => ({name: specialty})) ?? [],
+    education: profile?.educations.map((education) => ({name: education})) ?? [],
+    certifications: profile?.certifications.map((certification) => ({name: certification})) ?? [],
+    fields: profile?.fields.map((field) => ({name: field})) ?? [],
+    affiliations: profile?.affiliations.map((affiliation) => ({name: affiliation})) ?? [],
   }
 
   const professionalDetails = await getProfessionalDetailsAction(hpId);

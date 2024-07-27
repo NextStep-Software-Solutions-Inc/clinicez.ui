@@ -33,6 +33,7 @@ export function useMultiStepForm({ steps,  currentStep: activeStep = 1} : useMul
   
   const startOver = () => {
     setCurrentStep(1);
+    setIsComplete(false);
   };
 
   const setComplete = (value = true) => {

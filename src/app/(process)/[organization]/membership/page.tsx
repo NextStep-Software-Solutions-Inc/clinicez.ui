@@ -5,9 +5,15 @@ import React from "react";
 import Suspend from "@components/Suspend";
 import { MembershipTable } from "./MembershipTable";
 import { redirect } from "next/navigation";
+import { Metadata } from "next";
 
 export const maxDuration = 30; // page timeout in seconds
 export const revalidate  = 60; // revalidation interval in seconds
+
+export const metadata: Metadata = {
+  title: "Organization Memberships | Clinic EZ",
+  description: "View and manage organization memberships. (Only available to organization administrators)"
+};
 
 async function MembershipPage({params}: AppRouterPageRouteOpts) {
   const orgId = params?.organization as string;
@@ -19,9 +25,9 @@ async function MembershipPage({params}: AppRouterPageRouteOpts) {
     <>
       <div className="space-y-6">
         <div className="group/create-folder">
-          <h2 className="text-2xl font-bold tracking-tight">Membership Application Request</h2>
+          <h2 className="text-2xl font-bold tracking-tight">Organization Memberships</h2>
           <p className="text-sm text-muted-foreground">
-            View and manage membership application requests for your organization. (Only available to organization administrators)
+            View and manage organization memberships. (Only available to organization administrators)
           </p>
         </div>
         <Separator />

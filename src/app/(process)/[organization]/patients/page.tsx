@@ -8,11 +8,12 @@ import SearchBar from "../dashboard/components/SearchBar";
 import PageLoading from "@components/PageLoading";
 import { redirect } from "next/navigation";
 
+export const maxDuration = 30; // page timeout in seconds
+export const revalidate  = 60; // revalidation interval in seconds
 export const metadata: Metadata = {
   title: "Patients List",
-  description: "View and manage patients.",
+  description: "View and manage patient EMR",
 };
-
 
 async function PatientsPage({params, searchParams}: AppRouterPageRouteOpts) {
   const orgId = params?.organization as string;

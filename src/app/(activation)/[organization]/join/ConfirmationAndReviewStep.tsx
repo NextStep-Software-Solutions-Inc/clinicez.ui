@@ -1,6 +1,5 @@
 "use client";
 
-import { useUser } from "@auth0/nextjs-auth0/client";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocalStorage } from "@hooks/useLocalStorage";
@@ -14,6 +13,7 @@ import { OrganizationApplicationData } from "./OrganizationSteps";
 import { toast } from "sonner";
 import { useSound } from "use-sound";
 import { joinOrganizationAction, JoinOrganizationPayload } from "@actions/join-organization.action";
+import { revalidatePath } from "@actions/cache.action";
 
 interface ConfirmationAndReviewStepProps {
   orgId: string
@@ -78,6 +78,7 @@ export default function ConfirmationAndReviewStep({ orgId, isComplete, isFirstSt
             playError()
             return res.message
           }
+          revalidatePath(`/[organization]/join`, "page")
           await setOrgApplication({ complete: true})
           setComplete?.(true);
           playSuccess()

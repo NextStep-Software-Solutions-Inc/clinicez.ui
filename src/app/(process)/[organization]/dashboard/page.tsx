@@ -30,12 +30,12 @@ import { PatientHealthAnalytics } from "./PatientHealthAnalytics"
 import { PatientsAnalytics } from "./PatientsAnalytics"
 import { OrgMembershipAnalytics } from "./OrgMembershipAnalytics"
 
-export const metadata: Metadata = {
-  title: "Dashboard",
-  description: "Example dashboard app built using the components.",
-}
-
+export const maxDuration = 30; // page timeout in seconds
 export const revalidate  = 60; // revalidation interval in seconds
+export const metadata: Metadata = {
+  title: "Dashboard | Clinic EZ",
+  description: "Overview of your organization's activities and analytics."
+}
 
 async function DashboardPage({params, searchParams}: AppRouterPageRouteOpts) {
   const orgId = params?.organization as string

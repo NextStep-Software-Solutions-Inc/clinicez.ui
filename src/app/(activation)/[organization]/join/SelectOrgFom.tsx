@@ -24,7 +24,7 @@ interface SelectOrgFormProps {
 
 
 export const SelectOrgForm = ({existingRoles, orgRoles, orgId, userId, nextStep, isFirstStep, isLastStep}:SelectOrgFormProps) => {
-  const setOrgApplication = useLocalStorage<OrganizationApplicationData>(`${orgId}_application`, {userId, orgId})[1];
+  const [orgApplication, setOrgApplication] = useLocalStorage<OrganizationApplicationData>(`${orgId}_application`, {userId, orgId});
   
   const selectRoleSchema = z.object({
     roleId: z.coerce.number({
@@ -38,7 +38,10 @@ export const SelectOrgForm = ({existingRoles, orgRoles, orgId, userId, nextStep,
   
   const form = useForm<SelectRoleType>({
     resolver: zodResolver(selectRoleSchema),
-    mode: "all"
+    mode: "all",
+    defaultValues: {
+      roleId: orgApplication.roleId
+    }
   });
 
   const handleNext = () => {
@@ -55,7 +58,7 @@ export const SelectOrgForm = ({existingRoles, orgRoles, orgId, userId, nextStep,
     <Form {...form}>
       <form className="shadow-xl p-10 rounded-sm">
 
-        <h2 className="my-5 text-lg font-semibold">Select Organization Role</h2>
+        <h2 className="my-5 text-lg font-semibold">Select your desired role</h2>
         
         <FormField
           control={form.control}
@@ -63,7 +66,7 @@ export const SelectOrgForm = ({existingRoles, orgRoles, orgId, userId, nextStep,
           render={({ field }) => {
             return (
               <FormItem className="space-y-3">
-                <FormLabel>Select your role</FormLabel>
+                <FormLabel>Roles</FormLabel>
                 <FormControl>
                   <RadioGroup
                     onValueChange={field.onChange}

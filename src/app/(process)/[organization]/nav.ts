@@ -11,6 +11,11 @@ export const navList: {
     icon: "home",
   },
   {
+    name: "Membership",
+    href: `/membership`,
+    icon: "list-checks",
+  },
+  {
     name: "Patient List",
     href: `/patients`,
     icon: "users",

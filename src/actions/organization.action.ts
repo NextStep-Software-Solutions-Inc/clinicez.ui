@@ -48,13 +48,14 @@ export const getOrganizationsAction = cache(async (filters?: FiltersType) => {
   return organizations;
 });
 
-export const getOrganizationAction = cache(async (id: number) => {
+export const getOrganizationAction = cache(async (orgId: string) => {
 
   const organization = await prisma.organization.findUnique({
     where: {
-      id: id
+      isActive: true,
+      orgId
     }
-  });``
+  });
   return organization;
 })
 

@@ -3,8 +3,7 @@
 import Stepper from "@components/Stepper/Stepper";
 import { useMultiStepForm } from "@hooks/useMultiStepForm";
 import React from "react";
-import { Button } from "@components/ui/button";
-import Link from "next/link";
+import OrganizationStepComplete from "./OrganizationStepComplete";
 
 interface OrganizationStepProps {
     currentStep: number;
@@ -19,34 +18,15 @@ const steps = [
 
 export default function OrganizationApplication({ children, currentStep: cs }: OrganizationStepProps) {
 
-  const { currentStepComponent, currentStep, isComplete } = useMultiStepForm({
+  const { currentStepComponent, currentStep, isComplete, startOver } = useMultiStepForm({
     steps: children,
     currentStep: cs,
   });
   return (
     <div className="">
       <Stepper steps={steps.map(s => s.label)} currentStep={currentStep} complete={isComplete} />
-      {!isComplete ? currentStepComponent : <OrganizationStepComplete />}
+      {!isComplete ? currentStepComponent : <OrganizationStepComplete startOver={startOver} />}
     </div>
   );
 }
 
-
-export const OrganizationStepComplete = () => {
- 
-  return (
-    <>
-      <div className="shadow-2xl p-10 rounded-md">
-        <div className="text-center min-w-full my-10 space-y-5">
-          <h2 className="text-2xl font-bold text-green-500">Application Sent!</h2>
-          <p>
-        Your application has been successfully sent to the organization. You will be notified once your application has been reviewed.
-          </p>
-          <Link href="/" className="">
-            <Button className="my-5">Go Home</Button>
-          </Link>
-        </div>
-      </div>
-    </>
-  );
-};

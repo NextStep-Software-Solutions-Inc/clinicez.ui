@@ -6,22 +6,26 @@ import { AlertTriangle } from "lucide-react"
 import { getCachedSession } from "@actions/session.action";
 import { redirect } from "next/navigation";
 import OrganizationSteps from "./OrganizationSteps";
+import { getOrganizationAction } from "@actions/organization.action";
 
 async function JoinOrgPage({params}: AppRouterPageRouteOpts) {
-  const session = await getCachedSession();
+  const orgId = params?.organization as string;
+  const [session, org] = await Promise.all([
+    getCachedSession(),
+    getOrganizationAction(orgId),
+  ])
   if(!session) return redirect("/api/auth/login");
   const userId = session?.user.sub;
-  const orgId = params?.organization as string;
 
   return (
     <div className="container mx-auto my-10 space-y-6">
 
       <div className="group/upload">
         <div className="flex items-center">
-          <h2 className="text-2xl font-bold tracking-tight">You are about to join <code className="bg-slate-200 py-1 px-4 rounded">{params?.organization}</code> as their organization member.</h2>
+          <h2 className="text-2xl  tracking-tight">Welcome to <span className="font-bold">{org?.name}</span> membership portal.</h2>
         </div>
         <p className="text-sm text-muted-foreground">
-          {`You are about to join an organization as a member. Please be aware that you will be able to access the organization's resources and services once you are accepted.`}
+          Please follow the steps below to join the organization.
         </p>
       </div>
       
@@ -30,7 +34,7 @@ async function JoinOrgPage({params}: AppRouterPageRouteOpts) {
         <AlertTriangle className="h-4 w-4"/>
         <AlertTitle>Warning</AlertTitle>
         <AlertDescription>
-          Spamming join requests will result in a ban from the organization.
+          {`You are about to join the organization ${org?.name}. Please make sure you have read and understood the organization's policies and requirements before proceeding.`}
         </AlertDescription>
       </Alert>
 

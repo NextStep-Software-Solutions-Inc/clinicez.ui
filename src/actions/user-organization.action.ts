@@ -55,75 +55,72 @@ export const getUserOrganizationsAction = cache(async (filter?: GetUserOrgFilter
           lastName: true,
           gender: true,
           dob: true,
-          ...orgId ? {
-            StudentRecords: {
-              where: {
-                isActive: true,
-                Organization: {
-                  orgId: orgId
+          // ...orgId ? {
+          StudentRecords: {
+            where: {
+              isActive: true,
+              Organization: {
+                orgId: orgId ?? ""
+              }
+            },
+            select: {
+              studentId: true,
+              lrn: true,
+              Level: {
+                select: {
+                  name: true
                 }
               },
-              select: {
-                studentId: true,
-                lrn: true,
-                Level: {
-                  select: {
-                    name: true
-                  }
-                },
-                YearLevel: {
-                  select: {
-                    name: true
-                  }
-                },
-                Program: {
-                  select: {
-                    name: true
-                  }
-                },
-                Department: {
-                  select: {
-                    name: true
-                  }
-                },
-                College: {
-                  select: {
-                    name: true
-                  }
+              YearLevel: {
+                select: {
+                  name: true
+                }
+              },
+              Program: {
+                select: {
+                  name: true
+                }
+              },
+              Department: {
+                select: {
+                  name: true
+                }
+              },
+              College: {
+                select: {
+                  name: true
                 }
               }
             }
-          } : {},
-          ...orgId ? {
-            UserEmployments: {
-              where: {
-                isActive: true,
-                Organization: {
-                  orgId: orgId
+          },
+          UserEmployments: {
+            where: {
+              isActive: true,
+              Organization: {
+                orgId: orgId ?? ""
+              }
+            },
+            select: {
+              employeeId: true,
+              position: true,
+              designation: true,
+              Office: {
+                select: {
+                  name: true
                 }
               },
-              select: {
-                employeeId: true,
-                position: true,
-                designation: true,
-                Office: {
-                  select: {
-                    name: true
-                  }
-                },
-                Department: {
-                  select: {
-                    name: true
-                  }
-                },
-                College: {
-                  select: {
-                    name: true
-                  }
+              Department: {
+                select: {
+                  name: true
+                }
+              },
+              College: {
+                select: {
+                  name: true
                 }
               }
             }
-          } : {}
+          }
         }
       },
       AcceptedBy: {

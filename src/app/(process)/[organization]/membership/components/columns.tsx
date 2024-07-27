@@ -6,7 +6,6 @@ import { Badge } from "@components/ui/badge"
 import { Checkbox } from "@components/ui/checkbox"
 
 import { statuses } from "../data/data"
-import { MembershipRequestSchema, membershipRequestSchema } from "../data/schema"
 import { DataTableColumnHeader } from "./data-table-column-header"
 import { DataTableRowActions } from "./data-table-row-actions"
 import Link from "next/link"
@@ -16,29 +15,30 @@ import { ChevronDown, ChevronRight, ExternalLink } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@components/ui/avatar"
 import ConditionalRender from "@components/utils/ConditionalRender"
 import { Button } from "@components/ui/button"
+import { GetUserOrganizations } from "@actions/user-organization.action"
 
-export const columns: ColumnDef<MembershipRequestSchema>[] = [
+export const columns: ColumnDef<GetUserOrganizations[number]>[] = [
   {
     id: "select",
-    header: ({ table }) => (
-      <Checkbox
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && "indeterminate")
-        }
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
-        className="translate-y-[2px]"
-      />
-    ),
+    // header: ({ table }) => (
+    //   <Checkbox
+    //     checked={
+    //       table.getIsAllPageRowsSelected() ||
+    //       (table.getIsSomePageRowsSelected() && "indeterminate")
+    //     }
+    //     onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+    //     aria-label="Select all"
+    //     className="translate-y-[2px]"
+    //   />
+    // ),
     cell: ({ row, getValue }) => (
       <div className="flex gap-2 items-center">
-        <Checkbox
+        {/* <Checkbox
           checked={row.getIsSelected()}
           onCheckedChange={(value) => row.toggleSelected(!!value)}
           aria-label="Select row"
           className="translate-y-[2px]"
-        />
+        /> */}
         {
           <Button 
             onClick={() => row.toggleExpanded()}
@@ -147,7 +147,7 @@ export const columns: ColumnDef<MembershipRequestSchema>[] = [
   },
   {
     accessorKey: "role",
-    accessorFn: (row) => row.role.name,
+    accessorFn: (row) => row.UserRole.name,
     filterFn: (row, id, value) => {
       return value.includes(row.getValue(id))
     },
@@ -155,7 +155,7 @@ export const columns: ColumnDef<MembershipRequestSchema>[] = [
       <DataTableColumnHeader column={column} title="Role" />
     ),
     cell: ({ row }) => {
-      const label = row.original.role.name
+      const label = row.original.UserRole.name
 
       return (
         <div className="flex space-x-2">
@@ -198,11 +198,10 @@ export const columns: ColumnDef<MembershipRequestSchema>[] = [
   {
     id: "actions",
     cell: ({ row }) => {
-      const membershipRequest = membershipRequestSchema.parse(row.original)
       return (
         (
           <DropdownMenuProvider>
-            <DataTableRowActions applicationRequest={membershipRequest} />
+            <DataTableRowActions applicationRequest={row.original} />
           </DropdownMenuProvider>
         )
       )

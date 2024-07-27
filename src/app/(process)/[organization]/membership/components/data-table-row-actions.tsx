@@ -17,11 +17,11 @@ import { toast } from "sonner"
 import { UserOrganizationStatus } from "@prisma/client"
 import Each from "@components/utils/Each"
 import { Trash } from "lucide-react"
-import { setMembershipRequestStatusAction } from "@actions/user-organization.action"
+import { GetUserOrganizations, setMembershipRequestStatusAction } from "@actions/user-organization.action"
 import { revalidatePath } from "@actions/cache.action"
 import ConfirmDeleteMembership from "./ConfirmDeleteMembership"
 interface DataTableRowActionsProps<TData> {
-  applicationRequest: ApplicationRequest
+  applicationRequest: GetUserOrganizations[number]
 }
 
 export function DataTableRowActions<TData>({
@@ -48,6 +48,10 @@ export function DataTableRowActions<TData>({
     { status: "PENDING", label: "Set Pending" },
     { status: "SUSPENDED", label: "Suspend" },
   ];
+  const onConfirmDelete = () =>{
+    setDropdownOpen(false)
+    revalidatePath(`/[organization]/membership`, "page")
+  }
   return (
     <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
       <DropdownMenuTrigger asChild ref={dropdownTriggerRef}>
@@ -59,7 +63,7 @@ export function DataTableRowActions<TData>({
           <span className="sr-only">Open menu</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent  align="end" className="w-[160px]" hidden={hasOpenDialog}>
+      <DropdownMenuContent  align="end" className="w-full" hidden={hasOpenDialog}>
         <Each
           of={statusOptions}
           render={(option, index) => (
@@ -73,7 +77,9 @@ export function DataTableRowActions<TData>({
             )
           )}
         />
-        <ConfirmDeleteMembership userOrganizationId={applicationRequest.id}/>
+        <DropdownMenuItem asChild>
+          <ConfirmDeleteMembership onConfirmDelete={onConfirmDelete} userOrganizationId={applicationRequest.id}/>
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   )

@@ -30,7 +30,7 @@ export const SelectOrgForm = ({existingRoles, orgRoles, orgId, userId, nextStep,
     roleId: z.coerce.number({
       required_error: "Please select your role"
     }).refine((role) => !existingRoles.includes(role), (value) => ({
-      message: `Role already exists in the organization. Please select another role.`
+      message: `You already have applied for the role ${orgRoles.find(r => r.id === value)?.name} in this organization. Please select another role.`,
     }))
   })
 

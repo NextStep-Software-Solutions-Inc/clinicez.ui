@@ -30,16 +30,16 @@ import {
 import { DataTablePagination } from "./data-table-pagination"
 import { DataTableToolbar } from "./data-table-toolbar"
 import Each from "@components/utils/Each"
-import { MembershipRequestSchema } from "../data/schema"
 import { LabelValue } from "@components/LabelValue"
 import { Separator } from "@components/ui/separator"
+import { GetUserOrganizations } from "@actions/user-organization.action"
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
 }
 
-export function DataTable<TData extends MembershipRequestSchema, TValue>({
+export function DataTable<TData extends GetUserOrganizations[number], TValue>({
   columns,
   data,
 }: DataTableProps<TData, TValue>) {
@@ -129,48 +129,65 @@ export function DataTable<TData extends MembershipRequestSchema, TValue>({
                     <TableRow>
                       <TableCell colSpan={row.getVisibleCells().length}>
                         <div className="space-y-2">
-                          <h2 className="text-lg">Student Record</h2>
-                          <Separator/>
-                          <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
-                            <Each
-                              of={row.original.User.StudentRecords}
-                              fallback="No student record found."
-                              render={(studentRecord) => {
+                          <Each
+                            of={row.original.UserRole.requirements}
+                            fallback="No additional requirements needed for this role."
+                            render={(requirements) => {
+                              if(requirements === "student_record") {
                                 return (
                                   <>
-                                    <LabelValue className="flex items-baseline gap-2" value="Student ID No:" label={studentRecord.studentId ?? "N/A"}/>
-                                    <LabelValue className="flex items-baseline gap-2" value="Learner Ref. No.:" label={studentRecord.lrn ?? "N/A"}/>
-                                    <LabelValue className="flex items-baseline gap-2" value="Student Level:" label={studentRecord.Level?.name}/>
-                                    <LabelValue className="flex items-baseline gap-2" value="Year/Grade Level:" label={studentRecord.YearLevel?.name}/>
-                                    <LabelValue className="flex items-baseline gap-2" value="Program/Strand:" label={studentRecord.Program?.name}/>
-                                    <LabelValue className="flex items-baseline gap-2" value="Department:" label={studentRecord.Department?.name}/>
-                                    <LabelValue className="flex items-baseline gap-2" value="College:" label={studentRecord.College?.name}/>
+                                    <h2 className="text-lg">Student Record</h2>
+                                    <Separator/>
+                                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
+                                      <Each 
+                                        of={row.original.User.StudentRecords}
+                                        fallback="No student record found."
+                                        render={(studentRecord) => {
+                                          return (
+                                            <>
+                                              <LabelValue className="flex items-baseline gap-2" value="Student ID No:" label={studentRecord.studentId ?? "N/A"}/>
+                                              <LabelValue className="flex items-baseline gap-2" value="Learner Ref. No.:" label={studentRecord.lrn ?? "N/A"}/>
+                                              <LabelValue className="flex items-baseline gap-2" value="Student Level:" label={studentRecord.Level?.name}/>
+                                              <LabelValue className="flex items-baseline gap-2" value="Year/Grade Level:" label={studentRecord.YearLevel?.name ?? "N/A"}/>
+                                              <LabelValue className="flex items-baseline gap-2" value="Program/Strand:" label={studentRecord.Program?.name ?? "N/A"}/>
+                                              <LabelValue className="flex items-baseline gap-2" value="Department:" label={studentRecord.Department?.name ?? "N/A"}/>
+                                              <LabelValue className="flex items-baseline gap-2" value="College:" label={studentRecord.College?.name ?? "N/A"}/>
+                                            </>
+                                          )
+                                        }}
+                                      />
+                                    </div>
                                   </>
                                 )
-                              }}
-                            />
-                          </div>
-                          <h2 className="text-lg">Employee Record</h2>
-                          <Separator />
-                          <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
-                            <Each
-                              of={row.original.User.UserEmployments}
-                              fallback="No employee record found."
-                              render={(employee) => {
+                              }
+                              if(requirements === "employee_record") {
                                 return (
                                   <>
-                                    <LabelValue className="flex items-baseline gap-2" value="Employee ID No:" label={employee?.employeeId ?? "N/A"}/>
-                                    <LabelValue className="flex items-baseline gap-2" value="Position:" label={employee?.position ?? "N/A"}/>
-                                    <LabelValue className="flex items-baseline gap-2" value="Designation:" label={employee?.designation}/>
-                                    <LabelValue className="flex items-baseline gap-2" value="Office:" label={employee?.Office?.name}/>
-                                    <LabelValue className="flex items-baseline gap-2" value="Department:" label={employee?.Department?.name}/>
-                                    <LabelValue className="flex items-baseline gap-2" value="College:" label={employee?.College?.name}/>
+                                    <h2 className="text-lg">Employee Record</h2>
+                                    <Separator />
+                                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
+                                      <Each
+                                        of={row.original.User.UserEmployments}
+                                        fallback="No employee record found."
+                                        render={(employee) => {
+                                          return (
+                                            <>
+                                              <LabelValue className="flex items-baseline gap-2" value="Employee ID No:" label={employee?.employeeId ?? "N/A"}/>
+                                              <LabelValue className="flex items-baseline gap-2" value="Position:" label={employee?.position ?? "N/A"}/>
+                                              <LabelValue className="flex items-baseline gap-2" value="Designation:" label={employee?.designation ?? "N/A"}/>
+                                              <LabelValue className="flex items-baseline gap-2" value="Office:" label={employee?.Office?.name ?? "N/A" }/>
+                                              <LabelValue className="flex items-baseline gap-2" value="Department:" label={employee?.Department?.name ?? "N/A"}/>
+                                              <LabelValue className="flex items-baseline gap-2" value="College:" label={employee?.College?.name ?? "N/A"}/>
+                                            </>
+                                          )
+                                        }}
+                                      />
+                                    </div>
                                   </>
                                 )
-                              }}
-                            
-                            />
-                          </div>
+                              }
+                            }}
+                          />
                         </div>
                       </TableCell>
                     </TableRow>

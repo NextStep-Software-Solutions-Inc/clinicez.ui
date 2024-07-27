@@ -9,17 +9,27 @@ import { PopoverClose } from "@radix-ui/react-popover";
 import { Trash2 } from "lucide-react";
 import React from "react";
 import { toast } from "sonner";
+import { revalidate } from "../page";
+import { revalidatePath } from "@actions/cache.action";
 
 interface ConfirmDeleteMembershipProps {
   disabled?: boolean
   userOrganizationId: number
+  onConfirmDelete?: () => void
 }
 
-export default function ConfirmDeleteMembership({disabled = false, userOrganizationId}: ConfirmDeleteMembershipProps) {
+export default function ConfirmDeleteMembership({disabled = false, userOrganizationId, onConfirmDelete}: ConfirmDeleteMembershipProps) {
   const triggerRef = React.useRef<HTMLButtonElement>(null);
+  const closeBtnRef = React.useRef<HTMLButtonElement>(null);
 
   const action = async () => {
     toast.promise(deleteMembershipAction(userOrganizationId), {
+      loading: "Deleting membership...",
+      success: () => {
+        onConfirmDelete?.()
+        return "Membership deleted successfully!"
+      },
+      error: "Failed to delete membership",
     })
   }
 
@@ -29,9 +39,9 @@ export default function ConfirmDeleteMembership({disabled = false, userOrganizat
         <Tooltip>
           <TooltipTrigger asChild>
             <PopoverTrigger asChild ref={triggerRef}>
-              <Button className="group/delete invisible group-hover/item:visible" variant="ghost" size="icon">
-                <Trash2 className="h-4 w-4 text-destructive group-hover/delete:scale-125 transition-all" />
-                <span className="sr-only">Delete Membership</span>
+              <Button variant="ghost"  className="text-destructive">
+                <Trash2 className="h-4 w-4 mr-2 " />
+                Delete Membership
               </Button>
             </PopoverTrigger>
           </TooltipTrigger>
@@ -48,7 +58,7 @@ export default function ConfirmDeleteMembership({disabled = false, userOrganizat
           className="flex gap-4 py-4"
         >
           <PopoverClose asChild >
-            <Button variant="ghost" type="button">Cancel</Button>
+            <Button ref={closeBtnRef} variant="ghost" type="button">Cancel</Button>
           </PopoverClose>
           <ActionButton 
             form="delete-membership-form"

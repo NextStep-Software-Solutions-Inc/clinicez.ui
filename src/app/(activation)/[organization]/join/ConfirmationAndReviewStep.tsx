@@ -52,11 +52,8 @@ export default function ConfirmationAndReviewStep({ orgId, isComplete, isFirstSt
   })
 
   const reset = async () => {
-    const i = Object.entries(orgApplication).reduce((acc, [key, value]) => {
-      acc[key] = "";
-      return acc;
-    }, {} as any);
-    await setOrgApplication(i)
+    localStorage.removeItem(`${orgId}_application`)
+    await setOrgApplication({})
     startOver?.();
   }
 

@@ -7,8 +7,8 @@ import { MembershipTable } from "./MembershipTable";
 import { redirect } from "next/navigation";
 import { Metadata } from "next";
 
-export const maxDuration = 30; // page timeout in seconds
-export const revalidate  = 60; // revalidation interval in seconds
+export const maxDuration = 40; // page timeout in seconds
+export const revalidate  = 120; // revalidation interval in seconds
 
 export const metadata: Metadata = {
   title: "Organization Memberships | Clinic EZ",

@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { get } from '@vercel/edge-config'
 
 export default async function maintenanceCheck(req: NextRequest) {
+
+  if (process.env.NEXT_PUBLIC_BUILD_ENV !== "production") {
+    return NextResponse.next()
+  }
+
   if (!process.env.EDGE_CONFIG) {
     req.nextUrl.pathname = `/unauthorized`
     return NextResponse.rewrite(req.nextUrl)

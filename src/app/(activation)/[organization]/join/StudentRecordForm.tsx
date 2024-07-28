@@ -36,7 +36,7 @@ const employeeRecordSchema = z.object({
   levelId: z.coerce.number({
     required_error: "School level is required"
   }),
-  yearLevel: z.coerce.number({
+  yearLevelId: z.coerce.number({
     required_error: "Year level/Grade is required"
   }),
   programId: z.coerce.number({
@@ -167,11 +167,11 @@ export default function StudentRecordForm({orgId} : {orgId: string}) {
         <div className="flex flex-wrap gap-2 items-start">
           <FormField
             control={form.control}
-            name="yearLevel"
+            name="yearLevelId"
             render={({ field }) => {
               return (
                 <FormItem className="flex-grow">
-                  <FormLabel htmlFor="yearLevel">Year/Grade Level</FormLabel>
+                  <FormLabel htmlFor="yearLevelId">Year/Grade Level</FormLabel>
                   <FormControl>
                     <Select onValueChange={field.onChange} defaultValue={field.value?.toString()}>
                       <FormControl>

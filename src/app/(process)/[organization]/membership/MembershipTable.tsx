@@ -9,7 +9,7 @@ interface MembershipTableProps {
 
 export const MembershipTable = async ({ orgId }: MembershipTableProps) => {
 
-  const membershipRequests = await getUserOrganizationsAction({ orgId });
+  const membershipRequests = await getUserOrganizationsAction({ orgId, pageSize: 200 });
 
   return (
     <DataTable data={membershipRequests} columns={columns} />

@@ -827,7 +827,7 @@ model StudentLevel {
 model OrgYearLevel {
   id                 Int                 @id @default(autoincrement())
   organizationId     Int
-  name               String              @unique
+  name               String
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
   deletedAt          DateTime?

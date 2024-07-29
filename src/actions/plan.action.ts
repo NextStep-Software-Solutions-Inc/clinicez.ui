@@ -1,6 +1,6 @@
 "use server";
 
-import prisma from "@lib/prisma";
+import prisma from "@lib/prisma-common";
 
 export const getPlansAction = async () => {
   const plans = await prisma.plan.findMany({

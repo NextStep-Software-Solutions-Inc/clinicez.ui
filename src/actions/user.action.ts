@@ -1,6 +1,6 @@
 "use server";
 import 'server-only'
-import prisma from "@lib/prisma";
+import prisma from "@lib/prisma-common";
 import { Prisma } from "@prisma/client";
 import { managementClient } from "@services/auth0/management-client";
 import { cache } from 'react';

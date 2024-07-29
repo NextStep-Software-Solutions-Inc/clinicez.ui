@@ -1,6 +1,6 @@
 "use server";
 
-import prisma from "@lib/prisma";
+import prisma from "@lib/prisma-common";
 import { isHP } from "@lib/protect-org";
 import { HealthConditionStatus, Severity, User } from "@prisma/client";
 import { cache } from "react";

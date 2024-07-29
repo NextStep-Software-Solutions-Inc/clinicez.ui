@@ -1,6 +1,6 @@
 "use server";
 
-import prisma from "@lib/prisma";
+import prisma from "@lib/prisma-common";
 
 export const getDashboardData = async (orgUid: string) => {
   const [files, memberships, members, roles] = await Promise.all([

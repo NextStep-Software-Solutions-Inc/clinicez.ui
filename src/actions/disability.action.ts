@@ -1,6 +1,6 @@
 "use server";
 
-import prisma from "@lib/prisma";
+import prisma from "@lib/prisma-common";
 import { cache } from "react";
 
 export const addDisabilityAction = async ({name}: {name: string}) => {

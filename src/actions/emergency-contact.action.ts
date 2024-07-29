@@ -1,6 +1,6 @@
 "use server";
 
-import prisma from "@lib/prisma";
+import prisma from "@lib/prisma-common";
 
 export async function getEmergencyContactsAction(userId: string) {
   return await prisma.userEmergencyContact.findMany({

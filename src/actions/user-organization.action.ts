@@ -4,7 +4,7 @@ import "server-only";
 import fs from "fs/promises";
 import { sendMail } from "@actions/email.action";
 import { getCachedSession } from "@actions/session.action";
-import prisma from "@lib/prisma";
+import prisma from "@lib/prisma-common";
 import { isOrgAdmin } from "@lib/protect-org";
 import { UserOrganizationStatus } from "@prisma/client";
 import path from "path";

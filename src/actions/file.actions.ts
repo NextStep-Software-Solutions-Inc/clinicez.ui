@@ -1,5 +1,5 @@
 "use server";
-import prisma from "@lib/prisma";
+import prisma from "@lib/prisma-common";
 import { revalidatePath } from "next/cache";
 
 type CreateFileType = {

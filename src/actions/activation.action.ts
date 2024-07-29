@@ -1,6 +1,6 @@
 "use server";
 
-import prisma from "@lib/prisma";
+import prismaCommon from "@lib/prisma-common";
 
 import crypt from "crypto";
 import dayjs from "dayjs";
@@ -16,7 +16,7 @@ export const createActivationCodeAction = async (email: string): Promise<string 
   }
 
   const code = await codePromise();
-  await prisma.activationCode.create({
+  await prismaCommon.activationCode.create({
     data: {
       code,
       User: {
@@ -41,8 +41,8 @@ const codePromise = () => new Promise<string>((resolve, reject) => {
 });
 
 export const verifyActivationCodeAction = async (email: string, code: string) => {
-  return await prisma.$transaction(async (prisma) => {
-    await prisma.activationCode.findUniqueOrThrow({
+  return await prismaCommon.$transaction(async (prismaCommon) => {
+    await prismaCommon.activationCode.findUniqueOrThrow({
       where: {
         code,
         expiresAt: { gte: new Date() },
@@ -51,7 +51,7 @@ export const verifyActivationCodeAction = async (email: string, code: string) =>
       }
     });
 
-    await prisma.activationCode.update({ 
+    await prismaCommon.activationCode.update({ 
       where: { code },
       data: { isUsed: true }
     });

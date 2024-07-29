@@ -1,6 +1,6 @@
 "use server";
 
-import prisma from "@lib/prisma";
+import prisma from "@lib/prisma-common";
 
 import { HealthcareProviderType, Prisma } from "@prisma/client";
 import { cache } from "react";

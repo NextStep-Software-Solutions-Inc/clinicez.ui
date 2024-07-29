@@ -7,7 +7,7 @@ import { sendMail } from "./email.action";
 import fs from "fs/promises";
 import path from "path";
 import { Prisma } from "@prisma/client";
-import prisma from "@lib/prisma";
+import prisma from "@lib/prisma-common";
 
 export const getPatientAction = async (email: string) => {
   const conn = await mySQLConnection();   

@@ -1,6 +1,6 @@
 "use server";
 
-import prisma from "@lib/prisma";
+import prisma from "@lib/prisma-common";
 
 export type GetOrgDepartments = Awaited<ReturnType<typeof getOrgDepartmentAction>>
 export const getOrgDepartmentAction = async (orgId: string) => {

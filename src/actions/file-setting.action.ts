@@ -1,6 +1,6 @@
 "use server";
 
-import prisma from "@lib/prisma";
+import prisma from "@lib/prisma-common";
 
 export const updateFileSettingAction = async (fileId: number, isPublic: boolean) => {
   const folderSetting = await prisma.fileSetting.update({

@@ -1,6 +1,6 @@
 "use server";
 
-import prisma from "@lib/prisma";
+import prisma from "@lib/prisma-common";
 
 export type GetFileTypes = Awaited<ReturnType<typeof getFileTypesAction>>
 export const getFileTypesAction = async () => {

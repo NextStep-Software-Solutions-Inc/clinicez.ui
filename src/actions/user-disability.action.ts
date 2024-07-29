@@ -1,7 +1,7 @@
 import { GetUser } from './user.action';
 "use server";
 
-import prisma from "@lib/prisma";
+import prisma from "@lib/prisma-common";
 import { Severity } from "@prisma/client";
 import { cache } from "react";
 

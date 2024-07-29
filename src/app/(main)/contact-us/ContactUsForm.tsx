@@ -87,7 +87,7 @@ export const ContactUsForm = () => {
               <FormItem className="flex-grow">
                 <FormLabel>Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="Your Name" {...field} value={field.value} />
+                  <Input placeholder="Your Name" {...field} />
                 </FormControl>
                 <FormDescription>
                 </FormDescription>
@@ -104,7 +104,7 @@ export const ContactUsForm = () => {
               <FormItem className="flex-grow">
                 <FormLabel>Email</FormLabel>
                 <FormControl>
-                  <Input placeholder="Your Email address" {...field}  value={field.value}/>
+                  <Input placeholder="Your Email address" {...field}/>
                 </FormControl>
                 <FormDescription>
                 </FormDescription>
@@ -121,7 +121,7 @@ export const ContactUsForm = () => {
             <FormItem>
               <FormLabel>Message</FormLabel>
               <FormControl>
-                <Textarea  placeholder="How we can help you!" {...field}  value={field.value}/>
+                <Textarea  placeholder="How we can help you!" {...field}/>
               </FormControl>
               <FormDescription>
               </FormDescription>

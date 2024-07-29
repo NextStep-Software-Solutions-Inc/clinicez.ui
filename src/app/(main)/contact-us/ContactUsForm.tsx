@@ -41,9 +41,15 @@ type ContactUsFormSchema = z.infer<typeof contactUseFormSchema>;
 
 export const ContactUsForm = () => {
   const [status, setStatus] = useState(false)
+  const [prevName, setPrevName] = useState("")
 
   const form = useForm<ContactUsFormSchema>({
     resolver: zodResolver(contactUseFormSchema),
+    defaultValues: {
+      email: "",
+      message: "",
+      name: "",
+    }
   })
   
   const action = async () => {
@@ -54,6 +60,7 @@ export const ContactUsForm = () => {
         success: () => {
           setStatus(true)
           form.reset()
+          setPrevName(data.name)
           return "Message sent successfully."
         },
         error: "An error occurred while sending message.",
@@ -63,15 +70,15 @@ export const ContactUsForm = () => {
   return (
     <Form {...form}>
       <ConditionalRender condition={status}>
-        <Alert>
+        <Alert className="my-10">
           <RocketIcon className="h-4 w-4" />
-          <AlertTitle>Hello, {form.watch("name")}!</AlertTitle>
+          <AlertTitle className="">Hello, {prevName}!</AlertTitle>
           <AlertDescription>
             Your message has been sent successfully. Please wait for a response. Thank you!
           </AlertDescription>
         </Alert>
       </ConditionalRender>
-      <form action={action}>
+      <form  autoComplete="off" action={action}>
         <div className="flex flex-wrap gap-5">
           <FormField
             control={form.control}
@@ -80,7 +87,7 @@ export const ContactUsForm = () => {
               <FormItem className="flex-grow">
                 <FormLabel>Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="Your Name" {...field} />
+                  <Input placeholder="Your Name" {...field} value={field.value} />
                 </FormControl>
                 <FormDescription>
                 </FormDescription>
@@ -97,7 +104,7 @@ export const ContactUsForm = () => {
               <FormItem className="flex-grow">
                 <FormLabel>Email</FormLabel>
                 <FormControl>
-                  <Input placeholder="Your Email address" {...field} />
+                  <Input placeholder="Your Email address" {...field}  value={field.value}/>
                 </FormControl>
                 <FormDescription>
                 </FormDescription>
@@ -114,7 +121,7 @@ export const ContactUsForm = () => {
             <FormItem>
               <FormLabel>Message</FormLabel>
               <FormControl>
-                <Textarea  placeholder="How we can help you!" {...field} />
+                <Textarea  placeholder="How we can help you!" {...field}  value={field.value}/>
               </FormControl>
               <FormDescription>
               </FormDescription>

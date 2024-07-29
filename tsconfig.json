@@ -27,7 +27,8 @@
       "@contexts/*": ["./src/contexts/*"],
       "@services/*": ["./src/services/*"],
       "@middlewares/*": ["./src/middlewares/*"],
-      "@schemas/*": ["./src/schemas/*"]
+      "@schemas/*": ["./src/schemas/*"],
+      "@prisma/*": ["./prisma/*"]
     }
   },
   "include": [

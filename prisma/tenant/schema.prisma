@@ -1,0 +1,31 @@
+generator client {
+  provider      = "prisma-client-js"
+  output        = "../../node_modules/@prisma/tenant/client"
+  binaryTargets = ["native", "rhel-openssl-1.0.x"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("TENANT_DATABASE_URL")
+  directUrl = env("TENANT_DATABASE_URL_UNPOOLED")
+}
+
+model Appointment {
+  id          String    @id @default(cuid())
+  tenantId    Int
+  requester   String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  title       String
+  description String?
+  start       DateTime
+  end         DateTime
+  status      String
+}
+
+model AppointmentInvitee {
+  id            String @id @default(cuid())
+  appointmentId String
+  invitee       String
+}

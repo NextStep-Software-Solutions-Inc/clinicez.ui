@@ -56,6 +56,7 @@ async function AppointmentsPage({ searchParams, params }: AppRouterPageRouteOpts
   );
 }
 
+
 export default withPageAuthRequired(AppointmentsPage, {
   returnTo: ({params, searchParams}) => {
     const organization = params?.organization

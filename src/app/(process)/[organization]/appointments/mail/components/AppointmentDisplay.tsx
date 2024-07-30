@@ -32,10 +32,8 @@ import RescheduleAppointment from "../../components/RescheduleAppointment"
 import DeclineAppointmentAssignment from "../../components/DeclineAppointmentAssignment"
 import { UserRoles } from "./AppointmentPanel"
 import { Badge } from "@components/ui/badge"
-import { DropdownMenuProvider } from "@components/DropdownMenuProvider"
-import AppointmentMoreAction from "../../components/AppointmentMoreAction"
-import { getUserAction } from "@actions/user.action"
-import { th } from "@faker-js/faker"
+import ConsultationRecordSheet from "../../components/ConsultationRecordSheet"
+import { SheetTrigger } from "@components/ui/sheet"
 
 interface AppointmentDisplayProps {
   appointmentId: string | null
@@ -103,14 +101,24 @@ export default async function AppointmentDisplay({ appointmentId, role }: Appoin
           </Tooltip>
         </div>
         <Separator orientation="vertical" className="mx-2 h-6" />
-        <DropdownMenuProvider>
-          <AppointmentMoreAction>
-            <Button variant="ghost" size="icon" disabled={!freshAppointment}>
-              <MoreVertical className="h-4 w-4" />
-              <span className="sr-only">More</span>
-            </Button>
-          </AppointmentMoreAction>
-        </DropdownMenuProvider>
+        <ConsultationRecordSheet>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" disabled={!freshAppointment}>
+                <MoreVertical className="h-4 w-4" />
+                <span className="sr-only">More</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <SheetTrigger asChild>
+                <DropdownMenuItem>
+                  View Consultation Records
+                </DropdownMenuItem>
+              </SheetTrigger>
+
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </ConsultationRecordSheet>
       </div>
       <Separator />
       {freshAppointment ? (

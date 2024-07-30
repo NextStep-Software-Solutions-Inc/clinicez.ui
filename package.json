@@ -9,15 +9,25 @@
     "lint": "next lint",
     "test": "jest",
     "test:watch": "jest --watch",
-    "vercel-build": "prisma generate && prisma migrate deploy && next build",
-    "postinstall": "prisma generate",
-    "migrate:dev": "npx dotenv -e .env.development.local -- prisma migrate dev",
-    "db:push": "npx dotenv -e .env.development.local -- prisma db push",
-    "migrate:reset": "npx dotenv -e .env.development.local -- prisma migrate reset",
-    "db:seed": "npx dotenv -e .env.development.local -- prisma db seed",
-    "prisma:generate": "npx dotenv -e .env.development.local -- prisma generate",
-    "prisma:studio": "npx dotenv -e .env.development.local -- prisma studio",
-    "production:build": "npx prisma generate && npx prisma migrate deploy && next build"
+    "prisma:generate": "npx prisma generate --schema prisma/common-schema.prisma",
+    "prisma:studio": "prisma studio --schema prisma/common-schema.prisma",
+    "migrate:deploy": "prisma migrate deploy --schema prisma/common-schema.prisma",
+    "migrate:reset": "prisma migrate reset --schema prisma/common-schema.prisma",
+    "db:push": "prisma db push --schema prisma/common-schema.prisma",
+    "db:pull": "prisma db pull --schema prisma/common-schema.prisma",
+    "db:seed": "prisma db seed --schema prisma/common-schema.prisma",
+
+    "production:build": "npm run prisma:generate && npm run migrate:deploy && next build",
+    "vercel-build": "npm run prisma:generate && npm run migrate:deploy && next build",
+    "postinstall": "npm run prisma:generate",
+    
+    "migrate:dev": "npx dotenv -e .env.development.local -- prisma migrate dev --schema prisma/common-schema.prisma",
+    "prisma:dev:generate": "npx dotenv -e .env.development.local -- npm run prisma:generate",
+    "prisma:dev:studio": "npx dotenv -e .env.development.local -- npm run prisma:studio",
+    "migrate:dev:reset": "npx dotenv -e .env.development.local -- npm run migrate:reset",
+    "db:dev:push": "npx dotenv -e .env.development.local -- npm run db:push",
+    "db:dev:pull": "npx dotenv -e .env.development.local -- npm run db:pull",
+    "db:dev:seed": "npx dotenv -e .env.development.local -- npm run db:seed"
   },
   "dependencies": {
     "@auth0/nextjs-auth0": "^3.5.0",
@@ -84,6 +94,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@prisma/extension-optimize": "^0.10.0",
     "@tailwindcss/typography": "^0.5.13",
     "@testing-library/jest-dom": "^6.4.6",
     "@testing-library/react": "^15.0.7",

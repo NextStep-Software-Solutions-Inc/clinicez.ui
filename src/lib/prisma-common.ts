@@ -1,12 +1,12 @@
-import { PrismaClient } from '@prisma/generated/common-client';
+import { createPrismaCommonClient } from './factory/prisma';
 
-let prismaCommon: PrismaClient;
+let prismaCommon: ReturnType<typeof createPrismaCommonClient>;
 
 if (process.env.NODE_ENV === 'production') {
-  prismaCommon = new PrismaClient();
+  prismaCommon = createPrismaCommonClient(process.env.DATABASE_URL!);
 } else {
   if (!global.prisma) {
-    global.prisma = new PrismaClient();
+    global.prisma = createPrismaCommonClient(process.env.DATABASE_URL!);
   }
   prismaCommon = global.prisma;
 }

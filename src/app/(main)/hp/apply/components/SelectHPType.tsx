@@ -17,7 +17,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useSearchParams } from "next/navigation";
 import BackSubmitAndNext from "../../../../../components/SubmitAndNext";
 import {useLocalStorage} from "@hooks/useLocalStorage";
-import { $Enums, HealthcareProviderType } from "@prisma/client";
+import { $Enums, HealthcareProviderType } from "@prisma/common/client";
 
 const hpTypes = Object.values($Enums.HealthcareProviderType);
 const hpTypesSchema = z.nativeEnum($Enums.HealthcareProviderType);

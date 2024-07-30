@@ -2,7 +2,7 @@
 
 import "server-only";
 import prisma from "@lib/prisma-common";
-import { UserOrganizationStatus } from "@prisma/client";
+import { UserOrganizationStatus } from "@prisma/common/client";
 import { cache } from "react";
 
 type FiltersType = {

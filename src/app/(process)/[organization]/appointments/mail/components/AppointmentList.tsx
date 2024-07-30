@@ -8,7 +8,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import Each from "@components/utils/Each"
 import { Avatar, AvatarFallback, AvatarImage } from "@components/ui/avatar"
 import { type Appointment } from "@public/json/appointment-list"
-import { User } from "@prisma/client"
+import { User } from "@prisma/common/client"
 
 interface AppointmentListProps {
   items: (Appointment & {

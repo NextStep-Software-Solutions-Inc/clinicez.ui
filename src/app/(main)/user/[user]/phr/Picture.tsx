@@ -1,6 +1,6 @@
 "use client";
 
-import { User } from "@prisma/client";
+import { User } from "@prisma/common/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@components/ui/avatar";
 import { Label } from "@components/ui/label";
 import { Input } from "@components/ui/input";

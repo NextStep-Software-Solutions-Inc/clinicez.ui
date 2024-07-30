@@ -1,5 +1,5 @@
 import prisma from '@lib/prisma-common';
-import { Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/common/client';
 
 export const getTenantsAction = async () => {
 

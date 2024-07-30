@@ -13,7 +13,7 @@ import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import ActionButton from "@components/ActionButton";
 import { notFound, redirect } from "next/navigation";
-import { HealthcareProviderType } from "@prisma/client";
+import { HealthcareProviderType } from "@prisma/common/client";
 import { getCachedSession } from "@actions/session.action";
 
 async function EditorPage({params, searchParams}: AppRouterPageRouteOpts) {

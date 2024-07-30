@@ -1,7 +1,7 @@
-import { User } from '@prisma/client';
+import { User } from '@prisma/common/client';
 import { EmployeeRecordType } from './src/app/(activation)/[organization]/join/EmployeeRecordForm';
 import { StudentRecordType } from './src/app/(activation)/[organization]/join/StudentRecordForm';
-import { Gender, UserEmploymentRecord, UserStudentRecord } from '@prisma/client';
+import { Gender, UserEmploymentRecord, UserStudentRecord } from '@prisma/common/client';
 import { labels } from './src/app/(process)/[organization]/consultations/data/data';
 import { GetUserOrganizations } from '@actions/user-organization.action';
 declare global {

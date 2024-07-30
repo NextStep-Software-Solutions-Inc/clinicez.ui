@@ -2,7 +2,7 @@
 
 import prisma from "@lib/prisma-common";
 
-import { HealthcareProviderType, Prisma } from "@prisma/client";
+import { HealthcareProviderType, Prisma } from "@prisma/common/client";
 import { cache } from "react";
 
 export type HPFilters = {

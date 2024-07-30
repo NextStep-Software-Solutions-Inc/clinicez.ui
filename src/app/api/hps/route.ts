@@ -1,6 +1,6 @@
 import { getHPsAction } from "@actions/hp.actions";
 import { withJwtAuth } from "@middlewares/withJwtAuth";
-import { HealthcareProviderType } from "@prisma/client";
+import { HealthcareProviderType } from "@prisma/common/client";
 import { NextRequest, NextResponse } from "next/server";
 
 

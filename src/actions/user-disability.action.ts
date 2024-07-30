@@ -2,7 +2,7 @@ import { GetUser } from './user.action';
 "use server";
 
 import prisma from "@lib/prisma-common";
-import { Severity } from "@prisma/client";
+import { Severity } from "@prisma/common/client";
 import { cache } from "react";
 
 export const addUserDisabilityAction = async (payload: {

@@ -7,7 +7,7 @@ import { CircleDashed, CircleOff, Files, User, UserCheck, Users, UserXIcon } fro
 import ConditionalRender from "@components/utils/ConditionalRender";
 import { isMember, isOrgAdmin } from "@lib/protect-org";
 import { getDashboardData } from "@actions/dashboard/overview.actions";
-import { UserOrganizationStatus } from "@prisma/client";
+import { UserOrganizationStatus } from "@prisma/common/client";
 import Link from "next/link";
 import Each from "@components/utils/Each";
 // import MyMemberships from "./components/MyMemberships";

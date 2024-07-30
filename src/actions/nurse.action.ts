@@ -1,7 +1,7 @@
 "use server";
 
 import prisma from "@lib/prisma-common";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/common/client";
 
 export const getNursesAction = async () => {
   const nurses = await prisma.nurseProfile.findMany({

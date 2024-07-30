@@ -9,7 +9,7 @@ import { useFieldArray, useForm } from "react-hook-form";
 import DisabilityItem  from "./DisabilityItem";
 import { Badge } from "@components/ui/badge";
 import { Plus } from "lucide-react";
-import { Severity } from "@prisma/client";
+import { Severity } from "@prisma/common/client";
 import ConditionalRender from "@components/utils/ConditionalRender";
 import { Disability } from "./DisabilityList";
 

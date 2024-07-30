@@ -2,7 +2,7 @@
 
 import "server-only";
 import prisma from "@lib/prisma-common";
-import { Prisma, UserOrganizationStatus } from "@prisma/client";
+import { Prisma, UserOrganizationStatus } from "@prisma/common/client";
 import { cache } from "react";
 
 export const createOrganizationAction = async (data: Prisma.OrganizationCreateArgs["data"]) => {

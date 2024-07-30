@@ -6,7 +6,7 @@ import { sendMail } from "@actions/email.action";
 import { getCachedSession } from "@actions/session.action";
 import prisma from "@lib/prisma-common";
 import { isOrgAdmin } from "@lib/protect-org";
-import { UserOrganizationStatus } from "@prisma/client";
+import { UserOrganizationStatus } from "@prisma/common/client";
 import path from "path";
 import { cache } from "react";
 

@@ -1,7 +1,7 @@
 "use server";
 
 import prisma from "@lib/prisma-common";
-import { Prisma, UserPlanStatus } from "@prisma/client";
+import { Prisma, UserPlanStatus } from "@prisma/common/client";
 import dayjs from "dayjs";
 import { cache } from "react";
 

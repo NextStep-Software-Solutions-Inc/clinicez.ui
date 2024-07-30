@@ -1,6 +1,6 @@
 import { createTenantAction, getTenantsAction } from "@actions/tenant.action";
 import { withJwtAuth } from "@middlewares/withJwtAuth";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/common/client";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 

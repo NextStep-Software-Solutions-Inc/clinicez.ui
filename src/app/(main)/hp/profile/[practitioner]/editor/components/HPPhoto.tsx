@@ -3,7 +3,7 @@
 import { upsertDoctorAction } from "@actions/doctor.action";
 import { upsertNurseAction } from "@actions/nurse.action";
 import { Input } from "@components/ui/input";
-import { HealthcareProviderType } from "@prisma/client";
+import { HealthcareProviderType } from "@prisma/common/client";
 import React from "react";
 import { toast } from "sonner";
 import { HPProfileType } from "../hp-form.schema";

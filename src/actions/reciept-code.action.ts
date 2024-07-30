@@ -1,7 +1,7 @@
 "use server";
 
 import prisma from "@lib/prisma-common";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/common/client";
 
 export const createReceiptCodeAction = async (payload: Prisma.ReceiptCodeCreateArgs["data"]) => {
   await prisma.receiptCode.create({

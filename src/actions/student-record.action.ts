@@ -1,7 +1,7 @@
 "use server";
 
 import prisma from "@lib/prisma-common";
-import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
+import { PrismaClientKnownRequestError } from "@prisma/common/client/runtime/library";
 
 export type CreateUserStudentRecord = {
   studentId: string;

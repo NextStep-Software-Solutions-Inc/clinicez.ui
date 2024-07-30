@@ -2,7 +2,7 @@
 
 import prisma from "@lib/prisma-common";
 import { isHP } from "@lib/protect-org";
-import { HealthConditionStatus, Severity, User } from "@prisma/client";
+import { HealthConditionStatus, Severity, User } from "@prisma/common/client";
 import { cache } from "react";
 
 export const addUserIllnessAction = async (payload: {

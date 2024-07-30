@@ -10,7 +10,7 @@ import BackSubmitAndNext from "../../../../../components/SubmitAndNext";
 import { useLocalStorage } from "@hooks/useLocalStorage";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import { toast } from "sonner";
-import { HealthcareProviderType } from "@prisma/client";
+import { HealthcareProviderType } from "@prisma/common/client";
 import { getUserAction } from "@actions/user.action";
 import { hpApplicationTransactionAction } from "@actions/user-plan.action";
 

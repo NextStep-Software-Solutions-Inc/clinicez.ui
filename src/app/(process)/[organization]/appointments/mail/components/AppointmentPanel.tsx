@@ -34,7 +34,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { Appointment } from "@public/json/appointment-list"
 import { type AppointmentsCountsType } from "@actions/appointments.action"
 import Switcher from "@components/dashboard/Switcher"
-import { User } from "@prisma/client"
+import { User } from "@prisma/common/client"
 
 export type UserRoles = "student" | "faculty" | "admin" | "receptionist" | "doctor" | "nurse"
 export type UserSwitcherType = {

@@ -16,11 +16,9 @@
     "db:push": "prisma db push --schema prisma/common-schema.prisma",
     "db:pull": "prisma db pull --schema prisma/common-schema.prisma",
     "db:seed": "prisma db seed --schema prisma/common-schema.prisma",
-
     "production:build": "npm run prisma:generate && npm run migrate:deploy && next build",
     "vercel-build": "npm run prisma:generate && npm run migrate:deploy && next build",
     "postinstall": "npm run prisma:generate",
-    
     "migrate:dev": "npx dotenv -e .env.development.local -- prisma migrate dev --schema prisma/common-schema.prisma",
     "prisma:dev:generate": "npx dotenv -e .env.development.local -- npm run prisma:generate",
     "prisma:dev:studio": "npx dotenv -e .env.development.local -- npm run prisma:studio",
@@ -36,7 +34,7 @@
     "@hookform/resolvers": "^3.9.0",
     "@hotjar/browser": "^1.0.9",
     "@lottiefiles/react-lottie-player": "^3.5.4",
-    "@prisma/client": "5.17.0",
+    "@prisma/common/client": "5.17.0",
     "@radix-ui/react-accordion": "^1.2.0",
     "@radix-ui/react-avatar": "^1.1.0",
     "@radix-ui/react-checkbox": "^1.1.1",

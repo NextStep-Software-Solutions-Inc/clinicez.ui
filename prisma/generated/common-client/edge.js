@@ -916,7 +916,7 @@ const config = {
       }
     ],
     "previewFeatures": [],
-    "sourceFilePath": "D:\\projects\\github\\clinic-ez.ui\\prisma\\schema.prisma",
+    "sourceFilePath": "D:\\projects\\github\\clinic-ez.ui\\prisma\\common-schema.prisma",
     "isCustomOutput": true
   },
   "relativeEnvPaths": {

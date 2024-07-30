@@ -34,7 +34,7 @@
     "@hookform/resolvers": "^3.9.0",
     "@hotjar/browser": "^1.0.9",
     "@lottiefiles/react-lottie-player": "^3.5.4",
-    "@prisma/common/client": "5.17.0",
+    "@prisma/client": "5.17.0",
     "@radix-ui/react-accordion": "^1.2.0",
     "@radix-ui/react-avatar": "^1.1.0",
     "@radix-ui/react-checkbox": "^1.1.1",

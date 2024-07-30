@@ -93,6 +93,7 @@
   },
   "devDependencies": {
     "@prisma/extension-optimize": "^0.10.0",
+    "@prisma/nextjs-monorepo-workaround-plugin": "^5.17.0",
     "@tailwindcss/typography": "^0.5.13",
     "@testing-library/jest-dom": "^6.4.6",
     "@testing-library/react": "^15.0.7",

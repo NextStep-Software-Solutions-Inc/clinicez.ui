@@ -12,11 +12,6 @@ import {
 import { DialogProps } from "@radix-ui/react-dialog"
 import Suspend from "./Suspend";
 import EMRPreview from "./EMRPreview";
-// import { preloadUserAction } from "@actions/user.action";
-// import { preloadUserAllergiesAction } from "@actions/user-allergy.action";
-// import { preloadUserVaccinationsAction } from "@actions/user-vaccination.action";
-// import { preloadUserDisabilitiesAction } from "@actions/user-disability.action";
-// import { preloadUserIllnessesAction } from "@actions/user-illness.action";
 interface EMRPreviewSheetProps extends DialogProps {
   children?: React.ReactNode;
   record: {

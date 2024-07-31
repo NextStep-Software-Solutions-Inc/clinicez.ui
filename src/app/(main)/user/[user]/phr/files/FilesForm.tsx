@@ -4,7 +4,7 @@ import { format } from "date-fns";
 import Each from "@components/utils/Each";
 import dayjs from "dayjs";
 import { getCachedSession } from "@actions/session.action";
-import { getUserOrganizationsAction } from "@actions/user-organization.action";
+import { getUserOrganizationsAction } from "@actions/users/user-organization.action";
 
 interface FilesFormProps {
   readOnly: boolean;

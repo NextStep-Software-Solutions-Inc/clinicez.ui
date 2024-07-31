@@ -1,6 +1,6 @@
 "use client";
 
-import { getUserVaccinationsAction } from "@actions/user-vaccination.action";
+import { getUserVaccinationsAction } from "@actions/users/user-vaccination.action";
 import Each from "@components/utils/Each";
 import VaxItem from "./VaxItem";
 

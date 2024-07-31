@@ -1,4 +1,4 @@
-import { getUserIllnessesAction } from "@actions/user-illness.action";
+import { getUserIllnessesAction } from "@actions/users/user-illness.action";
 import IllnessesForm, { IllnessesFormProps } from "./IllnessesForm";
 
 interface IllnessListProps {

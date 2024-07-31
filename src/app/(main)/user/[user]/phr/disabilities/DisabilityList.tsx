@@ -1,4 +1,4 @@
-import { getUserDisabilitiesAction } from "@actions/user-disability.action";
+import { getUserDisabilitiesAction } from "@actions/users/user-disability.action";
 import DisabilitiesForm from "./DisabilitiesForm";
 
 interface DisabilityListProps {

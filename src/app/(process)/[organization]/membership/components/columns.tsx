@@ -15,7 +15,7 @@ import { ChevronDown, ChevronRight, ExternalLink } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@components/ui/avatar"
 import ConditionalRender from "@components/utils/ConditionalRender"
 import { Button } from "@components/ui/button"
-import { GetUserOrganizations } from "@actions/user-organization.action"
+import { GetUserOrganizations } from "@actions/users/user-organization.action"
 
 export const columns: ColumnDef<GetUserOrganizations[number]>[] = [
   {

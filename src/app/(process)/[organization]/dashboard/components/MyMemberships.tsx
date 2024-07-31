@@ -1,8 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@components/ui/card"
-import { useOrg } from "@hooks/useOrgs"
-import { useUserOrganization } from "@hooks/useUserOrganization";
+import { useUserOrganizations } from "@hooks/useUserOrganization";
 import { Building2, Files } from "lucide-react"
 
 interface MyMembershipsProps {
@@ -10,7 +9,7 @@ interface MyMembershipsProps {
 }
 export default function MyMemberships({ userId }: MyMembershipsProps) { 
 
-  const {data: myOrganizations } = useUserOrganization({userId})
+  const {data: myOrganizations } = useUserOrganizations({userId})
   return (
     <div>
       <h3 className="text-lg font-medium mb-2 ml-1">My Memberships</h3>

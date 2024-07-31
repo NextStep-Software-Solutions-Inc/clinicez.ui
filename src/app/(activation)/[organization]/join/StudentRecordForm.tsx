@@ -1,5 +1,4 @@
 import ActionButton from "@components/ActionButton";
-import { ComboBox } from "@components/ComboBox";
 import { Checkbox } from "@components/ui/checkbox";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@components/ui/form";
 import { Input } from "@components/ui/input";
@@ -8,11 +7,11 @@ import ConditionalRender from "@components/utils/ConditionalRender";
 import Each from "@components/utils/Each";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocalStorage } from "@hooks/useLocalStorage";
-import React, { useState } from "react";
+import React from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { OrganizationApplicationData } from "./OrganizationSteps";
-import { useAtom, useSetAtom } from "jotai";
+import { useAtom } from "jotai";
 import { additionalInfoValidAtom } from "./AdditionalInformationStep";
 import { useOrgYearLevels } from "@hooks/useOrgYearLevel";
 import { useStudentLevels } from "@hooks/useStudentLevel";
@@ -21,7 +20,7 @@ import { useOrgColleges } from "@hooks/useOrgCollege";
 import { useOrgDepartments } from "@hooks/useOrgDepartment";
 import { toast } from "sonner";
 import { upsertStudentRecordAction } from "@actions/student-record.action";
-import { useUser, useUsers } from "@hooks/useUser";
+import { useUser } from "@hooks/useUser";
 
 
 const employeeRecordSchema = z.object({

@@ -106,8 +106,6 @@ model Organization {
   Departments                  OrganizationDepartment[]
   Offices                      OrganizationOffice[]
   Programs                     OrganizationProgram[]
-  Services                     OrganizationService[]
-  ServiceCategories            OrganizationServiceCategory[]
   OrganizationSetting          OrganizationSetting?
   UserDefaultOrganizations     UserDefaultOrganization[]
   UserDefaultOrganizationRoles UserDefaultOrganizationRole[]
@@ -809,33 +807,6 @@ model UserEmploymentRecord {
   UserOrganizationRole   UserOrganizationRole?   @relation(fields: [userOrganizationRoleId], references: [id])
 
   @@unique([userId, organizationId], name: "unique_user_employment")
-}
-
-model OrganizationService {
-  id             Int                         @id @default(autoincrement())
-  organizationId Int
-  category       Int
-  name           String
-  description    String?
-  createdAt      DateTime                    @default(now())
-  updatedAt      DateTime                    @updatedAt
-  deletedAt      DateTime?
-  isActive       Boolean                     @default(true)
-  Category       OrganizationServiceCategory @relation(fields: [category], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  Organization   Organization                @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-}
-
-model OrganizationServiceCategory {
-  id                   Int                   @id @default(autoincrement())
-  organizationId       Int
-  name                 String
-  description          String?
-  createdAt            DateTime              @default(now())
-  updatedAt            DateTime              @updatedAt
-  deletedAt            DateTime?
-  isActive             Boolean               @default(true)
-  OrganizationServices OrganizationService[]
-  Organization         Organization          @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 enum HealthConditionStatus {

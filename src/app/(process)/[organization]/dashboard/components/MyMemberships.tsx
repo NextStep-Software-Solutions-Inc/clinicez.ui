@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@components/ui/card"
-import { useOrg } from "@hooks/useOrg"
+import { useOrg } from "@hooks/useOrgs"
 import { useUserOrganization } from "@hooks/useUserOrganization";
 import { Building2, Files } from "lucide-react"
 

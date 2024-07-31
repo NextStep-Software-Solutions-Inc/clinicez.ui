@@ -7,7 +7,7 @@ type UseDailyOrgMembership = {
   startDate: string
   endDate: string
 }
-export const useDailyOrgMembership = (userId: string, {startDate, endDate}:UseDailyOrgMembership) => {
+export const useDailyOrgMemberships = (userId: string, {startDate, endDate}:UseDailyOrgMembership) => {
   const fetcher = (...args:any) => self.get<GetDailyOrgMembershipRequest>(args)
   const searParams = new URLSearchParams()
   searParams.set('orgId', userId)

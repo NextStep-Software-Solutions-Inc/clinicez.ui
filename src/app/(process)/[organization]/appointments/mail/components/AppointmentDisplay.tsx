@@ -1,5 +1,7 @@
+"use client";
 
-import {differenceInCalendarYears, format } from "date-fns"
+
+import {differenceInCalendarYears } from "date-fns"
 import {
   Forward,
   MoreVertical,
@@ -18,7 +20,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@components/ui/tooltip"
-import { getAppointmentAction } from "@actions/appointments.action"
 import CreateConsultationRecordModal from "../../components/CreateConsultationRecordModal"
 import { ScrollArea } from "@components/ui/scroll-area"
 import Image from "next/image"
@@ -34,17 +35,31 @@ import { UserRoles } from "./AppointmentPanel"
 import { Badge } from "@components/ui/badge"
 import ConsultationRecordSheet from "../../components/ConsultationRecordSheet"
 import { SheetTrigger } from "@components/ui/sheet"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@components/ui/dropdown-menu"
+import { useParams } from "next/navigation"
+import { useUser } from "@hooks/useUser";
+import { useOrgAppointment } from "@hooks/useAppointment";
 
 interface AppointmentDisplayProps {
-  appointmentId: string | null
+  appointmentId: number
   role: UserRoles,
 }
 
-export default async function AppointmentDisplay({ appointmentId, role }: AppointmentDisplayProps) {
+export default function AppointmentDisplay({ appointmentId, role }: AppointmentDisplayProps) {
+
+  const params = useParams()
+  const organization = params?.organization as string
   
-  const freshAppointment = await getAppointmentAction(appointmentId ?? "")
-  const user = await getUserAction(freshAppointment?.patientId ?? "")
-  if (!user) return new Error("Select an appointment to view");
+  const {data: freshAppointment} = useOrgAppointment({
+    orgId: organization,
+    appointmentId: appointmentId
+  })
+
+  const {data: user} = useUser({email: freshAppointment?.Requesters[0].email})
+  
+  if (!user) {
+    return <div className="p-8 text-center text-muted-foreground">No user found</div>
+  };
   
   const appointmentToolsPerStatus: Record<AppointmentStatus, React.ReactNode> = {
     all: (<></>),
@@ -81,11 +96,11 @@ export default async function AppointmentDisplay({ appointmentId, role }: Appoin
     <div className="flex h-full flex-col">
       <div className="flex items-center p-2">
         <div className="flex items-center gap-2">
-          <Badge variant="default" className="capitalize">{freshAppointment?.status}</Badge>
-          <RescheduleAppointment disabled={!freshAppointment} bookingDateTime={freshAppointment?.bookingDateTime? new Date(freshAppointment?.bookingDateTime): new Date()}/>
+          <Badge variant="default" className="capitalize">{freshAppointment?.AppointmentAttribute?.status}</Badge>
+          {/* <RescheduleAppointment disabled={!freshAppointment} bookingDateTime={freshAppointment?.bookingDateTime? new Date(freshAppointment?.bookingDateTime): new Date()}/> */}
           <Separator orientation="vertical" className="mx-1 h-6" />
           {
-            appointmentToolsPerStatus[freshAppointment?.status as AppointmentStatus] ?? []
+            appointmentToolsPerStatus[freshAppointment?.AppointmentAttribute?.status as AppointmentStatus] ?? []
           }
         </div>
         <div className="ml-auto flex items-center gap-2">
@@ -132,9 +147,9 @@ export default async function AppointmentDisplay({ appointmentId, role }: Appoin
                 </AvatarFallback>
               </Avatar>
               <div className="grid gap-1">
-                <div className="font-semibold">{user.firstName} {user.lastName}</div>
+                <div className="font-semibold">{user.firstName} {user.lastName} - <span className="i">{user.email}</span></div>
                 <div className="line-clamp-1 text-xs">
-                  <span className="font-medium">{"Male"}/</span>{differenceInCalendarYears(new Date(), new Date())}
+                  <span className="font-medium">{user.gender} / </span>{user.dob ? differenceInCalendarYears(new Date(), user.dob) : 0}
                 </div>
                 <div className="line-clamp-1 text-xs">{freshAppointment.subject}</div>
 
@@ -142,7 +157,7 @@ export default async function AppointmentDisplay({ appointmentId, role }: Appoin
             </div>
             {freshAppointment.createdAt && (
               <div className="ml-auto text-xs text-muted-foreground">
-                {format(new Date(freshAppointment.bookingDateTime), "PPpp")}
+                {/* {format(new Date(freshAppointment.bookingDateTime), "PPpp")} */}
               </div>
             )}
           </div>
@@ -157,7 +172,7 @@ export default async function AppointmentDisplay({ appointmentId, role }: Appoin
                 of={Array(Math.floor(Math.random()*10)).fill(false)}
                 render={() => (
                   <div className="w-[200px] h-auto">
-                    <Image width={150} height={150} className="rounded w-full" src="https://source.unsplash.com/random" alt="" />
+                    <Image width={150} height={150} className="rounded w-full" src="https://images.unsplash.com/photo-1721777436309-a5af4d4a4382?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="" />
                   </div>
                 )}
               />

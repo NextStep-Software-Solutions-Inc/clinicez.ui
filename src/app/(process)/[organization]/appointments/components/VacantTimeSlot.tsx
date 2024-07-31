@@ -5,6 +5,7 @@ import { toast } from "@components/ui/use-toast";
 import Each from "@components/utils/Each";
 import { useLocalStorage } from "@hooks/useLocalStorage";
 import { useState } from "react";
+import { BookAppointmentForm } from "./FilterForm";
 
 const timeSlots = [
   {id:1, slot: "10:00 AM - 11:00 AM"},
@@ -14,11 +15,11 @@ const timeSlots = [
   {id:5, slot: "4:00 PM - 5:00 PM"}
 ]
 export default function VacantTimeSlot() {
-  const [selectedTimeSlot, setSelectedTimeSlot] = useLocalStorage<{timeSlotId: number | null}>("book-appointment-form", {
-    timeSlotId: null,
+  const [bookAppointmentForm, setBookAppointmentForm] = useLocalStorage<BookAppointmentForm>("book-appointment-form", {
+    orgUid: "ustp-hims",
   });
   const handleSelectTimeSlot = (timeSlotId: number) => {
-    setSelectedTimeSlot({timeSlotId});
+    setBookAppointmentForm({});
     toast({
       title: "Time Slot Selected",
       description: `You have selected: ${timeSlots.find((timeSlot) => timeSlot.id === timeSlotId)?.slot}`,
@@ -31,7 +32,7 @@ export default function VacantTimeSlot() {
         <Each
           of={timeSlots}
           render={(timeSlot) => (
-            <Badge className="cursor-pointer" onClick={() => handleSelectTimeSlot(timeSlot.id)} variant={selectedTimeSlot.timeSlotId === timeSlot.id ? "default": "secondary"}>{timeSlot.slot}</Badge>
+            <Badge className="cursor-pointer" onClick={() => handleSelectTimeSlot(timeSlot.id)} variant={bookAppointmentForm.timeSlotId === timeSlot.id ? "default": "secondary"}>{timeSlot.slot}</Badge>
           )}
         />
       </div>

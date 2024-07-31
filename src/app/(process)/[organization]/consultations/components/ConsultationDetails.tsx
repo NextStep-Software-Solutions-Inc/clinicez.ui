@@ -11,8 +11,8 @@ import { DataTableRowActions } from "./data-table-row-actions";
 import { DropdownMenuProvider } from "@components/DropdownMenuProvider";
 import Suspend from "@components/Suspend";
 import { faker } from "@faker-js/faker";
-import { getAppointmentAction } from "@actions/appointments.action";
-import { getUserAction } from "@actions/user.action";
+import { getAppointmentAction } from "@actions/appointments/appointments.action";
+import { getUserAction } from "@actions/users/user.action";
 import { differenceInCalendarYears } from "date-fns";
 
 interface ConsultationDetailsProps {
@@ -20,8 +20,8 @@ interface ConsultationDetailsProps {
 }
 export default async function ConsultationDetails({ consultation }: ConsultationDetailsProps) {
 
-  const appointment = await getAppointmentAction(consultation.appointmentId);
-  const user = await getUserAction(appointment?.patientId ?? "");
+  const appointment = await getAppointmentAction(consultation.id);
+  const user = await getUserAction(appointment?.Requesters[0].email ?? "");
 
   return (
     <Card>

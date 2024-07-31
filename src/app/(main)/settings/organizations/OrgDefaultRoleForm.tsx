@@ -19,7 +19,7 @@ import { toast } from "sonner";
 import { getDefaultOrgRoleAction, setDefaultOrgRoleAction } from "@actions/user-default-organization.action";
 import ConditionalRender from "@components/utils/ConditionalRender";
 import { getUserOrganizationsAction } from "@actions/user-organization.action";
-import { getOrganizationRolesAction } from "@actions/organization-role.action";
+import { getOrganizationRolesAction } from "@actions/organizations/organization-role.action";
 
 interface OrgDefaultRoleFormProps {
   org: Awaited<ReturnType<typeof getUserOrganizationsAction>>[number];

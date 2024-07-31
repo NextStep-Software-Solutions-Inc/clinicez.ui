@@ -3,7 +3,7 @@ import 'server-only'
 import { withJwtAuth } from '@middlewares/withJwtAuth';
 
 import { NextRequest, NextResponse } from "next/server";
-import { getOrgDepartmentAction } from '@actions/org-department.action';
+import { getOrgDepartmentAction } from '@actions/organizations/org-department.action';
 
 
 export const GET = withJwtAuth(async (req: NextRequest) => {

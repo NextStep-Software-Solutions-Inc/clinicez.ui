@@ -1,7 +1,7 @@
 "use client";
 
 import { DailyMembershipRequestChart } from "@components/charts/DailyMembershipRequestChart";
-import { useDailyOrgMembership } from "@hooks/useDailyOrgMembership";
+import { useDailyOrgMemberships } from "@hooks/useDailyOrgMembership";
 import dayjs from "dayjs";
 import React, {  useMemo } from "react";
 import { DateRange } from "react-day-picker";
@@ -12,7 +12,7 @@ export default function OrgAnalytics({ orgId }: { orgId: string; }) {
     to: dayjs().endOf("day").toDate(),
   })
   
-  const {data} = useDailyOrgMembership(orgId, {
+  const {data} = useDailyOrgMemberships(orgId, {
     startDate: dayjs(date?.from).startOf("day").format("YYYY-MM-DDTHH:mm:ss.SSSZ"),
     endDate: dayjs(date?.to).endOf("day").format("YYYY-MM-DDTHH:mm:ss.SSSZ")
   });

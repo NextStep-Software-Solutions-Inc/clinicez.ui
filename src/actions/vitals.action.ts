@@ -37,7 +37,7 @@ export const createUserVitalSignAction = async (payload: BaseVitalSign & { userI
 }
 
 
-export type GetUserVitalSignsType = Awaited<ReturnType<typeof getUserVitalSignsAction>>;
+export type GetUserVitalSigns = Awaited<ReturnType<typeof getUserVitalSignsAction>>;
 export const getUserVitalSignsAction = cache(async (userId: string) => {
   return await prisma.vitalSign.findMany({
     orderBy: {

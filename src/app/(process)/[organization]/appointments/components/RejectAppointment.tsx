@@ -1,6 +1,6 @@
 "use client";
 
-import { rejectAppointmentAction } from "@actions/appointments.action";
+import { rejectAppointmentAction } from "@actions/appointments/appointments.action";
 import ActionButton from "@components/ActionButton";
 import { Button } from "@components/ui/button";
 import { Input } from "@components/ui/input";

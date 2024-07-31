@@ -10,7 +10,7 @@ import { useLocalStorage } from "@hooks/useLocalStorage";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { OrganizationApplicationData } from "./OrganizationSteps";
-import { GetOrganizationRoles } from "@actions/organization-role.action";
+import { GetOrganizationRoles } from "@actions/organizations/organization-role.action";
 
 interface SelectOrgFormProps {
   userId: string

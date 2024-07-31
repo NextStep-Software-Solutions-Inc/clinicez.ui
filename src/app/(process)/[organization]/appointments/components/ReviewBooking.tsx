@@ -1,9 +1,14 @@
 "use client";
 
+import { createAppointmentAction } from "@actions/appointments/appointments.action";
 import BackSubmitAndNext from "@components/SubmitAndNext";
-import { toast } from "@components/ui/use-toast";
 import { useLocalStorage } from "@hooks/useLocalStorage";
 import React, { FormEvent } from "react";
+import { toast } from "sonner";
+import { BookAppointmentForm } from "./FilterForm";
+import { useUser } from "@auth0/nextjs-auth0/client";
+import { revalidatePath } from "@actions/cache.action";
+import useSound from "use-sound";
 
 interface ReviewBookingProps {
     nextStep?: () => void;
@@ -15,21 +20,46 @@ interface ReviewBookingProps {
 }
 
 export default function ReviewBooking({ nextStep, prevStep, isLastStep, isFirstStep, setComplete, startOver }: ReviewBookingProps) {
-  const [bookAppointmentForm, setBookAppointmentForm] = useLocalStorage("book-appointment-form")
+  const [bookAppointmentForm, setBookAppointmentForm] = useLocalStorage<BookAppointmentForm>("book-appointment-form")
+  const user = useUser()
+  const [playSuccess] = useSound("/audio/success-1.mp3");
   const handleBookAppointment = (e:FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    setComplete?.(true)
-    toast({
-      title: "Appointment booked successfully with the following values:",
-      description: <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4"><code className="text-white">{JSON.stringify(bookAppointmentForm, null, 2)}</code></pre>
-        
+    
+    if(!bookAppointmentForm.orgUid) {
+      toast.error("Organization is required")
+      return ;
+    }
+    if(!user.user?.email) {
+      toast.error("User email is missing")
+      return;
+    }
+    if (!bookAppointmentForm.appointmentTypeId) {
+      toast.error("Appointment type is required")
+      return;
+    }
+
+    toast.promise(createAppointmentAction({
+      orgUid: bookAppointmentForm.orgUid,
+      subject: bookAppointmentForm.subject ?? "Appointment Request",
+      complaint: bookAppointmentForm.chiefComplaint,
+      modeId: 2,
+      typeId: bookAppointmentForm.appointmentTypeId,
+      requesters: [user.user?.email]
+    }), {
+      loading: "Creating appointment...",
+      success: () => {
+        setComplete?.(true);
+        playSuccess();
+        revalidatePath(`/[organization]/appointments`, "page");
+        return "Appointment created successfully";
+      },
+      error: "Failed to create appointment"
     })
   }
+
   const reset = async () => {
-    await setBookAppointmentForm(Object.keys(bookAppointmentForm as object).reduce((acc: {[key: string]: string}, key) => {
-      acc[key] = "";
-      return acc;
-    }, {}))
+    await setBookAppointmentForm({})
     startOver?.();
   }
 

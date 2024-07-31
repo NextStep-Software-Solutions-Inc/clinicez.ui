@@ -1,6 +1,6 @@
 "use client";
 
-import { assignAppointmentAction } from "@actions/appointments.action";
+import { assignAppointmentAction } from "@actions/appointments/appointments.action";
 import ActionButton from "@components/ActionButton";
 import { Button } from "@components/ui/button";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator, CommandShortcut } from "@components/ui/command";

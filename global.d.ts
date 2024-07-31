@@ -4,8 +4,12 @@ import { StudentRecordType } from './src/app/(activation)/[organization]/join/St
 import { Gender, UserEmploymentRecord, UserStudentRecord } from '@prisma/common/client';
 import { labels } from './src/app/(process)/[organization]/consultations/data/data';
 import { GetUserOrganizations } from '@actions/user-organization.action';
+import { PrismaClient as PrismaCommonClient } from '@prisma/common/client';
+import { PrismaClient as PrismaTenantClient } from '@prisma/tenant/client';
 declare global {
-  var prisma: PrismaClient;
+  var prismaCommon: PrismaCommonClient;
+  var prismaTenant: PrismaTenantClient;
+  
   type Consultation =  {
     id: number
     subject: string

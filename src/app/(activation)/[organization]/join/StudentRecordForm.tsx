@@ -14,14 +14,14 @@ import { z } from "zod";
 import { OrganizationApplicationData } from "./OrganizationSteps";
 import { useAtom, useSetAtom } from "jotai";
 import { additionalInfoValidAtom } from "./AdditionalInformationStep";
-import { useOrgYearLevel } from "@hooks/useOrgYearLevel";
-import { useStudentLevel } from "@hooks/useStudentLevel";
-import { useOrgProgram } from "@hooks/useOrgProgram";
-import { useOrgCollege } from "@hooks/useOrgCollege";
-import { useOrgDepartment } from "@hooks/useOrgDepartment";
+import { useOrgYearLevels } from "@hooks/useOrgYearLevel";
+import { useStudentLevels } from "@hooks/useStudentLevel";
+import { useOrgPrograms } from "@hooks/useOrgProgram";
+import { useOrgColleges } from "@hooks/useOrgCollege";
+import { useOrgDepartments } from "@hooks/useOrgDepartment";
 import { toast } from "sonner";
 import { upsertStudentRecordAction } from "@actions/student-record.action";
-import { useUser } from "@hooks/useUser";
+import { useUser, useUsers } from "@hooks/useUser";
 
 
 const employeeRecordSchema = z.object({
@@ -53,12 +53,12 @@ export default function StudentRecordForm({orgId} : {orgId: string}) {
 
   const [additionalInfoValid, setAdditionalInfoValid] = useAtom(additionalInfoValidAtom)
   const [orgApplication, setOrgApplication] = useLocalStorage<OrganizationApplicationData>(`${orgId}_application`)
-  const {data: orgYearLevels} = useOrgYearLevel(orgId)
-  const {data: studentLevels} = useStudentLevel()
-  const {data: orgPrograms} = useOrgProgram(orgId)
-  const {data: orgColleges} = useOrgCollege(orgId)
-  const {data: orgDepartment} = useOrgDepartment(orgId)
-  const {data: user } = useUser(orgApplication.userId)
+  const {data: orgYearLevels} = useOrgYearLevels(orgId)
+  const {data: studentLevels} = useStudentLevels()
+  const {data: orgPrograms} = useOrgPrograms(orgId)
+  const {data: orgColleges} = useOrgColleges(orgId)
+  const {data: orgDepartment} = useOrgDepartments(orgId)
+  const {data: user} = useUser({userId: orgApplication.userId})
 
   const form = useForm<StudentRecordType>({
     resolver: zodResolver(employeeRecordSchema),
@@ -71,7 +71,11 @@ export default function StudentRecordForm({orgId} : {orgId: string}) {
   const action = async () => {
     form.handleSubmit(async (values) => {
       const orgId = orgPrograms?.[0].organizationId ?? 0
-      const userId = user?.id ?? 0
+      if(!user) {
+        toast.error("User data not found")
+        return;
+      }
+      const userId = user.id
 
       toast.promise(upsertStudentRecordAction({...values, orgId, userId}), {
         loading: "Saving student record...",

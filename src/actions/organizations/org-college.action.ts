@@ -21,12 +21,3 @@ export const getOrgCollegesAction = async (orgId: string) => {
   });
   return orgCollege;
 }
-
-export const createOrgCollegeAction = async (orgId: string, name: string) => {
-  const orgCollege = await prisma.organizationCollege.create({
-    data: {
-      name,
-    }
-  });
-  return orgCollege;
-}

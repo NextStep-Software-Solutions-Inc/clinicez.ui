@@ -9,7 +9,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@components/ui/sheet"
-import BookAppointmentStep from "./BookAppointmentStep";
+import BookAppointmentSteps from "./BookAppointmentSteps";
 import SelectTimeSlot from "./SelectTimeSlot";
 import ChiefComplaint from "./ChiefComplaint";
 import ConsentForm from "./ConsentForm";
@@ -28,12 +28,12 @@ export default function BookAppointmentSheet() {
             Filter the calendar to find the best time for your appointment.
           </SheetDescription>
         </SheetHeader>
-        <BookAppointmentStep initialStep={1}>
+        <BookAppointmentSteps initialStep={1}>
           <SelectTimeSlot/>
           <ChiefComplaint/>
           <ConsentForm/>
           <ReviewBooking/>
-        </BookAppointmentStep>
+        </BookAppointmentSteps>
         <SheetFooter>
           <SheetClose asChild>
             <Button variant="outline" type="button">Close</Button>

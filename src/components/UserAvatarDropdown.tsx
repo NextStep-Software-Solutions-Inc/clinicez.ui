@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@components/ui/dropdown-menu"
 import { SignInButton } from "./SignInButton";
-import { getUserAction } from "@actions/user.action";
+import { getUserAction } from "@actions/users/user.action";
 import { getCachedSession } from "@actions/session.action";
 
 export default async function UserAvatarDropdown({children}: {children: React.ReactNode}) {

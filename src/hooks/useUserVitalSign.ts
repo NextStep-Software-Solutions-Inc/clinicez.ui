@@ -1,8 +1,8 @@
-import { GetUserVitalSignsType } from "@actions/vitals.action";
+import { GetUserVitalSigns } from "@actions/vitals.action";
 import { self } from "@services/request";
 import useSWR from "swr"
 
-export const useUserVitalSign = (userId: string) => {
-  const fetcher =  (...args:any) => self.get<GetUserVitalSignsType>(args);
+export const useUserVitalSigns = (userId: string) => {
+  const fetcher =  (...args:any) => self.get<GetUserVitalSigns>(args);
   return useSWR(`/api/vitals?userId=${userId}`, fetcher)
 }

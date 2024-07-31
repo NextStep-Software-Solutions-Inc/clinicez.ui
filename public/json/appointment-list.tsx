@@ -1,18 +1,6 @@
 export type AppointmentStatus = "all" | "pending" | "received" | "accepted" | "rejected" | "routed" | "reschedule";
 
-export type Appointment = {
-  id: string;
-  status: AppointmentStatus;
-  patientId: string;
-  subject: string;
-  complaint: string;
-  createdAt: string;
-  bookingDateTime: string;
-  read: boolean;
-  labels: string[];
-};
-
-export const appointmentList:Appointment[] = [
+export const appointmentList = [
   {
     id: "auth0|668c3bcfb6e20bb732dc87a8",
     patientId: "auth0|668c3bcfb6e20bb732dc87a8",

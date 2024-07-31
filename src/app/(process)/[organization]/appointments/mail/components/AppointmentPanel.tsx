@@ -28,13 +28,14 @@ import {
   TabsTrigger,
 } from "@components/ui/tabs"
 import { TooltipProvider } from "@components/ui/tooltip"
-import AppointmentList from "./AppointmentList"
+import { AppointmentList } from "./AppointmentList"
 import { Nav } from "./nav"
-import { useRouter, useSearchParams } from "next/navigation"
-import { Appointment } from "@public/json/appointment-list"
-import { type AppointmentsCountsType } from "@actions/appointments.action"
+import { useParams, useRouter, useSearchParams } from "next/navigation"
+import { GetAppointments, type AppointmentsCountsType } from "@actions/appointments/appointments.action"
 import Switcher from "@components/dashboard/Switcher"
 import { User } from "@prisma/common/client"
+import { useOrgRoles } from "@hooks/useOrgRole"
+import { useUser } from "@auth0/nextjs-auth0/client"
 
 export type UserRoles = "student" | "faculty" | "admin" | "receptionist" | "doctor" | "nurse"
 export type UserSwitcherType = {
@@ -53,38 +54,7 @@ const icons = {
   rejected: Trash2,
   routed: Route,
 };
-const roles = [
-  {
-    label: "Student",
-    value: "student",
-    icon: UserIcon,
-  },
-  {
-    label: "Faculty",
-    value: "faculty",
-    icon: UserIcon,
-  },
-  {
-    label: "Admin",
-    value: "admin",
-    icon: UserIcon,
-  }, 
-  {
-    label: "Receptionist",
-    value: "receptionist",
-    icon: UserIcon,
-  }, 
-  {
-    label: "Doctor",
-    value: "doctor",
-    icon: UserIcon,
-  },
-  {
-    label: "Nurse",
-    value: "nurse",
-    icon: UserIcon,
-  }
-]
+
 const rolesLinks = {
   student: ["all", "pending", "received", "accepted", "declined", "rejected", "reschedule"],
   faculty: ["all", "pending", "received", "accepted", "declined", "rejected", "reschedule"],
@@ -95,8 +65,8 @@ const rolesLinks = {
 };
 interface AppointmentPanelProps {
   appointmentsCounts: AppointmentsCountsType
-  appointments: (Appointment & {
-    patient: User
+  appointments: (GetAppointments[number] & {
+    patient?: User
   })[]
   defaultLayout: number[] | undefined
   defaultCollapsed?: boolean
@@ -116,10 +86,23 @@ export default function AppointmentPanel({
   const [isCollapsed, setIsCollapsed] = React.useState(defaultCollapsed)
 
   const searchParams = useSearchParams();
+  const params = useParams();
   const router = useRouter();
+  const user = useUser();
+  const userId = user?.user?.sub;
   
   const type = searchParams.get("_type");
   const role = searchParams.get("_role") as UserRoles;
+  const organization = params.organization as string;
+  const {data: orgRoles} = useOrgRoles(organization, {userId})
+
+  const roles = (orgRoles ?? [])?.map((role) => ({
+    label: role.name,
+    value: role.name,
+    icon: UserIcon,
+  }))
+  
+
   const [query, setQuery] = React.useState("");
 
   const filteredAppointments = React.useMemo(() => {
@@ -127,7 +110,7 @@ export default function AppointmentPanel({
     return appointments.filter((appointment) => {
       return (
         appointment.subject.toLowerCase().includes(query.toLowerCase()) ||
-        appointment.complaint.toLowerCase().includes(query.toLowerCase())
+        appointment.complaint?.toLowerCase().includes(query.toLowerCase())
       );
     });
   },[appointments,query])
@@ -151,7 +134,7 @@ export default function AppointmentPanel({
       role,
       statuses.map(status => link(
         status.charAt(0).toUpperCase() + status.slice(1),
-        appointmentsCounts[status as keyof typeof appointmentsCounts].toString(),
+        appointmentsCounts?.[status as keyof typeof appointmentsCounts].toString(),
         icons[status as keyof typeof icons],
         status
       )),
@@ -253,7 +236,7 @@ export default function AppointmentPanel({
               <AppointmentList items={filteredAppointments} />
             </TabsContent>
             <TabsContent value="unread" asChild>
-              <AppointmentList items={filteredAppointments.filter((item) => !item.read)} />
+              <AppointmentList items={filteredAppointments.filter((item) => !item.AppointmentAttribute?.status)} />
             </TabsContent>
           </Tabs>
           <AppointmentList items={filteredAppointments} />

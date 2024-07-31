@@ -1,4 +1,4 @@
-import { getUserAction } from "@actions/user.action";
+import { getUserAction } from "@actions/users/user.action";
 import { Picture } from "./Picture";
 
 interface PictureWrapperProps {

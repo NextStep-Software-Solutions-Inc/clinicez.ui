@@ -2,7 +2,6 @@
 
 import { createActivationCodeAction, verifyActivationCodeAction } from "@actions/activation.action";
 import { sendActivationCodeAction, getPatientAction, startMigrationTransactionAction } from "@actions/hims-migration.action";
-import { updateUserAction } from "@actions/user.action";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import ActionButton from "@components/ActionButton";
 import { Checkbox } from "@components/ui/checkbox";

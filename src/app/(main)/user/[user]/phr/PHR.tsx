@@ -1,5 +1,5 @@
 import { PersonalInformationForm } from "./PersonalInformationForm";
-import { getUserAction } from "@actions/user.action";
+import { getUserAction } from "@actions/users/user.action";
 
 interface PHRProps {
   userId: string;

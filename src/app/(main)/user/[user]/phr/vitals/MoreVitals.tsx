@@ -6,10 +6,10 @@ import { Separator } from "@components/ui/separator";
 import { Fragment, useState } from "react";
 import VitalSign from "./VitalSign";
 import Each from "@components/utils/Each";
-import { GetUserVitalSignsType } from "@actions/vitals.action";
+import { GetUserVitalSigns } from "@actions/vitals.action";
 
 interface MoreVitalsProps {
-    vitalSigns: GetUserVitalSignsType;
+    vitalSigns: GetUserVitalSigns;
     readOnly: boolean
     
 }

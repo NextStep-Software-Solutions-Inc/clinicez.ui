@@ -18,7 +18,7 @@ import {
 } from "@components/ui/chart"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@components/ui/select"
 import Each from "@components/utils/Each"
-import { GetUserVitalSignsType } from "@actions/vitals.action"
+import { GetUserVitalSigns } from "@actions/vitals.action"
 
 const chartConfig = {
   views: {
@@ -63,12 +63,12 @@ const chartConfig = {
 } satisfies ChartConfig
 
 interface VitalChartInteractiveProps {
-  vitalSigns: GetUserVitalSignsType
+  vitalSigns: GetUserVitalSigns
 }
 
 export function VitalChartInteractive({vitalSigns}: VitalChartInteractiveProps) {
 
-  const groupVitalsByDate = (vitals: GetUserVitalSignsType) => {
+  const groupVitalsByDate = (vitals: GetUserVitalSigns) => {
     const data = []
     for (const vital of vitals) {
       const date = new Date(vital.dateTaken).toISOString()

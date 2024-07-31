@@ -9,11 +9,11 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormDescription, For
 import { Input } from "../../../../components/ui/input";
 import { Button } from "@components/ui/button";
 import { use, useState } from "react";
-import { createUserPlanAction } from "@actions/user-plan.action";
+import { createUserPlanAction } from "@actions/users/user-plan.action";
 import { toast } from "sonner";
 import { useSearchParams } from "next/navigation";
 import { useUser } from "@auth0/nextjs-auth0/client";
-import { getUserAction } from "@actions/user.action";
+import { getUserAction } from "@actions/users/user.action";
 import { getPlansAction } from "@actions/plan.action";
 import { getReceiptCodeAction } from "@actions/reciept-code.action";
 

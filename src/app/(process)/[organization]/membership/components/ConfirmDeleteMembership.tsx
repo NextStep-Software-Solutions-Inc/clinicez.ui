@@ -1,6 +1,6 @@
 "use client";
 
-import { deleteMembershipAction } from "@actions/user-organization.action";
+import { deleteMembershipAction } from "@actions/users/user-organization.action";
 import ActionButton from "@components/ActionButton";
 import { Button } from "@components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@components/ui/popover";

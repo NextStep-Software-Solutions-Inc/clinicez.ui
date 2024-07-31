@@ -14,21 +14,21 @@ interface TenantPaymentVerificationProps {
     isFirstStep?: boolean;
     isLastStep?: boolean;
 }
-export const paymentconfirmationFormSchema = z.object({
+export const paymentConfirmationFormSchema = z.object({
   receiptNumber: z.string().min(1, {
     message: "Receipt number is required",
   }),
 })
 export default function TenantPaymentVerification({ setComplete, prevStep }: TenantPaymentVerificationProps) {
   const [paymentData, setPaymentData] = useLocalStorage("tenant-application", { receiptNumber: "" });
-  const form = useForm<z.infer<typeof paymentconfirmationFormSchema>>({
-    resolver: zodResolver(paymentconfirmationFormSchema),
+  const form = useForm<z.infer<typeof paymentConfirmationFormSchema>>({
+    resolver: zodResolver(paymentConfirmationFormSchema),
     defaultValues: {
       receiptNumber: paymentData?.receiptNumber,
     }
   })
 
-  const onSubmit = async (data: z.infer<typeof paymentconfirmationFormSchema>) => {
+  const onSubmit = async (data: z.infer<typeof paymentConfirmationFormSchema>) => {
     await setPaymentData(data)
     await setComplete?.(true);
   }

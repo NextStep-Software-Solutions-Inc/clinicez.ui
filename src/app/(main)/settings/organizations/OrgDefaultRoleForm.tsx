@@ -16,9 +16,9 @@ import Each from "@components/utils/Each";
 import { useEffect, useState } from "react";
 import ActionButton from "@components/ActionButton";
 import { toast } from "sonner";
-import { getDefaultOrgRoleAction, setDefaultOrgRoleAction } from "@actions/user-default-organization.action";
+import { getDefaultOrgRoleAction, setDefaultOrgRoleAction } from "@actions/users/user-default-organization.action";
 import ConditionalRender from "@components/utils/ConditionalRender";
-import { getUserOrganizationsAction } from "@actions/user-organization.action";
+import { getUserOrganizationsAction } from "@actions/users/user-organization.action";
 import { getOrganizationRolesAction } from "@actions/organizations/organization-role.action";
 
 interface OrgDefaultRoleFormProps {

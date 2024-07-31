@@ -23,7 +23,7 @@ import { useUser } from "@auth0/nextjs-auth0/client"
 import ActionButton from "@components/ActionButton"
 import { OrgDefaultRoleForm } from "./OrgDefaultRoleForm"
 import ConditionalRender from "@components/utils/ConditionalRender"
-import { getUserOrganizationsAction } from "@actions/user-organization.action"
+import { getUserOrganizationsAction } from "@actions/users/user-organization.action"
 
 const organizationFormSchema = z.object({
   defaultOrgUid: z.string(),

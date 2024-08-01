@@ -8,7 +8,6 @@ import {
   MailPlus,
   MailX,
   Route,
-  Search,
   Trash2,
   UserIcon,
 } from "lucide-react"
@@ -28,7 +27,7 @@ import {
   TabsTrigger,
 } from "@components/ui/tabs"
 import { TooltipProvider } from "@components/ui/tooltip"
-import { AppointmentList } from "./AppointmentList"
+import { AppointmentList, AppointmentListWrapper } from "./AppointmentList"
 import { Nav } from "./nav"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { GetAppointments, type AppointmentsCountsType } from "@actions/appointments/appointments.action"
@@ -36,6 +35,7 @@ import Switcher from "@components/dashboard/Switcher"
 import { User } from "@prisma/common/client"
 import { useOrgRoles } from "@hooks/useOrgRole"
 import { useUser } from "@auth0/nextjs-auth0/client"
+import { useOrgAppointments } from "@hooks/useAppointment"
 
 export type UserRoles = "student" | "faculty" | "admin" | "receptionist" | "doctor" | "nurse"
 export type UserSwitcherType = {
@@ -98,27 +98,11 @@ export default function AppointmentPanel({
 
   const roles = (orgRoles ?? [])?.map((role) => ({
     label: role.name,
-    value: role.name,
+    value: role.name.toLowerCase(),
     icon: UserIcon,
   }))
   
-
-  const [query, setQuery] = React.useState("");
-
-  const filteredAppointments = React.useMemo(() => {
-    if (!query) return appointments;
-    return appointments.filter((appointment) => {
-      return (
-        appointment.subject.toLowerCase().includes(query.toLowerCase()) ||
-        appointment.complaint?.toLowerCase().includes(query.toLowerCase())
-      );
-    });
-  },[appointments,query])
-
-  const updateQuery = (q: string) => {
-    setQuery(q);
-  }
-  
+ 
   const isDefaultVariant = (activeTab: string): "default" | "ghost" => {
     return type === activeTab ? "default" : "ghost"
   }
@@ -224,22 +208,8 @@ export default function AppointmentPanel({
               </TabsList>
             </div>
             <Separator />
-            <div className="bg-background/95 p-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-              <form>
-                <div className="relative">
-                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input placeholder="Search" className="pl-8" type="search" value={query} onChange={e => updateQuery(e.target.value)} />
-                </div>
-              </form>
-            </div>
-            <TabsContent value="all" asChild>
-              <AppointmentList items={filteredAppointments} />
-            </TabsContent>
-            <TabsContent value="unread" asChild>
-              <AppointmentList items={filteredAppointments.filter((item) => !item.AppointmentAttribute?.status)} />
-            </TabsContent>
+            <AppointmentListWrapper orgUid={organization}/>
           </Tabs>
-          <AppointmentList items={filteredAppointments} />
         </ResizablePanel>
         <ResizableHandle withHandle />
         <ResizablePanel defaultSize={defaultLayout[2]}>

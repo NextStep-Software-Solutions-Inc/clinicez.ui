@@ -1,8 +1,6 @@
 "use client"
 
-import Link from "next/link"
 import { LucideIcon } from "lucide-react"
-
 import { cn } from "@lib/utils"
 import { buttonVariants } from "@components/ui/button"
 import {
@@ -11,7 +9,6 @@ import {
   TooltipTrigger,
 } from "@components/ui/tooltip"
 import Each from "@components/utils/Each"
-import { useSearchParams } from "next/navigation"
 
 interface NavProps {
   isCollapsed: boolean
@@ -24,7 +21,15 @@ interface NavProps {
 }
 
 export function Nav({ links, isCollapsed }: NavProps) {
-  const searchParams = useSearchParams();
+
+  const pushSearchParams = (params: {key:string, value:string | null}[]) => {
+    const searchParams = new URLSearchParams(window.location.search);
+    params.forEach(({key, value}) => {
+      if(value === null) searchParams.delete(key);
+      else searchParams.set(key, value);
+    });
+    window.history.pushState({}, "", `?${searchParams.toString()}`);
+  }
   
   return (
     <div
@@ -38,14 +43,16 @@ export function Nav({ links, isCollapsed }: NavProps) {
             isCollapsed ? (
               <Tooltip delayDuration={0}>
                 <TooltipTrigger asChild>
-                  <Link
-                    href={{
-                      query: {
-                        ...Object.fromEntries((new URLSearchParams(searchParams.toString()))),
-                        _appointment: null,
-                        _type: link.title.toLowerCase(),
+                  <div
+                    onClick={() => pushSearchParams([
+                      {
+                        key: "_aptStatus",
+                        value: link.title.toLowerCase()
+                      }, {
+                        key: "_appointment",
+                        value: null
                       }
-                    }}
+                    ])}
                     className={cn(
                       buttonVariants({ variant: link.variant, size: "icon" }),
                       "h-9 w-9",
@@ -55,7 +62,7 @@ export function Nav({ links, isCollapsed }: NavProps) {
                   >
                     <link.icon className="h-4 w-4" />
                     <span className="sr-only">{link.title}</span>
-                  </Link>
+                  </div>
                 </TooltipTrigger>
                 <TooltipContent side="right" className="flex items-center gap-4">
                   {link.title}
@@ -67,14 +74,16 @@ export function Nav({ links, isCollapsed }: NavProps) {
                 </TooltipContent>
               </Tooltip>
             ) : (
-              <Link
-                href={{
-                  query: {
-                    ...Object.fromEntries((new URLSearchParams(searchParams.toString()))),
-                    _appointment: null,
-                    _type: link.title.toLowerCase()
+              <div
+                onClick={() => pushSearchParams([
+                  {
+                    key: "_aptStatus",
+                    value: link.title.toLowerCase()
+                  }, {
+                    key: "_appointment",
+                    value: null
                   }
-                }}
+                ])}
                 className={cn(
                   buttonVariants({ variant: link.variant, size: "sm" }),
                   link.variant === "default" &&
@@ -95,10 +104,9 @@ export function Nav({ links, isCollapsed }: NavProps) {
                     {link.label}
                   </span>
                 )}
-              </Link>
+              </div>
             )}
         />
-        
       </nav>
     </div>
   )

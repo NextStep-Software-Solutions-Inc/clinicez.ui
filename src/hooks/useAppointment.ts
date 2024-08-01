@@ -5,7 +5,7 @@ import useSWR from "swr"
 
 type UseOrgAppointmentsFilter = {
     orgId: string,
-    status?: AppointmentStatus
+    status?: string | null
 }
 export const useOrgAppointments = (filter: UseOrgAppointmentsFilter) => {
   const { orgId, status } = filter

@@ -7,8 +7,8 @@ import React, { FormEvent } from "react";
 import { toast } from "sonner";
 import { BookAppointmentForm } from "./FilterForm";
 import { useUser } from "@auth0/nextjs-auth0/client";
-import { revalidatePath } from "@actions/cache.action";
 import useSound from "use-sound";
+import { useOrgAppointments } from "@hooks/useAppointment";
 
 interface ReviewBookingProps {
     nextStep?: () => void;
@@ -21,8 +21,12 @@ interface ReviewBookingProps {
 
 export default function ReviewBooking({ nextStep, prevStep, isLastStep, isFirstStep, setComplete, startOver }: ReviewBookingProps) {
   const [bookAppointmentForm, setBookAppointmentForm] = useLocalStorage<BookAppointmentForm>("book-appointment-form")
-  const user = useUser()
   const [playSuccess] = useSound("/audio/success-1.mp3");
+  const { mutate } = useOrgAppointments({
+    orgId: bookAppointmentForm.orgUid ?? ""
+  })
+  const user = useUser()
+
   const handleBookAppointment = (e:FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     
@@ -51,7 +55,7 @@ export default function ReviewBooking({ nextStep, prevStep, isLastStep, isFirstS
       success: () => {
         setComplete?.(true);
         playSuccess();
-        revalidatePath(`/[organization]/appointments`, "page");
+        mutate();
         return "Appointment created successfully";
       },
       error: "Failed to create appointment"

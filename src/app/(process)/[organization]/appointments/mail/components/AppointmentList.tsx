@@ -1,37 +1,39 @@
-import { ComponentProps, forwardRef } from "react"
+"use client";
+
+import { ComponentProps, forwardRef, useMemo, useState } from "react"
 import {formatDistanceToNow} from "date-fns"
 
 import { cn } from "@lib/utils"
 import { Badge } from "@components/ui/badge"
 import { ScrollArea } from "@components/ui/scroll-area"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import Each from "@components/utils/Each"
 import { Avatar, AvatarFallback, AvatarImage } from "@components/ui/avatar"
 import { GetAppointments } from "@actions/appointments/appointments.action"
 import { Separator } from "@components/ui/separator"
-
+import { useOrgAppointments } from "@hooks/useAppointment";
+import { Input } from "@components/ui/input";
+import { Search } from "lucide-react";
 interface AppointmentListProps {
-  items: GetAppointments
+  appointments: GetAppointments
 }
 
-export const AppointmentList = forwardRef<any, AppointmentListProps>(({ items }, ref) => {
+export const AppointmentList = forwardRef<any, AppointmentListProps>(({appointments},ref) => {
   const searchParams = useSearchParams()
   const appointmentId = searchParams.get("_appointment")
-  const appointmentStatus = searchParams.get("_type")
-  
-  const router = useRouter()
+  const appointmentStatus = searchParams.get("_aptStatus")
   
   const setAppointment = (appointmentId: string) => {
     const searchParams = new URLSearchParams(window.location.search)
     searchParams.set("_appointment", appointmentId)
-    router.replace(`?${searchParams.toString()}`)
+    window.history.pushState({}, "", `?${searchParams.toString()}`)
   }
-
+  
   return (
     <ScrollArea ref={ref} className="flex-auto h-[100dvh]">
       <div className="flex flex-col gap-2 p-4 pt-0">
         <Each
-          of={items}
+          of={appointments ?? []}
           render={(item) => (
             <button
               className={cn(
@@ -119,4 +121,46 @@ function getBadgeVariantFromLabel(
   }
 
   return "secondary"
+}
+
+
+interface AppointmentListWrapperProps {
+  orgUid: string
+}
+export const AppointmentListWrapper = ({orgUid}:AppointmentListWrapperProps) => {
+  const [query, setQuery] = useState("");
+  const searchParams = useSearchParams()
+  const appointmentStatus = searchParams.get("_aptStatus")
+  
+  const {data:appointments} = useOrgAppointments({orgId: orgUid, status: appointmentStatus?.toUpperCase()})
+
+  const filteredAppointments = useMemo(() => {
+    const withFallbackAppointments = appointments ?? [];
+    if (!query) return withFallbackAppointments;
+    return withFallbackAppointments.filter((appointment) => {
+      return (
+        appointment.Requesters.some(requester => requester.email.toLowerCase().includes(query.toLowerCase())) ||
+        appointment.subject.toLowerCase().includes(query.toLowerCase()) ||
+        appointment.complaint?.toLowerCase().includes(query.toLowerCase())
+      );
+    });
+  },[appointments,query])
+
+  const updateQuery = (q: string) => {
+    setQuery(q);
+  }
+  
+  return (
+    <>
+      <div className="bg-background/95 p-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <form>
+          <div className="relative">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input placeholder="Search" className="pl-8" type="search" value={query} onChange={e => updateQuery(e.target.value)} />
+          </div>
+        </form>
+      </div>
+      <AppointmentList appointments={filteredAppointments} />
+    </>
+  )
 }

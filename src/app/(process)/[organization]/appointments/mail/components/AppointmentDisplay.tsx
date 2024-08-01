@@ -35,29 +35,36 @@ import { Badge } from "@components/ui/badge"
 import ConsultationRecordSheet from "../../components/ConsultationRecordSheet"
 import { SheetTrigger } from "@components/ui/sheet"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@components/ui/dropdown-menu"
-import { useParams } from "next/navigation"
+import { useParams, useSearchParams } from "next/navigation"
 import { useUser } from "@hooks/useUser";
 import { useOrgAppointment } from "@hooks/useAppointment";
+import PageLoading from "@components/PageLoading";
 
-interface AppointmentDisplayProps {
-  appointmentId: number
-  role: UserRoles,
-}
-
-export default function AppointmentDisplay({ appointmentId, role }: AppointmentDisplayProps) {
+export default function AppointmentDisplay() {
 
   const params = useParams()
+  const searchParams = useSearchParams()
   const organization = params?.organization as string
+  const appointmentId = parseInt(searchParams.get("_appointment") ?? "")
+  const role = searchParams.get("_role") as UserRoles
   
-  const {data: freshAppointment} = useOrgAppointment({
+  const {data: freshAppointment, isLoading: loadingAppointment} = useOrgAppointment({
     orgId: organization,
     appointmentId: appointmentId
   })
 
-  const {data: user} = useUser({email: freshAppointment?.Requesters[0].email})
+  const {data: user, isLoading: loadingUser} = useUser({email: freshAppointment?.Requesters[0].email})
   
-  if (!user) {
-    return <div className="p-8 text-center text-muted-foreground">No user found</div>
+
+  if (!appointmentId) {
+    return <div className="p-8 text-center text-muted-foreground">No appointment selected</div>
+  }
+
+  if (loadingAppointment || !freshAppointment) {
+    return <PageLoading label="Loading Appointment" />
+  };
+  if (loadingUser || !user) {
+    return <PageLoading label="Loading User" />
   };
   
   const appointmentToolsPerStatus: Record<AppointmentStatus, React.ReactNode> = {

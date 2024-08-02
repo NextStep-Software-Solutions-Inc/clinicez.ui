@@ -108,21 +108,13 @@ AppointmentList.displayName = "AppointmentList"
 function getBadgeVariantFromLabel(
   label: string
 ): ComponentProps<typeof Badge>["variant"] {
-  if (["initial"].includes(label.toLowerCase())) {
-    return "default"
-  }
-
-  if (["emergency"].includes(label.toLowerCase())) {
-    return "destructive"
-  }
-
-  if (["follow-up"].includes(label.toLowerCase())) {
-    return "outline"
-  }
-
-  return "secondary"
+  const badgeColors = {
+    initial: "default",
+    emergency: "destructive",
+    "follow-up": "outline",
+  } as const
+  return badgeColors[label.toLowerCase() as keyof typeof badgeColors] ?? "default"
 }
-
 
 interface AppointmentListWrapperProps {
   orgUid: string

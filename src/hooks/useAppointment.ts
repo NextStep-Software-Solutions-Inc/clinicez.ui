@@ -22,5 +22,5 @@ type UseOrgAppointment = {
 }
 export const useOrgAppointment = ({orgId, appointmentId}:UseOrgAppointment) => {
   const fetcher = (...args: any) => self.get<GetAppointment>(args)
-  return useSWR(`/api/organizations/${orgId}/appointments/${appointmentId}`, fetcher)
+  return useSWR(() => !!appointmentId ? `/api/organizations/${orgId}/appointments/${appointmentId}` : null, fetcher)
 }

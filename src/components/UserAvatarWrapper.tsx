@@ -9,6 +9,7 @@ import UserAvatarDropdown from "./UserAvatarDropdown";
 import Suspend from "./Suspend";
 import { Skeleton } from "./ui/skeleton";
 import { getCachedSession } from "@actions/session.action";
+import LogoutLink from "./LogoutLink";
 
 export default async function UserAvatarWrapper() {
   const session = await getCachedSession();
@@ -49,14 +50,9 @@ export default async function UserAvatarWrapper() {
           <AdminConsoleLink />
         </Suspend>
         <DropdownMenuSeparator />
-        <a href="/api/auth/logout">
-          <DropdownMenuItem>
-            <LogOut className="mr-2 h-4 w-4" />
-            Log out
-            {/* <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut> */}
-          </DropdownMenuItem>
-        </a>
+        <LogoutLink/>
       </UserAvatarDropdown>
     </Suspend>
   );
 }
+

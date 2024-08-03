@@ -12,6 +12,7 @@ import { revalidatePath } from "@actions/cache.action";
 import ConditionalRender from "@components/utils/ConditionalRender";
 import { useState } from "react";
 import Image from "next/image";
+import { compressImageAsync } from "@lib/image-compression";
 
 interface PictureProps {
   user: User;
@@ -26,29 +27,41 @@ export const Picture = ({ user, readOnly = true }: PictureProps) => {
   }
 
   const action = async (formData: FormData) => {
+    // Add directory to file path
     formData.append("directory", user.userId);
-    toast.promise(uploadMediaAction(formData), {
-      loading: "Uploading...",
-      success: ({url}) => {
-        toast.promise(updateUserAction(user.userId, { picture: url }), {
-          loading: "Saving...",
-          success: () => {
-            revalidatePath(`/user/${user.userId}/phr`, "page");
-            return "Saved successfully";
-          },
-          error: "Uploaded to server but failed to save in database"
-        })
-        return "Uploaded successfully";
-      },
-      error: "Failed to upload"
-    });
+
+    try {
+      // Compress image before uploading
+      toast.loading("Compressing...");
+      const compressedFile = await compressImageAsync(formData.get("media") as File);
+      formData.set("media", compressedFile);
+      toast.dismiss();
+ 
+ 
+      // Upload media to server
+      toast.loading("Uploading...");
+      const { url } = await uploadMediaAction(formData);
+      toast.dismiss();
+ 
+      // Update user picture
+      toast.loading("Saving...");
+      await updateUserAction(user.userId, { picture: url });
+      revalidatePath(`/user/${user.userId}/phr`, "page");
+      toast.dismiss();
+
+      toast.success("Saved successfully");
+
+    } catch (error) {
+      console.error("Something went wrong:", error);
+      toast.error("Something went wrong while processing the image");
+    }
   }
 
   return (
     <div className="flex flex-wrap items-center gap-5">
       <Avatar className="rounded w-48 h-48">
         <Image fill className="object-cover" src={user?.picture || "https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png"} alt=""/>
-        <AvatarFallback> ME</AvatarFallback>
+        <AvatarFallback>{user.firstName?.charAt(0)}{user.lastName?.charAt(0)}</AvatarFallback>
       </Avatar>
       <ConditionalRender condition={!readOnly}>
         <form action={action}>

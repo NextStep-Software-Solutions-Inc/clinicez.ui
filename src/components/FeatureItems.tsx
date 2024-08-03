@@ -44,19 +44,20 @@ const MotionCard = motion(Card)
 export default function FeatureItems() {
   return (
     <motion.ul 
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ ease: "easeInOut", duration: 0.5 }}
+      initial="initial"
+      whileInView="inView"
+      transition={{ staggerChildren: 0.3, duration: 2, type:"spring", bounce:0.5 }}
       className="p-2 container flex justify-center flex-wrap ~gap-5/16 text-center">
       <Each
         of={topFeature}
-        render={(feature) => (
+        render={(feature, i) => (
           <MotionCard 
-            initial={{ opacity: 0, y: 100 }}
-            transition={{ ease: "easeIn", duration: 0.1 }}
-            whileInView={{ opacity: 1, y: 0 }}
+            variants={{
+              initial: { opacity: 0, y: "100%" },
+              inView: { opacity: 1, y: 0  }}
+            }
             whileHover={{ scale: 1.1, zIndex: 10}}
-            className="relative basis-[20rem] flex-grow shadow-xl transition-all rounded-2xl">
+            className="relative basis-[20rem] flex-grow shadow-xl rounded-2xl">
             <CardHeader>
               <CardTitle className="~text-sm/xl uppercase tracking-wider text-primary">{feature.name}</CardTitle>
               <CardDescription className="~text-xs/sm">{feature.description}</CardDescription>
@@ -80,13 +81,26 @@ export const HeroTitle = ({authenticated = false}) => {
   return (
     <motion.div
       animate={{ opacity: 1, x: 0 }}
-      initial={{ opacity: 0, x: -100 }}
-      transition={{ ease: "easeInOut", duration: 0.5 }}
+      initial={{ opacity: 0, x: "-100%" }}
+      transition={{ duration: 2, type:"spring", bounce:0.5 }}
     >
       <p className="text-center md:text-left ~text-xs/base font-semibold tracking-wider text-gray-500 uppercase">Optimized Healthcare Management System</p>
-      <h1 className="text-center md:text-left ~text-2xl/6xl mt-4 font-bold lg:mt-8 text-primary">
-        Welcome to Clinic EZ
-      </h1>
+      <motion.h1 
+        initial="initial"
+        animate="animate"
+        transition={{ staggerChildren: 0.15 }}
+        className="text-center md:text-left ~text-2xl/6xl mt-4 font-bold lg:mt-8 text-primary overflow-hidden">
+        Welcome to {
+          "Clinic".split("").map((l, index) => (
+            <motion.span 
+              variants={{
+                initial: { y:"-100%"},
+                animate:{ y: 0 }
+              }}
+              key={index} className="inline-block">{l}</motion.span>
+          ))
+        } EZ
+      </motion.h1>
       <p className="relative z-10 text-center md:text-left ~text-sm/base mt-4 text-gray-600 lg:mt-8">
         The innovative platform revolutionizing healthcare connections.<br/>Our user-friendly interface empowers healthcare providers to streamline appointment management, while giving patients effortless access to book consultations with their preferred professionals. Experience the future of healthcare with Clinic EZ — where convenience meets care.
       </p>
@@ -94,7 +108,7 @@ export const HeroTitle = ({authenticated = false}) => {
         <div className="flex md:block items-center flex-col">
           <Link href="/api/auth/login">
             <Button size="lg" className="rounded-full mt-8 mx-auto ~text-xs/sm ~h-8/10">
-                        Join for free
+              Join for free
               <ArrowRightCircle className="w-4 h-4 ml-2" />
             </Button>
           </Link>
@@ -116,8 +130,8 @@ export const HeroImage = () => {
   return (
     <motion.div
       animate={{ opacity: 1, x: 0 }}
-      initial={{ opacity: 0, x: 100 }}
-      transition={{ ease: "easeInOut", duration: 0.5 }}
+      initial={{ opacity: 0, x: "100%" }}
+      transition={{ duration: 2, type:"spring", bounce:0.5 }}
     
       className="absolute bottom-0 right-0 ~w-[30rem]/[40rem]">
       <motion.div className="bg-clip-content bg-teal-500 rounded-t-full absolute bottom-0 right-0 w-full h-1/2"></motion.div>

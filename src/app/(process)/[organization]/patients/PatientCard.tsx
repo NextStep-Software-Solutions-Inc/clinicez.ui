@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import ConditionalRender from "@components/utils/ConditionalRender";
 import { differenceInCalendarYears, format } from "date-fns";
 import { PatientsType } from "./PatientList";
+import Image from "next/image";
 
 interface PatientCardProps {
     patient: PatientsType[number] & {
@@ -36,7 +37,7 @@ export const PatientCard = async ({patient}: PatientCardProps) => {
       <CardContent>
         <div className="flex gap-3">
           <Avatar className="rounded w-40 h-40">
-            <AvatarImage className="object-cover" src={picture}alt="John Doe" />
+            <Image fill className="object-cover" src={picture} alt="John Doe" />
             <AvatarFallback>{nameInitials}</AvatarFallback>
           </Avatar>
           <div className="flex-1 flex flex-col justify-between">

@@ -10,6 +10,8 @@ import SyncToken from "@components/SyncToken";
 import { getCachedSession } from "@actions/session.action";
 import BypassAutoplay from "@components/BypassAutoplay";
 import dynamic from "next/dynamic";
+import { Analytics } from "@vercel/analytics/react"
+
 import "@styles/globals.css";
 const Hotjar = dynamic(() => import("@components/Hotjar"), { ssr: true });
 const montserrat = Montserrat({ subsets: ["latin"] });
@@ -40,6 +42,7 @@ export default async function RootLayout({children}:Props) {
             <UserProvider>
               {children}
               <SpeedInsights />
+              <Analytics />
               <SonnerToaster />
               <Toaster />
             </UserProvider>

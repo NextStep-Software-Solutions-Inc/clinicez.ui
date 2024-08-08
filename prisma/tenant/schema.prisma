@@ -40,6 +40,13 @@ model AppointmentAttribute {
   maxDuration        Int             @default(30)
   modeId             Int
   typeId             Int
+  receivedAt         DateTime?
+  receivedBy         String?
+  rejectedAt         DateTime?
+  rejectedBy         String?
+  rejectedReason     String?
+  approvedAt         DateTime?
+  approvedBy         String?
   status             String          @default("PENDING")
   serviceId          Int?
   preferredAppointee String?

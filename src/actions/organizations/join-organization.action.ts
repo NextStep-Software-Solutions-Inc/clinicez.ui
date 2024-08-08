@@ -1,7 +1,6 @@
 "use server";
 
 import prisma from "@lib/prisma-common";
-import { Prisma } from "@prisma/common/client";
 import fs from 'fs/promises';
 import { sendMail } from '../email.action';
 import path from 'path';

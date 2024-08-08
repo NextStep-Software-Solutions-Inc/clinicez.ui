@@ -1,33 +1,14 @@
 "use server";
+import 'server-only'
 
 import { delay } from "@lib/wait";
 import prismaTenant from "@lib/prisma-tenant";
-import { AppointmentStatus, appointmentList } from "@public/json/appointment-list";
-import 'server-only'
-
-export type AppointmentsCountsType = Awaited<ReturnType<typeof getAppointmentCounts>>;
-export const getAppointmentCounts = async () => {
-  const appointmentsCounts = {
-    all: 0,
-    pending: 0,
-    accepted: 0,
-    declined: 0,
-    rejected: 0,
-    received: 0,
-    routed: 0,
-    reschedule: 0,
-  }
-  appointmentList.forEach((item) => {
-    // count each status and increment the count
-    appointmentsCounts[item.status as keyof typeof appointmentsCounts ]++;
-    appointmentsCounts.all++;
-  });
-  return appointmentsCounts;
-}
+import { RoutedAptStatus, AppointmentStatus } from "@public/json/appointment-list";
 
 export type GetAppointmentFilter = {
   orgUid?: string;
   status?: AppointmentStatus;
+  routedAptStatus?: RoutedAptStatus
   appointmentId?: number
 }
 
@@ -66,7 +47,7 @@ export const createAppointmentAction = async ({orgUid, subject, complaint, reque
 
 export type GetAppointments = Awaited<ReturnType<typeof getAppointmentsAction>>;
 export const getAppointmentsAction = async (filter?: GetAppointmentFilter) => {
-  const { orgUid, status } = filter || {};
+  const { orgUid, status, routedAptStatus } = filter || {};
 
   const appointments = await prismaTenant.appointment.findMany({
     orderBy: {
@@ -74,7 +55,14 @@ export const getAppointmentsAction = async (filter?: GetAppointmentFilter) => {
     },
     where: {
       ...status ? { AppointmentAttribute: {status} } : {},
-      ...orgUid ? { orgUid } : {}
+      ...orgUid ? { orgUid } : {},
+      ...routedAptStatus ? {
+        AppointmentRouting: {
+          some: {
+            status: routedAptStatus
+          }
+        }
+      } : {}
     },
     select: {
       id: true,
@@ -153,6 +141,43 @@ export const getAppointmentAction = async (id: number) => {
   return appointment;
 }
 
+export type GetAppointmentCounts = Awaited<ReturnType<typeof getAppointmentCountsAction>>;
+export const getAppointmentCountsAction = async (orgUid: string) => {
+  const counts = await prismaTenant.appointmentAttribute.groupBy({
+    by: ['status'],
+    where: {
+      Appointment: {
+        orgUid
+      }
+    }, 
+    _count: true
+  });
+
+  const countsMap = counts.reduce((acc, count) => {
+    acc[count.status] = count._count
+    return acc;
+  }, {} as Record<string, number>)
+  return countsMap;
+}
+
+export const getRoutedAppointmentCountsAction = async (orgUid: string) => {
+  const counts = await prismaTenant.appointmentRouting.groupBy({
+    by: ['status'],
+    where: {
+      Appointment: {
+        orgUid
+      }
+    }, 
+    _count: true
+  });
+
+  const countsMap = counts.reduce((acc, count) => {
+    acc[count.status] = count._count
+    return acc;
+  }, {} as Record<string, number>)
+  return countsMap;
+}
+
 export const sendMsgAction = async(formData: FormData) => {
   await new Promise((resolve) => setTimeout(resolve, 1000));
   console.log(Object.fromEntries(formData));
@@ -165,23 +190,8 @@ export const acceptAppointmentAction = async (formData: FormData) => {
   return true;
 }
 
-export const rejectAppointmentAction = async (formData: FormData) => {
-  console.log("Rejecting appointment...", Object.fromEntries(formData));
-  await delay(1000);
-  return true;
-}
 
-export const receiveAppointmentAction = async (formData: FormData) => {
-  console.log("Receiving appointment...");
-  await delay(1000);
-  return true;
-}
 
-export const assignAppointmentAction = async (formData: FormData) => {
-  console.log("Assigning appointment...", Object.fromEntries(formData));
-  await delay(1000);
-  return true;
-}
 
 export const rescheduleAppointmentAction = async (formData: FormData) => {
   console.log("Reschedule appointment...", Object.fromEntries(formData));

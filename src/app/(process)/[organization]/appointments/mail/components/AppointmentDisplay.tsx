@@ -30,7 +30,6 @@ import { AppointmentStatus } from "@public/json/appointment-list"
 import AssignAppointment from "../../components/AssignAppointment"
 import RescheduleAppointment from "../../components/RescheduleAppointment"
 import DeclineAppointmentAssignment from "../../components/DeclineAppointmentAssignment"
-import { UserRoles } from "./AppointmentPanel"
 import { Badge } from "@components/ui/badge"
 import ConsultationRecordSheet from "../../components/ConsultationRecordSheet"
 import { SheetTrigger } from "@components/ui/sheet"
@@ -39,6 +38,8 @@ import { useParams, useSearchParams } from "next/navigation"
 import { useUser } from "@hooks/useUser";
 import { useOrgAppointment } from "@hooks/useAppointment";
 import PageLoading from "@components/PageLoading";
+import { revalidatePath } from "@actions/cache.action";
+import { mutate } from "swr";
 
 export default function AppointmentDisplay() {
 
@@ -46,15 +47,20 @@ export default function AppointmentDisplay() {
   const searchParams = useSearchParams()
   const organization = params?.organization as string
   const appointmentId = parseInt(searchParams.get("_appointment") ?? "")
-  const role = searchParams.get("_role") as UserRoles
+  const role = searchParams.get("_role")
   
   const {data: freshAppointment, isLoading: loadingAppointment} = useOrgAppointment({
     orgId: organization,
     appointmentId: appointmentId
   })
 
+  const revalidate = async () => {
+    revalidatePath(`${organization}/appointments`,  "page")
+    mutate((key) =>  typeof key === 'string' && key.startsWith(`/api/organizations/${organization}/appointments`), undefined, {
+      revalidate:true
+    })
+  }
   const {data: user, isLoading: loadingUser} = useUser({email: freshAppointment?.Requesters[0].email})
-  
 
   if (!appointmentId) {
     return <div className="p-8 text-center text-muted-foreground">No appointment selected</div>
@@ -67,37 +73,82 @@ export default function AppointmentDisplay() {
     return <PageLoading label="Loading User" />
   };
   
-  const appointmentToolsPerStatus: Record<AppointmentStatus, React.ReactNode> = {
-    all: (<></>),
-    pending: 
-      <>
-        {["doctor", "nurse"].includes(role) && (
-          <>
-            <AcceptAppointmentAssignment disabled={!freshAppointment}/> 
-            <DeclineAppointmentAssignment disabled={!freshAppointment}/> 
-          </>
-        )}
-        {["receptionist"].includes(role) && (
-          <>
-            <ReceiveAppointment disabled={!freshAppointment}/>
-            <RejectAppointment disabled={!freshAppointment}/>  
-          </>
-        )}
-      </>,
-    accepted: (
-      <>
-        {["doctor", "nurse"].includes(role) && <CreateConsultationRecordModal disabled={!freshAppointment} subject={freshAppointment?.subject ?? ""}/>}
-      </>
-    ),
-    rejected: (<></>),
-    received: (
-      <>
-        <AssignAppointment disabled={!freshAppointment} />
-      </>
-    ),
-    routed: (<></>),
-    reschedule: (<></>)
-  }
+  type AppointmentActions = "accept"|"decline"|"approve"|"receive"| "reject" | "assign" | "create-consultation-notes"| "reschedule"
+  type AppointmentStatusTools = {
+    action: AppointmentActions
+    roles: string[]
+    permissions?: string[],
+    appointmentStatuses: string[],
+    component: React.ReactNode
+  }[]
+  
+  const appointmentTools: AppointmentStatusTools = [
+    {
+      action:"accept",
+      roles: ["admin", "doctor", "nurse"],
+      permissions: [],
+      appointmentStatuses: ["all", "routed"],
+      component: <AcceptAppointmentAssignment disabled={!freshAppointment} />
+    },
+    {
+      action:"decline",
+      roles: ["admin", "doctor", "nurse"],
+      permissions: [],
+      appointmentStatuses: ["all", "routed"],
+      component: <DeclineAppointmentAssignment disabled={!freshAppointment} />
+    },
+    {
+      action:"receive",
+      roles: ["admin", ],
+      permissions: [],
+      appointmentStatuses: ["all", "pending"],
+      component: <ReceiveAppointment 
+        appointmentId={freshAppointment.id}
+        onReceived={revalidate} 
+        disabled={!freshAppointment}
+      />
+    },
+    {
+      action:"reject",
+      roles: ["admin", ],
+      permissions: [],
+      appointmentStatuses: ["all", "accepted", "pending"],
+      component: (
+        <RejectAppointment 
+          appointmentId={freshAppointment.id}
+          onRejected={revalidate} 
+          disabled={!freshAppointment}
+        /> 
+      )
+    },
+    {
+      action:"create-consultation-notes",
+      roles: ["admin", "doctor", "nurse"],
+      permissions: [],
+      appointmentStatuses: [],
+      component: <CreateConsultationRecordModal disabled={!freshAppointment} subject={freshAppointment?.subject ?? ""}/>
+    },
+    {
+      action:"assign",
+      roles: ["admin"],
+      permissions: [],
+      appointmentStatuses: ["received"],
+      component: (
+        <AssignAppointment 
+          appointmentId={freshAppointment.id}
+          onAssigned={revalidate} 
+          disabled={!freshAppointment}
+        />
+      )
+    },
+    {
+      action:"reschedule",
+      roles: ["admin"],
+      permissions: [],
+      appointmentStatuses: ["received"],
+      component: <RescheduleAppointment bookingDateTime={new Date()} disabled={!freshAppointment} />
+    }
+  ]
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center p-2">
@@ -105,9 +156,13 @@ export default function AppointmentDisplay() {
           <Badge variant="default" className="capitalize">{freshAppointment?.AppointmentAttribute?.status}</Badge>
           {/* <RescheduleAppointment disabled={!freshAppointment} bookingDateTime={freshAppointment?.bookingDateTime? new Date(freshAppointment?.bookingDateTime): new Date()}/> */}
           <Separator orientation="vertical" className="mx-1 h-6" />
-          {
-            appointmentToolsPerStatus[freshAppointment?.AppointmentAttribute?.status as AppointmentStatus] ?? []
-          }
+          <Each
+            of={appointmentTools.filter((tool) => {
+              const capable = tool.roles.includes(role ?? "") && tool.appointmentStatuses.includes(freshAppointment.AppointmentAttribute?.status.toLocaleLowerCase() ?? "")
+              return capable
+            })}
+            render={(tool) => tool.component}
+          />
         </div>
         <div className="ml-auto flex items-center gap-2">
             

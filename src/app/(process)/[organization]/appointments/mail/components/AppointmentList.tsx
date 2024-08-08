@@ -123,8 +123,9 @@ export const AppointmentListWrapper = ({orgUid}:AppointmentListWrapperProps) => 
   const [query, setQuery] = useState("");
   const searchParams = useSearchParams()
   const appointmentStatus = searchParams.get("_aptStatus")
+  const routedAptStatus = searchParams.get("_routedAptStatus")
   
-  const {data:appointments} = useOrgAppointments({orgId: orgUid, status: appointmentStatus?.toUpperCase()})
+  const {data:appointments} = useOrgAppointments({orgId: orgUid, status: appointmentStatus?.toUpperCase(), routedAptStatus: routedAptStatus?.toUpperCase()})
 
   const filteredAppointments = useMemo(() => {
     const withFallbackAppointments = appointments ?? [];

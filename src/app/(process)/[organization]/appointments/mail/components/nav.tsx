@@ -10,17 +10,21 @@ import {
 } from "@components/ui/tooltip"
 import Each from "@components/utils/Each"
 
-interface NavProps {
+export interface AppointmentStatusNavProps {
   isCollapsed: boolean
   links: {
-    title: string
-    label?: string
+    label: string
+    badge: string
+    params: {
+      key: string
+      value: string | null
+    }[]
     icon: LucideIcon
     variant: "default" | "ghost"
   }[]
 }
 
-export function Nav({ links, isCollapsed }: NavProps) {
+export function AppointmentStatusNav({ links, isCollapsed }: AppointmentStatusNavProps) {
 
   const pushSearchParams = (params: {key:string, value:string | null}[]) => {
     const searchParams = new URLSearchParams(window.location.search);
@@ -44,15 +48,7 @@ export function Nav({ links, isCollapsed }: NavProps) {
               <Tooltip delayDuration={0}>
                 <TooltipTrigger asChild>
                   <div
-                    onClick={() => pushSearchParams([
-                      {
-                        key: "_aptStatus",
-                        value: link.title.toLowerCase()
-                      }, {
-                        key: "_appointment",
-                        value: null
-                      }
-                    ])}
+                    onClick={() => pushSearchParams(link.params)}
                     className={cn(
                       buttonVariants({ variant: link.variant, size: "icon" }),
                       "h-9 w-9",
@@ -61,29 +57,21 @@ export function Nav({ links, isCollapsed }: NavProps) {
                     )}
                   >
                     <link.icon className="h-4 w-4" />
-                    <span className="sr-only">{link.title}</span>
+                    <span className="sr-only">{link.label}</span>
                   </div>
                 </TooltipTrigger>
                 <TooltipContent side="right" className="flex items-center gap-4">
-                  {link.title}
-                  {link.label && (
+                  {link.label}
+                  {link.badge && (
                     <span className="ml-auto text-muted-foreground">
-                      {link.label}
+                      {link.badge}
                     </span>
                   )}
                 </TooltipContent>
               </Tooltip>
             ) : (
               <div
-                onClick={() => pushSearchParams([
-                  {
-                    key: "_aptStatus",
-                    value: link.title.toLowerCase()
-                  }, {
-                    key: "_appointment",
-                    value: null
-                  }
-                ])}
+                onClick={() => pushSearchParams(link.params)}
                 className={cn(
                   buttonVariants({ variant: link.variant, size: "sm" }),
                   link.variant === "default" &&
@@ -92,8 +80,8 @@ export function Nav({ links, isCollapsed }: NavProps) {
                 )}
               >
                 <link.icon className="mr-2 h-4 w-4" />
-                {link.title}
-                {link.label && (
+                {link.label}
+                {link.badge && (
                   <span
                     className={cn(
                       "ml-auto",
@@ -101,7 +89,7 @@ export function Nav({ links, isCollapsed }: NavProps) {
                         "text-background dark:text-white"
                     )}
                   >
-                    {link.label}
+                    {link.badge}
                   </span>
                 )}
               </div>

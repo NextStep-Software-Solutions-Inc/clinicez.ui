@@ -22,6 +22,11 @@ export const getHPsAction = cache(async (filters?:HPFilters) => {
       ...(isPublished && { isPublished })
     },
     include: {
+      User: {
+        "select": {
+          email: true,
+        }
+      },
       DoctorProfile: {
         select: {
           picture: true,

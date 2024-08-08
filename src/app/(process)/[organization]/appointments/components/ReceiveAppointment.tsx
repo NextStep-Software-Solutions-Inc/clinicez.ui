@@ -1,23 +1,35 @@
 "use client";
 
-import { receiveAppointmentAction } from "@actions/appointments/appointments.action";
+import { receiveAppointmentAction } from "@actions/appointments/appointment-attribute.action";
+import { revalidatePath } from "@actions/cache.action";
 import ActionButton from "@components/ActionButton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@components/ui/tooltip";
 import { MailPlus } from "lucide-react";
-import { useFormState } from "react-dom";
 import { toast } from "sonner";
 
+interface ReceiveAppointmentProps {
+  disabled?: boolean;
+  appointmentId: number;
+  onReceived?: () => void;
+}
+export default function ReceiveAppointment({disabled = false, appointmentId, onReceived}: ReceiveAppointmentProps) {
+  
+  const action = async (formData: FormData) => {
+    formData.append("status", "RECEIVED");
+    formData.append("appointmentId", appointmentId.toString());
 
-const actionWrapper = async (prev: any, formData: FormData) => {
-  const res = await receiveAppointmentAction(formData);
-  if (res) {
-    toast.success("Appointment received successfully.");
-  }
-  return res;
-};
-
-export default function ReceiveAppointment({disabled = false}: {disabled?: boolean}) {
-  const [state, action] = useFormState(actionWrapper, false)
+    toast.promise(receiveAppointmentAction(formData), {
+      loading: "Receiving appointment...",
+      success: (res) => {
+        if (res) {
+          onReceived?.();
+          return "Appointment received.";
+        }
+        return "Something went wrong.";
+      },
+      error: "Failed to receive appointment.",
+    });
+  };
 
   return (
     <Tooltip>
@@ -25,11 +37,11 @@ export default function ReceiveAppointment({disabled = false}: {disabled?: boole
         <form action={action}>
           <ActionButton variant="ghost" size="icon" disabled={disabled}>
             <MailPlus className="h-4 w-4" />
-            <span className="sr-only">Receive</span>
+            <span className="sr-only">Receive Appointment</span>
           </ActionButton>
         </form>
       </TooltipTrigger>
-      <TooltipContent>Receive</TooltipContent>
+      <TooltipContent>Receive Appointment</TooltipContent>
     </Tooltip>
   );
 }

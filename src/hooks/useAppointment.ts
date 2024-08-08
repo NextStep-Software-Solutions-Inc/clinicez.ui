@@ -6,12 +6,14 @@ import useSWR from "swr"
 type UseOrgAppointmentsFilter = {
     orgId: string,
     status?: string | null
+    routedAptStatus?: string | null
 }
 export const useOrgAppointments = (filter: UseOrgAppointmentsFilter) => {
-  const { orgId, status } = filter
+  const { orgId, status, routedAptStatus } = filter
   const fetcher = (...args: any) => self.get<GetAppointments>(args)
   const searchParams = new URLSearchParams()
   if(status) searchParams.set('status', status)
+  if(routedAptStatus) searchParams.set('routedAptStatus', routedAptStatus)
   return useSWR(`/api/organizations/${orgId}/appointments?${searchParams.toString()}`, fetcher)
 }
 

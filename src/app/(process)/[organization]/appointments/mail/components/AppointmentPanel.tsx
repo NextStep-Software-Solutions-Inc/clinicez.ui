@@ -4,6 +4,7 @@ import * as React from "react"
 import {
   Clock,
   Inbox,
+  type LucideIcon,
   MailCheck,
   MailPlus,
   MailX,
@@ -27,111 +28,124 @@ import {
   TabsTrigger,
 } from "@components/ui/tabs"
 import { TooltipProvider } from "@components/ui/tooltip"
-import { AppointmentList, AppointmentListWrapper } from "./AppointmentList"
-import { Nav } from "./nav"
+import {  AppointmentListWrapper } from "./AppointmentList"
+import { AppointmentStatusNav, AppointmentStatusNavProps } from "./nav"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
-import { GetAppointments, type AppointmentsCountsType } from "@actions/appointments/appointments.action"
 import Switcher from "@components/dashboard/Switcher"
-import { User } from "@prisma/common/client"
 import { useOrgRoles } from "@hooks/useOrgRole"
 import { useUser } from "@auth0/nextjs-auth0/client"
-import { useOrgAppointments } from "@hooks/useAppointment"
 
-export type UserRoles = "student" | "faculty" | "admin" | "receptionist" | "doctor" | "nurse"
 export type UserSwitcherType = {
   label: string
-  role: UserRoles
+  role: string
   icon: React.ReactNode
 }
 
-const icons = {
+const icons: Record<string, LucideIcon> = {
   all: Inbox,
   pending: Inbox,
   received: MailPlus,
-  reschedule: Clock,
+  rescheduled: Clock,
   accepted: MailCheck,
   declined: MailX,
   rejected: Trash2,
   routed: Route,
 };
 
-const rolesLinks = {
-  student: ["all", "pending", "received", "accepted", "declined", "rejected", "reschedule"],
-  faculty: ["all", "pending", "received", "accepted", "declined", "rejected", "reschedule"],
-  admin: ["pending", "received", "accepted", "declined", "rejected", "routed", "reschedule"],
-  receptionist: ["pending", "received", "rejected", "routed", "reschedule"],
-  doctor: ["pending", "accepted", "declined", "reschedule"],
-  nurse: ["pending", "accepted", "declined", "reschedule"],
+const appointmentStatusesWithRoles = {
+  all: ["student", "faculty", "admin", "receptionist", "doctor", "nurse"],
+  pending: ["student", "faculty", "admin", "receptionist"],
+  received: ["admin", "receptionist"],
+  rejected: ["student", "faculty", "admin", "receptionist"],
+  rescheduled: ["student", "faculty", "admin", "receptionist", "doctor", "nurse"],
+  routed: ["student", "faculty", "admin", "receptionist", "doctor", "nurse"],
 };
+
+const routedAppointmentStatusesWithRoles = {
+  pending: ["student", "faculty", "admin", "receptionist", "doctor", "nurse"],
+  accepted: ["doctor", "nurse"],
+  declined: ["doctor", "nurse"],
+}
+
+const createStatusLinks = (
+  statusesWithRoles: Record<string, string[]>,
+  statusCounts: Record<string, number> | undefined,
+  currentStatus: string | null,
+  params: (status: string) => { key: string, value: string | null }[]
+) => {
+  return Object.entries(statusesWithRoles).reduce((acc, [status, roles]) => {
+    roles.forEach(role => {
+      if (!acc[role]) acc[role] = [];
+      acc[role].push({
+        label: `${status.charAt(0).toLocaleUpperCase()}${status.slice(1)}`,
+        badge: statusCounts?.[status.toLocaleUpperCase()]?.toString() ?? "0",
+        params: params(status),
+        icon: icons[status],
+        variant: currentStatus === status ? "default" : "ghost",
+      });
+    });
+    return acc;
+  }, {} as Record<string, AppointmentStatusNavProps["links"]>);
+};
+
 interface AppointmentPanelProps {
-  appointmentsCounts: AppointmentsCountsType
-  appointments: (GetAppointments[number] & {
-    patient?: User
-  })[]
+  appointmentStatusCounts?: Record<string, number>
+  routedAppointmentStatusCounts?: Record<string, number>
   defaultLayout: number[] | undefined
   defaultCollapsed?: boolean
   navCollapsedSize: number
   children: React.ReactNode
 }
 
-
 export default function AppointmentPanel({
-  appointmentsCounts,
-  appointments,
+  appointmentStatusCounts,
+  routedAppointmentStatusCounts,
   defaultLayout = [265, 440, 655],
   defaultCollapsed = false,
   navCollapsedSize,
   children
 }: AppointmentPanelProps) {
   const [isCollapsed, setIsCollapsed] = React.useState(defaultCollapsed)
-
   const searchParams = useSearchParams();
   const params = useParams();
   const router = useRouter();
   const user = useUser();
   const userId = user?.user?.sub;
   
-  const type = searchParams.get("_type");
-  const role = searchParams.get("_role") as UserRoles;
+  const aptStatus = searchParams.get("_aptStatus");
+  const routedAptStatus = searchParams.get("_routedAptStatus");
+  const role = searchParams.get("_role")
   const organization = params.organization as string;
   const {data: orgRoles} = useOrgRoles(organization, {userId})
 
-  const roles = (orgRoles ?? [])?.map((role) => ({
+  const roles = React.useMemo(() => (orgRoles ?? [])?.map((role) => ({
     label: role.name,
     value: role.name.toLowerCase(),
     icon: UserIcon,
-  }))
+  })), [orgRoles])
+
+  const appointmentStatusLinks = React.useMemo(() => createStatusLinks(
+    appointmentStatusesWithRoles,
+    appointmentStatusCounts,
+    aptStatus,
+    (status) => [{ key: "_aptStatus", value: status }, { key: "_routedAptStatus", value: null }, {key: "_appointment", value: null}]
+  ), [appointmentStatusCounts, aptStatus]);
   
- 
-  const isDefaultVariant = (activeTab: string): "default" | "ghost" => {
-    return type === activeTab ? "default" : "ghost"
-  }
-  const link = (title: string, badge: string, icon: any, variant: string) => ({
-    title,
-    label: badge,
-    icon,
-    variant: isDefaultVariant(variant),
-  });
+  const routerAppointmentStatusLinks = React.useMemo(() => createStatusLinks(
+    routedAppointmentStatusesWithRoles,
+    routedAppointmentStatusCounts,
+    routedAptStatus,
 
-  const sidebarLinksPerRole = Object.fromEntries(
-    Object.entries(rolesLinks).map(([role, statuses]) => [
-      role,
-      statuses.map(status => link(
-        status.charAt(0).toUpperCase() + status.slice(1),
-        appointmentsCounts?.[status as keyof typeof appointmentsCounts].toString(),
-        icons[status as keyof typeof icons],
-        status
-      )),
-    ])
-  );
+    (status) => [{ key: "_routedAptStatus", value: status }, { key: "_aptStatus", value: "routed" }, {key: "_appointment", value: null}]
+  ), [routedAppointmentStatusCounts, routedAptStatus]);
 
-  const changeRole = (role: string) => {
+  const changeRole = React.useCallback((role: string) => {
     if(window && role) {
       const searchParams = new URLSearchParams(window.location.search);
       searchParams.set("_role", role);
       router.push(`?${searchParams.toString()}`);
     }
-  }
+  }, [router])
   
   return (
     <TooltipProvider delayDuration={0}>
@@ -174,24 +188,34 @@ export default function AppointmentPanel({
             )}
           >
             <Switcher
-              value={role}
+              value={role ?? ""}
               isCollapsed={isCollapsed}
               onSwitch={changeRole}
               options={roles}
             />
           </div>
           <Separator />
-          <Nav
+          <div className="px-5 pt-2 font-semibold">
+            Appointments
+          </div>
+          <AppointmentStatusNav
             isCollapsed={isCollapsed}
-            links={sidebarLinksPerRole[role as keyof typeof sidebarLinksPerRole] ?? []}
+            links={appointmentStatusLinks[role as keyof typeof appointmentStatusLinks] ?? []}
           />
           <Separator />
+          <div className="px-5 pt-2 font-semibold">
+            Routed Appointments
+          </div>
+          <AppointmentStatusNav
+            isCollapsed={isCollapsed}
+            links={routerAppointmentStatusLinks[role as keyof typeof routerAppointmentStatusLinks] ?? []}
+          />
         </ResizablePanel>
         <ResizableHandle withHandle />
         <ResizablePanel className="" defaultSize={defaultLayout[1]} minSize={30}>
           <Tabs defaultValue="all" className="flex h-full flex-col">
             <div className="flex items-center px-4 py-2">
-              <h1 className="text-xl font-bold capitalize">{type}</h1>
+              <h1 className="text-xl font-bold capitalize">{aptStatus}</h1>
               <TabsList className="ml-auto">
                 <TabsTrigger
                   value="all"

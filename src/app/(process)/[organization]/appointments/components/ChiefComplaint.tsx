@@ -5,7 +5,6 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from "@components/ui/input";
 import { Textarea } from "@components/ui/textarea";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useLocalStorage } from "@hooks/useLocalStorage";
 import { bookAppointmentAtom } from "@state/book-appointment";
 import { useAtom } from "jotai";
 import React from "react";

@@ -2,13 +2,14 @@
 
 import { createAppointmentAction } from "@actions/appointments/appointments.action";
 import BackSubmitAndNext from "@components/SubmitAndNext";
-import { useLocalStorage } from "@hooks/useLocalStorage";
 import React, { FormEvent } from "react";
 import { toast } from "sonner";
-import { BookAppointmentForm } from "./FilterForm";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import useSound from "use-sound";
 import { useOrgAppointments } from "@hooks/useAppointment";
+import { useAtom } from "jotai";
+import { bookAppointmentAtom } from "@state/book-appointment";
+import { useParams } from "next/navigation";
 
 interface ReviewBookingProps {
     nextStep?: () => void;
@@ -20,17 +21,16 @@ interface ReviewBookingProps {
 }
 
 export default function ReviewBooking({ nextStep, prevStep, isLastStep, isFirstStep, setComplete, startOver }: ReviewBookingProps) {
-  const [bookAppointmentForm, setBookAppointmentForm] = useLocalStorage<BookAppointmentForm>("book-appointment-form")
+  const [bookAppointmentForm, setBookAppointmentForm] = useAtom(bookAppointmentAtom);
+  const params = useParams<{organization: string}>()
   const [playSuccess] = useSound("/audio/success-1.mp3");
-  const { mutate } = useOrgAppointments({
-    orgId: bookAppointmentForm.orgUid ?? ""
-  })
+  const { mutate } = useOrgAppointments({ orgId: bookAppointmentForm.orgUid ?? ""})
   const user = useUser()
 
   const handleBookAppointment = (e:FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     
-    if(!bookAppointmentForm.orgUid) {
+    if(!params.organization) {
       toast.error("Organization is required")
       return ;
     }
@@ -44,7 +44,7 @@ export default function ReviewBooking({ nextStep, prevStep, isLastStep, isFirstS
     }
 
     toast.promise(createAppointmentAction({
-      orgUid: bookAppointmentForm.orgUid,
+      orgUid: params.organization,
       subject: bookAppointmentForm.subject ?? "Appointment Request",
       complaint: bookAppointmentForm.chiefComplaint,
       modeId: 2,
@@ -63,7 +63,7 @@ export default function ReviewBooking({ nextStep, prevStep, isLastStep, isFirstS
   }
 
   const reset = async () => {
-    await setBookAppointmentForm({})
+    setBookAppointmentForm({})
     startOver?.();
   }
 

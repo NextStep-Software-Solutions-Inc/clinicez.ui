@@ -28,6 +28,8 @@ import { useOrgAppointmentTypes } from "@hooks/useOrgAppointmentType"
 import { useParams } from "next/navigation"
 import { useHPs } from "@hooks/useHP"
 import { useOrgServices } from "@hooks/useOrgService"
+import { bookAppointmentAtom, BookAppointmentForm } from "../../../../../state/book-appointment"
+import { useAtom } from "jotai"
 
 const FilterFormSchema = z.object({
   appointmentTypeId: z.coerce.number({
@@ -42,27 +44,10 @@ const FilterFormSchema = z.object({
 })
 
 
-export type BookAppointmentForm = Partial<{
-  orgUid: string
-  appointmentTypeId: number
-  serviceId: number
-  doctor: string
-  modeId: number
-  timeSlotId: number
-  subject: string
-  chiefComplaint: string
-  certify: boolean
-  agreeTerms: boolean
-  agreePrivacy: boolean
-}>
+
 export default function FilterForm() {
   const params = useParams()
-  const [bookAppointmentForm, setBookAppointmentForm] = useLocalStorage<BookAppointmentForm>("book-appointment-form", {
-    appointmentTypeId: 0,
-    serviceId: 0,
-    doctor: "",
-    modeId: 0
-  });
+  const [bookAppointmentForm, setBookAppointmentForm] = useAtom(bookAppointmentAtom)
 
   const organization = params?.organization as string
   const {data: appointmentTypes} = useOrgAppointmentTypes(organization)
@@ -77,7 +62,7 @@ export default function FilterForm() {
   })
 
   async function onSubmit(data: z.infer<typeof FilterFormSchema>) {
-    await setBookAppointmentForm(data)
+    setBookAppointmentForm((prev) => ({...prev, ...data}))
     toast({
       title: "You submitted the following values:",
       description: (
@@ -103,7 +88,7 @@ export default function FilterForm() {
                     form.resetField('serviceId')
                     return field.onChange(val)
                   }} 
-                  value={field.value.toString()}
+                  value={field.value?.toString()}
                 >
                   <FormControl>
                     <SelectTrigger>

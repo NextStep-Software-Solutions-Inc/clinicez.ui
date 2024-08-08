@@ -3,9 +3,8 @@
 import { Badge } from "@components/ui/badge";
 import { toast } from "@components/ui/use-toast";
 import Each from "@components/utils/Each";
-import { useLocalStorage } from "@hooks/useLocalStorage";
-import { useState } from "react";
-import { BookAppointmentForm } from "./FilterForm";
+import { useAtom } from "jotai";
+import { bookAppointmentAtom } from "@state/book-appointment";
 
 const timeSlots = [
   {id:1, slot: "10:00 AM - 11:00 AM"},
@@ -15,11 +14,9 @@ const timeSlots = [
   {id:5, slot: "4:00 PM - 5:00 PM"}
 ]
 export default function VacantTimeSlot() {
-  const [bookAppointmentForm, setBookAppointmentForm] = useLocalStorage<BookAppointmentForm>("book-appointment-form", {
-    orgUid: "ustp-hims",
-  });
+  const [bookAppointmentForm, setBookAppointmentForm] = useAtom(bookAppointmentAtom);
   const handleSelectTimeSlot = (timeSlotId: number) => {
-    setBookAppointmentForm({});
+    setBookAppointmentForm((prev) => ({...prev, timeSlotId}));
     toast({
       title: "Time Slot Selected",
       description: `You have selected: ${timeSlots.find((timeSlot) => timeSlot.id === timeSlotId)?.slot}`,

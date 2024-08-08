@@ -43,7 +43,7 @@ export default function AvatarDropdown() {
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem>
-          <Link href="/api/auth/logout">
+          <Link href="/api/auth/logout" onClick={() => localStorage.clear()}>
             Logout
           </Link>
         </DropdownMenuItem>

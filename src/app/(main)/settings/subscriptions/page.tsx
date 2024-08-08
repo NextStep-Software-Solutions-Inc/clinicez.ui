@@ -6,7 +6,7 @@ import { getCachedSession } from "@actions/session.action";
 import { withPageAuthRequired } from "@auth0/nextjs-auth0";
 
 export const metadata: Metadata = {
-  title: "Subscriptions | Clinic EZ",
+  title: "Subscriptions | Account Settings",
   description: "List of subscriptions for your account.",
 };
 

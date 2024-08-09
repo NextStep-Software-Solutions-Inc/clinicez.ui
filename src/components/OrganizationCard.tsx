@@ -19,8 +19,8 @@ export async function OrganizationCard({ organization }: OrganizationCardProps) 
           
         </div>
       </Link>
-      <Link href={`/${orgId}/join`} className="hidden group-hover/join:flex">
-        <div className="absolute bottom-0 h-20 w-full bg-white bg-opacity-90 px-4 flex items-center justify-center">
+      <Link href={`/${orgId}/join`} className="invisible group-hover/join:visible transition-all duration-300">
+        <div className="rounded-b-lg absolute bottom-0 h-20 w-full bg-white bg-opacity-90 px-4 flex items-center justify-center">
           <p className="mb-2 text-center line-clamp-3 text-sm font-semibold" title={name}>{name}</p>
         </div>
         <ActionButton size="sm" className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2">Join</ActionButton>

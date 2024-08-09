@@ -1,6 +1,6 @@
 import Each from "@components/utils/Each";
 import { OrganizationCard } from "@components/OrganizationCard";
-import { getOrganizationsAction } from "@actions/organization.action";
+import { getOrganizationsAction } from "@actions/organizations/organization.action";
 
 export default async function OrganizationList() {
   const organizations = await getOrganizationsAction()

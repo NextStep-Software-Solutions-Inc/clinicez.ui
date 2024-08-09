@@ -1,8 +1,8 @@
 "use server";
 
 import { getCachedSession } from "@actions/session.action";
-import { getUserOrganizationsAction } from "@actions/user-organization.action";
-import { getUserPlansAction } from "@actions/user-plan.action";
+import { getUserOrganizationsAction } from "@actions/users/user-organization.action";
+import { getUserPlansAction } from "@actions/users/user-plan.action";
 import { permanentRedirect } from "next/navigation";
 import { cache } from "react";
 

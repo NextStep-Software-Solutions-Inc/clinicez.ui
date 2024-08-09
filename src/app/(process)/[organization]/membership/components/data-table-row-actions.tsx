@@ -17,7 +17,7 @@ import { toast } from "sonner"
 import { UserOrganizationStatus } from "@prisma/common/client"
 import Each from "@components/utils/Each"
 import { Trash } from "lucide-react"
-import { GetUserOrganizations, setMembershipRequestStatusAction } from "@actions/user-organization.action"
+import { GetUserOrganizations, setMembershipRequestStatusAction } from "@actions/users/user-organization.action"
 import { revalidatePath } from "@actions/cache.action"
 import ConfirmDeleteMembership from "./ConfirmDeleteMembership"
 interface DataTableRowActionsProps<TData> {

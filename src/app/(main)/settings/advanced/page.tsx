@@ -4,7 +4,7 @@ import AdvancedSettingsForm from "./AdvancedSettingsForm";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Advanced Settings | Clinic EZ",
+  title: "Advanced Settings | Account Settings",
   description: "Advanced Settings",
 };
 

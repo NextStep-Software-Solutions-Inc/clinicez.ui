@@ -5,7 +5,8 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from "@components/ui/input";
 import { Textarea } from "@components/ui/textarea";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useLocalStorage } from "@hooks/useLocalStorage";
+import { bookAppointmentAtom } from "@state/book-appointment";
+import { useAtom } from "jotai";
 import React from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -29,10 +30,7 @@ interface ChiefComplaintProps {
 }
 
 export default function ChiefComplaint({ nextStep, prevStep, isLastStep, isFirstStep }: ChiefComplaintProps) {
-  const [bookAppointmentForm, setBookAppointmentForm] = useLocalStorage<z.infer<typeof chiefComplaintFormSchema>>("book-appointment-form", {
-    subject: "",
-    chiefComplaint: "",
-  });
+  const [bookAppointmentForm, setBookAppointmentForm] = useAtom(bookAppointmentAtom)
 
   const form = useForm<z.infer<typeof chiefComplaintFormSchema>>({
     resolver: zodResolver(chiefComplaintFormSchema),
@@ -40,10 +38,9 @@ export default function ChiefComplaint({ nextStep, prevStep, isLastStep, isFirst
   })
 
   const onSubmit = async (data: z.infer<typeof chiefComplaintFormSchema>) => {
-    await setBookAppointmentForm(data)
+    setBookAppointmentForm((prev) => ({...prev, ...data}))
     nextStep?.();
   }
-
   
   return (
     

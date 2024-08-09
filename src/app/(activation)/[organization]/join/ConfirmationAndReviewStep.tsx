@@ -12,7 +12,7 @@ import ConditionalRender from "@components/utils/ConditionalRender";
 import { OrganizationApplicationData } from "./OrganizationSteps";
 import { toast } from "sonner";
 import { useSound } from "use-sound";
-import { joinOrganizationAction, JoinOrganizationPayload } from "@actions/join-organization.action";
+import { joinOrganizationAction, JoinOrganizationPayload } from "@actions/organizations/join-organization.action";
 import { revalidatePath } from "@actions/cache.action";
 
 interface ConfirmationAndReviewStepProps {

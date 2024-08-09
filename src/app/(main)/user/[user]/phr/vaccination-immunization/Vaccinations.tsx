@@ -1,6 +1,6 @@
 "use server";
 
-import { getUserVaccinationsAction } from "@actions/user-vaccination.action";
+import { getUserVaccinationsAction } from "@actions/users/user-vaccination.action";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@components/ui/card";
 import AddUserVaccination from "./modal/AddUserVaccinationModal";
 import { Badge } from "@components/ui/badge";

@@ -17,13 +17,13 @@ import {
 import {toast} from "sonner"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@components/ui/select"
 import Each from "@components/utils/Each"
-import { getMyDefaultOrganizationAction, setMyDefaultOrganizationAction } from "@actions/organization.action"
+import { getMyDefaultOrganizationAction, setMyDefaultOrganizationAction } from "@actions/organizations/organization.action"
 import { useEffect, useState } from "react"
 import { useUser } from "@auth0/nextjs-auth0/client"
 import ActionButton from "@components/ActionButton"
 import { OrgDefaultRoleForm } from "./OrgDefaultRoleForm"
 import ConditionalRender from "@components/utils/ConditionalRender"
-import { getUserOrganizationsAction } from "@actions/user-organization.action"
+import { getUserOrganizationsAction } from "@actions/users/user-organization.action"
 
 const organizationFormSchema = z.object({
   defaultOrgUid: z.string(),

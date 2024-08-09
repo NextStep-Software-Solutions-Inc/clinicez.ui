@@ -32,7 +32,7 @@ import { DataTableToolbar } from "./data-table-toolbar"
 import Each from "@components/utils/Each"
 import { LabelValue } from "@components/LabelValue"
 import { Separator } from "@components/ui/separator"
-import { GetUserOrganizations } from "@actions/user-organization.action"
+import { GetUserOrganizations } from "@actions/users/user-organization.action"
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]

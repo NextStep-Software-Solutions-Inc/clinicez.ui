@@ -1,8 +1,8 @@
-import { GetUserOrganizations, GetUserOrgFilterType } from "@actions/user-organization.action"
+import { GetUserOrganizations, GetUserOrgFilterType } from "@actions/users/user-organization.action"
 import { self } from "@services/request"
 import useSWR from "swr"
 
-export const useUserOrganization = (filter:GetUserOrgFilterType, enable = true) => {
+export const useUserOrganizations = (filter:GetUserOrgFilterType, enable = true) => {
   const fetcher = (...args:any) => self.get<GetUserOrganizations>(args)
   const obj = {
     ...filter.userId ?{ userId: filter.userId } : {},

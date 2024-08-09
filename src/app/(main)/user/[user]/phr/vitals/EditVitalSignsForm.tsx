@@ -9,12 +9,12 @@ import { DialogClose, DialogFooter } from "@components/ui/dialog";
 import { toast } from "sonner";
 import ConditionalRender from "@components/utils/ConditionalRender";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { GetUserVitalSignsType, updateUserVitalSignAction } from "@actions/vitals.action";
+import { GetUserVitalSigns, updateUserVitalSignAction } from "@actions/vitals.action";
 import { usePathname } from "next/navigation";
 import { revalidatePath } from "@actions/cache.action";
 import { useRef } from "react";
 
-export default function EditVitalSignsForm({vitalSign}: {vitalSign: GetUserVitalSignsType[number]}){
+export default function EditVitalSignsForm({vitalSign}: {vitalSign: GetUserVitalSigns[number]}){
   const closeBtnRef = useRef<HTMLButtonElement>(null);
   const pathname = usePathname()
   const form = useForm<VitalSignsTypeSchema>({

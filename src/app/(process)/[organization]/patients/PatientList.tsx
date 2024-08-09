@@ -1,8 +1,8 @@
-import { getUsersAction } from "@actions/user.action";
+import { getUsersAction } from "@actions/users/user.action";
 import Each from "@components/utils/Each";
 import dynamic from "next/dynamic";
 import { PatientCard } from "./PatientCard";
-const Paginate = dynamic(() => import("../../../../components/Paginate"), { ssr: false, loading: () => <div>Loading...</div>});
+const Paginate = dynamic(() => import("@components/Paginate"), { ssr: false, loading: () => <div>Loading...</div>});
 
 
 interface PatientListProps {

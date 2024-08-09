@@ -1,0 +1,120 @@
+generator client {
+  provider      = "prisma-client-js"
+  output        = "../../node_modules/@prisma/tenant/client"
+  binaryTargets = ["native", "rhel-openssl-1.0.x"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("TENANT_DATABASE_URL")
+  directUrl = env("TENANT_DATABASE_URL_UNPOOLED")
+}
+
+model Appointment {
+  id                   Int                    @id @default(autoincrement())
+  orgUid               String
+  subject              String
+  complaint            String?
+  isActive             Boolean                @default(true)
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  deletedAt            DateTime?
+  Requesters           AppointmentRequester[]
+  AppointmentAttribute AppointmentAttribute?
+  AppointmentRouting   AppointmentRouting[]
+}
+
+model AppointmentRequester {
+  id            Int         @id @default(autoincrement())
+  appointmentId Int
+  email         String
+  Appointment   Appointment @relation(fields: [appointmentId], references: [id])
+
+  @@unique([appointmentId, email], name: "unique_appointment_email")
+}
+
+model AppointmentAttribute {
+  id                 Int             @id @default(autoincrement())
+  appointmentId      Int             @unique
+  recurring          Boolean         @default(false)
+  maxDuration        Int             @default(30)
+  modeId             Int
+  typeId             Int
+  receivedAt         DateTime?
+  receivedBy         String?
+  rejectedAt         DateTime?
+  rejectedBy         String?
+  rejectedReason     String?
+  approvedAt         DateTime?
+  approvedBy         String?
+  status             String          @default("PENDING")
+  serviceId          Int?
+  preferredAppointee String?
+  Appointment        Appointment     @relation(fields: [appointmentId], references: [id])
+  AppointmentMode    AppointmentMode @relation(fields: [modeId], references: [id])
+  AppointmentType    AppointmentType @relation(fields: [typeId], references: [id])
+  Service            Service?        @relation(fields: [serviceId], references: [id])
+}
+
+model AppointmentType {
+  id                    Int                    @id @default(autoincrement())
+  orgUid                String
+  name                  String
+  description           String?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  deletedAt             DateTime?
+  isActive              Boolean                @default(true)
+  AppointmentAttributes AppointmentAttribute[]
+}
+
+model AppointmentMode {
+  id                    Int                    @id @default(autoincrement())
+  orgUid                String
+  name                  String
+  description           String?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  deletedAt             DateTime?
+  isActive              Boolean                @default(true)
+  AppointmentAttributes AppointmentAttribute[]
+}
+
+model AppointmentRouting {
+  id            Int         @id @default(autoincrement())
+  routingCode   String      @unique @default(cuid())
+  appointmentId Int
+  routedBy      String
+  routedTo      String
+  status        String      @default("PENDING")
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  Appointment   Appointment @relation(fields: [appointmentId], references: [id])
+
+  @@unique([appointmentId, routedTo], name: "unique_appointment_routing")
+}
+
+model ServiceCategory {
+  id          Int       @id @default(autoincrement())
+  orgUid      String
+  name        String
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  isActive    Boolean   @default(true)
+  Services    Service[]
+}
+
+model Service {
+  id                   Int                    @id @default(autoincrement())
+  name                 String
+  description          String?
+  categoryId           Int
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  deletedAt            DateTime?
+  isActive             Boolean                @default(true)
+  ServiceCategory      ServiceCategory        @relation(fields: [categoryId], references: [id])
+  AppointmentAttribute AppointmentAttribute[]
+}

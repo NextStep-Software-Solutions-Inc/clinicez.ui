@@ -24,78 +24,45 @@ import {
 import { toast } from "@components/ui/use-toast"
 import Each from "@components/utils/Each"
 import { useLocalStorage } from "@hooks/useLocalStorage"
+import { useOrgAppointmentTypes } from "@hooks/useOrgAppointmentType"
+import { useParams } from "next/navigation"
+import { useHPs } from "@hooks/useHP"
+import { useOrgServices } from "@hooks/useOrgService"
+import { bookAppointmentAtom, BookAppointmentForm } from "../../../../../state/book-appointment"
+import { useAtom } from "jotai"
 
 const FilterFormSchema = z.object({
-  appointmentTypeId: z.string({
+  appointmentTypeId: z.coerce.number({
     description: 'Select an appointment type',
   }).min(1, 'Appointment type is required'),
-  serviceId: z.string({
+  serviceId: z.coerce.number({
     description: 'Select a service',
-  }).min(1, 'Service is required'),
-  doctorId: z.string({
+  }).optional(),
+  doctor: z.string({
     description: 'Select a doctor',
-  }).min(1, 'Doctor is required')
+  }).optional()
 })
 
-const appointmentTypes = [
-  {
-    id: 1, 
-    name: 'Consultation',
-    services: [
-      { id: 1, name: 'Dental Cleaning', doctors: [{ id: 1, name: 'Dr. Smith' }, { id: 2, name: 'Dr. Johnson' }] },
-      { id: 2, name: 'Cavity Filling', doctors: [{ id: 2, name: 'Dr. Johnson' }, { id: 3, name: 'Dr. Williams' }] },
-      { id: 3, name: 'Root Canal', doctors: [{ id: 3, name: 'Dr. Williams' }, { id: 4, name: 'Dr. Brown' }] },
-      { id: 4, name: 'Tooth Extraction', doctors: [{ id: 4, name: 'Dr. Brown' }, { id: 5, name: 'Dr. Jones' }] },
-      { id: 5, name: 'Dental Implants', doctors: [{ id: 5, name: 'Dr. Jones' }, { id: 6, name: 'Dr. Davis' }] },
-      { id: 6, name: 'Orthodontics', doctors: [{ id: 6, name: 'Dr. Davis' }, { id: 7, name: 'Dr. Miller' }] },
-      { id: 7, name: 'Other', doctors: [{ id: 7, name: 'Dr. Miller' }] },
-    ]
-  },
-  {
-    id: 2,
-    name: 'Checkup',
-    services: [
-      { id: 8, name: 'Dental Cleaning', doctors: [{ id: 8, name: 'Dr. Wilson' }, { id: 9, name: 'Dr. Moore' }] },
-      { id: 9, name: 'Cavity Filling', doctors: [{ id: 9, name: 'Dr. Moore' }, { id: 10, name: 'Dr. Taylor' }] },
-      { id: 10, name: 'Root Canal', doctors: [{ id: 10, name: 'Dr. Taylor' }, { id: 11, name: 'Dr. Anderson' }] },
-      { id: 11, name: 'Tooth Extraction', doctors: [{ id: 11, name: 'Dr. Anderson' }, { id: 12, name: 'Dr. Thomas' }] },
-      { id: 12, name: 'Dental Implants', doctors: [{ id: 12, name: 'Dr. Thomas' }, { id: 13, name: 'Dr. Jackson' }] },
-      { id: 13, name: 'Orthodontics', doctors: [{ id: 13, name: 'Dr. Jackson' }, { id: 14, name: 'Dr. White' }] },
-      { id: 14, name: 'Other', doctors: [{ id: 14, name: 'Dr. White' }] },
-    ]
-  },
-  {
-    id: 3,
-    name: 'Procedure',
-    services: [
-      { id: 15, name: 'Dental Cleaning', doctors: [{ id: 15, name: 'Dr. Harris' }, { id: 16, name: 'Dr. Martin' }] },
-      { id: 16, name: 'Cavity Filling', doctors: [{ id: 16, name: 'Dr. Martin' }, { id: 17, name: 'Dr. Thompson' }] },
-      { id: 17, name: 'Root Canal', doctors: [{ id: 17, name: 'Dr. Thompson' }, { id: 18, name: 'Dr. Garcia' }] },
-      { id: 18, name: 'Tooth Extraction', doctors: [{ id: 18, name: 'Dr. Garcia' }, { id: 19, name: 'Dr. Martinez' }] },
-      { id: 19, name: 'Dental Implants', doctors: [{ id: 19, name: 'Dr. Martinez' }, { id: 20, name: 'Dr. Robinson' }] },
-      { id: 20, name: 'Orthodontics', doctors: [{ id: 20, name: 'Dr. Robinson' }, { id: 21, name: 'Dr. Clark' }] },
-      { id: 21, name: 'Other', doctors: [{ id: 21, name: 'Dr. Clark' }] },
-    ]
-  }
-
-];
 
 
 export default function FilterForm() {
-  const [bookAppointmentForm, setBookAppointmentForm] = useLocalStorage<z.infer<typeof FilterFormSchema>>("book-appointment-form", {
-    appointmentTypeId: '',
-    serviceId: '',
-    doctorId: ''
+  const params = useParams()
+  const [bookAppointmentForm, setBookAppointmentForm] = useAtom(bookAppointmentAtom)
+
+  const organization = params?.organization as string
+  const {data: appointmentTypes} = useOrgAppointmentTypes(organization)
+  const {data: services} = useOrgServices({
+    orgUid: organization,
   })
+  const {data: doctors} = useHPs({type: "DOCTOR",})
+
   const form = useForm<z.infer<typeof FilterFormSchema>>({
     resolver: zodResolver(FilterFormSchema),
     defaultValues: bookAppointmentForm,
   })
-  const services = appointmentTypes.find(type => type.id.toString() === form.watch('appointmentTypeId'))?.services
-  const doctors = services?.find(service => service.id.toString() === form.watch('serviceId'))?.doctors
 
   async function onSubmit(data: z.infer<typeof FilterFormSchema>) {
-    await setBookAppointmentForm(data)
+    setBookAppointmentForm((prev) => ({...prev, ...data}))
     toast({
       title: "You submitted the following values:",
       description: (
@@ -121,16 +88,16 @@ export default function FilterForm() {
                     form.resetField('serviceId')
                     return field.onChange(val)
                   }} 
-                  value={field.value}
+                  value={field.value?.toString()}
                 >
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select an appointment" />
+                      <SelectValue placeholder="Select an appointment" className="capitalize"/>
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
                     <Each
-                      of={appointmentTypes}
+                      of={appointmentTypes ?? []}
                       render={(appointmentType) => (
                         <SelectItem value={appointmentType.id.toString()}>{appointmentType.name}</SelectItem>
                       )}
@@ -150,7 +117,7 @@ export default function FilterForm() {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Service</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
+                <Select onValueChange={field.onChange} value={field.value?.toString()}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select a service" />
@@ -174,7 +141,7 @@ export default function FilterForm() {
           />
           <FormField
             control={form.control}
-            name="doctorId"
+            name="doctor"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Doctor</FormLabel>
@@ -186,9 +153,9 @@ export default function FilterForm() {
                   </FormControl>
                   <SelectContent>
                     <Each
-                      of={doctors ?? []}
+                      of={doctors?.filter(d => d.DoctorProfile?.name) ?? []}
                       render={(doctor) => (
-                        <SelectItem value={doctor.id.toString()}>{doctor.name}</SelectItem>
+                        <SelectItem value={doctor.id.toString()}>{doctor.DoctorProfile?.name} </SelectItem>
                       )}
                     />
                   </SelectContent>

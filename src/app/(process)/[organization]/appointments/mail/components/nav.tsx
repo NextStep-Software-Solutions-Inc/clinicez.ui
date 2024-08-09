@@ -1,8 +1,6 @@
 "use client"
 
-import Link from "next/link"
 import { LucideIcon } from "lucide-react"
-
 import { cn } from "@lib/utils"
 import { buttonVariants } from "@components/ui/button"
 import {
@@ -11,20 +9,31 @@ import {
   TooltipTrigger,
 } from "@components/ui/tooltip"
 import Each from "@components/utils/Each"
-import { useSearchParams } from "next/navigation"
 
-interface NavProps {
+export interface AppointmentStatusNavProps {
   isCollapsed: boolean
   links: {
-    title: string
-    label?: string
+    label: string
+    badge: string
+    params: {
+      key: string
+      value: string | null
+    }[]
     icon: LucideIcon
     variant: "default" | "ghost"
   }[]
 }
 
-export function Nav({ links, isCollapsed }: NavProps) {
-  const searchParams = useSearchParams();
+export function AppointmentStatusNav({ links, isCollapsed }: AppointmentStatusNavProps) {
+
+  const pushSearchParams = (params: {key:string, value:string | null}[]) => {
+    const searchParams = new URLSearchParams(window.location.search);
+    params.forEach(({key, value}) => {
+      if(value === null) searchParams.delete(key);
+      else searchParams.set(key, value);
+    });
+    window.history.pushState({}, "", `?${searchParams.toString()}`);
+  }
   
   return (
     <div
@@ -38,14 +47,8 @@ export function Nav({ links, isCollapsed }: NavProps) {
             isCollapsed ? (
               <Tooltip delayDuration={0}>
                 <TooltipTrigger asChild>
-                  <Link
-                    href={{
-                      query: {
-                        ...Object.fromEntries((new URLSearchParams(searchParams.toString()))),
-                        _appointment: null,
-                        _type: link.title.toLowerCase(),
-                      }
-                    }}
+                  <div
+                    onClick={() => pushSearchParams(link.params)}
                     className={cn(
                       buttonVariants({ variant: link.variant, size: "icon" }),
                       "h-9 w-9",
@@ -54,27 +57,21 @@ export function Nav({ links, isCollapsed }: NavProps) {
                     )}
                   >
                     <link.icon className="h-4 w-4" />
-                    <span className="sr-only">{link.title}</span>
-                  </Link>
+                    <span className="sr-only">{link.label}</span>
+                  </div>
                 </TooltipTrigger>
                 <TooltipContent side="right" className="flex items-center gap-4">
-                  {link.title}
-                  {link.label && (
+                  {link.label}
+                  {link.badge && (
                     <span className="ml-auto text-muted-foreground">
-                      {link.label}
+                      {link.badge}
                     </span>
                   )}
                 </TooltipContent>
               </Tooltip>
             ) : (
-              <Link
-                href={{
-                  query: {
-                    ...Object.fromEntries((new URLSearchParams(searchParams.toString()))),
-                    _appointment: null,
-                    _type: link.title.toLowerCase()
-                  }
-                }}
+              <div
+                onClick={() => pushSearchParams(link.params)}
                 className={cn(
                   buttonVariants({ variant: link.variant, size: "sm" }),
                   link.variant === "default" &&
@@ -83,8 +80,8 @@ export function Nav({ links, isCollapsed }: NavProps) {
                 )}
               >
                 <link.icon className="mr-2 h-4 w-4" />
-                {link.title}
-                {link.label && (
+                {link.label}
+                {link.badge && (
                   <span
                     className={cn(
                       "ml-auto",
@@ -92,13 +89,12 @@ export function Nav({ links, isCollapsed }: NavProps) {
                         "text-background dark:text-white"
                     )}
                   >
-                    {link.label}
+                    {link.badge}
                   </span>
                 )}
-              </Link>
+              </div>
             )}
         />
-        
       </nav>
     </div>
   )

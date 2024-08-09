@@ -1,6 +1,6 @@
 "use client";
 
-import { rejectAppointmentAction } from "@actions/appointments.action";
+import { rejectAppointmentAction } from "@actions/appointments/appointment-attribute.action";
 import ActionButton from "@components/ActionButton";
 import { Button } from "@components/ui/button";
 import { Input } from "@components/ui/input";
@@ -15,13 +15,12 @@ import { toast } from "sonner";
 export default function DeclineAppointmentAssignment({disabled = false}: {disabled?: boolean}) {
   const triggerRef = React.useRef<HTMLButtonElement>(null);
 
-  const actionWrapper = async (prev: any, formData: FormData) => {
+  const action= async (formData: FormData) => {
     const res = await rejectAppointmentAction(formData);
     if(res) toast.success("Appointment assigned declined successfully.");
     triggerRef.current?.click();
     return res;
   }
-  const [state, action] = useFormState(actionWrapper, false);
 
   return (
     <Popover>

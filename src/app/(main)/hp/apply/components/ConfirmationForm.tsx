@@ -3,16 +3,16 @@
 import {useForm } from "react-hook-form";
 import { z } from "zod";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@components/ui/form";
-import { Checkbox } from "../../../../../components/ui/checkbox";
+import { Checkbox } from "@components/ui/checkbox";
 import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
-import BackSubmitAndNext from "../../../../../components/SubmitAndNext";
+import BackSubmitAndNext from "@components/SubmitAndNext";
 import { useLocalStorage } from "@hooks/useLocalStorage";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import { toast } from "sonner";
 import { HealthcareProviderType } from "@prisma/common/client";
-import { getUserAction } from "@actions/user.action";
-import { hpApplicationTransactionAction } from "@actions/user-plan.action";
+import { getUserAction } from "@actions/users/user.action";
+import { hpApplicationTransactionAction } from "@actions/users/user-plan.action";
 
 interface ConfirmationFormProps {
   nextStep?: () => void;

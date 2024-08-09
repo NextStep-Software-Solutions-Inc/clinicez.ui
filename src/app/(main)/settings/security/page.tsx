@@ -4,7 +4,7 @@ import { Metadata } from "next";
 import React from "react";
 
 export const metadata: Metadata = {
-  title: "Security Settings | Clinic EZ",
+  title: "Security | Account Settings",
   description: "Security Settings",
 };
 

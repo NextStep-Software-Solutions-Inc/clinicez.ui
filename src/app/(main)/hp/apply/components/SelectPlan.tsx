@@ -18,9 +18,9 @@ import BackSubmitAndNext from "../../../../../components/SubmitAndNext";
 import { useLocalStorage } from "@hooks/useLocalStorage";
 import { getPlansAction } from "@actions/plan.action";
 import { use } from "react";
-import { createUserPlanAction } from "@actions/user-plan.action";
+import { createUserPlanAction } from "@actions/users/user-plan.action";
 import { toast } from "sonner";
-import { getUserAction } from "@actions/user.action";
+import { getUserAction } from "@actions/users/user.action";
 import { useUser } from "@auth0/nextjs-auth0/client";
 
 export const planFormSchema = z.object({

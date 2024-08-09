@@ -2,7 +2,7 @@
 import 'server-only'
 
 import { NextRequest, NextResponse } from "next/server";
-import { getUserDisabilitiesAction } from '@actions/user-disability.action';
+import { getUserDisabilitiesAction } from '@actions/users/user-disability.action';
 import { withJwtAuth } from '@middlewares/withJwtAuth';
 
 

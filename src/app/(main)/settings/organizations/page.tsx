@@ -4,8 +4,8 @@ import OrganizationsSettings from "./OrganizationsSettings";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Manage Organizations | Clinic EZ",
-  description: "Organization Settings",
+  title: "Manage Organizations | Account Settings",
+  description: "Manage Organizations",
 };
 
 export default function OrganizationsPage() {

@@ -1,6 +1,6 @@
 "use client";
 
-import { assignAppointmentAction } from "@actions/appointments.action";
+import { assignAppointmentAction } from "@actions/appointments/appointment-routing.action";
 import ActionButton from "@components/ActionButton";
 import { Button } from "@components/ui/button";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator, CommandShortcut } from "@components/ui/command";
@@ -8,43 +8,51 @@ import { Label } from "@components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@components/ui/popover";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@components/ui/tooltip";
 import Each from "@components/utils/Each";
+import { useHPs } from "@hooks/useHP";
 import { User, UserCheck } from "lucide-react";
 import React from "react";
-import { useFormState } from "react-dom";
 import { toast } from "sonner";
 
-const healthcareProviders = [
-  {
-    id: "1",
-    name: "Dr. John Doe",
-    role: "Doctor",
-    avatar: "https://randomuser.me/api/portraits",
-  }, 
-  {
-    id: "2",
-    name: "Nurse Jane Doe",
-    role: "Nurse",
-    avatar: "https://randomuser.me/api/portraits",
-  }
-]
 
-export default function AssignAppointment({disabled = false}: {disabled?: boolean}) {
+interface AssignAppointmentProps {
+  disabled?: boolean;
+  onAssigned?: () => void;
+  appointmentId: number;
+}
+export default function AssignAppointment({disabled = false, appointmentId, onAssigned}: AssignAppointmentProps) {
   const triggerRef = React.useRef<HTMLButtonElement>(null);
+  const {data: hps } = useHPs();
 
-  const actionWrapper = async (prev: any, formData: FormData) => {
-    formData.append("assignee", selectedHp?.id ?? "");
-    const res = await assignAppointmentAction(formData);
-    if(res) toast.success("Appointment assigned successfully.");
-    triggerRef.current?.click();
-    return res;
+  const healthcareProviders = (hps ?? []).map(hp => {
+    return {
+      id: hp.id,
+      name: hp.type === "DOCTOR" ? `${hp.DoctorProfile?.title} ${hp.DoctorProfile?.name} ${hp.DoctorProfile?.suffix}` : hp.type === "NURSE" && `${hp.NurseProfile?.title} ${hp.NurseProfile?.name} ${hp.NurseProfile?.suffix}`,
+      role: hp.type,
+      avatar: hp.DoctorProfile?.picture,
+      email: hp.User?.email
+    }
+  })
+  
+  const action = async (formData: FormData) => {
+    formData.append("routedTo", selectedHp?.email ?? "");
+    formData.append("appointmentId", appointmentId.toString());
+
+    toast.promise(assignAppointmentAction(formData), {
+      loading: "Assigning...",
+      success: (res) => {
+        if(res.status) {
+          return `Assigned successfully to ${selectedHp?.name}`
+        }
+        return "Something went wrong"
+      },
+      error: "Failed to assign"
+    });
   }
-  const [state, action] = useFormState(actionWrapper, false);
 
   const [open, setOpen] = React.useState(false)
   const [selectedHp, setSelectedHp] = React.useState<(typeof healthcareProviders)[number] | null>(
     null
   )
-
   
   return (
     <Popover>
@@ -59,7 +67,7 @@ export default function AssignAppointment({disabled = false}: {disabled?: boolea
         </TooltipTrigger>
         <TooltipContent>Assign</TooltipContent>
       </Tooltip>
-      <PopoverContent className="w-96">
+      <PopoverContent className="w-full">
         <p>
           Assign this appointment to a healthcare provider.
         </p>
@@ -99,8 +107,8 @@ export default function AssignAppointment({disabled = false}: {disabled?: boolea
                         of={healthcareProviders}
                         render={(hp) => (
                           <CommandItem
-                            value={hp.id}
-                            onSelect={(val) => setSelectedHp(prev => healthcareProviders.find(hp => hp.id === val) || null)}
+                            value={hp.email}
+                            onSelect={(val) => setSelectedHp(prev => healthcareProviders.find(hp => hp.email === val) || null)}
                           >
                             <User className="mr-2 h-4 w-4" />
                             <span>{hp.name}</span>
@@ -114,8 +122,8 @@ export default function AssignAppointment({disabled = false}: {disabled?: boolea
                         of={healthcareProviders}
                         render={(hp) => (
                           <CommandItem 
-                            value={hp.id}
-                            onSelect={(val) => setSelectedHp(prev => healthcareProviders.find(hp => hp.id === val) || null)}
+                            value={hp.email}
+                            onSelect={(val) => setSelectedHp(prev => healthcareProviders.find(hp => hp.email === val) || null)}
                           >
                             <User className="mr-2 h-4 w-4" />
                             <span>{hp.name}</span>

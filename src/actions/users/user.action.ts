@@ -6,55 +6,18 @@ import { managementClient } from "@services/auth0/management-client";
 import { cache } from 'react';
 
 
-type FiltersType = {
-  orgId?: string;
-  search?: string;
+export type GetUsersFiltersType = {
+  orgId?: string
+  search?: string
   page?: number
   pageSize?: number
+  userId?: string
+  email?: string
 }
 
-export const getUsersAction = async (filter?:FiltersType) => {
-  const { orgId, search, page = 1, pageSize = 100 } = filter || {};
-  const query = {
-    orderBy: {
-      updatedAt: 'desc'
-    },
-    take: pageSize,
-    skip: (page - 1) * pageSize,
-    where: {
-      ...orgId ? { 
-        Organizations: { 
-          some: { 
-            Organization: {
-              orgId
-            } 
-          }
-        } 
-      } : {},
-      ...search ? {
-        OR: [
-          { firstName: { mode: "insensitive", contains: search } },
-          { lastName: { mode: "insensitive", contains: search } },
-          { middleName: { mode: "insensitive", contains: search } },
-          { email: { mode: "insensitive", contains: search } }
-        ]
-      }: {},
-      isActive: true
-    },
-    include: {
-      Organizations: {
-        distinct: "organizationId",
-        where: {
-          Organization: {
-            orgId
-          }
-        },
-        select: {
-          status: true,
-        }
-      }
-    }
-  }
+export type GetUsers = Awaited<ReturnType<typeof getUsersAction>>
+export const getUsersAction = async (filter?:GetUsersFiltersType) => {
+  const { orgId, search, page = 1, pageSize = 100, userId, email } = filter || {};
   return await prisma.$transaction(async (prisma) => {
     const users = await prisma.user.findMany({
       orderBy: {
@@ -63,6 +26,8 @@ export const getUsersAction = async (filter?:FiltersType) => {
       take: pageSize,
       skip: (page - 1) * pageSize,
       where: {
+        userId, 
+        email,
         ...orgId ? { 
           Organizations: { 
             some: { 
@@ -124,13 +89,17 @@ export const getUsersAction = async (filter?:FiltersType) => {
   });
 }
 
+
 export type GetUser = Awaited<ReturnType<typeof getUserAction>>
-export const getUserAction = cache(async (userId: string)=> {
-  const user = await prisma.user.findUniqueOrThrow({ 
+export const getUserAction = cache(async (key: string)=> {
+  const user = await prisma.user.findFirstOrThrow({ 
     where: { 
       isActive: true,
-      userId
-    } 
+      OR: [
+        { userId: key },
+        { email: key }
+      ], 
+    },
   }); 
   return user;
 })

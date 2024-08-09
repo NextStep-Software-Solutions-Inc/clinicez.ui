@@ -4,11 +4,11 @@ import {  DeleteVitals } from "./DeleteVitals";
 import ConditionalRender from "@components/utils/ConditionalRender";
 import EditVitalSignsModal from "./EditVitalSignsModal";
 import { LabelValue } from "@components/LabelValue";
-import { GetUserVitalSignsType } from "@actions/vitals.action";
+import { GetUserVitalSigns } from "@actions/vitals.action";
 
 interface VitalSignProps {
     readOnly: boolean;
-    vitalSign: GetUserVitalSignsType[number];
+    vitalSign: GetUserVitalSigns[number];
 }
 
 export default function VitalSign({readOnly, vitalSign}:VitalSignProps){

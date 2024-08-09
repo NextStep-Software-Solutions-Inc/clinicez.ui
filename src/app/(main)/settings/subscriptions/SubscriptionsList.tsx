@@ -1,4 +1,4 @@
-import { getUserPlansAction } from "@actions/user-plan.action"
+import { getUserPlansAction } from "@actions/users/user-plan.action"
 import Each from "@components/utils/Each"
 import { format, formatDistanceToNow } from "date-fns"
 import { ChangePlan } from "./ChangePlan"

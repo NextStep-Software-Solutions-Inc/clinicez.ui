@@ -7,7 +7,7 @@ import ChangeViewMode from "./ChangeViewMode";
 import VitalsSignView from "./VitalsSignView";
 import { VitalChartInteractive } from "@components/charts/VitalChartInteractive";
 import VitalSign from "./VitalSign";
-import { GetUserVitalSignsType } from "@actions/vitals.action";
+import { GetUserVitalSigns } from "@actions/vitals.action";
 import dayjs from "dayjs";
 import localizedFormat from 'dayjs/plugin/localizedFormat'
 dayjs.extend(localizedFormat)
@@ -15,7 +15,7 @@ interface RecentVitalSignsProps {
   readOnly?: boolean;
   userId: string;
   viewMode?: "chart" | "tile";
-  vitalSigns: GetUserVitalSignsType
+  vitalSigns: GetUserVitalSigns
 }
 
 export default function RecentVitalSigns({readOnly = true, userId, viewMode, vitalSigns}: RecentVitalSignsProps) {

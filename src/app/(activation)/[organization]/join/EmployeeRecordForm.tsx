@@ -13,9 +13,9 @@ import { z } from "zod";
 import { OrganizationApplicationData } from "./OrganizationSteps";
 import { useAtom } from "jotai";
 import { additionalInfoValidAtom } from "./AdditionalInformationStep";
-import { useOrgCollege } from "@hooks/useOrgCollege";
-import { useOrgDepartment } from "@hooks/useOrgDepartment";
-import { useOrgOffice } from "@hooks/useOrgOffice";
+import { useOrgColleges } from "@hooks/useOrgCollege";
+import { useOrgDepartments } from "@hooks/useOrgDepartment";
+import { useOrgOffices } from "@hooks/useOrgOffice";
 import { toast } from "sonner";
 import { upsertEmploymentRecordAction } from "@actions/employee-record.action";
 import { useUser } from "@hooks/useUser";
@@ -49,10 +49,10 @@ export type EmployeeRecordType = z.infer<typeof employeeRecordSchema>;
 export default function EmployeeRecordForm({orgId} : {orgId: string}) {
   const [additionalInfoValid, setAdditionalInfoValid] = useAtom(additionalInfoValidAtom)
   const [orgApplication, setOrgApplication] = useLocalStorage<OrganizationApplicationData>(`${orgId}_application`)
-  const {data: orgColleges} = useOrgCollege(orgId)
-  const {data: orgDepartments} = useOrgDepartment(orgId)
-  const {data: orgOffices} = useOrgOffice(orgId)
-  const {data: user } = useUser(orgApplication.userId)
+  const {data: orgColleges} = useOrgColleges(orgId)
+  const {data: orgDepartments} = useOrgDepartments(orgId)
+  const {data: orgOffices} = useOrgOffices(orgId)
+  const {data: user } = useUser({userId:orgApplication.userId})
 
   const form = useForm<EmployeeRecordType>({
     resolver: zodResolver(employeeRecordSchema),
@@ -65,7 +65,11 @@ export default function EmployeeRecordForm({orgId} : {orgId: string}) {
   const action = async () => {
     form.handleSubmit(async (values) => {
       const orgId = orgOffices?.[0].organizationId ?? 0
-      const userId = user?.id ?? 0
+      if(!user) {
+        toast.error("User not found")
+        return;
+      }
+      const userId = user.id
       toast.promise(upsertEmploymentRecordAction({...values, orgId, userId,}), {
         loading: "Saving...",
         success: async (res) => {

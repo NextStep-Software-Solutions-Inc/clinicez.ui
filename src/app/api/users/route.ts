@@ -2,7 +2,7 @@
 import 'server-only'
 
 import { withUnkey } from '@unkey/nextjs';
-import { createUserAction, getUsersAction } from "@actions/user.action";
+import { createUserAction, getUsersAction } from "@actions/users/user.action";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { withJwtAuth } from '@middlewares/withJwtAuth';
@@ -46,16 +46,16 @@ export const POST = withUnkey(async (req) => {
 
 export const GET = withJwtAuth(async (req: NextRequest) => {
   const searchParams = req.nextUrl.searchParams
-  const orgId = searchParams.get('orgId');
+  const orgId = searchParams.get('orgId') ?? '';
+  const userId = searchParams.get('userId') ?? '';
+  const email = searchParams.get('email') ?? '';
   
   const filter = {
-    ...orgId ? { orgId } : {}
+    ...(orgId? {orgId}: {}),
+    ...(userId? {userId}: {}),
+    ...(email ? {email}: {})
   }
-  
   const response = new NextResponse()
   const users = await getUsersAction(filter);
-  return NextResponse.json({
-    success: true,
-    response: users
-  }, response);
+  return NextResponse.json(users, response);
 });

@@ -14,8 +14,8 @@ interface SelectTimeSlotProps {
     isLastStep?: boolean;
 }
 export default function SelectTimeSlot({nextStep, prevStep, isFirstStep, isLastStep}: SelectTimeSlotProps) {
+  
   const handleNext = () => {
-
     nextStep?.();
   }
   return (

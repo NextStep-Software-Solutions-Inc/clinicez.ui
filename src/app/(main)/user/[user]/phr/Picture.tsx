@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@components/ui/avatar";
 import { Label } from "@components/ui/label";
 import { Input } from "@components/ui/input";
 import ActionButton from "@components/ActionButton";
-import { updateUserAction } from "@actions/user.action";
+import { updateUserAction } from "@actions/users/user.action";
 import { uploadMediaAction } from "@actions/blob.action";
 import { toast } from "sonner";
 import { revalidatePath } from "@actions/cache.action";

@@ -1,6 +1,6 @@
 "use client";
 
-import { rescheduleAppointmentAction } from "@actions/appointments.action";
+import { rescheduleAppointmentAction } from "@actions/appointments/appointments.action";
 import ActionButton from "@components/ActionButton";
 import { Button } from "@components/ui/button";
 import { Calendar } from "@components/ui/calendar";

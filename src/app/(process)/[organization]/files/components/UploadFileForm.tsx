@@ -29,8 +29,8 @@ import { uploadMediaAction } from "@actions/blob.action";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import { Checkbox } from "@components/ui/checkbox";
 import ConditionalRender from "@components/utils/ConditionalRender";
-import { useOrg } from "@hooks/useOrg";
-import { useFileType } from "@hooks/useFileType";
+import { useOrgs } from "@hooks/useOrg";
+import { useFileTypes } from "@hooks/useFileType";
 
 interface UploadFileFormProps {
     folder: {
@@ -42,8 +42,8 @@ interface UploadFileFormProps {
 export default function UploadFileForm({folder}: UploadFileFormProps) {
   
   const user = useUser()
-  const { data: userOrganizations } = useOrg(user?.user?.sub)
-  const { data: fileTypes } = useFileType()
+  const { data: userOrganizations } = useOrgs(user?.user?.sub)
+  const { data: fileTypes } = useFileTypes()
   const userId = user?.user?.sub
   const closeBtnRef = useRef<HTMLInputElement>(null)
   const [isDateTakenRequired, setIsDateTakenRequired] = useState(false)

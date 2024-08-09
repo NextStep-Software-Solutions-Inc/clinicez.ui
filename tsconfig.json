@@ -28,7 +28,7 @@
       "@services/*": ["./src/services/*"],
       "@middlewares/*": ["./src/middlewares/*"],
       "@schemas/*": ["./src/schemas/*"],
-      "@prisma/*": ["./prisma/*"]
+      "@state/*": ["./src/state/*"]
     }
   },
   "include": [

@@ -11,27 +11,29 @@ import IllnessesForm from "../app/(main)/user/[user]/phr/disabilities/IllnessesF
 import PageLoading from "./PageLoading";
 import { LabelValue } from "./LabelValue";
 import { useUser } from "@hooks/useUser";
-import { useAllergy } from "@hooks/useAllergy";
-import { useDisability } from "@hooks/useDisability";
-import { useIllness } from "@hooks/useIllness";
-import { useVaccination } from "@hooks/useVaccination";
-import VitalSign from "../app/(main)/user/[user]/phr/vitals/VitalSign";
+import { useAllergies } from "@hooks/useAllergy";
+import { useDisabilities } from "@hooks/useDisability";
+import { useIllnesses } from "@hooks/useIllness";
+import { useVaccinations } from "@hooks/useVaccination";
 import RecentVitalSigns from "../app/(main)/user/[user]/phr/vitals/RecentVitalSigns";
-import { useUserVitalSign } from "@hooks/useUserVitalSign";
+import { useUserVitalSigns } from "@hooks/useUserVitalSign";
+import { notFound } from "next/navigation";
 
 interface EMRPreviewProps {
     patientId: string;
   }
 function EMRPreview({patientId}: EMRPreviewProps) {
 
-  const { data: patient, isLoading } = useUser(patientId)
-  const { data: allergies, } = useAllergy(patientId)
-  const { data: disabilities } = useDisability(patientId)
-  const { data: illnesses } = useIllness(patientId)
-  const { data: vaccinations } = useVaccination(patientId)
-  const { data: vitalSigns } = useUserVitalSign(patientId)
+  const { data: patient, isLoading } = useUser({userId: patientId})
+  const { data: allergies, } = useAllergies(patientId)
+  const { data: disabilities } = useDisabilities(patientId)
+  const { data: illnesses } = useIllnesses(patientId)
+  const { data: vaccinations } = useVaccinations(patientId)
+  const { data: vitalSigns } = useUserVitalSigns(patientId)
   
   if(isLoading) return <PageLoading label="Loading Records ..."/>
+  if(patient === undefined) notFound()
+
   const name = `${patient?.lastName || "-"}, ${patient?.firstName || "-"} ${patient?.middleName ?? ""} ${patient?.suffix ?? ""}`
   return (
     <div className="space-y-5 my-5 overflow-auto h-[calc(100vh-15%)] no-scrollbar">

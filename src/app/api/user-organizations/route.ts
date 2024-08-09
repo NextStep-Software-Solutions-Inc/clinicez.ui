@@ -4,7 +4,7 @@ import 'server-only'
 import { NextRequest, NextResponse } from "next/server";
 import { UserOrganizationStatus } from '@prisma/common/client';
 import { withJwtAuth } from '@middlewares/withJwtAuth';
-import { getUserOrganizationsAction } from '../../../actions/user-organization.action';
+import { getUserOrganizationsAction } from '@actions/users/user-organization.action';
 
 
 export const GET = withJwtAuth(async (req: NextRequest) => {

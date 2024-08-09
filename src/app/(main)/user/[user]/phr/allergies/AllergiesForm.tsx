@@ -5,7 +5,7 @@ import Each from "@components/utils/Each";
 import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 import AllergyItem from "./AllergyItem";
-import { getUserAllergiesAction } from "@actions/user-allergy.action";
+import { getUserAllergiesAction } from "@actions/users/user-allergy.action";
 import { Plus } from "lucide-react";
 import { allergySchema } from "./EditAllergyForm";
 import ConditionalRender from "@components/utils/ConditionalRender";

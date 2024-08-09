@@ -3,12 +3,12 @@
 import {useForm } from "react-hook-form";
 import { z } from "zod";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@components/ui/form";
-import { Checkbox } from "../../../../../components/ui/checkbox";
+import { Checkbox } from "@components/ui/checkbox";
 import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
-import BackSubmitAndNext from "../../../../../components/SubmitAndNext";
-import { useLocalStorage } from "@hooks/useLocalStorage";
-// import { useLocalStorage } from "@hooks/useLocalStorage";
+import BackSubmitAndNext from "@components/SubmitAndNext";
+import { useAtom } from "jotai";
+import { bookAppointmentAtom } from "@state/book-appointment";
 
 interface ConsentFormProps {
   nextStep?: () => void;
@@ -20,28 +20,32 @@ interface ConsentFormProps {
   isLastStep?: boolean;
 }
 export const confirmationFormSchema = z.object({
-  certify: z.literal(true, {
+  certify: z.boolean({
     required_error: "You need to certify that you are entered the correct information.",
   }),
-  agreeTerms: z.literal(true, {
+  agreeTerms: z.boolean({
     required_error: "You need to agree to the terms and conditions.",
   }),
-  agreePrivacy: z.literal(true, {
+  agreePrivacy: z.boolean({
     required_error: "You need to agree to the privacy policy.",
   })
 })
 
 export default function ConsentForm({ nextStep, prevStep, isFirstStep, isComplete, setComplete, startOver }: ConsentFormProps) {
-  const [concentForm, setConcentForm] = useLocalStorage<z.infer<typeof confirmationFormSchema>>("book-appointment-form");
+  const [consent, setConcentForm] = useAtom(bookAppointmentAtom);
   
   const form = useForm<z.infer<typeof confirmationFormSchema>>({
     resolver: zodResolver(confirmationFormSchema),
-    defaultValues: concentForm
+    defaultValues: {
+      certify: consent.certify,
+      agreeTerms: consent.agreeTerms,
+      agreePrivacy: consent.agreePrivacy,
+    }
   })
 
-  const action = (formData: FormData) => {
+  const action = () => {
     form.handleSubmit(async (data: z.infer<typeof confirmationFormSchema>) => {
-      await setConcentForm(data)
+      setConcentForm((prev) => ({...prev, ...data}))
       nextStep?.();
     })()
   }

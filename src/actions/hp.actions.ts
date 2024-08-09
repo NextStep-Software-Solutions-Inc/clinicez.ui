@@ -8,22 +8,25 @@ import { cache } from "react";
 export type HPFilters = {
   type?: HealthcareProviderType,
   userId?: string
-  id?: number,
   isPublished?: boolean
 }
 
 export type GetHPsType = Awaited<ReturnType<typeof getHPsAction>>
 export const getHPsAction = cache(async (filters?:HPFilters) => {
-  const {type, userId, id, isPublished} = filters || {};
+  const {type, userId, isPublished} = filters || {};
   const hps = prisma.healthcareProvider.findMany({
     where: {
       isActive: true,
-      ...(id && { id }),
       ...(type && { type }),
       ...(userId && { User: { userId } }),
       ...(isPublished && { isPublished })
     },
     include: {
+      User: {
+        "select": {
+          email: true,
+        }
+      },
       DoctorProfile: {
         select: {
           picture: true,
@@ -48,12 +51,11 @@ export const getHPsAction = cache(async (filters?:HPFilters) => {
   return hps;
 })
 
-export const getHPAction = async ({id, userId, type, isPublished}:HPFilters) => {
+export const getHPAction = async ({ userId, type, isPublished}:HPFilters) => {
 
   const hp = prisma.healthcareProvider.findFirst({
     where: {
       isActive: true,
-      ...(id && { id }),
       ...(type && { type }),
       ...(userId && { User: { userId } }),
       ...(isPublished && { isPublished })

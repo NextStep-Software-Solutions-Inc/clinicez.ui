@@ -1,9 +1,9 @@
 import { atom, useAtom } from "jotai"
 
-import { Appointment, appointmentList } from "@public/json/appointment-list"
+import { appointmentList } from "@public/json/appointment-list"
 
 type Config = {
-  selected: Appointment["id"] | null
+  selected: string | null
 }
 
 const configAtom = atom<Config>({

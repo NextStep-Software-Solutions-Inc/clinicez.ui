@@ -37,7 +37,7 @@ export const profileSchema = z.object({
       message: "Specialty must be at least 2 characters.",
     })
   })),
-  education: z.array(z.object({
+  educations: z.array(z.object({
     name:z.string().min(2, {
       message: "Education must be at least 2 characters.",
     })

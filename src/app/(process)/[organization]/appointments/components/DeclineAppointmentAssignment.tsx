@@ -1,6 +1,6 @@
 "use client";
 
-import { rejectAppointmentAction } from "@actions/appointments/appointment-attribute.action";
+import { declineAppointmentAction } from "@actions/appointments/appointment-routing.action";
 import ActionButton from "@components/ActionButton";
 import { Button } from "@components/ui/button";
 import { Input } from "@components/ui/input";
@@ -9,17 +9,31 @@ import { Popover, PopoverContent, PopoverTrigger } from "@components/ui/popover"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@components/ui/tooltip";
 import { MailX } from "lucide-react";
 import React from "react";
-import { useFormState } from "react-dom";
 import { toast } from "sonner";
 
-export default function DeclineAppointmentAssignment({disabled = false}: {disabled?: boolean}) {
+interface DeclineAppointmentAssignmentProps {
+  disabled?: boolean
+  appointmentId: number
+  onDeclined?: () => void
+}
+
+export default function DeclineAppointmentAssignment({disabled = false, appointmentId, onDeclined}: DeclineAppointmentAssignmentProps) {
   const triggerRef = React.useRef<HTMLButtonElement>(null);
 
-  const action= async (formData: FormData) => {
-    const res = await rejectAppointmentAction(formData);
-    if(res) toast.success("Appointment assigned declined successfully.");
-    triggerRef.current?.click();
-    return res;
+  const action = async (formData: FormData) => {
+    formData.append("appointmentId", appointmentId.toString());
+
+    toast.promise(declineAppointmentAction(formData), {
+      loading: "Declining appointment assignment...",
+      success: (res) => {
+        if(!res.status) {
+          return `Failed to decline appointment: ${res.message}`;
+        }
+        onDeclined?.();
+        return "Appointment assigned declined successfully.";
+      },
+      error: "Failed to decline appointment"
+    })
   }
 
   return (

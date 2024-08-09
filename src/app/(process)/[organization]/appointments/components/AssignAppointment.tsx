@@ -41,6 +41,7 @@ export default function AssignAppointment({disabled = false, appointmentId, onAs
       loading: "Assigning...",
       success: (res) => {
         if(res.status) {
+          onAssigned?.()
           return `Assigned successfully to ${selectedHp?.name}`
         }
         return "Something went wrong"

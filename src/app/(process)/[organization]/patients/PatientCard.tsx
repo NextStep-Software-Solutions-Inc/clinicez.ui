@@ -37,8 +37,7 @@ export const PatientCard = async ({patient}: PatientCardProps) => {
       <CardContent>
         <div className="flex gap-3">
           <Avatar className="rounded w-40 h-40">
-            <Image fill className="object-cover" src={picture} alt="John Doe" />
-            <AvatarFallback>{nameInitials}</AvatarFallback>
+            <Image width={200} height={200} className="object-cover" src={picture} alt="John Doe" />
           </Avatar>
           <div className="flex-1 flex flex-col justify-between">
             <div className="">

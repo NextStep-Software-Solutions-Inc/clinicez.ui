@@ -62,9 +62,9 @@ const appointmentStatusesWithRoles = {
 };
 
 const routedAppointmentStatusesWithRoles = {
-  pending: ["student", "faculty", "admin", "receptionist", "doctor", "nurse"],
-  accepted: ["doctor", "nurse"],
-  declined: ["doctor", "nurse"],
+  pending: ["admin", "receptionist", "doctor", "nurse"],
+  accepted: ["doctor", "nurse", "admin", "receptionist"],
+  declined: ["doctor", "nurse", "admin", "receptionist"],
 }
 
 const createStatusLinks = (

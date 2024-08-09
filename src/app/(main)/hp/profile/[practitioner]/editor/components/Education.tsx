@@ -1,4 +1,5 @@
 "use client";
+
 import {
   FormControl,
   FormDescription,
@@ -16,12 +17,12 @@ import { HPProfileType } from "../hp-form.schema";
 export const Education = ({ form }: { form: ReturnType<typeof useForm<HPProfileType>>; }) => {
   const { fields, remove, append, update } = useFieldArray({
     control: form.control,
-    name: "education"
+    name: "educations"
   });
   return (
     <FormField
       control={form.control}
-      name="education"
+      name="educations"
       render={({ field }) => (
         <FormItem className="w-full">
           <FormLabel>Education</FormLabel>
@@ -33,7 +34,7 @@ export const Education = ({ form }: { form: ReturnType<typeof useForm<HPProfileT
                   <FormField
                     key={_field.id}
                     control={form.control}
-                    name={`education.${index}.name`}
+                    name={`educations.${index}.name`}
                     render={({ field }) => (
                       <FormItem className="flex-grow">
                         <FormControl>

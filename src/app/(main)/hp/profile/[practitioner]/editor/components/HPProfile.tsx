@@ -72,7 +72,7 @@ export default function HPProfile({ profile }: HPProfileProps) {
       
         languages: values.languages.map((lang) => lang.name),
         specialties: values.specialties.map((lang) => lang.name),
-        education: values.education.map((lang) => lang.name),
+        educations: values.educations.map((lang) => lang.name),
         certifications: values.certifications.map((lang) => lang.name),
         fields: values.fields.map((lang) => lang.name),
         affiliations: values.affiliations.map((lang) => lang.name),

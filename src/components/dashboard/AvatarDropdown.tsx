@@ -22,8 +22,8 @@ export default function AvatarDropdown() {
         >
           <Image
             src={user?.picture ?? ""}
-            width={36}
-            height={36}
+            width={10}
+            height={10}
             alt="Avatar"
             className="overflow-hidden rounded-full"
           />

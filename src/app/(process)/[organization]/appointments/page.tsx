@@ -40,8 +40,8 @@ async function AppointmentsPage({ searchParams, params }: AppRouterPageRouteOpts
         <Suspend>
           {/* <UnderConstruction/> */}
           <AppointmentPanel
-            appointmentStatusCounts={appointmentCounts}
-            routedAppointmentStatusCounts={routedAptCounts}
+            appointmentStatusCounts={appointmentCounts.data}
+            routedAppointmentStatusCounts={routedAptCounts.data}
             defaultLayout={defaultLayout}
             defaultCollapsed={defaultCollapsed}
             navCollapsedSize={4}

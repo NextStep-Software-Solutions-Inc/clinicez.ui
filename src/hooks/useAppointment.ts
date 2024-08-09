@@ -1,5 +1,4 @@
 import { GetAppointment, GetAppointments } from "@actions/appointments/appointments.action"
-import { AppointmentStatus } from "@public/json/appointment-list"
 import { self } from "@services/request"
 import useSWR from "swr"
 

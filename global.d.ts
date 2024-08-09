@@ -1,8 +1,7 @@
-import { PrismaClient as PrismaCommonClient } from '@prisma/common/client';
-import { PrismaClient as PrismaTenantClient } from '@prisma/tenant/client';
+import { createPrismaCommonClient, createPrismaTenantClient } from '@lib/factory/prisma';
 declare global {
-  var prismaCommon: PrismaCommonClient;
-  var prismaTenant: PrismaTenantClient;
+  var prismaCommon: ReturnType<typeof createPrismaCommonClient>;
+  var prismaTenant: ReturnType<typeof createPrismaTenantClient>;
   
   type Consultation =  {
     id: number

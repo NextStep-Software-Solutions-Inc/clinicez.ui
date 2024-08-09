@@ -48,7 +48,7 @@ async function EditorPage({params, searchParams}: AppRouterPageRouteOpts) {
     experience: profile?.experience ?? "",
     languages: profile?.languages.map((lang) => ({name: lang})) ?? [],
     specialties: profile?.specialties.map((specialty) => ({name: specialty})) ?? [],
-    education: profile?.educations.map((education) => ({name: education})) ?? [],
+    educations: profile?.educations.map((education) => ({name: education})) ?? [],
     certifications: profile?.certifications.map((certification) => ({name: certification})) ?? [],
     fields: profile?.fields.map((field) => ({name: field})) ?? [],
     affiliations: profile?.affiliations.map((affiliation) => ({name: affiliation})) ?? [],

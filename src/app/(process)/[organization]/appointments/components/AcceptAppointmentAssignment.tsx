@@ -1,24 +1,32 @@
 "use client";
 
-import { acceptAppointmentAction } from "@actions/appointments/appointments.action";
+import { acceptAppointmentAction } from "@actions/appointments/appointment-routing.action";
 import ActionButton from "@components/ActionButton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@components/ui/tooltip";
 import { MailCheck } from "lucide-react";
-import { useFormState } from "react-dom";
 import { toast } from "sonner";
 
+interface AcceptAppointmentAssignmentProps {
+  disabled?: boolean;
+  appointmentId: number;
+  onAccepted?: () => void;
+}
 
-const actionWrapper = async (prev: any, formData: FormData) => {
-  const res = await acceptAppointmentAction(formData);
-  if (res) {
-    toast.success("Appointment assigned accepted successfully.");
-  }
-  return res;
-};
+export default function AcceptAppointmentAssignment({disabled = false, appointmentId, onAccepted}: AcceptAppointmentAssignmentProps) {
+  const action = async (formData: FormData) => {
 
-export default function AcceptAppointmentAssignment({disabled = false}: {disabled?: boolean}) {
-  const [state, action] = useFormState(actionWrapper, false)
+    formData.append("appointmentId", appointmentId.toString());
 
+    toast.promise(acceptAppointmentAction(formData), {
+      loading: "Accepting appointment assignment...",
+      success: (res) => {
+        if(!res.status) return `Something went wrong: ${res.message}`;
+        onAccepted?.();
+        return "Appointment assignment accepted successfully."
+      },
+      error: "Failed to accept appointment assignment.",
+    })
+  };
   return (
     <Tooltip >
       <TooltipTrigger asChild>

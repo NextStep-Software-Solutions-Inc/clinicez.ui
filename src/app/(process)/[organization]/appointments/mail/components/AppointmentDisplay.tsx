@@ -79,6 +79,7 @@ export default function AppointmentDisplay() {
     roles: string[]
     permissions?: string[],
     appointmentStatuses: string[],
+    routedAptStatuses: string[],
     component: React.ReactNode
   }[]
   
@@ -88,20 +89,35 @@ export default function AppointmentDisplay() {
       roles: ["admin", "doctor", "nurse"],
       permissions: [],
       appointmentStatuses: ["all", "routed"],
-      component: <AcceptAppointmentAssignment disabled={!freshAppointment} />
+      routedAptStatuses: ["pending"],
+      component: (
+        <AcceptAppointmentAssignment
+          appointmentId={freshAppointment.id}
+          onAccepted={revalidate}
+          disabled={!freshAppointment || freshAppointment.AppointmentRouting.some(apt => apt.routedTo !== user.email)} 
+        />
+      )
     },
     {
       action:"decline",
       roles: ["admin", "doctor", "nurse"],
       permissions: [],
       appointmentStatuses: ["all", "routed"],
-      component: <DeclineAppointmentAssignment disabled={!freshAppointment} />
+      routedAptStatuses: ["pending"],
+      component: (
+        <DeclineAppointmentAssignment 
+          disabled={!freshAppointment || freshAppointment.AppointmentRouting.some(apt => apt.routedTo !== user.email)} 
+          appointmentId={freshAppointment.id}
+          onDeclined={revalidate}
+        />
+      )
     },
     {
       action:"receive",
-      roles: ["admin", ],
+      roles: ["admin"],
       permissions: [],
       appointmentStatuses: ["all", "pending"],
+      routedAptStatuses: [],
       component: <ReceiveAppointment 
         appointmentId={freshAppointment.id}
         onReceived={revalidate} 
@@ -113,6 +129,7 @@ export default function AppointmentDisplay() {
       roles: ["admin", ],
       permissions: [],
       appointmentStatuses: ["all", "accepted", "pending"],
+      routedAptStatuses: [],
       component: (
         <RejectAppointment 
           appointmentId={freshAppointment.id}
@@ -125,7 +142,8 @@ export default function AppointmentDisplay() {
       action:"create-consultation-notes",
       roles: ["admin", "doctor", "nurse"],
       permissions: [],
-      appointmentStatuses: [],
+      appointmentStatuses: ["routed"],
+      routedAptStatuses: ["accepted"],
       component: <CreateConsultationRecordModal disabled={!freshAppointment} subject={freshAppointment?.subject ?? ""}/>
     },
     {
@@ -133,6 +151,7 @@ export default function AppointmentDisplay() {
       roles: ["admin"],
       permissions: [],
       appointmentStatuses: ["received"],
+      routedAptStatuses: [],
       component: (
         <AssignAppointment 
           appointmentId={freshAppointment.id}
@@ -146,6 +165,7 @@ export default function AppointmentDisplay() {
       roles: ["admin"],
       permissions: [],
       appointmentStatuses: ["received"],
+      routedAptStatuses: [],
       component: <RescheduleAppointment bookingDateTime={new Date()} disabled={!freshAppointment} />
     }
   ]
@@ -158,10 +178,11 @@ export default function AppointmentDisplay() {
           <Separator orientation="vertical" className="mx-1 h-6" />
           <Each
             of={appointmentTools.filter((tool) => {
-              const capable = tool.roles.includes(role ?? "") && tool.appointmentStatuses.includes(freshAppointment.AppointmentAttribute?.status.toLocaleLowerCase() ?? "")
+              const capable = tool.roles.includes(role ?? "") && tool.appointmentStatuses.includes(freshAppointment.AppointmentAttribute?.status.toLocaleLowerCase() ?? "") && (tool.routedAptStatuses.length === 0 || freshAppointment.AppointmentRouting.some(apt =>tool.routedAptStatuses.includes(apt.status.toLocaleLowerCase()) && apt.routedTo === user.email))
               return capable
             })}
             render={(tool) => tool.component}
+            fallback={<span className="text-xs text-muted-foreground">No Action Available</span>}
           />
         </div>
         <div className="ml-auto flex items-center gap-2">
@@ -202,7 +223,7 @@ export default function AppointmentDisplay() {
           <div className="flex items-start p-4">
             <div className="flex items-start gap-4 text-sm">
               <Avatar>
-                <AvatarImage src={user.picture ?? ""} alt={user.nickname ?? ""} />
+                <Image src={user.picture ?? ""} width={50} height={50} className="object-cover" alt={user.nickname ?? ""} />
                 <AvatarFallback>
                   {user.firstName?.charAt(0)} {user.lastName?.charAt(0)}
                 </AvatarFallback>

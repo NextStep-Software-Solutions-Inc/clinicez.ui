@@ -15,7 +15,7 @@ import { useOrgAppointments } from "@hooks/useAppointment";
 import { Input } from "@components/ui/input";
 import { Search } from "lucide-react";
 interface AppointmentListProps {
-  appointments: GetAppointments
+  appointments: GetAppointments["data"]
 }
 
 export const AppointmentList = forwardRef<any, AppointmentListProps>(({appointments},ref) => {
@@ -125,10 +125,10 @@ export const AppointmentListWrapper = ({orgUid}:AppointmentListWrapperProps) => 
   const appointmentStatus = searchParams.get("_aptStatus")
   const routedAptStatus = searchParams.get("_routedAptStatus")
   
-  const {data:appointments} = useOrgAppointments({orgId: orgUid, status: appointmentStatus?.toUpperCase(), routedAptStatus: routedAptStatus?.toUpperCase()})
+  const {data : appointments} = useOrgAppointments({orgId: orgUid, status: appointmentStatus?.toUpperCase(), routedAptStatus: routedAptStatus?.toUpperCase()})
 
   const filteredAppointments = useMemo(() => {
-    const withFallbackAppointments = appointments ?? [];
+    const withFallbackAppointments = appointments?.data ?? [];
     if (!query) return withFallbackAppointments;
     return withFallbackAppointments.filter((appointment) => {
       return (

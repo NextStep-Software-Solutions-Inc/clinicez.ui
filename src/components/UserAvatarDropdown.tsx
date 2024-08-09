@@ -27,7 +27,7 @@ export default async function UserAvatarDropdown({children}: {children: React.Re
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Avatar className="w-10 h-10 ring-1 ring-primary">
-          <Image fill className="object-cover" src={user.picture ?? ""} alt={user.nickname ?? ""} />
+          <Image width={50} height={50} className="object-cover" src={user.picture ?? ""} alt={user.nickname ?? ""} />
           <AvatarFallback>{user.nickname?.substring(0,2)}</AvatarFallback>
         </Avatar>
       </DropdownMenuTrigger>

@@ -20,6 +20,7 @@ import { GetUserOrganizations } from "@actions/users/user-organization.action"
 export const columns: ColumnDef<GetUserOrganizations[number]>[] = [
   {
     id: "select",
+    size: 1,
     // header: ({ table }) => (
     //   <Checkbox
     //     checked={
@@ -54,9 +55,17 @@ export const columns: ColumnDef<GetUserOrganizations[number]>[] = [
   },
   {
     accessorKey: "application-date",
-    size: 50,
+    size: 5,
+    accessorFn: (row) => row.createdAt.toLocaleDateString("en-PH", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "numeric",
+      minute: "numeric",
+      timeZone: "Asia/Manila"
+    }),
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Application Date" />
+      <DataTableColumnHeader column={column} title="Application Date & Time" />
     ),
     cell: ({ row }) => {
       const dateApplied = row.original.createdAt.toLocaleDateString("en-PH", {
@@ -77,13 +86,11 @@ export const columns: ColumnDef<GetUserOrganizations[number]>[] = [
           <span>{dateApplied}</span>
         </div>
       )
-    },
-    filterFn: (row, id, value) => {
-      return value.includes(row.getValue(id))
-    },
+    }
   },
   {
     accessorKey: "user",
+    size: 10,
     accessorFn: (row) => `${row.User?.firstName} ${row.User?.lastName}`,
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="User" />
@@ -110,12 +117,12 @@ export const columns: ColumnDef<GetUserOrganizations[number]>[] = [
             <Link 
               target="_blank"
               href={`/user/${row.original.User?.userId}/phr`} 
-              className="flex gap-2 items-center hover:underline cursor-pointer"
+              className="hover:underline cursor-pointer"
             >
-              {user} <ExternalLink className="w-4 h-4"/>
+              {user} <ExternalLink className="w-4 h-4 ml-3 inline-block"/>
             </Link>
             <ConditionalRender condition={!!gender && !!dob}>
-              <span className="text-xs text-gray-400">{gender && gender.charAt(0)} / {dob && differenceInCalendarYears(new Date(), dob)}</span>
+              <div className="text-xs text-muted-foreground">{gender && gender.charAt(0)} / {dob && differenceInCalendarYears(new Date(), dob)}</div>
             </ConditionalRender>
           </div>
           
@@ -125,6 +132,8 @@ export const columns: ColumnDef<GetUserOrganizations[number]>[] = [
   },
   {
     accessorKey: "accepted-by",
+    size: 5,
+    accessorFn: (row) => `${row.AcceptedBy?.firstName ?? "-"} ${row.AcceptedBy?.lastName ?? "-"}`,
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Accepted By" />
     ),
@@ -141,12 +150,10 @@ export const columns: ColumnDef<GetUserOrganizations[number]>[] = [
         </div>
       )
     },
-    filterFn: (row, id, value) => {
-      return value.includes(row.getValue(id))
-    },
   },
   {
     accessorKey: "role",
+    size: 1,
     accessorFn: (row) => row.UserRole.name,
     filterFn: (row, id, value) => {
       return value.includes(row.getValue(id))
@@ -168,6 +175,7 @@ export const columns: ColumnDef<GetUserOrganizations[number]>[] = [
   },
   {
     accessorKey: "status",
+    size: 1,
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Status" />
     ),
@@ -191,12 +199,10 @@ export const columns: ColumnDef<GetUserOrganizations[number]>[] = [
         </div>
       )
     },
-    filterFn: (row, id, value) => {
-      return value.includes(row.getValue(id))
-    },
   },
   {
     id: "actions",
+    size: 1,
     cell: ({ row }) => {
       return (
         (

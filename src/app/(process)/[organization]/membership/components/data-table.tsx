@@ -60,6 +60,11 @@ export function DataTable<TData extends GetUserOrganizations[number], TValue>({
       rowSelection,
       columnFilters,
     },
+    defaultColumn: {
+      minSize: 1,
+      maxSize: 200,
+      size: 20,
+    },
     enableExpanding: true,
     getExpandedRowModel: getExpandedRowModel(),
     onExpandedChange: setExpanded,
@@ -104,7 +109,7 @@ export function DataTable<TData extends GetUserOrganizations[number], TValue>({
               )}
             />
           </TableHeader>
-          <TableBody>
+          <TableBody style={{width: "100%"}}>
             <Each
               of={table.getRowModel().rows}
               render={(row) => (
@@ -115,7 +120,7 @@ export function DataTable<TData extends GetUserOrganizations[number], TValue>({
                     <Each
                       of={row.getVisibleCells()}
                       render={(cell) => (
-                        <TableCell>
+                        <TableCell style={{width: `${cell.column.getSize()}%`}}>
                           {flexRender(
                             cell.column.columnDef.cell,
                             cell.getContext()
@@ -136,9 +141,9 @@ export function DataTable<TData extends GetUserOrganizations[number], TValue>({
                               if(requirements === "student_record") {
                                 return (
                                   <>
-                                    <h2 className="text-lg">Student Record</h2>
+                                    <h2 className="text-lg font-semibold">Student Record</h2>
                                     <Separator/>
-                                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
+                                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-1">
                                       <Each 
                                         of={row.original.User.StudentRecords}
                                         fallback="No student record found."
@@ -163,9 +168,9 @@ export function DataTable<TData extends GetUserOrganizations[number], TValue>({
                               if(requirements === "employee_record") {
                                 return (
                                   <>
-                                    <h2 className="text-lg">Employee Record</h2>
+                                    <h2 className="text-lg font-semibold">Employee Record</h2>
                                     <Separator />
-                                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
+                                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-1">
                                       <Each
                                         of={row.original.User.UserEmployments}
                                         fallback="No employee record found."

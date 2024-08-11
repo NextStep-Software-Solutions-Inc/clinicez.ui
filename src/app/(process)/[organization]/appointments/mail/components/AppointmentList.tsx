@@ -67,7 +67,7 @@ export const AppointmentList = forwardRef<any, AppointmentListProps>(({appointme
                       {item.AppointmentAttribute?.status === "PENDING" && (
                         <span className="flex h-2 w-2 rounded-full bg-blue-600" />
                       )}
-                      {appointmentStatus === "all" && <Badge variant="default" className="capitalize">{item?.AppointmentAttribute?.status}</Badge>}
+                     
                     </div>
                     <div
                       className={cn(
@@ -95,6 +95,7 @@ export const AppointmentList = forwardRef<any, AppointmentListProps>(({appointme
                   {item.AppointmentAttribute?.AppointmentType.name}
                 </Badge>
               </div>
+              {appointmentStatus === "all" && <Badge variant="outline" className="capitalize ml-auto">{item?.AppointmentAttribute?.status.toLocaleLowerCase()}</Badge>}
             </button>
           )}
         />

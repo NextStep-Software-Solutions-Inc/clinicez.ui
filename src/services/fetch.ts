@@ -1,6 +1,6 @@
 import { refreshTokensAction } from "@actions/auth.action";
-import { authAtom, jotaiStore } from "../state/auth";
-import { navigateAction } from "@actions/navigate.action";
+import { authAtom } from "../state/auth";
+import { jotaiStore } from "@state/store";
 
 type CustomRequestInit = RequestInit
 type CreateFetchOptions = CustomRequestInit & {

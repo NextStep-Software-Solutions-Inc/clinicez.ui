@@ -1,5 +1,5 @@
-export type AppointmentStatus = "all" | "pending" | "received" | "accepted" | "rejected" | "routed" | "reschedule";
-export type RoutedAptStatus = "pending" | "received" | "accepted" | "declined";
+export type AppointmentStatus = "ALL" | "PENDING" | "RECEIVED" | "REJECTED" | "ROUTED" | "RESCHEDULED";
+export type RoutedAptStatus = "PENDING" | "ACCEPTED" | "DECLINED";
 export const appointmentList = [
   {
     id: "auth0|668c3bcfb6e20bb732dc87a8",

@@ -9,37 +9,28 @@ import {
 import {
   Avatar,
   AvatarFallback,
-  AvatarImage,
 } from "@components/ui/avatar"
 import { Button } from "@components/ui/button"
 
 import { Separator } from "@components/ui/separator"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@components/ui/tooltip"
-import CreateConsultationRecordModal from "../../components/CreateConsultationRecordModal"
+
 import { ScrollArea } from "@components/ui/scroll-area"
 import Image from "next/image"
 import Each from "@components/utils/Each"
-import RejectAppointment from "../../components/RejectAppointment"
-import AcceptAppointmentAssignment from "../../components/AcceptAppointmentAssignment"
-import ReceiveAppointment from "../../components/ReceiveAppointment"
-import { AppointmentStatus } from "@public/json/appointment-list"
-import AssignAppointment from "../../components/AssignAppointment"
-import RescheduleAppointment from "../../components/RescheduleAppointment"
-import DeclineAppointmentAssignment from "../../components/DeclineAppointmentAssignment"
 import { Badge } from "@components/ui/badge"
 import ConsultationRecordSheet from "../../components/ConsultationRecordSheet"
 import { SheetTrigger } from "@components/ui/sheet"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@components/ui/dropdown-menu"
 import { useParams, useSearchParams } from "next/navigation"
-import { useUser } from "@hooks/useUser";
+import { useUser as useAptUser } from "@hooks/useUser";
 import { useOrgAppointment } from "@hooks/useAppointment";
 import PageLoading from "@components/PageLoading";
 import { revalidatePath } from "@actions/cache.action";
 import { mutate } from "swr";
+import { useAppointmentTools } from "../../components/useAppointmentActions";
+import { userDefaultOrganizationRoleAtom } from "@state/user-role";
+import { useAtomValue } from "jotai";
+import { useUser } from "@auth0/nextjs-auth0/client";
 
 export default function AppointmentDisplay() {
 
@@ -47,128 +38,44 @@ export default function AppointmentDisplay() {
   const searchParams = useSearchParams()
   const organization = params?.organization as string
   const appointmentId = parseInt(searchParams.get("_appointment") ?? "")
-  const role = searchParams.get("_role")
+  const activeRole = useAtomValue(userDefaultOrganizationRoleAtom)[organization]?.roleName
   
   const {data: freshAppointment, isLoading: loadingAppointment} = useOrgAppointment({
     orgId: organization,
     appointmentId: appointmentId
   })
 
-  const revalidate = async () => {
-    revalidatePath(`${organization}/appointments`,  "page")
-    mutate((key) =>  typeof key === 'string' && key.startsWith(`/api/organizations/${organization}/appointments`), undefined, {
-      revalidate:true
-    })
-  }
-  const {data: user, isLoading: loadingUser} = useUser({email: freshAppointment?.Requesters[0].email})
+  const { user } = useUser()
+  const {data: aptUser, isLoading: loadingUser} = useAptUser({email: freshAppointment?.Requesters[0].email})
+  const {tools: appointmentTools} = useAppointmentTools({
+    freshAppointment: freshAppointment,
+    revalidate : async () => {
+      revalidatePath(`${organization}/appointments`,  "page")
+      mutate((key) =>  typeof key === 'string' && key.startsWith(`/api/organizations/${organization}/appointments`), undefined, {
+        revalidate:true
+      })
+    }
+  })
 
   if (!appointmentId) {
     return <div className="p-8 text-center text-muted-foreground">No appointment selected</div>
   }
+  if (!user) {
+    return <div className="p-8 text-center text-muted-foreground">User not found</div>
+  }
 
-  if (loadingAppointment || !freshAppointment) {
+  if (loadingAppointment) {
     return <PageLoading label="Loading Appointment" />
   };
-  if (loadingUser || !user) {
+  
+  if (loadingUser) {
     return <PageLoading label="Loading User" />
   };
+
+  if(!freshAppointment || !aptUser) {
+    return <div className="p-8 text-center text-muted-foreground">Appointment not found</div>
+  }
   
-  type AppointmentActions = "accept"|"decline"|"approve"|"receive"| "reject" | "assign" | "create-consultation-notes"| "reschedule"
-  type AppointmentStatusTools = {
-    action: AppointmentActions
-    roles: string[]
-    permissions?: string[],
-    appointmentStatuses: string[],
-    routedAptStatuses: string[],
-    component: React.ReactNode
-  }[]
-  
-  const appointmentTools: AppointmentStatusTools = [
-    {
-      action:"accept",
-      roles: ["admin", "doctor", "nurse"],
-      permissions: [],
-      appointmentStatuses: ["all", "routed"],
-      routedAptStatuses: ["pending"],
-      component: (
-        <AcceptAppointmentAssignment
-          appointmentId={freshAppointment.id}
-          onAccepted={revalidate}
-          disabled={!freshAppointment || freshAppointment.AppointmentRouting.some(apt => apt.routedTo !== user.email)} 
-        />
-      )
-    },
-    {
-      action:"decline",
-      roles: ["admin", "doctor", "nurse"],
-      permissions: [],
-      appointmentStatuses: ["all", "routed"],
-      routedAptStatuses: ["pending"],
-      component: (
-        <DeclineAppointmentAssignment 
-          disabled={!freshAppointment || freshAppointment.AppointmentRouting.some(apt => apt.routedTo !== user.email)} 
-          appointmentId={freshAppointment.id}
-          onDeclined={revalidate}
-        />
-      )
-    },
-    {
-      action:"receive",
-      roles: ["admin"],
-      permissions: [],
-      appointmentStatuses: ["all", "pending"],
-      routedAptStatuses: [],
-      component: <ReceiveAppointment 
-        appointmentId={freshAppointment.id}
-        onReceived={revalidate} 
-        disabled={!freshAppointment}
-      />
-    },
-    {
-      action:"reject",
-      roles: ["admin", ],
-      permissions: [],
-      appointmentStatuses: ["all", "accepted", "pending"],
-      routedAptStatuses: [],
-      component: (
-        <RejectAppointment 
-          appointmentId={freshAppointment.id}
-          onRejected={revalidate} 
-          disabled={!freshAppointment}
-        /> 
-      )
-    },
-    {
-      action:"create-consultation-notes",
-      roles: ["admin", "doctor", "nurse"],
-      permissions: [],
-      appointmentStatuses: ["routed"],
-      routedAptStatuses: ["accepted"],
-      component: <CreateConsultationRecordModal disabled={!freshAppointment} subject={freshAppointment?.subject ?? ""}/>
-    },
-    {
-      action:"assign",
-      roles: ["admin"],
-      permissions: [],
-      appointmentStatuses: ["received"],
-      routedAptStatuses: [],
-      component: (
-        <AssignAppointment 
-          appointmentId={freshAppointment.id}
-          onAssigned={revalidate} 
-          disabled={!freshAppointment}
-        />
-      )
-    },
-    {
-      action:"reschedule",
-      roles: ["admin"],
-      permissions: [],
-      appointmentStatuses: ["received"],
-      routedAptStatuses: [],
-      component: <RescheduleAppointment bookingDateTime={new Date()} disabled={!freshAppointment} />
-    }
-  ]
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center p-2">
@@ -178,16 +85,17 @@ export default function AppointmentDisplay() {
           <Separator orientation="vertical" className="mx-1 h-6" />
           <Each
             of={appointmentTools.filter((tool) => {
-              const capable = tool.roles.includes(role ?? "") && tool.appointmentStatuses.includes(freshAppointment.AppointmentAttribute?.status.toLocaleLowerCase() ?? "") && (tool.routedAptStatuses.length === 0 || freshAppointment.AppointmentRouting.some(apt =>tool.routedAptStatuses.includes(apt.status.toLocaleLowerCase()) && apt.routedTo === user.email))
-              return capable
+              const enable = tool.roles.includes(activeRole ?? "") 
+                && tool.appointmentStatuses.includes(freshAppointment.AppointmentAttribute?.status.toLocaleLowerCase() ?? "") 
+                && (tool.routedAptStatuses.length === 0 || freshAppointment.AppointmentRouting.some(apt =>tool.routedAptStatuses.includes(apt.status.toLocaleLowerCase()) && apt.routedTo === user.email))
+              return enable
             })}
             render={(tool) => tool.component}
             fallback={<span className="text-xs text-muted-foreground">No Action Available</span>}
           />
         </div>
         <div className="ml-auto flex items-center gap-2">
-            
-          <Tooltip>
+          {/* <Tooltip>
             <TooltipTrigger asChild>
               <Button variant="ghost" size="icon" disabled={!freshAppointment}>
                 <Forward className="h-4 w-4" />
@@ -195,7 +103,7 @@ export default function AppointmentDisplay() {
               </Button>
             </TooltipTrigger>
             <TooltipContent>Forward</TooltipContent>
-          </Tooltip>
+          </Tooltip> */}
         </div>
         <Separator orientation="vertical" className="mx-2 h-6" />
         <ConsultationRecordSheet>
@@ -212,60 +120,57 @@ export default function AppointmentDisplay() {
                   View Consultation Records
                 </DropdownMenuItem>
               </SheetTrigger>
-
+              <DropdownMenuItem>
+                  View Assignment History
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </ConsultationRecordSheet>
       </div>
       <Separator />
-      {freshAppointment ? (
-        <div className="flex flex-1 flex-col">
-          <div className="flex items-start p-4">
-            <div className="flex items-start gap-4 text-sm">
-              <Avatar>
-                <Image src={user.picture ?? ""} width={50} height={50} className="object-cover" alt={user.nickname ?? ""} />
-                <AvatarFallback>
-                  {user.firstName?.charAt(0)} {user.lastName?.charAt(0)}
-                </AvatarFallback>
-              </Avatar>
-              <div className="grid gap-1">
-                <div className="font-semibold">{user.firstName} {user.lastName} - <span className="i">{user.email}</span></div>
-                <div className="line-clamp-1 text-xs">
-                  <span className="font-medium">{user.gender} / </span>{user.dob ? differenceInCalendarYears(new Date(), user.dob) : 0}
-                </div>
-                <div className="line-clamp-1 text-xs">{freshAppointment.subject}</div>
+      <div className="flex flex-1 flex-col">
+        <div className="flex items-start p-4">
+          <div className="flex items-start gap-4 text-sm">
+            <Avatar>
+              {
+                aptUser.picture 
+                  ? <Image src={aptUser.picture} width={50} height={50} className="object-cover" alt={aptUser.nickname ?? ""} />
+                  : <AvatarFallback>{aptUser.firstName?.charAt(0)} {aptUser.lastName?.charAt(0)}</AvatarFallback>
+              }
+            </Avatar>
+            <div className="grid gap-1">
+              <div className="font-semibold">{aptUser.firstName} {aptUser.lastName} - <span className="i">{aptUser.email}</span></div>
+              <div className="line-clamp-1 text-xs">
+                <span className="font-medium">{aptUser.gender} / </span>{aptUser.dob ? differenceInCalendarYears(new Date(), aptUser.dob) : 0}
+              </div>
+              <div className="line-clamp-1 text-xs">{freshAppointment.subject}</div>
 
-              </div>
             </div>
-            {freshAppointment.createdAt && (
-              <div className="ml-auto text-xs text-muted-foreground">
-                {/* {format(new Date(freshAppointment.bookingDateTime), "PPpp")} */}
-              </div>
-            )}
           </div>
-          <Separator />
-          <ScrollArea className="flex-auto whitespace-pre-wrap p-4 text-sm  h-0">
-            {freshAppointment.complaint}
-            
-            <Separator className="my-2" />
-            <h5>Attachments</h5>
-            <div className="flex flex-wrap gap-2">
-              <Each
-                of={Array(Math.floor(Math.random()*10)).fill(false)}
-                render={() => (
-                  <div className="w-[200px] h-auto">
-                    <Image width={150} height={150} className="rounded w-full" src="https://images.unsplash.com/photo-1721777436309-a5af4d4a4382?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="" />
-                  </div>
-                )}
-              />
+          {freshAppointment.createdAt && (
+            <div className="ml-auto text-xs text-muted-foreground">
+              {/* {format(new Date(freshAppointment.bookingDateTime), "PPpp")} */}
             </div>
-          </ScrollArea>
+          )}
         </div>
-      ) : (
-        <div className="p-8 text-center text-muted-foreground">
-          No message selected
-        </div>
-      )}
+        <Separator />
+        <ScrollArea className="flex-auto whitespace-pre-wrap p-4 text-sm  h-0">
+          {freshAppointment.complaint}
+            
+          <Separator className="my-2" />
+          <h5>Attachments</h5>
+          <div className="flex flex-wrap gap-2">
+            <Each
+              of={Array(Math.floor(Math.random()*10)).fill(false)}
+              render={() => (
+                <div className="w-[200px] h-auto">
+                  <Image width={150} height={150} className="rounded w-full" src="https://images.unsplash.com/photo-1721777436309-a5af4d4a4382?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="" />
+                </div>
+              )}
+            />
+          </div>
+        </ScrollArea>
+      </div>
     </div>
   )
 }

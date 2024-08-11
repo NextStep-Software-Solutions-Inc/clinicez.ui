@@ -38,7 +38,34 @@ export const getOrganizationRolesAction = cache(async (filter?: FiltersType) => 
       orgId: true,
       name: true,
       description: true,
-      requirements: true
+      requirements: true,
+      UserDefaultOrganizationRoles: {
+        where: {
+          isActive: true,
+          User: {
+            ...userId ? { userId } : {}
+          }
+        },
+        select: {
+          id: true,
+          Organization: {
+            select: {
+              orgId: true,
+            }
+          },
+          UserRole: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          User: {
+            select: {
+              userId: true
+            }
+          }
+        }
+      }
     }
   })
   return roles;

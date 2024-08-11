@@ -18,7 +18,7 @@ export default function BookAppointmentSteps({ initialStep = 1, children }: Book
 
   return (
     <div className="container flex flex-col gap-4 my-10">
-      <Stepper complete={isComplete} steps={["Pick Time Slot", "Chief Complaint", "Consent", "Review"]} currentStep={currentStep}/>
+      <Stepper complete={isComplete} steps={["Pick Time Slot", "Chief Complaint","Insert Attachment", "Consent", "Review"]} currentStep={currentStep}/>
       {!isComplete ? currentStepComponent : (
         <div className="prose max-w-full text-center my-10">
           <h2 className="">You had successfully booked your appointment. 🎉</h2>

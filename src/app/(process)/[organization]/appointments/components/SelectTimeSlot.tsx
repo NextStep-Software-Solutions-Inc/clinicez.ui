@@ -21,7 +21,7 @@ export default function SelectTimeSlot({nextStep, prevStep, isFirstStep, isLastS
   return (
     <div className="prose max-w-full shadow-lg w-full p-8 bg-white rounded-md">
       <h2>Pick your time slot</h2>
-      <div className="flex lg:flex-row flex-col items-center gap-5 justify-center">
+      <div className="flex lg:flex-row flex-col items-center gap-5 justify-center my-5">
         <FilterForm/>
         <AppointmentCalendar/>
       </div>

@@ -2,6 +2,7 @@
 import 'server-only'
 
 import { delay } from "@lib/wait";
+import { decode } from "jsonwebtoken"
 import prismaTenant from "@lib/prisma-tenant";
 import { RoutedAptStatus, AppointmentStatus } from "@public/json/appointment-list";
 import { getCachedSession } from '@actions/session.action';
@@ -50,26 +51,30 @@ export type GetAppointments = Awaited<ReturnType<typeof getAppointmentsAction>>;
 export const getAppointmentsAction = async (filter?: GetAppointmentFilter) => {
 
   const session = await getCachedSession();
-  if(!session) return {
+  if(!session || !session.accessToken) return {
     status: false,
     message: 'Unauthorized'
   };
 
   const { orgUid, status, routedAptStatus } = filter || {};
+  const hasPermission = checkUserPermission(session.accessToken);
 
+  console.log({hasPermission});
+  
   const appointments = await prismaTenant.appointment.findMany({
     orderBy: {
       createdAt: 'desc'
     },
     where: {
       orgUid,
-      AppointmentAttribute: { status },
+      AppointmentAttribute: { ...status !== "ALL" ? {status}: {}},
       ...routedAptStatus ? {
         AppointmentRouting: {
-          some: { status: routedAptStatus }
+          some: {status: routedAptStatus} 
         }
       }: {},
       OR: [
+        {...hasPermission ? {orgUid} : {}},
         { Requesters: { some: { email: session.user.email } } },
         {
           AppointmentRouting: {
@@ -80,7 +85,6 @@ export const getAppointmentsAction = async (filter?: GetAppointmentFilter) => {
               ]
             }
           }
-          
         }
       ]
     },
@@ -124,10 +128,11 @@ export const getAppointmentsAction = async (filter?: GetAppointmentFilter) => {
 }
 
 export type GetAppointment = Awaited<ReturnType<typeof getAppointmentAction>>;
-export const getAppointmentAction = async (id: number) => {
+export const getAppointmentAction = async (id: number, orgUid?: string) => {
   const appointment = await prismaTenant.appointment.findUnique({
     where: {
       isActive: true,
+      ...orgUid ? { orgUid } : {},
       id
     },
     select: {
@@ -175,10 +180,12 @@ export const getAppointmentAction = async (id: number) => {
 export type GetAppointmentCounts = Awaited<ReturnType<typeof getAppointmentCountsAction>>;
 export const getAppointmentCountsAction = async (orgUid: string) => {
   const session = await getCachedSession();
-  if(!session) return {
+  if(!session || !session.accessToken) return {
     status: false,
     message: 'Unauthorized'
   };
+
+  const hasPermission = checkUserPermission(session.accessToken);
 
   const counts = await prismaTenant.appointmentAttribute.groupBy({
     by: ['status'],
@@ -186,6 +193,7 @@ export const getAppointmentCountsAction = async (orgUid: string) => {
       Appointment: {
         orgUid,
         OR: [
+          {...hasPermission ? {orgUid} : {}},
           { Requesters: { some: { email: session.user.email } } },
           {
             AppointmentRouting: {
@@ -204,7 +212,11 @@ export const getAppointmentCountsAction = async (orgUid: string) => {
   });
 
   const countsMap = counts.reduce((acc, count) => {
+    if (acc["ALL"] === undefined) {
+      acc["ALL"] = 0;
+    }
     acc[count.status] = count._count
+    acc["ALL"] += count._count ?? 0
     return acc;
   }, {} as Record<string, number>)
   return {
@@ -216,10 +228,11 @@ export const getAppointmentCountsAction = async (orgUid: string) => {
 
 export const getRoutedAppointmentCountsAction = async (orgUid: string) => {
   const session = await getCachedSession();
-  if(!session) return {
+  if(!session || !session.accessToken) return {
     status: false,
     message: 'Unauthorized'
   };
+  const hasPermission = checkUserPermission(session.accessToken);
 
   const counts = await prismaTenant.appointmentRouting.groupBy({
     by: ['status'],
@@ -227,6 +240,7 @@ export const getRoutedAppointmentCountsAction = async (orgUid: string) => {
       Appointment: {
         orgUid,
         OR: [
+          {...hasPermission ? {orgUid} : {}},
           { Requesters: { some: { email: session.user.email } } },
           {
             AppointmentRouting: {
@@ -245,7 +259,11 @@ export const getRoutedAppointmentCountsAction = async (orgUid: string) => {
   });
 
   const countsMap = counts.reduce((acc, count) => {
+    if (acc["ALL"] === undefined) {
+      acc["ALL"] = 0;
+    }
     acc[count.status] = count._count
+    acc["ALL"] += count._count ?? 0;
     return acc;
   }, {} as Record<string, number>)
   return {
@@ -264,4 +282,21 @@ export const rescheduleAppointmentAction = async (formData: FormData) => {
   console.log("Reschedule appointment...", Object.fromEntries(formData));
   await delay(1000);
   return true;
+}
+
+function checkUserPermission(accessToken: string, permissions: string[] = []): boolean {
+  if(permissions.length === 0) return true;
+  return permissions.every((permission) => parseAccessToken(accessToken, "permissions").includes(permission));
+}
+
+
+// lets create a function that parse the accessToken to get the permission claims
+function parseAccessToken(accessToken: string, claim: string): string[] {
+  const payload = decode(accessToken, {
+    json: true
+  })
+  if(payload && claim in payload) {
+    return payload[claim]
+  }
+  return []
 }

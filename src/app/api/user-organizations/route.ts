@@ -15,6 +15,7 @@ export const GET = withJwtAuth(async (req: NextRequest) => {
   const status = searchParams.get('status');
   const pageSize = searchParams.get('pageSize');
   const pageNumber = searchParams.get('pageNumber');
+  const distinct = searchParams.get('distinct');
 
   const disabilities = await getUserOrganizationsAction({
     userId,
@@ -22,7 +23,8 @@ export const GET = withJwtAuth(async (req: NextRequest) => {
     roleId : roleId ? parseInt(roleId) : undefined,
     status : status as UserOrganizationStatus,
     pageSize: pageSize ? parseInt(pageSize) : undefined,
-    pageNumber: pageNumber ? parseInt(pageNumber) : undefined
+    pageNumber: pageNumber ? parseInt(pageNumber) : undefined,
+    distinct: distinct === "true"
   });
 
   return NextResponse.json(disabilities, {

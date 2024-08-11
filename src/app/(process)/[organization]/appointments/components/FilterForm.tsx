@@ -30,6 +30,7 @@ import { useHPs } from "@hooks/useHP"
 import { useOrgServices } from "@hooks/useOrgService"
 import { bookAppointmentAtom, BookAppointmentForm } from "../../../../../state/book-appointment"
 import { useAtom } from "jotai"
+import ActionButton from "@components/ActionButton"
 
 const FilterFormSchema = z.object({
   appointmentTypeId: z.coerce.number({
@@ -76,12 +77,12 @@ export default function FilterForm() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className=" space-y-6">
-        <div className="flex flex-row gap-5 items-center flex-wrap">
+        <div className="flex flex-row gap-5 items-center justify-center md:justify-start flex-wrap">
           <FormField
             control={form.control}
             name="appointmentTypeId"
             render={({ field }) => (
-              <FormItem>
+              <FormItem className="flex-grow">
                 <FormLabel>Appointment Type</FormLabel>
                 <Select 
                   onValueChange={val => {
@@ -115,7 +116,7 @@ export default function FilterForm() {
             control={form.control}
             name="serviceId"
             render={({ field }) => (
-              <FormItem>
+              <FormItem className="flex-grow">
                 <FormLabel>Service</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value?.toString()}>
                   <FormControl>
@@ -143,7 +144,7 @@ export default function FilterForm() {
             control={form.control}
             name="doctor"
             render={({ field }) => (
-              <FormItem>
+              <FormItem className="flex-grow">
                 <FormLabel>Doctor</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
@@ -153,7 +154,7 @@ export default function FilterForm() {
                   </FormControl>
                   <SelectContent>
                     <Each
-                      of={doctors?.filter(d => d.DoctorProfile?.name) ?? []}
+                      of={doctors ?? []}
                       render={(doctor) => (
                         <SelectItem value={doctor.id.toString()}>{doctor.DoctorProfile?.name} </SelectItem>
                       )}
@@ -167,7 +168,8 @@ export default function FilterForm() {
               </FormItem>
             )}
           />
-          <Button type="submit">Set Filter</Button>
+          <ActionButton className="w-full" type="submit">Set Filter</ActionButton>
+
         </div>
       </form>
     </Form>

@@ -8,7 +8,7 @@ export default function AppointmentCalendar() {
   const [date, setDate] = useState<Date | undefined>(new Date())
   
   return (
-    <div className="flex flex-row gap-5 items-baseline  w-full">
+    <div className="">
       <Calendar
         mode="single"
         selected={date}
@@ -43,17 +43,15 @@ export default function AppointmentCalendar() {
         footer={<span className="font-medium text-sm">Select a date to show available time slots</span>}
       />
         
-      <div className="space-y-2">
+      {/* <div className="space-y-2">
         <h3 className="text-md font-semibold mb-2">Legend:</h3>
         <div className="flex flex-row items-center justify-start gap-1 flex-wrap mt-2">
           <Badge variant="outline" className="bg-white text-black ring-1 ring-black">Available</Badge>
-          {/* <Badge className="bg-red-300">Fully Booked</Badge> */}
           <Badge variant="outline" className="bg-muted text-muted-foreground">Close</Badge>
           <Badge variant="outline" className="bg-slate-300 text-white">Holiday</Badge>
           <Badge variant="outline" className="bg-blue-300 text-white">Today</Badge>
         </div>
-        
-      </div>
+      </div> */}
       
     </div>
       

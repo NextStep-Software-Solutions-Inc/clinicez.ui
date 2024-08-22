@@ -23,185 +23,207 @@ export type GetUserOrgFilterType = {
 export type GetUserOrganizations = Awaited<ReturnType<typeof getUserOrganizationsAction>>
 export const getUserOrganizationsAction = cache(async (filter?: GetUserOrgFilterType) => {
   const { userId, orgId, status, roleId, pageNumber, pageSize, distinct } = filter || {};
-
-  const userOrganizations = await prisma.userOrganization.findMany({
-    ... pageSize? { take: pageSize }: {},
-    ... distinct? { distinct: ["organizationId"]}: {},
-    skip: pageNumber ? (pageNumber - 1) * (pageSize || 10) : 0,
-    orderBy: {
-      createdAt: "desc"
-    },
-    where: {
-      ...roleId && { roleId },
-      ...status && { status },
-      ...orgId && {
-        Organization: {
-          orgId
+  const paginatedData = await prisma.$transaction(async (prisma) => {
+    const userOrganizations =await prisma.userOrganization.findMany({
+      ... pageSize? { take: pageSize }: {},
+      ... distinct? { distinct: ["organizationId"]}: {},
+      skip: pageNumber ? (pageNumber - 1) * (pageSize || 10) : 0,
+      orderBy: {
+        createdAt: "desc"
+      },
+      where: {
+        ...roleId && { roleId },
+        ...status && { status },
+        ...orgId && {
+          Organization: {
+            orgId
+          }
+        },
+        ...userId && {
+          User: {
+            isActive: true,
+            userId
+          }
         }
       },
-      ...userId && {
+      select: {
+        id: true,
+        createdAt: true,
         User: {
-          isActive: true,
-          userId
-        }
-      }
-    },
-    select: {
-      id: true,
-      createdAt: true,
-      User: {
-        select: {
-          id: true,
-          picture: true,
-          userId: true,
-          firstName: true,
-          lastName: true,
-          gender: true,
-          dob: true,
-          // ...orgId ? {
-          StudentRecords: {
-            where: {
-              isActive: true,
-              Organization: {
-                orgId: orgId ?? ""
-              }
-            },
-            select: {
-              studentId: true,
-              lrn: true,
-              Level: {
-                select: {
-                  name: true
+          select: {
+            id: true,
+            picture: true,
+            userId: true,
+            firstName: true,
+            lastName: true,
+            gender: true,
+            dob: true,
+            // ...orgId ? {
+            StudentRecords: {
+              where: {
+                isActive: true,
+                Organization: {
+                  orgId: orgId ?? ""
                 }
               },
-              YearLevel: {
-                select: {
-                  name: true
-                }
-              },
-              Program: {
-                select: {
-                  name: true
-                }
-              },
-              Department: {
-                select: {
-                  name: true
-                }
-              },
-              College: {
-                select: {
-                  name: true
-                }
-              }
-            }
-          },
-          UserEmployments: {
-            where: {
-              isActive: true,
-              Organization: {
-                orgId: orgId ?? ""
-              }
-            },
-            select: {
-              employeeId: true,
-              position: true,
-              designation: true,
-              Office: {
-                select: {
-                  name: true
-                }
-              },
-              Department: {
-                select: {
-                  name: true
-                }
-              },
-              College: {
-                select: {
-                  name: true
-                }
-              }
-            }
-          }
-        }
-      },
-      AcceptedBy: {
-        select: {
-          id: true,
-          userId: true,
-          firstName: true,
-          lastName: true
-        }
-      },
-      status: true,
-      role: true,
-      UserRole: {
-        select: {
-          id: true,
-          name: true,
-          requirements: true
-        }
-      },
-      Organization: {
-        select: {
-          name: true,
-          orgId: true,
-          id: true,
-          Users: {
-            select: {
-              User: {
-                select: {
-                  userId: true,
+              select: {
+                studentId: true,
+                lrn: true,
+                Level: {
+                  select: {
+                    name: true
+                  }
                 },
-              },
-            }
-          },
-          UserDefaultOrganizations: {
-            where: {
-              isActive: true,
-              User: {
-                ...userId? {userId}: {}
-              }
-            },
-            select: {
-              id: true,
-              organizationId: true,
-              User: {
-                select: {
-                  userId: true,
-                }
-              },
-              Organization: {
-                select: {
-                  orgId: true,
+                YearLevel: {
+                  select: {
+                    name: true
+                  }
+                },
+                Program: {
+                  select: {
+                    name: true
+                  }
+                },
+                Department: {
+                  select: {
+                    name: true
+                  }
+                },
+                College: {
+                  select: {
+                    name: true
+                  }
                 }
               }
-            }
-          },
-          UserDefaultOrganizationRoles: {
-            where: {
-              isActive: true,
-              User: {
-                ...userId? {userId}: {}
-              }
             },
-            select: {
-              id: true,
-              organizationId: true,
-              UserRole: {
-                select: {
-                  id: true,
-                  name: true
+            UserEmployments: {
+              where: {
+                isActive: true,
+                Organization: {
+                  orgId: orgId ?? ""
+                }
+              },
+              select: {
+                employeeId: true,
+                position: true,
+                designation: true,
+                Office: {
+                  select: {
+                    name: true
+                  }
+                },
+                Department: {
+                  select: {
+                    name: true
+                  }
+                },
+                College: {
+                  select: {
+                    name: true
+                  }
                 }
               }
             }
           }
+        },
+        AcceptedBy: {
+          select: {
+            id: true,
+            userId: true,
+            firstName: true,
+            lastName: true
+          }
+        },
+        status: true,
+        role: true,
+        UserRole: {
+          select: {
+            id: true,
+            name: true,
+            requirements: true
+          }
+        },
+        Organization: {
+          select: {
+            name: true,
+            orgId: true,
+            id: true,
+            Users: {
+              select: {
+                User: {
+                  select: {
+                    userId: true,
+                  },
+                },
+              }
+            },
+            UserDefaultOrganizations: {
+              where: {
+                isActive: true,
+                User: {
+                  ...userId? {userId}: {}
+                }
+              },
+              select: {
+                id: true,
+                organizationId: true,
+                User: {
+                  select: {
+                    userId: true,
+                  }
+                },
+                Organization: {
+                  select: {
+                    orgId: true,
+                  }
+                }
+              }
+            },
+            UserDefaultOrganizationRoles: {
+              where: {
+                isActive: true,
+                User: {
+                  ...userId? {userId}: {}
+                }
+              },
+              select: {
+                id: true,
+                organizationId: true,
+                UserRole: {
+                  select: {
+                    id: true,
+                    name: true
+                  }
+                }
+              }
+            }
+          }
+        },
+      }
+    })
+    const total = await prisma.userOrganization.count({
+      where: {
+        ...roleId && { roleId },
+        ...status && { status },
+        ...orgId && {
+          Organization: {
+            orgId
+          }
+        },
+        ...userId && {
+          User: {
+            isActive: true,
+            userId
+          }
         }
       },
+    });
+    return {
+      data: userOrganizations,
+      total
     }
   });
-  return userOrganizations;
+  return paginatedData;
 })
 
 

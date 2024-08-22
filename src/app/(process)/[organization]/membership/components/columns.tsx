@@ -3,7 +3,6 @@
 import { ColumnDef } from "@tanstack/react-table"
 
 import { Badge } from "@components/ui/badge"
-import { Checkbox } from "@components/ui/checkbox"
 
 import { statuses } from "../data/data"
 import { DataTableColumnHeader } from "./data-table-column-header"
@@ -16,8 +15,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@components/ui/avatar"
 import ConditionalRender from "@components/utils/ConditionalRender"
 import { Button } from "@components/ui/button"
 import { GetUserOrganizations } from "@actions/users/user-organization.action"
+import dayjs from "dayjs"
 
-export const columns: ColumnDef<GetUserOrganizations[number]>[] = [
+export const columns: ColumnDef<GetUserOrganizations["data"][number]>[] = [
   {
     id: "select",
     size: 1,
@@ -68,15 +68,7 @@ export const columns: ColumnDef<GetUserOrganizations[number]>[] = [
       <DataTableColumnHeader column={column} title="Application Date & Time" />
     ),
     cell: ({ row }) => {
-      const dateApplied = row.original.createdAt.toLocaleDateString("en-PH", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-        hour: "numeric",
-        minute: "numeric",
-        timeZone: "Asia/Manila"
-      })
-
+      const dateApplied = dayjs.tz(row.original.createdAt).format("llll")
       if (!dateApplied) {
         return null
       }

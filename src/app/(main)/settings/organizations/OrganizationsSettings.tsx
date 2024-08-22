@@ -36,7 +36,7 @@ export default function OrganizationsSettings() {
   const userId = user?.user?.sub
   const {data: myOrgs} = useUserOrganizations({userId, distinct: true}, !!userId,) 
   const defaultOrg = useMemo(() => {
-    return myOrgs?.flatMap(org => org.Organization.UserDefaultOrganizations).find(defOrg => defOrg.User.userId === userId)
+    return myOrgs?.data?.flatMap(org => org.Organization.UserDefaultOrganizations).find(defOrg => defOrg.User.userId === userId)
   }, [myOrgs, userId])
    
 
@@ -79,7 +79,7 @@ export default function OrganizationsSettings() {
                   </FormControl>
                   <SelectContent>
                     <Each
-                      of={myOrgs ?? []}
+                      of={myOrgs?.data ?? []}
                       render={({ Organization: {id, orgId, name} }) => (
                         <SelectItem value={orgId}>{name}</SelectItem>
                       )}
@@ -98,7 +98,7 @@ export default function OrganizationsSettings() {
         </ConditionalRender>
       </form>
       <Each
-        of={myOrgs ?? []}
+        of={myOrgs?.data ?? []}
         render={(org) => <OrgDefaultRoleForm org={org} key={org.id}/>}
       />
     </Form>

@@ -22,9 +22,9 @@ export default function MyMemberships({ userId }: MyMembershipsProps) {
             <Building2 className="text-primary group-hover/icon:scale-150 transition-all" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{myOrganizations?.length ?? 0}</div>
+            <div className="text-2xl font-bold">{myOrganizations?.data?.length ?? 0}</div>
             <p className="text-xs text-muted-foreground">
-              {!!myOrganizations && `Recently joined ${myOrganizations[myOrganizations.length -1].Organization.name}`} 
+              {!!myOrganizations && `Recently joined ${myOrganizations["data"][myOrganizations.data.length -1].Organization.name}`} 
             </p>
           </CardContent>
         </Card>

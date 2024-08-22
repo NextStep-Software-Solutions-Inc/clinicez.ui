@@ -17,7 +17,7 @@ export function OrganizationSwitcher({isCollapsed,}: OrganizationSwitcherProps) 
   const user = useUser()
   const {data: myOrgs} = useUserOrganizations({userId: user.user?.sub}, !!user.user?.sub)  
   
-  const orgs: SwitcherOptionsType[] = (myOrgs ?? []).filter(o => ["ACTIVE"].includes(o.status))
+  const orgs: SwitcherOptionsType[] = (myOrgs?.data ?? []).filter(o => ["ACTIVE"].includes(o.status))
     .map(org => ({
       label: org.Organization.name,
       value: org.Organization.orgId,

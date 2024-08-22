@@ -21,7 +21,7 @@ import { GetUserOrganizations, setMembershipRequestStatusAction } from "@actions
 import { revalidatePath } from "@actions/cache.action"
 import ConfirmDeleteMembership from "./ConfirmDeleteMembership"
 interface DataTableRowActionsProps<TData> {
-  applicationRequest: GetUserOrganizations[number]
+  applicationRequest: GetUserOrganizations["data"][number]
 }
 
 export function DataTableRowActions<TData>({

@@ -22,7 +22,7 @@ import { getUserOrganizationsAction } from "@actions/users/user-organization.act
 import { useOrgRoles } from "@hooks/useOrgRole";
 
 interface OrgDefaultRoleFormProps {
-  org: Awaited<ReturnType<typeof getUserOrganizationsAction>>[number];
+  org: Awaited<ReturnType<typeof getUserOrganizationsAction>>["data"][number];
 }
 const orgDefaultRoleFormSchema = z.object({
   defaultRole: z.coerce.number({

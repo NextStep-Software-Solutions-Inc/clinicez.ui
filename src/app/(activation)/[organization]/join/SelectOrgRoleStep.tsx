@@ -13,7 +13,7 @@ export default async function SelectOrgRoleStep ({ orgId, userId, isFirstStep, i
     getUserOrganizationsAction({ userId }),
     getOrganizationRolesAction({ orgId })
   ]);
-  const existingRoles = myOrgs.map(org => org.role);
+  const existingRoles = myOrgs.data.map(org => org.role);
 
   return (
     <SelectOrgForm userId={userId} orgId={orgId} orgRoles={orgRoles} existingRoles={existingRoles} isFirstStep={isFirstStep} isLastStep={isLastStep} nextStep={nextStep} />

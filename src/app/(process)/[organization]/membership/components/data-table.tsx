@@ -36,19 +36,30 @@ import { GetUserOrganizations } from "@actions/users/user-organization.action"
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
-  data: TData[]
+  data: TData[],
+  onPaginationChange?: (value: React.SetStateAction<{
+    pageIndex: number;
+    pageSize: number;
+  }>) => void,
+  rowCount?: number
 }
 
-export function DataTable<TData extends GetUserOrganizations[number], TValue>({
+export function DataTable<TData extends GetUserOrganizations["data"][number], TValue>({
   columns,
   data,
+  onPaginationChange,
+  rowCount
 }: DataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = React.useState({})
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [expanded, setExpanded] = React.useState<ExpandedState>({})
+  const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 10 })
 
+  React.useEffect(() => {
+    onPaginationChange?.(pagination)
+  }, [onPaginationChange, pagination])
 
   const table = useReactTable({
     data,
@@ -59,12 +70,16 @@ export function DataTable<TData extends GetUserOrganizations[number], TValue>({
       columnVisibility,
       rowSelection,
       columnFilters,
+      pagination
     },
+    rowCount,
     defaultColumn: {
       minSize: 1,
       maxSize: 200,
       size: 20,
     },
+    manualPagination: true,
+    onPaginationChange: setPagination,
     enableExpanding: true,
     getExpandedRowModel: getExpandedRowModel(),
     onExpandedChange: setExpanded,
@@ -78,8 +93,9 @@ export function DataTable<TData extends GetUserOrganizations[number], TValue>({
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFacetedRowModel: getFacetedRowModel(),
-    getFacetedUniqueValues: getFacetedUniqueValues()
+    getFacetedUniqueValues: getFacetedUniqueValues(),
   })
+  
   return (
     <div className="space-y-4">
       <DataTableToolbar table={table} />

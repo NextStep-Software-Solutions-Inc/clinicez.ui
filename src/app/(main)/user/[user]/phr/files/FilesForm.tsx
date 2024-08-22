@@ -17,7 +17,7 @@ export const FilesForm = async ({ readOnly = true, userId }:FilesFormProps) => {
   const userOrgs= await getUserOrganizationsAction({
     userId: session?.user.sub
   });
-  const orgs = userOrgs.filter(uo => uo.UserRole.name.toLowerCase() === "admin" ).map(org => org.Organization.id);
+  const orgs = userOrgs.data.filter(uo => uo.UserRole.name.toLowerCase() === "admin" ).map(org => org.Organization.id);
 
   const mappedFolders: FolderProps["folder"][] = folders
     .filter(f => !readOnly  || f.Files.some(f => orgs.includes(f.FileType.FileTypeAttribute?.scopeOrgId ?? 0)) || f.FolderSetting?.isPublic)

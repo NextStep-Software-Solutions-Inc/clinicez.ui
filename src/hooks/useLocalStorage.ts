@@ -12,7 +12,7 @@ export function useLocalStorage<T>(key: string, initialValue?: T) {
   // Get the initial state from local storage or use the provided initial value
   const [state, setState] = useState<T>(() => {
     const storedValue = window.localStorage.getItem(key);
-    return storedValue ? JSON.parse(storedValue) : initialValue;
+    return initialValue ?? JSON.parse(storedValue ?? "{}");
   });
 
   // When the state changes, update local storage and notify all listeners

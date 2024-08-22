@@ -53,6 +53,8 @@ export const createEmploymentRecordAction = async (payload:CreateUserEmploymentR
 }
 
 export const upsertEmploymentRecordAction = async (payload:CreateUserEmploymentRecord ) => {
+  console.log({payload});
+  
   const { employeeId, position, designation, userId, orgId, officeId, departmentId, collegeId } = payload
   const response = {
     success: false,
@@ -92,6 +94,8 @@ export const upsertEmploymentRecordAction = async (payload:CreateUserEmploymentR
     response.message = "Employee record successfully created";
     return  {...response, data: employeeRecord};
   } catch (error) {
+    console.log({error});
+    
     if(error instanceof PrismaClientKnownRequestError) {
       console.log({error});
       

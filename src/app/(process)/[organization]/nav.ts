@@ -22,7 +22,7 @@ export const navList: {
   },
   {
     name: "Appointments",
-    href: `/appointments`,
+    href: `/appointments?_aptStatus=all`,
     icon: "calendar",
   },
   {

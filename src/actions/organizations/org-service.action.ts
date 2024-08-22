@@ -27,6 +27,12 @@ export const getOrgServicesAction = async (filter: OrgServiceFilter) => {
         select: {
           name: true
         }
+      },
+      ServiceAttribute: {
+        select: {
+          duration: true,
+          durationPadding: true
+        }
       }
     }
   });

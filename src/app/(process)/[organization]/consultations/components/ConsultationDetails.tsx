@@ -21,7 +21,7 @@ interface ConsultationDetailsProps {
 export default async function ConsultationDetails({ consultation }: ConsultationDetailsProps) {
 
   const appointment = await getAppointmentAction(consultation.id);
-  const user = await getUserAction(appointment?.Requesters[0].email ?? "");
+  const user = await getUserAction(appointment.data?.Requesters[0].email ?? "");
 
   return (
     <Card>
@@ -46,7 +46,7 @@ export default async function ConsultationDetails({ consultation }: Consultation
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {appointment?.complaint} 
+        {appointment.data?.complaint} 
       </CardContent>
       <CardFooter>
         <Tabs defaultValue="notes" className="w-full">

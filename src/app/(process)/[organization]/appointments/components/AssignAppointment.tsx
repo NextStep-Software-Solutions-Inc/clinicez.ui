@@ -23,16 +23,31 @@ export default function AssignAppointment({disabled = false, appointmentId, onAs
   const triggerRef = React.useRef<HTMLButtonElement>(null);
   const {data: hps } = useHPs();
 
-  const healthcareProviders = (hps ?? []).map(hp => {
-    return {
+  const healthcareProviders = (hps ?? []).reduce((acc, hp) => {
+    const role = hp.type;
+    if (!acc[role]) {
+      acc[role] = [];
+    }
+    acc[role].push({
       id: hp.id,
-      name: hp.type === "DOCTOR" ? `${hp.DoctorProfile?.title} ${hp.DoctorProfile?.name} ${hp.DoctorProfile?.suffix}` : hp.type === "NURSE" && `${hp.NurseProfile?.title} ${hp.NurseProfile?.name} ${hp.NurseProfile?.suffix}`,
+      name: hp.type === "DOCTOR" 
+        ? `${hp.DoctorProfile?.title} ${hp.DoctorProfile?.name} ${hp.DoctorProfile?.suffix}` 
+        : hp.type === "NURSE" 
+          ? `${hp.NurseProfile?.title} ${hp.NurseProfile?.name} ${hp.NurseProfile?.suffix}` 
+          : "",
       role: hp.type,
       avatar: hp.DoctorProfile?.picture,
       email: hp.User?.email
-    }
-  })
-  
+    });
+    return acc;
+  }, {} as Record<string, {
+    id: number;
+    name: string;
+    role: string;
+    avatar?: string | null;
+    email: string;
+  }[]>);
+
   const action = async (formData: FormData) => {
     formData.append("routedTo", selectedHp?.email ?? "");
     formData.append("appointmentId", appointmentId.toString());
@@ -51,7 +66,7 @@ export default function AssignAppointment({disabled = false, appointmentId, onAs
   }
 
   const [open, setOpen] = React.useState(false)
-  const [selectedHp, setSelectedHp] = React.useState<(typeof healthcareProviders)[number] | null>(
+  const [selectedHp, setSelectedHp] = React.useState<(typeof healthcareProviders)[number][number] | null>(
     null
   )
   
@@ -103,35 +118,30 @@ export default function AssignAppointment({disabled = false, appointmentId, onAs
                   <CommandInput placeholder="Type name or search..." />
                   <CommandList >
                     <CommandEmpty>No results found.</CommandEmpty>
-                    <CommandGroup heading="Doctor">
-                      <Each
-                        of={healthcareProviders}
-                        render={(hp) => (
-                          <CommandItem
-                            value={hp.email}
-                            onSelect={(val) => setSelectedHp(prev => healthcareProviders.find(hp => hp.email === val) || null)}
-                          >
-                            <User className="mr-2 h-4 w-4" />
-                            <span>{hp.name}</span>
-                          </CommandItem>
-                        )}
-                      />
-                    </CommandGroup>
-                    <CommandSeparator />
-                    <CommandGroup heading="Nurse">
-                      <Each
-                        of={healthcareProviders}
-                        render={(hp) => (
-                          <CommandItem 
-                            value={hp.email}
-                            onSelect={(val) => setSelectedHp(prev => healthcareProviders.find(hp => hp.email === val) || null)}
-                          >
-                            <User className="mr-2 h-4 w-4" />
-                            <span>{hp.name}</span>
-                          </CommandItem>
-                        )}
-                      />
-                    </CommandGroup>
+                    <Each
+                      of={Object.keys(healthcareProviders)}
+                      render={(role, index) => {
+                        return (
+                          <>
+                            <CommandGroup className="capitalize" heading={role.split("_").join(" ").toLocaleLowerCase()} key={role}>
+                              <Each
+                                of={healthcareProviders[role]}
+                                render={(hp) => (
+                                  <CommandItem
+                                    value={hp.email}
+                                    onSelect={(val) => setSelectedHp(prev => healthcareProviders[role].find(hp => hp.email === val) || null)}
+                                  >
+                                    <User className="mr-2 h-4 w-4" />
+                                    <span>{hp.name}</span>
+                                  </CommandItem>
+                                )}
+                              />
+                            </CommandGroup>
+                            {index !== (healthcareProviders[role].length -1) && <CommandSeparator />}
+                          </>
+                        )
+                      }} 
+                    />
                   </CommandList>
                 </Command>
               </PopoverContent>

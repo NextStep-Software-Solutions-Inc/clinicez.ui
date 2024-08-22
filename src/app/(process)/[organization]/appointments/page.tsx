@@ -7,7 +7,8 @@ import { getAppointmentCountsAction, getRoutedAppointmentCountsAction } from "@a
 import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth0";
 import AppointmentDisplay from "./mail/components/AppointmentDisplay";
 import Suspend from "@components/Suspend";
-import UnderConstruction from "@components/UnderConstruction";
+
+export const maxDuration = 30
 
 async function AppointmentsPage({ searchParams, params }: AppRouterPageRouteOpts ) {
   const organization = params?.organization as string
@@ -46,9 +47,7 @@ async function AppointmentsPage({ searchParams, params }: AppRouterPageRouteOpts
             defaultCollapsed={defaultCollapsed}
             navCollapsedSize={4}
           >
-            <Suspend>
-              <AppointmentDisplay/>
-            </Suspend>
+            <AppointmentDisplay/>
           </AppointmentPanel>
         </Suspend>
       </div>

@@ -33,6 +33,7 @@ import Image from "next/image";
 import { protectOrg } from "@lib/protect-org";
 import { Suspense } from "react";
 import UserAvatarWrapper from "@components/UserAvatarWrapper";
+import Suspend from "@components/Suspend";
 
 export default async function ProcessLayout({children, params:{organization}}: ProcessLayoutProps) {
   await protectOrg(organization)// Check if user is a member of the organization they are trying to access
@@ -98,7 +99,9 @@ export default async function ProcessLayout({children, params:{organization}}: P
               />
             </div>
             <div className="max-w-xs">
-              <OrganizationSwitcher isCollapsed/>
+              <Suspend>
+                <OrganizationSwitcher isCollapsed/>
+              </Suspend>
             </div>
             <Suspense fallback={<div>Loading</div>}>
               <UserAvatarWrapper/>

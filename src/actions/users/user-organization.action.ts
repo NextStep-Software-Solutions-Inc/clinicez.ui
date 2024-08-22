@@ -17,13 +17,16 @@ export type GetUserOrgFilterType = {
     roleId?: number | null;
     pageNumber?: number | null;
     pageSize?: number | null;
+    distinct?: boolean | null;
 }
   
 export type GetUserOrganizations = Awaited<ReturnType<typeof getUserOrganizationsAction>>
 export const getUserOrganizationsAction = cache(async (filter?: GetUserOrgFilterType) => {
-  const { userId, orgId, status, roleId, pageNumber, pageSize } = filter || {};
+  const { userId, orgId, status, roleId, pageNumber, pageSize, distinct } = filter || {};
+
   const userOrganizations = await prisma.userOrganization.findMany({
-    ... pageSize && { take: pageSize },
+    ... pageSize? { take: pageSize }: {},
+    ... distinct? { distinct: ["organizationId"]}: {},
     skip: pageNumber ? (pageNumber - 1) * (pageSize || 10) : 0,
     orderBy: {
       createdAt: "desc"
@@ -153,9 +156,49 @@ export const getUserOrganizationsAction = cache(async (filter?: GetUserOrgFilter
                 },
               },
             }
+          },
+          UserDefaultOrganizations: {
+            where: {
+              isActive: true,
+              User: {
+                ...userId? {userId}: {}
+              }
+            },
+            select: {
+              id: true,
+              organizationId: true,
+              User: {
+                select: {
+                  userId: true,
+                }
+              },
+              Organization: {
+                select: {
+                  orgId: true,
+                }
+              }
+            }
+          },
+          UserDefaultOrganizationRoles: {
+            where: {
+              isActive: true,
+              User: {
+                ...userId? {userId}: {}
+              }
+            },
+            select: {
+              id: true,
+              organizationId: true,
+              UserRole: {
+                select: {
+                  id: true,
+                  name: true
+                }
+              }
+            }
           }
         }
-      }
+      },
     }
   });
   return userOrganizations;

@@ -12,7 +12,14 @@ export const getAppointmentTypesAction = cache(async (orgUid: string) => {
     },
     select: {
       id: true,
-      name: true
+      name: true,
+      AppointmentTypeAttribute: {
+        select: {
+          id: true,
+          duration: true,
+          durationPadding: true
+        }
+      }
     }
   });
 })

@@ -1,8 +1,10 @@
+"use client";
+
 import { GetUserOrganizations, GetUserOrgFilterType } from "@actions/users/user-organization.action"
 import { self } from "@services/request"
 import useSWR from "swr"
 
-export const useUserOrganizations = (filter:GetUserOrgFilterType, enable = true) => {
+export const useUserOrganizations = (filter: GetUserOrgFilterType, enable = true) => {
   const fetcher = (...args:any) => self.get<GetUserOrganizations>(args)
   const obj = {
     ...filter.userId ?{ userId: filter.userId } : {},
@@ -11,6 +13,7 @@ export const useUserOrganizations = (filter:GetUserOrgFilterType, enable = true)
     ...filter.roleId ?{ roleId: filter.roleId.toString() } : {},
     ...filter.pageNumber ?{ pageNumber: filter.pageNumber.toString() } : {},
     ...filter.pageSize ?{ pageSize: filter.pageSize.toString() } : {},
+    ...filter.distinct ?{ distinct: filter.distinct.toString() } : {},
   }
   const query = new URLSearchParams(obj).toString()
   return useSWR(() => enable ? `/api/user-organizations?${query}` : null, fetcher)

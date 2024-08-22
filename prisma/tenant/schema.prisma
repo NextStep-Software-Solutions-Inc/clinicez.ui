@@ -11,17 +11,28 @@ datasource db {
 }
 
 model Appointment {
-  id                   Int                    @id @default(autoincrement())
-  orgUid               String
-  subject              String
-  complaint            String?
-  isActive             Boolean                @default(true)
-  createdAt            DateTime               @default(now())
-  updatedAt            DateTime               @updatedAt
-  deletedAt            DateTime?
-  Requesters           AppointmentRequester[]
-  AppointmentAttribute AppointmentAttribute?
-  AppointmentRouting   AppointmentRouting[]
+  id                     Int                     @id @default(autoincrement())
+  orgUid                 String
+  subject                String
+  complaint              String?
+  isActive               Boolean                 @default(true)
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  deletedAt              DateTime?
+  Requesters             AppointmentRequester[]
+  AppointmentAttribute   AppointmentAttribute?
+  AppointmentRouting     AppointmentRouting[]
+  AppointmentAttachments AppointmentAttachment[]
+  PreConsultationNotes   PreConsultationNote[]
+  ConsultationRecords    ConsultationRecord[]
+}
+
+model AppointmentAttachment {
+  id            Int         @id @default(autoincrement())
+  appointmentId Int
+  name          String
+  url           String
+  Appointment   Appointment @relation(fields: [appointmentId], references: [id])
 }
 
 model AppointmentRequester {
@@ -38,6 +49,9 @@ model AppointmentAttribute {
   appointmentId      Int             @unique
   recurring          Boolean         @default(false)
   maxDuration        Int             @default(30)
+  date               DateTime?       @db.Date
+  timeStart          DateTime?       @db.Time
+  timeEnd            DateTime?       @db.Time
   modeId             Int
   typeId             Int
   receivedAt         DateTime?
@@ -45,8 +59,8 @@ model AppointmentAttribute {
   rejectedAt         DateTime?
   rejectedBy         String?
   rejectedReason     String?
-  approvedAt         DateTime?
-  approvedBy         String?
+  completedAt        DateTime?
+  completedBy        String?
   status             String          @default("PENDING")
   serviceId          Int?
   preferredAppointee String?
@@ -57,15 +71,28 @@ model AppointmentAttribute {
 }
 
 model AppointmentType {
-  id                    Int                    @id @default(autoincrement())
-  orgUid                String
-  name                  String
-  description           String?
-  createdAt             DateTime               @default(now())
-  updatedAt             DateTime               @updatedAt
-  deletedAt             DateTime?
-  isActive              Boolean                @default(true)
-  AppointmentAttributes AppointmentAttribute[]
+  id                       Int                       @id @default(autoincrement())
+  orgUid                   String
+  name                     String
+  description              String?
+  createdAt                DateTime                  @default(now())
+  updatedAt                DateTime                  @updatedAt
+  deletedAt                DateTime?
+  isActive                 Boolean                   @default(true)
+  AppointmentAttributes    AppointmentAttribute[]
+  AppointmentTypeAttribute AppointmentTypeAttribute?
+}
+
+model AppointmentTypeAttribute {
+  id                Int             @id @default(autoincrement())
+  appointmentTypeId Int             @unique
+  requirments       String[]        @default([])
+  reminders         String[]        @default([])
+  duration          Int             @default(30)
+  durationPadding   Int             @default(0)
+  specializations   String[]        @default([])
+  resources         String[]        @default([])
+  AppointmentType   AppointmentType @relation(fields: [appointmentTypeId], references: [id])
 }
 
 model AppointmentMode {
@@ -120,4 +147,73 @@ model Service {
   isActive             Boolean                @default(true)
   ServiceCategory      ServiceCategory        @relation(fields: [categoryId], references: [id])
   AppointmentAttribute AppointmentAttribute[]
+  ServiceAttribute     ServiceAttribute?
+}
+
+model ServiceAttribute {
+  id              Int      @id @default(autoincrement())
+  serviceId       Int      @unique
+  requirments     String[] @default([])
+  reminders       String[] @default([])
+  duration        Int      @default(30)
+  durationPadding Int      @default(0)
+  specializations String[] @default([])
+  resources       String[] @default([])
+  Service         Service  @relation(fields: [serviceId], references: [id])
+}
+
+model ConsultationRecord {
+  id                          Int                          @id @default(autoincrement())
+  appointmentId               Int
+  orgUid                      String
+  subject                     String
+  createdBy                   String
+  createdAt                   DateTime                     @default(now())
+  updatedAt                   DateTime                     @updatedAt
+  Appointment                 Appointment                  @relation(fields: [appointmentId], references: [id])
+  NoteContents                NoteContent[]
+  ConsultationRecordAttribute ConsultationRecordAttribute?
+}
+
+model ConsultationRecordAttribute {
+  id                   Int                @id @default(autoincrement())
+  consultationRecordId Int                @unique
+  template             String             @default("SOAP")
+  whitelistEmails      String[]           @default([])
+  ConsultationRecord   ConsultationRecord @relation(fields: [consultationRecordId], references: [id])
+}
+
+model NoteContent {
+  id                   Int                 @id @default(autoincrement())
+  consultationRecordId Int?
+  section              String
+  content              String
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  ConsultationRecord   ConsultationRecord? @relation(fields: [consultationRecordId], references: [id])
+
+  @@unique([consultationRecordId, section], name: "unique_consultation_record_section")
+}
+
+model PreConsultationNote {
+  id                           Int                           @id @default(autoincrement())
+  appointmentId                Int
+  orgUid                       String
+  assessment                   String
+  homeInstructions             String?
+  remarks                      String
+  createdBy                    String
+  createdAt                    DateTime                      @default(now())
+  updatedAt                    DateTime                      @updatedAt
+  Appointment                  Appointment                   @relation(fields: [appointmentId], references: [id])
+  PreConsultationNoteAttribute PreConsultationNoteAttribute?
+
+  @@unique([appointmentId, createdBy], name: "unique_appointment_created_by")
+}
+
+model PreConsultationNoteAttribute {
+  id                    Int                 @id @default(autoincrement())
+  preConsultationNoteId Int                 @unique
+  whitelistEmails       String[]            @default([])
+  PreConsultationNote   PreConsultationNote @relation(fields: [preConsultationNoteId], references: [id])
 }

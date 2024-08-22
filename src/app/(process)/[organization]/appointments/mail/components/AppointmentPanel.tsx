@@ -6,6 +6,7 @@ import {
   Inbox,
   type LucideIcon,
   MailCheck,
+  MailOpen,
   MailPlus,
   MailX,
   Route,
@@ -30,10 +31,12 @@ import {
 import { TooltipProvider } from "@components/ui/tooltip"
 import {  AppointmentListWrapper } from "./AppointmentList"
 import { AppointmentStatusNav, AppointmentStatusNavProps } from "./nav"
-import { useParams, useRouter, useSearchParams } from "next/navigation"
+import { useParams, useSearchParams } from "next/navigation"
 import Switcher from "@components/dashboard/Switcher"
 import { useOrgRoles } from "@hooks/useOrgRole"
 import { useUser } from "@auth0/nextjs-auth0/client"
+import { useAtom } from "jotai"
+import { userDefaultOrganizationRoleAtom } from "@state/user-role"
 
 export type UserSwitcherType = {
   label: string
@@ -50,15 +53,17 @@ const icons: Record<string, LucideIcon> = {
   declined: MailX,
   rejected: Trash2,
   routed: Route,
+  completed: MailOpen,
 };
 
 const appointmentStatusesWithRoles = {
-  all: ["student", "faculty", "admin", "receptionist", "doctor", "nurse"],
-  pending: ["student", "faculty", "admin", "receptionist"],
-  received: ["admin", "receptionist"],
-  rejected: ["student", "faculty", "admin", "receptionist"],
-  rescheduled: ["student", "faculty", "admin", "receptionist", "doctor", "nurse"],
-  routed: ["student", "faculty", "admin", "receptionist", "doctor", "nurse"],
+  all: ["student", "employee", "admin", "receptionist", "doctor", "nurse"],
+  pending: ["student", "employee", "admin", "receptionist"],
+  received: ["student", "employee", "admin", "receptionist"],
+  rejected: ["student", "employee", "admin", "receptionist"],
+  rescheduled: ["student", "employee", "admin", "receptionist", "doctor", "nurse"],
+  routed: ["student", "employee", "admin", "receptionist", "doctor", "nurse"],
+  completed: ["student", "employee", "admin", "receptionist", "doctor", "nurse"],
 };
 
 const routedAppointmentStatusesWithRoles = {
@@ -107,22 +112,25 @@ export default function AppointmentPanel({
 }: AppointmentPanelProps) {
   const [isCollapsed, setIsCollapsed] = React.useState(defaultCollapsed)
   const searchParams = useSearchParams();
+  const [userDefaultOrgRole, setUserDefaultOrgRole] = useAtom(userDefaultOrganizationRoleAtom)
   const params = useParams();
-  const router = useRouter();
   const user = useUser();
   const userId = user?.user?.sub;
-  
   const aptStatus = searchParams.get("_aptStatus");
   const routedAptStatus = searchParams.get("_routedAptStatus");
-  const role = searchParams.get("_role")
   const organization = params.organization as string;
+  const activeRole = (userDefaultOrgRole[organization]?.roleName ?? "").toLowerCase();
   const {data: orgRoles} = useOrgRoles(organization, {userId})
 
-  const roles = React.useMemo(() => (orgRoles ?? [])?.map((role) => ({
-    label: role.name,
-    value: role.name.toLowerCase(),
-    icon: UserIcon,
-  })), [orgRoles])
+  
+  const roles = React.useMemo(() => (orgRoles ?? [])?.map((role) => {
+    return {
+      label: role.name,
+      value: role.name.toLowerCase(),
+      icon: UserIcon,
+      isDefault: role.UserDefaultOrganizationRoles.some((r) => r.User.userId === userId),
+    }
+  }), [orgRoles, userId])
 
   const appointmentStatusLinks = React.useMemo(() => createStatusLinks(
     appointmentStatusesWithRoles,
@@ -135,18 +143,29 @@ export default function AppointmentPanel({
     routedAppointmentStatusesWithRoles,
     routedAppointmentStatusCounts,
     routedAptStatus,
-
     (status) => [{ key: "_routedAptStatus", value: status }, { key: "_aptStatus", value: "routed" }, {key: "_appointment", value: null}]
   ), [routedAppointmentStatusCounts, routedAptStatus]);
 
   const changeRole = React.useCallback((role: string) => {
-    if(window && role) {
-      const searchParams = new URLSearchParams(window.location.search);
-      searchParams.set("_role", role);
-      router.push(`?${searchParams.toString()}`);
-    }
-  }, [router])
+    setUserDefaultOrgRole({
+      [organization]: {
+        roleId: orgRoles?.find((r) => r.name === role)?.id,
+        roleName: role
+      }})
+  }, [orgRoles, organization, setUserDefaultOrgRole])
   
+  React.useEffect(() => {
+    const defaultRole = orgRoles?.flatMap(orgRole => orgRole.UserDefaultOrganizationRoles).find((r) => r.User.userId === userId)
+    if(defaultRole) {
+      setUserDefaultOrgRole({
+        [defaultRole.Organization.orgId]: {
+          roleId: defaultRole?.UserRole.id,
+          roleName: defaultRole?.UserRole.name,
+        }
+      })
+    }
+  }, [orgRoles, setUserDefaultOrgRole, userId])
+
   return (
     <TooltipProvider delayDuration={0}>
       <ResizablePanelGroup
@@ -188,7 +207,7 @@ export default function AppointmentPanel({
             )}
           >
             <Switcher
-              value={role ?? ""}
+              value={activeRole}
               isCollapsed={isCollapsed}
               onSwitch={changeRole}
               options={roles}
@@ -200,7 +219,7 @@ export default function AppointmentPanel({
           </div>
           <AppointmentStatusNav
             isCollapsed={isCollapsed}
-            links={appointmentStatusLinks[role as keyof typeof appointmentStatusLinks] ?? []}
+            links={appointmentStatusLinks[activeRole as keyof typeof appointmentStatusLinks] ?? []}
           />
           <Separator />
           <div className="px-5 pt-2 font-semibold">
@@ -208,7 +227,7 @@ export default function AppointmentPanel({
           </div>
           <AppointmentStatusNav
             isCollapsed={isCollapsed}
-            links={routerAppointmentStatusLinks[role as keyof typeof routerAppointmentStatusLinks] ?? []}
+            links={routerAppointmentStatusLinks[activeRole as keyof typeof routerAppointmentStatusLinks] ?? []}
           />
         </ResizablePanel>
         <ResizableHandle withHandle />
@@ -223,12 +242,12 @@ export default function AppointmentPanel({
                 >
                   All appointment
                 </TabsTrigger>
-                <TabsTrigger
+                {/* <TabsTrigger
                   value="unread"
                   className="text-zinc-600 dark:text-zinc-200"
                 >
                   Unread
-                </TabsTrigger>
+                </TabsTrigger> */}
               </TabsList>
             </div>
             <Separator />

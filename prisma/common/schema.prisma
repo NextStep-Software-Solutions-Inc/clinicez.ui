@@ -82,6 +82,7 @@ model User {
   StudentRecords                   UserStudentRecord[]
   UserVaccinations                 UserVaccination[]
   VitalSigns                       VitalSign[]
+  UserSchedules                    UserSchedule[]
 }
 
 model Organization {
@@ -900,4 +901,27 @@ enum ReceiptCodeStatus {
   UNUSED
   USED
   EXPIRED
+}
+
+model UserSchedule {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  daysOfWeek  Int[]     @default([])
+  weekOfMonth Int[]     @default([])
+  startTime   DateTime  @db.Time()
+  endTime     DateTime  @db.Time()
+  startDate   DateTime  @db.Date()
+  endDate     DateTime  @db.Date()
+  type        String    @default("base")
+  pattern     String    @default("weekly")
+  isRecurring Boolean   @default(false)
+  isActive    Boolean   @default(true)
+  isAvailable Boolean   @default(true)
+  priority    Int       @default(1)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  User        User      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([userId, startDate, endDate], name: "user_schedule_index")
 }

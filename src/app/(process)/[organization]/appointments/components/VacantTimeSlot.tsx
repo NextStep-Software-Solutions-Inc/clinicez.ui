@@ -1,38 +1,50 @@
 "use client";
 
 import { Badge } from "@components/ui/badge";
-import { toast } from "@components/ui/use-toast";
 import Each from "@components/utils/Each";
 import { useAtom } from "jotai";
 import { bookAppointmentAtom } from "@state/book-appointment";
+import dayjs from "dayjs";
+import { toast } from "sonner";
 
-const timeSlots = [
-  {id:1, slot: "10:00 AM - 11:00 AM"},
-  {id:2, slot: "11:00 AM - 12:00 PM"},
-  {id:3, slot: "12:00 PM - 1:00 PM"},
-  {id:4, slot: "3:00 PM - 4:00 PM"},
-  {id:5, slot: "4:00 PM - 5:00 PM"}
-]
 export default function VacantTimeSlot() {
+
   const [bookAppointmentForm, setBookAppointmentForm] = useAtom(bookAppointmentAtom);
-  const handleSelectTimeSlot = (timeSlotId: number) => {
-    setBookAppointmentForm((prev) => ({...prev, timeSlotId}));
-    toast({
-      title: "Time Slot Selected",
-      description: `You have selected: ${timeSlots.find((timeSlot) => timeSlot.id === timeSlotId)?.slot}`,
-    });''
+  
+  const handleSelectTimeSlot = (timeSlot: {
+    start: Date;
+    end: Date;
+  }) => {
+    setBookAppointmentForm((prev) => ({...prev, selectedTimeSlot: timeSlot}));
+    toast.message(`You have selected: ${timeSlotToString(timeSlot)}`);
   }
   return (
     <div>
       <h3 className="text-md font-semibold mb-2">Vacant Time Slots:</h3>
       <div className="flex flex-row items-center justify-start gap-1 flex-wrap mt-2">
         <Each
-          of={timeSlots}
-          render={(timeSlot) => (
-            <Badge className="cursor-pointer" onClick={() => handleSelectTimeSlot(timeSlot.id)} variant={bookAppointmentForm.timeSlotId === timeSlot.id ? "default": "secondary"}>{timeSlot.slot}</Badge>
-          )}
+          of={(bookAppointmentForm.availabilities ?? []).find(a => dayjs(a.date).isSame(bookAppointmentForm.preferredDate))?.timeSlots ?? []}
+          render={(timeSlot) =>{
+            return  (
+              <Badge className="cursor-pointer" onClick={() => handleSelectTimeSlot(timeSlot)} variant={(bookAppointmentForm.selectedTimeSlot && isSameTimeSlot(bookAppointmentForm.selectedTimeSlot, timeSlot)) ? "default": "secondary"}>{timeSlotToString(timeSlot)}</Badge>
+            )
+          }}
         />
       </div>
     </div>
   );
+}
+
+
+type TimeSlot = {
+  start: Date;
+  end: Date;
+}
+
+const timeSlotToString = (timeSlot: TimeSlot) => {
+  return `${dayjs(timeSlot.start).format("hh:mm A")}- ${dayjs(timeSlot.end).format("hh:mm A")}`;
+}
+
+const isSameTimeSlot = (timeSlot1: TimeSlot, timeSlot2: TimeSlot) => {
+  return timeSlot1.start === timeSlot2.start && timeSlot1.end === timeSlot2.end
 }

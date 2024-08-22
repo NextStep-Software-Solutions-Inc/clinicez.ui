@@ -3,7 +3,7 @@
 import { ComponentProps, forwardRef, useMemo, useState } from "react"
 import {formatDistanceToNow} from "date-fns"
 
-import { cn } from "@lib/utils"
+import { cn, getBadgeVariantFromLabel } from "@lib/utils"
 import { Badge } from "@components/ui/badge"
 import { ScrollArea } from "@components/ui/scroll-area"
 import { useSearchParams } from "next/navigation"
@@ -13,19 +13,22 @@ import { GetAppointments } from "@actions/appointments/appointments.action"
 import { Separator } from "@components/ui/separator"
 import { useOrgAppointments } from "@hooks/useAppointment";
 import { Input } from "@components/ui/input";
-import { Search } from "lucide-react";
+import { ArrowRight, Search } from "lucide-react";
+import { useUser } from "@auth0/nextjs-auth0/client";
 interface AppointmentListProps {
   appointments: GetAppointments["data"]
 }
 
 export const AppointmentList = forwardRef<any, AppointmentListProps>(({appointments},ref) => {
+  const { user } = useUser()
   const searchParams = useSearchParams()
   const appointmentId = searchParams.get("_appointment")
   const appointmentStatus = searchParams.get("_aptStatus")
   
-  const setAppointment = (appointmentId: string) => {
+  const setAppointment = (thisAptId: string) => {
+    if(appointmentId === thisAptId) return
     const searchParams = new URLSearchParams(window.location.search)
-    searchParams.set("_appointment", appointmentId)
+    searchParams.set("_appointment", thisAptId)
     window.history.pushState({}, "", `?${searchParams.toString()}`)
   }
   
@@ -58,7 +61,7 @@ export const AppointmentList = forwardRef<any, AppointmentListProps>(({appointme
                         render={(requester, index) => {
                           return (
                             <div className="font-semibold items-center flex gap-2 ">
-                              {requester.email}
+                              {requester.email === user?.email ? <span className="text-primary">You ({requester.email})</span> : requester.email}
                               {index < item.Requesters.length - 1 && <Separator orientation="vertical" className="h-4" />}
                             </div>
                           )
@@ -94,8 +97,20 @@ export const AppointmentList = forwardRef<any, AppointmentListProps>(({appointme
                 <Badge variant={getBadgeVariantFromLabel(item.AppointmentAttribute?.AppointmentType.name ?? "")}>
                   {item.AppointmentAttribute?.AppointmentType.name}
                 </Badge>
+                <Badge variant="outline">
+                  {item.AppointmentAttribute?.AppointmentMode.name}
+                </Badge>
+                <Badge variant="secondary">
+                  {item.AppointmentAttribute?.Service?.name}
+                </Badge>
               </div>
-              {appointmentStatus === "all" && <Badge variant="outline" className="capitalize ml-auto">{item?.AppointmentAttribute?.status.toLocaleLowerCase()}</Badge>}
+              <div className="flex items-center justify-end gap-2 w-full">
+                <span className="text-xs">
+                  <ArrowRight className="inline-block w-3 h-3"/> {item.AppointmentAttribute?.preferredAppointee}
+                </span>
+                {appointmentStatus === "all" && <Badge variant="outline" className="capitalize">{item?.AppointmentAttribute?.status.toLocaleLowerCase()}</Badge>}
+
+              </div>
             </button>
           )}
         />
@@ -106,16 +121,7 @@ export const AppointmentList = forwardRef<any, AppointmentListProps>(({appointme
 
 AppointmentList.displayName = "AppointmentList"
 
-function getBadgeVariantFromLabel(
-  label: string
-): ComponentProps<typeof Badge>["variant"] {
-  const badgeColors = {
-    initial: "default",
-    emergency: "destructive",
-    "follow-up": "outline",
-  } as const
-  return badgeColors[label.toLowerCase() as keyof typeof badgeColors] ?? "default"
-}
+
 
 interface AppointmentListWrapperProps {
   orgUid: string

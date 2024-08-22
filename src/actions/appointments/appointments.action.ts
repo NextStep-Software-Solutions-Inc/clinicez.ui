@@ -6,6 +6,7 @@ import { decode } from "jsonwebtoken"
 import prismaTenant from "@lib/prisma-tenant";
 import { RoutedAptStatus, AppointmentStatus } from "@public/json/appointment-list";
 import { getCachedSession } from '@actions/session.action';
+import dayjs from 'dayjs';
 
 export type GetAppointmentFilter = {
   orgUid?: string;
@@ -20,10 +21,18 @@ type CreateAppointmentPayload = {
   complaint?: string;
   modeId: number;
   typeId: number;
+  serviceId?: number;
   requesters: string[]
+  attachments: string[]
+  hpEmail?: string,
+  schedule: {
+    date: Date;
+    timeStart: Date;
+    timeEnd: Date;
+  }
 }
-export const createAppointmentAction = async ({orgUid, subject, complaint, requesters, modeId, typeId}:CreateAppointmentPayload) => {
-
+export const createAppointmentAction = async ({orgUid, subject, complaint, requesters, modeId, typeId, serviceId, attachments, hpEmail, schedule}:CreateAppointmentPayload) => {
+  const { date, timeStart, timeEnd } = schedule;
   const newAppointment = await prismaTenant.appointment.create({
     data: {
       subject,
@@ -31,13 +40,24 @@ export const createAppointmentAction = async ({orgUid, subject, complaint, reque
       orgUid,
       AppointmentAttribute: {
         create: {
+          preferredAppointee: hpEmail,
           modeId,
           typeId,
+          serviceId,
+          timeStart,
+          timeEnd,
+          date: dayjs(date).endOf('day').toDate()
         }
       },
       Requesters: {
         createMany: {
           data: requesters.map((email) => ({email})),
+          skipDuplicates: true
+        }
+      },
+      AppointmentAttachments: {
+        createMany: {
+          data: attachments.map((url) => ({name: url.split("/").pop() ?? url, url})),
           skipDuplicates: true
         }
       }
@@ -59,8 +79,6 @@ export const getAppointmentsAction = async (filter?: GetAppointmentFilter) => {
   const { orgUid, status, routedAptStatus } = filter || {};
   const hasPermission = checkUserPermission(session.accessToken);
 
-  console.log({hasPermission});
-  
   const appointments = await prismaTenant.appointment.findMany({
     orderBy: {
       createdAt: 'desc'
@@ -110,6 +128,7 @@ export const getAppointmentsAction = async (filter?: GetAppointmentFilter) => {
               name: true
             }
           },
+          preferredAppointee: true,
           status: true,
           Service: {
             select: {
@@ -129,6 +148,14 @@ export const getAppointmentsAction = async (filter?: GetAppointmentFilter) => {
 
 export type GetAppointment = Awaited<ReturnType<typeof getAppointmentAction>>;
 export const getAppointmentAction = async (id: number, orgUid?: string) => {
+  const session = await getCachedSession();
+
+  if(!session || !session.accessToken) return {
+    status: false,
+    message: 'Unauthorized',
+    data: null
+  };
+
   const appointment = await prismaTenant.appointment.findUnique({
     where: {
       isActive: true,
@@ -145,8 +172,17 @@ export const getAppointmentAction = async (id: number, orgUid?: string) => {
           email: true,
         }
       },
+      AppointmentAttachments: {
+        select: {
+          id: true,
+          url: true,
+        }
+      },
       AppointmentAttribute: {
         select: {
+          date: true,
+          timeStart: true,
+          timeEnd: true,
           AppointmentType: {
             select: {
               name: true
@@ -162,19 +198,67 @@ export const getAppointmentAction = async (id: number, orgUid?: string) => {
             select: {
               name: true
             }
-          }
+          },
+          rejectedAt: true,
+          receivedAt: true,
+          rejectedBy: true,
+          receivedBy: true,
+          rejectedReason: true,
+          preferredAppointee: true,
+          completedAt: true,
+          completedBy: true,
         }
       },
       AppointmentRouting: {
         select: {
+          id: true,
+          amendment: true,        
           routedBy: true,
           routedTo: true,
-          status: true
+          status: true,
+          updatedAt: true,
+        }
+      },
+      PreConsultationNotes: {
+        where: {
+          appointmentId: id,
+          orgUid: orgUid,
+          createdBy: session.user.email
+        },
+        select: {
+          id: true,
+          assessment: true,
+          remarks: true,
+          homeInstructions: true,
+          createdBy: true,
+          PreConsultationNoteAttribute: {
+          }
+        }
+      },
+      ConsultationRecords: {
+        where: {
+          appointmentId: id,
+          orgUid: orgUid,
+        },
+        select: {
+          id: true,
+          updatedAt: true,
+          createdBy: true,
+          subject: true,
+          ConsultationRecordAttribute: {
+            select: {
+              template: true
+            }
+          }
         }
       }
     }
   })
-  return appointment;
+  return {
+    status: true,
+    message: 'Appointment fetched',
+    data: appointment
+  };
 }
 
 export type GetAppointmentCounts = Awaited<ReturnType<typeof getAppointmentCountsAction>>;

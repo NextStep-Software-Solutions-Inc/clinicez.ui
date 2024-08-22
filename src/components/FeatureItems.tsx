@@ -80,41 +80,20 @@ export default function FeatureItems() {
 export const HeroTitle = ({authenticated = false}) => {
   return (
     <motion.div
-      animate={{ opacity: 1, x: 0 }}
-      initial={{ opacity: 0, x: "-100%" }}
-      transition={{ duration: 2, type:"spring", bounce:0.5 }}
+      animate={{ opacity: 1 }}
+      initial={{ opacity: 0 }}
+      transition={{ duration: 1, delay: 0.5}}
     >
-      <p className="text-center md:text-left ~text-xs/base font-semibold tracking-wider text-gray-500 uppercase">Optimized Healthcare Management System</p>
-      <motion.h1 
-        initial="initial"
-        animate="animate"
-        transition={{ staggerChildren: 0.15 }}
-        className="text-center md:text-left ~text-2xl/6xl mt-4 font-bold lg:mt-8 text-primary overflow-hidden">
-        Welcome to {
-          "Clinic".split("").map((l, index) => (
-            <motion.span 
-              variants={{
-                initial: { y:"-100%"},
-                animate:{ y: 0 }
-              }}
-              key={index} className="inline-block">{l}</motion.span>
-          ))
-        } EZ
-      </motion.h1>
-      <p className="relative z-10 text-center md:text-left ~text-sm/base mt-4 text-gray-600 lg:mt-8">
-        The innovative platform revolutionizing healthcare connections.<br/>Our user-friendly interface empowers healthcare providers to streamline appointment management, while giving patients effortless access to book consultations with their preferred professionals. Experience the future of healthcare with Clinic EZ — where convenience meets care.
-      </p>
+      <p className="text-center md:text-left ~text-2xl/6xl font-semibold tracking-wider text-gray-500 uppercase">Optimized Healthcare Management System</p>
+      
       <ConditionalRender condition={!authenticated}>
         <div className="flex md:block items-center flex-col">
-          <Link href="/api/auth/login">
+          <Link href="/tenants/register">
             <Button size="lg" className="rounded-full mt-8 mx-auto ~text-xs/sm ~h-8/10">
-              Join for free
+              Register your clinic now
               <ArrowRightCircle className="w-4 h-4 ml-2" />
             </Button>
           </Link>
-          <p className="mt-5 ~text-sm/base text-gray-600">Already joined us?
-            <Link href="/api/auth/login" title="" className="text-black hover:underline">Log in</Link>
-          </p>
         </div>
       </ConditionalRender>
       <ConditionalRender condition={authenticated}>
@@ -133,7 +112,7 @@ export const HeroImage = () => {
       initial={{ opacity: 0, x: "100%" }}
       transition={{ duration: 2, type:"spring", bounce:0.5 }}
     
-      className="absolute bottom-0 right-0 ~w-[30rem]/[40rem]">
+      className="absolute bottom-0 right-0 ~w-[30rem]/[35rem]">
       <motion.div className="bg-clip-content bg-teal-500 rounded-t-full absolute bottom-0 right-0 w-full h-1/2"></motion.div>
       <Image 
         width={700}

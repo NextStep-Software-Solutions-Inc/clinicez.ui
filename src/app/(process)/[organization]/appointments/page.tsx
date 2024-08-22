@@ -47,9 +47,7 @@ async function AppointmentsPage({ searchParams, params }: AppRouterPageRouteOpts
             defaultCollapsed={defaultCollapsed}
             navCollapsedSize={4}
           >
-            <Suspend>
-              <AppointmentDisplay/>
-            </Suspend>
+            <AppointmentDisplay/>
           </AppointmentPanel>
         </Suspend>
       </div>

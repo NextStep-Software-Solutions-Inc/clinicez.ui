@@ -7,6 +7,7 @@ export const useHPs = (filters?: HPFilters, enable = true) => {
 
   const obj = {
     ...filters?.userId ? { userId: filters.userId } : {},
+    ...filters?.type ? { type: filters.type } : {},
     ...filters?.isPublished ? { isPublished: filters.isPublished.toString() } : {},
   }
   const query = new URLSearchParams(obj).toString()

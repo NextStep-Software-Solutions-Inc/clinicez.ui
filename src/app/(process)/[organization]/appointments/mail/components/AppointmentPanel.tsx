@@ -6,6 +6,7 @@ import {
   Inbox,
   type LucideIcon,
   MailCheck,
+  MailOpen,
   MailPlus,
   MailX,
   Route,
@@ -30,11 +31,11 @@ import {
 import { TooltipProvider } from "@components/ui/tooltip"
 import {  AppointmentListWrapper } from "./AppointmentList"
 import { AppointmentStatusNav, AppointmentStatusNavProps } from "./nav"
-import { useParams, useRouter, useSearchParams } from "next/navigation"
+import { useParams, useSearchParams } from "next/navigation"
 import Switcher from "@components/dashboard/Switcher"
 import { useOrgRoles } from "@hooks/useOrgRole"
 import { useUser } from "@auth0/nextjs-auth0/client"
-import { useAtom, useAtomValue } from "jotai"
+import { useAtom } from "jotai"
 import { userDefaultOrganizationRoleAtom } from "@state/user-role"
 
 export type UserSwitcherType = {
@@ -52,6 +53,7 @@ const icons: Record<string, LucideIcon> = {
   declined: MailX,
   rejected: Trash2,
   routed: Route,
+  completed: MailOpen,
 };
 
 const appointmentStatusesWithRoles = {
@@ -61,6 +63,7 @@ const appointmentStatusesWithRoles = {
   rejected: ["student", "employee", "admin", "receptionist"],
   rescheduled: ["student", "employee", "admin", "receptionist", "doctor", "nurse"],
   routed: ["student", "employee", "admin", "receptionist", "doctor", "nurse"],
+  completed: ["student", "employee", "admin", "receptionist", "doctor", "nurse"],
 };
 
 const routedAppointmentStatusesWithRoles = {
@@ -140,7 +143,6 @@ export default function AppointmentPanel({
     routedAppointmentStatusesWithRoles,
     routedAppointmentStatusCounts,
     routedAptStatus,
-
     (status) => [{ key: "_routedAptStatus", value: status }, { key: "_aptStatus", value: "routed" }, {key: "_appointment", value: null}]
   ), [routedAppointmentStatusCounts, routedAptStatus]);
 
@@ -240,12 +242,12 @@ export default function AppointmentPanel({
                 >
                   All appointment
                 </TabsTrigger>
-                <TabsTrigger
+                {/* <TabsTrigger
                   value="unread"
                   className="text-zinc-600 dark:text-zinc-200"
                 >
                   Unread
-                </TabsTrigger>
+                </TabsTrigger> */}
               </TabsList>
             </div>
             <Separator />

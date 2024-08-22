@@ -1,9 +1,10 @@
 "use client";
 
-import { createConsultationAction } from "@actions/consultations.action"
+import { createConsultationRecordAction } from "@actions/consultation/consultation-record.action";
 import ActionButton from "@components/ActionButton"
 import CustomModalContent from "@components/CustomModalContent";
 import { Button } from "@components/ui/button"
+import { Checkbox } from "@components/ui/checkbox";
 import {
   Dialog,
   DialogClose,
@@ -13,26 +14,41 @@ import {
 import { Input } from "@components/ui/input"
 import { Label } from "@components/ui/label"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@components/ui/tooltip"
+import { useOrgAppointment } from "@hooks/useAppointment";
 import { ClipboardPlus } from "lucide-react"
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { useRef } from "react"
+import { useRef, useState } from "react"
 import { toast } from "sonner";
 
 
 export default function CreateConsultationRecordModal({disabled = false, subject}: {disabled?: boolean, subject: string}) {
+  const [followConsultationRecord, setFollowConsultationRecord] = useState(false)
   const router = useRouter();
-  const params = useParams();
+  const params = useParams<{organization: string}>();
   const searchParams = useSearchParams();
+  const orgUid = params.organization
+
+  const appointmentId = parseInt(searchParams.get("_appointment") as string)
+  const {mutate} = useOrgAppointment({
+    orgId: orgUid,
+    appointmentId
+  })
 
   const closeBtnRef = useRef<HTMLInputElement>(null)
   const action = async (formData: FormData) => {
-    const res = await createConsultationAction(formData)
-    if (res) {
-      toast.success("Consultation record created successfully.")
-      closeBtnRef.current?.click()
-
-      router.push(`/${params.organization}/consultations/1099?${searchParams.toString()}`);
-    }
+    const subject = formData.get("subject") as string
+    toast.promise(createConsultationRecordAction({appointmentId, orgUid, subject}), {
+      loading: "Creating consultation record...",
+      success: (res) => {
+        if(res.status) {
+          closeBtnRef.current?.click()
+          mutate()
+          followConsultationRecord && router.push(`/${params.organization}/consultations/1099?${searchParams.toString()}`);
+        }
+        return res.message
+      },
+      error: "Failed to create consultation record"
+    })
   }
 
   return (
@@ -64,9 +80,17 @@ export default function CreateConsultationRecordModal({disabled = false, subject
             </Label>
             <Input
               id="subject"
+              name="subject"
               defaultValue={subject}
               className="col-span-3"
             />
+          </div>
+          
+          <div className="flex items-center gap-2 leading-none text-sm">
+            <Checkbox
+              checked={followConsultationRecord}
+              onCheckedChange={(checked) => typeof checked === "boolean" && setFollowConsultationRecord(checked)}
+            /> Open consultation record after creation
           </div>
           <DialogFooter>
             <DialogClose asChild>

@@ -2,6 +2,9 @@
 
 import { FileInput, FileUploader, FileUploaderContent, FileUploaderItem } from "@components/extention/file-upload";
 import BackSubmitAndNext from "@components/SubmitAndNext";
+import Each from "@components/utils/Each";
+import { bookAppointmentAtom } from "@state/book-appointment";
+import { useAtom } from "jotai";
 import { Paperclip } from "lucide-react";
 import { useState } from "react";
 
@@ -13,8 +16,16 @@ interface InsertAttachmentProps {
     isLastStep?: boolean;
 }
 export const InsertAttachment = ({isFirstStep, isLastStep, nextStep, prevStep}: InsertAttachmentProps) => {
-  const [files, setFiles] = useState<File[] | null>(null);
+  const [bookAppointment, setBookAppointment] = useAtom(bookAppointmentAtom);
   
+
+  const handleChangeAttachments = (files: File[] | null) => {
+    if(!files) return;
+    setBookAppointment({
+      ...bookAppointment,
+      attachments: files
+    });
+  }
   const dropZoneConfig = {
     maxFiles: 5,
     maxSize: 1024 * 1024 * 4,
@@ -22,7 +33,6 @@ export const InsertAttachment = ({isFirstStep, isLastStep, nextStep, prevStep}: 
   };
 
   const action = async () => {
-    console.log({files})
     nextStep?.();
   }
 
@@ -32,8 +42,8 @@ export const InsertAttachment = ({isFirstStep, isLastStep, nextStep, prevStep}: 
         <h2>Insert Attachment</h2>
       
         <FileUploader
-          value={files}
-          onValueChange={setFiles}
+          value={bookAppointment.attachments ?? []}
+          onValueChange={handleChangeAttachments}
           dropzoneOptions={dropZoneConfig}
           className="relative bg-background rounded-lg p-2 container"
         >
@@ -43,14 +53,15 @@ export const InsertAttachment = ({isFirstStep, isLastStep, nextStep, prevStep}: 
             </div>
           </FileInput>
           <FileUploaderContent>
-            {files &&
-          files.length > 0 &&
-          files.map((file, i) => (
-            <FileUploaderItem key={i} index={i}>
-              <Paperclip className="h-4 w-4 stroke-current" />
-              <span>{file.name}</span>
-            </FileUploaderItem>
-          ))}
+            <Each
+              of={bookAppointment.attachments ?? []}
+              render={(file, i) => (
+                <FileUploaderItem key={i} index={i}>
+                  <Paperclip className="h-4 w-4 stroke-current" />
+                  <span>{file.name}</span>
+                </FileUploaderItem>
+              )}
+            />
           </FileUploaderContent>
         </FileUploader>
       </div>
@@ -58,11 +69,12 @@ export const InsertAttachment = ({isFirstStep, isLastStep, nextStep, prevStep}: 
         <BackSubmitAndNext
           labels={{
             submit: "Save & Continue",
+            next: "Skip"
           }}
           disabled={{
             next: isLastStep,
             previous: isFirstStep,
-            submit:false
+            submit: !bookAppointment.attachments?.length,
           }}
           actions={{
             previous: prevStep,

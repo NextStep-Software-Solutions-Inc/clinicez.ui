@@ -7,7 +7,7 @@ import RescheduleAppointment from "../components/RescheduleAppointment"
 import DeclineAppointmentAssignment from "../components/DeclineAppointmentAssignment"
 import CreateConsultationRecordModal from './CreateConsultationRecordModal';
 
-type AppointmentActions = "accept"|"decline"|"approve"|"receive"| "reject" | "assign" | "create-consultation-notes"| "reschedule"
+type AppointmentActions = "accept"|"decline"|"approve"|"receive"| "reject" | "assign" | "create-consultation-record"| "reschedule"
 type AppointmentStatusTools = {
     action: AppointmentActions
     roles: string[]
@@ -18,12 +18,12 @@ type AppointmentStatusTools = {
 }[]
 
 
-export const useAppointmentTools = ({ freshAppointment, revalidate}: {
-    freshAppointment?: GetAppointment,
+export const useAppointmentTools = ({ appointment, revalidate}: {
+    appointment?: GetAppointment["data"],
     revalidate: () => void
 }) => {
   
-  if(!freshAppointment) return { tools: [] }
+  if(!appointment) return { tools: [] }
   const tools: AppointmentStatusTools = [
     {
       action:"accept",
@@ -33,9 +33,10 @@ export const useAppointmentTools = ({ freshAppointment, revalidate}: {
       routedAptStatuses: ["pending"],
       component: (
         <AcceptAppointmentAssignment
-          appointmentId={freshAppointment.id}
+          key={appointment.id}
+          appointmentId={appointment.id}
           onAccepted={revalidate}
-          disabled={!freshAppointment} 
+          disabled={!appointment} 
         />
       )
     },
@@ -47,8 +48,9 @@ export const useAppointmentTools = ({ freshAppointment, revalidate}: {
       routedAptStatuses: ["pending"],
       component: (
         <DeclineAppointmentAssignment 
-          disabled={!freshAppointment} 
-          appointmentId={freshAppointment.id}
+          key={appointment.id}
+          disabled={!appointment} 
+          appointmentId={appointment.id}
           onDeclined={revalidate}
         />
       )
@@ -60,9 +62,10 @@ export const useAppointmentTools = ({ freshAppointment, revalidate}: {
       appointmentStatuses: ["all", "pending"],
       routedAptStatuses: [],
       component: <ReceiveAppointment 
-        appointmentId={freshAppointment.id}
+        key={appointment.id}
+        appointmentId={appointment.id}
         onReceived={revalidate} 
-        disabled={!freshAppointment}
+        disabled={!appointment}
       />
     },
     {
@@ -73,42 +76,46 @@ export const useAppointmentTools = ({ freshAppointment, revalidate}: {
       routedAptStatuses: [],
       component: (
         <RejectAppointment 
-          appointmentId={freshAppointment.id}
+          key={appointment.id}
+          appointmentId={appointment?.id}
           onRejected={revalidate} 
-          disabled={!freshAppointment}
+          disabled={!appointment}
         /> 
       )
     },
     {
-      action:"create-consultation-notes",
-      roles: ["admin", "doctor", "nurse"],
+      action:"create-consultation-record",
+      roles: ["doctor"],
       permissions: [],
       appointmentStatuses: ["routed"],
       routedAptStatuses: ["accepted"],
-      component: <CreateConsultationRecordModal disabled={!freshAppointment} subject={freshAppointment?.subject ?? ""}/>
+      component: <CreateConsultationRecordModal key={appointment.id} disabled={!appointment} subject={appointment?.subject ?? ""}/>
     },
     {
       action:"assign",
       roles: ["admin"],
       permissions: [],
-      appointmentStatuses: ["received"],
-      routedAptStatuses: [],
+      appointmentStatuses: ["received", "routed"],
+      routedAptStatuses: ["declined"],
       component: (
         <AssignAppointment 
-          appointmentId={freshAppointment.id}
+          key={appointment.id}
+          appointmentId={appointment.id}
           onAssigned={revalidate} 
-          disabled={!freshAppointment}
+          disabled={!appointment}
         />
       )
     },
-    {
-      action:"reschedule",
-      roles: ["admin"],
-      permissions: [],
-      appointmentStatuses: ["received"],
-      routedAptStatuses: [],
-      component: <RescheduleAppointment bookingDateTime={new Date()} disabled={!freshAppointment} />
-    }
+    // {
+    //   action:"reschedule",
+    //   roles: ["admin"],
+    //   permissions: [],
+    //   appointmentStatuses: ["received"],
+    //   routedAptStatuses: [],
+    //   component: <RescheduleAppointment 
+    //     key={appointment.id}
+    //     bookingDateTime={new Date()} disabled={!appointment} />
+    // }
   ]
   return {
     tools

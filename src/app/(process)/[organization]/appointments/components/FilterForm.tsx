@@ -4,7 +4,6 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 
-import { Button } from "@components/ui/button"
 import {
   Form,
   FormControl,
@@ -21,16 +20,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@components/ui/select"
-import { toast } from "@components/ui/use-toast"
 import Each from "@components/utils/Each"
-import { useLocalStorage } from "@hooks/useLocalStorage"
 import { useOrgAppointmentTypes } from "@hooks/useOrgAppointmentType"
 import { useParams } from "next/navigation"
 import { useHPs } from "@hooks/useHP"
 import { useOrgServices } from "@hooks/useOrgService"
-import { bookAppointmentAtom, BookAppointmentForm } from "../../../../../state/book-appointment"
+import { bookAppointmentAtom } from "../../../../../state/book-appointment"
 import { useAtom } from "jotai"
 import ActionButton from "@components/ActionButton"
+import { generateTimeSlots } from "@actions/schedule/time-slot.actions"
+import { toast } from "sonner"
 
 const FilterFormSchema = z.object({
   appointmentTypeId: z.coerce.number({
@@ -38,12 +37,11 @@ const FilterFormSchema = z.object({
   }).min(1, 'Appointment type is required'),
   serviceId: z.coerce.number({
     description: 'Select a service',
-  }).optional(),
-  doctor: z.string({
+  }),
+  hpEmail: z.string({
     description: 'Select a doctor',
-  }).optional()
+  }),
 })
-
 
 
 export default function FilterForm() {
@@ -59,19 +57,45 @@ export default function FilterForm() {
 
   const form = useForm<z.infer<typeof FilterFormSchema>>({
     resolver: zodResolver(FilterFormSchema),
-    defaultValues: bookAppointmentForm,
+    defaultValues: {
+      appointmentTypeId: bookAppointmentForm.appointmentTypeId,
+      serviceId: bookAppointmentForm.serviceId,
+      hpEmail: bookAppointmentForm.hpEmail
+    },
   })
 
   async function onSubmit(data: z.infer<typeof FilterFormSchema>) {
-    setBookAppointmentForm((prev) => ({...prev, ...data}))
-    toast({
-      title: "You submitted the following values:",
-      description: (
-        <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-          <code className="text-white">{JSON.stringify(data, null, 2)}</code>
-        </pre>
-      ),
-    })
+    
+    const service = services?.find(service => service.id === data.serviceId)
+    const appointmentType = appointmentTypes?.find(appointmentType => appointmentType.id === data.appointmentTypeId)
+    const serviceAttribute = service?.ServiceAttribute
+    const appointmentTypeAttribute = appointmentType?.AppointmentTypeAttribute 
+    
+    if(!serviceAttribute || !appointmentTypeAttribute) return toast.message("Service or appointment type attribute not found")
+
+    setBookAppointmentForm((prev) => ({...prev, ...{
+      selectedTimeSlot: undefined,
+      availabilities: undefined,
+      hpEmail: data.hpEmail,
+      serviceId: data.serviceId,
+      appointmentTypeId: data.appointmentTypeId
+    }}))
+
+    form.reset(data)
+    toast.promise(generateTimeSlots({
+      appointmentTypeId: data.appointmentTypeId,
+      serviceId: data.serviceId,
+      hpEmail: data.hpEmail
+    }), {
+      loading: "Generating time slots...",
+      success: (res) => {
+        if(res.status === false) return res.message
+        setBookAppointmentForm((prev) => ({...prev, availabilities: res.data}))
+        return "Time slots generated"
+      },
+      error: "Failed to generate time slots",
+      position: "top-center"
+    });
   }
   
   return (
@@ -85,10 +109,7 @@ export default function FilterForm() {
               <FormItem className="flex-grow">
                 <FormLabel>Appointment Type</FormLabel>
                 <Select 
-                  onValueChange={val => {
-                    form.resetField('serviceId')
-                    return field.onChange(val)
-                  }} 
+                  onValueChange={field.onChange} 
                   value={field.value?.toString()}
                 >
                   <FormControl>
@@ -142,21 +163,21 @@ export default function FilterForm() {
           />
           <FormField
             control={form.control}
-            name="doctor"
+            name="hpEmail"
             render={({ field }) => (
               <FormItem className="flex-grow">
-                <FormLabel>Doctor</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
+                <FormLabel>Healthcare Provider</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value?.toString()}>
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select a doctor" />
+                      <SelectValue placeholder="Select a healthcare provider" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
                     <Each
                       of={doctors ?? []}
                       render={(doctor) => (
-                        <SelectItem value={doctor.id.toString()}>{doctor.DoctorProfile?.name} </SelectItem>
+                        <SelectItem value={doctor.User.email}>{doctor.DoctorProfile?.title} {doctor.DoctorProfile?.name} {doctor.DoctorProfile?.suffix}</SelectItem>
                       )}
                     />
                   </SelectContent>
@@ -168,10 +189,14 @@ export default function FilterForm() {
               </FormItem>
             )}
           />
-          <ActionButton className="w-full" type="submit">Set Filter</ActionButton>
+          <ActionButton className="w-full" type="submit" disabled={!form.formState.isDirty}>Get Time Slots</ActionButton>
 
         </div>
       </form>
     </Form>
   )
+}
+
+const findTheHighest = (arr: number[]) => {
+  return Math.max(...arr);
 }

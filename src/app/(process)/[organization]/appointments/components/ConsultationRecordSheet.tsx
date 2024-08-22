@@ -1,3 +1,4 @@
+import { GetAppointment } from "@actions/appointments/appointments.action";
 import { Button } from "@components/ui/button"
 import {
   Sheet,
@@ -10,72 +11,50 @@ import {
   SheetTrigger,
 } from "@components/ui/sheet"
 import Each from "@components/utils/Each";
-import { format } from "date-fns";
+import dayjs from "dayjs";
 import Link from "next/link";
+import { useParams } from "next/navigation";
+import { useState } from "react";
 interface ConsultationRecordSheetProps {
   children?: React.ReactNode;
-  onOpenChange? : (open: boolean) => void;
   onSelect? : (e: Event) => void;
+  onClose?: () => void;
+  consultationRecords: NonNullable<GetAppointment["data"]>["ConsultationRecords"]
 }
 
-const consultationRecords = [
-  {
-    id: "1",
-    createdAt: "2022-03-01T10:00:00Z",
-    doctor: "Dr. John Doe",
-    subject: "Fever",
-  },
-  {
-    id: "2",
-    createdAt: "2022-03-02T11:00:00Z",
-    doctor: "Dr. Jane Doe",
-    subject: "Headache",
-  },
-  {
-    id: "3",
-    createdAt: "2022-03-03T12:00:00Z",
-    doctor: "Dr. John Doe",
-    subject: "Cough",
-  },
-  {
-    id: "4",
-    createdAt: "2022-03-04T13:00:00Z",
-    doctor: "Dr. Jane Doe",
-    subject: "Stomachache",
-  },
-  {
-    id: "5",
-    createdAt: "2022-03-05T14:00:00Z",
-    doctor: "Dr. John Doe",
-    subject: "Backache",
+export default function ConsultationRecordSheet({ children, onClose, consultationRecords }: ConsultationRecordSheetProps) {
+  const [open, setOpen] = useState(false);
+  const params = useParams<{organization: string}>()
+  const orgUid = params.organization
+  const onOpenChange = (open: boolean) => {
+    if(!open) onClose?.()
+    setOpen(open);
   }
-]
-
-export default function ConsultationRecordSheet({ children, onOpenChange }: ConsultationRecordSheetProps) {
   return (
-    <Sheet onOpenChange={onOpenChange}>
+    <Sheet onOpenChange={onOpenChange} open={open} >
       <SheetTrigger asChild>{children}</SheetTrigger>
-      <SheetContent side="right">
+      <SheetContent side="right" className="min-w-[calc(100dvw-70%)]">
         <SheetHeader>
           <SheetTitle>Consultation Records</SheetTitle>
           <SheetDescription>
-            View and manage consultation records.
+            Consultation records for this appointment.
           </SheetDescription>
         </SheetHeader>
-        <div className="my-5">
+        <div className="flex flex-col my-5 gap-2">
           <Each
             of={consultationRecords}
+            fallback={<p className="text-center text-sm text-muted-foreground">No consultation records found.</p>}
             render={(record) => (
               <Link href={{
-                pathname: `/${"org"}/consultations/${record.id}`,
+                pathname: `/${orgUid}/consultations/${record.id}`,
               }}>
-                <div className="flex items-center justify-between p-2 border-b border-border hover:bg-slate-100 hover:ring-1">
+                <div className="rounded px-3 py-2 bg-slate-100 hover:ring-1">
                   <div>
-                    <p className="font-semibold">{record.subject}</p>
-                    <p className="text-sm text-muted-foreground">{record.doctor}</p>
-                 
+                    <p className="font-semibold text-primary text-wrap">{record.subject}</p>
+                    <p className="text-sm text-muted-foreground">{record.createdBy}</p>
+                    <p className="text-xs text-muted-foreground">{dayjs.tz(record.updatedAt).format("llll")}</p>
+
                   </div>
-                  <p className="text-sm text-muted-foreground">{format(record.createdAt, "PPp")}</p>
                 </div>
               </Link>
             )}
@@ -83,7 +62,7 @@ export default function ConsultationRecordSheet({ children, onOpenChange }: Cons
         </div>
         <SheetFooter>
           <SheetClose asChild>
-            <Button variant="outline" type="button">Close</Button>
+            <Button variant="outline" type="button" onClick={onClose}>Close</Button>
           </SheetClose>
         </SheetFooter>
       </SheetContent>

@@ -10,6 +10,9 @@ import { useOrgAppointments } from "@hooks/useAppointment";
 import { useAtom } from "jotai";
 import { bookAppointmentAtom } from "@state/book-appointment";
 import { useParams } from "next/navigation";
+import { uploadMediaAction } from "@actions/blob.action";
+import { mutate } from "swr";
+import dayjs from "dayjs";
 
 interface ReviewBookingProps {
     nextStep?: () => void;
@@ -22,12 +25,13 @@ interface ReviewBookingProps {
 
 export default function ReviewBooking({ nextStep, prevStep, isLastStep, isFirstStep, setComplete, startOver }: ReviewBookingProps) {
   const [bookAppointmentForm, setBookAppointmentForm] = useAtom(bookAppointmentAtom);
+  const withoutAvailabilities = {...bookAppointmentForm, availabilities: null}
   const params = useParams<{organization: string}>()
   const [playSuccess] = useSound("/audio/success-1.mp3");
-  const { mutate } = useOrgAppointments({ orgId: bookAppointmentForm.orgUid ?? ""})
   const user = useUser()
+  const userId = user.user?.sub
 
-  const handleBookAppointment = (e:FormEvent<HTMLFormElement>) => {
+  const handleBookAppointment = async (e:FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     
     if(!params.organization) {
@@ -42,6 +46,36 @@ export default function ReviewBooking({ nextStep, prevStep, isLastStep, isFirstS
       toast.error("Appointment type is required")
       return;
     }
+    if (!bookAppointmentForm.serviceId) {
+      toast.error("Service is required")
+      return;
+    }
+    if (!bookAppointmentForm.hpEmail) {
+      toast.error("Doctor is required")
+      return;
+    }
+    if (!bookAppointmentForm.selectedTimeSlot?.start || !bookAppointmentForm.selectedTimeSlot?.end) {
+      toast.error("Time slot is required")
+      return;
+    }
+    if(!bookAppointmentForm.preferredDate) {
+      toast.error("Preferred date is required")
+      return;
+    }
+
+    if(!userId) {
+      return  toast.error("User not found")
+    }
+   
+    toast.loading("Uploading attachments...")
+    const promises = (bookAppointmentForm.attachments ?? [])?.map(file => {
+      const formData = new FormData();
+      formData.append("media", file);
+      formData.append("directory", `${userId}/appointment/attachments`);
+      return uploadMediaAction(formData)
+    })
+    const attachmentUrls = await Promise.all(promises)
+    toast.dismiss()
 
     toast.promise(createAppointmentAction({
       orgUid: params.organization,
@@ -49,13 +83,23 @@ export default function ReviewBooking({ nextStep, prevStep, isLastStep, isFirstS
       complaint: bookAppointmentForm.chiefComplaint,
       modeId: 2,
       typeId: bookAppointmentForm.appointmentTypeId,
-      requesters: [user.user?.email]
+      serviceId: bookAppointmentForm.serviceId,
+      requesters: [user.user?.email],
+      attachments: attachmentUrls.map(url => url.url),
+      hpEmail: bookAppointmentForm.hpEmail,
+      schedule: {
+        timeStart: bookAppointmentForm.selectedTimeSlot?.start,
+        timeEnd: bookAppointmentForm.selectedTimeSlot?.end,
+        date: dayjs(bookAppointmentForm.preferredDate).toDate(),
+      }
     }), {
       loading: "Creating appointment...",
       success: () => {
         setComplete?.(true);
         playSuccess();
-        mutate();
+        mutate((key) =>  typeof key === 'string' && key.startsWith(`/api/organizations/${params.organization}/appointments`), undefined, {
+          revalidate:true
+        })
         return "Appointment created successfully";
       },
       error: "Failed to create appointment"
@@ -72,7 +116,7 @@ export default function ReviewBooking({ nextStep, prevStep, isLastStep, isFirstS
       <h2>Review details</h2>
 
       <form onSubmit={handleBookAppointment} >
-        <pre className="my-10 rounded-md bg-slate-950 p-5"><code className="text-white">{JSON.stringify(bookAppointmentForm, null, 2)}</code></pre>
+        <pre className="my-10 rounded-md bg-slate-950 p-5"><code className="text-white">{JSON.stringify(withoutAvailabilities, null, 2)}</code></pre>
         <BackSubmitAndNext
           labels={{
             submit: "Book Appointment",

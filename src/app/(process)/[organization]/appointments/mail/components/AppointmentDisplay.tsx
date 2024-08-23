@@ -32,11 +32,11 @@ import { userDefaultOrganizationRoleAtom } from "@state/user-role";
 import { useAtomValue } from "jotai";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import Attachments from "./Attachments";
-import { cn, getBadgeVariantFromLabel } from "@lib/utils";
+import { formatDateTime, getBadgeVariantFromLabel } from "@lib/utils";
 import dayjs from "dayjs";
 import { LabelValue } from "@components/LabelValue";
 import PreConsultationNoteSheet from "../../components/PreConsultationNoteSheet";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { GetAppointment } from "@actions/appointments/appointments.action";
 import AppointmentRoutingHistorySheet from "../../components/AppointmentRoutingHistorySheet";
 
@@ -214,7 +214,7 @@ export default function AppointmentDisplay() {
         <div className="px-5 py-2 text-xs">
           <span className="font-semibold text-base">{freshAppointment.data.AppointmentAttribute?.status !== "ROUTED" ? "Preferred": "Assigned"} Schedule</span> <br />
           {freshAppointment.data.AppointmentAttribute?.date && <LabelValue className="flex items-center gap-2" label={dayjs(freshAppointment.data.AppointmentAttribute.date).format("ll - dddd")} value="Date:" />}
-          {(freshAppointment.data.AppointmentAttribute?.timeStart && freshAppointment.data.AppointmentAttribute?.timeEnd) && <LabelValue className="flex items-center gap-2" label={`${dayjs(freshAppointment.data.AppointmentAttribute.timeStart).format("hh:mm A")} - ${dayjs(freshAppointment.data.AppointmentAttribute.timeEnd).format("hh:mm A")}`} value="Time:" />}
+          {(freshAppointment.data.AppointmentAttribute?.date && freshAppointment.data.AppointmentAttribute?.timeStart && freshAppointment.data.AppointmentAttribute?.timeEnd) && <LabelValue className="flex items-center gap-2" label={`${formatDateTime(freshAppointment.data.AppointmentAttribute.date, freshAppointment.data.AppointmentAttribute.timeStart).format("hh:mm A")} - ${formatDateTime(freshAppointment.data.AppointmentAttribute.date, freshAppointment.data.AppointmentAttribute.timeEnd).format("hh:mm A")}`} value="Time:" />}
           {freshAppointment.data.AppointmentAttribute?.preferredAppointee && <LabelValue className="flex items-center gap-2" label={freshAppointment.data.AppointmentAttribute.preferredAppointee ?? ""} value={`Preferred HP:`} />}
         </div>
         <Separator />

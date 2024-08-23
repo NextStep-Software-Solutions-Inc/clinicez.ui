@@ -67,8 +67,9 @@ export default function ReviewBooking({ nextStep, prevStep, isLastStep, isFirstS
     }
 
     let attachmentUrls:{url: string}[] = []
-    toast.loading("Uploading attachments...")
+    
     for (const file of bookAppointmentForm.attachments ?? []) {
+      toast.loading(`Uploading ${file.name}...`)
       if (file.size > 10 * 1024 * 1024) {
         toast.error("File size must be less than 10MB");
         return;
@@ -78,8 +79,8 @@ export default function ReviewBooking({ nextStep, prevStep, isLastStep, isFirstS
       formData.append("directory", `${userId}/appointment/attachments`);
       const url = await uploadMediaAction(formData);
       attachmentUrls.push(url);
+      toast.dismiss();
     }
-    toast.dismiss();
 
     toast.promise(createAppointmentAction({
       orgUid: params.organization,

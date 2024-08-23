@@ -189,7 +189,7 @@ export default function FilterForm() {
               </FormItem>
             )}
           />
-          <ActionButton className="w-full" type="submit" disabled={!form.formState.isDirty}>Get Time Slots</ActionButton>
+          <ActionButton className="w-full" type="submit" disabled={!form.formState.isDirty}>Find time slot.</ActionButton>
 
         </div>
       </form>

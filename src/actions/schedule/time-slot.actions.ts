@@ -25,7 +25,7 @@ type GenerateTimeSlotsArgs = {
   appointmentTypeId:number, 
 }
 interface Availability {
-  date: string;
+  date: Date;
   status: string;
   timeSlots: { start: Date, end: Date }[];
 }
@@ -169,7 +169,7 @@ export const generateTimeSlots = cache(async ({appointmentTypeId, serviceId, hpE
   const availability: Availability[] = allDates.map(date => {
     const { status, timeSlots } = checkAvailability(date, userSchedule, recurringDays, totalDuration);
     return {
-      date: dayjs.tz(date).format("llll"),
+      date: dayjs.tz(date).startOf("day").toDate(),
       status,
       timeSlots
     };

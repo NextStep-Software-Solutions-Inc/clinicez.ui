@@ -4,6 +4,11 @@ import { Calendar } from "@components/ui/calendar"
 import { useAtom } from "jotai";
 import { bookAppointmentAtom } from "@state/book-appointment";
 import dayjs from "dayjs";
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+dayjs.extend(utc)
+dayjs.extend(timezone);
+dayjs.tz.setDefault("Asia/Manila");
 
 export default function AppointmentCalendar() {
   const [bookAppointmentForm, setBookAppointmentForm] = useAtom(bookAppointmentAtom)
@@ -20,7 +25,7 @@ export default function AppointmentCalendar() {
         selected={bookAppointmentForm.preferredDate}
         onSelect={handleSelectDate}
         className="rounded-md border"
-        disabled={bookAppointmentForm.availabilities?.filter(a => a.status === "UNAVAILABLE").map(a => dayjs(a.date).toDate()) ?? [
+        disabled={bookAppointmentForm.availabilities?.filter(a => a.status === "UNAVAILABLE").map(a => dayjs.tz(a.date).toDate()) ?? [
           {
             after: new Date(),
             before: new Date(),

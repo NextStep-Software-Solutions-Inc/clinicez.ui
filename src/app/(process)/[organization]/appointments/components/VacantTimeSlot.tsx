@@ -11,6 +11,8 @@ export default function VacantTimeSlot() {
 
   const [bookAppointmentForm, setBookAppointmentForm] = useAtom(bookAppointmentAtom);
   
+  console.log({bookAppointmentForm});
+  
   const handleSelectTimeSlot = (timeSlot: {
     start: Date;
     end: Date;
@@ -24,6 +26,7 @@ export default function VacantTimeSlot() {
       <div className="flex flex-row items-center justify-start gap-1 flex-wrap mt-2">
         <Each
           of={(bookAppointmentForm.availabilities ?? []).find(a => dayjs(a.date).isSame(bookAppointmentForm.preferredDate))?.timeSlots ?? []}
+          fallback={<div className="text-sm text-gray-400">No vacant time slots available. Pick a date from the calendar.</div>}
           render={(timeSlot) =>{
             return  (
               <Badge className="cursor-pointer" onClick={() => handleSelectTimeSlot(timeSlot)} variant={(bookAppointmentForm.selectedTimeSlot && isSameTimeSlot(bookAppointmentForm.selectedTimeSlot, timeSlot)) ? "default": "secondary"}>{timeSlotToString(timeSlot)}</Badge>

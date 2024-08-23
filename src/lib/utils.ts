@@ -3,13 +3,7 @@ import { type ClassValue, clsx } from "clsx"
 import { ComponentProps } from "react";
 import { twMerge } from "tailwind-merge"
 import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc";
-import timezone from "dayjs/plugin/timezone";
 import localizeFormat from "dayjs/plugin/localizedFormat"
-
-dayjs.extend(utc);
-dayjs.extend(timezone);
-dayjs.tz.setDefault("Asia/Manila");
 dayjs.extend(localizeFormat)
 
 export function cn(...inputs: ClassValue[]) {
@@ -36,5 +30,5 @@ export function getBadgeVariantFromLabel(
 }
 
 export const formatDateTime = (date: Date, time: Date): dayjs.Dayjs => {
-  return dayjs.tz(date).add(dayjs.tz(time).hour(), "hour").add(dayjs.tz(time).minute(), "minute").add(dayjs.tz(time).second(), "second");
+  return dayjs(date).add(dayjs(time).hour(), "hour").add(dayjs(time).minute(), "minute").add(dayjs(time).second(), "second");
 }

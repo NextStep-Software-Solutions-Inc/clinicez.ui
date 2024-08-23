@@ -3,13 +3,8 @@
 import dayjs from "dayjs"
 import isBetween from "dayjs/plugin/isBetween"
 import localizeFormat from "dayjs/plugin/localizedFormat"
-import utc from 'dayjs/plugin/utc';
-import timezone from 'dayjs/plugin/timezone';
-dayjs.extend(utc)
 dayjs.extend(isBetween)
 dayjs.extend(localizeFormat)
-dayjs.extend(timezone);
-dayjs.tz.setDefault("Asia/Manila");
 
 import prismaTenant from "@lib/prisma-tenant";
 import { getHPAppointmentsSchedule, getUserScheduleAction } from "./user-schedule.action";
@@ -54,7 +49,6 @@ export const generateTimeSlots = cache(async ({appointmentTypeId, serviceId, hpE
     getUserScheduleAction(hpEmail),
     getHPAppointmentsSchedule(hpEmail)
   ])
-  console.log({userSchedule});
 
   const totalDuration = (serviceAttribute?.duration ?? 0) + (serviceAttribute?.durationPadding ?? 0)
 
@@ -75,7 +69,7 @@ export const generateTimeSlots = cache(async ({appointmentTypeId, serviceId, hpE
     };
   }
 
-  const defaultDateTime = dayjs.tz().startOf("day").toDate()
+  const defaultDateTime = dayjs().startOf("day").toDate()
   const startDate = userSchedule[0]?.startDate  ?? defaultDateTime // Date
   const endDate = userSchedule[0]?.endDate ?? defaultDateTime // Date
   const isRecurring = userSchedule[0]?.isRecurring // true or false
@@ -87,9 +81,9 @@ export const generateTimeSlots = cache(async ({appointmentTypeId, serviceId, hpE
     start: Date;
     end: Date;
   }): boolean => {
-    const start = formatDateTime(dayjs.tz(exception.startDate).startOf("day").toDate(), exception.startTime);
-    const end = formatDateTime(dayjs.tz(exception.endDate).startOf("day").toDate(), exception.endTime);
-    return dayjs.tz(timeSlot.start).isBetween(start, end, "minutes", "[)") || dayjs.tz(timeSlot.end).isBetween(start, end, "minutes", "(]");
+    const start = formatDateTime(dayjs(exception.startDate).startOf("day").toDate(), exception.startTime);
+    const end = formatDateTime(dayjs(exception.endDate).startOf("day").toDate(), exception.endTime);
+    return dayjs(timeSlot.start).isBetween(start, end, "minutes", "[)") || dayjs(timeSlot.end).isBetween(start, end, "minutes", "(]");
   };
 
   const isBooked = (schedules: typeof appointmentSchedules, timeSlot: {
@@ -100,19 +94,19 @@ export const generateTimeSlots = cache(async ({appointmentTypeId, serviceId, hpE
       if(!schedule.AppointmentAttribute?.timeStart || !schedule.AppointmentAttribute?.timeEnd) {
         return false;
       }
-      const start = formatDateTime(dayjs.tz(schedule.AppointmentAttribute?.date).startOf("day").toDate(), schedule.AppointmentAttribute?.timeStart);
-      const end = formatDateTime(dayjs.tz(schedule.AppointmentAttribute?.date).startOf("day").toDate(), schedule.AppointmentAttribute?.timeEnd);
-      return dayjs.tz(timeSlot.start).isBetween(start, end, "minutes", "[)") || dayjs.tz(timeSlot.end).isBetween(start, end, "minutes", "(]");
+      const start = formatDateTime(dayjs(schedule.AppointmentAttribute?.date).startOf("day").toDate(), schedule.AppointmentAttribute?.timeStart);
+      const end = formatDateTime(dayjs(schedule.AppointmentAttribute?.date).startOf("day").toDate(), schedule.AppointmentAttribute?.timeEnd);
+      return dayjs(timeSlot.start).isBetween(start, end, "minutes", "[)") || dayjs(timeSlot.end).isBetween(start, end, "minutes", "(]");
     });
   }
   
   type userSchedule = typeof userSchedule
 
   const checkAvailability = (date: Date, userSchedule: NonNullable<userSchedule>, recurringDays: number[], totalDuration: number): { status: string, timeSlots: { start: Date, end: Date }[] } => {
-    const currentDateTime = dayjs.tz(date);
+    const currentDateTime = dayjs(date);
     const start = formatDateTime(currentDateTime.toDate(), userSchedule[0]?.startTime);
     const end = formatDateTime(currentDateTime.toDate(), userSchedule[0]?.endTime);
-    const isBeforeEnd = dayjs.tz().isBefore(end, "minutes");
+    const isBeforeEnd = dayjs().isBefore(end, "minutes");
     
     let available = false;
     
@@ -124,11 +118,11 @@ export const generateTimeSlots = cache(async ({appointmentTypeId, serviceId, hpE
           available = isBeforeEnd
           break;
         case 'weekly':
-          const isWithinWeeklyPattern = currentDateTime.isBefore(dayjs.tz(userSchedule[0].endDate)) && recurringDays.includes(currentDateTime.day());
+          const isWithinWeeklyPattern = currentDateTime.isBefore(dayjs(userSchedule[0].endDate)) && recurringDays.includes(currentDateTime.day());
           available = isBeforeEnd && isWithinWeeklyPattern;
           break;
         case 'monthly':
-          const isWithinMonthlyPattern = currentDateTime.isBefore(dayjs.tz(userSchedule[0].endDate)) && weeksOfMonth.includes(getWeekOfMonth(currentDateTime.toDate()));
+          const isWithinMonthlyPattern = currentDateTime.isBefore(dayjs(userSchedule[0].endDate)) && weeksOfMonth.includes(getWeekOfMonth(currentDateTime.toDate()));
           available = isBeforeEnd  && isWithinMonthlyPattern;
           break;
         default:
@@ -142,9 +136,9 @@ export const generateTimeSlots = cache(async ({appointmentTypeId, serviceId, hpE
     
     const timeSlots: { start: Date, end: Date }[] = [];
     if (available) {
-      let clonedStart = dayjs.tz().isAfter(start, "minutes") ? dayjs.tz() : start;
+      let clonedStart = dayjs().isAfter(start, "minutes") ? dayjs() : start;
       const exceptionSchedule = userSchedule.filter(s => s.type === "exception")
-      while (clonedStart.add(totalDuration, "minute").isBetween(dayjs.tz(), end, "minute", "[]")) {
+      while (clonedStart.add(totalDuration, "minute").isBetween(dayjs(), end, "minute", "[]")) {
         
         const newStart = clonedStart.add(totalDuration, "minute");
         const isWithin = exceptionSchedule.some(exception => isWithinException(exception, { start: clonedStart.toDate(), end: newStart.toDate() }));
@@ -168,7 +162,7 @@ export const generateTimeSlots = cache(async ({appointmentTypeId, serviceId, hpE
   const availability: Availability[] = allDates.map(date => {
     const { status, timeSlots } = checkAvailability(date, userSchedule, recurringDays, totalDuration);
     return {
-      date: dayjs.tz(date).startOf("day").toDate(),
+      date: dayjs(date).startOf("day").toDate(),
       status,
       timeSlots
     };

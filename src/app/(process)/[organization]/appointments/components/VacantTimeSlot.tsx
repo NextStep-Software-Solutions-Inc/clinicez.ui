@@ -6,11 +6,6 @@ import { useAtom } from "jotai";
 import { bookAppointmentAtom } from "@state/book-appointment";
 import { toast } from "sonner";
 import dayjs from "dayjs";
-import utc from 'dayjs/plugin/utc';
-import timezone from 'dayjs/plugin/timezone';
-dayjs.extend(utc)
-dayjs.extend(timezone);
-dayjs.tz.setDefault("Asia/Manila");
 
 export default function VacantTimeSlot() {
 
@@ -30,7 +25,7 @@ export default function VacantTimeSlot() {
       <h3 className="text-md font-semibold mb-2">Vacant Time Slots:</h3>
       <div className="flex flex-row items-center justify-start gap-1 flex-wrap mt-2">
         <Each
-          of={(bookAppointmentForm.availabilities ?? []).find(a => dayjs.tz(a.date).isSame(bookAppointmentForm.preferredDate))?.timeSlots ?? []}
+          of={(bookAppointmentForm.availabilities ?? []).find(a => dayjs(a.date).isSame(bookAppointmentForm.preferredDate))?.timeSlots ?? []}
           fallback={<div className="text-sm text-gray-400">No vacant time slots available. Pick a date from the calendar.</div>}
           render={(timeSlot) =>{
             return  (
@@ -50,7 +45,7 @@ type TimeSlot = {
 }
 
 const timeSlotToString = (timeSlot: TimeSlot) => {
-  return `${dayjs.tz(timeSlot.start).format("hh:mm A")}- ${dayjs.tz(timeSlot.end).format("hh:mm A")}`;
+  return `${dayjs(timeSlot.start).format("hh:mm A")}- ${dayjs(timeSlot.end).format("hh:mm A")}`;
 }
 
 const isSameTimeSlot = (timeSlot1: TimeSlot, timeSlot2: TimeSlot) => {

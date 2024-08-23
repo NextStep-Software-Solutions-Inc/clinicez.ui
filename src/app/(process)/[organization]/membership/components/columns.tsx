@@ -68,7 +68,7 @@ export const columns: ColumnDef<GetUserOrganizations["data"][number]>[] = [
       <DataTableColumnHeader column={column} title="Application Date & Time" />
     ),
     cell: ({ row }) => {
-      const dateApplied = dayjs.tz(row.original.createdAt).format("llll")
+      const dateApplied = dayjs(row.original.createdAt).format("llll")
       if (!dateApplied) {
         return null
       }

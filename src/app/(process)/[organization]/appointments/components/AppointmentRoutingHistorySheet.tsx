@@ -61,7 +61,7 @@ export default function AppointmentRoutingHistorySheet({ children, onClose, rout
                   <Badge variant={badgeMap[record.status as keyof typeof badgeMap]} />
                   <LabelValue className="flex items-center flex-wrap" value={<span className="flex items-center">{record.routedBy} <ArrowRight className="w-4 h-4 mx-2"/></span>} label={record.routedTo} />
                   {record.amendment && <LabelValue className="flex items-center gap-1 text-xs text-muted-foreground" value="Amendment: " label={record.amendment} />}
-                  <p className="text-xs text-muted-foreground">{dayjs.tz(record.updatedAt).format("llll")}</p>
+                  <p className="text-xs text-muted-foreground">{dayjs(record.updatedAt).format("llll")}</p>
                 </div>
 
               </Link>

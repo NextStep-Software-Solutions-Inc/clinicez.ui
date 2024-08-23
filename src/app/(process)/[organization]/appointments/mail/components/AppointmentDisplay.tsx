@@ -141,7 +141,7 @@ export default function AppointmentDisplay() {
           </div>
           {freshAppointment.data.createdAt && (
             <div className="ml-auto text-xs text-muted-foreground">
-              { dayjs.tz(freshAppointment.data.createdAt).format("ll")}
+              { dayjs(freshAppointment.data.createdAt).format("ll")}
             </div>
           )}
         </div>

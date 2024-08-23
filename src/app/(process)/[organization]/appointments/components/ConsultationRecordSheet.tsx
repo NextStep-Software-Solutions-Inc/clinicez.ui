@@ -52,7 +52,7 @@ export default function ConsultationRecordSheet({ children, onClose, consultatio
                   <div>
                     <p className="font-semibold text-primary text-wrap">{record.subject}</p>
                     <p className="text-sm text-muted-foreground">{record.createdBy}</p>
-                    <p className="text-xs text-muted-foreground">{dayjs.tz(record.updatedAt).format("llll")}</p>
+                    <p className="text-xs text-muted-foreground">{dayjs(record.updatedAt).format("llll")}</p>
 
                   </div>
                 </div>

@@ -90,7 +90,7 @@ export default function ReviewBooking({ nextStep, prevStep, isLastStep, isFirstS
       schedule: {
         timeStart: bookAppointmentForm.selectedTimeSlot?.start,
         timeEnd: bookAppointmentForm.selectedTimeSlot?.end,
-        date: dayjs(bookAppointmentForm.preferredDate).toDate(),
+        date: dayjs(bookAppointmentForm.preferredDate).endOf("day").toDate(),
       }
     }), {
       loading: "Creating appointment...",

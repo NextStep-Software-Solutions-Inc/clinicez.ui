@@ -46,7 +46,7 @@ export const createAppointmentAction = async ({orgUid, subject, complaint, reque
           serviceId,
           timeStart,
           timeEnd,
-          date: dayjs(date).endOf('day').toDate()
+          date: date
         }
       },
       Requesters: {

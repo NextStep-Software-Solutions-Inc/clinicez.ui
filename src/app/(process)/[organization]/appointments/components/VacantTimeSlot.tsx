@@ -25,7 +25,7 @@ export default function VacantTimeSlot() {
       <h3 className="text-md font-semibold mb-2">Vacant Time Slots:</h3>
       <div className="flex flex-row items-center justify-start gap-1 flex-wrap mt-2">
         <Each
-          of={(bookAppointmentForm.availabilities ?? []).find(a => dayjs(a.date).isSame(bookAppointmentForm.preferredDate))?.timeSlots ?? []}
+          of={(bookAppointmentForm.availabilities ?? []).find(a => dayjs(a.date).isSame(bookAppointmentForm.preferredDate, "date"))?.timeSlots ?? []}
           fallback={<div className="text-sm text-gray-400">No vacant time slots available. Pick a date from the calendar.</div>}
           render={(timeSlot) =>{
             return  (

@@ -50,7 +50,7 @@ type TimeSlot = {
 }
 
 const timeSlotToString = (timeSlot: TimeSlot) => {
-  return `${dayjs(timeSlot.start).format("hh:mm A")}- ${dayjs(timeSlot.end).format("hh:mm A")}`;
+  return `${dayjs.tz(timeSlot.start).format("hh:mm A")}- ${dayjs.tz(timeSlot.end).format("hh:mm A")}`;
 }
 
 const isSameTimeSlot = (timeSlot1: TimeSlot, timeSlot2: TimeSlot) => {

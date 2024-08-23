@@ -37,12 +37,14 @@ export const formatDateTime = (date: Date, time: Date): dayjs.Dayjs => {
   const actualHour = dayjs(time).hour();
   const actualMinute = dayjs(time).minute();
   const actualSecond = dayjs(time).second();
-
-  return dayjs()
-    .set("year", actualYear)
-    .set("month", actualMonth)
-    .set("day", actualDay)
-    .set("hour", actualHour)
-    .set("minute", actualMinute)
-    .set("second", actualSecond);
+  const combinedDateTime = dayjs()
+    .set("years", actualYear)
+    .set("months", actualMonth)
+    .set("days", actualDay)
+    .set("hours", actualHour)
+    .set("minutes", actualMinute)
+    .set("seconds", actualSecond)
+  console.log(combinedDateTime.format("YYYY-MM-DD hh:mm:ss A"));
+    
+  return combinedDateTime;
 }

@@ -4,8 +4,13 @@ import { Badge } from "@components/ui/badge";
 import Each from "@components/utils/Each";
 import { useAtom } from "jotai";
 import { bookAppointmentAtom } from "@state/book-appointment";
-import dayjs from "dayjs";
 import { toast } from "sonner";
+import dayjs from "dayjs";
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+dayjs.extend(utc)
+dayjs.extend(timezone);
+dayjs.tz.setDefault("Asia/Manila");
 
 export default function VacantTimeSlot() {
 

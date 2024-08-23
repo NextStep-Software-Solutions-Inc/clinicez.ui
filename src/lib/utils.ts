@@ -44,7 +44,12 @@ export const formatDateTime = (date: Date, time: Date): dayjs.Dayjs => {
     .set("hours", actualHour)
     .set("minutes", actualMinute)
     .set("seconds", actualSecond)
-  console.log(combinedDateTime.format("YYYY-MM-DD hh:mm:ss A"));
+
+  console.log({
+    date: dayjs(date).format("YYYY-MM-DD hh:mm:ss A"),
+    time: dayjs(time).format("YYYY-MM-DD hh:mm:ss A"),
+    combinedDateTime: combinedDateTime.format("YYYY-MM-DD hh:mm:ss A")
+  });
     
   return combinedDateTime;
 }

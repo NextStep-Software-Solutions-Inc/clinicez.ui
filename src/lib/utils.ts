@@ -30,13 +30,17 @@ export function getBadgeVariantFromLabel(
 }
 
 export const formatDateTime = (date: Date, time: Date): dayjs.Dayjs => {
+  const actualYear = dayjs(date).year();
+  const actualMonth = dayjs(date).month();
+  const actualDate = dayjs(date).date();
+
   const actualHour = dayjs(time).hour();
   const actualMinute = dayjs(time).minute();
   const actualSecond = dayjs(time).second();
-  const combinedDateTime = dayjs(date)
-    .set("hours", actualHour)
-    .set("minutes", actualMinute)
-    .set("seconds", actualSecond)
+  const combinedDateTime = dayjs(time)
+    .set("years", actualYear)
+    .set("months", actualMonth)
+    .set("date", actualDate)
 
   console.log({
     actualHour,

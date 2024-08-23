@@ -4,6 +4,7 @@ import { ComponentProps } from "react";
 import { twMerge } from "tailwind-merge"
 import dayjs from "dayjs";
 import localizeFormat from "dayjs/plugin/localizedFormat"
+import { da } from "@faker-js/faker";
 dayjs.extend(localizeFormat)
 
 export function cn(...inputs: ClassValue[]) {
@@ -37,7 +38,7 @@ export const formatDateTime = (date: Date, time: Date): dayjs.Dayjs => {
   const actualHour = dayjs(time).hour();
   const actualMinute = dayjs(time).minute();
   const actualSecond = dayjs(time).second();
-  const combinedDateTime = dayjs()
+  const combinedDateTime = dayjs(date)
     .set("years", actualYear)
     .set("months", actualMonth)
     .set("date", actualDate)
@@ -46,9 +47,16 @@ export const formatDateTime = (date: Date, time: Date): dayjs.Dayjs => {
     .set("seconds", actualSecond)
 
   console.log({
-    date: dayjs(date).format("YYYY-MM-DD hh:mm:ss A"),
-    time: dayjs(time).format("YYYY-MM-DD hh:mm:ss A"),
-    combinedDateTime: combinedDateTime.format("YYYY-MM-DD hh:mm:ss A")
+    actualHour,
+    actualMinute,
+    actualSecond,
+  });
+    
+  console.log({
+    date: date,
+    time: dayjs(time),
+    dateTime: combinedDateTime.toDate(),
+    combinedDateTime: combinedDateTime.format("YYYY-MM-DD hh:mm A Z")
   });
     
   return combinedDateTime;

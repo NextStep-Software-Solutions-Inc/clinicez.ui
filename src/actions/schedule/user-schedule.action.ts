@@ -27,9 +27,6 @@ export const getHPAppointmentsSchedule = async (email: string) => {
         date: {
           gte: new Date()
         },
-        timeStart: {
-          gte: new Date()
-        }
       },
     },
     select: {

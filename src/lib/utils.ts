@@ -34,7 +34,7 @@ export const formatDateTime = (date: Date, time: Date): dayjs.Dayjs => {
 
 
   const dateStr = dayjs(date).endOf("date").toISOString();
-  const timeStr = time.toISOString();
+  const timeStr = dayjs(time).toISOString();
   const dateTimeStr = `${dateStr.split("T")[0]}T${timeStr.split("T")[1]}`;
   const combinedDateTime = dayjs(dateTimeStr);
 

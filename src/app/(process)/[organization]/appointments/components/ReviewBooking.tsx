@@ -65,16 +65,21 @@ export default function ReviewBooking({ nextStep, prevStep, isLastStep, isFirstS
     if(!userId) {
       return  toast.error("User not found")
     }
-   
+
+    let attachmentUrls:{url: string}[] = []
     toast.loading("Uploading attachments...")
-    const promises = (bookAppointmentForm.attachments ?? [])?.map(file => {
+    for (const file of bookAppointmentForm.attachments ?? []) {
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error("File size must be less than 10MB");
+        return;
+      }
       const formData = new FormData();
       formData.append("media", file);
       formData.append("directory", `${userId}/appointment/attachments`);
-      return uploadMediaAction(formData)
-    })
-    const attachmentUrls = await Promise.all(promises)
-    toast.dismiss()
+      const url = await uploadMediaAction(formData);
+      attachmentUrls.push(url);
+    }
+    toast.dismiss();
 
     toast.promise(createAppointmentAction({
       orgUid: params.organization,

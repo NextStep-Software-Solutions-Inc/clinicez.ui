@@ -96,6 +96,17 @@ export const generateTimeSlots = cache(async ({appointmentTypeId, serviceId, hpE
       }
       const start = formatDateTime(dayjs(schedule.AppointmentAttribute?.date).startOf("day").toDate(), schedule.AppointmentAttribute?.timeStart);
       const end = formatDateTime(dayjs(schedule.AppointmentAttribute?.date).startOf("day").toDate(), schedule.AppointmentAttribute?.timeEnd);
+      
+      console.log({
+        start: dayjs(start).format("YYYY-MM-DD HH:mm:ss"),
+        end: dayjs(end).format("YYYY-MM-DD HH:mm:ss"),
+        timeSlot: {
+          start: dayjs(timeSlot.start).format("YYYY-MM-DD HH:mm:ss"),
+          end: dayjs(timeSlot.end).format("YYYY-MM-DD HH:mm:ss")
+        }
+      });
+      
+      
       return dayjs(timeSlot.start).isBetween(start, end, "minutes", "[)") || dayjs(timeSlot.end).isBetween(start, end, "minutes", "(]");
     });
   }
@@ -135,11 +146,11 @@ export const generateTimeSlots = cache(async ({appointmentTypeId, serviceId, hpE
     }
     
     const timeSlots: { start: Date, end: Date }[] = [];
+    
     if (available) {
       let clonedStart = dayjs().isAfter(start, "minutes") ? dayjs() : start;
       const exceptionSchedule = userSchedule.filter(s => s.type === "exception")
       while (clonedStart.add(totalDuration, "minute").isBetween(dayjs(), end, "minute", "[]")) {
-        
         const newStart = clonedStart.add(totalDuration, "minute");
         const isWithin = exceptionSchedule.some(exception => isWithinException(exception, { start: clonedStart.toDate(), end: newStart.toDate() }));
         const isBookedSlot = isBooked(appointmentSchedules, { start: clonedStart.toDate(), end: newStart.toDate() });

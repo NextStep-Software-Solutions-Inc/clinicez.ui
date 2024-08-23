@@ -6,7 +6,6 @@ import { decode } from "jsonwebtoken"
 import prismaTenant from "@lib/prisma-tenant";
 import { RoutedAptStatus, AppointmentStatus } from "@public/json/appointment-list";
 import { getCachedSession } from '@actions/session.action';
-import dayjs from 'dayjs';
 
 export type GetAppointmentFilter = {
   orgUid?: string;

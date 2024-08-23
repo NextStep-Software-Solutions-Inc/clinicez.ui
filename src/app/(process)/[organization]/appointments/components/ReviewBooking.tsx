@@ -6,7 +6,6 @@ import React, { FormEvent } from "react";
 import { toast } from "sonner";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import useSound from "use-sound";
-import { useOrgAppointments } from "@hooks/useAppointment";
 import { useAtom } from "jotai";
 import { bookAppointmentAtom } from "@state/book-appointment";
 import { useParams } from "next/navigation";

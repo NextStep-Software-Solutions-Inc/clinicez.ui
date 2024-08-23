@@ -30,5 +30,19 @@ export function getBadgeVariantFromLabel(
 }
 
 export const formatDateTime = (date: Date, time: Date): dayjs.Dayjs => {
-  return dayjs(date).add(dayjs(time).hour(), "hour").add(dayjs(time).minute(), "minute").add(dayjs(time).second(), "second");
+  const actualYear = dayjs(date).year();
+  const actualMonth = dayjs(date).month();
+  const actualDay = dayjs(date).day();
+
+  const actualHour = dayjs(time).hour();
+  const actualMinute = dayjs(time).minute();
+  const actualSecond = dayjs(time).second();
+
+  return dayjs()
+    .set("year", actualYear)
+    .set("month", actualMonth)
+    .set("day", actualDay)
+    .set("hour", actualHour)
+    .set("minute", actualMinute)
+    .set("second", actualSecond);
 }

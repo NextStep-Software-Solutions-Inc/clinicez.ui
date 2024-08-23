@@ -11,8 +11,6 @@ export default function VacantTimeSlot() {
 
   const [bookAppointmentForm, setBookAppointmentForm] = useAtom(bookAppointmentAtom);
   
-  console.log({bookAppointmentForm});
-  
   const handleSelectTimeSlot = (timeSlot: {
     start: Date;
     end: Date;

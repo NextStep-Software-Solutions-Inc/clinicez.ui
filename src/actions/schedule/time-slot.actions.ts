@@ -96,17 +96,6 @@ export const generateTimeSlots = cache(async ({appointmentTypeId, serviceId, hpE
       }
       const start = formatDateTime(dayjs(schedule.AppointmentAttribute?.date).startOf("day").toDate(), schedule.AppointmentAttribute?.timeStart);
       const end = formatDateTime(dayjs(schedule.AppointmentAttribute?.date).startOf("day").toDate(), schedule.AppointmentAttribute?.timeEnd);
-      
-      console.log({
-        start: dayjs(start).format("YYYY-MM-DD HH:mm:ss"),
-        end: dayjs(end).format("YYYY-MM-DD HH:mm:ss"),
-        timeSlot: {
-          start: dayjs(timeSlot.start).format("YYYY-MM-DD HH:mm:ss"),
-          end: dayjs(timeSlot.end).format("YYYY-MM-DD HH:mm:ss")
-        }
-      });
-      
-      
       return dayjs(timeSlot.start).isBetween(start, end, "minutes", "[)") || dayjs(timeSlot.end).isBetween(start, end, "minutes", "(]");
     });
   }

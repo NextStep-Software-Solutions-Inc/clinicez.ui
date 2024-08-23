@@ -53,7 +53,6 @@ export const createEmploymentRecordAction = async (payload:CreateUserEmploymentR
 }
 
 export const upsertEmploymentRecordAction = async (payload:CreateUserEmploymentRecord ) => {
-  console.log({payload});
   
   const { employeeId, position, designation, userId, orgId, officeId, departmentId, collegeId } = payload
   const response = {

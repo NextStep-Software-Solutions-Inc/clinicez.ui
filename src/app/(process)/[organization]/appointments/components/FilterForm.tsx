@@ -82,8 +82,6 @@ export default function FilterForm() {
       appointmentTypeId: data.appointmentTypeId
     }}))
 
-    console.log(await getUserScheduleAction(data.hpEmail));
-    
     form.reset(data)
     toast.promise(generateTimeSlots({
       appointmentTypeId: data.appointmentTypeId,

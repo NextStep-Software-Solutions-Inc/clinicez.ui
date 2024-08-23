@@ -8,7 +8,6 @@ import timezone from 'dayjs/plugin/timezone';
 dayjs.extend(utc)
 dayjs.extend(isBetween)
 dayjs.extend(localizeFormat)
-dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.tz.setDefault("Asia/Manila");
 
@@ -55,7 +54,7 @@ export const generateTimeSlots = cache(async ({appointmentTypeId, serviceId, hpE
     getUserScheduleAction(hpEmail),
     getHPAppointmentsSchedule(hpEmail)
   ])
-  console.log(appointmentSchedules.map(s => s.AppointmentAttribute));
+  console.log({userSchedule});
 
   const totalDuration = (serviceAttribute?.duration ?? 0) + (serviceAttribute?.durationPadding ?? 0)
 

@@ -1,3 +1,4 @@
+import { da } from '@faker-js/faker';
 import { Badge } from "@components/ui/badge";
 import { type ClassValue, clsx } from "clsx"
 import { ComponentProps } from "react";
@@ -30,30 +31,14 @@ export function getBadgeVariantFromLabel(
 }
 
 export const formatDateTime = (date: Date, time: Date): dayjs.Dayjs => {
-  const actualYear = dayjs(date).year();
-  const actualMonth = dayjs(date).month();
-  const actualDate = dayjs(date).date();
 
-  const actualHour = dayjs(time).hour();
-  const actualMinute = dayjs(time).minute();
-  const actualSecond = dayjs(time).second();
-  const combinedDateTime = dayjs(time)
-    .set("years", actualYear)
-    .set("months", actualMonth)
-    .set("date", actualDate)
 
-  console.log({
-    actualHour,
-    actualMinute,
-    actualSecond,
-  });
+  const dateStr = dayjs(date).endOf("date").toISOString();
+  const timeStr = time.toISOString();
+  const dateTimeStr = `${dateStr.split("T")[0]}T${timeStr.split("T")[1]}`;
+  const combinedDateTime = dayjs(dateTimeStr);
+
     
-  console.log({
-    date: date,
-    time: time,
-    dateTime: combinedDateTime.toDate(),
-    combinedDateTime: combinedDateTime.format("YYYY-MM-DD hh:mm:ss A")
-  });
-    
+
   return combinedDateTime;
 }

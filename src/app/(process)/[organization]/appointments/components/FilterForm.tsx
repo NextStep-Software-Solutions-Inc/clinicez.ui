@@ -30,6 +30,7 @@ import { useAtom } from "jotai"
 import ActionButton from "@components/ActionButton"
 import { generateTimeSlots } from "@actions/schedule/time-slot.actions"
 import { toast } from "sonner"
+import { getUserScheduleAction } from "@actions/schedule/user-schedule.action"
 
 const FilterFormSchema = z.object({
   appointmentTypeId: z.coerce.number({
@@ -81,6 +82,8 @@ export default function FilterForm() {
       appointmentTypeId: data.appointmentTypeId
     }}))
 
+    console.log(await getUserScheduleAction(data.hpEmail));
+    
     form.reset(data)
     toast.promise(generateTimeSlots({
       appointmentTypeId: data.appointmentTypeId,

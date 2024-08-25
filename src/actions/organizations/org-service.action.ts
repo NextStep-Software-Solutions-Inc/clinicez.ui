@@ -2,7 +2,6 @@
 
 import prismaTenant from "@lib/prisma-tenant";
 
-
 type OrgServiceFilter = {
   orgUid?: string,
   categoryId?: number

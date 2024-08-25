@@ -1,5 +1,6 @@
 "use server";
 
+import prismaTenant from '@lib/prisma-tenant';
 import { getCachedSession } from '@actions/session.action';
 import 'server-only'
 

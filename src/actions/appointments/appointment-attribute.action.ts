@@ -2,6 +2,7 @@
 import 'server-only'
 
 import { getCachedSession } from '@actions/session.action';
+import prismaTenant from '@lib/prisma-tenant';
 
 export const receiveAppointmentAction = async (formData: FormData) => {
   const session = await getCachedSession();

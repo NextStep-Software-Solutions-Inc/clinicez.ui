@@ -2,7 +2,6 @@
 import 'server-only'
 
 import { getCachedSession } from '@actions/session.action';
-import { PrismaClientKnownRequestError } from '@prisma/tenant/client/runtime/library';
 import prismaTenant from '@lib/prisma-tenant';
 import { hasCodeProperty } from '@lib/utils';
 

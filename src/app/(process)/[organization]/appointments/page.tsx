@@ -9,6 +9,7 @@ import AppointmentDisplay from "./mail/components/AppointmentDisplay";
 import Suspend from "@components/Suspend";
 
 export const maxDuration = 30
+export const revalidate = 60
 
 async function AppointmentsPage({ searchParams, params }: AppRouterPageRouteOpts ) {
   const organization = params?.organization as string
@@ -34,12 +35,13 @@ async function AppointmentsPage({ searchParams, params }: AppRouterPageRouteOpts
             View and respond to appointments.
           </p>
         </div>
-        <BookAppointmentSheet/>
+        <Suspend>
+          <BookAppointmentSheet/>
+        </Suspend>
       </div>
       <Separator />
       <div className="rounded-[0.5rem] border bg-background shadow">
         <Suspend>
-          {/* <UnderConstruction/> */}
           <AppointmentPanel
             appointmentStatusCounts={appointmentCounts.data}
             routedAppointmentStatusCounts={routedAptCounts.data}

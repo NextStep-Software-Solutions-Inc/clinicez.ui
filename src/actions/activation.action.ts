@@ -1,7 +1,7 @@
 "use server";
 
 import prismaCommon from "@lib/prisma-common";
-
+import { Prisma } from "@prisma/common/client";
 import crypt from "crypto";
 import dayjs from "dayjs";
 
@@ -56,5 +56,10 @@ export const verifyActivationCodeAction = async (email: string, code: string) =>
       data: { isUsed: true }
     });
     return true;
+  },
+  {
+    timeout: 5000,
+    maxWait: 10000,
+    isolationLevel: Prisma.TransactionIsolationLevel.Serializable
   })
 }

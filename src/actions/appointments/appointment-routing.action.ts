@@ -3,6 +3,7 @@ import 'server-only'
 
 import { getCachedSession } from '@actions/session.action';
 import prismaTenant from '@lib/prisma-tenant';
+import { Prisma } from "@prisma/tenant/client"
 import { hasCodeProperty } from '@lib/utils';
 
 export const assignAppointmentAction = async (formData: FormData) => {
@@ -28,6 +29,11 @@ export const assignAppointmentAction = async (formData: FormData) => {
       where: { id: appointmentId },
       data: { status: 'ROUTED' }
     })
+  },
+  {
+    timeout: 5000,
+    maxWait: 10000,
+    isolationLevel: Prisma.TransactionIsolationLevel.Serializable
   })
 
   return {

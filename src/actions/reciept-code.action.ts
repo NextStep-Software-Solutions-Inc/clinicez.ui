@@ -64,5 +64,10 @@ export const claimReceiptCodeAction = async (code: string, userId: string) => {
       }
     });
     return true;
+  },
+  {
+    timeout: 5000,
+    maxWait: 10000,
+    isolationLevel: Prisma.TransactionIsolationLevel.Serializable
   })
 }

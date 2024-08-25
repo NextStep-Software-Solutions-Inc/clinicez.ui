@@ -133,6 +133,11 @@ export const startMigrationTransactionAction = async ({userId, data, orgId}: {
         }
       }
     })
+  },
+  {
+    timeout: 5000,
+    maxWait: 10000,
+    isolationLevel: Prisma.TransactionIsolationLevel.Serializable
   })
 
 }

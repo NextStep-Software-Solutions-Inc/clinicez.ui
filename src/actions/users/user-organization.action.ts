@@ -6,7 +6,7 @@ import { sendMail } from "@actions/email.action";
 import { getCachedSession } from "@actions/session.action";
 import prisma from "@lib/prisma-common";
 import { isOrgAdmin } from "@lib/protect-org";
-import { UserOrganizationStatus } from "@prisma/common/client";
+import { UserOrganizationStatus, Prisma } from "@prisma/common/client";
 import path from "path";
 import { cache } from "react";
 
@@ -222,6 +222,11 @@ export const getUserOrganizationsAction = cache(async (filter?: GetUserOrgFilter
       data: userOrganizations,
       total
     }
+  }, {
+    timeout: 10000,
+    maxWait: 5000,
+    isolationLevel: Prisma.TransactionIsolationLevel.Serializable
+    
   });
   return paginatedData;
 })

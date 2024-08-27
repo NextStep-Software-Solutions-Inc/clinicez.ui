@@ -1,4 +1,3 @@
-import { da } from '@faker-js/faker';
 import { Badge } from "@components/ui/badge";
 import { type ClassValue, clsx } from "clsx"
 import { ComponentProps } from "react";

@@ -24,6 +24,10 @@ export default function SettingsLayout({ children, params: {organization} }: Set
       href: `/settings/organizations`,
     },
     {
+      title: "Schedule",
+      href: `/settings/schedule`,
+    },
+    {
       title: "Subscriptions",
       href: `/settings/subscriptions`,
     },

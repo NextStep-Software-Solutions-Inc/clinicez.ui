@@ -7,7 +7,7 @@ dayjs.extend(isBetween)
 dayjs.extend(localizeFormat)
 
 import prismaTenant from "@lib/prisma-tenant";
-import { getHPAppointmentsSchedule, getUserScheduleAction } from "./user-schedule.action";
+import { getHPAppointmentsSchedule, getUserSchedulesAction } from "./user-schedule.action";
 import { eachDayOfInterval, getWeekOfMonth } from "date-fns";
 import { toast } from "sonner";
 import { cache } from "react";
@@ -35,7 +35,7 @@ export const generateTimeSlots = cache(async ({appointmentTypeId, serviceId, hpE
     data: []
   }
 
-  const [serviceAttribute, appointmentTypeAttribute, userSchedule, appointmentSchedules] = await Promise.all([
+  const [serviceAttribute, appointmentTypeAttribute, userSchedules, appointmentSchedules] = await Promise.all([
     prismaTenant.serviceAttribute.findUnique({
       where: {
         serviceId: serviceId
@@ -46,10 +46,12 @@ export const generateTimeSlots = cache(async ({appointmentTypeId, serviceId, hpE
         appointmentTypeId: appointmentTypeId
       }
     }),
-    getUserScheduleAction(hpEmail),
+    getUserSchedulesAction(hpEmail),
     getHPAppointmentsSchedule(hpEmail)
   ])
 
+  console.log({userSchedules});
+  
   const totalDuration = (serviceAttribute?.duration ?? 0) + (serviceAttribute?.durationPadding ?? 0)
 
   if(totalDuration <= 0) {
@@ -60,24 +62,25 @@ export const generateTimeSlots = cache(async ({appointmentTypeId, serviceId, hpE
     }
   }
 
-  if (!userSchedule) {
-    toast.error("Healthcare provider schedule not found")
+  const baseSchedule = userSchedules?.find(schedule => schedule.type === "base")
+  if (!baseSchedule) {
+    toast.error("Healthcare provider base schedule not found")
     return {
       ...response,
-      message: "Healthcare provider schedule not found",
+      message: "Healthcare provider base schedule not found",
       data: []
     };
   }
 
   const defaultDateTime = dayjs().startOf("day").toDate()
-  const startDate = userSchedule[0]?.startDate  ?? defaultDateTime // Date
-  const endDate = userSchedule[0]?.endDate ?? defaultDateTime // Date
-  const isRecurring = userSchedule[0]?.isRecurring // true or false
-  const recurringPattern = userSchedule[0]?.pattern // DAILY, WEEKLY, MONTHLY
-  const recurringDays = userSchedule[0]?.daysOfWeek ?? []// MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY
-  const weeksOfMonth = userSchedule[0]?.weekOfMonth  ?? []// 1st, 2nd, 3rd, 4th, 5th
+  const startDate = baseSchedule.startDate  ?? defaultDateTime // Date
+  const endDate = baseSchedule.endDate ?? defaultDateTime // Date
+  const isRecurring = baseSchedule.isRecurring // true or false
+  const recurringPattern = baseSchedule.pattern // DAILY, WEEKLY, MONTHLY
+  const recurringDays = baseSchedule.daysOfWeek ?? []// MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY
+  const weeksOfMonth = baseSchedule.weekOfMonth  ?? []// 1st, 2nd, 3rd, 4th, 5th
  
-  const isWithinException = (exception: typeof userSchedule[number], timeSlot: {
+  const isWithinException = (exception: typeof userSchedules[number], timeSlot: {
     start: Date;
     end: Date;
   }): boolean => {
@@ -100,12 +103,12 @@ export const generateTimeSlots = cache(async ({appointmentTypeId, serviceId, hpE
     });
   }
   
-  type userSchedule = typeof userSchedule
+  type userSchedule = typeof userSchedules
 
   const checkAvailability = (date: Date, userSchedule: NonNullable<userSchedule>, recurringDays: number[], totalDuration: number): { status: string, timeSlots: { start: Date, end: Date }[] } => {
     const currentDateTime = dayjs(date);
-    const start = formatDateTime(currentDateTime.toDate(), userSchedule[0]?.startTime);
-    const end = formatDateTime(currentDateTime.toDate(), userSchedule[0]?.endTime);
+    const start = formatDateTime(currentDateTime.toDate(), baseSchedule?.startTime);
+    const end = formatDateTime(currentDateTime.toDate(), baseSchedule?.endTime);
     const isBeforeEnd = dayjs().isBefore(end, "minutes");
     
     let available = false;
@@ -118,11 +121,11 @@ export const generateTimeSlots = cache(async ({appointmentTypeId, serviceId, hpE
           available = isBeforeEnd
           break;
         case 'weekly':
-          const isWithinWeeklyPattern = currentDateTime.isBefore(dayjs(userSchedule[0].endDate)) && recurringDays.includes(currentDateTime.day());
+          const isWithinWeeklyPattern = currentDateTime.isBefore(dayjs(baseSchedule.endDate)) && recurringDays.includes(currentDateTime.day());
           available = isBeforeEnd && isWithinWeeklyPattern;
           break;
         case 'monthly':
-          const isWithinMonthlyPattern = currentDateTime.isBefore(dayjs(userSchedule[0].endDate)) && weeksOfMonth.includes(getWeekOfMonth(currentDateTime.toDate()));
+          const isWithinMonthlyPattern = currentDateTime.isBefore(dayjs(baseSchedule.endDate)) && weeksOfMonth.includes(getWeekOfMonth(currentDateTime.toDate()));
           available = isBeforeEnd  && isWithinMonthlyPattern;
           break;
         default:
@@ -160,7 +163,7 @@ export const generateTimeSlots = cache(async ({appointmentTypeId, serviceId, hpE
 
   const allDates = eachDayOfInterval({ start: startDate, end: endDate })
   const availability: Availability[] = allDates.map(date => {
-    const { status, timeSlots } = checkAvailability(date, userSchedule, recurringDays, totalDuration);
+    const { status, timeSlots } = checkAvailability(date, userSchedules, recurringDays, totalDuration);
     return {
       date: dayjs(date).startOf("day").toDate(),
       status,

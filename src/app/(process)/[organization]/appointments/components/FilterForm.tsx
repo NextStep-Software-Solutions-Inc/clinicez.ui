@@ -30,7 +30,6 @@ import { useAtom } from "jotai"
 import ActionButton from "@components/ActionButton"
 import { generateTimeSlots } from "@actions/schedule/time-slot.actions"
 import { toast } from "sonner"
-import { getUserScheduleAction } from "@actions/schedule/user-schedule.action"
 
 const FilterFormSchema = z.object({
   appointmentTypeId: z.coerce.number({
@@ -90,9 +89,10 @@ export default function FilterForm() {
     }), {
       loading: "Generating time slots...",
       success: (res) => {
-        if(res.status === false) return res.message
-        setBookAppointmentForm((prev) => ({...prev, availabilities: res.data}))
-        return "Time slots generated"
+        console.log(res.data);
+        
+        if(res.status) setBookAppointmentForm((prev) => ({...prev, availabilities: res.data}))
+        return res.message
       },
       error: "Failed to generate time slots",
       position: "top-center"

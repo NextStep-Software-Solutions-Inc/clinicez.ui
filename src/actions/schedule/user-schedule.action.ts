@@ -1,15 +1,74 @@
 "use server";
+import "server-only";
 
 import prismaCommon from "@lib/prisma-common";
 import prismaTenant from "@lib/prisma-tenant";
 
-export type GetUserSchedule = Awaited<ReturnType<typeof getUserScheduleAction>>;
-export const getUserScheduleAction = async (email: string) => {
+export type UpsertUserScheduleArgs = {
+  id: number;
+  type: string;
+  startDate: Date;
+  endDate: Date;
+  startTime: Date;
+  endTime: Date;
+  isRecurring: boolean;
+  pattern?: string;
+  daysOfWeek?: number[];
+  weekOfMonth?: number[];
+  userId: string;
+};
+export const upsertBaseUserScheduleAction = async (args: UpsertUserScheduleArgs) => {
+  const { id, type, startDate, endDate, startTime, endTime, isRecurring, pattern, daysOfWeek, weekOfMonth, userId } = args;
+  const userSchedule = await prismaCommon.userSchedule.upsert({
+    where: {
+      User: { userId },
+      id
+    },
+    update: {
+      type,
+      startDate,
+      endDate,
+      startTime,
+      endTime,
+      isRecurring,
+      pattern,
+      daysOfWeek,
+      weekOfMonth
+    },
+    create: {
+      type,
+      startDate,
+      endDate,
+      startTime,
+      endTime,
+      isRecurring,
+      pattern,
+      daysOfWeek,
+      weekOfMonth,
+      User: {
+        connect: { userId }
+      }
+    }
+  });
+  return {
+    status: true,
+    message: "User schedule has been updated",
+    data: userSchedule
+  }
+}
+
+export type GetUserSchedules = Awaited<ReturnType<typeof getUserSchedulesAction>>;
+export const getUserSchedulesAction = async (unique: string) => {
   return await prismaCommon.userSchedule.findMany({
     where: {
-      User: {
-        email
-      }
+      OR: [
+        {
+          User: { email: unique }
+        }, 
+        {
+          User: { userId: unique }
+        }
+      ]
     },
   });
 }

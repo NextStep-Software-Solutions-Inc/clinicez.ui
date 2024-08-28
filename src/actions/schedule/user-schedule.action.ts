@@ -113,3 +113,16 @@ export const getHPAppointmentsSchedule = async (email: string) => {
     }
   });
 }
+
+export const deleteUserScheduleAction = async (id: number) => {
+  await prismaCommon.userSchedule.delete({
+    where: {
+      id,
+      isActive: true
+    }
+  });
+  return {
+    status: true,
+    message: "User schedule has been deleted"
+  }
+}

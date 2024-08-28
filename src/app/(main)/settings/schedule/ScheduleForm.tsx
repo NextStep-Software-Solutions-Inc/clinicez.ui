@@ -1,4 +1,3 @@
-import { GetUserSchedules } from "@actions/schedule/user-schedule.action";
 import DatePickerWithRange from "@components/DatePickerWithRange";
 import { Checkbox } from "@components/ui/checkbox";
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@components/ui/form";
@@ -17,12 +16,56 @@ export const scheduleFormSchema = z.object({
   }, {
     required_error: "Date range is required"
   }),
-  startTime: z.coerce.string(),
-  endTime: z.coerce.string(),
+  startTime: z.coerce.string({
+    message: "Start time is required"
+  }),
+  endTime: z.coerce.string({
+    message: "End time is required"
+  }),
   isRecurring: z.boolean(),
-  daysOfWeek: z.array(z.number()),
-  weekOfMonth: z.array(z.number()),
-  pattern: z.string()
+  pattern: z.string(),
+  daysOfWeek: z.array(z.number()).superRefine(({}, ctx) => {}),
+  weekOfMonth: z.array(z.number())
+}).superRefine((value, ctx) => {
+  value.isRecurring && ["weekly", "monthly"].includes(value.pattern) && !value.daysOfWeek.length && ctx.addIssue({
+    message: "Select at least one day of the week",
+    code: "invalid_intersection_types",
+    path: ["daysOfWeek"]
+  });
+  value.isRecurring && value.pattern === "monthly" && !value.weekOfMonth.length && ctx.addIssue({
+    message: "Select at least one week of the month",
+    code: "invalid_intersection_types",
+    path: ["weekOfMonth"]
+  });
+  !(value.dateRange.from || value.dateRange.to) && ctx.addIssue({
+    message: "Date range is required",
+    code: "invalid_intersection_types",
+    path: ["dateRange"]
+  });
+  console.log({
+    startTime: !value.startTime.trim().length,
+    endTime: !value.endTime.trim().length
+  });
+  !value.startTime.trim().length && ctx.addIssue({
+    message: "Start and End time is required",
+    code: "invalid_intersection_types",
+    path: ["startTime"]
+  });
+  !value.endTime.trim().length && ctx.addIssue({
+    message: "Start and End time is required",
+    code: "invalid_intersection_types",
+    path: ["endTime"]
+  });
+  // the end time should be greater than the start time
+  if(value.dateRange.from && value.dateRange.to) {
+    const startTime = new Date(new Date(value.dateRange.from).toISOString().split("T")[0] + "T" + value.startTime).getTime()
+    const endTime = new Date(new Date(value.dateRange.to).toISOString().split("T")[0] + "T" + value.endTime).getTime()
+    startTime > endTime && ctx.addIssue({
+      message: "End time should be greater than the start time",
+      code: "invalid_intersection_types",
+      path: ["endTime"]
+    });
+  }
 })
   
 const daysOfWeek = [
@@ -71,15 +114,14 @@ const weekOfMonth = [
 export type ScheduleFormType = z.infer<typeof scheduleFormSchema>
   
   interface ScheduleFormProps {
-    schedule?: GetUserSchedules[number]
     form: ReturnType<typeof useForm<ScheduleFormType>>
   }
-export default function ScheduleForm({schedule, form}:ScheduleFormProps) {
+export default function ScheduleForm({form}:ScheduleFormProps) {
   
   const isRecurring = form.watch("isRecurring")
   const pattern = form.watch("pattern") 
   return (
-    <>
+    <div className="my-10 space-y-5">
       <FormField
         control={form.control}
         name="dateRange"
@@ -99,12 +141,12 @@ export default function ScheduleForm({schedule, form}:ScheduleFormProps) {
           </FormItem>
         )}
       />
-      <div className="flex items-center gap-5">
+      <div className="flex items-center gap-5 flex-wrap">
         <FormField
           control={form.control}
           name="startTime"
           render={({ field }) => (
-            <FormItem>
+            <FormItem className="flex-grow">
               <FormLabel>Start Time</FormLabel>
               <FormControl>
                 <Input {...field}  type="time" />
@@ -120,7 +162,7 @@ export default function ScheduleForm({schedule, form}:ScheduleFormProps) {
           control={form.control}
           name="endTime"
           render={({ field }) => (
-            <FormItem>
+            <FormItem className="flex-grow">
               <FormLabel>End Time</FormLabel>
               <FormControl>
                 <Input {...field} type="time" />
@@ -136,9 +178,7 @@ export default function ScheduleForm({schedule, form}:ScheduleFormProps) {
         control={form.control}
         name="isRecurring"
         render={({field}) => (
-          <FormItem
-            className="flex flex-row items-start space-x-3 space-y-0"
-          >
+          <FormItem className="flex gap-2 items-end">
             <FormControl>
               <Checkbox
                 checked={field.value}
@@ -146,10 +186,9 @@ export default function ScheduleForm({schedule, form}:ScheduleFormProps) {
               />
             </FormControl>
             <FormLabel className="font-normal">
-                  Recurring
+              Recurring
             </FormLabel>
           </FormItem>
-
         )}
       />
       {
@@ -164,30 +203,24 @@ export default function ScheduleForm({schedule, form}:ScheduleFormProps) {
                     <RadioGroup
                       onValueChange={field.onChange}
                       defaultValue={field.value}
-                      className="flex flex-row items-center space-x-1"
+                      className="flex flex-row items-center gap-5 flex-wrap"
                     >
-                      <FormItem className="flex items-center space-x-3 space-y-0">
-                        <FormControl>
-                          <RadioGroupItem value="daily" />
-                        </FormControl>
-                        <FormLabel className="font-normal">
-                          Daily
-                        </FormLabel>
-                      </FormItem>
-                      <FormItem className="flex items-center space-x-3 space-y-0">
-                        <FormControl>
-                          <RadioGroupItem value="weekly" />
-                        </FormControl>
-                        <FormLabel className="font-normal">
-                          Weekly
-                        </FormLabel>
-                      </FormItem>
-                      <FormItem className="flex items-center space-x-3 space-y-0">
-                        <FormControl>
-                          <RadioGroupItem value="monthly" />
-                        </FormControl>
-                        <FormLabel className="font-normal">Monthly</FormLabel>
-                      </FormItem>
+                      <Each
+                        of={["daily", "weekly", "monthly"]}
+                        render={(pattern) => (
+                          <FormItem
+                            key={pattern}
+                            className="flex items-center space-x-1 space-y-0"
+                          >
+                            <FormControl>
+                              <RadioGroupItem value={pattern} />
+                            </FormControl>
+                            <FormLabel className="font-normal capitalize">
+                              {pattern}
+                            </FormLabel>
+                          </FormItem>
+                        )}
+                      />
                     </RadioGroup>
                   </FormControl>
                   <FormMessage />
@@ -201,14 +234,14 @@ export default function ScheduleForm({schedule, form}:ScheduleFormProps) {
               control={form.control}
               name="daysOfWeek"
               render={() => (
-                <FormItem>
+                <FormItem className="space-x-3">
                   <div className="mb-4">
                     <FormLabel className="text-base">Days of Week</FormLabel>
                     <FormDescription>
                     Select the days of the week you want to set the schedule for.
                     </FormDescription>
                   </div>
-                  <div className="flex gap-6 items-center">
+                  <div className="flex gap-2 items-center flex-wrap">
                     <Each
                       of={daysOfWeek}
                       render={(day) => (
@@ -258,14 +291,14 @@ export default function ScheduleForm({schedule, form}:ScheduleFormProps) {
               control={form.control}
               name="weekOfMonth"
               render={() => (
-                <FormItem >
+                <FormItem className="space-x-3">
                   <div className="mb-4">
                     <FormLabel className="text-base">Weeks of the Month </FormLabel>
                     <FormDescription>
                     Select the weeks of the month you want to set the schedule for.
                     </FormDescription>
                   </div>
-                  <div className="flex gap-6 items-center">
+                  <div className="flex gap-2 items-center flex-wrap">
                     <Each
                       of={weekOfMonth}
                       render={(week) => (
@@ -308,6 +341,6 @@ export default function ScheduleForm({schedule, form}:ScheduleFormProps) {
               )}
             />
       }
-    </>
+    </div>
   );
 }

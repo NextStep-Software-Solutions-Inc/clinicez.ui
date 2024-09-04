@@ -28,7 +28,7 @@ import { useOrgServices } from "@hooks/useOrgService"
 import { bookAppointmentAtom } from "../../../../../state/book-appointment"
 import { useAtom } from "jotai"
 import ActionButton from "@components/ActionButton"
-import { generateTimeSlots } from "@actions/schedule/time-slot.actions"
+import { getHPsTimeSlots } from "@actions/schedule/time-slot.actions"
 import { toast } from "sonner"
 
 const FilterFormSchema = z.object({
@@ -82,7 +82,7 @@ export default function FilterForm() {
     }}))
 
     form.reset(data)
-    toast.promise(generateTimeSlots({
+    toast.promise(getHPsTimeSlots({
       appointmentTypeId: data.appointmentTypeId,
       serviceId: data.serviceId,
       hpEmail: data.hpEmail

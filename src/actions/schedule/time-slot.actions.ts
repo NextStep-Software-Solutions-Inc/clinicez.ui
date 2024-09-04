@@ -23,8 +23,9 @@ interface Availability {
   status: boolean;
   timeSlots: { start: Date, end: Date }[];
 }
+const TIME_ALLOWANCE = 30
 
-export const getAvailableDates = cache(async ({appointmentTypeId, serviceId, hpEmail}: GenerateTimeSlotsArgs): Promise<{
+export const getHPsTimeSlots = cache(async ({appointmentTypeId, serviceId, hpEmail}: GenerateTimeSlotsArgs): Promise<{
   status: boolean;
   message: string;
   data: Availability[]
@@ -107,6 +108,7 @@ export const getAvailableDates = cache(async ({appointmentTypeId, serviceId, hpE
         }
       }
     }
+    
     return available
   };
 
@@ -129,11 +131,12 @@ export const getAvailableDates = cache(async ({appointmentTypeId, serviceId, hpE
     const timeSlots = isAvailable ? generateTimeSlotsV2(start, end, totalDuration, [...bookedTimeSlots, ...exceptionSlots]) : [];
     return {
       date: currentDateTime.endOf("day").toDate(),
-      status: isAvailable,
+      status: isAvailable && !!timeSlots.length,
       timeSlots
     };
   });
 
+  
   return {
     status: true,
     message: "Time slots generated",
@@ -172,13 +175,13 @@ const generateExceptionSlots = (exceptions: GetUserSchedules): Schedule[] => {
       )
       continue;
     }
-    function addExceptionSchedule(currentDateTime: dayjs.Dayjs, isNowBetween: boolean, exception: any, exceptionSchedules: any[]) {
+    function addExceptionSchedule(start: dayjs.Dayjs, end:dayjs.Dayjs,  isNowBetween: boolean) {
       const now = dayjs();
       exceptionSchedules.push({
-        dateStart: isNowBetween ? now.toDate() : currentDateTime.toDate(),
-        dateEnd: exception.endDate,
-        timeStart: isNowBetween ? now.toDate() : currentDateTime.toDate(),
-        timeEnd: exception.endTime
+        dateStart: isNowBetween ? now.toDate() : start.toDate(),
+        dateEnd: end.toDate(),
+        timeStart: isNowBetween ? now.toDate() : start.toDate(),
+        timeEnd: end.toDate()
       });
     }
     const dateRange = eachDayOfInterval({ start: exception.startDate, end: exception.endDate });
@@ -187,23 +190,23 @@ const generateExceptionSlots = (exceptions: GetUserSchedules): Schedule[] => {
       const start = formatDateTime(currentDateTime.toDate(), exception.startTime);
       const end = formatDateTime(currentDateTime.toDate(), exception.endTime);
       const isNowBetween = dayjs().isBetween(start, end, "minutes", "[]");
-    
+      
       switch (exception.pattern) {
       case 'daily':
-        addExceptionSchedule(currentDateTime, isNowBetween, exception, exceptionSchedules);
+        addExceptionSchedule(start, end, isNowBetween);
         break;
     
       case 'weekly':
         const isWithinWeeklyPattern = currentDateTime.isBefore(dayjs(exception.endDate)) && exception.daysOfWeek.includes(currentDateTime.day());
         if (isWithinWeeklyPattern) {
-          addExceptionSchedule(currentDateTime, isNowBetween, exception, exceptionSchedules);
+          addExceptionSchedule(start, end, isNowBetween);
         }
         break;
     
       case 'monthly':
         const isWithinMonthlyPattern = currentDateTime.isBefore(dayjs(exception.endDate)) && exception.weekOfMonth.includes(getWeekOfMonth(currentDateTime.toDate()));
         if (isWithinMonthlyPattern) {
-          addExceptionSchedule(currentDateTime, isNowBetween, exception, exceptionSchedules);
+          addExceptionSchedule(start, end, isNowBetween);
         }
         break;
     
@@ -211,16 +214,14 @@ const generateExceptionSlots = (exceptions: GetUserSchedules): Schedule[] => {
         break;
       }
     });
-
-
   }
   return exceptionSchedules
 }
 
 const generateTimeSlotsV2 = (start: Date, end: Date, duration: number, occupiedSlots: Schedule[] ) => {
   const timeSlots: { start: Date, end: Date }[] = [];
-  let clonedStart = dayjs(start);
-  while (clonedStart.add(duration, "minute").isBetween(dayjs(), end, "minute", "[]")) {
+  let clonedStart = dayjs().isBetween(start, end, "minutes", "[]")? dayjs().add(TIME_ALLOWANCE, "minutes"): dayjs(start);
+  while (clonedStart.add(duration, "minute").isBetween(clonedStart, end, "minute", "[]")) {
     const newStart = clonedStart.add(duration, "minute");
     const isOccupiedSlot = isOccupied({ start: clonedStart.toDate(), end: newStart.toDate() }, occupiedSlots);
     if(!isOccupiedSlot) {

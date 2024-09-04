@@ -20,7 +20,7 @@ export default function AppointmentCalendar() {
         selected={bookAppointmentForm.preferredDate}
         onSelect={handleSelectDate}
         className="rounded-md border"
-        disabled={bookAppointmentForm.availabilities?.filter(a => a.status === "UNAVAILABLE").map(a => dayjs(a.date).toDate()) ?? [
+        disabled={bookAppointmentForm.availabilities?.filter(a => !a.status).map(a => dayjs(a.date).toDate()) ?? [
           {
             after: new Date(),
             before: new Date(),
@@ -29,7 +29,7 @@ export default function AppointmentCalendar() {
         ]}
         
         modifiers={{
-          available: bookAppointmentForm.availabilities?.filter(a => a.status === "AVAILABLE").map(a => new Date(a.date)) ?? [],
+          available: bookAppointmentForm.availabilities?.filter(a => a.status).map(a => new Date(a.date)) ?? [],
         }}
         classNames={{
         }}

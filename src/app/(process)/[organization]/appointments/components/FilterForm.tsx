@@ -30,6 +30,7 @@ import { useAtom } from "jotai"
 import ActionButton from "@components/ActionButton"
 import { getHPsTimeSlots } from "@actions/schedule/time-slot.actions"
 import { toast } from "sonner"
+import { useOrgAppointmentModes } from "@hooks/useOrgAppointmentMode"
 
 const FilterFormSchema = z.object({
   appointmentTypeId: z.coerce.number({
@@ -37,6 +38,9 @@ const FilterFormSchema = z.object({
   }).min(1, 'Appointment type is required'),
   serviceId: z.coerce.number({
     description: 'Select a service',
+  }),
+  modeId: z.coerce.number({
+    description: 'Select a Mode',
   }),
   hpEmail: z.string({
     description: 'Select a doctor',
@@ -50,6 +54,7 @@ export default function FilterForm() {
 
   const organization = params?.organization as string
   const {data: appointmentTypes} = useOrgAppointmentTypes(organization)
+  const { data: appointmentModes } = useOrgAppointmentModes(organization);
   const {data: services} = useOrgServices({
     orgUid: organization,
   })
@@ -76,6 +81,7 @@ export default function FilterForm() {
     setBookAppointmentForm((prev) => ({...prev, ...{
       selectedTimeSlot: undefined,
       availabilities: undefined,
+      modeId: data.modeId,
       hpEmail: data.hpEmail,
       serviceId: data.serviceId,
       appointmentTypeId: data.appointmentTypeId
@@ -103,6 +109,37 @@ export default function FilterForm() {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className=" space-y-6">
         <div className="flex flex-row gap-5 items-center justify-center md:justify-start flex-wrap">
+          <FormField
+            control={form.control}
+            name="modeId"
+            render={({ field }) => (
+              <FormItem className="flex-grow">
+                <FormLabel>Mode</FormLabel>
+                <Select 
+                  onValueChange={field.onChange} 
+                  value={field.value?.toString()}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select an appointment mode" className="capitalize"/>
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <Each
+                      of={appointmentModes ?? []}
+                      render={(appointmentMode) => (
+                        <SelectItem value={appointmentMode.id.toString()}>{appointmentMode.name}</SelectItem>
+                      )}
+                    />
+                  </SelectContent>
+                </Select>
+                <FormDescription>
+                  Select an appointment mode to show available slots
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
           <FormField
             control={form.control}
             name="appointmentTypeId"

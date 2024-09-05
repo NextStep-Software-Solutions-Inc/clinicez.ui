@@ -12,6 +12,12 @@ import { useParams } from "next/navigation";
 import { uploadMediaAction } from "@actions/blob.action";
 import { mutate } from "swr";
 import dayjs from "dayjs";
+import { LabelValue } from "@components/LabelValue";
+import Each from "@components/utils/Each";
+import { Separator } from "@components/ui/separator";
+import { useOrgServices } from "@hooks/useOrgService";
+import { useOrgAppointmentTypes } from "@hooks/useOrgAppointmentType";
+import { useOrgAppointmentModes } from "@hooks/useOrgAppointmentMode";
 
 interface ReviewBookingProps {
     nextStep?: () => void;
@@ -24,8 +30,10 @@ interface ReviewBookingProps {
 
 export default function ReviewBooking({ nextStep, prevStep, isLastStep, isFirstStep, setComplete, startOver }: ReviewBookingProps) {
   const [bookAppointmentForm, setBookAppointmentForm] = useAtom(bookAppointmentAtom);
-  const withoutAvailabilities = {...bookAppointmentForm, availabilities: null}
-  const params = useParams<{organization: string}>()
+  const params = useParams<{organization: string}>();
+  const { data: services } = useOrgServices({orgUid: params.organization});
+  const { data: appointmentTypes } = useOrgAppointmentTypes(params.organization);
+  const { data: appointmentModes } = useOrgAppointmentModes(params.organization);
   const [playSuccess] = useSound("/audio/success-1.mp3");
   const user = useUser()
   const userId = user.user?.sub
@@ -117,11 +125,28 @@ export default function ReviewBooking({ nextStep, prevStep, isLastStep, isFirstS
   }
 
   return (
-    <div className="prose max-w-full shadow-lg w-full p-8 bg-white rounded-md">
-      <h2>Review details</h2>
-
+    <div className="shadow-lg p-8 space-y-5 bg-white rounded-md">
+      <h2 className="text-2xl  font-bold ">Review details</h2>
       <form onSubmit={handleBookAppointment} >
-        <pre className="my-10 rounded-md bg-slate-950 p-5"><code className="text-white">{JSON.stringify(withoutAvailabilities, null, 2)}</code></pre>
+        <div className="p-5 mb-5 space-y-2 text-sm bg-gray-100 rounded-sm select-none">
+          <LabelValue className="flex items-center gap-2" value="Subject:" label={bookAppointmentForm.subject ?? ""} />
+          <LabelValue className="flex items-center gap-2" value="Chief Complaint:" label={bookAppointmentForm.chiefComplaint ?? ""} />
+          <LabelValue className="flex items-center gap-2" value="Appointment Mode:" label={appointmentModes?.find(a => a.id === bookAppointmentForm.modeId)?.name ?? ""} />
+          <LabelValue className="flex items-center gap-2" value="Appointment Type:" label={appointmentTypes?.find(a => a.id === bookAppointmentForm.appointmentTypeId)?.name ?? ""} />
+          <LabelValue className="flex items-center gap-2" value="Service:" label={services?.find(s => s.id === bookAppointmentForm.serviceId)?.name ?? ""} />
+          <LabelValue className="flex items-center gap-2" value="Preferred Doctor:" label={bookAppointmentForm.hpEmail ?? ""} />
+          {!!bookAppointmentForm.preferredDate && <LabelValue className="flex items-center gap-2" value="Preferred Date:" label={dayjs().format("ll")} /> }
+          <LabelValue className="flex items-center gap-2" value="Time Slot:" label={`${dayjs(bookAppointmentForm.selectedTimeSlot?.start).format("LT")} - ${dayjs(bookAppointmentForm.selectedTimeSlot?.end).format("LT")}`} />
+          <Separator/>
+          <Each
+            of={bookAppointmentForm.attachments ?? []}
+            fallback={<p>No attachments</p>}
+            render={(attachment, index) => (
+              <LabelValue key={index} className="flex items-center gap-2"  value={`Attachment #${index+1}:`} label={attachment.name} />
+            )}
+          />
+        </div>
+       
         <BackSubmitAndNext
           labels={{
             submit: "Book Appointment",

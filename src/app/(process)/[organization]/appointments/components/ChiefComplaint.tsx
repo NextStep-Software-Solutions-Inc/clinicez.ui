@@ -15,11 +15,11 @@ const chiefComplaintFormSchema = z.object({
   subject: z.string({
     required_error: "You need to enter a subject.",
     invalid_type_error: "Invalid subject",
-  }).min(3, "Subject is too short"), 
+  }).trim().min(3, "Subject is too short"), 
   chiefComplaint: z.string({
     required_error: "You need to enter a chief complaint.",
     invalid_type_error: "Invalid chief complaint",
-  }).min(20, "Chief complaint is too short"),
+  }).trim().min(20, "Chief complaint is too short"),
 })
 
 interface ChiefComplaintProps {
@@ -34,7 +34,8 @@ export default function ChiefComplaint({ nextStep, prevStep, isLastStep, isFirst
 
   const form = useForm<z.infer<typeof chiefComplaintFormSchema>>({
     resolver: zodResolver(chiefComplaintFormSchema),
-    defaultValues: bookAppointmentForm
+    defaultValues: bookAppointmentForm,
+    mode: "onChange"
   })
 
   const onSubmit = async (data: z.infer<typeof chiefComplaintFormSchema>) => {

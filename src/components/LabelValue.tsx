@@ -10,7 +10,7 @@ export const LabelValue = ({label, value, className}:LabelValueProps) => {
   return (
     <div className={className}>
       <p className="font-medium" id={label}>{value}</p>
-      <Label htmlFor={label} className="text-primary">{label}</Label>
+      <Label htmlFor={label} className="text-primary font-normal">{label}</Label>
     </div>
   );
 }

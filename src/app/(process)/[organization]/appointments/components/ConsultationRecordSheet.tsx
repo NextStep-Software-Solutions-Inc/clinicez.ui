@@ -14,7 +14,6 @@ import Each from "@components/utils/Each";
 import dayjs from "dayjs";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useState } from "react";
 interface ConsultationRecordSheetProps {
   children?: React.ReactNode;
   onSelect? : (e: Event) => void;
@@ -23,16 +22,12 @@ interface ConsultationRecordSheetProps {
 }
 
 export default function ConsultationRecordSheet({ children, onClose, consultationRecords }: ConsultationRecordSheetProps) {
-  const [open, setOpen] = useState(false);
   const params = useParams<{organization: string}>()
   const orgUid = params.organization
-  const onOpenChange = (open: boolean) => {
-    if(!open) onClose?.()
-    setOpen(open);
-  }
+
   return (
-    <Sheet onOpenChange={onOpenChange} open={open} >
-      <SheetTrigger asChild>{children}</SheetTrigger>
+    <Sheet >
+      <SheetTrigger asChild >{children}</SheetTrigger>
       <SheetContent side="right" className="min-w-[calc(100dvw-70%)]">
         <SheetHeader>
           <SheetTitle>Consultation Records</SheetTitle>

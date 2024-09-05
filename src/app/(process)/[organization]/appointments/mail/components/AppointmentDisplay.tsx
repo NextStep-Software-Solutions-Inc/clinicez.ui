@@ -36,7 +36,7 @@ import { formatDateTime, getBadgeVariantFromLabel } from "@lib/utils";
 import dayjs from "dayjs";
 import { LabelValue } from "@components/LabelValue";
 import PreConsultationNoteSheet from "../../components/PreConsultationNoteSheet";
-import { useState } from "react";
+import { useRef } from "react";
 import { GetAppointment } from "@actions/appointments/appointments.action";
 import AppointmentRoutingHistorySheet from "../../components/AppointmentRoutingHistorySheet";
 
@@ -239,40 +239,37 @@ interface MoreToolsProps {
 }
 
 export const MoreTools = ({freshAppointment}: MoreToolsProps) => {
-  const [open, setOpen] = useState(false)
-
-  const handleClose = () => {
-    setOpen(false)
-  }
+  const consultationRecordTriggerRef = useRef<HTMLInputElement>(null)
+  const appointmentRoutingHistoryTriggerRef = useRef<HTMLInputElement>(null)
   return (
-    <DropdownMenu open={open}>
-      <DropdownMenuTrigger asChild onClick={() => setOpen(prev => !prev)}>
-        <Button variant="ghost" size="icon" disabled={!freshAppointment}>
-          <MoreVertical className="h-4 w-4" />
-          <span className="sr-only">More</span>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <ConsultationRecordSheet 
-          onClose={handleClose}
-          consultationRecords={freshAppointment?.ConsultationRecords ?? []}
-        >
-          <SheetTrigger asChild>
-            <DropdownMenuItem>
-              View Consultation Records
-            </DropdownMenuItem>
-          </SheetTrigger>
-        </ConsultationRecordSheet>
-        <AppointmentRoutingHistorySheet onClose={handleClose}
-          routing={freshAppointment?.AppointmentRouting ?? []}
-        >
-          <SheetTrigger asChild>
-            <DropdownMenuItem>
+    <>
+      <ConsultationRecordSheet
+        consultationRecords={freshAppointment?.ConsultationRecords ?? []}
+      >
+        <input ref={consultationRecordTriggerRef} type="hidden"></input>
+      </ConsultationRecordSheet>
+      <AppointmentRoutingHistorySheet
+        routing={freshAppointment?.AppointmentRouting ?? []}
+      >
+        <input ref={appointmentRoutingHistoryTriggerRef} type="hidden"></input>
+      </AppointmentRoutingHistorySheet>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" disabled={!freshAppointment}>
+            <MoreVertical className="h-4 w-4" />
+            <span className="sr-only">More</span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={() => consultationRecordTriggerRef.current?.click()}>
+            View Consultation Records
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => appointmentRoutingHistoryTriggerRef.current?.click()}>
             View Assignment History
-            </DropdownMenuItem>
-          </SheetTrigger>
-        </AppointmentRoutingHistorySheet>
-      </DropdownMenuContent>
-    </DropdownMenu>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </>
+
   )
 }

@@ -14,10 +14,8 @@ import {
 } from "@components/ui/sheet"
 import Each from "@components/utils/Each";
 import dayjs from "dayjs";
-import { CANCELLED } from "dns";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
 interface AppointmentRoutingHistorySheetProps {
   children?: React.ReactNode;
   onSelect? : (e: Event) => void;
@@ -27,11 +25,6 @@ interface AppointmentRoutingHistorySheetProps {
 
 
 export default function AppointmentRoutingHistorySheet({ children, onClose, routing }: AppointmentRoutingHistorySheetProps) {
-  const [open, setOpen] = useState(false);
-  const onOpenChange = (open: boolean) => {
-    if(!open) onClose?.()
-    setOpen(open);
-  }
   const badgeMap = {
     ACCEPTED: "default",
     PENDING: "outline",
@@ -40,7 +33,7 @@ export default function AppointmentRoutingHistorySheet({ children, onClose, rout
   } as const
 
   return (
-    <Sheet onOpenChange={onOpenChange} open={open} >
+    <Sheet>
       <SheetTrigger asChild>{children}</SheetTrigger>
       <SheetContent side="right" className="min-w-[calc(100dvw-70%)]">
         <SheetHeader>

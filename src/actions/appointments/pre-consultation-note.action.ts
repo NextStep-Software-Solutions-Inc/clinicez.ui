@@ -52,15 +52,19 @@ export const upsertPreConsultationNoteAction = async ({appointmentId, orgUid, as
   }
 }
 
+export type GetPreConsultationNotes = Awaited<ReturnType<typeof getPreConsultationNotesAction>>
 export const getPreConsultationNotesAction = async (appointmentId: number) => {
   const session = await getCachedSession()
   if(!session) return {
     status: false,
     message: "Session not found",
-    data: null
+    data: []
   }
 
   const preConsultationNote = await prismaTenant.preConsultationNote.findMany({
+    orderBy: {
+      createdAt: 'desc'
+    },
     where: {
       appointmentId
     }

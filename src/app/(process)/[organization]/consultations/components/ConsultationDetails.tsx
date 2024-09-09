@@ -63,7 +63,7 @@ export default async function ConsultationDetails({ consultation }: Consultation
         <Tabs defaultValue="notes" className="w-full">
           <TabsList>
             <TabsTrigger value="notes">Consultation Notes</TabsTrigger>
-            <TabsTrigger value="assessment">Nurse Assessment</TabsTrigger>
+            <TabsTrigger value="pre-consultation-notes">Pre-Consultation Notes</TabsTrigger>
             <TabsTrigger value="interventions">Interventions</TabsTrigger>
             <TabsTrigger value="conversation">Conversation</TabsTrigger>
             <TabsTrigger value="vital-signs">Vital Signs</TabsTrigger>
@@ -72,7 +72,7 @@ export default async function ConsultationDetails({ consultation }: Consultation
           <TabsContent value="notes">
             <ConsultationNotes consultation={consultation}/>
           </TabsContent>
-          <TabsContent value="assessment">
+          <TabsContent value="pre-consultation-notes">
             <NurseAssessment consultation={consultation}/>
           </TabsContent>
           <TabsContent value="interventions">

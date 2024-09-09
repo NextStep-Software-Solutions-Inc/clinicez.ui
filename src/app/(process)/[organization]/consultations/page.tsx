@@ -1,10 +1,9 @@
-// import './data/seed'
 import React from "react";
 import { Separator } from "@components/ui/separator";
 import Suspend from "@components/Suspend";
 import { DataTable } from "./components/data-table";
 import { columns } from "./components/columns"
-import { withPageAuthRequired } from "@auth0/nextjs-auth0";
+import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth0";
 import { Metadata } from "next";
 import { getConsultationRecordsAction } from "@actions/consultation/consultation-record.action";
 
@@ -13,8 +12,11 @@ export const metadata: Metadata = {
   description: "Consultation Records within your organization.",
 }
 
-async function ConsultationsPage() {
-  const consultations = await getConsultationRecordsAction()
+async function ConsultationsPage({params}: AppRouterPageRouteOpts) {
+  const orgUid = params?.organization as string
+  const consultations = await getConsultationRecordsAction({
+    orgUid
+  })
 
   return (
     <>

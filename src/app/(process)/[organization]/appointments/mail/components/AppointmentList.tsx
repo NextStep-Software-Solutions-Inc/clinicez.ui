@@ -70,7 +70,9 @@ export const AppointmentList = forwardRef<any, AppointmentListProps>(({appointme
                       {item.AppointmentAttribute?.status === "PENDING" && (
                         <span className="flex h-2 w-2 rounded-full bg-blue-600" />
                       )}
-                     
+                      {!item._count.ConsultationRecords && (
+                        <span className="flex h-2 w-2 rounded-full bg-red-600" />
+                      )}
                     </div>
                     <div
                       className={cn(

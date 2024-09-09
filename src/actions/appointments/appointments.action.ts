@@ -140,6 +140,11 @@ export const getAppointmentsAction = async (filter?: GetAppointmentFilter) => {
           email: true
         }
       },
+      _count: {
+        select: {
+          ConsultationRecords: true
+        }
+      },
       AppointmentAttribute: {
         select: {
           AppointmentType: {

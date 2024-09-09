@@ -11,9 +11,12 @@ import {
   SheetTrigger,
 } from "@components/ui/sheet"
 import Each from "@components/utils/Each";
-import dayjs from "dayjs";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+dayjs.extend(relativeTime);
+
 interface ConsultationRecordSheetProps {
   children?: React.ReactNode;
   onSelect? : (e: Event) => void;
@@ -47,7 +50,7 @@ export default function ConsultationRecordSheet({ children, onClose, consultatio
                   <div>
                     <p className="font-semibold text-primary text-wrap">{record.subject}</p>
                     <p className="text-sm text-muted-foreground">{record.createdBy}</p>
-                    <p className="text-xs text-muted-foreground">{dayjs(record.updatedAt).format("llll")}</p>
+                    <p className="text-xs text-muted-foreground">Created {dayjs(record.updatedAt).fromNow()}</p>
 
                   </div>
                 </div>

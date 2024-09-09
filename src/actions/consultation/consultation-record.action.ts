@@ -101,7 +101,7 @@ export const getConsultationRecordAction = cache(async (consultationId: number, 
 })
 
 export type GetConsultationRecords = Awaited<ReturnType<typeof getConsultationRecordsAction>>;
-export const getConsultationRecordsAction = async () => {
+export const getConsultationRecordsAction = async ({orgUid}: {orgUid: string}) => {
   const session = await getCachedSession()
   if(!session) return {
     status: false,
@@ -112,6 +112,10 @@ export const getConsultationRecordsAction = async () => {
   const consultationRecords = await prismaTenant.consultationRecord.findMany({
     orderBy: {
       createdAt: 'desc'
+    },
+    where: {
+      orgUid,
+      createdBy: session.user.email
     },
     select: {
       id: true,

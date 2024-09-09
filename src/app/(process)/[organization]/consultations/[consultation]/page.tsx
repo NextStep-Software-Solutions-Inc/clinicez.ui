@@ -1,4 +1,3 @@
-import { getConsultationAction } from "@actions/consultations.action";
 import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth0";
 import Suspend from "@components/Suspend";
 import { Separator } from "@components/ui/separator";
@@ -17,8 +16,9 @@ export const metadata: Metadata = {
 
 async function ConsultationPage({params}: AppRouterPageRouteOpts) {
   const consultationId = parseInt(params?.consultation as string)
+  const orgUid = params?.organization as string
 
-  const consultation = await getConsultationRecordAction(consultationId)
+  const consultation = await getConsultationRecordAction(consultationId, orgUid)
 
   return (
     <div className="space-y-6">

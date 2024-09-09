@@ -7,7 +7,6 @@ import { Button } from "@components/ui/button"
 import { Input } from "@components/ui/input"
 import { DataTableViewOptions } from "./data-table-view-options"
 
-import { priorities, statuses } from "../data/data"
 import { DataTableFacetedFilter } from "./data-table-faceted-filter"
 
 interface DataTableToolbarProps<TData> {
@@ -30,18 +29,68 @@ export function DataTableToolbar<TData>({
           }
           className="h-8 w-[150px] lg:w-[250px]"
         />
-        {table.getColumn("status") && (
+        {table.getColumn("service") && (
           <DataTableFacetedFilter
-            column={table.getColumn("status")}
-            title="Status"
-            options={statuses}
+            column={table.getColumn("service")}
+            title="Service"
+            options={[
+              {
+                label: "Consultation",
+                value: "consultation",
+              },
+              {
+                label: "Appointment",
+                value: "appointment",
+              }
+            ]}
           />
         )}
-        {table.getColumn("priority") && (
+        {table.getColumn("system") && (
           <DataTableFacetedFilter
-            column={table.getColumn("priority")}
-            title="Priority"
-            options={priorities}
+            column={table.getColumn("system")}
+            title="System"
+            options={[
+              {
+                label: "Teleconsultation",
+                value: "teleconsultation",
+              },
+              {
+                label: "In-person",
+                value: "in-person",
+              }
+            ]}
+          />
+        )}
+        {table.getColumn("mode") && (
+          <DataTableFacetedFilter
+            column={table.getColumn("mode")}
+            title="Mode"
+            options={[
+              {
+                label: "Video",
+                value: "video",
+              },
+              {
+                label: "Audio",
+                value: "audio",
+              }
+            ]}
+          />
+        )}
+        {table.getColumn("appointmentType") && (
+          <DataTableFacetedFilter
+            column={table.getColumn("appointmentType")}
+            title="Appointment Type"
+            options={[
+              {
+                label: "Scheduled",
+                value: "scheduled",
+              },
+              {
+                label: "On-demand",
+                value: "on-demand",
+              }
+            ]}
           />
         )}
         {isFiltered && (

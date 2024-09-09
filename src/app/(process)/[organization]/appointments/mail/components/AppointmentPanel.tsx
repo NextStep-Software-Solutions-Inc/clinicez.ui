@@ -15,7 +15,6 @@ import {
 } from "lucide-react"
 
 import { cn } from "@lib/utils"
-import { Input } from "@components/ui/input"
 import {
   ResizableHandle,
   ResizablePanel,
@@ -24,7 +23,6 @@ import {
 import { Separator } from "@components/ui/separator"
 import {
   Tabs,
-  TabsContent,
   TabsList,
   TabsTrigger,
 } from "@components/ui/tabs"
@@ -117,11 +115,11 @@ export default function AppointmentPanel({
   const user = useUser();
   const userId = user?.user?.sub;
   const aptStatus = searchParams.get("_aptStatus");
+  const sort = searchParams.get("_sort")  ?? "request";
   const routedAptStatus = searchParams.get("_routedAptStatus");
   const organization = params.organization as string;
   const activeRole = (userDefaultOrgRole[organization]?.roleName ?? "").toLowerCase();
   const {data: orgRoles} = useOrgRoles(organization, {userId})
-
   
   const roles = React.useMemo(() => (orgRoles ?? [])?.map((role) => {
     return {
@@ -166,6 +164,11 @@ export default function AppointmentPanel({
     }
   }, [orgRoles, setUserDefaultOrgRole, userId])
 
+  const handleSortTabChange = (value: string) => {
+    const searchParams = new URLSearchParams(window.location.search)
+    searchParams.set("_sort", value)
+    history.pushState({}, "", `?${searchParams.toString()}`)
+  }
   return (
     <TooltipProvider delayDuration={0}>
       <ResizablePanelGroup
@@ -232,23 +235,26 @@ export default function AppointmentPanel({
         </ResizablePanel>
         <ResizableHandle withHandle />
         <ResizablePanel className="" defaultSize={defaultLayout[1]} minSize={30}>
-          <Tabs defaultValue="all" className="flex h-full flex-col">
+          <Tabs defaultValue={sort} onValueChange={handleSortTabChange} className="flex h-full flex-col">
             <div className="flex items-center px-4 py-2">
               <h1 className="text-xl font-bold capitalize">{aptStatus}</h1>
-              <TabsList className="ml-auto">
-                <TabsTrigger
-                  value="all"
-                  className="text-zinc-600 dark:text-zinc-200"
-                >
-                  All appointment
-                </TabsTrigger>
-                {/* <TabsTrigger
-                  value="unread"
-                  className="text-zinc-600 dark:text-zinc-200"
-                >
-                  Unread
-                </TabsTrigger> */}
-              </TabsList>
+              <div className="ml-auto text-sm">
+                <span className="mx-2">Sort by</span>
+                <TabsList>
+                  <TabsTrigger
+                    value="request"
+                    className="text-zinc-600 dark:text-zinc-200"
+                  >
+                  Request
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="schedule"
+                    className="text-zinc-600 dark:text-zinc-200"
+                  >
+                  Schedule
+                  </TabsTrigger>
+                </TabsList>
+              </div>
             </div>
             <Separator />
             <AppointmentListWrapper orgUid={organization}/>

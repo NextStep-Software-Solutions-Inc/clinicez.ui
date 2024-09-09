@@ -16,14 +16,14 @@ import {
   DropdownMenuTrigger,
 } from "@components/ui/dropdown-menu"
 
-import { labels } from "../data/data"
 import ConsultationRecordSettingSheet from "../../appointments/components/ConsultationRecordSettingSheet"
 import EditConsultationRecordModal from "../../appointments/components/EditConsultationRecordModal"
 import React from "react"
 import { useDropdownMenu } from "@components/DropdownMenuProvider"
 import { toast } from "sonner"
+import { GetConsultationRecords } from "@actions/consultation/consultation-record.action"
 interface DataTableRowActionsProps<TData> {
-  consultation: Consultation
+  consultation: GetConsultationRecords["data"][number]
 }
 
 export function DataTableRowActions<TData>({
@@ -62,12 +62,12 @@ export function DataTableRowActions<TData>({
         <DropdownMenuSub>
           <DropdownMenuSubTrigger>Labels</DropdownMenuSubTrigger>
           <DropdownMenuSubContent>
-            <DropdownMenuRadioGroup value={consultation.label}>
-              {labels.map((label) => (
+            <DropdownMenuRadioGroup value={consultation.subject}>
+              {/* {labels.map((label) => (
                 <DropdownMenuRadioItem key={label.value} value={label.value}>
                   {label.label}
                 </DropdownMenuRadioItem>
-              ))}
+              ))} */}
             </DropdownMenuRadioGroup>
           </DropdownMenuSubContent>
         </DropdownMenuSub>

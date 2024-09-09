@@ -10,17 +10,19 @@ import Files from "./Files";
 import { DataTableRowActions } from "./data-table-row-actions";
 import { DropdownMenuProvider } from "@components/DropdownMenuProvider";
 import Suspend from "@components/Suspend";
-import { faker } from "@faker-js/faker";
 import { getAppointmentAction } from "@actions/appointments/appointments.action";
 import { getUserAction } from "@actions/users/user.action";
 import { differenceInCalendarYears } from "date-fns";
+import { GetConsultationRecord } from "@actions/consultation/consultation-record.action";
+import { ExternalLink } from "lucide-react";
+import Link from "next/link";
 
 interface ConsultationDetailsProps {
-    consultation: Consultation
+    consultation: NonNullable<GetConsultationRecord["data"]>
 }
 export default async function ConsultationDetails({ consultation }: ConsultationDetailsProps) {
 
-  const appointment = await getAppointmentAction(consultation.id);
+  const appointment = await getAppointmentAction(consultation?.appointmentId ?? 0);
   const user = await getUserAction(appointment.data?.Requesters[0].email ?? "");
 
   return (
@@ -30,7 +32,7 @@ export default async function ConsultationDetails({ consultation }: Consultation
           <div className="flex gap-2">
             <Avatar>
               <AvatarImage className="object-cover" src={user.picture ?? ""}/>
-              <AvatarFallback>{consultation.subject[0]}</AvatarFallback>
+              <AvatarFallback>{consultation?.subject.charAt(0)}</AvatarFallback>
             </Avatar>
             <div className="flex flex-col">
               <span className="text-sm font-semibold">{user.firstName} {user.lastName}</span>
@@ -42,7 +44,16 @@ export default async function ConsultationDetails({ consultation }: Consultation
           </DropdownMenuProvider>
         </CardTitle>
         <CardDescription>
-          {faker.word.words(100)} 
+          <span className="flex items-center gap-2">
+            {appointment.data?.subject} 
+            <Link target="_blank" href={{
+              pathname: `../appointments`,
+              query: {
+                _appointment: appointment.data?.id,
+              }
+            }}>
+              <ExternalLink className="w-4 h-4 text-primary"/></Link>
+          </span>
         </CardDescription>
       </CardHeader>
       <CardContent>

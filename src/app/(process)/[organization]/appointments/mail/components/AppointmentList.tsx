@@ -1,6 +1,6 @@
 "use client";
 
-import { ComponentProps, forwardRef, useMemo, useState } from "react"
+import { forwardRef, useMemo, useState } from "react"
 import {formatDistanceToNow} from "date-fns"
 
 import { cn, getBadgeVariantFromLabel } from "@lib/utils"
@@ -8,13 +8,13 @@ import { Badge } from "@components/ui/badge"
 import { ScrollArea } from "@components/ui/scroll-area"
 import { useSearchParams } from "next/navigation"
 import Each from "@components/utils/Each"
-import { Avatar, AvatarFallback, AvatarImage } from "@components/ui/avatar"
 import { GetAppointments } from "@actions/appointments/appointments.action"
 import { Separator } from "@components/ui/separator"
 import { useOrgAppointments } from "@hooks/useAppointment";
 import { Input } from "@components/ui/input";
 import { ArrowRight, Search } from "lucide-react";
 import { useUser } from "@auth0/nextjs-auth0/client";
+import { AppointmentStatus, RoutedAptStatus } from "@public/json/appointment-list";
 interface AppointmentListProps {
   appointments: GetAppointments["data"]
 }
@@ -131,8 +131,14 @@ export const AppointmentListWrapper = ({orgUid}:AppointmentListWrapperProps) => 
   const searchParams = useSearchParams()
   const appointmentStatus = searchParams.get("_aptStatus")
   const routedAptStatus = searchParams.get("_routedAptStatus")
+  const sort = searchParams.get("_sort") as "request" | "schedule"
   
-  const {data : appointments} = useOrgAppointments({orgId: orgUid, status: appointmentStatus?.toUpperCase(), routedAptStatus: routedAptStatus?.toUpperCase()})
+  const {data : appointments} = useOrgAppointments({
+    orgUid, 
+    status: appointmentStatus?.toUpperCase() as AppointmentStatus, 
+    routedAptStatus: routedAptStatus?.toUpperCase() as RoutedAptStatus,
+    sort
+  })
 
   const filteredAppointments = useMemo(() => {
     const withFallbackAppointments = appointments?.data ?? [];

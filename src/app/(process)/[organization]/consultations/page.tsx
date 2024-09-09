@@ -6,29 +6,28 @@ import { DataTable } from "./components/data-table";
 import { columns } from "./components/columns"
 import { withPageAuthRequired } from "@auth0/nextjs-auth0";
 import { Metadata } from "next";
-import { getConsultationsActions } from '@actions/consultations.action';
-import UnderConstruction from "@components/UnderConstruction";
+import { getConsultationRecordsAction } from "@actions/consultation/consultation-record.action";
 
 export const metadata: Metadata = {
-  title: "Consultations",
-  description: "Consultations of an organization.",
+  title: "Consultation Records",
+  description: "Consultation Records within your organization.",
 }
 
 async function ConsultationsPage() {
-  const consultations = await getConsultationsActions()
+  const consultations = await getConsultationRecordsAction()
+
   return (
     <>
       <div className="space-y-6">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Consultations</h2>
+          <h2 className="text-2xl font-bold tracking-tight">Consultation Records</h2>
           <p className="text-sm text-muted-foreground">
-            Here&apos;s a list of your consultations.
+            Here&apos;s a list of your consultation records.
           </p>
         </div>
         <Separator />
         <Suspend>
-          <UnderConstruction/>
-          {/* <DataTable data={consultations} columns={columns} /> */}
+          <DataTable data={consultations.data ?? []} columns={columns} />
         </Suspend>
       </div>
 

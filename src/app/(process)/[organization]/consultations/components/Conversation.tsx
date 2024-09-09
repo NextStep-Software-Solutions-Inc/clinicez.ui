@@ -1,5 +1,6 @@
 "use client";
 
+import { GetConsultationRecord } from "@actions/consultation/consultation-record.action";
 import { getConversationAction } from "@actions/consultations.action";
 import { Button } from "@components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@components/ui/card";
@@ -7,10 +8,10 @@ import { Input } from "@components/ui/input";
 import Each from "@components/utils/Each";
 import { cn } from "@lib/utils";
 import { Send } from "lucide-react"
-import React, { use, useEffect } from "react";
+import React, { useEffect } from "react";
 
 interface ConversationProps {
-    consultation: Consultation;
+    consultation:  NonNullable<GetConsultationRecord["data"]>;
 }
 
 export default function Conversation({ consultation}: ConversationProps) {

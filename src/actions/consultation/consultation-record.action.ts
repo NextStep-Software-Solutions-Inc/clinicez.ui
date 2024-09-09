@@ -1,8 +1,10 @@
 "use server";
+import 'server-only'
 
 import prismaTenant from '@lib/prisma-tenant';
+import { PrismaClientKnownRequestError } from '@prisma/tenant/client/runtime/library';
 import { getCachedSession } from '@actions/session.action';
-import 'server-only'
+import { cache } from 'react';
 
 type CreateConsultationRecordPayload = {
     appointmentId: number;
@@ -39,7 +41,7 @@ export const createConsultationRecordAction = async ({appointmentId, orgUid, sub
 }
 
 export type GetConsultationRecord = Awaited<ReturnType<typeof getConsultationRecordAction>>;
-export const getConsultationRecordAction = async (appointmentId: number) => {
+export const getConsultationRecordAction = cache(async (consultationId: number, orgUid: string) => {
   const session = await getCachedSession()
   if(!session) return {
     status: false,
@@ -47,14 +49,150 @@ export const getConsultationRecordAction = async (appointmentId: number) => {
     data: null
   }
 
-  const consultationRecord = await prismaTenant.consultationRecord.findMany({
-    where: {
-      appointmentId
+
+  const consultationRecord = await prismaTenant.consultationRecord.findUnique({
+    where: { id: consultationId, orgUid },
+    select: {
+      id: true,
+      subject: true,
+      appointmentId: true,
+      createdBy: true,
+      createdAt: true,
+      updatedAt: true,
+      Appointment: {
+        select: {
+          Requesters: {
+            select: {
+              email: true
+            }
+          },
+          AppointmentAttribute: {
+            select: {
+              AppointmentMode: {
+                select: {
+                  id: true,
+                  name: true
+                }
+              },
+              AppointmentType: {
+                select: {
+                  id: true,
+                  name: true
+                }
+              },
+              Service: {
+                select: {
+                  id: true,
+                  name: true
+                }
+              },
+            }
+          }
+        }
+      }
     }
   })
+
   return {
     status: true,
     message: "Consultation record fetched successfully",
     data: consultationRecord
+  }
+})
+
+export type GetConsultationRecords = Awaited<ReturnType<typeof getConsultationRecordsAction>>;
+export const getConsultationRecordsAction = async () => {
+  const session = await getCachedSession()
+  if(!session) return {
+    status: false,
+    message: "Session not found",
+    data: []
+  }
+
+  const consultationRecords = await prismaTenant.consultationRecord.findMany({
+    orderBy: {
+      createdAt: 'desc'
+    },
+    select: {
+      id: true,
+      subject: true,
+      appointmentId: true,
+      createdBy: true,
+      createdAt: true,
+      updatedAt: true,
+      Appointment: {
+        select: {
+          Requesters: {
+            select: {
+              email: true
+            }
+          },
+          AppointmentAttribute: {
+            select: {
+              AppointmentMode: {
+                select: {
+                  id: true,
+                  name: true
+                }
+              },
+              AppointmentType: {
+                select: {
+                  id: true,
+                  name: true
+                }
+              },
+              Service: {
+                select: {
+                  id: true,
+                  name: true
+                }
+              },
+            }
+          }
+        }
+      }
+    }
+  })
+  return {
+    status: true,
+    message: "Consultation records fetched successfully",
+    data: consultationRecords
+  }
+}
+
+type UpdateConsultationRecordPayload = {
+  consultationId: number;
+  subject: string;
+}
+export const updateConsultationRecordAction = async ({consultationId, subject}: UpdateConsultationRecordPayload) => {
+  const session = await getCachedSession()
+  
+  if(!session) return {
+    status: false,
+    message: "Session not found",
+    data: null
+  }
+
+  try {
+    await prismaTenant.consultationRecord.update({
+      where: { id: consultationId, createdBy: session.user.email },
+      data: { subject }
+    })
+    return {
+      status: true,
+      message: "Consultation Record updated successfully",
+      data: null
+    }
+  } catch (error) {
+    console.error(error);
+    let message = "Failed to update consultation record"
+    if(error instanceof PrismaClientKnownRequestError && error.code === 'P2025') {
+      message = error.meta?.cause as string ?? message
+    }
+    return {
+      status: false,
+      message,
+      data: null
+    }
   }
 }

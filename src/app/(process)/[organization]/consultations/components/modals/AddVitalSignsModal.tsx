@@ -1,5 +1,6 @@
 "use client";
 
+import { GetConsultationRecord } from "@actions/consultation/consultation-record.action";
 import { addVitalSignsAction } from "@actions/consultations.action"
 import ActionButton from "@components/ActionButton"
 import CustomModalContent from "@components/CustomModalContent";
@@ -30,7 +31,7 @@ import { z } from "zod";
 
 
 interface AddVitalSignsModalProps {
-  consultation: Consultation
+  consultation:  NonNullable<GetConsultationRecord["data"]>;
 }
 
 const AddVitalSignsFormSchema = z.object({

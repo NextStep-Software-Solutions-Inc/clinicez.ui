@@ -1,5 +1,6 @@
 "use client";
 
+import { GetConsultationRecord } from "@actions/consultation/consultation-record.action";
 import { getNurseAssessment, updateNurseAssessmentAction } from "@actions/consultations.action";
 import ActionButton from "@components/ActionButton";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@components/ui/accordion";
@@ -12,7 +13,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 interface NurseAssessmentProps {
-    consultation: Consultation;
+    consultation:  NonNullable<GetConsultationRecord["data"]>;
 }
 
 const nurseAssessmentSchema = z.object({

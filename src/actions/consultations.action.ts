@@ -40,10 +40,6 @@ export const addInterventionAction = async (data: FormData) => {
   return true;
 }
 
-export const getConsultationNotes = async (id: number) => {
-  return consultationNotes
-}
-
 export const getNurseAssessment = async (id: number) => {
   return nurseAssessment
 }
@@ -60,11 +56,7 @@ export const updateVitalSignsAction = async (data: FormData) => {
   return true;
 }
 
-export const updateConsultationNotesAction = async (data: FormData) => {
-  console.log("Updating consultation notes...", Object.fromEntries(data));
-  await delay(3000);
-  return true;
-}
+
 
 export const updateNurseAssessmentAction = async (data: FormData) => {
   console.log("Updating nurse assessment...", Object.fromEntries(data));

@@ -6,9 +6,10 @@ import Each from "@components/utils/Each";
 import { format } from "date-fns";
 import { Avatar, AvatarFallback, AvatarImage } from "@components/ui/avatar";
 import { getInterventionsAction } from "@actions/consultations.action";
+import { GetConsultationRecord } from "@actions/consultation/consultation-record.action";
 
 interface InterventionsProps {
-    consultation: Consultation;
+    consultation: NonNullable<GetConsultationRecord["data"]>;
 }
 
 export default async function Interventions({ consultation}: InterventionsProps) {

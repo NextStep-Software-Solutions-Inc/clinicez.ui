@@ -1,22 +1,18 @@
 "use client";
 
-import { GetAppointment, GetAppointments } from "@actions/appointments/appointments.action"
+import { GetAppointment, GetAppointmentFilter, GetAppointments } from "@actions/appointments/appointments.action"
 import { self } from "@services/request"
 import useSWR from "swr"
 
-type UseOrgAppointmentsFilter = {
-    orgId: string,
-    status?: string | null
-    routedAptStatus?: string | null
-}
-export const useOrgAppointments = (filter: UseOrgAppointmentsFilter) => {
-  const { orgId, status, routedAptStatus } = filter
+export const useOrgAppointments = (filter: GetAppointmentFilter) => {
+  const { orgUid, status, routedAptStatus, sort } = filter
   const fetcher = (...args: any) => self.get<GetAppointments>(args)
   const searchParams = new URLSearchParams()
   if(status) searchParams.set('status', status)
   if(routedAptStatus) searchParams.set('routedAptStatus', routedAptStatus)
+  if(sort) searchParams.set('sort', sort)
     
-  return useSWR(`/api/organizations/${orgId}/appointments?${searchParams.toString()}`, fetcher)
+  return useSWR(`/api/organizations/${orgUid}/appointments?${searchParams.toString()}`, fetcher)
 }
 
 

@@ -13,11 +13,13 @@ export const GET = withJwtAuth(async (req: NextRequest, { params }: {
   const searchParams = req.nextUrl.searchParams
   const status = searchParams.get('status') as AppointmentStatus;
   const routedAptStatus = searchParams.get('routedAptStatus') as RoutedAptStatus;
+  const sort = searchParams.get('sort') as "request" | "schedule";
 
   const appointments = await getAppointmentsAction({
     orgUid: organizationId,
     ...status ? { status }: {},
-    ...routedAptStatus ? { routedAptStatus }: {}
+    ...routedAptStatus ? { routedAptStatus }: {},
+    ...sort ? { sort }: {}
   });
   return NextResponse.json(appointments, {status: 200});
 });

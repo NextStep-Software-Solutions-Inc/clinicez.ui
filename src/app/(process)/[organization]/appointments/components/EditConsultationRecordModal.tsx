@@ -1,5 +1,6 @@
 "use client";
 
+import { updateConsultationRecordAction } from "@actions/consultation/consultation-record.action";
 import { updateConsultationAction } from "@actions/consultations.action"
 import ActionButton from "@components/ActionButton"
 import CustomModalContent from "@components/CustomModalContent";
@@ -27,11 +28,20 @@ const EditConsultationRecordModal = React.forwardRef<any, EditConsultationRecord
   const { record, children, ...res } = props
   const closeBtnRef = useRef<HTMLInputElement>(null)
   const action = async (formData: FormData) => {
-    const res = await updateConsultationAction(formData)
-    if (res) {
-      toast.success("Consultation record updated successfully.")
-      closeBtnRef.current?.click()
-    }
+    const subject = formData.get("subject") as string
+    toast.promise(updateConsultationRecordAction({
+      consultationId: record.id,
+      subject
+    }), {
+      loading: "Updating consultation record...",
+      success: (res) => {
+        if (res.status) {
+          closeBtnRef.current?.click()
+        }
+        return res.message
+      },
+      error: "Failed to update consultation record."
+    }) 
   }
 
   return (
@@ -55,6 +65,7 @@ const EditConsultationRecordModal = React.forwardRef<any, EditConsultationRecord
             </Label>
             <Input
               id="subject"
+              name="subject"
               defaultValue={record.subject}
               className="col-span-3"
             />

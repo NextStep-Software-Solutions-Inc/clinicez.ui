@@ -4,9 +4,10 @@ import { Brain, Gauge, Heart, HeartPulse, PersonStanding, Ruler, Thermometer, We
 import AddVitalSignsModal from "./modals/AddVitalSignsModal";
 import UpdateVitalSignsModal from "./modals/UpdateVitalSignsModal";
 import { getVitalSignsAction } from "@actions/consultations.action";
+import { GetConsultationRecord } from "@actions/consultation/consultation-record.action";
 
 interface VitalSignsProps {
-    consultation: Consultation;
+    consultation:  NonNullable<GetConsultationRecord["data"]>;
 }
 const vitalSigns = [
   {

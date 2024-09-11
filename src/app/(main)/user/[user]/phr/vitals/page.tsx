@@ -10,7 +10,6 @@ export const metadata = {
 }
 
 async function VitalsPage({params, searchParams}: AppRouterPageRouteOpts) {
-  const viewMode = (searchParams?.view_mode as "chart" | "tile") || "tile";
   const userId = decodeURI(params?.user as string);
   const userOwner = await isUserOwner(userId);
 
@@ -24,7 +23,7 @@ async function VitalsPage({params, searchParams}: AppRouterPageRouteOpts) {
       </div>
       <Separator />
       <Suspend>
-        <VitalSignsSSRWrapper readOnly={!userOwner} userId={userId} viewMode={viewMode}/>
+        <VitalSignsSSRWrapper readOnly={!userOwner} userId={userId}/>
       </Suspend>
     </div>
   );

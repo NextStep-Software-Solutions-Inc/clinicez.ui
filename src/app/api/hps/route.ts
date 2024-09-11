@@ -1,4 +1,4 @@
-import { getHPsAction } from "@actions/hp.actions";
+import { getHPsAction, getHpsByIdsAction } from "@actions/hp.actions";
 import { withJwtAuth } from "@middlewares/withJwtAuth";
 import { HealthcareProviderType } from "@prisma/common/client";
 import { NextRequest, NextResponse } from "next/server";
@@ -20,5 +20,12 @@ export const GET = withJwtAuth(async (req:NextRequest) => {
 
   const hps = await getHPsAction(filters)
 
+  return NextResponse.json(hps, {status: 200})
+})
+
+export const POST = withJwtAuth(async (req:NextRequest) => {
+  const payload = await req.json()
+  const ids = payload.ids as number[]
+  const hps = await getHpsByIdsAction(ids)
   return NextResponse.json(hps, {status: 200})
 })

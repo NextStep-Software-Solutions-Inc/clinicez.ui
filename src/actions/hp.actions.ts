@@ -103,3 +103,42 @@ export const setIsPublishAction = async (hpId: number, isPublished: boolean) => 
   })
   return hp;
 }
+
+export type GetHpsByIds = Awaited<ReturnType<typeof getHpsByIdsAction>>
+export const getHpsByIdsAction = async (ids: number[]) => {
+  const hps = prisma.healthcareProvider.findMany({
+    where: {
+      id: {
+        in: ids
+      }
+    },
+    select: {
+      id: true,
+      type: true,
+      User: {
+        "select": {
+          email: true,
+        }
+      },
+      DoctorProfile: {
+        select: {
+          picture: true,
+          name: true,
+          title: true,
+          suffix: true,
+          fields: true,
+        }
+      },
+      NurseProfile: {
+        select: {
+          picture: true,
+          name: true,
+          title: true,
+          suffix: true,
+          fields: true,
+        }
+      },
+    }
+  })
+  return hps;
+}

@@ -85,7 +85,7 @@ export const createCustomFetch = (options: CreateFetchOptions) => {
   }
   
   const get = <T>(url: string, init?: RequestOptionsType) => customFetch<T>(url, { ...init, method: 'GET' })
-  const post = (url: string, init?: RequestOptionsType ) => customFetch(url, { ...init, method: 'POST' })
+  const post = <T>(url: string, init?: RequestOptionsType ) => customFetch<T>(url, { ...init, method: 'POST' })
   const put = (url: string, init?: RequestOptionsType) => customFetch(url, { ...init, method: 'PUT' })
   const patch = (url: string, init?: RequestOptionsType) => customFetch(url, { ...init, method: 'PATCH' })
   const delete_ = (url: string, init?: RequestOptionsType) => customFetch(url, { ...init, method: 'DELETE' })

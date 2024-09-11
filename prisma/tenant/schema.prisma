@@ -173,6 +173,7 @@ model ConsultationRecord {
   Appointment                 Appointment                  @relation(fields: [appointmentId], references: [id])
   NoteContents                NoteContent[]
   ConsultationRecordAttribute ConsultationRecordAttribute?
+  Interventions               Intervention[]
 }
 
 model ConsultationRecordAttribute {
@@ -216,4 +217,30 @@ model PreConsultationNoteAttribute {
   preConsultationNoteId Int                 @unique
   whitelistEmails       String[]            @default([])
   PreConsultationNote   PreConsultationNote @relation(fields: [preConsultationNoteId], references: [id])
+}
+
+model Intervention {
+  id                   Int                @id @default(autoincrement())
+  orgUid               String
+  hpId                 Int
+  consultationRecordId Int
+  actionId             Int
+  details              String
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  deletedAt            DateTime?
+  isActive             Boolean            @default(true)
+  ConsultationRecord   ConsultationRecord @relation(fields: [consultationRecordId], references: [id])
+  Action               Action             @relation(fields: [actionId], references: [id])
+}
+
+model Action {
+  id            Int            @id @default(autoincrement())
+  name          String
+  description   String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  deletedAt     DateTime?
+  isActive      Boolean        @default(true)
+  Interventions Intervention[]
 }

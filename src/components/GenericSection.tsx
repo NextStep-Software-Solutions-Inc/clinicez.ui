@@ -74,7 +74,7 @@ export default function GenericSection({name, label, consultationId, value = ""}
             name={name}
             render={({ field }) => (
               <FormItem>
-                <AccordionTrigger>
+                <AccordionTrigger className="hover:no-underline">
                   <FormLabel>{label}</FormLabel>
                 </AccordionTrigger>
                 <AccordionContent className="p-1" asChild>

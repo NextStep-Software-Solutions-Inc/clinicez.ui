@@ -58,9 +58,9 @@ export const PreConsultationNote = ({note}: PreConsultationNoteProps) => {
       <CardContent>
         <Accordion type="multiple">
           <AccordionItem value="preAssessment">
-            <AccordionTrigger>
+            <AccordionTrigger className="hover:no-underline">
               <div>
-                Pre-Assessment <span className="italic font-bold text-primary">(readonly)</span>
+                Pre-Assessment <span className="italic text-primary">(readonly)</span>
               </div>
             </AccordionTrigger>
             <AccordionContent className="m-1">
@@ -73,9 +73,9 @@ export const PreConsultationNote = ({note}: PreConsultationNoteProps) => {
             </AccordionContent>
           </AccordionItem>
           <AccordionItem value="instructions">
-            <AccordionTrigger>
+            <AccordionTrigger className="hover:no-underline">
               <div>
-                Instructions <span className="italic font-bold text-primary">(readonly)</span>
+                Instructions <span className="italic text-primary">(readonly)</span>
               </div>
             </AccordionTrigger>
             <AccordionContent className="m-1">
@@ -88,9 +88,9 @@ export const PreConsultationNote = ({note}: PreConsultationNoteProps) => {
             </AccordionContent>
           </AccordionItem>
           <AccordionItem value="remarks">
-            <AccordionTrigger>
+            <AccordionTrigger className="hover:no-underline">
               <div>
-                Remarks <span className="italic font-bold text-primary">(readonly)</span>
+                Remarks <span className="italic text-primary">(readonly)</span>
               </div>
             </AccordionTrigger>
             <AccordionContent className="m-1">

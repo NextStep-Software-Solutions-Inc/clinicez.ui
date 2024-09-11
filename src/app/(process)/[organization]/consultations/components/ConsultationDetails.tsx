@@ -1,9 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@components/ui/avatar";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@components/ui/tabs";
-import ConsultationNotes from "./ConsultationNotes";
-import NurseAssessment from "./NurseAssessment";
-import Interventions from "./Interventions";
 import { DataTableRowActions } from "./data-table-row-actions";
 import { DropdownMenuProvider } from "@components/DropdownMenuProvider";
 import Suspend from "@components/Suspend";
@@ -18,6 +15,9 @@ import dynamic from 'next/dynamic';
 const VitalSigns = dynamic(() => import('./VitalSigns'), { ssr: false, loading: () => <div>Loading...</div> });
 const Conversation = dynamic(() => import('./Conversation'), { ssr: false, loading: () => <div>Loading...</div> });
 const Files = dynamic(() => import('./Files'), { ssr: false, loading: () => <div>Loading...</div> });
+const Interventions = dynamic(() => import('./Interventions'), { ssr: false, loading: () => <div>Loading...</div> });
+const NurseAssessment = dynamic(() => import('./NurseAssessment'), { ssr: false, loading: () => <div>Loading...</div> });
+const ConsultationNotes = dynamic(() => import('./ConsultationNotes'), { ssr: false, loading: () => <div>Loading...</div> });
 interface ConsultationDetailsProps {
     consultation: NonNullable<GetConsultationRecord["data"]>
 }
@@ -66,18 +66,24 @@ export default async function ConsultationDetails({ consultation }: Consultation
             <TabsTrigger value="notes">Consultation Notes</TabsTrigger>
             <TabsTrigger value="pre-consultation-notes">Pre-Consultation Notes</TabsTrigger>
             <TabsTrigger value="interventions">Interventions</TabsTrigger>
-            <TabsTrigger value="conversation">Conversation</TabsTrigger>
+            {/* <TabsTrigger value="conversation">Conversation</TabsTrigger> */}
             <TabsTrigger value="vital-signs">Vital Signs</TabsTrigger>
-            <TabsTrigger value="files">Files</TabsTrigger>
+            {/* <TabsTrigger value="files">Files</TabsTrigger> */}
           </TabsList>
           <TabsContent value="notes">
-            <ConsultationNotes consultation={consultation}/>
+            <Suspend>
+              <ConsultationNotes consultation={consultation}/>
+            </Suspend>
           </TabsContent>
           <TabsContent value="pre-consultation-notes">
-            <NurseAssessment consultation={consultation}/>
+            <Suspend>
+              <NurseAssessment consultation={consultation}/>
+            </Suspend>
           </TabsContent>
           <TabsContent value="interventions">
-            <Interventions consultation={consultation}/>
+            <Suspend>
+              <Interventions consultation={consultation}/>
+            </Suspend>
           </TabsContent>
           <TabsContent value="conversation">
             <Suspend>

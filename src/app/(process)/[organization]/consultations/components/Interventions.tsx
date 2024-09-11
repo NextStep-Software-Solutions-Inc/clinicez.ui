@@ -1,19 +1,64 @@
+"use client"
+
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@components/ui/accordion";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@components/ui/card";
 import AddInterventionModal from "./modals/AddInterventionModal";
 import { Badge } from "@components/ui/badge";
 import Each from "@components/utils/Each";
-import { format } from "date-fns";
-import { Avatar, AvatarFallback, AvatarImage } from "@components/ui/avatar";
-import { getInterventionsAction } from "@actions/consultations.action";
+import { Avatar, AvatarFallback } from "@components/ui/avatar";
 import { GetConsultationRecord } from "@actions/consultation/consultation-record.action";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+import Image from "next/image";
+import { useInterventions } from "@hooks/useIntervention";
+import { useHPsByIds } from "@hooks/useHP";
+dayjs.extend(relativeTime);
 
 interface InterventionsProps {
-    consultation: NonNullable<GetConsultationRecord["data"]>;
+  consultation: NonNullable<GetConsultationRecord["data"]>;
 }
+export default function Interventions({ consultation }: InterventionsProps) {
+  const payload = new FormData()
+  payload.append("consultationRecordId", consultation.id.toString())
+  payload.append("orgUid", consultation.orgUid)
 
-export default async function Interventions({ consultation}: InterventionsProps) {
-  const interventions = await getInterventionsAction(consultation.id)
+  const {data: interventions} = useInterventions({
+    orgUid: consultation.orgUid,
+    consultationRecordId: consultation.id
+  })
+  const hpIds = interventions?.data.map(intervention => intervention.hpId) ?? []
+  const {data: hps } = useHPsByIds(hpIds)
+
+    
+  type HPProfile = {
+    id: number;
+    type: string; 
+    name: string;
+    avatarUrl: string;
+    fields: string[];
+  }
+  
+  const hpsMapped = (hps ?? []).reduce((acc, hp) => {
+    const profile = {} as HPProfile
+    profile.id = hp.id;
+    profile.type = hp.type;
+    switch (hp.type) {
+    case "NURSE":
+      profile.name = `${hp.NurseProfile?.title} ${hp.NurseProfile?.name} ${hp.NurseProfile?.suffix}` ?? "";
+      profile.avatarUrl = hp.NurseProfile?.picture ?? "";
+      profile.fields = hp.NurseProfile?.fields ?? [];
+      break;
+    case "DOCTOR":
+      profile.name = `${hp.DoctorProfile?.title} ${hp.DoctorProfile?.name} ${hp.DoctorProfile?.suffix}` ?? "";
+      profile.avatarUrl = hp.DoctorProfile?.picture ?? "";
+      profile.fields = hp.DoctorProfile?.fields ?? [];
+      break;
+    default:
+      break;
+    }
+    acc.push(profile)
+    return acc
+  }, [] as HPProfile[])
 
   return (
     <Card>
@@ -26,12 +71,7 @@ export default async function Interventions({ consultation}: InterventionsProps)
             </CardDescription>
           </div>
           <div className="ml-auto">
-            <AddInterventionModal consultation={consultation} intervention={[
-              {
-                id: "1",
-                action: "Administered medication",
-              }
-            ]}/>
+            <AddInterventionModal consultation={consultation}/>
           </div>
         </div>
       </CardHeader>
@@ -39,27 +79,30 @@ export default async function Interventions({ consultation}: InterventionsProps)
         {/* list of interventions */}
         <Accordion type="multiple">
           <Each
-            of={interventions.interventions}
+            of={interventions?.data ?? []}
+            fallback={<div className="flex justify-center text-muted-foreground">No interventions</div>}
             render={(intervention) => {
-              const hp = interventions.hps.find(hp => hp.id === intervention.hpId)
+              const hp = hpsMapped.find(hp => hp.id === intervention.hpId)
               return (
                 <AccordionItem value={intervention.id.toString()}>
-                  <AccordionTrigger>
-                    <div className="flex flex-row items-center justify-between">
-                      <span>{intervention.action}</span>
-                      <Badge className="mx-2">{format(intervention.date, "PP")}</Badge>
+                  <AccordionTrigger className="hover:no-underline" >
+                    <div className="flex flex-row items-center justify-between ">
+                      <span>{intervention.Action.name}</span>
+                      <Badge className="mx-2">{dayjs(intervention.createdAt).fromNow()}</Badge>
                     </div>
                   </AccordionTrigger>
                   <AccordionContent >
                     <div>
                       <div className="flex items-center gap-1">
                         <Avatar className="h-8 w-8 object-cover">
-                          <AvatarImage src={hp?.avatarUrl} alt="avatar" />
-                          <AvatarFallback>{hp?.name.substring(0,2)}</AvatarFallback>
+                          {hp?.avatarUrl ? <Image alt={hp.name} className="object-cover" src={hp.avatarUrl} height={50} width={50} /> : <AvatarFallback>{hp?.name.substring(0,2)}</AvatarFallback>}
                         </Avatar> 
-                        <span className="text-muted-foreground font-semibold">{interventions.hps.find(hp => hp.id === intervention.hpId)?.name}</span>
+                        <div>
+                          <span className="font-semibold">{hp?.name}</span>
+                          <div className="text-muted-foreground text-xs">{hp?.type}</div>
+                        </div>
                       </div>
-                      <p className="ml-9">{intervention.details}</p>
+                      <p className="ml-9 italic">- {intervention.details}</p>
                     </div>
                   </AccordionContent>
                 </AccordionItem>

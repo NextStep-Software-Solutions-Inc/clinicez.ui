@@ -1,4 +1,4 @@
-import { GetHPsType, HPFilters } from "@actions/hp.actions";
+import { GetHpsByIds, GetHPsType, HPFilters } from "@actions/hp.actions";
 import { self } from "@services/request";
 import useSWR from "swr";
 
@@ -13,4 +13,11 @@ export const useHPs = (filters?: HPFilters, enable = true) => {
   const query = new URLSearchParams(obj).toString()
     
   return useSWR(() => enable ? `/api/hps?${query}` : null, fetcher)
+}
+
+export const useHPsByIds = (ids: number[]) => {
+  const fetcher = (args: string) => self.post<GetHpsByIds>(args, {
+    body: JSON.stringify({ids})
+  })
+  return useSWR(() => !!ids.length ? `/api/hps` : null, fetcher)
 }

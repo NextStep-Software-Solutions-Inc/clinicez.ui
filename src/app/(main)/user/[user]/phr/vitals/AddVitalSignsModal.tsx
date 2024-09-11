@@ -13,7 +13,7 @@ export default async function AddVitalSignsModal({userId}: {userId: string}) {
         <Button className="flex-grow sm:flex-grow-0">Add Vitals</Button>
       </DialogTrigger>
       <CustomModalContent 
-        className="sm:max-w-[625px] overflow-scroll max-h-[100vh] no-scrollbar"
+        className="sm:max-w-[800px] overflow-scroll max-h-[100vh] no-scrollbar"
         label="Add Vital Signs" 
         description="Add your vital signs and anthropometric measurements."
       >

@@ -4,9 +4,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@components/ui/tabs";
 import ConsultationNotes from "./ConsultationNotes";
 import NurseAssessment from "./NurseAssessment";
 import Interventions from "./Interventions";
-import Conversation from "./Conversation";
-import VitalSigns from "./VitalSigns";
-import Files from "./Files";
 import { DataTableRowActions } from "./data-table-row-actions";
 import { DropdownMenuProvider } from "@components/DropdownMenuProvider";
 import Suspend from "@components/Suspend";
@@ -16,7 +13,11 @@ import { differenceInCalendarYears } from "date-fns";
 import { GetConsultationRecord } from "@actions/consultation/consultation-record.action";
 import { ExternalLink } from "lucide-react";
 import Link from "next/link";
+import dynamic from 'next/dynamic';
 
+const VitalSigns = dynamic(() => import('./VitalSigns'), { ssr: false, loading: () => <div>Loading...</div> });
+const Conversation = dynamic(() => import('./Conversation'), { ssr: false, loading: () => <div>Loading...</div> });
+const Files = dynamic(() => import('./Files'), { ssr: false, loading: () => <div>Loading...</div> });
 interface ConsultationDetailsProps {
     consultation: NonNullable<GetConsultationRecord["data"]>
 }

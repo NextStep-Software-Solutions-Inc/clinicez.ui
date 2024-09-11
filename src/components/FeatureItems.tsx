@@ -75,8 +75,6 @@ export default function FeatureItems() {
   );
 }
 
-
-
 export const HeroTitle = ({authenticated = false}) => {
   return (
     <motion.div
@@ -98,7 +96,9 @@ export const HeroTitle = ({authenticated = false}) => {
       </ConditionalRender>
       <ConditionalRender condition={authenticated}>
         <div className="flex md:block">
-          <Button className="mx-auto ~text-xs/sm ~h-8/10 rounded-full mt-10"><Rocket size={18} className="mr-1"/>Get Started</Button>
+          <Link href="/organizations">
+            <Button className="mx-auto ~text-xs/sm ~h-8/10 rounded-full mt-10"><Rocket size={18} className="mr-1"/>Get Started</Button>
+          </Link>
         </div>
       </ConditionalRender>
     </motion.div>

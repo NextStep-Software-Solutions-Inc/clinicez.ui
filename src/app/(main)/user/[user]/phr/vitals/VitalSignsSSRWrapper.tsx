@@ -6,13 +6,12 @@ import RecentVitalSigns from "./RecentVitalSigns";
 interface VitalSignsSSRWrapperProps {
     readOnly: boolean
     userId: string,
-    viewMode?: "chart" | "tile";
 }
 
-export default async function VitalSignsSSRWrapper({readOnly, userId, viewMode}: VitalSignsSSRWrapperProps) {
+export default async function VitalSignsSSRWrapper({readOnly, userId}: VitalSignsSSRWrapperProps) {
   const vitalSigns = await getUserVitalSignsAction(userId);
 
   return (
-    <RecentVitalSigns vitalSigns={vitalSigns} readOnly={readOnly} userId={userId} viewMode={viewMode}/>
+    <RecentVitalSigns vitalSigns={vitalSigns} readOnly={readOnly} userId={userId}/>
   );
 }

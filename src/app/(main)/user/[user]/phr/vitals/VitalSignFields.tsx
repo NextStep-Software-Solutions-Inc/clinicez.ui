@@ -65,20 +65,36 @@ export default function VitalSignsFields({form}: VitalSignsFieldsProps){
           )}
         />
       </div>
-      <FormField
-        control={form.control}
-        name="temp"
-        render={({ field }) => (
-          <FormItem className="flex-grow">
-            <FormLabel>Temperature</FormLabel>
-            <FormControl>
-              <Input type="number" inputMode="numeric" placeholder="Enter temperature in celsius" {...field} onFocus={el => el.target.select()}  />
-            </FormControl>
-            <FormDescription>Body temperature from forehead of armpit</FormDescription>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
+      <div className="flex flex-wrap gap-2 items-center">
+        <FormField
+          control={form.control}
+          name="temp"
+          render={({ field }) => (
+            <FormItem className="flex-grow">
+              <FormLabel>Temperature</FormLabel>
+              <FormControl>
+                <Input type="number" inputMode="numeric" placeholder="Enter temperature in celsius" {...field} onFocus={el => el.target.select()}  />
+              </FormControl>
+              <FormDescription>Body temperature from forehead of armpit</FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="spo2"
+          render={({ field }) => (
+            <FormItem className="flex-grow">
+              <FormLabel>Oxygen Saturation (spo2)</FormLabel>
+              <FormControl>
+                <Input type="number" inputMode="numeric" placeholder="Enter spo2 readings here" {...field} onFocus={el => el.target.select()} />
+              </FormControl>
+              <FormDescription>Use the Pulse oximeter or other medical device to measure oxygen level of your blood.</FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
       <div className="flex flex-wrap gap-2 items-center">
         <FormField
           control={form.control}
@@ -140,20 +156,7 @@ export default function VitalSignsFields({form}: VitalSignsFieldsProps){
           )}
         />
       </div>
-      <FormField
-        control={form.control}
-        name="spo2"
-        render={({ field }) => (
-          <FormItem className="flex-grow">
-            <FormLabel>Oxygen Saturation (spo2)</FormLabel>
-            <FormControl>
-              <Input type="number" inputMode="numeric" placeholder="Enter spo2 readings here" {...field} onFocus={el => el.target.select()} />
-            </FormControl>
-            <FormDescription>Use the Pulse oximeter or other medical device to measure oxygen level of your blood.</FormDescription>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
+      
       <FormField
         rules={{
           required: {

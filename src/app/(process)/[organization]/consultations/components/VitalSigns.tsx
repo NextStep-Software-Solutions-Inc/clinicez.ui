@@ -5,6 +5,8 @@ import AddVitalSignsModal from "./modals/AddVitalSignsModal";
 import UpdateVitalSignsModal from "./modals/UpdateVitalSignsModal";
 import { getVitalSignsAction } from "@actions/consultations.action";
 import { GetConsultationRecord } from "@actions/consultation/consultation-record.action";
+import RecentVitalSigns from "../../../../(main)/user/[user]/phr/vitals/RecentVitalSigns";
+import { getUserVitalSignsAction } from "@actions/vitals.action";
 
 interface VitalSignsProps {
     consultation:  NonNullable<GetConsultationRecord["data"]>;
@@ -63,44 +65,45 @@ const vitalSigns = [
 export default async function VitalSigns({ consultation}: VitalSignsProps) {
 
   const vitalSignsValue = await getVitalSignsAction(consultation.id)
-
+  const vitalSigns = await getUserVitalSignsAction(consultation.Appointment.Requesters[0].email);
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex flex-row">
-          <div>
-            <CardTitle>Vital Signs</CardTitle>
-            <CardDescription>
-            Patients vital signs are recorded here.
-            </CardDescription>
-          </div>
-          <div className="ml-auto space-x-1">
-            <AddVitalSignsModal consultation={consultation}/>
-            <UpdateVitalSignsModal vitalSigns={vitalSignsValue}/>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
+    <RecentVitalSigns vitalSigns={vitalSigns} readOnly={false} userId="1231" />
+    // <Card>
+    //   <CardHeader>
+    //     <div className="flex flex-row">
+    //       <div>
+    //         <CardTitle>Vital Signs</CardTitle>
+    //         <CardDescription>
+    //         Patients vital signs are recorded here.
+    //         </CardDescription>
+    //       </div>
+    //       <div className="ml-auto space-x-1">
+    //         <AddVitalSignsModal consultation={consultation}/>
+    //         <UpdateVitalSignsModal vitalSigns={vitalSignsValue}/>
+    //       </div>
+    //     </div>
+    //   </CardHeader>
+    //   <CardContent>
 
-        <div className="flex flex-row flex-wrap basis-[500px] gap-5">
-          <Each
-            of={vitalSigns}
-            render={(vital) => {
-              const Icon = vital.icon;
-              return (
-                <Card className="basis-auto grow hover:shadow-xl hover:scale-105 group/icon transition-all">
-                  <CardHeader>
-                    <CardTitle className="flex gap-1"><Icon className="text-primary mr-2 group-hover/icon:scale-150 transition-all"/>{vitalSignsValue[vital.key as keyof typeof vitalSignsValue]}</CardTitle>
-                    <CardDescription>{vital.normalRange}</CardDescription>
-                  </CardHeader>
-                  <CardFooter>{vital.name}</CardFooter>
-                </Card>
-              )
-            }}
-          />
-        </div>
+  //     <div className="flex flex-row flex-wrap basis-[500px] gap-5">
+  //       <Each
+  //         of={vitalSigns}
+  //         render={(vital) => {
+  //           const Icon = vital.icon;
+  //           return (
+  //             <Card className="basis-auto grow hover:shadow-xl hover:scale-105 group/icon transition-all">
+  //               <CardHeader>
+  //                 <CardTitle className="flex gap-1"><Icon className="text-primary mr-2 group-hover/icon:scale-150 transition-all"/>{vitalSignsValue[vital.key as keyof typeof vitalSignsValue]}</CardTitle>
+  //                 <CardDescription>{vital.normalRange}</CardDescription>
+  //               </CardHeader>
+  //               <CardFooter>{vital.name}</CardFooter>
+  //             </Card>
+  //           )
+  //         }}
+  //       />
+  //     </div>
         
-      </CardContent>
-    </Card>
+  //   </CardContent>
+  // </Card>
   );
 }

@@ -7,9 +7,6 @@ export const metadata: Metadata = {
   description: "Optimized Healthcare Management System",
 };
 
-
-
-
 export default async function HomePage() {
   
   const session = await getCachedSession();

@@ -14,11 +14,10 @@ dayjs.extend(localizedFormat)
 interface RecentVitalSignsProps {
   readOnly?: boolean;
   userId: string;
-  viewMode?: "chart" | "tile";
   vitalSigns: GetUserVitalSigns
 }
 
-export default function RecentVitalSigns({readOnly = true, userId, viewMode, vitalSigns}: RecentVitalSignsProps) {
+export default function RecentVitalSigns({readOnly = true, userId, vitalSigns}: RecentVitalSignsProps) {
 
   const latestVitalSign = vitalSigns.length > 0 ? vitalSigns[vitalSigns.length - 1] : null;
   const restVitalSigns = vitalSigns.length > 0 ? vitalSigns.slice(0, vitalSigns.length - 1) : [];

@@ -10,7 +10,7 @@ interface VitalCardProps {
 const VitalCard = ({label = "Name", value = "0",icon = Bell, unit = ""}:VitalCardProps) => {
   const Icon = icon;
   return (
-    <Card className="group/icon hover:ring-1 basis-52 flex-grow">
+    <Card className="group/icon hover:ring-1 basis-52 grow hover:shadow-xl hover:scale-105 transition-all">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">{label}</CardTitle>
         <Icon className="text-primary group-hover/icon:scale-150 transition-all" />

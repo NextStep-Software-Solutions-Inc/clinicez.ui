@@ -17,7 +17,6 @@ export default function AppointmentCalendar() {
     setBookAppointmentForm(prev => ({...prev, preferredDate: date, selectedTimeSlot: undefined}))
   }
   const availableDates = useMemo(() => bookAppointmentForm.availabilities?.filter(a => a.status).map(a => dayjs(a.date).startOf("day").toDate()), [bookAppointmentForm.availabilities]) ?? []
-  console.log(bookAppointmentForm.availabilities);
   
   return (
     <div className="">

@@ -132,7 +132,7 @@ export const getHPsTimeSlots = cache(async ({appointmentTypeId, serviceId, hpEma
 
     const timeSlots = isAvailable ? generateTimeSlotsV2(start, end, totalDuration, [...bookedTimeSlots, ...exceptionSlots]) : [];
     return {
-      date: currentDateTime.endOf("day").toDate(),
+      date: currentDateTime.utc().toDate(),
       status: isAvailable && !!timeSlots.length,
       timeSlots
     };

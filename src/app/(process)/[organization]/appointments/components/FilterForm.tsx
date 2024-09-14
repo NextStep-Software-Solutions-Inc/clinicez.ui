@@ -95,8 +95,6 @@ export default function FilterForm() {
     }), {
       loading: "Generating time slots...",
       success: (res) => {
-        console.log(res.data);
-        
         if(res.status) setBookAppointmentForm((prev) => ({...prev, availabilities: res.data}))
         return res.message
       },

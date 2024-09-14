@@ -4,6 +4,7 @@ import { Calendar } from "@components/ui/calendar"
 import { useAtom } from "jotai";
 import { bookAppointmentAtom } from "@state/book-appointment";
 import dayjs from "dayjs";
+import { useMemo } from "react";
 
 export default function AppointmentCalendar() {
   const [bookAppointmentForm, setBookAppointmentForm] = useAtom(bookAppointmentAtom)
@@ -12,6 +13,7 @@ export default function AppointmentCalendar() {
     if(!date) return
     setBookAppointmentForm(prev => ({...prev, preferredDate: date, selectedTimeSlot: undefined}))
   }
+  const availableDates = useMemo(() => bookAppointmentForm.availabilities?.filter(a => a.status).map(a => dayjs(a.date).startOf("day").toDate()), [bookAppointmentForm.availabilities]) ?? []
   
   return (
     <div className="">
@@ -20,19 +22,15 @@ export default function AppointmentCalendar() {
         selected={bookAppointmentForm.preferredDate}
         onSelect={handleSelectDate}
         className="rounded-md border"
-        disabled={bookAppointmentForm.availabilities?.filter(a => !a.status).map(a => dayjs(a.date).toDate()) ?? [
-          {
-            after: new Date(),
-            before: new Date(),
-          },
-          new Date(),
+        disabled={[
+          (d) => {
+            return dayjs(d).isBefore(dayjs().startOf("day")) || !availableDates.some(a => dayjs(a).isSame(d, "day"))
+          }
         ]}
-        
         modifiers={{
-          available: bookAppointmentForm.availabilities?.filter(a => a.status).map(a => new Date(a.date)) ?? [],
+          available: availableDates,
         }}
-        classNames={{
-        }}
+        classNames={{}}
         modifiersClassNames={{
           available: "bg-primary text-primary-foreground hover:bg-teal-500",
           selected: "bg-red-400 text-white hover:bg-red-500 hover:text-white",

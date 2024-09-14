@@ -7,7 +7,10 @@ import { Badge } from "@components/ui/badge";
 import Each from "@components/utils/Each";
 import { Avatar, AvatarFallback } from "@components/ui/avatar";
 import { GetConsultationRecord } from "@actions/consultation/consultation-record.action";
-import dayjs from "dayjs";
+import dayjs from "dayjs"
+import utc from "dayjs/plugin/utc"
+dayjs.extend(utc)
+
 import relativeTime from "dayjs/plugin/relativeTime";
 import Image from "next/image";
 import { useInterventions } from "@hooks/useIntervention";

@@ -2,7 +2,10 @@ import { Badge } from "@components/ui/badge";
 import { type ClassValue, clsx } from "clsx"
 import { ComponentProps } from "react";
 import { twMerge } from "tailwind-merge"
-import dayjs from "dayjs";
+import dayjs from "dayjs"
+import utc from "dayjs/plugin/utc"
+dayjs.extend(utc)
+
 import localizeFormat from "dayjs/plugin/localizedFormat"
 dayjs.extend(localizeFormat)
 

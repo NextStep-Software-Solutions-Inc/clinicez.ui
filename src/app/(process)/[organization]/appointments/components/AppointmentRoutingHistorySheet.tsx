@@ -13,7 +13,10 @@ import {
   SheetTrigger,
 } from "@components/ui/sheet"
 import Each from "@components/utils/Each";
-import dayjs from "dayjs";
+import dayjs from "dayjs"
+import utc from "dayjs/plugin/utc"
+dayjs.extend(utc)
+
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 interface AppointmentRoutingHistorySheetProps {

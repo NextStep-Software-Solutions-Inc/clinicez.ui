@@ -3,6 +3,8 @@
 import dayjs from "dayjs"
 import isBetween from "dayjs/plugin/isBetween"
 import localizeFormat from "dayjs/plugin/localizedFormat"
+import utc from "dayjs/plugin/utc"
+dayjs.extend(utc)
 dayjs.extend(isBetween)
 dayjs.extend(localizeFormat)
 

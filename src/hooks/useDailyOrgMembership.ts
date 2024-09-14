@@ -1,6 +1,8 @@
 import { GetDailyOrgMembershipRequest } from "@actions/dashboard/analytics.action"
 import { self } from "@services/request"
 import dayjs from "dayjs"
+import utc from "dayjs/plugin/utc"
+dayjs.extend(utc)
 import useSWR from "swr"
 
 type UseDailyOrgMembership = {

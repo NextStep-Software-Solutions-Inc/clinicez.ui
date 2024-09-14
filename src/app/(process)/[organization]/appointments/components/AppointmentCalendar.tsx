@@ -3,7 +3,10 @@
 import { Calendar } from "@components/ui/calendar"
 import { useAtom } from "jotai";
 import { bookAppointmentAtom } from "@state/book-appointment";
-import dayjs from "dayjs";
+import dayjs from "dayjs"
+import utc from "dayjs/plugin/utc"
+dayjs.extend(utc)
+
 import { useMemo } from "react";
 
 export default function AppointmentCalendar() {

@@ -33,7 +33,10 @@ import { useAtomValue } from "jotai";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import Attachments from "./Attachments";
 import { formatDateTime, getBadgeVariantFromLabel } from "@lib/utils";
-import dayjs from "dayjs";
+import dayjs from "dayjs"
+import utc from "dayjs/plugin/utc"
+dayjs.extend(utc)
+
 import { LabelValue } from "@components/LabelValue";
 import PreConsultationNoteSheet from "../../components/PreConsultationNoteSheet";
 import { useRef } from "react";

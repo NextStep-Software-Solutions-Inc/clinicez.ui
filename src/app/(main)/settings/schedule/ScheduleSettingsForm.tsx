@@ -11,7 +11,6 @@ import {toast} from "sonner"
 import ActionButton from "@components/ActionButton"
 import { useUser } from "@auth0/nextjs-auth0/client"
 import Each from "@components/utils/Each"
-import dayjs from "dayjs"
 import { deleteUserScheduleAction, GetUserSchedules, upsertBaseUserScheduleAction } from "@actions/schedule/user-schedule.action"
 import { useUserSchedules } from "@hooks/useUserSchedule"
 import { formatDateTime } from "@lib/utils"
@@ -22,6 +21,9 @@ import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHe
 import ScheduleForm, { scheduleFormSchema, ScheduleFormType } from "./ScheduleForm"
 import { MouseEventHandler, useRef } from "react"
 import { Trash } from "lucide-react"
+import dayjs from "dayjs"
+import utc from "dayjs/plugin/utc"
+dayjs.extend(utc)
 
 const daysOfWeek = [
   {

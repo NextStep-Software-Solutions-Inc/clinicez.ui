@@ -8,8 +8,10 @@ import VitalsSignView from "./VitalsSignView";
 import { VitalChartInteractive } from "@components/charts/VitalChartInteractive";
 import VitalSign from "./VitalSign";
 import { GetUserVitalSigns } from "@actions/vitals.action";
-import dayjs from "dayjs";
+import dayjs from "dayjs"
+import utc from "dayjs/plugin/utc"
 import localizedFormat from 'dayjs/plugin/localizedFormat'
+dayjs.extend(utc)
 dayjs.extend(localizedFormat)
 interface RecentVitalSignsProps {
   readOnly?: boolean;

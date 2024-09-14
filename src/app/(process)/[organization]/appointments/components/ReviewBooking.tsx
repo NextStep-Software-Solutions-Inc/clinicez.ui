@@ -11,7 +11,10 @@ import { bookAppointmentAtom } from "@state/book-appointment";
 import { useParams } from "next/navigation";
 import { uploadMediaAction } from "@actions/blob.action";
 import { mutate } from "swr";
-import dayjs from "dayjs";
+import dayjs from "dayjs"
+import utc from "dayjs/plugin/utc"
+dayjs.extend(utc)
+
 import { LabelValue } from "@components/LabelValue";
 import Each from "@components/utils/Each";
 import { Separator } from "@components/ui/separator";

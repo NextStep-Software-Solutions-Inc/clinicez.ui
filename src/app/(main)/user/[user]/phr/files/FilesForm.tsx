@@ -2,7 +2,11 @@ import Folder, { FolderProps } from "../../../../../../components/Folder";
 import { getFoldersAction } from "@actions/folder.action";
 import { format } from "date-fns";
 import Each from "@components/utils/Each";
-import dayjs from "dayjs";
+
+import dayjs from "dayjs"
+import utc from "dayjs/plugin/utc"
+dayjs.extend(utc)
+
 import { getCachedSession } from "@actions/session.action";
 import { getUserOrganizationsAction } from "@actions/users/user-organization.action";
 

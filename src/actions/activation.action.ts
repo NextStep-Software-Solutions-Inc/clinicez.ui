@@ -4,6 +4,8 @@ import prismaCommon from "@lib/prisma-common";
 import { Prisma } from "@prisma/common/client";
 import crypt from "crypto";
 import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc"
+dayjs.extend(utc)
 
 const lastCallTimes = new Map<string, number>();
 const throttleDuration = 1000 * 60 * 5; // 5 minutes

@@ -19,8 +19,10 @@ import { Input } from "@components/ui/input"
 
 import {toast} from "sonner"
 import { useUser } from "@auth0/nextjs-auth0/client"
-import dayjs from "dayjs"
 import { Check } from "lucide-react"
+import dayjs from "dayjs"
+import utc from "dayjs/plugin/utc"
+dayjs.extend(utc)
 
 const accountFormSchema = z.object({
   id: z.string(),

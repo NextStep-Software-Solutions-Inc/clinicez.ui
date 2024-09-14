@@ -16,6 +16,9 @@ import ConditionalRender from "@components/utils/ConditionalRender"
 import { Button } from "@components/ui/button"
 import { GetUserOrganizations } from "@actions/users/user-organization.action"
 import dayjs from "dayjs"
+import utc from "dayjs/plugin/utc"
+dayjs.extend(utc)
+
 
 export const columns: ColumnDef<GetUserOrganizations["data"][number]>[] = [
   {

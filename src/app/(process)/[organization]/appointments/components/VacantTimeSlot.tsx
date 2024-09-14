@@ -5,7 +5,10 @@ import Each from "@components/utils/Each";
 import { useAtom } from "jotai";
 import { bookAppointmentAtom } from "@state/book-appointment";
 import { toast } from "sonner";
-import dayjs from "dayjs";
+import dayjs from "dayjs"
+import utc from "dayjs/plugin/utc"
+dayjs.extend(utc)
+
 
 export default function VacantTimeSlot() {
 

@@ -11,6 +11,9 @@ import Link from "next/link"
 import { DropdownMenuProvider } from "@components/DropdownMenuProvider"
 import { GetConsultationRecords } from "@actions/consultation/consultation-record.action"
 import dayjs from "dayjs"
+import utc from "dayjs/plugin/utc"
+dayjs.extend(utc)
+
 
 export const columns: ColumnDef<GetConsultationRecords["data"][number]>[] = [
   {

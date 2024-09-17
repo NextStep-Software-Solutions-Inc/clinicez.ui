@@ -96,7 +96,7 @@ export const useAppointmentTools = ({ appointment, revalidate}: {
       roles: ["admin"],
       permissions: [],
       appointmentStatuses: ["received", "routed"],
-      routedAptStatuses: ["declined"],
+      routedAptStatuses: [],
       component: (
         <AssignAppointment 
           key={appointment.id}

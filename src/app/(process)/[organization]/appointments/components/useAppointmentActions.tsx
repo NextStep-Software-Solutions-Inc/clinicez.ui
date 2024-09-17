@@ -93,7 +93,7 @@ export const useAppointmentTools = ({ appointment, revalidate}: {
     },
     {
       action:"assign",
-      roles: ["admin"],
+      roles: ["admin", "doctor"],
       permissions: [],
       appointmentStatuses: ["received", "routed"],
       routedAptStatuses: [],

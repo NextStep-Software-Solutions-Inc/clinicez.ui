@@ -30,6 +30,32 @@ export const receiveAppointmentAction = async (formData: FormData) => {
   };
 }
 
+export const completeAppointmentAction = async (formData: FormData) => {
+  const session = await getCachedSession();
+  const response = {
+    status: false,
+    message: 'Unauthorized'
+  }
+  if(!session) return response;
+  
+  const appointmentId = parseInt(formData.get('appointmentId') as string);
+  const newStatus = formData.get('status') as string;
+  await prismaTenant.appointmentAttribute.update({
+    where: {
+      appointmentId
+    },
+    data: {
+      status: newStatus,
+      completedAt: new Date(),
+      completedBy: session.user.email
+    }
+  })
+  return {
+    status: true,
+    message: 'Appointment completed'
+  };
+}
+
 export const rejectAppointmentAction = async (formData: FormData) => {
   const session = await getCachedSession();
   const response = {

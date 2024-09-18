@@ -17,6 +17,12 @@ export const assignAppointmentAction = async (formData: FormData) => {
   const routedTo = formData.get('routedTo') as string;
   const appointmentId = parseInt(formData.get('appointmentId') as string);
 
+  if(!routedTo || !appointmentId) {
+    return {
+      status: false,
+      message: 'Invalid data provided'
+    }
+  }
   await prismaTenant.$transaction(async (prisma) => {
     await prisma.appointmentRouting.create({
       data: {

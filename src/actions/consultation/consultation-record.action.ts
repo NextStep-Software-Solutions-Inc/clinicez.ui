@@ -21,7 +21,7 @@ export const createConsultationRecordAction = async ({appointmentId, orgUid, sub
     data: null
   }
 
-  await prismaTenant.consultationRecord.create({
+  const consultationRecord = await prismaTenant.consultationRecord.create({
     data: {
       appointmentId,
       subject,
@@ -36,7 +36,7 @@ export const createConsultationRecordAction = async ({appointmentId, orgUid, sub
   return {
     status: true,
     message: "Consultation Record created successfully",
-    data: null
+    data: consultationRecord
   }
 }
 

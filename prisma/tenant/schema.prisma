@@ -113,6 +113,7 @@ model AppointmentRouting {
   appointmentId Int
   routedBy      String
   routedTo      String
+  routedToRole  String      @default("")
   status        String      @default("PENDING")
   amendment     String?
   amendedAt     DateTime?

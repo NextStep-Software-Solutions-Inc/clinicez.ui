@@ -1,7 +1,6 @@
 "use client";
 
 import { receiveAppointmentAction } from "@actions/appointments/appointment-attribute.action";
-import { revalidatePath } from "@actions/cache.action";
 import ActionButton from "@components/ActionButton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@components/ui/tooltip";
 import { MailPlus } from "lucide-react";

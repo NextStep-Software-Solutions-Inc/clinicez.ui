@@ -2,6 +2,7 @@
 
 import {differenceInCalendarYears } from "date-fns"
 import {
+  CheckCircle,
   Forward,
   MoreVertical,
   Pencil,
@@ -42,6 +43,7 @@ import PreConsultationNoteSheet from "../../components/PreConsultationNoteSheet"
 import { useRef } from "react";
 import { GetAppointment } from "@actions/appointments/appointments.action";
 import AppointmentRoutingHistorySheet from "../../components/AppointmentRoutingHistorySheet";
+import CompleteAppointment from "../../components/CompleteAppointment";
 
 export default function AppointmentDisplay() {
 
@@ -56,15 +58,16 @@ export default function AppointmentDisplay() {
     appointmentId: appointmentId
   })
 
+  const revalidate = async () => {
+    revalidatePath(`${organization}/appointments`,  "page")
+    mutate((key) =>  typeof key === 'string' && key.startsWith(`/api/organizations/${organization}/appointments`), undefined, {
+      revalidate:true
+    })
+  }
   const {data: aptUser, isLoading: loadingUser} = useAptUser({email: freshAppointment?.data?.Requesters[0].email})
   const {tools: appointmentTools} = useAppointmentTools({
     appointment: freshAppointment?.data,
-    revalidate : async () => {
-      revalidatePath(`${organization}/appointments`,  "page")
-      mutate((key) =>  typeof key === 'string' && key.startsWith(`/api/organizations/${organization}/appointments`), undefined, {
-        revalidate:true
-      })
-    }
+    revalidate
   })
 
   if (!appointmentId) {
@@ -109,15 +112,10 @@ export default function AppointmentDisplay() {
           />
         </div>
         <div className="ml-auto flex items-center gap-2">
-          {/* <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" disabled={!freshAppointment}>
-                <Forward className="h-4 w-4" />
-                <span className="sr-only">Forward</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Forward</TooltipContent>
-          </Tooltip> */}
+          {
+            freshAppointment.data.AppointmentAttribute?.status === "ROUTED" &&
+            <CompleteAppointment appointmentId={freshAppointment.data.id} onCompleted={revalidate} disabled={!freshAppointment.data.id}/>
+          }
         </div>
         <Separator orientation="vertical" className="mx-2 h-6" />
         <MoreTools freshAppointment={freshAppointment.data}/>

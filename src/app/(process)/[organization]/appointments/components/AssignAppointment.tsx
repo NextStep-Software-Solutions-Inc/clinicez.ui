@@ -18,8 +18,13 @@ interface AssignAppointmentProps {
   disabled?: boolean;
   onAssigned?: () => void;
   appointmentId: number;
+  assigned: {
+    role: string;
+    email: string;
+    status: string;
+  }[];
 }
-export default function AssignAppointment({disabled = false, appointmentId, onAssigned}: AssignAppointmentProps) {
+export default function AssignAppointment({disabled = false, appointmentId, onAssigned, assigned}: AssignAppointmentProps) {
   const triggerRef = React.useRef<HTMLButtonElement>(null);
   const {data: hps } = useHPs();
 
@@ -27,6 +32,9 @@ export default function AssignAppointment({disabled = false, appointmentId, onAs
     const role = hp.type;
     if (!acc[role]) {
       acc[role] = [];
+    }
+    if(assigned.some(a => a.role.toUpperCase() === role && a.status !== "DECLINED")) {
+      return acc;
     }
     acc[role].push({
       id: hp.id,
@@ -89,7 +97,7 @@ export default function AssignAppointment({disabled = false, appointmentId, onAs
         </p>
         <form 
           action={action}
-          id="consultation-record-form"
+          id="assign-appointment-form"
           className="grid gap-4 py-4"
         >
           <div className="grid grid-cols-4 items-baseline gap-4">
@@ -100,7 +108,7 @@ export default function AssignAppointment({disabled = false, appointmentId, onAs
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
-                  size="sm"
+                  size="sm" 
                   className="col-span-3 justify-start"
                 >
                   {selectedHp ? (
@@ -126,6 +134,7 @@ export default function AssignAppointment({disabled = false, appointmentId, onAs
                             <CommandGroup className="capitalize" heading={role.split("_").join(" ").toLocaleLowerCase()} key={role}>
                               <Each
                                 of={healthcareProviders[role]}
+                                fallback={<p className="text-xs text-muted-foreground text-center">Already assigned or not available</p>}
                                 render={(hp) => (
                                   <CommandItem
                                     value={hp.email}
@@ -147,7 +156,7 @@ export default function AssignAppointment({disabled = false, appointmentId, onAs
               </PopoverContent>
             </Popover>
           </div>
-          <ActionButton form="consultation-record-form" type="submit" variant="default">
+          <ActionButton form="assign-appointment-form" type="submit" variant="default">
             Assign
           </ActionButton>
         </form>

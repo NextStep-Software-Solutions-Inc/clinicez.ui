@@ -43,7 +43,7 @@ export default function CreateConsultationRecordModal({disabled = false, subject
         if(res.status) {
           closeBtnRef.current?.click()
           mutate()
-          followConsultationRecord && router.push(`/${params.organization}/consultations/1099?${searchParams.toString()}`);
+          followConsultationRecord && router.push(`/${params.organization}/consultations/${res.data?.id}?${searchParams.toString()}`);
         }
         return res.message
       },

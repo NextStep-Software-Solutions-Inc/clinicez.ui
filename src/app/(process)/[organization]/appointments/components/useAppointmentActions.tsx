@@ -103,6 +103,11 @@ export const useAppointmentTools = ({ appointment, revalidate}: {
           appointmentId={appointment.id}
           onAssigned={revalidate} 
           disabled={!appointment}
+          assigned={appointment.AppointmentRouting?.map(r => ({
+            email: r.routedTo,
+            role: r.routedToRole,
+            status: r.status
+          }))}
         />
       )
     },

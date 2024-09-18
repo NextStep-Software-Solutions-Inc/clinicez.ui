@@ -56,6 +56,10 @@ export default function ReviewBooking({ nextStep, prevStep, isLastStep, isFirstS
       toast.error("Appointment type is required")
       return;
     }
+    if (!bookAppointmentForm.modeId) {
+      toast.error("Mode is required")
+      return;
+    }
     if (!bookAppointmentForm.serviceId) {
       toast.error("Service is required")
       return;
@@ -97,7 +101,7 @@ export default function ReviewBooking({ nextStep, prevStep, isLastStep, isFirstS
       orgUid: params.organization,
       subject: bookAppointmentForm.subject ?? "Appointment Request",
       complaint: bookAppointmentForm.chiefComplaint,
-      modeId: 2,
+      modeId: bookAppointmentForm.modeId,
       typeId: bookAppointmentForm.appointmentTypeId,
       serviceId: bookAppointmentForm.serviceId,
       requesters: [user.user?.email],
@@ -138,7 +142,7 @@ export default function ReviewBooking({ nextStep, prevStep, isLastStep, isFirstS
           <LabelValue className="flex items-center gap-2" value="Appointment Type:" label={appointmentTypes?.find(a => a.id === bookAppointmentForm.appointmentTypeId)?.name ?? ""} />
           <LabelValue className="flex items-center gap-2" value="Service:" label={services?.find(s => s.id === bookAppointmentForm.serviceId)?.name ?? ""} />
           <LabelValue className="flex items-center gap-2" value="Preferred Doctor:" label={bookAppointmentForm.hpEmail ?? ""} />
-          {!!bookAppointmentForm.preferredDate && <LabelValue className="flex items-center gap-2" value="Preferred Date:" label={dayjs().format("ll")} /> }
+          {!!bookAppointmentForm.preferredDate && <LabelValue className="flex items-center gap-2" value="Preferred Date:" label={dayjs(bookAppointmentForm.preferredDate).format("ll")} /> }
           <LabelValue className="flex items-center gap-2" value="Time Slot:" label={`${dayjs(bookAppointmentForm.selectedTimeSlot?.start).format("LT")} - ${dayjs(bookAppointmentForm.selectedTimeSlot?.end).format("LT")}`} />
           <Separator/>
           <Each

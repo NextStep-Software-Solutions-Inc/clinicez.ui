@@ -245,6 +245,7 @@ export const getAppointmentAction = async (id: number, orgUid?: string) => {
           amendment: true,
           routedBy: true,
           routedTo: true,
+          routedToRole: true,
           status: true,
           updatedAt: true
         }

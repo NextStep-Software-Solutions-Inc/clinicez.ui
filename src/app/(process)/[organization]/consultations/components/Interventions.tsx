@@ -1,7 +1,7 @@
 "use client"
 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@components/ui/accordion";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@components/ui/card";
 import AddInterventionModal from "./modals/AddInterventionModal";
 import { Badge } from "@components/ui/badge";
 import Each from "@components/utils/Each";
@@ -80,39 +80,38 @@ export default function Interventions({ consultation }: InterventionsProps) {
       </CardHeader>
       <CardContent>
         {/* list of interventions */}
-        <Accordion type="multiple">
+        <div className="flex flex-wrap gap-2">
           <Each
             of={interventions?.data ?? []}
             fallback={<div className="flex justify-center text-muted-foreground">No interventions</div>}
             render={(intervention) => {
               const hp = hpsMapped.find(hp => hp.id === intervention.hpId)
               return (
-                <AccordionItem value={intervention.id.toString()}>
-                  <AccordionTrigger className="hover:no-underline" >
-                    <div className="flex flex-row items-center justify-between ">
-                      <span>{intervention.Action.name}</span>
-                      <Badge className="mx-2">{dayjs(intervention.createdAt).fromNow()}</Badge>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent >
-                    <div>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base font-normal">
                       <div className="flex items-center gap-1">
                         <Avatar className="h-8 w-8 object-cover">
                           {hp?.avatarUrl ? <Image alt={hp.name} className="object-cover" src={hp.avatarUrl} height={50} width={50} /> : <AvatarFallback>{hp?.name.substring(0,2)}</AvatarFallback>}
                         </Avatar> 
                         <div>
-                          <span className="font-semibold">{hp?.name}</span>
-                          <div className="text-muted-foreground text-xs">{hp?.type}</div>
+                          <span className="font-semibold">{intervention.Action.name}</span>
+                          <div className="text-muted-foreground text-xs">{hp?.name} <span className="italic">({hp?.type})</span></div>
                         </div>
                       </div>
-                      <p className="ml-9 italic">- {intervention.details}</p>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="ml-9 italic">- {intervention.details}</p>
+                  </CardContent>
+                  <CardFooter className="text-xs">
+                    {dayjs(intervention.createdAt).fromNow()}
+                  </CardFooter>
+                </Card>
               )
             }}
           />
-        </Accordion>
+        </div>
       </CardContent>
     </Card>
   );

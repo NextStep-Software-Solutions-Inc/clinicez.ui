@@ -147,6 +147,8 @@ export const getAppointmentsAction = async (filter?: GetAppointmentFilter) => {
       },
       AppointmentAttribute: {
         select: {
+          date: true,
+          timeStart: true,
           AppointmentType: {
             select: {
               name: true

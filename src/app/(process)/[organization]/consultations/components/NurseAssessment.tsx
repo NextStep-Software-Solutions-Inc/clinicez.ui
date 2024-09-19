@@ -2,9 +2,7 @@
 
 import { GetPreConsultationNotes } from "@actions/appointments/pre-consultation-note.action";
 import { GetConsultationRecord } from "@actions/consultation/consultation-record.action";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@components/ui/accordion";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@components/ui/card";
-import { Textarea } from "@components/ui/textarea";
 import Each from "@components/utils/Each";
 import { usePreConsultationNotes } from "@hooks/usePreConsultationNotes";
 import { useParams } from "next/navigation";
@@ -32,7 +30,7 @@ export default function NurseAssessment({ consultation}: NurseAssessmentProps) {
           </div>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-2">
         <Each
           of={preConsultationNotes?.data ?? []}
           render={(note) => {
@@ -55,57 +53,44 @@ export const PreConsultationNote = ({note}: PreConsultationNoteProps) => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-primary">{`Assessed by ${note.createdBy}`}</CardTitle>
-        <CardDescription>Assessed {dayjs(note.updatedAt).fromNow()}</CardDescription>
+        <CardTitle className="text-primary text-lg">{`Assessed by ${note.createdBy}`}</CardTitle>
+        <CardDescription>Assessed {dayjs(note.updatedAt).fromNow()} <span className="italic text-primary">(readonly)</span></CardDescription>
       </CardHeader>
       <CardContent>
-        <Accordion type="multiple">
-          <AccordionItem value="preAssessment">
-            <AccordionTrigger className="hover:no-underline">
-              <div>
-                Pre-Assessment <span className="italic text-primary">(readonly)</span>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="m-1">
-              <Textarea 
-                rows={5} 
-                readOnly
-                value={note.assessment ?? ""}
-              // placeholder="Write the remarks here..."
-              />
-            </AccordionContent>
-          </AccordionItem>
-          <AccordionItem value="instructions">
-            <AccordionTrigger className="hover:no-underline">
-              <div>
-                Instructions <span className="italic text-primary">(readonly)</span>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="m-1">
-              <Textarea 
-                rows={5}
-                readOnly
-                value={note.homeInstructions ?? ""}
-              // placeholder="Write the remarks here..." 
-              />
-            </AccordionContent>
-          </AccordionItem>
-          <AccordionItem value="remarks">
-            <AccordionTrigger className="hover:no-underline">
-              <div>
-                Remarks <span className="italic text-primary">(readonly)</span>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="m-1">
-              <Textarea 
-                rows={5} 
-                readOnly
-                value={note.remarks ?? ""}
-              // placeholder="Write the remarks here..."
-              />
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
+
+        <div className="flex flex-wrap gap-2">
+          <Card className="grow lg:basis-1/4">
+            <CardHeader>
+              <CardTitle className="text-lg">
+                Pre-Assessment
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {note.assessment} 
+            </CardContent>
+          </Card>
+
+          <Card className="grow lg:basis-1/4">
+            <CardHeader>
+              <CardTitle className="text-lg">
+                Instructions
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {note.homeInstructions} 
+            </CardContent>
+          </Card>
+          <Card className="grow lg:basis-1/4">
+            <CardHeader>
+              <CardTitle className="text-lg">
+                Remarks
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {note.remarks} 
+            </CardContent>
+          </Card>
+        </div>
       </CardContent>        
     </Card>
   )

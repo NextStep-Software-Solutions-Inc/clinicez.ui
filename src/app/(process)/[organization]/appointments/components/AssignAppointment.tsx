@@ -156,7 +156,7 @@ export default function AssignAppointment({disabled = false, appointmentId, onAs
               </PopoverContent>
             </Popover>
           </div>
-          <ActionButton form="assign-appointment-form" type="submit" variant="default">
+          <ActionButton disabled={!selectedHp?.id} form="assign-appointment-form" type="submit" variant="default">
             Assign
           </ActionButton>
         </form>

@@ -1,7 +1,7 @@
 "use client";
 
 import { forwardRef, useMemo, useState } from "react"
-import {formatDistanceToNow} from "date-fns"
+import {formatDistanceToNow, formatRelative} from "date-fns"
 
 import { cn, getBadgeVariantFromLabel } from "@lib/utils"
 import { Badge } from "@components/ui/badge"
@@ -15,6 +15,7 @@ import { Input } from "@components/ui/input";
 import { ArrowRight, Search } from "lucide-react";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import { AppointmentStatus, RoutedAptStatus } from "@public/json/appointment-list";
+import dayjs from "dayjs";
 interface AppointmentListProps {
   appointments: GetAppointments["data"]
 }
@@ -52,10 +53,10 @@ export const AppointmentList = forwardRef<any, AppointmentListProps>(({appointme
                     {item.patient.firstName?.charAt(0) } {item.patient.lastName?.charAt(0)}
                   </AvatarFallback>
                 </Avatar> */}
-                <div className="flex w-full flex-col gap-1 ">
+                <div className="flex w-full flex-col">
                   <div className="flex items-center justify-between  flex-wrap">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <Each
+                      {/* <Each
                         of={item.Requesters}
                         fallback={<span className="text-xs text-muted-foreground">No Requester defined</span>}
                         render={(requester, index) => {
@@ -66,36 +67,30 @@ export const AppointmentList = forwardRef<any, AppointmentListProps>(({appointme
                             </div>
                           )
                         }}
-                      />
-                      {item.AppointmentAttribute?.status === "PENDING" && (
-                        <span className="flex h-2 w-2 rounded-full bg-blue-600" />
-                      )}
-                      {!item._count.ConsultationRecords && (
-                        <span className="flex h-2 w-2 rounded-full bg-red-600" />
-                      )}
+                      /> */}
                     </div>
+                  </div>
+                  <div className="text-sm font-semibold flex">
+                    {item.subject}
                     <div
                       className={cn(
-                        "ml-auto text-xs ",
+                        "ml-auto text-xs flex items-center gap-2 basis-36 justify-end",
                         appointmentId === item.id.toString()
                           ? "text-foreground"
                           : "text-muted-foreground"
                       )}
                     >
-                      {formatDistanceToNow(new Date(item.createdAt), {
-                        addSuffix: true,
-                      })}
+                      <Separator orientation="vertical" className="h-4" />
+                      {dayjs(item.createdAt).fromNow()}
                     </div>
-                  </div>
-                  <div className="text-xs font-medium">{item.subject}
-                    {/* (<span>{formatRelative(item.bookingDateTime, new Date())}</span>) */}
+                    {/* (<span>{formatRelative(new Date(), new Date())}</span>) */}
                   </div>
                 </div>
               </div>
               <div className="line-clamp-2 text-xs text-muted-foreground">
                 {item.complaint?.substring(0, 300)}
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 truncate">
                 <Badge variant={getBadgeVariantFromLabel(item.AppointmentAttribute?.AppointmentType.name ?? "")}>
                   {item.AppointmentAttribute?.AppointmentType.name}
                 </Badge>
@@ -111,7 +106,14 @@ export const AppointmentList = forwardRef<any, AppointmentListProps>(({appointme
                   <ArrowRight className="inline-block w-3 h-3"/> {item.AppointmentAttribute?.preferredAppointee}
                 </span>
                 {appointmentStatus === "all" && <Badge variant="outline" className="capitalize">{item?.AppointmentAttribute?.status.toLocaleLowerCase()}</Badge>}
-
+                <span className="flex gap-1">
+                  {item.AppointmentAttribute?.status === "PENDING" && (
+                    <span className="flex h-2 w-2 rounded-full bg-blue-600" />
+                  )}
+                  {!item._count.ConsultationRecords && (
+                    <span className="flex h-2 w-2 rounded-full bg-red-600" />
+                  )}
+                </span>
               </div>
             </button>
           )}

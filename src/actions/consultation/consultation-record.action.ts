@@ -116,7 +116,10 @@ export const getConsultationRecordsAction = async ({orgUid}: {orgUid: string}) =
     },
     where: {
       orgUid,
-      createdBy: session.user.email
+      OR: [
+        { createdBy: session.user.email },
+        { Appointment: { Requesters: { some: { email: session.user.email } } } }
+      ]
     },
     select: {
       id: true,

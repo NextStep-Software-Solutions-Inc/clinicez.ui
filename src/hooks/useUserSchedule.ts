@@ -6,5 +6,5 @@ import useSWR from 'swr';
 
 export const useUserSchedules = (userId: string) => {
   const fetcher = (path: string) => self.get<GetUserSchedules>(path);
-  return useSWR(`/api/users/${userId}/schedules`, fetcher)
+  return useSWR(() => userId.trim() ? `/api/users/${userId}/schedules` : null, fetcher)
 }

@@ -37,7 +37,7 @@ export default async function ConsultationDetails({ consultation }: Consultation
             </Avatar>
             <div className="flex flex-col">
               <span className="text-sm font-semibold">{user.firstName} {user.lastName}</span>
-              <div className="text-xs text-muted-foreground"><span>{"Male"}</span> / <span>{differenceInCalendarYears(new Date(), new Date())}</span></div>
+              <div className="text-xs text-muted-foreground"><span>{user.gender}</span> / <span>{user.dob && differenceInCalendarYears(new Date(), user.dob)}</span></div>
             </div>
           </div>
           <DropdownMenuProvider>

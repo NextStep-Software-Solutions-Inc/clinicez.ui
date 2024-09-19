@@ -4,9 +4,10 @@ import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessa
 import { Input } from "@components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@components/ui/radio-group";
 import Each from "@components/utils/Each";
+import dayjs from "dayjs";
 import { ArrowRight } from "lucide-react";
-import React from "react";
-import { useForm } from "react-hook-form";
+import React, { useEffect } from "react";
+import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 
 export const scheduleFormSchema = z.object({
@@ -20,11 +21,11 @@ export const scheduleFormSchema = z.object({
     message: "Start time is required"
   }),
   endTime: z.coerce.string({
-    message: "End time is required"
+    message: "End time is required",
   }),
   isRecurring: z.boolean(),
   pattern: z.string(),
-  daysOfWeek: z.array(z.number()).superRefine(({}, ctx) => {}),
+  daysOfWeek: z.array(z.number()),
   weekOfMonth: z.array(z.number())
 }).superRefine((value, ctx) => {
   value.isRecurring && ["weekly", "monthly"].includes(value.pattern) && !value.daysOfWeek.length && ctx.addIssue({
@@ -42,10 +43,7 @@ export const scheduleFormSchema = z.object({
     code: "invalid_intersection_types",
     path: ["dateRange"]
   });
-  console.log({
-    startTime: !value.startTime.trim().length,
-    endTime: !value.endTime.trim().length
-  });
+  
   !value.startTime.trim().length && ctx.addIssue({
     message: "Start and End time is required",
     code: "invalid_intersection_types",
@@ -58,13 +56,20 @@ export const scheduleFormSchema = z.object({
   });
   // the end time should be greater than the start time
   if(value.dateRange.from && value.dateRange.to) {
-    const startTime = new Date(new Date(value.dateRange.from).toISOString().split("T")[0] + "T" + value.startTime).getTime()
-    const endTime = new Date(new Date(value.dateRange.to).toISOString().split("T")[0] + "T" + value.endTime).getTime()
-    startTime > endTime && ctx.addIssue({
-      message: "End time should be greater than the start time",
-      code: "invalid_intersection_types",
-      path: ["endTime"]
-    });
+    let startTime = new Date(new Date(value.dateRange.from).toISOString().split("T")[0] + "T" + value.startTime)
+    let endTime = new Date(new Date(value.dateRange.to).toISOString().split("T")[0] + "T" + value.endTime)
+
+    if(value.isRecurring ) {
+      startTime = new Date(new Date().toISOString().split("T")[0] + "T" + value.startTime)
+      endTime = new Date(new Date().toISOString().split("T")[0] + "T" + value.endTime)
+    }
+    if ((endTime.getTime() - startTime.getTime()) < 1.8e+6) {
+      ctx.addIssue({
+        message: "End time should be greater than the start time by at least 30 minutes",
+        code: "custom",
+        path: ["endTime"]
+      });
+    }
   }
 })
   
@@ -118,62 +123,22 @@ export type ScheduleFormType = z.infer<typeof scheduleFormSchema>
   }
 export default function ScheduleForm({form}:ScheduleFormProps) {
   
-  const isRecurring = form.watch("isRecurring")
-  const pattern = form.watch("pattern") 
+  const formValue = useWatch({
+    control: form.control
+  })
+  
+  const isRecurring = formValue.isRecurring
+  const pattern = formValue.pattern
+  const from = formValue.dateRange?.from
+  const to = formValue.dateRange?.to
+
+
+  useEffect(() => {
+    form.trigger()
+  }, [form, formValue])
+
   return (
     <div className="my-10 space-y-5">
-      <FormField
-        control={form.control}
-        name="dateRange"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Date Range</FormLabel>
-            <DatePickerWithRange 
-              onDatesChange={dates => form.setValue(field.name, dates)}  
-              value={{
-                from: field.value?.from,
-                to: field.value?.to
-              }}
-            />
-            <FormDescription>
-            </FormDescription>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-      <div className="flex items-center gap-5 flex-wrap">
-        <FormField
-          control={form.control}
-          name="startTime"
-          render={({ field }) => (
-            <FormItem className="flex-grow">
-              <FormLabel>Start Time</FormLabel>
-              <FormControl>
-                <Input {...field}  type="time" />
-              </FormControl>
-              <FormDescription>
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <ArrowRight className="w-4 h-4" />
-        <FormField
-          control={form.control}
-          name="endTime"
-          render={({ field }) => (
-            <FormItem className="flex-grow">
-              <FormLabel>End Time</FormLabel>
-              <FormControl>
-                <Input {...field} type="time" />
-              </FormControl>
-              <FormDescription>
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      </div>
       <FormField
         control={form.control}
         name="isRecurring"
@@ -341,6 +306,58 @@ export default function ScheduleForm({form}:ScheduleFormProps) {
               )}
             />
       }
+      <FormField
+        control={form.control}
+        name="dateRange"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Date Range</FormLabel>
+            <DatePickerWithRange 
+              onDatesChange={dates => form.setValue(field.name, dates)}  
+              value={{
+                from: field.value?.from,
+                to: field.value?.to
+              }}
+            />
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <div className="flex items-center gap-5 flex-wrap">
+        <FormField
+          control={form.control}
+          name="startTime"
+          render={({ field }) => (
+            <FormItem className="grow basis-1/4">
+              {
+                isRecurring 
+                  ? <FormLabel>Start Time</FormLabel>
+                  : <FormLabel>From <span className="font-bold">{dayjs(from).format("ll")}</span></FormLabel>
+              }
+              <FormControl>
+                <Input {...field} type="time" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <ArrowRight className="w-4 h-4" />
+        <FormField
+          control={form.control}
+          name="endTime"
+          render={({ field }) => (
+            <FormItem className="grow basis-1/4">
+              {
+                isRecurring 
+                  ? <FormLabel>End Time</FormLabel>
+                  : <FormLabel>To <span className="font-bold">{dayjs(to).format("ll")}</span></FormLabel>
+              }
+              <Input {...field} type="time" />
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
     </div>
   );
 }

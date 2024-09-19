@@ -36,7 +36,6 @@ const preConsultationNotesSchema = z.object({
 
 type PreConsultationNotes = z.infer<typeof preConsultationNotesSchema>
 
-
 interface PreConsultationNoteSheetProps {
   children: React.ReactNode
   preConsultationNotes: {

@@ -4,8 +4,15 @@ import "server-only"
 
 import prismaTenant from "@lib/prisma-tenant"
 import { PrismaClientKnownRequestError } from '@prisma/tenant/client/runtime/library';
+import { getCachedSession } from "@actions/session.action";
 
 export const upsertConsultationNotesAction = async (data: FormData) => {
+  const session = await getCachedSession()
+  if(!session) return {
+    status: false,
+    message: "Session not found",
+    data: null
+  }
   const consultationRecordId = parseInt(data.get('consultationRecordId') as string)
   const section = data.get('section') as string
   const content = data.get('content') as string
@@ -14,7 +21,10 @@ export const upsertConsultationNotesAction = async (data: FormData) => {
       where: {
         unique_consultation_record_section: {
           consultationRecordId,
-          section
+          section, 
+        },
+        ConsultationRecord: {
+          createdBy: session.user.email
         }
       },
       create: {
@@ -30,7 +40,7 @@ export const upsertConsultationNotesAction = async (data: FormData) => {
       data: updatedNotes
     }
   } catch (error) {
-    let message = "Failed to update consultation notes"
+    let message = "Failed to update consultation notes section content, either the consultation record does not exist or you do not have permission to update it"
     if(error instanceof PrismaClientKnownRequestError && error.code === 'P2025') {
       message = error.meta?.cause as string ?? message
     }

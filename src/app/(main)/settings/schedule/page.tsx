@@ -1,8 +1,9 @@
 import Suspend from "@components/Suspend";
-import ScheduleSettingsForm from "./ScheduleSettingsForm";
+import dynamic from "next/dynamic";
 import { Separator } from "@components/ui/separator";
 import { Metadata } from "next";
 import React from "react";
+const ScheduleSettingsForm = dynamic(() => import("./ScheduleSettingsForm"), { ssr: false });
 
 export const metadata: Metadata = {
   title: "Schedule | Account Settings",

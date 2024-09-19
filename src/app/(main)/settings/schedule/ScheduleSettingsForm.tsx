@@ -2,11 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
-
-import {
-  Form,
-} from "@components/ui/form"
-
+import { Form } from "@components/ui/form"
 import {toast} from "sonner"
 import ActionButton from "@components/ActionButton"
 import { useUser } from "@auth0/nextjs-auth0/client"
@@ -19,7 +15,7 @@ import { Button } from "@components/ui/button"
 import { Separator } from "@components/ui/separator"
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from "@components/ui/sheet"
 import ScheduleForm, { scheduleFormSchema, ScheduleFormType } from "./ScheduleForm"
-import { MouseEventHandler, useRef } from "react"
+import { useRef } from "react"
 import { Trash } from "lucide-react"
 import dayjs from "dayjs"
 import utc from "dayjs/plugin/utc"
@@ -59,7 +55,6 @@ export default function ScheduleSettingsForm() {
   
   const form = useForm<ScheduleFormType>({
     resolver: zodResolver(scheduleFormSchema),
-    mode: "onChange",
     values: {
       dateRange: {
         from: baseSchedule?.startDate,
@@ -68,12 +63,11 @@ export default function ScheduleSettingsForm() {
       isRecurring: baseSchedule?.isRecurring || false,
       startTime: (baseSchedule?.startDate && baseSchedule.startTime) ? formatDateTime(new Date(baseSchedule?.startDate), new Date(baseSchedule?.startTime)).format("HH:mm") : "",
       endTime: (baseSchedule?.endDate && baseSchedule.endTime) ? formatDateTime(new Date(baseSchedule?.endDate), new Date(baseSchedule?.endTime)).format("HH:mm") : "",
-      daysOfWeek: baseSchedule?.daysOfWeek || [],
-      weekOfMonth: baseSchedule?.weekOfMonth || [], 
+      daysOfWeek: baseSchedule?.daysOfWeek.length ? baseSchedule?.daysOfWeek :  [0,1,2,3,4,5,6],
+      weekOfMonth: baseSchedule?.weekOfMonth.length ? baseSchedule?.weekOfMonth : [1,2,3,4,5], 
       pattern: baseSchedule?.pattern || "daily",
     }
   })
-  
 
   const action = async () => {
     form.handleSubmit(async (values) => {
@@ -192,7 +186,6 @@ export const ExceptionScheduleSheet = ({schedule, children}: ExceptionScheduleIt
   const closeBtnRef = useRef<HTMLButtonElement>(null)
   const form = useForm<ScheduleFormType>({
     resolver: zodResolver(scheduleFormSchema),
-    mode: "onChange",
     values: {
       dateRange: {
         from: schedule?.startDate,
@@ -200,9 +193,9 @@ export const ExceptionScheduleSheet = ({schedule, children}: ExceptionScheduleIt
       },
       isRecurring: schedule?.isRecurring || false,
       startTime: (schedule?.startDate && schedule.startTime) ? formatDateTime(new Date(schedule?.startDate), new Date(schedule?.startTime)).format("HH:mm") : "",
-      endTime: (schedule?.endDate && schedule.endTime) ? formatDateTime(new Date(schedule?.endDate), new Date(schedule?.endTime)).format("HH:mm") : "",
-      daysOfWeek: schedule?.daysOfWeek || [],
-      weekOfMonth: schedule?.weekOfMonth || [], 
+      endTime: (schedule?.startDate && schedule.startTime) ? formatDateTime(new Date(schedule?.startDate), new Date(schedule?.startTime)).format("HH:mm") : "",
+      daysOfWeek: schedule?.daysOfWeek.length ? schedule?.daysOfWeek :  [0,1,2,3,4,5,6],
+      weekOfMonth: schedule?.weekOfMonth.length ? schedule?.weekOfMonth : [1,2,3,4,5], 
       pattern: schedule?.pattern || "daily",
     }
   })

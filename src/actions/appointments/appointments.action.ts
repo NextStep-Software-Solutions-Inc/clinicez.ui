@@ -253,8 +253,7 @@ export const getAppointmentAction = async (id: number, orgUid?: string) => {
       PreConsultationNotes: {
         where: {
           appointmentId: id,
-          orgUid: orgUid,
-          createdBy: session.user.email
+          orgUid: orgUid
         },
         select: {
           id: true,

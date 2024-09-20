@@ -103,7 +103,7 @@ export default async function ConsultationDetails({ consultation }: Consultation
           </TabsContent>
           <TabsContent value="vital-signs">
             <Suspend>
-              <VitalSigns consultation={consultation}/>
+              <VitalSigns consultation={consultation} userId={user.userId}/>
             </Suspend>
           </TabsContent>
           <TabsContent value="files">

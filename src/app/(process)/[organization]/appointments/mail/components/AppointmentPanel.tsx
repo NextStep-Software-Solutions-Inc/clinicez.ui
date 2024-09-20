@@ -27,7 +27,6 @@ import {
   TabsTrigger,
 } from "@components/ui/tabs"
 import { TooltipProvider } from "@components/ui/tooltip"
-import {  AppointmentListWrapper } from "./AppointmentList"
 import { AppointmentStatusNav, AppointmentStatusNavProps } from "./nav"
 import { useParams, useSearchParams } from "next/navigation"
 import Switcher from "@components/dashboard/Switcher"
@@ -35,6 +34,7 @@ import { useOrgRoles } from "@hooks/useOrgRole"
 import { useUser } from "@auth0/nextjs-auth0/client"
 import { useAtom } from "jotai"
 import { userDefaultOrganizationRoleAtom } from "@state/user-role"
+import AppointmentListWrapper from "../../../../../../components/Com"
 
 export type UserSwitcherType = {
   label: string

@@ -1,7 +1,6 @@
 "use client";
 
-import { forwardRef, useMemo, useState } from "react"
-import {formatDistanceToNow, formatRelative} from "date-fns"
+import { forwardRef} from "react"
 
 import { cn, getBadgeVariantFromLabel } from "@lib/utils"
 import { Badge } from "@components/ui/badge"
@@ -10,18 +9,15 @@ import { useSearchParams } from "next/navigation"
 import Each from "@components/utils/Each"
 import { GetAppointments } from "@actions/appointments/appointments.action"
 import { Separator } from "@components/ui/separator"
-import { useOrgAppointments } from "@hooks/useAppointment";
-import { Input } from "@components/ui/input";
 import { ArrowRight, Search } from "lucide-react";
-import { useUser } from "@auth0/nextjs-auth0/client";
-import { AppointmentStatus, RoutedAptStatus } from "@public/json/appointment-list";
 import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+dayjs.extend(relativeTime)
 interface AppointmentListProps {
   appointments: GetAppointments["data"]
 }
 
 export const AppointmentList = forwardRef<any, AppointmentListProps>(({appointments},ref) => {
-  const { user } = useUser()
   const searchParams = useSearchParams()
   const appointmentId = searchParams.get("_appointment")
   const appointmentStatus = searchParams.get("_aptStatus")
@@ -124,53 +120,3 @@ export const AppointmentList = forwardRef<any, AppointmentListProps>(({appointme
 })
 
 AppointmentList.displayName = "AppointmentList"
-
-
-
-interface AppointmentListWrapperProps {
-  orgUid: string
-}
-export const AppointmentListWrapper = ({orgUid}:AppointmentListWrapperProps) => {
-  const [query, setQuery] = useState("");
-  const searchParams = useSearchParams()
-  const appointmentStatus = searchParams.get("_aptStatus")
-  const routedAptStatus = searchParams.get("_routedAptStatus")
-  const sort = searchParams.get("_sort") as "request" | "schedule"
-  
-  const {data : appointments} = useOrgAppointments({
-    orgUid, 
-    status: appointmentStatus?.toUpperCase() as AppointmentStatus, 
-    routedAptStatus: routedAptStatus?.toUpperCase() as RoutedAptStatus,
-    sort
-  })
-
-  const filteredAppointments = useMemo(() => {
-    const withFallbackAppointments = appointments?.data ?? [];
-    if (!query) return withFallbackAppointments;
-    return withFallbackAppointments.filter((appointment) => {
-      return (
-        appointment.Requesters.some(requester => requester.email.toLowerCase().includes(query.toLowerCase())) ||
-        appointment.subject.toLowerCase().includes(query.toLowerCase()) ||
-        appointment.complaint?.toLowerCase().includes(query.toLowerCase())
-      );
-    });
-  },[appointments,query])
-
-  const updateQuery = (q: string) => {
-    setQuery(q);
-  }
-  
-  return (
-    <>
-      <div className="bg-background/95 p-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <form>
-          <div className="relative">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Search" className="pl-8" type="search" value={query} onChange={e => updateQuery(e.target.value)} />
-          </div>
-        </form>
-      </div>
-      <AppointmentList appointments={filteredAppointments} />
-    </>
-  )
-}

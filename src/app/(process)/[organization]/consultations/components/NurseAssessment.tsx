@@ -54,7 +54,7 @@ export const PreConsultationNote = ({note}: PreConsultationNoteProps) => {
     <Card>
       <CardHeader>
         <CardTitle className="text-primary text-lg">{`Assessed by ${note.createdBy}`}</CardTitle>
-        <CardDescription>Assessed {dayjs(note.updatedAt).fromNow()} <span className="italic text-primary">(readonly)</span></CardDescription>
+        <CardDescription>Assessed on {dayjs(note.updatedAt).format("lll")} ({dayjs(note.updatedAt).fromNow()}) <span className="italic text-primary">(readonly)</span></CardDescription>
       </CardHeader>
       <CardContent>
 

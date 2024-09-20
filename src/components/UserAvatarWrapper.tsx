@@ -1,6 +1,6 @@
 
 import { DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from "./ui/dropdown-menu";
-import { CreditCard, LogOut, Settings } from "lucide-react";
+import { Mail, Settings } from "lucide-react";
 import PHRLink from "../app/(activation)/[organization]/activate/PHRLink";
 import HPProfilesLink from "./HPProfilesLink";
 import DashboardLink from "./DashboardLink";
@@ -28,12 +28,12 @@ export default async function UserAvatarWrapper() {
         <DropdownMenuGroup>
           <PHRLink />
           <HPProfilesLink userId={userId}/>
-          <a href="/billing">
+          <a href="/appointments">
             <DropdownMenuItem>
-              <CreditCard className="mr-2 h-4 w-4" />
-              Billing
-              {/* <DropdownMenuShortcut>⌘B</DropdownMenuShortcut> */}
-            </DropdownMenuItem></a>
+              <Mail className="mr-2 h-4 w-4" />
+              Appointments
+            </DropdownMenuItem>
+          </a>
           <a href="/settings">
             <DropdownMenuItem>
               <Settings className="mr-2 h-4 w-4" />

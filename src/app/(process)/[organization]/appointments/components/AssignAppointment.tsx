@@ -27,12 +27,13 @@ interface AssignAppointmentProps {
 export default function AssignAppointment({disabled = false, appointmentId, onAssigned, assigned}: AssignAppointmentProps) {
   const triggerRef = React.useRef<HTMLButtonElement>(null);
   const {data: hps } = useHPs();
-
   const healthcareProviders = (hps ?? []).reduce((acc, hp) => {
     const role = hp.type;
     if (!acc[role]) {
       acc[role] = [];
     }
+    console.log({assigned});
+    
     if(assigned.some(a => a.role.toUpperCase() === role && a.status !== "DECLINED")) {
       return acc;
     }
@@ -57,7 +58,11 @@ export default function AssignAppointment({disabled = false, appointmentId, onAs
   }[]>);
 
   const action = async (formData: FormData) => {
-    formData.append("routedTo", selectedHp?.email ?? "");
+    
+    if (!selectedHp) return;
+
+    formData.append("routedTo", selectedHp.email);
+    formData.append("routedToRole", selectedHp.role);
     formData.append("appointmentId", appointmentId.toString());
 
     toast.promise(assignAppointmentAction(formData), {

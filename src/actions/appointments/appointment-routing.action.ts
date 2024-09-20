@@ -15,6 +15,7 @@ export const assignAppointmentAction = async (formData: FormData) => {
   if(!session) return response;
 
   const routedTo = formData.get('routedTo') as string;
+  const routedToRole = formData.get('routedToRole') as string;
   const appointmentId = parseInt(formData.get('appointmentId') as string);
 
   if(!routedTo || !appointmentId) {
@@ -28,6 +29,7 @@ export const assignAppointmentAction = async (formData: FormData) => {
       data: {
         routedBy: session.user.email,
         routedTo,
+        routedToRole,
         appointmentId,
       }
     })

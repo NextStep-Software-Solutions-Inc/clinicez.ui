@@ -11,6 +11,7 @@ import { GetConsultationRecord } from "@actions/consultation/consultation-record
 import { ExternalLink } from "lucide-react";
 import Link from "next/link";
 import dynamic from 'next/dynamic';
+import { Tooltip, TooltipContent, TooltipTrigger } from "@components/ui/tooltip";
 
 const VitalSigns = dynamic(() => import('./VitalSigns'), { ssr: false, loading: () => <div>Loading...</div> });
 const Conversation = dynamic(() => import('./Conversation'), { ssr: false, loading: () => <div>Loading...</div> });
@@ -37,7 +38,9 @@ export default async function ConsultationDetails({ consultation }: Consultation
             </Avatar>
             <div className="flex flex-col">
               <span className="text-sm font-semibold">{user.firstName} {user.lastName}</span>
-              <div className="text-xs text-muted-foreground"><span>{user.gender}</span> / <span>{user.dob && differenceInCalendarYears(new Date(), user.dob)}</span></div>
+              <div className="text-xs text-muted-foreground">
+                <span>{user.gender}</span> / <span>{user.dob && differenceInCalendarYears(new Date(), user.dob)}</span>
+              </div>
             </div>
           </div>
           <DropdownMenuProvider>
@@ -53,7 +56,15 @@ export default async function ConsultationDetails({ consultation }: Consultation
                 _appointment: appointment.data?.id,
               }
             }}>
-              <ExternalLink className="w-4 h-4 text-primary"/></Link>
+              <Tooltip>
+                <TooltipTrigger>
+                  <ExternalLink className="w-4 h-4 text-primary"/>
+                </TooltipTrigger>
+                <TooltipContent>
+                  View Appointment
+                </TooltipContent>
+              </Tooltip>
+            </Link>
           </span>
         </CardDescription>
       </CardHeader>

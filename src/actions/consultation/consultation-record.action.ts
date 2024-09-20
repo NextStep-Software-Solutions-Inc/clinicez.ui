@@ -204,3 +204,39 @@ export const updateConsultationRecordAction = async ({consultationId, subject}: 
     }
   }
 }
+
+
+export const deleteConsultationRecordAction = async (consultationId: number) => {
+  const session = await getCachedSession()
+  
+  if(!session) return {
+    status: false,
+    message: "Session not found",
+    data: null
+  }
+
+  try {
+    await prismaTenant.consultationRecord.update({
+      where: { id: consultationId, createdBy: session.user.email },
+      data: {
+        isActive: false
+      }
+    })
+    return {
+      status: true,
+      message: "Consultation Record deleted successfully",
+      data: null
+    }
+  } catch (error) {
+    console.error(error);
+    let message = "Failed to delete consultation record"
+    if(error instanceof PrismaClientKnownRequestError && error.code === 'P2025') {
+      message = error.meta?.cause as string ?? message
+    }
+    return {
+      status: false,
+      message,
+      data: null
+    }
+  }
+}

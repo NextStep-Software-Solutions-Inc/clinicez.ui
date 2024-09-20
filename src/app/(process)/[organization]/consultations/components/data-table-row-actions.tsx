@@ -59,19 +59,19 @@ export function DataTableRowActions<TData>({
           <DropdownMenuItem onSelect={handleDialogItemSelect}>Settings</DropdownMenuItem>
         </ConsultationRecordSettingSheet>
         <DropdownMenuSeparator />
-        <DropdownMenuSub>
+        {/* <DropdownMenuSub>
           <DropdownMenuSubTrigger>Labels</DropdownMenuSubTrigger>
           <DropdownMenuSubContent>
             <DropdownMenuRadioGroup value={consultation.subject}>
-              {/* {labels.map((label) => (
+              {labels.map((label) => (
                 <DropdownMenuRadioItem key={label.value} value={label.value}>
                   {label.label}
                 </DropdownMenuRadioItem>
-              ))} */}
+              ))}
             </DropdownMenuRadioGroup>
           </DropdownMenuSubContent>
         </DropdownMenuSub>
-        <DropdownMenuSeparator />
+        <DropdownMenuSeparator /> */}
         <DropdownMenuItem onClick={notImplemented}>Delete</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

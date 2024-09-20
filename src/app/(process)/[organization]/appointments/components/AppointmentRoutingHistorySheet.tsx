@@ -1,7 +1,10 @@
+import { cancelAppointmentRoutingAction } from "@actions/appointments/appointment-routing.action";
 import { GetAppointment } from "@actions/appointments/appointments.action";
 import { LabelValue } from "@components/LabelValue";
+import { Alert, AlertDescription, AlertTitle } from "@components/ui/alert";
 import { Badge } from "@components/ui/badge";
 import { Button } from "@components/ui/button"
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "@components/ui/context-menu";
 import {
   Sheet,
   SheetClose,
@@ -13,12 +16,15 @@ import {
   SheetTrigger,
 } from "@components/ui/sheet"
 import Each from "@components/utils/Each";
+import { cn } from "@lib/utils";
 import dayjs from "dayjs"
 import utc from "dayjs/plugin/utc"
 dayjs.extend(utc)
 
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Ban, Info } from "lucide-react";
 import Link from "next/link";
+import { toast } from "sonner";
+import { record } from "zod";
 interface AppointmentRoutingHistorySheetProps {
   children?: React.ReactNode;
   onSelect? : (e: Event) => void;
@@ -45,22 +51,37 @@ export default function AppointmentRoutingHistorySheet({ children, onClose, rout
             View appointment routing history.
           </SheetDescription>
         </SheetHeader>
-        <div className="my-5 flex flex-col gap-2">
+        <Alert className="my-5">
+          <Info className="h-4 w-4" />
+          <AlertTitle>Tips!</AlertTitle>
+          <AlertDescription>
+            You can right click on each routing history to view more options.
+          </AlertDescription>
+        </Alert>
+        <div className="my-2 flex flex-col gap-2">
           <Each
             of={routing}
             fallback={<p className="text-center text-sm text-muted-foreground">No routing history found.</p>}
             render={(record) => (
-              <Link href={{
-                pathname: `/${"org"}/consultations/${record.id}`,
-              }}>
-                <div className="text-sm rounded px-3 py-2 bg-slate-100 hover:ring-1 ">
-                  <Badge variant={badgeMap[record.status as keyof typeof badgeMap]} />
-                  <LabelValue className="flex items-center flex-wrap" value={<span className="flex items-center">{record.routedBy} <ArrowRight className="w-4 h-4 mx-2"/></span>} label={record.routedTo} />
-                  {record.amendment && <LabelValue className="flex items-center gap-1 text-xs text-muted-foreground" value="Amendment: " label={record.amendment} />}
-                  <p className="text-xs text-muted-foreground">{dayjs(record.updatedAt).format("llll")}</p>
-                </div>
-
-              </Link>
+              <ContextMenu key={record.id}>
+                <ContextMenuTrigger>
+                  <div className={
+                    cn("text-sm rounded px-3 py-2 bg-slate-100 hover:ring-1", 
+                      record.status === "CANCELLED" && "bg-destructive/5",
+                    )}
+                  >
+                    <Badge variant={badgeMap[record.status as keyof typeof badgeMap]} />
+                    <LabelValue className="flex items-center flex-wrap" value={<span className="flex items-center">{record.routedBy} <ArrowRight className="w-4 h-4 mx-2"/></span>} label={record.routedTo} />
+                    {record.amendment && <LabelValue className="flex items-center gap-1 text-xs text-muted-foreground" value="Amendment: " label={record.amendment} />}
+                    <p className="text-xs text-muted-foreground">{dayjs(record.updatedAt).format("llll")}</p>
+                  </div>
+                </ContextMenuTrigger>
+                <ContextMenuContent>
+                  <ContextMenuItem>
+                    <CancelAssignment appointmentRoutingId={record.id}/>
+                  </ContextMenuItem>
+                </ContextMenuContent>
+              </ContextMenu>
             )}
           />
         </div>
@@ -72,4 +93,25 @@ export default function AppointmentRoutingHistorySheet({ children, onClose, rout
       </SheetContent>
     </Sheet>
   );
+}
+
+
+export const CancelAssignment = ({appointmentRoutingId}: {appointmentRoutingId: number}) => {
+
+  const handleCancelAssignment = () => {
+    toast.promise(cancelAppointmentRoutingAction(appointmentRoutingId), {
+      loading: "Cancelling assignment...",
+      success: (res) => {
+        return res.message
+      },
+      error: "Failed to cancel assignment."
+    })
+  }
+
+  return (
+    <div className="flex items-center gap-2" onClick={handleCancelAssignment}>
+      <Ban className="h-4 w-4" />
+      Cancel Assignment
+    </div>
+  )
 }

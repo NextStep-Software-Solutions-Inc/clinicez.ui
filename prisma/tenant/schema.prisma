@@ -171,6 +171,7 @@ model ConsultationRecord {
   createdBy                   String
   createdAt                   DateTime                     @default(now())
   updatedAt                   DateTime                     @updatedAt
+  isActive                    Boolean                      @default(true)
   Appointment                 Appointment                  @relation(fields: [appointmentId], references: [id])
   NoteContents                NoteContent[]
   ConsultationRecordAttribute ConsultationRecordAttribute?

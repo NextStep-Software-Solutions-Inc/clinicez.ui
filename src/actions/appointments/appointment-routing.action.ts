@@ -121,3 +121,43 @@ export const declineAppointmentAction = async (formData: FormData) => {
     }
   }
 }
+
+
+export const cancelAppointmentRoutingAction = async (appointmentRoutingId: number) => {
+  const session = await getCachedSession();
+  if(!session) return {
+    status: false,
+    message: 'Unauthorized'
+  };
+
+  try {
+    await prismaTenant.appointmentRouting.update({
+      where: { 
+        id: appointmentRoutingId,
+        routedBy: session.user.email,
+        status: {
+          in: ["PENDING"]
+        }
+      },
+      data: { 
+        status: 'CANCELLED',
+        amendedBy: session.user.email,
+        amendedAt: new Date(),
+        amendment: 'Cancelled by the assigner'
+      },
+    })
+    return {
+      status: true,
+      message: 'Appointment cancelled'
+    };
+  } catch (error) {
+    let errorMsg = 'Failed to cancel appointment assignment';
+    if(hasCodeProperty(error) && error.code === 'P2025') {
+      errorMsg = 'Appointment assignment not found or you are not authorized to cancel it';
+    }
+    return {
+      status: false,
+      message: errorMsg
+    }
+  }
+}

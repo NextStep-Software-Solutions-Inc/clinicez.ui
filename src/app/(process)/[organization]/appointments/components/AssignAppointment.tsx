@@ -32,7 +32,6 @@ export default function AssignAppointment({disabled = false, appointmentId, onAs
     if (!acc[role]) {
       acc[role] = [];
     }
-    console.log({assigned});
     
     if(assigned.some(a => a.role.toUpperCase() === role && a.status !== "DECLINED")) {
       return acc;

@@ -83,6 +83,8 @@ model User {
   UserVaccinations                 UserVaccination[]
   VitalSigns                       VitalSign[]
   UserSchedules                    UserSchedule[]
+  UserPermissions                  UserPermission[]
+  OrgUserPermissions               OrgUserPermission[]
 }
 
 model Organization {
@@ -101,7 +103,7 @@ model Organization {
   email                        String?
   FileTypeAttributes           FileTypeAttribute[]
   ScopeFolders                 FolderSetting[]
-  OrgYearLevel                 OrgYearLevel[]
+  OrgYearLevels                OrgYearLevel[]
   Tenant                       Tenant                        @relation(fields: [tenantId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   Colleges                     OrganizationCollege[]
   Departments                  OrganizationDepartment[]
@@ -115,6 +117,9 @@ model Organization {
   Users                        UserOrganization[]
   Roles                        UserOrganizationRole[]
   UserStudentRecords           UserStudentRecord[]
+  OrgAppointmentConfig         OrgAppointmentConfig?
+  OrgUserPermissions           OrgUserPermission[]
+  OrgAppointmentTabs           OrgAppointmentTab[]
 }
 
 model OrganizationSetting {
@@ -123,7 +128,90 @@ model OrganizationSetting {
   isPublic              Boolean      @default(false)
   sendEmailNotification Boolean      @default(true)
   emailToOrgOnly        Boolean      @default(false)
+  enableAppointment     Boolean      @default(true)
+  enableConsultation    Boolean      @default(true)
   Organization          Organization @relation(fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model OrgAppointmentConfig {
+  id                         Int          @id @default(autoincrement())
+  orgId                      Int          @unique
+  maxAppointmentsPerClient   Int          @default(0)
+  lastPerClientIntervalReses DateTime?    @db.Date
+  perClientResetInterval     Int          @default(0)
+  maxAppointmentsPerDay      Int          @default(0)
+  lastPerDayIntervalReset    DateTime?    @db.Date
+  perDayResetInterval        Int          @default(0)
+  Organization               Organization @relation(fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model OrgAppointmentTab {
+  id                     Int                     @id @default(autoincrement())
+  orgId                  Int
+  appointmentTabId       Int
+  Organization           Organization            @relation(fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  AppointmentTab         AppointmentTab          @relation(fields: [appointmentTabId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  OrgRoleAppointmentTabs OrgRoleAppointmentTab[]
+
+  @@unique([orgId, appointmentTabId], name: "unique_org_appointment_tab")
+}
+
+model OrgRoleAppointmentTab {
+  id                  Int                  @id @default(autoincrement())
+  orgRoleId           Int
+  orgAppointmentTabId Int
+  Role                UserOrganizationRole @relation(fields: [orgRoleId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  OrgAppointmentTab   OrgAppointmentTab    @relation(fields: [orgAppointmentTabId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([orgRoleId, orgAppointmentTabId], name: "unique_role_appointment_tab")
+}
+
+model AppointmentTab {
+  id                 Int                 @id @default(autoincrement())
+  name               String              @unique
+  description        String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  deletedAt          DateTime?
+  isActive           Boolean             @default(true)
+  OrgAppointmentTabs OrgAppointmentTab[]
+}
+
+model OrgUserPermission {
+  id           Int          @id @default(autoincrement())
+  orgId        Int
+  userId       Int
+  permissionId Int
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  Organization Organization @relation(fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Permission   Permission   @relation(fields: [permissionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  User         User         @relation(fields: [userId], references: [id])
+
+  @@unique([orgId, userId, permissionId], name: "unique_org_user_permission")
+}
+
+model UserPermission {
+  id           Int        @id @default(autoincrement())
+  userId       Int
+  permissionId Int
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  isActive     Boolean    @default(true)
+  User         User       @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Permission   Permission @relation(fields: [permissionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model Permission {
+  id                 Int                 @id @default(autoincrement())
+  name               String              @unique
+  description        String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  deletedAt          DateTime?
+  isActive           Boolean             @default(true)
+  OrgUserPermissions OrgUserPermission[]
+  UserPermissions    UserPermission[]
 }
 
 model UserOrganization {
@@ -154,7 +242,8 @@ model UserOrganizationRole {
   UserEmploymentRecord         UserEmploymentRecord[]
   UserOrganizations            UserOrganization[]
   Organization                 Organization                  @relation(fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  UserStudentRecord            UserStudentRecord[]
+  UserStudentRecords           UserStudentRecord[]
+  OrgRoleAppointmentTabs       OrgRoleAppointmentTab[]
 
   @@unique([orgId, name], name: "unique_organization_role")
 }

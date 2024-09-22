@@ -28,12 +28,6 @@ export default async function UserAvatarWrapper() {
         <DropdownMenuGroup>
           <PHRLink />
           <HPProfilesLink userId={userId}/>
-          <a href="/appointments">
-            <DropdownMenuItem>
-              <Mail className="mr-2 h-4 w-4" />
-              Appointments
-            </DropdownMenuItem>
-          </a>
           <a href="/settings">
             <DropdownMenuItem>
               <Settings className="mr-2 h-4 w-4" />

@@ -54,24 +54,9 @@ const icons: Record<string, LucideIcon> = {
   completed: MailOpen,
 };
 
-const appointmentStatusesWithRoles = {
-  all: ["student", "employee", "admin", "receptionist", "doctor", "nurse"],
-  pending: ["student", "employee", "admin", "receptionist"],
-  received: ["student", "employee", "admin", "receptionist"],
-  rejected: ["student", "employee", "admin", "receptionist"],
-  rescheduled: ["student", "employee", "admin", "receptionist", "doctor", "nurse"],
-  routed: ["student", "employee", "admin", "receptionist", "doctor", "nurse"],
-  completed: ["student", "employee", "admin", "receptionist", "doctor", "nurse"],
-};
-
-const routedAppointmentStatusesWithRoles = {
-  pending: ["admin", "receptionist", "doctor", "nurse"],
-  accepted: ["doctor", "nurse", "admin", "receptionist"],
-  declined: ["doctor", "nurse", "admin", "receptionist"],
-}
 
 const createStatusLinks = (
-  statusesWithRoles: Record<string, string[]>,
+  statusesWithRoles: Record<string, number[]>,
   statusCounts: Record<string, number> | undefined,
   currentStatus: string | null,
   params: (status: string) => { key: string, value: string | null }[]
@@ -88,10 +73,15 @@ const createStatusLinks = (
       });
     });
     return acc;
-  }, {} as Record<string, AppointmentStatusNavProps["links"]>);
+  }, {} as Record<number, AppointmentStatusNavProps["links"]>);
 };
 
 interface AppointmentPanelProps {
+  tabs: { 
+    name: string, 
+    description: string | null
+    roles: { id: number, name: string }[]
+   }[]
   appointmentStatusCounts?: Record<string, number>
   routedAppointmentStatusCounts?: Record<string, number>
   defaultLayout: number[] | undefined
@@ -106,8 +96,21 @@ export default function AppointmentPanel({
   defaultLayout = [265, 440, 655],
   defaultCollapsed = false,
   navCollapsedSize,
-  children
+  children,
+  tabs
 }: AppointmentPanelProps) {
+
+  const appointmentStatusAsTabs = tabs.reduce((acc, tab) => {
+    acc[tab.name] = [...new Set(tab.roles.map(role => role.id))]
+    return acc
+  }, {} as Record<string, number[]>)
+  
+  const inRouteAppointmentStatuses = ["pending", "accepted", "declined"].reduce((acc, tab) => {
+    acc[tab] = [...new Set(tabs.flatMap(tab => tab.roles.map(role => role.id)))]
+    return acc
+  }, {} as Record<string, number[]>)
+
+
   const [isCollapsed, setIsCollapsed] = React.useState(defaultCollapsed)
   const searchParams = useSearchParams();
   const [userDefaultOrgRole, setUserDefaultOrgRole] = useAtom(userDefaultOrganizationRoleAtom)
@@ -118,37 +121,38 @@ export default function AppointmentPanel({
   const sort = searchParams.get("_sort")  ?? "request";
   const routedAptStatus = searchParams.get("_routedAptStatus");
   const organization = params.organization as string;
-  const activeRole = (userDefaultOrgRole[organization]?.roleName ?? "").toLowerCase();
+  const activeRoleId = userDefaultOrgRole[organization]?.roleId ?? 0;
   const {data: orgRoles} = useOrgRoles(organization, {userId})
   
   const roles = React.useMemo(() => (orgRoles ?? [])?.map((role) => {
     return {
       label: role.name,
-      value: role.name.toLowerCase(),
+      value: role.id.toString(),
       icon: UserIcon,
       isDefault: role.UserDefaultOrganizationRoles.some((r) => r.User.userId === userId),
     }
   }), [orgRoles, userId])
 
   const appointmentStatusLinks = React.useMemo(() => createStatusLinks(
-    appointmentStatusesWithRoles,
+    appointmentStatusAsTabs,
     appointmentStatusCounts,
     aptStatus,
     (status) => [{ key: "_aptStatus", value: status }, { key: "_routedAptStatus", value: null }, {key: "_appointment", value: null}]
-  ), [appointmentStatusCounts, aptStatus]);
+  ), [appointmentStatusCounts, aptStatus, appointmentStatusAsTabs]);
   
   const routerAppointmentStatusLinks = React.useMemo(() => createStatusLinks(
-    routedAppointmentStatusesWithRoles,
+    inRouteAppointmentStatuses,
     routedAppointmentStatusCounts,
     routedAptStatus,
     (status) => [{ key: "_routedAptStatus", value: status }, { key: "_aptStatus", value: "routed" }, {key: "_appointment", value: null}]
-  ), [routedAppointmentStatusCounts, routedAptStatus]);
+  ), [routedAppointmentStatusCounts, routedAptStatus, inRouteAppointmentStatuses]);
 
-  const changeRole = React.useCallback((role: string) => {
+  const changeRole = React.useCallback((roleId: string) => {
+    const role = (orgRoles ?? []).find((role) => role.id === Number(roleId))
     setUserDefaultOrgRole({
       [organization]: {
-        roleId: orgRoles?.find((r) => r.name === role)?.id,
-        roleName: role
+        roleId: role?.id,
+        roleName: role?.name
       }})
   }, [orgRoles, organization, setUserDefaultOrgRole])
   
@@ -210,7 +214,7 @@ export default function AppointmentPanel({
             )}
           >
             <Switcher
-              value={activeRole}
+              value={activeRoleId.toString()}
               isCollapsed={isCollapsed}
               onSwitch={changeRole}
               options={roles}
@@ -222,15 +226,15 @@ export default function AppointmentPanel({
           </div>
           <AppointmentStatusNav
             isCollapsed={isCollapsed}
-            links={appointmentStatusLinks[activeRole as keyof typeof appointmentStatusLinks] ?? []}
+            links={appointmentStatusLinks[activeRoleId as keyof typeof appointmentStatusLinks] ?? []}
           />
           <Separator />
           <div className="px-5 pt-2 font-semibold">
-            Routed Appointments
+            In-route Appointments
           </div>
           <AppointmentStatusNav
             isCollapsed={isCollapsed}
-            links={routerAppointmentStatusLinks[activeRole as keyof typeof routerAppointmentStatusLinks] ?? []}
+            links={routerAppointmentStatusLinks[activeRoleId as keyof typeof routerAppointmentStatusLinks] ?? []}
           />
         </ResizablePanel>
         <ResizableHandle withHandle />

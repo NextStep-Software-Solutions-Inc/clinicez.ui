@@ -92,7 +92,6 @@ export default function AppointmentDisplay() {
   if(!(aptUser)) {
     return <div className="p-8 text-center text-muted-foreground">User not found</div>
   }
-  console.log(freshAppointment.data);
   
   return (
     <div className="flex h-full flex-col">

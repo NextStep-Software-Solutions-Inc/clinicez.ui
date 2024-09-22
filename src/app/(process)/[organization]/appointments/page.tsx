@@ -8,6 +8,7 @@ import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth
 import AppointmentDisplay from "./mail/components/AppointmentDisplay";
 import Suspend from "@components/Suspend";
 import { Metadata } from "next";
+import { getOrgAppointmentTabsAction } from "@actions/organizations/org-appointment-tab..action";
 
 export const maxDuration = 30
 export const revalidate = 60
@@ -23,9 +24,10 @@ async function AppointmentsPage({ searchParams, params }: AppRouterPageRouteOpts
   const layout = cookies().get("react-resizable-panels:layout")
   const collapsed = cookies().get("react-resizable-panels:collapsed")
 
-  const [appointmentCounts, routedAptCounts] = await Promise.all([
+  const [appointmentCounts, routedAptCounts, tabs] = await Promise.all([
     getAppointmentCountsAction(organization),
-    getRoutedAppointmentCountsAction(organization)
+    getRoutedAppointmentCountsAction(organization),
+    getOrgAppointmentTabsAction(organization)
   ])
   
   const defaultLayout = layout ? JSON.parse(layout.value) : undefined
@@ -48,6 +50,14 @@ async function AppointmentsPage({ searchParams, params }: AppRouterPageRouteOpts
       <div className="rounded-[0.5rem] border bg-background shadow">
         <Suspend>
           <AppointmentPanel
+            tabs={tabs.data.map(tab => ({
+              name: tab.AppointmentTab.name,
+              description: tab.AppointmentTab.description,
+              roles: tab.OrgRoleAppointmentTabs.map(role => ({
+                id: role.Role.id,
+                name: role.Role.name
+              }))      
+            }))}
             appointmentStatusCounts={appointmentCounts.data}
             routedAppointmentStatusCounts={routedAptCounts.data}
             defaultLayout={defaultLayout}

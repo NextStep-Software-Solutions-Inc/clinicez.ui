@@ -8,6 +8,12 @@ import { ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@components/ui/badge";
 import { getConsultationRecordAction } from "@actions/consultation/consultation-record.action";
+import { getUserAction } from "@actions/users/user.action";
+import { notFound } from "next/navigation";
+import { Avatar, AvatarFallback } from "@components/ui/avatar";
+import Image from "next/image";
+import { differenceInCalendarYears } from "date-fns";
+import { Card, CardContent, CardHeader, CardTitle } from "@components/ui/card";
 
 export const metadata: Metadata = {
   title: "Consultation Details",
@@ -19,9 +25,11 @@ async function ConsultationPage({params}: AppRouterPageRouteOpts) {
   const orgUid = params?.organization as string
 
   const consultation = await getConsultationRecordAction(consultationId, orgUid)
+  if(!consultation.data) notFound()
+  const hp = await getUserAction(consultation.data?.createdBy)
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div className="group/issue flex sticky top-10 z-10 bg-opacity-30 backdrop-blur p-2 items-center">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">{consultation.data?.subject}</h2>
@@ -44,6 +52,7 @@ async function ConsultationPage({params}: AppRouterPageRouteOpts) {
         </Link>
       </div>
       <Separator />
+
       <Suspend>
         <ConsultationDetails consultation={consultation.data! }/>
       </Suspend>

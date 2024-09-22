@@ -60,6 +60,12 @@ export const getConsultationRecordAction = cache(async (consultationId: number, 
       createdBy: true,
       createdAt: true,
       updatedAt: true,
+      ConsultationRecordAttribute: {
+        select: {
+          noteTemplateName: true,
+          status: true,
+        }
+      },
       Appointment: {
         select: {
           Requesters: {
@@ -128,6 +134,12 @@ export const getConsultationRecordsAction = async ({orgUid}: {orgUid: string}) =
       createdBy: true,
       createdAt: true,
       updatedAt: true,
+      ConsultationRecordAttribute: {
+        select: {
+          noteTemplateName: true,
+          status: true,
+        }
+      },
       Appointment: {
         select: {
           Requesters: {

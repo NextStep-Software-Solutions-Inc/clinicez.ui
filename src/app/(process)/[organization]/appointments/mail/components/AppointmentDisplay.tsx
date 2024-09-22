@@ -140,16 +140,15 @@ export default function AppointmentDisplay() {
           )}
         </div>
         <Separator />
-        <ScrollArea className="flex-auto whitespace-pre-wrap p-4 text-sm  h-0">
+        <ScrollArea className="flex-auto whitespace-pre-wrap p-4 text-sm h-0">
           {freshAppointment.data.complaint}
-            
           <Separator className="my-2" />
           <Attachments attachments={(freshAppointment.data.AppointmentAttachments ?? []).map(a => a.url)}/>
         </ScrollArea>
         <Separator />
         {
           freshAppointment.data.AppointmentRouting.some(apt => apt.status === "ACCEPTED") && 
-          <div className="px-5 py-2 text-xs group/action">
+          <div className="px-5 py-2 text-xs group/action max-h-40 scrollBox no-scrollbar">
             <div className="flex items-center">
               <span className="font-semibold text-base">Latest Pre-Consultation Notes</span> 
               <Pencil className="h-4 w-4 ml-auto invisible group-hover/action:visible" />
@@ -194,7 +193,7 @@ export default function AppointmentDisplay() {
           </div>
         }
         <Separator />
-        <div className="px-5 py-2 text-xs">
+        <div className="px-5 py-2 text-xs max-h-40 scrollBox no-scrollbar">
           <span className="font-semibold text-base">Meta</span> <br />
           {freshAppointment.data?.AppointmentAttribute?.completedAt && <LabelValue className="flex items-center gap-2" label={dayjs(freshAppointment.data.AppointmentAttribute.completedAt).format("llll")} value="Date received:" />}
           {freshAppointment.data?.AppointmentAttribute?.completedBy && <LabelValue className="flex items-center gap-2" label={freshAppointment.data.AppointmentAttribute.completedBy} value="Completed by:" />}
@@ -205,14 +204,14 @@ export default function AppointmentDisplay() {
           {freshAppointment.data?.AppointmentAttribute?.rejectedBy && <LabelValue className="flex items-center gap-2" label={freshAppointment.data.AppointmentAttribute.rejectedBy} value="Rejected by:" />}
         </div>
         <Separator />
-        <div className="px-5 py-2 text-xs">
+        <div className="px-5 py-2 text-xs max-h-40 scrollBox no-scrollbar">
           <span className="font-semibold text-base">{freshAppointment.data.AppointmentAttribute?.status !== "ROUTED" ? "Preferred": "Assigned"} Schedule</span> <br />
           {freshAppointment.data.AppointmentAttribute?.date && <LabelValue className="flex items-center gap-2" label={dayjs(freshAppointment.data.AppointmentAttribute.date).format("ll - dddd")} value="Date:" />}
           {(freshAppointment.data.AppointmentAttribute?.date && freshAppointment.data.AppointmentAttribute?.timeStart && freshAppointment.data.AppointmentAttribute?.timeEnd) && <LabelValue className="flex items-center gap-2" label={`${formatDateTime(freshAppointment.data.AppointmentAttribute.date, freshAppointment.data.AppointmentAttribute.timeStart).format("hh:mm A")} - ${formatDateTime(freshAppointment.data.AppointmentAttribute.date, freshAppointment.data.AppointmentAttribute.timeEnd).format("hh:mm A")}`} value="Time:" />}
           {freshAppointment.data.AppointmentAttribute?.preferredAppointee && <LabelValue className="flex items-center gap-2" label={freshAppointment.data.AppointmentAttribute.preferredAppointee ?? ""} value={`Preferred HP:`} />}
         </div>
         <Separator />
-        <div className="flex items-center p-4 gap-2">
+        <div className="flex items-center p-4 gap-2 max-h-40 scrollBox no-scrollbar">
           <Badge variant={getBadgeVariantFromLabel(freshAppointment.data.AppointmentAttribute?.AppointmentType.name ?? "")}>
             {freshAppointment.data.AppointmentAttribute?.AppointmentType.name}
           </Badge>

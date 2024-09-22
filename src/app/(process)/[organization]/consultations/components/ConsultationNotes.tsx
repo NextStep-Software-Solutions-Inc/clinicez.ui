@@ -25,18 +25,22 @@ const template = {
   name: "SOAP",
   sections: [
     {
+      id: 1,
       name: "subjective",
       label: "Subjective History"
     },
-    {
+    { 
+      id: 2,
       name: "objective",
       label: "Objective History"
     },
     {
+      id: 3,
       name: "assessment",
       label: "Assessment"
     },
     {
+      id: 4,
       name: "plan",
       label: "Plan"
     }

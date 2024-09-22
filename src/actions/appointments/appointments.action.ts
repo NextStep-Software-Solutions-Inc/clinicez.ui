@@ -277,7 +277,7 @@ export const getAppointmentAction = async (id: number, orgUid?: string) => {
           subject: true,
           ConsultationRecordAttribute: {
             select: {
-              template: true
+              noteTemplateName: true
             }
           }
         }

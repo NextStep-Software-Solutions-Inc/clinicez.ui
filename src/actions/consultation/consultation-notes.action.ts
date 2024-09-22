@@ -17,7 +17,7 @@ export const upsertConsultationNotesAction = async (data: FormData) => {
   const section = data.get('section') as string
   const content = data.get('content') as string
   try {
-    const updatedNotes = await prismaTenant.noteContent.upsert({
+    const updatedNotes = await prismaTenant.consultationNote.upsert({
       where: {
         unique_consultation_record_section: {
           consultationRecordId,
@@ -36,7 +36,7 @@ export const upsertConsultationNotesAction = async (data: FormData) => {
     })
     return {
       status: true,
-      message: `Saving ${section} ...`,
+      message: `Saving ...`,
       data: updatedNotes
     }
   } catch (error) {
@@ -55,7 +55,7 @@ export const upsertConsultationNotesAction = async (data: FormData) => {
 
 export type GetConsultationNotes = Awaited<ReturnType<typeof getConsultationNotesAction>>
 export const getConsultationNotesAction = async (consultationRecordId: number) => {
-  return await prismaTenant.noteContent.findMany({
+  return await prismaTenant.consultationNote.findMany({
     where: {
       consultationRecordId: consultationRecordId,
     }

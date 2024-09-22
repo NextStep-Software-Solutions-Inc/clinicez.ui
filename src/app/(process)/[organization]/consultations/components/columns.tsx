@@ -95,6 +95,23 @@ export const columns: ColumnDef<GetConsultationRecords["data"][number]>[] = [
     },
   },
   {
+    accessorKey: "status",
+    accessorFn: (row) => row.ConsultationRecordAttribute?.status,
+    filterFn: (row, id, filterValues) => {
+      return filterValues.includes(row.original.ConsultationRecordAttribute?.status)
+    },
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Status" />
+    ),
+    cell: ({ row }) => {
+      return (
+        <div className="flex items-center text-xs">
+          <Badge variant="outline">{row.original.ConsultationRecordAttribute?.status}</Badge>
+        </div>
+      )
+    },
+  },
+  {
     id: "actions",
     cell: ({ row }) => {
       return (

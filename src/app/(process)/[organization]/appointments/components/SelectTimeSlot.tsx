@@ -32,7 +32,7 @@ export default function SelectTimeSlot({nextStep, prevStep, isFirstStep, isLastS
       <Accordion type="single" defaultValue="filter" collapsible className="w-full">
         <AccordionItem value="filter">
           <AccordionTrigger>Select a Date</AccordionTrigger>
-          <AccordionContent className="overflow-y-auto max-h-[calc(50dvh)] no-scrollbar scrollbox px-2">
+          <AccordionContent className="overflow-y-auto max-h-[calc(50dvh)] no-scrollbar scrollBox px-2">
             <Alert>
               <AlertTitle>
           Select Appointment Type, Service, and Doctor to view available time slots

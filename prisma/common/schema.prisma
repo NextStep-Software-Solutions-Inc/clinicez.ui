@@ -120,6 +120,7 @@ model Organization {
   OrgAppointmentConfig         OrgAppointmentConfig?
   OrgUserPermissions           OrgUserPermission[]
   OrgAppointmentTabs           OrgAppointmentTab[]
+  OrgConsultationConfig        OrgConsultationConfig?
 }
 
 model OrganizationSetting {
@@ -143,6 +144,36 @@ model OrgAppointmentConfig {
   lastPerDayIntervalReset    DateTime?    @db.Date
   perDayResetInterval        Int          @default(0)
   Organization               Organization @relation(fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model OrgConsultationConfig {
+  id             Int          @id @default(autoincrement())
+  orgId          Int          @unique
+  NoteTemplateId Int
+  NoteTemplate   NoteTemplate @relation(fields: [NoteTemplateId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Organization   Organization @relation(fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model NoteTemplate {
+  id                     Int                     @id @default(autoincrement())
+  name                   String                  @unique
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  deletedAt              DateTime?
+  isActive               Boolean                 @default(true)
+  NoteSections           NoteSection[]
+  OrgConsultationConfigs OrgConsultationConfig[]
+}
+
+model NoteSection {
+  id             Int          @id @default(autoincrement())
+  noteTemplateId Int
+  name           String
+  description    String?
+  isActive       Boolean      @default(true)
+  NoteTemplate   NoteTemplate @relation(fields: [noteTemplateId], references: [id])
+
+  @@unique([noteTemplateId, name], name: "unique_note_section")
 }
 
 model OrgAppointmentTab {

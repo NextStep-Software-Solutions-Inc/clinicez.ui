@@ -29,23 +29,27 @@ export function DataTableToolbar<TData>({
           }
           className="h-8 w-[150px] lg:w-[250px]"
         />
-        {table.getColumn("service") && (
+        {table.getColumn("status") && (
           <DataTableFacetedFilter
-            column={table.getColumn("service")}
-            title="Service"
+            column={table.getColumn("status")}
+            title="Status"
             options={[
               {
-                label: "Consultation",
-                value: "consultation",
+                label: "Open",
+                value: "OPEN",
               },
               {
-                label: "Appointment",
-                value: "appointment",
+                label: "Resolved",
+                value: "RESOLVED",
+              },
+              {
+                label: "Closed",
+                value: "CLOSED",
               }
             ]}
           />
         )}
-        {table.getColumn("system") && (
+        {/* {table.getColumn("system") && (
           <DataTableFacetedFilter
             column={table.getColumn("system")}
             title="System"
@@ -92,7 +96,7 @@ export function DataTableToolbar<TData>({
               }
             ]}
           />
-        )}
+        )} */}
         {isFiltered && (
           <Button
             variant="ghost"

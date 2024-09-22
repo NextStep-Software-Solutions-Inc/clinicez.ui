@@ -8,7 +8,9 @@ export const GET = withJwtAuth(async (req: NextRequest, { params }: {
   }
 }) => {
   const userId = params.userId;
-
-  const user = await getUserAction(userId);
+  const searchParams = req.nextUrl.searchParams
+  const orgUid = searchParams.get("orgUid") ?? undefined;
+  
+  const user = await getUserAction(userId, orgUid);
   return NextResponse.json(user, {status: 200});
 });

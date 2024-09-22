@@ -3,8 +3,9 @@ import "server-only";
 
 import prismaCommon from "@lib/prisma-common";
 import { Prisma } from '@prisma/common/client';
+import { cache } from "react";
 
-export const getOrgAppointmentTabsAction = async (orgUid: string) => {
+export const getOrgAppointmentTabsAction = cache(async (orgUid: string) => {
   try {
     const orgAppointmentTabs = await prismaCommon.orgAppointmentTab.findMany({
       where: { 
@@ -31,7 +32,7 @@ export const getOrgAppointmentTabsAction = async (orgUid: string) => {
         }
       }
     });
-    
+      
     return {
       status: true,
       message: "Org appointment tabs fetched successfully",
@@ -49,4 +50,4 @@ export const getOrgAppointmentTabsAction = async (orgUid: string) => {
       data: []
     }
   }
-}
+})

@@ -1,17 +1,12 @@
 "use client";
 
-import {differenceInCalendarYears } from "date-fns"
-import {
-  CheckCircle,
-  Forward,
-  MoreVertical,
-  Pencil,
-} from "lucide-react"
+import dayjs from "dayjs"
+import utc from "dayjs/plugin/utc"
 
-import {
-  Avatar,
-  AvatarFallback,
-} from "@components/ui/avatar"
+import {differenceInCalendarYears } from "date-fns"
+import { MoreVertical, Pencil} from "lucide-react"
+
+import { Avatar, AvatarFallback } from "@components/ui/avatar"
 import { Button } from "@components/ui/button"
 
 import { Separator } from "@components/ui/separator"
@@ -20,7 +15,6 @@ import Image from "next/image"
 import Each from "@components/utils/Each"
 import { Badge } from "@components/ui/badge"
 import ConsultationRecordSheet from "../../components/ConsultationRecordSheet"
-import { SheetTrigger } from "@components/ui/sheet"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@components/ui/dropdown-menu"
 import { useParams, useSearchParams } from "next/navigation"
 import { useUser as useAptUser } from "@hooks/useUser";
@@ -29,14 +23,9 @@ import PageLoading from "@components/PageLoading";
 import { revalidatePath } from "@actions/cache.action";
 import { mutate } from "swr";
 import { useAppointmentTools } from "../../components/useAppointmentActions";
-import { userDefaultOrganizationRoleAtom } from "@state/user-role";
-import { useAtomValue } from "jotai";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import Attachments from "./Attachments";
 import { formatDateTime, getBadgeVariantFromLabel } from "@lib/utils";
-import dayjs from "dayjs"
-import utc from "dayjs/plugin/utc"
-dayjs.extend(utc)
 
 import { LabelValue } from "@components/LabelValue";
 import PreConsultationNoteSheet from "../../components/PreConsultationNoteSheet";
@@ -45,6 +34,8 @@ import { GetAppointment } from "@actions/appointments/appointments.action";
 import AppointmentRoutingHistorySheet from "../../components/AppointmentRoutingHistorySheet";
 import CompleteAppointment from "../../components/CompleteAppointment";
 
+dayjs.extend(utc)
+
 export default function AppointmentDisplay() {
 
   const { user } = useUser()
@@ -52,7 +43,6 @@ export default function AppointmentDisplay() {
   const searchParams = useSearchParams()
   const organization = params?.organization as string
   const appointmentId = parseInt(searchParams.get("_appointment") ?? "")
-  const activeRole = useAtomValue(userDefaultOrganizationRoleAtom)[organization]?.roleName?.toLowerCase()
   const {data:freshAppointment, isLoading: loadingAppointment} = useOrgAppointment({
     orgId: organization,
     appointmentId: appointmentId
@@ -64,7 +54,7 @@ export default function AppointmentDisplay() {
       revalidate:true
     })
   }
-  const {data: aptUser, isLoading: loadingUser} = useAptUser({email: freshAppointment?.data?.Requesters[0].email})
+  const {data: aptUser, isLoading: loadingUser} = useAptUser({email: freshAppointment?.data?.Requesters[0].email, orgUid: organization})
   const {tools: appointmentTools} = useAppointmentTools({
     appointment: freshAppointment?.data,
     revalidate
@@ -92,6 +82,8 @@ export default function AppointmentDisplay() {
   if(!(aptUser)) {
     return <div className="p-8 text-center text-muted-foreground">User not found</div>
   }
+
+  const myOrgPermission = aptUser.OrgUserPermissions.flatMap(p => p.Permission).map(p => p.name)
   
   return (
     <div className="flex h-full flex-col">
@@ -103,7 +95,7 @@ export default function AppointmentDisplay() {
           <Each
             key={freshAppointment.data.id}
             of={appointmentTools.filter((tool) => {
-              const enable = tool.roles.includes(activeRole ?? "") 
+              const enable = tool.permissions.every(p => myOrgPermission.includes(p))
                 && tool.appointmentStatuses.includes(freshAppointment.data!.AppointmentAttribute?.status.toLocaleLowerCase() ?? "") 
                 && (tool.routedAptStatuses.length === 0 || freshAppointment.data?.AppointmentRouting.some(apt =>tool.routedAptStatuses.includes(apt.status.toLocaleLowerCase()) && apt.routedTo === user.email))
               return enable
@@ -114,7 +106,7 @@ export default function AppointmentDisplay() {
         </div>
         <div className="ml-auto flex items-center gap-2">
           {
-            freshAppointment.data.AppointmentAttribute?.status === "ROUTED" &&
+            freshAppointment.data.AppointmentAttribute?.status === "ROUTED" && ["complete:org:appointment"].every(p => myOrgPermission.includes(p)) &&
             <CompleteAppointment appointmentId={freshAppointment.data.id} onCompleted={revalidate} disabled={!freshAppointment.data.id}/>
           }
         </div>

@@ -91,7 +91,7 @@ export const getUsersAction = async (filter?:GetUsersFiltersType) => {
 
 
 export type GetUser = Awaited<ReturnType<typeof getUserAction>>
-export const getUserAction = cache(async (key: string)=> {
+export const getUserAction = cache(async (key: string, orgUid?: string)=> {
   const user = await prisma.user.findFirstOrThrow({ 
     where: { 
       isActive: true,
@@ -100,6 +100,30 @@ export const getUserAction = cache(async (key: string)=> {
         { email: key }
       ], 
     },
+    include: {
+      OrgUserPermissions: {
+        where: {
+          Organization: {
+            isActive: true,
+            orgId: orgUid
+          }
+        },
+        select: {
+          Organization: {
+            select: {
+              orgId: true,
+              name: true
+            }
+          },
+          Permission: {
+            select: {
+              name: true
+            }
+          }
+        }
+      }
+    }
+    
   }); 
   return user;
 })

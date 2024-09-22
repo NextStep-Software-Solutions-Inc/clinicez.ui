@@ -2,13 +2,13 @@
 import "server-only";
 
 import { delay } from "@lib/wait";
-import { decode } from "jsonwebtoken";
 import prismaTenant from "@lib/prisma-tenant";
 import {
   RoutedAptStatus,
   AppointmentStatus
 } from "@public/json/appointment-list";
 import { getCachedSession } from "@actions/session.action";
+import { checkUserPermission } from "@lib/auth";
 
 export type GetAppointmentFilter = {
   orgUid?: string;
@@ -403,23 +403,3 @@ export const rescheduleAppointmentAction = async (formData: FormData) => {
   return true;
 };
 
-function checkUserPermission(
-  accessToken: string,
-  permissions: string[] = []
-): boolean {
-  if (permissions.length === 0) return true;
-  return permissions.every((permission) =>
-    parseAccessToken(accessToken, "permissions").includes(permission)
-  );
-}
-
-// lets create a function that parse the accessToken to get the permission claims
-function parseAccessToken(accessToken: string, claim: string): string[] {
-  const payload = decode(accessToken, {
-    json: true
-  });
-  if (payload && claim in payload) {
-    return payload[claim];
-  }
-  return [];
-}

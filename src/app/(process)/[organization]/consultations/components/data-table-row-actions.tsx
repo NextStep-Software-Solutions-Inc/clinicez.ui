@@ -34,7 +34,12 @@ export function DataTableRowActions<TData>({
 
   const handleArchive = () => {
     toast.promise(archiveConsultationRecordAction(consultation.id), {
-      position: "top-center"
+      position: "top-center",
+      loading: "Archiving...",
+      success: (res) => {
+        return res.message
+      },
+      error: "Failed to archive",
     })
   }
   return (

@@ -14,6 +14,8 @@ import { Avatar, AvatarFallback } from "@components/ui/avatar";
 import Image from "next/image";
 import { differenceInCalendarYears } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@components/ui/card";
+import { DropdownMenuProvider } from "@components/DropdownMenuProvider";
+import { DataTableRowActions } from "../components/data-table-row-actions";
 
 export const metadata: Metadata = {
   title: "Consultation Details",
@@ -41,21 +43,31 @@ async function ConsultationPage({params}: AppRouterPageRouteOpts) {
             <Badge variant="outline">{consultation.data?.Appointment.AppointmentAttribute?.AppointmentMode?.name}</Badge>
           </div>
         </div>
-        <Link className="ml-auto invisible group-hover/issue:visible transition-all" href={{
-          pathname: `/${params?.organization}/generate-document`,
-          query: {
-            _consultationId: consultationId,
-            _patientId: consultation.data?.id,
-          }
-        }}>
-          <Button variant="default" size="sm">Issue e-Document <ExternalLink className="h-4 w-4 ml-2"/></Button>
-        </Link>
+        <div className="ml-auto flex gap-1">
+          <Link className="invisible group-hover/issue:visible transition-all" href={{
+            pathname: `/${params?.organization}/generate-document`,
+            query: {
+              _consultationId: consultationId,
+              _patientId: consultation.data?.id,
+            }
+          }}>
+            <Button variant="default" size="sm">Issue e-Document <ExternalLink className="h-4 w-4 ml-2"/></Button>
+          </Link>
+          <Button variant="outline" size="sm" className="">Set Resolved</Button>
+          <DropdownMenuProvider>
+            <DataTableRowActions consultation={consultation.data}/>
+          </DropdownMenuProvider>
+        </div>
       </div>
       <Separator />
 
       <Suspend>
         <ConsultationDetails consultation={consultation.data! }/>
       </Suspend>
+
+      <div className="w-full text-center sticky bottom-5">
+       
+      </div>
     </div>
   );
 }

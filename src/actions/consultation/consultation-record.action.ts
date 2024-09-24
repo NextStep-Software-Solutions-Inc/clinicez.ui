@@ -252,3 +252,40 @@ export const deleteConsultationRecordAction = async (consultationId: number) => 
     }
   }
 }
+
+
+
+export const archiveConsultationRecordAction = async (consultationId: number) => {
+  const session = await getCachedSession()
+  
+  if(!session) return {
+    status: false,
+    message: "Session not found",
+    data: null
+  }
+
+  try {
+    await prismaTenant.consultationRecord.update({
+      where: { id: consultationId, createdBy: session.user.email, isActive: true, isArchived: false },
+      data: {
+        isArchived: true
+      }
+    })
+    return {
+      status: true,
+      message: "Consultation Record archived successfully",
+      data: null
+    }
+  } catch (error) {
+    console.error(error);
+    let message = "Failed to archive consultation record"
+    if(error instanceof PrismaClientKnownRequestError && error.code === 'P2025') {
+      message = error.meta?.cause as string ?? message
+    }
+    return {
+      status: false,
+      message,
+      data: null
+    }
+  }
+}

@@ -17,7 +17,7 @@ import { Badge } from "@components/ui/badge"
 import ConsultationRecordSheet from "../../components/ConsultationRecordSheet"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@components/ui/dropdown-menu"
 import { useParams, useSearchParams } from "next/navigation"
-import { useUser as useAptUser } from "@hooks/useUser";
+import { useUser as useUserDb } from "@hooks/useUser";
 import { useOrgAppointment } from "@hooks/useAppointment";
 import PageLoading from "@components/PageLoading";
 import { revalidatePath } from "@actions/cache.action";
@@ -54,7 +54,9 @@ export default function AppointmentDisplay() {
       revalidate:true
     })
   }
-  const {data: aptUser, isLoading: loadingUser} = useAptUser({email: freshAppointment?.data?.Requesters[0].email, orgUid: organization})
+
+  const {data: aptUser, isLoading: loadingUser} = useUserDb({email: freshAppointment?.data?.Requesters[0].email})
+  const {data: authUser } = useUserDb({userId: user?.sub ?? "", orgUid: organization})
   const {tools: appointmentTools} = useAppointmentTools({
     appointment: freshAppointment?.data,
     revalidate
@@ -63,9 +65,7 @@ export default function AppointmentDisplay() {
   if (!appointmentId) {
     return <div className="p-8 text-center text-muted-foreground">No appointment selected</div>
   }
-  if (!user) {
-    return <div className="p-8 text-center text-muted-foreground">User not found</div>
-  }
+
 
   if (loadingAppointment) {
     return <PageLoading label="Loading Appointment" />
@@ -83,7 +83,7 @@ export default function AppointmentDisplay() {
     return <div className="p-8 text-center text-muted-foreground">User not found</div>
   }
 
-  const myOrgPermission = aptUser.OrgUserPermissions.flatMap(p => p.Permission).map(p => p.name)
+  const myOrgPermission = authUser?.OrgUserPermissions.flatMap(p => p.Permission).map(p => p.name) ?? []
   
   return (
     <div className="flex h-full flex-col">
@@ -97,7 +97,7 @@ export default function AppointmentDisplay() {
             of={appointmentTools.filter((tool) => {
               const enable = tool.permissions.every(p => myOrgPermission.includes(p))
                 && tool.appointmentStatuses.includes(freshAppointment.data!.AppointmentAttribute?.status.toLocaleLowerCase() ?? "") 
-                && (tool.routedAptStatuses.length === 0 || freshAppointment.data?.AppointmentRouting.some(apt =>tool.routedAptStatuses.includes(apt.status.toLocaleLowerCase()) && apt.routedTo === user.email))
+                && (tool.routedAptStatuses.length === 0 || freshAppointment.data?.AppointmentRouting.some(apt =>tool.routedAptStatuses.includes(apt.status.toLocaleLowerCase()) && apt.routedTo === authUser?.email))
               return enable
             })}
             render={(tool) => tool.component}

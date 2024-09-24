@@ -106,6 +106,7 @@ export const getAppointmentsAction = async (filter?: GetAppointmentFilter) => {
     },
     where: {
       orgUid,
+      isActive: true,
       AppointmentAttribute: { ...(status !== "ALL" ? { status } : {}) },
       ...(routedAptStatus
         ? {
@@ -308,6 +309,7 @@ export const getAppointmentCountsAction = async (orgUid: string) => {
     by: ["status"],
     where: {
       Appointment: {
+        isActive: true,
         orgUid,
         OR: [
           { ...(hasPermission ? { orgUid } : {}) },
@@ -356,6 +358,7 @@ export const getRoutedAppointmentCountsAction = async (orgUid: string) => {
     by: ["status"],
     where: {
       Appointment: {
+        isActive: true,
         orgUid,
         OR: [
           { ...(hasPermission ? { orgUid } : {}) },

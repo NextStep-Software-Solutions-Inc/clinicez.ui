@@ -21,6 +21,11 @@ export default function RejectAppointment({disabled = false, appointmentId, onRe
   const triggerRef = React.useRef<HTMLButtonElement>(null);
 
   const action = async (formData: FormData) => {
+    const reason = formData.get("reason") as string;
+    if(!reason.trim()) {
+      toast.error("Please provide a reason for rejecting the appointment.");
+      return;
+    }
     formData.append("status", "REJECTED");
     formData.append("appointmentId", appointmentId.toString());
     toast.promise(rejectAppointmentAction(formData), {
@@ -67,6 +72,7 @@ export default function RejectAppointment({disabled = false, appointmentId, onRe
             <Input
               id="reason"
               name="reason"
+              required
               placeholder="Enter reason here"
               className="col-span-3"
             />

@@ -36,8 +36,9 @@ export default function CreateConsultationTicketModal({disabled = false, subject
 
   const closeBtnRef = useRef<HTMLInputElement>(null)
   const action = async (formData: FormData) => {
-    const subject = formData.get("subject") as string
-    toast.promise(createConsultationTicketAction({appointmentId, orgUid, subject}), {
+    const subject = String(formData.get("subject"))
+    const systemId = Number(formData.get("systemId"))
+    toast.promise(createConsultationTicketAction({appointmentId, orgUid, subject, systemId}), {
       loading: "Creating consultation ticket...",
       success: (res) => {
         if(res.status) {

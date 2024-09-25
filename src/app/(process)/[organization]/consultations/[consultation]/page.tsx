@@ -30,7 +30,7 @@ async function ConsultationPage({params}: AppRouterPageRouteOpts) {
     <div className="space-y-5">
       <div className="group/issue flex sticky top-10 z-10 bg-opacity-30 backdrop-blur p-2 items-center">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">{consultation.data?.subject}</h2>
+          <h2 className="text-2xl font-bold tracking-tight">{consultation.data?.subject?.trim() || `Consultation Ticket #${consultation.data.id}`}</h2>
           <div className="flex h-5 items-center gap-2 mt-3 capitalize">
             <Badge>{consultation.data.System.name}</Badge>
             <Separator orientation="vertical" />

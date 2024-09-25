@@ -26,6 +26,8 @@ import { useRef, useState } from "react"
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+import AppointmentRoutingHistorySheet from "./AppointmentRoutingHistorySheet";
+import ConsultationTicketSheet from "./ConsultationTicketSheet";
 
 
 type CreateConsultationTicketSchema = z.infer<typeof createConsultationTicketSchema>

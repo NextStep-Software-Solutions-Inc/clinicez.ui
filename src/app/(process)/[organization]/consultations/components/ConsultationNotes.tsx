@@ -11,13 +11,13 @@ import {
   CardHeader,
   CardTitle
 } from "@components/ui/card";
-import { GetConsultationRecord } from "@actions/consultation/consultation-ticket.action";
+import { GetConsultationTicket } from "@actions/consultation/consultation-ticket.action";
 import { useParams } from "next/navigation";
 import { useConsultationNotes } from "@hooks/useConsultationNote";
 import Each from "@components/utils/Each";
 import GenericSection from "@components/GenericSection";
 interface ConsultationNotesProps {
-  consultation: NonNullable<GetConsultationRecord["data"]>;
+  consultation: NonNullable<GetConsultationTicket["data"]>;
 }
 
 const template = {

@@ -9,13 +9,13 @@ import { DataTableColumnHeader } from "./data-table-column-header"
 import { DataTableRowActions } from "./data-table-row-actions"
 import Link from "next/link"
 import { DropdownMenuProvider } from "@components/DropdownMenuProvider"
-import { GetConsultationRecords } from "@actions/consultation/consultation-ticket.action"
+import { GetConsultationTickets } from "@actions/consultation/consultation-ticket.action"
 import dayjs from "dayjs"
 import utc from "dayjs/plugin/utc"
 dayjs.extend(utc)
 
 
-export const columns: ColumnDef<GetConsultationRecords["data"][number]>[] = [
+export const columns: ColumnDef<GetConsultationTickets["data"][number]>[] = [
   {
     id: "select",
     header: ({ table }) => (
@@ -67,18 +67,18 @@ export const columns: ColumnDef<GetConsultationRecords["data"][number]>[] = [
   },
   {
     accessorKey: "patient",
-    accessorFn: (row) => row.Appointment.Requesters.map((requester) => requester.email).join(", "),
+    accessorFn: (row) => (row.Appointment?.Requesters ?? []).map((requester) => requester.email).join(", "),
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Patient" />
     ),
     cell: ({ row }) => {
       return (
         <div>
-          <div className="text-wrap">{row.original.Appointment.Requesters.map((requester) => requester.email).join(", ")}</div>
+          <div className="text-wrap">{(row.original.Appointment?.Requesters ?? []).map((requester) => requester.email).join(", ")}</div>
           <div className="flex flex-wrap items-center gap-1">
-            <Badge>{row.original.Appointment.AppointmentAttribute?.Service?.name}</Badge>
-            <Badge variant="outline">{row.original.Appointment.AppointmentAttribute?.AppointmentType.name}</Badge>
-            <Badge variant="secondary">{row.original.Appointment.AppointmentAttribute?.AppointmentMode.name}</Badge>
+            <Badge>{row.original.Appointment?.AppointmentAttribute?.Service?.name}</Badge>
+            <Badge variant="outline">{row.original.Appointment?.AppointmentAttribute?.AppointmentType.name}</Badge>
+            <Badge variant="secondary">{row.original.Appointment?.AppointmentAttribute?.AppointmentMode.name}</Badge>
           </div>
         </div>
       )
@@ -99,9 +99,9 @@ export const columns: ColumnDef<GetConsultationRecords["data"][number]>[] = [
   },
   {
     accessorKey: "status",
-    accessorFn: (row) => row.ConsultationRecordAttribute?.status,
+    accessorFn: (row) => row.ConsultationTicketAttribute?.status,
     filterFn: (row, id, filterValues) => {
-      return filterValues.includes(row.original.ConsultationRecordAttribute?.status)
+      return filterValues.includes(row.original.ConsultationTicketAttribute?.status)
     },
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Status" />
@@ -114,7 +114,7 @@ export const columns: ColumnDef<GetConsultationRecords["data"][number]>[] = [
       } as const
       return (
         <div className="flex items-center text-xs">
-          <Badge variant={badgeVariant[row.original.ConsultationRecordAttribute?.status as keyof typeof badgeVariant]}>{row.original.ConsultationRecordAttribute?.status}</Badge>
+          <Badge variant={badgeVariant[row.original.ConsultationTicketAttribute?.status as keyof typeof badgeVariant]}>{row.original.ConsultationTicketAttribute?.status}</Badge>
         </div>
       )
     },

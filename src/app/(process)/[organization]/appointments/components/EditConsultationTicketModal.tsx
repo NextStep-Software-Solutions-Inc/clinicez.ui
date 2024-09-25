@@ -1,6 +1,6 @@
 "use client";
 
-import { updateConsultationRecordAction } from "@actions/consultation/consultation-ticket.action";
+import { updateConsultationTicketAction } from "@actions/consultation/consultation-ticket.action";
 import ActionButton from "@components/ActionButton"
 import CustomModalContent from "@components/CustomModalContent";
 import {
@@ -15,7 +15,7 @@ import { DialogProps } from "@radix-ui/react-dialog";
 import React, { useRef } from "react"
 import { toast } from "sonner";
 
-interface EditConsultationRecordModalProps extends DialogProps {
+interface EditConsultationTicketModalProps extends DialogProps {
   record: {
     id: number,
     subject: string,
@@ -23,23 +23,23 @@ interface EditConsultationRecordModalProps extends DialogProps {
   children: React.ReactNode
 }
 
-const EditConsultationRecordModal = React.forwardRef<any, EditConsultationRecordModalProps>((props, ref) => {
+const EditConsultationTicketModal = React.forwardRef<any, EditConsultationTicketModalProps>((props, ref) => {
   const { record, children, ...res } = props
   const closeBtnRef = useRef<HTMLInputElement>(null)
   const action = async (formData: FormData) => {
     const subject = formData.get("subject") as string
-    toast.promise(updateConsultationRecordAction({
+    toast.promise(updateConsultationTicketAction({
       consultationId: record.id,
       subject
     }), {
-      loading: "Updating consultation record...",
+      loading: "Updating consultation ticket...",
       success: (res) => {
         if (res.status) {
           closeBtnRef.current?.click()
         }
         return res.message
       },
-      error: "Failed to update consultation record."
+      error: "Failed to update consultation ticket."
     }) 
   }
 
@@ -50,12 +50,12 @@ const EditConsultationRecordModal = React.forwardRef<any, EditConsultationRecord
       </DialogTrigger>
       <CustomModalContent 
         className="sm:max-w-[525px]"
-        label="Update Consultation Record" 
-        description="Fill in the fields below to update the consultation record."
+        label="Update Consultation Ticket" 
+        description="Fill in the fields below to update the consultation ticket."
       >
         <form 
           action={action}
-          id="consultation-record-form"
+          id="consultation-ticket-form"
           className="grid gap-4 py-4"
         >
           <div className="grid grid-cols-4 items-baseline gap-4">
@@ -73,7 +73,7 @@ const EditConsultationRecordModal = React.forwardRef<any, EditConsultationRecord
             <DialogClose asChild>
               <input ref={closeBtnRef} type="hidden"  value="ok"/>
             </DialogClose>
-            <ActionButton form="consultation-record-form" type="submit">
+            <ActionButton form="consultation-ticket-form" type="submit">
             Save Changes
             </ActionButton>
           </DialogFooter>
@@ -82,5 +82,5 @@ const EditConsultationRecordModal = React.forwardRef<any, EditConsultationRecord
     </Dialog>
   )
 })
-EditConsultationRecordModal.displayName = "EditConsultationRecordModal"
-export default EditConsultationRecordModal
+EditConsultationTicketModal.displayName = "EditConsultationTicketModal"
+export default EditConsultationTicketModal

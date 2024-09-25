@@ -5,13 +5,13 @@ import prismaTenant from "@lib/prisma-tenant";
 import { PrismaClientKnownRequestError } from '@prisma/tenant/client/runtime/library';
 
 export const createInterventionAction = async (data: FormData) => {
-  const { consultationRecordId, actionId, details, orgUid, hpId } = Object.fromEntries(data); 
+  const { consultationTicketId, actionId, details, orgUid, hpId } = Object.fromEntries(data); 
 
   
   try {
     const intervention  = await prismaTenant.intervention.create({
       data: {
-        consultationRecordId: Number(consultationRecordId),
+        consultationTicketId: Number(consultationTicketId),
         actionId: Number(actionId),
         details: String(details),
         orgUid: String(orgUid),
@@ -37,13 +37,13 @@ export const createInterventionAction = async (data: FormData) => {
 
 export type GetInterventions = Awaited<ReturnType<typeof getInterventionsAction>>;
 export const getInterventionsAction = async (data: FormData) => {
-  const { consultationRecordId, orgUid } = Object.fromEntries(data);
+  const { consultationTicketId, orgUid } = Object.fromEntries(data);
   try {
     const interventions = await prismaTenant.intervention.findMany({
       where: {
         isActive: true,
         orgUid: String(orgUid),
-        consultationRecordId: Number(consultationRecordId)
+        consultationTicketId: Number(consultationTicketId)
       },
       select: {
         id: true,

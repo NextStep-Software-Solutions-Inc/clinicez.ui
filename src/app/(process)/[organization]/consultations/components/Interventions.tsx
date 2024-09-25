@@ -1,12 +1,11 @@
 "use client"
 
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@components/ui/accordion";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@components/ui/card";
 import AddInterventionModal from "./modals/AddInterventionModal";
 import { Badge } from "@components/ui/badge";
 import Each from "@components/utils/Each";
 import { Avatar, AvatarFallback } from "@components/ui/avatar";
-import { GetConsultationRecord } from "@actions/consultation/consultation-ticket.action";
+import { GetConsultationTicket } from "@actions/consultation/consultation-ticket.action";
 import dayjs from "dayjs"
 import utc from "dayjs/plugin/utc"
 dayjs.extend(utc)
@@ -18,16 +17,16 @@ import { useHPsByIds } from "@hooks/useHP";
 dayjs.extend(relativeTime);
 
 interface InterventionsProps {
-  consultation: NonNullable<GetConsultationRecord["data"]>;
+  consultation: NonNullable<GetConsultationTicket["data"]>;
 }
 export default function Interventions({ consultation }: InterventionsProps) {
   const payload = new FormData()
-  payload.append("consultationRecordId", consultation.id.toString())
+  payload.append("consultationTicketId", consultation.id.toString())
   payload.append("orgUid", consultation.orgUid)
 
   const {data: interventions} = useInterventions({
     orgUid: consultation.orgUid,
-    consultationRecordId: consultation.id
+    consultationTicketId: consultation.id
   })
   const hpIds = interventions?.data.map(intervention => intervention.hpId) ?? []
   const {data: hps } = useHPsByIds(hpIds)

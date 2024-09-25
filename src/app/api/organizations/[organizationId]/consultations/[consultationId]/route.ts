@@ -1,4 +1,4 @@
-import { getConsultationRecordAction } from "@actions/consultation/consultation-ticket.action";
+import { getConsultationTicketAction } from "@actions/consultation/consultation-ticket.action";
 import { withJwtAuth } from "@middlewares/withJwtAuth";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -11,8 +11,8 @@ export const GET = withJwtAuth(async (req: NextRequest, { params }: {
   const consultationId = parseInt(params.consultationId);
   const orgUid = params.organizationId;
 
-  const consultationRecord = await getConsultationRecordAction(consultationId, orgUid);
+  const consultationTicket = await getConsultationTicketAction(consultationId, orgUid);
   
-  if(!consultationRecord) return NextResponse.json({error: 'Consultation record not found'}, {status: 404});
-  return NextResponse.json(consultationRecord, {status: 200});
+  if(!consultationTicket) return NextResponse.json({error: 'Consultation ticket not found'}, {status: 404});
+  return NextResponse.json(consultationTicket, {status: 200});
 });

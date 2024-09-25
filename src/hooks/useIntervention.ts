@@ -7,10 +7,10 @@ import useSWR from "swr"
 
 type UseInterventions = {
   orgUid: string,
-  consultationRecordId: number
+  consultationTicketId: number
 }
 
-export const useInterventions = ({orgUid, consultationRecordId}: UseInterventions) => {
+export const useInterventions = ({orgUid, consultationTicketId}: UseInterventions) => {
   const fetcher = (args: string) => self.get<GetInterventions>(args)
-  return useSWR(() => !!consultationRecordId ? `/api/organizations/${orgUid}/consultations/${consultationRecordId}/interventions` : null, fetcher)
+  return useSWR(() => !!consultationTicketId ? `/api/organizations/${orgUid}/consultations/${consultationTicketId}/interventions` : null, fetcher)
 }

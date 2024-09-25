@@ -16,15 +16,15 @@ import {
   DropdownMenuTrigger,
 } from "@components/ui/dropdown-menu"
 
-import ConsultationRecordSettingSheet from "../../appointments/components/ConsultationRecordSettingSheet"
-import EditConsultationRecordModal from "../../appointments/components/EditConsultationRecordModal"
+import ConsultationTicketSettingSheet from "../../appointments/components/ConsultationTicketSettingSheet"
+import EditConsultationTicketModal from "../../appointments/components/EditConsultationTicketModal"
 import React from "react"
 import { useDropdownMenu } from "@components/DropdownMenuProvider"
 import { toast } from "sonner"
-import { archiveConsultationRecordAction, GetConsultationRecords } from "@actions/consultation/consultation-ticket.action"
+import { archiveConsultationTicketAction, GetConsultationTickets } from "@actions/consultation/consultation-ticket.action"
 import { Archive, Pencil } from "lucide-react"
 interface DataTableRowActionsProps<TData> {
-  consultation: GetConsultationRecords["data"][number]
+  consultation: GetConsultationTickets["data"][number]
 }
 
 export function DataTableRowActions<TData>({
@@ -33,7 +33,7 @@ export function DataTableRowActions<TData>({
   const { dropdownOpen, setDropdownOpen, hasOpenDialog, dropdownTriggerRef, handleDialogItemSelect, handleDialogItemOpenChange } = useDropdownMenu()!;
 
   const handleArchive = () => {
-    toast.promise(archiveConsultationRecordAction(consultation.id), {
+    toast.promise(archiveConsultationTicketAction(consultation.id), {
       position: "top-center",
       loading: "Archiving...",
       success: (res) => {
@@ -55,20 +55,20 @@ export function DataTableRowActions<TData>({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent  align="end" className="w-[160px]" hidden={hasOpenDialog}>
-        <EditConsultationRecordModal onOpenChange={handleDialogItemOpenChange} record={{
+        <EditConsultationTicketModal onOpenChange={handleDialogItemOpenChange} record={{
           id: consultation.id,
-          subject: consultation.subject,
+          subject: consultation.subject ?? "",
         }}>
           <DropdownMenuItem onSelect={handleDialogItemSelect}>
             <Pencil className="w-4 h-4 mr-2"/>
             Edit</DropdownMenuItem>
-        </EditConsultationRecordModal>
-        <ConsultationRecordSettingSheet onOpenChange={handleDialogItemOpenChange}>
+        </EditConsultationTicketModal>
+        <ConsultationTicketSettingSheet onOpenChange={handleDialogItemOpenChange}>
           <DropdownMenuItem onSelect={handleDialogItemSelect}>
             <GearIcon className="w-4 h-4 mr-2"/>
             Settings
           </DropdownMenuItem>
-        </ConsultationRecordSettingSheet>
+        </ConsultationTicketSettingSheet>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleArchive}>
           <Archive className="w-4 h-4 mr-2"/>

@@ -20,10 +20,10 @@ import {
 import { Label } from "@components/ui/label"
 import { Switch } from "@components/ui/switch"
 import { DialogProps } from "@radix-ui/react-dialog"
-interface ConsultationRecordSettingSheetProps extends DialogProps {
+interface ConsultationTicketSettingSheetProps extends DialogProps {
   children?: React.ReactNode;
 }
-export default function ConsultationRecordSettingSheet({ children, ...res }: ConsultationRecordSettingSheetProps) {
+export default function ConsultationTicketSettingSheet({ children, ...res }: ConsultationTicketSettingSheetProps) {
   
   const action = async (formData: FormData) => {
     console.log(Object.fromEntries(formData));

@@ -13,22 +13,22 @@ export const upsertConsultationNotesAction = async (data: FormData) => {
     message: "Session not found",
     data: null
   }
-  const consultationRecordId = parseInt(data.get('consultationRecordId') as string)
+  const consultationTicketId = parseInt(data.get('consultationTicketId') as string)
   const section = data.get('section') as string
   const content = data.get('content') as string
   try {
     const updatedNotes = await prismaTenant.consultationNote.upsert({
       where: {
-        unique_consultation_record_section: {
-          consultationRecordId,
+        unique_consultation_section: {
+          consultationTicketId,
           section, 
         },
-        ConsultationRecord: {
+        ConsultationTicket: {
           createdBy: session.user.email
         }
       },
       create: {
-        consultationRecordId,
+        consultationTicketId,
         section,
         content
       },
@@ -54,10 +54,10 @@ export const upsertConsultationNotesAction = async (data: FormData) => {
 } 
 
 export type GetConsultationNotes = Awaited<ReturnType<typeof getConsultationNotesAction>>
-export const getConsultationNotesAction = async (consultationRecordId: number) => {
+export const getConsultationNotesAction = async (consultationTicketId: number) => {
   return await prismaTenant.consultationNote.findMany({
     where: {
-      consultationRecordId: consultationRecordId,
+      consultationTicketId,
     }
   })
 }

@@ -1,10 +1,10 @@
 "use client";
 
-import { GetPreConsultationNotes } from "@actions/appointments/pre-assessment-note.action";
-import { GetConsultationRecord } from "@actions/consultation/consultation-ticket.action";
+import { GetPreAssessmentNotes } from "@actions/appointments/pre-assessment-note.action";
+import { GetConsultationTicket } from "@actions/consultation/consultation-ticket.action";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@components/ui/card";
 import Each from "@components/utils/Each";
-import { usePreConsultationNotes } from "@hooks/usePreConsultationNotes";
+import { usePreAssessmentNotes } from "@hooks/usePreAssessmentNotes";
 import { useParams } from "next/navigation";
 import dayjs from "dayjs"
 import utc from "dayjs/plugin/utc"
@@ -14,12 +14,12 @@ import relativeTime from "dayjs/plugin/relativeTime";
 dayjs.extend(relativeTime);
 
 interface NurseAssessmentProps {
-  consultation:  NonNullable<GetConsultationRecord["data"]>;
+  consultation:  NonNullable<GetConsultationTicket["data"]>;
 }
 export default function NurseAssessment({ consultation}: NurseAssessmentProps) {
 
   const {organization: orgUid} = useParams<{organization: string}>()
-  const {data: preConsultationNotes} = usePreConsultationNotes({orgUid, appointmentId: consultation.appointmentId})
+  const {data: preConsultationNotes} = usePreAssessmentNotes({orgUid, appointmentId: consultation.appointmentId ?? 0})
 
   return (
     <Card>
@@ -46,7 +46,7 @@ export default function NurseAssessment({ consultation}: NurseAssessmentProps) {
 
 
 interface PreConsultationNoteProps {
-  note: GetPreConsultationNotes["data"][number];
+  note: GetPreAssessmentNotes["data"][number];
 }
 export const PreConsultationNote = ({note}: PreConsultationNoteProps) => {
     

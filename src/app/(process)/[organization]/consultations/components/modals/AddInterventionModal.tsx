@@ -1,6 +1,6 @@
 "use client";
 
-import { GetConsultationRecord } from "@actions/consultation/consultation-ticket.action";
+import { GetConsultationTicket } from "@actions/consultation/consultation-ticket.action";
 import { createInterventionAction } from "@actions/consultation/intervention.action";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import ActionButton from "@components/ActionButton"
@@ -36,7 +36,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 interface AddInterventionModalProps {
-  consultation: NonNullable<GetConsultationRecord["data"]>;
+  consultation: NonNullable<GetConsultationTicket["data"]>;
 }
 
 const AddInterventionFormSchema = z.object({
@@ -61,7 +61,7 @@ export default function AddInterventionModal({consultation}: AddInterventionModa
   })
   const { mutate } = useInterventions({
     orgUid: consultation.orgUid,
-    consultationRecordId: consultation.id
+    consultationTicketId: consultation.id
   })
   
   type HPProfile = {
@@ -101,7 +101,7 @@ export default function AddInterventionModal({consultation}: AddInterventionModa
   const closeBtnRef = useRef<HTMLInputElement>(null)
   const action = async (formData: FormData) => {
     form.handleSubmit(async (data) => {
-      formData.append("consultationRecordId", consultation.id.toString())
+      formData.append("consultationTicketId", consultation.id.toString())
       formData.append("orgUid", consultation.orgUid)
       toast.promise(createInterventionAction(formData), {
         loading: "Saving...",

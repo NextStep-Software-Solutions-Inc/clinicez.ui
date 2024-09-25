@@ -1,11 +1,10 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@components/ui/card";
 import UploadFileModal from "../../files/components/modals/UploadFileModal";
 import { faker } from "@faker-js/faker";
-import File from "../../../../../components/File";
-import { GetConsultationRecord } from "@actions/consultation/consultation-ticket.action";
+import { GetConsultationTicket } from "@actions/consultation/consultation-ticket.action";
 
 interface FilesProps {
-    consultation:  NonNullable<GetConsultationRecord["data"]>;
+    consultation:  NonNullable<GetConsultationTicket["data"]>;
 }
 
 export default async function Files({ consultation}: FilesProps) {

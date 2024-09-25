@@ -13,10 +13,10 @@ export const GET = withJwtAuth(async (req: NextRequest, { params }: {
 
   const formData = new FormData();
 
-  formData.append('consultationRecordId', consultationId.toString());
+  formData.append('consultationTicketId', consultationId.toString());
   formData.append('orgUid', params.organizationId);
   
   const interventions = await getInterventionsAction(formData);
-  if(!interventions) return NextResponse.json({error: 'Consultation notes not found'}, {status: 404});
+  if(!interventions) return NextResponse.json({error: 'Consultation ticket not found'}, {status: 404});
   return NextResponse.json(interventions, {status: 200});
 });

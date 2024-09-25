@@ -49,7 +49,7 @@ export default function GenericSection({name, label, consultationId, value = ""}
   
     const handleSave = async (formData: FormData) => {
       form.handleSubmit(async (data: Schema) => {
-        formData.append("consultationRecordId", consultationId.toString())
+        formData.append("consultationTicketId", consultationId.toString())
         Object.entries(data).forEach(([key, value]) => {
           formData.append("section", key)
           formData.append("content", value)

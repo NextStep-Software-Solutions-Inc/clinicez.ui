@@ -36,11 +36,11 @@ async function ConsultationPage({params}: AppRouterPageRouteOpts) {
         <div>
           <h2 className="text-2xl font-bold tracking-tight">{consultation.data?.subject}</h2>
           <div className="flex h-5 items-center gap-2 mt-3 capitalize">
-            <Badge variant="outline">{consultation.data?.Appointment.AppointmentAttribute?.Service?.name}</Badge>
+            <Badge variant="outline">{consultation.data.Appointment?.AppointmentAttribute?.Service?.name}</Badge>
             <Separator orientation="vertical" />
-            <Badge variant="outline">{consultation.data?.Appointment.AppointmentAttribute?.AppointmentType?.name}</Badge>
+            <Badge variant="outline">{consultation.data.Appointment?.AppointmentAttribute?.AppointmentType?.name}</Badge>
             <Separator orientation="vertical" />
-            <Badge variant="outline">{consultation.data?.Appointment.AppointmentAttribute?.AppointmentMode?.name}</Badge>
+            <Badge variant="outline">{consultation.data.Appointment?.AppointmentAttribute?.AppointmentMode?.name}</Badge>
           </div>
         </div>
         <div className="ml-auto flex gap-1">

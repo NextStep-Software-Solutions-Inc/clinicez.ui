@@ -11,45 +11,71 @@ import {
   DialogFooter,
   DialogTrigger,
 } from "@components/ui/dialog"
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@components/ui/form";
 import { Input } from "@components/ui/input"
 import { Label } from "@components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@components/ui/select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@components/ui/tooltip"
+import Each from "@components/utils/Each";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useOrgAppointment } from "@hooks/useAppointment";
+import { useSystems } from "@hooks/useSystem";
 import { ClipboardPlus } from "lucide-react"
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useRef, useState } from "react"
+import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { z } from "zod";
 
+
+type CreateConsultationTicketSchema = z.infer<typeof createConsultationTicketSchema>
+const createConsultationTicketSchema = z.object({
+  subject: z.string().optional(),
+  systemId: z.coerce.number(),
+  openTicket: z.boolean().optional()
+})
 
 export default function CreateConsultationTicketModal({disabled = false, subject}: {disabled?: boolean, subject: string}) {
-  const [followConsultationTicket, setFollowConsultationTicket] = useState(false)
+  const closeBtnRef = useRef<HTMLInputElement>(null)
   const router = useRouter();
   const params = useParams<{organization: string}>();
   const searchParams = useSearchParams();
   const orgUid = params.organization
+  const {data: systems} = useSystems(orgUid)
 
-  const appointmentId = parseInt(searchParams.get("_appointment") as string)
+  const appointmentId = Number(searchParams.get("_appointment"))
   const {mutate} = useOrgAppointment({
     orgId: orgUid,
     appointmentId
   })
 
-  const closeBtnRef = useRef<HTMLInputElement>(null)
-  const action = async (formData: FormData) => {
-    const subject = String(formData.get("subject"))
-    const systemId = Number(formData.get("systemId"))
-    toast.promise(createConsultationTicketAction({appointmentId, orgUid, subject, systemId}), {
-      loading: "Creating consultation ticket...",
-      success: (res) => {
-        if(res.status) {
-          closeBtnRef.current?.click()
-          mutate()
-          followConsultationTicket && router.push(`/${params.organization}/consultations/${res.data?.id}?${searchParams.toString()}`);
-        }
-        return res.message
-      },
-      error: "Failed to create consultation ticket"
-    })
+
+  const form = useForm<CreateConsultationTicketSchema>({
+    resolver: zodResolver(createConsultationTicketSchema),
+    defaultValues: {
+      subject,
+      systemId: undefined,
+      openTicket: false
+    }
+  })
+
+  const action = async () => {
+    form.handleSubmit(async (data) => {
+      const subject = data.subject
+      const systemId = data.systemId
+      toast.promise(createConsultationTicketAction({appointmentId, orgUid, subject, systemId}), {
+        loading: "Creating consultation ticket...",
+        success: (res) => {
+          if(res.status) {
+            closeBtnRef.current?.click()
+            mutate()
+            data.openTicket && router.push(`/${params.organization}/consultations/${res.data?.id}?${searchParams.toString()}`);
+          }
+          return res.message
+        },
+        error: "Failed to create consultation ticket"
+      })
+    })()
   }
 
   return (
@@ -65,43 +91,95 @@ export default function CreateConsultationTicketModal({disabled = false, subject
         </TooltipTrigger>
         <TooltipContent>Create Consultation Ticket</TooltipContent>
       </Tooltip>
+
       <CustomModalContent 
         className="sm:max-w-[525px]"
         label="Create Consultation Ticket" 
         description="Fill in the fields below to create a new consultation ticket."
       >
-        <form 
-          action={action}
-          id="consultation-ticket-form"
-          className="grid gap-4 py-4"
-        >
-          <div className="grid grid-cols-4 items-baseline gap-4">
-            <Label htmlFor="subject" className="text-right">
-              Subject
-            </Label>
-            <Input
-              id="subject"
-              name="subject"
-              defaultValue={subject}
-              className="col-span-3"
+        <Form {...form}>
+          <form 
+            action={action}
+            id="consultation-ticket-form"
+            className="grid gap-4 py-4"
+          >
+            <FormField
+              control={form.control}
+              name="systemId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>System</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value?.toString()}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select system " />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <Each
+                        of={systems ?? []}
+                        render={(system) => (
+                          <SelectItem value={system.id.toString()}>{system.name}</SelectItem>
+                        )}
+                      />
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Select the system to create the consultation ticket for.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-          
-          <div className="flex items-center gap-2 leading-none text-sm">
-            <Checkbox
-              checked={followConsultationTicket}
-              onCheckedChange={(checked) => typeof checked === "boolean" && setFollowConsultationTicket(checked)}
-            /> Open consultation ticket after creation
-          </div>
-          <DialogFooter>
-            <DialogClose asChild>
-              <input ref={closeBtnRef} type="hidden"  value="ok"/>
-            </DialogClose>
-            <ActionButton form="consultation-ticket-form" type="submit">
-            Create
-            </ActionButton>
-          </DialogFooter>
-        </form>
+            <FormField
+              control={form.control}
+              name="subject"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Subject (optional)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Type here..." {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    Enter a custom subject for the consultation ticket.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="openTicket"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel>
+                      Open consultation ticket after creation
+                    </FormLabel>
+                    <FormDescription>
+                      When checked, a consultation ticket will be opened after the creation of the ticket.
+                    </FormDescription>
+                  </div>
+                </FormItem>
+              )}
+            />
+        
+            <DialogFooter>
+              <DialogClose asChild>
+                <input ref={closeBtnRef} type="hidden"  value="ok"/>
+              </DialogClose>
+              <ActionButton form="consultation-ticket-form" type="submit">
+                Create
+              </ActionButton>
+            </DialogFooter>
+          </form>
+        </Form>
       </CustomModalContent>
     </Dialog>
   )

@@ -10,10 +10,6 @@ import { Badge } from "@components/ui/badge";
 import { getConsultationTicketAction } from "@actions/consultation/consultation-ticket.action";
 import { getUserAction } from "@actions/users/user.action";
 import { notFound } from "next/navigation";
-import { Avatar, AvatarFallback } from "@components/ui/avatar";
-import Image from "next/image";
-import { differenceInCalendarYears } from "date-fns";
-import { Card, CardContent, CardHeader, CardTitle } from "@components/ui/card";
 import { DropdownMenuProvider } from "@components/DropdownMenuProvider";
 import { DataTableRowActions } from "../components/data-table-row-actions";
 
@@ -23,7 +19,7 @@ export const metadata: Metadata = {
 }
 
 async function ConsultationPage({params}: AppRouterPageRouteOpts) {
-  const consultationId = parseInt(params?.consultation as string)
+  const consultationId = Number(params?.consultation)
   const orgUid = params?.organization as string
 
   const consultation = await getConsultationTicketAction(consultationId, orgUid)
@@ -36,6 +32,8 @@ async function ConsultationPage({params}: AppRouterPageRouteOpts) {
         <div>
           <h2 className="text-2xl font-bold tracking-tight">{consultation.data?.subject}</h2>
           <div className="flex h-5 items-center gap-2 mt-3 capitalize">
+            <Badge>{consultation.data.System.name}</Badge>
+            <Separator orientation="vertical" />
             <Badge variant="outline">{consultation.data.Appointment?.AppointmentAttribute?.Service?.name}</Badge>
             <Separator orientation="vertical" />
             <Badge variant="outline">{consultation.data.Appointment?.AppointmentAttribute?.AppointmentType?.name}</Badge>

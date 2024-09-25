@@ -66,19 +66,21 @@ export const columns: ColumnDef<GetConsultationTickets["data"][number]>[] = [
     },
   },
   {
-    accessorKey: "patient",
-    accessorFn: (row) => (row.Appointment?.Requesters ?? []).map((requester) => requester.email).join(", "),
+    accessorKey: "system",
+    accessorFn: (row) => row.System.name,
+    filterFn: (row, id, filterValues) => {
+      return filterValues.includes(row.original.System.name)
+    },
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Patient" />
+      <DataTableColumnHeader column={column} title="System" />
     ),
     cell: ({ row }) => {
       return (
         <div>
           <div className="text-wrap">{(row.original.Appointment?.Requesters ?? []).map((requester) => requester.email).join(", ")}</div>
           <div className="flex flex-wrap items-center gap-1">
-            <Badge>{row.original.Appointment?.AppointmentAttribute?.Service?.name}</Badge>
-            <Badge variant="outline">{row.original.Appointment?.AppointmentAttribute?.AppointmentType.name}</Badge>
-            <Badge variant="secondary">{row.original.Appointment?.AppointmentAttribute?.AppointmentMode.name}</Badge>
+            <Badge>{row.original.System.name}</Badge>
+            <Badge variant="outline">{row.original.Appointment?.AppointmentAttribute?.Service?.name}</Badge>
           </div>
         </div>
       )

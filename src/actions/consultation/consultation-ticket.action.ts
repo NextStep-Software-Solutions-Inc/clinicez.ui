@@ -9,7 +9,7 @@ import { cache } from 'react';
 type CreateConsultationTicketPayload = {
     systemId: number;
     appointmentId?: number;
-    subject: string;
+    subject?: string;
     orgUid: string;
 }
 
@@ -63,6 +63,12 @@ export const getConsultationTicketAction = cache(async (consultationId: number, 
       createdAt: true,
       updatedAt: true,
       isArchived: true,
+      System: {
+        select: {
+          id: true,
+          name: true
+        }
+      },
       ConsultationTicketAttribute: {
         select: {
           noteTemplateName: true,
@@ -144,6 +150,12 @@ export const getConsultationTicketsAction = async ({orgUid, filters}: {orgUid: s
       createdAt: true,
       updatedAt: true,
       isArchived: true,
+      System: {
+        select: {
+          id: true,
+          name: true
+        }
+      },
       ConsultationTicketAttribute: {
         select: {
           noteTemplateName: true,

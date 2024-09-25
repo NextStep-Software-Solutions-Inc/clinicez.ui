@@ -12,6 +12,8 @@ import { Checkbox } from "@components/ui/checkbox"
 import { ConsultationTableOptions } from "./data-table"
 import { CheckedState } from "@radix-ui/react-checkbox"
 import { useState } from "react"
+import { useSystems } from "@hooks/useSystem"
+import { useParams } from "next/navigation"
 
 interface DataTableToolbarProps<TData> {
   table: Table<TData>
@@ -26,6 +28,8 @@ export function DataTableToolbar<TData>({
 }: DataTableToolbarProps<TData>) {
   const isFiltered = table.getState().columnFilters.length > 0
   const [showArchived, setShowArchived] = useState(options?.showArchived === true)
+  const params = useParams<{organization: string}>()
+  const {data: systems} = useSystems(params.organization)
 
   const handleShowArchivedChange = (checked: CheckedState) => {
     setShowArchived(checked === true)
@@ -62,6 +66,16 @@ export function DataTableToolbar<TData>({
                 value: "PROCESSING",
               }
             ]}
+          />
+        )}
+        {table.getColumn("system") && (
+          <DataTableFacetedFilter
+            column={table.getColumn("system")}
+            title="System"
+            options={(systems ?? [])?.map((system) => ({
+              label: system.name,
+              value: system.name,
+            }))}
           />
         )}
         {isFiltered && (

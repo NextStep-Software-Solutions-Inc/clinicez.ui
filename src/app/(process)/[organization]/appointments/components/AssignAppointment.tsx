@@ -13,7 +13,13 @@ import { User, UserCheck } from "lucide-react";
 import React from "react";
 import { toast } from "sonner";
 
-
+type HealthcareProvider = {
+  id: number;
+  name: string;
+  role: string;
+  avatar?: string | null;
+  email: string;
+}
 interface AssignAppointmentProps {
   disabled?: boolean;
   onAssigned?: () => void;
@@ -27,6 +33,7 @@ interface AssignAppointmentProps {
 export default function AssignAppointment({disabled = false, appointmentId, onAssigned, assigned}: AssignAppointmentProps) {
   const triggerRef = React.useRef<HTMLButtonElement>(null);
   const {data: hps } = useHPs();
+
   const healthcareProviders = (hps ?? []).reduce((acc, hp) => {
     const role = hp.type;
     if (!acc[role]) {
@@ -34,14 +41,12 @@ export default function AssignAppointment({disabled = false, appointmentId, onAs
     }
     const skip = assigned.some(a => {
       if(a.role.toUpperCase() === role) {
-        if(["PENDING"].includes(a.status)) return acc
-        return ["CANCELLED"].includes(a.status) && a.email === hp.User?.email
+        return ["PENDING", "ACCEPTED"].includes(a.status) || ["CANCELLED", "DECLINED"].includes(a.status) && a.email === hp.User?.email
       }
       return false
     })
-    if(skip) {
-      return acc;
-    }
+    if(skip) return acc
+
     acc[role].push({
       id: hp.id,
       name: hp.type === "DOCTOR" 
@@ -53,14 +58,9 @@ export default function AssignAppointment({disabled = false, appointmentId, onAs
       avatar: hp.DoctorProfile?.picture,
       email: hp.User?.email
     });
+
     return acc;
-  }, {} as Record<string, {
-    id: number;
-    name: string;
-    role: string;
-    avatar?: string | null;
-    email: string;
-  }[]>);
+  }, {} as Record<string, HealthcareProvider[]>);
 
   const action = async (formData: FormData) => {
     
@@ -84,9 +84,7 @@ export default function AssignAppointment({disabled = false, appointmentId, onAs
   }
 
   const [open, setOpen] = React.useState(false)
-  const [selectedHp, setSelectedHp] = React.useState<(typeof healthcareProviders)[number][number] | null>(
-    null
-  )
+  const [selectedHp, setSelectedHp] = React.useState<(typeof healthcareProviders)[number][number] | null>(null)
   
   return (
     <Popover>
@@ -102,9 +100,7 @@ export default function AssignAppointment({disabled = false, appointmentId, onAs
         <TooltipContent>Assign</TooltipContent>
       </Tooltip>
       <PopoverContent className="w-full">
-        <p>
-          Assign this appointment to a healthcare provider.
-        </p>
+        <p>Assign this appointment to a healthcare provider.</p>
         <form 
           action={action}
           id="assign-appointment-form"

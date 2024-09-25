@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@comp
 import UploadFileModal from "../../files/components/modals/UploadFileModal";
 import { faker } from "@faker-js/faker";
 import File from "../../../../../components/File";
-import { GetConsultationRecord } from "@actions/consultation/consultation-record.action";
+import { GetConsultationRecord } from "@actions/consultation/consultation-ticket.action";
 
 interface FilesProps {
     consultation:  NonNullable<GetConsultationRecord["data"]>;

@@ -14,7 +14,7 @@ import { ScrollArea } from "@components/ui/scroll-area"
 import Image from "next/image"
 import Each from "@components/utils/Each"
 import { Badge } from "@components/ui/badge"
-import ConsultationRecordSheet from "../../components/ConsultationRecordSheet"
+import ConsultationTicketSheet from "../../components/ConsultationTicketSheet"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@components/ui/dropdown-menu"
 import { useParams, useSearchParams } from "next/navigation"
 import { useUser as useUserDb } from "@hooks/useUser";
@@ -28,7 +28,7 @@ import Attachments from "./Attachments";
 import { formatDateTime, getBadgeVariantFromLabel } from "@lib/utils";
 
 import { LabelValue } from "@components/LabelValue";
-import PreConsultationNoteSheet from "../../components/PreConsultationNoteSheet";
+import PreAssessmentNoteSheet from "../../components/PreAssessmentNoteSheet";
 import { useRef } from "react";
 import { GetAppointment } from "@actions/appointments/appointments.action";
 import AppointmentRoutingHistorySheet from "../../components/AppointmentRoutingHistorySheet";
@@ -150,16 +150,16 @@ export default function AppointmentDisplay() {
           freshAppointment.data.AppointmentRouting.some(apt => apt.status === "ACCEPTED") && 
           <div className="px-5 py-2 text-xs group/action max-h-40 scrollBox no-scrollbar">
             <div className="flex items-center">
-              <span className="font-semibold text-base">Latest Pre-Consultation Notes</span> 
+              <span className="font-semibold text-base">Latest Pre-Assessment Notes</span> 
               <Pencil className="h-4 w-4 ml-auto invisible group-hover/action:visible" />
             </div>
             <Each 
               of={(freshAppointment.data.PreConsultationNotes ?? []).slice(-1)}
               fallback={(
-                <PreConsultationNoteSheet 
+                <PreAssessmentNoteSheet 
                   disabled={!freshAppointment}
                   key={freshAppointment.data.id}
-                  preConsultationNotes={{
+                  preAssessmentNotes={{
                     assessment: "",
                     homeInstructions:  "",
                     remarks: "",
@@ -168,13 +168,13 @@ export default function AppointmentDisplay() {
                   }}
                 >
                   <span className="text-muted-foreground cursor-pointer hover:underline">No Pre-Consultation Notes, click here to create</span>
-                </PreConsultationNoteSheet>
+                </PreAssessmentNoteSheet>
               )}
               render={(preConsultationNotes) => {
                 return (
-                  <PreConsultationNoteSheet 
+                  <PreAssessmentNoteSheet 
                     key={preConsultationNotes.id}
-                    preConsultationNotes={{
+                    preAssessmentNotes={{
                       ...preConsultationNotes,
                       homeInstructions: preConsultationNotes.homeInstructions ?? "",
                       appointmentId: freshAppointment.data!.id,
@@ -182,12 +182,12 @@ export default function AppointmentDisplay() {
                     }}
                   >
                     <div className="cursor-pointer">
-                      <LabelValue className="flex items-center gap-2" label={preConsultationNotes.assessment} value="Assessment:" />
+                      <LabelValue className="flex items-center gap-2" label={preConsultationNotes.assessment} value="Pre-Assessment:" />
                       {preConsultationNotes.homeInstructions && <LabelValue className="flex items-center gap-2" label={preConsultationNotes.homeInstructions} value="Home Instruction:" />}
                       <LabelValue className="flex items-center gap-2" label={preConsultationNotes.remarks} value="Remarks:" />
                       <LabelValue className="flex items-center gap-2" label={preConsultationNotes.createdBy} value="Noted by:" />
                     </div>
-                  </PreConsultationNoteSheet>
+                  </PreAssessmentNoteSheet>
                 )
               }}/>
           </div>
@@ -232,15 +232,15 @@ interface MoreToolsProps {
 }
 
 export const MoreTools = ({freshAppointment}: MoreToolsProps) => {
-  const consultationRecordTriggerRef = useRef<HTMLInputElement>(null)
+  const consultationTicketTriggerRef = useRef<HTMLInputElement>(null)
   const appointmentRoutingHistoryTriggerRef = useRef<HTMLInputElement>(null)
   return (
     <>
-      <ConsultationRecordSheet
-        consultationRecords={freshAppointment?.ConsultationRecords ?? []}
+      <ConsultationTicketSheet
+        consultationTickets={freshAppointment?.ConsultationTickets ?? []}
       >
-        <input ref={consultationRecordTriggerRef} type="hidden"></input>
-      </ConsultationRecordSheet>
+        <input ref={consultationTicketTriggerRef} type="hidden"></input>
+      </ConsultationTicketSheet>
       <AppointmentRoutingHistorySheet
         routing={freshAppointment?.AppointmentRouting ?? []}
       >
@@ -254,8 +254,8 @@ export const MoreTools = ({freshAppointment}: MoreToolsProps) => {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={() => consultationRecordTriggerRef.current?.click()}>
-            View Consultation Records
+          <DropdownMenuItem onClick={() => consultationTicketTriggerRef.current?.click()}>
+            View Consultation Tickets
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => appointmentRoutingHistoryTriggerRef.current?.click()}>
             View Assignment History

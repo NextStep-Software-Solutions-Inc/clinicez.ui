@@ -6,13 +6,14 @@ import { PrismaClientKnownRequestError } from '@prisma/tenant/client/runtime/lib
 import { getCachedSession } from '@actions/session.action';
 import { cache } from 'react';
 
-type CreateConsultationRecordPayload = {
-    appointmentId: number;
+type CreateConsultationTicketPayload = {
+    systemId: number;
+    appointmentId?: number;
     subject: string;
     orgUid: string;
 }
 
-export const createConsultationRecordAction = async ({appointmentId, orgUid, subject}: CreateConsultationRecordPayload) => {
+export const createConsultationTicketAction = async ({systemId, appointmentId, orgUid, subject}: CreateConsultationTicketPayload) => {
   const session = await getCachedSession()
   
   if(!session) return {
@@ -21,13 +22,14 @@ export const createConsultationRecordAction = async ({appointmentId, orgUid, sub
     data: null
   }
 
-  const consultationRecord = await prismaTenant.consultationRecord.create({
+  const consultationTicket = await prismaTenant.consultationTicket.create({
     data: {
+      systemId,
       appointmentId,
       subject,
       orgUid,
       createdBy: session.user.email,
-      ConsultationRecordAttribute:{
+      ConsultationTicketAttribute:{
         create: {
         }
       }
@@ -36,12 +38,12 @@ export const createConsultationRecordAction = async ({appointmentId, orgUid, sub
   return {
     status: true,
     message: "Consultation Record created successfully",
-    data: consultationRecord
+    data: consultationTicket
   }
 }
 
-export type GetConsultationRecord = Awaited<ReturnType<typeof getConsultationRecordAction>>;
-export const getConsultationRecordAction = cache(async (consultationId: number, orgUid: string) => {
+export type GetConsultationTicket = Awaited<ReturnType<typeof getConsultationTicketAction>>;
+export const getConsultationTicketAction = cache(async (consultationId: number, orgUid: string) => {
   const session = await getCachedSession()
   if(!session) return {
     status: false,
@@ -50,7 +52,7 @@ export const getConsultationRecordAction = cache(async (consultationId: number, 
   }
 
 
-  const consultationRecord = await prismaTenant.consultationRecord.findUnique({
+  const consultationTicket = await prismaTenant.consultationTicket.findUnique({
     where: { id: consultationId, orgUid },
     select: {
       id: true,
@@ -60,7 +62,8 @@ export const getConsultationRecordAction = cache(async (consultationId: number, 
       createdBy: true,
       createdAt: true,
       updatedAt: true,
-      ConsultationRecordAttribute: {
+      isArchived: true,
+      ConsultationTicketAttribute: {
         select: {
           noteTemplateName: true,
           status: true,
@@ -103,12 +106,15 @@ export const getConsultationRecordAction = cache(async (consultationId: number, 
   return {
     status: true,
     message: "Consultation record fetched successfully",
-    data: consultationRecord
+    data: consultationTicket
   }
 })
 
-export type GetConsultationRecords = Awaited<ReturnType<typeof getConsultationRecordsAction>>;
-export const getConsultationRecordsAction = async ({orgUid}: {orgUid: string}) => {
+
+export type GetConsultationTickets = Awaited<ReturnType<typeof getConsultationTicketsAction>>;
+export const getConsultationTicketsAction = async ({orgUid, filters}: {orgUid: string, filters?: {
+  showArchived?: boolean
+}}) => {
   const session = await getCachedSession()
   if(!session) return {
     status: false,
@@ -116,11 +122,14 @@ export const getConsultationRecordsAction = async ({orgUid}: {orgUid: string}) =
     data: []
   }
 
-  const consultationRecords = await prismaTenant.consultationRecord.findMany({
+  const { showArchived } = filters ?? {}
+  const consultationTickets = await prismaTenant.consultationTicket.findMany({
     orderBy: {
       createdAt: 'desc'
     },
     where: {
+      isActive: true,
+      ...showArchived ? {}: { isArchived: false},
       orgUid,
       OR: [
         { createdBy: session.user.email },
@@ -134,7 +143,8 @@ export const getConsultationRecordsAction = async ({orgUid}: {orgUid: string}) =
       createdBy: true,
       createdAt: true,
       updatedAt: true,
-      ConsultationRecordAttribute: {
+      isArchived: true,
+      ConsultationTicketAttribute: {
         select: {
           noteTemplateName: true,
           status: true,
@@ -176,15 +186,15 @@ export const getConsultationRecordsAction = async ({orgUid}: {orgUid: string}) =
   return {
     status: true,
     message: "Consultation records fetched successfully",
-    data: consultationRecords
+    data: consultationTickets
   }
 }
 
-type UpdateConsultationRecordPayload = {
+type UpdateConsultationTicketPayload = {
   consultationId: number;
   subject: string;
 }
-export const updateConsultationRecordAction = async ({consultationId, subject}: UpdateConsultationRecordPayload) => {
+export const updateConsultationTicketAction = async ({consultationId, subject}: UpdateConsultationTicketPayload) => {
   const session = await getCachedSession()
   
   if(!session) return {
@@ -194,7 +204,7 @@ export const updateConsultationRecordAction = async ({consultationId, subject}: 
   }
 
   try {
-    await prismaTenant.consultationRecord.update({
+    await prismaTenant.consultationTicket.update({
       where: { id: consultationId, createdBy: session.user.email },
       data: { subject }
     })
@@ -218,7 +228,7 @@ export const updateConsultationRecordAction = async ({consultationId, subject}: 
 }
 
 
-export const deleteConsultationRecordAction = async (consultationId: number) => {
+export const deleteConsultationTicketAction = async (consultationId: number) => {
   const session = await getCachedSession()
   
   if(!session) return {
@@ -228,7 +238,7 @@ export const deleteConsultationRecordAction = async (consultationId: number) => 
   }
 
   try {
-    await prismaTenant.consultationRecord.update({
+    await prismaTenant.consultationTicket.update({
       where: { id: consultationId, createdBy: session.user.email },
       data: {
         isActive: false
@@ -255,7 +265,7 @@ export const deleteConsultationRecordAction = async (consultationId: number) => 
 
 
 
-export const archiveConsultationRecordAction = async (consultationId: number) => {
+export const archiveConsultationTicketAction = async (consultationId: number) => {
   const session = await getCachedSession()
   
   if(!session) return {
@@ -265,7 +275,7 @@ export const archiveConsultationRecordAction = async (consultationId: number) =>
   }
 
   try {
-    await prismaTenant.consultationRecord.update({
+    await prismaTenant.consultationTicket.update({
       where: { id: consultationId, createdBy: session.user.email, isActive: true, isArchived: false },
       data: {
         isArchived: true

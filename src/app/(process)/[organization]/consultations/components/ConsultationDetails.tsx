@@ -5,7 +5,7 @@ import Suspend from "@components/Suspend";
 import { GetAppointment, getAppointmentAction } from "@actions/appointments/appointments.action";
 import { GetUser, getUserAction } from "@actions/users/user.action";
 import { differenceInCalendarYears } from "date-fns";
-import { GetConsultationRecord } from "@actions/consultation/consultation-record.action";
+import { GetConsultationTicket } from "@actions/consultation/consultation-ticket.action";
 import { ExternalLink } from "lucide-react";
 import Link from "next/link";
 import dynamic from 'next/dynamic';
@@ -20,7 +20,7 @@ const Interventions = dynamic(() => import('./Interventions'), { ssr: false, loa
 const NurseAssessment = dynamic(() => import('./NurseAssessment'), { ssr: false, loading: () => <div>Loading...</div> });
 const ConsultationNotes = dynamic(() => import('./ConsultationNotes'), { ssr: false, loading: () => <div>Loading...</div> });
 interface ConsultationDetailsProps {
-  consultation: NonNullable<GetConsultationRecord["data"]>
+  consultation: NonNullable<GetConsultationTicket["data"]>
 }
 export default async function ConsultationDetails({ consultation }: ConsultationDetailsProps) {
 
@@ -82,7 +82,7 @@ export const BackgroundInfo = ({ appointment, consultation, user }: BackgroundIn
         <Tabs defaultValue="notes" className="w-full">
           <TabsList>
             <TabsTrigger value="notes">Consultation Notes</TabsTrigger>
-            <TabsTrigger value="pre-consultation-notes">Pre-Consultation Notes</TabsTrigger>
+            <TabsTrigger value="pre-assessment-notes">Pre-Assessment Notes</TabsTrigger>
             <TabsTrigger value="interventions">Interventions</TabsTrigger>
             {/* <TabsTrigger value="conversation">Conversation</TabsTrigger> */}
             <TabsTrigger value="vital-signs">Vital Signs</TabsTrigger>
@@ -93,7 +93,7 @@ export const BackgroundInfo = ({ appointment, consultation, user }: BackgroundIn
               <ConsultationNotes consultation={consultation}/>
             </Suspend>
           </TabsContent>
-          <TabsContent value="pre-consultation-notes">
+          <TabsContent value="pre-assessment-notes">
             <Suspend>
               <NurseAssessment consultation={consultation}/>
             </Suspend>

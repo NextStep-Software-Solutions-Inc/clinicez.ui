@@ -7,7 +7,7 @@ import { Button } from "@components/ui/button";
 import { ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@components/ui/badge";
-import { getConsultationRecordAction } from "@actions/consultation/consultation-record.action";
+import { getConsultationTicketAction } from "@actions/consultation/consultation-ticket.action";
 import { getUserAction } from "@actions/users/user.action";
 import { notFound } from "next/navigation";
 import { Avatar, AvatarFallback } from "@components/ui/avatar";
@@ -26,7 +26,7 @@ async function ConsultationPage({params}: AppRouterPageRouteOpts) {
   const consultationId = parseInt(params?.consultation as string)
   const orgUid = params?.organization as string
 
-  const consultation = await getConsultationRecordAction(consultationId, orgUid)
+  const consultation = await getConsultationTicketAction(consultationId, orgUid)
   if(!consultation.data) notFound()
   const hp = await getUserAction(consultation.data?.createdBy)
 

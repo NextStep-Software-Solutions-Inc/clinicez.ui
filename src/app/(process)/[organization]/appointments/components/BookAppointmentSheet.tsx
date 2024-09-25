@@ -15,6 +15,7 @@ import ChiefComplaint from "./ChiefComplaint";
 import ConsentForm from "./ConsentForm";
 import ReviewBooking from "./ReviewBooking";
 import { InsertAttachment } from "./InsertAttachment";
+import SelectService from "./SelectService";
 
 export default function BookAppointmentSheet() {
   return (
@@ -31,10 +32,11 @@ export default function BookAppointmentSheet() {
         </SheetHeader>
         <div className="">
           <BookAppointmentSteps initialStep={1}>
-            <SelectTimeSlot/>
+            <SelectService/>
             <ChiefComplaint/>
             <InsertAttachment/>
             <ConsentForm/>
+            <SelectTimeSlot/>
             <ReviewBooking/>
           </BookAppointmentSteps>
         </div>

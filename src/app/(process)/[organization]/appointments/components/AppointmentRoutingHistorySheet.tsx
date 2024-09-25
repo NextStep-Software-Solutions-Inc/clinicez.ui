@@ -2,7 +2,7 @@ import { cancelAppointmentRoutingAction } from "@actions/appointments/appointmen
 import { GetAppointment } from "@actions/appointments/appointments.action";
 import { LabelValue } from "@components/LabelValue";
 import { Alert, AlertDescription, AlertTitle } from "@components/ui/alert";
-import { Badge } from "@components/ui/badge";
+import { Badge, BadgeProps } from "@components/ui/badge";
 import { Button } from "@components/ui/button"
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "@components/ui/context-menu";
 import {
@@ -16,15 +16,15 @@ import {
   SheetTrigger,
 } from "@components/ui/sheet"
 import Each from "@components/utils/Each";
+import { useOrgAppointment } from "@hooks/useAppointment";
 import { cn } from "@lib/utils";
 import dayjs from "dayjs"
 import utc from "dayjs/plugin/utc"
 dayjs.extend(utc)
 
 import { ArrowRight, Ban, Info } from "lucide-react";
-import Link from "next/link";
+import { useParams, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { record } from "zod";
 interface AppointmentRoutingHistorySheetProps {
   children?: React.ReactNode;
   onSelect? : (e: Event) => void;
@@ -34,7 +34,19 @@ interface AppointmentRoutingHistorySheetProps {
 
 
 export default function AppointmentRoutingHistorySheet({ children, onClose, routing }: AppointmentRoutingHistorySheetProps) {
-  const badgeMap = {
+  const params = useParams<{organization: string}>()
+  const searchParams = useSearchParams()
+  const appointmentId = Number(searchParams.get("_appointment"))
+  
+  const { mutate } = useOrgAppointment({
+    orgId: params.organization,
+    appointmentId: appointmentId
+  })
+  
+  const mu = () => {
+    mutate()
+  }
+  const badgeMap: Record<string, BadgeProps["variant"]> = {
     ACCEPTED: "default",
     PENDING: "outline",
     DECLINED: "destructive",
@@ -78,7 +90,7 @@ export default function AppointmentRoutingHistorySheet({ children, onClose, rout
                 </ContextMenuTrigger>
                 <ContextMenuContent>
                   <ContextMenuItem>
-                    <CancelAssignment appointmentRoutingId={record.id}/>
+                    {record.status !== "CANCELLED" && <CancelAssignment onCancel={mu} appointmentRoutingId={record.id}/>}
                   </ContextMenuItem>
                 </ContextMenuContent>
               </ContextMenu>
@@ -96,12 +108,13 @@ export default function AppointmentRoutingHistorySheet({ children, onClose, rout
 }
 
 
-export const CancelAssignment = ({appointmentRoutingId}: {appointmentRoutingId: number}) => {
-
+export const CancelAssignment = ({appointmentRoutingId, onCancel}: {appointmentRoutingId: number, onCancel?: () => void}) => {
+  
   const handleCancelAssignment = () => {
     toast.promise(cancelAppointmentRoutingAction(appointmentRoutingId), {
       loading: "Cancelling assignment...",
       success: (res) => {
+        if(res.status) onCancel?.()
         return res.message
       },
       error: "Failed to cancel assignment."

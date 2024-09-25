@@ -1,6 +1,6 @@
 "use client";
 
-import { GetPreConsultationNotes } from '@actions/appointments/pre-consultation-note.action';
+import { GetPreConsultationNotes } from '@actions/appointments/pre-assessment-note.action';
 import { self } from "@services/request"
 import useSWR from "swr"
 

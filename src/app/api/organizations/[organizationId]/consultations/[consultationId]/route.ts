@@ -1,4 +1,4 @@
-import { getConsultationRecordAction } from "@actions/consultation/consultation-record.action";
+import { getConsultationRecordAction } from "@actions/consultation/consultation-ticket.action";
 import { withJwtAuth } from "@middlewares/withJwtAuth";
 import { NextRequest, NextResponse } from "next/server";
 

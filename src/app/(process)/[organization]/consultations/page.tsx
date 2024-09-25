@@ -1,11 +1,8 @@
 import React from "react";
 import { Separator } from "@components/ui/separator";
-import Suspend from "@components/Suspend";
-import { DataTable } from "./components/data-table";
-import { columns } from "./components/columns"
 import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth0";
 import { Metadata } from "next";
-import { getConsultationRecordsAction } from "@actions/consultation/consultation-record.action";
+import ConsultationTable from "./components/ConsultationTable";
 
 export const metadata: Metadata = {
   title: "Consultation Records",
@@ -14,10 +11,6 @@ export const metadata: Metadata = {
 
 async function ConsultationsPage({params}: AppRouterPageRouteOpts) {
   const orgUid = params?.organization as string
-  const consultations = await getConsultationRecordsAction({
-    orgUid
-  })
-
   return (
     <>
       <div className="space-y-6">
@@ -28,11 +21,8 @@ async function ConsultationsPage({params}: AppRouterPageRouteOpts) {
           </p>
         </div>
         <Separator />
-        <Suspend>
-          <DataTable data={consultations.data ?? []} columns={columns} />
-        </Suspend>
+        <ConsultationTable orgUid={orgUid}/>
       </div>
-
     </>
   );
 }

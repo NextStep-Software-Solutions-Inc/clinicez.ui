@@ -6,7 +6,7 @@ import AddInterventionModal from "./modals/AddInterventionModal";
 import { Badge } from "@components/ui/badge";
 import Each from "@components/utils/Each";
 import { Avatar, AvatarFallback } from "@components/ui/avatar";
-import { GetConsultationRecord } from "@actions/consultation/consultation-record.action";
+import { GetConsultationRecord } from "@actions/consultation/consultation-ticket.action";
 import dayjs from "dayjs"
 import utc from "dayjs/plugin/utc"
 dayjs.extend(utc)

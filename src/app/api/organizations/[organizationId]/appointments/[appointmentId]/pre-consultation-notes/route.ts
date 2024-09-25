@@ -1,4 +1,4 @@
-import { getPreConsultationNotesAction } from "@actions/appointments/pre-consultation-note.action";
+import { getPreConsultationNotesAction } from "@actions/appointments/pre-assessment-note.action";
 import { withJwtAuth } from "@middlewares/withJwtAuth";
 import { NextRequest, NextResponse } from "next/server";
 

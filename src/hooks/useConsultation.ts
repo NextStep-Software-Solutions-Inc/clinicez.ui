@@ -1,19 +1,29 @@
 "use client";
 
-import { GetConsultationRecord } from "@actions/consultation/consultation-record.action";
+import { GetConsultationTicket, GetConsultationTickets } from "@actions/consultation/consultation-ticket.action";
 import { self } from "@services/request"
 import useSWR from "swr"
 
-export const useConsultations = () => {
-  const fetcher = (args: string) => self.get<GetConsultationRecord>(args)
-  return useSWR('/api/consultations', fetcher)
+
+type UseConsultations = {
+  orgUid: string
+  showArchived?: boolean
 }
+
+export const useConsultations = ({ orgUid, showArchived }:UseConsultations) => {
+  const fetcher = (args: string) => self.get<GetConsultationTickets>(args)
+  const searchParams = new URLSearchParams()
+  if(showArchived) searchParams.append('showArchived', showArchived.toString())
+  return useSWR(`/api/organizations/${orgUid}/consultations?${searchParams.toString()}`, fetcher)
+}
+
+
 
 type UseOrgConsultation = {
     orgUid: string,
     consultationId: number
 }
 export const useConsultation = ({orgUid, consultationId}: UseOrgConsultation) => {
-  const fetcher = (args: string) => self.get<GetConsultationRecord>(args)
+  const fetcher = (args: string) => self.get<GetConsultationTicket>(args)
   return useSWR(() => !!consultationId ? `/api/organizations/${orgUid}/consultations/${consultationId}` : null, fetcher)
 }

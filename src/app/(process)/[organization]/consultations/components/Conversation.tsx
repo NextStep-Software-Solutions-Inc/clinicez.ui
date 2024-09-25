@@ -1,6 +1,6 @@
 "use client";
 
-import { GetConsultationRecord } from "@actions/consultation/consultation-record.action";
+import { GetConsultationRecord } from "@actions/consultation/consultation-ticket.action";
 import { getConversationAction } from "@actions/consultations.action";
 import { Button } from "@components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@components/ui/card";

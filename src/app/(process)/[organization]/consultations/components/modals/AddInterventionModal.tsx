@@ -1,6 +1,6 @@
 "use client";
 
-import { GetConsultationRecord } from "@actions/consultation/consultation-record.action";
+import { GetConsultationRecord } from "@actions/consultation/consultation-ticket.action";
 import { createInterventionAction } from "@actions/consultation/intervention.action";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import ActionButton from "@components/ActionButton"

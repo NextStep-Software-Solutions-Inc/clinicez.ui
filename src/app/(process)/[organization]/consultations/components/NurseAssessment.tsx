@@ -1,7 +1,7 @@
 "use client";
 
-import { GetPreConsultationNotes } from "@actions/appointments/pre-consultation-note.action";
-import { GetConsultationRecord } from "@actions/consultation/consultation-record.action";
+import { GetPreConsultationNotes } from "@actions/appointments/pre-assessment-note.action";
+import { GetConsultationRecord } from "@actions/consultation/consultation-ticket.action";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@components/ui/card";
 import Each from "@components/utils/Each";
 import { usePreConsultationNotes } from "@hooks/usePreConsultationNotes";

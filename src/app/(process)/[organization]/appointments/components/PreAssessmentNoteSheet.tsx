@@ -17,13 +17,13 @@ import { z } from "zod";
 import { useForm, useWatch } from "react-hook-form";
 import ActionButton from "@components/ActionButton";
 import { toast } from "sonner";
-import { upsertPreConsultationNoteAction } from "@actions/appointments/pre-consultation-note.action";
+import { upsertPreAssessmentNoteAction } from "@actions/appointments/pre-assessment-note.action";
 import { useOrgAppointment } from "@hooks/useAppointment";
 import { Checkbox } from "@components/ui/checkbox";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import { useLocalStorage } from "@hooks/useLocalStorage";
 
-const preConsultationNotesSchema = z.object({
+const preAssessmentNotesSchema = z.object({
   createNew: z.boolean(),
   assessment: z.string({
     required_error: "Assessment is required",
@@ -34,11 +34,11 @@ const preConsultationNotesSchema = z.object({
   })
 })
 
-type PreConsultationNotes = z.infer<typeof preConsultationNotesSchema>
+type PreConsultationNotes = z.infer<typeof preAssessmentNotesSchema>
 
-interface PreConsultationNoteSheetProps {
+interface PreAssessmentNoteSheetProps {
   children: React.ReactNode
-  preConsultationNotes: {
+  preAssessmentNotes: {
     assessment: string
     homeInstructions?: string
     remarks: string
@@ -48,9 +48,9 @@ interface PreConsultationNoteSheetProps {
   }
   disabled?: boolean
 }
-export default function PreConsultationNoteSheet({children, disabled, preConsultationNotes:{ assessment, homeInstructions, remarks , appointmentId: appointmentId, orgUid, createdBy} }: PreConsultationNoteSheetProps) {
-  const preConSultKey = `preConsultationNote-${appointmentId}-${orgUid}`
-  const [preConsultationNote, setPreConsultationNote] = useLocalStorage<Partial<PreConsultationNotes>>(preConSultKey, {
+export default function PreAssessmentNoteSheet({children, disabled, preAssessmentNotes:{ assessment, homeInstructions, remarks , appointmentId: appointmentId, orgUid, createdBy} }: PreAssessmentNoteSheetProps) {
+  const preConSultKey = `preAssessmentNote-${appointmentId}-${orgUid}`
+  const [preAssessmentNote, setPreAssessmentNote] = useLocalStorage<Partial<PreConsultationNotes>>(preConSultKey, {
     assessment,
     homeInstructions,
     remarks,
@@ -65,29 +65,29 @@ export default function PreConsultationNoteSheet({children, disabled, preConsult
   })
   const form = useForm<PreConsultationNotes>({
     defaultValues: {
-      createNew: preConsultationNote.createNew,
-      assessment: preConsultationNote.assessment,
-      homeInstructions: preConsultationNote.homeInstructions,
-      remarks: preConsultationNote.remarks
+      createNew: preAssessmentNote.createNew,
+      assessment: preAssessmentNote.assessment,
+      homeInstructions: preAssessmentNote.homeInstructions,
+      remarks: preAssessmentNote.remarks
     },
   })
   const watch = form.watch
 
   useEffect(() => {
-    const subscription = watch((value) => setPreConsultationNote(value))
+    const subscription = watch((value) => setPreAssessmentNote(value))
     return () => subscription.unsubscribe()
-  }, [setPreConsultationNote, watch])
+  }, [setPreAssessmentNote, watch])
 
   const action = () => {
     form.handleSubmit((data) => {
-      toast.promise(upsertPreConsultationNoteAction({
+      toast.promise(upsertPreAssessmentNoteAction({
         appointmentId,
         assessment: data.assessment,
         homeInstructions: data.homeInstructions,
         remarks: data.remarks,
         orgUid
       }), {
-        loading: "Saving Pre-Consultation Note...",
+        loading: "Saving Pre-Assessment Note...",
         success: (res) => {
           if (res.status) {
             form.reset(data)
@@ -96,7 +96,7 @@ export default function PreConsultationNoteSheet({children, disabled, preConsult
             return res.message
           }
         },
-        error: "Failed to save Pre-Consultation Note"
+        error: "Failed to save Pre-Assessment Note"
       })
     })()
   }
@@ -111,7 +111,7 @@ export default function PreConsultationNoteSheet({children, disabled, preConsult
         <Form {...form}>
           <form action={action} className="space-y-6 container">
             <SheetHeader>
-              <SheetTitle>Pre Consultation Notes</SheetTitle>
+              <SheetTitle>Pre Assessment Notes</SheetTitle>
               <SheetDescription>
                 Notes to be taken before the actual consultation.
               </SheetDescription>

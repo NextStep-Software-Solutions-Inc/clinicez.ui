@@ -39,15 +39,10 @@ export const getHPsTimeSlots = cache(async ({appointmentTypeId, serviceId, hpEma
     data: []
   }
 
-  const [serviceAttribute, appointmentTypeAttribute, userSchedules, appointmentSchedules] = await Promise.all([
+  const [serviceAttribute, userSchedules, appointmentSchedules] = await Promise.all([
     prismaTenant.serviceAttribute.findUnique({
       where: {
         serviceId: serviceId
-      }
-    }),
-    prismaTenant.appointmentTypeAttribute.findUnique({
-      where: {
-        appointmentTypeId: appointmentTypeId
       }
     }),
     getUserSchedulesAction(hpEmail),

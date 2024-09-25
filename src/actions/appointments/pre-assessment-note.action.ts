@@ -4,7 +4,7 @@ import prismaTenant from '@lib/prisma-tenant';
 import { getCachedSession } from '@actions/session.action';
 import 'server-only'
 
-type UpsertPreConsultationNotePayload = {
+type UpsertPreAssessmentNotePayload = {
     appointmentId: number;
     assessment: string;
     homeInstructions?: string;
@@ -12,7 +12,7 @@ type UpsertPreConsultationNotePayload = {
     orgUid: string;
 }
 
-export const upsertPreConsultationNoteAction = async ({appointmentId, orgUid, assessment, homeInstructions, remarks}: UpsertPreConsultationNotePayload) => {
+export const upsertPreAssessmentNoteAction = async ({appointmentId, orgUid, assessment, homeInstructions, remarks}: UpsertPreAssessmentNotePayload) => {
   const session = await getCachedSession()
   
   if(!session) return {
@@ -21,7 +21,7 @@ export const upsertPreConsultationNoteAction = async ({appointmentId, orgUid, as
     data: null
   }
 
-  await prismaTenant.preConsultationNote.upsert({
+  await prismaTenant.preAssessmentNote.upsert({
     where: {
       unique_appointment_created_by: {
         appointmentId,
@@ -52,8 +52,8 @@ export const upsertPreConsultationNoteAction = async ({appointmentId, orgUid, as
   }
 }
 
-export type GetPreConsultationNotes = Awaited<ReturnType<typeof getPreConsultationNotesAction>>
-export const getPreConsultationNotesAction = async (appointmentId: number) => {
+export type GetPreAssessmentNotes = Awaited<ReturnType<typeof getPreAssessmentNotesAction>>
+export const getPreAssessmentNotesAction = async (appointmentId: number) => {
   const session = await getCachedSession()
   if(!session) return {
     status: false,
@@ -61,7 +61,7 @@ export const getPreConsultationNotesAction = async (appointmentId: number) => {
     data: []
   }
 
-  const preConsultationNote = await prismaTenant.preConsultationNote.findMany({
+  const preAssessmentNote = await prismaTenant.preAssessmentNote.findMany({
     orderBy: {
       createdAt: 'desc'
     },
@@ -72,6 +72,6 @@ export const getPreConsultationNotesAction = async (appointmentId: number) => {
   return {
     status: true,
     message: "Pre-consultation note fetched successfully",
-    data: preConsultationNote
+    data: preAssessmentNote
   }
 }

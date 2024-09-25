@@ -32,8 +32,14 @@ export default function AssignAppointment({disabled = false, appointmentId, onAs
     if (!acc[role]) {
       acc[role] = [];
     }
-    
-    if(assigned.some(a => a.role.toUpperCase() === role && a.status !== "DECLINED")) {
+    const skip = assigned.some(a => {
+      if(a.role.toUpperCase() === role) {
+        if(["PENDING"].includes(a.status)) return acc
+        return ["CANCELLED"].includes(a.status) && a.email === hp.User?.email
+      }
+      return false
+    })
+    if(skip) {
       return acc;
     }
     acc[role].push({

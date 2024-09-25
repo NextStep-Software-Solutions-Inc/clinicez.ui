@@ -17,7 +17,9 @@ export const MembershipTable = ({ orgId }: MembershipTableProps) => {
   if(isLoading) return <PageLoading label="Fetching membership data. Please wait..." />;
 
   return (
-    <DataTable data={membershipRequests?.data ?? []} columns={columns} rowCount={membershipRequests?.total ?? 0}
+    <DataTable 
+      data={membershipRequests?.data ?? []} 
+      columns={columns} rowCount={membershipRequests?.total ?? 0}
       onPaginationChange={(pagination)=> {
         if(typeof pagination === "object"){
           setPage(pagination.pageIndex + 1);

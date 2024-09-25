@@ -11,7 +11,7 @@ import {
   CardHeader,
   CardTitle
 } from "@components/ui/card";
-import { GetConsultationRecord } from "@actions/consultation/consultation-record.action";
+import { GetConsultationRecord } from "@actions/consultation/consultation-ticket.action";
 import { useParams } from "next/navigation";
 import { useConsultationNotes } from "@hooks/useConsultationNote";
 import Each from "@components/utils/Each";

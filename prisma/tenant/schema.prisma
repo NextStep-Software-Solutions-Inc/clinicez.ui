@@ -23,8 +23,8 @@ model Appointment {
   AppointmentAttribute   AppointmentAttribute?
   AppointmentRouting     AppointmentRouting[]
   AppointmentAttachments AppointmentAttachment[]
-  PreConsultationNotes   PreConsultationNote[]
-  ConsultationRecords    ConsultationRecord[]
+  PreConsultationNotes   PreAssessmentNote[]
+  ConsultationTickets    ConsultationTicket[]
 }
 
 model AppointmentAttachment {
@@ -61,6 +61,9 @@ model AppointmentAttribute {
   rejectedReason     String?
   completedAt        DateTime?
   completedBy        String?
+  rescheduledAt      DateTime?
+  rescheduledBy      String?
+  rescheduledReason  String?
   status             String          @default("PENDING")
   serviceId          Int?
   preferredAppointee String?
@@ -163,45 +166,55 @@ model ServiceAttribute {
   Service         Service  @relation(fields: [serviceId], references: [id])
 }
 
-model ConsultationRecord {
+model ConsultationTicket {
   id                          Int                          @id @default(autoincrement())
-  appointmentId               Int
+  systemId                    Int
+  appointmentId               Int?
   orgUid                      String
-  subject                     String
+  subject                     String?                      @default("")
   hpId                        Int                          @default(0)
   createdBy                   String
   createdAt                   DateTime                     @default(now())
   updatedAt                   DateTime                     @updatedAt
   isActive                    Boolean                      @default(true)
   isArchived                  Boolean                      @default(false)
-  Appointment                 Appointment                  @relation(fields: [appointmentId], references: [id])
+  Appointment                 Appointment?                 @relation(fields: [appointmentId], references: [id])
+  System                      System                       @relation(fields: [systemId], references: [id])
   ConsultationNotes           ConsultationNote[]
-  ConsultationRecordAttribute ConsultationRecordAttribute?
+  ConsultationTicketAttribute ConsultationTicketAttribute?
   Interventions               Intervention[]
 }
 
-model ConsultationRecordAttribute {
+model ConsultationTicketAttribute {
   id                   Int                @id @default(autoincrement())
-  consultationRecordId Int                @unique
-  status               String             @default("OPEN")
+  consultationTicketId Int                @unique
+  status               String             @default("PENDING")
   noteTemplateName     String             @default("SOAP")
   whitelistEmails      String[]           @default([])
-  ConsultationRecord   ConsultationRecord @relation(fields: [consultationRecordId], references: [id])
+  ConsultationTicket   ConsultationTicket @relation(fields: [consultationTicketId], references: [id])
+}
+
+model System {
+  id                  Int                  @id @default(autoincrement())
+  orgUid              String
+  name                String
+  isActive            Boolean              @default(true)
+  ConsultationTickets ConsultationTicket[]
 }
 
 model ConsultationNote {
   id                   Int                @id @default(autoincrement())
-  consultationRecordId Int
+  consultationTicketId Int
   section              String
   content              String
   createdAt            DateTime           @default(now())
   updatedAt            DateTime           @updatedAt
-  ConsultationRecord   ConsultationRecord @relation(fields: [consultationRecordId], references: [id])
+  ConsultationTicket   ConsultationTicket @relation(fields: [consultationTicketId], references: [id])
 
-  @@unique([consultationRecordId, section], name: "unique_consultation_record_section")
+  @@unique([consultationTicketId, section], name: "unique_consultation_section")
 }
 
-model PreConsultationNote {
+model PreAssessmentNote {
   id                           Int                           @id @default(autoincrement())
   appointmentId                Int
   orgUid                       String
@@ -218,24 +231,24 @@ model PreConsultationNote {
 }
 
 model PreConsultationNoteAttribute {
-  id                    Int                 @id @default(autoincrement())
-  preConsultationNoteId Int                 @unique
-  whitelistEmails       String[]            @default([])
-  PreConsultationNote   PreConsultationNote @relation(fields: [preConsultationNoteId], references: [id])
+  id                    Int               @id @default(autoincrement())
+  preConsultationNoteId Int               @unique
+  whitelistEmails       String[]          @default([])
+  PreAssessmentNote     PreAssessmentNote @relation(fields: [preConsultationNoteId], references: [id])
 }
 
 model Intervention {
   id                   Int                @id @default(autoincrement())
   orgUid               String
   hpId                 Int
-  consultationRecordId Int
+  consultationTicketId Int
   actionId             Int
   details              String
   createdAt            DateTime           @default(now())
   updatedAt            DateTime           @updatedAt
   deletedAt            DateTime?
   isActive             Boolean            @default(true)
-  ConsultationRecord   ConsultationRecord @relation(fields: [consultationRecordId], references: [id])
+  ConsultationTicket   ConsultationTicket @relation(fields: [consultationTicketId], references: [id])
   Action               Action             @relation(fields: [actionId], references: [id])
 }
 

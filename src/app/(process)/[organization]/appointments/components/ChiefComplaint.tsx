@@ -34,7 +34,10 @@ export default function ChiefComplaint({ nextStep, prevStep, isLastStep, isFirst
 
   const form = useForm<z.infer<typeof chiefComplaintFormSchema>>({
     resolver: zodResolver(chiefComplaintFormSchema),
-    defaultValues: bookAppointmentForm,
+    defaultValues: {
+      subject: bookAppointmentForm.subject ?? "",
+      chiefComplaint: bookAppointmentForm.chiefComplaint ?? "",
+    },
     mode: "onChange"
   })
 

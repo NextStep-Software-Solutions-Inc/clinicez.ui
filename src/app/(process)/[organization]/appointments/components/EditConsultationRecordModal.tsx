@@ -1,6 +1,6 @@
 "use client";
 
-import { updateConsultationRecordAction } from "@actions/consultation/consultation-record.action";
+import { updateConsultationRecordAction } from "@actions/consultation/consultation-ticket.action";
 import ActionButton from "@components/ActionButton"
 import CustomModalContent from "@components/CustomModalContent";
 import {

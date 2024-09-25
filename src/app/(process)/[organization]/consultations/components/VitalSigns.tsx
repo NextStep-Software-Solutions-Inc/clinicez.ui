@@ -1,4 +1,4 @@
-import { GetConsultationRecord } from "@actions/consultation/consultation-record.action";
+import { GetConsultationRecord } from "@actions/consultation/consultation-ticket.action";
 import RecentVitalSigns from "../../../../(main)/user/[user]/phr/vitals/RecentVitalSigns";
 import { getUserVitalSignsAction } from "@actions/vitals.action";
 

@@ -92,7 +92,7 @@ export const getAppointmentsAction = async (filter?: GetAppointmentFilter) => {
     };
 
   const { orgUid, status, routedAptStatus, sort } = filter || {};
-  const hasPermission = [].every(p => [].includes(p))
+  const hasPermission = ["read:org:appointment:all"].every(p => [""].includes(p))
 
   const appointments = await prismaTenant.appointment.findMany({
     orderBy: {
@@ -142,13 +142,16 @@ export const getAppointmentsAction = async (filter?: GetAppointmentFilter) => {
       },
       _count: {
         select: {
-          ConsultationRecords: true
+          ConsultationTickets: true
         }
       },
       AppointmentAttribute: {
         select: {
           date: true,
           timeStart: true,
+          completedAt: true,
+          receivedAt: true,
+          rejectedAt: true,
           AppointmentType: {
             select: {
               name: true
@@ -242,6 +245,7 @@ export const getAppointmentAction = async (id: number, orgUid?: string) => {
         }
       },
       AppointmentRouting: {
+        orderBy: {id: "asc"},
         select: {
           id: true,
           amendment: true,
@@ -266,7 +270,7 @@ export const getAppointmentAction = async (id: number, orgUid?: string) => {
           PreConsultationNoteAttribute: {}
         }
       },
-      ConsultationRecords: {
+      ConsultationTickets: {
         where: {
           appointmentId: id,
           orgUid: orgUid
@@ -276,7 +280,7 @@ export const getAppointmentAction = async (id: number, orgUid?: string) => {
           updatedAt: true,
           createdBy: true,
           subject: true,
-          ConsultationRecordAttribute: {
+          ConsultationTicketAttribute: {
             select: {
               noteTemplateName: true
             }
@@ -303,7 +307,7 @@ export const getAppointmentCountsAction = async (orgUid: string) => {
       message: "Unauthorized"
     };
 
-  const hasPermission = [].every(p => [].includes(p))
+  const hasPermission = ["read:org:appointment:all"].every(p => [""].includes(p))
 
   const counts = await prismaTenant.appointmentAttribute.groupBy({
     by: ["status"],
@@ -352,7 +356,7 @@ export const getRoutedAppointmentCountsAction = async (orgUid: string) => {
       status: false,
       message: "Unauthorized"
     };
-  const hasPermission = [].every(p => [].includes(p));
+  const hasPermission = ["read:org:appointment:all"].every(p => [""].includes(p));
 
   const counts = await prismaTenant.appointmentRouting.groupBy({
     by: ["status"],

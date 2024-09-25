@@ -28,15 +28,26 @@ import {
 import { DataTablePagination } from "./data-table-pagination"
 import { DataTableToolbar } from "./data-table-toolbar"
 import Each from "@components/utils/Each"
+import { cn } from "@lib/utils"
+import { GetConsultationTickets } from "@actions/consultation/consultation-ticket.action"
+import { CheckedState } from "@radix-ui/react-checkbox"
 
+
+export type ConsultationTableOptions = {
+  showArchived: CheckedState
+}
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
-  data: TData[]
+  data: TData[],
+  options?: ConsultationTableOptions
+  onOptionsChange?: (options: ConsultationTableOptions) => void
 }
 
-export function DataTable<TData, TValue>({
+export function DataTable<TData extends GetConsultationTickets["data"][number], TValue>({
   columns,
   data,
+  options,
+  onOptionsChange,
 }: DataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = React.useState({})
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
@@ -64,9 +75,19 @@ export function DataTable<TData, TValue>({
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
   })
+
+  const handleOptionsChange = (options: ConsultationTableOptions) => {
+    onOptionsChange?.(options)
+  }
+
   return (
     <div className="space-y-4">
-      <DataTableToolbar table={table} />
+      <DataTableToolbar 
+        table={table} 
+        options={{
+          showArchived: options?.showArchived === true
+        }}
+        onOptionsChange={handleOptionsChange} />
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -96,24 +117,27 @@ export function DataTable<TData, TValue>({
           <TableBody>
             <Each
               of={table.getRowModel().rows}
-              render={(row) => (
-                <TableRow
-                  data-state={row.getIsSelected() && "selected"}
-                >
-                  <Each
-                    of={row.getVisibleCells()}
-                    render={(cell) => (
-                      <TableCell>
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )}
-                      </TableCell>
-                    )}
-                  />
-
-                </TableRow>
-              )}
+              render={(row) => {
+                return (
+                  <TableRow
+                    data-state={row.getIsSelected() && "selected"}
+                    className={cn(row.original.isArchived && "bg-destructive/5")}
+                  >
+                    <Each
+                      of={row.getVisibleCells()}
+                      render={(cell) => (
+                        <TableCell>
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                          )}
+                        </TableCell>
+                      )}
+                    />
+  
+                  </TableRow>
+                )
+              }}
               fallback={(
                 <TableRow>
                   <TableCell

@@ -4,7 +4,7 @@ import useSWR from "swr"
 
 type UseOrgServicesFilter = {
   orgUid: string,
-    categoryId?: string
+  categoryId?: string
 }
 export const useOrgServices = (filter: UseOrgServicesFilter) => {
   const { orgUid, categoryId } = filter

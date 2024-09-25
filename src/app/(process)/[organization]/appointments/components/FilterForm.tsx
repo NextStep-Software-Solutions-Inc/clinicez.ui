@@ -16,7 +16,9 @@ import {
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@components/ui/select"
@@ -31,6 +33,7 @@ import ActionButton from "@components/ActionButton"
 import { getHPsTimeSlots } from "@actions/schedule/time-slot.actions"
 import { toast } from "sonner"
 import { useOrgAppointmentModes } from "@hooks/useOrgAppointmentMode"
+import { useOrgServiceCategories } from "@hooks/useOrgServiceCategory"
 
 const FilterFormSchema = z.object({
   appointmentTypeId: z.coerce.number({
@@ -47,36 +50,39 @@ const FilterFormSchema = z.object({
   }),
 })
 
+interface FilterFormProps {
+  onContinue?: () => void
+}
 
-export default function FilterForm() {
+export default function FilterForm({onContinue}: FilterFormProps) {
   const params = useParams()
   const [bookAppointmentForm, setBookAppointmentForm] = useAtom(bookAppointmentAtom)
 
   const organization = params?.organization as string
   const {data: appointmentTypes} = useOrgAppointmentTypes(organization)
-  const { data: appointmentModes } = useOrgAppointmentModes(organization);
-  const {data: services} = useOrgServices({
-    orgUid: organization,
-  })
+  const {data: appointmentModes } = useOrgAppointmentModes(organization);
+  const {data: serviceCategories} = useOrgServiceCategories(organization)
   const {data: doctors} = useHPs({type: "DOCTOR",})
 
   const form = useForm<z.infer<typeof FilterFormSchema>>({
     resolver: zodResolver(FilterFormSchema),
     defaultValues: {
+      modeId: bookAppointmentForm.modeId,
       appointmentTypeId: bookAppointmentForm.appointmentTypeId,
       serviceId: bookAppointmentForm.serviceId,
       hpEmail: bookAppointmentForm.hpEmail
     },
   })
 
-  async function onSubmit(data: z.infer<typeof FilterFormSchema>) {
+  function onSubmit(data: z.infer<typeof FilterFormSchema>) {
     
-    const service = services?.find(service => service.id === data.serviceId)
+    const service = serviceCategories?.flatMap(sc => sc.Services).find(service => service.id === data.serviceId)
     const appointmentType = appointmentTypes?.find(appointmentType => appointmentType.id === data.appointmentTypeId)
     const serviceAttribute = service?.ServiceAttribute
     const appointmentTypeAttribute = appointmentType?.AppointmentTypeAttribute 
     
-    if(!serviceAttribute || !appointmentTypeAttribute) return toast.message("Service or appointment type attribute not found")
+    if(!appointmentTypeAttribute) return toast.message("Appointment type attribute not found")
+    if(!serviceAttribute) return toast.message("Service attribute not found")
 
     setBookAppointmentForm((prev) => ({...prev, ...{
       selectedTimeSlot: undefined,
@@ -86,21 +92,8 @@ export default function FilterForm() {
       serviceId: data.serviceId,
       appointmentTypeId: data.appointmentTypeId
     }}))
-
     form.reset(data)
-    toast.promise(getHPsTimeSlots({
-      appointmentTypeId: data.appointmentTypeId,
-      serviceId: data.serviceId,
-      hpEmail: data.hpEmail
-    }), {
-      loading: "Generating time slots...",
-      success: (res) => {
-        if(res.status) setBookAppointmentForm((prev) => ({...prev, availabilities: res.data}))
-        return res.message
-      },
-      error: "Failed to generate time slots",
-      position: "top-center"
-    });
+    onContinue?.()
   }
   
   return (
@@ -183,15 +176,23 @@ export default function FilterForm() {
                   </FormControl>
                   <SelectContent>
                     <Each
-                      of={services ?? []}
-                      render={(service) => (
-                        <SelectItem value={service.id.toString()}>{service.name}</SelectItem>
+                      of={serviceCategories ?? []}
+                      render={(category) => (
+                        <SelectGroup>
+                          <SelectLabel>{category.name}</SelectLabel>
+                          <Each
+                            of={category.Services ?? []}
+                            render={(service) => (
+                              <SelectItem value={service.id.toString()}>{service.name}</SelectItem>
+                            )}
+                          />
+                        </SelectGroup>
                       )}
                     />
                   </SelectContent>
                 </Select>
                 <FormDescription>
-                    Select a service to filter even more available appointments
+                  Select a service to filter even more available appointments
                 </FormDescription>
                 <FormMessage />
               </FormItem>
@@ -202,7 +203,7 @@ export default function FilterForm() {
             name="hpEmail"
             render={({ field }) => (
               <FormItem className="flex-grow">
-                <FormLabel>Healthcare Provider</FormLabel>
+                <FormLabel>Preferred Healthcare Provider</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value?.toString()}>
                   <FormControl>
                     <SelectTrigger>
@@ -225,14 +226,9 @@ export default function FilterForm() {
               </FormItem>
             )}
           />
-          <ActionButton className="w-full" type="submit" disabled={!form.formState.isDirty}>Find time slot.</ActionButton>
-
+          <ActionButton className="w-full" type="submit" disabled={!form.formState.isValid}>Continue</ActionButton>
         </div>
       </form>
     </Form>
   )
-}
-
-const findTheHighest = (arr: number[]) => {
-  return Math.max(...arr);
 }

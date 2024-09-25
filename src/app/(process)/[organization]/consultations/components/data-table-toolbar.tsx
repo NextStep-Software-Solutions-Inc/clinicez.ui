@@ -8,24 +8,39 @@ import { Input } from "@components/ui/input"
 import { DataTableViewOptions } from "./data-table-view-options"
 
 import { DataTableFacetedFilter } from "./data-table-faceted-filter"
+import { Checkbox } from "@components/ui/checkbox"
+import { ConsultationTableOptions } from "./data-table"
+import { CheckedState } from "@radix-ui/react-checkbox"
+import { useState } from "react"
 
 interface DataTableToolbarProps<TData> {
   table: Table<TData>
+  options?: ConsultationTableOptions
+  onOptionsChange?: (options: ConsultationTableOptions) => void
 }
 
 export function DataTableToolbar<TData>({
   table,
+  options,
+  onOptionsChange
 }: DataTableToolbarProps<TData>) {
   const isFiltered = table.getState().columnFilters.length > 0
+  const [showArchived, setShowArchived] = useState(options?.showArchived === true)
 
+  const handleShowArchivedChange = (checked: CheckedState) => {
+    setShowArchived(checked === true)
+    onOptionsChange?.({
+      showArchived: checked
+    })
+  }
   return (
     <div className="flex items-center justify-between">
       <div className="flex flex-1 items-center space-x-2">
         <Input
           placeholder="Filter consultation records..."
-          value={(table.getColumn("subject")?.getFilterValue() as string) ?? ""}
+          value={(table.getColumn("ticket")?.getFilterValue() as string) ?? ""}
           onChange={(event) =>
-            table.getColumn("subject")?.setFilterValue(event.target.value)
+            table.getColumn("ticket")?.setFilterValue(event.target.value)
           }
           className="h-8 w-[150px] lg:w-[250px]"
         />
@@ -35,68 +50,20 @@ export function DataTableToolbar<TData>({
             title="Status"
             options={[
               {
-                label: "Open",
-                value: "OPEN",
+                label: "Pending",
+                value: "PENDING",
               },
               {
                 label: "Resolved",
                 value: "RESOLVED",
               },
               {
-                label: "Closed",
-                value: "CLOSED",
+                label: "Processing",
+                value: "PROCESSING",
               }
             ]}
           />
         )}
-        {/* {table.getColumn("system") && (
-          <DataTableFacetedFilter
-            column={table.getColumn("system")}
-            title="System"
-            options={[
-              {
-                label: "Teleconsultation",
-                value: "teleconsultation",
-              },
-              {
-                label: "In-person",
-                value: "in-person",
-              }
-            ]}
-          />
-        )}
-        {table.getColumn("mode") && (
-          <DataTableFacetedFilter
-            column={table.getColumn("mode")}
-            title="Mode"
-            options={[
-              {
-                label: "Video",
-                value: "video",
-              },
-              {
-                label: "Audio",
-                value: "audio",
-              }
-            ]}
-          />
-        )}
-        {table.getColumn("appointmentType") && (
-          <DataTableFacetedFilter
-            column={table.getColumn("appointmentType")}
-            title="Appointment Type"
-            options={[
-              {
-                label: "Scheduled",
-                value: "scheduled",
-              },
-              {
-                label: "On-demand",
-                value: "on-demand",
-              }
-            ]}
-          />
-        )} */}
         {isFiltered && (
           <Button
             variant="ghost"
@@ -108,7 +75,36 @@ export function DataTableToolbar<TData>({
           </Button>
         )}
       </div>
+      <ShowArchivedCheckbox
+        checked={showArchived}
+        onCheckedChange={handleShowArchivedChange}
+      />
       <DataTableViewOptions table={table} />
     </div>
   )
+}
+
+
+interface ShowArchivedCheckboxProps {
+  checked?: boolean
+  onCheckedChange?: (checked: CheckedState) => void
+}
+export const ShowArchivedCheckbox = ({onCheckedChange, checked}:ShowArchivedCheckboxProps) => {
+
+  return (
+    <div className="flex items-center space-x-2 mx-2">
+      <Checkbox 
+        checked={checked}
+        onCheckedChange={onCheckedChange}
+        id="show-archived"
+      />
+      <label
+        htmlFor="show-archived"
+        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+      >
+        Show archived
+      </label>
+    </div>
+  )
+
 }

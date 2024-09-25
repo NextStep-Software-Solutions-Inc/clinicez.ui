@@ -101,6 +101,7 @@ export default function AppointmentPanel({
 }: AppointmentPanelProps) {
 
   const appointmentStatusAsTabs = tabs.reduce((acc, tab) => {
+    if(!Object.keys(icons).includes(tab.name)) return acc
     acc[tab.name] = [...new Set(tab.roles.map(role => role.id))]
     return acc
   }, {} as Record<string, number[]>)
@@ -173,6 +174,7 @@ export default function AppointmentPanel({
     searchParams.set("_sort", value)
     history.pushState({}, "", `?${searchParams.toString()}`)
   }
+  
   return (
     <TooltipProvider delayDuration={0}>
       <ResizablePanelGroup
@@ -229,13 +231,20 @@ export default function AppointmentPanel({
             links={appointmentStatusLinks[activeRoleId as keyof typeof appointmentStatusLinks] ?? []}
           />
           <Separator />
-          <div className="px-5 pt-2 font-semibold">
-            In-route Appointments
-          </div>
-          <AppointmentStatusNav
-            isCollapsed={isCollapsed}
-            links={routerAppointmentStatusLinks[activeRoleId as keyof typeof routerAppointmentStatusLinks] ?? []}
-          />
+          {
+            tabs.find(t => t.name === "in-route")?.roles.some(r => r.id === activeRoleId) &&
+            (
+              <>
+                <div className="px-5 pt-2 font-semibold">
+                  In-route Appointments
+                </div>
+                <AppointmentStatusNav
+                  isCollapsed={isCollapsed}
+                  links={routerAppointmentStatusLinks[activeRoleId as keyof typeof routerAppointmentStatusLinks] ?? []}
+                />
+              </>
+            )
+          }
         </ResizablePanel>
         <ResizableHandle withHandle />
         <ResizablePanel className="" defaultSize={defaultLayout[1]} minSize={30}>

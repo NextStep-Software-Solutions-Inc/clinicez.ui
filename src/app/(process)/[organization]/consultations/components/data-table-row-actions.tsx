@@ -21,7 +21,7 @@ import EditConsultationRecordModal from "../../appointments/components/EditConsu
 import React from "react"
 import { useDropdownMenu } from "@components/DropdownMenuProvider"
 import { toast } from "sonner"
-import { archiveConsultationRecordAction, GetConsultationRecords } from "@actions/consultation/consultation-record.action"
+import { archiveConsultationRecordAction, GetConsultationRecords } from "@actions/consultation/consultation-ticket.action"
 import { Archive, Pencil } from "lucide-react"
 interface DataTableRowActionsProps<TData> {
   consultation: GetConsultationRecords["data"][number]

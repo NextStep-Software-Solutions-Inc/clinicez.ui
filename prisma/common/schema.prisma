@@ -85,6 +85,7 @@ model User {
   UserSchedules                    UserSchedule[]
   UserPermissions                  UserPermission[]
   OrgUserPermissions               OrgUserPermission[]
+  ReservedTimeSlots                ReservedTimeSlot[]
 }
 
 model Organization {
@@ -335,6 +336,7 @@ model HealthcareProvider {
   User                User                   @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   NurseProfile        NurseProfile?
   ProfessionalDetails ProfessionalDetails?
+  ReservedTimeSlots   ReservedTimeSlot[]
 }
 
 model DoctorProfile {
@@ -1044,4 +1046,18 @@ model UserSchedule {
   User        User      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([userId, startDate, endDate], name: "user_schedule_index")
+}
+
+model ReservedTimeSlot {
+  id                 Int                @id @default(autoincrement())
+  jobId              String             @unique
+  hpId               Int
+  reservedBy         Int
+  startDateTime      DateTime
+  endDateTime        DateTime
+  reservedAt         DateTime
+  User               User               @relation(fields: [reservedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  HealthCareProvider HealthcareProvider @relation(fields: [hpId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([hpId, reservedBy, startDateTime, endDateTime], name: "reserved_time_slot_index")
 }

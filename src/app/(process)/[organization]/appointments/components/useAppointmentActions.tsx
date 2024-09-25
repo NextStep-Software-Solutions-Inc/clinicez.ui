@@ -5,9 +5,9 @@ import ReceiveAppointment from "./ReceiveAppointment"
 import AssignAppointment from "../components/AssignAppointment"
 import RescheduleAppointment from "../components/RescheduleAppointment"
 import DeclineAppointmentAssignment from "../components/DeclineAppointmentAssignment"
-import CreateConsultationRecordModal from './CreateConsultationRecordModal';
+import CreateConsultationTicketModal from './CreateConsultationTicketModal';
 
-type AppointmentActions = "accept"|"decline"|"approve"|"receive"| "reject" | "assign" | "create-consultation-record"| "reschedule"
+type AppointmentActions = "accept"|"decline"|"approve"|"receive"| "reject" | "assign" | "create-consultation-ticket"| "reschedule"
 type AppointmentStatusTools = {
     action: AppointmentActions
     permissions: string[],
@@ -79,11 +79,11 @@ export const useAppointmentTools = ({ appointment, revalidate}: {
       )
     },
     {
-      action:"create-consultation-record",
-      permissions: ["create:org:consultation-record"],
+      action:"create-consultation-ticket",
+      permissions: ["create:org:consultation-ticket"],
       appointmentStatuses: ["routed"],
       routedAptStatuses: ["accepted"],
-      component: <CreateConsultationRecordModal key={appointment.id} disabled={!appointment} subject={appointment?.subject ?? ""}/>
+      component: <CreateConsultationTicketModal key={appointment.id} disabled={!appointment} subject={appointment?.subject ?? ""}/>
     },
     {
       action:"assign",

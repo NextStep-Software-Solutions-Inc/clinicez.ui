@@ -20,14 +20,14 @@ dayjs.extend(utc)
 import relativeTime from "dayjs/plugin/relativeTime";
 dayjs.extend(relativeTime);
 
-interface ConsultationRecordSheetProps {
+interface ConsultationTicketSheetProps {
   children?: React.ReactNode;
   onSelect? : (e: Event) => void;
   onClose?: () => void;
-  consultationRecords: NonNullable<GetAppointment["data"]>["ConsultationRecords"]
+  consultationTickets: NonNullable<GetAppointment["data"]>["ConsultationTickets"]
 }
 
-export default function ConsultationRecordSheet({ children, onClose, consultationRecords }: ConsultationRecordSheetProps) {
+export default function ConsultationTicketSheet({ children, onClose, consultationTickets }: ConsultationTicketSheetProps) {
   const params = useParams<{organization: string}>()
   const orgUid = params.organization
 
@@ -36,22 +36,23 @@ export default function ConsultationRecordSheet({ children, onClose, consultatio
       <SheetTrigger asChild >{children}</SheetTrigger>
       <SheetContent side="right" className="min-w-[calc(100dvw-70%)]">
         <SheetHeader>
-          <SheetTitle>Consultation Records</SheetTitle>
+          <SheetTitle>Consultation Tickets</SheetTitle>
           <SheetDescription>
-            Consultation records for this appointment.
+            Consultation tickets for this appointment.
           </SheetDescription>
         </SheetHeader>
         <div className="flex flex-col my-5 gap-2">
           <Each
-            of={consultationRecords}
-            fallback={<p className="text-center text-sm text-muted-foreground">No consultation records found.</p>}
+            of={consultationTickets}
+            fallback={<p className="text-center text-sm text-muted-foreground">No consultation tickets found.</p>}
             render={(record) => (
               <Link href={{
                 pathname: `/${orgUid}/consultations/${record.id}`,
               }}>
                 <div className="rounded px-3 py-2 bg-slate-100 hover:ring-1">
                   <div>
-                    <p className="font-semibold text-primary text-wrap">{record.subject}</p>
+                    <p className="font-semibold text-primary text-wrap">Consultation Ticket #{record.id}</p>
+                    {record.subject && <p className="font-medium text-wrap">{record.subject}</p>}
                     <p className="text-sm text-muted-foreground">{record.createdBy}</p>
                     <p className="text-xs text-muted-foreground">Created {dayjs(record.updatedAt).fromNow()}</p>
 

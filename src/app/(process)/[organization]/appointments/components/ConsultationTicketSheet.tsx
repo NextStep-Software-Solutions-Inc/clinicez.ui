@@ -46,9 +46,12 @@ export default function ConsultationTicketSheet({ children, onClose, consultatio
             of={consultationTickets}
             fallback={<p className="text-center text-sm text-muted-foreground">No consultation tickets found.</p>}
             render={(record) => (
-              <Link href={{
-                pathname: `/${orgUid}/consultations/${record.id}`,
-              }}>
+              <Link 
+                href={{
+                  pathname: `/${orgUid}/consultations/${record.id}`,
+                }} 
+                target="_blank"
+              >
                 <div className="rounded px-3 py-2 bg-slate-100 hover:ring-1">
                   <div>
                     <p className="font-semibold text-primary text-wrap">Consultation Ticket #{record.id}</p>

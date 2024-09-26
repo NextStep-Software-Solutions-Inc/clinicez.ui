@@ -3,11 +3,13 @@ import "server-only";
 
 import { delay } from "@lib/wait";
 import prismaTenant from "@lib/prisma-tenant";
+import prismaCommon from "@lib/prisma-common";
 import {
   RoutedAptStatus,
   AppointmentStatus
 } from "@public/json/appointment-list";
 import { getCachedSession } from "@actions/session.action";
+import { getPermissionsAction } from "@actions/permission.action";
 
 export type GetAppointmentFilter = {
   orgUid?: string;
@@ -92,7 +94,18 @@ export const getAppointmentsAction = async (filter?: GetAppointmentFilter) => {
     };
 
   const { orgUid, status, routedAptStatus, sort } = filter || {};
-  const hasPermission = ["read:org:appointment:all"].every(p => [""].includes(p))
+
+  const permissions = await getPermissionsAction(session.user.sub);
+  const userPermissionArray = permissions.map(p => p.name);
+  console.log({userPermissionArray});
+
+  const readAllOrgAppointmentPermission = ["read:org:appointment:all"];
+  const readAOwnOrgAppointmentPermission = ["read:org:appointment:own"];
+  const readAssignedOrgAppointmentPermission = ["read:org:appointment:assigned"];
+
+  const readAllOrgAppointment = readAllOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
+  const readAOwnOrgAppointment = readAOwnOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
+  const readAssignedOrgAppointment = readAssignedOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
 
   const appointments = await prismaTenant.appointment.findMany({
     orderBy: {
@@ -116,9 +129,9 @@ export const getAppointmentsAction = async (filter?: GetAppointmentFilter) => {
         }
         : {}),
       OR: [
-        { ...(hasPermission ? { orgUid } : {}) },
-        { Requesters: { some: { email: session.user.email } } },
-        {
+        { ...(readAllOrgAppointment ? { orgUid } : {}) },
+        { ...(readAOwnOrgAppointment ? { Requesters: { some: { email: session.user.email } } } : {}) },
+        { ...(readAssignedOrgAppointment ? {
           AppointmentRouting: {
             some: {
               OR: [
@@ -127,7 +140,7 @@ export const getAppointmentsAction = async (filter?: GetAppointmentFilter) => {
               ]
             }
           }
-        }
+        } : {}) },
       ]
     },
     select: {
@@ -191,10 +204,35 @@ export const getAppointmentAction = async (id: number, orgUid?: string) => {
       data: null
     };
 
+  const permissions = await getPermissionsAction(session.user.sub);
+  const userPermissionArray = permissions.map(p => p.name);
+  
+  const readAllOrgAppointmentPermission = ["read:org:appointment:all"]; // read all appointments in the org
+  const readAOwnOrgAppointmentPermission = ["read:org:appointment:own"]; // read appointments that the user is a requester
+  const readAssignedOrgAppointmentPermission = ["read:org:appointment:assigned"]; // read appointments that the user is assigned to or assigned by
+  
+  const readAllOrgAppointment = readAllOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
+  const readAOwnOrgAppointment = readAOwnOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
+  const readAssignedOrgAppointment = readAssignedOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
+  
   const appointment = await prismaTenant.appointment.findUnique({
     where: {
       isActive: true,
-      ...(orgUid ? { orgUid } : {}),
+      OR: [
+        { ...(readAllOrgAppointment ? { orgUid, id } : {}) },
+        { ...(readAOwnOrgAppointment ? { Requesters: { some: { email: session.user.email } }, id } : {}) },
+        { ...(readAssignedOrgAppointment ? {
+          AppointmentRouting: {
+            some: {
+              OR: [
+                { routedTo: session.user.email },
+                { routedBy: session.user.email }
+              ]
+            }
+          },
+          id
+        } : {}) },
+      ],
       id
     },
     select: {
@@ -307,7 +345,16 @@ export const getAppointmentCountsAction = async (orgUid: string) => {
       message: "Unauthorized"
     };
 
-  const hasPermission = ["read:org:appointment:all"].every(p => [""].includes(p))
+  const permissions = await getPermissionsAction(session.user.sub);
+  const userPermissionArray = permissions.map(p => p.name);
+  
+  const readAllOrgAppointmentPermission = ["read:org:appointment:all"];
+  const readAOwnOrgAppointmentPermission = ["read:org:appointment:own"];
+  const readAssignedOrgAppointmentPermission = ["read:org:appointment:assigned"];
+  
+  const readAllOrgAppointment = readAllOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
+  const readAOwnOrgAppointment = readAOwnOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
+  const readAssignedOrgAppointment = readAssignedOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
 
   const counts = await prismaTenant.appointmentAttribute.groupBy({
     by: ["status"],
@@ -316,9 +363,9 @@ export const getAppointmentCountsAction = async (orgUid: string) => {
         isActive: true,
         orgUid,
         OR: [
-          { ...(hasPermission ? { orgUid } : {}) },
-          { Requesters: { some: { email: session.user.email } } },
-          {
+          { ...(readAllOrgAppointment ? { orgUid } : {}) },
+          { ...(readAOwnOrgAppointment ? { Requesters: { some: { email: session.user.email } } } : {}) },
+          { ...(readAssignedOrgAppointment ? {
             AppointmentRouting: {
               some: {
                 OR: [
@@ -327,7 +374,7 @@ export const getAppointmentCountsAction = async (orgUid: string) => {
                 ]
               }
             }
-          }
+          } : {}) },
         ]
       }
     },
@@ -356,8 +403,17 @@ export const getRoutedAppointmentCountsAction = async (orgUid: string) => {
       status: false,
       message: "Unauthorized"
     };
-  const hasPermission = ["read:org:appointment:all"].every(p => [""].includes(p));
-
+  const permissions = await getPermissionsAction(session.user.sub);
+  const userPermissionArray = permissions.map(p => p.name);
+    
+  const readAllOrgAppointmentPermission = ["read:org:appointment:all"];
+  const readAOwnOrgAppointmentPermission = ["read:org:appointment:own"];
+  const readAssignedOrgAppointmentPermission = ["read:org:appointment:assigned"];
+    
+  const readAllOrgAppointment = readAllOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
+  const readAOwnOrgAppointment = readAOwnOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
+  const readAssignedOrgAppointment = readAssignedOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
+  
   const counts = await prismaTenant.appointmentRouting.groupBy({
     by: ["status"],
     where: {
@@ -365,9 +421,9 @@ export const getRoutedAppointmentCountsAction = async (orgUid: string) => {
         isActive: true,
         orgUid,
         OR: [
-          { ...(hasPermission ? { orgUid } : {}) },
-          { Requesters: { some: { email: session.user.email } } },
-          {
+          { ...(readAllOrgAppointment ? { orgUid } : {}) },
+          { ...(readAOwnOrgAppointment ? { Requesters: { some: { email: session.user.email } } } : {}) },
+          { ...(readAssignedOrgAppointment ? {
             AppointmentRouting: {
               some: {
                 OR: [
@@ -376,7 +432,7 @@ export const getRoutedAppointmentCountsAction = async (orgUid: string) => {
                 ]
               }
             }
-          }
+          } : {}) },
         ]
       }
     },

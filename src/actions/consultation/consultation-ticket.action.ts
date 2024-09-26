@@ -37,7 +37,7 @@ export const createConsultationTicketAction = async ({systemId, appointmentId, o
   })
   return {
     status: true,
-    message: "Consultation Record created successfully",
+    message: "Consultation Ticket created successfully",
     data: consultationTicket
   }
 }
@@ -222,7 +222,7 @@ export const updateConsultationTicketAction = async ({consultationId, subject}: 
     })
     return {
       status: true,
-      message: "Consultation Record updated successfully",
+      message: "Consultation Ticket updated successfully",
       data: null
     }
   } catch (error) {
@@ -258,7 +258,7 @@ export const deleteConsultationTicketAction = async (consultationId: number) => 
     })
     return {
       status: true,
-      message: "Consultation Record deleted successfully",
+      message: "Consultation Ticket deleted successfully",
       data: null
     }
   } catch (error) {
@@ -295,7 +295,7 @@ export const archiveConsultationTicketAction = async (consultationId: number) =>
     })
     return {
       status: true,
-      message: "Consultation Record archived successfully",
+      message: "Consultation Ticket archived successfully",
       data: null
     }
   } catch (error) {

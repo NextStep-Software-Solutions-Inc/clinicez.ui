@@ -34,9 +34,9 @@ export default function ConsultationTicketSettingSheet({ children, ...res }: Con
       <SheetTrigger asChild>{children}</SheetTrigger>
       <SheetContent side="right">
         <SheetHeader>
-          <SheetTitle>Consultation Record Settings</SheetTitle>
+          <SheetTitle>Consultation Ticket Settings</SheetTitle>
           <SheetDescription>
-            Configure settings related to consultation records.
+            Configure settings related to consultation tickets.
           </SheetDescription>
         </SheetHeader>
         <div className="my-5 gap-5 flex flex-col">

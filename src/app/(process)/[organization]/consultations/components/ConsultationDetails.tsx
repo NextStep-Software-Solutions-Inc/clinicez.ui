@@ -12,6 +12,7 @@ import dynamic from 'next/dynamic';
 import { Tooltip, TooltipContent, TooltipTrigger } from "@components/ui/tooltip";
 import Image from "next/image";
 import { Badge } from "@components/ui/badge";
+import { Separator } from "@components/ui/separator";
 
 const VitalSigns = dynamic(() => import('./VitalSigns'), { ssr: false, loading: () => <div>Loading...</div> });
 const Conversation = dynamic(() => import('./Conversation'), { ssr: false, loading: () => <div>Loading...</div> });
@@ -152,15 +153,30 @@ export const PatientHpDetails = ({ hp, user }: PatientHpDetailsProps) => {
         <CardHeader>
           <CardTitle className="">Healthcare Provider Details</CardTitle>
         </CardHeader>
-        <CardContent className="flex gap-2 items-center">
-          <Avatar>
-            <Image className="object-cover" width={80} height={80} src={hp.picture ?? ""} alt={hp.nickname ?? ""}/>
-            <AvatarFallback>{hp?.firstName?.charAt(0)}{hp?.lastName?.charAt(0)}</AvatarFallback>
-          </Avatar>
-          <div className="flex flex-col">
-            <span className="text-sm font-semibold">{hp.firstName} {hp.lastName}</span>
-            <div className="text-xs text-muted-foreground">
-              <Badge>{hp.gender}</Badge> / <span>{hp.dob && differenceInCalendarYears(new Date(), hp.dob)}</span>
+        <CardContent className="flex gap-5 items-center">
+          <div className="flex gap-2 items-center">
+            <Avatar>
+              <Image className="object-cover" width={80} height={80} src={hp.picture ?? ""} alt={hp.nickname ?? ""}/>
+              <AvatarFallback>{hp?.firstName?.charAt(0)}{hp?.lastName?.charAt(0)}</AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col">
+              <span className="text-sm font-semibold">{hp.firstName} {hp.lastName}</span>
+              <div className="text-xs text-muted-foreground">
+                <Badge>{hp.gender}</Badge> / <span>{hp.dob && differenceInCalendarYears(new Date(), hp.dob)}</span>
+              </div>
+            </div>
+          </div>
+          <Separator orientation="vertical" className="h-10"/>
+          <div className="flex gap-2 items-center">
+            <Avatar>
+              <Image className="object-cover" width={80} height={80} src={hp.picture ?? ""} alt={hp.nickname ?? ""}/>
+              <AvatarFallback>{hp?.firstName?.charAt(0)}{hp?.lastName?.charAt(0)}</AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col">
+              <span className="text-sm font-semibold">{hp.firstName} {hp.lastName}</span>
+              <div className="text-xs text-muted-foreground">
+                <Badge>{hp.gender}</Badge> / <span>{hp.dob && differenceInCalendarYears(new Date(), hp.dob)}</span>
+              </div>
             </div>
           </div>
         </CardContent>

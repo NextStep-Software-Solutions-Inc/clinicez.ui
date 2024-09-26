@@ -5,8 +5,8 @@ import { Metadata } from "next";
 import ConsultationTable from "./components/ConsultationTable";
 
 export const metadata: Metadata = {
-  title: "Consultation Records",
-  description: "Consultation Records within your organization.",
+  title: "Consultation Tickets",
+  description: "Consultation Tickets within your organization.",
 }
 
 async function ConsultationsPage({params}: AppRouterPageRouteOpts) {
@@ -15,7 +15,7 @@ async function ConsultationsPage({params}: AppRouterPageRouteOpts) {
     <>
       <div className="space-y-6">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Consultation Records</h2>
+          <h2 className="text-2xl font-bold tracking-tight">Consultation Tickets</h2>
           <p className="text-sm text-muted-foreground">
             Here&apos;s a list of your consultation records.
           </p>

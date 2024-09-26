@@ -9,6 +9,7 @@ import {
 } from "@public/json/appointment-list";
 import { getCachedSession } from "@actions/session.action";
 import { getPermissionsAction } from "@actions/permission.action";
+import { cache } from "react";
 
 export type GetAppointmentFilter = {
   orgUid?: string;
@@ -34,18 +35,8 @@ type CreateAppointmentPayload = {
     timeEnd: Date;
   };
 };
-export const createAppointmentAction = async ({
-  orgUid,
-  subject,
-  complaint,
-  requesters,
-  modeId,
-  typeId,
-  serviceId,
-  attachments,
-  hpEmail,
-  schedule
-}: CreateAppointmentPayload) => {
+export const createAppointmentAction = async (payload: CreateAppointmentPayload) => {
+  const { orgUid, subject, complaint, requesters, modeId, typeId, serviceId, attachments, hpEmail, schedule } = payload;
   const { date, timeStart, timeEnd } = schedule;
   const newAppointment = await prismaTenant.appointment.create({
     data: {
@@ -84,7 +75,7 @@ export const createAppointmentAction = async ({
 };
 
 export type GetAppointments = Awaited<ReturnType<typeof getAppointmentsAction>>;
-export const getAppointmentsAction = async (filter?: GetAppointmentFilter) => {
+export const getAppointmentsAction = cache(async (filter?: GetAppointmentFilter) => {
   const session = await getCachedSession();
   if (!session || !session.accessToken)
     return {
@@ -189,10 +180,10 @@ export const getAppointmentsAction = async (filter?: GetAppointmentFilter) => {
     message: "Appointments fetched",
     data: appointments
   };
-};
+});
 
 export type GetAppointment = Awaited<ReturnType<typeof getAppointmentAction>>;
-export const getAppointmentAction = async (id: number, orgUid?: string) => {
+export const getAppointmentAction = cache(async (id: number, orgUid?: string) => {
   const session = await getCachedSession();
 
   if (!session || !session.accessToken)
@@ -330,12 +321,10 @@ export const getAppointmentAction = async (id: number, orgUid?: string) => {
     message: "Appointment fetched",
     data: appointment
   };
-};
+});
 
-export type GetAppointmentCounts = Awaited<
-  ReturnType<typeof getAppointmentCountsAction>
->;
-export const getAppointmentCountsAction = async (orgUid: string) => {
+export type GetAppointmentCounts = Awaited<ReturnType<typeof getAppointmentCountsAction>>;
+export const getAppointmentCountsAction = cache(async (orgUid: string) => {
   const session = await getCachedSession();
   if (!session || !session.accessToken)
     return {
@@ -392,9 +381,9 @@ export const getAppointmentCountsAction = async (orgUid: string) => {
     message: "Appointment counts fetched",
     data: countsMap
   };
-};
+});
 
-export const getRoutedAppointmentCountsAction = async (orgUid: string) => {
+export const getRoutedAppointmentCountsAction = cache(async (orgUid: string) => {
   const session = await getCachedSession();
   if (!session || !session.accessToken)
     return {
@@ -450,7 +439,7 @@ export const getRoutedAppointmentCountsAction = async (orgUid: string) => {
     message: "Appointment counts fetched",
     data: countsMap
   };
-};
+});
 
 export const rescheduleAppointmentAction = async (formData: FormData) => {
   console.log("Reschedule appointment...", Object.fromEntries(formData));

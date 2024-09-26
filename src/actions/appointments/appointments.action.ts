@@ -3,7 +3,6 @@ import "server-only";
 
 import { delay } from "@lib/wait";
 import prismaTenant from "@lib/prisma-tenant";
-import prismaCommon from "@lib/prisma-common";
 import {
   RoutedAptStatus,
   AppointmentStatus
@@ -97,7 +96,6 @@ export const getAppointmentsAction = async (filter?: GetAppointmentFilter) => {
 
   const permissions = await getPermissionsAction(session.user.sub);
   const userPermissionArray = permissions.map(p => p.name);
-  console.log({userPermissionArray});
 
   const readAllOrgAppointmentPermission = ["read:org:appointment:all"];
   const readAOwnOrgAppointmentPermission = ["read:org:appointment:own"];
@@ -452,11 +450,6 @@ export const getRoutedAppointmentCountsAction = async (orgUid: string) => {
     message: "Appointment counts fetched",
     data: countsMap
   };
-};
-
-export const sendMsgAction = async (formData: FormData) => {
-  await new Promise((resolve) => setTimeout(resolve, 1000));
-  console.log(Object.fromEntries(formData));
 };
 
 export const rescheduleAppointmentAction = async (formData: FormData) => {

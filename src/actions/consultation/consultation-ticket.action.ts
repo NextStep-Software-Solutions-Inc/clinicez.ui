@@ -116,7 +116,6 @@ export const getConsultationTicketAction = cache(async (consultationId: number, 
   }
 })
 
-
 export type GetConsultationTickets = Awaited<ReturnType<typeof getConsultationTicketsAction>>;
 export const getConsultationTicketsAction = async ({orgUid, filters}: {orgUid: string, filters?: {
   showArchived?: boolean
@@ -239,7 +238,6 @@ export const updateConsultationTicketAction = async ({consultationId, subject}: 
   }
 }
 
-
 export const deleteConsultationTicketAction = async (consultationId: number) => {
   const session = await getCachedSession()
   
@@ -274,8 +272,6 @@ export const deleteConsultationTicketAction = async (consultationId: number) => 
     }
   }
 }
-
-
 
 export const archiveConsultationTicketAction = async (consultationId: number) => {
   const session = await getCachedSession()

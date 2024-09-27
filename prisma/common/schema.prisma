@@ -86,6 +86,8 @@ model User {
   UserPermissions                  UserPermission[]
   OrgUserPermissions               OrgUserPermission[]
   ReservedTimeSlots                ReservedTimeSlot[]
+  BookedByBookings                 Booking[]                     @relation("BookedBy")
+  BookedForBookings                Booking[]                     @relation("BookedFor")
 }
 
 model Organization {
@@ -332,41 +334,13 @@ model HealthcareProvider {
   deletedAt           DateTime?
   isActive            Boolean                @default(true)
   isPublished         Boolean                @default(false)
-  DoctorProfile       DoctorProfile?
   User                User                   @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  NurseProfile        NurseProfile?
   ProfessionalDetails ProfessionalDetails?
   ReservedTimeSlots   ReservedTimeSlot[]
+  HPProfile           HPProfile?
 }
 
-model DoctorProfile {
-  id                   Int                @id @default(autoincrement())
-  healthcareProviderId Int                @unique
-  title                String
-  name                 String
-  suffix               String?
-  picture              String?
-  cover                String?
-  createdAt            DateTime           @default(now())
-  updatedAt            DateTime           @updatedAt
-  deletedAt            DateTime?
-  isActive             Boolean            @default(true)
-  affiliations         String[]           @default([])
-  areaOfInterest       String?
-  certifications       String[]           @default([])
-  experience           String?
-  fields               String[]           @default([])
-  hobbies              String?
-  languages            String[]           @default([])
-  philosophy           String?
-  specialties          String[]           @default([])
-  workEmail            String?
-  workPhone            String?
-  educations           String[]           @default([])
-  HealthcareProvider   HealthcareProvider @relation(fields: [healthcareProviderId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-}
-
-model NurseProfile {
+model HPProfile {
   id                   Int                @id @default(autoincrement())
   healthcareProviderId Int                @unique
   title                String
@@ -1060,4 +1034,19 @@ model ReservedTimeSlot {
   HealthCareProvider HealthcareProvider @relation(fields: [hpId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([hpId, reservedBy, startDateTime, endDateTime], name: "reserved_time_slot_index")
+}
+
+model Booking {
+  id            Int      @id @default(autoincrement())
+  jobId         String   @unique
+  routingCode   String?
+  bookedFor     Int
+  bookedBy      Int
+  startDateTime DateTime
+  endDateTime   DateTime
+  bookedAt      DateTime
+  meetingLink   String?
+  platform      String?
+  BookedBy      User     @relation(name: "BookedBy", fields: [bookedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  BookedFor     User     @relation(name: "BookedFor", fields: [bookedFor], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }

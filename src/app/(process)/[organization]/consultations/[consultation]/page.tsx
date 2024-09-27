@@ -2,7 +2,7 @@ import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth
 import Suspend from "@components/Suspend";
 import { Separator } from "@components/ui/separator";
 import { Metadata } from "next";
-import ConsultationDetails from "../components/ConsultationDetails";
+import ConsultationDetails from "../../../../../components/consultation/ConsultationDetails";
 import { Button } from "@components/ui/button";
 import { ExternalLink } from "lucide-react";
 import Link from "next/link";
@@ -11,7 +11,7 @@ import { getConsultationTicketAction } from "@actions/consultation/consultation-
 import { getUserAction } from "@actions/users/user.action";
 import { notFound } from "next/navigation";
 import { DropdownMenuProvider } from "@components/DropdownMenuProvider";
-import { DataTableRowActions } from "../components/data-table-row-actions";
+import { DataTableRowActions } from "../../../../../components/consultation/data-table-row-actions";
 
 export const metadata: Metadata = {
   title: "Consultation Details",

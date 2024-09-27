@@ -18,8 +18,8 @@ import {
 } from "@components/ui/tooltip"
 import Breadcrumb from "@components/dashboard/Breadcrumb"
 import { OrganizationSwitcher } from "@components/dashboard/OrganizationSwitcher"
-import SideNav from "./SideNav";
-import DrawerNav from "./DrawerNav";
+import SideNav from "../../../components/dashboard/SideNav";
+import DrawerNav from "../../../components/dashboard/DrawerNav";
 import { navList } from "./nav";
 
 interface ProcessLayoutProps {

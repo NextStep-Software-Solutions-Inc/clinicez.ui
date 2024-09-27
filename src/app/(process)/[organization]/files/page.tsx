@@ -1,13 +1,10 @@
 import Suspend from "@components/Suspend";
 import { Separator } from "@components/ui/separator";
-import Folder from "../../../../components/Folder";
-import Each from "@components/utils/Each";
-import AlertBanner from "./components/AlertBanner";
 import { Metadata } from "next";
 import { getFilesAction } from "@actions/file.actions";
 import { AppRouterPageRouteOpts } from "@auth0/nextjs-auth0";
-import CreateFolderModal from "./components/modals/CreateFolderModal";
 import UnderConstruction from "@components/UnderConstruction";
+import CreateFolderModal from "@components/files/modals/CreateFolderModal";
 
 export const metadata: Metadata = {
   title: "Files",

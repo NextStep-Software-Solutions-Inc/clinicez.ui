@@ -1,7 +1,5 @@
 "use client"
 
-import { upsertDoctorAction } from "@actions/doctor.action";
-import { upsertNurseAction } from "@actions/nurse.action";
 import { Input } from "@components/ui/input";
 import { HealthcareProviderType } from "@prisma/common/client";
 import React from "react";
@@ -11,12 +9,8 @@ import ActionButton from "@components/ActionButton";
 import { uploadMediaAction } from "@actions/blob.action";
 import { Label } from "@components/ui/label";
 import { useUser } from "@auth0/nextjs-auth0/client";
+import { upsertHPAction } from "@actions/hp.actions";
 
-const actions = {
-  LAB_TECHNICIAN: upsertNurseAction,
-  NURSE: upsertNurseAction,
-  DOCTOR: upsertDoctorAction,
-}
 interface HPPhotoProps {
   profile: HPProfileType
   hpId: number
@@ -59,7 +53,7 @@ export default function HPPhoto({profile, hpId, type}: HPPhotoProps) {
       healthcareProviderId: hpId
     }
 
-    toast.promise(actions[type as keyof typeof actions]({
+    toast.promise(upsertHPAction({
       where: { healthcareProviderId: hpId },
       create: mappedData,
       update: mappedData

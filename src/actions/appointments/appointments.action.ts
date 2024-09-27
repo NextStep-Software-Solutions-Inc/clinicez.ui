@@ -247,6 +247,7 @@ export const getAppointmentAction = cache(async (id: number, orgUid?: string) =>
           timeEnd: true,
           AppointmentType: {
             select: {
+              id: true,
               name: true
             }
           },
@@ -258,6 +259,7 @@ export const getAppointmentAction = cache(async (id: number, orgUid?: string) =>
           status: true,
           Service: {
             select: {
+              id: true,
               name: true
             }
           },
@@ -348,7 +350,6 @@ export const getAppointmentCountsAction = cache(async (orgUid: string) => {
     where: {
       Appointment: {
         isActive: true,
-        orgUid,
         OR: [
           { ...(readAllOrgAppointment ? { orgUid } : {}) },
           { ...(readAOwnOrgAppointment ? { Requesters: { some: { email: session.user.email } } } : {}) },
@@ -406,7 +407,9 @@ export const getRoutedAppointmentCountsAction = cache(async (orgUid: string) => 
     where: {
       Appointment: {
         isActive: true,
-        orgUid,
+        AppointmentAttribute: {
+          status: "ROUTED"
+        },
         OR: [
           { ...(readAllOrgAppointment ? { orgUid } : {}) },
           { ...(readAOwnOrgAppointment ? { Requesters: { some: { email: session.user.email } } } : {}) },
@@ -423,7 +426,7 @@ export const getRoutedAppointmentCountsAction = cache(async (orgUid: string) => 
         ]
       }
     },
-    _count: true
+    _count: true,
   });
 
   const countsMap = counts.reduce((acc, count) => {

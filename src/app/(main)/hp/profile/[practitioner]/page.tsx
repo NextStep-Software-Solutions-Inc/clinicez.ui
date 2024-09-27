@@ -4,8 +4,6 @@ import { AppRouterPageRouteOpts } from "@auth0/nextjs-auth0";
 import dynamic from "next/dynamic";
 import ProfileNotFound from "../../ProfileNotFound";
 import { Metadata, ResolvingMetadata } from "next";
-import { getDoctorAction } from "@actions/doctor.action";
-import { getNurseAction } from "@actions/nurse.action";
 import Link from "next/link";
 import { Button } from "@components/ui/button";
 import { Pencil } from "lucide-react";
@@ -13,32 +11,27 @@ import { getHPAction } from "@actions/hp.actions";
 import ConditionalRender from "@components/utils/ConditionalRender";
 import { notFound } from "next/navigation";
 import { getCachedSession } from "@actions/session.action";
+import HPProfile from "./HPProfile";
 
 type Props = {
   params: { practitioner: string }
   searchParams: { [key: string]: string | string[] | undefined }
 }
 
-const profileComponent = {
-  DOCTOR: dynamic(() => import("./DoctorProfile")),
-  NURSE: dynamic(() => import("./NurseProfile")),
-}
-
 export async function generateMetadata({ params, searchParams }: Props, parent: ResolvingMetadata): Promise<Metadata> {
   const hpId = parseInt((params?.practitioner ?? "") as string);  
-  const hpType = (searchParams?._type as string)?.toUpperCase() as keyof typeof profileComponent
-  const action = { DOCTOR: getDoctorAction, NURSE: getNurseAction }[hpType];
-
-  const profile = await action?.(hpId)
+  const profile = await getHPAction({
+    isPublished: true,
+    id: hpId
+  })
   if(!profile) return notFound();
 
   const site = new URL(process.env.AUTH0_BASE_URL ?? "").hostname;
-  const title = `${profile.title} ${profile.name} ${profile.suffix} | ${profile.fields.join(", ")}`;
-  const description = profile.philosophy ?? "";
-  const image = profile.picture ?? "";
+  const title = `${profile.HPProfile?.title} ${profile.HPProfile?.name} ${profile.HPProfile?.suffix} | ${profile.HPProfile?.fields.join(", ")}`;
+  const description = profile.HPProfile?.philosophy ?? "";
+  const image = profile.HPProfile?.picture ?? "";
 
   const ogURL = `https://ogcdn.net/e4b8c678-7bd5-445d-ba03-bfaad510c686/v4/${encodeURIComponent(site)}/${encodeURIComponent(title)}/${encodeURIComponent(image)}/og.png`;
-
   const previousImages = (await parent).openGraph?.images || [];
 
   return {
@@ -58,21 +51,19 @@ export default async function PractitionerPage({params, searchParams}: AppRouter
     userId: session?.user.sub
   })
  
-  const hpType = (searchParams?._type as string)?.toUpperCase() as keyof typeof profileComponent
-
-  const Profile = profileComponent[hpType] || ProfileNotFound;
+  const Profile = HPProfile || ProfileNotFound;
   
   return (
     <div className="content container mx-auto my-10 relative">
       <ConditionalRender condition={myHp?.id === hpId}>
-        <Link href={`/hp/profile/${hpId}/editor?_type=${hpType}`}>
+        <Link href={`/hp/profile/${hpId}/editor`}>
           <Button className="z-10 fixed -right-[6.5rem] mr-2 hover:-right-[20px] transition-all">
             <Pencil size={20} className="mr-2"/>Edit profile
           </Button>
         </Link>
       </ConditionalRender>
       <Suspend>
-        <Profile profileId={hpId} />
+        <Profile hpId={hpId} />
       </Suspend>
     </div>
   )

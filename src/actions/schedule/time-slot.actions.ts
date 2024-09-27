@@ -9,14 +9,15 @@ dayjs.extend(isBetween)
 dayjs.extend(localizeFormat)
 
 import prismaTenant from "@lib/prisma-tenant";
-import { getHPAppointmentsSchedule, GetUserSchedules, getUserSchedulesAction } from "./user-schedule.action";
+import { GetUserSchedules, getUserSchedulesAction } from "./user-schedule.action";
 import { eachDayOfInterval, getWeekOfMonth } from "date-fns";
 import { toast } from "sonner";
 import { cache } from "react";
 import { formatDateTime } from "@lib/utils";
+import { getBookingsAction } from "@actions/booking.action";
 
 type GenerateTimeSlotsArgs = {
-  hpEmail: string, 
+  userId: string, 
   serviceId:number, 
   appointmentTypeId:number, 
 }
@@ -27,7 +28,8 @@ interface Availability {
 }
 const TIME_ALLOWANCE = 30
 
-export const getHPsTimeSlots = cache(async ({appointmentTypeId, serviceId, hpEmail}: GenerateTimeSlotsArgs): Promise<{
+export type GetUserTimeSlots = Awaited<ReturnType<typeof getUserTimeSlotsAction>>;
+export const getUserTimeSlotsAction = cache(async ({serviceId, userId}: GenerateTimeSlotsArgs): Promise<{
   status: boolean;
   message: string;
   data: Availability[]
@@ -39,14 +41,14 @@ export const getHPsTimeSlots = cache(async ({appointmentTypeId, serviceId, hpEma
     data: []
   }
 
-  const [serviceAttribute, userSchedules, appointmentSchedules] = await Promise.all([
+  const [serviceAttribute, userSchedules, bookings] = await Promise.all([
     prismaTenant.serviceAttribute.findUnique({
       where: {
         serviceId: serviceId
       }
     }),
-    getUserSchedulesAction(hpEmail),
-    getHPAppointmentsSchedule(hpEmail)
+    getUserSchedulesAction(userId),
+    getBookingsAction(userId, "upcoming")
   ])
 
   const totalDuration = (serviceAttribute?.duration ?? 0) + (serviceAttribute?.durationPadding ?? 0)
@@ -116,15 +118,15 @@ export const getHPsTimeSlots = cache(async ({appointmentTypeId, serviceId, hpEma
     const start = formatDateTime(date, baseSchedule?.startTime).toDate();
     const end = formatDateTime(date, baseSchedule?.endTime).toDate();
     const exceptionSlots = generateExceptionSlots(exceptionSchedules)
-    const bookedTimeSlots = appointmentSchedules.map(apt => {
+    
+    const bookedTimeSlots = bookings.map(booking => {
       return {
-        dateStart: apt.AppointmentAttribute?.date!,
-        dateEnd: apt.AppointmentAttribute?.date!,
-        timeStart: apt.AppointmentAttribute?.timeStart!,
-        timeEnd: apt.AppointmentAttribute?.timeEnd!
+        dateStart: dayjs(booking.startDateTime).toDate()!,
+        dateEnd: dayjs(booking.endDateTime).toDate()!,
+        timeStart: dayjs(booking.startDateTime).toDate()!,
+        timeEnd: dayjs(booking.endDateTime).toDate()!
       }
     });
-
     const timeSlots = isAvailable ? generateTimeSlotsV2(start, end, totalDuration, [...bookedTimeSlots, ...exceptionSlots]) : [];
     return {
       date: currentDateTime.utc().toDate(),

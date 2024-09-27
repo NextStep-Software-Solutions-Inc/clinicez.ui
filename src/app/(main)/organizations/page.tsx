@@ -1,5 +1,5 @@
 import { type Metadata } from 'next';
-import OrganizationList from './OrganizationList';
+import OrganizationList from '../../../components/organization/OrganizationList';
 import Suspend from '@components/Suspend';
 
 export const metadata: Metadata = {

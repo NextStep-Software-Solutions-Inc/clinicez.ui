@@ -2,11 +2,11 @@ import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth
 import Suspend from "@components/Suspend";
 import { Separator } from "@components/ui/separator";
 import { Metadata } from "next";
-import { PatientList } from "./PatientList";
 import { isHP } from "@lib/protect-org";
-import SearchBar from "../dashboard/components/SearchBar";
+import SearchBar from "../../../../components/dashboard/SearchBar";
 import PageLoading from "@components/PageLoading";
 import { redirect } from "next/navigation";
+import { PatientList } from "@components/patient/PatientList";
 
 export const maxDuration = 30; // page timeout in seconds
 export const revalidate  = 60; // revalidation interval in seconds

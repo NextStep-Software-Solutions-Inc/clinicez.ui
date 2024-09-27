@@ -6,7 +6,7 @@ import { AppointmentStatus, RoutedAptStatus } from "@public/json/appointment-lis
 import { Search } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
-import { AppointmentList } from "../app/(process)/[organization]/appointments/mail/components/AppointmentList";
+import { AppointmentList } from "./appointment/AppointmentList";
 
 
 interface AppointmentListWrapperProps {

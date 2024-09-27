@@ -8,9 +8,9 @@ import { FolderIcon, MoreVertical } from "lucide-react";
 import ConditionalRender from "./utils/ConditionalRender";
 import FolderSettingSheet from "./FolderSettingSheet";
 import { Button } from "./ui/button";
-import UpdateFolderModal from "../app/(process)/[organization]/files/components/modals/UpdateFolderModal";
+import UpdateFolderModal from "../app/(process)/[organization]/patients/modals/UpdateFolderModal";
 
-const UploadFileModal = dynamic(() => import("../app/(process)/[organization]/files/components/modals/UploadFileModal"));
+const UploadFileModal = dynamic(() => import("../app/(process)/[organization]/patients/modals/UploadFileModal"));
 
 export interface FolderProps {
   readOnly?: boolean;

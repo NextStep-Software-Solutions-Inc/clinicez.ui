@@ -3,7 +3,7 @@ import { Metadata } from "next"
 import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth0"
 import Suspend from "@components/Suspend"
 import { isUserOwner } from "@lib/protect-org"
-import CreateFolderModal from "../../../../../(process)/[organization]/files/components/modals/CreateFolderModal"
+import CreateFolderModal from "../../../../../(process)/[organization]/patients/modals/CreateFolderModal"
 import ConditionalRender from "@components/utils/ConditionalRender"
 import { FilesForm } from "./FilesForm"
 

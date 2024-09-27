@@ -17,7 +17,9 @@ export const getAppointmentTypesAction = cache(async (orgUid: string) => {
         select: {
           id: true,
           duration: true,
-          durationPadding: true
+          durationPadding: true,
+          reminders: true,
+          requirements: true,
         }
       }
     }

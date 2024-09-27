@@ -20,7 +20,9 @@ export const getOrgServiceCategoriesAction = async (orgUid?: string) => {
           ServiceAttribute: {
             select: {
               duration: true,
-              durationPadding: true
+              durationPadding: true,
+              reminders: true,
+              requirements: true,
             }
           }
         }

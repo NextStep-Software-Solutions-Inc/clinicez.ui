@@ -1,11 +1,11 @@
 import React from "react";
-import AppointmentPanel  from "./mail/components/AppointmentPanel";
+import AppointmentPanel  from "../../../../components/appointment/AppointmentPanel";
 import { cookies } from "next/headers";
 import { Separator } from "@components/ui/separator";
-import BookAppointmentSheet from "./components/BookAppointmentSheet";
+import BookAppointmentSheet from "../../../../components/appointment/BookAppointmentSheet";
 import { getAppointmentCountsAction, getRoutedAppointmentCountsAction } from "@actions/appointments/appointments.action";
 import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth0";
-import AppointmentDisplay from "./mail/components/AppointmentDisplay";
+import AppointmentDisplay from "../../../../components/appointment/AppointmentDisplay";
 import Suspend from "@components/Suspend";
 import { Metadata } from "next";
 import { getOrgAppointmentTabsAction } from "@actions/organizations/org-appointment-tab..action";

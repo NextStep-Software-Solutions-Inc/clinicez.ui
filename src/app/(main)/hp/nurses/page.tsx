@@ -1,7 +1,6 @@
-import JoinAsButton from '@components/JoinAs';
 import { Metadata } from "next";
 import Suspend from "@components/Suspend";
-import NurseList from "./NurseList";
+import HPList from '../../../../components/HPList';
 
 export const metadata: Metadata = {
   title: "Nurses | Clinic EZ",
@@ -20,7 +19,7 @@ export default async function Nurses() {
       </div>
       <div className="flex flex-col items-center justify-center min:h-screen relative my-5">
         <Suspend>
-          <NurseList />
+          <HPList type='NURSE' />
         </Suspend>
       </div>
     </div>

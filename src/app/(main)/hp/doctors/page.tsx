@@ -1,6 +1,6 @@
 import { Metadata } from 'next';
-import DoctorList from "./components/DoctorList";
 import Suspend from '@components/Suspend';
+import HPList from '../../../../components/HPList';
 
 export const metadata: Metadata = {
   title: "Doctors | Clinic EZ",
@@ -18,7 +18,7 @@ export default async function Doctors() {
       </div>
       <div className="flex flex-col items-center justify-center min:h-screen relative my-5">
         <Suspend>
-          <DoctorList />
+          <HPList type="DOCTOR" />
         </Suspend>
       </div>
     </div>

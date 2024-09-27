@@ -2,7 +2,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@compo
 import { cn } from "@lib/utils";
 import { DownloadIcon, FileText, ImageIcon, Settings } from "lucide-react";
 import Link from "next/link";
-import ConfirmDeleteFile from "../app/(process)/[organization]/files/components/ConfirmDeleteFile";
+import ConfirmDeleteFile from "../app/(process)/[organization]/patients/ConfirmDeleteFile";
 import { format } from "date-fns";
 import ConditionalRender from "./utils/ConditionalRender";
 import FileSettingSheet from "./FileSettingSheet";

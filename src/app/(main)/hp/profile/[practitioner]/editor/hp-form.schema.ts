@@ -18,42 +18,42 @@ export const profileSchema = z.object({
     message: "Please enter a valid phone number.",
   }),
   // Professional Information
-  philosophy: z.string().min(2, {
+  philosophy: z.string().trim().min(2, {
     message: "Bio must be at least 2 characters.",
   }),
-  areaOfInterest: z.string().min(2, {
+  areaOfInterest: z.string().trim().min(2, {
     message: "Bio must be at least 2 characters.",
   }),
-  experience: z.string().min(2, {
+  experience: z.string().trim().min(2, {
     message: "Experience must be at least 2 characters.",
   }),
   languages: z.array(z.object({
-    name: z.string().min(2, {
+    name: z.string().trim().min(2, {
       message: "Language must be at least 2 characters.",
     })
   })),
   specialties: z.array(z.object({
-    name: z.string().min(2, {
+    name: z.string().trim().min(2, {
       message: "Specialty must be at least 2 characters.",
     })
   })),
   educations: z.array(z.object({
-    name:z.string().min(2, {
+    name:z.string().trim().min(2, {
       message: "Education must be at least 2 characters.",
     })
   })),
   certifications: z.array(z.object({
-    name:z.string().min(2, {
+    name:z.string().trim().min(2, {
       message: "Certifications must be at least 2 characters.",
     })
   })),
   fields: z.array(z.object({
-    name:z.string().min(2, {
+    name:z.string().trim().min(2, {
       message: "Field of practice must be at least 2 characters.",
     })
   })),
   affiliations: z.array(z.object({
-    name:z.string().min(2, {
+    name:z.string().trim().min(2, {
       message: "Affiliation must be at least 2 characters.",
     })
   })),

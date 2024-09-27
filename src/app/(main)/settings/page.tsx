@@ -2,7 +2,7 @@ import { withPageAuthRequired } from '@auth0/nextjs-auth0';
 import Suspend from '@components/Suspend';
 import { Separator } from '@components/ui/separator';
 import React from 'react';
-import GeneralSettingsForm from './GeneralSettingsForm';
+import GeneralSettingsForm from '../../../components/settings/GeneralSettingsForm';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {

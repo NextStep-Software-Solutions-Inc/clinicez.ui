@@ -106,24 +106,13 @@ export const hpApplicationTransactionAction = async ({
       data: {
         ...hpPayload, 
         // For DOCTOR
-        ...hpPayload.type === "DOCTOR" && {
-          DoctorProfile: {
-            create: {
-              name: "",
-              title: "",
-            }
-          }
-        },
-        // For NURSE
-        ...hpPayload.type === "NURSE" && {
-          NurseProfile: {
-            create: {
-              name: "",
-              title: "",
-            }
+        HPProfile: {
+          create: {
+            name: "",
+            title: "",
           }
         }
-      }
+      },
     })
     // Return true if all transactions are successful
     return true;

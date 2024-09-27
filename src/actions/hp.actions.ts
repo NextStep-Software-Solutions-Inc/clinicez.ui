@@ -6,6 +6,7 @@ import { HealthcareProviderType, Prisma } from "@prisma/common/client";
 import { cache } from "react";
 
 export type HPFilters = {
+  id?: number,
   type?: HealthcareProviderType,
   userId?: string
   isPublished?: boolean
@@ -23,11 +24,12 @@ export const getHPsAction = cache(async (filters?:HPFilters) => {
     },
     include: {
       User: {
-        "select": {
+        select: {
+          userId: true,
           email: true,
         }
       },
-      DoctorProfile: {
+      HPProfile: {
         select: {
           picture: true,
           name: true,
@@ -35,34 +37,32 @@ export const getHPsAction = cache(async (filters?:HPFilters) => {
           suffix: true,
           fields: true,
         }
-      },
-      NurseProfile: {
-        select: {
-          picture: true,
-          name: true,
-          title: true,
-          suffix: true,
-          fields: true,
-        }
-      },
+      }
     }
   })
 
   return hps;
 })
 
-export const getHPAction = async ({ userId, type, isPublished}:HPFilters) => {
+export const getHPAction = async ({ userId, type, isPublished, id}:HPFilters) => {
 
   const hp = prisma.healthcareProvider.findFirst({
     where: {
       isActive: true,
       ...(type && { type }),
-      ...(userId && { User: { userId } }),
-      ...(isPublished && { isPublished })
+      ...(isPublished && { isPublished }),
+      OR: [
+        { User: { userId } },
+        { id }
+      ]
     },
     include: {
-      DoctorProfile: true,
-      NurseProfile: true,
+      HPProfile: true,
+      User: {
+        include: {
+          SocialLink: true
+        }
+      }
     }
   })
 
@@ -95,8 +95,12 @@ export const upsertProfessionalDetailsAction = async (payload: Prisma.Profession
   return hp;
 }
 
+export const upsertHPAction = async (payload: Prisma.HPProfileUpsertArgs) => {
+  const hpProfile = await prisma.hPProfile.upsert(payload)
+  return hpProfile;
+}
+
 export const setIsPublishAction = async (hpId: number, isPublished: boolean) => {
-  
   const hp = await prisma.healthcareProvider.update({
     where: { id: hpId },
     data: { isPublished }
@@ -120,7 +124,7 @@ export const getHpsByIdsAction = async (ids: number[]) => {
           email: true,
         }
       },
-      DoctorProfile: {
+      HPProfile: {
         select: {
           picture: true,
           name: true,
@@ -128,16 +132,7 @@ export const getHpsByIdsAction = async (ids: number[]) => {
           suffix: true,
           fields: true,
         }
-      },
-      NurseProfile: {
-        select: {
-          picture: true,
-          name: true,
-          title: true,
-          suffix: true,
-          fields: true,
-        }
-      },
+      }
     }
   })
   return hps;

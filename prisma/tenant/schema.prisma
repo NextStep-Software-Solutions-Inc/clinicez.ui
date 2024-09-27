@@ -89,7 +89,7 @@ model AppointmentType {
 model AppointmentTypeAttribute {
   id                Int             @id @default(autoincrement())
   appointmentTypeId Int             @unique
-  requirments       String[]        @default([])
+  requirements      String[]        @default([])
   reminders         String[]        @default([])
   duration          Int             @default(30)
   durationPadding   Int             @default(0)
@@ -157,7 +157,7 @@ model Service {
 model ServiceAttribute {
   id              Int      @id @default(autoincrement())
   serviceId       Int      @unique
-  requirments     String[] @default([])
+  requirements    String[] @default([])
   reminders       String[] @default([])
   duration        Int      @default(30)
   durationPadding Int      @default(0)

@@ -2,7 +2,7 @@ import React from "react";
 import { Separator } from "@components/ui/separator";
 import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth0";
 import { Metadata } from "next";
-import ConsultationTable from "./components/ConsultationTable";
+import ConsultationTable from "../../../../components/consultation/ConsultationTable";
 
 export const metadata: Metadata = {
   title: "Consultation Tickets",

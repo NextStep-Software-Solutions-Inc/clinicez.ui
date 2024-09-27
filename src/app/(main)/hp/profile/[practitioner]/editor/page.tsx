@@ -1,11 +1,10 @@
 import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth0";
-import { getDoctorAction } from "@actions/doctor.action";
-import { getNurseAction } from "@actions/nurse.action";
-import HPProfile from "./components/HPProfile";
+
+import HPProfileForm from "./components/HPProfileForm";
 import HPProfessionalInfo from "./components/HPProfessionalInfo";
 import { HPProfileType } from "./hp-form.schema";
 import Suspend from "@components/Suspend";
-import { getHPsAction, getProfessionalDetailsAction, setIsPublishAction } from "@actions/hp.actions";
+import { getHPAction, getHPsAction, getProfessionalDetailsAction, setIsPublishAction } from "@actions/hp.actions";
 import HPPhoto from "./components/HPPhoto";
 import { Button } from "@components/ui/button";
 import { ExternalLink } from "lucide-react";
@@ -28,50 +27,46 @@ async function EditorPage({params, searchParams}: AppRouterPageRouteOpts) {
   const isMyHp = myHps.some((hp) => hp.id === hpId);
   if(!isMyHp) return notFound();
 
-  const actions = {
-    NURSE: getNurseAction,
-    DOCTOR: getDoctorAction,
-  }
-
-  const action = actions[type as keyof typeof actions];
-  const profile = await action(hpId);
+  const profile = await getHPAction({
+    id: hpId,
+  });
   
   const mappedProfile: HPProfileType = {
     id: profile?.id ?? 0,
-    title: profile?.title ?? "",
-    name: profile?.name ?? "",
-    suffix: profile?.suffix ?? "",
-    workEmail: profile?.workEmail ?? "",
-    workPhone: profile?.workPhone ?? "",
-    philosophy: profile?.philosophy ?? "",
-    areaOfInterest: profile?.areaOfInterest ?? "",
-    experience: profile?.experience ?? "",
-    languages: profile?.languages.map((lang) => ({name: lang})) ?? [],
-    specialties: profile?.specialties.map((specialty) => ({name: specialty})) ?? [],
-    educations: profile?.educations.map((education) => ({name: education})) ?? [],
-    certifications: profile?.certifications.map((certification) => ({name: certification})) ?? [],
-    fields: profile?.fields.map((field) => ({name: field})) ?? [],
-    affiliations: profile?.affiliations.map((affiliation) => ({name: affiliation})) ?? [],
+    title: profile?.HPProfile?.title ?? "",
+    name: profile?.HPProfile?.name ?? "",
+    suffix: profile?.HPProfile?.suffix ?? "",
+    workEmail: profile?.HPProfile?.workEmail ?? "",
+    workPhone: profile?.HPProfile?.workPhone ?? "",
+    philosophy: profile?.HPProfile?.philosophy ?? "",
+    areaOfInterest: profile?.HPProfile?.areaOfInterest ?? "",
+    experience: profile?.HPProfile?.experience ?? "",
+    languages: profile?.HPProfile?.languages.map((lang) => ({name: lang})) ?? [],
+    specialties: profile?.HPProfile?.specialties.map((specialty) => ({name: specialty})) ?? [],
+    educations: profile?.HPProfile?.educations.map((education) => ({name: education})) ?? [],
+    certifications: profile?.HPProfile?.certifications.map((certification) => ({name: certification})) ?? [],
+    fields: profile?.HPProfile?.fields.map((field) => ({name: field})) ?? [],
+    affiliations: profile?.HPProfile?.affiliations.map((affiliation) => ({name: affiliation})) ?? [],
   }
 
   const professionalDetails = await getProfessionalDetailsAction(hpId);
 
-  const isPublished = profile?.HealthcareProvider.isPublished;
+  const isPublished = profile?.isPublished;
   const handleTogglePublish = async () => {
     "use server"
     await setIsPublishAction(hpId, !isPublished);
-    revalidatePath(`/hp/profile/${hpId}?_type=${type}`,  "page");
+    revalidatePath(`/hp/profile/${hpId}`,  "page");
   }
 
   return (
     <div className="container mx-auto my-10 relative">
       <div className="prose max-w-full mb-5">
         <div className="flex">
-          <h1 className="capitalize flex-1">{type.replaceAll("_", " ").toLowerCase()} Profile Editor</h1>
+          <h1 className="capitalize flex-1">{profile?.type.replaceAll("_", " ").toLowerCase()} Profile Editor</h1>
           <form action={handleTogglePublish}>
             <ActionButton variant={isPublished? "destructive": "default"}>{isPublished ? "Unpublish": "Publish"}</ActionButton>
           </form>
-          <Link href={`/hp/profile/${hpId}?_type=${type}`}>
+          <Link href={`/hp/profile/${hpId}`}>
             <Button className="fixed top-44 -right-[7rem] mr-2 hover:-right-[20px] transition-all"><ExternalLink size={20} className="mr-2"/>View profile</Button>
           </Link>
         </div>
@@ -84,7 +79,7 @@ async function EditorPage({params, searchParams}: AppRouterPageRouteOpts) {
           <HPPhoto profile={mappedProfile} type={type} hpId={hpId}/>
         </Suspend>
         <Suspend>
-          <HPProfile profile={mappedProfile}/>
+          <HPProfileForm profile={mappedProfile}/>
         </Suspend>
         <Suspend>
           <HPProfessionalInfo professionalDetails={professionalDetails}/>

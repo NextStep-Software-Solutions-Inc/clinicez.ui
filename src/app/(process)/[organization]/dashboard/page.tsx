@@ -1,34 +1,19 @@
 import { Metadata } from "next"
-
-import { Button } from "@components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@components/ui/card"
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
 } from "@components/ui/tabs"
-import { CalendarDateRangePicker } from "./components/date-range-picker"
-import { MainNav } from "./components/main-nav"
-import { Overview } from "./components/overview"
-import { RecentSales } from "./components/recent-sales"
-import { Calendar, Stethoscope, TrendingUp } from "lucide-react"
+import { MainNav } from "../../../../components/dashboard/MainNav"
 import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth0"
 import { redirect } from "next/navigation"
-import ConditionalRender from "@components/utils/ConditionalRender"
-import { isHP, isMember } from "@lib/protect-org"
-import { DashboardStats } from "./DashboardStats"
+import { DashboardStats } from "../../../../components/dashboard/DashboardStats"
 import { getCachedSession } from "@actions/session.action"
 import Suspend from "@components/Suspend"
-import { PatientHealthAnalytics } from "./PatientHealthAnalytics"
-import { PatientsAnalytics } from "./PatientsAnalytics"
-import { OrgMembershipAnalytics } from "./OrgMembershipAnalytics"
+import { PatientHealthAnalytics } from "../../../../components/dashboard/PatientHealthAnalytics"
+import { PatientsAnalytics } from "../../../../components/dashboard/PatientsAnalytics"
+import { OrgMembershipAnalytics } from "../../../../components/dashboard/OrgMembershipAnalytics"
 
 export const maxDuration = 30; // page timeout in seconds
 export const revalidate  = 60; // revalidation interval in seconds
@@ -55,12 +40,6 @@ async function DashboardPage({params, searchParams}: AppRouterPageRouteOpts) {
         <div className="flex-1 space-y-4 p-8 pt-6">
           <div className="flex items-center justify-between space-y-2">
             <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
-            {/* <ConditionalRender condition={await isMember() && await isHP()}>
-              <div className="flex items-center space-x-2">
-                <CalendarDateRangePicker />
-                <Button>Download PDF</Button>
-              </div>
-            </ConditionalRender> */}
           </div>
           <Tabs defaultValue="overview" className="space-y-4">
             <TabsList>

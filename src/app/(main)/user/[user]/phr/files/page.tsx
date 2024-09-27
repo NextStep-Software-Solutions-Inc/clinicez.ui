@@ -3,9 +3,9 @@ import { Metadata } from "next"
 import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth0"
 import Suspend from "@components/Suspend"
 import { isUserOwner } from "@lib/protect-org"
-import CreateFolderModal from "../../../../../(process)/[organization]/patients/modals/CreateFolderModal"
 import ConditionalRender from "@components/utils/ConditionalRender"
 import { FilesForm } from "./FilesForm"
+import CreateFolderModal from "@components/files/modals/CreateFolderModal"
 
 export const metadata: Metadata = {
   title: "Files | PHR",

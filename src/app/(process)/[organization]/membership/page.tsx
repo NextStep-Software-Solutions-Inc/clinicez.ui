@@ -3,9 +3,9 @@ import { Separator } from "@components/ui/separator";
 import { isOrgAdmin } from "@lib/protect-org";
 import React from "react";
 import Suspend from "@components/Suspend";
-import { MembershipTable } from "./MembershipTable";
 import { redirect } from "next/navigation";
 import { Metadata } from "next";
+import { MembershipTable } from "@components/membership/MembershipTable";
 
 export const maxDuration = 40; // page timeout in seconds
 export const revalidate  = 120; // revalidation interval in seconds

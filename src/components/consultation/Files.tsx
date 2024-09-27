@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@components/ui/card";
-import UploadFileModal from "../../app/(process)/[organization]/patients/modals/UploadFileModal";
 import { faker } from "@faker-js/faker";
 import { GetConsultationTicket } from "@actions/consultation/consultation-ticket.action";
+import UploadFileModal from "@components/files/modals/UploadFileModal";
 
 interface FilesProps {
     consultation:  NonNullable<GetConsultationTicket["data"]>;

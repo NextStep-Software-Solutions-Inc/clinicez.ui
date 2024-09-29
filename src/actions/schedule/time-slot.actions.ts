@@ -107,7 +107,6 @@ export const getUserTimeSlotsAction = cache(async ({serviceId, userId}: Generate
         }
       }
     }
-    
     return available
   };
 

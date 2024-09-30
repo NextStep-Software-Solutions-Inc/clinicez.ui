@@ -1,5 +1,6 @@
 "use client";
 
+import { GetAppointment } from "@actions/appointments/appointments.action";
 import { createConsultationTicketAction } from "@actions/consultation/consultation-ticket.action";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import ActionButton from "@components/ActionButton"
@@ -23,7 +24,7 @@ import { useHPs } from "@hooks/useHP";
 import { useSystems } from "@hooks/useSystem";
 import { ClipboardPlus } from "lucide-react"
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { useRef } from "react"
+import { useEffect, useRef } from "react"
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -37,7 +38,12 @@ const createConsultationTicketSchema = z.object({
   hpId: z.coerce.number()
 })
 
-export default function CreateConsultationTicketModal({disabled = false, subject}: {disabled?: boolean, subject: string}) {
+interface CreateConsultationTicketModalProps {
+  disabled?: boolean
+  subject: string
+  appointment: NonNullable<GetAppointment["data"]>
+}
+export default function CreateConsultationTicketModal({disabled = false, subject, appointment}: CreateConsultationTicketModalProps) {
   const closeBtnRef = useRef<HTMLInputElement>(null)
   const router = useRouter();
   const params = useParams<{organization: string}>();
@@ -64,12 +70,21 @@ export default function CreateConsultationTicketModal({disabled = false, subject
     }
   })
 
+  useEffect(() => {
+    if(myHps?.length === 1) {
+      form.setValue("hpId", myHps[0].id)
+    }
+    
+  }, [form, myHps])
+
+
   const action = async () => {
     form.handleSubmit(async (data) => {
       const subject = data.subject
       const systemId = data.systemId
       const hpId = String(data.hpId)
-      toast.promise(createConsultationTicketAction({appointmentId, orgUid, subject, systemId, hpId}), {
+      const hpIds = new Set([...appointment.AppointmentRouting.filter(r => r.status === "ACCEPTED").map(r => r.routedTo), hpId])
+      toast.promise(createConsultationTicketAction({appointmentId, orgUid, subject, systemId, hpIds : [...hpIds]}), {
         loading: "Creating consultation ticket...",
         success: (res) => {
           if(res.status) {
@@ -140,7 +155,7 @@ export default function CreateConsultationTicketModal({disabled = false, subject
               name="systemId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>System</FormLabel>
+                  <FormLabel>System Category</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value?.toString()}>
                     <FormControl>
                       <SelectTrigger>

@@ -85,7 +85,14 @@ export const useAppointmentTools = ({ appointment, revalidate}: {
       permissions: ["create:org:consultation-ticket"],
       appointmentStatuses: ["routed"],
       routedAptStatuses: ["accepted"],
-      component: <CreateConsultationTicketModal key={appointment.id} disabled={!appointment} subject={appointment?.subject ?? ""}/>
+      component: (
+        <CreateConsultationTicketModal 
+          key={appointment.id} 
+          appointment={appointment}
+          disabled={!appointment} 
+          subject={appointment?.subject ?? ""}
+        />
+      )
     },
     {
       action:"assign",

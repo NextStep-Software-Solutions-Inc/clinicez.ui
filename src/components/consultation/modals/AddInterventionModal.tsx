@@ -30,7 +30,7 @@ import { useActions } from "@hooks/useAction";
 import { useHPs } from "@hooks/useHP";
 import { useInterventions } from "@hooks/useIntervention";
 import {  Plus } from "lucide-react"
-import { useRef } from "react"
+import { useEffect, useRef } from "react"
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -86,6 +86,13 @@ export default function AddInterventionModal({consultation}: AddInterventionModa
     })()
   }
 
+
+  useEffect(() => {
+    if (myHps?.length === 1) {
+      form.setValue("hpId", myHps[0].id)
+    }
+  }, [form, myHps])
+  
   return (
     <Dialog>
       <Tooltip>

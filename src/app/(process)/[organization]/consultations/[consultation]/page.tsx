@@ -24,7 +24,7 @@ async function ConsultationPage({params}: AppRouterPageRouteOpts) {
 
   const consultation = await getConsultationTicketAction(consultationId, orgUid)
   if(!consultation.data) notFound()
-  const hp = await getUserAction(consultation.data?.createdBy)
+  // const hp = await getUserAction(consultation.data?.createdBy)
 
   return (
     <div className="space-y-5">
@@ -42,7 +42,7 @@ async function ConsultationPage({params}: AppRouterPageRouteOpts) {
           </div>
         </div>
         <div className="ml-auto flex gap-1">
-          <Link className="invisible group-hover/issue:visible transition-all" href={{
+          {/* <Link className="invisible group-hover/issue:visible transition-all" href={{
             pathname: `/${params?.organization}/generate-document`,
             query: {
               _consultationId: consultationId,
@@ -50,7 +50,7 @@ async function ConsultationPage({params}: AppRouterPageRouteOpts) {
             }
           }}>
             <Button variant="default" size="sm">Issue e-Document <ExternalLink className="h-4 w-4 ml-2"/></Button>
-          </Link>
+          </Link> */}
           <Button variant="outline" size="sm" className="">Set Resolved</Button>
           <DropdownMenuProvider>
             <DataTableRowActions consultation={consultation.data}/>

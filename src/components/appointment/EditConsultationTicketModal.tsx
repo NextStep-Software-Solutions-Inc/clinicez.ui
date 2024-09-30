@@ -1,5 +1,6 @@
 "use client";
 
+// import { revalidatePath } from "@actions/cache.action";
 import { updateConsultationTicketAction } from "@actions/consultation/consultation-ticket.action";
 import ActionButton from "@components/ActionButton"
 import CustomModalContent from "@components/CustomModalContent";
@@ -14,11 +15,13 @@ import { Label } from "@components/ui/label"
 import { DialogProps } from "@radix-ui/react-dialog";
 import React, { useRef } from "react"
 import { toast } from "sonner";
+import { mutate } from "swr";
 
 interface EditConsultationTicketModalProps extends DialogProps {
   record: {
     id: number,
     subject: string,
+    orgUid: string
   }
   children: React.ReactNode
 }
@@ -26,6 +29,13 @@ interface EditConsultationTicketModalProps extends DialogProps {
 const EditConsultationTicketModal = React.forwardRef<any, EditConsultationTicketModalProps>((props, ref) => {
   const { record, children, ...res } = props
   const closeBtnRef = useRef<HTMLInputElement>(null)
+
+  const revalidate = async () => {
+    // revalidatePath(`${record.orgUid}/consultations`,  "page")
+    mutate((key) =>  typeof key === 'string' && key.startsWith(`/api/organizations/${record.orgUid}/consultations`), undefined, {
+      revalidate: true
+    })
+  }
   const action = async (formData: FormData) => {
     const subject = formData.get("subject") as string
     toast.promise(updateConsultationTicketAction({
@@ -36,6 +46,7 @@ const EditConsultationTicketModal = React.forwardRef<any, EditConsultationTicket
       success: (res) => {
         if (res.status) {
           closeBtnRef.current?.click()
+          revalidate()
         }
         return res.message
       },

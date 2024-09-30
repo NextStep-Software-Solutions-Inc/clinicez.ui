@@ -309,7 +309,7 @@ export const getAppointmentAction = cache(async (id: number, orgUid?: string) =>
         select: {
           id: true,
           updatedAt: true,
-          createdBy: true,
+          ConsultationTicketAuthors: true,
           subject: true,
           ConsultationTicketAttribute: {
             select: {

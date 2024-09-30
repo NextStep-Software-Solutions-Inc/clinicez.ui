@@ -5,16 +5,18 @@ import prismaTenant from '@lib/prisma-tenant';
 import { PrismaClientKnownRequestError } from '@prisma/tenant/client/runtime/library';
 import { getCachedSession } from '@actions/session.action';
 import { cache } from 'react';
+import { getHPsAction } from '@actions/hp.actions';
+import { getPermissionsAction } from '@actions/permission.action';
 
 type CreateConsultationTicketPayload = {
-    systemId: number;
-    appointmentId?: number;
-    subject?: string;
-    orgUid: string;
-    hpId: string
+  systemId: number;
+  appointmentId?: number;
+  subject?: string;
+  orgUid: string;
+  hpIds: string[]
 }
 
-export const createConsultationTicketAction = async ({systemId, appointmentId, orgUid, subject, hpId}: CreateConsultationTicketPayload) => {
+export const createConsultationTicketAction = async ({systemId, appointmentId, orgUid, subject, hpIds}: CreateConsultationTicketPayload) => {
   const session = await getCachedSession()
   
   if(!session) return {
@@ -29,7 +31,11 @@ export const createConsultationTicketAction = async ({systemId, appointmentId, o
       appointmentId,
       subject,
       orgUid,
-      createdBy: hpId,
+      ConsultationTicketAuthors: {
+        createMany: {
+          data: hpIds.map(hpId => ({hpId}))
+        }
+      },
       ConsultationTicketAttribute:{
         create: {
         }
@@ -52,15 +58,69 @@ export const getConsultationTicketAction = cache(async (consultationId: number, 
     data: null
   }
 
+  const [permissions, myHps] = await Promise.all([
+    getPermissionsAction(session.user.sub),
+    getHPsAction({userId: session.user.sub})
+  ])
 
+  const userPermissionArray = permissions.map(p => p.name);
+  const readAllOrgConsultationsPermissions = ["read:org:consultation:all"]
+  const readOwnOrgConsultationPermissions = ["read:org:consultation:own"]
+  const readCreatedOrgConsultationPermissions = ["read:org:consultation:created"]
+  const readCoCreatedOrgConsultationPermissions = ["read:org:consultation:co-created"]
+
+  const readAllOrgConsultations = readAllOrgConsultationsPermissions.every(p => userPermissionArray.includes(p))
+  const readOwnOrgConsultations = readOwnOrgConsultationPermissions.every(p => userPermissionArray.includes(p))
+  const readCreatedOrgConsultations = readCreatedOrgConsultationPermissions.every(p => userPermissionArray.includes(p))
+  const readCoCreatedOrgConsultations = readCoCreatedOrgConsultationPermissions.every(p => userPermissionArray.includes(p))
+  
   const consultationTicket = await prismaTenant.consultationTicket.findUnique({
-    where: { id: consultationId, orgUid },
+    where: { 
+      id: consultationId,
+      OR: [
+        {
+          ...readAllOrgConsultations ? {orgUid} : {},
+        },
+        { 
+          ...readCreatedOrgConsultations 
+            ? { 
+              ConsultationTicketAuthors: { 
+                some: { 
+                  hpId: { in: myHps.map(hp => hp.id.toString()) } 
+                }
+              } 
+            } 
+            : {}
+        },
+        {
+          ...readOwnOrgConsultations
+            ? { Appointment: { Requesters: {  some: { userId: session.user.sub } } } }
+            : {}
+        },
+        {
+          ...readCoCreatedOrgConsultations
+            ? {
+              Appointment: {
+                AppointmentRouting: {
+                  some: {
+                    status: "ACCEPTED",
+                    routedTo: {
+                      in: myHps.map(hp => hp.id.toString())
+                    }
+                  }
+                }
+              }
+            }
+            : {}
+        }
+      ]
+    },
     select: {
       id: true,
       subject: true,
       appointmentId: true,
       orgUid: true,
-      createdBy: true,
+      ConsultationTicketAuthors: true,
       createdAt: true,
       updatedAt: true,
       isArchived: true,
@@ -129,6 +189,22 @@ export const getConsultationTicketsAction = async ({orgUid, filters}: {orgUid: s
   }
 
   const { showArchived } = filters ?? {}
+
+  const [permissions, myHps] = await Promise.all([
+    getPermissionsAction(session.user.sub),
+    getHPsAction({userId: session.user.sub})
+  ])
+  const userPermissionArray = permissions.map(p => p.name);
+  const readAllOrgConsultationsPermissions = ["read:org:consultation:all"]
+  const readOwnOrgConsultationPermissions = ["read:org:consultation:own"]
+  const readCreatedOrgConsultationPermissions = ["read:org:consultation:created"]
+  const readCoCreatedOrgConsultationPermissions = ["read:org:consultation:co-created"]
+
+  const readAllOrgConsultations = readAllOrgConsultationsPermissions.every(p => userPermissionArray.includes(p))
+  const readOwnOrgConsultations = readOwnOrgConsultationPermissions.every(p => userPermissionArray.includes(p))
+  const readCreatedOrgConsultations = readCreatedOrgConsultationPermissions.every(p => userPermissionArray.includes(p))
+  const readCoCreatedOrgConsultations = readCoCreatedOrgConsultationPermissions.every(p => userPermissionArray.includes(p))
+
   const consultationTickets = await prismaTenant.consultationTicket.findMany({
     orderBy: {
       createdAt: 'desc'
@@ -136,17 +212,52 @@ export const getConsultationTicketsAction = async ({orgUid, filters}: {orgUid: s
     where: {
       isActive: true,
       ...showArchived ? {}: { isArchived: false},
-      orgUid,
       OR: [
-        { createdBy: session.user.sub },
-        { Appointment: { Requesters: { some: { userId: session.user.sub } } } }
+        {
+          ...readAllOrgConsultations ? {orgUid} : {},
+        },
+        { 
+          ...readCreatedOrgConsultations 
+            ? { 
+              ConsultationTicketAuthors: {
+                some: {
+                  hpId: {
+                    in: myHps.map(hp => hp.id.toString())
+                  }
+                }
+              }
+            } 
+            : {}
+        },
+        { 
+          ...readOwnOrgConsultations 
+            ? { Appointment: { Requesters: { some: { userId: session.user.sub } } } }
+            : {},
+        },
+        {
+          ...readCoCreatedOrgConsultations 
+            ? {
+              Appointment: {
+                AppointmentRouting: {
+                  some: {
+                    status: "ACCEPTED",
+                    routedTo: {
+                      in: myHps.map(hp => hp.id.toString())
+                    }
+                  }
+                }
+              }
+            }
+            : {}
+        }
       ]
     },
     select: {
       id: true,
       subject: true,
+      orgUid: true,
       appointmentId: true,
-      createdBy: true,
+      ConsultationTicketAuthors: true,
       createdAt: true,
       updatedAt: true,
       isArchived: true,
@@ -216,8 +327,18 @@ export const updateConsultationTicketAction = async ({consultationId, subject}: 
   }
 
   try {
+    const myHps = await getHPsAction({userId: session.user.sub})
     await prismaTenant.consultationTicket.update({
-      where: { id: consultationId, createdBy: session.user.sub },
+      where: { 
+        id: consultationId, 
+        ConsultationTicketAuthors: {
+          some: {
+            hpId: {
+              in: myHps.map(hp => hp.id.toString())
+            }
+          }
+        }
+      },
       data: { subject }
     })
     return {
@@ -249,8 +370,18 @@ export const deleteConsultationTicketAction = async (consultationId: number) => 
   }
 
   try {
+    const myHps = await getHPsAction({userId: session.user.sub})
     await prismaTenant.consultationTicket.update({
-      where: { id: consultationId, createdBy: session.user.sub },
+      where: { 
+        id: consultationId, 
+        ConsultationTicketAuthors: {
+          some: {
+            hpId: {
+              in: myHps.map(hp => hp.id.toString())
+            }
+          }
+        }
+      },
       data: {
         isActive: false
       }
@@ -284,8 +415,19 @@ export const archiveConsultationTicketAction = async (consultationId: number) =>
   }
 
   try {
+    const myHps = await getHPsAction({userId: session.user.sub})
     await prismaTenant.consultationTicket.update({
-      where: { id: consultationId, createdBy: session.user.sub, isActive: true, isArchived: false },
+      where: { 
+        id: consultationId, 
+        ConsultationTicketAuthors: {
+          some: {
+            hpId: {
+              in: myHps.map(hp => hp.id.toString())
+            }
+          }
+        }, 
+        isActive: true, 
+        isArchived: false },
       data: {
         isArchived: true
       }

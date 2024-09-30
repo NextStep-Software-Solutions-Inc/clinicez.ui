@@ -106,7 +106,7 @@ export default function ReviewBooking({ nextStep, prevStep, isLastStep, isFirstS
       modeId: bookAppointmentForm.modeId,
       typeId: bookAppointmentForm.appointmentTypeId,
       serviceId: bookAppointmentForm.serviceId,
-      requesters: [user.user?.email],
+      requesters: [userId],
       attachments: attachmentUrls.map(url => url.url),
       hpId: String(bookAppointmentForm.hpId),
       schedule: {

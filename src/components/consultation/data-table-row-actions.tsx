@@ -55,10 +55,12 @@ export function DataTableRowActions<TData>({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent  align="end" className="w-[160px]" hidden={hasOpenDialog}>
-        <EditConsultationTicketModal onOpenChange={handleDialogItemOpenChange} record={{
-          id: consultation.id,
-          subject: consultation.subject ?? "",
-        }}>
+        <EditConsultationTicketModal onOpenChange={handleDialogItemOpenChange} 
+          record={{
+            id: consultation.id,
+            subject: consultation.subject ?? "",
+            orgUid: consultation.orgUid
+          }}>
           <DropdownMenuItem onSelect={handleDialogItemSelect}>
             <Pencil className="w-4 h-4 mr-2"/>
             Edit</DropdownMenuItem>

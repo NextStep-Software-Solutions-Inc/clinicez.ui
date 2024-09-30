@@ -8,6 +8,7 @@ import useSWR from "swr"
 type UseConsultations = {
   orgUid: string
   showArchived?: boolean
+  // hpId: number
 }
 
 export const useConsultations = ({ orgUid, showArchived }:UseConsultations) => {

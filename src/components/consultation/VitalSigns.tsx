@@ -8,12 +8,12 @@ interface VitalSignsProps {
 }
 export default async function VitalSigns({ consultation, userId}: VitalSignsProps) {
 
-  const requesterEmail = consultation.Appointment?.Requesters?.[0].email
+  const requesterUserId = consultation.Appointment?.Requesters?.[0].userId
   
-  if (!requesterEmail) {
+  if (!requesterUserId) {
     return null;
   }
-  const vitalSigns = await getUserVitalSignsAction(requesterEmail);
+  const vitalSigns = await getUserVitalSignsAction(requesterUserId);
   return (
     <RecentVitalSigns vitalSigns={vitalSigns} readOnly={false} userId={userId} />
   );

@@ -9,8 +9,6 @@ import { bookAppointmentAtom } from "@state/book-appointment";
 import { Alert, AlertDescription, AlertTitle } from "@components/ui/alert";
 import dayjs from "dayjs"
 import utc from "dayjs/plugin/utc"
-import { toast } from "sonner";
-import { getUserTimeSlotsAction } from "@actions/schedule/time-slot.actions";
 import { useTimeSlots } from "@hooks/useTimeSlots";
 import { BarLoader } from "react-spinners";
 import { Info } from "lucide-react";
@@ -27,11 +25,12 @@ export default function SelectTimeSlot({nextStep, prevStep, isFirstStep, isLastS
   const handleNext = () => {
     nextStep?.();
   }
-  const { appointmentTypeId, serviceId, hpUserId } = bookAppointment;
+  const { appointmentTypeId, serviceId, hpUserId, hpId } = bookAppointment;
   const {data: timeSlots, isValidating} = useTimeSlots({
     appointmentTypeId,
+    userId: hpUserId ?? "",
+    hpId: String(hpId),
     serviceId,
-    userId: hpUserId ?? ""
   });
 
   const availableDates = useMemo(() => isValidating ? [] : timeSlots?.data?.filter(a => a.status).map(a => dayjs(a.date).startOf("day").toDate()), [isValidating, timeSlots?.data]) ?? []

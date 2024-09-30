@@ -11,7 +11,6 @@ dayjs.extend(localizeFormat)
 import prismaTenant from "@lib/prisma-tenant";
 import { getHPAppointmentsSchedule, GetUserSchedules, getUserSchedulesAction } from "./user-schedule.action";
 import { eachDayOfInterval, getWeekOfMonth } from "date-fns";
-import { toast } from "sonner";
 import { cache } from "react";
 import { formatDateTime } from "@lib/utils";
 
@@ -50,7 +49,7 @@ export const getUserTimeSlotsAction = cache(async ({serviceId, userId, hpId}: Ge
     getUserSchedulesAction(userId),
     getHPAppointmentsSchedule(hpId)
   ])
-
+  
   const totalDuration = (serviceAttribute?.duration ?? 0) + (serviceAttribute?.durationPadding ?? 0)
 
   if(totalDuration <= 0) {

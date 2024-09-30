@@ -12,6 +12,7 @@ import { DropdownMenuProvider } from "@components/DropdownMenuProvider"
 import { GetConsultationTickets } from "@actions/consultation/consultation-ticket.action"
 import dayjs from "dayjs"
 import utc from "dayjs/plugin/utc"
+import { useUser } from "@hooks/useUser"
 dayjs.extend(utc)
 
 
@@ -77,7 +78,7 @@ export const columns: ColumnDef<GetConsultationTickets["data"][number]>[] = [
     cell: ({ row }) => {
       return (
         <div>
-          <div className="text-wrap">{(row.original.Appointment?.Requesters ?? []).map((requester) => requester.userId).join(", ")}</div>
+          <Requester requester={row.original.Appointment?.Requesters[0].userId ?? ""} />
           <div className="flex flex-wrap items-center gap-1">
             <Badge>{row.original.System.name}</Badge>
             <Badge variant="outline">{row.original.Appointment?.AppointmentAttribute?.Service?.name}</Badge>
@@ -134,3 +135,12 @@ export const columns: ColumnDef<GetConsultationTickets["data"][number]>[] = [
     }
   },
 ]
+
+
+export const Requester = ({ requester }: {requester: string}) => {
+  const {data: user} = useUser({userId: requester})
+  const requesterName = `${user?.firstName} ${user?.middleName} ${user?.lastName} ${user?.suffix ?? ""}`
+  return (
+    <div className="text-wrap">{requesterName}</div>
+  )
+}

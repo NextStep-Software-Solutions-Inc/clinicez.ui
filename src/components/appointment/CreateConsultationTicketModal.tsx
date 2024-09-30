@@ -1,6 +1,7 @@
 "use client";
 
 import { createConsultationTicketAction } from "@actions/consultation/consultation-ticket.action";
+import { useUser } from "@auth0/nextjs-auth0/client";
 import ActionButton from "@components/ActionButton"
 import CustomModalContent from "@components/CustomModalContent";
 import { Button } from "@components/ui/button"
@@ -13,28 +14,27 @@ import {
 } from "@components/ui/dialog"
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@components/ui/form";
 import { Input } from "@components/ui/input"
-import { Label } from "@components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@components/ui/select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@components/ui/tooltip"
 import Each from "@components/utils/Each";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useOrgAppointment } from "@hooks/useAppointment";
+import { useHPs } from "@hooks/useHP";
 import { useSystems } from "@hooks/useSystem";
 import { ClipboardPlus } from "lucide-react"
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { useRef, useState } from "react"
+import { useRef } from "react"
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
-import AppointmentRoutingHistorySheet from "./AppointmentRoutingHistorySheet";
-import ConsultationTicketSheet from "./ConsultationTicketSheet";
 
 
 type CreateConsultationTicketSchema = z.infer<typeof createConsultationTicketSchema>
 const createConsultationTicketSchema = z.object({
   subject: z.string().optional(),
   systemId: z.coerce.number(),
-  openTicket: z.boolean().optional()
+  openTicket: z.boolean().optional(),
+  hpId: z.coerce.number()
 })
 
 export default function CreateConsultationTicketModal({disabled = false, subject}: {disabled?: boolean, subject: string}) {
@@ -43,14 +43,17 @@ export default function CreateConsultationTicketModal({disabled = false, subject
   const params = useParams<{organization: string}>();
   const searchParams = useSearchParams();
   const orgUid = params.organization
+  const { user } = useUser()
   const {data: systems} = useSystems(orgUid)
+  const { data: myHps } = useHPs({
+    userId: user?.sub ?? ""
+  })
 
   const appointmentId = Number(searchParams.get("_appointment"))
   const {mutate} = useOrgAppointment({
     orgId: orgUid,
     appointmentId
   })
-
 
   const form = useForm<CreateConsultationTicketSchema>({
     resolver: zodResolver(createConsultationTicketSchema),
@@ -65,7 +68,8 @@ export default function CreateConsultationTicketModal({disabled = false, subject
     form.handleSubmit(async (data) => {
       const subject = data.subject
       const systemId = data.systemId
-      toast.promise(createConsultationTicketAction({appointmentId, orgUid, subject, systemId}), {
+      const hpId = String(data.hpId)
+      toast.promise(createConsultationTicketAction({appointmentId, orgUid, subject, systemId, hpId}), {
         loading: "Creating consultation ticket...",
         success: (res) => {
           if(res.status) {
@@ -105,6 +109,32 @@ export default function CreateConsultationTicketModal({disabled = false, subject
             id="consultation-ticket-form"
             className="grid gap-4 py-4"
           >
+            <FormField
+              control={form.control}
+              name="hpId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Interacting as</FormLabel>
+                  <Select onValueChange={field.onChange} name={field.name} defaultValue={field.value?.toString()}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="HP profile to interact as" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <Each
+                        of={myHps ?? []}
+                        render={(hp) => 
+                          <SelectItem value={hp.id.toString()}>{hp.HPProfile?.title} {hp.HPProfile?.name} {hp.HPProfile?.suffix} ({hp.type})</SelectItem>}
+                      />
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <FormField
               control={form.control}
               name="systemId"

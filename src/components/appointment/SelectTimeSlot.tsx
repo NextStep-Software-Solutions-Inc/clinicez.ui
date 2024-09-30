@@ -34,46 +34,6 @@ export default function SelectTimeSlot({nextStep, prevStep, isFirstStep, isLastS
     userId: hpUserId ?? ""
   });
 
-  // useEffect(() => {
-
-  //   if(!appointmentTypeId || !serviceId || !hpUserId) {
-  //     toast.error("Unable to fetch time slots. Required fields are missing.");
-  //     return;
-  //   }
-
-  //   const loadTimeSlots = () => {
-  //     setBookAppointmentForm((prev) => ({
-  //       ...prev,
-  //       availabilities: [],
-  //       selectedTimeSlot: undefined,
-  //       preferredDate: undefined
-  //     }));
-  //     toast.promise(getUserTimeSlotsAction({
-  //       appointmentTypeId: appointmentTypeId,
-  //       serviceId: serviceId,
-  //       userId: hpUserId
-  //     }), {
-  //       position: "top-center",
-  //       loading: "Refreshing time slots...",
-  //       success: (res) => {
-  //         setBookAppointmentForm((prev) => ({
-  //           ...prev,
-  //           availabilities: res.data
-  //         }));
-  //         return res.message;
-  //       },
-  //       error: "Failed to refresh time slots."
-  //     })
-  //   };
-    
-  //   loadTimeSlots();
-  //   const interval = setInterval(() => {
-  //     loadTimeSlots();
-  //   }, 300000);
-
-  //   return () => clearInterval(interval);
-  // }, [appointmentTypeId, serviceId, hpUserId, setBookAppointmentForm])
-
   const availableDates = useMemo(() => isValidating ? [] : timeSlots?.data?.filter(a => a.status).map(a => dayjs(a.date).startOf("day").toDate()), [isValidating, timeSlots?.data]) ?? []
   const availableTimeSlots = useMemo(() => isValidating ? [] : timeSlots?.data?.find(a => dayjs(a.date).isSame(bookAppointment.preferredDate, "day"))?.timeSlots, [isValidating, timeSlots?.data, bookAppointment.preferredDate]) ?? []
 
@@ -91,7 +51,7 @@ export default function SelectTimeSlot({nextStep, prevStep, isFirstStep, isLastS
           </AlertDescription>
         </Alert>
         {
-          (!bookAppointment.hpUserId || !bookAppointment.hpEmail) &&
+          (!bookAppointment.hpUserId || !bookAppointment.hpId) &&
           <Alert className="my-5 bg-destructive/15">
             <Info className="h-4 w-4" />
             <AlertTitle>

@@ -13,16 +13,15 @@ import { toast } from "sonner";
 
 interface DeclineAppointmentAssignmentProps {
   disabled?: boolean
-  appointmentId: number
+  routingCode: string
   onDeclined?: () => void
 }
 
-export default function DeclineAppointmentAssignment({disabled = false, appointmentId, onDeclined}: DeclineAppointmentAssignmentProps) {
+export default function DeclineAppointmentAssignment({disabled = false, routingCode, onDeclined}: DeclineAppointmentAssignmentProps) {
   const triggerRef = React.useRef<HTMLButtonElement>(null);
 
   const action = async (formData: FormData) => {
-    formData.append("appointmentId", appointmentId.toString());
-
+    formData.append("routingCode", routingCode);
     toast.promise(declineAppointmentAction(formData), {
       loading: "Declining appointment assignment...",
       success: (res) => {

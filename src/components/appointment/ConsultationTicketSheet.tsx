@@ -18,6 +18,8 @@ import utc from "dayjs/plugin/utc"
 dayjs.extend(utc)
 
 import relativeTime from "dayjs/plugin/relativeTime";
+import { useUser } from "@hooks/useUser";
+import { useHP } from "@hooks/useHP";
 dayjs.extend(relativeTime);
 
 interface ConsultationTicketSheetProps {
@@ -52,15 +54,7 @@ export default function ConsultationTicketSheet({ children, onClose, consultatio
                 }} 
                 target="_blank"
               >
-                <div className="rounded px-3 py-2 bg-slate-100 hover:ring-1">
-                  <div>
-                    <p className="font-semibold text-primary text-wrap">Consultation Ticket #{record.id}</p>
-                    {record.subject && <p className="font-medium text-wrap">{record.subject}</p>}
-                    <p className="text-sm text-muted-foreground">{record.createdBy}</p>
-                    <p className="text-xs text-muted-foreground">Created {dayjs(record.updatedAt).fromNow()}</p>
-
-                  </div>
-                </div>
+                <ConsultationTicket record={record}/>
               </Link>
             )}
           />
@@ -73,4 +67,22 @@ export default function ConsultationTicketSheet({ children, onClose, consultatio
       </SheetContent>
     </Sheet>
   );
+}
+
+export const ConsultationTicket = ({record}: {record: NonNullable<GetAppointment["data"]>["ConsultationTickets"][number]}) => {
+  
+  const {data: ticketAuthor} = useHP(Number(record.createdBy))
+  const ticketAuthorName = `${ticketAuthor?.HPProfile?.title ?? ticketAuthor?.User.firstName} ${ticketAuthor?.HPProfile?.name ?? ticketAuthor?.User.lastName} ${ticketAuthor?.HPProfile?.suffix ?? ticketAuthor?.User.suffix ?? ""}`
+  
+  return (
+    <div className="rounded px-3 py-2 bg-slate-100 hover:ring-1">
+      <div>
+        <p className="font-semibold text-primary text-wrap">Consultation Ticket #{record.id}</p>
+        {record.subject && <p className="font-medium text-wrap">{record.subject}</p>}
+        <p className="text-sm text-muted-foreground">{ticketAuthorName}</p>
+        <p className="text-xs text-muted-foreground">Created {dayjs(record.updatedAt).fromNow()}</p>
+
+      </div>
+    </div>
+  )
 }

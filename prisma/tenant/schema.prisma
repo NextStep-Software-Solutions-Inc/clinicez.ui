@@ -23,7 +23,7 @@ model Appointment {
   AppointmentAttribute   AppointmentAttribute?
   AppointmentRouting     AppointmentRouting[]
   AppointmentAttachments AppointmentAttachment[]
-  PreConsultationNotes   PreAssessmentNote[]
+  PreAssessmentNotes     PreAssessmentNote[]
   ConsultationTickets    ConsultationTicket[]
 }
 
@@ -38,10 +38,10 @@ model AppointmentAttachment {
 model AppointmentRequester {
   id            Int         @id @default(autoincrement())
   appointmentId Int
-  email         String
+  userId        String      @default("")
   Appointment   Appointment @relation(fields: [appointmentId], references: [id])
 
-  @@unique([appointmentId, email], name: "unique_appointment_email")
+  @@unique([appointmentId, userId], name: "unique_appointment_requester")
 }
 
 model AppointmentAttribute {

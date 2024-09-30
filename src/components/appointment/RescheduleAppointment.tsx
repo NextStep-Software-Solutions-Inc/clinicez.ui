@@ -1,16 +1,16 @@
 "use client";
 
-import { rescheduleAppointmentAction } from "@actions/appointments/appointments.action";
+import { GetAppointment, rescheduleAppointmentAction } from "@actions/appointments/appointments.action";
 import { Button } from "@components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@components/ui/popover";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@components/ui/tooltip";
-import { Clock } from "lucide-react";
+import { Clock, Group } from "lucide-react";
 import React, { useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import AppointmentCalendar from "./AppointmentCalendar";
 import VacantTimeSlot from "./VacantTimeSlot";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@components/ui/form";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@components/ui/select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@components/ui/select";
 import { useForm } from "react-hook-form";
 import Each from "@components/utils/Each";
 import { useHPs } from "@hooks/useHP";
@@ -19,65 +19,126 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useTimeSlots } from "@hooks/useTimeSlots";
 import { BarLoader } from "react-spinners";
 import dayjs from "dayjs";
+import { Checkbox } from "@components/ui/checkbox";
+import ActionButton from "@components/ActionButton";
 
 type ScheduleAppointment = z.infer<typeof scheduleAppointmentSchema>;
 const scheduleAppointmentSchema = z.object({
-  userId: z.string(),
-  date: z.date(),
-  startDateTime: z.date(),
-  endDateTime: z.date(),
+  hpId: z.string(),
+  date: z.date({
+    required_error: "Please select a date"
+  }),
+  startDateTime: z.date({
+    required_error: "Please select a start time",
+  }),
+  endDateTime: z.date({
+    required_error: "Please select an end time"
+  }),
+  assign: z.boolean().default(true).optional()
 });
 
 interface RescheduleAppointmentProps {
   disabled?: boolean;
-  preferredDate?: Date;
-  preferredUserId?: string | null;
-  serviceId: number;
-  appointmentTypeId: number;
+  appointment: NonNullable<GetAppointment["data"]>;
+  onRescheduled?: () => void;
 }
 
-export default function RescheduleAppointment({disabled = false, preferredDate, preferredUserId, serviceId, appointmentTypeId }: RescheduleAppointmentProps) {
+export default function RescheduleAppointment({disabled = true, onRescheduled, appointment}: RescheduleAppointmentProps) {
   const triggerRef = React.useRef<HTMLButtonElement>(null)
   const {data: hps} = useHPs()
 
+  const filteredHps = useMemo(() => hps?.filter(hp => {
+    const skip = appointment.AppointmentRouting.some(a => 
+      a.routedToRole.toUpperCase() === hp.type && 
+      (["PENDING", "ACCEPTED"].includes(a.status) || 
+      (["CANCELLED", "DECLINED"].includes(a.status) && Number(a.routedTo) === hp.id))
+    );
+    return !skip || hp.id.toString() === appointment.AppointmentAttribute?.preferredAppointee
+
+  }), [appointment.AppointmentAttribute?.preferredAppointee, appointment.AppointmentRouting, hps])
   const form = useForm<ScheduleAppointment>({
     resolver: zodResolver(scheduleAppointmentSchema),
+    reValidateMode: "onChange",
     defaultValues: {
-      userId: preferredUserId ?? "",
-      date: preferredDate,
-      startDateTime: undefined,
-      endDateTime: undefined
+      hpId: appointment.AppointmentAttribute?.preferredAppointee ?? undefined,
+      date: appointment.AppointmentAttribute?.date ? new Date(appointment.AppointmentAttribute.date) : undefined,
+      assign: true
     }
   })
-
-  const userId = form.watch("userId")
+  
+  const hpId = form.watch("hpId")
+  const existingRoute = appointment.AppointmentRouting.some(r => r.routedTo === hpId)
+  const selectedHp = useMemo(() => hps?.find(hp => hp.id.toString() === hpId), [hpId, hps])
   const {data: timeSlots, isValidating} = useTimeSlots({
-    userId: userId,
-    serviceId,
-    appointmentTypeId
+    hpId,
+    userId: selectedHp?.User.userId ?? "",
+    serviceId: appointment.AppointmentAttribute?.Service?.id,
+    appointmentTypeId: appointment.AppointmentAttribute?.AppointmentType.id
   })
 
-  const action = async (formData: FormData) => {
-    const res = await rescheduleAppointmentAction(formData)
-    if(res) {
-      toast.success("Appointment rescheduled successfully.")
-      triggerRef.current?.click()
+  const action = async () => {
+    if(isValidating) {
+      toast.error("Please wait for the available time slots to load")
+      return;
     }
+    
+    form.handleSubmit(async (data) => {
+      if(!selectedHp) {
+        toast.error("Please select a healthcare provider to reschedule the appointment")
+        return
+      }
+
+      toast.promise(rescheduleAppointmentAction({
+        appointmentId: appointment.id, 
+        assign: existingRoute ? false : data.assign ?? false,
+        hpId: selectedHp?.id.toString(),
+        hpRole: selectedHp?.type,
+        date: data.date.toISOString(),
+        startDateTime: data.startDateTime.toISOString(),
+        endDateTime: data.endDateTime.toISOString()
+      }), {
+        loading: "Rescheduling appointment...",
+        success: (res) => {
+          if(res.status) {
+            triggerRef.current?.click()
+            onRescheduled?.()
+          }
+          return res.message
+        },
+        error: "Failed to reschedule appointment"
+      })
+      
+    },(errorFields) => {
+      Object.entries(errorFields).forEach(([key, value]) => { 
+        toast.error(value.message)
+      })
+    })()
   }
   
   const selectedDate = form.watch("date")
   const startDateTime = form.watch("startDateTime")
   const endDateTime = form.watch("endDateTime")
   const availableDates = useMemo(() => isValidating ? [] : timeSlots?.data?.filter(a => a.status).map(a => dayjs(a.date).startOf("day").toDate()), [isValidating, timeSlots?.data]) ?? []
-  const availableTimeSlots = useMemo(() => isValidating ? [] : timeSlots?.data?.find(a => dayjs(a.date).isSame(selectedDate, "day"))?.timeSlots, [isValidating, timeSlots?.data, selectedDate]) ?? []
+  const availableTimeSlots = useMemo(() => isValidating 
+    ?  [] 
+    : timeSlots?.data?.find(a => dayjs(a.date).isSame(selectedDate, "day"))?.timeSlots.map(ts => {
+      return {
+        start: dayjs(ts.start).toDate(),
+        end: dayjs(ts.end).toDate()
+      }
+    }), [isValidating, timeSlots?.data, selectedDate]) ?? []
 
   useEffect(() => {
-    if(!isValidating) return
-    form.resetField("endDateTime");
-    form.resetField("startDateTime");
-    
-  }, [form, isValidating, preferredDate, preferredUserId])
-  
+    if(isValidating){
+      const date = form.watch("date")
+      form.reset({
+        hpId: hpId,
+        assign: true,
+        date
+      })
+    }
+    ;
+  }, [form, isValidating, hpId])
   return (
     <Tooltip>
       <Popover>
@@ -91,12 +152,12 @@ export default function RescheduleAppointment({disabled = false, preferredDate, 
         </PopoverTrigger>
         <PopoverContent className="flex w-fit p-0">
           <div className="p-4">
-            <h5 className="text-lg font-bold">Schedule Appointment</h5>
+            <h5 className="text-lg font-bold">Reschedule Appointment</h5>
             <Form {...form}>
-              <form action="">
+              <form action={action}>
                 <FormField
                   control={form.control}
-                  name="userId"
+                  name="hpId"
                   render={({ field }) => (
                     <FormItem className="flex-grow">
                       <FormLabel>Healthcare Provider</FormLabel>
@@ -107,15 +168,17 @@ export default function RescheduleAppointment({disabled = false, preferredDate, 
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <Each
-                            of={hps ?? []}
-                            render={(hp) => {
-                              const hpType = hp.type
-                              return (
-                                <SelectItem value={hp.User.email}>{hp.HPProfile?.title} {hp.HPProfile?.name} {hp.HPProfile?.suffix}</SelectItem>
-                              )
-                            }}
-                          />
+                          <SelectGroup>
+                            <SelectLabel>North America</SelectLabel>
+                            <Each
+                              of={filteredHps ?? []}
+                              render={(hp) => {
+                                return (
+                                  <SelectItem value={hp.id.toString()}>{hp.HPProfile?.title ?? hp.User.firstName ?? "-"} {hp.HPProfile?.name ?? hp.User.lastName ?? "-"} {hp.HPProfile?.suffix ?? hp.User.suffix ?? ""} (<span className="italic">{hp.type.toLocaleLowerCase()}</span>)</SelectItem>
+                                )
+                              }}
+                            />
+                          </SelectGroup>
                         </SelectContent>
                       </Select>
                       <FormDescription>
@@ -132,27 +195,65 @@ export default function RescheduleAppointment({disabled = false, preferredDate, 
                     preferredDate={selectedDate}
                     onSelect={(date) => {
                       if(!date) return
-                      form.setValue("date", date)
+                      form.reset({
+                        hpId: hpId,
+                        assign: existingRoute,
+                        date: date
+                      })
                     }}
                   />
                   <VacantTimeSlot
                     timeSlots={availableTimeSlots}
                     selectedTimeSlot={{
-                      start: startDateTime,
-                      end: endDateTime
+                      start: dayjs(startDateTime).toDate(),
+                      end: dayjs(endDateTime).toDate()
                     }}
                     onSelect={(timeSlot) => {
-                      form.setValue("startDateTime", timeSlot.start)
-                      form.setValue("endDateTime", timeSlot.end)
+                      form.setValue("startDateTime", timeSlot.start, {
+                        shouldValidate: true
+                      })
+                      form.setValue("endDateTime", timeSlot.end, {
+                        shouldValidate: true
+                      })
                     }}
                   />
                 </div>
+                <FormField
+                  control={form.control}
+                  name="assign"
+                  render={({ field }) => (
+                    <FormItem className="flex-grow">
+                      <div className="flex items-center space-x-2">
+                        <FormControl>
+                          <Checkbox
+                            checked={!existingRoute}
+                            disabled
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <label
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                          Assign to healthcare provider immediately after scheduling
+                        </label>
+                      </div>
+                      <FormDescription>
+                        Assigned healthcare provider will be notified to accept the appointment
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <ActionButton 
+                  disabled={form.formState.isSubmitting || !form.formState.isValid}
+                  className="mt-5 w-full"
+                >Book now</ActionButton>
               </form>
             </Form>
           </div>
         </PopoverContent>
       </Popover>
-      <TooltipContent>Reschedule</TooltipContent>
+      <TooltipContent >Reschedule</TooltipContent>
     </Tooltip>
   );
 }

@@ -17,6 +17,8 @@ import {
 } from "@components/ui/sheet"
 import Each from "@components/utils/Each";
 import { useOrgAppointment } from "@hooks/useAppointment";
+import { useHP } from "@hooks/useHP";
+import { useUser } from "@hooks/useUser";
 import { cn } from "@lib/utils";
 import dayjs from "dayjs"
 import utc from "dayjs/plugin/utc"
@@ -25,6 +27,7 @@ dayjs.extend(utc)
 import { ArrowRight, Ban, Info } from "lucide-react";
 import { useParams, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
+import { mutate } from "swr";
 interface AppointmentRoutingHistorySheetProps {
   children?: React.ReactNode;
   onSelect? : (e: Event) => void;
@@ -38,21 +41,6 @@ export default function AppointmentRoutingHistorySheet({ children, onClose, rout
   const searchParams = useSearchParams()
   const appointmentId = Number(searchParams.get("_appointment"))
   
-  const { mutate } = useOrgAppointment({
-    orgId: params.organization,
-    appointmentId: appointmentId
-  })
-  
-  const mu = () => {
-    mutate()
-  }
-  const badgeMap: Record<string, BadgeProps["variant"]> = {
-    ACCEPTED: "default",
-    PENDING: "outline",
-    DECLINED: "destructive",
-    CANCELLED: "destructive",
-  } as const
-
   return (
     <Sheet>
       <SheetTrigger asChild>{children}</SheetTrigger>
@@ -75,25 +63,12 @@ export default function AppointmentRoutingHistorySheet({ children, onClose, rout
             of={routing}
             fallback={<p className="text-center text-sm text-muted-foreground">No routing history found.</p>}
             render={(record) => (
-              <ContextMenu key={record.id}>
-                <ContextMenuTrigger disabled={!["PENDING"].includes(record.status)} >
-                  <div className={
-                    cn("text-sm rounded px-3 py-2 bg-slate-100 hover:ring-1", 
-                      record.status === "CANCELLED" && "bg-destructive/5",
-                    )}
-                  >
-                    <Badge variant={badgeMap[record.status as keyof typeof badgeMap]} />
-                    <LabelValue className="flex items-center flex-wrap" value={<span className="flex items-center">{record.routedBy} <ArrowRight className="w-4 h-4 mx-2"/></span>} label={record.routedTo} />
-                    {record.amendment && <LabelValue className="flex items-center gap-1 text-xs text-muted-foreground" value="Amendment: " label={record.amendment} />}
-                    <p className="text-xs text-muted-foreground">{dayjs(record.updatedAt).format("llll")}</p>
-                  </div>
-                </ContextMenuTrigger>
-                <ContextMenuContent>
-                  <ContextMenuItem>
-                    <CancelAssignment onCancel={mu} appointmentRoutingId={record.id}/>
-                  </ContextMenuItem>
-                </ContextMenuContent>
-              </ContextMenu>
+              <Route 
+                key={record.id}
+                record={record}
+                appointmentId={appointmentId}
+                organization={params.organization}
+              />
             )}
           />
         </div>
@@ -107,6 +82,54 @@ export default function AppointmentRoutingHistorySheet({ children, onClose, rout
   );
 }
 
+interface RouteProps {
+  record:  NonNullable<GetAppointment["data"]>["AppointmentRouting"][number]
+  organization: string
+  appointmentId: number
+}
+export const Route = ({record, appointmentId, organization}: RouteProps ) => {
+
+  const badgeMap: Record<string, BadgeProps["variant"]> = {
+    ACCEPTED: "default",
+    PENDING: "outline",
+    DECLINED: "destructive",
+    CANCELLED: "destructive",
+  } as const
+
+  const { mutate } = useOrgAppointment({
+    orgId: organization,
+    appointmentId: appointmentId
+  })
+
+  const {data: routedBy} = useUser({
+    userId: record.routedBy
+  })
+  const routedByName = `${routedBy?.firstName} ${routedBy?.middleName} ${routedBy?.lastName} ${routedBy?.suffix ?? ""}`
+  const {data: routedTo} = useHP(Number(record.routedTo));
+  const routedToName = `${routedTo?.HPProfile?.title ?? routedTo?.User.firstName} ${routedTo?.HPProfile?.name ?? routedTo?.User.lastName} ${routedTo?.HPProfile?.suffix ?? routedTo?.User.suffix ?? ""}`
+
+  return (
+    <ContextMenu key={record.id}>
+      <ContextMenuTrigger disabled={!["PENDING"].includes(record.status)} >
+        <div className={
+          cn("text-sm rounded px-3 py-2 bg-slate-100 hover:ring-1", 
+            record.status === "CANCELLED" && "bg-destructive/5",
+          )}
+        >
+          <Badge variant={badgeMap[record.status as keyof typeof badgeMap]} />
+          <LabelValue className="flex items-center flex-wrap" value={<span className="flex items-center">{routedByName} <ArrowRight className="w-4 h-4 mx-2"/></span>} label={routedToName} />
+          {record.amendment && <LabelValue className="flex items-center gap-1 text-xs text-muted-foreground" value="Amendment: " label={record.amendment} />}
+          <p className="text-xs text-muted-foreground">{dayjs(record.updatedAt).format("llll")}</p>
+        </div>
+      </ContextMenuTrigger>
+      <ContextMenuContent>
+        <ContextMenuItem>
+          <CancelAssignment onCancel={() => mutate()} appointmentRoutingId={record.id}/>
+        </ContextMenuItem>
+      </ContextMenuContent>
+    </ContextMenu>
+  )
+}
 
 export const CancelAssignment = ({appointmentRoutingId, onCancel}: {appointmentRoutingId: number, onCancel?: () => void}) => {
   

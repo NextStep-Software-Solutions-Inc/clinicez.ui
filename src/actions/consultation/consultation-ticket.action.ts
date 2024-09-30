@@ -11,9 +11,10 @@ type CreateConsultationTicketPayload = {
     appointmentId?: number;
     subject?: string;
     orgUid: string;
+    hpId: string
 }
 
-export const createConsultationTicketAction = async ({systemId, appointmentId, orgUid, subject}: CreateConsultationTicketPayload) => {
+export const createConsultationTicketAction = async ({systemId, appointmentId, orgUid, subject, hpId}: CreateConsultationTicketPayload) => {
   const session = await getCachedSession()
   
   if(!session) return {
@@ -28,7 +29,7 @@ export const createConsultationTicketAction = async ({systemId, appointmentId, o
       appointmentId,
       subject,
       orgUid,
-      createdBy: session.user.email,
+      createdBy: hpId,
       ConsultationTicketAttribute:{
         create: {
         }
@@ -79,7 +80,7 @@ export const getConsultationTicketAction = cache(async (consultationId: number, 
         select: {
           Requesters: {
             select: {
-              email: true
+              userId: true
             }
           },
           AppointmentAttribute: {
@@ -137,8 +138,8 @@ export const getConsultationTicketsAction = async ({orgUid, filters}: {orgUid: s
       ...showArchived ? {}: { isArchived: false},
       orgUid,
       OR: [
-        { createdBy: session.user.email },
-        { Appointment: { Requesters: { some: { email: session.user.email } } } }
+        { createdBy: session.user.sub },
+        { Appointment: { Requesters: { some: { userId: session.user.sub } } } }
       ]
     },
     select: {
@@ -165,7 +166,7 @@ export const getConsultationTicketsAction = async ({orgUid, filters}: {orgUid: s
         select: {
           Requesters: {
             select: {
-              email: true
+              userId: true
             }
           },
           AppointmentAttribute: {
@@ -216,7 +217,7 @@ export const updateConsultationTicketAction = async ({consultationId, subject}: 
 
   try {
     await prismaTenant.consultationTicket.update({
-      where: { id: consultationId, createdBy: session.user.email },
+      where: { id: consultationId, createdBy: session.user.sub },
       data: { subject }
     })
     return {
@@ -249,7 +250,7 @@ export const deleteConsultationTicketAction = async (consultationId: number) => 
 
   try {
     await prismaTenant.consultationTicket.update({
-      where: { id: consultationId, createdBy: session.user.email },
+      where: { id: consultationId, createdBy: session.user.sub },
       data: {
         isActive: false
       }
@@ -284,7 +285,7 @@ export const archiveConsultationTicketAction = async (consultationId: number) =>
 
   try {
     await prismaTenant.consultationTicket.update({
-      where: { id: consultationId, createdBy: session.user.email, isActive: true, isArchived: false },
+      where: { id: consultationId, createdBy: session.user.sub, isActive: true, isArchived: false },
       data: {
         isArchived: true
       }

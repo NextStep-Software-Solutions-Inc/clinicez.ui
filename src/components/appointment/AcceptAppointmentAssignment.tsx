@@ -8,14 +8,14 @@ import { toast } from "sonner";
 
 interface AcceptAppointmentAssignmentProps {
   disabled?: boolean;
-  appointmentId: number;
+  routingCode: string;
   onAccepted?: () => void;
 }
 
-export default function AcceptAppointmentAssignment({disabled = false, appointmentId, onAccepted}: AcceptAppointmentAssignmentProps) {
+export default function AcceptAppointmentAssignment({disabled = false, routingCode, onAccepted}: AcceptAppointmentAssignmentProps) {
   const action = async (formData: FormData) => {
 
-    formData.append("appointmentId", appointmentId.toString());
+    formData.append("routingCode", routingCode);
 
     toast.promise(acceptAppointmentAction(formData), {
       loading: "Accepting appointment assignment...",

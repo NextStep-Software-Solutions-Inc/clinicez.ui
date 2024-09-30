@@ -27,6 +27,9 @@ export const getHPsAction = cache(async (filters?:HPFilters) => {
         select: {
           userId: true,
           email: true,
+          firstName: true,
+          lastName: true,
+          suffix: true,
         }
       },
       HPProfile: {
@@ -44,6 +47,7 @@ export const getHPsAction = cache(async (filters?:HPFilters) => {
   return hps;
 })
 
+export type GetHP = Awaited<ReturnType<typeof getHPAction>>
 export const getHPAction = async ({ userId, type, isPublished, id}:HPFilters) => {
 
   const hp = prisma.healthcareProvider.findFirst({

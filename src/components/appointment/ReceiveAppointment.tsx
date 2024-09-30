@@ -28,7 +28,7 @@ export default function ReceiveAppointment({disabled = false, appointmentId, onR
       },
       error: "Failed to receive appointment.",
     });
-  };
+  }; 
 
   return (
     <Tooltip>

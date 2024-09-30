@@ -6,15 +6,17 @@ import useSWR from "swr";
 
 type UseTimeSlotsArgs = {
     userId: string
+    hpId: string
     serviceId?: number
     appointmentTypeId?: number
 }
-export const useTimeSlots = ({userId, serviceId, appointmentTypeId}: UseTimeSlotsArgs) => {
+export const useTimeSlots = ({userId, serviceId, appointmentTypeId, hpId}: UseTimeSlotsArgs) => {
   const fetcher = (args:string) => self.get<GetUserTimeSlots>(args)
 
   const searchParams = new URLSearchParams()
   if(serviceId) searchParams.set("serviceId", serviceId.toString())
   if(appointmentTypeId) searchParams.set("appointmentTypeId", appointmentTypeId.toString())
+  if(hpId) searchParams.set("hpId", hpId)
 
   const refreshInterval = 1000 * 60 * 5;
   return useSWR(userId ? `/api/users/${userId}/availabilities?${searchParams.toString()}`: null, fetcher, {

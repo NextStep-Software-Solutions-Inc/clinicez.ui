@@ -43,8 +43,9 @@ const FilterFormSchema = z.object({
   modeId: z.coerce.number({
     description: 'Select a Mode',
   }),
-  hpEmail: z.string({
-    description: 'Select a doctor',
+  hpId: z.number({
+    coerce: true,
+    description: 'Select a healthcare provider',
   }).optional(),
 })
 
@@ -68,7 +69,7 @@ export default function FilterForm({onContinue}: FilterFormProps) {
       modeId: bookAppointmentForm.modeId,
       appointmentTypeId: bookAppointmentForm.appointmentTypeId,
       serviceId: bookAppointmentForm.serviceId,
-      hpEmail: bookAppointmentForm.hpEmail,
+      hpId: bookAppointmentForm.hpId,
     },
   })
 
@@ -81,13 +82,13 @@ export default function FilterForm({onContinue}: FilterFormProps) {
     
     if(!appointmentTypeAttribute) return toast.message("Appointment type attribute not found")
     if(!serviceAttribute) return toast.message("Service attribute not found")
-
+    const hpUserId = (doctors ?? []).find(doctor => doctor.id === data.hpId)?.User.userId 
     setBookAppointmentForm((prev) => ({...prev, ...{
       selectedTimeSlot: undefined,
       availabilities: undefined,
       modeId: data.modeId,
-      hpEmail: data.hpEmail,
-      hpUserId: doctors?.find(doctor => doctor.User.email === data.hpEmail)?.User.userId ?? "",
+      hpId: data.hpId,
+      hpUserId,
       serviceId: data.serviceId,
       appointmentTypeId: data.appointmentTypeId
     }}))
@@ -199,7 +200,7 @@ export default function FilterForm({onContinue}: FilterFormProps) {
           />
           <FormField
             control={form.control}
-            name="hpEmail"
+            name="hpId"
             render={({ field }) => (
               <FormItem className="flex-grow">
                 <FormLabel>Preferred Healthcare Provider (optional)</FormLabel>
@@ -212,14 +213,17 @@ export default function FilterForm({onContinue}: FilterFormProps) {
                   <SelectContent>
                     <Each
                       of={doctors ?? []}
-                      render={(doctor) => (
-                        <SelectItem value={doctor.User.email}>{doctor.HPProfile?.title} {doctor.HPProfile?.name} {doctor.HPProfile?.suffix}</SelectItem>
-                      )}
+                      render={(doctor) => {
+                        const name = `${doctor.HPProfile?.title ?? doctor.User.firstName} ${doctor.HPProfile?.name ?? doctor.User.lastName} ${doctor.HPProfile?.suffix ?? doctor.User.suffix ?? ""}`
+                        return (
+                          <SelectItem value={doctor.id.toString()}>{name}</SelectItem>
+                        )
+                      }}
                     />
                   </SelectContent>
                 </Select>
                 <FormDescription>
-                    Select a doctor to show their vacant slots
+                  Select a doctor to show their vacant slots
                 </FormDescription>
                 <FormMessage />
               </FormItem>

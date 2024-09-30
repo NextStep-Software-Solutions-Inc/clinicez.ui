@@ -12,10 +12,12 @@ export const GET = withJwtAuth(async (req: NextRequest, { params }: {
   const searchParams = req.nextUrl.searchParams;
   const serviceId = Number(searchParams.get("serviceId"));
   const appointmentTypeId = Number(searchParams.get("appointmentTypeId"));
+  const hpId = String(searchParams.get("hpId"));
 
   const availabilities = await getUserTimeSlotsAction({
     userId: userId,
     serviceId,
+    hpId,
     appointmentTypeId
   });
   return NextResponse.json(availabilities, {status: 200});

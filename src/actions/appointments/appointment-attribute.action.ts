@@ -21,7 +21,7 @@ export const receiveAppointmentAction = async (formData: FormData) => {
     data: {
       status: newStatus,
       receivedAt: new Date(),
-      receivedBy: session.user.email
+      receivedBy: session.user.sub
     }
   })
   return {
@@ -39,15 +39,14 @@ export const completeAppointmentAction = async (formData: FormData) => {
   if(!session) return response;
   
   const appointmentId = parseInt(formData.get('appointmentId') as string);
-  const newStatus = formData.get('status') as string;
   await prismaTenant.appointmentAttribute.update({
     where: {
       appointmentId
     },
     data: {
-      status: newStatus,
+      status: "COMPLETED",
       completedAt: new Date(),
-      completedBy: session.user.email
+      completedBy: session.user.sub
     }
   })
   return {
@@ -64,7 +63,6 @@ export const rejectAppointmentAction = async (formData: FormData) => {
   }
   if(!session) return response;
   const appointmentId = parseInt(formData.get('appointmentId') as string);
-  const newStatus = formData.get('status') as string;
   const reason = formData.get('reason') as string;
   
   await prismaTenant.appointmentAttribute.update({
@@ -72,10 +70,10 @@ export const rejectAppointmentAction = async (formData: FormData) => {
       appointmentId,
     },
     data: {
-      status: newStatus,
+      status: "REJECTED",
       rejectedReason: reason,
       rejectedAt: new Date(),
-      rejectedBy: session.user.email
+      rejectedBy: session.user.sub
     }
   })
   return {

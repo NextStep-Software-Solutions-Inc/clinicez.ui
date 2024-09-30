@@ -1,8 +1,8 @@
 "use server";
 import "server-only";
 
-import { delay } from "@lib/wait";
 import prismaTenant from "@lib/prisma-tenant";
+import { Prisma } from "@prisma/tenant/client";
 import {
   RoutedAptStatus,
   AppointmentStatus
@@ -10,6 +10,7 @@ import {
 import { getCachedSession } from "@actions/session.action";
 import { getPermissionsAction } from "@actions/permission.action";
 import { cache } from "react";
+import dayjs from "dayjs";
 
 export type GetAppointmentFilter = {
   orgUid?: string;
@@ -28,7 +29,7 @@ type CreateAppointmentPayload = {
   serviceId?: number;
   requesters: string[];
   attachments: string[];
-  hpEmail?: string;
+  hpId?: string;
   schedule: {
     date: Date;
     timeStart: Date;
@@ -36,7 +37,7 @@ type CreateAppointmentPayload = {
   };
 };
 export const createAppointmentAction = async (payload: CreateAppointmentPayload) => {
-  const { orgUid, subject, complaint, requesters, modeId, typeId, serviceId, attachments, hpEmail, schedule } = payload;
+  const { orgUid, subject, complaint, requesters, modeId, typeId, serviceId, attachments, hpId, schedule } = payload;
   const { date, timeStart, timeEnd } = schedule;
   const newAppointment = await prismaTenant.appointment.create({
     data: {
@@ -45,7 +46,7 @@ export const createAppointmentAction = async (payload: CreateAppointmentPayload)
       orgUid,
       AppointmentAttribute: {
         create: {
-          preferredAppointee: hpEmail,
+          preferredAppointee: hpId,
           modeId,
           typeId,
           serviceId,
@@ -56,7 +57,7 @@ export const createAppointmentAction = async (payload: CreateAppointmentPayload)
       },
       Requesters: {
         createMany: {
-          data: requesters.map((email) => ({ email })),
+          data: requesters.map((userId) => ({ userId })),
           skipDuplicates: true
         }
       },
@@ -119,13 +120,13 @@ export const getAppointmentsAction = cache(async (filter?: GetAppointmentFilter)
         : {}),
       OR: [
         { ...(readAllOrgAppointment ? { orgUid } : {}) },
-        { ...(readAOwnOrgAppointment ? { Requesters: { some: { email: session.user.email } } } : {}) },
+        { ...(readAOwnOrgAppointment ? { Requesters: { some: { userId: session.user.sub } } } : {}) },
         { ...(readAssignedOrgAppointment ? {
           AppointmentRouting: {
             some: {
               OR: [
-                { routedTo: session.user.email },
-                { routedBy: session.user.email }
+                { routedTo: session.user.sub },
+                { routedBy: session.user.sub }
               ]
             }
           }
@@ -139,7 +140,7 @@ export const getAppointmentsAction = cache(async (filter?: GetAppointmentFilter)
       createdAt: true,
       Requesters: {
         select: {
-          email: true
+          userId: true
         }
       },
       _count: {
@@ -209,13 +210,13 @@ export const getAppointmentAction = cache(async (id: number, orgUid?: string) =>
       isActive: true,
       OR: [
         { ...(readAllOrgAppointment ? { orgUid, id } : {}) },
-        { ...(readAOwnOrgAppointment ? { Requesters: { some: { email: session.user.email } }, id } : {}) },
+        { ...(readAOwnOrgAppointment ? { Requesters: { some: { userId: session.user.sub } }, id } : {}) },
         { ...(readAssignedOrgAppointment ? {
           AppointmentRouting: {
             some: {
               OR: [
-                { routedTo: session.user.email },
-                { routedBy: session.user.email }
+                { routedTo: session.user.sub },
+                { routedBy: session.user.sub }
               ]
             }
           },
@@ -231,7 +232,7 @@ export const getAppointmentAction = cache(async (id: number, orgUid?: string) =>
       createdAt: true,
       Requesters: {
         select: {
-          email: true
+          userId: true
         }
       },
       AppointmentAttachments: {
@@ -277,6 +278,7 @@ export const getAppointmentAction = cache(async (id: number, orgUid?: string) =>
         orderBy: {id: "asc"},
         select: {
           id: true,
+          routingCode: true,
           amendment: true,
           routedBy: true,
           routedTo: true,
@@ -285,7 +287,7 @@ export const getAppointmentAction = cache(async (id: number, orgUid?: string) =>
           updatedAt: true
         }
       },
-      PreConsultationNotes: {
+      PreAssessmentNotes: {
         where: {
           appointmentId: id,
           orgUid: orgUid
@@ -352,13 +354,13 @@ export const getAppointmentCountsAction = cache(async (orgUid: string) => {
         isActive: true,
         OR: [
           { ...(readAllOrgAppointment ? { orgUid } : {}) },
-          { ...(readAOwnOrgAppointment ? { Requesters: { some: { email: session.user.email } } } : {}) },
+          { ...(readAOwnOrgAppointment ? { Requesters: { some: { userId: session.user.sub } } } : {}) },
           { ...(readAssignedOrgAppointment ? {
             AppointmentRouting: {
               some: {
                 OR: [
-                  { routedTo: session.user.email },
-                  { routedBy: session.user.email }
+                  { routedTo: session.user.sub },
+                  { routedBy: session.user.sub }
                 ]
               }
             }
@@ -408,17 +410,19 @@ export const getRoutedAppointmentCountsAction = cache(async (orgUid: string) => 
       Appointment: {
         isActive: true,
         AppointmentAttribute: {
-          status: "ROUTED"
+          status: {
+            in: ["ROUTED"]
+          }
         },
         OR: [
           { ...(readAllOrgAppointment ? { orgUid } : {}) },
-          { ...(readAOwnOrgAppointment ? { Requesters: { some: { email: session.user.email } } } : {}) },
+          { ...(readAOwnOrgAppointment ? { Requesters: { some: { userId: session.user.sub } } } : {}) },
           { ...(readAssignedOrgAppointment ? {
             AppointmentRouting: {
               some: {
                 OR: [
-                  { routedTo: session.user.email },
-                  { routedBy: session.user.email }
+                  { routedTo: session.user.sub },
+                  { routedBy: session.user.sub }
                 ]
               }
             }
@@ -444,9 +448,71 @@ export const getRoutedAppointmentCountsAction = cache(async (orgUid: string) => 
   };
 });
 
-export const rescheduleAppointmentAction = async (formData: FormData) => {
-  console.log("Reschedule appointment...", Object.fromEntries(formData));
-  await delay(1000);
-  return true;
+type RescheduleAppointmentPayload = {
+  appointmentId: number;
+  startDateTime: string;
+  endDateTime: string;
+  date: string;
+  hpId: string;
+  hpRole: string;
+  assign: boolean;
+};
+export const rescheduleAppointmentAction = async ({ appointmentId, startDateTime, endDateTime, date, hpId, hpRole, assign }:RescheduleAppointmentPayload ) => {
+  const session = await getCachedSession();
+  if (!session) {
+    return {
+      status: false,
+      message: "Unauthorized"
+    };
+  }
+  try {
+    await prismaTenant.$transaction(async (prisma) => {
+      await prisma.appointmentAttribute.update({
+        where: {
+          appointmentId,
+          Appointment: {
+            isActive: true
+          }
+        },
+        data: {
+          date: dayjs(date).endOf("day").toDate(),
+          timeStart: startDateTime,
+          timeEnd: endDateTime,
+          rescheduledAt: new Date(),
+          rescheduledBy: session.user.sub,
+          ...assign ? { status: "ROUTED" } : {}
+        }
+      });
+      if(assign) {
+        await prisma.appointmentRouting.create({
+          data: {
+            appointmentId,
+            routedBy: session.user.sub,
+            routedTo: hpId,
+            routedToRole: hpRole,
+            status: "PENDING"
+          }
+        });
+      }
+    }, {
+      timeout: 5000,
+      maxWait: 10000,
+      isolationLevel: Prisma.TransactionIsolationLevel.Serializable
+    });
+    return {
+      status: true,
+      message: "Appointment rescheduled"
+    }
+  } catch (error) {
+    console.error(error);
+    let errorMsg = "Failed to reschedule appointment";
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+      errorMsg = "Appointment not found or you are not authorized to reschedule it";
+    }
+    return {
+      status: false,
+      message: errorMsg
+    }
+  }
 };
 

@@ -7,8 +7,8 @@ export type BookAppointmentForm = Partial<{
     orgUid: string
     appointmentTypeId:  number
     serviceId: number
+    hpId: number
     hpUserId: string
-    hpEmail: string,
     modeId: number
     selectedTimeSlot: {
         start: Date

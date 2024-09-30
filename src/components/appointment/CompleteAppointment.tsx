@@ -14,9 +14,7 @@ interface CompleteAppointmentProps {
 export default function CompleteAppointment({disabled = false, appointmentId, onCompleted}: CompleteAppointmentProps) {
   
   const action = async (formData: FormData) => {
-    formData.append("status", "COMPLETED");
     formData.append("appointmentId", appointmentId.toString());
-
     toast.promise(completeAppointmentAction(formData), {
       loading: "Processing...",
       success: (res) => {

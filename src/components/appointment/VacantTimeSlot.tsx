@@ -7,7 +7,6 @@ import dayjs from "dayjs"
 import utc from "dayjs/plugin/utc"
 import { GetUserTimeSlots } from "@actions/schedule/time-slot.actions";
 dayjs.extend(utc)
-
 interface VacantTimeSlotProps {
   timeSlots: GetUserTimeSlots["data"][number]["timeSlots"]
   selectedTimeSlot?: {
@@ -43,7 +42,6 @@ export default function VacantTimeSlot({timeSlots = [], selectedTimeSlot, onSele
   );
 }
 
-
 type TimeSlot = {
   start: Date;
   end: Date;
@@ -54,5 +52,5 @@ const timeSlotToString = (timeSlot: TimeSlot) => {
 }
 
 const isSameTimeSlot = (timeSlot1: TimeSlot, timeSlot2: TimeSlot) => {
-  return timeSlot1.start === timeSlot2.start && timeSlot1.end === timeSlot2.end
+  return dayjs(timeSlot1.start).isSame(timeSlot2.start, "minute") && dayjs(timeSlot1.end).isSame(timeSlot2.end, "minute");
 }

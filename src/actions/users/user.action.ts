@@ -101,6 +101,11 @@ export const getUserAction = cache(async (key: string, orgUid?: string)=> {
       ], 
     },
     include: {
+      HealthcareProvider: {
+        select: {
+          id: true,
+        }
+      },
       OrgUserPermissions: {
         where: {
           Organization: {

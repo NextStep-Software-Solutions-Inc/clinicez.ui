@@ -29,10 +29,11 @@ import { formatDateTime, getBadgeVariantFromLabel } from "@lib/utils";
 
 import { LabelValue } from "@components/LabelValue";
 import PreAssessmentNoteSheet from "./PreAssessmentNoteSheet";
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
 import { GetAppointment } from "@actions/appointments/appointments.action";
 import AppointmentRoutingHistorySheet from "./AppointmentRoutingHistorySheet";
 import CompleteAppointment from "./CompleteAppointment";
+import { useHP } from "@hooks/useHP";
 
 dayjs.extend(utc)
 
@@ -55,8 +56,14 @@ export default function AppointmentDisplay() {
     })
   }
 
-  const {data: aptUser, isLoading: loadingUser} = useUserDb({email: freshAppointment?.data?.Requesters[0].email})
+  const requestorId = freshAppointment?.data?.Requesters[0].userId
+  const {data: aptUser, isLoading: loadingUser} = useUserDb({email: requestorId})
+  
   const {data: authUser } = useUserDb({userId: user?.sub ?? "", orgUid: organization})
+
+  const preferredHpId = Number(freshAppointment?.data?.AppointmentAttribute?.preferredAppointee)
+  const {data: preferredHp} = useHP(preferredHpId)
+
   const {tools: appointmentTools} = useAppointmentTools({
     appointment: freshAppointment?.data,
     revalidate
@@ -65,7 +72,6 @@ export default function AppointmentDisplay() {
   if (!appointmentId) {
     return <div className="p-8 text-center text-muted-foreground">No appointment selected</div>
   }
-
 
   if (loadingAppointment) {
     return <PageLoading label="Loading Appointment" />
@@ -84,26 +90,29 @@ export default function AppointmentDisplay() {
   }
 
   const myOrgPermission = authUser?.OrgUserPermissions.flatMap(p => p.Permission).map(p => p.name) ?? []
+  const preferredHPName = `${preferredHp?.HPProfile?.title} ${preferredHp?.HPProfile?.name} ${preferredHp?.HPProfile?.suffix}`
   
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center p-2">
         <div className="flex items-center gap-2">
           <Badge variant="default" className="capitalize">{freshAppointment.data.AppointmentAttribute?.status}</Badge>
+          
           {/* <RescheduleAppointment disabled={!freshAppointment} bookingDateTime={freshAppointment?.bookingDateTime? new Date(freshAppointment?.bookingDateTime): new Date()}/> */}
           <Separator orientation="vertical" className="mx-1 h-6" />
+          
           <Each
             key={freshAppointment.data.id}
-            of={appointmentTools.filter((tool) => {
+            of={appointmentTools.filter((tool) => {     
               const enable = tool.permissions.every(p => myOrgPermission.includes(p))
-              
                 && tool.appointmentStatuses.includes(freshAppointment.data!.AppointmentAttribute?.status.toLocaleLowerCase() ?? "") 
-                && (tool.routedAptStatuses.length === 0 || (freshAppointment.data?.AppointmentAttribute?.status !== "ROUTED" || freshAppointment.data?.AppointmentRouting.some(apt =>tool.routedAptStatuses.includes(apt.status.toLocaleLowerCase()) && apt.routedTo === authUser?.email)))
+                && (tool.routedAptStatuses.length === 0 || (freshAppointment.data?.AppointmentAttribute?.status !== "ROUTED" || freshAppointment.data?.AppointmentRouting.some(apt =>tool.routedAptStatuses.includes(apt.status.toLocaleLowerCase()) && Number(apt.routedTo) === authUser?.HealthcareProvider?.id)))
               return enable
             })}
             render={(tool) => tool.component}
             fallback={<span className="text-xs text-muted-foreground">No Action Available</span>}
           />
+
         </div>
         <div className="ml-auto flex items-center gap-2">
           {
@@ -126,7 +135,7 @@ export default function AppointmentDisplay() {
               }
             </Avatar>
             <div className="grid gap-1">
-              <div className="font-semibold">{aptUser.firstName} {aptUser.lastName} - <span className="i">{aptUser.email}</span></div>
+              <div className="font-semibold">{aptUser.firstName} {aptUser.middleName} {aptUser.lastName} {aptUser.suffix}</div>
               <div className="line-clamp-1 text-xs">
                 <span className="font-medium">{aptUser.gender} / </span>{aptUser.dob ? differenceInCalendarYears(new Date(), aptUser.dob) : 0}
               </div>
@@ -155,7 +164,7 @@ export default function AppointmentDisplay() {
               <Pencil className="h-4 w-4 ml-auto invisible group-hover/action:visible" />
             </div>
             <Each 
-              of={(freshAppointment.data.PreConsultationNotes ?? []).slice(-1)}
+              of={(freshAppointment.data.PreAssessmentNotes ?? []).slice(-1)}
               fallback={(
                 <PreAssessmentNoteSheet 
                   disabled={!freshAppointment}
@@ -171,22 +180,22 @@ export default function AppointmentDisplay() {
                   <span className="text-muted-foreground cursor-pointer hover:underline">No Pre-Consultation Notes, click here to create</span>
                 </PreAssessmentNoteSheet>
               )}
-              render={(preConsultationNotes) => {
+              render={(preAssessmentNote) => {
                 return (
                   <PreAssessmentNoteSheet 
-                    key={preConsultationNotes.id}
+                    key={preAssessmentNote.id}
                     preAssessmentNotes={{
-                      ...preConsultationNotes,
-                      homeInstructions: preConsultationNotes.homeInstructions ?? "",
+                      ...preAssessmentNote,
+                      homeInstructions: preAssessmentNote.homeInstructions ?? "",
                       appointmentId: freshAppointment.data!.id,
                       orgUid: organization
                     }}
                   >
                     <div className="cursor-pointer">
-                      <LabelValue className="flex items-center gap-2" label={preConsultationNotes.assessment} value="Pre-Assessment:" />
-                      {preConsultationNotes.homeInstructions && <LabelValue className="flex items-center gap-2" label={preConsultationNotes.homeInstructions} value="Home Instruction:" />}
-                      <LabelValue className="flex items-center gap-2" label={preConsultationNotes.remarks} value="Remarks:" />
-                      <LabelValue className="flex items-center gap-2" label={preConsultationNotes.createdBy} value="Noted by:" />
+                      <LabelValue className="flex items-center gap-2" label={preAssessmentNote.assessment} value="Pre-Assessment:" />
+                      {preAssessmentNote.homeInstructions && <LabelValue className="flex items-center gap-2" label={preAssessmentNote.homeInstructions} value="Home Instruction:" />}
+                      <LabelValue className="flex items-center gap-2" label={preAssessmentNote.remarks} value="Remarks:" />
+                      <LabelValue className="flex items-center gap-2" label={preAssessmentNote.createdBy} value="Noted by:" />
                     </div>
                   </PreAssessmentNoteSheet>
                 )
@@ -194,22 +203,14 @@ export default function AppointmentDisplay() {
           </div>
         }
         <Separator />
-        <div className="px-5 py-2 text-xs max-h-40 scrollBox no-scrollbar">
-          <span className="font-semibold text-base">Meta</span> <br />
-          {freshAppointment.data?.AppointmentAttribute?.completedAt && <LabelValue className="flex items-center gap-2" label={dayjs(freshAppointment.data.AppointmentAttribute.completedAt).format("llll")} value="Date received:" />}
-          {freshAppointment.data?.AppointmentAttribute?.completedBy && <LabelValue className="flex items-center gap-2" label={freshAppointment.data.AppointmentAttribute.completedBy} value="Completed by:" />}
-          {freshAppointment.data?.AppointmentAttribute?.receivedAt && <LabelValue className="flex items-center gap-2" label={dayjs(freshAppointment.data.AppointmentAttribute.receivedAt).format("llll")} value="Date received:" />}
-          {freshAppointment.data?.AppointmentAttribute?.receivedBy && <LabelValue className="flex items-center gap-2" label={freshAppointment.data.AppointmentAttribute.receivedBy} value="Received by:" />}
-          {freshAppointment.data?.AppointmentAttribute?.rejectedReason && <LabelValue className="flex items-center gap-2" label={freshAppointment.data.AppointmentAttribute.rejectedReason} value="Reason of rejection:" />}
-          {freshAppointment.data?.AppointmentAttribute?.rejectedAt && <LabelValue className="flex items-center gap-2" label={dayjs(freshAppointment.data.AppointmentAttribute.rejectedAt).format("llll")} value="Date rejected:" />}
-          {freshAppointment.data?.AppointmentAttribute?.rejectedBy && <LabelValue className="flex items-center gap-2" label={freshAppointment.data.AppointmentAttribute.rejectedBy} value="Rejected by:" />}
-        </div>
+        <AppointmentMetadata appointment={freshAppointment.data} organization={organization}>
+        </AppointmentMetadata>
         <Separator />
         <div className="px-5 py-2 text-xs max-h-40 scrollBox no-scrollbar">
           <span className="font-semibold text-base">{freshAppointment.data.AppointmentAttribute?.status !== "ROUTED" ? "Preferred": "Assigned"} Schedule</span> <br />
           {freshAppointment.data.AppointmentAttribute?.date && <LabelValue className="flex items-center gap-2" label={dayjs(freshAppointment.data.AppointmentAttribute.date).format("ll - dddd")} value="Date:" />}
           {(freshAppointment.data.AppointmentAttribute?.date && freshAppointment.data.AppointmentAttribute?.timeStart && freshAppointment.data.AppointmentAttribute?.timeEnd) && <LabelValue className="flex items-center gap-2" label={`${formatDateTime(freshAppointment.data.AppointmentAttribute.date, freshAppointment.data.AppointmentAttribute.timeStart).format("hh:mm A")} - ${formatDateTime(freshAppointment.data.AppointmentAttribute.date, freshAppointment.data.AppointmentAttribute.timeEnd).format("hh:mm A")}`} value="Time:" />}
-          {freshAppointment.data.AppointmentAttribute?.preferredAppointee && <LabelValue className="flex items-center gap-2" label={freshAppointment.data.AppointmentAttribute.preferredAppointee ?? ""} value={`Preferred HP:`} />}
+          {freshAppointment.data.AppointmentAttribute?.preferredAppointee && <LabelValue className="flex items-center gap-2" label={preferredHPName} value={`Preferred HP:`} />}
         </div>
         <Separator />
         <div className="flex items-center p-4 gap-2 max-h-40 scrollBox no-scrollbar">
@@ -265,5 +266,36 @@ export const MoreTools = ({freshAppointment}: MoreToolsProps) => {
       </DropdownMenu>
     </>
 
+  )
+}
+
+interface AppointmentMetadataProps {
+  appointment: NonNullable<GetAppointment["data"]>;
+  organization: string;
+}
+export const AppointmentMetadata = ({appointment, organization}: AppointmentMetadataProps) => {
+  const receiverId = appointment.AppointmentAttribute?.receivedBy ?? undefined
+  const {data: aptReceiver } = useUserDb({userId: receiverId, orgUid: organization})
+  const receiverName = `${aptReceiver?.firstName} ${aptReceiver?.middleName} ${aptReceiver?.lastName} ${aptReceiver?.suffix ?? ""}`
+
+  const rejectorId = appointment.AppointmentAttribute?.rejectedBy ?? undefined
+  const {data: aptRejector } = useUserDb({userId: rejectorId, orgUid: organization})
+  const rejectorName = `${aptRejector?.firstName} ${aptRejector?.middleName} ${aptRejector?.lastName} ${aptRejector?.suffix ?? ""}`
+  
+  const completerId = appointment.AppointmentAttribute?.rejectedBy ?? undefined
+  const {data: aptCompleter } = useUserDb({userId: completerId, orgUid: organization})
+  const completerName = `${aptCompleter?.firstName} ${aptCompleter?.middleName} ${aptCompleter?.lastName} ${aptCompleter?.suffix ?? ""}`
+  
+  return (
+    <div className="px-5 py-2 text-xs max-h-40 scrollBox no-scrollbar">
+      <span className="font-semibold text-base">Meta</span> <br />
+      {appointment.AppointmentAttribute?.completedAt && <LabelValue className="flex items-center gap-2" label={dayjs(appointment.AppointmentAttribute.completedAt).format("llll")} value="Date received:" />}
+      {appointment.AppointmentAttribute?.completedBy && <LabelValue className="flex items-center gap-2" label={completerName} value="Completed by:" />}
+      {appointment.AppointmentAttribute?.receivedAt && <LabelValue className="flex items-center gap-2" label={dayjs(appointment.AppointmentAttribute.receivedAt).format("llll")} value="Date received:" />}
+      {appointment.AppointmentAttribute?.receivedBy && <LabelValue className="flex items-center gap-2" label={receiverName} value="Received by:" />}
+      {appointment.AppointmentAttribute?.rejectedReason && <LabelValue className="flex items-center gap-2" label={appointment.AppointmentAttribute.rejectedReason} value="Reason of rejection:" />}
+      {appointment.AppointmentAttribute?.rejectedAt && <LabelValue className="flex items-center gap-2" label={dayjs(appointment.AppointmentAttribute.rejectedAt).format("llll")} value="Date rejected:" />}
+      {appointment.AppointmentAttribute?.rejectedBy && <LabelValue className="flex items-center gap-2" label={rejectorName} value="Rejected by:" />}
+    </div>
   )
 }

@@ -73,26 +73,44 @@ export const getUserSchedulesAction = async (unique: string) => {
   });
 }
 
-export type GetHPAppointmentsSchedule = Awaited<ReturnType<typeof getHPAppointmentsSchedule>>;
-export const getHPAppointmentsSchedule = async (email: string) => {
+export type GetUserAppointmentsSchedule = Awaited<ReturnType<typeof getHPAppointmentsSchedule>>;
+export const getHPAppointmentsSchedule = async (hpId: string) => {
   return await prismaTenant.appointment.findMany({
     orderBy: {
       createdAt: 'desc'
     },
     where: {
       isActive: true,
-      AppointmentAttribute: {
-        preferredAppointee: email,
-        date: {
-          gte: new Date()
+      OR: [
+        {
+          AppointmentAttribute: {
+            status: {
+              notIn: ["COMPLETED", "REJECTED"]
+            },
+            preferredAppointee: hpId,
+            date: {
+              gte: new Date()
+            },
+          }
         },
-      },
+        {
+          AppointmentRouting: {
+            some: {
+              routedTo: hpId,
+              status: {
+                in: ["DECLINED", "CANCELLED"]
+              }
+            }
+          }
+        }
+      ]
+      
     },
     select: {
       id: true,
       Requesters: {
         select: {
-          email: true,
+          userId: true,
         }
       },
       AppointmentAttribute: {

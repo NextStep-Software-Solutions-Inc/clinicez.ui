@@ -6,6 +6,7 @@ import AssignAppointment from "@components/appointment/AssignAppointment"
 import RescheduleAppointment from "@components/appointment/RescheduleAppointment"
 import DeclineAppointmentAssignment from "@components/appointment/DeclineAppointmentAssignment"
 import CreateConsultationTicketModal from './CreateConsultationTicketModal';
+import { useHP } from '@hooks/useHP';
 
 type AppointmentActions = "accept"|"decline"|"approve"|"receive"| "reject" | "assign" | "create-consultation-ticket"| "reschedule"
 type AppointmentStatusTools = {
@@ -21,7 +22,8 @@ export const useAppointmentTools = ({ appointment, revalidate}: {
     appointment?: GetAppointment["data"],
     revalidate: () => void
 }) => {
-  
+  const {data: authHp} = useHP(2)
+  const routingCode = appointment?.AppointmentRouting.find(r => Number(r.routedTo) === authHp?.id)?.routingCode
   if(!appointment) return { tools: [] }
   const tools: AppointmentStatusTools = [
     {
@@ -29,28 +31,28 @@ export const useAppointmentTools = ({ appointment, revalidate}: {
       permissions: ["accept:org:appointment"],
       appointmentStatuses: ["all", "routed"],
       routedAptStatuses: ["pending"],
-      component: (
+      component: routingCode ? (
         <AcceptAppointmentAssignment
           key={`${appointment.id}-accept`}
-          appointmentId={appointment.id}
+          routingCode={routingCode}
           onAccepted={revalidate}
           disabled={!appointment} 
         />
-      )
+      ) : null
     },
     {
       action:"decline",
       permissions: ["decline:org:appointment"],
       appointmentStatuses: ["all", "routed"],
       routedAptStatuses: ["pending"],
-      component: (
+      component: routingCode ? (
         <DeclineAppointmentAssignment 
           key={`${appointment.id}-decline`}
+          routingCode={routingCode}
           disabled={!appointment} 
-          appointmentId={appointment.id}
           onDeclined={revalidate}
         />
-      )
+      ) : null
     },
     {
       action:"receive",
@@ -93,15 +95,9 @@ export const useAppointmentTools = ({ appointment, revalidate}: {
       component: (
         <AssignAppointment 
           key={`${appointment.id}-assign`}
-          appointmentId={appointment.id}
+          appointment={appointment}
           onAssigned={revalidate} 
           disabled={!appointment}
-          preferredAppointee={appointment.AppointmentAttribute?.preferredAppointee}
-          assigned={appointment.AppointmentRouting?.map(r => ({
-            email: r.routedTo,
-            role: r.routedToRole,
-            status: r.status
-          }))}
         />
       )
     },
@@ -112,12 +108,10 @@ export const useAppointmentTools = ({ appointment, revalidate}: {
       routedAptStatuses: ["accepted"],
       component: (
         <RescheduleAppointment 
-          key={appointment.id}
-          serviceId={appointment.AppointmentAttribute?.Service?.id ?? 0}
-          appointmentTypeId={appointment.AppointmentAttribute?.AppointmentType?.id ?? 0}
-          preferredDate={new Date()} 
-          preferredUserId={appointment.AppointmentAttribute?.preferredAppointee}
+          key={`${appointment.id}-reschedule`}
+          appointment={appointment}
           disabled={!appointment}
+          onRescheduled={revalidate}
         />
       )
     }

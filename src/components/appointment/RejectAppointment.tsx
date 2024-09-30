@@ -26,7 +26,6 @@ export default function RejectAppointment({disabled = false, appointmentId, onRe
       toast.error("Please provide a reason for rejecting the appointment.");
       return;
     }
-    formData.append("status", "REJECTED");
     formData.append("appointmentId", appointmentId.toString());
     toast.promise(rejectAppointmentAction(formData), {
       loading: "Rejecting appointment...",

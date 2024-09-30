@@ -1,6 +1,7 @@
 "use client";
 
 import { assignAppointmentAction } from "@actions/appointments/appointment-routing.action";
+import { GetAppointment } from "@actions/appointments/appointments.action";
 import ActionButton from "@components/ActionButton";
 import { Button } from "@components/ui/button";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator, CommandShortcut } from "@components/ui/command";
@@ -10,7 +11,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@components/ui/tooltip"
 import Each from "@components/utils/Each";
 import { useHPs } from "@hooks/useHP";
 import { User, UserCheck } from "lucide-react";
-import React from "react";
+import React, { useEffect, useMemo } from "react";
 import { toast } from "sonner";
 
 type HealthcareProvider = {
@@ -18,21 +19,17 @@ type HealthcareProvider = {
   name: string;
   role: string;
   avatar?: string | null;
-  email: string;
 }
 interface AssignAppointmentProps {
   disabled?: boolean;
   onAssigned?: () => void;
-  appointmentId: number;
-  preferredAppointee?: string | null;
-  assigned: {
-    role: string;
-    email: string;
-    status: string;
-  }[];
+  appointment: NonNullable<GetAppointment["data"]>;
+  
 }
-export default function AssignAppointment({disabled = false, appointmentId, onAssigned, assigned, preferredAppointee}: AssignAppointmentProps) {
+export default function AssignAppointment({disabled = false, appointment, onAssigned}: AssignAppointmentProps) {
   const triggerRef = React.useRef<HTMLButtonElement>(null);
+  const [selectedHp, setSelectedHp] = React.useState<HealthcareProvider | null>(null);
+  const [open, setOpen] = React.useState(false)
   const {data: hps } = useHPs();
 
   const healthcareProviders = (hps ?? []).reduce((acc, hp) => {
@@ -40,20 +37,19 @@ export default function AssignAppointment({disabled = false, appointmentId, onAs
     if (!acc[role]) {
       acc[role] = [];
     }
-    const skip = assigned.some(a => {
-      if(a.role.toUpperCase() === role) {
-        return ["PENDING", "ACCEPTED"].includes(a.status) || ["CANCELLED", "DECLINED"].includes(a.status) && a.email === hp.User?.email
-      }
-      return false
-    })
+
+    const skip = appointment.AppointmentRouting.some(a => 
+      a.routedToRole.toUpperCase() === hp.type && 
+      (["PENDING", "ACCEPTED"].includes(a.status) || 
+      (["CANCELLED", "DECLINED"].includes(a.status) && Number(a.routedTo) === hp.id))
+    );
     if(skip) return acc
 
     acc[role].push({
       id: hp.id,
-      name: `${hp.HPProfile?.title} ${hp.HPProfile?.name} ${hp.HPProfile?.suffix}`,
+      name: `${hp.HPProfile?.title ?? hp.User.firstName} ${hp.HPProfile?.name ?? hp.User.lastName} ${hp.HPProfile?.suffix ?? hp.User.suffix ?? ""}`,
       role: hp.type,
       avatar: hp.HPProfile?.picture,
-      email: hp.User?.email
     });
 
     return acc;
@@ -63,9 +59,9 @@ export default function AssignAppointment({disabled = false, appointmentId, onAs
     
     if (!selectedHp) return;
 
-    formData.append("routedTo", selectedHp.email);
+    formData.append("routedTo", selectedHp.id.toString());
     formData.append("routedToRole", selectedHp.role);
-    formData.append("appointmentId", appointmentId.toString());
+    formData.append("appointmentId", appointment.id.toString());
 
     toast.promise(assignAppointmentAction(formData), {
       loading: "Assigning...",
@@ -80,16 +76,19 @@ export default function AssignAppointment({disabled = false, appointmentId, onAs
     });
   }
 
-  const [open, setOpen] = React.useState(false)
-  const defaultHp = (hps ?? []).find(hp => hp.User.email === preferredAppointee) ?? null
+  const defaultHp = useMemo(() => (hps ?? []).find(hp => hp.id.toString() === appointment.AppointmentAttribute?.preferredAppointee) ?? null, [hps, appointment.AppointmentAttribute?.preferredAppointee])
   
-  const [selectedHp, setSelectedHp] = React.useState<(typeof healthcareProviders)[number][number] | null>({
-    email: defaultHp?.User.email ?? "",
-    id: defaultHp?.id ?? 0,
-    name: `${defaultHp?.HPProfile?.title} ${defaultHp?.HPProfile?.name} ${defaultHp?.HPProfile?.suffix}`,
-    role: defaultHp?.type ?? "",
-  })
-  
+  useEffect(() => {
+    if(defaultHp) {
+      setSelectedHp({
+        id: defaultHp.id,
+        name: `${defaultHp.HPProfile?.title} ${defaultHp.HPProfile?.name} ${defaultHp.HPProfile?.suffix}`,
+        role: defaultHp.type,
+        avatar: defaultHp.HPProfile?.picture,
+      })
+    }
+  }, [defaultHp])
+
   return (
     <Popover>
       <Tooltip>
@@ -147,8 +146,8 @@ export default function AssignAppointment({disabled = false, appointmentId, onAs
                                 fallback={<p className="text-xs text-muted-foreground text-center">Already assigned or not available</p>}
                                 render={(hp) => (
                                   <CommandItem
-                                    value={hp.email}
-                                    onSelect={(val) => setSelectedHp(prev => healthcareProviders[role].find(hp => hp.email === val) || null)}
+                                    value={hp.id.toString()}
+                                    onSelect={(val) => setSelectedHp(prev => healthcareProviders[role].find(hp => hp.id.toString() === val) || null)}
                                   >
                                     <User className="mr-2 h-4 w-4" />
                                     <span>{hp.name}</span>

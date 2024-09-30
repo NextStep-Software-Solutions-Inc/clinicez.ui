@@ -1,8 +1,6 @@
 "use client";
 
-import { Calendar, CalendarProps } from "@components/ui/calendar"
-import { useAtom } from "jotai";
-import { bookAppointmentAtom } from "@state/book-appointment";
+import { Calendar } from "@components/ui/calendar"
 import dayjs from "dayjs"
 import utc from "dayjs/plugin/utc"
 dayjs.extend(utc)
@@ -31,10 +29,11 @@ export default function AppointmentCalendar({ availableDates = [], preferredDate
         modifiers={{
           available: availableDates,
         }}
-        classNames={{}}
+        classNames={{
+        }}
         modifiersClassNames={{
-          available: "bg-primary text-primary-foreground hover:bg-teal-500",
-          selected: "bg-red-400 text-white hover:bg-red-500 hover:text-white",
+          available: "bg-green-500 text-white hover:bg-teal-500",
+          selected: "bg-primary text-white hover:bg-red-500 hover:text-white",
         }}
         footer={!preferredDate && <span className="font-medium text-sm">Select a date to show available time slots</span>}
       />

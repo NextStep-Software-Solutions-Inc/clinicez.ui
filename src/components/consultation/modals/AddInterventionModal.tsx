@@ -56,8 +56,7 @@ export default function AddInterventionModal({consultation}: AddInterventionModa
   const { user } = useUser()
   const { data: actions } = useActions()
   const { data: myHps } = useHPs({
-    userId: user?.sub ?? "", 
-    isPublished: true
+    userId: user?.sub ?? ""
   })
   const { mutate } = useInterventions({
     orgUid: consultation.orgUid,
@@ -116,7 +115,7 @@ export default function AddInterventionModal({consultation}: AddInterventionModa
               name="hpId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Your HP profile</FormLabel>
+                  <FormLabel>Interacting as</FormLabel>
                   <Select onValueChange={field.onChange} name={field.name} defaultValue={field.value?.toString()}>
                     <FormControl>
                       <SelectTrigger>
@@ -127,7 +126,7 @@ export default function AddInterventionModal({consultation}: AddInterventionModa
                       <Each
                         of={myHps ?? []}
                         render={(hp) => 
-                          <SelectItem value={hp.id.toString()}>{hp.HPProfile?.name} ({hp.type})</SelectItem>}
+                          <SelectItem value={hp.id.toString()}>{hp.HPProfile?.title} {hp.HPProfile?.suffix} {hp.HPProfile?.name} ({hp.type})</SelectItem>}
                       />
                     </SelectContent>
                   </Select>

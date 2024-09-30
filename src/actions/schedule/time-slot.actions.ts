@@ -9,15 +9,15 @@ dayjs.extend(isBetween)
 dayjs.extend(localizeFormat)
 
 import prismaTenant from "@lib/prisma-tenant";
-import { GetUserSchedules, getUserSchedulesAction } from "./user-schedule.action";
+import { getHPAppointmentsSchedule, GetUserSchedules, getUserSchedulesAction } from "./user-schedule.action";
 import { eachDayOfInterval, getWeekOfMonth } from "date-fns";
 import { toast } from "sonner";
 import { cache } from "react";
 import { formatDateTime } from "@lib/utils";
-import { getBookingsAction } from "@actions/booking.action";
 
 type GenerateTimeSlotsArgs = {
   userId: string, 
+  hpId: string,
   serviceId:number, 
   appointmentTypeId:number, 
 }
@@ -29,7 +29,7 @@ interface Availability {
 const TIME_ALLOWANCE = 30
 
 export type GetUserTimeSlots = Awaited<ReturnType<typeof getUserTimeSlotsAction>>;
-export const getUserTimeSlotsAction = cache(async ({serviceId, userId}: GenerateTimeSlotsArgs): Promise<{
+export const getUserTimeSlotsAction = cache(async ({serviceId, userId, hpId}: GenerateTimeSlotsArgs): Promise<{
   status: boolean;
   message: string;
   data: Availability[]
@@ -41,14 +41,14 @@ export const getUserTimeSlotsAction = cache(async ({serviceId, userId}: Generate
     data: []
   }
 
-  const [serviceAttribute, userSchedules, bookings] = await Promise.all([
+  const [serviceAttribute, userSchedules, appointmentSchedules] = await Promise.all([
     prismaTenant.serviceAttribute.findUnique({
       where: {
         serviceId: serviceId
       }
     }),
     getUserSchedulesAction(userId),
-    getBookingsAction(userId, "upcoming")
+    getHPAppointmentsSchedule(hpId)
   ])
 
   const totalDuration = (serviceAttribute?.duration ?? 0) + (serviceAttribute?.durationPadding ?? 0)
@@ -63,7 +63,6 @@ export const getUserTimeSlotsAction = cache(async ({serviceId, userId}: Generate
 
   const baseSchedule = userSchedules?.find(schedule => schedule.type === "base")
   if (!baseSchedule) {
-    toast.error("Healthcare provider base schedule not found")
     return {
       ...response,
       message: "Healthcare provider base schedule not found",
@@ -118,12 +117,12 @@ export const getUserTimeSlotsAction = cache(async ({serviceId, userId}: Generate
     const end = formatDateTime(date, baseSchedule?.endTime).toDate();
     const exceptionSlots = generateExceptionSlots(exceptionSchedules)
     
-    const bookedTimeSlots = bookings.map(booking => {
+    const bookedTimeSlots = appointmentSchedules.map(appointment => {
       return {
-        dateStart: dayjs(booking.startDateTime).toDate()!,
-        dateEnd: dayjs(booking.endDateTime).toDate()!,
-        timeStart: dayjs(booking.startDateTime).toDate()!,
-        timeEnd: dayjs(booking.endDateTime).toDate()!
+        dateStart: dayjs(appointment.AppointmentAttribute?.date).toDate()!,
+        dateEnd: dayjs(appointment.AppointmentAttribute?.date).toDate()!,
+        timeStart: dayjs(appointment.AppointmentAttribute?.timeStart).toDate()!,
+        timeEnd: dayjs(appointment.AppointmentAttribute?.timeEnd).toDate()!
       }
     });
     const timeSlots = isAvailable ? generateTimeSlotsV2(start, end, totalDuration, [...bookedTimeSlots, ...exceptionSlots]) : [];

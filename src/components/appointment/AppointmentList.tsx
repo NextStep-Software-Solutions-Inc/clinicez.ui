@@ -2,7 +2,7 @@
 
 import { forwardRef, useMemo} from "react"
 
-import { cn, getBadgeVariantFromLabel } from "@lib/utils"
+import { cn, formatDateTime, getBadgeVariantFromLabel } from "@lib/utils"
 import { Badge } from "@components/ui/badge"
 import { ScrollArea } from "@components/ui/scroll-area"
 import { useSearchParams } from "next/navigation"
@@ -12,6 +12,7 @@ import { Separator } from "@components/ui/separator"
 import { ArrowRight, Search } from "lucide-react";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
+import { formatRelative } from "date-fns";
 dayjs.extend(relativeTime)
 interface AppointmentListProps {
   appointments: GetAppointments["data"]
@@ -91,7 +92,7 @@ export const AppointmentList = forwardRef<any, AppointmentListProps>(({appointme
                         <Separator orientation="vertical" className="h-4" />
                         {getTransitionDate().fromNow()}
                       </div>
-                      {/* (<span>{formatRelative(new Date(), new Date())}</span>) */}
+                      
                     </div>
                   </div>
                 </div>
@@ -110,8 +111,10 @@ export const AppointmentList = forwardRef<any, AppointmentListProps>(({appointme
                   </Badge>
                 </div>
                 <div className="flex items-center justify-end gap-2 w-full">
-                  <span className="text-xs">
-                    <ArrowRight className="inline-block w-3 h-3"/> {item.AppointmentAttribute?.preferredAppointee}
+                  <span className="text-xs flex gap-1 items-center">
+                    <ArrowRight className="inline-block w-3 h-3"/>
+                    {/* {item.AppointmentAttribute?.preferredAppointee} */}
+                    {item.AppointmentAttribute?.date && item.AppointmentAttribute.timeStart && <span>{formatDateTime(item.AppointmentAttribute.date, item.AppointmentAttribute.timeStart).fromNow()}</span>}
                   </span>
                   {appointmentStatus === "all" && <Badge variant="outline" className="capitalize">{item?.AppointmentAttribute?.status.toLocaleLowerCase()}</Badge>}
                   <span className="flex gap-1">

@@ -21,6 +21,7 @@ import { Separator } from "@components/ui/separator";
 import { useOrgServices } from "@hooks/useOrgService";
 import { useOrgAppointmentTypes } from "@hooks/useOrgAppointmentType";
 import { useOrgAppointmentModes } from "@hooks/useOrgAppointmentMode";
+import { useHP } from "@hooks/useHP";
 
 interface ReviewBookingProps {
     nextStep?: () => void;
@@ -37,6 +38,7 @@ export default function ReviewBooking({ nextStep, prevStep, isLastStep, isFirstS
   const { data: services } = useOrgServices({orgUid: params.organization});
   const { data: appointmentTypes } = useOrgAppointmentTypes(params.organization);
   const { data: appointmentModes } = useOrgAppointmentModes(params.organization);
+  const {data: hp } = useHP(bookAppointmentForm.hpId ?? 0)
   const [playSuccess] = useSound("/audio/success-1.mp3");
   const user = useUser()
   const userId = user.user?.sub
@@ -64,8 +66,8 @@ export default function ReviewBooking({ nextStep, prevStep, isLastStep, isFirstS
       toast.error("Service is required")
       return;
     }
-    if (!bookAppointmentForm.hpEmail) {
-      toast.error("Doctor is required")
+    if (!bookAppointmentForm.hpId) {
+      toast.error("Healthcare Provider is required")
       return;
     }
     if (!bookAppointmentForm.selectedTimeSlot?.start || !bookAppointmentForm.selectedTimeSlot?.end) {
@@ -106,7 +108,7 @@ export default function ReviewBooking({ nextStep, prevStep, isLastStep, isFirstS
       serviceId: bookAppointmentForm.serviceId,
       requesters: [user.user?.email],
       attachments: attachmentUrls.map(url => url.url),
-      hpEmail: bookAppointmentForm.hpEmail,
+      hpId: String(bookAppointmentForm.hpId),
       schedule: {
         timeStart: bookAppointmentForm.selectedTimeSlot?.start,
         timeEnd: bookAppointmentForm.selectedTimeSlot?.end,
@@ -131,17 +133,18 @@ export default function ReviewBooking({ nextStep, prevStep, isLastStep, isFirstS
     startOver?.();
   }
 
+  const preferredHp = `${hp?.HPProfile?.title} ${hp?.HPProfile?.name} ${hp?.HPProfile?.suffix}`
   return (
     <div className="shadow-lg p-8 space-y-5 bg-white rounded-md">
       <h2 className="text-2xl  font-bold ">Review details</h2>
-      <form onSubmit={handleBookAppointment} >
+      <form onSubmit={handleBookAppointment}>
         <div className="p-5 mb-5 space-y-2 text-sm bg-gray-100 rounded-sm select-none">
           <LabelValue className="flex items-center gap-2" value="Subject:" label={bookAppointmentForm.subject ?? ""} />
           <LabelValue className="flex items-center gap-2" value="Chief Complaint:" label={bookAppointmentForm.chiefComplaint ?? ""} />
           <LabelValue className="flex items-center gap-2" value="Appointment Mode:" label={appointmentModes?.find(a => a.id === bookAppointmentForm.modeId)?.name ?? ""} />
           <LabelValue className="flex items-center gap-2" value="Appointment Type:" label={appointmentTypes?.find(a => a.id === bookAppointmentForm.appointmentTypeId)?.name ?? ""} />
           <LabelValue className="flex items-center gap-2" value="Service:" label={services?.find(s => s.id === bookAppointmentForm.serviceId)?.name ?? ""} />
-          <LabelValue className="flex items-center gap-2" value="Preferred Doctor:" label={bookAppointmentForm.hpEmail ?? ""} />
+          <LabelValue className="flex items-center gap-2" value="Preferred Doctor:" label={preferredHp} />
           {!!bookAppointmentForm.preferredDate && <LabelValue className="flex items-center gap-2" value="Preferred Date:" label={dayjs(bookAppointmentForm.preferredDate).format("ll")} /> }
           {bookAppointmentForm.selectedTimeSlot?.start && bookAppointmentForm.selectedTimeSlot?.end && <LabelValue className="flex items-center gap-2" value="Time Slot:" label={`${dayjs(bookAppointmentForm.selectedTimeSlot.start).format("LT")} - ${dayjs(bookAppointmentForm.selectedTimeSlot.end).format("LT")}`} />}
           <Separator/>
@@ -159,7 +162,6 @@ export default function ReviewBooking({ nextStep, prevStep, isLastStep, isFirstS
             submit: "Book Appointment",
             previous: "Back",
             next: "Start Over"
-      
           }}
           disabled={{
             previous: isFirstStep,

@@ -14,40 +14,53 @@ export const assignAppointmentAction = async (formData: FormData) => {
   }
   if(!session) return response;
 
-  const routedTo = formData.get('routedTo') as string;
-  const routedToRole = formData.get('routedToRole') as string;
-  const appointmentId = parseInt(formData.get('appointmentId') as string);
+  try {
+    const routedTo = formData.get('routedTo') as string;
+    const routedToRole = formData.get('routedToRole') as string;
+    const appointmentId = parseInt(formData.get('appointmentId') as string);
 
-  if(!routedTo || !appointmentId) {
+    if(!routedTo || !appointmentId) {
+      return {
+        status: false,
+        message: 'Invalid data provided'
+      }
+    }
+    await prismaTenant.$transaction(async (prisma) => {
+      await prisma.appointmentRouting.create({
+        data: {
+          routedBy: session.user.sub,
+          routedTo,
+          routedToRole,
+          appointmentId,
+        }
+      })
+    
+      await prisma.appointmentAttribute.update({
+        where: { appointmentId },
+        data: { status: 'ROUTED' }
+      })
+
+    },
+    {
+      timeout: 5000,
+      maxWait: 10000,
+      isolationLevel: Prisma.TransactionIsolationLevel.Serializable
+    })
+    return {
+      status: true,
+      message: 'Appointment assigned'
+    };
+  } catch (error) {
+    console.error(error);
+    let errorMsg = 'Failed to assign appointment';
+    if(error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+      errorMsg = 'Appointment not found or you are not authorized to assign it';
+    }
     return {
       status: false,
-      message: 'Invalid data provided'
+      message: errorMsg
     }
   }
-  await prismaTenant.$transaction(async (prisma) => {
-    await prisma.appointmentRouting.create({
-      data: {
-        routedBy: session.user.email,
-        routedTo,
-        routedToRole,
-        appointmentId,
-      }
-    })
-    await prisma.appointmentAttribute.update({
-      where: { id: appointmentId },
-      data: { status: 'ROUTED' }
-    })
-  },
-  {
-    timeout: 5000,
-    maxWait: 10000,
-    isolationLevel: Prisma.TransactionIsolationLevel.Serializable
-  })
-
-  return {
-    status: true,
-    message: 'Appointment assigned'
-  };
 }
 
 export const acceptAppointmentAction = async (formData: FormData) => {
@@ -56,15 +69,11 @@ export const acceptAppointmentAction = async (formData: FormData) => {
     status: false,
     message: 'Unauthorized'
   };
-  const appointmentId = parseInt(formData.get('appointmentId') as string);
-
+  const routingCode = formData.get('routingCode') as string;
   try {
     await prismaTenant.appointmentRouting.update({
       where: { 
-        unique_appointment_routing: {
-          appointmentId,
-          routedTo: session.user.email
-        } 
+        routingCode
       },
       data: { status: 'ACCEPTED'},
     })
@@ -90,21 +99,18 @@ export const declineAppointmentAction = async (formData: FormData) => {
     status: false,
     message: 'Unauthorized'
   };
-  const appointmentId = parseInt(formData.get('appointmentId') as string);
   const reason = formData.get('reason') as string;
-
+  const routingCode = formData.get('routingCode') as string;
+  
   try {
     await prismaTenant.appointmentRouting.update({
       where: { 
-        unique_appointment_routing: {
-          appointmentId,
-          routedTo: session.user.email
-        } 
+        routingCode 
       },
       data: { 
         status: 'DECLINED',
         amendedAt: new Date(),
-        amendedBy: session.user.email,
+        amendedBy: session.user.sub,
         amendment: reason
       },
     })
@@ -124,7 +130,6 @@ export const declineAppointmentAction = async (formData: FormData) => {
   }
 }
 
-
 export const cancelAppointmentRoutingAction = async (appointmentRoutingId: number) => {
   const session = await getCachedSession();
   if(!session) return {
@@ -136,14 +141,14 @@ export const cancelAppointmentRoutingAction = async (appointmentRoutingId: numbe
     await prismaTenant.appointmentRouting.update({
       where: { 
         id: appointmentRoutingId,
-        routedBy: session.user.email,
+        routedBy: session.user.sub,
         status: {
           in: ["PENDING"]
         }
       },
       data: { 
         status: 'CANCELLED',
-        amendedBy: session.user.email,
+        amendedBy: session.user.sub,
         amendedAt: new Date(),
         amendment: 'Cancelled by the assigner'
       },

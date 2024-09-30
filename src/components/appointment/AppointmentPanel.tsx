@@ -34,7 +34,7 @@ import { useOrgRoles } from "@hooks/useOrgRole"
 import { useUser } from "@auth0/nextjs-auth0/client"
 import { useAtom } from "jotai"
 import { userDefaultOrganizationRoleAtom } from "@state/user-role"
-import AppointmentListWrapper from "../Com"
+import AppointmentListWrapper from "../AppointmentListWrapper"
 
 export type UserSwitcherType = {
   label: string

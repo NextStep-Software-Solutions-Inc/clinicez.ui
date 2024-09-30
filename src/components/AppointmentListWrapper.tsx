@@ -31,7 +31,7 @@ export default function AppointmentListWrapper({orgUid}:AppointmentListWrapperPr
     if (!query) return withFallbackAppointments;
     return withFallbackAppointments.filter((appointment) => {
       return (
-        appointment.Requesters.some(requester => requester.email.toLowerCase().includes(query.toLowerCase())) ||
+        appointment.Requesters.some(requester => requester.userId.toLowerCase().includes(query.toLowerCase())) ||
           appointment.subject.toLowerCase().includes(query.toLowerCase()) ||
           appointment.complaint?.toLowerCase().includes(query.toLowerCase())
       );

@@ -5,6 +5,7 @@ import "server-only"
 import prismaTenant from "@lib/prisma-tenant"
 import { PrismaClientKnownRequestError } from '@prisma/tenant/client/runtime/library';
 import { getCachedSession } from "@actions/session.action";
+import { getHPsAction } from "@actions/hp.actions";
 
 export const upsertConsultationNotesAction = async (data: FormData) => {
   const session = await getCachedSession()
@@ -13,6 +14,7 @@ export const upsertConsultationNotesAction = async (data: FormData) => {
     message: "Session not found",
     data: null
   }
+  const myHps = await getHPsAction({userId: session.user.sub})
   const consultationTicketId = parseInt(data.get('consultationTicketId') as string)
   const section = data.get('section') as string
   const content = data.get('content') as string
@@ -24,7 +26,13 @@ export const upsertConsultationNotesAction = async (data: FormData) => {
           section, 
         },
         ConsultationTicket: {
-          createdBy: session.user.email
+          ConsultationTicketAuthors: {
+            some: {
+              hpId: {
+                in: myHps.map(hp => hp.id.toString())
+              }
+            }
+          }
         }
       },
       create: {

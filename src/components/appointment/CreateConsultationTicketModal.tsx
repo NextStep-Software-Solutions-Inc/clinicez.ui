@@ -83,7 +83,7 @@ export default function CreateConsultationTicketModal({disabled = false, subject
       const subject = data.subject
       const systemId = data.systemId
       const hpId = String(data.hpId)
-      const hpIds = new Set([...appointment.AppointmentRouting.filter(r => r.status === "ACCEPTED").map(r => r.routedTo), hpId])
+      const hpIds = new Set([hpId, ...appointment.AppointmentRouting.filter(r => r.status === "ACCEPTED").map(r => r.routedTo)])
       toast.promise(createConsultationTicketAction({appointmentId, orgUid, subject, systemId, hpIds : [...hpIds]}), {
         loading: "Creating consultation ticket...",
         success: (res) => {

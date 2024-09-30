@@ -71,7 +71,7 @@ export const AppointmentList = forwardRef<any, AppointmentListProps>(({appointme
                         render={(requester, index) => {
                           return (
                             <div className="font-semibold items-center flex gap-2 ">
-                              {requester.email === user?.email ? <span className="text-primary">You ({requester.email})</span> : requester.email}
+                              {requester.userId === user?.userId ? <span className="text-primary">You ({requester.userId})</span> : requester.userId}
                               {index < item.Requesters.length - 1 && <Separator orientation="vertical" className="h-4" />}
                             </div>
                           )

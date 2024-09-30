@@ -77,7 +77,7 @@ export const columns: ColumnDef<GetConsultationTickets["data"][number]>[] = [
     cell: ({ row }) => {
       return (
         <div>
-          <div className="text-wrap">{(row.original.Appointment?.Requesters ?? []).map((requester) => requester.email).join(", ")}</div>
+          <div className="text-wrap">{(row.original.Appointment?.Requesters ?? []).map((requester) => requester.userId).join(", ")}</div>
           <div className="flex flex-wrap items-center gap-1">
             <Badge>{row.original.System.name}</Badge>
             <Badge variant="outline">{row.original.Appointment?.AppointmentAttribute?.Service?.name}</Badge>

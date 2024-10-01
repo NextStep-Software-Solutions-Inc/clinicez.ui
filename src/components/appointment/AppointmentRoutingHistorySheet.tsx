@@ -27,14 +27,12 @@ dayjs.extend(utc)
 import { ArrowRight, Ban, Info } from "lucide-react";
 import { useParams, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { mutate } from "swr";
 interface AppointmentRoutingHistorySheetProps {
   children?: React.ReactNode;
   onSelect? : (e: Event) => void;
   onClose?: () => void;
   routing: NonNullable<GetAppointment["data"]>["AppointmentRouting"]
 }
-
 
 export default function AppointmentRoutingHistorySheet({ children, onClose, routing }: AppointmentRoutingHistorySheetProps) {
   const params = useParams<{organization: string}>()
@@ -55,7 +53,7 @@ export default function AppointmentRoutingHistorySheet({ children, onClose, rout
           <Info className="h-4 w-4" />
           <AlertTitle>Tips!</AlertTitle>
           <AlertDescription>
-            You can right click on each routing history to view more options.
+            You can right click on each routing history to view more options. You can cancel an assignment if it is still pending.
           </AlertDescription>
         </Alert>
         <div className="my-2 flex flex-col gap-2">

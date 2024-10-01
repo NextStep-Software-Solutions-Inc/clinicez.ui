@@ -59,7 +59,7 @@ model User {
   telephone                        String?
   ActivationCodes                  ActivationCode[]
   Folders                          Folder[]
-  HealthcareProvider               HealthcareProvider?
+  HealthcareProviders              HealthcareProvider[]
   ReceiptCodeClaims                ReceiptCodeClaim[]
   SocialLink                       SocialLink?
   Tenants                          Tenant[]
@@ -326,7 +326,7 @@ model UserPlan {
 
 model HealthcareProvider {
   id                  Int                    @id @default(autoincrement())
-  userId              Int                    @unique
+  userId              Int
   type                HealthcareProviderType
   description         String?
   createdAt           DateTime               @default(now())
@@ -338,6 +338,8 @@ model HealthcareProvider {
   ProfessionalDetails ProfessionalDetails?
   ReservedTimeSlots   ReservedTimeSlot[]
   HPProfile           HPProfile?
+
+  @@unique([userId, type], name: "unique_user_hp_type")
 }
 
 model HPProfile {

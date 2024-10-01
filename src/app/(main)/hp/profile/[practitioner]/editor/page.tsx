@@ -27,31 +27,31 @@ async function EditorPage({params, searchParams}: AppRouterPageRouteOpts) {
   const isMyHp = myHps.some((hp) => hp.id === hpId);
   if(!isMyHp) return notFound();
 
-  const profile = await getHPAction({
+  const hp = await getHPAction({
     id: hpId,
   });
   
   const mappedProfile: HPProfileType = {
-    id: profile?.id ?? 0,
-    title: profile?.HPProfile?.title ?? "",
-    name: profile?.HPProfile?.name ?? "",
-    suffix: profile?.HPProfile?.suffix ?? "",
-    workEmail: profile?.HPProfile?.workEmail ?? "",
-    workPhone: profile?.HPProfile?.workPhone ?? "",
-    philosophy: profile?.HPProfile?.philosophy ?? "",
-    areaOfInterest: profile?.HPProfile?.areaOfInterest ?? "",
-    experience: profile?.HPProfile?.experience ?? "",
-    languages: profile?.HPProfile?.languages.map((lang) => ({name: lang})) ?? [],
-    specialties: profile?.HPProfile?.specialties.map((specialty) => ({name: specialty})) ?? [],
-    educations: profile?.HPProfile?.educations.map((education) => ({name: education})) ?? [],
-    certifications: profile?.HPProfile?.certifications.map((certification) => ({name: certification})) ?? [],
-    fields: profile?.HPProfile?.fields.map((field) => ({name: field})) ?? [],
-    affiliations: profile?.HPProfile?.affiliations.map((affiliation) => ({name: affiliation})) ?? [],
+    id: hp?.HPProfile?.id ?? 0,
+    title: hp?.HPProfile?.title ?? "",
+    name: hp?.HPProfile?.name ?? "",
+    suffix: hp?.HPProfile?.suffix ?? "",
+    workEmail: hp?.HPProfile?.workEmail ?? "",
+    workPhone: hp?.HPProfile?.workPhone ?? "",
+    philosophy: hp?.HPProfile?.philosophy ?? "",
+    areaOfInterest: hp?.HPProfile?.areaOfInterest ?? "",
+    experience: hp?.HPProfile?.experience ?? "",
+    languages: hp?.HPProfile?.languages.map((lang) => ({name: lang})) ?? [],
+    specialties: hp?.HPProfile?.specialties.map((specialty) => ({name: specialty})) ?? [],
+    educations: hp?.HPProfile?.educations.map((education) => ({name: education})) ?? [],
+    certifications: hp?.HPProfile?.certifications.map((certification) => ({name: certification})) ?? [],
+    fields: hp?.HPProfile?.fields.map((field) => ({name: field})) ?? [],
+    affiliations: hp?.HPProfile?.affiliations.map((affiliation) => ({name: affiliation})) ?? [],
   }
 
   const professionalDetails = await getProfessionalDetailsAction(hpId);
 
-  const isPublished = profile?.isPublished;
+  const isPublished = hp?.isPublished;
   const handleTogglePublish = async () => {
     "use server"
     await setIsPublishAction(hpId, !isPublished);
@@ -62,7 +62,7 @@ async function EditorPage({params, searchParams}: AppRouterPageRouteOpts) {
     <div className="container mx-auto my-10 relative">
       <div className="prose max-w-full mb-5">
         <div className="flex">
-          <h1 className="capitalize flex-1">{profile?.type.replaceAll("_", " ").toLowerCase()} Profile Editor</h1>
+          <h1 className="capitalize flex-1">{hp?.type.replaceAll("_", " ").toLowerCase()} Profile Editor</h1>
           <form action={handleTogglePublish}>
             <ActionButton variant={isPublished? "destructive": "default"}>{isPublished ? "Unpublish": "Publish"}</ActionButton>
           </form>

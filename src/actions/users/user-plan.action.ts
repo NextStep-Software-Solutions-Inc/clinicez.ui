@@ -1,7 +1,8 @@
 "use server";
 
+import { getCachedSession } from "@actions/session.action";
 import prisma from "@lib/prisma-common";
-import { Prisma, UserPlanStatus } from "@prisma/common/client";
+import { Prisma, UserPlanStatus, HealthcareProviderType } from "@prisma/common/client";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc"
 dayjs.extend(utc)
@@ -33,95 +34,120 @@ export const setUserPlanStatusAction = async (id: number, status: UserPlanStatus
   return userPlan;
 }
 
-export const hpApplicationTransactionAction = async ({
-  planPayload : {planId, userId, status = "PENDING"},
-  hpPayload, code
-}: {
-  planPayload: {planId: number, userId: number, status: UserPlanStatus};
-  hpPayload: Prisma.HealthcareProviderCreateArgs["data"];
-  code: string;
+type HPApplicationTransactionPayload = {
+ code: string;
+ planId: number;
+ hpType: HealthcareProviderType;
 
-}) => {
-  const success = await prisma.$transaction(async (prisma) => {
-    // Count claimed receipt codes
-    const claimedCount = await prisma.receiptCodeClaim.count({
-      where: {
-        isActive: true,
-        ReceiptCode: {
-          code
+}
+export const hpApplicationTransactionAction = async ({planId, hpType,code}: HPApplicationTransactionPayload) => {
+
+  const session = await getCachedSession();
+  let errorMessage = "";
+  
+  try {
+    await prisma.$transaction(async (prisma) => {
+      // Count claimed receipt codes
+      errorMessage = "Receipt code is invalid or has been claimed.";
+      const claimedCount = await prisma.receiptCodeClaim.count({
+        where: {
+          isActive: true,
+          ReceiptCode: { code }
         }
-      }
-    })
-
-    // Get plan cost
-    const planCost = await prisma.plan.findFirstOrThrow({
-      where: { id: planId, isActive: true}
-    })
-    
-    // Check if code is less than maxUses and amount is greater than plan cost and status is UNUSED and coverage is ALL or HEALTHCARE_PROVIDER 
-    const receiptCode = await prisma.receiptCode.findFirstOrThrow({
-      where: { 
-        isActive: true,
-        code, 
-        maxUses: { gt: claimedCount },
-        amount: { gte: planCost.price},
-        status: "UNUSED",
-        OR: [{ coverage: "ALL" }, {coverage: "HEALTHCARE_PROVIDER"}]
-      },
-    })
-
-    // If less than maxUses, claim receipt code
-    await prisma.receiptCodeClaim.create({
-      data: {
-        ReceiptCode: {
-          connect: { code: receiptCode.code } 
-        },
-        User: {
-          connect: { id: userId }
-        }
-      }
-    });
-
-    // If maxUses is reached, update receipt code status to "USED"
-    if(receiptCode.maxUses === claimedCount + 1) {
-      await prisma.receiptCode.update({
-        where: { code },
-        data: { status: "USED" }
       })
-    }
-    
-    // Create user plan
-    await prisma.userPlan.create({
-      data: {
-        startDate: dayjs().toDate(),
-        endDate: dayjs().add(1, "year").toDate(),
-        planId,
-        userId,
-        status
-      }
-    }),
-
-    // Create healthcare provider
-    await prisma.healthcareProvider.create({
-      data: {
-        ...hpPayload, 
-        // For DOCTOR
-        HPProfile: {
-          create: {
-            name: "",
-            title: "",
+  
+      // Get plan cost
+      errorMessage = "Plan is invalid or inactive.";
+      const planCost = await prisma.plan.findFirstOrThrow({
+        where: { id: planId, isActive: true}
+      })
+     
+      
+      // Check if code is less than maxUses and amount is greater than plan cost and status is UNUSED and coverage is ALL or HEALTHCARE_PROVIDER 
+      errorMessage = "Receipt code is invalid or has been claimed.";
+      const receiptCode = await prisma.receiptCode.findFirstOrThrow({
+        where: { 
+          isActive: true,
+          maxUses: { gt: claimedCount },
+          amount: { gte: planCost.price},
+          status: "UNUSED",
+          code, 
+          OR: [{ coverage: "ALL" }, {coverage: "HEALTHCARE_PROVIDER"}]
+        },
+      })
+  
+      // If less than maxUses, claim receipt code
+      errorMessage = "An error occurred while claiming receipt code. User may have already claimed the code.";
+      await prisma.receiptCodeClaim.create({
+        data: {
+          ReceiptCode: {
+            connect: { code: receiptCode.code } 
+          },
+          User: {
+            connect: { userId: session?.user.sub }
           }
         }
-      },
+      });
+  
+      // If maxUses is reached, update receipt code status to "USED"
+      if(receiptCode.maxUses === claimedCount + 1) {
+        errorMessage = "An error occurred while updating receipt code status.";
+        await prisma.receiptCode.update({
+          where: { code },
+          data: { status: "USED" }
+        })
+      }
+      
+      // Create user plan
+      errorMessage = "An error occurred while creating user plan.";
+      await prisma.userPlan.create({
+        data: {
+          Plan: {
+            connect: { id: planId }
+          },
+          User: {
+            connect: { userId: session?.user.sub }
+          },
+          startDate: dayjs().toDate(),
+          endDate: dayjs().add(1, "year").toDate(),
+          status: "ACTIVE",
+        }
+      }),
+  
+      // Create healthcare provider
+      errorMessage = "An error occurred while creating healthcare provider.";
+      await prisma.healthcareProvider.create({
+        data: {
+          type: hpType,
+          User: {
+            connect: { userId: session?.user.sub }
+          },
+          HPProfile: {
+            create: {
+              name: "",
+              title: "",
+            }
+          }
+        },
+      })
+      // Return true if all transactions are successful
+      errorMessage = "Healthcare provider application successful.";
+    }, {
+      maxWait: 5000,
+      timeout: 10000,
+      isolationLevel: Prisma.TransactionIsolationLevel.Serializable
     })
-    // Return true if all transactions are successful
-    return true;
-  }, {
-    maxWait: 5000,
-    timeout: 10000,
-    isolationLevel: Prisma.TransactionIsolationLevel.Serializable
-  })
-  return success;
+    return {
+      status: true,
+      message: errorMessage
+    };
+  } catch (error) {
+    console.error(error);
+    return {
+      status: false,
+      message: errorMessage
+    };
+  }
 }
 
 export const getUserPlansAction = cache(async (userId: string) => {

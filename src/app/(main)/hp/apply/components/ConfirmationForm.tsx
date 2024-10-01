@@ -13,6 +13,8 @@ import { toast } from "sonner";
 import { HealthcareProviderType } from "@prisma/common/client";
 import { getUserAction } from "@actions/users/user.action";
 import { hpApplicationTransactionAction } from "@actions/users/user-plan.action";
+import { useAtom } from "jotai";
+import { hpApply } from "@state/hp-apply";
 
 interface ConfirmationFormProps {
   nextStep?: () => void;
@@ -38,14 +40,7 @@ export const confirmationFormSchema = z.object({
 type formType = z.infer<typeof confirmationFormSchema>
 
 export default function ConfirmationForm({ nextStep, prevStep, isFirstStep, isComplete, setComplete, startOver }: ConfirmationFormProps) {
-  const [applicationData, setApplicationData] = useLocalStorage<formType & {
-    role: HealthcareProviderType;
-    plan: string;
-    receiptCode: string;
-    complete: boolean;
-  }>("hp-application");
-
-  const {user} = useUser();
+  const [applicationData, setApplicationData] = useAtom(hpApply);
   
   const form = useForm<formType>({
     resolver: zodResolver(confirmationFormSchema)
@@ -53,31 +48,21 @@ export default function ConfirmationForm({ nextStep, prevStep, isFirstStep, isCo
 
   const action = () => {
     form.handleSubmit(async (data) => {
-
-      await setApplicationData({...data, complete: true, role: applicationData?.role, plan: applicationData?.plan, receiptCode: applicationData?.receiptCode})
-
-      const dbUser = await getUserAction(user?.sub ?? "")
-      const userId = dbUser.id  
-      const planId = parseInt(applicationData.plan)
-  
-      if(!userId || !planId) return toast.error("An error occurred. Please try again later.");
+      const planId = applicationData.planId
+      const hpType = applicationData.hpType
+      const code = applicationData.receiptCode
+      
+      if(!planId || !hpType || !code) return toast.error("An error occurred. One or more required fields are missing.");
       
       // transaction method
-      toast.promise(hpApplicationTransactionAction({
-        planPayload: {planId, userId, status : "ACTIVE"},
-        hpPayload: {
-          type: applicationData.role,
-          User: {
-            connect: {
-              userId: user?.sub ?? ""
-            }
-          }
-        }, code: applicationData.receiptCode
-      }), {
+      toast.promise(hpApplicationTransactionAction({ code, hpType,  planId }), {
         loading: "Submitting application...",
-        success: () => {
-          setComplete?.(true);
-          return "Healthcare Provider registration successful!";
+        success: (res) => {
+          if(res.status) {
+            setComplete?.(true);
+
+          }
+          return res.message;
         },
         error: (error) => `An error occurred while submitting your application. Please try again later. Error: ${error}`,
       });

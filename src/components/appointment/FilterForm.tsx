@@ -61,7 +61,7 @@ export default function FilterForm({onContinue}: FilterFormProps) {
   const {data: appointmentTypes} = useOrgAppointmentTypes(organization)
   const {data: appointmentModes } = useOrgAppointmentModes(organization);
   const {data: serviceCategories} = useOrgServiceCategories(organization)
-  const {data: doctors} = useHPs({type: "DOCTOR",})
+  const {data: hps} = useHPs()
 
   const form = useForm<z.infer<typeof FilterFormSchema>>({
     resolver: zodResolver(FilterFormSchema),
@@ -82,7 +82,7 @@ export default function FilterForm({onContinue}: FilterFormProps) {
     
     if(!appointmentTypeAttribute) return toast.message("Appointment type attribute not found")
     if(!serviceAttribute) return toast.message("Service attribute not found")
-    const hpUserId = (doctors ?? []).find(doctor => doctor.id === data.hpId)?.User.userId 
+    const hpUserId = (hps ?? []).find(hp => hp.id === data.hpId)?.User.userId 
     setBookAppointmentForm((prev) => ({...prev, ...{
       selectedTimeSlot: undefined,
       availabilities: undefined,
@@ -212,18 +212,18 @@ export default function FilterForm({onContinue}: FilterFormProps) {
                   </FormControl>
                   <SelectContent>
                     <Each
-                      of={doctors ?? []}
-                      render={(doctor) => {
-                        const name = `${doctor.HPProfile?.title ?? doctor.User.firstName} ${doctor.HPProfile?.name ?? doctor.User.lastName} ${doctor.HPProfile?.suffix ?? doctor.User.suffix ?? ""}`
+                      of={hps ?? []}
+                      render={(hp) => {
+                        const name = `${hp.HPProfile?.title ?? hp.User.firstName} ${hp.HPProfile?.name ?? hp.User.lastName} ${hp.HPProfile?.suffix ?? hp.User.suffix ?? ""}`
                         return (
-                          <SelectItem value={doctor.id.toString()}>{name}</SelectItem>
+                          <SelectItem value={hp.id.toString()}>{name} (<span className="italic">{hp.type.toLocaleLowerCase()}</span>)</SelectItem>
                         )
                       }}
                     />
                   </SelectContent>
                 </Select>
                 <FormDescription>
-                  Select a doctor to show their vacant slots
+                  Select a healthcare provider to show their vacant slots
                 </FormDescription>
                 <FormMessage />
               </FormItem>

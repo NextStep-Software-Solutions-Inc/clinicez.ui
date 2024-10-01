@@ -1,8 +1,8 @@
-import { GetHP, GetHpsByIds, GetHPsType, HPFilters } from "@actions/hp.actions";
+import { GetHP, GetHpsByIds, GetHPsType, HPSFilters } from "@actions/hp.actions";
 import { self } from "@services/request";
 import useSWR from "swr";
 
-export const useHPs = (filters?: HPFilters, enable = true) => {
+export const useHPs = (filters?: HPSFilters, enable = true) => {
   const fetcher = (...args: any) => self.get<GetHPsType>(args)
 
   const obj = {

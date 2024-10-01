@@ -101,7 +101,10 @@ export const getUserAction = cache(async (key: string, orgUid?: string)=> {
       ], 
     },
     include: {
-      HealthcareProvider: {
+      HealthcareProviders: {
+        where: {
+          isActive: true,
+        },
         select: {
           id: true,
         }

@@ -22,9 +22,7 @@ import { Languages } from "./Languages"
 import { HPProfileType, profileSchema } from "../hp-form.schema"
 import { toast } from "sonner"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useLocalStorage } from "@hooks/useLocalStorage"
-import { useParams, useSearchParams } from "next/navigation"
-import { HealthcareProviderType } from "@prisma/common/client"
+import { useParams } from "next/navigation"
 import React from "react"
 import ActionButton from "@components/ActionButton"
 import { upsertHPAction } from "@actions/hp.actions"
@@ -36,23 +34,16 @@ type HPProfileProps = {
 export default function HPProfileForm({ profile }: HPProfileProps) {
   const params = useParams() as { practitioner: string }
   const [profileId, setProfileId] = React.useState<number | undefined>(profile.id)
-  const searchParams = useSearchParams();
   const practitioner = parseInt(params.practitioner)
-  const _type = searchParams.get("_type") as HealthcareProviderType
-  const HP_FORM_KEY = `hp-${practitioner}-${_type}-profile`;
 
-  const [hpProfile, setHpProfile] = useLocalStorage<HPProfileType>(HP_FORM_KEY, profile);
   const form = useForm<HPProfileType>({
     resolver: zodResolver(profileSchema),
-    defaultValues: hpProfile,
-    mode: "all"
+    mode: "all",
+    defaultValues: profile
   })
     
-  const action = async (formData: FormData) => {
-
+  const action = async () => {
     await (form.handleSubmit(async (values: HPProfileType) => {
-      await setHpProfile(values) // save to local storage
-      
       const mappedData = {
         title: values.title,
         name: values.name,
@@ -69,19 +60,24 @@ export default function HPProfileForm({ profile }: HPProfileProps) {
         certifications: values.certifications.map((lang) => lang.name),
         fields: values.fields.map((lang) => lang.name),
         affiliations: values.affiliations.map((lang) => lang.name),
-      
         healthcareProviderId: practitioner,
-      
       }
       
-      const latestProfile = await upsertHPAction({
+      toast.promise(upsertHPAction({
         where: { id: profileId },
         create: mappedData,
         update: mappedData
-      });
-      setProfileId(latestProfile.id)
-      toast.success("Profile updated successfully.")
-      form.reset(values)
+      }), {
+        loading: "Saving profile...",
+        success: (res) => {
+          if(res) {
+            setProfileId(res.id)
+            form.reset(values)
+          }
+          return "Profile updated successfully."
+        },
+        error: "Failed to update profile."
+      })
     })())
   }
 

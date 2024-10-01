@@ -16,12 +16,12 @@ import { RadioGroup, RadioGroupItem } from "@components/ui/radio-group"
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useSearchParams } from "next/navigation";
 import BackSubmitAndNext from "../../../../../components/SubmitAndNext";
-import {useLocalStorage} from "@hooks/useLocalStorage";
 import { $Enums, HealthcareProviderType } from "@prisma/common/client";
+import { useAtom } from "jotai";
+import { hpApply } from "@state/hp-apply";
 
 const hpTypes = Object.values($Enums.HealthcareProviderType);
 const hpTypesSchema = z.nativeEnum($Enums.HealthcareProviderType);
-
 interface ISelectHPTypeProps {
   activeRole?: typeof hpTypes;
   nextStep?: () => void;
@@ -31,28 +31,28 @@ interface ISelectHPTypeProps {
 } 
 
 export default function SelectHPType({nextStep, prevStep, isFirstStep,isLastStep, activeRole}: ISelectHPTypeProps) {
-  
+  const searchParams = useSearchParams();
+  const hpType = searchParams.get("HPType") as HealthcareProviderType | undefined;
   const roleFormSchema = z.object({
-    role: hpTypesSchema.refine(value => hpTypes.includes(value) , {
+    hpType: hpTypesSchema.refine(value => hpTypes.includes(value) , {
       message: "Invalid role",
     }).refine(value => !activeRole?.includes(value), (value) => ({
       message: `You have already possessed ${value} role. Please select a different role.`,
     })),
   })
   
-  const role = useSearchParams().get("_role")?.toLowerCase() as HealthcareProviderType | undefined;
-  const [applicationData,setApplicationData] = useLocalStorage("hp-application", {role});
+  const [applicationData,setApplicationData] = useAtom(hpApply);
   const form = useForm<z.infer<typeof roleFormSchema>>({
     resolver: zodResolver(roleFormSchema),
     mode: "all",
     defaultValues: {
-      role: role || applicationData?.role,
+      hpType: hpType || applicationData?.hpType,
     }
   })
 
   const action = async (formData: FormData) => {
     form.handleSubmit(async (data: z.infer<typeof roleFormSchema>) => {
-      await setApplicationData(data)
+      setApplicationData(prev => ({...prev, ...data}))
       nextStep?.();
     })()
   }
@@ -62,10 +62,10 @@ export default function SelectHPType({nextStep, prevStep, isFirstStep,isLastStep
       <form action={action} className="space-y-6 shadow-lg w-full p-8 bg-white rounded-md">
         <FormField
           control={form.control}
-          name="role"
+          name="hpType"
           render={({ field,  }) => (
             <FormItem className="space-y-3">
-              <FormLabel>Select Role</FormLabel>
+              <FormLabel>Select HP Type</FormLabel>
               <FormControl>
                 <RadioGroup
                   name="role"

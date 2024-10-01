@@ -16,7 +16,6 @@ import { SignInButton } from "./SignInButton";
 import { getUserAction } from "@actions/users/user.action";
 import { getCachedSession } from "@actions/session.action";
 import Image from "next/image";
-import ConditionalRender from "./utils/ConditionalRender";
 
 export default async function UserAvatarDropdown({children}: {children: React.ReactNode}) {
 

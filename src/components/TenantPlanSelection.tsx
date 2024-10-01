@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from 'react';
+import React from 'react';
 import plans from '@public/json/plans.json';
 import Each from './utils/Each';
 import PricingMode from './PricingMode';

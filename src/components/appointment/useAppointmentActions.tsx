@@ -6,7 +6,8 @@ import AssignAppointment from "@components/appointment/AssignAppointment"
 import RescheduleAppointment from "@components/appointment/RescheduleAppointment"
 import DeclineAppointmentAssignment from "@components/appointment/DeclineAppointmentAssignment"
 import CreateConsultationTicketModal from './CreateConsultationTicketModal';
-import { useHP } from '@hooks/useHP';
+import { useHP, useHPs } from '@hooks/useHP';
+import { useUser } from '@auth0/nextjs-auth0/client';
 
 type AppointmentActions = "accept"|"decline"|"approve"|"receive"| "reject" | "assign" | "create-consultation-ticket"| "reschedule"
 type AppointmentStatusTools = {
@@ -17,13 +18,17 @@ type AppointmentStatusTools = {
     component: React.ReactNode
 }[]
 
-
-export const useAppointmentTools = ({ appointment, revalidate}: {
+interface UseAppointmentToolsProps {
     appointment?: GetAppointment["data"],
     revalidate: () => void
-}) => {
-  const {data: authHp} = useHP(2)
-  const routingCode = appointment?.AppointmentRouting.find(r => Number(r.routedTo) === authHp?.id)?.routingCode
+}
+export const useAppointmentTools = ({ appointment, revalidate}:UseAppointmentToolsProps) => {
+
+  const {user} = useUser()
+  const {data: authHps} = useHPs({
+    userId: user?.sub ?? undefined
+  })
+  const routingCode = appointment?.AppointmentRouting.find(r => authHps?.some(hp => hp.id === Number(r.routedTo)))?.routingCode
   if(!appointment) return { tools: [] }
   const tools: AppointmentStatusTools = [
     {

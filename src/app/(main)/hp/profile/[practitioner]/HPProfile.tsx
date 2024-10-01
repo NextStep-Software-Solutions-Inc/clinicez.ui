@@ -13,7 +13,6 @@ interface HPProfileProps {
 
 export default async function HPProfile({hpId}: HPProfileProps) {
   const profile = await getHPAction({
-    isPublished: true,
     id: hpId
   });
   if (!profile) notFound();

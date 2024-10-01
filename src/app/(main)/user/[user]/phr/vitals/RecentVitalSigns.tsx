@@ -3,7 +3,6 @@ import AddVitalSignsModal from "./AddVitalSignsModal";
 import MoreVitals from "./MoreVitals";
 import ConditionalRender from "@components/utils/ConditionalRender";
 import Suspend from "@components/Suspend";
-import ChangeViewMode from "./ChangeViewMode";
 import VitalsSignView from "./VitalsSignView";
 import { VitalChartInteractive } from "@components/charts/VitalChartInteractive";
 import VitalSign from "./VitalSign";
@@ -11,8 +10,11 @@ import { GetUserVitalSigns } from "@actions/vitals.action";
 import dayjs from "dayjs"
 import utc from "dayjs/plugin/utc"
 import localizedFormat from 'dayjs/plugin/localizedFormat'
+import dynamic from "next/dynamic";
 dayjs.extend(utc)
 dayjs.extend(localizedFormat)
+
+const ChangeViewMode = dynamic(() => import("./ChangeViewMode"), { ssr: false });
 interface RecentVitalSignsProps {
   readOnly?: boolean;
   userId: string;

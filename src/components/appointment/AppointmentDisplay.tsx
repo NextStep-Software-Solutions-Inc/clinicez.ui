@@ -106,7 +106,13 @@ export default function AppointmentDisplay() {
             of={appointmentTools.filter((tool) => {     
               const enable = tool.permissions.every(p => myOrgPermission.includes(p))
                 && tool.appointmentStatuses.includes(freshAppointment.data!.AppointmentAttribute?.status.toLocaleLowerCase() ?? "") 
-                && (tool.routedAptStatuses.length === 0 || (freshAppointment.data?.AppointmentAttribute?.status !== "ROUTED" || freshAppointment.data?.AppointmentRouting.some(apt =>tool.routedAptStatuses.includes(apt.status.toLocaleLowerCase()) && Number(apt.routedTo) === authUser?.HealthcareProvider?.id)))
+                && (
+                  tool.routedAptStatuses.length === 0 
+                  || (
+                    freshAppointment.data?.AppointmentAttribute?.status !== "ROUTED" 
+                    || freshAppointment.data?.AppointmentRouting.some(apt =>tool.routedAptStatuses.includes(apt.status.toLocaleLowerCase()) && authUser?.HealthcareProviders.some(hp => hp.id === Number(apt.routedTo)))
+                  )
+                )
               return enable
             })}
             render={(tool) => tool.component}

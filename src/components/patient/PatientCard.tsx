@@ -1,5 +1,5 @@
 import EMRPreviewSheet from "@components/EMRPreviewSheet";
-import { Avatar } from "@components/ui/avatar";
+import { Avatar, AvatarFallback } from "@components/ui/avatar";
 import { Badge } from "@components/ui/badge";
 import { Button } from "@components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@components/ui/card";
@@ -38,6 +38,7 @@ export const PatientCard = async ({patient}: PatientCardProps) => {
         <div className="flex gap-3">
           <Avatar className="rounded w-40 h-40">
             <Image width={200} height={200} className="object-cover" src={picture} alt="John Doe" />
+            <AvatarFallback>{nameInitials}</AvatarFallback>
           </Avatar>
           <div className="flex-1 flex flex-col justify-between">
             <div className="">

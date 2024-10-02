@@ -6,14 +6,14 @@ import { GetAppointment, getAppointmentAction } from "@actions/appointments/appo
 import { GetUser, getUserAction } from "@actions/users/user.action";
 import { differenceInCalendarYears } from "date-fns";
 import { GetConsultationTicket } from "@actions/consultation/consultation-ticket.action";
-import { Clipboard, ExternalLink } from "lucide-react";
+import { ExternalLink, FolderHeart } from "lucide-react";
 import Link from "next/link";
 import dynamic from 'next/dynamic';
 import { Tooltip, TooltipContent, TooltipTrigger } from "@components/ui/tooltip";
 import Image from "next/image";
 import { Badge } from "@components/ui/badge";
 import { Separator } from "@components/ui/separator";
-import { GetHP, getHPAction, GetHpsByIds, getHpsByIdsAction } from "@actions/hp.actions";
+import { GetHpsByIds, getHpsByIdsAction } from "@actions/hp.actions";
 import Each from "@components/utils/Each";
 import { Fragment } from "react";
 import EMRPreviewSheet from "@components/EMRPreviewSheet";
@@ -160,10 +160,10 @@ export const PatientHpDetails = ({ creators = [], user }: PatientHpDetailsProps)
           </div>
           <div>
             <Tooltip>
-              <EMRPreviewSheet record={{ id: patientId, subject:patientName }}>
+              <EMRPreviewSheet record={{ id: patientId, subject:patientName}}>
                 <TooltipTrigger asChild>
                   <Button size="icon" variant="link">
-                    <Clipboard className="w-6 h-6"/>
+                    <FolderHeart className="w-6 h-6"/>
                   </Button>
                 </TooltipTrigger>
               </EMRPreviewSheet>

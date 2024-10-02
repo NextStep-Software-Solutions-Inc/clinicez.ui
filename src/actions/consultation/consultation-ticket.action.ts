@@ -166,6 +166,12 @@ export const getConsultationTicketAction = cache(async (consultationId: number, 
             }
           }
         }
+      },
+      ConsultationNotes: {
+        select: {
+          section: true,
+          content: true,
+        }
       }
     }
   })
@@ -179,7 +185,8 @@ export const getConsultationTicketAction = cache(async (consultationId: number, 
 
 export type GetConsultationTickets = Awaited<ReturnType<typeof getConsultationTicketsAction>>;
 export const getConsultationTicketsAction = async ({orgUid, filters}: {orgUid: string, filters?: {
-  showArchived?: boolean
+  showArchived?: boolean,
+  userId: string
 }}) => {
   const session = await getCachedSession()
   if(!session) return {
@@ -188,7 +195,7 @@ export const getConsultationTicketsAction = async ({orgUid, filters}: {orgUid: s
     data: []
   }
 
-  const { showArchived } = filters ?? {}
+  const { showArchived, userId } = filters ?? {}
 
   const [permissions, myHps] = await Promise.all([
     getPermissionsAction(session.user.sub),
@@ -212,6 +219,15 @@ export const getConsultationTicketsAction = async ({orgUid, filters}: {orgUid: s
     where: {
       isActive: true,
       ...showArchived ? {}: { isArchived: false},
+      ...userId ? {
+        Appointment: {
+          Requesters: {
+            some: {
+              userId: userId
+            }
+          }
+        }
+      } : {},
       OR: [
         {
           ...readAllOrgConsultations ? {orgUid} : {},

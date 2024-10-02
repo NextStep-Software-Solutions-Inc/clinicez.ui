@@ -17,13 +17,15 @@ import { useIllnesses } from "@hooks/useIllness";
 import { useVaccinations } from "@hooks/useVaccination";
 import RecentVitalSigns from "../app/(main)/user/[user]/phr/vitals/RecentVitalSigns";
 import { useUserVitalSigns } from "@hooks/useUserVitalSign";
-import { notFound } from "next/navigation";
+import { notFound, useParams } from "next/navigation";
+import MedicalHistory from "./MedicalHistory";
 
 interface EMRPreviewProps {
-    patientId: string;
+    patientId: string
   }
 function EMRPreview({patientId}: EMRPreviewProps) {
 
+  const params = useParams<{organization: string}>();
   const { data: patient, isLoading } = useUser({userId: patientId})
   const { data: allergies, } = useAllergies(patientId)
   const { data: disabilities } = useDisabilities(patientId)
@@ -53,7 +55,7 @@ function EMRPreview({patientId}: EMRPreviewProps) {
         </div>
       </div>
       <Separator/>
-      <h3 className="text-xl">Basic Information</h3>
+      <h3 className="text-xl bg-primary text-primary-foreground rounded px-2 font-bold">Basic Information</h3>
       <div className="space-y-3">
         <LabelValue className="flex items-center gap-2 flex-row-reverse justify-end" label="Nickname:" value={patient?.nickname}/>
         <LabelValue className="flex items-center gap-2 flex-row-reverse justify-end" label="Mobile:" value={(
@@ -65,34 +67,40 @@ function EMRPreview({patientId}: EMRPreviewProps) {
       </div>
         
       <Separator/>
-      <h3 className="text-xl">Allergies</h3>
+      <h3 className="text-xl bg-primary text-primary-foreground rounded px-2 font-bold">Allergies</h3>
       <AllergiesForm readOnly allergies={allergies ?? []} />
   
       <Separator/>
-      <h3 className="text-xl">Vaccination & Immunization</h3>
+      <h3 className="text-xl bg-primary text-primary-foreground rounded px-2 font-bold">Vaccination & Immunization</h3>
       <VaccinationForm readOnly vaccinations={vaccinations ?? []} />
       <Separator/>
-      <h3 className="text-xl">Personal & Social History</h3>
-      <DisabilitiesForm readOnly disabilities={disabilities ?? []} />
-      <IllnessesForm readOnly illnesses={illnesses ?? []} />
+
+      <h3 className="text-xl bg-primary text-primary-foreground rounded px-2 font-bold">Personal & Social History</h3>
+      <div>
+        <DisabilitiesForm readOnly disabilities={disabilities ?? []} />
+        <IllnessesForm readOnly illnesses={illnesses ?? []} />
+      </div>
       <Separator/>
-      <h3 className="text-xl">Family History</h3>
+      <h3 className="text-xl bg-primary text-primary-foreground rounded px-2 font-bold">Family History</h3>
         
       <Separator/>
-      <h3 className="text-xl">Medical History</h3>
+      <h3 className="text-xl bg-primary text-primary-foreground rounded px-2 font-bold">Medical History</h3>
+      <MedicalHistory
+        patientId={patientId}
+        orgUid={params.organization}
+      />
+      {/* <Separator/> */}
+      <h3 className="text-xl bg-primary text-primary-foreground rounded px-2 font-bold">Obstetric History</h3>
         
       <Separator/>
-      <h3 className="text-xl">Obstetric History</h3>
-        
-      <Separator/>
-      <h3 className="text-xl">Vital Signs & Anthropometric Measurements</h3>
+      <h3 className="text-xl bg-primary text-primary-foreground rounded px-2 font-bold">Vital Signs & Anthropometric Measurements</h3>
       <RecentVitalSigns readOnly vitalSigns={vitalSigns ?? []} userId={patient?.userId ?? ""}/>
         
       <Separator/>
-      <h3 className="text-xl">Organs / Systems</h3>
+      <h3 className="text-xl bg-primary text-primary-foreground rounded px-2 font-bold">Organs / Systems</h3>
   
       <Separator/>
-      <h3 className="text-xl">{`Visual Acuity / Snellen's`}</h3>
+      <h3 className="text-xl bg-primary text-primary-foreground rounded px-2 font-bold">{`Visual Acuity / Snellen's`}</h3>
   
     </div>
   );

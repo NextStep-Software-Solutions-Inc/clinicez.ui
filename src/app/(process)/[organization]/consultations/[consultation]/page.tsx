@@ -12,6 +12,7 @@ import { getUserAction } from "@actions/users/user.action";
 import { notFound } from "next/navigation";
 import { DropdownMenuProvider } from "@components/DropdownMenuProvider";
 import { DataTableRowActions } from "../../../../../components/consultation/data-table-row-actions";
+import ResolveConsultationTicket from "@components/consultation/ResolveConsultationTicket";
 
 export const metadata: Metadata = {
   title: "Consultation Details",
@@ -26,11 +27,20 @@ async function ConsultationPage({params}: AppRouterPageRouteOpts) {
   if(!consultation.data) notFound()
   // const hp = await getUserAction(consultation.data?.createdBy)
 
+  const statusBadge = {
+    PENDING: "destructive",
+    RESOLVED: "default",
+    PROCESSING: "outline",
+  } as const
+
   return (
     <div className="space-y-5">
       <div className="group/issue flex sticky top-10 z-10 bg-opacity-30 backdrop-blur p-2 items-center">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">{consultation.data?.subject?.trim() || `Consultation Ticket #${consultation.data.id}`}</h2>
+          <div className="flex items-center gap-5">
+            <h2 className="text-2xl font-bold tracking-tight">{consultation.data?.subject?.trim() || `Consultation Ticket #${consultation.data.id}`}</h2>
+            <Badge variant={statusBadge[consultation.data.ConsultationTicketAttribute?.status as keyof typeof statusBadge]}>{consultation.data.ConsultationTicketAttribute?.status}</Badge>
+          </div>
           <div className="flex h-5 items-center gap-2 mt-3 capitalize">
             <Badge>{consultation.data.System.name}</Badge>
             <Separator orientation="vertical" />
@@ -51,7 +61,10 @@ async function ConsultationPage({params}: AppRouterPageRouteOpts) {
           }}>
             <Button variant="default" size="sm">Issue e-Document <ExternalLink className="h-4 w-4 ml-2"/></Button>
           </Link> */}
-          <Button variant="outline" size="sm" className="">Set Resolved</Button>
+          {
+            consultation.data.ConsultationTicketAttribute?.status !== "RESOLVED" &&
+            <ResolveConsultationTicket ticketId={consultationId}/>
+          }
           <DropdownMenuProvider>
             <DataTableRowActions consultation={consultation.data}/>
           </DropdownMenuProvider>

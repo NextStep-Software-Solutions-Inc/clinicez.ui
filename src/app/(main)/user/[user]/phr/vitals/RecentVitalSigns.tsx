@@ -11,6 +11,7 @@ import dayjs from "dayjs"
 import utc from "dayjs/plugin/utc"
 import localizedFormat from 'dayjs/plugin/localizedFormat'
 import dynamic from "next/dynamic";
+import { Button } from "@components/ui/button";
 dayjs.extend(utc)
 dayjs.extend(localizedFormat)
 
@@ -41,7 +42,9 @@ export default function RecentVitalSigns({readOnly = true, userId, vitalSigns}: 
         <div className="ml-auto flex-grow sm:flex-grow-0 flex flex-wrap items-center justify-end gap-2">
           <ChangeViewMode/>
           <ConditionalRender condition={!readOnly} fallback="">
-            <AddVitalSignsModal userId={userId}/>
+            <AddVitalSignsModal userId={userId}>
+              <Button className="flex-grow sm:flex-grow-0">Add Vitals</Button>
+            </AddVitalSignsModal>
           </ConditionalRender>
         </div>
       </CardHeader>

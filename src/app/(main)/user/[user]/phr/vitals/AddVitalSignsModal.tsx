@@ -4,13 +4,15 @@ import { Alert, AlertDescription, AlertTitle } from "@components/ui/alert";
 import { Dialog, DialogTrigger } from "@components/ui/dialog";
 import { AlertCircle } from "lucide-react";
 import AddVitalSignsForm from "./AddVitalSignsForm";
-import { Button } from "@components/ui/button";
-
-export default async function AddVitalSignsModal({userId}: {userId: string}) {
+interface AddVitalSignsModalProps {
+  userId: string
+  children: React.ReactNode
+}
+export default async function AddVitalSignsModal({userId, children}: AddVitalSignsModalProps) {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button className="flex-grow sm:flex-grow-0">Add Vitals</Button>
+        {children}
       </DialogTrigger>
       <CustomModalContent 
         className="sm:max-w-[800px] overflow-scroll max-h-[100vh] no-scrollbar"

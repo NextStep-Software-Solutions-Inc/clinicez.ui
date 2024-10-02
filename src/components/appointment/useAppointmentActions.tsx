@@ -6,10 +6,14 @@ import AssignAppointment from "@components/appointment/AssignAppointment"
 import RescheduleAppointment from "@components/appointment/RescheduleAppointment"
 import DeclineAppointmentAssignment from "@components/appointment/DeclineAppointmentAssignment"
 import CreateConsultationTicketModal from './CreateConsultationTicketModal';
-import { useHP, useHPs } from '@hooks/useHP';
+import { useHPs } from '@hooks/useHP';
 import { useUser } from '@auth0/nextjs-auth0/client';
+import AddVitalSignsModal from '../../app/(main)/user/[user]/phr/vitals/AddVitalSignsModal';
+import { Button } from '@components/ui/button';
+import { Activity } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@components/ui/tooltip';
 
-type AppointmentActions = "accept"|"decline"|"approve"|"receive"| "reject" | "assign" | "create-consultation-ticket"| "reschedule"
+type AppointmentActions = "accept"|"decline"|"approve"|"receive"| "reject" | "assign" | "create-consultation-ticket"| "reschedule" | "add-vitals"
 type AppointmentStatusTools = {
     action: AppointmentActions
     permissions: string[],
@@ -30,6 +34,7 @@ export const useAppointmentTools = ({ appointment, revalidate}:UseAppointmentToo
   })
   const routingCode = appointment?.AppointmentRouting.find(r => authHps?.some(hp => hp.id === Number(r.routedTo)))?.routingCode
   if(!appointment) return { tools: [] }
+  const patientId = appointment.Requesters[0].userId
   const tools: AppointmentStatusTools = [
     {
       action:"accept",
@@ -125,6 +130,24 @@ export const useAppointmentTools = ({ appointment, revalidate}:UseAppointmentToo
           disabled={!appointment}
           onRescheduled={revalidate}
         />
+      )
+    }, {
+      action:"add-vitals",
+      permissions: ["write:org:vitals"],
+      appointmentStatuses: ["received", "routed"],
+      routedAptStatuses: [],
+      component: (
+        <Tooltip key={`${appointment.id}-add-vitals`}>
+          <AddVitalSignsModal userId={patientId}>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" disabled={!appointment}>
+                <Activity className="h-4 w-4" />
+                <span className="sr-only">Add Vitals</span>
+              </Button>
+            </TooltipTrigger>
+          </AddVitalSignsModal>
+          <TooltipContent>Add Vitals</TooltipContent>
+        </Tooltip>
       )
     }
   ]

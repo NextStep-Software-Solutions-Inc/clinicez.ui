@@ -219,7 +219,7 @@ export const getConsultationTicketsAction = async ({orgUid, filters}: {orgUid: s
     where: {
       isActive: true,
       ...showArchived ? {}: { isArchived: false},
-      ...userId ? {
+      ...userId !== "null" ? {
         Appointment: {
           Requesters: {
             some: {

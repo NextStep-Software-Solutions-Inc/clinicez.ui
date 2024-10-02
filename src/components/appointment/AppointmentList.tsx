@@ -9,10 +9,9 @@ import { useSearchParams } from "next/navigation"
 import Each from "@components/utils/Each"
 import { GetAppointments } from "@actions/appointments/appointments.action"
 import { Separator } from "@components/ui/separator"
-import { ArrowRight, Search } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
-import { formatRelative } from "date-fns";
 dayjs.extend(relativeTime)
 interface AppointmentListProps {
   appointments: GetAppointments["data"]
@@ -21,7 +20,7 @@ interface AppointmentListProps {
 export const AppointmentList = forwardRef<any, AppointmentListProps>(({appointments},ref) => {
   const searchParams = useSearchParams()
   const appointmentId = searchParams.get("_appointment")
-  const appointmentStatus = searchParams.get("_aptStatus")
+  const appointmentStatus = searchParams.get("_aptStatus")?.toLocaleLowerCase()
   
   const setAppointment = (thisAptId: string) => {
     if(appointmentId === thisAptId) return
@@ -44,7 +43,8 @@ export const AppointmentList = forwardRef<any, AppointmentListProps>(({appointme
               if(appointmentStatus === "completed") return dayjs(item.AppointmentAttribute?.completedAt)
               if(appointmentStatus === "rejected") return dayjs(item.AppointmentAttribute?.rejectedAt)
               if(appointmentStatus === "received") return dayjs(item.AppointmentAttribute?.receivedAt)
-              if(appointmentStatus === "routed") return dayjs(item.createdAt)
+              if(appointmentStatus === "rescheduled") return dayjs(item.AppointmentAttribute?.rescheduledAt)
+              if(appointmentStatus === "routed") return dayjs(item.updatedAt)
               return dayjs(item.createdAt)
             }
             return (

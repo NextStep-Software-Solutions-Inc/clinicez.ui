@@ -138,6 +138,7 @@ export const getAppointmentsAction = cache(async (filter?: GetAppointmentFilter)
       subject: true,
       complaint: true,
       createdAt: true,
+      updatedAt: true,
       Requesters: {
         select: {
           userId: true
@@ -155,6 +156,7 @@ export const getAppointmentsAction = cache(async (filter?: GetAppointmentFilter)
           completedAt: true,
           receivedAt: true,
           rejectedAt: true,
+          rescheduledAt: true,
           AppointmentType: {
             select: {
               name: true

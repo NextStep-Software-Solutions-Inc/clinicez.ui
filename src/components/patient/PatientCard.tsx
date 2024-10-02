@@ -1,10 +1,10 @@
 import EMRPreviewSheet from "@components/EMRPreviewSheet";
-import { Avatar, AvatarFallback, AvatarImage } from "@components/ui/avatar";
+import { Avatar } from "@components/ui/avatar";
 import { Badge } from "@components/ui/badge";
 import { Button } from "@components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@components/ui/card";
 import ConditionalRender from "@components/utils/ConditionalRender";
-import { differenceInCalendarYears, format } from "date-fns";
+import { differenceInCalendarYears } from "date-fns";
 import { PatientsType } from "./PatientList";
 import Image from "next/image";
 

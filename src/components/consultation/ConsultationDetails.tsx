@@ -6,7 +6,7 @@ import { GetAppointment, getAppointmentAction } from "@actions/appointments/appo
 import { GetUser, getUserAction } from "@actions/users/user.action";
 import { differenceInCalendarYears } from "date-fns";
 import { GetConsultationTicket } from "@actions/consultation/consultation-ticket.action";
-import { ExternalLink } from "lucide-react";
+import { Clipboard, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import dynamic from 'next/dynamic';
 import { Tooltip, TooltipContent, TooltipTrigger } from "@components/ui/tooltip";
@@ -16,6 +16,8 @@ import { Separator } from "@components/ui/separator";
 import { GetHP, getHPAction, GetHpsByIds, getHpsByIdsAction } from "@actions/hp.actions";
 import Each from "@components/utils/Each";
 import { Fragment } from "react";
+import EMRPreviewSheet from "@components/EMRPreviewSheet";
+import { Button } from "@components/ui/button";
 
 const VitalSigns = dynamic(() => import('./VitalSigns'), { ssr: false, loading: () => <div>Loading...</div> });
 const Conversation = dynamic(() => import('./Conversation'), { ssr: false, loading: () => <div>Loading...</div> });
@@ -135,22 +137,40 @@ interface PatientHpDetailsProps {
   user: GetUser
 }
 export const PatientHpDetails = ({ creators = [], user }: PatientHpDetailsProps) => {
+  const patientId = user.userId
+  const patientName = `${user.firstName} ${user.middleName} ${user.lastName} ${user.suffix ?? ""}`
   return (
     <div className="flex flex-wrap gap-2 justify-between">
       <Card className="grow">
         <CardHeader>
           <CardTitle className="">Patient Details</CardTitle>
         </CardHeader>
-        <CardContent className="flex gap-2 items-center">
-          <Avatar>
-            <Image className="object-cover" width={80} height={80} src={user.picture ?? ""} alt={user.nickname ?? ""}/>
-            <AvatarFallback>{user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}</AvatarFallback>
-          </Avatar>
-          <div className="flex flex-col">
-            <span className="text-sm font-semibold">{user.firstName} {user.lastName}</span>
-            <div className="text-xs text-muted-foreground">
-              <Badge>{user.gender?.toLocaleLowerCase()}</Badge> / <span>{user.dob && differenceInCalendarYears(new Date(), user.dob)}</span>
+        <CardContent className="flex gap-2 items-center justify-between">
+          <div className="flex gap-2 items-center">
+            <Avatar>
+              <Image className="object-cover" width={80} height={80} src={user.picture ?? ""} alt={user.nickname ?? ""}/>
+              <AvatarFallback>{user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}</AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col">
+              <span className="text-sm font-semibold">{user.firstName} {user.lastName}</span>
+              <div className="text-xs text-muted-foreground">
+                <Badge>{user.gender?.toLocaleLowerCase()}</Badge> / <span>{user.dob && differenceInCalendarYears(new Date(), user.dob)}</span>
+              </div>
             </div>
+          </div>
+          <div>
+            <Tooltip>
+              <EMRPreviewSheet record={{ id: patientId, subject:patientName }}>
+                <TooltipTrigger asChild>
+                  <Button size="icon" variant="link">
+                    <Clipboard className="w-6 h-6"/>
+                  </Button>
+                </TooltipTrigger>
+              </EMRPreviewSheet>
+              <TooltipContent> 
+                EMR Preview
+              </TooltipContent>
+            </Tooltip>
           </div>
         </CardContent>
       </Card>

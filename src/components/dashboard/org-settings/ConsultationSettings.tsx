@@ -3,14 +3,16 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@components/ui/form";
-import { Input } from "@components/ui/input";
 import ActionButton from "@components/ActionButton";
 import { Checkbox } from "@components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@components/ui/card";
 import { Separator } from "@components/ui/separator";
-import { Label } from "@components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@components/ui/select";
 import Each from "@components/utils/Each";
+import { upsertOrgSettingsAction } from "@actions/organizations/org-setting.action";
+import { useOrgSetting } from "@hooks/useOrgSetting";
+import { useParams } from "next/navigation";
+import { toast } from "sonner";
 
 type ConsultationSettingsForm = z.infer<typeof consultationSettingsForm>
 const consultationSettingsForm = z.object({
@@ -21,16 +23,32 @@ const consultationSettingsForm = z.object({
 })
 
 export const ConsultationSettings = () => {
+  const params = useParams<{organization: string}>()
+  const {data: orgSetting, mutate} = useOrgSetting(params.organization)
   const form = useForm<ConsultationSettingsForm>({
     resolver: zodResolver(consultationSettingsForm),
-    defaultValues: {
-      
+    values: {
+      enableConsultation: orgSetting?.data?.enableConsultation ?? false,
+      noteTemplateId: orgSetting?.data?.Organization.OrgConsultationConfig?.NoteTemplateId ?? 0,
     }
   })
 
   const action = async () => {
     form.handleSubmit(async (data) => {
-      console.log(data)
+      const orgSettingId = orgSetting?.data?.id ?? 0
+      toast.promise(upsertOrgSettingsAction(orgSettingId, {
+        orgUid: params.organization,
+        enableConsultation: data.enableConsultation,
+      }), {
+        loading: "Saving changes...",
+        success: res => {
+          if(res.status) {
+            mutate(res)
+          }
+          return res.message;
+        },
+        error: "Failed to save changes"
+      })
     })();
   }
   
@@ -39,7 +57,7 @@ export const ConsultationSettings = () => {
       <CardHeader>
         <CardTitle>Consultations</CardTitle>
         <CardDescription>
-            Consultations related settings for your organization.
+          Consultations related settings for your organization.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -89,9 +107,18 @@ export const ConsultationSettings = () => {
                         </FormControl>
                         <SelectContent>
                           <Each
-                            of={["SOAPIE", "SOAP", "PIE", "SOAPR"]}
-                            render={(value) => (
-                              <SelectItem value={value}>{value}</SelectItem>
+                            of={[
+                              {
+                                id: 1,
+                                name: "SOAPIE Note"
+                              },
+                              {
+                                id: 2,
+                                name: "SOAP Note"
+                              }
+                            ]}
+                            render={(note) => (
+                              <SelectItem value={note.id.toString()}>{note.name}</SelectItem>
                             )}
                           />
                         </SelectContent>

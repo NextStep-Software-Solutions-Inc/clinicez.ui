@@ -1,3 +1,4 @@
+"use client";
 
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -9,30 +10,62 @@ import { Checkbox } from "@components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@components/ui/card";
 import { Separator } from "@components/ui/separator";
 import { Label } from "@components/ui/label";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+import { useOrgSetting } from "@hooks/useOrgSetting";
+import { useParams } from "next/navigation";
+import { toast } from "sonner";
+import { upsertOrgSettingsAction } from "@actions/organizations/org-setting.action";
+dayjs.extend(relativeTime);
 
 type AppointmentSettingsForm = z.infer<typeof generalSettingsForm>
 const generalSettingsForm = z.object({
   enableAppointment: z.boolean().default(true),
-  maxAppointmentsPerClient: z.number(),
-  lastPerClientIntervalReset: z.date(),
-  perClientResetInterval: z.number(),
-  
-  maxAppointmentsPerDay: z.number(),
-  lastPerDayIntervalReset: z.date(),
-  perDayResetInterval: z.number(),
+  maxAppointmentsPerClient: z.number({
+    coerce: true
+  }).min(0),
+  perClientResetInterval: z.number({
+    coerce: true
+  }).min(0),
+  maxAppointmentsPerDay: z.number({
+    coerce: true
+  }).min(0),
+  perDayResetInterval: z.number({
+    coerce: true
+  }).min(0),
 })
 
 export const AppointmentSettings = () => {
+  const params = useParams<{organization: string}>()
+  const {data: orgSetting, mutate} = useOrgSetting(params.organization)
   const form = useForm<AppointmentSettingsForm>({
     resolver: zodResolver(generalSettingsForm),
-    defaultValues: {
-      
+    mode:"onChange",
+    values: {
+      enableAppointment: orgSetting?.data?.enableAppointment ?? false,
+      maxAppointmentsPerClient: orgSetting?.data?.Organization.OrgAppointmentConfig?.maxAppointmentsPerClient ?? 0,
+      perClientResetInterval: orgSetting?.data?.Organization.OrgAppointmentConfig?.perClientResetInterval ?? 0,
+      maxAppointmentsPerDay: orgSetting?.data?.Organization.OrgAppointmentConfig?.maxAppointmentsPerDay ?? 0,
+      perDayResetInterval: orgSetting?.data?.Organization.OrgAppointmentConfig?.perDayResetInterval ?? 0,
     }
   })
 
   const action = async () => {
     form.handleSubmit(async (data) => {
-      console.log(data)
+      const orgSettingId = orgSetting?.data?.id ?? 0
+      toast.promise(upsertOrgSettingsAction(orgSettingId, {
+        orgUid: params.organization,
+        enableAppointment: data.enableAppointment,
+      }), {
+        loading: "Saving changes...",
+        success: res => {
+          if(res.status) {
+            mutate(res)
+          }
+          return res.message;
+        },
+        error: "Failed to save changes"
+      })
     })();
   }
   
@@ -133,8 +166,10 @@ export const AppointmentSettings = () => {
                       </FormItem>
                     )}
                   />
+                </div>
+                <div>
                   <Label>
-                    Last reset: {form.watch("lastPerClientIntervalReset")?.toDateString()}
+                    Last reset: {orgSetting?.data?.Organization.OrgAppointmentConfig?.lastPerClientIntervalReses && dayjs(orgSetting.data.Organization.OrgAppointmentConfig.lastPerClientIntervalReses).fromNow()}
                   </Label>
                 </div>
               </>

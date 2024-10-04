@@ -8,13 +8,13 @@ export const GET = withJwtAuth(async (req: NextRequest, { params }: {
     organizationId: string;
   }
 }) => {
-  const organizationId = params.organizationId;
+  const orgUid = params.organizationId;
   const searchParams = req.nextUrl.searchParams
   const showArchived = searchParams.get('showArchived')
   const userId = String(searchParams.get('userId'))
 
   const consultations = await getConsultationTicketsAction({
-    orgUid: organizationId,
+    orgUid,
     filters: {
       showArchived: showArchived === 'true',
       userId: userId

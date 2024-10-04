@@ -8,16 +8,27 @@ import ActionButton from "@components/ActionButton";
 import { Checkbox } from "@components/ui/checkbox";
 import { Textarea } from "@components/ui/textarea";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@components/ui/card";
+import { Separator } from "@components/ui/separator";
+import { useOrganization } from "@hooks/useOrg";
+import { useParams } from "next/navigation";
+import { updateOrganizationAction } from "@actions/organizations/organization.action";
+import { toast } from "sonner";
 
 type GeneralSettingsForm = z.infer<typeof generalSettingsForm>
 const generalSettingsForm = z.object({
-  orgUid: z.string().readonly(),
-  name: z.string(),
-  description: z.string().optional(),
-  picture: z.string(),
-  cover: z.string().optional(),
-  customUrl: z.string().optional(),
-  email: z.string().email(),
+  orgUid: z.string({
+    required_error: "Organization unique ID is required"
+  }).trim().readonly(),
+  name: z.string({
+    required_error: "Organization name is required"
+  }).trim().readonly(),
+  description: z.string().trim().optional(),
+  picture: z.string().trim().url(),
+  cover: z.string().trim().url().optional(),
+  customUrl: z.string().trim().optional(),
+  email: z.string({
+    required_error: "Organization email is required"
+  }).email(),
 
   isPublic: z.boolean().default(true),
   sendEmailNotification: z.boolean().default(true),
@@ -25,17 +36,32 @@ const generalSettingsForm = z.object({
 })
 
 export const GeneralSettings = () => {
+  const params = useParams<{organization: string}>()
+  const {data: organization} = useOrganization(params.organization)
   const form = useForm<GeneralSettingsForm>({
     resolver: zodResolver(generalSettingsForm),
-    defaultValues: {
-      orgUid: "",
-      name: ""
+    values: {
+      orgUid: organization?.orgId ?? "",
+      name: organization?.name ?? "",
+      description: organization?.description ?? undefined,
+      picture: organization?.picture ?? "",
+      cover: organization?.cover ?? undefined,
+      customUrl: organization?.customUrl ?? undefined,
+      email: organization?.email ?? "",
+      isPublic: organization?.OrganizationSetting?.isPublic ?? false,
+      sendEmailNotification: organization?.OrganizationSetting?.sendEmailNotification ?? false,
+      emailToOrgOnly: organization?.OrganizationSetting?.emailToOrgOnly ?? false,
     }
   })
 
   const action = async () => {
     form.handleSubmit(async (data) => {
-      console.log(data)
+      toast.promise(updateOrganizationAction(params.organization, data), {
+        loading: "Saving changes...",
+        success: "Changes saved successfully",
+        error: "An error occurred while saving changes",
+        position: "top-center"
+      })
     })();
   }
   
@@ -44,25 +70,24 @@ export const GeneralSettings = () => {
       <CardHeader>
         <CardTitle>General</CardTitle>
         <CardDescription>
-                General settings for your organization.
+          General settings for your organization.
         </CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
           <form action={action} className="w-full space-y-6">
-            <div className="flex flex-wrap gap-2 items-center">
+            <div className="flex flex-wrap gap-2 items-baseline">
               <FormField
                 control={form.control}
                 name="orgUid"
-                disabled
                 render={({ field }) => (
                   <FormItem className="grow">
                     <FormLabel>Unique ID</FormLabel>
                     <FormControl>
-                      <Input readOnly {...field} />
+                      <Input disabled readOnly {...field} />
                     </FormControl>
                     <FormDescription>
-                The unique identifier for your organization.
+                      The unique identifier for your organization.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -70,6 +95,9 @@ export const GeneralSettings = () => {
               />
               <FormField
                 control={form.control}
+                rules={{
+                  required: "Organization name is required"
+                }}
                 name="name"
                 render={({ field }) => (
                   <FormItem className="grow">
@@ -78,7 +106,7 @@ export const GeneralSettings = () => {
                       <Input {...field} />
                     </FormControl>
                     <FormDescription>
-                The unique identifier for your organization.
+                      The unique identifier for your organization.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -123,18 +151,18 @@ export const GeneralSettings = () => {
                 </FormItem>
               )}
             />
-            <div className="flex flex-wrap gap-2 items-center">
+            <div className="flex flex-wrap gap-2 items-baseline">
               <FormField
                 control={form.control}
                 name="picture"
                 render={({ field }) => (
                   <FormItem className="grow">
-                    <FormLabel>Organization Logo</FormLabel>
+                    <FormLabel>Organization Logo URL</FormLabel>
                     <FormControl>
-                      <Input type="file" {...field} />
+                      <Input {...field} />
                     </FormControl>
                     <FormDescription>
-                The logo for your organization.
+                      The logo for your organization.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -145,12 +173,12 @@ export const GeneralSettings = () => {
                 name="cover"
                 render={({ field }) => (
                   <FormItem className="grow">
-                    <FormLabel>Organization Cover Photo</FormLabel>
+                    <FormLabel>Organization Cover Photo URL</FormLabel>
                     <FormControl>
-                      <Input type="file" {...field} />
+                      <Input {...field} />
                     </FormControl>
                     <FormDescription>
-                The logo for your organization.
+                      The logo for your organization.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -167,12 +195,13 @@ export const GeneralSettings = () => {
                     <Input type="email" {...field} />
                   </FormControl>
                   <FormDescription>
-                The email address for your organization.
+                    The email address for your organization.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
+            <Separator/>
             <FormField
               control={form.control}
               name="sendEmailNotification"

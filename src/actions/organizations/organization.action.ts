@@ -48,12 +48,16 @@ export const getOrganizationsAction = cache(async (filters?: FiltersType) => {
   return organizations;
 });
 
+export type GetOrganization = Awaited<ReturnType<typeof getOrganizationAction>>
 export const getOrganizationAction = cache(async (orgId: string) => {
 
   const organization = await prisma.organization.findUnique({
     where: {
       isActive: true,
       orgId
+    },
+    include: {
+      OrganizationSetting: true,
     }
   });
   return organization;
@@ -102,4 +106,49 @@ export const setMyDefaultOrganizationAction = async (id: number, orgId: string, 
     }
   })
   return org;
+}
+
+type UpdateOrganizationArgs = {
+  name: string;
+  description?: string;
+  picture: string;
+  cover?: string;
+  customUrl?: string;
+  email: string;
+  isPublic: boolean;
+  sendEmailNotification: boolean;
+  emailToOrgOnly: boolean;
+}
+export const updateOrganizationAction = async (orgId: string, data: UpdateOrganizationArgs) => {
+  const organization = await prisma.organization.update({
+    where: { orgId, isActive: true },
+    data: {
+      name: data.name,
+      description: data.description,
+      picture: data.picture,
+      cover: data.cover,
+      customUrl: data.customUrl,
+      email: data.email,
+      OrganizationSetting: {
+        upsert: {
+          where:{
+            Organization: {
+              orgId
+            }
+          },
+          create: {
+            isPublic: data.isPublic,
+            sendEmailNotification: data.sendEmailNotification,
+            emailToOrgOnly: data.emailToOrgOnly
+          },
+          update: {
+            isPublic: data.isPublic,
+            sendEmailNotification: data.sendEmailNotification,
+            emailToOrgOnly: data.emailToOrgOnly
+          }
+        }
+      }
+    }
+  });
+  return organization;
 }

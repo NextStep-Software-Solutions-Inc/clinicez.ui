@@ -1,4 +1,4 @@
-import { GetOrganizations } from "@actions/organizations/organization.action"
+import { GetOrganization, GetOrganizations } from "@actions/organizations/organization.action"
 import { self } from "@services/request"
 import useSWR from "swr"
 
@@ -10,4 +10,9 @@ export const useOrgs = (userId?: string | null) => {
     searchParams.append("userId", userId) 
   }
   return useSWR(`/api/organizations?${searchParams.toString()}`, fetcher)
+}
+
+export const useOrganization = (orgId: string) => {
+  const fetcher = (args:string) => self.get<GetOrganization>(args)
+  return useSWR(`/api/organizations/${orgId}`, fetcher)
 }

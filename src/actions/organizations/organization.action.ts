@@ -120,35 +120,51 @@ type UpdateOrganizationArgs = {
   emailToOrgOnly: boolean;
 }
 export const updateOrganizationAction = async (orgId: string, data: UpdateOrganizationArgs) => {
-  const organization = await prisma.organization.update({
-    where: { orgId, isActive: true },
-    data: {
-      name: data.name,
-      description: data.description,
-      picture: data.picture,
-      cover: data.cover,
-      customUrl: data.customUrl,
-      email: data.email,
-      OrganizationSetting: {
-        upsert: {
-          where:{
-            Organization: {
-              orgId
+  try {
+    const organization = await prisma.organization.update({
+      where: { orgId, isActive: true },
+      data: {
+        name: data.name,
+        description: data.description,
+        picture: data.picture,
+        cover: data.cover,
+        customUrl: data.customUrl,
+        email: data.email,
+        OrganizationSetting: {
+          upsert: {
+            where:{
+              Organization: {
+                orgId
+              }
+            },
+            create: {
+              isPublic: data.isPublic,
+              sendEmailNotification: data.sendEmailNotification,
+              emailToOrgOnly: data.emailToOrgOnly
+            },
+            update: {
+              isPublic: data.isPublic,
+              sendEmailNotification: data.sendEmailNotification,
+              emailToOrgOnly: data.emailToOrgOnly
             }
-          },
-          create: {
-            isPublic: data.isPublic,
-            sendEmailNotification: data.sendEmailNotification,
-            emailToOrgOnly: data.emailToOrgOnly
-          },
-          update: {
-            isPublic: data.isPublic,
-            sendEmailNotification: data.sendEmailNotification,
-            emailToOrgOnly: data.emailToOrgOnly
           }
         }
+      },
+      include: {
+        OrganizationSetting: true,
       }
+    });
+    return {
+      status: true,
+      message: "Organization updated successfully",
+      data: organization
+    };
+  } catch (error) {
+    console.error("Error updating organization", error);
+    return {
+      status: false,
+      message: "Error updating organization",
+      data: null
     }
-  });
-  return organization;
+  }
 }

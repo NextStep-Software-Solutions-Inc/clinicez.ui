@@ -13,6 +13,11 @@ import { useOrganization } from "@hooks/useOrg";
 import { useParams } from "next/navigation";
 import { updateOrganizationAction } from "@actions/organizations/organization.action";
 import { toast } from "sonner";
+import PageLoading from "@components/PageLoading";
+import { Badge } from "@components/ui/badge";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+dayjs.extend(relativeTime);
 
 type GeneralSettingsForm = z.infer<typeof generalSettingsForm>
 const generalSettingsForm = z.object({
@@ -37,7 +42,7 @@ const generalSettingsForm = z.object({
 
 export const GeneralSettings = () => {
   const params = useParams<{organization: string}>()
-  const {data: organization} = useOrganization(params.organization)
+  const {data: organization, isLoading, mutate} = useOrganization(params.organization)
   const form = useForm<GeneralSettingsForm>({
     resolver: zodResolver(generalSettingsForm),
     values: {
@@ -58,13 +63,19 @@ export const GeneralSettings = () => {
     form.handleSubmit(async (data) => {
       toast.promise(updateOrganizationAction(params.organization, data), {
         loading: "Saving changes...",
-        success: "Changes saved successfully",
+        success: (res) => {
+          if(res.status){
+            mutate(res.data)
+          }
+          return res.message;
+        },
         error: "An error occurred while saving changes",
         position: "top-center"
       })
     })();
   }
   
+  if(isLoading) return <PageLoading label="Page loading, Please wait a moment..."/>
   return (
     <Card>
       <CardHeader>
@@ -250,7 +261,16 @@ export const GeneralSettings = () => {
           </form>
         </Form>
       </CardContent>
-      <CardFooter></CardFooter>
+      <CardFooter>
+        {
+          organization?.updatedAt && 
+          (
+            <Badge variant="secondary">
+              Updated last {dayjs(organization.updatedAt).fromNow()}
+            </Badge>
+          )
+        }
+      </CardFooter>
     </Card>
   )
 }

@@ -1,9 +1,11 @@
 import "@styles/globals.css";
 import Link from "next/link"
 import {
+  LifeBuoy,
   PanelLeft,
   Search,
-  Settings
+  Settings,
+  UserRound
 } from "lucide-react"
 
 import { Button } from "@components/ui/button"
@@ -56,7 +58,31 @@ export default async function ProcessLayout({children, params:{organization}}: P
             <Tooltip>
               <TooltipTrigger asChild>
                 <Link
-                  href="/dashboard/settings"
+                  href="profile"
+                  className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
+                >
+                  <LifeBuoy className="h-5 w-5" />
+                  <span className="sr-only">Support</span>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="right">Support</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link
+                  href="user-org-profile"
+                  className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
+                >
+                  <UserRound className="h-5 w-5" />
+                  <span className="sr-only">User Organization Profile</span>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="right">User Organization Profile</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link
+                  href="org-settings"
                   className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
                 >
                   <Settings className="h-5 w-5" />

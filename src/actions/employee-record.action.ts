@@ -4,7 +4,6 @@ import prisma from "@lib/prisma-common";
 import { Prisma } from "@prisma/common/client";
 import { PrismaClientKnownRequestError } from "@prisma/common/client/runtime/library";
 
-
 export type CreateUserEmploymentRecord = {
   employeeId: string;
   position: string
@@ -107,4 +106,14 @@ export const upsertEmploymentRecordAction = async (payload:CreateUserEmploymentR
     }
     return response;
   }
+}
+
+export const getEmploymentRecordAction = async (userId: number, orgId: number) => {
+  const employmentRecord = await prisma.userEmploymentRecord.findFirst({
+    where: {
+      userId,
+      organizationId: orgId
+    }
+  });
+  return employmentRecord;
 }

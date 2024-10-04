@@ -131,7 +131,8 @@ export const useAppointmentTools = ({ appointment, revalidate}:UseAppointmentToo
           onRescheduled={revalidate}
         />
       )
-    }, {
+    },
+    {
       action:"add-vitals",
       permissions: ["write:org:vitals"],
       appointmentStatuses: ["received", "routed"],

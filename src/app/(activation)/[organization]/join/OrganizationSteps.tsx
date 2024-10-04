@@ -4,23 +4,11 @@ import AdditionalInformationStep from "./AdditionalInformationStep";
 import OrganizationApplication from "./OrganizationApplication";
 import SelectOrgRoleStep from "./SelectOrgRoleStep";
 import ConfirmationAndReviewStep from "./ConfirmationAndReviewStep";
-import { EmployeeRecordType } from "./EmployeeRecordForm";
-import { StudentRecordType } from "./StudentRecordForm";
-
 interface OrganizationStepsProps {
   orgId: string;
   userId: string;
 }
 
-export type OrganizationApplicationData = Partial<{
-  orgId: string
-  roleId: number
-  userId: string
-  roleRequirements: string[]
-  employee_record: EmployeeRecordType
-  student_record: StudentRecordType
-  complete: boolean
-}>
 export default async function OrganizationSteps ({orgId, userId}:OrganizationStepsProps){
   return (
     <OrganizationApplication currentStep={1}>

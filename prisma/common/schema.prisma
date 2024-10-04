@@ -141,7 +141,7 @@ model OrgAppointmentConfig {
   id                         Int          @id @default(autoincrement())
   orgId                      Int          @unique
   maxAppointmentsPerClient   Int          @default(0)
-  lastPerClientIntervalReses DateTime?    @db.Date
+  lastPerClientIntervalReset DateTime?    @db.Date
   perClientResetInterval     Int          @default(0)
   maxAppointmentsPerDay      Int          @default(0)
   lastPerDayIntervalReset    DateTime?    @db.Date
@@ -152,8 +152,8 @@ model OrgAppointmentConfig {
 model OrgConsultationConfig {
   id             Int          @id @default(autoincrement())
   orgId          Int          @unique
-  NoteTemplateId Int
-  NoteTemplate   NoteTemplate @relation(fields: [NoteTemplateId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  noteTemplateId Int
+  NoteTemplate   NoteTemplate @relation(fields: [noteTemplateId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   Organization   Organization @relation(fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 

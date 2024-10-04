@@ -1,3 +1,5 @@
+"use client";
+
 import ActionButton from "@components/ActionButton";
 import { Checkbox } from "@components/ui/checkbox";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@components/ui/form";
@@ -6,11 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import ConditionalRender from "@components/utils/ConditionalRender";
 import Each from "@components/utils/Each";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useLocalStorage } from "@hooks/useLocalStorage";
 import React from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { OrganizationApplicationData } from "./OrganizationSteps";
 import { useAtom } from "jotai";
 import { additionalInfoValidAtom } from "./AdditionalInformationStep";
 import { useOrgColleges } from "@hooks/useOrgCollege";
@@ -19,6 +19,7 @@ import { useOrgOffices } from "@hooks/useOrgOffice";
 import { toast } from "sonner";
 import { upsertEmploymentRecordAction } from "@actions/employee-record.action";
 import { useUser } from "@hooks/useUser";
+import { joinOrgApplicationAtom } from "@state/join-org-application";
 
 const employeeRecordSchema = z.object({
   employeeId: z.string({
@@ -48,7 +49,7 @@ export type EmployeeRecordType = z.infer<typeof employeeRecordSchema>;
 
 export default function EmployeeRecordForm({orgId} : {orgId: string}) {
   const [additionalInfoValid, setAdditionalInfoValid] = useAtom(additionalInfoValidAtom)
-  const [orgApplication, setOrgApplication] = useLocalStorage<OrganizationApplicationData>(`${orgId}_application`)
+  const [orgApplication, setOrgApplication] = useAtom(joinOrgApplicationAtom)
   const {data: orgColleges} = useOrgColleges(orgId)
   const {data: orgDepartments} = useOrgDepartments(orgId)
   const {data: orgOffices} = useOrgOffices(orgId)
@@ -81,7 +82,7 @@ export default function EmployeeRecordForm({orgId} : {orgId: string}) {
             employee_record: true
           }))
           form.reset(values)
-          await setOrgApplication({
+          setOrgApplication({
             employee_record: values
           })
           return res.message

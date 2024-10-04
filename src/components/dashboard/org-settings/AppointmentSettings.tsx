@@ -1,0 +1,149 @@
+
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@components/ui/form";
+import { Input } from "@components/ui/input";
+import ActionButton from "@components/ActionButton";
+import { Checkbox } from "@components/ui/checkbox";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@components/ui/card";
+import { Separator } from "@components/ui/separator";
+import { Label } from "@components/ui/label";
+
+type AppointmentSettingsForm = z.infer<typeof generalSettingsForm>
+const generalSettingsForm = z.object({
+  enableAppointment: z.boolean().default(true),
+  maxAppointmentsPerClient: z.number(),
+  lastPerClientIntervalReset: z.date(),
+  perClientResetInterval: z.number(),
+  
+  maxAppointmentsPerDay: z.number(),
+  lastPerDayIntervalReset: z.date(),
+  perDayResetInterval: z.number(),
+})
+
+export const AppointmentSettings = () => {
+  const form = useForm<AppointmentSettingsForm>({
+    resolver: zodResolver(generalSettingsForm),
+    defaultValues: {
+      
+    }
+  })
+
+  const action = async () => {
+    form.handleSubmit(async (data) => {
+      console.log(data)
+    })();
+  }
+  
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Appointments</CardTitle>
+        <CardDescription>
+            Appointment related settings for your organization.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form action={action} className="w-full space-y-6">
+            <FormField
+              control={form.control}
+              name="enableAppointment"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel>
+                    Enable Appointments management feature
+                    </FormLabel>
+                    <FormDescription>
+                    Enable or disable the appointment management feature for your organization.
+                    </FormDescription>
+                  </div>
+                </FormItem>
+              )}
+            />
+            
+            {
+              form.watch("enableAppointment") &&
+            (
+              <>
+                <Separator/>
+                <FormField
+                  control={form.control}
+                  name="maxAppointmentsPerDay"
+                  render={({ field }) => (
+                    <FormItem className="grow">
+                      <FormLabel>
+                          Appointments quota per day
+                      </FormLabel>
+                      <FormControl>
+                        <Input type="number" inputMode="numeric" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        The maximum number of appointments that can be made per day.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <Separator/>
+                  
+                <div className="flex flex-wrap gap-2 items-center">
+                  <FormField
+                    control={form.control}
+                    name="maxAppointmentsPerClient"
+                    render={({ field }) => (
+                      <FormItem className="grow">
+                        <FormLabel>
+                          Appointments quota per client
+                        </FormLabel>
+                        <FormControl>
+                          <Input type="number" inputMode="numeric" {...field} />
+                        </FormControl>
+                        <FormDescription>
+                          The maximum number of appointments that can be made per client.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="perClientResetInterval"
+                    render={({ field }) => (
+                      <FormItem className="grow">
+                        <FormLabel>
+                          How many day after the last reset
+                        </FormLabel>
+                        <FormControl>
+                          <Input type="number" inputMode="numeric" {...field} />
+                        </FormControl>
+                        <FormDescription>
+                          The number of days after the last reset before the per client interval will be reset.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Label>
+                    Last reset: {form.watch("lastPerClientIntervalReset")?.toDateString()}
+                  </Label>
+                </div>
+              </>
+            )}
+            <ActionButton type="submit">Save Changes</ActionButton>
+          </form>
+        </Form>
+      </CardContent>
+      <CardFooter></CardFooter>
+    </Card>
+  )
+}

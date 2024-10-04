@@ -1,14 +1,13 @@
 "use client";
 
 import BackSubmitAndNext from "@components/SubmitAndNext";
-import { useLocalStorage } from "@hooks/useLocalStorage";
 import React from "react";
 import EmployeeRecordForm from "./EmployeeRecordForm";
 import ConditionalRender from "@components/utils/ConditionalRender";
-import { OrganizationApplicationData } from "./OrganizationSteps";
 import StudentRecordForm from "./StudentRecordForm";
 import { atom, useAtomValue } from "jotai";
 import Each from "@components/utils/Each";
+import { joinOrgApplicationAtom } from "@state/join-org-application";
 
 interface OrganizationStepProps {
   orgId: string;
@@ -26,7 +25,7 @@ export const additionalInfoValidAtom = atom({
 export default function AdditionalInformationStep({ orgId, isLastStep, isFirstStep, nextStep, prevStep }: OrganizationStepProps) {
 
   const additionalInfoValidValue = useAtomValue(additionalInfoValidAtom)
-  const [orgApplication] = useLocalStorage<OrganizationApplicationData>(`${orgId}_application`);
+  const orgApplication = useAtomValue(joinOrgApplicationAtom)
   const requirements = orgApplication.roleRequirements ?? [];
   const isValid = requirements.every(requirement => additionalInfoValidValue[requirement as keyof typeof additionalInfoValidValue])
 

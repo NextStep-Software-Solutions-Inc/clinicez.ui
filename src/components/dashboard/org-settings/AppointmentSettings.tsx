@@ -12,11 +12,11 @@ import { Separator } from "@components/ui/separator";
 import { Label } from "@components/ui/label";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
+dayjs.extend(relativeTime);
 import { useOrgSetting } from "@hooks/useOrgSetting";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
 import { upsertOrgSettingsAction } from "@actions/organizations/org-setting.action";
-dayjs.extend(relativeTime);
 
 type AppointmentSettingsForm = z.infer<typeof generalSettingsForm>
 const generalSettingsForm = z.object({
@@ -169,7 +169,7 @@ export const AppointmentSettings = () => {
                 </div>
                 <div>
                   <Label>
-                    Last reset: {orgSetting?.data?.Organization.OrgAppointmentConfig?.lastPerClientIntervalReses && dayjs(orgSetting.data.Organization.OrgAppointmentConfig.lastPerClientIntervalReses).fromNow()}
+                    Last reset: {orgSetting?.data?.Organization.OrgAppointmentConfig?.lastPerClientIntervalReset && dayjs(orgSetting.data.Organization.OrgAppointmentConfig.lastPerClientIntervalReses).fromNow()}
                   </Label>
                 </div>
               </>

@@ -29,7 +29,7 @@ export const ConsultationSettings = () => {
     resolver: zodResolver(consultationSettingsForm),
     values: {
       enableConsultation: orgSetting?.data?.enableConsultation ?? false,
-      noteTemplateId: orgSetting?.data?.Organization.OrgConsultationConfig?.NoteTemplateId ?? 0,
+      noteTemplateId: orgSetting?.data?.Organization.OrgConsultationConfig?.noteTemplateId ?? 0,
     }
   })
 

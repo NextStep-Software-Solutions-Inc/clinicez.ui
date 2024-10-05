@@ -169,7 +169,7 @@ export const AppointmentSettings = () => {
                 </div>
                 <div>
                   <Label>
-                    Last reset: {orgSetting?.data?.Organization.OrgAppointmentConfig?.lastPerClientIntervalReset && dayjs(orgSetting.data.Organization.OrgAppointmentConfig.lastPerClientIntervalReses).fromNow()}
+                    Last reset: {orgSetting?.data?.Organization.OrgAppointmentConfig?.lastPerClientIntervalReset && dayjs(orgSetting.data.Organization.OrgAppointmentConfig.lastPerClientIntervalReset).fromNow()}
                   </Label>
                 </div>
               </>

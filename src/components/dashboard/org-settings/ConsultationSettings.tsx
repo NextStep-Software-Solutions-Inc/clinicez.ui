@@ -13,6 +13,7 @@ import { upsertOrgSettingsAction } from "@actions/organizations/org-setting.acti
 import { useOrgSetting } from "@hooks/useOrgSetting";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
+import PageLoading from "@components/PageLoading";
 
 type ConsultationSettingsForm = z.infer<typeof consultationSettingsForm>
 const consultationSettingsForm = z.object({
@@ -24,7 +25,7 @@ const consultationSettingsForm = z.object({
 
 export const ConsultationSettings = () => {
   const params = useParams<{organization: string}>()
-  const {data: orgSetting, mutate} = useOrgSetting(params.organization)
+  const {data: orgSetting, mutate, isLoading} = useOrgSetting(params.organization)
   const form = useForm<ConsultationSettingsForm>({
     resolver: zodResolver(consultationSettingsForm),
     values: {
@@ -52,6 +53,7 @@ export const ConsultationSettings = () => {
     })();
   }
   
+  if(isLoading) return <PageLoading label="Page loading, Please wait a moment..."/>
   return (
     <Card>
       <CardHeader>

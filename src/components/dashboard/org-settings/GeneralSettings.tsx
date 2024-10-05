@@ -38,6 +38,8 @@ const generalSettingsForm = z.object({
   isPublic: z.boolean().default(true),
   sendEmailNotification: z.boolean().default(true),
   emailToOrgOnly: z.boolean().default(true),
+  enableAppointment: z.boolean().default(true),
+  enableConsultation: z.boolean().default(true),
 })
 
 export const GeneralSettings = () => {
@@ -56,6 +58,8 @@ export const GeneralSettings = () => {
       isPublic: organization?.OrganizationSetting?.isPublic ?? false,
       sendEmailNotification: organization?.OrganizationSetting?.sendEmailNotification ?? false,
       emailToOrgOnly: organization?.OrganizationSetting?.emailToOrgOnly ?? false,
+      enableAppointment: organization?.OrganizationSetting?.enableAppointment ?? false,
+      enableConsultation: organization?.OrganizationSetting?.enableConsultation ?? false,
     }
   })
 
@@ -252,6 +256,50 @@ export const GeneralSettings = () => {
                     </FormLabel>
                     <FormDescription>
                     Only send email notifications to organization official email address.
+                    </FormDescription>
+                  </div>
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="enableAppointment"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel>
+                    Enable Appointments management feature
+                    </FormLabel>
+                    <FormDescription>
+                    Enable or disable the appointment management feature for your organization.
+                    </FormDescription>
+                  </div>
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="enableConsultation"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel>
+                    Enable Consultation management feature
+                    </FormLabel>
+                    <FormDescription>
+                      Enable or disable the consultation management feature for your organization.
                     </FormDescription>
                   </div>
                 </FormItem>

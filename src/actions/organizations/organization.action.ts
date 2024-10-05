@@ -118,6 +118,8 @@ type UpdateOrganizationArgs = {
   isPublic: boolean;
   sendEmailNotification: boolean;
   emailToOrgOnly: boolean;
+  enableAppointment: boolean;
+  enableConsultation: boolean;
 }
 export const updateOrganizationAction = async (orgId: string, data: UpdateOrganizationArgs) => {
   try {
@@ -140,12 +142,16 @@ export const updateOrganizationAction = async (orgId: string, data: UpdateOrgani
             create: {
               isPublic: data.isPublic,
               sendEmailNotification: data.sendEmailNotification,
-              emailToOrgOnly: data.emailToOrgOnly
+              emailToOrgOnly: data.emailToOrgOnly,
+              enableAppointment: data.enableAppointment,
+              enableConsultation: data.enableConsultation,
             },
             update: {
               isPublic: data.isPublic,
               sendEmailNotification: data.sendEmailNotification,
-              emailToOrgOnly: data.emailToOrgOnly
+              emailToOrgOnly: data.emailToOrgOnly,
+              enableAppointment: data.enableAppointment,
+              enableConsultation: data.enableConsultation,
             }
           }
         }

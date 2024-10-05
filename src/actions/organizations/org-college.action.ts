@@ -2,7 +2,6 @@
 
 import prisma from "@lib/prisma-common";
 
-
 export type GetOrgColleges = Awaited<ReturnType<typeof getOrgCollegesAction>>
 export const getOrgCollegesAction = async (orgId: string) => {
   const orgCollege = await prisma.organizationCollege.findMany({

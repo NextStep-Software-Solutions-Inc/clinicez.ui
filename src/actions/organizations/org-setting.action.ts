@@ -43,25 +43,30 @@ type UpsertOrganizationSetting = {
   enableConsultation?: boolean;
   orgUid: string;
 }
-export const upsertOrgSettingsAction = async (orgSettingId: number, { enableAppointment, enableConsultation, orgUid }: UpsertOrganizationSetting) => {
+export const updateOrgSettingsAction = async (orgSettingId: number, { enableAppointment, enableConsultation, orgUid }: UpsertOrganizationSetting) => {
   try {
-    const orgSetting = await prismaCommon.organizationSetting.upsert({
+    const orgSetting = await prismaCommon.organizationSetting.update({
       where: { 
         id: orgSettingId
       },
-      create: {
+      data: {
         Organization: {
-          connect: {
-            orgId: orgUid
-          }
-        },
-        enableAppointment,
-        enableConsultation,
-      },
-      update: {
-        Organization: {
-          connect: {
-            orgId: orgUid
+          update: {
+            OrgAppointmentConfig: {
+              upsert: {
+                where: {
+                  Organization: {
+                    orgId: orgUid
+                  }
+                },
+                create: {
+
+                },
+                update: {
+                  
+                }
+              }
+            }
           }
         },
         enableAppointment,

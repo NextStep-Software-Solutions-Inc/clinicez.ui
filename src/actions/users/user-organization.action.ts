@@ -23,6 +23,7 @@ export type GetUserOrgFilterType = {
 export type GetUserOrganizations = Awaited<ReturnType<typeof getUserOrganizationsAction>>
 export const getUserOrganizationsAction = cache(async (filter?: GetUserOrgFilterType) => {
   const { userId, orgId, status, roleId, pageNumber, pageSize, distinct } = filter || {};
+  
   const paginatedData = await prisma.$transaction(async (prisma) => {
     const userOrganizations =await prisma.userOrganization.findMany({
       ... pageSize? { take: pageSize }: {},
@@ -63,7 +64,7 @@ export const getUserOrganizationsAction = cache(async (filter?: GetUserOrgFilter
               where: {
                 isActive: true,
                 Organization: {
-                  orgId: orgId ?? ""
+                  ...orgId? {orgId}: {}
                 }
               },
               select: {
@@ -100,7 +101,7 @@ export const getUserOrganizationsAction = cache(async (filter?: GetUserOrgFilter
               where: {
                 isActive: true,
                 Organization: {
-                  orgId: orgId ?? ""
+                  ...orgId? {orgId}: {}
                 }
               },
               select: {
@@ -201,6 +202,7 @@ export const getUserOrganizationsAction = cache(async (filter?: GetUserOrgFilter
         },
       }
     })
+    
     const total = await prisma.userOrganization.count({
       where: {
         ...roleId && { roleId },

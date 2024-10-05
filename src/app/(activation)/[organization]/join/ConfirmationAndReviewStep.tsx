@@ -2,18 +2,18 @@
 
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useLocalStorage } from "@hooks/useLocalStorage";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import BackSubmitAndNext from "@components/SubmitAndNext";
 import { Checkbox } from "@components/ui/checkbox";
 import Link from "next/link";
 import ConditionalRender from "@components/utils/ConditionalRender";
-import { OrganizationApplicationData } from "./OrganizationSteps";
 import { toast } from "sonner";
 import { useSound } from "use-sound";
 import { joinOrganizationAction, JoinOrganizationPayload } from "@actions/organizations/join-organization.action";
 import { revalidatePath } from "@actions/cache.action";
+import { useAtom } from "jotai";
+import { joinOrgApplicationAtom } from "@state/join-org-application";
 
 interface ConfirmationAndReviewStepProps {
   orgId: string
@@ -39,7 +39,7 @@ export const confirmationFormSchema = z.object({
 })
 
 export default function ConfirmationAndReviewStep({ orgId, isComplete, isFirstStep, isLastStep, nextStep, prevStep, startOver, setComplete }:ConfirmationAndReviewStepProps) {
-  const [orgApplication, setOrgApplication] = useLocalStorage<OrganizationApplicationData>(`${orgId}_application`);
+  const [orgApplication, setOrgApplication] = useAtom(joinOrgApplicationAtom);
   const [playSuccess] = useSound("/audio/success-1.mp3", {
     interrupt: true,
   });
@@ -52,8 +52,7 @@ export default function ConfirmationAndReviewStep({ orgId, isComplete, isFirstSt
   })
 
   const reset = async () => {
-    localStorage.removeItem(`${orgId}_application`)
-    await setOrgApplication({})
+    setOrgApplication({})
     startOver?.();
   }
 
@@ -78,11 +77,10 @@ export default function ConfirmationAndReviewStep({ orgId, isComplete, isFirstSt
             playError()
             return res.message
           }
+          setOrgApplication(pres => ({...pres,  complete: true}))
           revalidatePath(`/[organization]/join`, "page")
-          await setOrgApplication({ complete: true})
           setComplete?.(true);
           playSuccess()
-          localStorage.removeItem(`${orgId}_application`)
           return res.message
         },
         error: (error) => {

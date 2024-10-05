@@ -82,9 +82,10 @@ export default function EmployeeRecordForm({orgId} : {orgId: string}) {
             employee_record: true
           }))
           form.reset(values)
-          setOrgApplication({
+          setOrgApplication(prev => ({
+            ...prev,
             employee_record: values
-          })
+          }))
           return res.message
         },
         error: (error) => `An error occurred: Error ${error}`

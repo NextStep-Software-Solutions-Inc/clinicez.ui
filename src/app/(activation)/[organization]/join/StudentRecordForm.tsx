@@ -6,11 +6,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import ConditionalRender from "@components/utils/ConditionalRender";
 import Each from "@components/utils/Each";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useLocalStorage } from "@hooks/useLocalStorage";
 import React from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { OrganizationApplicationData } from "./OrganizationSteps";
 import { useAtom } from "jotai";
 import { additionalInfoValidAtom } from "./AdditionalInformationStep";
 import { useOrgYearLevels } from "@hooks/useOrgYearLevel";
@@ -21,6 +19,7 @@ import { useOrgDepartments } from "@hooks/useOrgDepartment";
 import { toast } from "sonner";
 import { upsertStudentRecordAction } from "@actions/student-record.action";
 import { useUser } from "@hooks/useUser";
+import { joinOrgApplicationAtom } from "@state/join-org-application";
 
 
 const employeeRecordSchema = z.object({
@@ -51,7 +50,7 @@ export type StudentRecordType = z.infer<typeof employeeRecordSchema>;
 export default function StudentRecordForm({orgId} : {orgId: string}) {
 
   const [additionalInfoValid, setAdditionalInfoValid] = useAtom(additionalInfoValidAtom)
-  const [orgApplication, setOrgApplication] = useLocalStorage<OrganizationApplicationData>(`${orgId}_application`)
+  const [orgApplication, setOrgApplication] = useAtom(joinOrgApplicationAtom)
   const {data: orgYearLevels} = useOrgYearLevels(orgId)
   const {data: studentLevels} = useStudentLevels()
   const {data: orgPrograms} = useOrgPrograms(orgId)
@@ -86,9 +85,10 @@ export default function StudentRecordForm({orgId} : {orgId: string}) {
             ...prev,
             student_record: true
           }))
-          await setOrgApplication({
+          setOrgApplication(prev => ({
+            ...prev,
             student_record: values
-          })
+          }))
           return res.message
         },
         error: (error) => `An error occurred: Error ${error}`

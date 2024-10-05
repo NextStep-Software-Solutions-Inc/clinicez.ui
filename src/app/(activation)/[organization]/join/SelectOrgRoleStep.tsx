@@ -1,7 +1,8 @@
 import { getOrganizationRolesAction } from "@actions/organizations/organization-role.action";
 import { getUserOrganizationsAction } from "@actions/users/user-organization.action";
 import { SelectOrgForm } from "./SelectOrgFom";
-interface SelectOrgRoleStepProps {
+import HydrateAtoms from "@components/utils/HydrateAtoms";
+  interface SelectOrgRoleStepProps {
   orgId: string;
   userId: string;
   isFirstStep?: boolean;
@@ -16,6 +17,14 @@ export default async function SelectOrgRoleStep ({ orgId, userId, isFirstStep, i
   const existingRoles = myOrgs.data.map(org => org.role);
 
   return (
-    <SelectOrgForm userId={userId} orgId={orgId} orgRoles={orgRoles} existingRoles={existingRoles} isFirstStep={isFirstStep} isLastStep={isLastStep} nextStep={nextStep} />
+    <SelectOrgForm 
+      userId={userId} 
+      orgId={orgId} 
+      orgRoles={orgRoles} 
+      existingRoles={existingRoles} 
+      isFirstStep={isFirstStep}
+      isLastStep={isLastStep}
+      nextStep={nextStep}
+    />
   );
 };

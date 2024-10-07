@@ -8,8 +8,7 @@ import { getAppointmentTabsAction } from '@actions/appointment-tab.action';
 
 export const GET = withJwtAuth(async (req: NextRequest) => {
   const searchParams = req.nextUrl.searchParams
-  const orgUid = searchParams.get('orgUid') ?? undefined;
-  const appointmentTabs = await getAppointmentTabsAction(orgUid);
+  const appointmentTabs = await getAppointmentTabsAction();
 
   return NextResponse.json(appointmentTabs,  {status: 200});
 });

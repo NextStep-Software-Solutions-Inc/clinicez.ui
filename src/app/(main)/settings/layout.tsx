@@ -41,7 +41,7 @@ export default function SettingsLayout({ children, params: {organization} }: Set
     <>
       <div className="container space-y-6 p-5 md:p-10 pb-16">
         <div className="space-y-0.5">
-          <h2 className="text-2xl font-bold tracking-tight">Settings</h2>
+          <h2 className="text-2xl font-bold tracking-tight">Account Settings</h2>
           <p className="text-muted-foreground">
             Manage your account and settings.
           </p>

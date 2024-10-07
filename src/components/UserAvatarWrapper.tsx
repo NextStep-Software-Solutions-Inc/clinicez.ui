@@ -31,7 +31,7 @@ export default async function UserAvatarWrapper() {
           <a href="/settings">
             <DropdownMenuItem>
               <Settings className="mr-2 h-4 w-4" />
-              Settings
+              Account Settings
               {/* <DropdownMenuShortcut>⌘S</DropdownMenuShortcut> */}
             </DropdownMenuItem>
           </a>

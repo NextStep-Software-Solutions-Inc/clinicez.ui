@@ -9,7 +9,7 @@ import {
 } from "@components/ui/tabs"
 import Each from "@components/utils/Each";
 import { GeneralSettings } from "./org-settings/GeneralSettings";
-import { AppointmentSettings } from "./org-settings/AppointmentSettings";
+import { AppointmentSettings, AppointmentTabsConfig } from "./org-settings/AppointmentSettings";
 import { ConsultationSettings } from "./org-settings/ConsultationSettings";
 import { OrganizationRolesSetting } from "./org-settings/OrgRolesSetting";
 import { OrgPermissionsSetting } from "./org-settings/OrgPermissionsSetting";
@@ -41,8 +41,11 @@ export default function OrgSettings() {
         <TabsContent value="membership">
           <OrgMembershipSettings/>
         </TabsContent>
-        <TabsContent value="appointments">
-          <AppointmentSettings/>
+        <TabsContent value="appointments" asChild>
+          <div className="space-y-2">
+            <AppointmentSettings/>
+            <AppointmentTabsConfig/>
+          </div>
         </TabsContent>
         <TabsContent value="consultations">
           <ConsultationSettings/>

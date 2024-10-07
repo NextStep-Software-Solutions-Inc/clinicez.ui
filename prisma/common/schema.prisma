@@ -124,6 +124,7 @@ model Organization {
   OrgUserPermissions           OrgUserPermission[]
   OrgAppointmentTabs           OrgAppointmentTab[]
   OrgConsultationConfig        OrgConsultationConfig?
+  OrgRoleInitialPermissions    OrgRoleInitialPermission[]
 }
 
 model OrganizationSetting {
@@ -237,15 +238,16 @@ model UserPermission {
 }
 
 model Permission {
-  id                 Int                 @id @default(autoincrement())
-  name               String              @unique
-  description        String?
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
-  deletedAt          DateTime?
-  isActive           Boolean             @default(true)
-  OrgUserPermissions OrgUserPermission[]
-  UserPermissions    UserPermission[]
+  id                        Int                        @id @default(autoincrement())
+  name                      String                     @unique
+  description               String?
+  createdAt                 DateTime                   @default(now())
+  updatedAt                 DateTime                   @updatedAt
+  deletedAt                 DateTime?
+  isActive                  Boolean                    @default(true)
+  OrgUserPermissions        OrgUserPermission[]
+  UserPermissions           UserPermission[]
+  OrgRoleInitialPermissions OrgRoleInitialPermission[]
 }
 
 model UserOrganization {
@@ -280,6 +282,18 @@ model UserOrganizationRole {
   OrgRoleAppointmentTabs       OrgRoleAppointmentTab[]
 
   @@unique([orgId, name], name: "unique_organization_role")
+}
+
+model OrgRoleInitialPermission {
+  id           Int          @id @default(autoincrement())
+  orgRoleId    Int
+  permissionId Int
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  Organization Organization @relation(fields: [orgRoleId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Permission   Permission   @relation(fields: [permissionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([orgRoleId, permissionId], name: "unique_org_role_permission")
 }
 
 model Plan {

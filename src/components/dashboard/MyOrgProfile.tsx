@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useMemo } from "react";
 import {
   Tabs,
   TabsContent,
@@ -13,14 +13,33 @@ import ConditionalRender from "@components/utils/ConditionalRender";
 import EmployeeRecordForm from "../../app/(activation)/[organization]/join/EmployeeRecordForm";
 import StudentRecordForm from "../../app/(activation)/[organization]/join/StudentRecordForm";
 import { useParams } from "next/navigation";
+import { useOrgRoles } from "@hooks/useOrgRole";
+import { useUser } from "@auth0/nextjs-auth0/client";
 
-const orgRequirements = ["student_record", "employee_record"]
 export default function MyOrgProfile() {
+  const [defaultTab, setDefaultTab] = React.useState<string>("")
+  const { user } = useUser();
   const params = useParams<{organization: string}>();
+  const {data: myOrgRoles} = useOrgRoles(params.organization, {
+    userId: user?.sub
+  })
+
+  const orgRequirements = useMemo(() => [...new Set(myOrgRoles?.flatMap((role) => role.requirements))], [myOrgRoles]);
+  
+  const handleChangeTab = (value: string) => {
+    setDefaultTab(value)
+  }
+
+  useEffect(() => {
+    if(orgRequirements.length){
+      setDefaultTab(orgRequirements[0])
+    }
+  }, [orgRequirements])
+  
   return (
     <div className="container mx-auto space-y-5">
       <h5 className="text-lg font-bold">Organization Membership Requirements</h5>
-      <Tabs defaultValue={orgRequirements[0]} className="w-full">
+      <Tabs value={defaultTab} onValueChange={handleChangeTab} className="w-full">
         <TabsList className="flex gap-1 justify-start">
           <Each
             of={orgRequirements}
@@ -45,7 +64,7 @@ export default function MyOrgProfile() {
                     <CardHeader>
                       <CardTitle>{name}</CardTitle>
                       <CardDescription>
-                        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer nec odio. Praesent libero. Sed cursus ante dapibus diam. Sed nisi.
+                        Newly submitted records will be reviewed by the organization admin.
                       </CardDescription>
                     </CardHeader>
                     <CardContent>

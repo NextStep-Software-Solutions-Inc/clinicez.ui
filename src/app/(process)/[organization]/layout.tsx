@@ -62,10 +62,10 @@ export default async function ProcessLayout({children, params:{organization}}: P
                   className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
                 >
                   <LifeBuoy className="h-5 w-5" />
-                  <span className="sr-only">Support</span>
+                  <span className="sr-only">Organization Support</span>
                 </Link>
               </TooltipTrigger>
-              <TooltipContent side="right">Support</TooltipContent>
+              <TooltipContent side="right">Organization Support</TooltipContent>
             </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -86,10 +86,10 @@ export default async function ProcessLayout({children, params:{organization}}: P
                   className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
                 >
                   <Settings className="h-5 w-5" />
-                  <span className="sr-only">Settings</span>
+                  <span className="sr-only">Organization Settings</span>
                 </Link>
               </TooltipTrigger>
-              <TooltipContent side="right">Settings</TooltipContent>
+              <TooltipContent side="right">Organization Settings</TooltipContent>
             </Tooltip>
           </nav>
         </aside>

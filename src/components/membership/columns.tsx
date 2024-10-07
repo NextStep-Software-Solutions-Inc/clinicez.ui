@@ -187,9 +187,9 @@ export const columns: ColumnDef<GetUserOrganizations["data"][number]>[] = [
       if (!status) {
         return null
       }
-      const PendingBadge = <Badge variant="secondary" className="bg-blue-500 text-white">{status.label}</Badge>
+      const PendingBadge = <Badge variant="secondary" className="bg-blue-500 text-white hover:text-blue-500">{status.label}</Badge>
       const SuspendedBadge = <Badge variant="destructive">{status.label}</Badge>
-      const ActiveBadge = <Badge variant="secondary" className="bg-green-500 text-white">{status.label}</Badge>
+      const ActiveBadge = <Badge variant="secondary" className="bg-green-500 text-white hover:text-green-500">{status.label}</Badge>
       return (
         <div className="flex items-center">
           {!["ACTIVE", "SUSPENDED", "PENDING"].includes(status.value) && status.label}

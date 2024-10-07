@@ -50,10 +50,10 @@ export const GeneralSettings = () => {
     values: {
       orgUid: organization?.orgId ?? "",
       name: organization?.name ?? "",
-      description: organization?.description ?? undefined,
+      description: organization?.description ?? "",
       picture: organization?.picture ?? "",
-      cover: organization?.cover ?? undefined,
-      customUrl: organization?.customUrl ?? undefined,
+      cover: organization?.cover ?? "",
+      customUrl: organization?.customUrl ?? "",
       email: organization?.email ?? "",
       isPublic: organization?.OrganizationSetting?.isPublic ?? false,
       sendEmailNotification: organization?.OrganizationSetting?.sendEmailNotification ?? false,

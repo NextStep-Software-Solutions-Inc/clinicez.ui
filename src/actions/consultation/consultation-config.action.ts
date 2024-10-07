@@ -1,9 +1,12 @@
 "use server";
 
 import "server-only";
+import prismaCommon from "@lib/prisma-common";
 
 export type GetOrgConsultationConfig = Awaited<ReturnType<typeof getOrgConsultationConfigAction>>
 export const getOrgConsultationConfigAction = async (orgUid: string) => {
+  console.log({orgUid});
+  
   const orgConsultationConfig = await prismaCommon.orgConsultationConfig.findFirst({
     where: {
       Organization: {
@@ -11,6 +14,7 @@ export const getOrgConsultationConfigAction = async (orgUid: string) => {
       }
     },
   });
+  console.log({orgConsultationConfig});
   return orgConsultationConfig;
 }
 

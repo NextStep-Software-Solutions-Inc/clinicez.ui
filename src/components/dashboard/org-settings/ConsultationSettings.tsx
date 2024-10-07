@@ -23,7 +23,7 @@ const consultationSettingsForm = z.object({
   }),
 })
 
-export const ConsultationSettings = () => {
+export default function ConsultationSettings() {
   const params = useParams<{organization: string}>()
   const {data: orgConsultationConfig, mutate, isLoading} = useOrgConsultationConfig(params.organization)
   const {data: noteTemplates, isLoading: loadingTemplates} = useNoteTemplates()

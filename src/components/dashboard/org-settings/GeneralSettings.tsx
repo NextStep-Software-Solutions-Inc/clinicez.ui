@@ -42,7 +42,7 @@ const generalSettingsForm = z.object({
   enableConsultation: z.boolean().default(true),
 })
 
-export const GeneralSettings = () => {
+export default function GeneralSettings() {
   const params = useParams<{organization: string}>()
   const {data: organization, isLoading, mutate} = useOrganization(params.organization)
   const form = useForm<GeneralSettingsForm>({
@@ -70,6 +70,7 @@ export const GeneralSettings = () => {
         success: (res) => {
           if(res.status){
             mutate(res.data)
+            form.reset(data)
           }
           return res.message;
         },
@@ -261,6 +262,9 @@ export const GeneralSettings = () => {
                 </FormItem>
               )}
             />
+            
+            <Separator/>
+
             <FormField
               control={form.control}
               name="enableAppointment"
@@ -305,7 +309,10 @@ export const GeneralSettings = () => {
                 </FormItem>
               )}
             />
-            <ActionButton type="submit">Save Changes</ActionButton>
+            {
+              form.formState.isDirty &&
+              <ActionButton type="submit">Save Changes</ActionButton>
+            }
           </form>
         </Form>
       </CardContent>

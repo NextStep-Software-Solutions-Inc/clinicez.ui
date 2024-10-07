@@ -8,12 +8,13 @@ import {
   TabsTrigger,
 } from "@components/ui/tabs"
 import Each from "@components/utils/Each";
-import { GeneralSettings } from "./org-settings/GeneralSettings";
-import { AppointmentSettings, AppointmentTabsConfig } from "./org-settings/AppointmentSettings";
-import { ConsultationSettings } from "./org-settings/ConsultationSettings";
-import { OrganizationRolesSetting } from "./org-settings/OrgRolesSetting";
-import { OrgPermissionsSetting } from "./org-settings/OrgPermissionsSetting";
-import { OrgMembershipSettings } from "./org-settings/OrgMembershipSettings";
+import GeneralSettings from "./org-settings/GeneralSettings";
+import ConsultationSettings from "./org-settings/ConsultationSettings";
+import OrganizationRolesSetting from "./org-settings/OrgRolesSetting";
+import OrgPermissionsSetting from "./org-settings/OrgPermissionsSetting";
+import OrgMembershipSettings from "./org-settings/OrgMembershipSettings";
+import AppointmentSettings from "./org-settings/AppointmentSettings";
+import AppointmentTabsConfig from "./org-settings/AppointmentTabsConfig";
 
 const tabs = ["general", "membership", "appointments", "consultations", "roles", "permissions"]
 export default function OrgSettings() {
@@ -42,7 +43,7 @@ export default function OrgSettings() {
           <OrgMembershipSettings/>
         </TabsContent>
         <TabsContent value="appointments" asChild>
-          <div className="space-y-2">
+          <div className="space-y-5">
             <AppointmentSettings/>
             <AppointmentTabsConfig/>
           </div>

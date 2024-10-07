@@ -3,7 +3,7 @@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@components/ui/card";
 import UnderConstruction from "@components/UnderConstruction";
 
-export const OrgPermissionsSetting = () => {
+export default function OrgPermissionsSetting() {
   
   return (
     <Card>

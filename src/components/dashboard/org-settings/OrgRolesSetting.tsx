@@ -9,7 +9,7 @@ import { OrgRoleCard } from "./OrgRoleCard";
 import AddRoleModal from "./modal/AddRoleModal";
 
 
-export const OrganizationRolesSetting = () => {
+export default function OrganizationRolesSetting(){
   const params = useParams<{organization: string}>();
   const {data: orgRoles, isLoading: loadingOrgRoles, mutate} = useOrgRoles(params.organization);
   

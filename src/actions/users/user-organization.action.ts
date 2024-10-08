@@ -337,29 +337,67 @@ export const setMembershipRequestStatusAction = async (id: number, status: UserO
 
 export const deleteMembershipAction = async (id: number) => {
   try {
-    const userOrganization = await prismaCommon.userOrganization.delete({
-      where: { id  },
-      select: {
-        status: true,
-        Organization: {
-          select:{
-            name: true
-          }
-        },
-        User: {
-          select: {
-            firstName: true,
-            lastName: true,
-            email: true
+    await prismaCommon.$transaction(async (prisma) => {
+      const userOrganization = await prismaCommon.userOrganization.delete({
+        where: { id  },
+        select: {
+          UserRole: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          status: true,
+          Organization: {
+            select:{
+              id: true,
+              name: true
+            }
+          },
+          User: {
+            select: {
+              id: true,
+              userId: true,
+              firstName: true,
+              lastName: true,
+              email: true
+            }
           }
         }
-      }
-    })
+      })
+      const permissions = await prisma.orgRoleInitialPermission.findMany({
+        where: {
+          orgRoleId: userOrganization.UserRole.id,
+          orgId: userOrganization.Organization.id
+        },
+        select: {
+          Permission: {
+            select: {
+              id: true,
+              name: true,
+              description: true
+            }
+          }
+        }
+      })
+      await prisma.orgUserPermission.deleteMany({
+        where: {
+          orgId: userOrganization.Organization.id,
+          userId: userOrganization.User.id,
+          Permission: {
+            id: {
+              in: permissions.map((item) => item.Permission.id)
+            }
+          }
+        }
+      })
 
-    await sendMembershipDeletionEmailNotification({
-      name: `${userOrganization.User.firstName} ${userOrganization.User.lastName}`,
-      email: userOrganization.User.email,
-      organization: userOrganization.Organization.name,
+      await sendMembershipDeletionEmailNotification({
+        name: `${userOrganization.User.firstName} ${userOrganization.User.lastName}`,
+        email: userOrganization.User.email,
+        organization: userOrganization.Organization.name,
+        role: userOrganization.UserRole.name
+      })
     })
 
     return {
@@ -380,6 +418,7 @@ type RecipientType = {
   email: string
   name: string,
   status?: UserOrganizationStatus
+  role?: string
 }
 const sendMembershipUpdateEmailNotification = async ({name, email, organization, status}:RecipientType) => {
   try {
@@ -401,15 +440,15 @@ const sendMembershipUpdateEmailNotification = async ({name, email, organization,
   }
 }
 
-const sendMembershipDeletionEmailNotification = async ({name, email, organization}:RecipientType) => {
+const sendMembershipDeletionEmailNotification = async ({name, email, organization, role}:RecipientType) => {
   try {
     const filePath = path.join(process.cwd(), "email-templates/org-membership-deleted.html");
     const emailTemplate = await fs.readFile(filePath, "utf-8");
     const appName = process.env.NEXT_PUBLIC_APP_NAME!;
-    const html = emailTemplate.replaceAll("@{userName}", name).replaceAll("@{orgName}", organization).replaceAll("@{appName}", appName)
+    const html = emailTemplate.replaceAll("@{userName}", name).replaceAll("@{orgName}", organization).replaceAll("@{appName}", appName).replaceAll("@{roleName}", role ?? "")
 
     await sendMail({
-      subject: `Your membership request to ${organization} was dropped.`,
+      subject: `Your membership to ${organization} was dropped.`,
       to: email,
       text: html,
       html

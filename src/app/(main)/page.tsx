@@ -1,7 +1,6 @@
 import { Metadata } from "next";
 import { getCachedSession } from "@actions/session.action";
 import FeatureItems, { HeroImage, HeroTitle } from "@components/FeatureItems";
-import Image from "next/image";
 
 export const metadata: Metadata = {
   title: "Home | Clinic EZ ",

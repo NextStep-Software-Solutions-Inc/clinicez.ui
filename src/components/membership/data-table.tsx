@@ -48,7 +48,7 @@ export function DataTable<TData extends GetUserOrganizations["data"][number], TV
   columns,
   data,
   onPaginationChange,
-  rowCount
+  rowCount,
 }: DataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = React.useState({})
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})

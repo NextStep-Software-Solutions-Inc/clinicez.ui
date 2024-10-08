@@ -4,11 +4,11 @@ import "server-only";
 import fs from "fs/promises";
 import { sendMail } from "@actions/email.action";
 import { getCachedSession } from "@actions/session.action";
-import prisma from "@lib/prisma-common";
-import { isOrgAdmin } from "@lib/protect-org";
+import prismaCommon from "@lib/prisma-common";
 import { UserOrganizationStatus, Prisma } from "@prisma/common/client";
 import path from "path";
 import { cache } from "react";
+import { getPermissionsAction } from "@actions/permission.action";
 
 export type GetUserOrgFilterType = {
     userId?: string | null;
@@ -24,7 +24,7 @@ export type GetUserOrganizations = Awaited<ReturnType<typeof getUserOrganization
 export const getUserOrganizationsAction = cache(async (filter?: GetUserOrgFilterType) => {
   const { userId, orgId, status, roleId, pageNumber, pageSize, distinct } = filter || {};
   
-  const paginatedData = await prisma.$transaction(async (prisma) => {
+  const paginatedData = await prismaCommon.$transaction(async (prisma) => {
     const userOrganizations =await prisma.userOrganization.findMany({
       ... pageSize? { take: pageSize }: {},
       ... distinct? { distinct: ["organizationId"]}: {},
@@ -233,70 +233,190 @@ export const getUserOrganizationsAction = cache(async (filter?: GetUserOrgFilter
   return paginatedData;
 })
 
-
-
 export const setMembershipRequestStatusAction = async (id: number, status: UserOrganizationStatus) => {
-  const [session, orgAdmin] = await Promise.all([
-    getCachedSession(),
-    isOrgAdmin()
-  ]);
-  const userId = session?.user.sub;
-  if(!userId) throw new Error("No session found");
-  if(!orgAdmin) throw new Error("Unauthorized");
+  const session = await getCachedSession();
+  if(!session) {
+    return {
+      status: false,
+      message: "No session found"
+    }
+  }
+  const userId = session.user.sub as string;
+  const updateMembershipPermissions = ["update:org:membership-request"];
+  const myPermissions = await getPermissionsAction(userId);
+  const myPermissionArray = myPermissions.map((item) => item.name);
+  const hasMembershipPermission = updateMembershipPermissions.every((item) => myPermissionArray.includes(item));
   
-  const request = await prisma.userOrganization.update({
-    where: { id },
-    data: {
-      status,
-      ...status === "ACTIVE" && {
-        AcceptedBy: {
-          connect: {
-            userId
+  if(!hasMembershipPermission) {
+    return {
+      status: false,
+      message: "You do not have permission to update membership request status"
+    }
+  }
+  try {
+    await prismaCommon.$transaction(async (prisma) => {
+      const userOrganization = await prisma.userOrganization.update({
+        where: { id },
+        data: {
+          status,
+          ...status === "ACTIVE" && {
+            AcceptedBy: {
+              connect: {
+                userId
+              }
+            },
+          }
+        }, 
+        include: {
+          UserRole: {
+            select: {
+              id: true,
+            }
+          },
+          Organization: {
+            select: {
+              name: true
+            }
+          },
+          User: {
+            select: {
+              firstName: true,
+              lastName: true,
+              email: true
+            }
+          }
+        }
+      })
+      if (status === "ACTIVE") {
+        const permissions = await prisma.orgRoleInitialPermission.findMany({
+          where: {
+            orgRoleId: userOrganization.role,
+          },
+          select: {
+            Permission: {
+              select: {
+                id: true,
+                name: true,
+                description: true
+              }
+            }
+          }
+        })
+    
+        await prisma.orgUserPermission.createMany({
+          skipDuplicates: true,
+          data: permissions.map((item) => {
+            return {
+              permissionId: item.Permission.id,
+              orgId: userOrganization.organizationId,
+              userId: userOrganization.userId
+            }
+          })
+        })
+      }
+
+      await sendMembershipUpdateEmailNotification({
+        name: `${userOrganization.User.firstName} ${userOrganization.User.lastName}`,
+        email: userOrganization.User.email,
+        organization: userOrganization.Organization.name,
+        status: userOrganization.status
+      })
+    })
+    return {
+      status: true,
+      message: `Membership request status updated to ${status}`,
+    }
+  } catch (error) {
+    console.error(`Error updating membership request status: ${error}`);
+    return {
+      status: false,
+      message: "Error updating membership request status"
+    }
+  }
+}
+
+export const deleteMembershipAction = async (id: number) => {
+  try {
+    const userOrganization = await prismaCommon.userOrganization.delete({
+      where: { id  },
+      select: {
+        status: true,
+        Organization: {
+          select:{
+            name: true
+          }
+        },
+        User: {
+          select: {
+            firstName: true,
+            lastName: true,
+            email: true
           }
         }
       }
-    }, 
-    include: {
-      Organization: {
-        select: {
-          name: true
-        }
-      },
-      User: {
-        select: {
-          firstName: true,
-          lastName: true,
-          email: true
-        }
-      }
+    })
+
+    await sendMembershipDeletionEmailNotification({
+      name: `${userOrganization.User.firstName} ${userOrganization.User.lastName}`,
+      email: userOrganization.User.email,
+      organization: userOrganization.Organization.name,
+    })
+
+    return {
+      status: true,
+      message: "Membership request deleted successfully"
     }
-  })
-  if(!request) throw new Error("Error updating membership request status");
-  
-  const filePath = path.join(process.cwd(), "email-templates/org-membership-update.html");
-    
-  const emailTemplate = await fs.readFile(filePath, "utf-8");
-  const userName = `${request.User.firstName} ${request.User.lastName}`;
-  const appName = process.env.NEXT_PUBLIC_APP_NAME!;
-  const html = emailTemplate.replace("@{userName}", userName).replace("@{status}", status).replace("@{appName}", appName)
-  const receiver = request.User.email;
-    
+  } catch (error) {
+    console.error(`Error deleting membership request: ${error}`);
+    return {
+      status: false,
+      message: "Error deleting membership request"
+    }
+  }
+}
+
+type RecipientType = {
+  organization: string
+  email: string
+  name: string,
+  status?: UserOrganizationStatus
+}
+const sendMembershipUpdateEmailNotification = async ({name, email, organization, status}:RecipientType) => {
   try {
+    const filePath = path.join(process.cwd(), "email-templates/org-membership-update.html");
+    const emailTemplate = await fs.readFile(filePath, "utf-8");
+    const appName = process.env.NEXT_PUBLIC_APP_NAME!;
+    const html = emailTemplate.replaceAll("@{userName}", name).replaceAll("@{status}", status ?? "").replaceAll("@{appName}", appName)
+
     await sendMail({
-      subject: `Membership Request to ${request.Organization.name} Status Update`,
-      to: receiver,
+      subject: `Membership request to ${organization} status was changed - ${status?.toUpperCase()}`,
+      to: email,
       text: html,
       html
     })
+    return true;
   } catch (error) {
-    console.error(error);
+    console.error(`Error sending email notification: ${error}`);
+    return false;
   }
-  return request;
 }
-  
 
-export const deleteMembershipAction = async (id: number) => {
-  await prisma.userOrganization.delete({
-    where: { id  }
-  })
+const sendMembershipDeletionEmailNotification = async ({name, email, organization}:RecipientType) => {
+  try {
+    const filePath = path.join(process.cwd(), "email-templates/org-membership-deleted.html");
+    const emailTemplate = await fs.readFile(filePath, "utf-8");
+    const appName = process.env.NEXT_PUBLIC_APP_NAME!;
+    const html = emailTemplate.replaceAll("@{userName}", name).replaceAll("@{orgName}", organization).replaceAll("@{appName}", appName)
+
+    await sendMail({
+      subject: `Your membership request to ${organization} was dropped.`,
+      to: email,
+      text: html,
+      html
+    })
+    return true;
+  } catch (error) {
+    console.error(`Error sending email notification: ${error}`);
+    return false;
+  }
 }

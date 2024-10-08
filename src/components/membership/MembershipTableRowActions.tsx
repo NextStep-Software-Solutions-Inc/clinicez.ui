@@ -16,25 +16,34 @@ import { useDropdownMenu } from "@components/DropdownMenuProvider"
 import { toast } from "sonner"
 import { UserOrganizationStatus } from "@prisma/common/client"
 import Each from "@components/utils/Each"
-import { Trash } from "lucide-react"
 import { GetUserOrganizations, setMembershipRequestStatusAction } from "@actions/users/user-organization.action"
 import { revalidatePath } from "@actions/cache.action"
 import ConfirmDeleteMembership from "./ConfirmDeleteMembership"
-interface DataTableRowActionsProps<TData> {
+import { mutate } from "swr"
+interface MembershipTableRowActionsProps<TData> {
   applicationRequest: GetUserOrganizations["data"][number]
 }
 
-export function DataTableRowActions<TData>({
+export default function MembershipTableRowActions<TData>({
   applicationRequest,
-}: DataTableRowActionsProps<TData>) {
+}: MembershipTableRowActionsProps<TData>) {
   const { dropdownOpen, setDropdownOpen, hasOpenDialog, dropdownTriggerRef } = useDropdownMenu()!;
+
+  const revalidateMembershipTable = async () => {
+    revalidatePath(`/[organization]/membership`, "page")
+    mutate((key) =>  typeof key === 'string' && key.startsWith(`/api/user-organizations`), undefined, {
+      revalidate:true
+    })
+  }
 
   const setStatus = async (status: UserOrganizationStatus) => {
     toast.promise(setMembershipRequestStatusAction(applicationRequest.id, status), {
       loading: "Updating status...",
-      success: () => {
-        revalidatePath(`/[organization]/membership`, "page")
-        return `Status set to ${status} successfully!`
+      success: (res) => {
+        if(res.status) {
+          revalidateMembershipTable()
+        }
+        return res.message
       },
       error: "Failed to update status",
       position: "top-center",
@@ -50,7 +59,7 @@ export function DataTableRowActions<TData>({
   ];
   const onConfirmDelete = () =>{
     setDropdownOpen(false)
-    revalidatePath(`/[organization]/membership`, "page")
+    revalidateMembershipTable()
   }
   return (
     <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>

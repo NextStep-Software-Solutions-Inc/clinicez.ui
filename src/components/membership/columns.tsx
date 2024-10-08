@@ -6,11 +6,6 @@ import { Badge } from "@components/ui/badge"
 
 import { $Enums } from "@prisma/common/client"
 
-export const statuses = Object.values($Enums.UserOrganizationStatus).map((status) => ({
-  label: status.split("").map((char, index) => (index === 0 ? char : char.toLowerCase())).join(""),
-  value: status,
-}))
-
 import Link from "next/link"
 import { DropdownMenuProvider } from "@components/DropdownMenuProvider"
 import { differenceInCalendarYears } from "date-fns"
@@ -22,8 +17,13 @@ import { GetUserOrganizations } from "@actions/users/user-organization.action"
 import dayjs from "dayjs"
 import utc from "dayjs/plugin/utc"
 import { DataTableColumnHeader } from "./data-table-column-header"
-import { DataTableRowActions } from "./data-table-row-actions"
+import MembershipTableRowActions from "./MembershipTableRowActions"
 dayjs.extend(utc)
+
+export const statuses = Object.values($Enums.UserOrganizationStatus).map((status) => ({
+  label: status.split("").map((char, index) => (index === 0 ? char : char.toLowerCase())).join(""),
+  value: status,
+}))
 
 export const columns: ColumnDef<GetUserOrganizations["data"][number]>[] = [
   {
@@ -207,7 +207,7 @@ export const columns: ColumnDef<GetUserOrganizations["data"][number]>[] = [
       return (
         (
           <DropdownMenuProvider>
-            <DataTableRowActions applicationRequest={row.original} />
+            <MembershipTableRowActions applicationRequest={row.original} />
           </DropdownMenuProvider>
         )
       )

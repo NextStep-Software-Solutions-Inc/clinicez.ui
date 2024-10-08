@@ -10,32 +10,36 @@ import ConditionalRender from "./utils/ConditionalRender";
 import { ArrowRightCircle, Rocket } from "lucide-react";
 import Image from "next/image";
 import heroImage from "@public/assets/hero-img-1.png";
+import { cn } from "@lib/utils";
 
 const topFeature = [
   {
-    name: "⏰ Appointment Booking",
+    name: "Appointment Booking",
     description: "Book appointments from anywhere, anytime. It's that easy!",
     content: "Skip the wait, see your doctor anytime. Book appointments 24/7 with Clinic EZ.",
+    image: "/assets/booking.svg",
     action: {
       label: "Schedule Appointment ➡️",
       path: "/contact-us"
     }
   },
   {
-    name: "⚙️ Dynamic Workflow",
+    name: "Dynamic Workflow",
     description: "Tailor your clinic, your way.",
     content: "Perfect matches for patients & providers. Build trust, customize workflows, streamline care.",
+    image: "/assets/user_flow.svg",
     action: {
       label: "Learn More About Customization ✏️",
       path: "/contact-us"
     }
   },
   {
-    name: "🤩 Showcase Your Expertise",
+    name: "Showcase Your Expertise",
     description: "Build your profile and connect with patients.",
     content: "Matching patients with the perfect fit. Build your trusted profile & connect with patients seeking your expertise.",
+    image: "/assets/personal_information.svg",
     action: {
-      label: "Join Clinic EZ ✅",
+      label: "I'm a Healthcare Provider✅",
       path: "/hp/apply"
     }
   }
@@ -44,31 +48,49 @@ const MotionCard = motion(Card)
 export default function FeatureItems() {
   return (
     <motion.ul 
-      initial="initial"
-      whileInView="inView"
-      transition={{ staggerChildren: 0.3, duration: 2, type:"spring", bounce:0.5 }}
-      className="p-2 container flex justify-center flex-wrap ~gap-5/16 text-center">
+      
+      className=""
+    >
       <Each
         of={topFeature}
         render={(feature, i) => (
-          <MotionCard 
-            variants={{
-              initial: { opacity: 0, y: "100%" },
-              inView: { opacity: 1, y: 0  }}
-            }
-            whileHover={{ scale: 1.1, zIndex: 10}}
-            className="relative basis-[20rem] flex-grow shadow-xl rounded-2xl">
-            <CardHeader>
-              <CardTitle className="~text-sm/xl uppercase tracking-wider text-primary">{feature.name}</CardTitle>
-              <CardDescription className="~text-xs/sm">{feature.description}</CardDescription>
-            </CardHeader>
-            <CardContent className="~text-sm/base mb-16 text-gray-600">{feature.content}</CardContent>
-            <CardFooter className="absolute bottom-0 w-full">
-              <Link href={feature.action.path} className="w-full">
-                <Button className="~text-xs/sm ~h-8/10 w-full rounded-full hover:animate-pulse">{feature.action.label}</Button>
-              </Link>
-            </CardFooter>
-          </MotionCard>
+          <motion.div 
+            initial={{ opacity: 0, x: 300 * (i % 2 === 0 ? -1: 1) }}
+            whileInView={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.5, type: "spring", bounce: 0.5,damping: 10, stiffness: 100 }}
+            className={cn(" from-primary to-teal-50 p-24",
+              i % 2 === 0 ? "bg-gradient-to-bl" : "bg-gradient-to-br"
+            )
+            }>
+            <div className={cn("container grid grid-cols-1 lg:grid-cols-2 gap-5 items-center px-10  mx-auto",
+             
+            )}>
+              <div className={
+                cn("flex-1 min-w-64 space-y-2 text-center lg:text-left order-last",
+                  i % 2 === 0 ? "text-gray-700 lg:order-first" : "text-white lg:order-last"
+                )
+              }>
+                <h2 className="text-3xl font-bold ">{feature.name}</h2>
+                <p className="text-gray-800">
+                  {feature.description}
+                </p>
+                <p className="text-gray-800">
+                  {feature.content}
+                </p>
+                <Link href={feature.action.path} target="_blank">
+                  <Button size="lg" className="mt-8 mx-auto ~text-xs/sm ~h-8/10">
+                    {feature.action.label}
+                    <ArrowRightCircle className="w-4 h-4 ml-2" />
+                  </Button>
+                </Link>
+              </div>
+              <div className="mx-auto">
+                <Image src={feature.image} alt="Hero Image" className="object-scale-down max-w-80 " width={500} height={500} />
+              </div>
+              
+            </div>
+
+          </motion.div>
         )}
       />
     </motion.ul>
@@ -82,12 +104,12 @@ export const HeroTitle = ({authenticated = false}) => {
       initial={{ opacity: 0 }}
       transition={{ duration: 1, delay: 0.5}}
     >
-      <p className="text-center md:text-left ~text-2xl/6xl font-semibold tracking-wider text-gray-500 uppercase">Optimized Healthcare Management System</p>
+      <p className="text-center lg:text-left text-6xl font-extrabold tracking-wider text-gray-500">Optimized Healthcare Management System</p>
       
       <ConditionalRender condition={!authenticated}>
         <div className="flex md:block items-center flex-col">
           <Link href="/tenants/register">
-            <Button size="lg" className="rounded-full mt-8 mx-auto ~text-xs/sm ~h-8/10">
+            <Button size="lg" className="mt-8 mx-auto text-sm h-10">
               Register your clinic now
               <ArrowRightCircle className="w-4 h-4 ml-2" />
             </Button>
@@ -95,9 +117,9 @@ export const HeroTitle = ({authenticated = false}) => {
         </div>
       </ConditionalRender>
       <ConditionalRender condition={authenticated}>
-        <div className="flex md:block">
+        <div className="flex lg:block justify-center">
           <Link href="/organizations">
-            <Button className="mx-auto ~text-xs/sm ~h-8/10 rounded-full mt-10"><Rocket size={18} className="mr-1"/>Get Started</Button>
+            <Button className="mx-auto h-10 mt-10"><Rocket size={18} className="mr-1"/>Get Started</Button>
           </Link>
         </div>
       </ConditionalRender>

@@ -237,6 +237,18 @@ model UserPermission {
   Permission   Permission @relation(fields: [permissionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
+model OrgRoleInitialPermission {
+  id           Int                  @id @default(autoincrement())
+  orgId        Int
+  orgRoleId    Int
+  permissionId Int
+  Organization Organization         @relation(fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Permission   Permission           @relation(fields: [permissionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  UserRole     UserOrganizationRole @relation(fields: [orgRoleId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([orgId, orgRoleId, permissionId], name: "unique_org_role_permission")
+}
+
 model Permission {
   id                        Int                        @id @default(autoincrement())
   name                      String                     @unique
@@ -280,20 +292,9 @@ model UserOrganizationRole {
   Organization                 Organization                  @relation(fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   UserStudentRecords           UserStudentRecord[]
   OrgRoleAppointmentTabs       OrgRoleAppointmentTab[]
+  OrgRoleInitialPermissions    OrgRoleInitialPermission[]
 
   @@unique([orgId, name], name: "unique_organization_role")
-}
-
-model OrgRoleInitialPermission {
-  id           Int          @id @default(autoincrement())
-  orgRoleId    Int
-  permissionId Int
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-  Organization Organization @relation(fields: [orgRoleId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  Permission   Permission   @relation(fields: [permissionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-
-  @@unique([orgRoleId, permissionId], name: "unique_org_role_permission")
 }
 
 model Plan {

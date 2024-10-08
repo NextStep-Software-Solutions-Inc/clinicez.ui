@@ -14,6 +14,8 @@ import { toast } from "sonner";
 import PageLoading from "@components/PageLoading";
 import Each from "@components/utils/Each";
 import { usePermissions } from "@hooks/usePermission";
+import { useOrgRoleInitialPermissions } from "@hooks/useOrgRoleInitialPermission";
+import { setOrgRoleInitialPermissionsAction } from "@actions/role-initial-permission.action";
 
 
 const FormSchema = z.object({
@@ -23,31 +25,45 @@ const FormSchema = z.object({
 })
   
 interface OrgRoleInitialPermissionsProps {
+  orgRoleId: number
   currentPermissionIds: number[]
 }
-export default function OrgRoleInitialPermissions({ currentPermissionIds}:OrgRoleInitialPermissionsProps ) {
+export default function OrgRoleInitialPermissions({orgRoleId, currentPermissionIds}:OrgRoleInitialPermissionsProps ) {
   const params = useParams<{organization: string}>()
-  const {data: permissions ,isLoading} = usePermissions()
+  const {data: roleInitialPermissions ,isLoading, mutate} = useOrgRoleInitialPermissions({
+    orgUid: params.organization,
+    orgRoleId
+  })
+  const {data: permissions ,isLoading: loadingPermissions} = usePermissions()
+
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     values: {
-      permissionIds: currentPermissionIds,
+      permissionIds: (roleInitialPermissions ?? []).map((item) => item.Permission.id),
     },
   })
   
   const action = async () => {
     form.handleSubmit(async (data) => {
-      // toast.promise(setOrgRoleInitialPermissionsAction(orgRoleTabId, data.permissionIds), {
-      //   loading: "Saving changes...",
-      //   success: res => {
-      //     return res.message
-      //   },
-      //   error: "Error while saving changes",
-      // })
+      toast.promise(setOrgRoleInitialPermissionsAction({
+        orgRoleId,
+        orgUid: params.organization,
+        permissionIds: data.permissionIds,
+      }), {
+        loading: "Saving changes...",
+        success: res => {
+          if(res.status) {
+            mutate()
+            form.reset(data)
+          }
+          return res.message
+        },
+        error: "Error while saving changes",
+      })
     })();
   }
   
-  if(isLoading) return <PageLoading label="Loading page, please wait a moment..."/>
+  if(isLoading && loadingPermissions) return <p>Loading page, please wait a moment...</p>
   return (
     <Form {...form}>
       <form action={action} className="space-y-8">

@@ -49,7 +49,7 @@ export default function OrgRoleAppointmentTabs({orgRoleTabId, currentOrgTabIds}:
     })();
   }
   
-  if(isLoading) return <PageLoading label="Loading page, please wait a moment..."/>
+  if(isLoading) return <p>Loading page, please wait a moment...</p>
   return (
     <Form {...form}>
       <form action={action} className="space-y-8">

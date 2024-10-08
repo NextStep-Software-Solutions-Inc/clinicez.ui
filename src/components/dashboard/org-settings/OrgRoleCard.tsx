@@ -59,6 +59,7 @@ export const OrgRoleCard = ({role, onDeleteRole}:OrgRoleCardProps) => {
         />
         <Separator/>
         <OrgRoleInitialPermissions
+          orgRoleId={role.id}
           currentPermissionIds={assignedOrgTabIds}
         />
       </CardContent>

@@ -9,6 +9,7 @@ import {
 import { useConsultation, useConsultations } from "@hooks/useConsultation";
 import Each from "./utils/Each";
 import dayjs from "dayjs";
+import { Badge } from "./ui/badge";
   
 interface MedicalHistoryProps {
     patientId: string
@@ -30,7 +31,11 @@ export default function MedicalHistory({orgUid, patientId}: MedicalHistoryProps)
         render={(ticket) => {
           return (
             <AccordionItem key={ticket.id} value={ticket.id.toString()}>
-              <AccordionTrigger>{ticket.subject || `Consultation Ticket #${ticket.id}`} ({dayjs(ticket.createdAt).format("llll")})</AccordionTrigger>
+              <AccordionTrigger>
+                <div>
+                  {ticket.subject || `Consultation Ticket #${ticket.id}`} ({dayjs(ticket.createdAt).format("llll")}) <Badge variant="outline" className="text-primary">{ticket.System.name}</Badge>
+                </div>
+              </AccordionTrigger>
               <AccordionContent>
                 <div className="p-4">
                   <MedicalHistorySummary 

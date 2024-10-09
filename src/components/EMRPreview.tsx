@@ -70,7 +70,7 @@ function EMRPreview({patientId}: EMRPreviewProps) {
       <Section title={`Allergies`} >
         <AllergiesForm readOnly allergies={allergies ?? []} />
       </Section>
-      
+
       <Section title={`Vaccination & Immunization`} >
         <VaccinationForm readOnly vaccinations={vaccinations ?? []} />
       </Section>
@@ -111,9 +111,9 @@ export default memo(EMRPreview)
 
 export const Section = ({title, children}: {title: string, children?: React.ReactNode}) => {
   return (
-    <div className="space-y-3">
+    <section className="space-y-3">
       <h3 className="text-xl bg-primary text-primary-foreground rounded px-2 py-1 font-semibold">{title}</h3>
       {children ?? <p className="text-muted-foreground">No records found.</p>}
-    </div>
+    </section>
   )
 }

@@ -37,7 +37,6 @@ export const Picture = ({ user, readOnly = true }: PictureProps) => {
       formData.set("media", compressedFile);
       toast.dismiss();
  
- 
       // Upload media to server
       toast.loading("Uploading...");
       const { url } = await uploadMediaAction(formData);
@@ -60,8 +59,12 @@ export const Picture = ({ user, readOnly = true }: PictureProps) => {
   return (
     <div className="flex flex-wrap items-center gap-5">
       <Avatar className="rounded w-48 h-48">
-        <Image fill className="object-cover" src={user?.picture || "https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png"} alt=""/>
-        <AvatarFallback>{user.firstName?.charAt(0)}{user.lastName?.charAt(0)}</AvatarFallback>
+        {
+          user?.picture 
+            ? (<Image width={200} height={200} className="object-cover" src={user?.picture} alt={user.nickname ?? ""}/>)
+            : <AvatarFallback>{user.firstName?.charAt(0)}{user.lastName?.charAt(0)}</AvatarFallback>
+        } 
+        
       </Avatar>
       <ConditionalRender condition={!readOnly}>
         <form action={action}>

@@ -25,9 +25,11 @@ export default function ConfirmDeleteMembership({disabled = false, userOrganizat
   const action = async () => {
     toast.promise(deleteMembershipAction(userOrganizationId), {
       loading: "Deleting membership...",
-      success: () => {
-        onConfirmDelete?.()
-        return "Membership deleted successfully!"
+      success: (res) => {
+        if(res.status) {
+          onConfirmDelete?.()
+        }
+        return res.message
       },
       error: "Failed to delete membership",
     })

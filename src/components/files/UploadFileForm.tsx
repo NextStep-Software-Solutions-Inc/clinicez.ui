@@ -34,8 +34,9 @@ import { useFileTypes } from "@hooks/useFileType";
 
 interface UploadFileFormProps {
     folder: {
-      id: number;
+      id: number
       name: string
+      scopeOrgId?: number
     }
 }
 
@@ -65,7 +66,11 @@ export default function UploadFileForm({folder}: UploadFileFormProps) {
   })
 
   const form = useForm<z.infer<typeof uploadFileFormSchema>>({
-    resolver: zodResolver(uploadFileFormSchema)
+    resolver: zodResolver(uploadFileFormSchema),
+    defaultValues: {
+      bindOrg: !!folder?.scopeOrgId,
+      ...folder?.scopeOrgId ? {orgId: folder.scopeOrgId} : {},
+    }
   })
     
   const action = async (formData: FormData) => {
@@ -136,59 +141,61 @@ export default function UploadFileForm({folder}: UploadFileFormProps) {
             </FormItem>
           )}
         />
-        <ConditionalRender condition={mappedOrgs.length > 0}>
-          <FormField
-            control={form.control}
-            name="bindOrg"
-            render={({ field }) => {
-              return (
-                <FormItem className="my-5">
-                  <div className="flex items-center space-x-2">
+        <ConditionalRender condition={!folder.scopeOrgId}>
+          <ConditionalRender condition={mappedOrgs.length > 0}>
+            <FormField
+              control={form.control}
+              name="bindOrg"
+              render={({ field }) => {
+                return (
+                  <FormItem className="my-5">
+                    <div className="flex items-center space-x-2">
+                      <FormControl>
+                        <Checkbox checked={field.value} onCheckedChange={field.onChange}/>
+                      </FormControl>
+                      <FormLabel 
+                        htmlFor="collegeId"
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >Bind this to file to one of my organization.</FormLabel>
+                    </div>
+                    <FormMessage/>
+                  </FormItem>
+                )
+              }}
+            />
+          </ConditionalRender>
+          <ConditionalRender condition={form.watch("bindOrg")}>
+            <FormField
+              control={form.control}
+              name="orgId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Binding organization</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value?.toString()} name="orgId">
                     <FormControl>
-                      <Checkbox checked={field.value} onCheckedChange={field.onChange}/>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select one of your organization" />
+                      </SelectTrigger>
                     </FormControl>
-                    <FormLabel 
-                      htmlFor="collegeId"
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    >Bind this to file to one of my organization.</FormLabel>
-                  </div>
-                  <FormMessage/>
+                    <SelectContent>
+                      <Each
+                        of={mappedOrgs}
+                        render={item => (
+                          <SelectItem value={item.id?.toString()} className="cursor-pointer">
+                            {item.name}
+                          </SelectItem>
+                        )}
+                      />
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    {`Binding the file to an organization will limit the file type to the organization's file types. Note: Bounded files are subject to organization Privacy Policy & Terms of Conditions.`}
+                  </FormDescription>
+                  <FormMessage />
                 </FormItem>
-              )
-            }}
-          />
-        </ConditionalRender>
-        <ConditionalRender condition={form.watch("bindOrg")}>
-          <FormField
-            control={form.control}
-            name="orgId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Binding organization</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value?.toString()} name="orgId">
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select one of your organization" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <Each
-                      of={mappedOrgs}
-                      render={item => (
-                        <SelectItem value={item.id?.toString()} className="cursor-pointer">
-                          {item.name}
-                        </SelectItem>
-                      )}
-                    />
-                  </SelectContent>
-                </Select>
-                <FormDescription>
-                  {`Binding the file to an organization will limit the file type to the organization's file types. Note: Bounded files are subject to organization Privacy Policy & Terms of Conditions.`}
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+              )}
+            />
+          </ConditionalRender>
         </ConditionalRender>
         <div className="flex items-baseline gap-2">
           <FormField

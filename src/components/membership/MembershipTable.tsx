@@ -13,8 +13,8 @@ export const MembershipTable = ({ orgId }: MembershipTableProps) => {
   const [page, setPage] = React.useState(1);
   const [pageSize, setPageSize] = React.useState(10);
   const {data: membershipRequests, isLoading} = useUserOrganizations({ orgId, pageSize, pageNumber: page });
-  if(isLoading) return <PageLoading label="Fetching membership data. Please wait..." />;
 
+  if(isLoading) return <PageLoading label="Fetching membership data. Please wait..." />;
   return (
     <DataTable 
       data={membershipRequests?.data ?? []} 

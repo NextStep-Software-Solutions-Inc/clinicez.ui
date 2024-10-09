@@ -14,6 +14,7 @@ import { joinOrganizationAction, JoinOrganizationPayload } from "@actions/organi
 import { revalidatePath } from "@actions/cache.action";
 import { useAtom } from "jotai";
 import { joinOrgApplicationAtom } from "@state/join-org-application";
+import { Button } from "@components/ui/button";
 
 interface ConfirmationAndReviewStepProps {
   orgId: string
@@ -176,22 +177,22 @@ export default function ConfirmationAndReviewStep({ orgId, isComplete, isFirstSt
             By clicking submit, you agree to the terms and conditions and privacy policy of {orgId} organization.
             </p>
           </ConditionalRender>
-          <div className="mt-4">
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
             <BackSubmitAndNext 
               labels={{
                 previous: "Back",
                 submit: "Submit",
-                next: "Start Over",
               }}
               disabled={{
                 submit:!form.formState.isValid || isComplete,
                 previous: isFirstStep || isComplete,
+                next: true
               }}
               actions={{
                 previous: prevStep,
-                next: reset,
               }}
             />
+            <Button onClick={reset}>Start Over</Button>
           </div>
         </form>
       </div>

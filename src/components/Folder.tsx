@@ -19,6 +19,7 @@ export interface FolderProps {
     name: string;
     isPublic?: boolean;
     description?: string;
+    scopeOrgId?: number;
     files: FileProps["file"][];
   };
 }

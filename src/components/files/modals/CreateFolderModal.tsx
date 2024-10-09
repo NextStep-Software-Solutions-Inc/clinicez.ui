@@ -19,7 +19,12 @@ import { useRef } from "react"
 import { toast } from "sonner";
 
 
-export default function CreateFolderModal({disabled = false}: {disabled?: boolean}) {
+interface CreateFolderModalProps {
+  disabled?: boolean;
+  orgUid?: string;
+  onCreated?: () => void;
+}
+export default function CreateFolderModal({disabled = false, orgUid, onCreated}: CreateFolderModalProps) {
   const user = useUser()
   const userId = user?.user?.sub
 
@@ -27,11 +32,14 @@ export default function CreateFolderModal({disabled = false}: {disabled?: boolea
   const action = async (formData: FormData) => {
     if(!userId) throw new Error("User ID is required to create a folder.")
     const name = formData.get("name") as string
-    toast.promise(createFolderAction(name, userId), {
+    toast.promise(createFolderAction(name, userId, orgUid), {
       loading: "Creating folder...",
       success: (res) => {
-        closeBtnRef.current?.click()
-        return "Folder created successfully"
+        if(res.status) {
+          closeBtnRef.current?.click()
+          onCreated?.()
+        }
+        return res.message
       },
       error: "Failed to create folder"
     })

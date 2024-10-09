@@ -20,6 +20,7 @@ import { GetUserOrganizations, setMembershipRequestStatusAction } from "@actions
 import { revalidatePath } from "@actions/cache.action"
 import ConfirmDeleteMembership from "./ConfirmDeleteMembership"
 import { mutate } from "swr"
+import RequestAdditionalInfo from "./RequestAdditionalInfo"
 interface MembershipTableRowActionsProps<TData> {
   applicationRequest: GetUserOrganizations["data"][number]
 }
@@ -81,11 +82,14 @@ export default function MembershipTableRowActions<TData>({
                 <DropdownMenuItem onClick={() => setStatus(option.status as UserOrganizationStatus)}>
                   {option.label}
                 </DropdownMenuItem>
-                {index === statusOptions.length - 1 && <DropdownMenuSeparator />}
               </React.Fragment>
             )
           )}
         />
+        <DropdownMenuItem asChild>
+          <RequestAdditionalInfo onSend={() => setDropdownOpen(false)} userOrganizationId={applicationRequest.id}/>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
           <ConfirmDeleteMembership onConfirmDelete={onConfirmDelete} userOrganizationId={applicationRequest.id}/>
         </DropdownMenuItem>

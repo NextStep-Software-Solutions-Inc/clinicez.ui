@@ -15,6 +15,7 @@ import { getUserAction } from "@actions/users/user.action";
 import { hpApplicationTransactionAction } from "@actions/users/user-plan.action";
 import { useAtom } from "jotai";
 import { hpApply } from "@state/hp-apply";
+import { Button } from "@components/ui/button";
 
 interface ConfirmationFormProps {
   nextStep?: () => void;
@@ -154,22 +155,22 @@ export default function ConfirmationForm({ nextStep, prevStep, isFirstStep, isCo
               </FormItem>
             )}
           />
-          <div className="mt-4">
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
             <BackSubmitAndNext 
               labels={{
                 previous: "Back",
                 submit: "Submit",
-                next: "Start Over",
               }}
               disabled={{
                 submit:!form.formState.isValid || isComplete,
                 previous: isFirstStep || isComplete,
+                next: true
               }}
               actions={{
                 previous: prevStep,
-                next: reset,
               }}
             />
+            <Button onClick={reset}>Start Over</Button>
           </div>
         </form>
       </div>

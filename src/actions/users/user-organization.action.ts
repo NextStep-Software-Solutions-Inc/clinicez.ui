@@ -420,12 +420,62 @@ type RecipientType = {
   status?: UserOrganizationStatus
   role?: string
 }
-const sendMembershipUpdateEmailNotification = async ({name, email, organization, status}:RecipientType) => {
+
+export const requestMembershipAdditionalInfo = async (id: number) => {
+  try {
+    const userOrganization = await prismaCommon.userOrganization.findUniqueOrThrow({
+      where: { id },
+      select: {
+        User: {
+          select: {
+            email: true,
+            firstName: true,
+            lastName: true
+          }
+        },
+        Organization: {
+          select: {
+            name: true,
+            email: true
+          }
+        },
+        UserRole: {
+          select: {
+            name: true
+          }
+        }
+      }
+    })
+    await sendMembershipAdditionalInfo({
+      name: `${userOrganization.User.firstName} ${userOrganization.User.lastName}`,
+      email: userOrganization.User.email,
+      organization: userOrganization.Organization.name,
+      orgMail: userOrganization.Organization.email ?? ""
+    })
+    return {
+      status: true,
+      message: "Additional information request sent"
+    }
+  } catch (error) {
+    console.error(`Error sending additional information request: ${error}`);
+    return {
+      status: false,
+      message: "Error sending additional information request"
+    }
+  }
+}
+
+const sendMembershipUpdateEmailNotification = async ({name, email, organization, status}:{
+  organization: string
+  email: string
+  name: string,
+  status: UserOrganizationStatus
+}) => {
   try {
     const filePath = path.join(process.cwd(), "email-templates/org-membership-update.html");
     const emailTemplate = await fs.readFile(filePath, "utf-8");
     const appName = process.env.NEXT_PUBLIC_APP_NAME!;
-    const html = emailTemplate.replaceAll("@{userName}", name).replaceAll("@{status}", status ?? "").replaceAll("@{appName}", appName)
+    const html = emailTemplate.replaceAll("@{userName}", name).replaceAll("@{status}", status).replaceAll("@{appName}", appName)
 
     await sendMail({
       subject: `Membership request to ${organization} status was changed - ${status?.toUpperCase()}`,
@@ -440,15 +490,45 @@ const sendMembershipUpdateEmailNotification = async ({name, email, organization,
   }
 }
 
-const sendMembershipDeletionEmailNotification = async ({name, email, organization, role}:RecipientType) => {
+const sendMembershipDeletionEmailNotification = async ({name, email, organization, role}:{
+  organization: string
+  email: string
+  name: string,
+  role: string
+}) => {
   try {
     const filePath = path.join(process.cwd(), "email-templates/org-membership-deleted.html");
     const emailTemplate = await fs.readFile(filePath, "utf-8");
     const appName = process.env.NEXT_PUBLIC_APP_NAME!;
-    const html = emailTemplate.replaceAll("@{userName}", name).replaceAll("@{orgName}", organization).replaceAll("@{appName}", appName).replaceAll("@{roleName}", role ?? "")
+    const html = emailTemplate.replaceAll("@{userName}", name).replaceAll("@{orgName}", organization).replaceAll("@{appName}", appName).replaceAll("@{roleName}", role)
 
     await sendMail({
       subject: `Your membership to ${organization} was dropped.`,
+      to: email,
+      text: html,
+      html
+    })
+    return true;
+  } catch (error) {
+    console.error(`Error sending email notification: ${error}`);
+    return false;
+  }
+}
+
+const sendMembershipAdditionalInfo = async ({name, email, organization, orgMail}:{
+  organization: string
+  email: string
+  name: string,
+  orgMail: string
+}) => {
+  try {
+    const filePath = path.join(process.cwd(), "email-templates/org-membership-comply-request.html");
+    const emailTemplate = await fs.readFile(filePath, "utf-8");
+    const appName = process.env.NEXT_PUBLIC_APP_NAME!;
+    const html = emailTemplate.replaceAll("@{userName}", name).replaceAll("@{orgName}", organization).replaceAll("@{appName}", appName).replaceAll("@{orgMail}", orgMail)
+
+    await sendMail({
+      subject: `Keep Your Membership Active: Update Your Information`,
       to: email,
       text: html,
       html

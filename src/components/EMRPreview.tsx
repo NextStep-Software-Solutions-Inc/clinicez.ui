@@ -55,55 +55,65 @@ function EMRPreview({patientId}: EMRPreviewProps) {
         </div>
       </div>
       <Separator/>
-      <h3 className="text-xl bg-primary text-primary-foreground rounded px-2 font-bold">Basic Information</h3>
-      <div className="space-y-3">
-        <LabelValue className="flex items-center gap-2 flex-row-reverse justify-end" label="Nickname:" value={patient?.nickname}/>
-        <LabelValue className="flex items-center gap-2 flex-row-reverse justify-end" label="Mobile:" value={(
-          <a href={`tel:${patient?.mobile}`}>{patient?.mobile}</a>
-        )}/>
-        <LabelValue className="flex items-center gap-2 flex-row-reverse justify-end" label="Civil Status:" value={patient?.civilStatus}/>
-        <LabelValue className="flex items-center gap-2 flex-row-reverse justify-end" label="Religion:" value={patient?.religion}/>
-        <LabelValue className="flex items-center gap-2 flex-row-reverse justify-end" label="Nationality:" value={patient?.nationality}/>
-      </div>
-        
-      <Separator/>
-      <h3 className="text-xl bg-primary text-primary-foreground rounded px-2 font-bold">Allergies</h3>
-      <AllergiesForm readOnly allergies={allergies ?? []} />
-  
-      <Separator/>
-      <h3 className="text-xl bg-primary text-primary-foreground rounded px-2 font-bold">Vaccination & Immunization</h3>
-      <VaccinationForm readOnly vaccinations={vaccinations ?? []} />
-      <Separator/>
+      <Section title={`Basic Information`} >
+        <div className="">
+          <LabelValue className="flex items-center gap-2 flex-row-reverse justify-end" label="Nickname:" value={patient?.nickname}/>
+          <LabelValue className="flex items-center gap-2 flex-row-reverse justify-end" label="Mobile:" value={(
+            <a href={`tel:${patient?.mobile}`}>{patient?.mobile}</a>
+          )}/>
+          <LabelValue className="flex items-center gap-2 flex-row-reverse justify-end" label="Civil Status:" value={patient?.civilStatus}/>
+          <LabelValue className="flex items-center gap-2 flex-row-reverse justify-end" label="Religion:" value={patient?.religion}/>
+          <LabelValue className="flex items-center gap-2 flex-row-reverse justify-end" label="Nationality:" value={patient?.nationality}/>
+        </div>
+      </Section>
+      
+      <Section title={`Allergies`} >
+        <AllergiesForm readOnly allergies={allergies ?? []} />
+      </Section>
+      
+      <Section title={`Vaccination & Immunization`} >
+        <VaccinationForm readOnly vaccinations={vaccinations ?? []} />
+      </Section>
 
-      <h3 className="text-xl bg-primary text-primary-foreground rounded px-2 font-bold">Personal & Social History</h3>
-      <div>
+      <Section title={`Personal & Social History`} >
         <DisabilitiesForm readOnly disabilities={disabilities ?? []} />
         <IllnessesForm readOnly illnesses={illnesses ?? []} />
-      </div>
-      <Separator/>
-      <h3 className="text-xl bg-primary text-primary-foreground rounded px-2 font-bold">Family History</h3>
-        
-      <Separator/>
-      <h3 className="text-xl bg-primary text-primary-foreground rounded px-2 font-bold">Medical History</h3>
-      <MedicalHistory
-        patientId={patientId}
-        orgUid={params.organization}
-      />
-      {/* <Separator/> */}
-      <h3 className="text-xl bg-primary text-primary-foreground rounded px-2 font-bold">Obstetric History</h3>
-        
-      <Separator/>
-      <h3 className="text-xl bg-primary text-primary-foreground rounded px-2 font-bold">Vital Signs & Anthropometric Measurements</h3>
-      <RecentVitalSigns readOnly vitalSigns={vitalSigns ?? []} userId={patient?.userId ?? ""}/>
-        
-      <Separator/>
-      <h3 className="text-xl bg-primary text-primary-foreground rounded px-2 font-bold">Organs / Systems</h3>
-  
-      <Separator/>
-      <h3 className="text-xl bg-primary text-primary-foreground rounded px-2 font-bold">{`Visual Acuity / Snellen's`}</h3>
-  
+      </Section>
+
+
+      <Section title={`Family History`} >
+      </Section>
+
+      <Section title={`Medical History`} >
+        <MedicalHistory
+          patientId={patientId}
+          orgUid={params.organization}
+        />
+      </Section>
+     
+      <Section title={`Obstetric History`} >
+      </Section>
+
+      <Section title={`Vital Signs & Anthropometric Measurements`} >
+        <RecentVitalSigns readOnly vitalSigns={vitalSigns ?? []} userId={patient?.userId ?? ""}/>
+      </Section>
+
+      <Section title={`Organs / Systems`} >
+      </Section>
+
+      <Section title={`Visual Acuity / Snellen's`} >
+      </Section>
     </div>
   );
 }
   
 export default memo(EMRPreview)
+
+export const Section = ({title, children}: {title: string, children?: React.ReactNode}) => {
+  return (
+    <div className="space-y-3">
+      <h3 className="text-xl bg-primary text-primary-foreground rounded px-2 py-1 font-semibold">{title}</h3>
+      {children ?? <p className="text-muted-foreground">No records found.</p>}
+    </div>
+  )
+}

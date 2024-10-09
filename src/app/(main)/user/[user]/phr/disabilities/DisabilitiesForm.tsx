@@ -64,6 +64,7 @@ export default function DisabilitiesForm({disabilities, readOnly = true}:Disabil
             <AccordionContent className="p-5 flex flex-wrap gap-2">
               <Each
                 of={fields}
+                fallback={<div className="text-muted-foreground text-center w-full">No declared disabilities.</div>}
                 render={(disability, index) => <DisabilityItem readOnly={readOnly} disability={disability} index={index} remove={remove} update={update}/>}
               />
               <ConditionalRender condition={!readOnly}>

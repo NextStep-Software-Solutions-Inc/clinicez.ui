@@ -50,6 +50,7 @@ export default function AllergiesForm({allergies, readOnly}:AllergiesFormProps) 
       <div className="flex gap-2 flex-wrap">
         <Each
           of={fields}
+          fallback={<div className="text-muted-foreground">No declared allergies.</div>}
           render={(allergy, index) => (
             <AllergyItem 
               readOnly={readOnly}

@@ -23,12 +23,13 @@ export default function MedicalHistory({orgUid, patientId}: MedicalHistoryProps)
   })
 
   return (
-    <Accordion type="single" collapsible className="w-full">
+    <Accordion type="multiple" className="w-full">
       <Each 
         of={consultationTickets?.data || []}
+        fallback={<p className="text-muted-foreground">No consultation records.</p>}
         render={(ticket) => {
           return (
-            <AccordionItem key={ticket.id} value="item-3">
+            <AccordionItem key={ticket.id} value={ticket.id.toString()}>
               <AccordionTrigger>{ticket.subject || `Consultation Ticket #${ticket.id}`} ({dayjs(ticket.createdAt).format("llll")})</AccordionTrigger>
               <AccordionContent>
                 <div className="p-4">
@@ -42,8 +43,6 @@ export default function MedicalHistory({orgUid, patientId}: MedicalHistoryProps)
           )
         }}
       />
-     
-     
     </Accordion>
   )
 }
@@ -59,15 +58,15 @@ export const MedicalHistorySummary = ({consultationTicketId, orgUid}: MedicalHis
     orgUid
   })
   return (
-    <div>
+    <div className="space-y-2">
       <p className="text-lg font-bold">Notes Summary</p>
       <Each
         of={consultationTicket?.data?.ConsultationNotes || []}
-        fallback={<p>No notes</p>}
+        fallback={<p className="text-muted-foreground">No notes</p>}
         render={(note) => {
           return (
             <div key={note.section} className="p-2 bg-gray-100 rounded-lg">
-              <p>{note.section}</p>
+              <p className="capitalize font-semibold ">{note.section}</p>
               <p className="text-sm text-gray-500">{note.content}</p>
             </div>
           )

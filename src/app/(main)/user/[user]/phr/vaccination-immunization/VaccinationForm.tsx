@@ -12,6 +12,7 @@ export const VaccinationForm = ({ vaccinations, readOnly }: VaccinationFormProps
   return (
     <Each
       of={vaccinations}
+      fallback={<div className="text-muted-foreground">No vaccination record declared.</div>}
       render={(vaccination) => <VaxItem key={vaccination.id} readOnly={readOnly} vaccination={vaccination} />} 
     />
   );

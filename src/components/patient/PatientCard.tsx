@@ -22,7 +22,7 @@ export const PatientCard = async ({patient}: PatientCardProps) => {
   return (
     <Card className="shadow-2xl select-none flex-grow lg:flex-grow-0 basis-[35rem]">
       <CardHeader>
-        <CardTitle className="line-clamp-2">{name}</CardTitle>
+        <CardTitle className="line-clamp-1">{name}</CardTitle>
         <CardDescription>
         Last update: {new Date(patient.updatedAt).toLocaleDateString("en-PH", {
             month:"short",
@@ -37,8 +37,12 @@ export const PatientCard = async ({patient}: PatientCardProps) => {
       <CardContent>
         <div className="flex gap-3">
           <Avatar className="rounded w-40 h-40">
-            <Image width={200} height={200} className="object-cover" src={picture} alt="John Doe" />
-            <AvatarFallback>{nameInitials}</AvatarFallback>
+            {
+              picture ? 
+                (<Image width={200} height={200} className="object-cover w-full" src={picture} alt={patient.nickname ?? ""} />)
+                : <AvatarFallback>{nameInitials}</AvatarFallback>
+            }
+            
           </Avatar>
           <div className="flex-1 flex flex-col justify-between">
             <div className="">

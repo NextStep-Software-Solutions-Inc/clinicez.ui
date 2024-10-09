@@ -34,7 +34,7 @@ export default function RecentVitalSigns({readOnly = true, userId, vitalSigns}: 
           <CardTitle>Recent Vitals</CardTitle>
           {!!latestVitalSign && (
             <CardDescription>
-              Most recent vital record was taken last {dayjs(latestVitalSign?.dateTaken).format("llll")}
+              Most recent vital record was taken last <strong>{dayjs(latestVitalSign?.dateTaken).format("llll")}</strong>
             </CardDescription>
           )}
           
@@ -50,7 +50,7 @@ export default function RecentVitalSigns({readOnly = true, userId, vitalSigns}: 
       </CardHeader>
       <CardContent>
         <VitalsSignView fallback={<VitalChartInteractive vitalSigns={vitalSigns}/>}>
-          <ConditionalRender condition={!!latestVitalSign} fallback="No recent vital signs record">
+          <ConditionalRender condition={!!latestVitalSign} fallback={<p className="text-muted-foreground">No recent vital signs record.</p>}>
             <VitalSign vitalSign={latestVitalSign!} readOnly={readOnly}/>
           </ConditionalRender>
         </VitalsSignView>

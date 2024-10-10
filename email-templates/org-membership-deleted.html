@@ -1,11 +1,37 @@
-<body>
-  <p>Hi @{userName},</p>
+<body
+  style="
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+      Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue',
+      sans-serif;
+    margin: 0;
+    padding: 1em;
+    background-color: #f4f4f4;
+  "
+>
+  <p>Dear @{userName},</p>
+
   <p>
-    You have been removed from @{orgName} as @{roleName}. All permissions issued
-    to you by the organization for that role have been revoked. Please contact
-    the organization admin if you have any questions.
+    We regret to inform you that your membership with @{orgName} as @{roleName}
+    has been terminated.
   </p>
-  <p>Thank you for being an awesome @{roleName}! We hope to see you around.</p>
-  <p>Best regards,</p>
+
+  <p>
+    Please note that all permissions and privileges associated with your role
+    have been revoked. If you have any questions or require further information,
+    please don't hesitate to contact the organization administrator.
+  </p>
+
+  <p>
+    We appreciate your contributions during your time as a member of @{orgName}.
+    We wish you all the best in your future endeavors.
+  </p>
+
+  <p>Sincerely,</p>
   <p>Team @{appName}</p>
+
+  <footer
+    style="font-size: 0.8em; color: #888; margin-top: 50px; text-align: center"
+  >
+    Powered by @{appName}
+  </footer>
 </body>

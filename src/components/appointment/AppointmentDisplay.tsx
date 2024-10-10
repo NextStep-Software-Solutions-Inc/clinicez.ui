@@ -85,11 +85,11 @@ export default function AppointmentDisplay() {
     return <div className="p-8 text-center text-muted-foreground">Appointment not found</div>
   }
 
-  if(!(aptUser)) {
+  if(!aptUser?.data) {
     return <div className="p-8 text-center text-muted-foreground">User not found</div>
   }
 
-  const myOrgPermission = authUser?.OrgUserPermissions.flatMap(p => p.Permission).map(p => p.name) ?? []
+  const myOrgPermission = authUser?.data?.OrgUserPermissions.flatMap(p => p.Permission).map(p => p.name) ?? []
   const preferredHPName = `${preferredHp?.HPProfile?.title} ${preferredHp?.HPProfile?.name} ${preferredHp?.HPProfile?.suffix}`
   
   return (
@@ -110,7 +110,7 @@ export default function AppointmentDisplay() {
                   tool.routedAptStatuses.length === 0 
                   || (
                     freshAppointment.data?.AppointmentAttribute?.status !== "ROUTED" 
-                    || freshAppointment.data?.AppointmentRouting.some(apt =>tool.routedAptStatuses.includes(apt.status.toLocaleLowerCase()) && authUser?.HealthcareProviders.some(hp => hp.id === Number(apt.routedTo)))
+                    || freshAppointment.data?.AppointmentRouting.some(apt =>tool.routedAptStatuses.includes(apt.status.toLocaleLowerCase()) && authUser?.data?.HealthcareProviders.some(hp => hp.id === Number(apt.routedTo)))
                   )
                 )
               return enable
@@ -135,15 +135,15 @@ export default function AppointmentDisplay() {
           <div className="flex items-start gap-4 text-sm">
             <Avatar>
               {
-                aptUser.picture 
-                  ? <Image src={aptUser.picture} width={50} height={50} className="object-cover" alt={aptUser.nickname ?? ""} />
-                  : <AvatarFallback>{aptUser.firstName?.charAt(0)} {aptUser.lastName?.charAt(0)}</AvatarFallback>
+                aptUser.data.picture 
+                  ? <Image src={aptUser.data.picture} width={50} height={50} className="object-cover" alt={aptUser.data.nickname ?? ""} />
+                  : <AvatarFallback>{aptUser.data.firstName?.charAt(0)} {aptUser.data.lastName?.charAt(0)}</AvatarFallback>
               }
             </Avatar>
             <div className="grid gap-1">
-              <div className="font-semibold">{aptUser.firstName} {aptUser.middleName} {aptUser.lastName} {aptUser.suffix}</div>
+              <div className="font-semibold">{aptUser.data.firstName} {aptUser.data.middleName} {aptUser.data.lastName} {aptUser.data.suffix}</div>
               <div className="line-clamp-1 text-xs">
-                <span className="font-medium">{aptUser.gender} / </span>{aptUser.dob ? differenceInCalendarYears(new Date(), aptUser.dob) : 0}
+                <span className="font-medium">{aptUser.data.gender} / </span>{aptUser.data.dob ? differenceInCalendarYears(new Date(), aptUser.data.dob) : 0}
               </div>
               <div className="line-clamp-1 text-xs">{freshAppointment.data.subject}</div>
 
@@ -282,15 +282,15 @@ interface AppointmentMetadataProps {
 export const AppointmentMetadata = ({appointment, organization}: AppointmentMetadataProps) => {
   const receiverId = appointment.AppointmentAttribute?.receivedBy ?? undefined
   const {data: aptReceiver } = useUserDb({userId: receiverId, orgUid: organization})
-  const receiverName = `${aptReceiver?.firstName} ${aptReceiver?.middleName} ${aptReceiver?.lastName} ${aptReceiver?.suffix ?? ""}`
+  const receiverName = `${aptReceiver?.data?.firstName} ${aptReceiver?.data?.middleName} ${aptReceiver?.data?.lastName} ${aptReceiver?.data?.suffix ?? ""}`
 
   const rejectorId = appointment.AppointmentAttribute?.rejectedBy ?? undefined
   const {data: aptRejector } = useUserDb({userId: rejectorId, orgUid: organization})
-  const rejectorName = `${aptRejector?.firstName} ${aptRejector?.middleName} ${aptRejector?.lastName} ${aptRejector?.suffix ?? ""}`
+  const rejectorName = `${aptRejector?.data?.firstName} ${aptRejector?.data?.middleName} ${aptRejector?.data?.lastName} ${aptRejector?.data?.suffix ?? ""}`
   
   const completerId = appointment.AppointmentAttribute?.rejectedBy ?? undefined
   const {data: aptCompleter } = useUserDb({userId: completerId, orgUid: organization})
-  const completerName = `${aptCompleter?.firstName} ${aptCompleter?.middleName} ${aptCompleter?.lastName} ${aptCompleter?.suffix ?? ""}`
+  const completerName = `${aptCompleter?.data?.firstName} ${aptCompleter?.data?.middleName} ${aptCompleter?.data?.lastName} ${aptCompleter?.data?.suffix ?? ""}`
   
   return (
     <div className="px-5 py-2 text-xs max-h-40 scrollBox no-scrollbar">

@@ -11,6 +11,7 @@ import { getCachedSession } from "@actions/session.action";
 import { getPermissionsAction } from "@actions/permission.action";
 import { cache } from "react";
 import dayjs from "dayjs";
+import { tr } from "@faker-js/faker";
 
 export type GetAppointmentFilter = {
   orgUid?: string;
@@ -37,42 +38,116 @@ type CreateAppointmentPayload = {
   };
 };
 export const createAppointmentAction = async (payload: CreateAppointmentPayload) => {
+  const session = await getCachedSession();
+  if (!session) {
+    return {
+      status: false,
+      message: "Unauthorized"
+    };
+  }
+
   const { orgUid, subject, complaint, requesters, modeId, typeId, serviceId, attachments, hpId, schedule } = payload;
   const { date, timeStart, timeEnd } = schedule;
-  const newAppointment = await prismaTenant.appointment.create({
-    data: {
-      subject,
-      complaint,
-      orgUid,
-      AppointmentAttribute: {
-        create: {
-          preferredAppointee: hpId,
-          modeId,
-          typeId,
-          serviceId,
-          timeStart,
-          timeEnd,
-          date: date
-        }
-      },
-      Requesters: {
-        createMany: {
-          data: requesters.map((userId) => ({ userId })),
-          skipDuplicates: true
-        }
-      },
-      AppointmentAttachments: {
-        createMany: {
-          data: attachments.map((url) => ({
-            name: url.split("/").pop() ?? url,
-            url
-          })),
-          skipDuplicates: true
-        }
-      }
+  
+  const createAppointmentPermissions = ["write:org:appointment"];
+  const myPermissions = await getPermissionsAction(session.user.sub);
+  const userPermissionArray = myPermissions.map(p => p.name);
+  const createAppointment = createAppointmentPermissions.every(p => userPermissionArray.includes(p));
+
+  try {
+    
+    if (!createAppointment) {
+      throw new Error("You do not have permission to create an appointment in this organization");
     }
-  });
-  return newAppointment;
+    
+    const newAppointment = await prismaTenant.$transaction(async (prisma) => {
+      const numberOfAppointments = await prisma.appointment.count({
+        where: {
+          orgUid,
+          createdAt: {
+            // today only
+            gte: dayjs().startOf("day").toDate(),
+          },
+          AppointmentAttribute: {
+            status: "PENDING"
+          },
+          Requesters: {
+            some: {
+              userId: session.user.sub
+            }
+          }
+        }
+      });
+      const maxNumberOfAppointment = await prismaCommon.orgAppointmentConfig.findFirstOrThrow({
+        where: {
+          Organization: {
+            orgId: orgUid
+          }
+        },
+        select: {
+          maxAppointmentsPerClient: true,
+          maxAppointmentsPerDay: true
+        }
+      })
+      if(numberOfAppointments >= maxNumberOfAppointment.maxAppointmentsPerClient) {
+        throw new Error("You have reached the maximum number of appointments you can book for today");
+      }
+      if(numberOfAppointments >= maxNumberOfAppointment.maxAppointmentsPerDay) {
+        throw new Error("The appointments quota of the organization for today has been reached");
+      }
+      
+      return await prisma.appointment.create({
+        data: {
+          subject,
+          complaint,
+          orgUid,
+          AppointmentAttribute: {
+            create: {
+              preferredAppointee: hpId,
+              modeId,
+              typeId,
+              serviceId,
+              timeStart,
+              timeEnd,
+              date: date
+            }
+          },
+          Requesters: {
+            createMany: {
+              data: requesters.map((userId) => ({ userId })),
+              skipDuplicates: true
+            }
+          },
+          AppointmentAttachments: {
+            createMany: {
+              data: attachments.map((url) => ({
+                name: url.split("/").pop() ?? url,
+                url
+              })),
+              skipDuplicates: true
+            }
+          }
+        }
+      })
+    })
+    return {
+      status: true,
+      message: "Appointment created",
+      data: newAppointment
+    };
+  } catch (error) {
+    console.error(`Failed to create appointment: ${error}`);
+    let message = "Failed to create appointment";
+    if(error instanceof Error) {
+      message = error.message;
+    }
+    return {
+      status: false,
+      message,
+      data: null
+    }
+    
+  }
 };
 
 export type GetAppointments = Awaited<ReturnType<typeof getAppointmentsAction>>;

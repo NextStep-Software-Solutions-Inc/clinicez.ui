@@ -43,10 +43,10 @@ export default function SelectTimeSlot({nextStep, prevStep, isFirstStep, isLastS
         <Alert className="my-5">
           <Info className="h-4 w-4" />
           <AlertTitle>
-            Time slots refresh every 5 minutes to show the most up-to-date availability.
+            Time slots refresh every minute to show the most up-to-date availability.
           </AlertTitle>
           <AlertDescription>
-            Once you have selected a time slot, you have 5 minutes to complete the booking process. If you do not complete the booking within 5 minutes, the time slot will be released and made available to other patients.
+            Once you have selected a time slot, you have 1 minute to complete the booking process. If you do not complete the booking within a minute, the time slot will be released and made available to other patients.
           </AlertDescription>
         </Alert>
         {

@@ -22,6 +22,7 @@ import { useOrgServices } from "@hooks/useOrgService";
 import { useOrgAppointmentTypes } from "@hooks/useOrgAppointmentType";
 import { useOrgAppointmentModes } from "@hooks/useOrgAppointmentMode";
 import { useHP } from "@hooks/useHP";
+import { Button } from "@components/ui/button";
 
 interface ReviewBookingProps {
     nextStep?: () => void;
@@ -116,15 +117,18 @@ export default function ReviewBooking({ nextStep, prevStep, isLastStep, isFirstS
       }
     }), {
       loading: "Creating appointment...",
-      success: () => {
-        setComplete?.(true);
-        playSuccess();
-        mutate((key) =>  typeof key === 'string' && key.startsWith(`/api/organizations/${params.organization}/appointments`), undefined, {
-          revalidate:true
-        })
-        return "Appointment created successfully";
+      success: (res) => {
+        if(res.status){
+          setComplete?.(true);
+          playSuccess();
+          mutate((key) =>  typeof key === 'string' && key.startsWith(`/api/organizations/${params.organization}/appointments`), undefined, {
+            revalidate:true
+          })
+        }
+        return res.message;
       },
-      error: "Failed to create appointment"
+      error: "Failed to create appointment",
+      position:"top-center"
     })
   }
 
@@ -157,20 +161,25 @@ export default function ReviewBooking({ nextStep, prevStep, isLastStep, isFirstS
           />
         </div>
        
-        <BackSubmitAndNext
-          labels={{
-            submit: "Book Appointment",
-            previous: "Back",
-            next: "Start Over"
-          }}
-          disabled={{
-            previous: isFirstStep,
-          }}
-          actions={{
-            next: isLastStep? reset : nextStep,
-            previous: prevStep,
-          }}
-        />
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <BackSubmitAndNext
+            labels={{
+              submit: "Book Appointment",
+              previous: "Back",
+            }}
+            disabled={{
+              previous: isFirstStep,
+              next: true
+            }}
+            actions={{
+              next: isLastStep? reset : nextStep,
+              previous: prevStep,
+            }}
+          />
+          <Button variant="outline" type="button" onClick={isLastStep? reset : nextStep}>
+          Start Over
+          </Button>
+        </div>
       </form>
     </div>
   );

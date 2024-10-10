@@ -102,7 +102,7 @@ export const Route = ({record, appointmentId, organization}: RouteProps ) => {
   const {data: routedBy} = useUser({
     userId: record.routedBy
   })
-  const routedByName = `${routedBy?.firstName} ${routedBy?.middleName} ${routedBy?.lastName} ${routedBy?.suffix ?? ""}`
+  const routedByName = `${routedBy?.data?.firstName} ${routedBy?.data?.middleName} ${routedBy?.data?.lastName} ${routedBy?.data?.suffix ?? ""}`
   const {data: routedTo} = useHP(Number(record.routedTo));
   const routedToName = `${routedTo?.HPProfile?.title ?? routedTo?.User.firstName} ${routedTo?.HPProfile?.name ?? routedTo?.User.lastName} ${routedTo?.HPProfile?.suffix ?? routedTo?.User.suffix ?? ""}`
 

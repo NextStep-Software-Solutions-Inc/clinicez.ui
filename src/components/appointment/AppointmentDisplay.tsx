@@ -163,7 +163,8 @@ export default function AppointmentDisplay() {
         </ScrollArea>
         <Separator />
         {
-          freshAppointment.data.AppointmentRouting.some(apt => apt.status === "ACCEPTED") && 
+          (["write:org:pre-assessment"].every(p => myOrgPermission.includes(p)) 
+          && freshAppointment.data.AppointmentRouting.some(apt => apt.status === "ACCEPTED")) && 
           <div className="px-5 py-2 text-xs group/action max-h-40 scrollBox no-scrollbar">
             <div className="flex items-center">
               <span className="font-semibold text-base">Latest Pre-Assessment Notes</span> 

@@ -3,6 +3,7 @@
 import prismaTenant from '@lib/prisma-tenant';
 import { getCachedSession } from '@actions/session.action';
 import 'server-only'
+import { getPermissionsAction } from '@actions/permission.action';
 
 type UpsertPreAssessmentNotePayload = {
     appointmentId: number;
@@ -21,6 +22,17 @@ export const upsertPreAssessmentNoteAction = async ({appointmentId, orgUid, asse
     data: null
   }
 
+  const writePreAssessmentNotePermissions = ["write:org:pre-assessment"]
+  const myPermissions = await getPermissionsAction(session.user.sub)
+  const myPermissionArray = myPermissions.map(permission => permission.name)
+  const writePermission = writePreAssessmentNotePermissions.every(permission => myPermissionArray.includes(permission))
+  
+  if(!writePermission) return {
+    status: false,
+    message: "You do not have permission to write pre-assessment notes",
+    data: null
+  }
+  
   await prismaTenant.preAssessmentNote.upsert({
     where: {
       unique_appointment_created_by: {

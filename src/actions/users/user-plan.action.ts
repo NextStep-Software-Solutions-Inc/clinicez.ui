@@ -1,33 +1,60 @@
 "use server";
 
 import { getCachedSession } from "@actions/session.action";
-import prisma from "@lib/prisma-common";
+import prismaCommon from "@lib/prisma-common";
 import { Prisma, UserPlanStatus, HealthcareProviderType } from "@prisma/common/client";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc"
+import { connect } from "http2";
 dayjs.extend(utc)
 import { cache } from "react";
 
-export const createUserPlanAction = async (planId: number, userId: number, status: UserPlanStatus = "PENDING") => {
-  const userPlan = await prisma.userPlan.create({
-    data: {
-      startDate: dayjs().toDate(),
-      endDate: dayjs().add(1, "year").toDate(),
-      planId,
-      userId,
-      status
+export const createUserPlanAction = async (planId: number, userId: string, status: UserPlanStatus = "PENDING") => {
+  try {
+    const userPlan = await prismaCommon.$transaction(async (prisma) => {
+
+      const userPlan = await prisma.userPlan.create({
+        data: {
+          User: {
+            connect: {
+              userId
+            }
+          },
+          Plan: {
+            connect: {
+              id: planId
+            }
+          },
+          startDate: dayjs().toDate(),
+          endDate: dayjs().add(1, "year").toDate(),
+          status
+        }
+      });
+      return userPlan;
+    });
+    
+    return {
+      status: true,
+      message: "User plan created successfully.",
+      data: userPlan
     }
-  });
-  return userPlan;
+  } catch (error) {
+    console.error(`Error creating user plan: ${error}`);
+    return {
+      status: false,
+      message: "An error occurred while creating user plan.",
+      data: null
+    }
+  }
 }
 
 export const upsertUserPlanAction = async (payload: Prisma.UserPlanUpsertArgs) => {
-  const userPlan = await prisma.userPlan.upsert(payload);
+  const userPlan = await prismaCommon.userPlan.upsert(payload);
   return userPlan;
 }
 
 export const setUserPlanStatusAction = async (id: number, status: UserPlanStatus) => {
-  const userPlan = await prisma.userPlan.update({
+  const userPlan = await prismaCommon.userPlan.update({
     where: { id },
     data: { status }
   });
@@ -46,7 +73,7 @@ export const hpApplicationTransactionAction = async ({planId, hpType,code}: HPAp
   let errorMessage = "";
   
   try {
-    await prisma.$transaction(async (prisma) => {
+    await prismaCommon.$transaction(async (prisma) => {
       // Count claimed receipt codes
       errorMessage = "Receipt code is invalid or has been claimed.";
       const claimedCount = await prisma.receiptCodeClaim.count({
@@ -151,7 +178,7 @@ export const hpApplicationTransactionAction = async ({planId, hpType,code}: HPAp
 }
 
 export const getUserPlansAction = cache(async (userId: string) => {
-  const userPlans = await prisma.userPlan.findMany({
+  const userPlans = await prismaCommon.userPlan.findMany({
     orderBy: {
       endDate: "desc"
     },

@@ -77,13 +77,13 @@ export default function AddRoleModal({orgUid, onAddRole}:AddRoleModalProps) {
       </Tooltip>
       <CustomModalContent 
         className="sm:max-w-[525px]"
-        label="Add Intervention" 
-        description="Enter the intervention performed during the consultation."
+        label="Add Role" 
+        description="Create a new role for the organization."
       >
         <Form {...form}>
           <form 
             action={action}
-            id="add-intervention-form"
+            id="add-role-form"
             className="grid gap-4 py-4"
           >
             <FormField
@@ -91,7 +91,7 @@ export default function AddRoleModal({orgUid, onAddRole}:AddRoleModalProps) {
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Details</FormLabel>
+                  <FormLabel>Name</FormLabel>
                   <Input
                     id="name"
                     placeholder="Enter role name"
@@ -110,7 +110,7 @@ export default function AddRoleModal({orgUid, onAddRole}:AddRoleModalProps) {
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Details</FormLabel>
+                  <FormLabel>Description</FormLabel>
                   <Textarea
                     id="description"
                     placeholder="Enter role description"
@@ -129,7 +129,7 @@ export default function AddRoleModal({orgUid, onAddRole}:AddRoleModalProps) {
               <DialogClose asChild>
                 <input ref={closeBtnRef} type="hidden"  value="ok"/>
               </DialogClose>
-              <ActionButton form="add-intervention-form" type="submit">
+              <ActionButton form="add-role-form" type="submit">
                 Add
               </ActionButton>
             </DialogFooter>

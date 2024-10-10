@@ -35,16 +35,13 @@ export const getUserOrganizationsAction = cache(async (filter?: GetUserOrgFilter
       where: {
         ...roleId && { roleId },
         ...status && { status },
-        ...orgId && {
-          Organization: {
-            orgId
-          }
+        Organization: {
+          isActive: true,
+          ...orgId? { orgId }: {}
         },
-        ...userId && {
-          User: {
-            isActive: true,
-            userId
-          }
+        User: {
+          isActive: true,
+          ...userId? { userId }: {}
         }
       },
       select: {
@@ -59,7 +56,6 @@ export const getUserOrganizationsAction = cache(async (filter?: GetUserOrgFilter
             lastName: true,
             gender: true,
             dob: true,
-            // ...orgId ? {
             StudentRecords: {
               where: {
                 isActive: true,
@@ -207,16 +203,13 @@ export const getUserOrganizationsAction = cache(async (filter?: GetUserOrgFilter
       where: {
         ...roleId && { roleId },
         ...status && { status },
-        ...orgId && {
-          Organization: {
-            orgId
-          }
+        Organization: {
+          isActive: true,
+          ...orgId? { orgId }: {}
         },
-        ...userId && {
-          User: {
-            isActive: true,
-            userId
-          }
+        User: {
+          isActive: true,
+          ...userId? { userId }: {}
         }
       },
     });

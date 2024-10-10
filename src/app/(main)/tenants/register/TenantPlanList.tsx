@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import Each from "@components/utils/Each";
 import Link from "next/link";
 import { cn } from "@lib/utils";
-import { getPlansAction } from "@actions/plan.action";
+import { GetPlans, getPlansAction } from "@actions/plan.action";
 
 interface TenantPlanListProps {
   freq?: string;
@@ -12,7 +12,7 @@ interface TenantPlanListProps {
   nextStep?: () => void;
 }
 export default function TenantPlanList({ freq, initialPlan, nextStep }: TenantPlanListProps) {
-  const [tenantPlans, setTenantPlans] = useState<Awaited<ReturnType<typeof getPlansAction>> | []>([]);
+  const [tenantPlans, setTenantPlans] = useState<GetPlans>([]);
 
   useEffect(() => {
     (async () => {

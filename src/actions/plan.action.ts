@@ -2,6 +2,7 @@
 
 import prisma from "@lib/prisma-common";
 
+export type GetPlans = Awaited<ReturnType<typeof getPlansAction>>
 export const getPlansAction = async () => {
   const plans = await prisma.plan.findMany({
     where: {

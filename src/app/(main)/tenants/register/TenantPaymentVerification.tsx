@@ -13,9 +13,10 @@ import { createUserPlanAction } from "@actions/users/user-plan.action";
 import { toast } from "sonner";
 import { useSearchParams } from "next/navigation";
 import { useUser } from "@auth0/nextjs-auth0/client";
-import { getUserAction } from "@actions/users/user.action";
 import { getPlansAction } from "@actions/plan.action";
 import { getReceiptCodeAction } from "@actions/reciept-code.action";
+import { useAtom } from "jotai";
+import { tenantApplyAtom } from "@state/tenant-apply";
 
 interface TenantPaymentVerificationProps {
     prevStep?: () => void;
@@ -28,10 +29,11 @@ interface TenantPaymentVerificationProps {
 
 const fetchPlans = getPlansAction()
 export default function TenantPaymentVerification({ setComplete, prevStep }: TenantPaymentVerificationProps) {
-  const [paymentData, setPaymentData] = useLocalStorage("tenant-application", { receiptCode: "" });
+  const [paymentData, setPaymentData] = useAtom(tenantApplyAtom);
   const plans = use(fetchPlans)
   const searchParams = useSearchParams();
   const user = useUser();
+  const userId = user.user?.sub;
 
   const selectedPlan = plans.find(plan => plan.id === parseInt(searchParams.get("plan") ?? "0"));
   const cost = selectedPlan?.price ?? 0;
@@ -51,20 +53,27 @@ export default function TenantPaymentVerification({ setComplete, prevStep }: Ten
   })
 
   const action = async () =>{
+    if(!userId) {
+      toast.error("User not found. Please login again.");
+      return;
+    }
     form.handleSubmit(async (data) => {
-      await setPaymentData(data)
-
-      const planId = parseInt(searchParams.get("plan") || "0");
-      const dbUser = await getUserAction(user.user?.sub ?? "")
-      
-      await createUserPlanAction(planId, dbUser.id, "ACTIVE");
-      toast.success("Tenant application completed. You can now create your first tenant.");
-      await setComplete?.(true);
+      setPaymentData(prev => ({...prev, ...data}));
+      const planId = Number(searchParams.get("plan"));
+      toast.promise(createUserPlanAction(planId, userId, "ACTIVE"), {
+        loading: "Creating tenant application...",
+        success: (res) => {
+          if(res.status){
+            setComplete?.(true);
+          }
+          return res.message;
+        },
+        error: "An error occurred while creating tenant application."
+      })
     })()
   } 
 
   const handleVerify = (code: string) => {
-
     toast.promise(getReceiptCodeAction(code), {
       loading: "Verifying code...",
       success: () => {
@@ -72,7 +81,6 @@ export default function TenantPaymentVerification({ setComplete, prevStep }: Ten
         return "Code verified. You can now submit your application.";
       },
       error: "Invalid Code. Please try again or use different code.",
-    
     })
 
    

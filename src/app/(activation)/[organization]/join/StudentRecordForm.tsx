@@ -69,11 +69,11 @@ export default function StudentRecordForm({orgId} : {orgId: string}) {
   const action = async () => {
     form.handleSubmit(async (values) => {
       const orgId = orgPrograms?.[0].organizationId ?? 0
-      if(!user) {
+      if(!user?.data) {
         toast.error("User data not found")
         return;
       }
-      const userId = user.id
+      const userId = user.data.id
 
       toast.promise(upsertStudentRecordAction({...values, orgId, userId}), {
         loading: "Saving student record...",

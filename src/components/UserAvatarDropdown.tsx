@@ -3,7 +3,6 @@
 import {
   Avatar,
   AvatarFallback,
-  AvatarImage,
 } from "@components/ui/avatar"
 
 
@@ -27,9 +26,9 @@ export default async function UserAvatarDropdown({children}: {children: React.Re
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Avatar className="w-10 h-10 ring-2">
-          {!!user?.picture
-            ? <Image width={50} height={50} className="object-cover" src={user.picture} alt={user.nickname ?? ""} /> 
-            : <AvatarFallback>{user.nickname?.substring(0,2)}</AvatarFallback>
+          {!!user.data?.picture
+            ? <Image width={50} height={50} className="object-cover" src={user.data?.picture} alt={user.data?.nickname ?? ""} /> 
+            : <AvatarFallback>{user.data?.email?.substring(0,2)}</AvatarFallback>
           }
         </Avatar>
       </DropdownMenuTrigger>

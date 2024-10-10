@@ -20,7 +20,7 @@ const topFeature = [
     image: "/assets/booking.svg",
     action: {
       label: "Schedule Appointment ➡️",
-      path: "/contact-us"
+      path: "/organizations"
     }
   },
   {
@@ -44,13 +44,9 @@ const topFeature = [
     }
   }
 ]
-const MotionCard = motion(Card)
 export default function FeatureItems() {
   return (
-    <motion.ul 
-      
-      className=""
-    >
+    <div className="">
       <Each
         of={topFeature}
         render={(feature, i) => (
@@ -58,25 +54,16 @@ export default function FeatureItems() {
             initial={{ opacity: 0, x: 300 * (i % 2 === 0 ? -1: 1) }}
             whileInView={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.5, type: "spring", bounce: 0.5,damping: 10, stiffness: 100 }}
-            className={cn(" from-primary to-teal-50 p-24",
+            className={cn("from-primary to-teal-50 p-24",
               i % 2 === 0 ? "bg-gradient-to-bl" : "bg-gradient-to-br"
-            )
-            }>
-            <div className={cn("container grid grid-cols-1 lg:grid-cols-2 gap-5 items-center px-10  mx-auto",
-             
             )}>
-              <div className={
-                cn("flex-1 min-w-64 space-y-2 text-center lg:text-left order-last",
-                  i % 2 === 0 ? "text-gray-700 lg:order-first" : "text-white lg:order-last"
-                )
-              }>
+            <div className={cn("container grid grid-cols-1 lg:grid-cols-2 gap-5 items-center px-10 mx-auto")}>
+              <div className={cn("flex-1 min-w-64 space-y-2 text-center lg:text-left order-last",
+                i % 2 === 0 ? "text-gray-700 lg:order-first" : "text-white lg:order-last"
+              )}>
                 <h2 className="text-3xl font-bold ">{feature.name}</h2>
-                <p className="text-gray-800">
-                  {feature.description}
-                </p>
-                <p className="text-gray-800">
-                  {feature.content}
-                </p>
+                <p className="text-gray-800">{feature.description}</p>
+                <p className="text-gray-800">{feature.content}</p>
                 <Link href={feature.action.path} target="_blank">
                   <Button size="lg" className="mt-8 mx-auto ~text-xs/sm ~h-8/10">
                     {feature.action.label}
@@ -87,13 +74,11 @@ export default function FeatureItems() {
               <div className="mx-auto">
                 <Image src={feature.image} alt="Hero Image" className="object-scale-down max-w-80 " width={500} height={500} />
               </div>
-              
             </div>
-
           </motion.div>
         )}
       />
-    </motion.ul>
+    </div>
   );
 }
 

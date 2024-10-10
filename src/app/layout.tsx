@@ -13,9 +13,13 @@ import dynamic from "next/dynamic";
 import { Analytics } from "@vercel/analytics/react"
 
 import "@styles/globals.css";
-const Hotjar = dynamic(() => import("@components/Hotjar"), { ssr: true });
+import { findAndCreateUserAction } from "@actions/users/user.action";
+import { redirect } from "next/navigation";
+const HotJar = dynamic(() => import("@components/HotJar"), { ssr: true });
+
 const montserrat = Montserrat({ subsets: ["latin"] });
 
+export const maxDuration = 40; // page timeout in seconds
 export const metadata = {
   title: 'Clinic EZ',
   description: 'Optimized Healthcare Management System',
@@ -26,11 +30,14 @@ interface Props {
 
 export default async function RootLayout({children}:Props) {
   const session = await getCachedSession();
-  
-  return (
+  if(session){
+    const dbUser = await findAndCreateUserAction();
+    if(!dbUser.data) redirect(`/api/auth/logout?returnTo=/email-is-taken`);
+  }
 
+  return (
     <html lang="en">
-      <Hotjar/>
+      <HotJar/>
       <body className={`${montserrat.className}`}>
         <BypassAutoplay/>
         <JotaiProvider>

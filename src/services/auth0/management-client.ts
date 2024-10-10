@@ -1,7 +1,6 @@
 
 import { ManagementClient, ManagementClientOptionsWithClientSecret } from 'auth0';
 type CreateManagementClientOptions = ManagementClientOptionsWithClientSecret & {
-
 }
 
 export const createManagementClient = (options: CreateManagementClientOptions) => {
@@ -14,5 +13,5 @@ export const createManagementClient = (options: CreateManagementClientOptions) =
 export const managementClient = createManagementClient({
   domain: process.env.AUTH0_ISSUER_BASE_URL?.split('https://')[1] ?? "",
   clientId: process.env.AUTH0_CLIENT_ID ?? "",
-  clientSecret: process.env.AUTH0_CLIENT_SECRET ?? "",
+  clientSecret: process.env.AUTH0_CLIENT_SECRET ?? ""
 });

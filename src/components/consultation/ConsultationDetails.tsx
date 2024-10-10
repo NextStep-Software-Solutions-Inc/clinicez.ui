@@ -18,6 +18,7 @@ import Each from "@components/utils/Each";
 import { Fragment } from "react";
 import EMRPreviewSheet from "@components/EMRPreviewSheet";
 import { Button } from "@components/ui/button";
+import { notFound } from "next/navigation";
 
 const VitalSigns = dynamic(() => import('./VitalSigns'), { ssr: false, loading: () => <div>Loading...</div> });
 const Conversation = dynamic(() => import('./Conversation'), { ssr: false, loading: () => <div>Loading...</div> });
@@ -35,16 +36,16 @@ export default async function ConsultationDetails({ consultation }: Consultation
   const [user, creators] = await Promise.all([
     await getUserAction(appointment.data?.Requesters[0].userId ?? ""),
     await getHpsByIdsAction(consultation.ConsultationTicketAuthors.map(c => Number(c.hpId))),
-    
   ]);
-  
+
+  if(!user.data) notFound();
   return (
     <>
-      <PatientHpDetails creators={creators} user={user}/>
+      <PatientHpDetails creators={creators} user={user.data}/>
       <BackgroundInfo 
         appointment={appointment.data} 
         consultation={consultation} 
-        user={user}
+        user={user.data}
       />
     </>
   );
@@ -53,7 +54,7 @@ export default async function ConsultationDetails({ consultation }: Consultation
 interface BackgroundInfoProps {
   appointment: GetAppointment["data"]
   consultation: ConsultationDetailsProps["consultation"]
-  user: GetUser
+  user: NonNullable<GetUser["data"]>
 }
 export const BackgroundInfo = ({ appointment, consultation, user }: BackgroundInfoProps) => {
   return (
@@ -134,7 +135,7 @@ export const BackgroundInfo = ({ appointment, consultation, user }: BackgroundIn
 
 interface PatientHpDetailsProps {
   creators: GetHpsByIds
-  user: GetUser
+  user: NonNullable<GetUser["data"]>
 }
 export const PatientHpDetails = ({ creators = [], user }: PatientHpDetailsProps) => {
   const patientId = user.userId
@@ -149,7 +150,7 @@ export const PatientHpDetails = ({ creators = [], user }: PatientHpDetailsProps)
           <div className="flex gap-2 items-center">
             <Avatar>
               <Image className="object-cover" width={80} height={80} src={user.picture ?? ""} alt={user.nickname ?? ""}/>
-              <AvatarFallback>{user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}</AvatarFallback>
+              <AvatarFallback>{user.firstName?.charAt(0)}{user.lastName?.charAt(0)}</AvatarFallback>
             </Avatar>
             <div className="flex flex-col">
               <span className="text-sm font-semibold">{user.firstName} {user.lastName}</span>

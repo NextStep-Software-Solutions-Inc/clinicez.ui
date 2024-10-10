@@ -139,7 +139,7 @@ export const columns: ColumnDef<GetConsultationTickets["data"][number]>[] = [
 
 export const Requester = ({ requester }: {requester: string}) => {
   const {data: user} = useUser({userId: requester})
-  const requesterName = `${user?.firstName} ${user?.middleName} ${user?.lastName} ${user?.suffix ?? ""}`
+  const requesterName = `${user?.data?.firstName} ${user?.data?.middleName} ${user?.data?.lastName} ${user?.data?.suffix ?? ""}`
   return (
     <div className="text-wrap">{requesterName}</div>
   )

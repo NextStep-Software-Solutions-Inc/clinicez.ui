@@ -163,8 +163,7 @@ export default function AppointmentDisplay() {
         </ScrollArea>
         <Separator />
         {
-          (["write:org:pre-assessment"].every(p => myOrgPermission.includes(p)) 
-          && freshAppointment.data.AppointmentRouting.some(apt => apt.status === "ACCEPTED")) && 
+          ( freshAppointment.data.AppointmentRouting.some(apt => apt.status === "ACCEPTED")) && 
           <div className="px-5 py-2 text-xs group/action max-h-40 scrollBox no-scrollbar">
             <div className="flex items-center">
               <span className="font-semibold text-base">Latest Pre-Assessment Notes</span> 
@@ -174,7 +173,7 @@ export default function AppointmentDisplay() {
               of={(freshAppointment.data.PreAssessmentNotes ?? []).slice(-1)}
               fallback={(
                 <PreAssessmentNoteSheet 
-                  disabled={!freshAppointment}
+                  disabled={!freshAppointment || ["write:org:pre-assessment"].every(p => !myOrgPermission.includes(p))}
                   key={freshAppointment.data.id}
                   preAssessmentNotes={{
                     assessment: "",
@@ -191,6 +190,7 @@ export default function AppointmentDisplay() {
                 return (
                   <PreAssessmentNoteSheet 
                     key={preAssessmentNote.id}
+                    disabled={!freshAppointment || ["write:org:pre-assessment"].every(p => !myOrgPermission.includes(p))}
                     preAssessmentNotes={{
                       ...preAssessmentNote,
                       homeInstructions: preAssessmentNote.homeInstructions ?? "",

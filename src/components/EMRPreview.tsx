@@ -34,36 +34,36 @@ function EMRPreview({patientId}: EMRPreviewProps) {
   const { data: vitalSigns } = useUserVitalSigns(patientId)
   
   if(isLoading) return <PageLoading label="Loading Records ..."/>
-  if(patient === undefined) notFound()
+  if(!patient?.data) notFound()
 
-  const name = `${patient?.lastName || "-"}, ${patient?.firstName || "-"} ${patient?.middleName ?? ""} ${patient?.suffix ?? ""}`
+  const name = `${patient?.data?.lastName || "-"}, ${patient?.data?.firstName || "-"} ${patient?.data?.middleName ?? ""} ${patient?.data?.suffix ?? ""}`
   return (
     <div className="space-y-5 my-5 overflow-auto h-[calc(100vh-15%)] no-scrollbar">
       <div className="flex gap-5">
-        <Picture readOnly user={patient!}/>
+        <Picture readOnly user={patient.data}/>
         <div className="">
           <LabelValue label="Name" value={name}/>
           <div className="flex gap-5 items-center">
-            <LabelValue label="Gender" value={patient?.gender}/>
+            <LabelValue label="Gender" value={patient?.data?.gender}/>
             <Separator orientation="vertical" className="h-10"/>
-            <LabelValue label="Age" value={patient?.dob && `${differenceInCalendarYears(new Date(), patient.dob)} years old`}/>
+            <LabelValue label="Age" value={patient.data.dob && `${differenceInCalendarYears(new Date(), patient.data.dob)} years old`}/>
           </div>
-          <LabelValue label="Blood Type" value={patient?.bloodType}/>
+          <LabelValue label="Blood Type" value={patient?.data?.bloodType}/>
           <LabelValue label="Email" value={(
-            <a className="text-primary" href={`mailto:${patient?.email}`}>{patient?.email}</a>
+            <a className="text-primary" href={`mailto:${patient?.data?.email}`}>{patient?.data?.email}</a>
           )}/>
         </div>
       </div>
       <Separator/>
       <Section title={`Basic Information`} >
         <div className="">
-          <LabelValue className="flex items-center gap-2 flex-row-reverse justify-end" label="Nickname:" value={patient?.nickname}/>
+          <LabelValue className="flex items-center gap-2 flex-row-reverse justify-end" label="Nickname:" value={patient?.data?.nickname}/>
           <LabelValue className="flex items-center gap-2 flex-row-reverse justify-end" label="Mobile:" value={(
-            <a href={`tel:${patient?.mobile}`}>{patient?.mobile}</a>
+            <a href={`tel:${patient?.data?.mobile}`}>{patient?.data?.mobile}</a>
           )}/>
-          <LabelValue className="flex items-center gap-2 flex-row-reverse justify-end" label="Civil Status:" value={patient?.civilStatus}/>
-          <LabelValue className="flex items-center gap-2 flex-row-reverse justify-end" label="Religion:" value={patient?.religion}/>
-          <LabelValue className="flex items-center gap-2 flex-row-reverse justify-end" label="Nationality:" value={patient?.nationality}/>
+          <LabelValue className="flex items-center gap-2 flex-row-reverse justify-end" label="Civil Status:" value={patient?.data?.civilStatus}/>
+          <LabelValue className="flex items-center gap-2 flex-row-reverse justify-end" label="Religion:" value={patient?.data?.religion}/>
+          <LabelValue className="flex items-center gap-2 flex-row-reverse justify-end" label="Nationality:" value={patient?.data?.nationality}/>
         </div>
       </Section>
       
@@ -95,7 +95,7 @@ function EMRPreview({patientId}: EMRPreviewProps) {
       </Section>
 
       <Section title={`Vital Signs & Anthropometric Measurements`} >
-        <RecentVitalSigns readOnly vitalSigns={vitalSigns ?? []} userId={patient?.userId ?? ""}/>
+        <RecentVitalSigns readOnly vitalSigns={vitalSigns ?? []} userId={patient?.data?.userId ?? ""}/>
       </Section>
 
       <Section title={`Organs / Systems`} >

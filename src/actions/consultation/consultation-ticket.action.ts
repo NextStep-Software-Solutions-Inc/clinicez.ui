@@ -57,7 +57,7 @@ export const getConsultationTicketAction = cache(async (consultationId: number, 
     if(!session) throw new Error("Session not found")
 
     const [permissions, myHps] = await Promise.all([
-      getPermissionsAction(session.user.sub),
+      getPermissionsAction({ userId:session.user.sub }),
       getHPsAction({userId: session.user.sub})
     ])
 
@@ -209,7 +209,7 @@ export const getConsultationTicketsAction = async ({orgUid, filters}: {orgUid: s
   const { showArchived, userId } = filters ?? {}
 
   const [permissions, myHps] = await Promise.all([
-    getPermissionsAction(session.user.sub),
+    getPermissionsAction({ userId:session.user.sub }),
     getHPsAction({userId: session.user.sub})
   ])
   const userPermissionArray = permissions.map(p => p.name);
@@ -485,7 +485,7 @@ export const resolveConsultationTicket = async (consultationId: number) => {
     if(!session) throw new Error("Session not found")
       
     const resolveConsultationTicketPermissions = ["resolve:org:consultation"]
-    const myPermissions = await getPermissionsAction(session.user.sub)
+    const myPermissions = await getPermissionsAction({ userId:session.user.sub })
     const userPermissionArray = myPermissions.map(p => p.name);
     const canResolveConsultationTicket = resolveConsultationTicketPermissions.every(p => userPermissionArray.includes(p))
 

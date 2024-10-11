@@ -23,7 +23,9 @@ export const upsertPreAssessmentNoteAction = async ({appointmentId, orgUid, asse
   }
 
   const writePreAssessmentNotePermissions = ["write:org:pre-assessment"]
-  const myPermissions = await getPermissionsAction(session.user.sub)
+  const myPermissions = await getPermissionsAction({
+    userId:session.user.sub
+  })
   const myPermissionArray = myPermissions.map(permission => permission.name)
   const writePermission = writePreAssessmentNotePermissions.every(permission => myPermissionArray.includes(permission))
   

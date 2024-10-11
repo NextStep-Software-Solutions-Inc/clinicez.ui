@@ -38,7 +38,9 @@ export const createAppointmentAction = async (payload: CreateAppointmentPayload)
   const { date, timeStart, timeEnd } = schedule;
   
   const createAppointmentPermissions = ["write:org:appointment"];
-  const myPermissions = await getPermissionsAction(session.user.sub);
+  const myPermissions = await getPermissionsAction({
+    userId:session.user.sub
+  });
   const userPermissionArray = myPermissions.map(p => p.name);
   const createAppointment = createAppointmentPermissions.every(p => userPermissionArray.includes(p));
 
@@ -156,7 +158,9 @@ export const getAppointmentsAction = cache(async (filter?: GetAppointmentFilter)
 
   const { orgUid, userId, status, routedAptStatus, sort } = filter || {};
 
-  const permissions = await getPermissionsAction(session.user.sub);
+  const permissions = await getPermissionsAction({
+    userId:session.user.sub
+  });
   const userPermissionArray = permissions.map(p => p.name);
 
   const readAllOrgAppointmentPermission = ["read:org:appointment:all"];
@@ -270,7 +274,9 @@ export const getAppointmentAction = cache(async (id: number, orgUid?: string) =>
       data: null
     };
 
-  const permissions = await getPermissionsAction(session.user.sub);
+  const permissions = await getPermissionsAction({
+    userId:session.user.sub
+  });
   const userPermissionArray = permissions.map(p => p.name);
   
   const readAllOrgAppointmentPermission = ["read:org:appointment:all"]; // read all appointments in the org
@@ -412,7 +418,9 @@ export const getAppointmentCountsAction = cache(async (orgUid: string) => {
       message: "Unauthorized"
     };
 
-  const permissions = await getPermissionsAction(session.user.sub);
+  const permissions = await getPermissionsAction({
+    userId:session.user.sub
+  });
   const userPermissionArray = permissions.map(p => p.name);
   
   const readAllOrgAppointmentPermission = ["read:org:appointment:all"];
@@ -469,7 +477,9 @@ export const getRoutedAppointmentCountsAction = cache(async (orgUid: string) => 
       status: false,
       message: "Unauthorized"
     };
-  const permissions = await getPermissionsAction(session.user.sub);
+  const permissions = await getPermissionsAction({
+    userId:session.user.sub
+  });
   const userPermissionArray = permissions.map(p => p.name);
     
   const readAllOrgAppointmentPermission = ["read:org:appointment:all"];

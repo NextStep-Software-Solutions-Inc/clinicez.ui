@@ -1,7 +1,7 @@
 "use server";
 import 'server-only'
 import prismaCommon from "@lib/prisma-common";
-import { Prisma, $Enums, PrismaClient  } from "@prisma/common/client";
+import { Prisma, $Enums  } from "@prisma/common/client";
 import { managementClient } from "@services/auth0/management-client";
 import { cache } from 'react';
 import dayjs from 'dayjs';

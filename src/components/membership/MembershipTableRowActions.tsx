@@ -1,7 +1,6 @@
 "use client"
 
 import { DotsHorizontalIcon } from "@radix-ui/react-icons"
-
 import { Button } from "@components/ui/button"
 import {
   DropdownMenu,
@@ -21,6 +20,8 @@ import { revalidatePath } from "@actions/cache.action"
 import ConfirmDeleteMembership from "./ConfirmDeleteMembership"
 import { mutate } from "swr"
 import RequestAdditionalInfo from "./RequestAdditionalInfo"
+import Link from "next/link"
+import { User } from "lucide-react"
 interface MembershipTableRowActionsProps<TData> {
   applicationRequest: GetUserOrganizations["data"][number]
 }
@@ -80,12 +81,20 @@ export default function MembershipTableRowActions<TData>({
             currentStatus !== option.status && (
               <React.Fragment key={option.status}>
                 <DropdownMenuItem onClick={() => setStatus(option.status as UserOrganizationStatus)}>
-                  {option.label}
+                  <>{option.label}</>
                 </DropdownMenuItem>
               </React.Fragment>
             )
           )}
         />
+        <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <Link href={`/${applicationRequest.Organization.orgId}/membership/${applicationRequest.User.userId}`}>
+            <User className="mr-1 w-4 h-4"/>
+            View Details
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
           <RequestAdditionalInfo onSend={() => setDropdownOpen(false)} userOrganizationId={applicationRequest.id}/>
         </DropdownMenuItem>

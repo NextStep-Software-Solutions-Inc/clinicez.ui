@@ -11,7 +11,6 @@ import relativeTime from "dayjs/plugin/relativeTime";
 dayjs.extend(relativeTime);
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
-import PageLoading from "@components/PageLoading";
 import Each from "@components/utils/Each";
 import { usePermissions } from "@hooks/usePermission";
 import { useOrgRoleInitialPermissions } from "@hooks/useOrgRoleInitialPermission";
@@ -34,7 +33,9 @@ export default function OrgRoleInitialPermissions({orgRoleId, currentPermissionI
     orgUid: params.organization,
     orgRoleId
   })
-  const {data: permissions ,isLoading: loadingPermissions} = usePermissions()
+  const {data: permissions ,isLoading: loadingPermissions} = usePermissions({
+    type: "ORGANIZATION",
+  })
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),

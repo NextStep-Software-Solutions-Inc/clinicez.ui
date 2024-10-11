@@ -14,20 +14,23 @@ export default function Breadcrumb() {
       <BreadcrumbList>
         <Each
           of={pathSegment}
-          render={(segment, index) =>  (
-            <>
-              <BreadcrumbItem>
-                <BreadcrumbLink asChild className="capitalize">
-                  {
-                    index !== pathSegment.length -1 ?
-                      <Link href="#" >{segment}</Link> :
-                      <BreadcrumbPage>{segment}</BreadcrumbPage>
-                  }
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-              {index !== pathSegment.length-1 && <BreadcrumbSeparator />}
-            </>
-          )}
+          render={(segment, index) =>  {
+            const decodedSegment = decodeURIComponent(segment)//.replace(/-/g, " ");
+            return (
+              <>
+                <BreadcrumbItem>
+                  <BreadcrumbLink asChild className="">
+                    {
+                      index !== pathSegment.length -1 ?
+                        <Link href="#" >{decodedSegment}</Link> :
+                        <BreadcrumbPage>{decodedSegment}</BreadcrumbPage>
+                    }
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+                {index !== pathSegment.length-1 && <BreadcrumbSeparator />}
+              </>
+            )
+          }}
         />
       </BreadcrumbList>
     </ChadBreadcrumb>

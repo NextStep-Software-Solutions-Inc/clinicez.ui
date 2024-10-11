@@ -41,7 +41,7 @@ export default function ConfirmDeleteMembership({disabled = false, userOrganizat
         <Tooltip>
           <TooltipTrigger asChild>
             <PopoverTrigger asChild ref={triggerRef}>
-              <Button variant="ghost"  className="text-destructive">
+              <Button variant="ghost" className="text-destructive">
                 <Trash2 className="h-4 w-4 mr-2 " />
                 Delete Membership
               </Button>

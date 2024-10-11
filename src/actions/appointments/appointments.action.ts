@@ -3,23 +3,11 @@ import "server-only";
 
 import prismaTenant from "@lib/prisma-tenant";
 import { Prisma } from "@prisma/tenant/client";
-import {
-  RoutedAptStatus,
-  AppointmentStatus
-} from "@public/json/appointment-list";
 import { getCachedSession } from "@actions/session.action";
 import { getPermissionsAction } from "@actions/permission.action";
 import { cache } from "react";
 import dayjs from "dayjs";
-import { tr } from "@faker-js/faker";
-
-export type GetAppointmentFilter = {
-  orgUid?: string;
-  status?: AppointmentStatus;
-  routedAptStatus?: RoutedAptStatus;
-  appointmentId?: number;
-  sort?: "request" | "schedule";
-};
+import { AppointmentStatus, RoutedAptStatus } from "@public/json/appointment-list";
 
 type CreateAppointmentPayload = {
   orgUid: string;
@@ -149,7 +137,14 @@ export const createAppointmentAction = async (payload: CreateAppointmentPayload)
     
   }
 };
-
+export type GetAppointmentFilter = {
+  orgUid?: string;
+  userId?: string;
+  status?: AppointmentStatus;
+  routedAptStatus?: RoutedAptStatus;
+  appointmentId?: number;
+  sort?: "request" | "schedule";
+};
 export type GetAppointments = Awaited<ReturnType<typeof getAppointmentsAction>>;
 export const getAppointmentsAction = cache(async (filter?: GetAppointmentFilter) => {
   const session = await getCachedSession();
@@ -159,7 +154,7 @@ export const getAppointmentsAction = cache(async (filter?: GetAppointmentFilter)
       message: "Unauthorized"
     };
 
-  const { orgUid, status, routedAptStatus, sort } = filter || {};
+  const { orgUid, userId, status, routedAptStatus, sort } = filter || {};
 
   const permissions = await getPermissionsAction(session.user.sub);
   const userPermissionArray = permissions.map(p => p.name);
@@ -171,7 +166,6 @@ export const getAppointmentsAction = cache(async (filter?: GetAppointmentFilter)
   const readAllOrgAppointment = readAllOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
   const readAOwnOrgAppointment = readAOwnOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
   const readAssignedOrgAppointment = readAssignedOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
-
   const appointments = await prismaTenant.appointment.findMany({
     orderBy: {
       ...(sort === "schedule"
@@ -194,7 +188,12 @@ export const getAppointmentsAction = cache(async (filter?: GetAppointmentFilter)
         }
         : {}),
       OR: [
-        { ...(readAllOrgAppointment ? { orgUid } : {}) },
+        { 
+          ...(readAllOrgAppointment ? { 
+            orgUid,
+            ...userId ? { Requesters: { some: { userId } } } : {}
+          } : {})
+        },
         { ...(readAOwnOrgAppointment ? { Requesters: { some: { userId: session.user.sub } } } : {}) },
         { ...(readAssignedOrgAppointment ? {
           AppointmentRouting: {

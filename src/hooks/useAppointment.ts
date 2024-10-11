@@ -5,16 +5,14 @@ import { self } from "@services/request"
 import useSWR from "swr"
 
 export const useOrgAppointments = (filter: GetAppointmentFilter) => {
-  const { orgUid, status, routedAptStatus, sort } = filter
-  const fetcher = (...args: any) => self.get<GetAppointments>(args)
+  const { orgUid } = filter
+  const fetcher = (args: string) => self.get<GetAppointments>(args)
   const searchParams = new URLSearchParams()
-  if(status) searchParams.set('status', status)
-  if(routedAptStatus) searchParams.set('routedAptStatus', routedAptStatus)
-  if(sort) searchParams.set('sort', sort)
-    
+  Object.entries(filter).forEach(([key, value]) => {
+    if(value) searchParams.set(key, value?.toString())
+  })
   return useSWR(`/api/organizations/${orgUid}/appointments?${searchParams.toString()}`, fetcher)
 }
-
 
 type UseOrgAppointment = {
     orgId: string,

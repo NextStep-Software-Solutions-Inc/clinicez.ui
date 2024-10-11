@@ -105,6 +105,13 @@ export const getUserAction = cache(async (key: string, orgUid?: string)=> {
           { userId: key },
           { email: key }
         ], 
+        Organizations: { 
+          some: { 
+            Organization: {
+              orgId: orgUid
+            } 
+          }
+        }
       },
       include: {
         HealthcareProviders: {

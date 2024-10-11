@@ -33,6 +33,7 @@ interface MemberDetailsProps {
 }
 export default function MemberDetails({userId, orgUid}:MemberDetailsProps) {
   const {data: user, isLoading} = useUser({ userId, orgUid });
+  
   const {data: roles} = useOrgRoles(orgUid,  {userId});
   const {data: appointments} = useOrgAppointments({orgUid, userId });
   
@@ -46,17 +47,19 @@ export default function MemberDetails({userId, orgUid}:MemberDetailsProps) {
             <Picture readOnly user={user?.data}/>
             <div className="space-y-2">
               <div className="flex gap-5 flex-wrap items-center basis-[400px]">
-                <LabelValue label="Name" value={`${user.data.firstName} ${user.data.middleName} ${user.data.lastName} ${user.data.suffix ?? ""}`} />
+                <LabelValue label="Name" value={`${user.data.firstName} ${user.data.middleName ?? ""} ${user.data.lastName} ${user.data.suffix ?? ""}`} />
                 <Separator orientation="vertical" className="h-6"/>
-                <LabelValue label="Age" value={user.data.dob ? differenceInCalendarYears(new Date(), user.data.dob,) : "0"} />
+                <LabelValue label="Age" value={`${user.data.dob ? differenceInCalendarYears(new Date(), user.data.dob) : "0"} yr old`} />
                 <Separator orientation="vertical" className="h-6"/>
                 <LabelValue label="Gender" value={user?.data.gender} />
               </div>
+              <Separator />
               <div className="flex gap-5 flex-wrap items-center basis-[400px]">
                 <LabelValue label="Roles" value={roles?.length ?? 0} />
                 <Separator orientation="vertical" className="h-6"/>
                 <LabelValue label="Total Appointments" value={appointments?.data?.length ?? 0} />
               </div>
+              <Separator />
               <LabelValue label="Joined" value={dayjs(user?.data.createdAt).fromNow()} />
             </div>
           </div>

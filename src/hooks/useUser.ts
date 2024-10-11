@@ -8,14 +8,11 @@ type UseUsersFilter = {
   orgUid?: string
 }
 export const useUsers = (filter?: UseUsersFilter) => {
-  const { userId, email, orgUid } = filter || {};
   const fetcher = (...args: any) => self.get<GetUsers>(args)
   const searchParams = new URLSearchParams();
-
-  if (userId) searchParams.append('userId', userId);
-  if (email) searchParams.append("email", email)
-  if (orgUid) searchParams.append("orgUid", orgUid)
-    
+  Object.entries(filter || {}).forEach(([key, value]) => {
+    if(value) searchParams.append(key, value.toString())
+  })
   return  useSWR(() => `/api/users?${searchParams.toString()}`, fetcher);
 }
 type UseUser = {
@@ -28,6 +25,5 @@ export const useUser = ({userId, email, orgUid}: UseUser) => {
   const fetcher = (...args: any) => self.get<GetUser>(args)
   const searchParams = new URLSearchParams();
   if (orgUid) searchParams.append("orgUid", orgUid)
-
   return  useSWR(() => (userId || email) ? `/api/users/${userId || email}?${searchParams.toString()}`: null, fetcher);
 }

@@ -421,7 +421,7 @@ export const deleteConsultationTicketAction = async (consultationId: number) => 
   }
 }
 
-export const archiveConsultationTicketAction = async (consultationId: number) => {
+export const toggleArchiveConsultationTicketAction = async (consultationId: number, isArchived: boolean) => {
   const session = await getCachedSession()
   
   if(!session) return {
@@ -443,19 +443,20 @@ export const archiveConsultationTicketAction = async (consultationId: number) =>
           }
         }, 
         isActive: true, 
-        isArchived: false },
+        isArchived: !isArchived
+      },
       data: {
-        isArchived: true
+        isArchived
       }
     })
     return {
       status: true,
-      message: "Consultation Ticket archived successfully",
+      message: "Consultation Ticket archive status toggled successfully",
       data: null
     }
   } catch (error) {
     console.error(error);
-    let message = "Failed to archive consultation record"
+    let message = "Failed to toggle archive status"
     if(error instanceof PrismaClientKnownRequestError && error.code === 'P2025') {
       message = error.meta?.cause as string ?? message
     }

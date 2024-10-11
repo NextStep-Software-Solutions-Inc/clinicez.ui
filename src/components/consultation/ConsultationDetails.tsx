@@ -149,8 +149,11 @@ export const PatientHpDetails = ({ creators = [], user }: PatientHpDetailsProps)
         <CardContent className="flex gap-2 items-center justify-between">
           <div className="flex gap-2 items-center">
             <Avatar>
-              <Image className="object-cover" width={80} height={80} src={user.picture ?? ""} alt={user.nickname ?? ""}/>
-              <AvatarFallback>{user.firstName?.charAt(0)}{user.lastName?.charAt(0)}</AvatarFallback>
+              {user.picture
+                ? <Image className="object-cover" width={80} height={80} src={user.picture} alt={user.nickname ?? ""}/>
+                : <AvatarFallback>{user.firstName?.charAt(0)}{user.lastName?.charAt(0)}</AvatarFallback>
+              }
+              
             </Avatar>
             <div className="flex flex-col">
               <span className="text-sm font-semibold">{user.firstName} {user.lastName}</span>
@@ -186,8 +189,12 @@ export const PatientHpDetails = ({ creators = [], user }: PatientHpDetailsProps)
               <Fragment key={creator.id} >
                 <div className="flex gap-2 items-center">
                   <Avatar>
-                    <Image className="object-cover" width={80} height={80} src={creator?.HPProfile?.picture ?? ""} alt={creator?.HPProfile?.name ?? ""}/>
-                    <AvatarFallback>{creator?.HPProfile?.name.split(" ").map(c => c.charAt(0)).join()}</AvatarFallback>
+                    {
+                      creator?.HPProfile?.picture
+                        ? <Image className="object-cover" width={80} height={80} src={creator.HPProfile.picture} alt={creator?.HPProfile?.name ?? ""}/>
+                        : <AvatarFallback>{creator?.HPProfile?.name.slice(0,2)}</AvatarFallback>
+                    }
+                    
                   </Avatar>
                   <div className="flex flex-col">
                     <span className="text-sm font-semibold">{creator?.HPProfile?.title} {creator?.HPProfile?.name} {creator?.HPProfile?.suffix}</span>

@@ -1,12 +1,10 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-
 import { Badge, BadgeProps } from "@components/ui/badge"
 import { Checkbox } from "@components/ui/checkbox"
-
 import { DataTableColumnHeader } from "./data-table-column-header"
-import { DataTableRowActions } from "./data-table-row-actions"
+import ConsultationTicketTableRowActions from "./ConsultationTicketTableRowActions"
 import Link from "next/link"
 import { DropdownMenuProvider } from "@components/DropdownMenuProvider"
 import { GetConsultationTickets } from "@actions/consultation/consultation-ticket.action"
@@ -14,7 +12,6 @@ import dayjs from "dayjs"
 import utc from "dayjs/plugin/utc"
 import { useUser } from "@hooks/useUser"
 dayjs.extend(utc)
-
 
 export const columns: ColumnDef<GetConsultationTickets["data"][number]>[] = [
   {
@@ -128,7 +125,7 @@ export const columns: ColumnDef<GetConsultationTickets["data"][number]>[] = [
       return (
         (
           <DropdownMenuProvider>
-            <DataTableRowActions consultation={row.original} />
+            <ConsultationTicketTableRowActions consultation={row.original} />
           </DropdownMenuProvider>
         )
       )

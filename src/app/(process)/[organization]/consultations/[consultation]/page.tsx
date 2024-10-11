@@ -7,7 +7,7 @@ import { Badge } from "@components/ui/badge";
 import { getConsultationTicketAction } from "@actions/consultation/consultation-ticket.action";
 import { notFound } from "next/navigation";
 import { DropdownMenuProvider } from "@components/DropdownMenuProvider";
-import { DataTableRowActions } from "../../../../../components/consultation/data-table-row-actions";
+import ConsultationTicketTableRowActions from "../../../../../components/consultation/ConsultationTicketTableRowActions";
 import ResolveConsultationTicket from "@components/consultation/ResolveConsultationTicket";
 
 export const metadata: Metadata = {
@@ -62,7 +62,7 @@ async function ConsultationPage({params}: AppRouterPageRouteOpts) {
             <ResolveConsultationTicket ticketId={consultationId}/>
           }
           <DropdownMenuProvider>
-            <DataTableRowActions consultation={consultation.data}/>
+            <ConsultationTicketTableRowActions consultation={consultation.data}/>
           </DropdownMenuProvider>
         </div>
       </div>

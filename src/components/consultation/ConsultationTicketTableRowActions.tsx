@@ -21,25 +21,25 @@ import EditConsultationTicketModal from "../appointment/EditConsultationTicketMo
 import React from "react"
 import { useDropdownMenu } from "@components/DropdownMenuProvider"
 import { toast } from "sonner"
-import { archiveConsultationTicketAction, GetConsultationTickets } from "@actions/consultation/consultation-ticket.action"
+import { toggleArchiveConsultationTicketAction, GetConsultationTickets } from "@actions/consultation/consultation-ticket.action"
 import { Archive, Pencil } from "lucide-react"
-interface DataTableRowActionsProps<TData> {
+interface ConsultationTicketTableRowActionsProps<TData> {
   consultation: GetConsultationTickets["data"][number]
 }
 
-export function DataTableRowActions<TData>({
+export default function ConsultationTicketTableRowActions<TData>({
   consultation,
-}: DataTableRowActionsProps<TData>) {
+}: ConsultationTicketTableRowActionsProps<TData>) {
   const { dropdownOpen, setDropdownOpen, hasOpenDialog, dropdownTriggerRef, handleDialogItemSelect, handleDialogItemOpenChange } = useDropdownMenu()!;
 
   const handleArchive = () => {
-    toast.promise(archiveConsultationTicketAction(consultation.id), {
+    toast.promise(toggleArchiveConsultationTicketAction(consultation.id, !consultation.isArchived), {
       position: "top-center",
-      loading: "Archiving...",
+      loading: "Toggling archive status...",
       success: (res) => {
         return res.message
       },
-      error: "Failed to archive",
+      error: "Failed to toggle archive status",
     })
   }
   return (
@@ -72,9 +72,9 @@ export function DataTableRowActions<TData>({
           </DropdownMenuItem>
         </ConsultationTicketSettingSheet>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleArchive}>
+        <DropdownMenuItem onClick={handleArchive} className="text-destructive">
           <Archive className="w-4 h-4 mr-2"/>
-          Archive
+          {consultation.isArchived ? "Unarchive" : "Archive"}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

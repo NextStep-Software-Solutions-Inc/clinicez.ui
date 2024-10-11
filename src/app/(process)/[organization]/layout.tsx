@@ -70,7 +70,7 @@ export default async function ProcessLayout({children, params:{organization}}: P
             <Tooltip>
               <TooltipTrigger asChild>
                 <Link
-                  href="user-org-profile"
+                  href={`/${organization}/user-org-profile`}
                   className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
                 >
                   <UserRound className="h-5 w-5" />
@@ -82,7 +82,7 @@ export default async function ProcessLayout({children, params:{organization}}: P
             <Tooltip>
               <TooltipTrigger asChild>
                 <Link
-                  href="org-settings"
+                  href={`/${organization}/org-settings`}
                   className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
                 >
                   <Settings className="h-5 w-5" />

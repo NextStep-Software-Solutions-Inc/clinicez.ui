@@ -55,18 +55,24 @@ export const getOrganizationRolesAction = cache(async (filter?: FiltersType) => 
     },
     where: {
       isActive: true,
-      ...orgId && { Organization: { orgId } },
-      ...userId && { 
-        UserOrganizations: {
-          some: {
-            ...status ? { status }: {},
-            User: {
-              userId
+      AND: [
+        {
+          ...orgId ? { Organization: { orgId } } : {}
+        },
+        {
+          ...userId ? { 
+            UserOrganizations: {
+              some: {
+                ...status ? { status }: {},
+                User: {
+                  userId
+                }
+              }
+            
             }
-          }
-        
+          } : {}
         }
-      }
+      ]
     },
     select: {
       id: true,

@@ -52,135 +52,146 @@ export const createConsultationTicketAction = async ({systemId, appointmentId, o
 export type GetConsultationTicket = Awaited<ReturnType<typeof getConsultationTicketAction>>;
 export const getConsultationTicketAction = cache(async (consultationId: number, orgUid: string) => {
   const session = await getCachedSession()
-  if(!session) return {
-    status: false,
-    message: "Session not found",
-    data: null
-  }
+  try {
 
-  const [permissions, myHps] = await Promise.all([
-    getPermissionsAction(session.user.sub),
-    getHPsAction({userId: session.user.sub})
-  ])
+    if(!session) throw new Error("Session not found")
 
-  const userPermissionArray = permissions.map(p => p.name);
-  const readAllOrgConsultationsPermissions = ["read:org:consultation:all"]
-  const readOwnOrgConsultationPermissions = ["read:org:consultation:own"]
-  const readCreatedOrgConsultationPermissions = ["read:org:consultation:created"]
-  const readCoCreatedOrgConsultationPermissions = ["read:org:consultation:co-created"]
+    const [permissions, myHps] = await Promise.all([
+      getPermissionsAction(session.user.sub),
+      getHPsAction({userId: session.user.sub})
+    ])
 
-  const readAllOrgConsultations = readAllOrgConsultationsPermissions.every(p => userPermissionArray.includes(p))
-  const readOwnOrgConsultations = readOwnOrgConsultationPermissions.every(p => userPermissionArray.includes(p))
-  const readCreatedOrgConsultations = readCreatedOrgConsultationPermissions.every(p => userPermissionArray.includes(p))
-  const readCoCreatedOrgConsultations = readCoCreatedOrgConsultationPermissions.every(p => userPermissionArray.includes(p))
+    const userPermissionArray = permissions.map(p => p.name);
+    const readAllOrgConsultationsPermissions = ["read:org:consultation:all"]
+    const readOwnOrgConsultationPermissions = ["read:org:consultation:own"]
+    const readCreatedOrgConsultationPermissions = ["read:org:consultation:created"]
+    const readCoCreatedOrgConsultationPermissions = ["read:org:consultation:co-created"]
+
+    const readAllOrgConsultations = readAllOrgConsultationsPermissions.every(p => userPermissionArray.includes(p))
+    const readOwnOrgConsultations = readOwnOrgConsultationPermissions.every(p => userPermissionArray.includes(p))
+    const readCreatedOrgConsultations = readCreatedOrgConsultationPermissions.every(p => userPermissionArray.includes(p))
+    const readCoCreatedOrgConsultations = readCoCreatedOrgConsultationPermissions.every(p => userPermissionArray.includes(p))
   
-  const consultationTicket = await prismaTenant.consultationTicket.findUnique({
-    where: { 
-      id: consultationId,
-      OR: [
-        {
-          ...readAllOrgConsultations ? {orgUid} : {},
-        },
-        { 
-          ...readCreatedOrgConsultations 
-            ? { 
-              ConsultationTicketAuthors: { 
-                some: { 
-                  hpId: { in: myHps.map(hp => hp.id.toString()) } 
-                }
+    const consultationTicket = await prismaTenant.consultationTicket.findUnique({
+      where: { 
+        id: consultationId,
+        OR: [
+          {
+            ...readAllOrgConsultations ? {orgUid} : {},
+          },
+          { 
+            ...readCreatedOrgConsultations 
+              ? { 
+                ConsultationTicketAuthors: { 
+                  some: { 
+                    hpId: { in: myHps.map(hp => hp.id.toString()) } 
+                  }
+                } 
               } 
-            } 
-            : {}
-        },
-        {
-          ...readOwnOrgConsultations
-            ? { Appointment: { Requesters: {  some: { userId: session.user.sub } } } }
-            : {}
-        },
-        {
-          ...readCoCreatedOrgConsultations
-            ? {
-              Appointment: {
-                AppointmentRouting: {
-                  some: {
-                    status: "ACCEPTED",
-                    routedTo: {
-                      in: myHps.map(hp => hp.id.toString())
+              : {}
+          },
+          {
+            ...readOwnOrgConsultations
+              ? { Appointment: { Requesters: {  some: { userId: session.user.sub } } } }
+              : {}
+          },
+          {
+            ...readCoCreatedOrgConsultations
+              ? {
+                Appointment: {
+                  AppointmentRouting: {
+                    some: {
+                      status: "ACCEPTED",
+                      routedTo: {
+                        in: myHps.map(hp => hp.id.toString())
+                      }
                     }
                   }
                 }
               }
-            }
-            : {}
-        }
-      ]
-    },
-    select: {
-      id: true,
-      subject: true,
-      appointmentId: true,
-      orgUid: true,
-      ConsultationTicketAuthors: true,
-      createdAt: true,
-      updatedAt: true,
-      isArchived: true,
-      System: {
-        select: {
-          id: true,
-          name: true
-        }
+              : {}
+          }
+        ]
       },
-      ConsultationTicketAttribute: {
-        select: {
-          noteTemplateName: true,
-          status: true,
-        }
-      },
-      Appointment: {
-        select: {
-          Requesters: {
-            select: {
-              userId: true
-            }
-          },
-          AppointmentAttribute: {
-            select: {
-              AppointmentMode: {
-                select: {
-                  id: true,
-                  name: true
-                }
-              },
-              AppointmentType: {
-                select: {
-                  id: true,
-                  name: true
-                }
-              },
-              Service: {
-                select: {
-                  id: true,
-                  name: true
-                }
-              },
+      select: {
+        id: true,
+        subject: true,
+        appointmentId: true,
+        orgUid: true,
+        ConsultationTicketAuthors: true,
+        createdAt: true,
+        updatedAt: true,
+        isArchived: true,
+        System: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        ConsultationTicketAttribute: {
+          select: {
+            noteTemplateName: true,
+            status: true,
+          }
+        },
+        Appointment: {
+          select: {
+            Requesters: {
+              select: {
+                userId: true
+              }
+            },
+            AppointmentAttribute: {
+              select: {
+                AppointmentMode: {
+                  select: {
+                    id: true,
+                    name: true
+                  }
+                },
+                AppointmentType: {
+                  select: {
+                    id: true,
+                    name: true
+                  }
+                },
+                Service: {
+                  select: {
+                    id: true,
+                    name: true
+                  }
+                },
+              }
             }
           }
-        }
-      },
-      ConsultationNotes: {
-        select: {
-          section: true,
-          content: true,
+        },
+        ConsultationNotes: {
+          select: {
+            section: true,
+            content: true,
+          }
         }
       }
-    }
-  })
+    })
 
-  return {
-    status: true,
-    message: "Consultation record fetched successfully",
-    data: consultationTicket
+    return {
+      status: true,
+      message: "Consultation record fetched successfully",
+      data: consultationTicket
+    }
+  } catch (error) {
+    console.error(`Error fetching consultation ticket: ${error}`);
+    let message = "Failed to fetch consultation record"
+    if(error instanceof Error) {
+      message = error.message
+    }
+    return {
+      status: false,
+      message,
+      data: null
+    }
   }
+
 })
 
 export type GetConsultationTickets = Awaited<ReturnType<typeof getConsultationTicketsAction>>;
@@ -470,14 +481,17 @@ export const toggleArchiveConsultationTicketAction = async (consultationId: numb
 
 export const resolveConsultationTicket = async (consultationId: number) => {
   const session = await getCachedSession()
-  
-  if(!session) return {
-    status: false,
-    message: "Session not found",
-    data: null
-  }
-
   try {
+    if(!session) throw new Error("Session not found")
+      
+    const resolveConsultationTicketPermissions = ["resolve:org:consultation"]
+    const myPermissions = await getPermissionsAction(session.user.sub)
+    const userPermissionArray = myPermissions.map(p => p.name);
+    const canResolveConsultationTicket = resolveConsultationTicketPermissions.every(p => userPermissionArray.includes(p))
+
+    if(!canResolveConsultationTicket) {
+      throw new Error("You do not have permission to resolve consultation tickets")
+    }
     await prismaTenant.consultationTicketAttribute.update({
       where: { 
         consultationTicketId: consultationId,
@@ -495,6 +509,9 @@ export const resolveConsultationTicket = async (consultationId: number) => {
   } catch (error) {
     console.error(error);
     let message = "Failed to resolve consultation record"
+    if (error instanceof Error) {
+      message = error.message
+    }
     if(error instanceof PrismaClientKnownRequestError && error.code === 'P2025') {
       message = error.meta?.cause as string ?? message
     }

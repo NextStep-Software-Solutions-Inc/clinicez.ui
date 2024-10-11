@@ -197,7 +197,7 @@ model ConsultationTicketAuthor {
 model ConsultationTicketAttribute {
   id                   Int                @id @default(autoincrement())
   consultationTicketId Int                @unique
-  status               String             @default("PENDING")
+  status               String             @default("PROCESSING")
   noteTemplateName     String             @default("SOAP")
   whitelistEmails      String[]           @default([])
   ConsultationTicket   ConsultationTicket @relation(fields: [consultationTicketId], references: [id])

@@ -4,12 +4,21 @@ import { resolveConsultationTicket } from "@actions/consultation/consultation-ti
 import ActionButton from "@components/ActionButton";
 import { toast } from "sonner";
 
-export default function ResolveConsultationTicket({ticketId}: {ticketId: number}) {
+interface ResolveConsultationTicketProps {
+  ticketId: number;
+  onResolved?: () => void;
+}
+export default function ResolveConsultationTicket({ticketId, onResolved}: ResolveConsultationTicketProps) {
   const action = async () => {
     
     toast.promise(resolveConsultationTicket(ticketId), {
       loading: "Resolving consultation ticket...",
-      success: "Consultation ticket resolved.",
+      success: res => {
+        if(res.status) {
+          onResolved?.()
+        }
+        return res.message
+      },
       error: "Failed to resolve consultation ticket."
     })
   }

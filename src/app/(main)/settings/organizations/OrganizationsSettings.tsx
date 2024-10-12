@@ -24,6 +24,7 @@ import ActionButton from "@components/ActionButton"
 import { OrgDefaultRoleForm } from "./OrgDefaultRoleForm"
 import ConditionalRender from "@components/utils/ConditionalRender"
 import { useUserOrganizations } from "@hooks/useUserOrganization"
+import { Checkbox } from "@components/ui/checkbox"
 
 const organizationFormSchema = z.object({
   defaultOrgUid: z.string(),
@@ -43,7 +44,7 @@ export default function OrganizationsSettings() {
   const form = useForm<DefaultOrgFormSchema>({
     resolver: zodResolver(organizationFormSchema),
     values: {
-      defaultOrgUid: defaultOrg?.Organization?.orgId ?? "",
+      defaultOrgUid: defaultOrg?.Organization?.orgId ?? ""
     }
   })
 
@@ -104,3 +105,4 @@ export default function OrganizationsSettings() {
     </Form>
   )
 }
+

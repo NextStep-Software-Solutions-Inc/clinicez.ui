@@ -88,6 +88,16 @@ model User {
   ReservedTimeSlots                ReservedTimeSlot[]
   BookedByBookings                 Booking[]                     @relation("BookedBy")
   BookedForBookings                Booking[]                     @relation("BookedFor")
+  UserPreference                   UserPreference?
+}
+
+model UserPreference {
+  id                              Int     @id @default(autoincrement())
+  userId                          Int     @unique
+  autoAcceptAppointmentAssignment Boolean @default(false)
+  autoAssignAppointmentToSelf     Boolean @default(false)
+
+  User User @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model Organization {
@@ -146,7 +156,6 @@ model OrgAppointmentConfig {
   perClientResetInterval     Int          @default(0)
   maxAppointmentsPerDay      Int          @default(0)
   lastPerDayIntervalReset    DateTime?    @db.Date
-  perDayResetInterval        Int          @default(0)
   Organization               Organization @relation(fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 

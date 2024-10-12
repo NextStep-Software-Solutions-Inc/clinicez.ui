@@ -4,6 +4,7 @@ import prismaTenant from '@lib/prisma-tenant';
 import { getCachedSession } from '@actions/session.action';
 import 'server-only'
 import { getPermissionsAction } from '@actions/permission.action';
+import { PERMISSIONS } from '@lib/permissions';
 
 type UpsertPreAssessmentNotePayload = {
     appointmentId: number;
@@ -16,76 +17,91 @@ type UpsertPreAssessmentNotePayload = {
 export const upsertPreAssessmentNoteAction = async ({appointmentId, orgUid, assessment, homeInstructions, remarks}: UpsertPreAssessmentNotePayload) => {
   const session = await getCachedSession()
   
-  if(!session) return {
-    status: false,
-    message: "Session not found",
-    data: null
-  }
-
-  const writePreAssessmentNotePermissions = ["write:org:pre-assessment"]
-  const myPermissions = await getPermissionsAction({
-    userId:session.user.sub
-  })
-  const myPermissionArray = myPermissions.map(permission => permission.name)
-  const writePermission = writePreAssessmentNotePermissions.every(permission => myPermissionArray.includes(permission))
+  try {
+    if(!session) throw new Error("User not authenticated.")
   
-  if(!writePermission) return {
-    status: false,
-    message: "You do not have permission to write pre-assessment notes",
-    data: null
-  }
-  
-  await prismaTenant.preAssessmentNote.upsert({
-    where: {
-      unique_appointment_created_by: {
+    const myPermissions = await getPermissionsAction({  userId:session.user.sub, type: "ORGANIZATION" })
+    const writePreAssessmentNotePermissions = [PERMISSIONS.ORGANIZATION["WRITE:ORG:PRE_ASSESSMENT_NOTE"].name]
+    const myPermissionArray = myPermissions.map(permission => permission.name)
+    const canWritePermission = writePreAssessmentNotePermissions.every(permission => myPermissionArray.includes(permission))
+    
+    if(!canWritePermission) throw new Error("You do not have permission to write pre-assessment note.")
+    
+    await prismaTenant.preAssessmentNote.upsert({
+      where: {
+        unique_appointment_created_by: {
+          appointmentId,
+          createdBy: session.user.email
+        }
+      },
+      create: {
         appointmentId,
-        createdBy: session.user.email
+        orgUid,
+        assessment,
+        homeInstructions,
+        remarks,
+        createdBy: session.user.email,
+        PreConsultationNoteAttribute:{
+          create: {}
+        }
+      },
+      update: {
+        assessment,
+        homeInstructions,
+        remarks,
       }
-    },
-    create: {
-      appointmentId,
-      orgUid,
-      assessment,
-      homeInstructions,
-      remarks,
-      createdBy: session.user.email,
-      PreConsultationNoteAttribute:{
-        create: {}
-      }
-    },
-    update: {
-      assessment,
-      homeInstructions,
-      remarks,
+    })
+    return {
+      status: true,
+      message: "Pre-consultation note created successfully",
     }
-  })
-  return {
-    status: true,
-    message: "Pre-consultation note created successfully",
-    data: null
+  } catch (error) {
+    console.error(`Error upserting pre-assessment note: ${error}`);
+    let message = "An error occurred while updating pre-assessment note.";
+    if(error instanceof Error) message = error.message;
+    return {
+      status: false,
+      message,
+    }
+    
   }
 }
 
 export type GetPreAssessmentNotes = Awaited<ReturnType<typeof getPreAssessmentNotesAction>>
 export const getPreAssessmentNotesAction = async (appointmentId: number) => {
   const session = await getCachedSession()
-  if(!session) return {
-    status: false,
-    message: "Session not found",
-    data: []
-  }
+  try {
+    if(!session) throw new Error("User not authenticated.")
 
-  const preAssessmentNote = await prismaTenant.preAssessmentNote.findMany({
-    orderBy: {
-      createdAt: 'desc'
-    },
-    where: {
-      appointmentId
+    const myPermissions = await getPermissionsAction({userId: session.user.sub, type: "ORGANIZATION"})
+    const readPreAssessmentNotePermissions = [PERMISSIONS.ORGANIZATION["READ:ORG:PRE_ASSESSMENT_NOTE"].name]
+    const myPermissionArray = myPermissions.map(permission => permission.name)
+    const canReadPermission = readPreAssessmentNotePermissions.every(permission => myPermissionArray.includes(permission))
+
+    if(!canReadPermission) throw new Error("You do not have permission to read pre-assessment note.")
+
+  
+    const preAssessmentNote = await prismaTenant.preAssessmentNote.findMany({
+      orderBy: {
+        createdAt: 'desc'
+      },
+      where: {
+        appointmentId
+      }
+    })
+    return {
+      status: true,
+      message: "Pre-consultation note fetched successfully",
+      data: preAssessmentNote
     }
-  })
-  return {
-    status: true,
-    message: "Pre-consultation note fetched successfully",
-    data: preAssessmentNote
+  } catch (error) {
+    console.error(`Error fetching pre-assessment note: ${error}`);
+    let message = "An error occurred while fetching pre-assessment note.";
+    if(error instanceof Error) message = error.message;
+    return {
+      status: false,
+      message,
+      data: []
+    }
   }
 }

@@ -28,21 +28,21 @@ export const receiveAppointmentAction = async (formData: FormData) => {
       }
     });
 
-    const autoAssignToSelf = userPreference?.autoAssignAppointmentToSelf || false;
+    const role = formData.get('role');
+    const autoAssignToSelf = (userPreference?.autoAssignAppointmentToSelf && !!role) || false;
     const autoAcceptAppointment = userPreference?.autoAcceptAppointmentAssignment || false;
     
     const appointmentId = parseInt(formData.get('appointmentId') as string);
     const newStatus = formData.get('status') as string;
-    const role = formData.get('role');
     await prismaTenant.appointmentAttribute.update({
       where: {
         appointmentId
       },
       data: {
-        status: newStatus,
+        status: autoAssignToSelf ? "ROUTED" : newStatus,
         receivedAt: new Date(),
         receivedBy: session.user.sub,
-        ...(autoAssignToSelf && role ? {
+        ...(autoAssignToSelf ? {
           Appointment: {
             update: {
               AppointmentRouting: {

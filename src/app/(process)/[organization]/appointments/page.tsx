@@ -58,8 +58,8 @@ async function AppointmentsPage({ searchParams, params }: AppRouterPageRouteOpts
                 name: role.Role.name
               }))      
             }))}
-            appointmentStatusCounts={appointmentCounts.data}
-            routedAppointmentStatusCounts={routedAptCounts.data}
+            appointmentStatusCounts={appointmentCounts.data ?? {}}
+            routedAppointmentStatusCounts={routedAptCounts.data ?? {}}
             defaultLayout={defaultLayout}
             defaultCollapsed={defaultCollapsed}
             navCollapsedSize={4}

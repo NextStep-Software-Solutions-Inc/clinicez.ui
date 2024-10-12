@@ -101,7 +101,6 @@ export const setOrgAppointmentTabsAction = async (orgUid: string, appointmentTab
 }
 
 export const setOrgRoleAppointmentTabsAction = async (orgRoleId: number, orgAppointmentTabIds: number[]) => {
-  console.log({orgRoleId, orgAppointmentTabIds});
 
   try {
     await prismaCommon.$transaction(async (prisma) => {

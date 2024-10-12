@@ -92,12 +92,13 @@ model User {
 }
 
 model UserPreference {
-  id                              Int     @id @default(autoincrement())
-  userId                          Int     @unique
-  autoAcceptAppointmentAssignment Boolean @default(false)
-  autoAssignAppointmentToSelf     Boolean @default(false)
-
-  User User @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id                              Int                 @id @default(autoincrement())
+  userId                          Int                 @unique
+  autoAcceptAppointmentAssignment Boolean             @default(false)
+  autoAssignAppointmentToSelf     Boolean             @default(false)
+  defaultHpId                     Int?
+  HealthCareProvider              HealthcareProvider? @relation(fields: [defaultHpId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  User                            User                @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model Organization {
@@ -363,6 +364,7 @@ model HealthcareProvider {
   ProfessionalDetails ProfessionalDetails?
   ReservedTimeSlots   ReservedTimeSlot[]
   HPProfile           HPProfile?
+  UserPreference      UserPreference[]
 
   @@unique([userId, type], name: "unique_user_hp_type")
 }

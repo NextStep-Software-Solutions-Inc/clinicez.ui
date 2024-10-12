@@ -72,7 +72,6 @@ export const useAppointmentTools = ({ appointment, revalidate}:UseAppointmentToo
       routedAptStatuses: [],
       component: <ReceiveAppointment 
         key={`${appointment.id}-receive`}
-        orgUId={appointment.orgUid}
         appointmentId={appointment.id}
         onReceived={revalidate} 
         disabled={!appointment}

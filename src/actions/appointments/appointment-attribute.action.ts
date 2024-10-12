@@ -25,11 +25,21 @@ export const receiveAppointmentAction = async (formData: FormData) => {
         User: {
           userId: session.user.sub,
         }
+      },
+      select: {
+        HealthCareProvider: {
+          select: {
+            id: true,
+            type: true
+          }
+        },
+        autoAssignAppointmentToSelf: true,
+        autoAcceptAppointmentAssignment: true,
       }
     });
 
-    const role = formData.get('role');
-    const autoAssignToSelf = (userPreference?.autoAssignAppointmentToSelf && !!role) || false;
+    const defaultHp = userPreference?.HealthCareProvider
+    const autoAssignToSelf = (userPreference?.autoAssignAppointmentToSelf && !!defaultHp) || false;
     const autoAcceptAppointment = userPreference?.autoAcceptAppointmentAssignment || false;
     
     const appointmentId = parseInt(formData.get('appointmentId') as string);
@@ -47,9 +57,9 @@ export const receiveAppointmentAction = async (formData: FormData) => {
             update: {
               AppointmentRouting: {
                 create: {
-                  routedTo: session.user.sub,
+                  routedTo: String(defaultHp?.id),
                   routedBy:session.user.sub,
-                  routedToRole: String(role),
+                  routedToRole: defaultHp?.type,
                   status: autoAcceptAppointment ? "ACCEPTED" : "PENDING",
                 }
               }

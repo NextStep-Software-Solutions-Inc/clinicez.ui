@@ -70,7 +70,6 @@ export default function AddPatientModal({orgUid, onAddPatient}:AddPatientModalPr
 
   const action = async () => {
     form.handleSubmit(async (values) => {
-      console.log({...values, orgUid});
       toast.promise(createUserAction({...values, orgUid}), {
         loading: "Adding patient...",
         success: res => {

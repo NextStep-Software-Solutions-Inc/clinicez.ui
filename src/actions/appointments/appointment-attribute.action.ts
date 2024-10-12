@@ -3,6 +3,7 @@ import 'server-only'
 
 import { getCachedSession } from '@actions/session.action';
 import prismaTenant from '@lib/prisma-tenant';
+import prismaCommon from '@lib/prisma-common';
 import { getPermissionsAction } from '@actions/permission.action';
 import { PERMISSIONS } from '@lib/permissions';
 
@@ -18,9 +19,21 @@ export const receiveAppointmentAction = async (formData: FormData) => {
     const canReceiveAppointment = receiveAppointmentPermissions.some(permission => myPermissionArray.includes(permission));
 
     if(!canReceiveAppointment) throw new Error("You do not have permission to receive appointment.");
+
+    const userPreference = await prismaCommon.userPreference.findFirst({
+      where: {
+        User: {
+          userId: session.user.sub,
+        }
+      }
+    });
+
+    const autoAssignToSelf = userPreference?.autoAssignAppointmentToSelf || false;
+    const autoAcceptAppointment = userPreference?.autoAcceptAppointmentAssignment || false;
     
     const appointmentId = parseInt(formData.get('appointmentId') as string);
     const newStatus = formData.get('status') as string;
+    const role = formData.get('role');
     await prismaTenant.appointmentAttribute.update({
       where: {
         appointmentId
@@ -28,7 +41,21 @@ export const receiveAppointmentAction = async (formData: FormData) => {
       data: {
         status: newStatus,
         receivedAt: new Date(),
-        receivedBy: session.user.sub
+        receivedBy: session.user.sub,
+        ...(autoAssignToSelf && role ? {
+          Appointment: {
+            update: {
+              AppointmentRouting: {
+                create: {
+                  routedTo: session.user.sub,
+                  routedBy:session.user.sub,
+                  routedToRole: String(role),
+                  status: autoAcceptAppointment ? "ACCEPTED" : "PENDING",
+                }
+              }
+            }
+          }
+        } : {})
       }
     })
     return {

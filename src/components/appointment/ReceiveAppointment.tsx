@@ -26,11 +26,10 @@ export default function ReceiveAppointment({disabled = false, appointmentId, onR
     toast.promise(receiveAppointmentAction(formData), {
       loading: "Receiving appointment...",
       success: (res) => {
-        if (res) {
+        if (res.status) {
           onReceived?.();
-          return "Appointment received.";
         }
-        return "Something went wrong.";
+        return res.message;
       },
       error: "Failed to receive appointment.",
     });

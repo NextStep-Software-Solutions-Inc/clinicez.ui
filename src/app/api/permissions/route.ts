@@ -7,9 +7,9 @@ import { getPermissionsAction } from '@actions/permission.action';
 
 export const GET = withJwtAuth(async (req: NextRequest) => {
   const searchParams = req.nextUrl.searchParams
-  const userId = searchParams.get('userId') ?? undefined;
-  const type = searchParams.get('type') ?? undefined;
 
-  const permissions = await getPermissionsAction({ userId, type });
+  const payload = Object.fromEntries(searchParams.entries());
+
+  const permissions = await getPermissionsAction(payload);
   return NextResponse.json(permissions, { status: 200 });
 });

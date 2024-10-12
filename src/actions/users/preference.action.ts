@@ -67,7 +67,7 @@ export const upsertMyUserPreference = async (payload: UpsertUserPreferencePayloa
 
     if(!canUpsertUserPreference) throw new Error("You do not have permission to update user preference.");
 
-    const { defaultHpId } = payload;
+    const { defaultHpId, autoAssignAppointmentToSelf, autoAcceptAppointmentAssignment } = payload;
     const userPreference = await prismaCommon.userPreference.upsert({
       where: {
         id: payload.userPreferenceId,
@@ -81,20 +81,20 @@ export const upsertMyUserPreference = async (payload: UpsertUserPreferencePayloa
             userId: session.user.sub
           }
         },
-        ...defaultHpId ? {
+        ...autoAssignAppointmentToSelf ? {
           HealthCareProvider: {
             connect: {
               id: defaultHpId
             }
           }
         } : {},
-        autoAcceptAppointmentAssignment: payload.autoAcceptAppointmentAssignment,
-        autoAssignAppointmentToSelf: payload.autoAssignAppointmentToSelf,
+        autoAcceptAppointmentAssignment: autoAcceptAppointmentAssignment,
+        autoAssignAppointmentToSelf: autoAssignAppointmentToSelf,
       },
       update: {
-        ...defaultHpId ? {defaultHpId} : {},
-        autoAcceptAppointmentAssignment: payload.autoAcceptAppointmentAssignment,
-        autoAssignAppointmentToSelf: payload.autoAssignAppointmentToSelf
+        ...autoAssignAppointmentToSelf ? {defaultHpId } : {defaultHpId: null},
+        autoAcceptAppointmentAssignment: autoAcceptAppointmentAssignment,
+        autoAssignAppointmentToSelf: autoAssignAppointmentToSelf
       }
     })
     

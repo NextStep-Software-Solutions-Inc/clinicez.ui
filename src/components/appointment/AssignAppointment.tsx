@@ -70,7 +70,7 @@ export default function AssignAppointment({disabled = false, appointment, onAssi
           onAssigned?.()
           return `Assigned successfully to ${selectedHp?.name}`
         }
-        return "Something went wrong"
+        return res.message
       },
       error: "Failed to assign"
     });

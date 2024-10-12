@@ -12,6 +12,7 @@ import AddVitalSignsModal from '../../app/(main)/user/[user]/phr/vitals/AddVital
 import { Button } from '@components/ui/button';
 import { Activity } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@components/ui/tooltip';
+import { PERMISSIONS } from '@lib/permissions';
 
 type AppointmentActions = "accept"|"decline"|"approve"|"receive"| "reject" | "assign" | "create-consultation-ticket"| "reschedule" | "add-vitals"
 type AppointmentStatusTools = {
@@ -38,7 +39,7 @@ export const useAppointmentTools = ({ appointment, revalidate}:UseAppointmentToo
   const tools: AppointmentStatusTools = [
     {
       action:"accept",
-      permissions: ["accept:org:appointment"],
+      permissions: [PERMISSIONS.ORGANIZATION["ACCEPT:ORG:APPOINTMENT_ASSIGNMENT"].name],
       appointmentStatuses: ["all", "routed"],
       routedAptStatuses: ["pending"],
       component: routingCode ? (
@@ -52,7 +53,7 @@ export const useAppointmentTools = ({ appointment, revalidate}:UseAppointmentToo
     },
     {
       action:"decline",
-      permissions: ["decline:org:appointment"],
+      permissions: [PERMISSIONS.ORGANIZATION["DECLINE:ORG:APPOINTMENT_ASSIGNMENT"].name],
       appointmentStatuses: ["all", "routed"],
       routedAptStatuses: ["pending"],
       component: routingCode ? (
@@ -66,7 +67,7 @@ export const useAppointmentTools = ({ appointment, revalidate}:UseAppointmentToo
     },
     {
       action:"receive",
-      permissions: ["receive:org:appointment"],
+      permissions: [PERMISSIONS.ORGANIZATION["RECEIVE:ORG:APPOINTMENT"].name],
       appointmentStatuses: ["all", "pending"],
       routedAptStatuses: [],
       component: <ReceiveAppointment 
@@ -79,7 +80,7 @@ export const useAppointmentTools = ({ appointment, revalidate}:UseAppointmentToo
     },
     {
       action:"reject",
-      permissions: ["reject:org:appointment"],
+      permissions: [PERMISSIONS.ORGANIZATION["REJECT:ORG:APPOINTMENT"].name],
       appointmentStatuses: ["all", "accepted", "pending"],
       routedAptStatuses: [],
       component: (
@@ -93,7 +94,7 @@ export const useAppointmentTools = ({ appointment, revalidate}:UseAppointmentToo
     },
     {
       action:"create-consultation-ticket",
-      permissions: ["create:org:consultation-ticket"],
+      permissions: [PERMISSIONS.ORGANIZATION["CREATE:ORG:CONSULTATION_TICKET"].name],
       appointmentStatuses: ["routed"],
       routedAptStatuses: ["accepted"],
       component: (
@@ -107,7 +108,7 @@ export const useAppointmentTools = ({ appointment, revalidate}:UseAppointmentToo
     },
     {
       action:"assign",
-      permissions: ["assign:org:appointment"],
+      permissions: [PERMISSIONS.ORGANIZATION["ASSIGN:ORG:APPOINTMENT"].name],
       appointmentStatuses: ["received", "routed"],
       routedAptStatuses: [],
       component: (
@@ -121,7 +122,7 @@ export const useAppointmentTools = ({ appointment, revalidate}:UseAppointmentToo
     },
     {
       action:"reschedule",
-      permissions: ["reschedule:org:appointment"],
+      permissions: [PERMISSIONS.ORGANIZATION["RESCHEDULE:ORG:APPOINTMENT"].name],
       appointmentStatuses: ["received", "routed"],
       routedAptStatuses: ["accepted"],
       component: (
@@ -135,7 +136,7 @@ export const useAppointmentTools = ({ appointment, revalidate}:UseAppointmentToo
     },
     {
       action:"add-vitals",
-      permissions: ["write:org:vitals"],
+      permissions: [PERMISSIONS.ORGANIZATION["WRITE:ORG:VITAL_SIGNS"].name],
       appointmentStatuses: ["received", "routed"],
       routedAptStatuses: [],
       component: (

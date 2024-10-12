@@ -109,6 +109,14 @@ export const PERMISSIONS = {
     "REJECT:ORG:APPOINTMENT": {
       name: "reject:org:appointment",
       description: "User can reject appointment within the organization.",
-    }
+    },
+    "WRITE:ORG:VITAL_SIGNS": {
+      name: "write:org:vital_signs",
+      description: "User can write vital signs within the organization.",
+    },
+    "RESCHEDULE:ORG:APPOINTMENT": {
+      name: "reschedule:org:appointment",
+      description: "User can reschedule appointment within the organization.",
+    },
   },
 }

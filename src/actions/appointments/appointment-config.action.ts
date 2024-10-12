@@ -18,7 +18,6 @@ type UpsertOrgAppointmentConfig = {
   maxAppointmentsPerClient?: number;
   perClientResetInterval?: number;
   maxAppointmentsPerDay?: number;
-  perDayResetInterval?: number;
   orgUid: string;
 }
 export const upsertOrgAppointmentConfigAction = async (orgAppointmentConfigId: number, data: UpsertOrgAppointmentConfig) => {
@@ -36,13 +35,11 @@ export const upsertOrgAppointmentConfigAction = async (orgAppointmentConfigId: n
         maxAppointmentsPerClient: data.maxAppointmentsPerClient,
         perClientResetInterval: data.perClientResetInterval,
         maxAppointmentsPerDay: data.maxAppointmentsPerDay,
-        perDayResetInterval: data.perDayResetInterval
       },
       update: {
         maxAppointmentsPerClient: data.maxAppointmentsPerClient,
         perClientResetInterval: data.perClientResetInterval,
         maxAppointmentsPerDay: data.maxAppointmentsPerDay,
-        perDayResetInterval: data.perDayResetInterval
       }
     });
     return {

@@ -28,9 +28,6 @@ const appointmentSettingsForm = z.object({
   maxAppointmentsPerDay: z.number({
     coerce: true
   }).min(0),
-  perDayResetInterval: z.number({
-    coerce: true
-  }).min(0),
 })
 
 export default function AppointmentSettings(){
@@ -43,7 +40,6 @@ export default function AppointmentSettings(){
       maxAppointmentsPerClient: orgAppointmentConfig?.maxAppointmentsPerClient ?? 0,
       perClientResetInterval: orgAppointmentConfig?.perClientResetInterval ?? 0,
       maxAppointmentsPerDay: orgAppointmentConfig?.maxAppointmentsPerDay ?? 0,
-      perDayResetInterval: orgAppointmentConfig?.perDayResetInterval ?? 0,
     }
   })
 
@@ -55,7 +51,6 @@ export default function AppointmentSettings(){
         maxAppointmentsPerClient: data.maxAppointmentsPerClient,
         perClientResetInterval: data.perClientResetInterval,
         maxAppointmentsPerDay: data.maxAppointmentsPerDay,
-        perDayResetInterval: data.perDayResetInterval
       }), {
         loading: "Saving changes...",
         success: res => {

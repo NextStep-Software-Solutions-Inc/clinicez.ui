@@ -309,6 +309,7 @@ export const getAppointmentAction = cache(async (id: number, orgUid?: string) =>
             userId: true
           }
         },
+        orgUid: true,
         AppointmentAttachments: {
           select: {
             id: true,

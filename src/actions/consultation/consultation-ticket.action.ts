@@ -360,7 +360,7 @@ export const getConsultationTicketsAction = async ({orgUid, filters}: {orgUid: s
     return {
       status: false,
       message,
-      data: null
+      data: []
     }
   }
 }

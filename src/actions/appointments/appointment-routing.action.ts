@@ -3,6 +3,7 @@ import 'server-only'
 
 import { getCachedSession } from '@actions/session.action';
 import prismaTenant from '@lib/prisma-tenant';
+import prismaCommon from '@lib/prisma-common';
 import { Prisma } from "@prisma/tenant/client"
 import { hasCodeProperty } from '@lib/utils';
 import { getPermissionsAction } from '@actions/permission.action';

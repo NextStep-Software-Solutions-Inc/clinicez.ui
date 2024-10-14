@@ -22,10 +22,10 @@ type CreateAppointmentPayload = {
   requesters: string[];
   attachments: string[];
   hpId?: string;
-  schedule: {
-    date: Date;
-    timeStart: Date;
-    timeEnd: Date;
+  schedule?: {
+    date?: Date;
+    timeStart?: Date;
+    timeEnd?: Date;
   };
 };
 export const createAppointmentAction = async (payload: CreateAppointmentPayload) => {
@@ -35,7 +35,7 @@ export const createAppointmentAction = async (payload: CreateAppointmentPayload)
     if (!session) throw new Error("Unauthorized");
 
     const { orgUid, subject, complaint, requesters, modeId, typeId, serviceId, attachments, hpId, schedule } = payload;
-    const { date, timeStart, timeEnd } = schedule;
+    const { date, timeStart, timeEnd } = schedule ?? {};
     
     const createAppointmentPermissions = [PERMISSIONS.ORGANIZATION["WRITE:ORG:APPOINTMENT"].name];
     const myPermissions = await getPermissionsAction({ userId:session.user.sub });

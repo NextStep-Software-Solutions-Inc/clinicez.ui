@@ -93,6 +93,8 @@ export const acceptAppointmentAction = async (formData: FormData) => {
     if(!canAcceptAppointment) throw new Error('You do not have permission to accept appointment');
 
     const routingCode = formData.get('routingCode') as string;
+    console.log({routingCode});
+    
     await prismaTenant.appointmentRouting.update({
       where: { 
         routingCode,

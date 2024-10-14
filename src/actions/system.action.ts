@@ -16,3 +16,60 @@ export const getSystemsAction = cache(async (orgUid?:string) => {
     }
   });
 });
+
+type CreateSystemPayload = {
+  name: string;
+  orgUid: string;
+}
+export const createSystemAction = async (payload: CreateSystemPayload) => {
+  const { name, orgUid } = payload;
+  try {
+    await prismaTenant.system.create({
+      data: {
+        orgUid,
+        name
+      }
+    });
+    return { status: true, message: "System created successfully" }
+  } catch (error) {
+    console.error(`Failed to create system: ${error}`);
+    let message = "Failed to create system";
+    if(error instanceof Error) message = error.message;
+    return { status: false, message }    
+  }
+}
+
+type UpdateSystemPayload = {
+  id: number;
+  name: string;
+}
+export const updateSystemAction = async (payload: UpdateSystemPayload) => {
+  const { id, name } = payload;
+  try {
+    await prismaTenant.system.update({
+      where: { id, isActive: true },
+      data: { name }
+    });
+    return { status: true, message: "System updated successfully" }
+  } catch (error) {
+    console.error(`Failed to update system: ${error}`);
+    let message = "Failed to update system";
+    if(error instanceof Error) message = error.message;
+    return { status: false, message }    
+  }
+}
+
+export const deleteSystemAction = async (id: number) => {
+  try {
+    await prismaTenant.system.update({
+      where: { id, isActive: true },
+      data: { isActive: false }
+    });
+    return { status: true, message: "System deleted successfully" }
+  } catch (error) {
+    console.error(`Failed to delete system: ${error}`);
+    let message = "Failed to delete system";
+    if(error instanceof Error) message = error.message;
+    return { status: false, message }    
+  }
+}

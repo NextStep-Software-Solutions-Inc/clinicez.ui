@@ -71,15 +71,7 @@ export default function ReviewBooking({ nextStep, prevStep, isLastStep, isFirstS
       toast.error("Healthcare Provider is required")
       return;
     }
-    if (!bookAppointmentForm.selectedTimeSlot?.start || !bookAppointmentForm.selectedTimeSlot?.end) {
-      toast.error("Time slot is required")
-      return;
-    }
-    if(!bookAppointmentForm.preferredDate) {
-      toast.error("Preferred date is required")
-      return;
-    }
-
+  
     if(!userId) {
       return  toast.error("User not found")
     }

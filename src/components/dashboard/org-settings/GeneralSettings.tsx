@@ -217,7 +217,10 @@ export default function GeneralSettings() {
                 </FormItem>
               )}
             />
-            <Separator/>
+            <div>
+              <h5 className="text-lg font-semibold">Organization Preferences</h5>
+              <Separator/>
+            </div>
             <FormField
               control={form.control}
               name="sendEmailNotification"
@@ -262,9 +265,10 @@ export default function GeneralSettings() {
                 </FormItem>
               )}
             />
-            
-            <Separator/>
-
+            <div>
+              <h5 className="text-lg font-semibold">Feature Flags</h5>
+              <Separator/>
+            </div>
             <FormField
               control={form.control}
               name="enableAppointment"

@@ -13,6 +13,7 @@ export const getOrgServiceCategoriesAction = async (orgUid?: string) => {
     select: {
       id: true,
       name: true,
+      description: true,
       Services: {
         select: {
           id: true,
@@ -32,3 +33,66 @@ export const getOrgServiceCategoriesAction = async (orgUid?: string) => {
   return orgServiceCategories;
 }
 
+type CreateOrgServiceCategoryPayload = {
+  orgUid: string;
+  name: string;
+  description?: string;
+}
+export const createOrgServiceCategoryAction = async (payload: CreateOrgServiceCategoryPayload) => {
+  const { name, description, orgUid } = payload;
+  try {
+    await prismaTenant.serviceCategory.create({
+      data: {
+        name,
+        description,
+        orgUid
+      }
+    });
+    return { status: true, message: "Service category created successfully" }
+  } catch (error) {
+    console.error(`Failed to create service category: ${error}`);
+    let message = "Failed to create service category";
+    if(error instanceof Error) message = error.message;
+    return { status: false, message }
+  }
+}
+
+type UpdateOrgServiceCategoryPayload = {
+  id: number;
+  name: string;
+  description?: string;
+}
+export const updateOrgServiceCategoryAction = async (payload: UpdateOrgServiceCategoryPayload) => {
+  const { id, name, description } = payload;
+  try {
+    await prismaTenant.serviceCategory.update({
+      where: { id },
+      data: {
+        name,
+        description
+      }
+    });
+    return { status: true, message: "Service category updated successfully" }
+  } catch (error) {
+    console.error(`Failed to update service category: ${error}`);
+    let message = "Failed to update service category";
+    if(error instanceof Error) message = error.message;
+    return { status: false, message }
+  }
+}
+
+export const deleteServiceCategoryAction = async (id: number) => {
+  try {
+    await prismaTenant.serviceCategory.update({
+      where: { id, isActive: true },
+      data: {  isActive: false
+      }
+    });
+    return { status: true, message: "Service category deleted successfully" }
+  } catch (error) {
+    console.error(`Failed to delete service category: ${error}`);
+    let message = "Failed to delete service category";
+    if(error instanceof Error) message = error.message;
+    return { status: false, message }
+  }
+}

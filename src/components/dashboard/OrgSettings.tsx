@@ -15,6 +15,10 @@ import OrgPermissionsSetting from "./org-settings/OrgPermissionsSetting";
 import OrgMembershipSettings from "./org-settings/OrgMembershipSettings";
 import AppointmentSettings from "./org-settings/AppointmentSettings";
 import AppointmentTabsConfig from "./org-settings/AppointmentTabsConfig";
+import AppointmentTypeList from "./org-settings/AppointmentTypeList";
+import AppointmentModeList from "./org-settings/AppointmentModeList";
+import ServiceCategoryList from "./org-settings/ServiceCategoryList";
+import ServiceList from "./org-settings/ServiceList";
 
 const tabs = ["general", "membership", "appointments", "consultations", "roles", "permissions"]
 export default function OrgSettings() {
@@ -22,7 +26,7 @@ export default function OrgSettings() {
 
     <div className="container mx-auto space-y-5">
       {/* <h5 className="text-lg font-bold">Organization Membership Requirements</h5> */}
-      <Tabs defaultValue={tabs[0]} className="w-full">
+      <Tabs defaultValue={tabs[2]} className="w-full">
         <TabsList className="flex gap-1 justify-start">
           <Each
             of={tabs}
@@ -46,6 +50,10 @@ export default function OrgSettings() {
           <div className="space-y-5">
             <AppointmentSettings/>
             <AppointmentTabsConfig/>
+            <AppointmentTypeList/>
+            <AppointmentModeList/>
+            <ServiceCategoryList/>
+           
           </div>
         </TabsContent>
         <TabsContent value="consultations">

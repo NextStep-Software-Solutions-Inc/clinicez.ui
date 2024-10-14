@@ -4,15 +4,15 @@ import useSWR from "swr"
 
 type UseOrgServicesFilter = {
   orgUid: string,
-  categoryId?: string
+  categoryId?: number
 }
 export const useOrgServices = (filter: UseOrgServicesFilter) => {
-  const { orgUid, categoryId } = filter
   const fetcher = (...args:any) => self.get<GetOrgServices>(args)
   const searchParams = new URLSearchParams()
 
-  if(orgUid) searchParams.set('orgUid', orgUid)
-  if(categoryId) searchParams.set('categoryId', categoryId)
-
+  Object.entries(filter).forEach(([key, value]) => {
+    if(value) searchParams.set(key, value.toString())
+  })
+  
   return useSWR(`/api/services?${searchParams.toString()}`, fetcher)
 }

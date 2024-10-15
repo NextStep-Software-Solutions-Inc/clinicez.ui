@@ -424,9 +424,9 @@ export const getAppointmentCountsAction = cache(async (orgUid: string) => {
     const permissions = await getPermissionsAction({ userId:session.user.sub });
     const userPermissionArray = permissions.map(p => p.name);
     
-    const readAllOrgAppointmentPermission = ["read:org:appointment:all"];
-    const readAOwnOrgAppointmentPermission = ["read:org:appointment:own"];
-    const readAssignedOrgAppointmentPermission = ["read:org:appointment:assigned"];
+    const readAllOrgAppointmentPermission = [PERMISSIONS.ORGANIZATION["READ:ORG:APPOINTMENT:ALL"].name];
+    const readAOwnOrgAppointmentPermission = [PERMISSIONS.ORGANIZATION["READ:ORG:APPOINTMENT:OWN"].name];
+    const readAssignedOrgAppointmentPermission = [PERMISSIONS.ORGANIZATION["READ:ORG:APPOINTMENT:ASSIGNED"].name];
     
     const canReadAllOrgAppointment = readAllOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
     const canReadAOwnOrgAppointment = readAOwnOrgAppointmentPermission.every(p => userPermissionArray.includes(p))

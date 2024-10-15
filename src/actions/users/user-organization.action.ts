@@ -9,6 +9,7 @@ import { UserOrganizationStatus, Prisma } from "@prisma/common/client";
 import path from "path";
 import { cache } from "react";
 import { getPermissionsAction } from "@actions/permission.action";
+import { PERMISSIONS } from "@lib/permissions";
 
 export type GetUserOrgFilterType = {
     userId?: string | null;
@@ -235,7 +236,7 @@ export const setMembershipRequestStatusAction = async (id: number, status: UserO
     }
   }
   const userId = session.user.sub as string;
-  const updateMembershipPermissions = ["update:org:membership-request"];
+  const updateMembershipPermissions = [PERMISSIONS.ORGANIZATION["UPDATE:ORG:MEMBERSHIP_REQUEST"].name];
   const myPermissions = await getPermissionsAction({userId});
   const myPermissionArray = myPermissions.map((item) => item.name);
   const hasMembershipPermission = updateMembershipPermissions.every((item) => myPermissionArray.includes(item));

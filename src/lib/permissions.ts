@@ -118,5 +118,9 @@ export const PERMISSIONS = {
       name: "reschedule:org:appointment",
       description: "User can reschedule appointment within the organization.",
     },
+    "UPDATE:ORG:MEMBERSHIP_REQUEST": {
+      name: "update:org:membership_request",
+      description: "User can update membership request within the organization.",
+    },
   },
 }

@@ -29,11 +29,12 @@ import { formatDateTime, getBadgeVariantFromLabel } from "@lib/utils";
 
 import { LabelValue } from "@components/LabelValue";
 import PreAssessmentNoteSheet from "./PreAssessmentNoteSheet";
-import { useMemo, useRef } from "react";
+import { useRef } from "react";
 import { GetAppointment } from "@actions/appointments/appointments.action";
 import AppointmentRoutingHistorySheet from "./AppointmentRoutingHistorySheet";
 import CompleteAppointment from "./CompleteAppointment";
 import { useHP } from "@hooks/useHP";
+import { PERMISSIONS } from "@lib/permissions";
 
 dayjs.extend(utc)
 
@@ -122,7 +123,7 @@ export default function AppointmentDisplay() {
         </div>
         <div className="ml-auto flex items-center gap-2">
           {
-            freshAppointment.data.AppointmentAttribute?.status === "ROUTED" && ["complete:org:appointment"].every(p => myOrgPermission.includes(p)) &&
+            freshAppointment.data.AppointmentAttribute?.status === "ROUTED" && [PERMISSIONS.ORGANIZATION["COMPLETE:ORG:APPOINTMENT"].name].every(p => myOrgPermission.includes(p)) &&
             <CompleteAppointment appointmentId={freshAppointment.data.id} onCompleted={revalidate} disabled={!freshAppointment.data.id}/>
           }
         </div>
@@ -173,7 +174,7 @@ export default function AppointmentDisplay() {
               of={(freshAppointment.data.PreAssessmentNotes ?? []).slice(-1)}
               fallback={(
                 <PreAssessmentNoteSheet 
-                  disabled={!freshAppointment || ["write:org:pre-assessment"].every(p => !myOrgPermission.includes(p))}
+                  disabled={!freshAppointment || [PERMISSIONS.ORGANIZATION["WRITE:ORG:PRE_ASSESSMENT_NOTE"].name].every(p => !myOrgPermission.includes(p))}
                   key={freshAppointment.data.id}
                   preAssessmentNotes={{
                     assessment: "",
@@ -190,7 +191,7 @@ export default function AppointmentDisplay() {
                 return (
                   <PreAssessmentNoteSheet 
                     key={preAssessmentNote.id}
-                    disabled={!freshAppointment || ["write:org:pre-assessment"].every(p => !myOrgPermission.includes(p))}
+                    disabled={!freshAppointment || [PERMISSIONS.ORGANIZATION["WRITE:ORG:PRE_ASSESSMENT_NOTE"].name].every(p => !myOrgPermission.includes(p))}
                     preAssessmentNotes={{
                       ...preAssessmentNote,
                       homeInstructions: preAssessmentNote.homeInstructions ?? "",

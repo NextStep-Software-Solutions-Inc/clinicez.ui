@@ -36,8 +36,10 @@ import { protectOrg } from "@lib/protect-org";
 import { Suspense } from "react";
 import UserAvatarWrapper from "@components/UserAvatarWrapper";
 import Suspend from "@components/Suspend";
+import { getCachedSession } from "@actions/session.action";
 
 export default async function ProcessLayout({children, params:{organization}}: ProcessLayoutProps) {
+  const session = await getCachedSession()
   await protectOrg(organization)// Check if user is a member of the organization they are trying to access
   
   return (
@@ -70,7 +72,7 @@ export default async function ProcessLayout({children, params:{organization}}: P
             <Tooltip>
               <TooltipTrigger asChild>
                 <Link
-                  href={`/${organization}/user-org-profile`}
+                  href={`/${organization}/membership/${session?.user.sub}`}
                   className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
                 >
                   <UserRound className="h-5 w-5" />

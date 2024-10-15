@@ -4,6 +4,10 @@ export const PERMISSIONS = {
       name: "upsert:user-preference:own",
       description: "User can update their own user preference.",
     },
+    "UPDATE:USER:PERMISSIONS": {
+      name: "update:user:permissions",
+      description: "User can update the permissions.",
+    }
   },
   ORGANIZATION: {
     "ASSIGN:ORG:APPOINTMENT": {
@@ -122,5 +126,9 @@ export const PERMISSIONS = {
       name: "update:org:membership_request",
       description: "User can update membership request within the organization.",
     },
+    "UPDATE:ORG:PERMISSIONS": {
+      name: "update:org:permissions",
+      description: "User can update permissions within the organization.",
+    }
   },
 }

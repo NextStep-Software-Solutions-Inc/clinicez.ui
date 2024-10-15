@@ -30,6 +30,7 @@ export default function AppointmentWhitelistFilters() {
           {
             whitelists?.data?.length === 0 &&
             <CreateWhitelistFilterModal
+              onUpdated={mutate}
               orgUid={params.organization}
               userId={params.userId}
             />

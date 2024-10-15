@@ -28,7 +28,8 @@ export default function CreateWhitelistFilterModal({ onUpdated, orgUid, userId}:
   const closeBtnRef = useRef<HTMLInputElement>(null)
   const action = async (formData: FormData) => {
     const name = formData.get("name") as string
-    toast.promise(createWhitelistAction({ name,orgId: orgUid,userId }), {
+    const decodedUserId = decodeURIComponent(userId)
+    toast.promise(createWhitelistAction({ name,orgId: orgUid,userId:decodedUserId }), {
       loading: "Creating whitelist...",
       success: (res) => {
         if(res.status){

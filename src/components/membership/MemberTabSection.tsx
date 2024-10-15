@@ -12,6 +12,7 @@ import StudentRecordForm from "../../app/(activation)/[organization]/join/Studen
 import MemberRoles from "./MemberRoles";
 import { MemberPermissions } from "./MemberPermissions";
 import MemberActivities from "./MemberActivities";
+import AppointmentWhitelistFilters from "./AppointmentWhitelistFilter";
 
 
 interface MemberTabSectionProps {
@@ -42,6 +43,7 @@ export default function MemberTabSection({orgUid, userId}:MemberTabSectionProps)
             )
           }}
         />
+        <TabsTrigger value="appointment-whitelist-filter">Appointment Whitelist Filter</TabsTrigger>
         <TabsTrigger value="activities">Activities</TabsTrigger>
       </TabsList>
       <Each
@@ -79,6 +81,9 @@ export default function MemberTabSection({orgUid, userId}:MemberTabSectionProps)
       </TabsContent>
       <TabsContent value="permissions">
         <MemberPermissions userId={userId} orgUid={orgUid} />
+      </TabsContent>
+      <TabsContent value="appointment-whitelist-filter">
+        <AppointmentWhitelistFilters/>
       </TabsContent>
       <TabsContent value="activities">
         <MemberActivities/>

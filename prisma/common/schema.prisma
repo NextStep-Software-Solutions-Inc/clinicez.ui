@@ -919,7 +919,7 @@ model WhitelistFilter {
   Filter                        Filter                      @relation(fields: [filterId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   UserOrgAppointmentWhitelist   UserOrgAppointmentWhitelist @relation(fields: [userOrgAppointmentWhitelistId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
-  @@unique([userOrgAppointmentWhitelistId, filterId], name: "unique_whitelist_filter")
+  @@unique([userOrgAppointmentWhitelistId, filterId, value], name: "unique_whitelist_filter")
 }
 
 model Filter {

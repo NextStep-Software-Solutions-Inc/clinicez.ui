@@ -35,6 +35,7 @@ export const AppointmentList = forwardRef<any, AppointmentListProps>(({appointme
       <div className="flex flex-col gap-2 p-4 pt-0">
         <Each
           of={appointments ?? []}
+          fallback={<div className="text-muted-foreground text-center">No appointments found.</div>}
           render={(item) => {
             const getTransitionDate = () => {
               // base on appointment status get the date

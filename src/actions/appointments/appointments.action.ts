@@ -11,6 +11,7 @@ import dayjs from "dayjs";
 import { AppointmentStatus, RoutedAptStatus } from "@public/json/appointment-list";
 import { PERMISSIONS } from "@lib/permissions";
 import { hasCodeProperty } from "@lib/utils";
+import { getHPsAction } from "@actions/hp.actions";
 
 type CreateAppointmentPayload = {
   orgUid: string;
@@ -146,7 +147,11 @@ export const getAppointmentsAction = cache(async (filter?: GetAppointmentFilter)
 
     const { orgUid, userId, status, routedAptStatus, sort } = filter || {};
 
-    const permissions = await getPermissionsAction({ userId:session.user.sub });
+    const [permissions, myHps] = await Promise.all([
+      getPermissionsAction({ userId:session.user.sub }),
+      getHPsAction({ userId: session.user.sub })
+    ])
+
     const userPermissionArray = permissions.map(p => p.name);
   
     const readAllOrgAppointmentPermission = [PERMISSIONS.ORGANIZATION["READ:ORG:APPOINTMENT:ALL"].name];
@@ -190,7 +195,11 @@ export const getAppointmentsAction = cache(async (filter?: GetAppointmentFilter)
             AppointmentRouting: {
               some: {
                 OR: [
-                  { routedTo: session.user.sub },
+                  { 
+                    routedTo: {
+                      in: myHps.map((hp) => hp.id.toString())
+                    }
+                  },
                   { routedBy: session.user.sub }
                 ]
               }
@@ -200,6 +209,7 @@ export const getAppointmentsAction = cache(async (filter?: GetAppointmentFilter)
       },
       select: {
         id: true,
+        orgUid: true,
         subject: true,
         complaint: true,
         createdAt: true,
@@ -243,22 +253,33 @@ export const getAppointmentsAction = cache(async (filter?: GetAppointmentFilter)
         }
       }
     });
-    return {
-      status: true,
-      message: "Appointments fetched",
-      data: appointments
-    };
+
+
+    // whitelist filter
+    const requesterIds = appointments.flatMap((apt) => apt.Requesters.map((r) => r.userId));
+    const [requestersDetail, myWhitelistFilter] = await Promise.all([
+      getRequestersDetail(requesterIds, orgUid),
+      getUserWhitelistFilters(session.user.sub, orgUid)
+    ])
+
+    const filteredAppointments = appointments.filter((apt) => {
+      const patient = requestersDetail.find((r) => r.userId === apt.Requesters[0].userId);
+      return (myWhitelistFilter?.WhitelistFilters ?? []).every((filter) => {
+        return (
+          (filter.Filter.key === "department" && (patient?.StudentRecords.some((s) => s.departmentId?.toString() === filter.value) || patient?.UserEmployments.some((e) => e.departmentId?.toString() === filter.value))) ||
+          (filter.Filter.key === "college" && (patient?.StudentRecords.some((s) => s.collegeId?.toString() === filter.value) || patient?.UserEmployments.some((e) => e.collegeId?.toString() === filter.value))) ||
+          (filter.Filter.key === "office" && patient?.UserEmployments.some((e) => e.officeId?.toString() === filter.value)) ||
+          (filter.Filter.key === "program" && patient?.StudentRecords.some((s) => s.programId?.toString() === filter.value))
+        );
+      });
+    });
+
+    return { status: true,  message: "Appointments fetched", data: filteredAppointments };
   } catch (error) {
     console.error(`Failed to fetch appointments: ${error}`);
     let message = "Failed to fetch appointments";
-    if(error instanceof Error) {
-      message = error.message;
-    }
-    return {
-      status: false,
-      message,
-      data: null
-    }
+    if(error instanceof Error) message = error.message;
+    return { status: false, message, data: null }
   }
 });
 
@@ -396,6 +417,7 @@ export const getAppointmentAction = cache(async (id: number, orgUid?: string) =>
         }
       }
     });
+
     return {
       status: true,
       message: "Appointment fetched",
@@ -420,8 +442,11 @@ export const getAppointmentCountsAction = cache(async (orgUid: string) => {
   const session = await getCachedSession();
   try {
     if (!session) throw new Error("Unauthorized");
-  
-    const permissions = await getPermissionsAction({ userId:session.user.sub });
+
+    const [permissions, myHps] = await Promise.all([
+      getPermissionsAction({ userId:session.user.sub }),
+      getHPsAction({ userId: session.user.sub })
+    ])
     const userPermissionArray = permissions.map(p => p.name);
     
     const readAllOrgAppointmentPermission = [PERMISSIONS.ORGANIZATION["READ:ORG:APPOINTMENT:ALL"].name];
@@ -431,57 +456,105 @@ export const getAppointmentCountsAction = cache(async (orgUid: string) => {
     const canReadAllOrgAppointment = readAllOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
     const canReadAOwnOrgAppointment = readAOwnOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
     const canReadAssignedOrgAppointment = readAssignedOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
+    
   
-    const counts = await prismaTenant.appointmentAttribute.groupBy({
-      by: ["status"],
+    // const counts = await prismaTenant.appointmentAttribute.groupBy({
+    //   by: ["status"],
+    //   where: {
+    //     Appointment: {
+    //       isActive: true,
+    //       OR: [
+    //         { ...(canReadAllOrgAppointment ? { orgUid } : {}) },
+    //         { ...(canReadAOwnOrgAppointment ? { Requesters: { some: { userId: session.user.sub } } } : {}) },
+    //         { ...(canReadAssignedOrgAppointment ? {
+    //           AppointmentRouting: {
+    //             some: {
+    //               OR: [
+    //                 { 
+    //                   routedTo: {
+    //                     in: myHps.map((hp) => hp.id.toString())
+    //                   }
+    //                 },
+    //                 { routedBy: session.user.sub }
+    //               ]
+    //             }
+    //           }
+    //         } : {}) },
+    //       ]
+    //     }
+    //   },
+    //   _count: true
+    // });
+
+    const appointments = await prismaTenant.appointment.findMany({
       where: {
-        Appointment: {
-          isActive: true,
-          OR: [
-            { ...(canReadAllOrgAppointment ? { orgUid } : {}) },
-            { ...(canReadAOwnOrgAppointment ? { Requesters: { some: { userId: session.user.sub } } } : {}) },
-            { ...(canReadAssignedOrgAppointment ? {
-              AppointmentRouting: {
-                some: {
-                  OR: [
-                    { routedTo: session.user.sub },
-                    { routedBy: session.user.sub }
-                  ]
-                }
+        isActive: true,
+        OR: [
+          { ...(canReadAllOrgAppointment ? { orgUid } : {}) },
+          { ...(canReadAOwnOrgAppointment ? { Requesters: { some: { userId: session.user.sub } } } : {}) },
+          { ...(canReadAssignedOrgAppointment ? {
+            AppointmentRouting: {
+              some: {
+                OR: [
+                  { 
+                    routedTo: {
+                      in: myHps.map((hp) => hp.id.toString())
+                    }
+                  },
+                  { routedBy: session.user.sub }
+                ]
               }
-            } : {}) },
-          ]
-        }
+            }
+          } : {}) },
+        ]
       },
-      _count: true
-    });
-  
-    const countsMap = counts.reduce((acc, count) => {
-      if (acc["ALL"] === undefined) {
-        acc["ALL"] = 0;
+      select: {
+        AppointmentAttribute: {
+          select: {
+            status: true
+          }
+        },
+        Requesters: {
+          select: {
+            userId: true
+          }
+        },
       }
-      acc[count.status] = count._count;
-      acc["ALL"] += count._count ?? 0;
+    });
+
+    const requesterIds = appointments.flatMap((apt) => apt.Requesters.map((r) => r.userId));
+
+    const [requestersDetail, myWhitelistFilter] = await Promise.all([
+      getRequestersDetail(requesterIds, orgUid),
+      getUserWhitelistFilters(session.user.sub, orgUid)
+    ])
+
+    const filteredAppointments = appointments.filter((apt) => {
+      const patient = requestersDetail.find((r) => apt.Requesters.some((r) => r.userId));
+      return (myWhitelistFilter?.WhitelistFilters ?? []).every((filter) => {
+        return (
+          (filter.Filter.key === "department" && (patient?.StudentRecords.some((s) => s.departmentId?.toString() === filter.value) || patient?.UserEmployments.some((e) => e.departmentId?.toString() === filter.value))) ||
+          (filter.Filter.key === "college" && (patient?.StudentRecords.some((s) => s.collegeId?.toString() === filter.value) || patient?.UserEmployments.some((e) => e.collegeId?.toString() === filter.value))) ||
+          (filter.Filter.key === "office" && patient?.UserEmployments.some((e) => e.officeId?.toString() === filter.value)) ||
+          (filter.Filter.key === "program" && patient?.StudentRecords.some((s) => s.programId?.toString() === filter.value))
+        );
+      });
+    });
+
+    // group by status
+    const countsMap = filteredAppointments.reduce((acc, apt) => {
+      const status = apt?.AppointmentAttribute?.status;
+      if (status) acc[status] = (acc[status] ?? 0) + 1;
+      acc["ALL"] += 1;
       return acc;
-    }, {} as Record<string, number>);
-
-    return {
-      status: true,
-      message: "Appointment counts fetched",
-      data: countsMap
-    };
-
+    }, { ALL: 0 } as Record<string, number>);
+    
+    return { status: true, message: "Appointment counts fetched", data: countsMap };
   } catch (error) {
     console.error(`Failed to fetch appointment counts: ${error}`);
     let message = "Failed to fetch appointment counts";
-    if(error instanceof Error) {
-      message = error.message;
-    }
-    return {
-      status: false,
-      message,
-      data: null
-    }
+    if(error instanceof Error) message = error.message;
+    return { status: false, message, data: null}
   }
 });
 
@@ -489,8 +562,11 @@ export const getRoutedAppointmentCountsAction = cache(async (orgUid: string) => 
   const session = await getCachedSession();
   try {
     if (!session) throw new Error("Unauthorized");
-
-    const permissions = await getPermissionsAction({ userId:session.user.sub });
+    
+    const [permissions, myHps] = await Promise.all([
+      getPermissionsAction({ userId:session.user.sub }),
+      getHPsAction({ userId: session.user.sub })
+    ])
     const userPermissionArray = permissions.map(p => p.name);
       
     const readAllOrgAppointmentPermission = [PERMISSIONS.ORGANIZATION["READ:ORG:APPOINTMENT:ALL"].name];
@@ -501,8 +577,40 @@ export const getRoutedAppointmentCountsAction = cache(async (orgUid: string) => 
     const canReadAOwnOrgAppointment = readAOwnOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
     const canReadAssignedOrgAppointment = readAssignedOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
     
-    const counts = await prismaTenant.appointmentRouting.groupBy({
-      by: ["status"],
+    // const counts = await prismaTenant.appointmentRouting.groupBy({
+    //   by: ["status"],
+    //   where: {
+    //     Appointment: {
+    //       isActive: true,
+    //       AppointmentAttribute: {
+    //         status: {
+    //           in: ["ROUTED"]
+    //         }
+    //       },
+    //       OR: [
+    //         { ...(canReadAllOrgAppointment ? { orgUid } : {}) },
+    //         { ...(canReadAOwnOrgAppointment ? { Requesters: { some: { userId: session.user.sub } } } : {}) },
+    //         { ...(canReadAssignedOrgAppointment ? {
+    //           AppointmentRouting: {
+    //             some: {
+    //               OR: [
+    //                 { 
+    //                  routedTo: {
+    //                    in:  myHps.map((hp) => hp.id.toString())
+    //                  }
+    //                 },
+    //                 { routedBy: session.user.sub }
+    //               ]
+    //             }
+    //           }
+    //         } : {}) },
+    //       ]
+    //     }
+    //   },
+    //   _count: true,
+    // });
+
+    const routedAppointments = await prismaTenant.appointmentRouting.findMany({
       where: {
         Appointment: {
           isActive: true,
@@ -518,7 +626,11 @@ export const getRoutedAppointmentCountsAction = cache(async (orgUid: string) => 
               AppointmentRouting: {
                 some: {
                   OR: [
-                    { routedTo: session.user.sub },
+                    { 
+                      routedTo: {
+                        in:  myHps.map((hp) => hp.id.toString())
+                      }
+                    },
                     { routedBy: session.user.sub }
                   ]
                 }
@@ -527,35 +639,53 @@ export const getRoutedAppointmentCountsAction = cache(async (orgUid: string) => 
           ]
         }
       },
-      _count: true,
+      select: {
+        status: true,
+        Appointment: {
+          select: {
+            Requesters: {
+              select: {
+                userId: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    const requesterIds = routedAppointments.flatMap((routed) => routed.Appointment.Requesters.map((r) => r.userId));
+    
+    const [requestersDetail, myWhitelistFilter] = await Promise.all([
+      getRequestersDetail(requesterIds, orgUid),
+      getUserWhitelistFilters(session.user.sub, orgUid)
+    ])
+
+    const filteredAppointments = routedAppointments.filter((routed) => {
+      const patient = requestersDetail.find((r) => routed.Appointment.Requesters.some((r) => r.userId));
+      return (myWhitelistFilter?.WhitelistFilters ?? []).every((filter) => {
+        return (
+          (filter.Filter.key === "department" && (patient?.StudentRecords.some((s) => s.departmentId?.toString() === filter.value) || patient?.UserEmployments.some((e) => e.departmentId?.toString() === filter.value))) ||
+          (filter.Filter.key === "college" && (patient?.StudentRecords.some((s) => s.collegeId?.toString() === filter.value) || patient?.UserEmployments.some((e) => e.collegeId?.toString() === filter.value))) ||
+          (filter.Filter.key === "office" && patient?.UserEmployments.some((e) => e.officeId?.toString() === filter.value)) ||
+          (filter.Filter.key === "program" && patient?.StudentRecords.some((s) => s.programId?.toString() === filter.value))
+        );
+      });
     });
   
-    const countsMap = counts.reduce((acc, count) => {
-      if (acc["ALL"] === undefined) {
-        acc["ALL"] = 0;
-      }
-      acc[count.status] = count._count;
-      acc["ALL"] += count._count ?? 0;
+    const countsMap = filteredAppointments.reduce((acc, routed) => {
+      const status = routed.status;
+      if (status) acc[status] = (acc[status] ?? 0) + 1;
+      acc["ALL"] += 1;
       return acc;
-    }, {} as Record<string, number>);
+    }, {ALL: 0} as Record<string, number>);
 
-    return {
-      status: true,
-      message: "Appointment counts fetched",
-      data: countsMap
-    };
+    return { status: true, message: "Appointment counts fetched", data: countsMap };
 
   } catch (error) {
     console.error(`Failed to fetch appointment counts: ${error}`);
     let message = "Failed to fetch appointment counts";
-    if(error instanceof Error) {
-      message = error.message;
-    }
-    return {
-      status: false,
-      message,
-      data: null
-    }
+    if(error instanceof Error) message = error.message;
+    return { status: false, message, data: null  }
   }
 });
 
@@ -627,3 +757,65 @@ export const rescheduleAppointmentAction = async ({ appointmentId, startDateTime
   }
 };
 
+const getUserWhitelistFilters = async (userId: string, orgUid?: string) => {
+  return await prismaCommon.userOrgAppointmentWhitelist.findFirst({
+    where: {
+      User: {
+        userId
+      },
+      Organization: {
+        orgId: orgUid
+      }
+    },
+    select: {
+      WhitelistFilters: {
+        select: {
+          value: true,
+          Filter: {
+            select: {
+              key: true,
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+const getRequestersDetail = async (userIds: string[], orgUid?: string) => {
+  return await prismaCommon.user.findMany({
+    where: {
+      userId: {
+        in: userIds
+      },
+    },
+    select: {
+      userId: true,
+      StudentRecords: {
+        where: {
+          Organization: {
+            orgId: orgUid
+          }
+        },
+        select: {
+          organizationId: true,
+          programId: true,
+          departmentId: true,
+          collegeId: true
+        }
+      },
+      UserEmployments: {
+        where: {
+          Organization: {
+            orgId: orgUid
+          }
+        },
+        select: {
+          departmentId: true,
+          collegeId: true,
+          officeId: true
+        },
+      }
+    }
+  })
+}

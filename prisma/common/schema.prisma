@@ -89,6 +89,7 @@ model User {
   BookedByBookings                 Booking[]                     @relation("BookedBy")
   BookedForBookings                Booking[]                     @relation("BookedFor")
   UserPreference                   UserPreference?
+  UserOrgAppointmentWhitelists     UserOrgAppointmentWhitelist[]
 }
 
 model UserPreference {
@@ -136,6 +137,7 @@ model Organization {
   OrgAppointmentTabs           OrgAppointmentTab[]
   OrgConsultationConfig        OrgConsultationConfig?
   OrgRoleInitialPermissions    OrgRoleInitialPermission[]
+  UserOrgAppointmentWhitelists UserOrgAppointmentWhitelist[]
 }
 
 model OrganizationSetting {
@@ -895,6 +897,36 @@ model UserStudentRecord {
   YearLevel              OrgYearLevel?           @relation(fields: [yearLevel], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@unique([userId, organizationId], name: "unique_user_student_record")
+}
+
+model UserOrgAppointmentWhitelist {
+  id               Int               @id @default(autoincrement())
+  userId           Int
+  orgId            Int
+  name             String
+  User             User              @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Organization     Organization      @relation(fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  WhitelistFilters WhitelistFilter[]
+
+  @@unique([userId, orgId], name: "unique_user_org_appointment_whitelist")
+}
+
+model WhitelistFilter {
+  id                            Int                         @id @default(autoincrement())
+  userOrgAppointmentWhitelistId Int
+  filterId                      Int
+  value                         String
+  Filter                        Filter                      @relation(fields: [filterId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  UserOrgAppointmentWhitelist   UserOrgAppointmentWhitelist @relation(fields: [userOrgAppointmentWhitelistId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([userOrgAppointmentWhitelistId, filterId], name: "unique_whitelist_filter")
+}
+
+model Filter {
+  id               Int               @id @default(autoincrement())
+  key              String            @unique
+  name             String
+  WhitelistFilters WhitelistFilter[]
 }
 
 model OrganizationOffice {

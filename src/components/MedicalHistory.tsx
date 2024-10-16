@@ -10,6 +10,8 @@ import { useConsultation, useConsultations } from "@hooks/useConsultation";
 import Each from "./utils/Each";
 import dayjs from "dayjs";
 import { Badge } from "./ui/badge";
+import { cn } from "@lib/utils";
+import { faker } from "@faker-js/faker";
   
 interface MedicalHistoryProps {
     patientId: string
@@ -72,7 +74,7 @@ export const MedicalHistorySummary = ({consultationTicketId, orgUid}: MedicalHis
           return (
             <div key={note.section} className="p-2 bg-gray-100 rounded-lg">
               <p className="capitalize font-semibold ">{note.section}</p>
-              <p className="text-sm text-gray-500">{note.content}</p>
+              <p className={cn("text-sm text-gray-500", !note.showOnPatient && "blur-sm")}>{note.showOnPatient? note.content: "This content is blurred intentionally but you're a little bit techie."}</p>
             </div>
           )
         }}

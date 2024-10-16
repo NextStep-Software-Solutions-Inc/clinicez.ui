@@ -18,6 +18,7 @@ export const upsertConsultationNotesAction = async (data: FormData) => {
   const consultationTicketId = parseInt(data.get('consultationTicketId') as string)
   const section = data.get('section') as string
   const content = data.get('content') as string
+
   try {
     const updatedNotes = await prismaTenant.consultationNote.upsert({
       where: {
@@ -38,13 +39,15 @@ export const upsertConsultationNotesAction = async (data: FormData) => {
       create: {
         consultationTicketId,
         section,
-        content
+        content,
       },
-      update: { content }
+      update: { 
+        content,
+      }
     })
     return {
       status: true,
-      message: `Saving ...`,
+      message: `${section} content updated successfully`,
       data: updatedNotes
     }
   } catch (error) {

@@ -185,6 +185,8 @@ model NoteSection {
   id             Int          @id @default(autoincrement())
   noteTemplateId Int
   name           String
+  label          String       @default("")
+  showOnPatient  Boolean      @default(true)
   description    String?
   isActive       Boolean      @default(true)
   NoteTemplate   NoteTemplate @relation(fields: [noteTemplateId], references: [id])
@@ -314,8 +316,11 @@ model Plan {
   id          Int        @id @default(autoincrement())
   planUid     String     @unique
   price       Float
+  discount    Float      @default(0)
+  currency    String     @default("PHP")
   name        String
   type        PlanType
+  frequency   String     @default("MONTHLY")
   description String?
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt

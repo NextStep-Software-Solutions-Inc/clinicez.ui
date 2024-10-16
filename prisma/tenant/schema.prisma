@@ -216,6 +216,7 @@ model ConsultationNote {
   consultationTicketId Int
   section              String
   content              String
+  showOnPatient        Boolean            @default(false)
   createdAt            DateTime           @default(now())
   updatedAt            DateTime           @updatedAt
   ConsultationTicket   ConsultationTicket @relation(fields: [consultationTicketId], references: [id])

@@ -6,7 +6,7 @@ import Suspend from '@components/Suspend';
 import BackSubmitAndNext from '@components/SubmitAndNext';
 interface TenantPlanSelectionProps {
   defaultPlan: string;
-  freq: string;
+  freq: "MONTHLY" | "YEARLY";
   nextStep?: () => void;
   isFirstStep?: boolean;
 }
@@ -14,7 +14,7 @@ interface TenantPlanSelectionProps {
 export default function TenantPlanSelection(props: TenantPlanSelectionProps) {
   
   const { defaultPlan: initialPlan, freq, nextStep, isFirstStep } = props;
-  
+    
   return (
     <div>
       <div className="prose max-w-full mt-5 text-center md:text-left">
@@ -28,7 +28,7 @@ export default function TenantPlanSelection(props: TenantPlanSelectionProps) {
       </div>
       <div className='shadow-lg w-full p-4 bg-background rounded-md'>
         <Suspend>
-          <TenantPlanList initialPlan={initialPlan} freq={freq} nextStep={nextStep} />
+          <TenantPlanList initialPlan={initialPlan} frequency={freq} nextStep={nextStep} />
         </Suspend>
         <BackSubmitAndNext
           actions={{

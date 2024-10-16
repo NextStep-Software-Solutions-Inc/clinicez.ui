@@ -184,6 +184,7 @@ export const getConsultationTicketAction = cache(async (consultationId: number, 
         },
         ConsultationNotes: {
           select: {
+            showOnPatient: true,
             section: true,
             content: true,
           }

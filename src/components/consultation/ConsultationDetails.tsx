@@ -30,7 +30,6 @@ interface ConsultationDetailsProps {
   consultation: NonNullable<GetConsultationTicket["data"]>
 }
 export default async function ConsultationDetails({ consultation }: ConsultationDetailsProps) {
-
   const appointment = await getAppointmentAction(consultation?.appointmentId ?? 0);
   
   const [user, creators] = await Promise.all([

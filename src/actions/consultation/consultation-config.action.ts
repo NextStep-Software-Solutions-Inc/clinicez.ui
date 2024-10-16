@@ -12,6 +12,14 @@ export const getOrgConsultationConfigAction = async (orgUid: string) => {
         orgId: orgUid
       }
     },
+    include: {
+      NoteTemplate: {
+        include: {
+          NoteSections: true
+        }
+      }
+
+    }
   });
   return orgConsultationConfig;
 }

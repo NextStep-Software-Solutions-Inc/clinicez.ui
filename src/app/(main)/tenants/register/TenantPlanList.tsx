@@ -7,36 +7,33 @@ import { cn } from "@lib/utils";
 import { GetPlans, getPlansAction } from "@actions/plan.action";
 
 interface TenantPlanListProps {
-  freq?: string;
+  frequency?: "MONTHLY" | "YEARLY";
   initialPlan?: string;
   nextStep?: () => void;
 }
-export default function TenantPlanList({ freq, initialPlan, nextStep }: TenantPlanListProps) {
+export default function TenantPlanList({ frequency, initialPlan, nextStep }: TenantPlanListProps) {
   const [tenantPlans, setTenantPlans] = useState<GetPlans>([]);
 
   useEffect(() => {
     (async () => {
-      const plans = (await getPlansAction()).filter((plan) => plan.type === "TENANT");
+      const plans = (await getPlansAction({type: "TENANT", frequency })).filter((plan) => plan.type === "TENANT");
       setTenantPlans(plans);
     })()
-  },[])
-
+  },[frequency])
 
   return (
     <div className="flex flex-wrap justify-center my-10 gap-5">
       <Each
         of={tenantPlans}
         render={(plan) => {
-          const discount = freq === "monthly" ? 0 : 0.1;
-          // if yearly, multiply by 12 and less 10%
-          const price = freq === "monthly" ? plan?.price : Math.ceil(plan?.price * 12 * (1 - discount));
-          const frequency = freq === "monthly" ? "/mo" : "/yr";
+          const discount = plan.discount;
+          const price = Math.ceil(plan?.price * (1 - discount/100));
           return (
             <div className={cn("relative bg-primary flex-grow max-w-sm h-96 basis-72 rounded-md  hover:animate-pulse shadow-2xl",
               initialPlan === plan.id.toString() && "ring-4 ring-primary rounded-ss-none"
             )}>
               <div className="bg-background opacity-98 rounded-ee-[5rem]  p-8 mr-6 h-80 ">
-                <p className="~text-lg/2xl font-bold mb-2">₱{price} <span className="~text-base/xl font-normal">{frequency}</span> <span className="text-xs">{discount*100}% off</span></p>
+                <p className="~text-lg/2xl font-bold mb-2">₱{price} <span className="~text-base/xl font-normal">{frequency === "MONTHLY" ? "/mo" : "/yr"}</span> <span className="text-xs">{discount}% off</span></p>
                 <h2 className="~text-base/lg mb-8 font-semibold border-b-2 border-gray-200 pb-2">{plan.name}</h2>
                 <ul className="list-none list-inside text-sm">
                   <Each
@@ -53,7 +50,7 @@ export default function TenantPlanList({ freq, initialPlan, nextStep }: TenantPl
                   query: { 
                     role: "tenant",
                     plan: plan?.id,
-                    freq,
+                    freq: frequency,
                   } 
                 }}>
                   <button className="text-white hover:scale-105 hover:font-bold transition-all">Choose Plan</button>

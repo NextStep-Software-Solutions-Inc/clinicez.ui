@@ -16,35 +16,9 @@ import { useParams } from "next/navigation";
 import { useConsultationNotes } from "@hooks/useConsultationNote";
 import Each from "@components/utils/Each";
 import GenericSection from "@components/GenericSection";
+import { useNoteTemplate, useNoteTemplates } from "@hooks/useNoteTemplate";
 interface ConsultationNotesProps {
   consultation: NonNullable<GetConsultationTicket["data"]>;
-}
-
-const template = {
-  id: 1,
-  name: "SOAP",
-  sections: [
-    {
-      id: 1,
-      name: "subjective",
-      label: "Subjective History"
-    },
-    { 
-      id: 2,
-      name: "objective",
-      label: "Objective History"
-    },
-    {
-      id: 3,
-      name: "assessment",
-      label: "Assessment"
-    },
-    {
-      id: 4,
-      name: "plan",
-      label: "Plan"
-    }
-  ]
 }
 
 export default function ConsultationNotes({
@@ -53,15 +27,17 @@ export default function ConsultationNotes({
 
   const params = useParams<{organization: string}>()
   const orgUid = params.organization;
-  const {data: consultationNotes} = useConsultationNotes({ orgUid, consultationId: consultation.id })
- 
-  const notes = template.sections.map(section => {
+  const {data: consultationNotes, mutate} = useConsultationNotes({ orgUid, consultationId: consultation.id })
+  const {data: noteTemplate, isLoading:loadingNoteTemplate} = useNoteTemplate(consultation.ConsultationTicketAttribute?.noteTemplateName ?? "")
+  const notes = (noteTemplate?.NoteSections ?? []).map(section => {
     const note = consultationNotes?.find(note => note.section === section.name)
     return {
       ...section,
+      showOnPatient: note?.showOnPatient ?? section.showOnPatient,
       value: note?.content ?? ""
     }
   })
+  if(loadingNoteTemplate) return <div>Loading...</div>
   return (
     <Card>
       <CardHeader>
@@ -69,7 +45,7 @@ export default function ConsultationNotes({
           <div>
             <CardTitle>Consultation Notes</CardTitle>
             <CardDescription>
-                This notes follow the {template.name} format.
+                This notes follow the {noteTemplate?.name} format.
             </CardDescription>
           </div>
           <div className="ml-auto">
@@ -81,11 +57,19 @@ export default function ConsultationNotes({
         <Accordion type="multiple">
           <Each
             of={notes}
-            render={(note, index) => (
-              <AccordionItem key={note.name} value={note.name}>
-                <GenericSection value={note.value} consultationId={consultation.id} name={note.name} label={note.label}/>
-              </AccordionItem>
-            )}
+            render={(note, index) => {
+              return (
+                <AccordionItem key={note.name} value={note.name}>
+                  <GenericSection 
+                    onUpdated={mutate}
+                    value={note.value} 
+                    consultationId={consultation.id} 
+                    name={note.name} label={note.label} 
+                    showOnPatient={note.showOnPatient}
+                  />
+                </AccordionItem>
+              )
+            }}
           />
         </Accordion>
       </CardContent>

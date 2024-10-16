@@ -5,7 +5,7 @@ import TenantPlanSelection from "./TenantPlanSelection";
 ;
 
 async function TenantsRegistrationPage(props: AppRouterPageRouteOpts) {
-  const { role, plan, freq = "yearly" } = (props.searchParams || {}) as {role: string, plan:string, freq: string } 
+  const { role, plan, freq = "YEARLY" } = (props.searchParams || {}) as {role: string, plan:string, freq: "MONTHLY" | "YEARLY" } 
 
   return (
     <div className="container mx-auto content my-10">
@@ -13,15 +13,8 @@ async function TenantsRegistrationPage(props: AppRouterPageRouteOpts) {
         <h1>Tenant Subscription</h1>
         <p>
           Follow the steps below to complete your subscription.
-        </p>TenantApplicationWrapper
-      </div>
-      {/* Page Under development */}
-      {/* <div className="text-5xl text-center my-10">
-        <h5>Page Not Available!</h5>
-        <p className="text-2xl">
-          This page is currently under development. Please check back later.
         </p>
-      </div> */}
+      </div>
       <TenantApplicationWrapper>
         <TenantPlanSelection freq={freq} defaultPlan={plan}/>
         <TenantPaymentVerification />

@@ -19,6 +19,7 @@ import AppointmentTypeList from "./org-settings/AppointmentTypeList";
 import AppointmentModeList from "./org-settings/AppointmentModeList";
 import ServiceCategoryList from "./org-settings/ServiceCategoryList";
 import SystemList from "./org-settings/SystemList";
+import ActionList from "./org-settings/ActionList";
 
 const tabs = ["general", "membership", "appointments", "consultations", "roles", "permissions"]
 export default function OrgSettings() {
@@ -60,6 +61,7 @@ export default function OrgSettings() {
           <div className="space-y-5">
             <ConsultationSettings/>
             <SystemList/>
+            <ActionList/>
           </div>
         </TabsContent>
         <TabsContent value="roles">

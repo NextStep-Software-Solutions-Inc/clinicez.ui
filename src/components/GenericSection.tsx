@@ -84,7 +84,7 @@ export default function GenericSection({name, label, consultationId, value = "",
                 <FormControl>
                   <Textarea
                     rows={5}
-                    disabled={readonly && !showOnPatient}
+                    disabled={readonly}
                     className={cn("mb-2", {
                       "blur-sm": readonly && !showOnPatient
                     })}

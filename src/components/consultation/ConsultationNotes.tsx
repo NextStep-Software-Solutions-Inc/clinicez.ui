@@ -16,14 +16,20 @@ import { useParams } from "next/navigation";
 import { useConsultationNotes } from "@hooks/useConsultationNote";
 import Each from "@components/utils/Each";
 import GenericSection from "@components/GenericSection";
-import { useNoteTemplate, useNoteTemplates } from "@hooks/useNoteTemplate";
+import { useNoteTemplate } from "@hooks/useNoteTemplate";
+import { useHPs } from "@hooks/useHP";
+import { useUser } from "@auth0/nextjs-auth0/client";
 interface ConsultationNotesProps {
   consultation: NonNullable<GetConsultationTicket["data"]>;
 }
 
-export default function ConsultationNotes({
-  consultation
-}: ConsultationNotesProps) {
+export default function ConsultationNotes({ consultation }: ConsultationNotesProps) {
+  const {user} = useUser()
+  const authUserHPS = useHPs({
+    userId: user?.sub ?? ""
+  })
+  const consultationTicketHps = consultation.ConsultationTicketAuthors.map(c => c.hpId)
+  const isConsultationAuthor = (authUserHPS.data ?? []).some(hp => consultationTicketHps.includes(hp.id.toString()))
 
   const params = useParams<{organization: string}>()
   const orgUid = params.organization;
@@ -61,6 +67,7 @@ export default function ConsultationNotes({
               return (
                 <AccordionItem key={note.name} value={note.name}>
                   <GenericSection 
+                    readonly={!isConsultationAuthor}
                     onUpdated={mutate}
                     value={note.value} 
                     consultationId={consultation.id} 

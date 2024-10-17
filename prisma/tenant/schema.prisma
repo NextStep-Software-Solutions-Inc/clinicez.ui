@@ -195,12 +195,14 @@ model ConsultationTicketAuthor {
 }
 
 model ConsultationTicketAttribute {
-  id                   Int                @id @default(autoincrement())
-  consultationTicketId Int                @unique
-  status               String             @default("PROCESSING")
-  noteTemplateName     String             @default("SOAP")
-  whitelistEmails      String[]           @default([])
-  ConsultationTicket   ConsultationTicket @relation(fields: [consultationTicketId], references: [id])
+  id                      Int                @id @default(autoincrement())
+  consultationTicketId    Int                @unique
+  status                  String             @default("PROCESSING")
+  noteTemplateName        String             @default("SOAP")
+  allowOtherHPToAddVitals Boolean            @default(false)
+  allowPatientToAddVitals Boolean            @default(false)
+  whitelistEmails         String[]           @default([])
+  ConsultationTicket      ConsultationTicket @relation(fields: [consultationTicketId], references: [id])
 }
 
 model System {

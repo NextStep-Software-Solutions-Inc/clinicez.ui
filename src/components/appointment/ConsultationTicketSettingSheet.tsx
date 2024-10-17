@@ -20,15 +20,25 @@ import {
 import { Label } from "@components/ui/label"
 import { Switch } from "@components/ui/switch"
 import { DialogProps } from "@radix-ui/react-dialog"
+import { GetConsultationTicket } from "@actions/consultation/consultation-ticket.action"
+import { useConsultation } from "@hooks/useConsultation"
+import Each from "@components/utils/Each"
+import { useNoteTemplate } from "@hooks/useNoteTemplate"
+import { toast } from "sonner"
+import { upsertConsultationNotesAction, upsertConsultationNotesSettingsAction } from "@actions/consultation/consultation-notes.action"
+import { useState } from "react"
+import { FormControl } from "@components/ui/form"
 interface ConsultationTicketSettingSheetProps extends DialogProps {
   children?: React.ReactNode;
+  consultationId: number;
+  orgUid: string;
 }
-export default function ConsultationTicketSettingSheet({ children, ...res }: ConsultationTicketSettingSheetProps) {
+export default function ConsultationTicketSettingSheet({ children, consultationId, orgUid, ...res }: ConsultationTicketSettingSheetProps) {
   
   const action = async (formData: FormData) => {
     console.log(Object.fromEntries(formData));
-    
   }
+
   return (
     <Sheet {...res}>
       <SheetTrigger asChild>{children}</SheetTrigger>
@@ -42,7 +52,7 @@ export default function ConsultationTicketSettingSheet({ children, ...res }: Con
         <div className="my-5 gap-5 flex flex-col">
           <Card>
             <CardHeader>
-              <CardTitle>Vital Signs</CardTitle>
+              <CardTitle>Vital Signs (canary)</CardTitle>
               <CardDescription>Configure settings related to vital signs</CardDescription>
             </CardHeader>
             <CardContent >
@@ -51,28 +61,19 @@ export default function ConsultationTicketSettingSheet({ children, ...res }: Con
                   <Label htmlFor="vital-patient" className="flex flex-col space-y-1">
                     <span>Allow Patient to add Vital Signs</span>
                     <span className="font-normal leading-snug text-muted-foreground">
-                    Alow patients to add their own vital signs
+                    Allow patients to add their own vital signs
                     </span>
                   </Label>
                   <Switch id="vital-patient" name="vital-patient" />
                 </div>
                 <div className="flex items-center justify-between space-x-2">
                   <Label htmlFor="vital-nurse" className="flex flex-col space-y-1">
-                    <span>Allow Nurse to add Vital Signs</span>
+                    <span>Allow Other HP to add Vital Signs</span>
                     <span className="font-normal leading-snug text-muted-foreground">
                     Allow nurses to add vital signs for patients
                     </span>
                   </Label>
                   <Switch id="vital-nurse" name="vital-nurse" />
-                </div>
-                <div className="flex items-center justify-between space-x-2">
-                  <Label htmlFor="vital-doctor" className="flex flex-col space-y-1">
-                    <span>Allow Doctor to add Vital Signs</span>
-                    <span className="font-normal leading-snug text-muted-foreground">
-                    Allow doctors to add vital signs for patients
-                    </span>
-                  </Label>
-                  <Switch id="vital-doctor" name="vital-doctor" checked={true} />
                 </div>
               </form>
             </CardContent>
@@ -82,70 +83,7 @@ export default function ConsultationTicketSettingSheet({ children, ...res }: Con
               </Button>
             </CardFooter>
           </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>Consultation Notes</CardTitle>
-              <CardDescription>
-                Configure settings related to consultation notes
-              </CardDescription>
-            </CardHeader>
-            <CardContent >
-              <form id="notes-settings" action={action} className="grid gap-6">
-
-                <div className="flex items-center justify-between space-x-2">
-                  <Label htmlFor="notes-patient" className="flex flex-col space-y-1">
-                    <span>
-                    Create Consultation Notes for Patients
-                    </span>
-                    <span className="font-normal leading-snug text-muted-foreground">
-                    Allow doctors to create consultation notes for patients
-                    </span>
-                  </Label>
-                  <Switch id="notes-patient" defaultChecked  name="notes-patient"/>
-                </div>
-                <Label className="flex flex-col space-y-1">
-                Allow Patients to view Consultation Notes (S.O.A.P)
-                </Label>
-                <div className="flex items-center justify-between space-x-2">
-                  <Label htmlFor="notes-s" className="flex flex-col space-y-1">
-                    <span className="font-normal leading-snug text-muted-foreground">
-                    Subjective History
-                    </span>
-                  </Label>
-                  <Switch id="notes-s" name="notes-s" />
-                </div>
-                <div className="flex items-center justify-between space-x-2">
-                  <Label htmlFor="notes-o" className="flex flex-col space-y-1">
-                    <span className="font-normal leading-snug text-muted-foreground">
-                    Objective History
-                    </span>
-                  </Label>
-                  <Switch id="notes-o" name="notes-o"/>
-                </div>
-                <div className="flex items-center justify-between space-x-2">
-                  <Label htmlFor="notes-a" className="flex flex-col space-y-1">
-                    <span className="font-normal leading-snug text-muted-foreground">
-                    Assessment
-                    </span>
-                  </Label>
-                  <Switch id="notes-a" name="notes-a" />
-                </div>
-                <div className="flex items-center justify-between space-x-2">
-                  <Label htmlFor="notes-p" className="flex flex-col space-y-1">
-                    <span className="font-normal leading-snug text-muted-foreground">
-                    Plan
-                    </span>
-                  </Label>
-                  <Switch id="notes-p" name="notes-p"/>
-                </div>
-              </form>
-            </CardContent>
-            <CardFooter>
-              <Button form="notes-settings" variant="outline" className="w-full">
-                Save preferences
-              </Button>
-            </CardFooter>
-          </Card>
+          <ConsultationNotesSetting consultationId={consultationId} orgUid={orgUid}/>
         </div>
         <SheetFooter>
           <SheetClose asChild>
@@ -155,4 +93,96 @@ export default function ConsultationTicketSettingSheet({ children, ...res }: Con
       </SheetContent>
     </Sheet>
   );
+}
+
+
+export const ConsultationNotesSetting = ({consultationId, orgUid}: { consultationId: number, orgUid: string }) => {
+
+  const {data: consultation} = useConsultation({
+    consultationId,
+    orgUid
+  });
+
+  const {data: noteTemplate} = useNoteTemplate(consultation?.data?.ConsultationTicketAttribute?.noteTemplateName ?? "");
+
+  const mappedNotes = (consultation?.data?.ConsultationNotes ?? []).map(note => {
+    const noteSection = noteTemplate?.NoteSections?.find(section => section.name === note.section)
+    return {
+      ...note,
+      label: noteSection?.label ?? note.section,
+    }
+  })
+
+  const action = async (formData: FormData) => {
+    mappedNotes.forEach(note => {
+      const showOnPatient = formData.get(note.section) === "on"
+      formData.append(note.section, showOnPatient.toString()) 
+    })
+    formData.append("consultationTicketId", consultationId.toString())
+    toast.promise(upsertConsultationNotesSettingsAction(formData), {
+      loading: "Saving consultation notes settings...",
+      success: (res)  => {
+        return res.message;
+      },
+      error: "Failed to save consultation notes settings",
+      position: "top-center",
+    })
+    
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Consultation Notes (canary)</CardTitle>
+        <CardDescription>
+          Configure settings related to consultation notes
+        </CardDescription>
+      </CardHeader>
+      <CardContent >
+        <form id="notes-settings" action={action} className="grid gap-6">
+          <Label className="flex flex-col space-y-1">
+            Allow Patients to view Consultation Notes ({consultation?.data?.ConsultationTicketAttribute?.noteTemplateName})
+          </Label>
+          <Each
+            of={mappedNotes}
+            render={(note) => {
+              return (
+                <SectionSetting
+                  key={note.section}
+                  note={{
+                    label: note.label,
+                    section: note.section,
+                    showOnPatient: note.showOnPatient
+                  }}
+                />
+              )
+            }}
+          />
+        </form>
+      </CardContent>
+      <CardFooter>
+        <Button form="notes-settings" variant="outline" className="w-full">
+          Save preferences
+        </Button>
+      </CardFooter>
+    </Card>
+  )
+}
+
+export const SectionSetting = ({note}: {note: {
+  label: string;
+  section: string;
+  showOnPatient: boolean;
+}}) => {
+  const [showOnPatient, setShowOnPatient] = useState(note.showOnPatient);
+  return (
+    <div key={note.section} className="flex items-center justify-between space-x-2">
+      <Label htmlFor={note.section} className="flex flex-col space-y-1">
+        <span className="font-normal leading-snug text-muted-foreground">
+          {note.label} ({note.section})
+        </span>
+      </Label>
+      <Switch name={note.section} id={note.section} checked={showOnPatient} onCheckedChange={setShowOnPatient}/>
+    </div>
+  )
 }

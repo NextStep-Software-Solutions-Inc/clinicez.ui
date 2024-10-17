@@ -21,15 +21,13 @@ import EditConsultationTicketModal from "../appointment/EditConsultationTicketMo
 import React from "react"
 import { useDropdownMenu } from "@components/DropdownMenuProvider"
 import { toast } from "sonner"
-import { toggleArchiveConsultationTicketAction, GetConsultationTickets } from "@actions/consultation/consultation-ticket.action"
+import { toggleArchiveConsultationTicketAction, GetConsultationTickets, GetConsultationTicket } from "@actions/consultation/consultation-ticket.action"
 import { Archive, Pencil } from "lucide-react"
 interface ConsultationTicketTableRowActionsProps<TData> {
-  consultation: GetConsultationTickets["data"][number]
+  consultation: NonNullable<GetConsultationTicket["data"]> | GetConsultationTickets["data"][number]
 }
 
-export default function ConsultationTicketTableRowActions<TData>({
-  consultation,
-}: ConsultationTicketTableRowActionsProps<TData>) {
+export default function ConsultationTicketTableRowActions<TData>({consultation}: ConsultationTicketTableRowActionsProps<TData>) {
   const { dropdownOpen, setDropdownOpen, hasOpenDialog, dropdownTriggerRef, handleDialogItemSelect, handleDialogItemOpenChange } = useDropdownMenu()!;
 
   const handleArchive = () => {
@@ -65,7 +63,11 @@ export default function ConsultationTicketTableRowActions<TData>({
             <Pencil className="w-4 h-4 mr-2"/>
             Edit</DropdownMenuItem>
         </EditConsultationTicketModal>
-        <ConsultationTicketSettingSheet onOpenChange={handleDialogItemOpenChange}>
+        <ConsultationTicketSettingSheet 
+          consultationId={consultation.id}
+          orgUid={consultation.orgUid}
+          onOpenChange={handleDialogItemOpenChange}
+        >
           <DropdownMenuItem onSelect={handleDialogItemSelect}>
             <GearIcon className="w-4 h-4 mr-2"/>
             Settings

@@ -45,7 +45,7 @@ export default function ConsultationSettings() {
         loading: "Saving changes...",
         success: res => {
           if(res.status) {
-            mutate(res.data),
+            mutate(),
             form.reset(data)
           }
           return res.message;

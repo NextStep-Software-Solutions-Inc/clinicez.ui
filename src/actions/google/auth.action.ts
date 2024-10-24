@@ -37,10 +37,10 @@ export async function getGoogleAuthTokens(code: string, redirect_uri:string) {
     });
     const session = await getCachedSession();
 
-    const newUser = await managementClient.users.create({
-      email: session?.user.email,
-      connection: "google-oauth2",
-    })
+    // const newUser = await managementClient.users.create({
+    //   email: session?.user.email,
+    //   connection: "google-oauth2",
+    // })
     // const user = await managementClient.users.link({id: session?.user.sub}, {link_with: newUser.data.})
     // console.log(JSON.stringify(user, null, 2));
     

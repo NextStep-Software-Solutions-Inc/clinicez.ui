@@ -53,7 +53,7 @@ export default function EmployeeRecordForm({orgId} : {orgId: string}) {
   const {data: orgColleges} = useOrgColleges(orgId)
   const {data: orgDepartments} = useOrgDepartments(orgId)
   const {data: orgOffices} = useOrgOffices(orgId)
-  const {data: user } = useUser({userId:orgApplication.userId})
+  const {data: user } = useUser({userId: orgApplication.userId})
 
   const form = useForm<EmployeeRecordType>({
     resolver: zodResolver(employeeRecordSchema),
@@ -65,9 +65,13 @@ export default function EmployeeRecordForm({orgId} : {orgId: string}) {
 
   const action = async () => {
     form.handleSubmit(async (values) => {
-      const orgId = orgOffices?.[0].organizationId ?? 0
+      const orgId = orgApplication.orgId;
       if(!user?.data) {
         toast.error("User not found")
+        return;
+      }
+      if(!orgId) {
+        toast.error("Organization not found")
         return;
       }
       const userId = user.data.id

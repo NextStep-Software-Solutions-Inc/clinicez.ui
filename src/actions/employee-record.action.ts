@@ -9,7 +9,7 @@ export type CreateUserEmploymentRecord = {
   position: string
   designation?: string
   userId: number
-  orgId: number
+  orgId: string
   officeId?: number
   departmentId?: number
   collegeId?: number
@@ -24,7 +24,7 @@ export const createEmploymentRecordAction = async (payload:CreateUserEmploymentR
   }
   const Organization: Prisma.UserEmploymentRecordCreateInput["Organization"] = {
     connect: {
-      id: orgId
+      orgId
     }
   }
   const Department: Prisma.UserEmploymentRecordCreateInput["Department"] =  {
@@ -60,11 +60,15 @@ export const upsertEmploymentRecordAction = async (payload:CreateUserEmploymentR
     data: null
   }
   try {
+    const organization = await prisma.organization.findUniqueOrThrow({
+      where: { orgId, isActive: true },
+      select: { id: true }
+    })
     const employeeRecord = await prisma.userEmploymentRecord.upsert({
       where: {
         unique_user_employment: {
           userId,
-          organizationId: orgId
+          organizationId: organization.id
         }
       },
       create: {
@@ -72,7 +76,7 @@ export const upsertEmploymentRecordAction = async (payload:CreateUserEmploymentR
         userId,
         position,
         designation,
-        organizationId: orgId,
+        organizationId: organization.id,
         officeId,
         departmentId,
         collegeId,
@@ -82,7 +86,7 @@ export const upsertEmploymentRecordAction = async (payload:CreateUserEmploymentR
         userId,
         position,
         designation,
-        organizationId: orgId,
+        organizationId: organization.id,
         officeId,
         departmentId,
         collegeId,

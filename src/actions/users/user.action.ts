@@ -338,15 +338,9 @@ const sendCreateUserNotification = async ({email, password, orgName}: SendCreate
 
 export const findAndCreateUserAction = cache(async () => {
   const session = await getCachedSession();
-  if(!session) {
-    return {
-      success: false,
-      message: "Unauthorized",
-      data: null
-    }
-  }
-
+  
   try {
+    if(!session)  throw new Error("Unauthorized");
     const user = await prismaCommon.$transaction(async (prisma) => {
       let dbUser = await prisma.user.findUnique({
         where: {

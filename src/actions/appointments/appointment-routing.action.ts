@@ -8,6 +8,7 @@ import { Prisma } from "@prisma/tenant/client"
 import { hasCodeProperty } from '@lib/utils';
 import { getPermissionsAction } from '@actions/permission.action';
 import { PERMISSIONS } from '@lib/permissions';
+import { insertToCalendar } from '@actions/google/auth.action';
 
 export const assignAppointmentAction = async (formData: FormData) => {
   const session = await getCachedSession();
@@ -94,15 +95,16 @@ export const acceptAppointmentAction = async (formData: FormData) => {
 
     const routingCode = formData.get('routingCode') as string;
     
-    await prismaTenant.appointmentRouting.update({
+    const routedApt = await prismaTenant.appointmentRouting.update({
       where: { 
         routingCode,
         status: {
           not: 'ACCEPTED'
         }
       },
-      data: { status: 'ACCEPTED'},
+      data: { status: 'ACCEPTED'}      
     })
+
     return {
       status: true,
       message: 'Appointment accepted'

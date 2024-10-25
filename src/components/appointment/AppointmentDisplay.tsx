@@ -35,6 +35,7 @@ import AppointmentRoutingHistorySheet from "./AppointmentRoutingHistorySheet";
 import CompleteAppointment from "./CompleteAppointment";
 import { useHP } from "@hooks/useHP";
 import { PERMISSIONS } from "@lib/permissions";
+import Link from "next/link";
 
 dayjs.extend(utc)
 
@@ -92,7 +93,8 @@ export default function AppointmentDisplay() {
 
   const myOrgPermission = authUser?.data?.OrgUserPermissions.flatMap(p => p.Permission).map(p => p.name) ?? []
   const preferredHPName = `${preferredHp?.HPProfile?.title} ${preferredHp?.HPProfile?.name} ${preferredHp?.HPProfile?.suffix}`
-  
+  const meetingUrl = freshAppointment.data.AppointmentAttribute?.meetingUrl
+
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center p-2">
@@ -219,6 +221,10 @@ export default function AppointmentDisplay() {
           {freshAppointment.data.AppointmentAttribute?.date && <LabelValue className="flex items-center gap-2" label={dayjs(freshAppointment.data.AppointmentAttribute.date).format("ll - dddd")} value="Date:" />}
           {(freshAppointment.data.AppointmentAttribute?.date && freshAppointment.data.AppointmentAttribute?.timeStart && freshAppointment.data.AppointmentAttribute?.timeEnd) && <LabelValue className="flex items-center gap-2" label={`${formatDateTime(freshAppointment.data.AppointmentAttribute.date, freshAppointment.data.AppointmentAttribute.timeStart).format("hh:mm A")} - ${formatDateTime(freshAppointment.data.AppointmentAttribute.date, freshAppointment.data.AppointmentAttribute.timeEnd).format("hh:mm A")}`} value="Time:" />}
           {freshAppointment.data.AppointmentAttribute?.preferredAppointee && <LabelValue className="flex items-center gap-2" label={preferredHPName} value={`Preferred HP:`} />}
+          {meetingUrl && <div className="flex gap-2 items-center">
+            <LabelValue className="flex items-center gap-2" label={meetingUrl} value={`Meeting link:`} />
+            <Badge><Link href={meetingUrl} target="_blank">Join Meeting</Link></Badge>
+          </div>}
         </div>
         <Separator />
         <div className="flex items-center p-4 gap-2 max-h-40 scrollBox no-scrollbar">

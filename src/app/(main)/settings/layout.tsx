@@ -36,6 +36,10 @@ export default function SettingsLayout({ children, params: {organization} }: Set
       href: `/settings/subscriptions`,
     },
     {
+      title: "Integrations",
+      href: `/settings/integrations`,
+    },
+    {
       title: "Advanced",
       href: `/settings/advanced`,
     }

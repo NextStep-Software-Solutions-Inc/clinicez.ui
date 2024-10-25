@@ -67,6 +67,8 @@ model AppointmentAttribute {
   status             String          @default("PENDING")
   serviceId          Int?
   preferredAppointee String?
+  eventId            String?         @default("")
+  meetingUrl         String?         @default("")
   Appointment        Appointment     @relation(fields: [appointmentId], references: [id])
   AppointmentMode    AppointmentMode @relation(fields: [modeId], references: [id])
   AppointmentType    AppointmentType @relation(fields: [typeId], references: [id])

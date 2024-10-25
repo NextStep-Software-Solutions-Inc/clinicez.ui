@@ -343,6 +343,8 @@ export const getAppointmentAction = cache(async (id: number, orgUid?: string) =>
             date: true,
             timeStart: true,
             timeEnd: true,
+            eventId: true,
+            meetingUrl: true,
             AppointmentType: {
               select: {
                 id: true,

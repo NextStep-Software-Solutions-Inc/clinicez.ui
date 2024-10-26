@@ -60,7 +60,7 @@ export const receiveAppointmentAction = async (formData: FormData) => {
                   routedTo: String(defaultHp?.id),
                   routedBy: session.user.sub,
                   routedToRole: defaultHp?.type,
-                  status: (autoAssignToSelf || autoAcceptAppointment) ? "ACCEPT" : "PENDING",
+                  status: (autoAssignToSelf || autoAcceptAppointment) ? "ACCEPTED" : "PENDING",
                 }
               }
             }

@@ -179,7 +179,9 @@ export const getAppointmentsAction = cache(async (filter?: GetAppointmentFilter)
         ...(routedAptStatus
           ? {
             AppointmentRouting: {
-              some: { status: routedAptStatus }
+              some: {
+                status: routedAptStatus
+              },
             }
           }
           : {}),
@@ -187,10 +189,10 @@ export const getAppointmentsAction = cache(async (filter?: GetAppointmentFilter)
           { 
             ...(canReadAllOrgAppointment ? { 
               orgUid,
-              ...userId ? { Requesters: { some: { userId } } } : {}
+              ...userId ? { Requesters: { every: { userId } } } : {}
             } : {})
           },
-          { ...(canReadAOwnOrgAppointment ? { Requesters: { some: { userId: session.user.sub } } } : {}) },
+          { ...(canReadAOwnOrgAppointment ? { Requesters: { every: { userId: session.user.sub } } } : {}) },
           { ...(canReadAssignedOrgAppointment ? {
             AppointmentRouting: {
               some: {
@@ -263,14 +265,10 @@ export const getAppointmentsAction = cache(async (filter?: GetAppointmentFilter)
     ])
 
     const filteredAppointments = appointments.filter((apt) => {
-      const patient = requestersDetail.find((r) => r.userId === apt.Requesters[0].userId);
+
+      const patient = requestersDetail.find((rd) => apt.Requesters.some((r) => r.userId === rd.userId));
       return (myWhitelistFilter?.WhitelistFilters ?? []).every((filter) => {
-        return (
-          (filter.Filter.key === "department" && (patient?.StudentRecords.some((s) => s.departmentId?.toString() === filter.value) || patient?.UserEmployments.some((e) => e.departmentId?.toString() === filter.value))) ||
-          (filter.Filter.key === "college" && (patient?.StudentRecords.some((s) => s.collegeId?.toString() === filter.value) || patient?.UserEmployments.some((e) => e.collegeId?.toString() === filter.value))) ||
-          (filter.Filter.key === "office" && patient?.UserEmployments.some((e) => e.officeId?.toString() === filter.value)) ||
-          (filter.Filter.key === "program" && patient?.StudentRecords.some((s) => s.programId?.toString() === filter.value))
-        );
+        return isFilterMatch(filter.Filter.key, filter.value, patient);
       });
     });
 
@@ -462,45 +460,16 @@ export const getAppointmentCountsAction = cache(async (orgUid: string) => {
     const canReadAllOrgAppointment = readAllOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
     const canReadAOwnOrgAppointment = readAOwnOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
     const canReadAssignedOrgAppointment = readAssignedOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
-    
-  
-    // const counts = await prismaTenant.appointmentAttribute.groupBy({
-    //   by: ["status"],
-    //   where: {
-    //     Appointment: {
-    //       isActive: true,
-    //       OR: [
-    //         { ...(canReadAllOrgAppointment ? { orgUid } : {}) },
-    //         { ...(canReadAOwnOrgAppointment ? { Requesters: { some: { userId: session.user.sub } } } : {}) },
-    //         { ...(canReadAssignedOrgAppointment ? {
-    //           AppointmentRouting: {
-    //             some: {
-    //               OR: [
-    //                 { 
-    //                   routedTo: {
-    //                     in: myHps.map((hp) => hp.id.toString())
-    //                   }
-    //                 },
-    //                 { routedBy: session.user.sub }
-    //               ]
-    //             }
-    //           }
-    //         } : {}) },
-    //       ]
-    //     }
-    //   },
-    //   _count: true
-    // });
 
     const appointments = await prismaTenant.appointment.findMany({
       where: {
         isActive: true,
         OR: [
           { ...(canReadAllOrgAppointment ? { orgUid } : {}) },
-          { ...(canReadAOwnOrgAppointment ? { Requesters: { some: { userId: session.user.sub } } } : {}) },
+          { ...(canReadAOwnOrgAppointment ? { Requesters: { every: { userId: session.user.sub } } } : {}) },
           { ...(canReadAssignedOrgAppointment ? {
             AppointmentRouting: {
-              some: {
+              every: {
                 OR: [
                   { 
                     routedTo: {
@@ -538,12 +507,7 @@ export const getAppointmentCountsAction = cache(async (orgUid: string) => {
     const filteredAppointments = appointments.filter((apt) => {
       const patient = requestersDetail.find((r) => apt.Requesters.some((r) => r.userId));
       return (myWhitelistFilter?.WhitelistFilters ?? []).every((filter) => {
-        return (
-          (filter.Filter.key === "department" && (patient?.StudentRecords.some((s) => s.departmentId?.toString() === filter.value) || patient?.UserEmployments.some((e) => e.departmentId?.toString() === filter.value))) ||
-          (filter.Filter.key === "college" && (patient?.StudentRecords.some((s) => s.collegeId?.toString() === filter.value) || patient?.UserEmployments.some((e) => e.collegeId?.toString() === filter.value))) ||
-          (filter.Filter.key === "office" && patient?.UserEmployments.some((e) => e.officeId?.toString() === filter.value)) ||
-          (filter.Filter.key === "program" && patient?.StudentRecords.some((s) => s.programId?.toString() === filter.value))
-        );
+        return isFilterMatch(filter.Filter.key, filter.value, patient);
       });
     });
 
@@ -582,41 +546,9 @@ export const getRoutedAppointmentCountsAction = cache(async (orgUid: string) => 
     const canReadAllOrgAppointment = readAllOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
     const canReadAOwnOrgAppointment = readAOwnOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
     const canReadAssignedOrgAppointment = readAssignedOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
-    
-    // const counts = await prismaTenant.appointmentRouting.groupBy({
-    //   by: ["status"],
-    //   where: {
-    //     Appointment: {
-    //       isActive: true,
-    //       AppointmentAttribute: {
-    //         status: {
-    //           in: ["ROUTED"]
-    //         }
-    //       },
-    //       OR: [
-    //         { ...(canReadAllOrgAppointment ? { orgUid } : {}) },
-    //         { ...(canReadAOwnOrgAppointment ? { Requesters: { some: { userId: session.user.sub } } } : {}) },
-    //         { ...(canReadAssignedOrgAppointment ? {
-    //           AppointmentRouting: {
-    //             some: {
-    //               OR: [
-    //                 { 
-    //                  routedTo: {
-    //                    in:  myHps.map((hp) => hp.id.toString())
-    //                  }
-    //                 },
-    //                 { routedBy: session.user.sub }
-    //               ]
-    //             }
-    //           }
-    //         } : {}) },
-    //       ]
-    //     }
-    //   },
-    //   _count: true,
-    // });
 
     const routedAppointments = await prismaTenant.appointmentRouting.findMany({
+      distinct: ["appointmentId", "status"],
       where: {
         Appointment: {
           isActive: true,
@@ -627,7 +559,7 @@ export const getRoutedAppointmentCountsAction = cache(async (orgUid: string) => 
           },
           OR: [
             { ...(canReadAllOrgAppointment ? { orgUid } : {}) },
-            { ...(canReadAOwnOrgAppointment ? { Requesters: { some: { userId: session.user.sub } } } : {}) },
+            { ...(canReadAOwnOrgAppointment ? { Requesters: { every: { userId: session.user.sub } } } : {}) },
             { ...(canReadAssignedOrgAppointment ? {
               AppointmentRouting: {
                 some: {
@@ -653,7 +585,8 @@ export const getRoutedAppointmentCountsAction = cache(async (orgUid: string) => 
               select: {
                 userId: true
               }
-            }
+            },
+            
           }
         }
       }
@@ -666,15 +599,11 @@ export const getRoutedAppointmentCountsAction = cache(async (orgUid: string) => 
       getUserWhitelistFilters(session.user.sub, orgUid)
     ])
 
+    
     const filteredAppointments = routedAppointments.filter((routed) => {
       const patient = requestersDetail.find((r) => routed.Appointment.Requesters.some((r) => r.userId));
       return (myWhitelistFilter?.WhitelistFilters ?? []).every((filter) => {
-        return (
-          (filter.Filter.key === "department" && (patient?.StudentRecords.some((s) => s.departmentId?.toString() === filter.value) || patient?.UserEmployments.some((e) => e.departmentId?.toString() === filter.value))) ||
-          (filter.Filter.key === "college" && (patient?.StudentRecords.some((s) => s.collegeId?.toString() === filter.value) || patient?.UserEmployments.some((e) => e.collegeId?.toString() === filter.value))) ||
-          (filter.Filter.key === "office" && patient?.UserEmployments.some((e) => e.officeId?.toString() === filter.value)) ||
-          (filter.Filter.key === "program" && patient?.StudentRecords.some((s) => s.programId?.toString() === filter.value))
-        );
+        return isFilterMatch(filter.Filter.key, filter.value, patient);
       });
     });
   
@@ -825,3 +754,46 @@ const getRequestersDetail = async (userIds: string[], orgUid?: string) => {
     }
   })
 }
+
+type Patient = {
+  userId: string;
+  UserEmployments: {
+      departmentId: number | null;
+      collegeId: number | null;
+      officeId: number | null;
+  }[];
+  StudentRecords: {
+      organizationId: number;
+      programId: number | null;
+      departmentId: number | null;
+      collegeId: number | null;
+  }[];
+} | undefined
+const isFilterMatch = <T extends Patient>(filterKey: string, filterValue: string, patient: T) => {
+  switch (filterKey) {
+  case "department":
+    return (
+      filterValue === filterKey ||
+        patient?.StudentRecords.some((s) => s.departmentId?.toString() === filterValue) ||
+        patient?.UserEmployments.some((e) => e.departmentId?.toString() === filterValue)
+    );
+  case "college":
+    return (
+      filterValue === filterKey ||
+        patient?.StudentRecords.some((s) => s.collegeId?.toString() === filterValue) ||
+        patient?.UserEmployments.some((e) => e.collegeId?.toString() === filterValue)
+    );
+  case "office":
+    return (
+      filterValue === filterKey ||
+        patient?.UserEmployments.some((e) => e.officeId?.toString() === filterValue)
+    );
+  case "program":
+    return (
+      filterValue === filterKey ||
+        patient?.StudentRecords.some((s) => s.programId?.toString() === filterValue)
+    );
+  default:
+    return false;
+  }
+};

@@ -221,7 +221,7 @@ export const insertToCalendar = async (appointmentId:number) => {
         dateTime: formatDateTime(appointment.AppointmentAttribute!.date!, appointment.AppointmentAttribute!.timeEnd!).toISOString(),
         timeZone: "Asia/Manila"
       },
-      attendees: [...patients.map(p => ({email: p.email})), ...hps.map(h => ({email: h.User.email}))],
+      attendees: [...hps.map(h => ({email: h.User.email})), ...patients.map(p => ({email: p.email}))],
       conferenceData: {
         createRequest: {
           requestId: `meet-${appointmentId}`
@@ -253,9 +253,11 @@ export const insertToCalendar = async (appointmentId:number) => {
     }
   } catch (error) {
     console.error(`Error inserting to calendar: ${error}`);
+    let message = "An error occurred while inserting to calendar";
+    if(error instanceof Error) message = error.message;
     return {
       status: false,
-      message: "Error inserting to calendar",
+      message,
     }
   }
 }

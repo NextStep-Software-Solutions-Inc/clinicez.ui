@@ -52,11 +52,11 @@ interface PreConsultationNoteProps {
 }
 export const PreConsultationNote = ({note}: PreConsultationNoteProps) => {
   const {data: hp} = useUser({userId: note.createdBy})
-  const hpNmae = `${hp?.data?.firstName} ${hp?.data?.middleName ?? ""} ${hp?.data?.lastName} ${hp?.data?.suffix ?? ""}`.trim()
+  const hpName = `${hp?.data?.firstName} ${hp?.data?.middleName ?? ""} ${hp?.data?.lastName} ${hp?.data?.suffix ?? ""}`.trim()
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-primary text-lg">{`Assessed by ${hpNmae}`}</CardTitle>
+        <CardTitle className="text-primary text-lg">{`Assessed by ${hpName}`}</CardTitle>
         <CardDescription>Assessed on {dayjs(note.updatedAt).format("lll")} ({dayjs(note.updatedAt).fromNow()}) <span className="italic text-primary">(readonly)</span></CardDescription>
       </CardHeader>
       <CardContent>

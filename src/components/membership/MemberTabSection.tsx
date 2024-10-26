@@ -63,10 +63,16 @@ export default function MemberTabSection({orgUid, userId}:MemberTabSectionProps)
                   <CardContent>
                     <>
                       <ConditionalRender condition={value === "employee_record"}>
-                        <EmployeeRecordForm orgId={params.organization}/>
+                        <EmployeeRecordForm 
+                          orgId={params.organization}
+                          userId={userId}
+                        />
                       </ConditionalRender>
                       <ConditionalRender condition={value === "student_record"}>
-                        <StudentRecordForm orgId={params.organization}/>
+                        <StudentRecordForm 
+                          orgId={params.organization}
+                          userId={userId}
+                        />
                       </ConditionalRender>
                     </>
                   </CardContent>

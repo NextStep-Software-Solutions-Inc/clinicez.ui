@@ -47,7 +47,7 @@ const employeeRecordSchema = z.object({
 
 export type StudentRecordType = z.infer<typeof employeeRecordSchema>;
 
-export default function StudentRecordForm({orgId} : {orgId: string}) {
+export default function StudentRecordForm({orgId, userId} : {orgId: string, userId: string}) {
 
   const [additionalInfoValid, setAdditionalInfoValid] = useAtom(additionalInfoValidAtom)
   const [orgApplication, setOrgApplication] = useAtom(joinOrgApplicationAtom)
@@ -56,7 +56,7 @@ export default function StudentRecordForm({orgId} : {orgId: string}) {
   const {data: orgPrograms} = useOrgPrograms(orgId)
   const {data: orgColleges} = useOrgColleges(orgId)
   const {data: orgDepartment} = useOrgDepartments(orgId)
-  const {data: user} = useUser({userId: orgApplication.userId})
+  const {data: user} = useUser({userId})
 
   const form = useForm<StudentRecordType>({
     resolver: zodResolver(employeeRecordSchema),

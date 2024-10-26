@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { NextRequest, NextResponse } from "next/server";
 
 export const GET = async (req: NextRequest) => {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL
   const searchParams = req.nextUrl.searchParams;
   const {code, scope} = Object.fromEntries(searchParams.entries())
   const token = await getGoogleAuthTokens(code, `${baseUrl}/api/google/code`);

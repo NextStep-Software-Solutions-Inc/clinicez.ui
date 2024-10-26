@@ -26,7 +26,7 @@ export default function Integrations({intergrations = []}: UserPreferenceFormPro
   const {user} = useUser()
 
   const action = async () => {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL
     toast.promise(getGoogleAuthUrl(`${baseUrl}/api/google/code`), {
       loading: "Connecting to Google Calendar...",
       success: res => {

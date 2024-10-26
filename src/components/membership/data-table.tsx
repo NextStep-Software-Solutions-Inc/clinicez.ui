@@ -37,16 +37,21 @@ import { GetUserOrganizations } from "@actions/users/user-organization.action"
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[],
-  onPaginationChange?: (value: React.SetStateAction<{
+  pagination: {
+    pageIndex: number,
+    pageSize: number
+  }
+  onPaginationChange?: (value: {
     pageIndex: number;
     pageSize: number;
-  }>) => void,
+  }) => void,
   rowCount?: number
 }
 
 export function DataTable<TData extends GetUserOrganizations["data"][number], TValue>({
   columns,
   data,
+  pagination: pg,
   onPaginationChange,
   rowCount,
 }: DataTableProps<TData, TValue>) {
@@ -55,7 +60,7 @@ export function DataTable<TData extends GetUserOrganizations["data"][number], TV
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [expanded, setExpanded] = React.useState<ExpandedState>({})
-  const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 10 })
+  const [pagination, setPagination] = React.useState({ pageIndex: pg.pageIndex, pageSize: pg.pageSize })
 
   React.useEffect(() => {
     onPaginationChange?.(pagination)

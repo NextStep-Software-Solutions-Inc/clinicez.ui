@@ -301,6 +301,10 @@ export const getAppointmentAction = cache(async (id: number, orgUid?: string) =>
     const canReadAOwnOrgAppointment = readAOwnOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
     const canReadAssignedOrgAppointment = readAssignedOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
     
+
+    const myHps = await getHPsAction({ userId: session.user.sub });
+    const myHpIds = myHps.map((hp) => hp.id.toString());
+
     const appointment = await prismaTenant.appointment.findUnique({
       where: {
         isActive: true,
@@ -311,7 +315,7 @@ export const getAppointmentAction = cache(async (id: number, orgUid?: string) =>
             AppointmentRouting: {
               some: {
                 OR: [
-                  { routedTo: session.user.sub },
+                  { routedTo: { in: myHpIds } },
                   { routedBy: session.user.sub }
                 ]
               }

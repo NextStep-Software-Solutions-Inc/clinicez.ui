@@ -7,7 +7,7 @@ export type CreateUserStudentRecord = {
   studentId: string;
   levelId: number
   userId: number
-  orgId: number
+  orgUid: string
   lrn?: string;
   departmentId?: number
   programId?: number
@@ -16,19 +16,23 @@ export type CreateUserStudentRecord = {
 }
 
 export const createStudentRecordAction = async (payload:CreateUserStudentRecord ) => {
-  const { userId, orgId, studentId, lrn, departmentId, programId, collegeId, levelId, yearLevelId } = payload
+  const { userId, orgUid, studentId, lrn, departmentId, programId, collegeId, levelId, yearLevelId } = payload
 
+  const organization = await prisma.organization.findUniqueOrThrow({
+    where: { orgId: orgUid, isActive: true },
+    select: { id: true }
+  })
   const studentRecord = await prisma.userStudentRecord.create({
     data: {
       studentId,
-      userId,
-      organizationId: orgId,
-      level: levelId,
       lrn,
+      level: levelId,
+      userId,
+      organizationId: organization.id,
       departmentId,
-      programId, 
+      programId,
       collegeId,
-      yearLevel: yearLevelId
+      yearLevel: yearLevelId,
     }
   });
   return studentRecord;
@@ -36,24 +40,28 @@ export const createStudentRecordAction = async (payload:CreateUserStudentRecord 
 
 
 export const upsertStudentRecordAction = async (payload:CreateUserStudentRecord ) => {
-  const { userId, orgId, studentId, lrn, departmentId, programId, collegeId, levelId, yearLevelId } = payload
+  const { userId, orgUid, studentId, lrn, departmentId, programId, collegeId, levelId, yearLevelId } = payload
   const response = {
     success: false,
     message: "Something went wrong!",
     data: null
   }
   try {
+    const organization = await prisma.organization.findUniqueOrThrow({
+      where: { orgId: orgUid, isActive: true },
+      select: { id: true }
+    })
     const studentRecord = await prisma.userStudentRecord.upsert({
       where: {
         unique_user_student_record: {
           userId,
-          organizationId: orgId
+          organizationId: organization.id
         }
       },
       create: {
         studentId,
         userId,
-        organizationId: orgId,
+        organizationId: organization.id,
         level: levelId,
         lrn,
         departmentId,
@@ -63,8 +71,6 @@ export const upsertStudentRecordAction = async (payload:CreateUserStudentRecord 
       },
       update: {
         studentId,
-        userId,
-        organizationId: orgId,
         level: levelId,
         lrn,
         departmentId,

@@ -5,7 +5,7 @@ import { self } from "@services/request"
 import useSWR from "swr"
 
 export const useOrgAppointments = (filter: GetAppointmentFilter) => {
-  const { orgUid } = filter
+  const { orgUid, userId } = filter
   const fetcher = (args: string) => self.get<GetAppointments>(args)
   const searchParams = new URLSearchParams()
   Object.entries(filter).forEach(([key, value]) => {

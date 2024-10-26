@@ -192,7 +192,7 @@ export const getAppointmentsAction = cache(async (filter?: GetAppointmentFilter)
               ...userId ? { Requesters: { every: { userId } } } : {}
             } : {})
           },
-          { ...(canReadAOwnOrgAppointment ? { Requesters: { every: { userId: session.user.sub } } } : {}) },
+          { ...(canReadAOwnOrgAppointment ? { Requesters: { every: { userId: userId ? userId : session.user.sub } } } : {}) },
           { ...(canReadAssignedOrgAppointment ? {
             AppointmentRouting: {
               some: {

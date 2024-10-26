@@ -65,20 +65,20 @@ export default function EmployeeRecordForm({orgId} : {orgId: string}) {
 
   const action = async () => {
     form.handleSubmit(async (values) => {
-      const orgId = orgApplication.orgId;
+      const orgUid = orgApplication.orgId;
       if(!user?.data) {
         toast.error("User not found")
         return;
       }
-      if(!orgId) {
+      if(!orgUid) {
         toast.error("Organization not found")
         return;
       }
       const userId = user.data.id
-      toast.promise(upsertEmploymentRecordAction({...values, orgId, userId,}), {
+      toast.promise(upsertEmploymentRecordAction({...values, orgUid, userId,}), {
         loading: "Saving...",
         success: async (res) => {
-          if(!res?.success) {
+          if(!res.success) {
             return `An error occurred: ${res?.message}`
           }
           setAdditionalInfoValid((prev) => ({

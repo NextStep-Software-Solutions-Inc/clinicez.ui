@@ -44,10 +44,16 @@ export default function AdditionalInformationStep({ orgId, isLastStep, isFirstSt
             return (
               <>
                 <ConditionalRender condition={requirement === "employee_record"}>
-                  <EmployeeRecordForm orgId={orgId}/>
+                  <EmployeeRecordForm 
+                    orgId={orgId}
+                    userId={orgApplication.userId ?? ""}
+                  />
                 </ConditionalRender>
                 <ConditionalRender condition={requirement === "student_record"}>
-                  <StudentRecordForm orgId={orgId}/>
+                  <StudentRecordForm 
+                    orgId={orgId}
+                    userId={orgApplication.userId ?? ""}
+                  />
                 </ConditionalRender>
               </>
             )

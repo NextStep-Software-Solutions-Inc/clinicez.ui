@@ -64,14 +64,7 @@ export const columns: ColumnDef<GetUserOrganizations["data"][number]>[] = [
   {
     accessorKey: "application-date",
     size: 5,
-    accessorFn: (row) => row.createdAt.toLocaleDateString("en-PH", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "numeric",
-      minute: "numeric",
-      timeZone: "Asia/Manila"
-    }),
+    accessorFn: (row) => dayjs(row.createdAt).format("llll"),
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Application Date & Time" />
     ),
@@ -117,7 +110,7 @@ export const columns: ColumnDef<GetUserOrganizations["data"][number]>[] = [
             <Link 
               target="_blank"
               href={`/user/${row.original.User?.userId}/phr`} 
-              className="hover:underline cursor-pointer"
+              className="hover:underline cursor-pointer line-clamp-1"
             >
               {user} <ExternalLink className="w-4 h-4 ml-3 inline-block"/>
             </Link>

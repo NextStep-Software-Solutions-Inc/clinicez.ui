@@ -10,6 +10,10 @@ export const PERMISSIONS = {
     }
   },
   ORGANIZATION: {
+    "CONFIRM:ORG:APPOINTMENT": {
+      name: "confirm:org:appointment",
+      description: "User can confirm appointment within the organization.",
+    },
     "ASSIGN:ORG:APPOINTMENT": {
       name: "assign:org:appointment",
       description: "User can assign appointment to another user within then organization.",

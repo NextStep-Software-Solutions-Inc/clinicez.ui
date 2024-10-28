@@ -11,6 +11,8 @@ import utc from "dayjs/plugin/utc"
 dayjs.extend(utc)
 
 import relativeTime from "dayjs/plugin/relativeTime";
+import { useUser } from "@hooks/useUser";
+import { useHP } from "@hooks/useHP";
 dayjs.extend(relativeTime);
 
 interface NurseAssessmentProps {
@@ -49,11 +51,12 @@ interface PreConsultationNoteProps {
   note: GetPreAssessmentNotes["data"][number];
 }
 export const PreConsultationNote = ({note}: PreConsultationNoteProps) => {
-    
+  const {data: hp} = useUser({userId: note.createdBy})
+  const hpName = `${hp?.data?.firstName} ${hp?.data?.middleName ?? ""} ${hp?.data?.lastName} ${hp?.data?.suffix ?? ""}`.trim()
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-primary text-lg">{`Assessed by ${note.createdBy}`}</CardTitle>
+        <CardTitle className="text-primary text-lg">{`Assessed by ${hpName}`}</CardTitle>
         <CardDescription>Assessed on {dayjs(note.updatedAt).format("lll")} ({dayjs(note.updatedAt).fromNow()}) <span className="italic text-primary">(readonly)</span></CardDescription>
       </CardHeader>
       <CardContent>

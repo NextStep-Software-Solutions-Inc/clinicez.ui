@@ -5,7 +5,7 @@ import { self } from "@services/request"
 import useSWR from "swr"
 
 export const useUserOrganizations = (filter: GetUserOrgFilterType, enable = true) => {
-  const fetcher = (...args:any) => self.get<GetUserOrganizations>(args)
+  const fetcher = (args:string) => self.get<GetUserOrganizations>(args)
   const searchParams = new URLSearchParams()
   Object.entries(filter).forEach(([key, value]) => {
     if(value) searchParams.append(key, value.toString())

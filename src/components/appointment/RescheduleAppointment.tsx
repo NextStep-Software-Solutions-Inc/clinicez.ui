@@ -169,7 +169,7 @@ export default function RescheduleAppointment({disabled = true, onRescheduled, a
                         </FormControl>
                         <SelectContent>
                           <SelectGroup>
-                            <SelectLabel>North America</SelectLabel>
+                            <SelectLabel>Healthcare Providers</SelectLabel>
                             <Each
                               of={filteredHps ?? []}
                               render={(hp) => {
@@ -247,7 +247,7 @@ export default function RescheduleAppointment({disabled = true, onRescheduled, a
                 <ActionButton 
                   disabled={form.formState.isSubmitting || !form.formState.isValid}
                   className="mt-5 w-full"
-                >Book now</ActionButton>
+                >Reschedule</ActionButton>
               </form>
             </Form>
           </div>

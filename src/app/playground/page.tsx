@@ -6,9 +6,8 @@ export default  async function PlaygroundPage({searchParams}: {searchParams: {
     scope: string;
 }}) {
   const { code, scope } = searchParams;
-  console.log({code, scope});
-  const token = await getGoogleAuthTokens(searchParams.code, "http://localhost:3000/api/google/api");
-  console.log(token);
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL
+  const token = await getGoogleAuthTokens(code, `${baseUrl}/api/google/code`);
   return (
     <div>
       {JSON.stringify(token)}

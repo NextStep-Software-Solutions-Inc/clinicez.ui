@@ -23,26 +23,32 @@ export type GetUserOrgFilterType = {
   
 export type GetUserOrganizations = Awaited<ReturnType<typeof getUserOrganizationsAction>>
 export const getUserOrganizationsAction = cache(async (filter?: GetUserOrgFilterType) => {
-  const { userId, orgId, status, roleId, pageNumber, pageSize, distinct } = filter || {};
+  const { userId, orgId, status, distinct } = filter || {};
+
+  const castToNumber = (value: string | null | undefined | number) => value ? Number(value) : undefined;
   
+  const pageSize = castToNumber(filter?.pageSize);
+  const pageNumber = castToNumber(filter?.pageNumber);
+  const roleId = castToNumber(filter?.roleId);
+
   const paginatedData = await prismaCommon.$transaction(async (prisma) => {
     const userOrganizations =await prisma.userOrganization.findMany({
-      ... pageSize? { take: pageSize }: {},
-      ... distinct? { distinct: ["organizationId"]}: {},
+      ... pageSize ? { take: pageSize } : {},
+      ... distinct ? { distinct: ["organizationId"]} : {},
       skip: pageNumber ? (pageNumber - 1) * (pageSize || 10) : 0,
       orderBy: {
         createdAt: "desc"
       },
       where: {
-        ...roleId && { roleId },
-        ...status && { status },
+        ...roleId ? { roleId } : {},
+        ...status ? { status } : {},
         Organization: {
           isActive: true,
-          ...orgId? { orgId }: {}
+          ...orgId ? { orgId }: {}
         },
         User: {
           isActive: true,
-          ...userId? { userId }: {}
+          ...userId ? { userId }: {}
         }
       },
       select: {
@@ -61,7 +67,7 @@ export const getUserOrganizationsAction = cache(async (filter?: GetUserOrgFilter
               where: {
                 isActive: true,
                 Organization: {
-                  ...orgId? {orgId}: {}
+                  ...orgId ? {orgId}: {}
                 }
               },
               select: {
@@ -98,7 +104,7 @@ export const getUserOrganizationsAction = cache(async (filter?: GetUserOrgFilter
               where: {
                 isActive: true,
                 Organization: {
-                  ...orgId? {orgId}: {}
+                  ...orgId ? {orgId}: {}
                 }
               },
               select: {
@@ -159,7 +165,7 @@ export const getUserOrganizationsAction = cache(async (filter?: GetUserOrgFilter
               where: {
                 isActive: true,
                 User: {
-                  ...userId? {userId}: {}
+                  ...userId ? {userId}: {}
                 }
               },
               select: {
@@ -181,7 +187,7 @@ export const getUserOrganizationsAction = cache(async (filter?: GetUserOrgFilter
               where: {
                 isActive: true,
                 User: {
-                  ...userId? {userId}: {}
+                  ...userId ? {userId}: {}
                 }
               },
               select: {
@@ -199,25 +205,24 @@ export const getUserOrganizationsAction = cache(async (filter?: GetUserOrgFilter
         },
       }
     })
+
     
     const total = await prisma.userOrganization.count({
       where: {
-        ...roleId && { roleId },
-        ...status && { status },
+        ...roleId ? { roleId }: {},
+        ...status ? { status }: {},
         Organization: {
           isActive: true,
-          ...orgId? { orgId }: {}
+          ...orgId ? { orgId }: {}
         },
         User: {
           isActive: true,
-          ...userId? { userId }: {}
+          ...userId ? { userId }: {}
         }
       },
     });
-    return {
-      data: userOrganizations,
-      total
-    }
+
+    return { data: userOrganizations,  total }
   }, {
     timeout: 10000,
     maxWait: 5000,

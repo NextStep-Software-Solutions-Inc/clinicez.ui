@@ -13,8 +13,9 @@ import { Button } from '@components/ui/button';
 import { Activity } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@components/ui/tooltip';
 import { PERMISSIONS } from '@lib/permissions';
+import ConfirmBooking from './ConfirmBooking';
 
-type AppointmentActions = "accept"|"decline"|"approve"|"receive"| "reject" | "assign" | "create-consultation-ticket"| "reschedule" | "add-vitals"
+type AppointmentActions = "accept"|"decline"|"approve"|"receive"| "reject" | "assign" | "create-consultation-ticket"| "reschedule" | "add-vitals" | "confirm-booking"
 type AppointmentStatusTools = {
     action: AppointmentActions
     permissions: string[],
@@ -150,6 +151,20 @@ export const useAppointmentTools = ({ appointment, revalidate}:UseAppointmentToo
           </AddVitalSignsModal>
           <TooltipContent>Add Vitals</TooltipContent>
         </Tooltip>
+      )
+    },
+    {
+      action:"confirm-booking",
+      permissions: [PERMISSIONS.ORGANIZATION["CONFIRM:ORG:APPOINTMENT"].name],
+      appointmentStatuses: ["routed"],
+      routedAptStatuses: ["accepted"],
+      component: (
+        <ConfirmBooking 
+          appointmentId={appointment.id}
+          onAccepted={revalidate}
+          key={`${appointment.id}-confirm`}
+          disabled={!appointment.AppointmentAttribute?.date || !appointment.AppointmentAttribute?.timeStart || !appointment.AppointmentAttribute?.timeEnd} 
+        />
       )
     }
   ]

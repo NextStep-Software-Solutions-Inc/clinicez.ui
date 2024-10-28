@@ -47,13 +47,13 @@ const employeeRecordSchema = z.object({
 
 export type EmployeeRecordType = z.infer<typeof employeeRecordSchema>;
 
-export default function EmployeeRecordForm({orgId} : {orgId: string}) {
+export default function EmployeeRecordForm({orgId, userId} : {orgId: string, userId: string}) {
   const [additionalInfoValid, setAdditionalInfoValid] = useAtom(additionalInfoValidAtom)
   const [orgApplication, setOrgApplication] = useAtom(joinOrgApplicationAtom)
   const {data: orgColleges} = useOrgColleges(orgId)
   const {data: orgDepartments} = useOrgDepartments(orgId)
   const {data: orgOffices} = useOrgOffices(orgId)
-  const {data: user } = useUser({userId:orgApplication.userId})
+  const {data: user } = useUser({userId})
 
   const form = useForm<EmployeeRecordType>({
     resolver: zodResolver(employeeRecordSchema),
@@ -65,16 +65,16 @@ export default function EmployeeRecordForm({orgId} : {orgId: string}) {
 
   const action = async () => {
     form.handleSubmit(async (values) => {
-      const orgId = orgOffices?.[0].organizationId ?? 0
       if(!user?.data) {
         toast.error("User not found")
         return;
       }
+      
       const userId = user.data.id
-      toast.promise(upsertEmploymentRecordAction({...values, orgId, userId,}), {
+      toast.promise(upsertEmploymentRecordAction({...values, orgUid: orgId, userId,}), {
         loading: "Saving...",
         success: async (res) => {
-          if(!res?.success) {
+          if(!res.success) {
             return `An error occurred: ${res?.message}`
           }
           setAdditionalInfoValid((prev) => ({

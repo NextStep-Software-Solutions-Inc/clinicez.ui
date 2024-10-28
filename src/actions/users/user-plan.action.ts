@@ -177,6 +177,7 @@ export const hpApplicationTransactionAction = async ({planId, hpType,code}: HPAp
   }
 }
 
+export type GetUserPlans = ReturnType<typeof getUserPlansAction>;
 export const getUserPlansAction = cache(async (userId: string) => {
   const userPlans = await prismaCommon.userPlan.findMany({
     orderBy: {
@@ -188,13 +189,17 @@ export const getUserPlansAction = cache(async (userId: string) => {
       },
       isActive: true 
     },
-    include: { 
+    select: { 
       Plan: {
         select: {
           name: true,
           type: true,
         }
-      }
+      },
+      startDate: true,
+      endDate: true,
+      status: true,
+      id: true
     }
   });
   return userPlans;

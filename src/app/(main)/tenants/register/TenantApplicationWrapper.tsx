@@ -22,15 +22,15 @@ export default function TenantApplicationWrapper(props:TenantApplicationWrapperP
       <Stepper steps={steps} currentStep={currentStep} complete={isComplete} />
       {!isComplete ? currentStepComponent : (
         <div className="prose max-w-full mt-5 text-center">
-          <h2 className="text-green-600">You are All Set! 🎉</h2>
+          <h2 className="text-green-600">You are all set! 🎉</h2>
           <p>
-          You have successfully subscribed to the Clinic EZ Plan. You can now access the admin console to manage your tenants.
+          You have successfully subscribed to the Clinic EZ Plan. You can now access the tenant console to manage your tenancy.
           </p>
           <Link 
             target="_blank"
-            href="https://clinic-ez-admin.vercel.app/tenants?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOiI3NDFkNTJhOC1lZTYzLTQ2ZTMtYTE3ZS1mMzJmZmUwY2RiNTkiLCJFbWFpbCI6IndhY2FuYW0yMEBnbWFpbC5jb20iLCJBY2NvdW50VHlwZSI6IjEiLCJuYmYiOjE3MTIzOTE0ODIsImV4cCI6MTcxNDk4ODg4MiwiaWF0IjoxNzEyMzkxNDgyfQ.fNKngLCdsR8MS6utQLBbkU7TUtCmj0NZLxt_dQ8jA8w"
+            href={process.env.NEXT_PUBLIC_APP_URL + "/console/tenant"}
           >
-            <Button>Go to Admin Console</Button>
+            <Button>Go to Tenant Console</Button>
           </Link>
         </div>
       )}

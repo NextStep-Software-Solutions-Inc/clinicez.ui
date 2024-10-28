@@ -4,12 +4,12 @@ import { Mail, Settings } from "lucide-react";
 import PHRLink from "../app/(activation)/[organization]/activate/PHRLink";
 import HPProfilesLink from "./HPProfilesLink";
 import DashboardLink from "./DashboardLink";
-import AdminConsoleLink from "../app/(activation)/[organization]/activate/AdminConsoleLink";
 import UserAvatarDropdown from "./UserAvatarDropdown";
 import Suspend from "./Suspend";
 import { Skeleton } from "./ui/skeleton";
 import { getCachedSession } from "@actions/session.action";
 import LogoutLink from "./LogoutLink";
+import TenantConsoleLink from "./TenantConsoleLink";
 
 export default async function UserAvatarWrapper() {
   const session = await getCachedSession();
@@ -40,8 +40,9 @@ export default async function UserAvatarWrapper() {
         <Suspend loadingFallback={<Skeleton className="h-6 mx-2 my-1 bg-slate-400" />}>
           <DashboardLink />
         </Suspend>
+        <DropdownMenuSeparator />
         <Suspend loadingFallback={<Skeleton className="h-6 mx-2 my-1 bg-slate-400" />}>
-          <AdminConsoleLink />
+          <TenantConsoleLink />
         </Suspend>
         <DropdownMenuSeparator />
         <LogoutLink/>

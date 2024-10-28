@@ -9,7 +9,8 @@ import { getCachedSession } from '@actions/session.action';
 import path from 'path';
 import fs from "fs/promises";
 import { sendMail } from '@actions/email.action';
-import { faker, th } from '@faker-js/faker';
+import { faker } from '@faker-js/faker';
+import { hasCodeProperty } from '@lib/utils';
 
 
 export type GetUsersFiltersType = {
@@ -105,13 +106,15 @@ export const getUserAction = cache(async (key: string, orgUid?: string)=> {
           { userId: key },
           { email: key }
         ], 
-        Organizations: { 
-          some: { 
-            Organization: {
-              orgId: orgUid
-            } 
+        ...orgUid ? {
+          Organizations: { 
+            some: { 
+              Organization: {
+                orgId: orgUid
+              } 
+            }
           }
-        }
+        } : {},
       },
       include: {
         HealthcareProviders: {
@@ -338,15 +341,11 @@ const sendCreateUserNotification = async ({email, password, orgName}: SendCreate
 
 export const findAndCreateUserAction = cache(async () => {
   const session = await getCachedSession();
-  if(!session) {
-    return {
-      success: false,
-      message: "Unauthorized",
-      data: null
-    }
-  }
+ 
 
   try {
+    if(!session) throw new Error("Unauthorized");
+    
     const user = await prismaCommon.$transaction(async (prisma) => {
       let dbUser = await prisma.user.findUnique({
         where: {
@@ -370,6 +369,7 @@ export const findAndCreateUserAction = cache(async () => {
         dbUser = newUser.data
       }
       return dbUser;
+      
     }, {
       timeout: 5000,
       maxWait: 10000,
@@ -384,10 +384,8 @@ export const findAndCreateUserAction = cache(async () => {
   } catch (error) {
     console.error(`Error finding and creating user: ${error}`);
     let message = "Failed to find and create user";
-    if(error instanceof Error) {
-      message = error.message
-    }
-    if(error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+    if(error instanceof Error) message = error.message
+    if(hasCodeProperty(error) && error.code === "P2002") {
       message = "User already exists in the db and associated with another user";
     }
     return {

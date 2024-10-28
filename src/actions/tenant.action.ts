@@ -2,22 +2,35 @@ import prisma from '@lib/prisma-common';
 import { Prisma } from '@prisma/common/client';
 import { getCachedSession } from './session.action';
 
+export type GetTenants = Awaited<ReturnType<typeof getTenantsAction>>;
 export const getTenantsAction = async () => {
 
   const tenants = await prisma.tenant.findMany({
     where: {
       isActive: true,
+    },
+    select: {
+      id: true,
+      name: true,
+      createdAt: true,
+      _count: {
+        select: {
+          Organizations: true
+        }
+      }
     }
   });
 
   return tenants;
 }
 
-export type GetMyTenants = ReturnType<typeof getMyTenantsAction>;
+export type GetMyTenants = Awaited<ReturnType<typeof getMyTenantsAction>>;
 export const getMyTenantsAction = async (userId: string) => {
   const session = await getCachedSession();
   try {
     if(!session) throw new Error("Unauthorized");
+    console.log({userId});
+    
     const tenants = await prisma.tenant.findMany({
       where: {
         isActive: true,
@@ -30,6 +43,11 @@ export const getMyTenantsAction = async (userId: string) => {
         name: true,
         createdAt: true,
         updatedAt: true,
+        _count: {
+          select: {
+            Organizations: true
+          }
+        }
       }
     });
     return { success: true, data: tenants, message: "Tenants fetched successfully" };

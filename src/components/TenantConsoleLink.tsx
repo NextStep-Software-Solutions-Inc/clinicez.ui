@@ -8,7 +8,7 @@ export default async function TenantConsoleLink(){
   
   return (
     <ConditionalRender condition={tenant}>
-      <a href={`/console/tenant`}>
+      <a href={`/console/tenants`}>
         <DropdownMenuItem>
           <Container className="mr-2 h-4 w-4" />
           Tenant Console

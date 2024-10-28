@@ -505,11 +505,12 @@ export const getAppointmentCountsAction = cache(async (orgUid: string) => {
     ])
 
     const filteredAppointments = appointments.filter((apt) => {
-      const patient = requestersDetail.find((r) => apt.Requesters.some((r) => r.userId));
+      const patient = requestersDetail.find((rd) => apt.Requesters.some((r) => r.userId === rd.userId));
       return (myWhitelistFilter?.WhitelistFilters ?? []).every((filter) => {
         return isFilterMatch(filter.Filter.key, filter.value, patient);
-      });
+      })
     });
+     
 
     // group by status
     const countsMap = filteredAppointments.reduce((acc, apt) => {
@@ -601,7 +602,7 @@ export const getRoutedAppointmentCountsAction = cache(async (orgUid: string) => 
 
     
     const filteredAppointments = routedAppointments.filter((routed) => {
-      const patient = requestersDetail.find((r) => routed.Appointment.Requesters.some((r) => r.userId));
+      const patient = requestersDetail.find((rd) => routed.Appointment.Requesters.some((r) => r.userId === rd.userId));
       return (myWhitelistFilter?.WhitelistFilters ?? []).every((filter) => {
         return isFilterMatch(filter.Filter.key, filter.value, patient);
       });
@@ -770,28 +771,25 @@ type Patient = {
   }[];
 } | undefined
 const isFilterMatch = <T extends Patient>(filterKey: string, filterValue: string, patient: T) => {
+  if (filterKey === filterValue) return true;
   switch (filterKey) {
   case "department":
     return (
-      filterValue === filterKey ||
-        patient?.StudentRecords.some((s) => s.departmentId?.toString() === filterValue) ||
+      patient?.StudentRecords.some((s) => s.departmentId?.toString() === filterValue) ||
         patient?.UserEmployments.some((e) => e.departmentId?.toString() === filterValue)
     );
   case "college":
     return (
-      filterValue === filterKey ||
-        patient?.StudentRecords.some((s) => s.collegeId?.toString() === filterValue) ||
+      patient?.StudentRecords.some((s) => s.collegeId?.toString() === filterValue) ||
         patient?.UserEmployments.some((e) => e.collegeId?.toString() === filterValue)
     );
   case "office":
     return (
-      filterValue === filterKey ||
-        patient?.UserEmployments.some((e) => e.officeId?.toString() === filterValue)
+      patient?.UserEmployments.some((e) => e.officeId?.toString() === filterValue)
     );
   case "program":
     return (
-      filterValue === filterKey ||
-        patient?.StudentRecords.some((s) => s.programId?.toString() === filterValue)
+      patient?.StudentRecords.some((s) => s.programId?.toString() === filterValue)
     );
   default:
     return false;

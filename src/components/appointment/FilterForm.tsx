@@ -32,6 +32,7 @@ import ActionButton from "@components/ActionButton"
 import { toast } from "sonner"
 import { useOrgAppointmentModes } from "@hooks/useOrgAppointmentMode"
 import { useOrgServiceCategories } from "@hooks/useOrgServiceCategory"
+import { useMemo } from "react"
 
 const FilterFormSchema = z.object({
   appointmentTypeId: z.coerce.number({
@@ -62,6 +63,16 @@ export default function FilterForm({onContinue}: FilterFormProps) {
   const {data: appointmentModes } = useOrgAppointmentModes(organization);
   const {data: serviceCategories} = useOrgServiceCategories(organization)
   const {data: hps} = useHPs()
+
+  const groupedHps = useMemo(() => {
+    // array of array of hps
+    return (hps ?? [])?.reduce((acc, hp) => {
+      const existing = acc.find(a => a.hpTypeName === hp.HPType.name)
+      if(existing) existing.hps.push(hp)
+      else acc.push({hpTypeName: hp.HPType.name, hps: [hp]})
+      return acc
+    }, [] as {hpTypeName: string, hps: NonNullable<typeof hps>}[] )
+  }, [hps])
 
   const form = useForm<z.infer<typeof FilterFormSchema>>({
     resolver: zodResolver(FilterFormSchema),
@@ -212,11 +223,21 @@ export default function FilterForm({onContinue}: FilterFormProps) {
                   </FormControl>
                   <SelectContent>
                     <Each
-                      of={hps ?? []}
-                      render={(hp) => {
-                        const name = `${hp.HPProfile?.title ?? hp.User.firstName} ${hp.HPProfile?.name ?? hp.User.lastName} ${hp.HPProfile?.suffix ?? hp.User.suffix ?? ""}`
+                      of={groupedHps}
+                      render={(group) => {
                         return (
-                          <SelectItem value={hp.id.toString()}>{name} (<span className="italic">{hp.type.toLocaleLowerCase()}</span>)</SelectItem>
+                          <SelectGroup>
+                            <SelectLabel>{group.hpTypeName}</SelectLabel>
+                            <Each
+                              of={group.hps ?? []}
+                              render={(hp) => {
+                                const name = `${hp.HPProfile?.title || hp.User.firstName} ${hp.HPProfile?.name || hp.User.lastName} ${hp.HPProfile?.suffix || hp.User.suffix || ""}`
+                                return (
+                                  <SelectItem value={hp.id.toString()}>{name}</SelectItem>
+                                )}}
+                            />
+                          </SelectGroup>
+                          
                         )
                       }}
                     />

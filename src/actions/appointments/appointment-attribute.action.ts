@@ -30,7 +30,12 @@ export const receiveAppointmentAction = async (formData: FormData) => {
         HealthCareProvider: {
           select: {
             id: true,
-            type: true
+            HPType: {
+              select: {
+                id: true,
+                name: true,
+              }
+            }
           }
         },
         autoAssignAppointmentToSelf: true,
@@ -59,7 +64,7 @@ export const receiveAppointmentAction = async (formData: FormData) => {
                 create: {
                   routedTo: String(defaultHp?.id),
                   routedBy: session.user.sub,
-                  routedToRole: defaultHp?.type,
+                  routedToRole: defaultHp?.HPType.id.toString(),
                   status: (autoAssignToSelf || autoAcceptAppointment) ? "ACCEPTED" : "PENDING",
                 }
               }

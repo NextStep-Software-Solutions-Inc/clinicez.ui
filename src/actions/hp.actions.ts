@@ -141,7 +141,12 @@ export const getHpsByIdsAction = async (ids: number[]) => {
     },
     select: {
       id: true,
-      hpTypeId: true,
+      HPType: {
+        select: {
+          id: true,
+          name: true
+        }
+      },
       User: {
         "select": {
           email: true,

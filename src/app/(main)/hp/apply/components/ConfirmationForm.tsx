@@ -44,7 +44,7 @@ export default function ConfirmationForm({ nextStep, prevStep, isFirstStep, isCo
   })
 
   const action = () => {
-    form.handleSubmit(async (data) => {
+    form.handleSubmit(async () => {
       const planId = hpApplication.planId
       const hpTypeId = hpApplication.hpTypeId
       const code = hpApplication.receiptCode

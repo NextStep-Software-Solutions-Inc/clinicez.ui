@@ -49,7 +49,7 @@ export default function RescheduleAppointment({disabled = true, onRescheduled, a
 
   const filteredHps = useMemo(() => hps?.filter(hp => {
     const skip = appointment.AppointmentRouting.some(a => 
-      a.routedToRole.toUpperCase() === hp.type && 
+      a.routedToRole === hp.hpTypeId.toString() && 
       (["PENDING", "ACCEPTED"].includes(a.status) || 
       (["CANCELLED", "DECLINED"].includes(a.status) && Number(a.routedTo) === hp.id))
     );
@@ -92,7 +92,7 @@ export default function RescheduleAppointment({disabled = true, onRescheduled, a
         appointmentId: appointment.id, 
         assign: existingRoute ? false : data.assign ?? false,
         hpId: selectedHp?.id.toString(),
-        hpRole: selectedHp?.type,
+        hpTypeId: selectedHp?.hpTypeId.toString(),
         date: data.date.toISOString(),
         startDateTime: data.startDateTime.toISOString(),
         endDateTime: data.endDateTime.toISOString()
@@ -174,7 +174,7 @@ export default function RescheduleAppointment({disabled = true, onRescheduled, a
                               of={filteredHps ?? []}
                               render={(hp) => {
                                 return (
-                                  <SelectItem value={hp.id.toString()}>{hp.HPProfile?.title ?? hp.User.firstName ?? "-"} {hp.HPProfile?.name ?? hp.User.lastName ?? "-"} {hp.HPProfile?.suffix ?? hp.User.suffix ?? ""} (<span className="italic">{hp.type.toLocaleLowerCase()}</span>)</SelectItem>
+                                  <SelectItem value={hp.id.toString()}>{hp.HPProfile?.title ?? hp.User.firstName ?? "-"} {hp.HPProfile?.name ?? hp.User.lastName ?? "-"} {hp.HPProfile?.suffix ?? hp.User.suffix ?? ""} (<span className="italic">{hp.HPType.name}</span>)</SelectItem>
                                 )
                               }}
                             />

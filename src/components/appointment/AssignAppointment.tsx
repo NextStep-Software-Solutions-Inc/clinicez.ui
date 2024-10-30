@@ -17,15 +17,15 @@ import { toast } from "sonner";
 type HealthcareProvider = {
   id: number;
   name: string;
-  role: string;
+  hpTypeId: string;
   avatar?: string | null;
 }
 interface AssignAppointmentProps {
   disabled?: boolean;
   onAssigned?: () => void;
   appointment: NonNullable<GetAppointment["data"]>;
-  
 }
+
 export default function AssignAppointment({disabled = false, appointment, onAssigned}: AssignAppointmentProps) {
   const triggerRef = React.useRef<HTMLButtonElement>(null);
   const [selectedHp, setSelectedHp] = React.useState<HealthcareProvider | null>(null);
@@ -33,22 +33,22 @@ export default function AssignAppointment({disabled = false, appointment, onAssi
   const {data: hps } = useHPs();
 
   const healthcareProviders = (hps ?? []).reduce((acc, hp) => {
-    const role = hp.type;
-    if (!acc[role]) {
-      acc[role] = [];
+    const hpTypeName = hp.HPType.name;
+    if (!acc[hpTypeName]) {
+      acc[hpTypeName] = [];
     }
 
     const skip = appointment.AppointmentRouting.some(a => 
-      a.routedToRole.toUpperCase() === hp.type && 
+      a.routedToRole === hp.hpTypeId.toString() && 
       (["PENDING", "ACCEPTED"].includes(a.status) || 
       (["CANCELLED", "DECLINED"].includes(a.status) && Number(a.routedTo) === hp.id))
     );
     if(skip) return acc
 
-    acc[role].push({
+    acc[hpTypeName].push({
       id: hp.id,
-      name: `${hp.HPProfile?.title ?? hp.User.firstName} ${hp.HPProfile?.name ?? hp.User.lastName} ${hp.HPProfile?.suffix ?? hp.User.suffix ?? ""}`,
-      role: hp.type,
+      name: `${hp.HPProfile?.title || hp.User.firstName} ${hp.HPProfile?.name || hp.User.lastName} ${hp.HPProfile?.suffix || hp.User.suffix || ""}`,
+      hpTypeId: hp.hpTypeId.toString(),
       avatar: hp.HPProfile?.picture,
     });
 
@@ -60,7 +60,7 @@ export default function AssignAppointment({disabled = false, appointment, onAssi
     if (!selectedHp) return;
 
     formData.append("routedTo", selectedHp.id.toString());
-    formData.append("routedToRole", selectedHp.role);
+    formData.append("routedToRole", selectedHp.hpTypeId);
     formData.append("appointmentId", appointment.id.toString());
 
     toast.promise(assignAppointmentAction(formData), {
@@ -82,8 +82,8 @@ export default function AssignAppointment({disabled = false, appointment, onAssi
     if(defaultHp) {
       setSelectedHp({
         id: defaultHp.id,
-        name: `${defaultHp.HPProfile?.title} ${defaultHp.HPProfile?.name} ${defaultHp.HPProfile?.suffix}`,
-        role: defaultHp.type,
+        name: `${defaultHp.HPProfile?.title || defaultHp.User.firstName} ${defaultHp.HPProfile?.name || defaultHp.User.lastName} ${defaultHp.HPProfile?.suffix || defaultHp.User.suffix || ""}`,
+        hpTypeId: defaultHp.hpTypeId.toString(),
         avatar: defaultHp.HPProfile?.picture,
       })
     }

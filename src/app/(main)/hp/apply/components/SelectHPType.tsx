@@ -14,8 +14,7 @@ import {
 } from "@components/ui/form"
 import { RadioGroup, RadioGroupItem } from "@components/ui/radio-group"
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useSearchParams } from "next/navigation";
-import BackSubmitAndNext from "../../../../../components/SubmitAndNext";
+import BackSubmitAndNext from "@components/SubmitAndNext";
 import { useAtom } from "jotai";
 import { hpApply } from "@state/hp-apply";
 import { useHPTypes } from "@hooks/useHPTypes";
@@ -28,11 +27,9 @@ interface ISelectHPTypeProps {
   isLastStep?: boolean;
 } 
 
-export default function SelectHPType({nextStep, prevStep, isFirstStep,isLastStep, currentHPTypeIds}: ISelectHPTypeProps) {
-  const searchParams = useSearchParams();
+export default function SelectHPType({nextStep, prevStep, isFirstStep, isLastStep, currentHPTypeIds}: ISelectHPTypeProps) {
   const {data: hpTypes} = useHPTypes()
 
-  const hpTypeId =  Number(searchParams.get("hpType"));
   const roleFormSchema = z.object({
     hpTypeId: z.number({
       coerce: true,
@@ -47,13 +44,13 @@ export default function SelectHPType({nextStep, prevStep, isFirstStep,isLastStep
     resolver: zodResolver(roleFormSchema),
     mode: "all",
     defaultValues: {
-      hpTypeId: hpTypeId || applicationData?.hpTypeId,
+      hpTypeId: applicationData?.hpTypeId,
     }
   })
 
   const action = async () => {
     form.handleSubmit(async (data: z.infer<typeof roleFormSchema>) => {
-      setApplicationData(prev => ({...prev, ...data}))
+      setApplicationData(prev => ({...prev, ...data}));
       nextStep?.();
     })()
   }
@@ -64,7 +61,7 @@ export default function SelectHPType({nextStep, prevStep, isFirstStep,isLastStep
         <FormField
           control={form.control}
           name="hpTypeId"
-          render={({ field,  }) => (
+          render={({ field }) => (
             <FormItem className="space-y-3">
               <FormLabel>Healthcare Provider Type</FormLabel>
               <FormControl>

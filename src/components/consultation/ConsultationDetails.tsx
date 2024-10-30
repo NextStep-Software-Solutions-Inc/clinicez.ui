@@ -157,7 +157,7 @@ export const PatientHpDetails = ({ creators = [], user }: PatientHpDetailsProps)
             <div className="flex flex-col">
               <span className="text-sm font-semibold">{user.firstName} {user.lastName}</span>
               <div className="text-xs text-muted-foreground">
-                <Badge>{user.gender?.toLocaleLowerCase()}</Badge> / <span>{user.dob && differenceInCalendarYears(new Date(), user.dob)}</span>
+                <Badge>{user.gender}</Badge> / <span>{user.dob && differenceInCalendarYears(new Date(), user.dob)}</span>
               </div>
             </div>
           </div>
@@ -198,7 +198,7 @@ export const PatientHpDetails = ({ creators = [], user }: PatientHpDetailsProps)
                   <div className="flex flex-col">
                     <span className="text-sm font-semibold">{creator?.HPProfile?.title} {creator?.HPProfile?.name} {creator?.HPProfile?.suffix}</span>
                     <div className="text-xs text-muted-foreground">
-                      <Badge>{creator?.HPProfile?.fields}</Badge> / <span>{creator?.type.toLocaleLowerCase()}</span>
+                      <Badge>{creator?.HPProfile?.fields}</Badge> / <span>{creator.HPType.name}</span>
                     </div>
                   </div>
                 </div>

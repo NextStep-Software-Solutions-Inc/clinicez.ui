@@ -16,7 +16,6 @@ import { getCachedSession } from "@actions/session.action";
 
 async function EditorPage({params, searchParams}: AppRouterPageRouteOpts) {
   const hpId = parseInt(params?.practitioner as string);
-  const hpTypeId = Number(searchParams?._hpTypeId);
 
   const session = await getCachedSession();
   const userId = session?.user.sub

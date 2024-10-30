@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 export const GET = withJwtAuth(async (req:NextRequest) => {
   const searchParams = req.nextUrl.searchParams
 
-  const hpTypeId = convertStringToNumber(searchParams.get('_hpTypeId'));
+  const hpTypeId = convertStringToNumber(searchParams.get('hpTypeId'));
   const userId = searchParams.get('userId');
   const id = convertStringToNumber(searchParams.get('id'));
   const isPublished = searchParams.get('isPublished');

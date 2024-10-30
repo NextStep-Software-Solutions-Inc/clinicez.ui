@@ -92,7 +92,7 @@ export default function AppointmentDisplay() {
   }
 
   const myOrgPermission = authUser?.data?.OrgUserPermissions.flatMap(p => p.Permission).map(p => p.name) ?? []
-  const preferredHPName = `${preferredHp?.HPProfile?.title} ${preferredHp?.HPProfile?.name} ${preferredHp?.HPProfile?.suffix}`
+  const preferredHPName = `${preferredHp?.HPProfile?.title || preferredHp?.User.firstName} ${preferredHp?.HPProfile?.name || preferredHp?.User.lastName} ${preferredHp?.HPProfile?.suffix || preferredHp?.User.suffix || ""}`
   const meetingUrl = freshAppointment.data.AppointmentAttribute?.meetingUrl
 
   return (

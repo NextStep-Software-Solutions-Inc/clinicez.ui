@@ -631,10 +631,10 @@ type RescheduleAppointmentPayload = {
   endDateTime: string;
   date: string;
   hpId: string;
-  hpRole: string;
+  hpTypeId: string;
   assign: boolean;
 };
-export const rescheduleAppointmentAction = async ({ appointmentId, startDateTime, endDateTime, date, hpId, hpRole, assign }:RescheduleAppointmentPayload ) => {
+export const rescheduleAppointmentAction = async ({ appointmentId, startDateTime, endDateTime, date, hpId, hpTypeId, assign }:RescheduleAppointmentPayload ) => {
   const session = await getCachedSession();
   
   try {
@@ -663,7 +663,7 @@ export const rescheduleAppointmentAction = async ({ appointmentId, startDateTime
             appointmentId,
             routedBy: session.user.sub,
             routedTo: hpId,
-            routedToRole: hpRole,
+            routedToRole: hpTypeId,
             status: "PENDING"
           }
         });

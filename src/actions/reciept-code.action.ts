@@ -66,7 +66,6 @@ export const claimReceiptCodeAction = async (code: string) => {
           }
         }
       })
-      console.log({claimedCount});
       
       const receiptCode = await prisma.receiptCode.findFirst({
         where: { code, maxUses: { gt: claimedCount }, status: "UNUSED" }

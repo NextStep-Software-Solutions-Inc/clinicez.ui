@@ -9,6 +9,7 @@ import AppointmentDisplay from "../../../../components/appointment/AppointmentDi
 import Suspend from "@components/Suspend";
 import { Metadata } from "next";
 import { getOrgAppointmentTabsAction } from "@actions/organizations/org-appointment-tab..action";
+import PageLoading from "@components/PageLoading";
 
 export const maxDuration = 30
 export const revalidate = 60
@@ -48,7 +49,9 @@ async function AppointmentsPage({ searchParams, params }: AppRouterPageRouteOpts
       </div>
       <Separator />
       <div className="rounded-[0.5rem] border bg-background shadow">
-        <Suspend>
+        <Suspend
+          loadingFallback={<PageLoading label="Loading Appointments..."/>}
+        >
           <AppointmentPanel
             tabs={tabs.data.map(tab => ({
               name: tab.AppointmentTab.name,

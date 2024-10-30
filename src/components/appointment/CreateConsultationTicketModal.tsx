@@ -140,7 +140,7 @@ export default function CreateConsultationTicketModal({disabled = false, subject
                       <Each
                         of={myHps ?? []}
                         render={(hp) => 
-                          <SelectItem value={hp.id.toString()}>{hp.HPProfile?.title} {hp.HPProfile?.name} {hp.HPProfile?.suffix} ({hp.type})</SelectItem>}
+                          <SelectItem value={hp.id.toString()}>{hp.HPProfile?.title} {hp.HPProfile?.name} {hp.HPProfile?.suffix} ({hp.HPType.name})</SelectItem>}
                       />
                     </SelectContent>
                   </Select>

@@ -133,7 +133,7 @@ export default function AddInterventionModal({consultation}: AddInterventionModa
                       <Each
                         of={myHps ?? []}
                         render={(hp) => 
-                          <SelectItem value={hp.id.toString()}>{hp.HPProfile?.title} {hp.HPProfile?.suffix} {hp.HPProfile?.name} ({hp.type})</SelectItem>}
+                          <SelectItem value={hp.id.toString()}>{hp.HPProfile?.title} {hp.HPProfile?.suffix} {hp.HPProfile?.name} ({hp.HPType.name})</SelectItem>}
                       />
                     </SelectContent>
                   </Select>

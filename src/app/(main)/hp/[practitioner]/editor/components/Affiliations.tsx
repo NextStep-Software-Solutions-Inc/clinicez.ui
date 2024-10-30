@@ -49,7 +49,7 @@ export const Affiliations = ({ form }: { form: ReturnType<typeof useForm<HPProfi
               }} />
           </div>
           <FormDescription>
-            This will reflect in you public profile.
+            {`You can add the affiliations you're associated with. This will help patients know your affiliations.`}
           </FormDescription>
           <FormMessage />
           <Button type="button" onClick={() => append({ name: "" })}>Add Affiliation</Button>

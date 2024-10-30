@@ -50,7 +50,7 @@ export const Languages = ({ form }: { form: ReturnType<typeof useForm<HPProfileT
             />
           </div>
           <FormDescription>
-            This is your public languages.(comma separated)
+            {`You can add the languages you're fluent in. This will help patients find you based on the languages you speak.`}
           </FormDescription>
           <FormMessage />
           <Button type="button" onClick={() => append({ name: "" })}>Add Language</Button>

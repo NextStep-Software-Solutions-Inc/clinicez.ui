@@ -11,7 +11,6 @@ import {
 import { Input } from "@components/ui/input"
 import { useForm } from "react-hook-form"
 import { Select, SelectContent, SelectItem, SelectLabel, SelectTrigger, SelectValue, SelectGroup } from "@components/ui/select"
-import { HPProfileType } from "../hp-form.schema"
 
 type HPAddressProps = {
     form: ReturnType<typeof useForm>

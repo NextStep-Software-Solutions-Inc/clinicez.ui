@@ -51,7 +51,7 @@ export const Education = ({ form }: { form: ReturnType<typeof useForm<HPProfileT
             />
           </div>
           <FormDescription>
-            This will reflect in you public profile.
+            {`You can add the schools you've attended or seminars you've participated in. This will help patients know your educational background.`}
           </FormDescription>
           <FormMessage />
           <Button type="button" onClick={() => append({ name: "" })}>Add Education</Button>

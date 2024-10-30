@@ -49,7 +49,7 @@ export const Certifications = ({ form }: { form: ReturnType<typeof useForm<HPPro
               }} />
           </div>
           <FormDescription>
-            This will reflect in you public profile.
+            {`You can add the certifications you've acquired. This will help patients know your certifications.`}
           </FormDescription>
           <FormMessage />
           <Button type="button" onClick={() => append({ name: "" })}>Add Certification</Button>

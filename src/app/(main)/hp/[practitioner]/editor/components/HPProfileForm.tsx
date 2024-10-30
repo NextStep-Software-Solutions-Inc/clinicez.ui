@@ -26,6 +26,7 @@ import { useParams } from "next/navigation"
 import React from "react"
 import ActionButton from "@components/ActionButton"
 import { upsertHPAction } from "@actions/hp.actions"
+import { Separator } from "@components/ui/separator"
 
 type HPProfileProps = {
   profile:HPProfileType
@@ -53,6 +54,7 @@ export default function HPProfileForm({ profile }: HPProfileProps) {
         philosophy: values.philosophy,
         areaOfInterest: values.areaOfInterest,
         experience: values.experience,
+        hobbies: values.hobbies,
       
         languages: values.languages.map((lang) => lang.name),
         specialties: values.specialties.map((lang) => lang.name),
@@ -217,6 +219,22 @@ export default function HPProfileForm({ profile }: HPProfileProps) {
         />
         <FormField
           control={form.control}
+          name="hobbies"
+          render={({ field }) => (
+            <FormItem className="w-full">
+              <FormLabel>Hobbies</FormLabel>
+              <FormControl>
+                <Textarea placeholder="" {...field}/>
+              </FormControl>
+              <FormDescription>
+                What are your hobbies?
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
           name="experience"
           render={({ field }) => (
             <FormItem className="w-full">
@@ -232,16 +250,17 @@ export default function HPProfileForm({ profile }: HPProfileProps) {
           )}
         />
         <Languages form={form}/>
-
+        <Separator/>
         <Fields form={form}/>
-
+        <Separator/>
         <Specialties form={form}/>
-
+        <Separator/>
         <Education form={form}/>
-
+        <Separator/>
         <Certifications form={form}/>
-
+        <Separator/>
         <Affiliations form={form}/>
+        <Separator/>
         <div className="mt-4">
           <ActionButton className="w-full" disabled={form.formState.isLoading}>Save Changes</ActionButton>
         </div>

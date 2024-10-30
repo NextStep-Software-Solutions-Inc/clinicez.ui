@@ -50,7 +50,7 @@ export const Fields = ({ form }: { form: ReturnType<typeof useForm<HPProfileType
             />
           </div>
           <FormDescription>
-            This will reflect in you public profile.
+            In what field do you practice? You can add multiple fields.
           </FormDescription>
           <FormMessage />
           <Button type="button" onClick={() => append({ name: "" })}>Add Fields</Button>

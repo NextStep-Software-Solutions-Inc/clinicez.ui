@@ -50,7 +50,7 @@ export const Specialties = ({ form }: { form: ReturnType<typeof useForm<HPProfil
             />
           </div>
           <FormDescription>
-            This will reflect in you public profile.
+            {`You can add the specialties you're specialized in. This will help patients find you based on the specialties you're specialized in.`}
           </FormDescription>
           <FormMessage />
           <Button type="button" onClick={() => append({ name: "" })}>Add Specialty</Button>

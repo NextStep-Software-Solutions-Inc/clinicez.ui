@@ -27,6 +27,7 @@ export const profileSchema = z.object({
   experience: z.string().trim().min(2, {
     message: "Experience must be at least 2 characters.",
   }),
+  hobbies: z.string().trim(),
   languages: z.array(z.object({
     name: z.string().trim().min(2, {
       message: "Language must be at least 2 characters.",
@@ -56,7 +57,7 @@ export const profileSchema = z.object({
     name:z.string().trim().min(2, {
       message: "Affiliation must be at least 2 characters.",
     })
-  })),
+  }))
 })
   
 export type HPProfileType = z.infer<typeof profileSchema>;

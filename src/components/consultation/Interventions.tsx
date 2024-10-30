@@ -64,7 +64,7 @@ export default function Interventions({ consultation }: InterventionsProps) {
                         </Avatar> 
                         <div>
                           <span className="font-semibold">{intervention.Action.name}</span>
-                          <div className="text-muted-foreground text-xs">{hp?.HPProfile?.name} <span className="italic">({hp?.type})</span></div>
+                          <div className="text-muted-foreground text-xs">{hp?.HPProfile?.name} <span className="italic">({hp?.HPType.name})</span></div>
                         </div>
                       </div>
                     </CardTitle>

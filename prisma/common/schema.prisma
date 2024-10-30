@@ -366,7 +366,7 @@ model HealthcareProvider {
   id                  Int                    @id @default(autoincrement())
   userId              Int
   userPlanId          Int?
-  type                HealthcareProviderType
+  hpTypeId            Int
   description         String?
   createdAt           DateTime               @default(now())
   updatedAt           DateTime               @updatedAt
@@ -375,12 +375,13 @@ model HealthcareProvider {
   isPublished         Boolean                @default(false)
   User                User                   @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   UserPlan            UserPlan?              @relation(fields: [userPlanId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  HPType              HealthcareProviderType @relation(fields: [hpTypeId], references: [id])
   ProfessionalDetails ProfessionalDetails?
   ReservedTimeSlots   ReservedTimeSlot[]
   HPProfile           HPProfile?
   UserPreference      UserPreference[]
 
-  @@unique([userId, type], name: "unique_user_hp_type")
+  @@unique([userId, hpTypeId], name: "unique_user_hp_type")
 }
 
 model HPProfile {
@@ -1041,23 +1042,13 @@ enum UserPlanStatus {
   PENDING
 }
 
-enum HealthcareProviderType {
-  DOCTOR
-  NURSE
-  LAB_TECHNICIAN
-  PHARMACIST
-  RADIOLOGIST
-  PHYSIOTHERAPIST
-  OCCUPATIONAL_THERAPIST
-  SPEECH_THERAPIST
-  DIETITIAN
-  SOCIAL_WORKER
-  PSYCHOLOGIST
-  PSYCHIATRIST
-  DENTIST
-  OPTOMETRIST
-  CHIROPRACTOR
-  PODIATRIST
+model HealthcareProviderType {
+  id                  Int                  @id @default(autoincrement())
+  name                String               @unique
+  description         String?
+  deletedAt           DateTime?
+  isActive            Boolean              @default(true)
+  HealthcareProviders HealthcareProvider[]
 }
 
 enum Coverage {

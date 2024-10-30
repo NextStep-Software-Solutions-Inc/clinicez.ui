@@ -1,23 +1,25 @@
 "use server";
 
+import { cache } from "react";
 import { getCachedSession } from "@actions/session.action";
 import prismaCommon from "@lib/prisma-common";
 import { Prisma, UserPlanStatus, HealthcareProviderType } from "@prisma/common/client";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc"
-import { connect } from "http2";
 dayjs.extend(utc)
-import { cache } from "react";
 
-export const createUserPlanAction = async (planId: number, userId: string, status: UserPlanStatus = "PENDING") => {
+
+
+export const createUserPlanAction = async (planId: number, status: UserPlanStatus = "PENDING") => {
+  const session = await getCachedSession();
   try {
+    if(!session) throw new Error("Unauthorized");
     const userPlan = await prismaCommon.$transaction(async (prisma) => {
-
       const userPlan = await prisma.userPlan.create({
         data: {
           User: {
             connect: {
-              userId
+              userId: session?.user.sub
             }
           },
           Plan: {

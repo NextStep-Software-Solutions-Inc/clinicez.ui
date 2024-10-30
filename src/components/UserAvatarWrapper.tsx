@@ -13,7 +13,7 @@ import TenantConsoleLink from "./TenantConsoleLink";
 
 export default async function UserAvatarWrapper() {
   const session = await getCachedSession();
-  const userId = session?.user.sub;
+  const userId = String(session?.user.sub);
   
   return (
     <Suspend>
@@ -40,7 +40,6 @@ export default async function UserAvatarWrapper() {
         <Suspend loadingFallback={<Skeleton className="h-6 mx-2 my-1 bg-slate-400" />}>
           <DashboardLink />
         </Suspend>
-        <DropdownMenuSeparator />
         <Suspend loadingFallback={<Skeleton className="h-6 mx-2 my-1 bg-slate-400" />}>
           <TenantConsoleLink />
         </Suspend>

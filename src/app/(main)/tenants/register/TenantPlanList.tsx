@@ -1,36 +1,36 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
 import Each from "@components/utils/Each";
-import Link from "next/link";
 import { cn } from "@lib/utils";
-import { GetPlans, getPlansAction } from "@actions/plan.action";
+import { Button } from "@components/ui/button";
+import { useAtom } from "jotai";
+import { tenantApplyAtom } from "@state/tenant-apply";
+import { usePlans } from "@hooks/usePlan";
 
 interface TenantPlanListProps {
   frequency?: "MONTHLY" | "YEARLY";
-  initialPlan?: string;
   nextStep?: () => void;
 }
-export default function TenantPlanList({ frequency, initialPlan, nextStep }: TenantPlanListProps) {
-  const [tenantPlans, setTenantPlans] = useState<GetPlans>([]);
+export default function TenantPlanList({ frequency, nextStep }: TenantPlanListProps) {
+  const {data: tenantPlans } = usePlans("TENANT", frequency);
+  const [tenantApplication, setTenantApplication] = useAtom(tenantApplyAtom);
 
-  useEffect(() => {
-    (async () => {
-      const plans = (await getPlansAction({type: "TENANT", frequency })).filter((plan) => plan.type === "TENANT");
-      setTenantPlans(plans);
-    })()
-  },[frequency])
+  const handleSelectPlan = (planId: number) => {
+    setTenantApplication(prev => ({...prev, planId}));
+    nextStep?.();
+  }
 
   return (
     <div className="flex flex-wrap justify-center my-10 gap-5">
       <Each
-        of={tenantPlans}
+        of={tenantPlans ?? []}
         render={(plan) => {
           const discount = plan.discount;
           const price = Math.ceil(plan?.price * (1 - discount/100));
           return (
-            <div className={cn("relative bg-primary flex-grow max-w-sm h-96 basis-72 rounded-md  hover:animate-pulse shadow-2xl",
-              initialPlan === plan.id.toString() && "ring-4 ring-primary rounded-ss-none"
+            <div className={cn("relative bg-primary flex-grow max-w-sm h-96 basis-72 rounded-md shadow-2xl",{
+              "ring-4 ring-primary rounded-ss-none": tenantApplication.planId === plan.id
+            }
             )}>
               <div className="bg-background opacity-98 rounded-ee-[5rem]  p-8 mr-6 h-80 ">
                 <p className="~text-lg/2xl font-bold mb-2">₱{price} <span className="~text-base/xl font-normal">{frequency === "MONTHLY" ? "/mo" : "/yr"}</span> <span className="text-xs">{discount}% off</span></p>
@@ -45,16 +45,10 @@ export default function TenantPlanList({ frequency, initialPlan, nextStep }: Ten
                 </ul>
               </div>
               <div className="absolute bottom-0 left-0 right-0 p-4">
-                <Link href={{ 
-                  pathname: "/tenants/register", 
-                  query: { 
-                    role: "tenant",
-                    plan: plan?.id,
-                    freq: frequency,
-                  } 
-                }}>
-                  <button className="text-white hover:scale-105 hover:font-bold transition-all">Choose Plan</button>
-                </Link>
+                <Button 
+                  onClick={() => handleSelectPlan(plan.id)}
+                  className="text-white hover:scale-105 hover:font-bold transition-all"
+                >Choose Plan</Button>
               </div>
             </div>
           )

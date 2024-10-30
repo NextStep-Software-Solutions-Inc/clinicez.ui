@@ -4,19 +4,16 @@ import { z } from "zod";
 import BackSubmitAndNext from "../../../../components/SubmitAndNext";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, } from "react-hook-form";
-import { useLocalStorage } from "@hooks/useLocalStorage";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from "../../../../components/ui/form";
 import { Input } from "../../../../components/ui/input";
 import { Button } from "@components/ui/button";
-import { use, useState } from "react";
-import { createUserPlanAction } from "@actions/users/user-plan.action";
+import { useState } from "react";
 import { toast } from "sonner";
 import { useSearchParams } from "next/navigation";
-import { useUser } from "@auth0/nextjs-auth0/client";
-import { getPlansAction } from "@actions/plan.action";
-import { getReceiptCodeAction } from "@actions/reciept-code.action";
+import { verifyReceiptCodeAction } from "@actions/reciept-code.action";
 import { useAtom } from "jotai";
 import { tenantApplyAtom } from "@state/tenant-apply";
+import { usePlans } from "@hooks/usePlan";
 
 interface TenantPaymentVerificationProps {
     prevStep?: () => void;
@@ -27,15 +24,11 @@ interface TenantPaymentVerificationProps {
 }
 
 
-const fetchPlans = getPlansAction()
-export default function TenantPaymentVerification({ setComplete, prevStep }: TenantPaymentVerificationProps) {
-  const [paymentData, setPaymentData] = useAtom(tenantApplyAtom);
-  const plans = use(fetchPlans)
-  const searchParams = useSearchParams();
-  const user = useUser();
-  const userId = user.user?.sub;
+export default function TenantPaymentVerification({ prevStep, nextStep }: TenantPaymentVerificationProps) {
+  const [tenantApplication, setTenantApplication] = useAtom(tenantApplyAtom);
+  const {data: tenantPlans} = usePlans("TENANT");
 
-  const selectedPlan = plans.find(plan => plan.id === parseInt(searchParams.get("plan") ?? "0"));
+  const selectedPlan = (tenantPlans ?? []).find(plan => plan.id === tenantApplication.planId);
   const cost = selectedPlan?.price ?? 0;
 
   const paymentConfirmationFormSchema = z.object({
@@ -48,42 +41,29 @@ export default function TenantPaymentVerification({ setComplete, prevStep }: Ten
   const form = useForm<z.infer<typeof paymentConfirmationFormSchema>>({
     resolver: zodResolver(paymentConfirmationFormSchema),
     defaultValues: {
-      receiptCode: paymentData?.receiptCode,
+      receiptCode: tenantApplication?.receiptCode || "",
     }
   })
 
   const action = async () =>{
-    if(!userId) {
-      toast.error("User not found. Please login again.");
-      return;
-    }
     form.handleSubmit(async (data) => {
-      setPaymentData(prev => ({...prev, ...data}));
-      const planId = Number(searchParams.get("plan"));
-      toast.promise(createUserPlanAction(planId, userId, "ACTIVE"), {
-        loading: "Creating tenant application...",
-        success: (res) => {
-          if(res.status){
-            setComplete?.(true);
-          }
-          return res.message;
-        },
-        error: "An error occurred while creating tenant application."
-      })
+      setTenantApplication(prev => ({...prev, ...data}));
+      console.log(tenantApplication.receiptCode);
+      nextStep?.();
     })()
   } 
 
   const handleVerify = (code: string) => {
-    toast.promise(getReceiptCodeAction(code), {
+    toast.promise(verifyReceiptCodeAction(code), {
       loading: "Verifying code...",
-      success: () => {
-        setPaymentVerified(true);
-        return "Code verified. You can now submit your application.";
+      success: (res) => {
+        if(res.success) {
+          setPaymentVerified(true);
+        }
+        return res.message
       },
       error: "Invalid Code. Please try again or use different code.",
     })
-
-   
   }
 
   return (
@@ -118,7 +98,7 @@ export default function TenantPaymentVerification({ setComplete, prevStep }: Ten
           <BackSubmitAndNext
             labels={{
               previous: "Back",
-              submit: "Submit",
+              submit: "Next",
             }}
             disabled={{
               submit: !paymentVerified,

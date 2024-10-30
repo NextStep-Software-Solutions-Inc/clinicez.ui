@@ -78,7 +78,6 @@ export const upsertConsultationNotesSettingsAction = async (data: FormData) => {
       const notes = Object.fromEntries(data)
       for(const [section, showOnPatient] of Object.entries(notes)) {
         const show = showOnPatient === "true"
-        console.log({consultationTicketId, section, show});
         await prisma.consultationNote.upsert({
           where: {
             unique_consultation_section: {

@@ -3,18 +3,14 @@
 import PricingMode from '@components/PricingMode';
 import TenantPlanList from './TenantPlanList';
 import Suspend from '@components/Suspend';
-import BackSubmitAndNext from '@components/SubmitAndNext';
 interface TenantPlanSelectionProps {
-  defaultPlan: string;
   freq: "MONTHLY" | "YEARLY";
   nextStep?: () => void;
   isFirstStep?: boolean;
 }
 
 export default function TenantPlanSelection(props: TenantPlanSelectionProps) {
-  
-  const { defaultPlan: initialPlan, freq, nextStep, isFirstStep } = props;
-    
+  const { freq, nextStep } = props;
   return (
     <div>
       <div className="prose max-w-full mt-5 text-center md:text-left">
@@ -28,18 +24,8 @@ export default function TenantPlanSelection(props: TenantPlanSelectionProps) {
       </div>
       <div className='shadow-lg w-full p-4 bg-background rounded-md'>
         <Suspend>
-          <TenantPlanList initialPlan={initialPlan} frequency={freq} nextStep={nextStep} />
+          <TenantPlanList frequency={freq} nextStep={nextStep} />
         </Suspend>
-        <BackSubmitAndNext
-          actions={{
-            next: nextStep,
-          }}
-          disabled={{
-            next: !initialPlan,
-            previous: isFirstStep,
-            submit: true,
-          }}
-        />
       </div>
     </div>
   );

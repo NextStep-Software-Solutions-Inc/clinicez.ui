@@ -2,10 +2,11 @@ import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth
 import TenantApplicationWrapper from "./TenantApplicationWrapper";
 import TenantPaymentVerification from "./TenantPaymentVerification";
 import TenantPlanSelection from "./TenantPlanSelection";
+import TenantDetails from "./TenantDetails";
 ;
 
 async function TenantsRegistrationPage(props: AppRouterPageRouteOpts) {
-  const { role, plan, freq = "YEARLY" } = (props.searchParams || {}) as {role: string, plan:string, freq: "MONTHLY" | "YEARLY" } 
+  const {freq = "YEARLY" } = (props.searchParams || {}) as { freq: "MONTHLY" | "YEARLY" } 
 
   return (
     <div className="container mx-auto content my-10">
@@ -16,8 +17,9 @@ async function TenantsRegistrationPage(props: AppRouterPageRouteOpts) {
         </p>
       </div>
       <TenantApplicationWrapper>
-        <TenantPlanSelection freq={freq} defaultPlan={plan}/>
+        <TenantPlanSelection freq={freq}/>
         <TenantPaymentVerification />
+        <TenantDetails />
       </TenantApplicationWrapper>
     </div>
   );

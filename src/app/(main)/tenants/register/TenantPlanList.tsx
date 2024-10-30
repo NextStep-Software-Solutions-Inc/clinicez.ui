@@ -23,7 +23,7 @@ export default function TenantPlanList({ frequency, nextStep }: TenantPlanListPr
   return (
     <div className="flex flex-wrap justify-center my-10 gap-5">
       <Each
-        of={tenantPlans ?? []}
+        of={tenantPlans?.data ?? []}
         render={(plan) => {
           const discount = plan.discount;
           const price = Math.ceil(plan?.price * (1 - discount/100));

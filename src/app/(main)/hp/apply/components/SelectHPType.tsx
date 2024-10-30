@@ -18,6 +18,7 @@ import { useSearchParams } from "next/navigation";
 import BackSubmitAndNext from "../../../../../components/SubmitAndNext";
 import { useAtom } from "jotai";
 import { hpApply } from "@state/hp-apply";
+import { useHPTypes } from "@hooks/useHPTypes";
 
 interface ISelectHPTypeProps {
   currentHPTypeIds?: number[];
@@ -29,19 +30,15 @@ interface ISelectHPTypeProps {
 
 export default function SelectHPType({nextStep, prevStep, isFirstStep,isLastStep, currentHPTypeIds}: ISelectHPTypeProps) {
   const searchParams = useSearchParams();
-  const hpTypes = [
-    {
-      id: 1,
-      name: "Doctor"
-    }
-  ]
+  const {data: hpTypes} = useHPTypes()
+
   const hpTypeId =  Number(searchParams.get("hpType"));
   const roleFormSchema = z.object({
     hpTypeId: z.number({
       coerce: true,
       message: "Invalid role",
     }).refine(value => !currentHPTypeIds?.includes(value), (value) => ({
-      message: `You have already possessed ${value} role. Please select a different role.`,
+      message: `You have already possessed ${hpTypes?.data.find(type => type.id === value)?.name} role. Please select a different role.`,
     })),
   })
   
@@ -54,7 +51,7 @@ export default function SelectHPType({nextStep, prevStep, isFirstStep,isLastStep
     }
   })
 
-  const action = async (formData: FormData) => {
+  const action = async () => {
     form.handleSubmit(async (data: z.infer<typeof roleFormSchema>) => {
       setApplicationData(prev => ({...prev, ...data}))
       nextStep?.();
@@ -69,7 +66,7 @@ export default function SelectHPType({nextStep, prevStep, isFirstStep,isLastStep
           name="hpTypeId"
           render={({ field,  }) => (
             <FormItem className="space-y-3">
-              <FormLabel>Select HP Type</FormLabel>
+              <FormLabel>Healthcare Provider Type</FormLabel>
               <FormControl>
                 <RadioGroup
                   name="role"
@@ -78,7 +75,7 @@ export default function SelectHPType({nextStep, prevStep, isFirstStep,isLastStep
                   className="flex flex-wrap gap-5"
                 >
                   <Each
-                    of={hpTypes}
+                    of={hpTypes?.data ?? []}
                     render={(type) => (
                       <FormItem className="flex items-center space-x-3 space-y-0">
                         <FormControl>

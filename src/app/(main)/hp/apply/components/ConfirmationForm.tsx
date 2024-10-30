@@ -37,7 +37,7 @@ export const confirmationFormSchema = z.object({
 type formType = z.infer<typeof confirmationFormSchema>
 
 export default function ConfirmationForm({ nextStep, prevStep, isFirstStep, isComplete, setComplete, startOver }: ConfirmationFormProps) {
-  const [applicationData, setApplicationData] = useAtom(hpApply);
+  const [hpApplication, setHpApplication] = useAtom(hpApply);
   
   const form = useForm<formType>({
     resolver: zodResolver(confirmationFormSchema)
@@ -45,9 +45,9 @@ export default function ConfirmationForm({ nextStep, prevStep, isFirstStep, isCo
 
   const action = () => {
     form.handleSubmit(async (data) => {
-      const planId = applicationData.planId
-      const hpTypeId = applicationData.hpTypeId
-      const code = applicationData.receiptCode
+      const planId = hpApplication.planId
+      const hpTypeId = hpApplication.hpTypeId
+      const code = hpApplication.receiptCode
       
       if(!planId || !hpTypeId || !code) return toast.error("An error occurred. One or more required fields are missing.");
       
@@ -67,11 +67,11 @@ export default function ConfirmationForm({ nextStep, prevStep, isFirstStep, isCo
   }
 
   const reset = async () => {
-    const i = Object.entries(applicationData).reduce((acc, [key, value]) => {
-      acc[key] = "";
+    const i = Object.entries(hpApplication).reduce((acc, [key, value]) => {
+      acc[key] = undefined;
       return acc;
     }, {} as any);
-    await setApplicationData(i)
+    setHpApplication(i)
     startOver?.();
   }
 

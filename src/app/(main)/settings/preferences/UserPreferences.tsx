@@ -15,7 +15,6 @@ import {
 } from "@components/ui/form"
 
 import {toast} from "sonner"
-import { setMyDefaultOrganizationAction } from "@actions/organizations/organization.action"
 import ActionButton from "@components/ActionButton"
 import { Checkbox } from "@components/ui/checkbox"
 import { GetMyUserPreference, upsertMyUserPreference } from "@actions/users/preference.action"
@@ -143,7 +142,7 @@ export default function UserPreferences({userPreference}: UserPreferenceFormProp
                           <Each
                             of={myHps ?? []}
                             render={(hp) => (
-                              <SelectItem key={hp.id} value={hp.id.toString()}>{hp.HPProfile?.title} {hp.HPProfile?.name} {hp.HPProfile?.suffix} (<span className="italic font-medium">{hp.type.toLocaleLowerCase()}</span>)</SelectItem>
+                              <SelectItem key={hp.id} value={hp.id.toString()}>{hp.HPProfile?.title} {hp.HPProfile?.name} {hp.HPProfile?.suffix} (<span className="italic font-medium">{hp.HPType.name.toLocaleLowerCase()}</span>)</SelectItem>
                             ) }
                           />
                         </SelectContent>

@@ -6,13 +6,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, } from "react-hook-form";
 import { z } from "zod";
 import BackSubmitAndNext from "@components/SubmitAndNext";
-import { getPlansAction } from "@actions/plan.action";
-import { use, useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@components/ui/button";
 import { verifyReceiptCodeAction } from "@actions/reciept-code.action";
 import { useAtom } from "jotai";
 import { hpApply } from "@state/hp-apply";
+import { usePlans } from "@hooks/usePlan";
 interface PaymentFormProps {
   nextStep?: () => void;
   prevStep?: () => void;
@@ -20,16 +20,14 @@ interface PaymentFormProps {
   isLastStep?: boolean;
 }
 
-const fetchPlans = getPlansAction()
 
 export default function PaymentForm({ nextStep, prevStep, isFirstStep, isLastStep}: PaymentFormProps) {
-
   const [paymentVerified, setPaymentVerified] = useState(false);
-  const hpPlans = use(fetchPlans)
+  const {data: hpPlans} = usePlans("HEALTHCARE_PROVIDER", "MONTHLY")
 
-  const [applicationData,setApplicationData] = useAtom(hpApply);
+  const [hpApplication,setHpApplication] = useAtom(hpApply);
 
-  const selectedPlan = hpPlans.find(plan => plan.id === Number(applicationData.planId));
+  const selectedPlan = useMemo(() => hpPlans?.data?.find(plan => plan.id === hpApplication?.planId), [hpPlans, hpApplication]);
   const cost = selectedPlan?.price ?? 0;
 
   const applicationFormSchema = z.object({
@@ -43,14 +41,14 @@ export default function PaymentForm({ nextStep, prevStep, isFirstStep, isLastSte
   const form = useForm<formType>({
     resolver: zodResolver(applicationFormSchema),
     defaultValues: {
-      receiptCode: applicationData?.receiptCode,
+      receiptCode: hpApplication?.receiptCode,
     }
   })
 
 
   const action = async () => {
     form.handleSubmit(async (data: formType) => {
-      setApplicationData(prev => ({...prev, ...data}))
+      setHpApplication(prev => ({...prev, ...data}))
       nextStep?.();
     })();
   }

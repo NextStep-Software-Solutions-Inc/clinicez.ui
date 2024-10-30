@@ -22,7 +22,12 @@ export const getMyUserPreferenceAction = async () => {
         HealthCareProvider: {
           select: {
             id: true,
-            type: true
+            HPType: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
           }
         }
       }

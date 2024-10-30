@@ -10,7 +10,7 @@ import Suspend from "@components/Suspend";
 import { getHPAction } from "@actions/hp.actions";
 import { useUser } from "@auth0/nextjs-auth0/client";
 
-const steps = ["Role", "Plan", "Payment", "Confirmation"];
+const steps = ["Healthcare Provider Type", "Plan", "Payment", "Confirmation"];
 interface ApplicationFormProps {
     currentStep: number;
     children: React.ReactElement[];
@@ -50,7 +50,7 @@ export const GotoHpProfile = () => {
 
   if (!hp) return null;
   return (
-    <Link href={`/hp/profile/${hp.id}?_type=${hp.type}`}>
+    <Link href={`/hp/${hp.id}`}>
       <Button className="mt-5">Go to Profile <ArrowRight/></Button>
     </Link>
   )

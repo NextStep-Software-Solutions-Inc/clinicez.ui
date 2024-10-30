@@ -28,7 +28,7 @@ export default function TenantPaymentVerification({ prevStep, nextStep }: Tenant
   const [tenantApplication, setTenantApplication] = useAtom(tenantApplyAtom);
   const {data: tenantPlans} = usePlans("TENANT");
 
-  const selectedPlan = (tenantPlans ?? []).find(plan => plan.id === tenantApplication.planId);
+  const selectedPlan = (tenantPlans?.data ?? []).find(plan => plan.id === tenantApplication.planId);
   const cost = selectedPlan?.price ?? 0;
 
   const paymentConfirmationFormSchema = z.object({
@@ -71,7 +71,7 @@ export default function TenantPaymentVerification({ prevStep, nextStep }: Tenant
       <div className="prose max-w-full mt-5">
         <h3 className="">Payment</h3>
         <p>
-        Go to your agent and get a receipt number of your payment. Then, enter the receipt number below.
+        You can find the receipt number from the payment you made to our agent/representative. You may also receive an email from us with the receipt number.
         </p>
       </div>
       <form action={action} className="space-y-6 shadow-lg w-full p-8 bg-white rounded-md">

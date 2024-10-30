@@ -10,6 +10,7 @@ import ConditionalRender from "@components/utils/ConditionalRender";
 import { notFound } from "next/navigation";
 import { getCachedSession } from "@actions/session.action";
 import HPProfile from "./HPProfile";
+import { FEMALE_DOCTOR_AVATAR, MALE_DOCTOR_AVATAR } from "@lib/contants";
 
 type Props = {
   params: { practitioner: string }
@@ -28,7 +29,7 @@ export async function generateMetadata({ params, searchParams }: Props, parent: 
   const site = new URL(process.env.AUTH0_BASE_URL ?? "").hostname;
   const title = `${profile.HPProfile?.title} ${profile.HPProfile?.name} ${profile.HPProfile?.suffix} | ${profile.HPProfile?.fields.join(", ")}`;
   const description = profile.HPProfile?.philosophy ?? "";
-  const image = profile.HPProfile?.picture ?? "";
+  const image = profile.HPProfile?.picture || profile.User.gender === "FEMALE" ? FEMALE_DOCTOR_AVATAR : MALE_DOCTOR_AVATAR;
 
   const ogURL = `https://ogcdn.net/e4b8c678-7bd5-445d-ba03-bfaad510c686/v4/${encodeURIComponent(site)}/${encodeURIComponent(title)}/${encodeURIComponent(image)}/og.png`;
   const previousImages = (await parent).openGraph?.images || [];

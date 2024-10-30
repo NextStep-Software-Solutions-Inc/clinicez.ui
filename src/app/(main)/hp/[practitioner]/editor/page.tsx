@@ -38,6 +38,7 @@ async function EditorPage({params, searchParams}: AppRouterPageRouteOpts) {
     workPhone: hp?.HPProfile?.workPhone ?? "",
     philosophy: hp?.HPProfile?.philosophy ?? "",
     areaOfInterest: hp?.HPProfile?.areaOfInterest ?? "",
+    hobbies: hp?.HPProfile?.hobbies ?? "",
     experience: hp?.HPProfile?.experience ?? "",
     languages: hp?.HPProfile?.languages.map((lang) => ({name: lang})) ?? [],
     specialties: hp?.HPProfile?.specialties.map((specialty) => ({name: specialty})) ?? [],

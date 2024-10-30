@@ -46,13 +46,13 @@ export default function ConfirmationForm({ nextStep, prevStep, isFirstStep, isCo
   const action = () => {
     form.handleSubmit(async (data) => {
       const planId = applicationData.planId
-      const hpType = applicationData.hpType
+      const hpTypeId = applicationData.hpTypeId
       const code = applicationData.receiptCode
       
-      if(!planId || !hpType || !code) return toast.error("An error occurred. One or more required fields are missing.");
+      if(!planId || !hpTypeId || !code) return toast.error("An error occurred. One or more required fields are missing.");
       
       // transaction method
-      toast.promise(hpApplicationTransactionAction({ code, hpType,  planId }), {
+      toast.promise(hpApplicationTransactionAction({ code, hpTypeId,  planId }), {
         loading: "Submitting application...",
         success: (res) => {
           if(res.status) {

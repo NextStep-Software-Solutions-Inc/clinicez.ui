@@ -44,3 +44,8 @@ export const formatDateTime = (date: Date, time: Date): dayjs.Dayjs => {
 
   return combinedDateTime;
 }
+
+export function convertStringToNumber(str: string| null): number | undefined {
+  const num = Number(str);
+  return Number.isNaN(num) ? undefined : num;
+}

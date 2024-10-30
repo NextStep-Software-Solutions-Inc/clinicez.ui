@@ -12,12 +12,11 @@ import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import ActionButton from "@components/ActionButton";
 import { notFound, redirect } from "next/navigation";
-import { HealthcareProviderType } from "@prisma/common/client";
 import { getCachedSession } from "@actions/session.action";
 
 async function EditorPage({params, searchParams}: AppRouterPageRouteOpts) {
   const hpId = parseInt(params?.practitioner as string);
-  const type = searchParams?._type as HealthcareProviderType;
+  const hpTypeId = Number(searchParams?._hpTypeId);
 
   const session = await getCachedSession();
   const userId = session?.user.sub
@@ -62,11 +61,11 @@ async function EditorPage({params, searchParams}: AppRouterPageRouteOpts) {
     <div className="container mx-auto my-10 relative">
       <div className="prose max-w-full mb-5">
         <div className="flex">
-          <h1 className="capitalize flex-1">{hp?.type.replaceAll("_", " ").toLowerCase()} Profile Editor</h1>
+          <h1 className="capitalize flex-1">{hp?.HPType.name.toLowerCase()} Profile Editor</h1>
           <form action={handleTogglePublish}>
             <ActionButton variant={isPublished? "destructive": "default"}>{isPublished ? "Unpublish": "Publish"}</ActionButton>
           </form>
-          <Link href={`/hp/profile/${hpId}`}>
+          <Link href={`/hp/${hpId}`}>
             <Button className="fixed top-44 -right-[7rem] mr-2 hover:-right-[20px] transition-all"><ExternalLink size={20} className="mr-2"/>View profile</Button>
           </Link>
         </div>
@@ -76,7 +75,7 @@ async function EditorPage({params, searchParams}: AppRouterPageRouteOpts) {
       </div>
       <div className="space-y-10">
         <Suspend>
-          <HPPhoto profile={mappedProfile} type={type} hpId={hpId}/>
+          <HPPhoto profile={mappedProfile} hpTypeName={hp?.HPType.name ?? ""} hpId={hpId}/>
         </Suspend>
         <Suspend>
           <HPProfileForm profile={mappedProfile}/>

@@ -16,27 +16,31 @@ import { RadioGroup, RadioGroupItem } from "@components/ui/radio-group"
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useSearchParams } from "next/navigation";
 import BackSubmitAndNext from "../../../../../components/SubmitAndNext";
-import { $Enums, HealthcareProviderType } from "@prisma/common/client";
 import { useAtom } from "jotai";
 import { hpApply } from "@state/hp-apply";
 
-const hpTypes = Object.values($Enums.HealthcareProviderType);
-const hpTypesSchema = z.nativeEnum($Enums.HealthcareProviderType);
 interface ISelectHPTypeProps {
-  activeRole?: typeof hpTypes;
+  currentHPTypeIds?: number[];
   nextStep?: () => void;
   prevStep?: () => void;
   isFirstStep?: boolean;
   isLastStep?: boolean;
 } 
 
-export default function SelectHPType({nextStep, prevStep, isFirstStep,isLastStep, activeRole}: ISelectHPTypeProps) {
+export default function SelectHPType({nextStep, prevStep, isFirstStep,isLastStep, currentHPTypeIds}: ISelectHPTypeProps) {
   const searchParams = useSearchParams();
-  const hpType = searchParams.get("HPType") as HealthcareProviderType | undefined;
+  const hpTypes = [
+    {
+      id: 1,
+      name: "Doctor"
+    }
+  ]
+  const hpTypeId =  Number(searchParams.get("hpType"));
   const roleFormSchema = z.object({
-    hpType: hpTypesSchema.refine(value => hpTypes.includes(value) , {
+    hpTypeId: z.number({
+      coerce: true,
       message: "Invalid role",
-    }).refine(value => !activeRole?.includes(value), (value) => ({
+    }).refine(value => !currentHPTypeIds?.includes(value), (value) => ({
       message: `You have already possessed ${value} role. Please select a different role.`,
     })),
   })
@@ -46,7 +50,7 @@ export default function SelectHPType({nextStep, prevStep, isFirstStep,isLastStep
     resolver: zodResolver(roleFormSchema),
     mode: "all",
     defaultValues: {
-      hpType: hpType || applicationData?.hpType,
+      hpTypeId: hpTypeId || applicationData?.hpTypeId,
     }
   })
 
@@ -62,7 +66,7 @@ export default function SelectHPType({nextStep, prevStep, isFirstStep,isLastStep
       <form action={action} className="space-y-6 shadow-lg w-full p-8 bg-white rounded-md">
         <FormField
           control={form.control}
-          name="hpType"
+          name="hpTypeId"
           render={({ field,  }) => (
             <FormItem className="space-y-3">
               <FormLabel>Select HP Type</FormLabel>
@@ -70,7 +74,7 @@ export default function SelectHPType({nextStep, prevStep, isFirstStep,isLastStep
                 <RadioGroup
                   name="role"
                   onValueChange={field.onChange}
-                  value={field.value}
+                  value={field.value?.toString()}
                   className="flex flex-wrap gap-5"
                 >
                   <Each
@@ -78,10 +82,10 @@ export default function SelectHPType({nextStep, prevStep, isFirstStep,isLastStep
                     render={(type) => (
                       <FormItem className="flex items-center space-x-3 space-y-0">
                         <FormControl>
-                          <RadioGroupItem value={type} onClick={() => form.trigger()}/>
+                          <RadioGroupItem value={type.id.toString()} onClick={() => form.trigger()}/>
                         </FormControl>
                         <FormLabel className="font-normal capitalize">
-                          {type}
+                          {type.name}
                         </FormLabel>
                       </FormItem>
                     )}

@@ -16,11 +16,10 @@ export default function HPProfilesLink({userId}: {userId: string}) {
     <Each
       of={hpProfiles ?? []}
       render={(item) => (
-        <a href={`/hp/profile/${item.id}`}>
+        <a href={`/hp/${item.id}`}>
           <DropdownMenuItem>
             <User className="mr-2 h-4 w-4" />
-            <span className="capitalize">My {item.type.replaceAll("_", " ").toLowerCase()} Profile</span>
-            {/* <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut> */}
+            <span className="capitalize">My {item.HPType.name.replaceAll("_", " ").toLowerCase()} Profile</span>
           </DropdownMenuItem>
         </a>
       )}

@@ -6,6 +6,7 @@ import { EarthIcon, FacebookIcon, LinkedinIcon, MailIcon, PhoneCallIcon, Twitter
 import Suspend from "@components/Suspend";
 import { notFound } from "next/navigation";
 import { getHPAction } from "@actions/hp.actions";
+import { BANNER_PLACEHOLDER, FEMALE_DOCTOR_AVATAR, MALE_DOCTOR_AVATAR } from "@lib/contants";
 
 interface HPProfileProps {
   hpId: number;
@@ -17,8 +18,8 @@ export default async function HPProfile({hpId}: HPProfileProps) {
   });
   if (!profile) notFound();
   
-  const cover = profile.HPProfile?.cover ?? "https://art.metro.net/wp-content/uploads/2021/02/placeholder.png";
-  const picture = profile.HPProfile?.picture ?? "https://integratedmedfl.com/wp-content/uploads/2023/08/dr.png";
+  const cover = profile.HPProfile?.cover || BANNER_PLACEHOLDER;
+  const picture = profile.HPProfile?.picture || (profile.User.gender === "FEMALE" ? FEMALE_DOCTOR_AVATAR: MALE_DOCTOR_AVATAR);
   const philosophy = profile.HPProfile?.philosophy;
   const areaOfInterest = profile.HPProfile?.areaOfInterest;
   const experience = profile.HPProfile?.experience ?? "";

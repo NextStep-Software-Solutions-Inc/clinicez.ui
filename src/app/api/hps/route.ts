@@ -1,20 +1,21 @@
 import { getHPsAction, getHpsByIdsAction } from "@actions/hp.actions";
+import { convertStringToNumber } from "@lib/utils";
 import { withJwtAuth } from "@middlewares/withJwtAuth";
-import { HealthcareProviderType } from "@prisma/common/client";
 import { NextRequest, NextResponse } from "next/server";
 
 
 export const GET = withJwtAuth(async (req:NextRequest) => {
   const searchParams = req.nextUrl.searchParams
-  const type = searchParams.get('type') as HealthcareProviderType;
+
+  const hpTypeId = convertStringToNumber(searchParams.get('_hpTypeId'));
   const userId = searchParams.get('userId');
-  const id = searchParams.get('id');
+  const id = convertStringToNumber(searchParams.get('id'));
   const isPublished = searchParams.get('isPublished');
 
   const filters = {
-    ...type ? { type } : {},
+    ...hpTypeId ? { hpTypeId } : {},
     ...userId ? { userId } : {},
-    ...id ? { id: parseInt(id) } : {},
+    ...id ? { id } : {},
     ...isPublished ? { isPublished: isPublished === 'true' } : {},
   }
 
@@ -29,3 +30,4 @@ export const POST = withJwtAuth(async (req:NextRequest) => {
   const hps = await getHpsByIdsAction(ids)
   return NextResponse.json(hps, {status: 200})
 })
+

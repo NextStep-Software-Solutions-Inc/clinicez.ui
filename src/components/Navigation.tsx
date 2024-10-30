@@ -10,7 +10,6 @@ import {
 import Link from "next/link";
 import Each from "./utils/Each";
 import { cn } from "@lib/utils";
-import { Building, Coins, Contact, Home, Users } from "lucide-react";
 import dynamicIconImports from "lucide-react/dynamicIconImports";
   
 export const navLinks: {
@@ -20,9 +19,8 @@ export const navLinks: {
 }[]
 = [
   { name: "Home", href: "/", icon: "home" },
-  { name: "Doctors", href: "/hp/doctors", icon: "users"  },
-  { name: "Nurses", href: "/hp/nurses", icon: "users"  },
-  { name: "Organizations", href: "/organizations", icon: "building"  },
+  { name: "Our Healthcare Providers", href: "/hp", icon: "users"  },
+  { name: "Clinics & Organizations", href: "/organizations", icon: "building"  },
   { name: "Pricing", href: "/pricing", icon: "coins"  },
   { name: "Contact Us", href: "/contact-us", icon: "contact"  }
 ];

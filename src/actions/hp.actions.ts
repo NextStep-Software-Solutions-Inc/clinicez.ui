@@ -2,30 +2,38 @@
 
 import prisma from "@lib/prisma-common";
 
-import { HealthcareProviderType, Prisma } from "@prisma/common/client";
+import { Prisma } from "@prisma/common/client";
 import { cache } from "react";
 
 export type HPSFilters = {
-  type?: HealthcareProviderType,
+  hpTypeId?: number,
   userId?: string
   isPublished?: boolean
 }
 
 export type GetHPsType = Awaited<ReturnType<typeof getHPsAction>>
 export const getHPsAction = cache(async (filters?:HPSFilters) => {
-  const {type, userId, isPublished} = filters || {};
+  
+  const {hpTypeId, userId, isPublished} = filters || {};
   const hps = prisma.healthcareProvider.findMany({
+    orderBy: {
+      HPProfile: {name: "asc"}
+    },
     where: {
       isActive: true,
-      ...(type && { type }),
-      ...(userId && { User: { userId } }),
-      ...(isPublished && { isPublished })
+      ...(hpTypeId ? { hpTypeId }: {}),
+      ...(userId ? { User: { userId } }: {}),
+      ...(isPublished ? { isPublished }: {})
     },
     include: {
+      HPType: {
+        select: {id: true, name: true}
+      },
       User: {
         select: {
           userId: true,
           email: true,
+          gender: true,
           firstName: true,
           lastName: true,
           suffix: true,
@@ -48,18 +56,18 @@ export const getHPsAction = cache(async (filters?:HPSFilters) => {
 
 export type HPFilters = {
   id?: number,
-  type?: HealthcareProviderType,
+  hpTypeId?: number,
   userId?: string
   isPublished?: boolean
 }
 export type GetHP = Awaited<ReturnType<typeof getHPAction>>
-export const getHPAction = async ({ userId, type, isPublished, id}:HPFilters) => {
+export const getHPAction = async ({ userId, hpTypeId, isPublished, id}:HPFilters) => {
 
   const hp = prisma.healthcareProvider.findFirst({
     where: {
       isActive: true,
-      ...(type && { type }),
-      ...(isPublished && { isPublished }),
+      ...(hpTypeId ? { hpTypeId }: {}),
+      ...(isPublished ? { isPublished }: {}),
       OR: [
         { User: { userId } },
         { id }
@@ -67,6 +75,12 @@ export const getHPAction = async ({ userId, type, isPublished, id}:HPFilters) =>
     },
     include: {
       HPProfile: true,
+      HPType: {
+        select: {
+          id: true,
+          name: true
+        }
+      },
       User: {
         include: {
           SocialLink: true
@@ -127,7 +141,7 @@ export const getHpsByIdsAction = async (ids: number[]) => {
     },
     select: {
       id: true,
-      type: true,
+      hpTypeId: true,
       User: {
         "select": {
           email: true,

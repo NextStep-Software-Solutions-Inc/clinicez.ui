@@ -1,25 +1,25 @@
 import { Metadata } from "next";
 import Suspend from "@components/Suspend";
-import HPList from '../../../../components/HPList';
+import HPList from '../../../components/HPList';
 
 export const metadata: Metadata = {
-  title: "Nurses | Clinic EZ",
-  description: "Our Nurses are here to help you with your healthcare needs.",
+  title: "Healthcare Providers | Clinic EZ",
+  description: "Our Healthcare Providers are equipped with the latest technology to provide you with the best care possible.",
 };
 
-export default async function Nurses() {
+export default async function HealthcareProvidersPage() {
 
   return (
     <div className="container mx-auto my-10">
       <div className="prose max-w-full text-center">
-        <h1>Meet our Nurses</h1>
+        <h1>Meet our Healthcare Providers </h1>
         <p>
-          Our Nurses are here to help you with your healthcare needs.
+          Our Healthcare Providers are equipped with the latest technology to provide you with the best care possible.
         </p>
       </div>
       <div className="flex flex-col items-center justify-center min:h-screen relative my-5">
         <Suspend>
-          <HPList type='NURSE' />
+          <HPList />
         </Suspend>
       </div>
     </div>

@@ -1,7 +1,6 @@
 "use client"
 
 import { Input } from "@components/ui/input";
-import { HealthcareProviderType } from "@prisma/common/client";
 import React from "react";
 import { toast } from "sonner";
 import { HPProfileType } from "../hp-form.schema";
@@ -14,10 +13,10 @@ import { upsertHPAction } from "@actions/hp.actions";
 interface HPPhotoProps {
   profile: HPProfileType
   hpId: number
-  type: HealthcareProviderType
+  hpTypeName:  string
 }
 
-export default function HPPhoto({profile, hpId, type}: HPPhotoProps) {
+export default function HPPhoto({profile, hpId, hpTypeName}: HPPhotoProps) {
   const user = useUser()
   const userId = user?.user?.sub
     

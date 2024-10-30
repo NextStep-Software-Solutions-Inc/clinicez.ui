@@ -3,11 +3,10 @@
 import { cache } from "react";
 import { getCachedSession } from "@actions/session.action";
 import prismaCommon from "@lib/prisma-common";
-import { Prisma, UserPlanStatus, HealthcareProviderType } from "@prisma/common/client";
+import { Prisma, UserPlanStatus } from "@prisma/common/client";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc"
 dayjs.extend(utc)
-
 
 
 export const createUserPlanAction = async (planId: number, status: UserPlanStatus = "PENDING") => {
@@ -66,10 +65,10 @@ export const setUserPlanStatusAction = async (id: number, status: UserPlanStatus
 type HPApplicationTransactionPayload = {
  code: string;
  planId: number;
- hpType: HealthcareProviderType;
-
+ hpTypeId: number;
 }
-export const hpApplicationTransactionAction = async ({planId, hpType,code}: HPApplicationTransactionPayload) => {
+
+export const hpApplicationTransactionAction = async ({planId, hpTypeId ,code}: HPApplicationTransactionPayload) => {
 
   const session = await getCachedSession();
   let errorMessage = "";
@@ -147,7 +146,9 @@ export const hpApplicationTransactionAction = async ({planId, hpType,code}: HPAp
       errorMessage = "An error occurred while creating healthcare provider.";
       await prisma.healthcareProvider.create({
         data: {
-          type: hpType,
+          HPType: {
+            connect: { id: hpTypeId }
+          },
           User: {
             connect: { userId: session?.user.sub }
           },

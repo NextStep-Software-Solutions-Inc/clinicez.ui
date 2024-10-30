@@ -1,6 +1,6 @@
 
 import { DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from "./ui/dropdown-menu";
-import { Mail, Settings } from "lucide-react";
+import { Settings } from "lucide-react";
 import PHRLink from "../app/(activation)/[organization]/activate/PHRLink";
 import HPProfilesLink from "./HPProfilesLink";
 import DashboardLink from "./DashboardLink";
@@ -23,7 +23,6 @@ export default async function UserAvatarWrapper() {
           <br />
           <span className="text-xs text-muted-foreground">{session?.user.email}</span>
         </DropdownMenuLabel>
-
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <PHRLink />

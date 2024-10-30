@@ -3,16 +3,15 @@ import { self } from "@services/request";
 import useSWR from "swr";
 
 export const useHPs = (filters?: HPSFilters, enable = true) => {
-  const fetcher = (...args: any) => self.get<GetHPsType>(args)
+  const fetcher = (args: string) => self.get<GetHPsType>(args)
 
-  const obj = {
-    ...filters?.userId ? { userId: filters.userId } : {},
-    ...filters?.type ? { type: filters.type } : {},
-    ...filters?.isPublished ? { isPublished: filters.isPublished.toString() } : {},
-  }
-  const query = new URLSearchParams(obj).toString()
-    
-  return useSWR(() => enable ? `/api/hps?${query}` : null, fetcher)
+
+  const searchParams = new URLSearchParams()
+  Object.entries(filters ?? {}).forEach(([key, value]) => {
+    if(value) searchParams.append(key, value.toString())
+  })
+
+  return useSWR(() => enable ? `/api/hps?${searchParams.toString()}` : null, fetcher)
 }
 
 export const useHP = (id: number) => {

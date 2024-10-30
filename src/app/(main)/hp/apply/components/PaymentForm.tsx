@@ -10,7 +10,7 @@ import { getPlansAction } from "@actions/plan.action";
 import { use, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@components/ui/button";
-import { getReceiptCodeAction } from "@actions/reciept-code.action";
+import { verifyReceiptCodeAction } from "@actions/reciept-code.action";
 import { useAtom } from "jotai";
 import { hpApply } from "@state/hp-apply";
 interface PaymentFormProps {
@@ -57,7 +57,7 @@ export default function PaymentForm({ nextStep, prevStep, isFirstStep, isLastSte
 
   const handleVerify = async (code: string) => {
     
-    toast.promise(getReceiptCodeAction(code), {
+    toast.promise(verifyReceiptCodeAction(code), {
       loading: "Verifying code...",
       success: () => {
         setPaymentVerified(true);

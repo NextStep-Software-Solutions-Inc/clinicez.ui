@@ -16,11 +16,14 @@ model Tenant {
   tenantId           String              @unique
   ownerId            Int
   name               String
+  description        String?
+  userPlanId         Int?
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
   deletedAt          DateTime?
   isActive           Boolean             @default(true)
   Organizations      Organization[]
+  UserPlan           UserPlan?           @relation(fields: [userPlanId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   Owner              User                @relation(fields: [ownerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   TenantSetting      TenantSetting?
   UserDefaultTenants UserDefaultTenant[]
@@ -343,23 +346,26 @@ model Feature {
 }
 
 model UserPlan {
-  id        Int            @id @default(autoincrement())
-  userId    Int
-  planId    Int
-  startDate DateTime
-  endDate   DateTime
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
-  deletedAt DateTime?
-  isActive  Boolean        @default(true)
-  status    UserPlanStatus
-  Plan      Plan           @relation(fields: [planId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  User      User           @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id                  Int                  @id @default(autoincrement())
+  userId              Int
+  planId              Int
+  startDate           DateTime
+  endDate             DateTime
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  deletedAt           DateTime?
+  isActive            Boolean              @default(true)
+  status              UserPlanStatus
+  Plan                Plan                 @relation(fields: [planId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  User                User                 @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Tenants             Tenant[]
+  HealthcareProviders HealthcareProvider[]
 }
 
 model HealthcareProvider {
   id                  Int                    @id @default(autoincrement())
   userId              Int
+  userPlanId          Int?
   type                HealthcareProviderType
   description         String?
   createdAt           DateTime               @default(now())
@@ -368,6 +374,7 @@ model HealthcareProvider {
   isActive            Boolean                @default(true)
   isPublished         Boolean                @default(false)
   User                User                   @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  UserPlan            UserPlan?              @relation(fields: [userPlanId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   ProfessionalDetails ProfessionalDetails?
   ReservedTimeSlots   ReservedTimeSlot[]
   HPProfile           HPProfile?

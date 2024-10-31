@@ -1,6 +1,7 @@
 "use server";
 
 import "server-only";
+import prismaCommon from "@lib/prisma-common";
 
 export type GetOrgAppointmentConfig = Awaited<ReturnType<typeof getOrgAppointmentConfigAction>>
 export const getOrgAppointmentConfigAction = async (orgUid: string) => {

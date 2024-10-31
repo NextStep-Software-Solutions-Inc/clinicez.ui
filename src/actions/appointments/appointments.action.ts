@@ -12,6 +12,9 @@ import { AppointmentStatus, RoutedAptStatus } from "@public/json/appointment-lis
 import { PERMISSIONS } from "@lib/permissions";
 import { hasCodeProperty } from "@lib/utils";
 import { getHPsAction } from "@actions/hp.actions";
+import path from "path";
+import fs from "fs/promises";
+import { sendMail } from "@actions/email.action";
 
 type CreateAppointmentPayload = {
   orgUid: string;
@@ -31,7 +34,7 @@ type CreateAppointmentPayload = {
 };
 export const createAppointmentAction = async (payload: CreateAppointmentPayload) => {
   const session = await getCachedSession();
- 
+
   try {
     if (!session) throw new Error("Unauthorized");
 
@@ -78,7 +81,7 @@ export const createAppointmentAction = async (payload: CreateAppointmentPayload)
       
       if(numberOfAppointments >= maxNumberOfAppointment.maxAppointmentsPerDay) throw new Error("The appointments quota of the organization for today has been reached");
       
-      return await prisma.appointment.create({
+      const newAppointment = await prisma.appointment.create({
         data: {
           subject,
           complaint,
@@ -109,9 +112,54 @@ export const createAppointmentAction = async (payload: CreateAppointmentPayload)
               skipDuplicates: true
             }
           }
+        },
+        select: {
+          Requesters: {
+            select: {
+              userId: true
+            }
+          }
         }
       })
+      return newAppointment;
     })
+
+    const users = await prismaCommon.user.findMany({
+      where: {
+        userId: {
+          in: requesters
+        }
+      },
+      select: {
+        email: true,
+        firstName: true,
+        middleName: true,
+        lastName: true,
+        suffix: true,
+        Organizations: {
+          where: {
+            Organization: {
+              orgId: orgUid
+            }
+          },
+          select: {
+            Organization: {
+              select: {
+                name: true,
+                email: true
+              }
+            }
+          }
+        }
+      }
+    })
+    const mappedUsers = users.map((user) => ({
+      fullName:`${user.firstName} ${user.middleName ?? ""} ${user.lastName ?? ""} ${user.suffix ?? ""}`.trim(),
+      email: user.email,
+      organization:  user.Organizations[0].Organization.name,
+      orgMail: user.Organizations[0].Organization.email ?? ""
+    }))
+    await sendAppointmentRequestSent({ users: mappedUsers})
     return {
       status: true,
       message: "Appointment created",
@@ -255,7 +303,6 @@ export const getAppointmentsAction = cache(async (filter?: GetAppointmentFilter)
         }
       }
     });
-
 
     // whitelist filter
     const requesterIds = appointments.flatMap((apt) => apt.Requesters.map((r) => r.userId));
@@ -795,3 +842,32 @@ const isFilterMatch = <T extends Patient>(filterKey: string, filterValue: string
     return false;
   }
 };
+
+const sendAppointmentRequestSent = async ({ users }:{
+  users: {
+    fullName: string,
+    email: string,
+    organization: string,
+    orgMail: string
+  }[]
+}) => {
+  try {
+    const filePath = path.join(process.cwd(), "email-templates/clinic-appointment-sent.html");
+    const emailTemplate = await fs.readFile(filePath, "utf-8");
+    const appName = process.env.NEXT_PUBLIC_APP_NAME!;
+    for (const user of users) {
+      const { fullName: name, email, organization, orgMail } = user;
+      const html = emailTemplate.replaceAll("@{userName}", name).replaceAll("@{orgName}", organization).replaceAll("@{appName}", appName).replaceAll("@{orgMail}", orgMail)
+      await sendMail({
+        subject: `Appointment Request Sent`,
+        to: email,
+        text: html,
+        html
+      })
+    }
+    return true;
+  } catch (error) {
+    console.error(`Error sending email notification: ${error}`);
+    return false;
+  }
+}

@@ -51,10 +51,6 @@ export default function ReviewBooking({ nextStep, prevStep, isLastStep, isFirstS
       toast.error("Organization is required")
       return ;
     }
-    if(!user.user?.email) {
-      toast.error("User email is missing")
-      return;
-    }
     if (!bookAppointmentForm.appointmentTypeId) {
       toast.error("Appointment type is required")
       return;

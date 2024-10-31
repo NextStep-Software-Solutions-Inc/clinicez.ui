@@ -72,14 +72,13 @@ export default function ReviewBooking({ nextStep, prevStep, isLastStep, isFirstS
     if(bookAppointmentForm.bookAFriend) {
 
     }
-  
-    if(!bookAppointmentForm.requester || !user.user?.sub) {
-      return toast.error("Requester ID is required")
+    const requester = bookAppointmentForm.bookAFriend ? bookAppointmentForm.requester: user.user?.sub;
+    if(!requester) {
+      toast.error("Requester ID is required")
+      return;
     }
 
     let attachmentUrls:{url: string}[] = []
-    const requester = bookAppointmentForm.bookAFriend ? bookAppointmentForm.requester: user.user.sub;
-
     
     for (const attachment of bookAppointmentForm.attachments ?? []) {
       toast.loading(`Uploading ${attachment.name}...`)

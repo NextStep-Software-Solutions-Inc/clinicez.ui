@@ -165,11 +165,11 @@ export default function FilterForm({onContinue}: FilterFormProps) {
                     </FormControl>
                     <div className="space-y-1 leading-none">
                       <FormLabel>
-                  Book appointment for a friend.
+                        Book appointment for a friend.
                       </FormLabel>
                       <FormDescription>
-                  Check this box if you are booking an appointment for someone else other than yourself.
-                  You can can only book for a friend if you are the same member of the organization.
+                        Check this box if you are booking an appointment for someone else other than yourself.
+                        You can can only book for a friend if you are the same member of the organization.
                       </FormDescription>
                     </div>
                   </FormItem>

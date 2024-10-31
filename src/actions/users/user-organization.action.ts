@@ -413,14 +413,6 @@ export const deleteMembershipAction = async (id: number) => {
   }
 }
 
-type RecipientType = {
-  organization: string
-  email: string
-  name: string,
-  status?: UserOrganizationStatus
-  role?: string
-}
-
 export const requestMembershipAdditionalInfo = async (id: number) => {
   try {
     const userOrganization = await prismaCommon.userOrganization.findUniqueOrThrow({

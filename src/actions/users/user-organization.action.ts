@@ -274,7 +274,7 @@ export const setMembershipRequestStatusAction = async (id: number, status: UserO
           },
           Organization: {
             select: {
-              name: true
+              name: true, email: true
             }
           },
           User: {
@@ -318,7 +318,8 @@ export const setMembershipRequestStatusAction = async (id: number, status: UserO
         name: `${userOrganization.User.firstName} ${userOrganization.User.lastName}`,
         email: userOrganization.User.email,
         organization: userOrganization.Organization.name,
-        status: userOrganization.status
+        status: userOrganization.status,
+        orgMail: userOrganization.Organization.email ?? ""
       })
     })
     return {
@@ -464,17 +465,23 @@ export const requestMembershipAdditionalInfo = async (id: number) => {
   }
 }
 
-const sendMembershipUpdateEmailNotification = async ({name, email, organization, status}:{
+const sendMembershipUpdateEmailNotification = async ({name, email, organization, status, orgMail}:{
   organization: string
   email: string
   name: string,
-  status: UserOrganizationStatus
+  status: UserOrganizationStatus,
+  orgMail: string
 }) => {
   try {
     const filePath = path.join(process.cwd(), "email-templates/org-membership-update.html");
     const emailTemplate = await fs.readFile(filePath, "utf-8");
     const appName = process.env.NEXT_PUBLIC_APP_NAME!;
-    const html = emailTemplate.replaceAll("@{userName}", name).replaceAll("@{status}", status).replaceAll("@{appName}", appName)
+    const html = emailTemplate
+      .replaceAll("@{userName}", name).
+      replaceAll("@{status}", status)
+      .replaceAll("@{appName}", appName)
+      .replaceAll("@{orgName}", organization)
+      .replaceAll("@{orgMail}", orgMail)
 
     await sendMail({
       subject: `Membership request to ${organization} status was changed - ${status?.toUpperCase()}`,

@@ -8,7 +8,7 @@ type UseUsersFilter = {
   orgUid?: string
 }
 export const useUsers = (filter?: UseUsersFilter) => {
-  const fetcher = (...args: any) => self.get<GetUsers>(args)
+  const fetcher = (args: string) => self.get<GetUsers>(args)
   const searchParams = new URLSearchParams();
   Object.entries(filter || {}).forEach(([key, value]) => {
     if(value) searchParams.append(key, value.toString())

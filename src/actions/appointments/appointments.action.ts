@@ -42,11 +42,14 @@ export const createAppointmentAction = async (payload: CreateAppointmentPayload)
     const { date, timeStart, timeEnd } = schedule ?? {};
     
     const createAppointmentPermissions = [PERMISSIONS.ORGANIZATION["WRITE:ORG:APPOINTMENT"].name];
-    const myPermissions = await getPermissionsAction({ userId:session.user.sub });
+    const bookAFriendPermissions = [PERMISSIONS.ORGANIZATION["WRITE:ORG:APPOINTMENT:BOOK_A_FRIEND"].name];
+    const myPermissions = await getPermissionsAction({ userId: session.user.sub });
     const userPermissionArray = myPermissions.map(p => p.name);
     const canCreateAppointment = createAppointmentPermissions.every(p => userPermissionArray.includes(p));
+    const canBookAFriend = bookAFriendPermissions.every(p => userPermissionArray.includes(p));
   
     if (!canCreateAppointment) throw new Error("You do not have permission to create an appointment in this organization");
+    if(requesters.some((requester) => requester !== session.user.sub) && !canBookAFriend) throw new Error("You cannot book an appointment for another user");
     
     const newAppointment = await prismaTenant.$transaction(async (prisma) => {
       const numberOfAppointments = await prisma.appointment.count({
@@ -61,7 +64,9 @@ export const createAppointmentAction = async (payload: CreateAppointmentPayload)
           },
           Requesters: {
             some: {
-              userId: session.user.sub
+              userId: {
+                in: requesters
+              }
             }
           }
         }

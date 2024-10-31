@@ -133,6 +133,10 @@ export const PERMISSIONS = {
     "UPDATE:ORG:PERMISSIONS": {
       name: "update:org:permissions",
       description: "User can update permissions within the organization.",
+    },
+    "WRITE:ORG:APPOINTMENT:BOOK_A_FRIEND": {
+      name: "write:org:appointment:book_a_friend",
+      description: "User can write appointment for a friend within the organization.",
     }
   },
 }

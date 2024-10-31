@@ -15,7 +15,7 @@ export default function SelectService({nextStep, prevStep, isFirstStep, isLastSt
   }
   return (
     <div className="shadow-lg w-full p-8 bg-white rounded-md ">
-      <h5 className="text-lg font-semibold">What service do you want to avail?</h5>
+     
       <div className="overflow-y-auto max-h-[calc(50dvh)] no-scrollbar scrollBox px-2">
         <div className="flex lg:flex-row flex-col items-center gap-5 justify-center my-5">
           <FilterForm

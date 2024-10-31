@@ -33,6 +33,12 @@ import { toast } from "sonner"
 import { useOrgAppointmentModes } from "@hooks/useOrgAppointmentMode"
 import { useOrgServiceCategories } from "@hooks/useOrgServiceCategory"
 import { useMemo } from "react"
+import { Checkbox } from "@components/ui/checkbox"
+import { useUsers } from "@hooks/useUser"
+import { Separator } from "@components/ui/separator"
+import { usePermissions } from "@hooks/usePermission"
+import { PERMISSIONS } from "@lib/permissions"
+import { useUser } from "@auth0/nextjs-auth0/client"
 
 const FilterFormSchema = z.object({
   appointmentTypeId: z.coerce.number({
@@ -48,6 +54,18 @@ const FilterFormSchema = z.object({
     coerce: true,
     description: 'Select a healthcare provider',
   }).optional(),
+  bookAFriend: z.boolean().default(false),
+  requester: z.string({
+    description: 'Select a patient',
+  }).optional()
+}).superRefine((data, ctx) => {
+  if(data.bookAFriend && !data.requester) {
+    ctx.addIssue({
+      message: 'Requester is required when booking for a friend',
+      code: 'custom',
+      path: ['requester']
+    })
+  }
 })
 
 interface FilterFormProps {
@@ -56,14 +74,21 @@ interface FilterFormProps {
 
 export default function FilterForm({onContinue}: FilterFormProps) {
   const params = useParams()
+  const {user} = useUser()
   const [bookAppointmentForm, setBookAppointmentForm] = useAtom(bookAppointmentAtom)
-
   const organization = params?.organization as string
   const {data: appointmentTypes} = useOrgAppointmentTypes(organization)
   const {data: appointmentModes } = useOrgAppointmentModes(organization);
   const {data: serviceCategories} = useOrgServiceCategories(organization)
-  const {data: hps} = useHPs()
+  const {data: users } = useUsers({
+    orgUid: organization,
+  })
+  const {data: myOrgPermissions, isLoading: loadingPermissions} = usePermissions({
+    userId: user?.sub ?? undefined,
+    type: "ORGANIZATION"
+  })
 
+  const {data: hps} = useHPs()
   const groupedHps = useMemo(() => {
     // array of array of hps
     return (hps ?? [])?.reduce((acc, hp) => {
@@ -76,11 +101,14 @@ export default function FilterForm({onContinue}: FilterFormProps) {
 
   const form = useForm<z.infer<typeof FilterFormSchema>>({
     resolver: zodResolver(FilterFormSchema),
+    mode: "onChange",
     defaultValues: {
       modeId: bookAppointmentForm.modeId,
       appointmentTypeId: bookAppointmentForm.appointmentTypeId,
       serviceId: bookAppointmentForm.serviceId,
       hpId: bookAppointmentForm.hpId,
+      bookAFriend: bookAppointmentForm.bookAFriend || false,
+      requester: bookAppointmentForm.requester ?? undefined
     },
   })
 
@@ -101,15 +129,93 @@ export default function FilterForm({onContinue}: FilterFormProps) {
       hpId: data.hpId,
       hpUserId,
       serviceId: data.serviceId,
-      appointmentTypeId: data.appointmentTypeId
+      appointmentTypeId: data.appointmentTypeId,
+      bookAFriend: data.bookAFriend,
+      requester: data.requester,
     }}))
     form.reset(data)
     onContinue?.()
   }
+  const bookAFriend = form.watch('bookAFriend')
+  const myPermissionArray = myOrgPermissions?.map(permission => permission.name)
   
+  const writeOrgAppointmentPermissions = [PERMISSIONS.ORGANIZATION["WRITE:ORG:APPOINTMENT"].name]
+  const writeOrgAppointmentBookAFriendPermissions = [PERMISSIONS.ORGANIZATION["WRITE:ORG:APPOINTMENT:BOOK_A_FRIEND"].name]
+  const canWritePermission = writeOrgAppointmentPermissions.every(permission => myPermissionArray?.includes(permission))
+  const canWriteBookAFriendPermission = writeOrgAppointmentBookAFriendPermissions.every(permission => myPermissionArray?.includes(permission))
+  
+  if(loadingPermissions) return <p>Loading permissions...</p>
+  if(!canWritePermission) return <p>Sorry, You do not have permission to book an appointment. 😔</p>
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className=" space-y-6">
+        {
+          canWriteBookAFriendPermission && (
+            <>
+              <FormField
+                control={form.control}
+                name="bookAFriend"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>
+                  Book appointment for a friend.
+                      </FormLabel>
+                      <FormDescription>
+                  Check this box if you are booking an appointment for someone else other than yourself.
+                  You can can only book for a friend if you are a member of the organization.
+                      </FormDescription>
+                    </div>
+                  </FormItem>
+                )}
+              />
+              {
+                bookAFriend && (
+                  <FormField
+                    control={form.control}
+                    name="requester"
+                    render={({ field }) => (
+                      <FormItem className="flex-grow">
+                        <FormLabel>Select Patient</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value?.toString()}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Search a patient" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <Each
+                              of={users?.[0] ?? []}
+                              render={(user) => {
+                                return (
+                                  <SelectItem value={user.userId}>{user.firstName} {user.middleName} {user.lastName} {user.suffix} (<span className="font-medium">{user.email}</span>)</SelectItem>
+                                )
+                              }}
+                            />
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                  Select a healthcare provider to show their vacant slots
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )
+              }
+              <Separator/>
+            </>
+
+          )
+        }
+        
+        <h5 className="text-lg font-semibold">What service do you want to avail?</h5>
         <div className="flex flex-row gap-5 items-center justify-center md:justify-start flex-wrap">
           <FormField
             control={form.control}

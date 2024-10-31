@@ -169,7 +169,7 @@ export default function FilterForm({onContinue}: FilterFormProps) {
                       </FormLabel>
                       <FormDescription>
                   Check this box if you are booking an appointment for someone else other than yourself.
-                  You can can only book for a friend if you are a member of the organization.
+                  You can can only book for a friend if you are the same member of the organization.
                       </FormDescription>
                     </div>
                   </FormItem>
@@ -201,7 +201,7 @@ export default function FilterForm({onContinue}: FilterFormProps) {
                           </SelectContent>
                         </Select>
                         <FormDescription>
-                  Select a healthcare provider to show their vacant slots
+                            Select a patient to book an appointment for.
                         </FormDescription>
                         <FormMessage />
                       </FormItem>

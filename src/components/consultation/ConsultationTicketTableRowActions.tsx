@@ -22,7 +22,7 @@ import React from "react"
 import { useDropdownMenu } from "@components/DropdownMenuProvider"
 import { toast } from "sonner"
 import { toggleArchiveConsultationTicketAction, GetConsultationTickets, GetConsultationTicket } from "@actions/consultation/consultation-ticket.action"
-import { Archive, Pencil } from "lucide-react"
+import { Archive, Pencil, Pill } from "lucide-react"
 interface ConsultationTicketTableRowActionsProps<TData> {
   consultation: NonNullable<GetConsultationTicket["data"]> | GetConsultationTickets["data"][number]
 }
@@ -44,8 +44,8 @@ export default function ConsultationTicketTableRowActions<TData>({consultation}:
     <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
       <DropdownMenuTrigger asChild ref={dropdownTriggerRef}>
         <Button
-          variant="ghost"
-          size="lg"
+          variant="outline"
+          size="icon"
           className="flex h-8 w-8 p-0 data-[state=open]:bg-muted"
         >
           <DotsHorizontalIcon className="h-4 w-4" />

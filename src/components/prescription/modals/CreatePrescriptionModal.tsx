@@ -1,5 +1,6 @@
 "use client";
 
+import { createPrescriptionActions } from "@actions/medications/prescription.action";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import ActionButton from "@components/ActionButton";
 import CustomModalContent from "@components/CustomModalContent";
@@ -37,67 +38,87 @@ import {
 import Each from "@components/utils/Each";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useHPs } from "@hooks/useHP";
-import { useUserOrganizations } from "@hooks/useUserOrganization";
+import { useMedications } from "@hooks/useMedication";
+import { sessionClinicAtom } from "@state/session-clinic";
+import { useAtomValue } from "jotai";
 import { Pill } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 import { z } from "zod";
 
 interface CreatePrescriptionModalProps {
-  prescription: {
-    id: number;
-    name: string;
-    description?: string;
-    scopeOrgId?: number;
-  };
+  onCreated?: () => void;
 }
 
 type CreatePrescriptionForm = z.infer<typeof createPrescriptionFormSchema>;
 const createPrescriptionFormSchema = z.object({
   name: z.string().trim().optional(),
-  patientId: z
-    .string({
-      required_error: "Patient is required"
-    })
-    .trim(),
-  hpId: z
-    .string({
-      required_error: "Healthcare provider is required"
-    })
-    .trim()
+  medicationId: z.number({
+    coerce: true,
+    required_error: "Medication is required"
+  }),
+  hpId: z.number({
+    coerce: true,
+    required_error: "Healthcare provider is required"
+  }),
 });
 
 export default function CreatePrescriptionModal({
-  prescription
+  onCreated,
 }: CreatePrescriptionModalProps) {
   const { user } = useUser();
   const closeBtnRef = useRef<HTMLInputElement>(null);
+  const sessionClinicValue = useAtomValue(sessionClinicAtom);
+  
   const { data: myHps } = useHPs({
     userId: user?.sub ?? ""
   });
 
-  const { data: orgUsers } = useUserOrganizations({
-    orgId: "ustp-hims",
-    status: "ACTIVE"
+  const { data: medications } = useMedications({
+    clinicId: sessionClinicValue?.clinicId
   });
 
   const form = useForm<CreatePrescriptionForm>({
-    resolver: zodResolver(createPrescriptionFormSchema)
+    resolver: zodResolver(createPrescriptionFormSchema),
+    defaultValues: {
+      name: "",
+    }
   });
 
   const action = async () => {
     form.handleSubmit((data) => {
-      form.reset(data);
+      if(!sessionClinicValue?.clinicId) {
+        toast.error("Clinic UID is required");
+        return;
+      }
+      toast.promise(createPrescriptionActions({...data, clinicId: sessionClinicValue.clinicId}), {
+        loading: "Creating new prescription...",
+        success: (res) => {
+          if (res.status) {
+            onCreated?.();
+            closeBtnRef.current?.click();
 
-      closeBtnRef.current?.click();
-    }, console.error)();
+            form.reset(data);
+          }
+          return res.message;
+        },
+        error: "Failed to create prescription"
+      });
+    })();
   };
 
   useEffect(() => {
     if (myHps?.length === 1) {
-      form.setValue("hpId", myHps[0].id.toString());
+      form.setValue("hpId", myHps[0].id);
     }
   }, [form, myHps]);
+
+  useEffect(() => {
+    if (medications?.data?.length === 1) {
+      form.setValue("medicationId", medications?.data[0].id);
+    }
+  }, [form, medications?.data]);
 
   return (
     <Dialog>
@@ -120,7 +141,7 @@ export default function CreatePrescriptionModal({
         description={
           <>
             The prescription will be linked to consultation #:{" "}
-            <span className="italic font-semibold">{prescription.id}</span>
+            <span className="italic font-semibold"></span>
           </>
         }
       >
@@ -150,8 +171,7 @@ export default function CreatePrescriptionModal({
                         of={myHps ?? []}
                         render={(hp) => (
                           <SelectItem value={hp.id.toString()}>
-                            {hp.HPProfile?.title} {hp.HPProfile?.suffix}{" "}
-                            {hp.HPProfile?.name} ({hp.HPType.name})
+                            {hp.HPProfile?.title} {hp.HPProfile?.name} {hp.HPProfile?.suffix} ({hp.HPType.name})
                           </SelectItem>
                         )}
                       />
@@ -163,7 +183,7 @@ export default function CreatePrescriptionModal({
               )}
             />
 
-            <FormField
+            {/* <FormField
               control={form.control}
               name="patientId"
               render={({ field }) => (
@@ -195,8 +215,40 @@ export default function CreatePrescriptionModal({
                   <FormMessage />
                 </FormItem>
               )}
-            />
+            /> */}
 
+            <FormField
+              control={form.control}
+              name="medicationId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Medication</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    name={field.name}
+                    defaultValue={field.value?.toString()}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select active medication" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <Each
+                        of={medications?.data ?? []}
+                        render={(medication) => (
+                          <SelectItem value={medication.id.toString()}>
+                            {medication.name || `Medication #${medication.id}`}
+                          </SelectItem>
+                        )}
+                      />
+                    </SelectContent>
+                  </Select>
+                  <FormDescription></FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <FormField
               control={form.control}
               name="name"

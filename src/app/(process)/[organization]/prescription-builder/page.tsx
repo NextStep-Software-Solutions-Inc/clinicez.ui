@@ -1,16 +1,10 @@
-import Suspend from "@components/Suspend";
 import { Separator } from "@components/ui/separator";
 import { Metadata } from "next";
 import { AppRouterPageRouteOpts } from "@auth0/nextjs-auth0";
-import CreateFolderModal from "@components/files/modals/CreateFolderModal";
-import Each from "@components/utils/Each";
-import Folder from "@components/Folder";
-import { getFoldersAction } from "@actions/folder.action";
-import { getCachedSession } from "@actions/session.action";
-import dayjs from "dayjs";
+
 import Prescriptions from "@components/Prescriptions";
 import { Button } from "@components/ui/button";
-import { MoreHorizontal, MoreVertical } from "lucide-react";
+import { MoreHorizontal } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Prescription builder",
@@ -18,9 +12,7 @@ export const metadata: Metadata = {
 };
 
 export default async function FilesPage({ params }: AppRouterPageRouteOpts) {
-  const organizationId = params?.organization as string;
-  const session = await getCachedSession();
-  const folders = await getFoldersAction(session?.user.sub, organizationId);
+
   return (
     <>
       <div className="space-y-6">
@@ -42,9 +34,7 @@ export default async function FilesPage({ params }: AppRouterPageRouteOpts) {
           </p>
         </div>
         <Separator />
-        <Suspend>
-          <Prescriptions />
-        </Suspend>
+        <Prescriptions />
       </div>
     </>
   );

@@ -49,3 +49,33 @@ export function convertStringToNumber(str: string| null): number | undefined {
   const num = Number(str);
   return Number.isNaN(num) ? undefined : num;
 }
+
+
+/**
+ * Parses an object with string values to their respective types
+ * @param obj - Object to parse
+ * @returns Object with parsed values
+ * @example
+ * const obj = { name: 'John', age: '25', isStudent: 'true' };
+ * const parsed = parseObject(obj);
+ * console.log(parsed); // { name: 'John', age: 25, isStudent: true }
+ * @example
+ * const obj = { name: 'John', age: '25', isStudent: 'false' };
+ * const parsed = parseObject(obj);
+ * console.log(parsed); // { name: 'John', age: 25, isStudent: false }
+ */
+export const parseObject = (obj: Record<string, string>) => {
+  const parsed: Record<string, string | number | boolean> = {};
+  Object.entries(obj).forEach(([key, value]) => {
+    if (value === 'true') {
+      parsed[key] = true;
+    } else if (value === 'false') {
+      parsed[key] = false;
+    } else if (!isNaN(Number(value))) {
+      parsed[key] = Number(value);
+    } else {
+      parsed[key] = value;
+    }
+  });
+  return parsed;
+};

@@ -1,3 +1,5 @@
+"use client";
+
 import {
   Card,
   CardContent,
@@ -5,19 +7,40 @@ import {
   CardHeader,
   CardTitle
 } from "@components/ui/card";
-import React from "react";
+import React, { useMemo } from "react";
 import Each from "@components/utils/Each";
 import Suspend from "@components/Suspend";
 import dynamic from "next/dynamic";
 import { Pill } from "lucide-react";
-import PrescriptionItem from "@components/PrescriptionItem";
+import PrescriptionItem, {
+  PrescriptionItemProps
+} from "@components/PrescriptionItem";
+import { usePrescriptions } from "@hooks/usePrescription";
 const CreatePrescriptionModal = dynamic(
   () => import("@components/prescription/modals/CreatePrescriptionModal")
 );
 
 export interface PrescriptionsProps {}
 
-export default async function Prescriptions({}: PrescriptionsProps) {
+export default function Prescriptions({}: PrescriptionsProps) {
+  const { data: prescriptions, mutate } = usePrescriptions({});
+
+  const mappedPrescriptions: PrescriptionItemProps["prescription"][] =
+    useMemo(() => {
+      return (prescriptions?.data ?? []).map((prescription) => {
+        return {
+          id: prescription.id,
+          name: prescription.name ?? "",
+          medicationDrugs: prescription.Medication._count.MedicationDrugs,
+          createdAt: prescription.createdAt,
+          patient: {
+            userId: prescription.Medication.patientId + "",
+            name: "Patient Name"
+          }
+        };
+      });
+    }, [prescriptions?.data]);
+
   return (
     <Card className="group/folder">
       <CardHeader>
@@ -32,11 +55,7 @@ export default async function Prescriptions({}: PrescriptionsProps) {
           <div className="ml-auto flex flex-grow sm:flex-grow-0 items-center gap-2">
             <Suspend>
               <CreatePrescriptionModal
-                prescription={{
-                  id: 1,
-                  name: "",
-                  description: ""
-                }}
+                onCreated={mutate}
               />
             </Suspend>
           </div>
@@ -44,24 +63,14 @@ export default async function Prescriptions({}: PrescriptionsProps) {
       </CardHeader>
       <CardContent className="grid gap-1">
         <Each
-          of={[
-            {
-              name: `Prescription # 1`,
-              medicationsCount: 2,
-              createdAt: new Date(),
-              patient: {
-                userId: "12",
-                name: "Wave Ambray"
-              }
-            }
-          ]}
+          of={mappedPrescriptions}
           fallback={
             <p className="text-center text-muted-foreground">
               No recent prescription to show.
             </p>
           }
           render={(prescription) => (
-            <PrescriptionItem prescription={prescription} />
+            <PrescriptionItem prescription={prescription} onUpdated={mutate} />
           )}
         />
       </CardContent>

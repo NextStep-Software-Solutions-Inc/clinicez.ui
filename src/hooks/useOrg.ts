@@ -12,7 +12,7 @@ export const useOrgs = (userId?: string | null) => {
   return useSWR(`/api/organizations?${searchParams.toString()}`, fetcher)
 }
 
-export const useOrganization = (orgId: string) => {
+export const useOrganization = (key: number | string) => {
   const fetcher = (args:string) => self.get<GetOrganization>(args)
-  return useSWR(`/api/organizations/${orgId}`, fetcher)
+  return useSWR(`/api/organizations/${key}`, fetcher)
 }

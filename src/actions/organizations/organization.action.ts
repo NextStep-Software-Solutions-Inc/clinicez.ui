@@ -49,14 +49,23 @@ export const getOrganizationsAction = cache(async (filters?: FiltersType) => {
 });
 
 export type GetOrganization = Awaited<ReturnType<typeof getOrganizationAction>>
-export const getOrganizationAction = cache(async (orgId: string) => {
+export const getOrganizationAction = cache(async (key: string | number) => {
 
-  const organization = await prisma.organization.findUnique({
+  const organization = await prisma.organization.findFirst({
     where: {
       isActive: true,
-      orgId
+      OR: [
+        {...!isNaN(Number(key))? {id: Number(key)} : {}}, 
+        {orgId: String(key)}
+      ]
     },
     include: {
+      Tenant: {
+        select: {
+          id: true,
+          tenantId: true
+        }
+      },
       OrganizationSetting: true,
     }
   });

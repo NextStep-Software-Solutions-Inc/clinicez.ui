@@ -30,6 +30,7 @@ export const getPrescriptionsActions = async (filters?: GetPrescriptionsFilter) 
       include: {
         Medication: {
           select: {
+            completedAt: true,
             patientId: true,
             _count: {
               select: {

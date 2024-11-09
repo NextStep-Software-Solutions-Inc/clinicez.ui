@@ -276,3 +276,70 @@ model Action {
   isActive      Boolean        @default(true)
   Interventions Intervention[]
 }
+
+model Prescription {
+  id           Int              @id @default(autoincrement())
+  templateId   Int
+  patientId    String
+  hpId         String
+  name         String?
+  isArchived   Boolean          @default(false)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  dateArchived DateTime?
+  Template     DocumentTemplate @relation(fields: [templateId], references: [id])
+  Medications  Medication[]
+
+  @@index([patientId], name: "patientId")
+}
+
+model Drug {
+  id          Int          @id @default(autoincrement())
+  name        String
+  generic     String
+  Medications Medication[]
+}
+
+model Medication {
+  id             Int          @id @default(autoincrement())
+  prescriptionId Int
+  drugId         Int
+  dosage         String
+  quantity       Int          @default(1)
+  notes          String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  completedAt    DateTime?
+  Drug           Drug         @relation(fields: [drugId], references: [id])
+  Prescription   Prescription @relation(fields: [prescriptionId], references: [id])
+
+  @@index([prescriptionId], name: "prescriptionId")
+}
+
+model DocumentTemplate {
+  id                         Int                         @id @default(autoincrement())
+  name                       String
+  type                       Int
+  htmlContent                String
+  createdAt                  DateTime                    @default(now())
+  updatedAt                  DateTime                    @updatedAt
+  deletedAt                  DateTime?
+  isActive                   Boolean                     @default(true)
+  DocumentTemplateType       DocumentTemplateType        @relation(fields: [type], references: [id])
+  Prescriptions              Prescription[]
+  ClinicPrescriptionSettings ClinicPrescriptionSetting[] @relation("prescription")
+}
+
+model DocumentTemplateType {
+  id                Int                @id @default(autoincrement())
+  name              String
+  description       String?
+  DocumentTemplates DocumentTemplate[]
+}
+
+model ClinicPrescriptionSetting {
+  id                     Int               @id @default(autoincrement())
+  orgUid                 String
+  prescriptionTemplateId Int?
+  PrescriptioTemplate    DocumentTemplate? @relation(name: "prescription", fields: [prescriptionTemplateId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}

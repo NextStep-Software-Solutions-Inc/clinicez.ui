@@ -61,6 +61,7 @@ export const getUserOrganizationsAction = cache(async (filter?: GetUserOrgFilter
             userId: true,
             firstName: true,
             lastName: true,
+            suffix: true,
             gender: true,
             dob: true,
             StudentRecords: {

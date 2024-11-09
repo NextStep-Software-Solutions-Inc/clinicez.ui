@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import React from "react";
 import { cn } from "@lib/utils";
-import dynamicIconImports from 'lucide-react/dynamicIconImports';
+import dynamicIconImports from "lucide-react/dynamicIconImports";
 import Icon from "@components/Icon";
 
 interface DrawerNavProps {
@@ -18,10 +18,11 @@ interface DrawerNavProps {
 
 export default function DrawerNav({ navItems }: DrawerNavProps) {
   const pathname = usePathname();
+
   return (
     <Each
       of={navItems}
-      render={({name, href, icon}) => {
+      render={({ name, href, icon }) => {
         return (
           <Link
             href={href}
@@ -30,12 +31,14 @@ export default function DrawerNav({ navItems }: DrawerNavProps) {
               href === pathname && "text-foreground"
             )}
           >
-            <Icon name={icon} className="h-5 w-5" />
+            <Icon
+              name={icon}
+              className="h-5 w-5"
+            />
             {name}
           </Link>
-        )
+        );
       }}
     />
   );
 }
-

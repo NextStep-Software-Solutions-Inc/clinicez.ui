@@ -1,11 +1,15 @@
 "use client";
 
-import { Tooltip, TooltipContent, TooltipTrigger } from "@components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger
+} from "@components/ui/tooltip";
 import Each from "@components/utils/Each";
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
 import React from "react";
-import { navList } from "../../app/(process)/[organization]/nav";
+import { filterNavList } from "../../app/(process)/[organization]/nav";
 import { cn } from "@lib/utils";
 import Icon from "@components/Icon";
 
@@ -15,8 +19,11 @@ export default function SideNav() {
 
   return (
     <Each
-      of={navList.map((item) => ({...item, href: `/${organization}${item.href}`}))}
-      render={({name, href, icon}) => (
+      of={filterNavList().map((item) => ({
+        ...item,
+        href: `/${organization}${item.href}`
+      }))}
+      render={({ name, href, icon }) => (
         <Tooltip>
           <TooltipTrigger asChild>
             <Link
@@ -26,7 +33,10 @@ export default function SideNav() {
                 href === pathname && "bg-accent text-accent-foreground"
               )}
             >
-              <Icon name={icon} className="h-5 w-5" />
+              <Icon
+                name={icon}
+                className="h-5 w-5"
+              />
               <span className="sr-only">{name}</span>
             </Link>
           </TooltipTrigger>

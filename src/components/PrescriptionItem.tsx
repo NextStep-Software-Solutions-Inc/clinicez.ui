@@ -20,6 +20,7 @@ export interface PrescriptionItemProps {
     id: number;
     name: string;
     medicationDrugs: number;
+    completedAt: Date | null;
     createdAt: Date;
     patient: {
       userId: string;
@@ -50,6 +51,11 @@ export default function PrescriptionItem({prescription, onUpdated}: Prescription
               <Badge variant="destructive">
                 Medication Drugs: {prescription.medicationDrugs}
               </Badge>
+              {!!prescription.completedAt && (
+                <Badge variant="default">
+                  Completed
+                </Badge>
+              )}
             </div>
           </Link>
           <p className="text-sm text-muted-foreground">

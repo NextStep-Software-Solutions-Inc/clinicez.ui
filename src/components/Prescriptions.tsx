@@ -32,6 +32,7 @@ export default function Prescriptions({}: PrescriptionsProps) {
           id: prescription.id,
           name: prescription.name ?? "",
           medicationDrugs: prescription.Medication._count.MedicationDrugs,
+          completedAt: prescription.Medication.completedAt,
           createdAt: prescription.createdAt,
           patient: {
             userId: prescription.Medication.patientId + "",

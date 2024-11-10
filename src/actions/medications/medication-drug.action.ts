@@ -59,6 +59,7 @@ type AddMedicationDrugPayload = {
   medicationId: number,
   dosage: string,
   quantity: number,
+  unit: string,
   notes?: string,
   daysCount?: number
   isGeneric?: boolean
@@ -80,7 +81,7 @@ export const addMedicationDrugAction = async (payload: AddMedicationDrugPayload)
 
     if(!canAddMedicationDrug) throw new Error("You do not have permission to add medication drug");
 
-    const { drugId, medicationId, dosage, quantity, notes, daysCount, isGeneric } = payload;
+    const { drugId, medicationId, dosage, quantity, unit, notes, daysCount, isGeneric } = payload;
 
     await prismaTenant.medicationDrug.create({
       data: {
@@ -88,6 +89,7 @@ export const addMedicationDrugAction = async (payload: AddMedicationDrugPayload)
         drugId,
         dosage,
         quantity,
+        unit,
         notes,
         isGeneric,
         daysCount

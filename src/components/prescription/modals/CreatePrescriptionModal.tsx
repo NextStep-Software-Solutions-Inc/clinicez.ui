@@ -76,7 +76,7 @@ export default function CreatePrescriptionModal({
   });
 
   const { data: medications } = useMedications({
-    clinicId: sessionClinicValue?.clinicId
+    clinicId: sessionClinicValue?.clinicId ?? 0
   });
 
   const form = useForm<CreatePrescriptionForm>({

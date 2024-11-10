@@ -15,18 +15,26 @@ import { cn } from "@lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@components/ui/tooltip";
 import { toast } from "sonner";
 import { setMedicationCompletedAction } from "@actions/medications/medication.action";
+import { useHPs } from "@hooks/useHP";
+import { useUser } from "@auth0/nextjs-auth0/client";
+import { useAtomValue } from "jotai";
+import { sessionClinicAtom } from "@state/session-clinic";
 
 interface MedicationsSheetProps {
+  readonly?: boolean;
   consultation: {
     id: number;
     patientId: number;
   }
 }
-export default function MedicationsSheet({consultation}: MedicationsSheetProps ) {
-
+export default function MedicationsSheet({consultation, readonly = true}: MedicationsSheetProps ) {
+  
+  const sessionClinicValue = useAtomValue(sessionClinicAtom)
+  const {user} = useUser()
   const searchParams = useSearchParams()
   const open = useMemo(() => searchParams.get("show-medications") === "true", [searchParams])
-  const {data: medications, mutate} = useMedications({consultationTicketId: consultation.id})
+  const {data: medications, mutate} = useMedications({consultationTicketId: consultation.id, clinicId: sessionClinicValue?.clinicId!})
+  const {data: myHps} = useHPs({userId: user?.sub ?? ""})
 
   const handleClose = (state: boolean) => {
     const searchParams = new URLSearchParams(window.location.search)
@@ -57,7 +65,7 @@ export default function MedicationsSheet({consultation}: MedicationsSheetProps )
 
   return (
     <Sheet open={open} onOpenChange={handleClose}>
-      <SheetTrigger>
+      <SheetTrigger asChild>
         <Button size="sm" variant="outline">
             Medications
           <Pill className="h-4 w-4 ml-2"/>
@@ -72,7 +80,7 @@ export default function MedicationsSheet({consultation}: MedicationsSheetProps )
         </SheetHeader>
         <Separator/>
         <div className="space-y-5">
-          <CreateMedicationModal consultation={consultation} onCreated={mutate}/>
+          {!readonly && <CreateMedicationModal consultation={consultation} onCreated={mutate}/>}
           <div className="space-y-2">
             <Each
               of={medications?.data ?? []}
@@ -89,18 +97,23 @@ export default function MedicationsSheet({consultation}: MedicationsSheetProps )
                         <h5 className="font-medium">{medication.name || `Medication #${medication.id}`}</h5>
                         <Badge variant="destructive">Medication Drugs: {medication._count.MedicationDrugs}</Badge>
                         {medication.completedAt && <Badge variant="default">Completed</Badge>}
+                        {!!medication._count.Prescriptions && <Badge variant="outline">Prescription Available</Badge>}
                       </div>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button onClick={e => {
-                              e.stopPropagation()
-                              handleCompleteMedication(medication.id)
-                            }} variant="outline" size="sm" className=""><Check className="w-4 h-4"/></Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Mark as Completed</TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
+                      {
+                        !medication.completedAt && myHps?.some(hp => hp.id === medication.hpId) && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button onClick={e => {
+                                  e.stopPropagation()
+                                  handleCompleteMedication(medication.id)
+                                }} variant="outline" size="sm" className=""><Check className="w-4 h-4"/></Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Mark as Completed</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )
+                      }
                     </div>
                     <p className="text-muted-foreground text-xs">{dayjs(medication.createdAt).format('lll')}</p>
                   </div>

@@ -40,7 +40,7 @@ export default function PrescriptionItem({prescription, onUpdated}: Prescription
       <div className="flex w-full">
         <div className="space-y-1">
           <Link
-            href={"/"}
+            href={`prescription-builder/${prescription.id}`}
             target="_blank"
             rel="noreferrer"
           >
@@ -64,7 +64,6 @@ export default function PrescriptionItem({prescription, onUpdated}: Prescription
           </p>
         </div>
         <div className="flex items-center ml-auto gap-1">
-          <ViewPrescriptionAction prescription={prescription}/>
           <DownloadPrescriptionAction prescription={prescription}/>
           <ModifyPrescriptionAction prescription={prescription} onUpdated={onUpdated}/>
           <DeletePrescriptionAction prescription={prescription}/>
@@ -99,30 +98,6 @@ const DownloadPrescriptionAction = ({prescription}: {prescription: PrescriptionI
           </Link>
         </TooltipTrigger>
         <TooltipContent side="top">Download</TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  )
-}
-
-const ViewPrescriptionAction = ({prescription}: {prescription: PrescriptionItemProps["prescription"]}) => {
-  return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Link
-            href={`prescription-builder/${prescription.id}`}
-            download
-            className="invisible group-hover/item:visible"
-          >
-            <Button
-              variant="ghost"
-              size="icon"
-            >
-              <Eye className="h-4 w-4  hover:scale-125 transition-all" />
-            </Button>
-          </Link>
-        </TooltipTrigger>
-        <TooltipContent side="top">View</TooltipContent>
       </Tooltip>
     </TooltipProvider>
   )

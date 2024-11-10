@@ -34,6 +34,8 @@ async function ConsultationPage({params}: AppRouterPageRouteOpts) {
     PROCESSING: "outline",
   } as const
 
+  const isResolved = consultation.data.ConsultationTicketAttribute?.status === "RESOLVED"
+
   return (
     <div className="space-y-5">
       <div className="group/issue flex sticky top-10 z-10 bg-opacity-30 backdrop-blur p-2 items-center">
@@ -54,15 +56,14 @@ async function ConsultationPage({params}: AppRouterPageRouteOpts) {
         </div>
         <div className="ml-auto flex gap-1">
           
-          <MedicationsSheet consultation={{
-            id: consultationId,
-            patientId: patient.data?.id ?? 0
-          }}/>
-          <ModifyMedicationSheet
+          <MedicationsSheet 
+            readonly={isResolved}
             consultation={{
               id: consultationId,
               patientId: patient.data?.id ?? 0
-            }}
+            }}/>
+          <ModifyMedicationSheet
+            readonly={isResolved}
           />
           {
             consultation.data.ConsultationTicketAttribute?.status !== "RESOLVED" &&
@@ -78,10 +79,8 @@ async function ConsultationPage({params}: AppRouterPageRouteOpts) {
       <Suspend>
         <ConsultationDetails consultation={consultation.data! }/>
       </Suspend>
-      
 
       <div className="w-full text-center sticky bottom-5">
-       
       </div>
     </div>
   );

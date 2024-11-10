@@ -139,8 +139,8 @@ export default function FilterForm({onContinue}: FilterFormProps) {
   const bookAFriend = form.watch('bookAFriend')
   const myPermissionArray = myOrgPermissions?.map(permission => permission.name)
   
-  const writeOrgAppointmentPermissions = [PERMISSIONS.ORGANIZATION["WRITE:ORG:APPOINTMENT"].name]
-  const writeOrgAppointmentBookAFriendPermissions = [PERMISSIONS.ORGANIZATION["WRITE:ORG:APPOINTMENT:BOOK_A_FRIEND"].name]
+  const writeOrgAppointmentPermissions = [PERMISSIONS.CLINIC["WRITE:ORG:APPOINTMENT"].name]
+  const writeOrgAppointmentBookAFriendPermissions = [PERMISSIONS.CLINIC["WRITE:ORG:APPOINTMENT:BOOK_A_FRIEND"].name]
   const canWritePermission = writeOrgAppointmentPermissions.every(permission => myPermissionArray?.includes(permission))
   const canWriteBookAFriendPermission = writeOrgAppointmentBookAFriendPermissions.every(permission => myPermissionArray?.includes(permission))
   

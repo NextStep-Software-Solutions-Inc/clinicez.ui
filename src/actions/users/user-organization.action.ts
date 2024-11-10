@@ -242,7 +242,7 @@ export const setMembershipRequestStatusAction = async (id: number, status: UserO
     }
   }
   const userId = session.user.sub as string;
-  const updateMembershipPermissions = [PERMISSIONS.ORGANIZATION["UPDATE:ORG:MEMBERSHIP_REQUEST"].name];
+  const updateMembershipPermissions = [PERMISSIONS.CLINIC["UPDATE:ORG:MEMBERSHIP_REQUEST"].name];
   const myPermissions = await getPermissionsAction({userId});
   const myPermissionArray = myPermissions.map((item) => item.name);
   const hasMembershipPermission = updateMembershipPermissions.every((item) => myPermissionArray.includes(item));

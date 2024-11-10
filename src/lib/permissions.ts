@@ -9,7 +9,7 @@ export const PERMISSIONS = {
       description: "User can update the permissions.",
     }
   },
-  ORGANIZATION: {
+  CLINIC: {
     "CONFIRM:ORG:APPOINTMENT": {
       name: "confirm:org:appointment",
       description: "User can confirm appointment within the organization.",
@@ -137,6 +137,42 @@ export const PERMISSIONS = {
     "WRITE:ORG:APPOINTMENT:BOOK_A_FRIEND": {
       name: "write:org:appointment:book_a_friend",
       description: "User can write appointment for a friend within the organization.",
-    }
+    },
+    "READ:CLINIC:MEDICATION:ALL": {
+      name: "read:clinic:medication:all",
+      description: "User can read all medication within the clinic.",
+    },
+    "READ:CLINIC:MEDICATION:OWN": {
+      name: "read:clinic:medication:own",
+      description: "User can read their own medication within the clinic.",
+    },
+    "READ:CLINIC:MEDICATION:CREATED": {
+      name: "read:clinic:medication:created",
+      description: "User can read medication created by them within the clinic.",
+    },
+    "COMPLETE:CLINIC:MEDICATION": {
+      name: "complete:clinic:medication",
+      description: "User can complete medication within the clinic.",
+    },
+    "CREATE:CLINIC:MEDICATION": {
+      name: "create:clinic:medication",
+      description: "User can create medication within the clinic.",
+    },
+    "REMOVE:CLINIC:MEDICATION_DRUG": {
+      name: "remove:clinic:medication_drug",
+      description: "User can remove medication drug within the clinic.",
+    },
+    "ADD:CLINIC:MEDICATION_DRUG": {
+      name: "add:clinic:medication_drug",
+      description: "User can add medication drug within the clinic.",
+    },
+    "READ:CLINIC:MEDICATION_DRUG": {
+      name: "read:clinic:medication_drug",
+      description: "User can read medication drug within the clinic.",
+    },
+    "CREATE:CLINIC:PRESCRIPTION": {
+      name: "create:clinic:prescription",
+      description: "User can create prescription within the clinic.",
+    },
   },
 }

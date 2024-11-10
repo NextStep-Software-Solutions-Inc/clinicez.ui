@@ -5,27 +5,37 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTr
 import { Button } from "@components/ui/button";
 import { Separator } from "@components/ui/separator";
 import { useSearchParams } from "next/navigation";
-import { Pill, Trash, X } from "lucide-react";
-import { useMedication, useMedicationDrugs, useMedications } from "@hooks/useMedication";
+import { Download, FileText, Pill, Trash } from "lucide-react";
+import { useMedication, useMedicationDrugs, } from "@hooks/useMedication";
 import Each from "@components/utils/Each";
 import { Badge } from "@components/ui/badge";
 import ActionButton from "@components/ActionButton";
 import { toast } from "sonner";
-import { deleteMedicationDrugAction } from "@actions/medications/medication-drug.action";
+import { removeMedicationDrugAction } from "@actions/medications/medication-drug.action";
 import AddMedicationDrugModal from "@components/prescription/modals/AddMedicationDrugModal";
+import { createPrescriptionAction } from "@actions/medications/prescription.action";
+import { useHP } from "@hooks/useHP";
+import { useAtomValue } from "jotai";
+import { sessionClinicAtom } from "@state/session-clinic";
+import { usePermissions } from "@hooks/usePermission";
+import { useUser } from "@auth0/nextjs-auth0/client";
+import { PERMISSIONS } from "@lib/permissions";
 
 interface ModifyMedicationSheetProps {
-  consultation: {
-    id: number;
-    patientId: number;
-  }
+  readonly?: boolean;
 }
-export default function ModifyMedicationSheet({consultation}: ModifyMedicationSheetProps ) {
+export default function ModifyMedicationSheet({ readonly }: ModifyMedicationSheetProps ) {
 
+  const {user} = useUser()
+  const sessionClinicValue = useAtomValue(sessionClinicAtom)
   const searchParams = useSearchParams()
-  const open = useMemo(() => !!searchParams.get("modify-medication"), [searchParams])
-  const {data: medication} = useMedication(Number(searchParams.get("modify-medication") ?? 0))
-  const {data: medicationDrugs, mutate} = useMedicationDrugs(Number(searchParams.get("modify-medication") ?? 0))
+  const medicationId = Number(searchParams.get("modify-medication") ?? 0)
+
+  const open = useMemo(() => !!medicationId, [medicationId])
+
+  const {data: medication, mutate: mutateMedication} = useMedication(medicationId, sessionClinicValue?.clinicId ?? 0)
+  const {data: medicationDrugs, mutate} = useMedicationDrugs(medicationId)
+  const {data: myPermissions } = usePermissions({ userId: user?.sub ?? "", type: "ORGANIZATION" })
 
   const handleClose = (state: boolean) => {
     const searchParams = new URLSearchParams(window.location.search)
@@ -34,7 +44,7 @@ export default function ModifyMedicationSheet({consultation}: ModifyMedicationSh
   }
 
   const handleRemoveDrug = (medicationDrugId: number) => {
-    toast.promise(deleteMedicationDrugAction(medicationDrugId), {
+    toast.promise(removeMedicationDrugAction(medicationDrugId), {
       loading: "Removing medication drug...",
       success: res => {
         if(res.status) {
@@ -50,6 +60,7 @@ export default function ModifyMedicationSheet({consultation}: ModifyMedicationSh
     id: number;
     brandName: string;
     genericName: string;
+    unit: string | null;
     dosage: string;
     quantity: number;
     isGeneric: boolean;
@@ -63,6 +74,7 @@ export default function ModifyMedicationSheet({consultation}: ModifyMedicationSh
         id: medicationDrug.id,
         brandName: medicationDrug.Drug.brandName,
         genericName: medicationDrug.Drug.genericName,
+        unit: medicationDrug.unit,
         dosage: medicationDrug.dosage,
         quantity: medicationDrug.quantity,
         isGeneric: medicationDrug.isGeneric,
@@ -71,17 +83,42 @@ export default function ModifyMedicationSheet({consultation}: ModifyMedicationSh
       }
     })
   }, [medicationDrugs?.data])
+
+
+  const handleCreatePrescription = () => {
+    if(!medication?.data) {
+      toast.error("Medication not found")
+      return
+    }
+    toast.promise(createPrescriptionAction({
+      clinicId: medication.data.clinicId,
+      hpId: medication.data.hpId,
+      medicationId: medication.data.id,
+      name: medication.data.name,
+    }), {
+      loading: "Creating prescription...",
+      success: res => {
+        if(res.status) {
+          mutateMedication()
+        }
+        return res.message
+      },
+      error: "Failed to create prescription"
+    })
+  }
   
+ 
   return (
     <Sheet open={open} onOpenChange={handleClose}>
       <SheetContent className="space-y-4 min-w-[calc(100dvw-50%)] select-none" >
         <SheetHeader>
-          <SheetTitle>{medication?.data?.name || `Medication #${medication?.data?.id}`}</SheetTitle>
+          <SheetTitle>{medication?.data?.name || `Medication #${medicationId}`}</SheetTitle>
           <SheetDescription>
             Modify the medication details.
           </SheetDescription>
         </SheetHeader>
         <Separator/>
+        
         <div className="space-y-5">
           <div className="space-y-2">
             <Each
@@ -94,21 +131,65 @@ export default function ModifyMedicationSheet({consultation}: ModifyMedicationSh
                       <Pill size={16} />
                       <span className="text-sm">{medicationDrug.genericName} {!medicationDrug.isGeneric ? `- ${medicationDrug.brandName}` : ""}</span>
                       <Badge variant="outline">{medicationDrug.dosage}</Badge>
-                      <Badge variant="outline">{medicationDrug.quantity} Tablet</Badge>
+                      <Badge variant="outline">{medicationDrug.quantity} {medicationDrug.unit}</Badge>
                       <Badge variant="outline">{medicationDrug.daysCount} Days</Badge>
                     </div>
-                    <p className="text-xs text-muted-foreground indent-6">{medicationDrug.notes}</p>
+                    <p className="text-xs text-muted-foreground indent-6">Sig: {medicationDrug.notes}</p>
                   </div>
-                  <ActionButton variant="outline" size="icon" className="" onClick={()=>handleRemoveDrug(medicationDrug.id)}>
-                    <Trash className="w-4 h-4 text-destructive"/>
-                  </ActionButton>
+                  {
+                    !readonly && myPermissions?.some(p => p.name === PERMISSIONS.CLINIC["REMOVE:CLINIC:MEDICATION_DRUG"].name) && (
+                      <form action={()=>handleRemoveDrug(medicationDrug.id)}>
+                        <ActionButton variant="outline" size="icon" className="">
+                          <Trash className="w-4 h-4 text-destructive"/>
+                        </ActionButton>
+                      </form>
+                    )
+                  }
                 </div>
               )}
             />
           </div>
-          <AddMedicationDrugModal medicationId={medication?.data?.id!} onCreated={mutate} />
+          <div className="flex gap-2 items-center">
+            {/* add permission check here */}
+            {!readonly && myPermissions?.some(p => p.name === PERMISSIONS.CLINIC["ADD:CLINIC:MEDICATION_DRUG"].name) && (
+              <AddMedicationDrugModal medicationId={medication?.data?.id!} onCreated={mutate} />
+            ) }
+            {
+              !readonly && myPermissions?.some(p => p.name === PERMISSIONS.CLINIC["CREATE:CLINIC:PRESCRIPTION"].name) && medication?.data?._count.Prescriptions === 0 && ( // add permission check here
+                <form action={handleCreatePrescription} className="w-full">
+                  <ActionButton 
+                    variant="outline" 
+                    className="w-full"
+                  >
+                    <FileText className="h-4 w-4 mr-2" />
+                    Create Prescription
+                  </ActionButton>
+                </form>
+              )
+            }
+          </div>
+          <Separator/>
+          <div className="space-y-2">
+            {
+              medication?.data?.Prescriptions?.map((prescription) => (
+                <Prescription key={prescription.id} prescription={prescription} />
+              ))
+            }
+          </div>
         </div>
       </SheetContent>
     </Sheet>
   );
+}
+
+export const Prescription = ({prescription}: {
+  prescription: {id: number, hpId: number}
+}) => {
+  const {data: hp } = useHP(prescription.hpId)
+  return (
+    <Button key={prescription.id} variant="outline" className="w-full">
+      <Download className="h-4 w-4 mr-2" />
+      Download Prescription of {hp?.HPProfile?.title} {hp?.HPProfile?.name} {hp?.HPProfile?.suffix}&apos;s
+    </Button>
+  )
 }

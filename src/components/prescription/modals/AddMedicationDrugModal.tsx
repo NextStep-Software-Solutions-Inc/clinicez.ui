@@ -72,6 +72,9 @@ const createPrescriptionFormSchema = z.object({
     coerce: true,
     message: "Quantity is required"
   }),
+  unit: z.string({
+    message: "Unit is required"
+  }).trim(),
   notes: z.string().optional(),
   daysCount: z.number({
     coerce: true,
@@ -142,7 +145,7 @@ export default function AddMedicationDrugModal({onCreated, medicationId}: AddMed
               name="drugId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Drug</FormLabel>
+                  <FormLabel>Drug*</FormLabel>
                   <Select
                     onValueChange={field.onChange}
                     name={field.name}
@@ -197,8 +200,8 @@ export default function AddMedicationDrugModal({onCreated, medicationId}: AddMed
                 control={form.control}
                 name="dosage"
                 render={({ field }) => (
-                  <FormItem className="flex-auto">
-                    <FormLabel>Dosage</FormLabel>
+                  <FormItem className="flex-1">
+                    <FormLabel>Dosage*</FormLabel>
                     <FormControl>
                       <Input
                         type="text"
@@ -218,7 +221,7 @@ export default function AddMedicationDrugModal({onCreated, medicationId}: AddMed
                 name="quantity"
                 render={({ field }) => (
                   <FormItem className="flex-1">
-                    <FormLabel>Quantity</FormLabel>
+                    <FormLabel>Quantity*</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
@@ -229,6 +232,26 @@ export default function AddMedicationDrugModal({onCreated, medicationId}: AddMed
                     </FormControl>
                     <FormDescription>
                     Dosage of the medicine
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="unit"
+                render={({ field }) => (
+                  <FormItem className="flex-1">
+                    <FormLabel>Unit*</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="text"
+                        placeholder="Enter unit"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      e.g tablet, capsule, drops etc.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

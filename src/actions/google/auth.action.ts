@@ -124,7 +124,7 @@ export const insertToCalendar = async (appointmentId:number) => {
 
     const myPermissions = await getPermissionsAction({userId: session.user.sub, type: "ORGANIZATION"});
     const myPermissionArray = myPermissions.map(p => p.name);
-    const confirmBookingPermissions = [PERMISSIONS.ORGANIZATION["CONFIRM:ORG:APPOINTMENT"].name];
+    const confirmBookingPermissions = [PERMISSIONS.CLINIC["CONFIRM:ORG:APPOINTMENT"].name];
     const canConfirmBooking = confirmBookingPermissions.every(p => myPermissionArray.includes(p));
 
     if(!canConfirmBooking) throw new Error("You don't have permission to confirm booking");

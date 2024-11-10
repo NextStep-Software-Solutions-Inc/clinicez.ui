@@ -326,6 +326,7 @@ model MedicationDrug {
   isGeneric    Boolean    @default(false)
   dosage       String
   quantity     Int        @default(1)
+  unit         String?
   notes        String?
   daysCount    Int?
   Drug         Drug       @relation(fields: [drugId], references: [id])

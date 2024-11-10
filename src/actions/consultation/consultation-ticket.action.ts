@@ -25,7 +25,7 @@ export const createConsultationTicketAction = async ({systemId, appointmentId, o
 
     const myPermissions = await getPermissionsAction({ userId:session.user.sub, type: "ORGANIZATION" })
     const userPermissionArray = myPermissions.map(p => p.name);
-    const createConsultationTicketPermissions = [PERMISSIONS.ORGANIZATION["CREATE:ORG:CONSULTATION_TICKET"].name]
+    const createConsultationTicketPermissions = [PERMISSIONS.CLINIC["CREATE:ORG:CONSULTATION_TICKET"].name]
     const canCreateConsultationTicket = createConsultationTicketPermissions.some(p => userPermissionArray.includes(p))
 
     if(!canCreateConsultationTicket) throw new Error("You do not have permission to create consultation tickets")
@@ -79,10 +79,10 @@ export const getConsultationTicketAction = cache(async (consultationId: number, 
     ])
 
     const userPermissionArray = permissions.map(p => p.name);
-    const readAllOrgConsultationsPermissions = [PERMISSIONS.ORGANIZATION["READ:ORG:CONSULTATION_TICKET:ALL"].name]
-    const readOwnOrgConsultationPermissions = [PERMISSIONS.ORGANIZATION["READ:ORG:CONSULTATION_TICKET:OWN"].name]
-    const readCreatedOrgConsultationPermissions = [PERMISSIONS.ORGANIZATION["READ:ORG:CONSULTATION_TICKET:CREATED"].name]
-    const readCoCreatedOrgConsultationPermissions = [PERMISSIONS.ORGANIZATION["READ:ORG:CONSULTATION_TICKET:CO_CREATED"].name]
+    const readAllOrgConsultationsPermissions = [PERMISSIONS.CLINIC["READ:ORG:CONSULTATION_TICKET:ALL"].name]
+    const readOwnOrgConsultationPermissions = [PERMISSIONS.CLINIC["READ:ORG:CONSULTATION_TICKET:OWN"].name]
+    const readCreatedOrgConsultationPermissions = [PERMISSIONS.CLINIC["READ:ORG:CONSULTATION_TICKET:CREATED"].name]
+    const readCoCreatedOrgConsultationPermissions = [PERMISSIONS.CLINIC["READ:ORG:CONSULTATION_TICKET:CO_CREATED"].name]
 
     const canReadAllOrgConsultations = readAllOrgConsultationsPermissions.every(p => userPermissionArray.includes(p))
     const canReadOwnOrgConsultations = readOwnOrgConsultationPermissions.every(p => userPermissionArray.includes(p))
@@ -227,10 +227,10 @@ export const getConsultationTicketsAction = async ({orgUid, filters}: {orgUid: s
       getHPsAction({userId: session.user.sub})
     ])
     const userPermissionArray = permissions.map(p => p.name);
-    const readAllOrgConsultationsPermissions = [PERMISSIONS.ORGANIZATION["READ:ORG:CONSULTATION_TICKET:ALL"].name]
-    const readOwnOrgConsultationPermissions = [PERMISSIONS.ORGANIZATION["READ:ORG:CONSULTATION_TICKET:OWN"].name]
-    const readCreatedOrgConsultationPermissions = [PERMISSIONS.ORGANIZATION["READ:ORG:CONSULTATION_TICKET:CREATED"].name]
-    const readCoCreatedOrgConsultationPermissions = [PERMISSIONS.ORGANIZATION["READ:ORG:CONSULTATION_TICKET:CO_CREATED"].name]
+    const readAllOrgConsultationsPermissions = [PERMISSIONS.CLINIC["READ:ORG:CONSULTATION_TICKET:ALL"].name]
+    const readOwnOrgConsultationPermissions = [PERMISSIONS.CLINIC["READ:ORG:CONSULTATION_TICKET:OWN"].name]
+    const readCreatedOrgConsultationPermissions = [PERMISSIONS.CLINIC["READ:ORG:CONSULTATION_TICKET:CREATED"].name]
+    const readCoCreatedOrgConsultationPermissions = [PERMISSIONS.CLINIC["READ:ORG:CONSULTATION_TICKET:CO_CREATED"].name]
     
     const canReadAllOrgConsultations = readAllOrgConsultationsPermissions.every(p => userPermissionArray.includes(p))
     const canReadOwnOrgConsultations = readOwnOrgConsultationPermissions.every(p => userPermissionArray.includes(p))
@@ -383,8 +383,8 @@ export const updateConsultationTicketAction = async ({consultationId, subject}: 
 
     const userPermissionArray = myPermissions.map(p => p.name);
     const updateConsultationTicketPermissions = [
-      PERMISSIONS.ORGANIZATION["UPDATE:ORG:CONSULTATION_TICKET:CREATED"].name,
-      PERMISSIONS.ORGANIZATION["UPDATE:ORG:CONSULTATION_TICKET:CO_CREATED"].name]
+      PERMISSIONS.CLINIC["UPDATE:ORG:CONSULTATION_TICKET:CREATED"].name,
+      PERMISSIONS.CLINIC["UPDATE:ORG:CONSULTATION_TICKET:CO_CREATED"].name]
     const canUpdateConsultationTicket = updateConsultationTicketPermissions.some(p => userPermissionArray.includes(p))
 
     if(!canUpdateConsultationTicket) throw new Error("You do not have permission to update consultation tickets")
@@ -437,8 +437,8 @@ export const deleteConsultationTicketAction = async (consultationId: number) => 
 
     const myPermissionArray = myPermissions.map(p => p.name);
     const deleteConsultationTicketPermissions = [
-      PERMISSIONS.ORGANIZATION["DELETE:ORG:CONSULTATION_TICKET:CREATED"].name,
-      PERMISSIONS.ORGANIZATION["DELETE:ORG:CONSULTATION_TICKET:CO_CREATED"].name
+      PERMISSIONS.CLINIC["DELETE:ORG:CONSULTATION_TICKET:CREATED"].name,
+      PERMISSIONS.CLINIC["DELETE:ORG:CONSULTATION_TICKET:CO_CREATED"].name
     ]
     const canDeleteConsultationTicket = deleteConsultationTicketPermissions.some(p => myPermissionArray.includes(p))
 
@@ -494,8 +494,8 @@ export const toggleArchiveConsultationTicketAction = async (consultationId: numb
 
     const userPermissionArray = myPermissions.map(p => p.name);
     const updateConsultationTicketPermissions = [
-      PERMISSIONS.ORGANIZATION["TOGGLE_ARCHIVE:ORG:CONSULTATION_TICKET:CREATED"].name,
-      PERMISSIONS.ORGANIZATION["TOGGLE_ARCHIVE:ORG:CONSULTATION_TICKET:CO_CREATED"].name
+      PERMISSIONS.CLINIC["TOGGLE_ARCHIVE:ORG:CONSULTATION_TICKET:CREATED"].name,
+      PERMISSIONS.CLINIC["TOGGLE_ARCHIVE:ORG:CONSULTATION_TICKET:CO_CREATED"].name
     ]
     const canUpdateConsultationTicket = updateConsultationTicketPermissions.some(p => userPermissionArray.includes(p))
 
@@ -544,8 +544,8 @@ export const resolveConsultationTicket = async (consultationId: number) => {
     if(!session) throw new Error("Session not found")
       
     const resolveConsultationTicketPermissions = [
-      PERMISSIONS.ORGANIZATION["RESOLVE:ORG:CONSULTATION_TICKET:CREATED"].name,
-      PERMISSIONS.ORGANIZATION["RESOLVE:ORG:CONSULTATION_TICKET:CO_CREATED"].name
+      PERMISSIONS.CLINIC["RESOLVE:ORG:CONSULTATION_TICKET:CREATED"].name,
+      PERMISSIONS.CLINIC["RESOLVE:ORG:CONSULTATION_TICKET:CO_CREATED"].name
     ]
     const myPermissions = await getPermissionsAction({ userId:session.user.sub })
     const userPermissionArray = myPermissions.map(p => p.name);

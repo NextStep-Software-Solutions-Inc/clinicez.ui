@@ -4,6 +4,8 @@ import "server-only";
 import prismaTenant from "@lib/prisma-tenant";
 import { getCachedSession } from "@actions/session.action";
 import { hasCodeProperty } from "@lib/utils";
+import { getPermissionsAction } from "@actions/permission.action";
+import { PERMISSIONS } from "@lib/permissions";
 
 export type GetMedicationDrugs = Awaited<ReturnType<typeof getMedicationDrugsAction>>;
 export const getMedicationDrugsAction = async (medicationId: number) => {
@@ -11,6 +13,17 @@ export const getMedicationDrugsAction = async (medicationId: number) => {
   try {
     const session = await getCachedSession();
     if(!session) throw new Error("Unauthorized");
+
+    const [myPermissions] = await Promise.all([
+      getPermissionsAction({ userId: session.user.sub, type: "ORGANIZATION" }),
+    ]);
+
+    const myPermissionArray = myPermissions.map(permission => permission.name);
+
+    const readMedicationDrugPermissions = [PERMISSIONS.CLINIC["READ:CLINIC:MEDICATION_DRUG"].name]
+    const canReadMedicationDrug = readMedicationDrugPermissions.every(permission => myPermissionArray.includes(permission));
+
+    if(!canReadMedicationDrug) throw new Error("You do not have permission to remove medication drug");
 
     const medicationDrugs = await prismaTenant.medicationDrug.findMany({
       where: {
@@ -26,10 +39,10 @@ export const getMedicationDrugsAction = async (medicationId: number) => {
         },
         dosage: true,
         quantity: true,
+        unit: true,
         isGeneric: true,
         notes: true,
         daysCount: true
-
       }
     })
     return { status: true, message, data: medicationDrugs }
@@ -56,6 +69,17 @@ export const addMedicationDrugAction = async (payload: AddMedicationDrugPayload)
     const session = await getCachedSession();
     if(!session) throw new Error("Unauthorized");
 
+    const [myPermissions] = await Promise.all([
+      getPermissionsAction({ userId: session.user.sub, type: "ORGANIZATION" }),
+    ]);
+
+    const myPermissionArray = myPermissions.map(permission => permission.name);
+
+    const addMedicationDrugPermissions = [PERMISSIONS.CLINIC["ADD:CLINIC:MEDICATION_DRUG"].name]
+    const canAddMedicationDrug = addMedicationDrugPermissions.every(permission => myPermissionArray.includes(permission));
+
+    if(!canAddMedicationDrug) throw new Error("You do not have permission to add medication drug");
+
     const { drugId, medicationId, dosage, quantity, notes, daysCount, isGeneric } = payload;
 
     await prismaTenant.medicationDrug.create({
@@ -80,11 +104,22 @@ export const addMedicationDrugAction = async (payload: AddMedicationDrugPayload)
 }
 
 
-export const deleteMedicationDrugAction = async (medicationDrugId: number) => {
+export const removeMedicationDrugAction = async (medicationDrugId: number) => {
   let message = "Successfully deleted medication drug";
   try {
     const session = await getCachedSession();
     if(!session) throw new Error("Unauthorized");
+
+    const [myPermissions] = await Promise.all([
+      getPermissionsAction({ userId: session.user.sub, type: "ORGANIZATION" }),
+    ]);
+
+    const myPermissionArray = myPermissions.map(permission => permission.name);
+
+    const addMedicationDrugPermissions = [PERMISSIONS.CLINIC["REMOVE:CLINIC:MEDICATION_DRUG"].name]
+    const canAddMedicationDrug = addMedicationDrugPermissions.every(permission => myPermissionArray.includes(permission));
+
+    if(!canAddMedicationDrug) throw new Error("You do not have permission to remove medication drug");
 
     await prismaTenant.medicationDrug.delete({
       where: {

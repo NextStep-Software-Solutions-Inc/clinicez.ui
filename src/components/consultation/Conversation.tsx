@@ -1,7 +1,6 @@
 "use client";
 
 import { GetConsultationTicket } from "@actions/consultation/consultation-ticket.action";
-import { getConversationAction } from "@actions/consultations.action";
 import { Button } from "@components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@components/ui/card";
 import { Input } from "@components/ui/input";
@@ -22,14 +21,6 @@ export default function Conversation({ consultation}: ConversationProps) {
     content: string
   }[]>()
 
-  useEffect(() => {
-    const fetchConversation = async () => {
-      const convo = await getConversationAction(consultation.id)
-      setMessages(convo)
-    }
-    fetchConversation()
-  }, [consultation.id])
-  
   return (
     <Card>
       <CardHeader>

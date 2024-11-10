@@ -40,7 +40,7 @@ export const useAppointmentTools = ({ appointment, revalidate}:UseAppointmentToo
   const tools: AppointmentStatusTools = [
     {
       action:"accept",
-      permissions: [PERMISSIONS.ORGANIZATION["ACCEPT:ORG:APPOINTMENT_ASSIGNMENT"].name],
+      permissions: [PERMISSIONS.CLINIC["ACCEPT:ORG:APPOINTMENT_ASSIGNMENT"].name],
       appointmentStatuses: ["all", "routed"],
       routedAptStatuses: ["pending"],
       component: routingCode ? (
@@ -54,7 +54,7 @@ export const useAppointmentTools = ({ appointment, revalidate}:UseAppointmentToo
     },
     {
       action:"decline",
-      permissions: [PERMISSIONS.ORGANIZATION["DECLINE:ORG:APPOINTMENT_ASSIGNMENT"].name],
+      permissions: [PERMISSIONS.CLINIC["DECLINE:ORG:APPOINTMENT_ASSIGNMENT"].name],
       appointmentStatuses: ["all", "routed"],
       routedAptStatuses: ["pending"],
       component: routingCode ? (
@@ -68,7 +68,7 @@ export const useAppointmentTools = ({ appointment, revalidate}:UseAppointmentToo
     },
     {
       action:"receive",
-      permissions: [PERMISSIONS.ORGANIZATION["RECEIVE:ORG:APPOINTMENT"].name],
+      permissions: [PERMISSIONS.CLINIC["RECEIVE:ORG:APPOINTMENT"].name],
       appointmentStatuses: ["all", "pending"],
       routedAptStatuses: [],
       component: <ReceiveAppointment 
@@ -80,7 +80,7 @@ export const useAppointmentTools = ({ appointment, revalidate}:UseAppointmentToo
     },
     {
       action:"reject",
-      permissions: [PERMISSIONS.ORGANIZATION["REJECT:ORG:APPOINTMENT"].name],
+      permissions: [PERMISSIONS.CLINIC["REJECT:ORG:APPOINTMENT"].name],
       appointmentStatuses: ["all", "accepted", "pending"],
       routedAptStatuses: [],
       component: (
@@ -94,7 +94,7 @@ export const useAppointmentTools = ({ appointment, revalidate}:UseAppointmentToo
     },
     {
       action:"create-consultation-ticket",
-      permissions: [PERMISSIONS.ORGANIZATION["CREATE:ORG:CONSULTATION_TICKET"].name],
+      permissions: [PERMISSIONS.CLINIC["CREATE:ORG:CONSULTATION_TICKET"].name],
       appointmentStatuses: ["routed"],
       routedAptStatuses: ["accepted"],
       component: (
@@ -108,7 +108,7 @@ export const useAppointmentTools = ({ appointment, revalidate}:UseAppointmentToo
     },
     {
       action:"assign",
-      permissions: [PERMISSIONS.ORGANIZATION["ASSIGN:ORG:APPOINTMENT"].name],
+      permissions: [PERMISSIONS.CLINIC["ASSIGN:ORG:APPOINTMENT"].name],
       appointmentStatuses: ["received", "routed"],
       routedAptStatuses: [],
       component: (
@@ -122,7 +122,7 @@ export const useAppointmentTools = ({ appointment, revalidate}:UseAppointmentToo
     },
     {
       action:"reschedule",
-      permissions: [PERMISSIONS.ORGANIZATION["RESCHEDULE:ORG:APPOINTMENT"].name],
+      permissions: [PERMISSIONS.CLINIC["RESCHEDULE:ORG:APPOINTMENT"].name],
       appointmentStatuses: ["received", "routed"],
       routedAptStatuses: ["accepted"],
       component: (
@@ -136,7 +136,7 @@ export const useAppointmentTools = ({ appointment, revalidate}:UseAppointmentToo
     },
     {
       action:"add-vitals",
-      permissions: [PERMISSIONS.ORGANIZATION["WRITE:ORG:VITAL_SIGNS"].name],
+      permissions: [PERMISSIONS.CLINIC["WRITE:ORG:VITAL_SIGNS"].name],
       appointmentStatuses: ["received", "routed"],
       routedAptStatuses: [],
       component: (
@@ -155,7 +155,7 @@ export const useAppointmentTools = ({ appointment, revalidate}:UseAppointmentToo
     },
     {
       action:"confirm-booking",
-      permissions: [PERMISSIONS.ORGANIZATION["CONFIRM:ORG:APPOINTMENT"].name],
+      permissions: [PERMISSIONS.CLINIC["CONFIRM:ORG:APPOINTMENT"].name],
       appointmentStatuses: ["routed"],
       routedAptStatuses: ["accepted"],
       component: (

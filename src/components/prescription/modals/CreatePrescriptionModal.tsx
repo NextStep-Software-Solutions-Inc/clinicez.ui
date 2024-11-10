@@ -1,6 +1,6 @@
 "use client";
 
-import { createPrescriptionActions } from "@actions/medications/prescription.action";
+import { createPrescriptionAction } from "@actions/medications/prescription.action";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import ActionButton from "@components/ActionButton";
 import CustomModalContent from "@components/CustomModalContent";
@@ -92,7 +92,7 @@ export default function CreatePrescriptionModal({
         toast.error("Clinic UID is required");
         return;
       }
-      toast.promise(createPrescriptionActions({...data, clinicId: sessionClinicValue.clinicId}), {
+      toast.promise(createPrescriptionAction({...data, clinicId: sessionClinicValue.clinicId}), {
         loading: "Creating new prescription...",
         success: (res) => {
           if (res.status) {

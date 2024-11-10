@@ -48,7 +48,6 @@ export default function TenantPaymentVerification({ prevStep, nextStep }: Tenant
   const action = async () =>{
     form.handleSubmit(async (data) => {
       setTenantApplication(prev => ({...prev, ...data}));
-      console.log(tenantApplication.receiptCode);
       nextStep?.();
     })()
   } 

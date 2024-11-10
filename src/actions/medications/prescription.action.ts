@@ -56,7 +56,7 @@ type CreatePrescriptionPayload = {
   hpId: number,
   clinicId: number,
 }
-export const createPrescriptionActions = async (payload: CreatePrescriptionPayload) => {
+export const createPrescriptionAction = async (payload: CreatePrescriptionPayload) => {
   let message = "Successfully created prescription";
   try {
     const session = await getCachedSession()

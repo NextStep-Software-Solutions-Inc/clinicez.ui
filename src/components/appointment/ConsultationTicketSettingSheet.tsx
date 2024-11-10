@@ -36,7 +36,6 @@ interface ConsultationTicketSettingSheetProps extends DialogProps {
 export default function ConsultationTicketSettingSheet({ children, consultationId, orgUid, ...res }: ConsultationTicketSettingSheetProps) {
   
   const action = async (formData: FormData) => {
-    console.log(Object.fromEntries(formData));
   }
 
   return (

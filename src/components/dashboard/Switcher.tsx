@@ -33,7 +33,7 @@ export  default function Switcher({
   onSwitch
 }: SwitcherProps) {
   const [selectedOption, setSelectedOption] = React.useState<string | undefined>(value)
-
+  
   const handleSwitch = (value: string) => {
     const option = options.find((option) => option.value === value)
     
@@ -45,8 +45,12 @@ export  default function Switcher({
   }
   const Icon = options.find((option) => option.value === selectedOption)?.icon ?? RefreshCw
   
+  React.useEffect(() => {
+    setSelectedOption(value);
+  }, [value]);
+
   return (
-    <Select defaultValue={selectedOption} onValueChange={handleSwitch}>
+    <Select value={selectedOption} onValueChange={handleSwitch}>
       <SelectTrigger
         className={cn(
           "flex items-center gap-2 [&>span]:line-clamp-1 [&>span]:flex [&>span]:w-full [&>span]:items-center [&>span]:gap-1 [&>span]:truncate [&_svg]:h-4 [&_svg]:w-4 [&_svg]:shrink-0",

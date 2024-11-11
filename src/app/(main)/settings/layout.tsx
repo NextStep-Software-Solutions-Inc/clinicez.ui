@@ -1,14 +1,5 @@
-import { Metadata } from "next"
-import Image from "next/image"
-
 import { Separator } from "@components/ui/separator"
 import SidebarNav from "@components/SidebarNav"
-
-export const metadata: Metadata = {
-  title: "PHR",
-  description: "Personal Health Record",
-}
-
 
 interface SettingsLayoutProps {
   children: React.ReactNode
@@ -33,8 +24,20 @@ export default function SettingsLayout({ children, params: {organization} }: Set
       href: `/settings/organizations`,
     },
     {
+      title: "Schedule",
+      href: `/settings/schedule`,
+    },
+    {
+      title: "Preferences",
+      href: `/settings/preferences`,
+    },
+    {
       title: "Subscriptions",
       href: `/settings/subscriptions`,
+    },
+    {
+      title: "Integrations",
+      href: `/settings/integrations`,
     },
     {
       title: "Advanced",
@@ -46,7 +49,7 @@ export default function SettingsLayout({ children, params: {organization} }: Set
     <>
       <div className="container space-y-6 p-5 md:p-10 pb-16">
         <div className="space-y-0.5">
-          <h2 className="text-2xl font-bold tracking-tight">Settings</h2>
+          <h2 className="text-2xl font-bold tracking-tight">Account Settings</h2>
           <p className="text-muted-foreground">
             Manage your account and settings.
           </p>

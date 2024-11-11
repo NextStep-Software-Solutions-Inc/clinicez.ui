@@ -5,7 +5,7 @@ import Each from "@components/utils/Each";
 import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 import AllergyItem from "./AllergyItem";
-import { getUserAllergiesAction } from "@actions/user-allergy.action";
+import { getUserAllergiesAction } from "@actions/users/user-allergy.action";
 import { Plus } from "lucide-react";
 import { allergySchema } from "./EditAllergyForm";
 import ConditionalRender from "@components/utils/ConditionalRender";
@@ -50,6 +50,7 @@ export default function AllergiesForm({allergies, readOnly}:AllergiesFormProps) 
       <div className="flex gap-2 flex-wrap">
         <Each
           of={fields}
+          fallback={<div className="text-muted-foreground">No declared allergies.</div>}
           render={(allergy, index) => (
             <AllergyItem 
               readOnly={readOnly}

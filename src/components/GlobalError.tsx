@@ -15,12 +15,13 @@ export default function GlobalError({ error, reset}: GlobalErrorProps) {
   }, [error])
  
   return (
-    <Button variant="link" className='container mx-auto my-10 text-xs text-destructive text-wrap line-clamp-3' 
-      onClick={
-      // Attempt to recover by trying to re-render the segment
-        () => reset()
-      }>
-      {/* <div className='text-destructive border border-destructive rounded-lg p-5'>
+    <div className='overflow-hidden'>
+      <Button variant="link" className='container mx-auto my-10 text-xs text-destructive text-wrap line-clamp-3' 
+        onClick={
+          // Attempt to recover by trying to re-render the segment
+          () => reset()
+        }>
+        {/* <div className='text-destructive border border-destructive rounded-lg p-5'>
         <h3></h3>
         <div className='prose max-w-full'>
           <pre>{error.message}</pre>
@@ -32,7 +33,8 @@ export default function GlobalError({ error, reset}: GlobalErrorProps) {
             () => reset()
           }>Try Again</Button>
       </div> */}
-      {error.message}. Try again.
-    </Button>
+        {error.message}. Try again.
+      </Button>
+    </div>
   )
 }

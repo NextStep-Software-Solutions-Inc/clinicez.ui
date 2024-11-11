@@ -13,16 +13,16 @@ import {
 } from "@components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@components/ui/select";
 import Each from "@components/utils/Each";
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 import ActionButton from "@components/ActionButton";
 import { toast } from "sonner";
-import { getDefaultOrgRoleAction, setDefaultOrgRoleAction } from "@actions/user-default-organization.action";
+import { setDefaultOrgRoleAction } from "@actions/users/user-default-organization.action";
 import ConditionalRender from "@components/utils/ConditionalRender";
-import { getUserOrganizationsAction } from "@actions/user-organization.action";
-import { getOrganizationRolesAction } from "@actions/organization-role.action";
+import { getUserOrganizationsAction } from "@actions/users/user-organization.action";
+import { useOrgRoles } from "@hooks/useOrgRole";
 
 interface OrgDefaultRoleFormProps {
-  org: Awaited<ReturnType<typeof getUserOrganizationsAction>>[number];
+  org: Awaited<ReturnType<typeof getUserOrganizationsAction>>["data"][number];
 }
 const orgDefaultRoleFormSchema = z.object({
   defaultRole: z.coerce.number({
@@ -32,8 +32,12 @@ const orgDefaultRoleFormSchema = z.object({
 type OrgDefaultRoleFormSchema = z.infer<typeof orgDefaultRoleFormSchema>;
 
 export const OrgDefaultRoleForm = ({ org }: OrgDefaultRoleFormProps) => {
-  const [orgRoles, setOrgRoles] = useState<Awaited<ReturnType<typeof getOrganizationRolesAction>>>([]);
-  const [defaultRole, setDefaultRole] = useState<Awaited<ReturnType<typeof getDefaultOrgRoleAction>>>(null);
+  
+  const {data: orgRoles} = useOrgRoles(org.Organization.orgId, {
+    userId: org.User.userId
+  });
+
+  const defaultRole = useMemo(() => org.Organization.UserDefaultOrganizationRoles.find(role => role.UserRole.id), [org.Organization.UserDefaultOrganizationRoles]);
   const form = useForm<OrgDefaultRoleFormSchema>({
     resolver: zodResolver(orgDefaultRoleFormSchema),
     values: {
@@ -59,17 +63,6 @@ export const OrgDefaultRoleForm = ({ org }: OrgDefaultRoleFormProps) => {
     })();
   };
 
-  useEffect(() => {
-    (async () => {
-      const [orgRoles, defaultRole] = await Promise.all([
-        getOrganizationRolesAction({ orgId: org.Organization.orgId, userId: org.User.userId}),
-        getDefaultOrgRoleAction(org.User.userId)
-      ]);
-      await setOrgRoles(() => orgRoles);
-      await setDefaultRole(() => defaultRole);
-    })();
-  }, [org.Organization.orgId, org.User.userId]);
-
   return (
     <form action={action} className="space-y-8">
       <FormField
@@ -86,7 +79,7 @@ export const OrgDefaultRoleForm = ({ org }: OrgDefaultRoleFormProps) => {
               </FormControl>
               <SelectContent>
                 <Each
-                  of={orgRoles}
+                  of={orgRoles?? []}
                   render={({ id, name }) => (
                     <SelectItem value={id.toString()}>{name}</SelectItem>
                   )} />

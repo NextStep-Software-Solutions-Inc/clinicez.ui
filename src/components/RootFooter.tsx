@@ -26,19 +26,16 @@ const RootFooter = () => {
             <h5 className="mb-4 font-semibold">Links</h5>
             <ul className="mb-4 ">
               <li className="">
-                <a href="/organizations" className="hover:underline hover:text-primary">Organizations</a>
+                <a href="/organizations" className="hover:underline hover:text-primary">Clinics & Organizations</a>
               </li>
               <li className="">
-                <a href="/hp/doctors" className="hover:underline hover:text-primary">Our Doctors</a>
-              </li>
-              <li className="">
-                <a href="/hp/nurses" className="hover:underline hover:text-primary">Our Nurses</a>
+                <a href="/hp" className="hover:underline hover:text-primary">Our Healthcare Providers</a>
               </li>
               <li className="">
                 <a href="/tenants/register" className="hover:underline hover:text-primary">Be a Tenant</a>
               </li>
               <li className="">
-                <a href="/hp/apply" className="hover:underline hover:text-primary">Healthcare Provider</a>
+                <a href="/hp/apply" className="hover:underline hover:text-primary">Apply as Healthcare Provider</a>
               </li>
             </ul>
           </div>

@@ -20,7 +20,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@components/ui/chart"
-import { Gender } from "@prisma/client"
+import { Gender } from "@prisma/common/client"
 
 const genders = [...Object.values(Gender), null]
 const chartConfig: ChartConfig = genders.reduce((config: ChartConfig, gender: (typeof genders)[number], index: number) => {

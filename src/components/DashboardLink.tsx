@@ -2,7 +2,7 @@
 import { Container } from "lucide-react";
 import { DropdownMenuItem } from "@components/ui/dropdown-menu";
 import ConditionalRender from "./utils/ConditionalRender";
-import { getMyDefaultOrganizationAction } from "@actions/organization.action";
+import { getMyDefaultOrganizationAction } from "@actions/organizations/organization.action";
 import { redirect } from "next/navigation";
 import { isHP, isMember } from "@lib/protect-org";
 import { getCachedSession } from "@actions/session.action";

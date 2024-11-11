@@ -3,16 +3,15 @@
 import {useForm } from "react-hook-form";
 import { z } from "zod";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@components/ui/form";
-import { Checkbox } from "../../../../../components/ui/checkbox";
+import { Checkbox } from "@components/ui/checkbox";
 import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
-import BackSubmitAndNext from "../../../../../components/SubmitAndNext";
-import { useLocalStorage } from "@hooks/useLocalStorage";
-import { useUser } from "@auth0/nextjs-auth0/client";
+import BackSubmitAndNext from "@components/SubmitAndNext";
 import { toast } from "sonner";
-import { HealthcareProviderType } from "@prisma/client";
-import { getUserAction } from "@actions/user.action";
-import { hpApplicationTransactionAction } from "@actions/user-plan.action";
+import { hpApply } from "@state/hp-apply";
+import { Button } from "@components/ui/button";
+import { useAtom } from "jotai";
+import { hpApplicationTransactionAction } from "@actions/users/user-plan.action";
 
 interface ConfirmationFormProps {
   nextStep?: () => void;
@@ -38,46 +37,29 @@ export const confirmationFormSchema = z.object({
 type formType = z.infer<typeof confirmationFormSchema>
 
 export default function ConfirmationForm({ nextStep, prevStep, isFirstStep, isComplete, setComplete, startOver }: ConfirmationFormProps) {
-  const [applicationData, setApplicationData] = useLocalStorage<formType & {
-    role: HealthcareProviderType;
-    plan: string;
-    receiptCode: string;
-    complete: boolean;
-  }>("hp-application");
-
-  const {user} = useUser();
+  const [hpApplication, setHpApplication] = useAtom(hpApply);
   
   const form = useForm<formType>({
     resolver: zodResolver(confirmationFormSchema)
   })
 
   const action = () => {
-    form.handleSubmit(async (data) => {
-
-      await setApplicationData({...data, complete: true, role: applicationData?.role, plan: applicationData?.plan, receiptCode: applicationData?.receiptCode})
-
-      const dbUser = await getUserAction(user?.sub ?? "")
-      const userId = dbUser.id  
-      const planId = parseInt(applicationData.plan)
-  
-      if(!userId || !planId) return toast.error("An error occurred. Please try again later.");
+    form.handleSubmit(async () => {
+      const planId = hpApplication.planId
+      const hpTypeId = hpApplication.hpTypeId
+      const code = hpApplication.receiptCode
+      
+      if(!planId || !hpTypeId || !code) return toast.error("An error occurred. One or more required fields are missing.");
       
       // transaction method
-      toast.promise(hpApplicationTransactionAction({
-        planPayload: {planId, userId, status : "ACTIVE"},
-        hpPayload: {
-          type: applicationData.role,
-          User: {
-            connect: {
-              userId: user?.sub ?? ""
-            }
-          }
-        }, code: applicationData.receiptCode
-      }), {
+      toast.promise(hpApplicationTransactionAction({ code, hpTypeId,  planId }), {
         loading: "Submitting application...",
-        success: () => {
-          setComplete?.(true);
-          return "Healthcare Provider registration successful!";
+        success: (res) => {
+          if(res.status) {
+            setComplete?.(true);
+
+          }
+          return res.message;
         },
         error: (error) => `An error occurred while submitting your application. Please try again later. Error: ${error}`,
       });
@@ -85,11 +67,11 @@ export default function ConfirmationForm({ nextStep, prevStep, isFirstStep, isCo
   }
 
   const reset = async () => {
-    const i = Object.entries(applicationData).reduce((acc, [key, value]) => {
-      acc[key] = "";
+    const i = Object.entries(hpApplication).reduce((acc, [key, value]) => {
+      acc[key] = undefined;
       return acc;
     }, {} as any);
-    await setApplicationData(i)
+    setHpApplication(i)
     startOver?.();
   }
 
@@ -169,22 +151,22 @@ export default function ConfirmationForm({ nextStep, prevStep, isFirstStep, isCo
               </FormItem>
             )}
           />
-          <div className="mt-4">
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
             <BackSubmitAndNext 
               labels={{
                 previous: "Back",
                 submit: "Submit",
-                next: "Start Over",
               }}
               disabled={{
                 submit:!form.formState.isValid || isComplete,
                 previous: isFirstStep || isComplete,
+                next: true
               }}
               actions={{
                 previous: prevStep,
-                next: reset,
               }}
             />
+            <Button onClick={reset}>Start Over</Button>
           </div>
         </form>
       </div>

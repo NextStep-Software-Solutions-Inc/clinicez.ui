@@ -1,6 +1,6 @@
 "use server";
 
-import { createOrganizationAction, getOrganizationsAction } from "@actions/organization.action";
+import { createOrganizationAction, getOrganizationsAction } from "@actions/organizations/organization.action";
 import { withJwtAuth } from "@middlewares/withJwtAuth";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";

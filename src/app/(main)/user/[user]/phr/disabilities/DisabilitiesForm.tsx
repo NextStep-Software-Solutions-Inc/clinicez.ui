@@ -9,7 +9,7 @@ import { useFieldArray, useForm } from "react-hook-form";
 import DisabilityItem  from "./DisabilityItem";
 import { Badge } from "@components/ui/badge";
 import { Plus } from "lucide-react";
-import { Severity } from "@prisma/client";
+import { Severity } from "@prisma/common/client";
 import ConditionalRender from "@components/utils/ConditionalRender";
 import { Disability } from "./DisabilityList";
 
@@ -64,6 +64,7 @@ export default function DisabilitiesForm({disabilities, readOnly = true}:Disabil
             <AccordionContent className="p-5 flex flex-wrap gap-2">
               <Each
                 of={fields}
+                fallback={<div className="text-muted-foreground text-center w-full">No declared disabilities.</div>}
                 render={(disability, index) => <DisabilityItem readOnly={readOnly} disability={disability} index={index} remove={remove} update={update}/>}
               />
               <ConditionalRender condition={!readOnly}>

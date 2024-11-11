@@ -8,7 +8,11 @@ export const refreshTokensAction = async () => {
     })
     return token;
   } catch (error) {
-    console.error("Failed to refresh token", error);
+    let message = "Something went wrong!"
+    if(error instanceof Error) {
+      message = error.message
+    }
+    console.error("Failed to refresh token", message);
     return null;
   }
 }

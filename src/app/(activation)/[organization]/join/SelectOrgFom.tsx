@@ -5,12 +5,12 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { RadioGroup, RadioGroupItem } from "@components/ui/radio-group";
 import Each from "@components/utils/Each";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useLocalStorage } from "@hooks/useLocalStorage";
 
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { OrganizationApplicationData } from "./OrganizationSteps";
-import { GetOrganizationRoles } from "@actions/organization-role.action";
+import { GetOrganizationRoles } from "@actions/organizations/organization-role.action";
+import { useAtom } from "jotai";
+import { joinOrgApplicationAtom } from "@state/join-org-application";
 
 interface SelectOrgFormProps {
   userId: string
@@ -24,7 +24,7 @@ interface SelectOrgFormProps {
 
 
 export const SelectOrgForm = ({existingRoles, orgRoles, orgId, userId, nextStep, isFirstStep, isLastStep}:SelectOrgFormProps) => {
-  const [orgApplication, setOrgApplication] = useLocalStorage<OrganizationApplicationData>(`${orgId}_application`, {userId, orgId});
+  const [orgApplication, setOrgApplication] = useAtom(joinOrgApplicationAtom);
   
   const selectRoleSchema = z.object({
     roleId: z.coerce.number({
@@ -46,10 +46,13 @@ export const SelectOrgForm = ({existingRoles, orgRoles, orgId, userId, nextStep,
 
   const handleNext = () => {
     form.handleSubmit(async (values) => {
-      await setOrgApplication({
+      setOrgApplication(prev => ({
+        ...prev,
+        orgId,
+        userId,
         roleId: values.roleId, 
         roleRequirements: orgRoles.find(role => role.id === values.roleId)?.requirements ?? []
-      });
+      }));
       nextStep?.();
     })();
   }
@@ -57,9 +60,7 @@ export const SelectOrgForm = ({existingRoles, orgRoles, orgId, userId, nextStep,
   return (
     <Form {...form}>
       <form className="shadow-xl p-10 rounded-sm">
-
         <h2 className="my-5 text-lg font-semibold">Select your desired role</h2>
-        
         <FormField
           control={form.control}
           name="roleId"

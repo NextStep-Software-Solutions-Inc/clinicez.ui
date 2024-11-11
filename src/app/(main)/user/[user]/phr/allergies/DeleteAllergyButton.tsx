@@ -1,6 +1,6 @@
 "use client";
 
-import { deleteUserAllergyAction } from "@actions/user-allergy.action";
+import { deleteUserAllergyAction } from "@actions/users/user-allergy.action";
 import ActionButton from "@components/ActionButton"
 import { toast } from "sonner"
 

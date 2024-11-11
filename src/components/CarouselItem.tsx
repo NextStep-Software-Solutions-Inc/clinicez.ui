@@ -6,7 +6,6 @@ export interface ICarouselItemProps {
         name: string;
         fields: string[];
         photoUrl: string;
-        type: string;
     }
 }
 

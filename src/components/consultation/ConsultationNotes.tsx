@@ -1,0 +1,87 @@
+"use client";
+
+import {
+  Accordion,
+  AccordionItem,
+} from "@components/ui/accordion";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from "@components/ui/card";
+import { GetConsultationTicket } from "@actions/consultation/consultation-ticket.action";
+import { useParams } from "next/navigation";
+import { useConsultationNotes } from "@hooks/useConsultationNote";
+import Each from "@components/utils/Each";
+import GenericSection from "@components/GenericSection";
+import { useNoteTemplate } from "@hooks/useNoteTemplate";
+import { useHPs } from "@hooks/useHP";
+import { useUser } from "@auth0/nextjs-auth0/client";
+interface ConsultationNotesProps {
+  consultation: NonNullable<GetConsultationTicket["data"]>;
+}
+
+export default function ConsultationNotes({ consultation }: ConsultationNotesProps) {
+  const {user} = useUser()
+  const authUserHPS = useHPs({
+    userId: user?.sub ?? ""
+  })
+  const consultationTicketHps = consultation.ConsultationTicketAuthors.map(c => c.hpId)
+  const isConsultationAuthor = (authUserHPS.data ?? []).some(hp => consultationTicketHps.includes(hp.id.toString()))
+
+  const params = useParams<{organization: string}>()
+  const orgUid = params.organization;
+  const {data: consultationNotes, mutate} = useConsultationNotes({ orgUid, consultationId: consultation.id })
+  const {data: noteTemplate, isLoading:loadingNoteTemplate} = useNoteTemplate(consultation.ConsultationTicketAttribute?.noteTemplateName ?? "")
+  const notes = (noteTemplate?.NoteSections ?? []).map(section => {
+    const note = consultationNotes?.find(note => note.section === section.name)
+    return {
+      ...section,
+      showOnPatient: note?.showOnPatient ?? section.showOnPatient,
+      value: note?.content ?? ""
+    }
+  })
+  if(loadingNoteTemplate) return <div>Loading...</div>
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex flex-row">
+          <div>
+            <CardTitle>Consultation Notes</CardTitle>
+            <CardDescription>
+                This notes follow the {noteTemplate?.name} format.
+            </CardDescription>
+          </div>
+          <div className="ml-auto">
+            
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <Accordion type="multiple">
+          <Each
+            of={notes}
+            render={(note, index) => {
+              return (
+                <AccordionItem key={note.name} value={note.name}>
+                  <GenericSection 
+                    readonly={!isConsultationAuthor}
+                    onUpdated={mutate}
+                    value={note.value} 
+                    consultationId={consultation.id} 
+                    name={note.name} label={note.label} 
+                    showOnPatient={note.showOnPatient}
+                  />
+                </AccordionItem>
+              )
+            }}
+          />
+        </Accordion>
+      </CardContent>
+    </Card>
+  );
+}
+
+

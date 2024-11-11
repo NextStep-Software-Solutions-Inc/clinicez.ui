@@ -1,7 +1,7 @@
 "use server";
 
-import prisma from "@lib/prisma";
-import { Prisma } from "@prisma/client";
+import prisma from "@lib/prisma-common";
+import { Prisma } from "@prisma/common/client";
 
 
 export const getHealthAnalyticsData = async (orgUid: string) => {

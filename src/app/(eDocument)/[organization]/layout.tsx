@@ -31,6 +31,7 @@ interface EDocLayoutProps {
 }
 import ClinicEzMiniLogo from "@public/assets/clinic-ez_mini-logo.svg"
 import { protectOrg } from "@lib/protect-org";
+import Suspend from "@components/Suspend";
 
 export default async function EDocLayout({children, params:{organization}}: EDocLayoutProps) {
   await protectOrg(organization)// Check if user is a member of the organization they are trying to access
@@ -110,7 +111,9 @@ export default async function EDocLayout({children, params:{organization}}: EDoc
               />
             </div>
             <div className="max-w-xs">
-              <OrganizationSwitcher isCollapsed/>
+              <Suspend>
+                <OrganizationSwitcher isCollapsed/>
+              </Suspend>
             </div>
             <AvatarDropdown/>
           </header>

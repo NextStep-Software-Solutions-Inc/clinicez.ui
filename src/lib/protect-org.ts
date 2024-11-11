@@ -1,15 +1,15 @@
 "use server";
 
 import { getCachedSession } from "@actions/session.action";
-import { getUserOrganizationsAction } from "@actions/user-organization.action";
-import { getUserPlansAction } from "@actions/user-plan.action";
+import { getUserOrganizationsAction } from "@actions/users/user-organization.action";
+import { getUserPlansAction } from "@actions/users/user-plan.action";
 import { permanentRedirect } from "next/navigation";
 import { cache } from "react";
 
 export const protectOrg = cache(async (orgUid: string) => {
   const session = await getCachedSession()
   const myOrgs = await getUserOrganizationsAction({userId: session?.user.sub})
-  if (!myOrgs.map(org => org.Organization.orgId).includes(orgUid)) {
+  if (!myOrgs.data.map(org => org.Organization.orgId).includes(orgUid)) {
     permanentRedirect("/unauthorized")
   }
 })
@@ -23,7 +23,7 @@ export const isMember = cache(async () => {
   const session = await getCachedSession();
   if(!session) throw new Error("No session found");
   const myOrgs = await getUserOrganizationsAction({userId: session.user.sub});
-  return myOrgs.some((org) => ["ACTIVE"].includes(org.status));
+  return myOrgs.data.some((org) => ["ACTIVE"].includes(org.status));
 })
 
 export const isHP = cache(async () => {
@@ -47,12 +47,12 @@ export const isOrgAdmin = cache(async (orgId?:string) => {
     userId: session.user.sub,
     orgId
   });
-  return myOrgs.some((org) => ["ACTIVE"].includes(org.status) && org.UserRole.name.toUpperCase() === "ADMIN");
+  return myOrgs.data.some((org) => ["ACTIVE"].includes(org.status) && org.UserRole.name.toUpperCase() === "ADMIN");
 })
 
 export const isSameOrg = cache(async (userId: string) => {
   const session = await getCachedSession();
   if(!session) throw new Error("No session found");
   const orgs = await getUserOrganizationsAction({userId: session.user.sub});
-  return orgs.find((org) => org.Organization.Users.some((user) => user.User.userId === userId));
+  return orgs.data.find((org) => org.Organization.Users.some((user) => user.User.userId === userId));
 });

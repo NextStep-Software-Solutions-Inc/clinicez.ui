@@ -13,7 +13,7 @@ import {
 
 import { DialogProps } from "@radix-ui/react-dialog"
 import { navLinks } from "./Navigation";
-import DrawerNav from "../app/(process)/[organization]/DrawerNav";
+import DrawerNav from "./dashboard/DrawerNav";
 interface RootDrawerProps extends DialogProps {
   children?: React.ReactNode;
 }

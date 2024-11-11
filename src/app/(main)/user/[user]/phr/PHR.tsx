@@ -1,5 +1,6 @@
+import { notFound } from "next/navigation";
 import { PersonalInformationForm } from "./PersonalInformationForm";
-import { getUserAction } from "@actions/user.action";
+import { getUserAction } from "@actions/users/user.action";
 
 interface PHRProps {
   userId: string;
@@ -8,7 +9,8 @@ interface PHRProps {
 
 export const PHR = async ({ userId, readOnly = true }: PHRProps) => {
   const user = await getUserAction(userId);
+  if(!user.data) notFound();
   return (
-    <PersonalInformationForm user={user} readOnly={readOnly} />
+    <PersonalInformationForm user={user.data} readOnly={readOnly} />
   );
 };

@@ -1,0 +1,139 @@
+"use client";
+
+import { forwardRef, useMemo} from "react"
+
+import { cn, formatDateTime, getBadgeVariantFromLabel } from "@lib/utils"
+import { Badge } from "@components/ui/badge"
+import { ScrollArea } from "@components/ui/scroll-area"
+import { useSearchParams } from "next/navigation"
+import Each from "@components/utils/Each"
+import { GetAppointments } from "@actions/appointments/appointments.action"
+import { Separator } from "@components/ui/separator"
+import { ArrowRight } from "lucide-react";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+dayjs.extend(relativeTime)
+interface AppointmentListProps {
+  appointments: GetAppointments["data"]
+}
+
+export const AppointmentList = forwardRef<any, AppointmentListProps>(({appointments},ref) => {
+  const searchParams = useSearchParams()
+  const appointmentId = searchParams.get("_appointment")
+  const appointmentStatus = searchParams.get("_aptStatus")?.toLocaleLowerCase()
+  
+  const setAppointment = (thisAptId: string) => {
+    if(appointmentId === thisAptId) return
+    const searchParams = new URLSearchParams(window.location.search)
+    searchParams.set("_appointment", thisAptId)
+    window.history.pushState({}, "", `?${searchParams.toString()}`)
+  }
+  
+ 
+  return (
+    <ScrollArea ref={ref} className="flex-auto h-[100dvh]">
+      <div className="flex flex-col gap-2 p-4 pt-0">
+        <Each
+          of={appointments ?? []}
+          fallback={<div className="text-muted-foreground text-center">No appointments found.</div>}
+          render={(item) => {
+            const getTransitionDate = () => {
+              // base on appointment status get the date
+              if(appointmentStatus === "all") return dayjs(item.createdAt)
+              if(appointmentStatus === "pending") return dayjs(item.createdAt)
+              if(appointmentStatus === "completed") return dayjs(item.AppointmentAttribute?.completedAt)
+              if(appointmentStatus === "rejected") return dayjs(item.AppointmentAttribute?.rejectedAt)
+              if(appointmentStatus === "received") return dayjs(item.AppointmentAttribute?.receivedAt)
+              if(appointmentStatus === "rescheduled") return dayjs(item.AppointmentAttribute?.rescheduledAt)
+              if(appointmentStatus === "routed") return dayjs(item.updatedAt)
+              return dayjs(item.createdAt)
+            }
+            return (
+              <button
+                className={cn(
+                  "flex flex-col items-start gap-2 rounded-lg border p-3 text-left text-sm transition-all hover:bg-accent",
+                  appointmentId === item.id.toString() && "bg-muted"
+                )}
+                onClick={() => setAppointment(item.id.toString())}
+              >
+                <div className="flex items-center gap-2 w-full">
+                  {/* <Avatar>
+                  <AvatarImage src={item.patient.picture ?? ""} alt={item.patient.nickname ?? ""}/>
+                  <AvatarFallback>
+                    {item.patient.firstName?.charAt(0) } {item.patient.lastName?.charAt(0)}
+                  </AvatarFallback>
+                </Avatar> */}
+                  <div className="flex w-full flex-col">
+                    <div className="flex items-center justify-between  flex-wrap">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {/* <Each
+                        of={item.Requesters}
+                        fallback={<span className="text-xs text-muted-foreground">No Requester defined</span>}
+                        render={(requester, index) => {
+                          return (
+                            <div className="font-semibold items-center flex gap-2 ">
+                              {requester.userId === user?.userId ? <span className="text-primary">You ({requester.userId})</span> : requester.userId}
+                              {index < item.Requesters.length - 1 && <Separator orientation="vertical" className="h-4" />}
+                            </div>
+                          )
+                        }}
+                      /> */}
+                      </div>
+                    </div>
+                    <div className="text-sm font-semibold flex">
+                      {item.subject}
+                      <div
+                        className={cn(
+                          "ml-auto text-xs flex items-center gap-2 basis-36 justify-end",
+                          appointmentId === item.id.toString()
+                            ? "text-foreground"
+                            : "text-muted-foreground"
+                        )}
+                      >
+                        <Separator orientation="vertical" className="h-4" />
+                        {getTransitionDate().fromNow()}
+                      </div>
+                      
+                    </div>
+                  </div>
+                </div>
+                <div className="line-clamp-2 text-xs text-muted-foreground">
+                  {item.complaint?.substring(0, 300)}
+                </div>
+                <div className="flex items-center gap-2 truncate">
+                  <Badge variant={getBadgeVariantFromLabel(item.AppointmentAttribute?.AppointmentType.name ?? "")}>
+                    {item.AppointmentAttribute?.AppointmentType.name}
+                  </Badge>
+                  <Badge variant="outline">
+                    {item.AppointmentAttribute?.AppointmentMode.name}
+                  </Badge>
+                  <Badge variant="secondary">
+                    {item.AppointmentAttribute?.Service?.name}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-end gap-2 w-full">
+                  <span className="text-xs flex gap-1 items-center">
+                    <ArrowRight className="inline-block w-3 h-3"/>
+                    {/* {item.AppointmentAttribute?.preferredAppointee} */}
+                    {item.AppointmentAttribute?.date && item.AppointmentAttribute.timeStart && <span>{formatDateTime(item.AppointmentAttribute.date, item.AppointmentAttribute.timeStart).fromNow()}</span>}
+                  </span>
+                  {appointmentStatus === "all" && <Badge variant="outline" className="capitalize">{item?.AppointmentAttribute?.status.toLocaleLowerCase()}</Badge>}
+                  <span className="flex gap-1">
+                    {item.AppointmentAttribute?.status === "PENDING" && (
+                      <span className="flex h-2 w-2 rounded-full bg-blue-600" />
+                    )}
+                    {!item._count.ConsultationTickets && (
+                      <span className="flex h-2 w-2 rounded-full bg-red-600" />
+                    )}
+                  </span>
+                </div>
+              </button>
+            )}
+          }
+        />
+      </div>
+    </ScrollArea>
+  )
+})
+
+AppointmentList.displayName = "AppointmentList"

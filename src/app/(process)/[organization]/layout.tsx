@@ -1,42 +1,44 @@
 import "@styles/globals.css";
-import Link from "next/link"
-import {
-  PanelLeft,
-  Search,
-  Settings
-} from "lucide-react"
+import Link from "next/link";
+import { LifeBuoy, PanelLeft, Search, Settings, UserRound } from "lucide-react";
 
-import { Button } from "@components/ui/button"
-import { Input } from "@components/ui/input"
-import { Sheet, SheetContent, SheetTrigger } from "@components/ui/sheet"
+import { Button } from "@components/ui/button";
+import { Input } from "@components/ui/input";
+import { Sheet, SheetContent, SheetTrigger } from "@components/ui/sheet";
 
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
-  TooltipTrigger,
-} from "@components/ui/tooltip"
-import Breadcrumb from "@components/dashboard/Breadcrumb"
-import { OrganizationSwitcher } from "@components/dashboard/OrganizationSwitcher"
-import SideNav from "./SideNav";
-import DrawerNav from "./DrawerNav";
-import { navList } from "./nav";
+  TooltipTrigger
+} from "@components/ui/tooltip";
+import Breadcrumb from "@components/dashboard/Breadcrumb";
+import { OrganizationSwitcher } from "@components/dashboard/OrganizationSwitcher";
+import SideNav from "../../../components/dashboard/SideNav";
+import DrawerNav from "../../../components/dashboard/DrawerNav";
+import { filterNavList, navList } from "./nav";
 
 interface ProcessLayoutProps {
-  children: React.ReactNode
+  children: React.ReactNode;
   params: {
-    organization: string
-  }
+    organization: string;
+  };
 }
-import ClinicEzMiniLogo from "@public/assets/clinic-ez_mini-logo.svg"
+import ClinicEzMiniLogo from "@public/assets/clinic-ez_mini-logo.svg";
 import Image from "next/image";
 import { protectOrg } from "@lib/protect-org";
 import { Suspense } from "react";
 import UserAvatarWrapper from "@components/UserAvatarWrapper";
+import Suspend from "@components/Suspend";
+import { getCachedSession } from "@actions/session.action";
 
-export default async function ProcessLayout({children, params:{organization}}: ProcessLayoutProps) {
-  await protectOrg(organization)// Check if user is a member of the organization they are trying to access
-  
+export default async function ProcessLayout({
+  children,
+  params: { organization }
+}: ProcessLayoutProps) {
+  const session = await getCachedSession();
+  await protectOrg(organization); // Check if user is a member of the organization they are trying to access
+
   return (
     <TooltipProvider>
       <div className="flex min-h-screen w-full flex-col bg-muted/40">
@@ -46,23 +48,57 @@ export default async function ProcessLayout({children, params:{organization}}: P
               href="/"
               className="flex h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full ring-primary ring-2 text-lg font-semibold md:h-8 md:w-8 md:text-base transition-all hover:scale-125"
             >
-              <Image src={ClinicEzMiniLogo} width={100} height={100} alt="mini-logo"  className="h-5 w-5" />
+              <Image
+                src={ClinicEzMiniLogo}
+                width={100}
+                height={100}
+                alt="mini-logo"
+                className="h-5 w-5"
+              />
               <span className="sr-only">Clinic EZ</span>
             </Link>
-            <SideNav/>
+            <SideNav />
           </nav>
           <nav className="mt-auto flex flex-col items-center gap-4 px-2 sm:py-5">
             <Tooltip>
               <TooltipTrigger asChild>
                 <Link
-                  href="/dashboard/settings"
+                  href="profile"
+                  className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
+                >
+                  <LifeBuoy className="h-5 w-5" />
+                  <span className="sr-only">Organization Support</span>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="right">Organization Support</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link
+                  href={`/${organization}/membership/${session?.user.sub}`}
+                  className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
+                >
+                  <UserRound className="h-5 w-5" />
+                  <span className="sr-only">User Organization Profile</span>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                User Organization Profile
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link
+                  href={`/${organization}/org-settings`}
                   className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
                 >
                   <Settings className="h-5 w-5" />
-                  <span className="sr-only">Settings</span>
+                  <span className="sr-only">Organization Settings</span>
                 </Link>
               </TooltipTrigger>
-              <TooltipContent side="right">Settings</TooltipContent>
+              <TooltipContent side="right">
+                Organization Settings
+              </TooltipContent>
             </Tooltip>
           </nav>
         </aside>
@@ -70,14 +106,21 @@ export default async function ProcessLayout({children, params:{organization}}: P
           <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
             <Sheet>
               <SheetTrigger asChild>
-                <Button size="icon" variant="outline" className="sm:hidden">
+                <Button
+                  size="icon"
+                  variant="outline"
+                  className="sm:hidden"
+                >
                   <PanelLeft className="h-5 w-5" />
                   <span className="sr-only">Toggle Menu</span>
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="sm:max-w-xs">
+              <SheetContent
+                side="left"
+                className="sm:max-w-xs"
+              >
                 <nav className="grid gap-6 text-lg font-medium">
-                  <DrawerNav navItems={navList}/>
+                  <DrawerNav navItems={filterNavList()} />
                   <Link
                     href="/dashboard/settings"
                     className="mt-auto flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
@@ -88,7 +131,7 @@ export default async function ProcessLayout({children, params:{organization}}: P
                 </nav>
               </SheetContent>
             </Sheet>
-            <Breadcrumb/>
+            <Breadcrumb />
             <div className="relative ml-auto flex-1 md:grow-0">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
@@ -98,10 +141,12 @@ export default async function ProcessLayout({children, params:{organization}}: P
               />
             </div>
             <div className="max-w-xs">
-              <OrganizationSwitcher isCollapsed/>
+              <Suspend>
+                <OrganizationSwitcher isCollapsed />
+              </Suspend>
             </div>
             <Suspense fallback={<div>Loading</div>}>
-              <UserAvatarWrapper/>
+              <UserAvatarWrapper />
             </Suspense>
           </header>
           <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
@@ -110,5 +155,5 @@ export default async function ProcessLayout({children, params:{organization}}: P
         </div>
       </div>
     </TooltipProvider>
-  )
+  );
 }

@@ -3,22 +3,26 @@ import AddVitalSignsModal from "./AddVitalSignsModal";
 import MoreVitals from "./MoreVitals";
 import ConditionalRender from "@components/utils/ConditionalRender";
 import Suspend from "@components/Suspend";
-import ChangeViewMode from "./ChangeViewMode";
 import VitalsSignView from "./VitalsSignView";
 import { VitalChartInteractive } from "@components/charts/VitalChartInteractive";
 import VitalSign from "./VitalSign";
-import { GetUserVitalSignsType } from "@actions/vitals.action";
-import dayjs from "dayjs";
+import { GetUserVitalSigns } from "@actions/vitals.action";
+import dayjs from "dayjs"
+import utc from "dayjs/plugin/utc"
 import localizedFormat from 'dayjs/plugin/localizedFormat'
+import dynamic from "next/dynamic";
+import { Button } from "@components/ui/button";
+dayjs.extend(utc)
 dayjs.extend(localizedFormat)
+
+const ChangeViewMode = dynamic(() => import("./ChangeViewMode"), { ssr: false });
 interface RecentVitalSignsProps {
   readOnly?: boolean;
   userId: string;
-  viewMode?: "chart" | "tile";
-  vitalSigns: GetUserVitalSignsType
+  vitalSigns: GetUserVitalSigns
 }
 
-export default function RecentVitalSigns({readOnly = true, userId, viewMode, vitalSigns}: RecentVitalSignsProps) {
+export default function RecentVitalSigns({readOnly = true, userId, vitalSigns}: RecentVitalSignsProps) {
 
   const latestVitalSign = vitalSigns.length > 0 ? vitalSigns[vitalSigns.length - 1] : null;
   const restVitalSigns = vitalSigns.length > 0 ? vitalSigns.slice(0, vitalSigns.length - 1) : [];
@@ -30,7 +34,7 @@ export default function RecentVitalSigns({readOnly = true, userId, viewMode, vit
           <CardTitle>Recent Vitals</CardTitle>
           {!!latestVitalSign && (
             <CardDescription>
-              Most recent vital record was taken last {dayjs(latestVitalSign?.dateTaken).format("llll")}
+              Most recent vital record was taken last <strong>{dayjs(latestVitalSign?.dateTaken).format("llll")}</strong>
             </CardDescription>
           )}
           
@@ -38,13 +42,15 @@ export default function RecentVitalSigns({readOnly = true, userId, viewMode, vit
         <div className="ml-auto flex-grow sm:flex-grow-0 flex flex-wrap items-center justify-end gap-2">
           <ChangeViewMode/>
           <ConditionalRender condition={!readOnly} fallback="">
-            <AddVitalSignsModal userId={userId}/>
+            <AddVitalSignsModal userId={userId}>
+              <Button className="flex-grow sm:flex-grow-0">Add Vitals</Button>
+            </AddVitalSignsModal>
           </ConditionalRender>
         </div>
       </CardHeader>
       <CardContent>
         <VitalsSignView fallback={<VitalChartInteractive vitalSigns={vitalSigns}/>}>
-          <ConditionalRender condition={!!latestVitalSign} fallback="No recent vital signs record">
+          <ConditionalRender condition={!!latestVitalSign} fallback={<p className="text-muted-foreground">No recent vital signs record.</p>}>
             <VitalSign vitalSign={latestVitalSign!} readOnly={readOnly}/>
           </ConditionalRender>
         </VitalsSignView>

@@ -1,14 +1,16 @@
-import { getUserAction } from '@actions/user.action';
-import { withJwtAuth } from '@middlewares/withJwtAuth';
-import { NextResponse } from 'next/server';
-import 'server-only'
+import { getUserAction } from "@actions/users/user.action";
+import { withJwtAuth } from "@middlewares/withJwtAuth";
+import { NextRequest, NextResponse } from "next/server";
 
-export const dynamic = 'force-dynamic' // defaults to auto
-
-export const GET = withJwtAuth(async (req:Request,  {params}: { params: { userId: string } }) => {
+export const GET = withJwtAuth(async (req: NextRequest, { params }: {
+  params: {
+    userId: string;
+  }
+}) => {
+  const userId = params.userId;
+  const searchParams = req.nextUrl.searchParams
+  const orgUid = searchParams.get("orgUid") ?? undefined;
   
-  const userId = params.userId
-  const response = new NextResponse()
-  const user = await getUserAction(userId);
-  return NextResponse.json(user, response, );
+  const user = await getUserAction(userId, orgUid);
+  return NextResponse.json(user, {status: 200});
 });

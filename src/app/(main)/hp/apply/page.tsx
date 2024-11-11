@@ -11,7 +11,7 @@ import { Metadata } from "next";
 import HPApplicationDataProvider from "@contexts/hp-application.context";
 import ApplicationForm from "./components/ApplicationForm";
 import React from "react";
-import { getHPAction } from "@actions/hp.actions";
+import { getHPAction, getHPsAction } from "@actions/hp.actions";
 import { getCachedSession } from "@actions/session.action";
 
 export const metadata: Metadata = {
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
 async function HealthcareProviderRegistrationPage(props: AppRouterPageRouteOpts) {
   const session = await getCachedSession();
   
-  const hp = await getHPAction({userId: session?.user.sub});
+  const hps = await getHPsAction({userId: session?.user.sub});
   
   return (
     <HPApplicationDataProvider>
@@ -36,9 +36,7 @@ async function HealthcareProviderRegistrationPage(props: AppRouterPageRouteOpts)
           </p>
         </div>
         <ApplicationForm currentStep={1} >
-          <SelectHPType {
-            ...(hp?.type ? { activeRole: [hp.type] } : {})
-          }/>
+          <SelectHPType currentHPTypeIds={hps?.map(hp => hp.hpTypeId)} />
           <SelectPlan/>
           <PaymentForm />
           <ConfirmationForm />

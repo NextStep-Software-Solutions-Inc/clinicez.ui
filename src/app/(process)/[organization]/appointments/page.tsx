@@ -1,28 +1,36 @@
 import React from "react";
-import AppointmentPanel, { UserRoles }  from "./mail/components/AppointmentPanel";
+import AppointmentPanel  from "../../../../components/appointment/AppointmentPanel";
 import { cookies } from "next/headers";
 import { Separator } from "@components/ui/separator";
-import BookAppointmentSheet from "./components/BookAppointmentSheet";
-import { getAppointmentCounts, getAppointmentsAction } from "@actions/appointments.action";
+import BookAppointmentSheet from "../../../../components/appointment/BookAppointmentSheet";
+import { getAppointmentCountsAction, getRoutedAppointmentCountsAction } from "@actions/appointments/appointments.action";
 import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth0";
-import { AppointmentStatus } from "@public/json/appointment-list";
-import AppointmentDisplay from "./mail/components/AppointmentDisplay";
+import AppointmentDisplay from "../../../../components/appointment/AppointmentDisplay";
 import Suspend from "@components/Suspend";
-import UnderConstruction from "@components/UnderConstruction";
+import { Metadata } from "next";
+import { getOrgAppointmentTabsAction } from "@actions/organizations/org-appointment-tab..action";
+import PageLoading from "@components/PageLoading";
+
+export const maxDuration = 30
+export const revalidate = 60
+export const metadata: Metadata = {
+  title: "Appointments",
+  description: "View and respond to appointments",
+}
 
 async function AppointmentsPage({ searchParams, params }: AppRouterPageRouteOpts ) {
-  const appointmentStatus = searchParams?._type as AppointmentStatus
-  const role = searchParams?._role as string
   const organization = params?.organization as string
   // if(!appointmentStatus || !role ) return redirect(`/${organization}/appointments?_type=pending&_role=admin`)
 
-  const appointmentId = searchParams?._appointment as string
   const layout = cookies().get("react-resizable-panels:layout")
   const collapsed = cookies().get("react-resizable-panels:collapsed")
 
-  const appointmentsCounts = await getAppointmentCounts()
-  const appointments = await getAppointmentsAction(appointmentStatus)
-
+  const [appointmentCounts, routedAptCounts, tabs] = await Promise.all([
+    getAppointmentCountsAction(organization),
+    getRoutedAppointmentCountsAction(organization),
+    getOrgAppointmentTabsAction(organization)
+  ])
+  
   const defaultLayout = layout ? JSON.parse(layout.value) : undefined
   const defaultCollapsed = collapsed ? JSON.parse(collapsed.value) : undefined
   
@@ -35,26 +43,38 @@ async function AppointmentsPage({ searchParams, params }: AppRouterPageRouteOpts
             View and respond to appointments.
           </p>
         </div>
-        <BookAppointmentSheet/>
+        <Suspend>
+          <BookAppointmentSheet/>
+        </Suspend>
       </div>
       <Separator />
       <div className="rounded-[0.5rem] border bg-background shadow">
-        <Suspend>
-          <UnderConstruction/>
-          {/* <AppointmentPanel
-            appointmentsCounts={appointmentsCounts}
-            appointments={appointments ?? []}
+        <Suspend
+          loadingFallback={<PageLoading label="Loading Appointments..."/>}
+        >
+          <AppointmentPanel
+            tabs={tabs.data.map(tab => ({
+              name: tab.AppointmentTab.name,
+              description: tab.AppointmentTab.description,
+              roles: tab.OrgRoleAppointmentTabs.map(role => ({
+                id: role.Role.id,
+                name: role.Role.name
+              }))      
+            }))}
+            appointmentStatusCounts={appointmentCounts.data ?? {}}
+            routedAppointmentStatusCounts={routedAptCounts.data ?? {}}
             defaultLayout={defaultLayout}
             defaultCollapsed={defaultCollapsed}
             navCollapsedSize={4}
           >
-            <AppointmentDisplay appointmentId={appointmentId || null} role={role as UserRoles}/>
-          </AppointmentPanel> */}
+            <AppointmentDisplay/>
+          </AppointmentPanel>
         </Suspend>
       </div>
     </div>
   );
 }
+
 
 export default withPageAuthRequired(AppointmentsPage, {
   returnTo: ({params, searchParams}) => {

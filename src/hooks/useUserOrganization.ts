@@ -1,17 +1,14 @@
-import { GetUserOrganizations, GetUserOrgFilterType } from "@actions/user-organization.action"
+"use client";
+
+import { GetUserOrganizations, GetUserOrgFilterType } from "@actions/users/user-organization.action"
 import { self } from "@services/request"
 import useSWR from "swr"
 
-export const useUserOrganization = (filter:GetUserOrgFilterType, enable = true) => {
-  const fetcher = (...args:any) => self.get<GetUserOrganizations>(args)
-  const obj = {
-    ...filter.userId ?{ userId: filter.userId } : {},
-    ...filter.orgId ?{ orgId: filter.orgId } : {},
-    ...filter.status ?{ status: filter.status } : {},
-    ...filter.roleId ?{ roleId: filter.roleId.toString() } : {},
-    ...filter.pageNumber ?{ pageNumber: filter.pageNumber.toString() } : {},
-    ...filter.pageSize ?{ pageSize: filter.pageSize.toString() } : {},
-  }
-  const query = new URLSearchParams(obj).toString()
-  return useSWR(() => enable ? `/api/user-organizations?${query}` : null, fetcher)
+export const useUserOrganizations = (filter: GetUserOrgFilterType, enable = true) => {
+  const fetcher = (args:string) => self.get<GetUserOrganizations>(args)
+  const searchParams = new URLSearchParams()
+  Object.entries(filter).forEach(([key, value]) => {
+    if(value) searchParams.append(key, value.toString())
+  })
+  return useSWR(() => enable ? `/api/user-organizations?${searchParams.toString()}` : null, fetcher)
 }

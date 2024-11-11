@@ -9,8 +9,8 @@ interface LabelValueProps {
 export const LabelValue = ({label, value, className}:LabelValueProps) => {
   return (
     <div className={className}>
-      <p className="font-semibold" id={label}>{value}</p>
-      <Label htmlFor={label}>{label}</Label>
+      <p className="font-medium" id={label}>{value}</p>
+      <Label htmlFor={label} className="text-primary font-normal">{label}</Label>
     </div>
   );
 }

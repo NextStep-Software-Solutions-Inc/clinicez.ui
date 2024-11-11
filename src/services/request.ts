@@ -1,5 +1,6 @@
 import { createCustomFetch } from "./fetch";
-import { authAtom, jotaiStore } from "../state/auth";
+import { authAtom } from "../state/auth";
+import { jotaiStore } from "@state/store";
 
 
 const { type, token} = jotaiStore.get(authAtom)

@@ -2,7 +2,7 @@
 import 'server-only'
 
 import { NextRequest, NextResponse } from "next/server";
-import { getUserVaccinationsAction } from '@actions/user-vaccination.action';
+import { getUserVaccinationsAction } from '@actions/users/user-vaccination.action';
 import { withJwtAuth } from '@middlewares/withJwtAuth';
 
 

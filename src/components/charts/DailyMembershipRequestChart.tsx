@@ -25,6 +25,9 @@ import { cn } from "@lib/utils"
 import { CalendarIcon } from "lucide-react"
 import { Calendar } from "@components/ui/calendar"
 import dayjs from "dayjs"
+import utc from "dayjs/plugin/utc"
+dayjs.extend(utc)
+
 
 const chartConfig = {
   request: {

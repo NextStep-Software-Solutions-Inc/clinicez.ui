@@ -3,7 +3,7 @@ import { useParams, usePathname, useRouter } from "next/navigation"
 import Switcher, { SwitcherOptionsType } from "./Switcher"
 import { Building } from "lucide-react"
 import { useUser } from "@auth0/nextjs-auth0/client"
-import { useUserOrganization } from "@hooks/useUserOrganization"
+import { useUserOrganizations } from "@hooks/useUserOrganization"
 
 interface OrganizationSwitcherProps {
   isCollapsed: boolean
@@ -15,9 +15,9 @@ export function OrganizationSwitcher({isCollapsed,}: OrganizationSwitcherProps) 
   const router = useRouter();
   const pathname = usePathname();
   const user = useUser()
-  const {data: myOrgs} = useUserOrganization({userId: user.user?.sub}, !!user.user?.sub)  
+  const {data: myOrgs} = useUserOrganizations({userId: user.user?.sub}, !!user.user?.sub)  
   
-  const orgs: SwitcherOptionsType[] = (myOrgs ?? []).filter(o => ["ACTIVE"].includes(o.status))
+  const orgs: SwitcherOptionsType[] = (myOrgs?.data ?? []).filter(o => ["ACTIVE"].includes(o.status))
     .map(org => ({
       label: org.Organization.name,
       value: org.Organization.orgId,

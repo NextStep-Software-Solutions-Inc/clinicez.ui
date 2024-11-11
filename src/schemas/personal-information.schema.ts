@@ -1,4 +1,4 @@
-import { BloodType, CivilStatus, Gender } from "@prisma/client"
+import { BloodType, CivilStatus, Gender } from "@prisma/common/client"
 import { z } from "zod"
 
 export const personalInformationFormSchema = z.object({

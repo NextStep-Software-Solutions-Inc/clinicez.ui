@@ -11,7 +11,7 @@ import { useFieldArray, useForm } from "react-hook-form";
 import IllnessItem from "./IllnessItem";
 import { Badge } from "@components/ui/badge";
 import { Plus } from "lucide-react";
-import { Severity } from "@prisma/client";
+import { Severity } from "@prisma/common/client";
 import ConditionalRender from "@components/utils/ConditionalRender";
 import { Illness } from "./IllnessList";
 
@@ -70,6 +70,7 @@ export default function IllnessesForm({illnesses, readOnly = true}:IllnessesForm
             <AccordionContent className="p-5 flex flex-wrap gap-2">
               <Each
                 of={fields}
+                fallback={<div className="text-muted-foreground text-center w-full">No declared illnesses.</div>}
                 render={(illness, index) => <IllnessItem readOnly={readOnly} illness={illness} index={index} remove={remove} update={update}/>}
               />
               <ConditionalRender condition={!readOnly}>

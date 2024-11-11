@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Plan" ADD COLUMN     "frequency" TEXT NOT NULL DEFAULT 'MONTHLY';

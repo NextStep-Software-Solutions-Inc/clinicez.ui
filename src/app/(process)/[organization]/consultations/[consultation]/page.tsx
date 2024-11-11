@@ -1,13 +1,19 @@
-import { getConsultationAction } from "@actions/consultations.action";
 import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth0";
 import Suspend from "@components/Suspend";
 import { Separator } from "@components/ui/separator";
 import { Metadata } from "next";
-import ConsultationDetails from "../components/ConsultationDetails";
-import { Button } from "@components/ui/button";
-import { ExternalLink } from "lucide-react";
-import Link from "next/link";
+import ConsultationDetails from "../../../../../components/consultation/ConsultationDetails";
 import { Badge } from "@components/ui/badge";
+import { getConsultationTicketAction } from "@actions/consultation/consultation-ticket.action";
+import { notFound } from "next/navigation";
+import { DropdownMenuProvider } from "@components/DropdownMenuProvider";
+import ConsultationTicketTableRowActions from "../../../../../components/consultation/ConsultationTicketTableRowActions";
+import ResolveConsultationTicket from "@components/consultation/ResolveConsultationTicket";
+import { Pill } from "lucide-react";
+import { Button } from "@components/ui/button";
+import MedicationsSheet from "@components/consultation/MedicationsSheet";
+import { getUserAction } from "@actions/users/user.action";
+import ModifyMedicationSheet from "@components/consultation/ModifyMedicationSheet";
 
 export const metadata: Metadata = {
   title: "Consultation Details",
@@ -15,37 +21,67 @@ export const metadata: Metadata = {
 }
 
 async function ConsultationPage({params}: AppRouterPageRouteOpts) {
-  const consultationId = parseInt(params?.consultation as string)
+  const consultationId = Number(params?.consultation)
+  const orgUid = params?.organization as string
 
-  const consultation = await getConsultationAction(consultationId)
+  const consultation = await getConsultationTicketAction(consultationId, orgUid)
+  const patient = await getUserAction(consultation.data?.Appointment?.Requesters[0].userId ?? "")
+  if(!consultation.data) notFound()
+
+  const statusBadge = {
+    PENDING: "destructive",
+    RESOLVED: "default",
+    PROCESSING: "outline",
+  } as const
+
+  const isResolved = consultation.data.ConsultationTicketAttribute?.status === "RESOLVED"
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div className="group/issue flex sticky top-10 z-10 bg-opacity-30 backdrop-blur p-2 items-center">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">{consultation.subject}</h2>
+          <div className="flex items-center gap-5">
+            <h2 className="text-2xl font-bold tracking-tight">{consultation.data?.subject?.trim() || `Consultation Ticket #${consultation.data.id}`}</h2>
+            <Badge variant={statusBadge[consultation.data.ConsultationTicketAttribute?.status as keyof typeof statusBadge]}>{consultation.data.ConsultationTicketAttribute?.status}</Badge>
+          </div>
           <div className="flex h-5 items-center gap-2 mt-3 capitalize">
-            <Badge variant="outline">{consultation.label}</Badge>
+            <Badge>{consultation.data.System.name}</Badge>
             <Separator orientation="vertical" />
-            <Badge variant="outline">{consultation.priority}</Badge>
+            <Badge variant="outline">{consultation.data.Appointment?.AppointmentAttribute?.Service?.name}</Badge>
             <Separator orientation="vertical" />
-            <Badge variant="outline">{consultation.status}</Badge>
+            <Badge variant="outline">{consultation.data.Appointment?.AppointmentAttribute?.AppointmentType?.name}</Badge>
+            <Separator orientation="vertical" />
+            <Badge variant="outline">{consultation.data.Appointment?.AppointmentAttribute?.AppointmentMode?.name}</Badge>
           </div>
         </div>
-        <Link className="ml-auto invisible group-hover/issue:visible transition-all" href={{
-          pathname: `/${params?.organization}/generate-document`,
-          query: {
-            _consultationId: consultationId,
-            _patientId: consultation.id,
+        <div className="ml-auto flex gap-1">
+          
+          <MedicationsSheet 
+            readonly={isResolved}
+            consultation={{
+              id: consultationId,
+              patientId: patient.data?.id ?? 0
+            }}/>
+          <ModifyMedicationSheet
+            readonly={isResolved}
+          />
+          {
+            consultation.data.ConsultationTicketAttribute?.status !== "RESOLVED" &&
+            <ResolveConsultationTicket ticketId={consultationId}/>
           }
-        }}>
-          <Button variant="default" size="sm">Issue e-Document <ExternalLink className="h-4 w-4 ml-2"/></Button>
-        </Link>
+          <DropdownMenuProvider>
+            <ConsultationTicketTableRowActions consultation={consultation.data}/>
+          </DropdownMenuProvider>
+        </div>
       </div>
       <Separator />
+
       <Suspend>
-        <ConsultationDetails consultation={consultation}/>
+        <ConsultationDetails consultation={consultation.data! }/>
       </Suspend>
+
+      <div className="w-full text-center sticky bottom-5">
+      </div>
     </div>
   );
 }

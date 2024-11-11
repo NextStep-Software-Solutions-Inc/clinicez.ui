@@ -2,9 +2,13 @@ import Folder, { FolderProps } from "../../../../../../components/Folder";
 import { getFoldersAction } from "@actions/folder.action";
 import { format } from "date-fns";
 import Each from "@components/utils/Each";
-import dayjs from "dayjs";
+
+import dayjs from "dayjs"
+import utc from "dayjs/plugin/utc"
+dayjs.extend(utc)
+
 import { getCachedSession } from "@actions/session.action";
-import { getUserOrganizationsAction } from "@actions/user-organization.action";
+import { getUserOrganizationsAction } from "@actions/users/user-organization.action";
 
 interface FilesFormProps {
   readOnly: boolean;
@@ -17,7 +21,7 @@ export const FilesForm = async ({ readOnly = true, userId }:FilesFormProps) => {
   const userOrgs= await getUserOrganizationsAction({
     userId: session?.user.sub
   });
-  const orgs = userOrgs.filter(uo => uo.UserRole.name.toLowerCase() === "admin" ).map(org => org.Organization.id);
+  const orgs = userOrgs.data.filter(uo => uo.UserRole.name.toLowerCase() === "admin" ).map(org => org.Organization.id);
 
   const mappedFolders: FolderProps["folder"][] = folders
     .filter(f => !readOnly  || f.Files.some(f => orgs.includes(f.FileType.FileTypeAttribute?.scopeOrgId ?? 0)) || f.FolderSetting?.isPublic)

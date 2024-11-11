@@ -14,45 +14,43 @@ import {
 } from "@components/ui/form"
 import { RadioGroup, RadioGroupItem } from "@components/ui/radio-group"
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useSearchParams } from "next/navigation";
-import BackSubmitAndNext from "../../../../../components/SubmitAndNext";
-import {useLocalStorage} from "@hooks/useLocalStorage";
-import { $Enums, HealthcareProviderType } from "@prisma/client";
-
-const hpTypes = Object.values($Enums.HealthcareProviderType);
-const hpTypesSchema = z.nativeEnum($Enums.HealthcareProviderType);
+import BackSubmitAndNext from "@components/SubmitAndNext";
+import { useAtom } from "jotai";
+import { hpApply } from "@state/hp-apply";
+import { useHPTypes } from "@hooks/useHPTypes";
 
 interface ISelectHPTypeProps {
-  activeRole?: typeof hpTypes;
+  currentHPTypeIds?: number[];
   nextStep?: () => void;
   prevStep?: () => void;
   isFirstStep?: boolean;
   isLastStep?: boolean;
 } 
 
-export default function SelectHPType({nextStep, prevStep, isFirstStep,isLastStep, activeRole}: ISelectHPTypeProps) {
-  
+export default function SelectHPType({nextStep, prevStep, isFirstStep, isLastStep, currentHPTypeIds}: ISelectHPTypeProps) {
+  const {data: hpTypes} = useHPTypes()
+
   const roleFormSchema = z.object({
-    role: hpTypesSchema.refine(value => hpTypes.includes(value) , {
+    hpTypeId: z.number({
+      coerce: true,
       message: "Invalid role",
-    }).refine(value => !activeRole?.includes(value), (value) => ({
-      message: `You have already possessed ${value} role. Please select a different role.`,
+    }).refine(value => !currentHPTypeIds?.includes(value), (value) => ({
+      message: `You have already possessed ${hpTypes?.data.find(type => type.id === value)?.name} role. Please select a different role.`,
     })),
   })
   
-  const role = useSearchParams().get("_role")?.toLowerCase() as HealthcareProviderType | undefined;
-  const [applicationData,setApplicationData] = useLocalStorage("hp-application", {role});
+  const [applicationData,setApplicationData] = useAtom(hpApply);
   const form = useForm<z.infer<typeof roleFormSchema>>({
     resolver: zodResolver(roleFormSchema),
     mode: "all",
     defaultValues: {
-      role: role || applicationData?.role,
+      hpTypeId: applicationData?.hpTypeId,
     }
   })
 
-  const action = async (formData: FormData) => {
+  const action = async () => {
     form.handleSubmit(async (data: z.infer<typeof roleFormSchema>) => {
-      await setApplicationData(data)
+      setApplicationData(prev => ({...prev, ...data}));
       nextStep?.();
     })()
   }
@@ -62,26 +60,26 @@ export default function SelectHPType({nextStep, prevStep, isFirstStep,isLastStep
       <form action={action} className="space-y-6 shadow-lg w-full p-8 bg-white rounded-md">
         <FormField
           control={form.control}
-          name="role"
-          render={({ field,  }) => (
+          name="hpTypeId"
+          render={({ field }) => (
             <FormItem className="space-y-3">
-              <FormLabel>Select Role</FormLabel>
+              <FormLabel>Healthcare Provider Type</FormLabel>
               <FormControl>
                 <RadioGroup
                   name="role"
                   onValueChange={field.onChange}
-                  value={field.value}
+                  value={field.value?.toString()}
                   className="flex flex-wrap gap-5"
                 >
                   <Each
-                    of={hpTypes}
+                    of={hpTypes?.data ?? []}
                     render={(type) => (
                       <FormItem className="flex items-center space-x-3 space-y-0">
                         <FormControl>
-                          <RadioGroupItem value={type} onClick={() => form.trigger()}/>
+                          <RadioGroupItem value={type.id.toString()} onClick={() => form.trigger()}/>
                         </FormControl>
                         <FormLabel className="font-normal capitalize">
-                          {type}
+                          {type.name}
                         </FormLabel>
                       </FormItem>
                     )}

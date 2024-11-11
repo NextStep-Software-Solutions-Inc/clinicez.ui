@@ -9,12 +9,12 @@ export const metadata: Metadata = {
 };
 interface PricingPageProps {
   searchParams: {
-    freq: string
+    freq: "MONTHLY" | "YEARLY";
   }
 }
 
 export default async function PricingPage(props: PricingPageProps) {
-  const { freq = "yearly" } = props.searchParams ;
+  const { freq = "YEARLY" } = props.searchParams ;
 
   return (
     <div className="container mx-auto my-10">
@@ -28,7 +28,7 @@ export default async function PricingPage(props: PricingPageProps) {
         <PricingMode defaultMode={freq} />
       </div>
       <Suspend>
-        <TenantPlanList freq={freq} />
+        <TenantPlanList frequency={freq} />
       </Suspend>
     </div>
   );

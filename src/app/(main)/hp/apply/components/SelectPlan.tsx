@@ -15,16 +15,14 @@ import {
 import { RadioGroup, RadioGroupItem } from "@components/ui/radio-group"
 import { zodResolver } from "@hookform/resolvers/zod";
 import BackSubmitAndNext from "../../../../../components/SubmitAndNext";
-import { useLocalStorage } from "@hooks/useLocalStorage";
 import { getPlansAction } from "@actions/plan.action";
-import { use } from "react";
-import { createUserPlanAction } from "@actions/user-plan.action";
-import { toast } from "sonner";
-import { getUserAction } from "@actions/user.action";
-import { useUser } from "@auth0/nextjs-auth0/client";
+import { useAtom } from "jotai";
+import { hpApply } from "@state/hp-apply";
+import { usePlans } from "@hooks/usePlan";
 
 export const planFormSchema = z.object({
-  plan: z.number({
+  planId: z.number({
+    coerce: true,
     required_error: "You need to select a plan.",
     invalid_type_error: "Invalid plan",
   }).min(1, {
@@ -40,30 +38,20 @@ interface ISelectPlanProps {
   totalSteps?: number;
 }
 
-const fetchPlans = getPlansAction()
 export default function SelectPlan({ nextStep, isFirstStep, isLastStep, prevStep,totalSteps}: ISelectPlanProps) {
-  const hpPlans = use(fetchPlans)
-  // const [hpPlans, setHpPlans] = useState<Awaited<ReturnType<typeof getPlansAction>>| []>([]);
+  const {data: hpPlans} = usePlans("HEALTHCARE_PROVIDER", "MONTHLY")
+  const [applicationData,setApplicationData] = useAtom(hpApply);
   
-  // useEffect(() => {
-  //   (async () => {
-  //     const plans = await getPlansAction()
-  //     setHpPlans(plans);
-  //   })()
-  // },[])
-  
-  const [applicationData,setApplicationData] = useLocalStorage("hp-application", {plan: 0});
-
   const form = useForm<z.infer<typeof planFormSchema>>({
     resolver: zodResolver(planFormSchema),
     defaultValues: {
-      plan: applicationData.plan,
+      planId: applicationData.planId,
     }
   })
 
   const action = async () => {
     form.handleSubmit(async (data) => {
-      await setApplicationData(data)
+      setApplicationData(prev => ({...prev, ...data}))
       nextStep?.();
     })()
   }
@@ -75,10 +63,10 @@ export default function SelectPlan({ nextStep, isFirstStep, isLastStep, prevStep
         className="space-y-6 shadow-lg w-full p-8 bg-white rounded-md">
         <FormField
           control={form.control}
-          name="plan"
+          name="planId"
           render={({ field }) => (
             <FormItem className="space-y-3">
-              <FormLabel>Select Plan...</FormLabel>
+              <FormLabel>Plan</FormLabel>
               <FormControl>
                 <RadioGroup
                   name="plan"
@@ -92,7 +80,7 @@ export default function SelectPlan({ nextStep, isFirstStep, isLastStep, prevStep
                   className="flex flex-wrap flex-row"
                 >
                   <Each
-                    of={hpPlans.filter(plan => plan.type === "HEALTHCARE_PROVIDER")}
+                    of={(hpPlans?.data ?? []).filter(plan => plan.type === "HEALTHCARE_PROVIDER")}
                     render={(_plan) => (
                       <FormItem className={`flex-1 has-[:checked]:bg-teal-50 has-[:checked]:text-teal-900 has-[:checked]:ring-teal-200 flex items-center space-x-5 bg-white shadow-lg rounded-lg p-4 `}>
                         <FormControl>

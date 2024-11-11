@@ -4,18 +4,16 @@ import { z } from "zod";
 import BackSubmitAndNext from "../../../../components/SubmitAndNext";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, } from "react-hook-form";
-import { useLocalStorage } from "@hooks/useLocalStorage";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from "../../../../components/ui/form";
 import { Input } from "../../../../components/ui/input";
 import { Button } from "@components/ui/button";
-import { use, useState } from "react";
-import { createUserPlanAction } from "@actions/user-plan.action";
+import { useState } from "react";
 import { toast } from "sonner";
 import { useSearchParams } from "next/navigation";
-import { useUser } from "@auth0/nextjs-auth0/client";
-import { getUserAction } from "@actions/user.action";
-import { getPlansAction } from "@actions/plan.action";
-import { getReceiptCodeAction } from "@actions/reciept-code.action";
+import { verifyReceiptCodeAction } from "@actions/reciept-code.action";
+import { useAtom } from "jotai";
+import { tenantApplyAtom } from "@state/tenant-apply";
+import { usePlans } from "@hooks/usePlan";
 
 interface TenantPaymentVerificationProps {
     prevStep?: () => void;
@@ -26,14 +24,11 @@ interface TenantPaymentVerificationProps {
 }
 
 
-const fetchPlans = getPlansAction()
-export default function TenantPaymentVerification({ setComplete, prevStep }: TenantPaymentVerificationProps) {
-  const [paymentData, setPaymentData] = useLocalStorage("tenant-application", { receiptCode: "" });
-  const plans = use(fetchPlans)
-  const searchParams = useSearchParams();
-  const user = useUser();
+export default function TenantPaymentVerification({ prevStep, nextStep }: TenantPaymentVerificationProps) {
+  const [tenantApplication, setTenantApplication] = useAtom(tenantApplyAtom);
+  const {data: tenantPlans} = usePlans("TENANT");
 
-  const selectedPlan = plans.find(plan => plan.id === parseInt(searchParams.get("plan") ?? "0"));
+  const selectedPlan = (tenantPlans?.data ?? []).find(plan => plan.id === tenantApplication.planId);
   const cost = selectedPlan?.price ?? 0;
 
   const paymentConfirmationFormSchema = z.object({
@@ -46,36 +41,28 @@ export default function TenantPaymentVerification({ setComplete, prevStep }: Ten
   const form = useForm<z.infer<typeof paymentConfirmationFormSchema>>({
     resolver: zodResolver(paymentConfirmationFormSchema),
     defaultValues: {
-      receiptCode: paymentData?.receiptCode,
+      receiptCode: tenantApplication?.receiptCode || "",
     }
   })
 
   const action = async () =>{
     form.handleSubmit(async (data) => {
-      await setPaymentData(data)
-
-      const planId = parseInt(searchParams.get("plan") || "0");
-      const dbUser = await getUserAction(user.user?.sub ?? "")
-      
-      await createUserPlanAction(planId, dbUser.id, "ACTIVE");
-      toast.success("Tenant application completed. You can now create your first tenant.");
-      await setComplete?.(true);
+      setTenantApplication(prev => ({...prev, ...data}));
+      nextStep?.();
     })()
   } 
 
   const handleVerify = (code: string) => {
-
-    toast.promise(getReceiptCodeAction(code), {
+    toast.promise(verifyReceiptCodeAction(code), {
       loading: "Verifying code...",
-      success: () => {
-        setPaymentVerified(true);
-        return "Code verified. You can now submit your application.";
+      success: (res) => {
+        if(res.success) {
+          setPaymentVerified(true);
+        }
+        return res.message
       },
       error: "Invalid Code. Please try again or use different code.",
-    
     })
-
-   
   }
 
   return (
@@ -83,7 +70,7 @@ export default function TenantPaymentVerification({ setComplete, prevStep }: Ten
       <div className="prose max-w-full mt-5">
         <h3 className="">Payment</h3>
         <p>
-        Go to your agent and get a receipt number of your payment. Then, enter the receipt number below.
+        You can find the receipt number from the payment you made to our agent/representative. You may also receive an email from us with the receipt number.
         </p>
       </div>
       <form action={action} className="space-y-6 shadow-lg w-full p-8 bg-white rounded-md">
@@ -110,7 +97,7 @@ export default function TenantPaymentVerification({ setComplete, prevStep }: Ten
           <BackSubmitAndNext
             labels={{
               previous: "Back",
-              submit: "Submit",
+              submit: "Next",
             }}
             disabled={{
               submit: !paymentVerified,

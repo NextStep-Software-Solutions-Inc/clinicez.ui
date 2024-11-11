@@ -2,7 +2,6 @@
 
 import { createActivationCodeAction, verifyActivationCodeAction } from "@actions/activation.action";
 import { sendActivationCodeAction, getPatientAction, startMigrationTransactionAction } from "@actions/hims-migration.action";
-import { updateUserAction } from "@actions/user.action";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import ActionButton from "@components/ActionButton";
 import { Checkbox } from "@components/ui/checkbox";
@@ -13,7 +12,7 @@ import { Separator } from "@components/ui/separator";
 import ConditionalRender from "@components/utils/ConditionalRender";
 import Each from "@components/utils/Each";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { BloodType, CivilStatus, Gender } from "@prisma/client";
+import { BloodType, CivilStatus, Gender } from "@prisma/common/client";
 import { useParams } from "next/navigation";
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";

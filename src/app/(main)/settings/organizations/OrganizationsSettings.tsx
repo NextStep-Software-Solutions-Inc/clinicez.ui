@@ -17,13 +17,14 @@ import {
 import {toast} from "sonner"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@components/ui/select"
 import Each from "@components/utils/Each"
-import { getMyDefaultOrganizationAction, setMyDefaultOrganizationAction } from "@actions/organization.action"
-import { useEffect, useState } from "react"
+import { setMyDefaultOrganizationAction } from "@actions/organizations/organization.action"
+import {  useMemo } from "react"
 import { useUser } from "@auth0/nextjs-auth0/client"
 import ActionButton from "@components/ActionButton"
 import { OrgDefaultRoleForm } from "./OrgDefaultRoleForm"
 import ConditionalRender from "@components/utils/ConditionalRender"
-import { getUserOrganizationsAction } from "@actions/user-organization.action"
+import { useUserOrganizations } from "@hooks/useUserOrganization"
+import { Checkbox } from "@components/ui/checkbox"
 
 const organizationFormSchema = z.object({
   defaultOrgUid: z.string(),
@@ -32,37 +33,18 @@ const organizationFormSchema = z.object({
 type DefaultOrgFormSchema = z.infer<typeof organizationFormSchema>
 
 export default function OrganizationsSettings() {
-  const [myOrgs, setMyOrgs] = useState<Awaited<ReturnType<typeof getUserOrganizationsAction>>>([])
-  const [defaultOrg, setDefaultOrg] = useState<Awaited<ReturnType<typeof getMyDefaultOrganizationAction>>>(null)
   const user = useUser();
   const userId = user?.user?.sub
-
-  useEffect(() => {
-    (async () => {
-      if(!userId) return
-
-      const [orgs, defaultOrg] = await Promise.all([
-        getUserOrganizationsAction({userId}),
-        getMyDefaultOrganizationAction(userId)
-      ])
-      
-      await setDefaultOrg(defaultOrg)
-      await setMyOrgs(() => orgs.filter(o => ["ACTIVE"].includes(o.status)).reduce((acc: typeof orgs, current) => {
-        const x = acc.find(item => item.Organization.orgId === current.Organization.orgId)
-        if(!x) {
-          return acc.concat([current])
-        } else {
-          return acc
-        }
-      }, []))
-    })()
-
-  }, [userId])
+  const {data: myOrgs} = useUserOrganizations({userId, distinct: true}, !!userId,) 
+  const defaultOrg = useMemo(() => {
+    return myOrgs?.data?.flatMap(org => org.Organization.UserDefaultOrganizations).find(defOrg => defOrg.User.userId === userId)
+  }, [myOrgs, userId])
+   
 
   const form = useForm<DefaultOrgFormSchema>({
     resolver: zodResolver(organizationFormSchema),
     values: {
-      defaultOrgUid: defaultOrg?.Organization?.orgId ?? "",
+      defaultOrgUid: defaultOrg?.Organization?.orgId ?? ""
     }
   })
 
@@ -98,7 +80,7 @@ export default function OrganizationsSettings() {
                   </FormControl>
                   <SelectContent>
                     <Each
-                      of={myOrgs}
+                      of={myOrgs?.data ?? []}
                       render={({ Organization: {id, orgId, name} }) => (
                         <SelectItem value={orgId}>{name}</SelectItem>
                       )}
@@ -117,9 +99,10 @@ export default function OrganizationsSettings() {
         </ConditionalRender>
       </form>
       <Each
-        of={myOrgs}
-        render={(org) => <OrgDefaultRoleForm org={org}/>}
+        of={myOrgs?.data ?? []}
+        render={(org) => <OrgDefaultRoleForm org={org} key={org.id}/>}
       />
     </Form>
   )
 }
+

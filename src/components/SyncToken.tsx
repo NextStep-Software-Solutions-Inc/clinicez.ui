@@ -2,6 +2,7 @@
 
 import { useSetAtom } from "jotai";
 import { authAtom } from "../state/auth";
+import { useEffect } from "react";
 
 interface SyncTokenProps {
   token: {
@@ -12,6 +13,10 @@ interface SyncTokenProps {
 
 export default function SyncToken({token: {type, accessToken} }:SyncTokenProps) {
   const setAuth = useSetAtom(authAtom)
-  setAuth(() => ({type, token: accessToken}))
+  
+  useEffect(() => {
+    setAuth(() => ({type, token: accessToken}))
+  }, [accessToken, setAuth, type])
+  
   return null;
 }

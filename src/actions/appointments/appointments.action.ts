@@ -1,0 +1,873 @@
+"use server";
+import "server-only";
+
+import prismaTenant from "@lib/prisma-tenant";
+import prismaCommon from "@lib/prisma-common";
+import { Prisma } from "@prisma/tenant/client";
+import { getCachedSession } from "@actions/session.action";
+import { getPermissionsAction } from "@actions/permission.action";
+import { cache } from "react";
+import dayjs from "dayjs";
+import { AppointmentStatus, RoutedAptStatus } from "@public/json/appointment-list";
+import { PERMISSIONS } from "@lib/permissions";
+import { hasCodeProperty } from "@lib/utils";
+import { getHPsAction } from "@actions/hp.actions";
+import path from "path";
+import fs from "fs/promises";
+import { sendMail } from "@actions/email.action";
+
+type CreateAppointmentPayload = {
+  orgUid: string;
+  subject: string;
+  complaint?: string;
+  modeId: number;
+  typeId: number;
+  serviceId?: number;
+  requesters: string[];
+  attachments: string[];
+  hpId?: string;
+  schedule?: {
+    date?: Date;
+    timeStart?: Date;
+    timeEnd?: Date;
+  };
+};
+export const createAppointmentAction = async (payload: CreateAppointmentPayload) => {
+  const session = await getCachedSession();
+
+  try {
+    if (!session) throw new Error("Unauthorized");
+
+    const { orgUid, subject, complaint, requesters, modeId, typeId, serviceId, attachments, hpId, schedule } = payload;
+    const { date, timeStart, timeEnd } = schedule ?? {};
+    
+    const createAppointmentPermissions = [PERMISSIONS.CLINIC["WRITE:ORG:APPOINTMENT"].name];
+    const bookAFriendPermissions = [PERMISSIONS.CLINIC["WRITE:ORG:APPOINTMENT:BOOK_A_FRIEND"].name];
+    const myPermissions = await getPermissionsAction({ userId: session.user.sub });
+    const userPermissionArray = myPermissions.map(p => p.name);
+    const canCreateAppointment = createAppointmentPermissions.every(p => userPermissionArray.includes(p));
+    const canBookAFriend = bookAFriendPermissions.every(p => userPermissionArray.includes(p));
+  
+    if (!canCreateAppointment) throw new Error("You do not have permission to create an appointment in this organization");
+    if(requesters.some((requester) => requester !== session.user.sub) && !canBookAFriend) throw new Error("You cannot book an appointment for another user");
+    
+    const newAppointment = await prismaTenant.$transaction(async (prisma) => {
+      const numberOfAppointments = await prisma.appointment.count({
+        where: {
+          orgUid,
+          createdAt: {
+            // today only
+            gte: dayjs().startOf("day").toDate(),
+          },
+          AppointmentAttribute: {
+            status: "PENDING"
+          },
+          Requesters: {
+            some: {
+              userId: {
+                in: requesters
+              }
+            }
+          }
+        }
+      });
+      const maxNumberOfAppointment = await prismaCommon.orgAppointmentConfig.findFirstOrThrow({
+        where: {
+          Organization: {
+            orgId: orgUid
+          }
+        },
+        select: {
+          maxAppointmentsPerClient: true,
+          maxAppointmentsPerDay: true
+        }
+      })
+      if(numberOfAppointments >= maxNumberOfAppointment.maxAppointmentsPerClient) throw new Error("You have reached the maximum number of appointments you can book for today");
+      
+      if(numberOfAppointments >= maxNumberOfAppointment.maxAppointmentsPerDay) throw new Error("The appointments quota of the organization for today has been reached");
+      
+      const newAppointment = await prisma.appointment.create({
+        data: {
+          subject,
+          complaint,
+          orgUid,
+          AppointmentAttribute: {
+            create: {
+              preferredAppointee: hpId,
+              modeId,
+              typeId,
+              serviceId,
+              timeStart,
+              timeEnd,
+              date: date
+            }
+          },
+          Requesters: {
+            createMany: {
+              data: requesters.map((userId) => ({ userId })),
+              skipDuplicates: true
+            }
+          },
+          AppointmentAttachments: {
+            createMany: {
+              data: attachments.map((url) => ({
+                name: url.split("/").pop() ?? url,
+                url
+              })),
+              skipDuplicates: true
+            }
+          }
+        },
+        select: {
+          Requesters: {
+            select: {
+              userId: true
+            }
+          }
+        }
+      })
+      return newAppointment;
+    })
+
+    const users = await prismaCommon.user.findMany({
+      where: {
+        userId: {
+          in: requesters
+        }
+      },
+      select: {
+        email: true,
+        firstName: true,
+        middleName: true,
+        lastName: true,
+        suffix: true,
+        Organizations: {
+          where: {
+            Organization: {
+              orgId: orgUid
+            }
+          },
+          select: {
+            Organization: {
+              select: {
+                name: true,
+                email: true
+              }
+            }
+          }
+        }
+      }
+    })
+    const mappedUsers = users.map((user) => ({
+      fullName:`${user.firstName} ${user.middleName ?? ""} ${user.lastName ?? ""} ${user.suffix ?? ""}`.trim(),
+      email: user.email,
+      organization:  user.Organizations[0].Organization.name,
+      orgMail: user.Organizations[0].Organization.email ?? ""
+    }))
+    await sendAppointmentRequestSent({ users: mappedUsers})
+    return {
+      status: true,
+      message: "Appointment created",
+      data: newAppointment
+    };
+  } catch (error) {
+    console.error(`Failed to create appointment: ${error}`);
+    let message = "Failed to create appointment";
+    if(error instanceof Error) {
+      message = error.message;
+    }
+    return {
+      status: false,
+      message,
+      data: null
+    }
+    
+  }
+};
+export type GetAppointmentFilter = {
+  orgUid?: string;
+  userId?: string;
+  status?: AppointmentStatus;
+  routedAptStatus?: RoutedAptStatus;
+  appointmentId?: number;
+  sort?: "request" | "schedule";
+};
+export type GetAppointments = Awaited<ReturnType<typeof getAppointmentsAction>>;
+export const getAppointmentsAction = cache(async (filter?: GetAppointmentFilter) => {
+  const session = await getCachedSession();
+  try {
+    if (!session) throw new Error("Unauthorized");
+
+    const { orgUid, userId, status, routedAptStatus, sort } = filter || {};
+
+    const [permissions, myHps] = await Promise.all([
+      getPermissionsAction({ userId:session.user.sub }),
+      getHPsAction({ userId: session.user.sub })
+    ])
+
+    const userPermissionArray = permissions.map(p => p.name);
+  
+    const readAllOrgAppointmentPermission = [PERMISSIONS.CLINIC["READ:ORG:APPOINTMENT:ALL"].name];
+    const readAOwnOrgAppointmentPermission = [PERMISSIONS.CLINIC["READ:ORG:APPOINTMENT:OWN"].name];
+    const readAssignedOrgAppointmentPermission = [PERMISSIONS.CLINIC["READ:ORG:APPOINTMENT:ASSIGNED"].name];
+  
+    const canReadAllOrgAppointment = readAllOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
+    const canReadAOwnOrgAppointment = readAOwnOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
+    const canReadAssignedOrgAppointment = readAssignedOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
+    
+    const appointments = await prismaTenant.appointment.findMany({
+      orderBy: {
+        ...(sort === "schedule"
+          ? {
+            AppointmentAttribute: {
+              date: "asc",
+            }
+          }
+          : { createdAt: "desc" })
+      },
+      where: {
+        orgUid,
+        isActive: true,
+        AppointmentAttribute: { ...(status !== "ALL" ? { status } : {}) },
+        ...(routedAptStatus
+          ? {
+            AppointmentRouting: {
+              some: {
+                status: routedAptStatus
+              },
+            }
+          }
+          : {}),
+        OR: [
+          {...(canReadAllOrgAppointment ? { orgUid, ...userId ? { Requesters: { every: { userId } } } : {} } : {}) },
+          {...(canReadAOwnOrgAppointment ? { Requesters: { every: { userId: session.user.sub } } } : {}) },
+          {...(canReadAssignedOrgAppointment ? {
+            AppointmentRouting: {
+              some: {
+                OR: [
+                  { 
+                    routedTo: {
+                      in: myHps.map((hp) => hp.id.toString())
+                    }
+                  },
+                  { routedBy: session.user.sub }
+                ]
+              }
+            }
+          } : {}) },
+        ]
+      },
+      select: {
+        id: true,
+        orgUid: true,
+        subject: true,
+        complaint: true,
+        createdAt: true,
+        updatedAt: true,
+        Requesters: {
+          select: {
+            userId: true
+          }
+        },
+        _count: {
+          select: {
+            ConsultationTickets: true
+          }
+        },
+        AppointmentAttribute: {
+          select: {
+            date: true,
+            timeStart: true,
+            completedAt: true,
+            receivedAt: true,
+            rejectedAt: true,
+            rescheduledAt: true,
+            AppointmentType: {
+              select: {
+                name: true
+              }
+            },
+            AppointmentMode: {
+              select: {
+                name: true
+              }
+            },
+            preferredAppointee: true,
+            status: true,
+            Service: {
+              select: {
+                name: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    // whitelist filter
+    const requesterIds = appointments.flatMap((apt) => apt.Requesters.map((r) => r.userId));
+    const [requestersDetail, myWhitelistFilter] = await Promise.all([
+      getRequestersDetail(requesterIds, orgUid),
+      getUserWhitelistFilters(session.user.sub, orgUid)
+    ])
+
+    const filteredAppointments = appointments.filter((apt) => {
+
+      const patient = requestersDetail.find((rd) => apt.Requesters.some((r) => r.userId === rd.userId));
+      return (myWhitelistFilter?.WhitelistFilters ?? []).every((filter) => {
+        return isFilterMatch(filter.Filter.key, filter.value, patient);
+      });
+    });
+
+    return { status: true,  message: "Appointments fetched", data: filteredAppointments };
+  } catch (error) {
+    console.error(`Failed to fetch appointments: ${error}`);
+    let message = "Failed to fetch appointments";
+    if(error instanceof Error) message = error.message;
+    return { status: false, message, data: null }
+  }
+});
+
+export type GetAppointment = Awaited<ReturnType<typeof getAppointmentAction>>;
+export const getAppointmentAction = cache(async (id: number, orgUid?: string) => {
+  const session = await getCachedSession();
+
+  try {
+    if (!session) throw new Error("Unauthorized");
+  
+    const permissions = await getPermissionsAction({ userId:session.user.sub });
+    const userPermissionArray = permissions.map(p => p.name);
+    
+    const readAllOrgAppointmentPermission = [PERMISSIONS.CLINIC["READ:ORG:APPOINTMENT:ALL"].name]; // read all appointments in the org
+    const readAOwnOrgAppointmentPermission = [PERMISSIONS.CLINIC["READ:ORG:APPOINTMENT:OWN"].name]; // read appointments that the user is a requester
+    const readAssignedOrgAppointmentPermission = [PERMISSIONS.CLINIC["READ:ORG:APPOINTMENT:ASSIGNED"].name]; // read appointments that the user is assigned to or assigned by
+    
+    const canReadAllOrgAppointment = readAllOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
+    const canReadAOwnOrgAppointment = readAOwnOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
+    const canReadAssignedOrgAppointment = readAssignedOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
+    
+
+    const myHps = await getHPsAction({ userId: session.user.sub });
+    const myHpIds = myHps.map((hp) => hp.id.toString());
+
+    const appointment = await prismaTenant.appointment.findUnique({
+      where: {
+        isActive: true,
+        OR: [
+          { ...(canReadAllOrgAppointment ? { orgUid, id } : {}) },
+          { ...(canReadAOwnOrgAppointment ? { Requesters: { some: { userId: session.user.sub } }, id } : {}) },
+          { ...(canReadAssignedOrgAppointment ? {
+            AppointmentRouting: {
+              some: {
+                OR: [
+                  { routedTo: { in: myHpIds } },
+                  { routedBy: session.user.sub }
+                ]
+              }
+            },
+            id
+          } : {}) },
+        ],
+        id
+      },
+      select: {
+        id: true,
+        subject: true,
+        complaint: true,
+        createdAt: true,
+        Requesters: {
+          select: {
+            userId: true
+          }
+        },
+        orgUid: true,
+        AppointmentAttachments: {
+          select: {
+            id: true,
+            url: true
+          }
+        },
+        AppointmentAttribute: {
+          select: {
+            date: true,
+            timeStart: true,
+            timeEnd: true,
+            eventId: true,
+            meetingUrl: true,
+            AppointmentType: {
+              select: {
+                id: true,
+                name: true
+              }
+            },
+            AppointmentMode: {
+              select: {
+                name: true
+              }
+            },
+            status: true,
+            Service: {
+              select: {
+                id: true,
+                name: true
+              }
+            },
+            rejectedAt: true,
+            receivedAt: true,
+            rejectedBy: true,
+            receivedBy: true,
+            rejectedReason: true,
+            preferredAppointee: true,
+            completedAt: true,
+            completedBy: true
+          }
+        },
+        AppointmentRouting: {
+          orderBy: {id: "asc"},
+          select: {
+            id: true,
+            routingCode: true,
+            amendment: true,
+            routedBy: true,
+            routedTo: true,
+            routedToRole: true,
+            status: true,
+            updatedAt: true
+          }
+        },
+        PreAssessmentNotes: {
+          where: {
+            appointmentId: id,
+            orgUid: orgUid
+          },
+          select: {
+            id: true,
+            assessment: true,
+            remarks: true,
+            homeInstructions: true,
+            createdBy: true,
+            PreConsultationNoteAttribute: {}
+          }
+        },
+        ConsultationTickets: {
+          where: {
+            appointmentId: id,
+            orgUid: orgUid
+          },
+          select: {
+            id: true,
+            updatedAt: true,
+            ConsultationTicketAuthors: true,
+            subject: true,
+            ConsultationTicketAttribute: {
+              select: {
+                noteTemplateName: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    return {
+      status: true,
+      message: "Appointment fetched",
+      data: appointment
+    };
+  } catch (error) {
+    console.error(`Failed to fetch appointment: ${error}`);
+    let message = "Failed to fetch appointment";
+    if(error instanceof Error) {
+      message = error.message;
+    }
+    return {
+      status: false,
+      message,
+      data: null
+    }
+  }
+});
+
+export type GetAppointmentCounts = Awaited<ReturnType<typeof getAppointmentCountsAction>>;
+export const getAppointmentCountsAction = cache(async (orgUid: string) => {
+  const session = await getCachedSession();
+  try {
+    if (!session) throw new Error("Unauthorized");
+
+    const [permissions, myHps] = await Promise.all([
+      getPermissionsAction({ userId:session.user.sub }),
+      getHPsAction({ userId: session.user.sub })
+    ])
+    const userPermissionArray = permissions.map(p => p.name);
+    
+    const readAllOrgAppointmentPermission = [PERMISSIONS.CLINIC["READ:ORG:APPOINTMENT:ALL"].name];
+    const readAOwnOrgAppointmentPermission = [PERMISSIONS.CLINIC["READ:ORG:APPOINTMENT:OWN"].name];
+    const readAssignedOrgAppointmentPermission = [PERMISSIONS.CLINIC["READ:ORG:APPOINTMENT:ASSIGNED"].name];
+    
+    const canReadAllOrgAppointment = readAllOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
+    const canReadAOwnOrgAppointment = readAOwnOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
+    const canReadAssignedOrgAppointment = readAssignedOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
+
+    const appointments = await prismaTenant.appointment.findMany({
+      where: {
+        isActive: true,
+        OR: [
+          { ...(canReadAllOrgAppointment ? { orgUid } : {}) },
+          { ...(canReadAOwnOrgAppointment ? { Requesters: { every: { userId: session.user.sub } } } : {}) },
+          { ...(canReadAssignedOrgAppointment ? {
+            AppointmentRouting: {
+              every: {
+                OR: [
+                  { 
+                    routedTo: {
+                      in: myHps.map((hp) => hp.id.toString())
+                    }
+                  },
+                  { routedBy: session.user.sub }
+                ]
+              }
+            }
+          } : {}) },
+        ]
+      },
+      select: {
+        AppointmentAttribute: {
+          select: {
+            status: true
+          }
+        },
+        Requesters: {
+          select: {
+            userId: true
+          }
+        },
+      }
+    });
+
+    const requesterIds = appointments.flatMap((apt) => apt.Requesters.map((r) => r.userId));
+
+    const [requestersDetail, myWhitelistFilter] = await Promise.all([
+      getRequestersDetail(requesterIds, orgUid),
+      getUserWhitelistFilters(session.user.sub, orgUid)
+    ])
+
+    const filteredAppointments = appointments.filter((apt) => {
+      const patient = requestersDetail.find((rd) => apt.Requesters.some((r) => r.userId === rd.userId));
+      return (myWhitelistFilter?.WhitelistFilters ?? []).every((filter) => {
+        return isFilterMatch(filter.Filter.key, filter.value, patient);
+      })
+    });
+     
+
+    // group by status
+    const countsMap = filteredAppointments.reduce((acc, apt) => {
+      const status = apt?.AppointmentAttribute?.status;
+      if (status) acc[status] = (acc[status] ?? 0) + 1;
+      acc["ALL"] += 1;
+      return acc;
+    }, { ALL: 0 } as Record<string, number>);
+    
+    return { status: true, message: "Appointment counts fetched", data: countsMap };
+  } catch (error) {
+    console.error(`Failed to fetch appointment counts: ${error}`);
+    let message = "Failed to fetch appointment counts";
+    if(error instanceof Error) message = error.message;
+    return { status: false, message, data: null}
+  }
+});
+
+export const getRoutedAppointmentCountsAction = cache(async (orgUid: string) => {
+  const session = await getCachedSession();
+  try {
+    if (!session) throw new Error("Unauthorized");
+    
+    const [permissions, myHps] = await Promise.all([
+      getPermissionsAction({ userId:session.user.sub }),
+      getHPsAction({ userId: session.user.sub })
+    ])
+    const userPermissionArray = permissions.map(p => p.name);
+      
+    const readAllOrgAppointmentPermission = [PERMISSIONS.CLINIC["READ:ORG:APPOINTMENT:ALL"].name];
+    const readAOwnOrgAppointmentPermission = [PERMISSIONS.CLINIC["READ:ORG:APPOINTMENT:OWN"].name];
+    const readAssignedOrgAppointmentPermission = [PERMISSIONS.CLINIC["READ:ORG:APPOINTMENT:ASSIGNED"].name];
+      
+    const canReadAllOrgAppointment = readAllOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
+    const canReadAOwnOrgAppointment = readAOwnOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
+    const canReadAssignedOrgAppointment = readAssignedOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
+
+    const routedAppointments = await prismaTenant.appointmentRouting.findMany({
+      distinct: ["appointmentId", "status"],
+      where: {
+        Appointment: {
+          isActive: true,
+          AppointmentAttribute: {
+            status: {
+              in: ["ROUTED"]
+            }
+          },
+          OR: [
+            { ...(canReadAllOrgAppointment ? { orgUid } : {}) },
+            { ...(canReadAOwnOrgAppointment ? { Requesters: { every: { userId: session.user.sub } } } : {}) },
+            { ...(canReadAssignedOrgAppointment ? {
+              AppointmentRouting: {
+                some: {
+                  OR: [
+                    { 
+                      routedTo: {
+                        in:  myHps.map((hp) => hp.id.toString())
+                      }
+                    },
+                    { routedBy: session.user.sub }
+                  ]
+                }
+              }
+            } : {}) },
+          ]
+        }
+      },
+      select: {
+        status: true,
+        Appointment: {
+          select: {
+            Requesters: {
+              select: {
+                userId: true
+              }
+            },
+            
+          }
+        }
+      }
+    });
+
+    const requesterIds = routedAppointments.flatMap((routed) => routed.Appointment.Requesters.map((r) => r.userId));
+    
+    const [requestersDetail, myWhitelistFilter] = await Promise.all([
+      getRequestersDetail(requesterIds, orgUid),
+      getUserWhitelistFilters(session.user.sub, orgUid)
+    ])
+
+    
+    const filteredAppointments = routedAppointments.filter((routed) => {
+      const patient = requestersDetail.find((rd) => routed.Appointment.Requesters.some((r) => r.userId === rd.userId));
+      return (myWhitelistFilter?.WhitelistFilters ?? []).every((filter) => {
+        return isFilterMatch(filter.Filter.key, filter.value, patient);
+      });
+    });
+  
+    const countsMap = filteredAppointments.reduce((acc, routed) => {
+      const status = routed.status;
+      if (status) acc[status] = (acc[status] ?? 0) + 1;
+      acc["ALL"] += 1;
+      return acc;
+    }, {ALL: 0} as Record<string, number>);
+
+    return { status: true, message: "Appointment counts fetched", data: countsMap };
+
+  } catch (error) {
+    console.error(`Failed to fetch appointment counts: ${error}`);
+    let message = "Failed to fetch appointment counts";
+    if(error instanceof Error) message = error.message;
+    return { status: false, message, data: null  }
+  }
+});
+
+type RescheduleAppointmentPayload = {
+  appointmentId: number;
+  startDateTime: string;
+  endDateTime: string;
+  date: string;
+  hpId: string;
+  hpTypeId: string;
+  assign: boolean;
+};
+export const rescheduleAppointmentAction = async ({ appointmentId, startDateTime, endDateTime, date, hpId, hpTypeId, assign }:RescheduleAppointmentPayload ) => {
+  const session = await getCachedSession();
+  
+  try {
+    if (!session) throw new Error("Unauthorized");
+
+    await prismaTenant.$transaction(async (prisma) => {
+      await prisma.appointmentAttribute.update({
+        where: {
+          appointmentId,
+          Appointment: {
+            isActive: true
+          }
+        },
+        data: {
+          date: dayjs(date).endOf("day").toDate(),
+          timeStart: startDateTime,
+          timeEnd: endDateTime,
+          rescheduledAt: new Date(),
+          rescheduledBy: session.user.sub,
+          ...assign ? { status: "ROUTED" } : {}
+        }
+      });
+      if(assign) {
+        await prisma.appointmentRouting.create({
+          data: {
+            appointmentId,
+            routedBy: session.user.sub,
+            routedTo: hpId,
+            routedToRole: hpTypeId,
+            status: "PENDING"
+          }
+        });
+      }
+    }, {
+      timeout: 5000,
+      maxWait: 10000,
+      isolationLevel: Prisma.TransactionIsolationLevel.Serializable
+    });
+    return {
+      status: true,
+      message: "Appointment rescheduled"
+    }
+  } catch (error) {
+    console.error(error);
+    let errorMsg = "Failed to reschedule appointment";
+    if(error instanceof Error) {
+      errorMsg = error.message;
+    }
+    if (hasCodeProperty(error) && error.code === "P2025") {
+      errorMsg = "Appointment not found or you are not authorized to reschedule it";
+    }
+    return {
+      status: false,
+      message: errorMsg
+    }
+  }
+};
+
+const getUserWhitelistFilters = async (userId: string, orgUid?: string) => {
+  return await prismaCommon.userOrgAppointmentWhitelist.findFirst({
+    where: {
+      User: {
+        userId
+      },
+      Organization: {
+        orgId: orgUid
+      }
+    },
+    select: {
+      WhitelistFilters: {
+        select: {
+          value: true,
+          Filter: {
+            select: {
+              key: true,
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+const getRequestersDetail = async (userIds: string[], orgUid?: string) => {
+  return await prismaCommon.user.findMany({
+    where: {
+      userId: {
+        in: userIds
+      },
+    },
+    select: {
+      userId: true,
+      StudentRecords: {
+        where: {
+          Organization: {
+            orgId: orgUid
+          }
+        },
+        select: {
+          organizationId: true,
+          programId: true,
+          departmentId: true,
+          collegeId: true
+        }
+      },
+      UserEmployments: {
+        where: {
+          Organization: {
+            orgId: orgUid
+          }
+        },
+        select: {
+          departmentId: true,
+          collegeId: true,
+          officeId: true
+        },
+      }
+    }
+  })
+}
+
+type Patient = {
+  userId: string;
+  UserEmployments: {
+      departmentId: number | null;
+      collegeId: number | null;
+      officeId: number | null;
+  }[];
+  StudentRecords: {
+      organizationId: number;
+      programId: number | null;
+      departmentId: number | null;
+      collegeId: number | null;
+  }[];
+} | undefined
+const isFilterMatch = <T extends Patient>(filterKey: string, filterValue: string, patient: T) => {
+  if (filterKey === filterValue) return true;
+  switch (filterKey) {
+  case "department":
+    return (
+      patient?.StudentRecords.some((s) => s.departmentId?.toString() === filterValue) ||
+        patient?.UserEmployments.some((e) => e.departmentId?.toString() === filterValue)
+    );
+  case "college":
+    return (
+      patient?.StudentRecords.some((s) => s.collegeId?.toString() === filterValue) ||
+        patient?.UserEmployments.some((e) => e.collegeId?.toString() === filterValue)
+    );
+  case "office":
+    return (
+      patient?.UserEmployments.some((e) => e.officeId?.toString() === filterValue)
+    );
+  case "program":
+    return (
+      patient?.StudentRecords.some((s) => s.programId?.toString() === filterValue)
+    );
+  default:
+    return false;
+  }
+};
+
+const sendAppointmentRequestSent = async ({ users }:{
+  users: {
+    fullName: string,
+    email: string,
+    organization: string,
+    orgMail: string
+  }[]
+}) => {
+  try {
+    const filePath = path.join(process.cwd(), "email-templates/clinic-appointment-sent.html");
+    const emailTemplate = await fs.readFile(filePath, "utf-8");
+    const appName = process.env.NEXT_PUBLIC_APP_NAME!;
+    for (const user of users) {
+      const { fullName: name, email, organization, orgMail } = user;
+      const html = emailTemplate.replaceAll("@{userName}", name).replaceAll("@{orgName}", organization).replaceAll("@{appName}", appName).replaceAll("@{orgMail}", orgMail)
+      await sendMail({
+        subject: `Appointment Request Sent`,
+        to: email,
+        text: html,
+        html
+      })
+    }
+    return true;
+  } catch (error) {
+    console.error(`Error sending email notification: ${error}`);
+    return false;
+  }
+}

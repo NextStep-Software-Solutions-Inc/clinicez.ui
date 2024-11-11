@@ -1,30 +1,45 @@
 "use server";
 
-import prisma from "@lib/prisma";
+import prisma from "@lib/prisma-common";
 
-import { HealthcareProviderType, Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/common/client";
 import { cache } from "react";
 
-export type HPFilters = {
-  type?: HealthcareProviderType,
+export type HPSFilters = {
+  hpTypeId?: number,
   userId?: string
-  id?: number,
   isPublished?: boolean
 }
 
 export type GetHPsType = Awaited<ReturnType<typeof getHPsAction>>
-export const getHPsAction = cache(async (filters?:HPFilters) => {
-  const {type, userId, id, isPublished} = filters || {};
+export const getHPsAction = cache(async (filters?:HPSFilters) => {
+  
+  const {hpTypeId, userId, isPublished} = filters || {};
   const hps = prisma.healthcareProvider.findMany({
+    orderBy: {
+      HPProfile: {name: "asc"}
+    },
     where: {
       isActive: true,
-      ...(id && { id }),
-      ...(type && { type }),
-      ...(userId && { User: { userId } }),
-      ...(isPublished && { isPublished })
+      ...(hpTypeId ? { hpTypeId }: {}),
+      ...(userId ? { User: { userId } }: {}),
+      ...(isPublished ? { isPublished }: {})
     },
     include: {
-      DoctorProfile: {
+      HPType: {
+        select: {id: true, name: true}
+      },
+      User: {
+        select: {
+          userId: true,
+          email: true,
+          gender: true,
+          firstName: true,
+          lastName: true,
+          suffix: true,
+        }
+      },
+      HPProfile: {
         select: {
           picture: true,
           name: true,
@@ -32,35 +47,45 @@ export const getHPsAction = cache(async (filters?:HPFilters) => {
           suffix: true,
           fields: true,
         }
-      },
-      NurseProfile: {
-        select: {
-          picture: true,
-          name: true,
-          title: true,
-          suffix: true,
-          fields: true,
-        }
-      },
+      }
     }
   })
 
   return hps;
 })
 
-export const getHPAction = async ({id, userId, type, isPublished}:HPFilters) => {
+export type HPFilters = {
+  id?: number,
+  hpTypeId?: number,
+  userId?: string
+  isPublished?: boolean
+}
+export type GetHP = Awaited<ReturnType<typeof getHPAction>>
+export const getHPAction = async ({ userId, hpTypeId, isPublished, id}:HPFilters) => {
 
   const hp = prisma.healthcareProvider.findFirst({
     where: {
       isActive: true,
-      ...(id && { id }),
-      ...(type && { type }),
-      ...(userId && { User: { userId } }),
-      ...(isPublished && { isPublished })
+      ...(hpTypeId ? { hpTypeId }: {}),
+      ...(isPublished ? { isPublished }: {}),
+      OR: [
+        { User: { userId } },
+        { id }
+      ]
     },
     include: {
-      DoctorProfile: true,
-      NurseProfile: true,
+      HPProfile: true,
+      HPType: {
+        select: {
+          id: true,
+          name: true
+        }
+      },
+      User: {
+        include: {
+          SocialLink: true
+        }
+      }
     }
   })
 
@@ -93,11 +118,50 @@ export const upsertProfessionalDetailsAction = async (payload: Prisma.Profession
   return hp;
 }
 
+export const upsertHPAction = async (payload: Prisma.HPProfileUpsertArgs) => {
+  const hpProfile = await prisma.hPProfile.upsert(payload)
+  return hpProfile;
+}
+
 export const setIsPublishAction = async (hpId: number, isPublished: boolean) => {
-  
   const hp = await prisma.healthcareProvider.update({
     where: { id: hpId },
     data: { isPublished }
   })
   return hp;
+}
+
+export type GetHpsByIds = Awaited<ReturnType<typeof getHpsByIdsAction>>
+export const getHpsByIdsAction = async (ids: number[]) => {
+  const hps = prisma.healthcareProvider.findMany({
+    where: {
+      id: {
+        in: ids
+      }
+    },
+    select: {
+      id: true,
+      HPType: {
+        select: {
+          id: true,
+          name: true
+        }
+      },
+      User: {
+        "select": {
+          email: true,
+        }
+      },
+      HPProfile: {
+        select: {
+          picture: true,
+          name: true,
+          title: true,
+          suffix: true,
+          fields: true,
+        }
+      }
+    }
+  })
+  return hps;
 }

@@ -1,8 +1,16 @@
-import { GetOrganizationRoles } from "@actions/organization-role.action"
+import { GetOrganizationRoles } from "@actions/organizations/organization-role.action"
 import { self } from "@services/request"
 import useSWR from "swr"
 
-export const useOrgRole = (orgId: string) => {
+type UserRoleFilter = {
+  userId?: string | null
+}
+
+export const useOrgRoles = (orgId: string, filter?: UserRoleFilter) => {
   const fetcher = (...args: any) => self.get<GetOrganizationRoles>(args)
-  return useSWR(`/api/organizations/${orgId}/roles`,fetcher)
+  const searParams = new URLSearchParams()
+  if(filter) {
+    if(filter.userId) searParams.set('userId', filter.userId)
+  }
+  return useSWR(`/api/organizations/${orgId}/roles?${searParams.toString()}`,fetcher)
 }

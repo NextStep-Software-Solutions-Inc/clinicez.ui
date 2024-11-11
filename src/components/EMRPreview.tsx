@@ -11,89 +11,109 @@ import IllnessesForm from "../app/(main)/user/[user]/phr/disabilities/IllnessesF
 import PageLoading from "./PageLoading";
 import { LabelValue } from "./LabelValue";
 import { useUser } from "@hooks/useUser";
-import { useAllergy } from "@hooks/useAllergy";
-import { useDisability } from "@hooks/useDisability";
-import { useIllness } from "@hooks/useIllness";
-import { useVaccination } from "@hooks/useVaccination";
-import VitalSign from "../app/(main)/user/[user]/phr/vitals/VitalSign";
+import { useAllergies } from "@hooks/useAllergy";
+import { useDisabilities } from "@hooks/useDisability";
+import { useIllnesses } from "@hooks/useIllness";
+import { useVaccinations } from "@hooks/useVaccination";
 import RecentVitalSigns from "../app/(main)/user/[user]/phr/vitals/RecentVitalSigns";
-import { useUserVitalSign } from "@hooks/useUserVitalSign";
+import { useUserVitalSigns } from "@hooks/useUserVitalSign";
+import { notFound, useParams } from "next/navigation";
+import MedicalHistory from "./MedicalHistory";
 
 interface EMRPreviewProps {
-    patientId: string;
+    patientId: string
   }
 function EMRPreview({patientId}: EMRPreviewProps) {
 
-  const { data: patient, isLoading } = useUser(patientId)
-  const { data: allergies, } = useAllergy(patientId)
-  const { data: disabilities } = useDisability(patientId)
-  const { data: illnesses } = useIllness(patientId)
-  const { data: vaccinations } = useVaccination(patientId)
-  const { data: vitalSigns } = useUserVitalSign(patientId)
+  const params = useParams<{organization: string}>();
+  const { data: patient, isLoading } = useUser({userId: patientId})
+  const { data: allergies, } = useAllergies(patientId)
+  const { data: disabilities } = useDisabilities(patientId)
+  const { data: illnesses } = useIllnesses(patientId)
+  const { data: vaccinations } = useVaccinations(patientId)
+  const { data: vitalSigns } = useUserVitalSigns(patientId)
   
   if(isLoading) return <PageLoading label="Loading Records ..."/>
-  const name = `${patient?.lastName || "-"}, ${patient?.firstName || "-"} ${patient?.middleName ?? ""} ${patient?.suffix ?? ""}`
+  if(!patient?.data) notFound()
+
+  const name = `${patient?.data?.lastName || "-"}, ${patient?.data?.firstName || "-"} ${patient?.data?.middleName ?? ""} ${patient?.data?.suffix ?? ""}`
   return (
     <div className="space-y-5 my-5 overflow-auto h-[calc(100vh-15%)] no-scrollbar">
       <div className="flex gap-5">
-        <Picture readOnly user={patient!}/>
+        <Picture readOnly user={patient.data}/>
         <div className="">
           <LabelValue label="Name" value={name}/>
           <div className="flex gap-5 items-center">
-            <LabelValue label="Gender" value={patient?.gender}/>
+            <LabelValue label="Gender" value={patient?.data?.gender}/>
             <Separator orientation="vertical" className="h-10"/>
-            <LabelValue label="Age" value={patient?.dob && `${differenceInCalendarYears(new Date(), patient.dob)} years old`}/>
+            <LabelValue label="Age" value={patient.data.dob && `${differenceInCalendarYears(new Date(), patient.data.dob)} years old`}/>
           </div>
-          <LabelValue label="Blood Type" value={patient?.bloodType}/>
+          <LabelValue label="Blood Type" value={patient?.data?.bloodType}/>
           <LabelValue label="Email" value={(
-            <a className="text-primary" href={`mailto:${patient?.email}`}>{patient?.email}</a>
+            <a className="text-primary" href={`mailto:${patient?.data?.email}`}>{patient?.data?.email}</a>
           )}/>
         </div>
       </div>
       <Separator/>
-      <h3 className="text-xl">Basic Information</h3>
-      <div className="space-y-3">
-        <LabelValue className="flex items-center gap-2 flex-row-reverse justify-end" label="Nickname:" value={patient?.nickname}/>
-        <LabelValue className="flex items-center gap-2 flex-row-reverse justify-end" label="Mobile:" value={(
-          <a href={`tel:${patient?.mobile}`}>{patient?.mobile}</a>
-        )}/>
-        <LabelValue className="flex items-center gap-2 flex-row-reverse justify-end" label="Civil Status:" value={patient?.civilStatus}/>
-        <LabelValue className="flex items-center gap-2 flex-row-reverse justify-end" label="Religion:" value={patient?.religion}/>
-        <LabelValue className="flex items-center gap-2 flex-row-reverse justify-end" label="Nationality:" value={patient?.nationality}/>
-      </div>
-        
-      <Separator/>
-      <h3 className="text-xl">Allergies</h3>
-      <AllergiesForm readOnly allergies={allergies ?? []} />
-  
-      <Separator/>
-      <h3 className="text-xl">Vaccination & Immunization</h3>
-      <VaccinationForm readOnly vaccinations={vaccinations ?? []} />
-      <Separator/>
-      <h3 className="text-xl">Personal & Social History</h3>
-      <DisabilitiesForm readOnly disabilities={disabilities ?? []} />
-      <IllnessesForm readOnly illnesses={illnesses ?? []} />
-      <Separator/>
-      <h3 className="text-xl">Family History</h3>
-        
-      <Separator/>
-      <h3 className="text-xl">Medical History</h3>
-        
-      <Separator/>
-      <h3 className="text-xl">Obstetric History</h3>
-        
-      <Separator/>
-      <h3 className="text-xl">Vital Signs & Anthropometric Measurements</h3>
-      <RecentVitalSigns readOnly vitalSigns={vitalSigns ?? []} userId={patient?.userId ?? ""}/>
-        
-      <Separator/>
-      <h3 className="text-xl">Organs / Systems</h3>
-  
-      <Separator/>
-      <h3 className="text-xl">{`Visual Acuity / Snellen's`}</h3>
-  
+      <Section title={`Basic Information`} >
+        <div className="">
+          <LabelValue className="flex items-center gap-2 flex-row-reverse justify-end" label="Nickname:" value={patient?.data?.nickname}/>
+          <LabelValue className="flex items-center gap-2 flex-row-reverse justify-end" label="Mobile:" value={(
+            <a href={`tel:${patient?.data?.mobile}`}>{patient?.data?.mobile}</a>
+          )}/>
+          <LabelValue className="flex items-center gap-2 flex-row-reverse justify-end" label="Civil Status:" value={patient?.data?.civilStatus}/>
+          <LabelValue className="flex items-center gap-2 flex-row-reverse justify-end" label="Religion:" value={patient?.data?.religion}/>
+          <LabelValue className="flex items-center gap-2 flex-row-reverse justify-end" label="Nationality:" value={patient?.data?.nationality}/>
+        </div>
+      </Section>
+      
+      <Section title={`Allergies`} >
+        <AllergiesForm readOnly allergies={allergies ?? []} />
+      </Section>
+
+      <Section title={`Vaccination & Immunization`} >
+        <VaccinationForm readOnly vaccinations={vaccinations ?? []} />
+      </Section>
+
+      <Section title={`Personal & Social History`} >
+        <DisabilitiesForm readOnly disabilities={disabilities ?? []} />
+        <IllnessesForm readOnly illnesses={illnesses ?? []} />
+      </Section>
+
+
+      <Section title={`Family History`} >
+      </Section>
+
+      <Section title={`Medical History`} >
+        <MedicalHistory
+          patientId={patientId}
+          orgUid={params.organization}
+        />
+      </Section>
+     
+      <Section title={`Obstetric History`} >
+      </Section>
+
+      <Section title={`Vital Signs & Anthropometric Measurements`} >
+        <RecentVitalSigns readOnly vitalSigns={vitalSigns ?? []} userId={patient?.data?.userId ?? ""}/>
+      </Section>
+
+      <Section title={`Organs / Systems`} >
+      </Section>
+
+      <Section title={`Visual Acuity / Snellen's`} >
+      </Section>
     </div>
   );
 }
   
 export default memo(EMRPreview)
+
+export const Section = ({title, children}: {title: string, children?: React.ReactNode}) => {
+  return (
+    <section className="space-y-3">
+      <h3 className="text-xl bg-primary text-primary-foreground rounded px-2 py-1 font-semibold">{title}</h3>
+      {children ?? <p className="text-muted-foreground">No records found.</p>}
+    </section>
+  )
+}

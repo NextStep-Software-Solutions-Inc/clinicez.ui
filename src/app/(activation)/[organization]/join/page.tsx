@@ -6,7 +6,7 @@ import { AlertTriangle } from "lucide-react"
 import { getCachedSession } from "@actions/session.action";
 import { redirect } from "next/navigation";
 import OrganizationSteps from "./OrganizationSteps";
-import { getOrganizationAction } from "@actions/organization.action";
+import { getOrganizationAction } from "@actions/organizations/organization.action";
 
 async function JoinOrgPage({params}: AppRouterPageRouteOpts) {
   const orgId = params?.organization as string;
@@ -46,7 +46,7 @@ async function JoinOrgPage({params}: AppRouterPageRouteOpts) {
   );
 }
 
-export default  withPageAuthRequired(JoinOrgPage, {
+export default withPageAuthRequired(JoinOrgPage, {
   returnTo: ({params, searchParams}) => {
     const searchStr = Object.entries(searchParams ?? {}).map(([key, value]) => `${key}=${value}`).join("&");
     return `/${params?.organization}/join?${searchStr}`;

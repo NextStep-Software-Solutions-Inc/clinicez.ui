@@ -3,7 +3,7 @@
 import React from "react";
 import ActionButton from "@components/ActionButton";
 import { toast } from "sonner";
-import { deleteUserVaccinationAction } from "@actions/user-vaccination.action";
+import { deleteUserVaccinationAction } from "@actions/users/user-vaccination.action";
 import { revalidatePath } from "@actions/cache.action";
 
 export const DeleteVaccinationForm = ({ vaccinationId }: { vaccinationId: number; }) => {

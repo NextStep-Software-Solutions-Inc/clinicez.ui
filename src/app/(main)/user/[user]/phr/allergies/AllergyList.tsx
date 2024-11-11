@@ -1,4 +1,4 @@
-import { getUserAllergiesAction } from "@actions/user-allergy.action";
+import { getUserAllergiesAction } from "@actions/users/user-allergy.action";
 import AllergiesForm from "./AllergiesForm";
 
 interface AllergyListProps {

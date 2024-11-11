@@ -1,6 +1,6 @@
 "use client";
 
-import { deleteUserDisabilityAction } from "@actions/user-disability.action";
+import { deleteUserDisabilityAction } from "@actions/users/user-disability.action";
 import ActionButton from "@components/ActionButton";
 import { toast } from "sonner";
 

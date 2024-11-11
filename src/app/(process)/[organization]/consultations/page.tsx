@@ -1,37 +1,28 @@
-// import './data/seed'
 import React from "react";
 import { Separator } from "@components/ui/separator";
-import Suspend from "@components/Suspend";
-import { DataTable } from "./components/data-table";
-import { columns } from "./components/columns"
-import { withPageAuthRequired } from "@auth0/nextjs-auth0";
+import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth0";
 import { Metadata } from "next";
-import { getConsultationsActions } from '@actions/consultations.action';
-import UnderConstruction from "@components/UnderConstruction";
+import ConsultationTable from "../../../../components/consultation/ConsultationTable";
 
 export const metadata: Metadata = {
-  title: "Consultations",
-  description: "Consultations of an organization.",
+  title: "Consultation Tickets",
+  description: "Consultation Tickets within your organization.",
 }
 
-async function ConsultationsPage() {
-  const consultations = await getConsultationsActions()
+async function ConsultationsPage({params}: AppRouterPageRouteOpts) {
+  const orgUid = params?.organization as string
   return (
     <>
       <div className="space-y-6">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Consultations</h2>
+          <h2 className="text-2xl font-bold tracking-tight">Consultation Tickets</h2>
           <p className="text-sm text-muted-foreground">
-            Here&apos;s a list of your consultations.
+            Here&apos;s a list of your consultation records.
           </p>
         </div>
         <Separator />
-        <Suspend>
-          <UnderConstruction/>
-          {/* <DataTable data={consultations} columns={columns} /> */}
-        </Suspend>
+        <ConsultationTable orgUid={orgUid}/>
       </div>
-
     </>
   );
 }

@@ -1,19 +1,19 @@
 
 import { DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from "./ui/dropdown-menu";
-import { CreditCard, LogOut, Settings } from "lucide-react";
+import { Settings } from "lucide-react";
 import PHRLink from "../app/(activation)/[organization]/activate/PHRLink";
 import HPProfilesLink from "./HPProfilesLink";
 import DashboardLink from "./DashboardLink";
-import AdminConsoleLink from "../app/(activation)/[organization]/activate/AdminConsoleLink";
 import UserAvatarDropdown from "./UserAvatarDropdown";
 import Suspend from "./Suspend";
 import { Skeleton } from "./ui/skeleton";
 import { getCachedSession } from "@actions/session.action";
 import LogoutLink from "./LogoutLink";
+import TenantConsoleLink from "./TenantConsoleLink";
 
 export default async function UserAvatarWrapper() {
   const session = await getCachedSession();
-  const userId = session?.user.sub;
+  const userId = String(session?.user.sub);
   
   return (
     <Suspend>
@@ -23,21 +23,14 @@ export default async function UserAvatarWrapper() {
           <br />
           <span className="text-xs text-muted-foreground">{session?.user.email}</span>
         </DropdownMenuLabel>
-
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <PHRLink />
           <HPProfilesLink userId={userId}/>
-          <a href="/billing">
-            <DropdownMenuItem>
-              <CreditCard className="mr-2 h-4 w-4" />
-              Billing
-              {/* <DropdownMenuShortcut>⌘B</DropdownMenuShortcut> */}
-            </DropdownMenuItem></a>
           <a href="/settings">
             <DropdownMenuItem>
               <Settings className="mr-2 h-4 w-4" />
-              Settings
+              Account Settings
               {/* <DropdownMenuShortcut>⌘S</DropdownMenuShortcut> */}
             </DropdownMenuItem>
           </a>
@@ -47,7 +40,7 @@ export default async function UserAvatarWrapper() {
           <DashboardLink />
         </Suspend>
         <Suspend loadingFallback={<Skeleton className="h-6 mx-2 my-1 bg-slate-400" />}>
-          <AdminConsoleLink />
+          <TenantConsoleLink />
         </Suspend>
         <DropdownMenuSeparator />
         <LogoutLink/>

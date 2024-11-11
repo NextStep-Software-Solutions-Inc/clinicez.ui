@@ -2,7 +2,7 @@
 import 'server-only'
 
 import { NextRequest, NextResponse } from "next/server";
-import { getUserAllergiesAction } from '@actions/user-allergy.action';
+import { getUserAllergiesAction } from '@actions/users/user-allergy.action';
 import { withJwtAuth } from '@middlewares/withJwtAuth';
 
 

@@ -1,9 +1,9 @@
 "use client";
 
 import { Tabs, TabsList, TabsTrigger } from "./ui/tabs";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 
-export default function PricingMode({defaultMode ="monthly"}: {defaultMode: string}) {
+export default function PricingMode({defaultMode ="MONTHLY"}: {defaultMode: string}) {
 
   const router = useRouter();
   const handleChangeTab = (value: string) => {
@@ -15,12 +15,12 @@ export default function PricingMode({defaultMode ="monthly"}: {defaultMode: stri
     <Tabs defaultValue={defaultMode} onValueChange={handleChangeTab}>
       <TabsList className="rounded-lg">
         <TabsTrigger    
-          value="monthly"
+          value="MONTHLY"
         >
             Monthly
         </TabsTrigger>
         <TabsTrigger
-          value="yearly"
+          value="YEARLY"
         >
             Yearly
         </TabsTrigger>

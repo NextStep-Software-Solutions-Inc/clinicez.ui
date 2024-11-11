@@ -1,0 +1,61 @@
+"use client";
+import {
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage
+} from "@components/ui/form";
+import { Input } from "@components/ui/input";
+import { useFieldArray, useForm } from "react-hook-form";
+import { Button } from "@components/ui/button";
+import Each from "@components/utils/Each";
+import { HPProfileType } from "../hp-form.schema";
+
+export const Languages = ({ form }: { form: ReturnType<typeof useForm<HPProfileType>>; }) => {
+  const { fields, remove, append, update } = useFieldArray({
+    control: form.control,
+    name: "languages"
+  });
+  return (
+    <FormField
+      control={form.control}
+      name="languages"
+      render={({ field }) => (
+        <FormItem >
+          <FormLabel>Languages</FormLabel>
+          <div className="flex flex-wrap gap-2">
+            <Each
+              of={fields}
+              render={(_field, index) => {
+                return (
+                  <FormField
+                    key={_field.id}
+                    control={form.control}
+                    name={`languages.${index}.name`}
+                    render={({ field }) => (
+                      <FormItem className="flex-grow">
+                        <FormControl>
+                          <div className="flex gap-2">
+                            <Input placeholder="Enter language you're fluent" {...field} />
+                            <Button type="button" variant="destructive" size="sm" onClick={() => remove(index)}>Remove</Button>
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                );
+              }}
+            />
+          </div>
+          <FormDescription>
+            {`You can add the languages you're fluent in. This will help patients find you based on the languages you speak.`}
+          </FormDescription>
+          <FormMessage />
+          <Button type="button" onClick={() => append({ name: "" })}>Add Language</Button>
+        </FormItem>
+      )} />
+
+  );
+};

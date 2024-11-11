@@ -1,36 +1,60 @@
 "use server";
 
-import prisma from "@lib/prisma";
-import { revalidatePath } from "next/cache";
+import prisma from "@lib/prisma-common";
 
-export const createFolderAction = async (name: string, userId: string) => {
-  const folder = await prisma.folder.create({
-    data: {
-      name,
-      User: {
-        connect: {
-          userId
-        }
-      },
-      FolderSetting: {
-        create: {
-          isPublic: true
+export const createFolderAction = async (name: string, userId: string, orgUid?:string) => {
+  try {
+    const folder = await prisma.folder.create({
+      data: {
+        name,
+        User: {
+          connect: {
+            userId
+          }
+        },
+        FolderSetting: {
+          create: {
+            isPublic: true,
+            ...orgUid ? {
+              Organization: {
+                connect: {
+                  orgId: orgUid
+                }
+              }
+            } : {}
+          }
         }
       }
+    });
+    return {
+      status: true,
+      message: "Folder created successfully",
+      data: folder
     }
-  });
-    
-  revalidatePath('/', "page");
-  return folder;
+  } catch (error) {
+    console.error(`Error creating folder: ${error}`);
+    return {
+      status: false,
+      message: "Failed to create folder",
+      data: null
+    }
+  }
 }
 
-export const getFoldersAction = async (userId: string) => {
+export const getFoldersAction = async (userId: string, orgUid?:string) => {
   const folders = await prisma.folder.findMany({
     where: {
       isActive: true,
       User: {
         userId
-      }
+      },
+      ...orgUid ? {
+        FolderSetting: {
+          Organization: {
+            orgId: orgUid
+          }
+        }
+      } : {}
     },
     select: {
       id: true,
@@ -69,6 +93,7 @@ export const getFoldersAction = async (userId: string) => {
         select: {
           id: true,
           isPublic: true,
+          scopeOrgId: true,
           Organization: {
             select: {
               orgId: true
@@ -87,7 +112,6 @@ export const updateFolderAction = async (folderId: number, name: string) => {
     data: { name }
   });
     
-  revalidatePath('/', "page");
   return folder;
 }
 
@@ -97,6 +121,5 @@ export const deleteFolderAction = async (folderId: number) => {
     data: { isActive: false }
   });
   
-  revalidatePath('/', "page");
   return folder;
 }

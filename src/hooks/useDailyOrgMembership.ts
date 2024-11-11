@@ -1,13 +1,15 @@
 import { GetDailyOrgMembershipRequest } from "@actions/dashboard/analytics.action"
 import { self } from "@services/request"
 import dayjs from "dayjs"
+import utc from "dayjs/plugin/utc"
+dayjs.extend(utc)
 import useSWR from "swr"
 
 type UseDailyOrgMembership = {
   startDate: string
   endDate: string
 }
-export const useDailyOrgMembership = (userId: string, {startDate, endDate}:UseDailyOrgMembership) => {
+export const useDailyOrgMemberships = (userId: string, {startDate, endDate}:UseDailyOrgMembership) => {
   const fetcher = (...args:any) => self.get<GetDailyOrgMembershipRequest>(args)
   const searParams = new URLSearchParams()
   searParams.set('orgId', userId)

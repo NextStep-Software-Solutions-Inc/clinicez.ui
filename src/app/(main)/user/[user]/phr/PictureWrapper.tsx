@@ -1,5 +1,6 @@
-import { getUserAction } from "@actions/user.action";
+import { getUserAction } from "@actions/users/user.action";
 import { Picture } from "./Picture";
+import { notFound } from "next/navigation";
 
 interface PictureWrapperProps {
   userId: string;
@@ -8,7 +9,8 @@ interface PictureWrapperProps {
 
 export const PictureWrapper = async ({ userId, readOnly }: PictureWrapperProps) => {
   const user = await getUserAction(userId);
+  if(!user.data) notFound();
   return (
-    <Picture user={user} readOnly={readOnly} />
+    <Picture user={user.data} readOnly={readOnly} />
   );
 };

@@ -1,30 +1,30 @@
 "use server";
 
-import prisma from "@lib/prisma-common";
+import prisma from "@lib/prisma";
 import fs from 'fs/promises';
-import { sendMail } from '../email.action';
+import { sendMail } from '@actions/email.action';
 import path from 'path';
 import { capitalize } from "@lib/utils";
 
 export type JoinOrganizationPayload = {
   userId: string;
-  orgId: string;
+  orgUid: string;
   orgRoleId: number;
 }
 
 export async function joinOrganizationAction(payload: JoinOrganizationPayload) {
   
-  const { userId, orgId, orgRoleId} = payload
-  const userOrganization = await prisma.userOrganization.create({
+  const { userId, orgUid, orgRoleId} = payload
+  const userOrganization = await prisma.organizationMember.create({
     data: {
-      UserRole: {
+      OrganizationRole: {
         connect: { id: orgRoleId  }
       },
       User: {
         connect: { userId }
       },
       Organization: {
-        connect: { orgId }
+        connect: { orgUid }
       }
     },
     include: {
@@ -35,7 +35,7 @@ export async function joinOrganizationAction(payload: JoinOrganizationPayload) {
           email: true
         }
       },
-      UserRole: {
+      OrganizationRole: {
         select: {
           requirements: true
         }
@@ -43,7 +43,7 @@ export async function joinOrganizationAction(payload: JoinOrganizationPayload) {
       Organization: {
         select: {
           name: true,
-          Users: {
+          OrganizationMembers: {
             select: {
               User: {
                 select: {
@@ -51,7 +51,7 @@ export async function joinOrganizationAction(payload: JoinOrganizationPayload) {
                 }
               },
               status: true,
-              UserRole: {
+              OrganizationRole: {
                 select: {
                   name: true,
                 }
@@ -64,7 +64,7 @@ export async function joinOrganizationAction(payload: JoinOrganizationPayload) {
   });
 
   if(!(userOrganization)) throw new Error("Error sending membership request");
-  const adminEmails = userOrganization.Organization.Users.filter(u => u.UserRole.name.toUpperCase() === "ADMIN" && u.status === "ACTIVE").map(u => u.User.email);
+  const adminEmails = userOrganization.Organization.OrganizationMembers.filter(u => u.OrganizationRole.name.toUpperCase() === "ADMIN" && u.status === "ACTIVE").map(u => u.User.email);
   const userName = `${userOrganization.User.firstName} ${userOrganization.User.lastName}`;
   const applicantEmail = userOrganization.User.email;
   const applicantName = capitalize(`${userOrganization.User.firstName} ${userOrganization.User.lastName}`);
@@ -79,7 +79,7 @@ export async function joinOrganizationAction(payload: JoinOrganizationPayload) {
 
   return {
     status: true,
-    message: `Application to ${orgId} was successfully sent. Please wait for the approval from the organization.`,
+    message: `Application to ${orgUid} was successfully sent. Please wait for the approval from the organization.`,
     data: userOrganization
   }
 }

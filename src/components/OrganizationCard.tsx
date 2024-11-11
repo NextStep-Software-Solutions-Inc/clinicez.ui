@@ -1,4 +1,4 @@
-import { Organization } from "@prisma/common/client";
+import { Organization } from "@prisma/client";
 import Image from "next/image";
 import organizationPlaceholder from "@public/assets/organization_placeholder.jpg";
 import Link from "next/link";

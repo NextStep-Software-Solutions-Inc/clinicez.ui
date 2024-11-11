@@ -1,4 +1,4 @@
-import { GetOrganizationRoles } from "@actions/organizations/organization-role.action"
+import { GetClinicRoles } from "@actions/organizations/organization-role.action"
 import { self } from "@services/request"
 import useSWR from "swr"
 
@@ -7,7 +7,7 @@ type UserRoleFilter = {
 }
 
 export const useOrgRoles = (orgId: string, filter?: UserRoleFilter) => {
-  const fetcher = (...args: any) => self.get<GetOrganizationRoles>(args)
+  const fetcher = (...args: any) => self.get<GetClinicRoles>(args)
   const searParams = new URLSearchParams()
   if(filter) {
     if(filter.userId) searParams.set('userId', filter.userId)

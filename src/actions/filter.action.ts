@@ -1,12 +1,12 @@
 "use server";
 
 import "server-only";
-import prismaCommon from "@lib/prisma-common";
+import prisma from "@lib/prisma";
 
 export type GetFilters = Awaited<ReturnType<typeof getFilters>>;
 export const getFilters = async () => {
   try {
-    const filters = await prismaCommon.filter.findMany({
+    const filters = await prisma.filter.findMany({
       orderBy: {
         key: "asc"
       }
@@ -25,10 +25,10 @@ type AddWhitelistFilterPayload = {
 }
 export const addWhitelistFilterAction = async ({whitelistId, filterId, value}:AddWhitelistFilterPayload) => {
   try {
-    const whitelistFilter = await prismaCommon.whitelistFilter.create({
+    const whitelistFilter = await prisma.whitelistFilter.create({
       data: {
         value,
-        UserOrgAppointmentWhitelist: {
+        UserClinicAppointmentWhitelist: {
           connect: {
             id: whitelistId
           }
@@ -54,7 +54,7 @@ type UpdateWhitelistFilterPayload = {
 }
 export const updateWhitelistFilterAction = async (payload: UpdateWhitelistFilterPayload) => {
   try {
-    const whitelistFilter = await prismaCommon.whitelistFilter.update({
+    const whitelistFilter = await prisma.whitelistFilter.update({
       where: { id: payload.id },
       data: { value: payload.value, filterId: payload.filterId }
     });
@@ -69,7 +69,7 @@ export const updateWhitelistFilterAction = async (payload: UpdateWhitelistFilter
 
 export const deleteWhitelistFilterAction = async (id: number) => {
   try {
-    await prismaCommon.whitelistFilter.delete({
+    await prisma.whitelistFilter.delete({
       where: { id }
     });
     return { status: true, message: "Whitelist filter deleted successfully." }

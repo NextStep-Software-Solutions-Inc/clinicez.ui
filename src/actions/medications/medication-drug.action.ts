@@ -1,7 +1,7 @@
 "use server";
 
 import "server-only";
-import prismaTenant from "@lib/prisma-tenant";
+import prisma from "@lib/prisma";
 import { getCachedSession } from "@actions/session.action";
 import { hasCodeProperty } from "@lib/utils";
 import { getPermissionsAction } from "@actions/permission.action";
@@ -25,7 +25,7 @@ export const getMedicationDrugsAction = async (medicationId: number) => {
 
     if(!canReadMedicationDrug) throw new Error("You do not have permission to remove medication drug");
 
-    const medicationDrugs = await prismaTenant.medicationDrug.findMany({
+    const medicationDrugs = await prisma.medicationDrug.findMany({
       where: {
         medicationId
       },
@@ -83,7 +83,7 @@ export const addMedicationDrugAction = async (payload: AddMedicationDrugPayload)
 
     const { drugId, medicationId, dosage, quantity, unit, notes, daysCount, isGeneric } = payload;
 
-    await prismaTenant.medicationDrug.create({
+    await prisma.medicationDrug.create({
       data: {
         medicationId,
         drugId,
@@ -123,7 +123,7 @@ export const removeMedicationDrugAction = async (medicationDrugId: number) => {
 
     if(!canAddMedicationDrug) throw new Error("You do not have permission to remove medication drug");
 
-    await prismaTenant.medicationDrug.delete({
+    await prisma.medicationDrug.delete({
       where: {
         id: medicationDrugId,
         Medication: {

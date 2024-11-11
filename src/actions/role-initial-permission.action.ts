@@ -1,7 +1,7 @@
 "use server";
 
 import "server-only";
-import prismaCommon from "@lib/prisma-common";
+import prisma from "@lib/prisma";
 
 type GetOrgRoleInitialPermissionsFilters = {
   orgUid: string;
@@ -10,11 +10,11 @@ type GetOrgRoleInitialPermissionsFilters = {
 export type GetOrgRoleInitialPermissions = Awaited<ReturnType<typeof getOrgRoleInitialPermissionsAction>>;
 export async function getOrgRoleInitialPermissionsAction({orgRoleId, orgUid}: GetOrgRoleInitialPermissionsFilters) {
 
-  const orgRoleInitialPermissions = await prismaCommon.orgRoleInitialPermission.findMany({
+  const orgRoleInitialPermissions = await prisma.orgRoleInitialPermission.findMany({
     where: {
       orgRoleId: orgRoleId,
       Organization: {
-        orgId: orgUid
+        orgUid
       }
     }, 
     select: {
@@ -41,10 +41,10 @@ type SetOrgRoleInitialPermissionsPayload = {
 export const setOrgRoleInitialPermissionsAction = async ({orgRoleId, orgUid, permissionIds}:SetOrgRoleInitialPermissionsPayload) => {
 
   try {
-    await prismaCommon.$transaction(async (prisma) => {
+    await prisma.$transaction(async (prisma) => {
       const organization = await prisma.organization.findUniqueOrThrow({
         where: {
-          orgId: orgUid
+          orgUid
         }
       })
       await prisma.orgRoleInitialPermission.deleteMany({

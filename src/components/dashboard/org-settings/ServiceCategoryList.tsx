@@ -8,7 +8,7 @@ import { useParams } from "next/navigation";
 import React from "react";
 import { toast } from "sonner";
 import { useOrgServiceCategories } from "@hooks/useOrgServiceCategory";
-import { deleteServiceCategoryAction, GetOrgServiceCategories } from "@actions/organizations/org-service-category.action";
+import { deleteServiceCategoryAction, GetClinicServiceCategories } from "@actions/organizations/clinic-service-category.action";
 import AddServiceCategoryModal from "./modal/AddServiceCategoryModal";
 import UpdateServiceCategoryModal from "./modal/UpdateServiceCategoryModal";
 import ServiceList from "./ServiceList";
@@ -79,7 +79,7 @@ export default function ServiceCategoryList() {
 
 
 interface ActionsProps {
-  serviceCategory: GetOrgServiceCategories[number];
+  serviceCategory: GetClinicServiceCategories[number];
   editAction?: () => void;
   deleteAction?: () => void;
 }

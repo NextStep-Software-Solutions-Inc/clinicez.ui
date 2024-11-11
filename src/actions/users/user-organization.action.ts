@@ -4,17 +4,19 @@ import "server-only";
 import fs from "fs/promises";
 import { sendMail } from "@actions/email.action";
 import { getCachedSession } from "@actions/session.action";
-import prismaCommon from "@lib/prisma-common";
-import { UserOrganizationStatus, Prisma } from "@prisma/common/client";
+import prisma from "@lib/prisma";
+import {Prisma } from "@prisma/client";
 import path from "path";
 import { cache } from "react";
 import { getPermissionsAction } from "@actions/permission.action";
 import { PERMISSIONS } from "@lib/permissions";
+import { OrganizationMemberStatus } from "@/types";
+import { parseObject } from "@/lib/utils";
 
 export type GetUserOrgFilterType = {
     userId?: string | null;
-    orgId?: string | null;
-    status?: UserOrganizationStatus | null;
+    orgUid?: string | null;
+    status?: OrganizationMemberStatus;
     roleId?: number | null;
     pageNumber?: number | null;
     pageSize?: number | null;
@@ -23,7 +25,7 @@ export type GetUserOrgFilterType = {
   
 export type GetUserOrganizations = Awaited<ReturnType<typeof getUserOrganizationsAction>>
 export const getUserOrganizationsAction = cache(async (filter?: GetUserOrgFilterType) => {
-  const { userId, orgId, status, distinct } = filter || {};
+  const { userId, orgUid, status, distinct } = filter || {};
 
   const castToNumber = (value: string | null | undefined | number) => value ? Number(value) : undefined;
   
@@ -31,8 +33,8 @@ export const getUserOrganizationsAction = cache(async (filter?: GetUserOrgFilter
   const pageNumber = castToNumber(filter?.pageNumber);
   const roleId = castToNumber(filter?.roleId);
 
-  const paginatedData = await prismaCommon.$transaction(async (prisma) => {
-    const userOrganizations =await prisma.userOrganization.findMany({
+  const paginatedData = await prisma.$transaction(async (prisma) => {
+    const userOrganizations =await prisma.organizationMember.findMany({
       ... pageSize ? { take: pageSize } : {},
       ... distinct ? { distinct: ["organizationId"]} : {},
       skip: pageNumber ? (pageNumber - 1) * (pageSize || 10) : 0,
@@ -44,7 +46,7 @@ export const getUserOrganizationsAction = cache(async (filter?: GetUserOrgFilter
         ...status ? { status } : {},
         Organization: {
           isActive: true,
-          ...orgId ? { orgId }: {}
+          ...orgUid ? { orgUid }: {}
         },
         User: {
           isActive: true,
@@ -68,7 +70,7 @@ export const getUserOrganizationsAction = cache(async (filter?: GetUserOrgFilter
               where: {
                 isActive: true,
                 Organization: {
-                  ...orgId ? {orgId}: {}
+                  ...orgUid ? {orgUid}: {}
                 }
               },
               select: {
@@ -79,7 +81,7 @@ export const getUserOrganizationsAction = cache(async (filter?: GetUserOrgFilter
                     name: true
                   }
                 },
-                YearLevel: {
+                OrganizationYearLevel: {
                   select: {
                     name: true
                   }
@@ -105,7 +107,7 @@ export const getUserOrganizationsAction = cache(async (filter?: GetUserOrgFilter
               where: {
                 isActive: true,
                 Organization: {
-                  ...orgId ? {orgId}: {}
+                  ...orgUid ? {orgUid}: {}
                 }
               },
               select: {
@@ -141,7 +143,7 @@ export const getUserOrganizationsAction = cache(async (filter?: GetUserOrgFilter
         },
         status: true,
         role: true,
-        UserRole: {
+        OrganizationRole: {
           select: {
             id: true,
             name: true,
@@ -151,9 +153,9 @@ export const getUserOrganizationsAction = cache(async (filter?: GetUserOrgFilter
         Organization: {
           select: {
             name: true,
-            orgId: true,
+            orgUid: true,
             id: true,
-            Users: {
+            OrganizationMembers: {
               select: {
                 User: {
                   select: {
@@ -179,7 +181,7 @@ export const getUserOrganizationsAction = cache(async (filter?: GetUserOrgFilter
                 },
                 Organization: {
                   select: {
-                    orgId: true,
+                    orgUid: true,
                   }
                 }
               }
@@ -194,7 +196,7 @@ export const getUserOrganizationsAction = cache(async (filter?: GetUserOrgFilter
               select: {
                 id: true,
                 organizationId: true,
-                UserRole: {
+                OrganizationRole: {
                   select: {
                     id: true,
                     name: true
@@ -208,13 +210,13 @@ export const getUserOrganizationsAction = cache(async (filter?: GetUserOrgFilter
     })
 
     
-    const total = await prisma.userOrganization.count({
+    const total = await prisma.organizationMember.count({
       where: {
         ...roleId ? { roleId }: {},
         ...status ? { status }: {},
         Organization: {
           isActive: true,
-          ...orgId ? { orgId }: {}
+          ...orgUid ? { orgUid }: {}
         },
         User: {
           isActive: true,
@@ -233,29 +235,22 @@ export const getUserOrganizationsAction = cache(async (filter?: GetUserOrgFilter
   return paginatedData;
 })
 
-export const setMembershipRequestStatusAction = async (id: number, status: UserOrganizationStatus) => {
-  const session = await getCachedSession();
-  if(!session) {
-    return {
-      status: false,
-      message: "No session found"
-    }
-  }
-  const userId = session.user.sub as string;
-  const updateMembershipPermissions = [PERMISSIONS.CLINIC["UPDATE:ORG:MEMBERSHIP_REQUEST"].name];
-  const myPermissions = await getPermissionsAction({userId});
-  const myPermissionArray = myPermissions.map((item) => item.name);
-  const hasMembershipPermission = updateMembershipPermissions.every((item) => myPermissionArray.includes(item));
-  
-  if(!hasMembershipPermission) {
-    return {
-      status: false,
-      message: "You do not have permission to update membership request status"
-    }
-  }
+export const setMembershipRequestStatusAction = async (id: number, status: OrganizationMemberStatus) => {
   try {
-    await prismaCommon.$transaction(async (prisma) => {
-      const userOrganization = await prisma.userOrganization.update({
+
+    const session = await getCachedSession();
+    if(!session) throw new Error("User not authenticated.");
+
+    const userId = session.user.sub as string;
+    const updateMembershipPermissions = [PERMISSIONS.CLINIC["UPDATE:ORG:MEMBERSHIP_REQUEST"].name];
+    const myPermissions = await getPermissionsAction({userId});
+    const myPermissionArray = myPermissions.map((item) => item.name);
+    const hasMembershipPermission = updateMembershipPermissions.every((item) => myPermissionArray.includes(item));
+  
+    if(!hasMembershipPermission) throw new Error("You do not have permission to update membership request status");
+  
+    await prisma.$transaction(async (prisma) => {
+      const userOrganization = await prisma.organizationMember.update({
         where: { id },
         data: {
           status,
@@ -267,8 +262,10 @@ export const setMembershipRequestStatusAction = async (id: number, status: UserO
             },
           }
         }, 
-        include: {
-          UserRole: {
+        select: {
+          id: true,
+          status: true,
+          OrganizationRole: {
             select: {
               id: true,
             }
@@ -290,7 +287,7 @@ export const setMembershipRequestStatusAction = async (id: number, status: UserO
       if (status === "ACTIVE") {
         const permissions = await prisma.orgRoleInitialPermission.findMany({
           where: {
-            orgRoleId: userOrganization.role,
+            orgRoleId: userOrganization.OrganizationRole.id,
           },
           select: {
             Permission: {
@@ -303,13 +300,12 @@ export const setMembershipRequestStatusAction = async (id: number, status: UserO
           }
         })
     
-        await prisma.orgUserPermission.createMany({
+        await prisma.orgMemberPermission.createMany({
           skipDuplicates: true,
           data: permissions.map((item) => {
             return {
               permissionId: item.Permission.id,
-              orgId: userOrganization.organizationId,
-              userId: userOrganization.userId
+              orgMemberId: userOrganization.id
             }
           })
         })
@@ -319,7 +315,7 @@ export const setMembershipRequestStatusAction = async (id: number, status: UserO
         name: `${userOrganization.User.firstName} ${userOrganization.User.lastName}`,
         email: userOrganization.User.email,
         organization: userOrganization.Organization.name,
-        status: userOrganization.status,
+        status: userOrganization.status as OrganizationMemberStatus,
         orgMail: userOrganization.Organization.email ?? ""
       })
     })
@@ -338,11 +334,12 @@ export const setMembershipRequestStatusAction = async (id: number, status: UserO
 
 export const deleteMembershipAction = async (id: number) => {
   try {
-    await prismaCommon.$transaction(async (prisma) => {
-      const userOrganization = await prismaCommon.userOrganization.delete({
+    await prisma.$transaction(async (prisma) => {
+      const userOrganization = await prisma.organizationMember.delete({
         where: { id  },
         select: {
-          UserRole: {
+          id: true,
+          OrganizationRole: {
             select: {
               id: true,
               name: true
@@ -368,7 +365,7 @@ export const deleteMembershipAction = async (id: number) => {
       })
       const permissions = await prisma.orgRoleInitialPermission.findMany({
         where: {
-          orgRoleId: userOrganization.UserRole.id,
+          orgRoleId: userOrganization.OrganizationRole.id,
           orgId: userOrganization.Organization.id
         },
         select: {
@@ -381,10 +378,9 @@ export const deleteMembershipAction = async (id: number) => {
           }
         }
       })
-      await prisma.orgUserPermission.deleteMany({
+      await prisma.orgMemberPermission.deleteMany({
         where: {
-          orgId: userOrganization.Organization.id,
-          userId: userOrganization.User.id,
+          orgMemberId: userOrganization.id,
           Permission: {
             id: {
               in: permissions.map((item) => item.Permission.id)
@@ -397,7 +393,7 @@ export const deleteMembershipAction = async (id: number) => {
         name: `${userOrganization.User.firstName} ${userOrganization.User.lastName}`,
         email: userOrganization.User.email,
         organization: userOrganization.Organization.name,
-        role: userOrganization.UserRole.name
+        role: userOrganization.OrganizationRole.name
       })
     })
 
@@ -416,7 +412,7 @@ export const deleteMembershipAction = async (id: number) => {
 
 export const requestMembershipAdditionalInfo = async (id: number) => {
   try {
-    const userOrganization = await prismaCommon.userOrganization.findUniqueOrThrow({
+    const userOrganization = await prisma.organizationMember.findUniqueOrThrow({
       where: { id },
       select: {
         User: {
@@ -432,7 +428,7 @@ export const requestMembershipAdditionalInfo = async (id: number) => {
             email: true
           }
         },
-        UserRole: {
+        OrganizationRole: {
           select: {
             name: true
           }
@@ -462,7 +458,7 @@ const sendMembershipUpdateEmailNotification = async ({name, email, organization,
   organization: string
   email: string
   name: string,
-  status: UserOrganizationStatus,
+  status: OrganizationMemberStatus,
   orgMail: string
 }) => {
   try {

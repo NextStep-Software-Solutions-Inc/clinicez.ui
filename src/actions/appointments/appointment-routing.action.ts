@@ -1,24 +1,23 @@
 "use server";
-import 'server-only'
 
+import 'server-only'
 import { getCachedSession } from '@actions/session.action';
-import prismaTenant from '@lib/prisma-tenant';
-import prismaCommon from '@lib/prisma-common';
-import { Prisma } from "@prisma/tenant/client"
+import prisma from '@lib/prisma';
+import { Prisma } from "@prisma/client"
 import { hasCodeProperty } from '@lib/utils';
 import { getPermissionsAction } from '@actions/permission.action';
 import { PERMISSIONS } from '@lib/permissions';
-import { insertToCalendar } from '@actions/google/auth.action';
 
-export const assignAppointmentAction = async (formData: FormData) => {
+type AssignAppointmentPayload = {
+  routedTo: number;
+  appointmentId: number;
+}
+export const assignAppointmentAction = async (data: AssignAppointmentPayload) => {
   const session = await getCachedSession();
   try {
     if(!session) throw new Error('Unauthorized');
 
-    const routedTo = formData.get('routedTo') as string;
-    const routedToRole = formData.get('routedToRole') as string;
-    const appointmentId = parseInt(formData.get('appointmentId') as string);
-
+    const { routedTo, appointmentId } = data;
     if(!routedTo || !appointmentId) throw new Error('Invalid data provided');
 
     const myPermissions = await getPermissionsAction({userId: session.user.sub, type: 'ORGANIZATION'});
@@ -27,8 +26,8 @@ export const assignAppointmentAction = async (formData: FormData) => {
     const canAssignAppointment = assignAppointmentPermissions.every(permission => myPermissionArray.includes(permission));
 
     if(!canAssignAppointment) throw new Error('You do not have permission to assign appointment');
-
-    const userPreference = await prismaCommon.userPreference.findFirst({
+    
+    const userPreference = await prisma.userPreference.findFirst({
       where: {
         User: {
           userId: session.user.sub
@@ -38,14 +37,25 @@ export const assignAppointmentAction = async (formData: FormData) => {
 
     const autoAccept = userPreference?.autoAcceptAppointmentAssignment ?? false;
     
-    await prismaTenant.$transaction(async (prisma) => {
+    await prisma.$transaction(async (prisma) => {
       await prisma.appointmentRouting.create({
         data: {
-          routedBy: session.user.sub,
+          RoutedBy: {
+            connect: {
+              userId: session.user.sub
+            }
+          },
+          RoutedTo: {
+            connect: {
+              id: routedTo
+            }
+          },
+          Appointment: {
+            connect: {
+              id: appointmentId
+            }
+          },
           status: autoAccept ? 'ACCEPTED' : 'PENDING',
-          routedTo,
-          routedToRole,
-          appointmentId,
         }
       })
     
@@ -95,7 +105,7 @@ export const acceptAppointmentAction = async (formData: FormData) => {
 
     const routingCode = formData.get('routingCode') as string;
     
-    const routedApt = await prismaTenant.appointmentRouting.update({
+    await prisma.appointmentRouting.update({
       where: { 
         routingCode,
         status: {
@@ -141,7 +151,7 @@ export const declineAppointmentAction = async (formData: FormData) => {
 
     if(!canDeclineAppointment) throw new Error('You do not have permission to decline appointment');
 
-    await prismaTenant.appointmentRouting.update({
+    await prisma.appointmentRouting.update({
       where: { routingCode },
       data: { 
         status: 'DECLINED',
@@ -184,7 +194,7 @@ export const cancelAppointmentRoutingAction = async (appointmentRoutingId: numbe
 
     if(!canCancelAppointment) throw new Error('You do not have permission to cancel appointment assignment');
 
-    await prismaTenant.appointmentRouting.update({
+    await prisma.appointmentRouting.update({
       where: { 
         id: appointmentRoutingId,
         routedBy: session.user.sub,

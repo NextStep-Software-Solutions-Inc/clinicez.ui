@@ -1,36 +1,36 @@
 "use server";
 
 import "server-only";
-import prismaCommon from "@lib/prisma-common";
+import prisma from "@lib/prisma";
 
 export type GetOrgAppointmentConfig = Awaited<ReturnType<typeof getOrgAppointmentConfigAction>>
-export const getOrgAppointmentConfigAction = async (orgUid: string) => {
-  const orgAppointmentConfig = await prismaCommon.orgAppointmentConfig.findFirst({
+export const getOrgAppointmentConfigAction = async (clinicUid: string) => {
+  const orgAppointmentConfig = await prisma.appointmentConfig.findFirst({
     where: {
-      Organization: {
-        orgId: orgUid
+      Clinic: {
+        clinicUid
       }
     },
   });
   return orgAppointmentConfig;
 }
 
-type UpsertOrgAppointmentConfig = {
+type UpsertAppointmentConfig = {
   maxAppointmentsPerClient?: number;
   perClientResetInterval?: number;
   maxAppointmentsPerDay?: number;
-  orgUid: string;
+  clinicUid: string;
 }
-export const upsertOrgAppointmentConfigAction = async (orgAppointmentConfigId: number, data: UpsertOrgAppointmentConfig) => {
+export const upsertOrgAppointmentConfigAction = async (appointmentConfigId: number, data: UpsertAppointmentConfig) => {
   try {
-    const orgAppointmentConfig = await prismaCommon.orgAppointmentConfig.upsert({
+    const orgAppointmentConfig = await prisma.appointmentConfig.upsert({
       where: {
-        id: orgAppointmentConfigId
+        id: appointmentConfigId
       },
       create: {
-        Organization: {
+        Clinic: {
           connect: {
-            orgId: data.orgUid
+            clinicUid: data.clinicUid
           }
         },
         maxAppointmentsPerClient: data.maxAppointmentsPerClient,

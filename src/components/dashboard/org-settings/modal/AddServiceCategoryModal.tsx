@@ -1,6 +1,6 @@
 "use client";
 
-import { createOrgServiceCategoryAction } from "@actions/organizations/org-service-category.action";
+import { createClinicServiceCategoryAction } from "@actions/organizations/clinic-service-category.action";
 import ActionButton from "@components/ActionButton";
 import CustomModalContent from "@components/CustomModalContent";
 import { Button } from "@components/ui/button";
@@ -45,7 +45,7 @@ export default function AddServiceCategoryModal({orgUid, onAddServiceCategory}:A
 
   const action = async () => {
     form.handleSubmit(async (values) => {
-      toast.promise(createOrgServiceCategoryAction({
+      toast.promise(createClinicServiceCategoryAction({
         name: values.name,
         description: values.description,
         orgUid

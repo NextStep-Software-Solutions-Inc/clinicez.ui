@@ -1,6 +1,6 @@
 "use server";
 
-import prisma from "@lib/prisma-common";
+import prisma from "@lib/prisma";
 
 export type GetFileTypes = Awaited<ReturnType<typeof getFileTypesAction>>
 export const getFileTypesAction = async () => {
@@ -15,10 +15,10 @@ export const getFileTypesAction = async () => {
         select: {
           dateTakenRequired: true,
           required: true,
-          Organization: {
+          Clinic: {
             select: {
               id: true,
-              orgId: true
+              clinicUid: true
             }
           }
         }

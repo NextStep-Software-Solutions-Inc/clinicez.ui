@@ -1,16 +1,18 @@
 "use server";
 
-import prisma from "@lib/prisma-tenant";
+import prisma from "@lib/prisma";
 import { cache } from "react";
 
 export type GetAppointmentModes = Awaited<ReturnType<typeof getAppointmentModesAction>>;
-export const getAppointmentModesAction = cache(async (orgUid: string) => {
+export const getAppointmentModesAction = cache(async (clinicUid: string) => {
   return await prisma.appointmentMode.findMany({
     orderBy: {
       name: 'asc'
     },
     where: {
-      orgUid,
+      Clinic: {
+        clinicUid
+      },
       isActive: true
     }
   });
@@ -19,16 +21,20 @@ export const getAppointmentModesAction = cache(async (orgUid: string) => {
 type CreateAppointmentModePayload = {
   name: string;
   description?: string;
-  orgUid: string;
+  clinicUid: string;
 }
 export const createAppointmentModeAction = async (payload: CreateAppointmentModePayload) => {
-  const { name, description, orgUid } = payload;
+  const { name, description, clinicUid } = payload;
   try {
     const appointmentMode = await prisma.appointmentMode.create({
       data: {
         name,
         description,
-        orgUid
+        Clinic: {
+          connect: {
+            clinicUid
+          }
+        }
       }
     });
     return { status: true, message: "Appointment mode created successfully", data: appointmentMode }

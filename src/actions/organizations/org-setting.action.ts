@@ -1,97 +1,59 @@
 "use server";
 import "server-only";
 
-import prismaCommon from "@lib/prisma-common";
-import { Prisma } from '@prisma/common/client';
+import prisma from "@lib/prisma";
+import { Prisma } from '@prisma/client';
 import { cache } from "react";
+import { getCachedSession } from "@actions/session.action";
+import { hasCodeProperty } from "@lib/utils";
 
 export type GetOrgSetting = Awaited<ReturnType<typeof getOrgSettingAction>>
 export const getOrgSettingAction = cache(async (orgUid: string) => {
+
+  let message = "Org settings fetched successfully";
   try {
-    const orgSetting = await prismaCommon.organizationSetting.findFirst({
-      where: { Organization: { orgId: orgUid } },
-      include: {
-        Organization: {
-          select: {
-            OrgAppointmentConfig: true,
-            OrgConsultationConfig: true
-          }
-        }
-      }
+
+    const session = await getCachedSession();
+    if(!session) throw new Error("User not authenticated.");
+
+    const orgSetting = await prisma.organizationSetting.findFirst({
+      where: { Organization: { orgUid } },
     });
-    return {
-      status: true,
-      message: "Org settings fetched successfully",
-      data: orgSetting
-    }
+    return { status: true,  message, data: orgSetting }
   } catch (error) {
     console.error(error);
-    let errorMessage = "Error while fetching org settings";
-    if(error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
-      errorMessage = "Organization not found";
-    }
-    return {
-      status: false,
-      message: errorMessage,
-      data: null
-    }
+    message = "Error while fetching org settings";
+    if(hasCodeProperty(error) && error.code === 'P2025') message = "Organization not found";
+    return { status: false, message: message, data: null }
   }
 });
 
 type UpsertOrganizationSetting = {
-  enableAppointment?: boolean;
-  enableConsultation?: boolean;
-  orgUid: string;
+  sendEmailNotification?: boolean;
+  emailToOrgOnly?: boolean;
 }
-export const updateOrgSettingsAction = async (orgSettingId: number, { enableAppointment, enableConsultation, orgUid }: UpsertOrganizationSetting) => {
+export const updateOrgSettingsAction = async (orgSettingId: number, { sendEmailNotification, emailToOrgOnly }: UpsertOrganizationSetting) => {
+
+  let message = "Organization settings updated successfully";
   try {
-    const orgSetting = await prismaCommon.organizationSetting.update({
+
+    const session = await getCachedSession();
+    if(!session) throw new Error("User not authenticated.");
+
+    const orgSetting = await prisma.organizationSetting.update({
       where: { 
         id: orgSettingId
       },
       data: {
-        Organization: {
-          update: {
-            OrgAppointmentConfig: {
-              upsert: {
-                where: {
-                  Organization: {
-                    orgId: orgUid
-                  }
-                },
-                create: {
-
-                },
-                update: {
-                  
-                }
-              }
-            }
-          }
-        },
-        enableAppointment,
-        enableConsultation,
-      },
-      include: {
-        Organization: {
-          select: {
-            OrgAppointmentConfig: true,
-            OrgConsultationConfig: true
-          }
-        }
+        sendEmailNotification,
+        emailToOrgOnly
       }
     });
-    return {
-      status: true,
-      message: "Organization settings updated successfully",
-      data: orgSetting
-    }
+    return { status: true, message, data: orgSetting }
   } catch (error) {
-    console.error(error);
-    return {
-      status: false,
-      message: "Error while updating organization settings",
-      data: null
-    }
+    console.error(`Error updating org settings: ${error}`);
+    message = "Error while updating org settings";
+    if(error instanceof Error) message = error.message;
+    return { status: false,  message, data: null }
   }
 };

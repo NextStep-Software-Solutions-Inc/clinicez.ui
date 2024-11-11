@@ -8,7 +8,7 @@ import { useParams } from "next/navigation";
 import React from "react";
 import { toast } from "sonner";
 import { useOrgServices } from "@hooks/useOrgService";
-import { deleteOrgServiceAction, GetOrgServices } from "@actions/organizations/org-service.action";
+import { deleteClinicServiceAction, GetClinicServices } from "@actions/organizations/org-service.action";
 import AddServiceModal from "./modal/AddServiceModal";
 import UpdateServiceModal from "./modal/UpdateServiceModal";
 
@@ -24,7 +24,7 @@ export default function ServiceList({categoryId}:ServiceListProps) {
   })
 
   const deleteServiceCategory = (id: number) => {
-    toast.promise(deleteOrgServiceAction(id), {
+    toast.promise(deleteClinicServiceAction(id), {
       loading: "Deleting service...",
       success: res => {
         if(res.status) {
@@ -99,7 +99,7 @@ export const ListItem = ({name,actions, description}: ListItemProps) => {
 }
 
 interface ActionsProps {
-  service: GetOrgServices[number];
+  service: GetClinicServices[number];
   editAction?: () => void;
   deleteAction?: () => void;
 }

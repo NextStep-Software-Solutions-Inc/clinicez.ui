@@ -1,6 +1,6 @@
 "use server";
 
-import prisma from "@lib/prisma-common";
+import prisma from "@lib/prisma";
 import { cache } from "react";
 
 type UserVaccinationPayloadType = {

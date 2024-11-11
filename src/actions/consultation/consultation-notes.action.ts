@@ -2,66 +2,60 @@
 
 import "server-only"
 
-import prismaTenant from "@lib/prisma-tenant"
+import prisma from "@lib/prisma"
 import { getCachedSession } from "@actions/session.action";
 import { getHPsAction } from "@actions/hp.actions";
 import { hasCodeProperty } from "@lib/utils";
 
-export const upsertConsultationNotesAction = async (data: FormData) => {
-  const session = await getCachedSession()
+type UpsertConsultationNotePayload = {
+  consultationTicketId: number;
+  section: string;
+  content: string;
+  hpId: number
+}
+export const upsertConsultationNotesAction = async (data: UpsertConsultationNotePayload) => {
+  let message = "Consultation notes updated successfully"
   try {
-
+    const session = await getCachedSession()
     if(!session) throw new Error("User not authenticated.")
       
-    const myHps = await getHPsAction({userId: session.user.sub})
-    const consultationTicketId = parseInt(data.get('consultationTicketId') as string)
-    const section = data.get('section') as string
-    const content = data.get('content') as string
-
-    const updatedNotes = await prismaTenant.consultationNote.upsert({
+    const { consultationTicketId, section, content, hpId } = data
+    const updatedNotes = await prisma.consultationNote.upsert({
       where: {
         unique_consultation_section: {
           consultationTicketId,
           section, 
+          hpId
         },
         ConsultationTicket: {
-          ConsultationTicketAuthors: {
+          ConsultationTicketHPs: {
             some: {
-              hpId: {
-                in: myHps.map(hp => hp.id.toString())
+              HealthCareProvider: {
+                User: {
+                  userId: session.user.sub
+                }
               }
             }
           }
         }
       },
-      create: {
-        consultationTicketId,
-        section,
-        content,
-      },
-      update: { 
-        content,
-      }
+      create: { consultationTicketId, section, content, hpId },
+      update: { content }
     })
-    return {
-      status: true,
-      message: `${section} content updated successfully`,
-      data: updatedNotes
-    }
+    return {  status: true,  message: `${section} content updated successfully`, data: updatedNotes }
   } catch (error) {
-    let message = "Failed to update consultation notes section content, either the consultation record does not exist or you do not have permission to update it"
+    console.error(`Error upsert-ing consultation notes: ${error}`);
+    message = "Failed to update consultation notes section content, either the consultation record does not exist or you do not have permission to update it"
+    if(error instanceof Error) message = error.message;
     if(hasCodeProperty(error) && error.code === 'P2025')  message = "Consultation record not found or you do not have permission to update it"
     return { status: false, message, data: null }
   }
-  
 } 
 
 export type GetConsultationNotes = Awaited<ReturnType<typeof getConsultationNotesAction>>
 export const getConsultationNotesAction = async (consultationTicketId: number) => {
-  return await prismaTenant.consultationNote.findMany({
-    where: {
-      consultationTicketId,
-    }
+  return await prisma.consultationNote.findMany({
+    where: {  consultationTicketId  }
   })
 }
 
@@ -71,24 +65,24 @@ export const upsertConsultationNotesSettingsAction = async (data: FormData) => {
   try {
     if(!session) throw new Error("Session not found")
       
-    const myHps = await getHPsAction({userId: session.user.sub})
     const consultationTicketId = Number(data.get('consultationTicketId'))
+    const hpId = Number(data.get('hpId'))
     data.delete('consultationTicketId')
-    await prismaTenant.$transaction(async (prisma) => {
+    data.delete('hpId')
+    await prisma.$transaction(async (prisma) => {
       const notes = Object.fromEntries(data)
       for(const [section, showOnPatient] of Object.entries(notes)) {
         const show = showOnPatient === "true"
         await prisma.consultationNote.upsert({
           where: {
-            unique_consultation_section: {
-              consultationTicketId,
-              section, 
-            },
+            unique_consultation_section: { consultationTicketId,  section, hpId },
             ConsultationTicket: {
-              ConsultationTicketAuthors: {
+              ConsultationTicketHPs: {
                 some: {
-                  hpId: {
-                    in: myHps.map(hp => hp.id.toString())
+                  HealthCareProvider: {
+                    User: {
+                      userId: session.user.sub
+                    }
                   }
                 }
               }
@@ -98,6 +92,7 @@ export const upsertConsultationNotesSettingsAction = async (data: FormData) => {
             consultationTicketId,
             section,
             content : "",
+            hpId,
             showOnPatient:show
           },
           update: { 
@@ -108,7 +103,9 @@ export const upsertConsultationNotesSettingsAction = async (data: FormData) => {
     })
     return { status: true,  message: `Consultation notes settings updated successfully` }
   } catch (error) {
+    console.error(`Error upsert-ing consultation notes settings: ${error}`);
     let message = "Failed to update consultation notes section content, either the consultation record does not exist or you do not have permission to update it"
+    if(error instanceof Error) message = error.message;
     if(hasCodeProperty(error) && error.code === 'P2025') message = "Consultation record not found or you do not have permission to update it"
     return { status: false, message }
   }

@@ -8,14 +8,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { GetOrganizationRoles } from "@actions/organizations/organization-role.action";
+import { GetClinicRoles } from "@actions/organizations/organization-role.action";
 import { useAtom } from "jotai";
 import { joinOrgApplicationAtom } from "@state/join-org-application";
 
 interface SelectOrgFormProps {
   userId: string
   orgId: string
-  orgRoles: GetOrganizationRoles
+  orgRoles: GetClinicRoles
   existingRoles: number[]
   isFirstStep?: boolean;
   isLastStep?: boolean;

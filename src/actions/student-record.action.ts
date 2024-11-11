@@ -1,7 +1,7 @@
 "use server";
 
-import prisma from "@lib/prisma-common";
-import { PrismaClientKnownRequestError } from "@prisma/common/client/runtime/library";
+import prisma from "@lib/prisma";
+import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 
 export type CreateUserStudentRecord = {
   studentId: string;
@@ -19,7 +19,7 @@ export const createStudentRecordAction = async (payload:CreateUserStudentRecord 
   const { userId, orgUid, studentId, lrn, departmentId, programId, collegeId, levelId, yearLevelId } = payload
 
   const organization = await prisma.organization.findUniqueOrThrow({
-    where: { orgId: orgUid, isActive: true },
+    where: { orgUid, isActive: true },
     select: { id: true }
   })
   const studentRecord = await prisma.userStudentRecord.create({
@@ -48,7 +48,7 @@ export const upsertStudentRecordAction = async (payload:CreateUserStudentRecord 
   }
   try {
     const organization = await prisma.organization.findUniqueOrThrow({
-      where: { orgId: orgUid, isActive: true },
+      where: { orgUid, isActive: true },
       select: { id: true }
     })
     const studentRecord = await prisma.userStudentRecord.upsert({

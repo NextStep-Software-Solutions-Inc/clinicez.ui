@@ -1,7 +1,7 @@
 "use server";
 import 'server-only'
-import prismaCommon from "@lib/prisma-common";
-import { Prisma, $Enums  } from "@prisma/common/client";
+import prisma from "@lib/prisma";
+import { Prisma, $Enums  } from "@prisma/client";
 import { managementClient } from "@services/auth0/management-client";
 import { cache } from 'react';
 import dayjs from 'dayjs';
@@ -14,7 +14,7 @@ import { hasCodeProperty } from '@lib/utils';
 
 
 export type GetUsersFiltersType = {
-  orgId?: string
+  orgUid?: string
   search?: string
   page?: number
   pageSize?: number
@@ -24,8 +24,8 @@ export type GetUsersFiltersType = {
 
 export type GetUsers = Awaited<ReturnType<typeof getUsersAction>>
 export const getUsersAction = cache(async (filter?:GetUsersFiltersType) => {
-  const { orgId, search, page = 1, pageSize = 100, userId, email } = filter || {};
-  return await prismaCommon.$transaction(async (prisma) => {
+  const { orgUid, search, page = 1, pageSize = 100, userId, email } = filter || {};
+  return await prisma.$transaction(async (prisma) => {
     const users = await prisma.user.findMany({
       orderBy: {
         updatedAt: 'desc'
@@ -35,11 +35,11 @@ export const getUsersAction = cache(async (filter?:GetUsersFiltersType) => {
       where: {
         userId, 
         email,
-        ...orgId ? { 
+        ...orgUid ? { 
           Organizations: { 
             some: { 
               Organization: {
-                orgId
+                orgUid
               } 
             }
           } 
@@ -59,7 +59,7 @@ export const getUsersAction = cache(async (filter?:GetUsersFiltersType) => {
           distinct: "organizationId",
           where: {
             Organization: {
-              orgId
+              orgUid
             }
           },
           select: {
@@ -69,11 +69,11 @@ export const getUsersAction = cache(async (filter?:GetUsersFiltersType) => {
       }
     })
     const total = await prisma.user.count({ where: {
-      ...orgId ? { 
+      ...orgUid ? { 
         Organizations: { 
           some: { 
             Organization: {
-              orgId
+              orgUid
             } 
           }
         } 
@@ -99,7 +99,7 @@ export const getUsersAction = cache(async (filter?:GetUsersFiltersType) => {
 export type GetUser = Awaited<ReturnType<typeof getUserAction>>
 export const getUserAction = cache(async (key: string, orgUid?: string)=> {
   try {
-    const user = await prismaCommon.user.findFirstOrThrow({ 
+    const user = await prisma.user.findFirstOrThrow({ 
       where: { 
         isActive: true,
         OR: [
@@ -110,7 +110,7 @@ export const getUserAction = cache(async (key: string, orgUid?: string)=> {
           Organizations: { 
             some: { 
               Organization: {
-                orgId: orgUid
+                orgUid
               } 
             }
           }
@@ -125,23 +125,31 @@ export const getUserAction = cache(async (key: string, orgUid?: string)=> {
             id: true,
           }
         },
-        OrgUserPermissions: {
+        Organizations: {
           where: {
             Organization: {
               isActive: true,
-              orgId: orgUid
+              orgUid
             }
           },
           select: {
-            Organization: {
+            OrgMemberPermissions: {
               select: {
-                orgId: true,
-                name: true
-              }
-            },
-            Permission: {
-              select: {
-                name: true
+                OrganizationMember: {
+                  select: {
+                    Organization: {
+                      select: {
+                        orgUid: true,
+                        name: true
+                      }
+                    }
+                  }
+                },
+                Permission: {
+                  select: {
+                    name: true
+                  }
+                }
               }
             }
           }
@@ -187,21 +195,22 @@ export const createUserAction = async (payload: CreateUserPayload) => {
   }
 
   try {
+    const {email, firstName, lastName, mobile, gender, dob, orgUid, userRoleId, } = payload
     // generate strong password // lowercase, uppercase, number, special character
     const randomPassword = faker.internet.password({
       length: 12,
       pattern: /[A-Za-z\d!@#$%^&*()_+]/,
     });
     let orgName: string | null = null 
-    const newUser = await prismaCommon.$transaction(async (prisma) => {
+    const newUser = await prisma.$transaction(async (prisma) => {
       // create user in auth0
       const { data, status } = await managementClient.users.create({
-        given_name: payload.firstName,
-        family_name: payload.lastName,
-        name: `${payload.firstName} ${payload.lastName}`,
-        email: payload.email,
+        given_name: firstName,
+        family_name: lastName,
+        name: `${firstName} ${lastName}`,
+        email,
         password: randomPassword,
-        nickname: `${payload.firstName} ${payload.lastName}`,
+        nickname: `${firstName} ${lastName}`,
         connection: "Username-Password-Authentication",
       })
 
@@ -211,18 +220,18 @@ export const createUserAction = async (payload: CreateUserPayload) => {
       const newUser = await insertUserInDb(prisma, {
         userId: data.user_id,
         email: data.email,
-        mobile: payload.mobile,
+        mobile: mobile,
         firstName: data.given_name,
         lastName: data.family_name,
-        gender: payload.gender,
-        dob: dayjs(payload.dob).toDate(),
+        gender: gender,
+        dob: dayjs(dob).toDate(),
       });
 
       if(!newUser.data) throw new Error("Failed to create user in db");
 
       // add user to organization
-      if(payload.userRoleId && payload.orgUid) {
-        const userOrganization = await prisma.userOrganization.create({
+      if(userRoleId && orgUid) {
+        const userOrganization = await prisma.organizationMember.create({
           data: {
             User: {
               connect: {
@@ -231,17 +240,18 @@ export const createUserAction = async (payload: CreateUserPayload) => {
             },
             Organization: {
               connect: {
-                orgId: payload.orgUid
+                orgUid
               }
             },
-            UserRole: {
+            OrganizationRole: {
               connect: {
-                id: payload.userRoleId
+                id: userRoleId
               }
             },
             status: "ACTIVE"
           },
           select: {
+            id: true,
             organizationId: true,
             role: true,
             Organization: {
@@ -260,12 +270,11 @@ export const createUserAction = async (payload: CreateUserPayload) => {
         })
 
         // create user organization permissions
-        await prisma.orgUserPermission.createMany({
+        await prisma.orgMemberPermission.createMany({
           skipDuplicates: true,
           data: permissions.map(permission => ({
-            userId: newUser.data.id,
+            orgMemberId: userOrganization.id,
             permissionId: permission.permissionId,
-            orgId: userOrganization.organizationId
           }))
         })
       }
@@ -299,7 +308,7 @@ export const createUserAction = async (payload: CreateUserPayload) => {
 }
 
 export const updateUserAction = async (userId: string, data: Prisma.UserUpdateArgs["data"]) => {
-  const updatedUser = await prismaCommon.user.update({
+  const updatedUser = await prisma.user.update({
     where: { userId },
     data
   });
@@ -346,7 +355,7 @@ export const findAndCreateUserAction = cache(async () => {
   try {
     if(!session) throw new Error("Unauthorized");
     
-    const user = await prismaCommon.$transaction(async (prisma) => {
+    const user = await prisma.$transaction(async (prisma) => {
       let dbUser = await prisma.user.findUnique({
         where: {
           userId: session.user.sub
@@ -397,7 +406,7 @@ export const findAndCreateUserAction = cache(async () => {
 })
 
 export type PrismaTransactionalClient = Parameters<
-    Parameters<typeof prismaCommon['$transaction']>[0]
+    Parameters<typeof prisma['$transaction']>[0]
 >[0];
 const insertUserInDb = async (prisma: PrismaTransactionalClient, payload: {
   userId: string

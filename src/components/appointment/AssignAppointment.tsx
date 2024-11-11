@@ -59,11 +59,12 @@ export default function AssignAppointment({disabled = false, appointment, onAssi
     
     if (!selectedHp) return;
 
-    formData.append("routedTo", selectedHp.id.toString());
-    formData.append("routedToRole", selectedHp.hpTypeId);
-    formData.append("appointmentId", appointment.id.toString());
-
-    toast.promise(assignAppointmentAction(formData), {
+    const payload = {
+      routedTo: selectedHp.id,
+      appointmentId: appointment.id,
+    }
+  
+    toast.promise(assignAppointmentAction(payload), {
       loading: "Assigning...",
       success: (res) => {
         if(res.status) {

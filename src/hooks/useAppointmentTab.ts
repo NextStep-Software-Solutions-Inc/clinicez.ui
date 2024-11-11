@@ -1,5 +1,5 @@
 import { GetAppointmentTabs } from "@actions/appointment-tab.action"
-import { GetOrgAppointmentTabs } from "@actions/organizations/org-appointment-tab..action"
+import { GetOrgAppointmentTabs } from "@actions/organizations/clinic-appointment-tab..action"
 import { self } from "@services/request"
 import useSWR from "swr"
 

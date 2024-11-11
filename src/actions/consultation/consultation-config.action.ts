@@ -1,15 +1,16 @@
 "use server";
 
 import "server-only";
-import prismaCommon from "@lib/prisma-common";
+import prisma from "@lib/prisma";
+import { getCachedSession } from "@actions/session.action";
 
 export type GetOrgConsultationConfig = Awaited<ReturnType<typeof getOrgConsultationConfigAction>>
-export const getOrgConsultationConfigAction = async (orgUid: string) => {
+export const getOrgConsultationConfigAction = async (clinicUid: string) => {
   
-  const orgConsultationConfig = await prismaCommon.orgConsultationConfig.findFirst({
+  const orgConsultationConfig = await prisma.consultationConfig.findFirst({
     where: {
-      Organization: {
-        orgId: orgUid
+      Clinic: {
+        clinicUid
       }
     },
     include: {
@@ -24,47 +25,45 @@ export const getOrgConsultationConfigAction = async (orgUid: string) => {
   return orgConsultationConfig;
 }
 
-type UpsertOrgConsultationConfig = {
+type UpsertConsultationConfig = {
   noteTemplateId?: number;
-  orgUid: string;
+  clinicUid: string;
 }
-export const upsertOrgConsultationConfigAction = async (orgConsultationConfigId: number, data: UpsertOrgConsultationConfig) => {
+export const upsertOrgConsultationConfigAction = async (orgConsultationConfigId: number, data: UpsertConsultationConfig) => {
+  let message = "Appointment settings updated successfully";
   try {
-    const orgConsultationConfig = await prismaCommon.orgConsultationConfig.upsert({
+
+    const session = await getCachedSession();
+    if (!session) throw new Error("User not authenticated.");
+    const { clinicUid, noteTemplateId } = data;
+    const orgConsultationConfig = await prisma.consultationConfig.upsert({
       where: {
         id: orgConsultationConfigId
       },
       create: {
-        Organization: {
+        Clinic: {
           connect: {
-            orgId: data.orgUid
+            clinicUid
           }
         },
         NoteTemplate: {
           connect: {
-            id: data.noteTemplateId
+            id: noteTemplateId
           }
         },
       },
       update: {
         NoteTemplate: {
           connect: {
-            id: data.noteTemplateId
+            id: noteTemplateId
           }
         }
       }
     });
-    return {
-      status: true,
-      message: "Appointment settings updated successfully",
-      data: orgConsultationConfig
-    }
+    return { status: true, message, data: orgConsultationConfig}
   } catch (error) {
-    console.error(error);
-    return {
-      status: false,
-      message: "Failed to update appointment settings",
-      data: null
-    }
+    console.error(`Error updating appointment settings: ${error}`);
+    if(error instanceof Error) message = error.message;
+    return { status: false, message: "Failed to update appointment settings", data: null}
   }
 }

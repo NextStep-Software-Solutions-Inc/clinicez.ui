@@ -3,7 +3,7 @@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@components/ui/card"
 import OrgRoleAppointmentTabs from "./OrgRoleAppointmentTabs"
 import { Separator } from "@components/ui/separator"
-import { deleteOrgRoleAction, GetOrganizationRoles } from "@actions/organizations/organization-role.action"
+import { deleteClinicRoleAction, GetClinicRoles } from "@actions/organizations/organization-role.action"
 import OrgRoleInitialPermissions from "./OrgRoleInitialPermissions";
 import OrgRoleRequirements from "./OrgRoleRequirements";
 import { toast } from "sonner";
@@ -11,13 +11,13 @@ import ActionButton from "@components/ActionButton";
 import { Trash } from "lucide-react";
 
 interface OrgRoleCardProps {
-    role: NonNullable<GetOrganizationRoles>[number]
+    role: NonNullable<GetClinicRoles>[number]
     onDeleteRole?: () => void
   }
 export const OrgRoleCard = ({role, onDeleteRole}:OrgRoleCardProps) => {
   const assignedOrgTabIds = role.OrgRoleAppointmentTabs.map((item) => item.OrgAppointmentTab.id)
   const handleDelete = async () => {
-    toast.promise(deleteOrgRoleAction(role.id), {
+    toast.promise(deleteClinicRoleAction(role.id), {
       loading: "Deleting role...",
       success: res => {
         if(res.status) {

@@ -1,8 +1,7 @@
 "use server";
 
-import prisma from "@lib/prisma-common";
-import { Prisma } from "@prisma/common/client";
-
+import prisma from "@lib/prisma";
+import { Prisma } from "@prisma/client";
 
 export const getHealthAnalyticsData = async (orgUid: string) => {
   const [userHealthCondition, userDisability] = await Promise.all([
@@ -22,7 +21,7 @@ export const getHealthAnalyticsData = async (orgUid: string) => {
               Organizations: {
                 some: {
                   Organization: {
-                    orgId: orgUid
+                    orgUid
                   }
                 }
               }
@@ -38,7 +37,7 @@ export const getHealthAnalyticsData = async (orgUid: string) => {
               Organizations: {
                 some: {
                   Organization: {
-                    orgId: orgUid
+                    orgUid
                   }
                 }
               }
@@ -60,7 +59,7 @@ export const getHealthAnalyticsData = async (orgUid: string) => {
                   Organizations: {
                     some: {
                       Organization: {
-                        orgId: orgUid
+                        orgUid
                       }
                     }
                   }
@@ -87,7 +86,7 @@ export const getHealthAnalyticsData = async (orgUid: string) => {
               Organizations: {
                 some: {
                   Organization: {
-                    orgId: orgUid
+                    orgUid
                   }
                 }
               }
@@ -103,7 +102,7 @@ export const getHealthAnalyticsData = async (orgUid: string) => {
               Organizations: {
                 some: {
                   Organization: {
-                    orgId: orgUid
+                    orgUid
                   }
                 }
               } 
@@ -125,7 +124,7 @@ export const getHealthAnalyticsData = async (orgUid: string) => {
                   Organizations: {
                     some: {
                       Organization: {
-                        orgId: orgUid
+                        orgUid
                       }
                     }
                   }
@@ -153,7 +152,7 @@ export const getPatientAnalyticsData = async (orgUid: string) => {
         Organizations: {
           some: {
             Organization: {
-              orgId: orgUid
+              orgUid
             }
           }
         }
@@ -169,7 +168,7 @@ export const getPatientAnalyticsData = async (orgUid: string) => {
         Organizations: {
           some: {
             Organization: {
-              orgId: orgUid
+              orgUid
             }
           }
         }
@@ -185,7 +184,7 @@ export const getPatientAnalyticsData = async (orgUid: string) => {
         Organizations: {
           some: {
             Organization: {
-              orgId: orgUid
+              orgUid
             }
           }
         }

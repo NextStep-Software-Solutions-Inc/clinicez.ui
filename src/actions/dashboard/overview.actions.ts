@@ -1,16 +1,16 @@
 "use server";
 
-import prisma from "@lib/prisma-common";
+import prisma from "@lib/prisma";
 
-export const getDashboardData = async (orgUid: string) => {
+export const getDashboardData = async (clinicUid: string) => {
   const [files, memberships, members, roles] = await Promise.all([
     prisma.file.aggregate({
       where: {
         isActive: true,
         FileType: {
           FileTypeAttribute: {
-            Organization: {
-              orgId: orgUid
+            Clinic: {
+              clinicUid
             } 
           }
         }
@@ -20,11 +20,17 @@ export const getDashboardData = async (orgUid: string) => {
         size: true
       }
     }),
-    prisma.userOrganization.groupBy({
+    prisma.organizationMember.groupBy({
       by: ["status"],
       where: {
         Organization: {
-          orgId: orgUid
+          ClinicOrganizations: {
+            some: {
+              Clinic: {
+                clinicUid
+              }
+            }
+          }
         },
       },
       _count: {
@@ -35,22 +41,28 @@ export const getDashboardData = async (orgUid: string) => {
     }),
     prisma.user.count({
       where: {
-        Organizations: {
+        ClinicMembers: {
           some: {
-            Organization: {
-              orgId: orgUid
+            Clinic: {
+              clinicUid
             }
           }
         }
       },
     }),
-    prisma.userOrganizationRole.findMany({
+    prisma.organizationRole.findMany({
       orderBy: {
         name: "asc"
       },
       where: {
         Organization: {
-          orgId: orgUid
+          ClinicOrganizations: {
+            some: {
+              Clinic: {
+                clinicUid
+              }
+            }
+          }
         },
       },
       select: {
@@ -58,10 +70,16 @@ export const getDashboardData = async (orgUid: string) => {
         name: true,
         _count: {
           select: {
-            UserOrganizations: {
+            OrganizationMembers: {
               where: {
                 Organization: {
-                  orgId: orgUid
+                  ClinicOrganizations: {
+                    some: {
+                      Clinic: {
+                        clinicUid
+                      }
+                    }
+                  }
                 }
               }
             }

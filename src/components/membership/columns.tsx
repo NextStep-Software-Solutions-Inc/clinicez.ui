@@ -4,7 +4,7 @@ import { ColumnDef } from "@tanstack/react-table"
 
 import { Badge } from "@components/ui/badge"
 
-import { $Enums } from "@prisma/common/client"
+import { $Enums } from "@prisma/client"
 
 import Link from "next/link"
 import { DropdownMenuProvider } from "@components/DropdownMenuProvider"

@@ -1,4 +1,4 @@
-import { GetOrgServices } from "@actions/organizations/org-service.action"
+import { GetClinicServices } from "@actions/organizations/org-service.action"
 import { self } from "@services/request"
 import useSWR from "swr"
 
@@ -7,7 +7,7 @@ type UseOrgServicesFilter = {
   categoryId?: number
 }
 export const useOrgServices = (filter: UseOrgServicesFilter) => {
-  const fetcher = (...args:any) => self.get<GetOrgServices>(args)
+  const fetcher = (...args:any) => self.get<GetClinicServices>(args)
   const searchParams = new URLSearchParams()
 
   Object.entries(filter).forEach(([key, value]) => {

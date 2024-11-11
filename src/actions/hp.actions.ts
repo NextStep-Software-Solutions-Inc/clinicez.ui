@@ -1,8 +1,8 @@
 "use server";
 
-import prisma from "@lib/prisma-common";
+import prisma from "@lib/prisma";
 
-import { Prisma } from "@prisma/common/client";
+import { Prisma } from "@prisma/client";
 import { cache } from "react";
 
 export type HPSFilters = {

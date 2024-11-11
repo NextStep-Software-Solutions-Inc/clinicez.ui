@@ -1,4 +1,4 @@
-import { getOrgAppointmentTabsAction } from "@actions/organizations/org-appointment-tab..action";
+import { getClinicAppointmentTabsAction } from "@actions/organizations/clinic-appointment-tab..action";
 import { withJwtAuth } from "@middlewares/withJwtAuth";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -10,6 +10,6 @@ export const GET = withJwtAuth(async (req: NextRequest, { params }: {
 }) => {
   const organizationId = params.organizationId;
 
-  const orgAppointmentTabs = await getOrgAppointmentTabsAction(organizationId);
+  const orgAppointmentTabs = await getClinicAppointmentTabsAction(organizationId);
   return NextResponse.json(orgAppointmentTabs, {status: 200});
 });

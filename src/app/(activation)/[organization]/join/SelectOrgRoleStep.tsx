@@ -1,4 +1,4 @@
-import { getOrganizationRolesAction } from "@actions/organizations/organization-role.action";
+import { getClinicRolesAction } from "@actions/organizations/organization-role.action";
 import { getUserOrganizationsAction } from "@actions/users/user-organization.action";
 import { SelectOrgForm } from "./SelectOrgFom";
 import HydrateAtoms from "@components/utils/HydrateAtoms";
@@ -12,7 +12,7 @@ import HydrateAtoms from "@components/utils/HydrateAtoms";
 export default async function SelectOrgRoleStep ({ orgId, userId, isFirstStep, isLastStep, nextStep }: SelectOrgRoleStepProps) {
   const [myOrgs, orgRoles] = await Promise.all([
     getUserOrganizationsAction({ userId }),
-    getOrganizationRolesAction({ orgId })
+    getClinicRolesAction({ orgId })
   ]);
   const existingRoles = myOrgs.data.map(org => org.role);
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { createOrgRoleAction } from "@actions/organizations/organization-role.action";
+import { createClinicRoleAction } from "@actions/organizations/organization-role.action";
 import ActionButton from "@components/ActionButton";
 import CustomModalContent from "@components/CustomModalContent";
 import { Button } from "@components/ui/button";
@@ -45,7 +45,7 @@ export default function AddRoleModal({orgUid, onAddRole}:AddRoleModalProps) {
 
   const action = async () => {
     form.handleSubmit(async (values) => {
-      toast.promise(createOrgRoleAction({
+      toast.promise(createClinicRoleAction({
         orgUid,
         name: values.name,
         description: values.description

@@ -1,7 +1,7 @@
 "use client";
 
 import { createAppointmentTypeAction } from "@actions/appointments/appointment-type.action";
-import { createOrgServiceAction } from "@actions/organizations/org-service.action";
+import { createClinicServiceAction } from "@actions/organizations/org-service.action";
 import ActionButton from "@components/ActionButton";
 import CustomModalContent from "@components/CustomModalContent";
 import { Button } from "@components/ui/button";
@@ -58,7 +58,7 @@ export default function AddServiceModal({orgUid, onAddService}:AddServiceModalPr
 
   const action = async () => {
     form.handleSubmit(async (values) => {
-      toast.promise(createOrgServiceAction({...values, categoryId: 1}), {
+      toast.promise(createClinicServiceAction({...values, categoryId: 1}), {
         loading: "Creating service...",
         success: res => {
           if(res.status) {

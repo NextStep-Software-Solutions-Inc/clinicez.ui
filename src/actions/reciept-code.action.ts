@@ -1,18 +1,18 @@
 "use server";
 
-import prismaCommon from "@lib/prisma-common";
-import { Prisma } from "@prisma/common/client";
+import prisma from "@lib/prisma";
+import { Prisma } from "@prisma/client";
 import { getCachedSession } from "./session.action";
 import { hasCodeProperty } from "@lib/utils";
 
 export const createReceiptCodeAction = async (payload: Prisma.ReceiptCodeCreateArgs["data"]) => {
-  await prismaCommon.receiptCode.create({
+  await prisma.receiptCode.create({
     data: payload,
   });
 }
 
 export const getReceiptCodesAction = async () => {
-  return await prismaCommon.receiptCode.findMany({
+  return await prisma.receiptCode.findMany({
     where: {
       isActive: true,
     }
@@ -23,7 +23,7 @@ export const verifyReceiptCodeAction = async (code: string) => {
   const session = await getCachedSession();
   try {
     if(!session) throw new Error("Unauthorized");
-    await prismaCommon.$transaction(async (prisma) => {
+    await prisma.$transaction(async (prisma) => {
       // Count claimed receipt codes
       const claimCount =  await prisma.receiptCodeClaim.count({
         where: {
@@ -57,7 +57,7 @@ export const claimReceiptCodeAction = async (code: string) => {
   try {
     if(!session) throw new Error("Unauthorized");
     const userId = String(session.user.sub);
-    return await prismaCommon.$transaction(async (prisma) => {
+    return await prisma.$transaction(async (prisma) => {
       const claimedCount = await prisma.receiptCodeClaim.count({
         where: {
           isActive: true,

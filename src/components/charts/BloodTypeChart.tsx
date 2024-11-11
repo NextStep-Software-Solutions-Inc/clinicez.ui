@@ -20,7 +20,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@components/ui/chart"
-import { BloodType } from "@prisma/common/client"
+import { BloodType } from "@prisma/client"
 
 const bt = [...Object.values(BloodType), null] 
 const chartConfig: ChartConfig = bt.reduce((config: ChartConfig, type: (typeof bt)[number], index: number) => {

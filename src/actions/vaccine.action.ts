@@ -1,6 +1,6 @@
 "use server";
 
-import prisma from "@lib/prisma-common";   
+import prisma from "@lib/prisma";   
 
 
 export const getVaccinesAction = async () => {

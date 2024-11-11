@@ -15,7 +15,7 @@ import { toast } from "sonner";
 import PageLoading from "@components/PageLoading";
 import { useAppointmentTabs, useOrgAppointmentTabs } from "@hooks/useAppointmentTab";
 import Each from "@components/utils/Each";
-import { setOrgAppointmentTabsAction } from "@actions/organizations/org-appointment-tab..action";
+import { setClinicAppointmentTabsAction } from "@actions/organizations/clinic-appointment-tab..action";
 
 
 const FormSchema = z.object({
@@ -37,7 +37,7 @@ export default function AppointmentTabsConfig() {
     
   const action = async () => {
     form.handleSubmit(async (data) => {
-      toast.promise(setOrgAppointmentTabsAction(params.organization, data.tabIds), {
+      toast.promise(setClinicAppointmentTabsAction(params.organization, data.tabIds), {
         loading: "Saving changes...",
         success: res => {
           if(res.status) {

@@ -4,11 +4,9 @@ import "server-only";
 import { google } from "googleapis";
 import { managementClient } from "@services/auth0/management-client";
 import { getCachedSession } from "@actions/session.action";
-import prismaTenant from "@lib/prisma-tenant";
-import prismaCommon from "@lib/prisma-common";
+import prisma from "@lib/prisma";
 import { getPermissionsAction } from "@actions/permission.action";
 import { PERMISSIONS } from "@lib/permissions";
-import { time } from "console";
 import { formatDateTime } from "@lib/utils";
 
 type Credentials  = {
@@ -144,7 +142,7 @@ export const insertToCalendar = async (appointmentId:number) => {
     
     // construct event
 
-    const appointment = await prismaTenant.appointment.findUniqueOrThrow({
+    const appointment = await prisma.appointment.findUniqueOrThrow({
       where: {
         id: appointmentId,
         isActive: true
@@ -155,7 +153,11 @@ export const insertToCalendar = async (appointmentId:number) => {
         complaint: true,
         Requesters: {
           select: {
-            userId: true
+            User: {
+              select: {
+                email: true
+              }
+            }
           }
         },
         AppointmentAttribute: {
@@ -176,36 +178,20 @@ export const insertToCalendar = async (appointmentId:number) => {
             status: "ACCEPTED"
           },
           select: {
-            routedTo: true,
+            RoutedTo: {
+              select: {
+                User: {
+                  select: {
+                    email: true
+                  }
+                }
+              }
+            },
             status: true
           }
         }
       }
     })
-
-    const patientsId = appointment.Requesters.map(r => r.userId);
-    const hpsId = appointment.AppointmentRouting.map(r => Number(r.routedTo));
-
-    const [patients, hps] = await Promise.all([
-      prismaCommon.user.findMany({
-        where: {
-          isActive: true,
-          userId: {
-            in: patientsId
-          }
-        },
-        select: { email: true }
-      }),
-      prismaCommon.healthcareProvider.findMany({
-        where: {
-          isActive: true,
-          id: {
-            in: hpsId
-          }
-        },
-        select: { User: { select: { email: true } } }
-      })
-    ]);
 
 
     const calendar = google.calendar({ version: "v3", auth: oauth2Client });
@@ -221,7 +207,7 @@ export const insertToCalendar = async (appointmentId:number) => {
         dateTime: formatDateTime(appointment.AppointmentAttribute!.date!, appointment.AppointmentAttribute!.timeEnd!).toISOString(),
         timeZone: "Asia/Manila"
       },
-      attendees: [...hps.map(h => ({email: h.User.email})), ...patients.map(p => ({email: p.email}))],
+      attendees: [...appointment.AppointmentRouting.map(h => ({email: h.RoutedTo.User.email})), ...appointment.Requesters.map(p => ({email: p.User.email}))],
       conferenceData: {
         createRequest: {
           requestId: `meet-${appointmentId}`
@@ -239,7 +225,7 @@ export const insertToCalendar = async (appointmentId:number) => {
 
     if(![200, 201, 202].includes(status)) throw new Error("Error inserting to calendar");
 
-    await prismaTenant.appointmentAttribute.update({
+    await prisma.appointmentAttribute.update({
       where: {id: appointment.AppointmentAttribute!.id },
       data: { 
         eventId: calendarEvent.id,

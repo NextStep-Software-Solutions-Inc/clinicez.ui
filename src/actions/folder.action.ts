@@ -1,8 +1,8 @@
 "use server";
 
-import prisma from "@lib/prisma-common";
+import prisma from "@lib/prisma";
 
-export const createFolderAction = async (name: string, userId: string, orgUid?:string) => {
+export const createFolderAction = async (name: string, userId: string, clinicUid?:string) => {
   try {
     const folder = await prisma.folder.create({
       data: {
@@ -15,10 +15,10 @@ export const createFolderAction = async (name: string, userId: string, orgUid?:s
         FolderSetting: {
           create: {
             isPublic: true,
-            ...orgUid ? {
+            ...clinicUid ? {
               Organization: {
                 connect: {
-                  orgId: orgUid
+                  orgId: clinicUid
                 }
               }
             } : {}
@@ -41,17 +41,17 @@ export const createFolderAction = async (name: string, userId: string, orgUid?:s
   }
 }
 
-export const getFoldersAction = async (userId: string, orgUid?:string) => {
+export const getFoldersAction = async (userId: string, clinicUid?:string) => {
   const folders = await prisma.folder.findMany({
     where: {
       isActive: true,
       User: {
         userId
       },
-      ...orgUid ? {
+      ...clinicUid ? {
         FolderSetting: {
-          Organization: {
-            orgId: orgUid
+          Clinic: {
+            clinicUid
           }
         }
       } : {}
@@ -76,8 +76,8 @@ export const getFoldersAction = async (userId: string, orgUid?:string) => {
               FileTypeAttribute: {
                 select: {
                   required: true,
-                  validUntil: true,
-                  scopeOrgId: true
+                  validityDays: true,
+                  scopeClinicId: true
                 }
               }
             }
@@ -93,10 +93,10 @@ export const getFoldersAction = async (userId: string, orgUid?:string) => {
         select: {
           id: true,
           isPublic: true,
-          scopeOrgId: true,
-          Organization: {
+          scopeClinicId: true,
+          Clinic: {
             select: {
-              orgId: true
+              clinicUid: true
             }
           }
         }

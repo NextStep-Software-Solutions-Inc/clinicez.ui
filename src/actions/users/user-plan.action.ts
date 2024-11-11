@@ -2,8 +2,8 @@
 
 import { cache } from "react";
 import { getCachedSession } from "@actions/session.action";
-import prismaCommon from "@lib/prisma-common";
-import { Prisma, UserPlanStatus } from "@prisma/common/client";
+import prisma from "@lib/prisma";
+import { Prisma, UserPlanStatus } from "@prisma/client";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc"
 dayjs.extend(utc)
@@ -13,7 +13,7 @@ export const createUserPlanAction = async (planId: number, status: UserPlanStatu
   const session = await getCachedSession();
   try {
     if(!session) throw new Error("Unauthorized");
-    const userPlan = await prismaCommon.$transaction(async (prisma) => {
+    const userPlan = await prisma.$transaction(async (prisma) => {
       const userPlan = await prisma.userPlan.create({
         data: {
           User: {
@@ -50,12 +50,12 @@ export const createUserPlanAction = async (planId: number, status: UserPlanStatu
 }
 
 export const upsertUserPlanAction = async (payload: Prisma.UserPlanUpsertArgs) => {
-  const userPlan = await prismaCommon.userPlan.upsert(payload);
+  const userPlan = await prisma.userPlan.upsert(payload);
   return userPlan;
 }
 
 export const setUserPlanStatusAction = async (id: number, status: UserPlanStatus) => {
-  const userPlan = await prismaCommon.userPlan.update({
+  const userPlan = await prisma.userPlan.update({
     where: { id },
     data: { status }
   });
@@ -74,7 +74,7 @@ export const hpApplicationTransactionAction = async ({planId, hpTypeId ,code}: H
   let errorMessage = "";
   
   try {
-    await prismaCommon.$transaction(async (prisma) => {
+    await prisma.$transaction(async (prisma) => {
       // Count claimed receipt codes
       errorMessage = "Receipt code is invalid or has been claimed.";
       const claimedCount = await prisma.receiptCodeClaim.count({
@@ -182,7 +182,7 @@ export const hpApplicationTransactionAction = async ({planId, hpTypeId ,code}: H
 
 export type GetUserPlans = ReturnType<typeof getUserPlansAction>;
 export const getUserPlansAction = cache(async (userId: string) => {
-  const userPlans = await prismaCommon.userPlan.findMany({
+  const userPlans = await prisma.userPlan.findMany({
     orderBy: {
       endDate: "desc"
     },

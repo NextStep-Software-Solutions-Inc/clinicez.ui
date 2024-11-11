@@ -1,7 +1,7 @@
 "use server";
 
 import "server-only";
-import prismaTenant from "@lib/prisma-tenant";
+import prisma from "@lib/prisma";
 import { getCachedSession } from "@actions/session.action";
 
 export type GetDrugsFilters = {
@@ -16,7 +16,7 @@ export const getDrugsAction = async (filters?: GetDrugsFilters) => {
     if(!session) throw new Error("Unauthorized");
 
     const { brandName, genericName } = filters || {};
-    const drugs = await prismaTenant.drug.findMany({
+    const drugs = await prisma.drug.findMany({
       orderBy: {
         genericName: 'asc'
       },

@@ -13,7 +13,7 @@ dayjs.extend(relativeTime);
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
 import PageLoading from "@components/PageLoading";
-import { useAppointmentTabs, useOrgAppointmentTabs } from "@hooks/useAppointmentTab";
+import { useAppointmentTabs, useClinicAppointmentTabs } from "@hooks/useAppointmentTab";
 import Each from "@components/utils/Each";
 import { setClinicAppointmentTabsAction } from "@actions/organizations/clinic-appointment-tab..action";
 
@@ -27,7 +27,7 @@ const FormSchema = z.object({
 export default function AppointmentTabsConfig() {
   const params = useParams<{organization: string}>()
   const {data: appointmentTabs, isLoading: loadingAppointmentTabs} = useAppointmentTabs()
-  const {data: orgAppointmentTabs ,isLoading} = useOrgAppointmentTabs(params.organization)
+  const {data: orgAppointmentTabs ,isLoading} = useClinicAppointmentTabs(params.organization)
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     values: {

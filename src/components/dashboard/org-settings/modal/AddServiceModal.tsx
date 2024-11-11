@@ -1,7 +1,6 @@
 "use client";
 
-import { createAppointmentTypeAction } from "@actions/appointments/appointment-type.action";
-import { createClinicServiceAction } from "@actions/organizations/org-service.action";
+import { createClinicServiceAction } from "@actions/organizations/clinic-service.action";
 import ActionButton from "@components/ActionButton";
 import CustomModalContent from "@components/CustomModalContent";
 import { Button } from "@components/ui/button";
@@ -43,10 +42,10 @@ const addServiceSchema = z.object({
 });
 
 interface AddServiceModalProps {
-    orgUid: string;
+  clinicUid: string;
     onAddService?: () => void;
 }
-export default function AddServiceModal({orgUid, onAddService}:AddServiceModalProps) {
+export default function AddServiceModal({clinicUid, onAddService}:AddServiceModalProps) {
   const closeBtnRef = React.useRef<HTMLInputElement>(null);
   const form = useForm<z.infer<typeof addServiceSchema>>({
     resolver: zodResolver(addServiceSchema),

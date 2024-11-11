@@ -7,15 +7,18 @@ import { z } from "zod";
 
 
 const createOrganizationSchema = z.object({
-  orgId: z.string({
+  orgUid: z.string({
     required_error: "Organization ID is required",
   }),
   name: z.string({
     required_error: "Name is required",
   }),
-  description: z.string().optional().nullable(),
-  tenantId: z.number({
+  description: z.string(),
+  tenantUid: z.string({
     required_error: "Tenant ID is required",
+  }),
+  email: z.string({
+    required_error: "Email is required",
   }),
 })
 

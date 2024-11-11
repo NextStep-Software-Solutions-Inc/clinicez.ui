@@ -9,7 +9,7 @@ import { cache } from "react";
 export const protectOrg = cache(async (orgUid: string) => {
   const session = await getCachedSession()
   const myOrgs = await getUserOrganizationsAction({userId: session?.user.sub})
-  if (!myOrgs.data.map(org => org.Organization.orgId).includes(orgUid)) {
+  if (!myOrgs.data.map(org => org.Organization.orgUid).includes(orgUid)) {
     permanentRedirect("/unauthorized")
   }
 })
@@ -40,19 +40,19 @@ export const isTenant = cache(async () => {
   return userPlans.some((plan) => plan.Plan.type === "TENANT" && !["ON_HOLD", "PENDING", "EXPIRED"].includes(plan.status));
 })
 
-export const isOrgAdmin = cache(async (orgId?:string) => {
+export const isOrgAdmin = cache(async (orgUid?:string) => {
   const session = await getCachedSession();
   if(!session) throw new Error("No session found");
   const myOrgs = await getUserOrganizationsAction({
     userId: session.user.sub,
-    orgId
+    orgUid
   });
-  return myOrgs.data.some((org) => ["ACTIVE"].includes(org.status) && org.UserRole.name.toUpperCase() === "ADMIN");
+  return myOrgs.data.some((org) => ["ACTIVE"].includes(org.status) && org.OrganizationRole.name.toUpperCase() === "ADMIN");
 })
 
 export const isSameOrg = cache(async (userId: string) => {
   const session = await getCachedSession();
   if(!session) throw new Error("No session found");
   const orgs = await getUserOrganizationsAction({userId: session.user.sub});
-  return orgs.data.find((org) => org.Organization.Users.some((user) => user.User.userId === userId));
+  return orgs.data.find((org) => org.Organization.OrganizationMembers.some((user) => user.User.userId === userId));
 });

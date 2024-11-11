@@ -10,7 +10,7 @@ import { DataTableViewOptions } from "./data-table-view-options"
 import { DataTableFacetedFilter } from "./data-table-faceted-filter"
 import { $Enums } from "@prisma/client"
 import React from "react"
-import { useOrgRoles } from "@hooks/useOrgRole"
+import { useOrganizationRoles } from "@/hooks/useOrganizationRole"
 import { useParams } from "next/navigation"
 
 interface DataTableToolbarProps<TData> {
@@ -21,12 +21,12 @@ export function DataTableToolbar<TData>({
   table,
 }: DataTableToolbarProps<TData>) {
   const isFiltered = table.getState().columnFilters.length > 0
-  const membershipStatuses = Object.values($Enums.UserOrganizationStatus).map((status) => ({
+  const membershipStatuses = Object.values({ACTIVE: "ACTIVE", INACTIVE: "INACTIVE", PENDING: "PENDING", SUSPENDED: "SUSPENDED"}).map((status) => ({
     label: status.split("").map((char, index) => (index === 0 ? char : char.toLowerCase())).join(""),
     value: status,
   }))
   const params = useParams<{organization: string}>()
-  const {data: orgRoles } = useOrgRoles(params.organization)
+  const {data: orgRoles } = useOrganizationRoles(params.organization)
   
   return (
     <div className="flex items-center justify-between">

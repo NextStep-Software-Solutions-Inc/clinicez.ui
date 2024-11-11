@@ -30,10 +30,10 @@ const addServiceCategorySchema = z.object({
 });
 
 interface AddServiceCategoryModalProps {
-    orgUid: string;
+  clinicUid: string;
     onAddServiceCategory?: () => void;
 }
-export default function AddServiceCategoryModal({orgUid, onAddServiceCategory}:AddServiceCategoryModalProps) {
+export default function AddServiceCategoryModal({clinicUid, onAddServiceCategory}:AddServiceCategoryModalProps) {
   const closeBtnRef = React.useRef<HTMLInputElement>(null);
   const form = useForm<z.infer<typeof addServiceCategorySchema>>({
     resolver: zodResolver(addServiceCategorySchema),
@@ -48,7 +48,7 @@ export default function AddServiceCategoryModal({orgUid, onAddServiceCategory}:A
       toast.promise(createClinicServiceCategoryAction({
         name: values.name,
         description: values.description,
-        orgUid
+        clinicUid
       }), {
         loading: "Creating appointment mode...",
         success: res => {

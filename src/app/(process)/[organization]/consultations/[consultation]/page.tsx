@@ -9,10 +9,7 @@ import { notFound } from "next/navigation";
 import { DropdownMenuProvider } from "@components/DropdownMenuProvider";
 import ConsultationTicketTableRowActions from "../../../../../components/consultation/ConsultationTicketTableRowActions";
 import ResolveConsultationTicket from "@components/consultation/ResolveConsultationTicket";
-import { Pill } from "lucide-react";
-import { Button } from "@components/ui/button";
 import MedicationsSheet from "@components/consultation/MedicationsSheet";
-import { getUserAction } from "@actions/users/user.action";
 import ModifyMedicationSheet from "@components/consultation/ModifyMedicationSheet";
 
 export const metadata: Metadata = {
@@ -25,7 +22,7 @@ async function ConsultationPage({params}: AppRouterPageRouteOpts) {
   const orgUid = params?.organization as string
 
   const consultation = await getConsultationTicketAction(consultationId, orgUid)
-  const patient = await getUserAction(consultation.data?.Appointment?.Requesters[0].userId ?? "")
+  const patient = consultation.data?.Appointment?.Requesters[0].User
   if(!consultation.data) notFound()
 
   const statusBadge = {
@@ -60,7 +57,7 @@ async function ConsultationPage({params}: AppRouterPageRouteOpts) {
             readonly={isResolved}
             consultation={{
               id: consultationId,
-              patientId: patient.data?.id ?? 0
+              patientId: patient?.id ?? 0
             }}/>
           <ModifyMedicationSheet
             readonly={isResolved}

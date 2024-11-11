@@ -48,7 +48,7 @@ export const PatientCard = async ({patient}: PatientCardProps) => {
             <div className="">
               <p className="text-sm text-muted-foreground italic font-medium truncate overflow-hidden capitalize">{gender?.toLowerCase()} / {dob && `${differenceInCalendarYears(new Date(), dob)} years old`}</p>
               <p className="text-sm text-muted-foreground italic font-medium capitalize">{patient.bloodType?.split("_").join(" ").toLowerCase()}</p>
-              <Badge variant="default" className="capitalize">{patient.Organizations[0].status.toLowerCase()}</Badge>
+              <Badge variant="default" className="capitalize">{patient.OrganizationMembers[0].status.toLowerCase()}</Badge>
             </div>
             <div className="flex gap-2 flex-wrap">
               <ConditionalRender condition={immunocompromised ?? false}>

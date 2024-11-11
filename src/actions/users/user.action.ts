@@ -55,7 +55,7 @@ export const getUsersAction = cache(async (filter?:GetUsersFiltersType) => {
         isActive: true
       },
       include: {
-        Organizations: {
+        OrganizationMembers: {
           distinct: "organizationId",
           where: {
             Organization: {
@@ -125,7 +125,10 @@ export const getUserAction = cache(async (key: string, orgUid?: string)=> {
             id: true,
           }
         },
-        Organizations: {
+        ClinicMembers: {
+          where: {},
+        },
+        OrganizationMembers: {
           where: {
             Organization: {
               isActive: true,

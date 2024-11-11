@@ -6,22 +6,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@comp
 import Each from "@components/utils/Each";
 import { usePreAssessmentNotes } from "@hooks/usePreAssessmentNotes";
 import { useParams } from "next/navigation";
-import dayjs from "dayjs"
-import utc from "dayjs/plugin/utc"
-dayjs.extend(utc)
-
-import relativeTime from "dayjs/plugin/relativeTime";
-import { useUser } from "@hooks/useUser";
-import { useHP } from "@hooks/useHP";
-dayjs.extend(relativeTime);
+import dayjs from "@lib/day-utils";
 
 interface NurseAssessmentProps {
   consultation:  NonNullable<GetConsultationTicket["data"]>;
 }
 export default function NurseAssessment({ consultation}: NurseAssessmentProps) {
 
-  const {organization: orgUid} = useParams<{organization: string}>()
-  const {data: preConsultationNotes} = usePreAssessmentNotes({orgUid, appointmentId: consultation.appointmentId ?? 0})
+  const {clinicUid} = useParams<{clinicUid: string}>()
+  const {data: preConsultationNotes} = usePreAssessmentNotes({clinicUid, appointmentId: consultation.appointmentId ?? 0})
 
   return (
     <Card>
@@ -51,12 +44,11 @@ interface PreConsultationNoteProps {
   note: GetPreAssessmentNotes["data"][number];
 }
 export const PreConsultationNote = ({note}: PreConsultationNoteProps) => {
-  const {data: hp} = useUser({userId: note.createdBy})
-  const hpName = `${hp?.data?.firstName} ${hp?.data?.middleName ?? ""} ${hp?.data?.lastName} ${hp?.data?.suffix ?? ""}`.trim()
+  const name = `${note.CreatedBy?.firstName} ${note.CreatedBy?.middleName ?? ""} ${note.CreatedBy?.lastName} ${note.CreatedBy?.suffix ?? ""}`.trim()
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-primary text-lg">{`Assessed by ${hpName}`}</CardTitle>
+        <CardTitle className="text-primary text-lg">{`Assessed by ${name}`}</CardTitle>
         <CardDescription>Assessed on {dayjs(note.updatedAt).format("lll")} ({dayjs(note.updatedAt).fromNow()}) <span className="italic text-primary">(readonly)</span></CardDescription>
       </CardHeader>
       <CardContent>

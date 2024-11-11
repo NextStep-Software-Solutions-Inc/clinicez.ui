@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import Each from "@components/utils/Each";
 import { usePermissions } from "@hooks/usePermission";
 import { useOrgRoleInitialPermissions } from "@hooks/useOrgRoleInitialPermission";
-import { setOrgRoleInitialPermissionsAction } from "@actions/role-initial-permission.action";
+import { setOrgRoleInitialPermissionsAction } from "@/actions/org-role-initial-permission.action";
 
 
 const FormSchema = z.object({

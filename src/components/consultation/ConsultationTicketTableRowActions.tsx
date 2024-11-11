@@ -57,7 +57,7 @@ export default function ConsultationTicketTableRowActions<TData>({consultation}:
           record={{
             id: consultation.id,
             subject: consultation.subject ?? "",
-            orgUid: consultation.orgUid
+            clinicUid: consultation.Clinic.clinicUid
           }}>
           <DropdownMenuItem onSelect={handleDialogItemSelect}>
             <Pencil className="w-4 h-4 mr-2"/>
@@ -65,7 +65,7 @@ export default function ConsultationTicketTableRowActions<TData>({consultation}:
         </EditConsultationTicketModal>
         <ConsultationTicketSettingSheet 
           consultationId={consultation.id}
-          orgUid={consultation.orgUid}
+          clinicUid={consultation.Clinic.clinicUid}
           onOpenChange={handleDialogItemOpenChange}
         >
           <DropdownMenuItem onSelect={handleDialogItemSelect}>

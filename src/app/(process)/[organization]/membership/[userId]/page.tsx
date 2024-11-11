@@ -27,7 +27,7 @@ export default function MemberDetailsPage({params}: MemberDetailsPageProps) {
         </div>
         <Separator />
         <Suspend>
-          <MemberDetails userId={decodeURIComponent(params.userId)} orgUid={params.organization}/>
+          <MemberDetails userId={decodeURIComponent(params.userId)} clinicUid={params.organization}/>
         </Suspend>
       </div>
     </>

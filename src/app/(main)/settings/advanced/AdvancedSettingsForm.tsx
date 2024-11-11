@@ -26,7 +26,7 @@ import { Input } from "@components/ui/input"
 import ConfirmDeactivateAccountForm from "./ConfirmDeactivateAccountForm"
 
 const organizationFormSchema = z.object({
-  organizationId: z.string(),
+  orgUid: z.string(),
 })
 
 type GeneraSettingsFormValues = z.infer<typeof organizationFormSchema>
@@ -49,7 +49,7 @@ export default function AdvancedSettingsForm() {
   const form = useForm<GeneraSettingsFormValues>({
     resolver: zodResolver(organizationFormSchema),
     defaultValues: {
-      organizationId: myOrganizations[0].id,
+      orgUid: myOrganizations[0].id,
     }
   })
 

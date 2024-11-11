@@ -18,7 +18,7 @@ export const getHealthAnalyticsData = async (orgUid: string) => {
         UserHealthConditions: {
           some: {
             User: {
-              Organizations: {
+              OrganizationMembers: {
                 some: {
                   Organization: {
                     orgUid
@@ -34,7 +34,7 @@ export const getHealthAnalyticsData = async (orgUid: string) => {
         UserHealthConditions: {
           where: {
             User: {
-              Organizations: {
+              OrganizationMembers: {
                 some: {
                   Organization: {
                     orgUid
@@ -56,7 +56,7 @@ export const getHealthAnalyticsData = async (orgUid: string) => {
             UserHealthConditions: {
               where: {
                 User: {
-                  Organizations: {
+                  OrganizationMembers: {
                     some: {
                       Organization: {
                         orgUid
@@ -83,7 +83,7 @@ export const getHealthAnalyticsData = async (orgUid: string) => {
         UserDisabilities:{
           some: {
             User: {
-              Organizations: {
+              OrganizationMembers: {
                 some: {
                   Organization: {
                     orgUid
@@ -99,7 +99,7 @@ export const getHealthAnalyticsData = async (orgUid: string) => {
         UserDisabilities: { 
           where: {
             User: {
-              Organizations: {
+              OrganizationMembers: {
                 some: {
                   Organization: {
                     orgUid
@@ -121,7 +121,7 @@ export const getHealthAnalyticsData = async (orgUid: string) => {
             UserDisabilities: {
               where: {
                 User: {
-                  Organizations: {
+                  OrganizationMembers: {
                     some: {
                       Organization: {
                         orgUid
@@ -149,7 +149,7 @@ export const getPatientAnalyticsData = async (orgUid: string) => {
     prisma.user.groupBy({
       by: "gender",
       where: {
-        Organizations: {
+        OrganizationMembers: {
           some: {
             Organization: {
               orgUid
@@ -165,7 +165,7 @@ export const getPatientAnalyticsData = async (orgUid: string) => {
     prisma.user.groupBy({
       by: "bloodType",
       where: {
-        Organizations: {
+        OrganizationMembers: {
           some: {
             Organization: {
               orgUid
@@ -181,7 +181,7 @@ export const getPatientAnalyticsData = async (orgUid: string) => {
     prisma.user.groupBy({
       by: "civilStatus",
       where: {
-        Organizations: {
+        OrganizationMembers: {
           some: {
             Organization: {
               orgUid

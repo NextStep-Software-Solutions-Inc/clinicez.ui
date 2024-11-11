@@ -80,7 +80,7 @@ model User {
   UserHealthConditions             UserHealthCondition[]            @relation("HealthCondition")
   UserMigration                    UserMigration?
   AcceptedOrganizationApplications OrganizationMember[]             @relation("AcceptedBy")
-  Organizations                    OrganizationMember[]             @relation("User")
+  OrganizationMembers              OrganizationMember[]             @relation("User")
   Plans                            UserPlan[]
   StudentRecords                   UserStudentRecord[]
   UserVaccinations                 UserVaccination[]
@@ -198,19 +198,32 @@ model OrgRoleInitialPermission {
   @@unique([orgId, orgRoleId, permissionId], name: "unique_org_role_permission")
 }
 
+model ClinicRoleInitialPermission {
+  id           Int              @id @default(autoincrement())
+  clinicId     Int
+  clinicRoleId Int
+  permissionId Int
+  Clinic       Clinic           @relation(fields: [clinicId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Permission   Permission       @relation(fields: [permissionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  ClinicRole   ClinicMemberRole @relation(fields: [clinicRoleId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([clinicId, clinicRoleId, permissionId], name: "unique_org_role_permission")
+}
+
 model Permission {
-  id                        Int                        @id @default(autoincrement())
-  name                      String                     @unique
-  description               String?
-  type                      String                     @default("USER")
-  createdAt                 DateTime                   @default(now())
-  updatedAt                 DateTime                   @updatedAt
-  deletedAt                 DateTime?
-  isActive                  Boolean                    @default(true)
-  OrgMemberPermissions      OrgMemberPermission[]
-  UserPermissions           UserPermission[]
-  OrgRoleInitialPermissions OrgRoleInitialPermission[]
-  ClinicMemberPermission    ClinicMemberPermission[]
+  id                           Int                           @id @default(autoincrement())
+  name                         String                        @unique
+  description                  String?
+  type                         String                        @default("USER")
+  createdAt                    DateTime                      @default(now())
+  updatedAt                    DateTime                      @updatedAt
+  deletedAt                    DateTime?
+  isActive                     Boolean                       @default(true)
+  OrgMemberPermissions         OrgMemberPermission[]
+  UserPermissions              UserPermission[]
+  OrgRoleInitialPermissions    OrgRoleInitialPermission[]
+  ClinicMemberPermissions      ClinicMemberPermission[]
+  ClinicRoleInitialPermissions ClinicRoleInitialPermission[]
 }
 
 model OrganizationMember {
@@ -1095,7 +1108,8 @@ model Clinic {
   UserClinicAppointmentWhitelists UserClinicAppointmentWhitelist[]
   FileTypeAttributes              FileTypeAttribute[]
   FolderSettings                  FolderSetting[]
-  UserDefaultClinicRole           UserDefaultClinicRole[]
+  UserDefaultClinicRoles          UserDefaultClinicRole[]
+  ClinicRoleInitialPermissions    ClinicRoleInitialPermission[]
 
   @@index([tenantId, clinicUid], name: "clinic_index")
 }
@@ -1144,17 +1158,18 @@ model ClinicOrganization {
 }
 
 model ClinicMemberRole {
-  id                        Int                        @id @default(autoincrement())
-  clinicId                  Int
-  name                      String
-  createdAt                 DateTime                   @default(now())
-  updatedAt                 DateTime                   @updatedAt
-  deletedAt                 DateTime?
-  isActive                  Boolean                    @default(true)
-  Clinic                    Clinic                     @relation(fields: [clinicId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  ClinicMembers             ClinicMember[]
-  ClinicRoleAppointmentTabs ClinicRoleAppointmentTab[]
-  UserDefaultClinicRoles    UserDefaultClinicRole[]
+  id                           Int                           @id @default(autoincrement())
+  clinicId                     Int
+  name                         String
+  createdAt                    DateTime                      @default(now())
+  updatedAt                    DateTime                      @updatedAt
+  deletedAt                    DateTime?
+  isActive                     Boolean                       @default(true)
+  Clinic                       Clinic                        @relation(fields: [clinicId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  ClinicMembers                ClinicMember[]
+  ClinicRoleAppointmentTabs    ClinicRoleAppointmentTab[]
+  UserDefaultClinicRoles       UserDefaultClinicRole[]
+  ClinicRoleInitialPermissions ClinicRoleInitialPermission[]
 
   @@unique([clinicId, name], name: "unique_clinic_member_role")
 }

@@ -16,7 +16,7 @@ import {
   SheetTrigger,
 } from "@components/ui/sheet"
 import Each from "@components/utils/Each";
-import { useOrgAppointment } from "@hooks/useAppointment";
+import { useClinicAppointment } from "@hooks/useAppointment";
 import { useHP } from "@hooks/useHP";
 import { useUser } from "@hooks/useUser";
 import { cn } from "@lib/utils";
@@ -94,16 +94,16 @@ export const Route = ({record, appointmentId, organization}: RouteProps ) => {
     CANCELLED: "destructive",
   } as const
 
-  const { mutate } = useOrgAppointment({
-    orgId: organization,
+  const { mutate } = useClinicAppointment({
+    clinicUid: organization,
     appointmentId: appointmentId
   })
 
   const {data: routedBy} = useUser({
-    userId: record.routedBy
+    userId: record.RoutedBy.userId
   })
   const routedByName = `${routedBy?.data?.firstName} ${routedBy?.data?.middleName} ${routedBy?.data?.lastName} ${routedBy?.data?.suffix ?? ""}`
-  const {data: routedTo} = useHP(Number(record.routedTo));
+  const {data: routedTo} = useHP(Number(record.RoutedTo.HPProfile?.id));
   const routedToName = `${routedTo?.HPProfile?.title ?? routedTo?.User.firstName} ${routedTo?.HPProfile?.name ?? routedTo?.User.lastName} ${routedTo?.HPProfile?.suffix ?? routedTo?.User.suffix ?? ""}`
 
   return (

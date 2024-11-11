@@ -13,7 +13,6 @@ import {
 import React from "react"
 import { useDropdownMenu } from "@components/DropdownMenuProvider"
 import { toast } from "sonner"
-import { UserOrganizationStatus } from "@prisma/client"
 import Each from "@components/utils/Each"
 import { GetUserOrganizations, setMembershipRequestStatusAction } from "@actions/users/user-organization.action"
 import { revalidatePath } from "@actions/cache.action"
@@ -22,6 +21,7 @@ import { mutate } from "swr"
 import RequestAdditionalInfo from "./RequestAdditionalInfo"
 import Link from "next/link"
 import { User } from "lucide-react"
+import { OrganizationMemberStatus } from "@/types"
 interface MembershipTableRowActionsProps<TData> {
   applicationRequest: GetUserOrganizations["data"][number]
 }
@@ -38,7 +38,7 @@ export default function MembershipTableRowActions<TData>({
     })
   }
 
-  const setStatus = async (status: UserOrganizationStatus) => {
+  const setStatus = async (status: OrganizationMemberStatus) => {
     toast.promise(setMembershipRequestStatusAction(applicationRequest.id, status), {
       loading: "Updating status...",
       success: (res) => {
@@ -80,7 +80,7 @@ export default function MembershipTableRowActions<TData>({
           render={(option, index) => (
             currentStatus !== option.status && (
               <React.Fragment key={option.status}>
-                <DropdownMenuItem onClick={() => setStatus(option.status as UserOrganizationStatus)}>
+                <DropdownMenuItem onClick={() => setStatus(option.status as OrganizationMemberStatus)}>
                   <>{option.label}</>
                 </DropdownMenuItem>
               </React.Fragment>
@@ -89,7 +89,7 @@ export default function MembershipTableRowActions<TData>({
         />
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link href={`/${applicationRequest.Organization.orgId}/membership/${applicationRequest.User.userId}`}>
+          <Link href={`/${applicationRequest.Organization.orgUid}/membership/${applicationRequest.User.userId}`}>
             <User className="mr-1 w-4 h-4"/>
             View Details
           </Link>

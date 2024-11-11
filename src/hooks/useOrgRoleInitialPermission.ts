@@ -1,4 +1,4 @@
-import { GetOrgRoleInitialPermissions } from "@actions/role-initial-permission.action"
+import { GetOrgRoleInitialPermissions } from "@/actions/org-role-initial-permission.action"
 import { self } from "@services/request"
 import useSWR from "swr"
 

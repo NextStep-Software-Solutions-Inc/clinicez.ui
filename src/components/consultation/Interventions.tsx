@@ -20,12 +20,8 @@ interface InterventionsProps {
   consultation: NonNullable<GetConsultationTicket["data"]>;
 }
 export default function Interventions({ consultation }: InterventionsProps) {
-  const payload = new FormData()
-  payload.append("consultationTicketId", consultation.id.toString())
-  payload.append("orgUid", consultation.orgUid)
-
   const {data: interventions} = useInterventions({
-    orgUid: consultation.orgUid,
+    clinicUid: consultation.Clinic.clinicUid,
     consultationTicketId: consultation.id
   })
   const hpIds = interventions?.data.map(intervention => intervention.hpId) ?? []

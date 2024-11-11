@@ -22,7 +22,7 @@ interface UploadFileModalProps {
     id: number;
     name: string;
     description?: string;
-    scopeOrgId?: number;
+    scopeClinicId?: number;
   }
 }
 

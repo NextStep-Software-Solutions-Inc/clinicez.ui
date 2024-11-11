@@ -18,7 +18,7 @@ import { format } from "date-fns";
 import Each from "@components/utils/Each";
 import { RadioGroup, RadioGroupItem } from "@components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@components/ui/select";
-import { useOrgRoles } from "@hooks/useOrgRole";
+import { useOrganizationRoles } from "@/hooks/useOrganizationRole";
 import { createUserAction } from "@actions/users/user.action";
 
 const addUserSchema = z.object({
@@ -63,7 +63,7 @@ interface AddPatientModalProps {
 }
 export default function AddPatientModal({orgUid, onAddPatient}:AddPatientModalProps) {
   const closeBtnRef = React.useRef<HTMLInputElement>(null);
-  const {data: orgRoles} = useOrgRoles(orgUid);
+  const {data: orgRoles} = useOrganizationRoles(orgUid);
   const form = useForm<z.infer<typeof addUserSchema>>({
     resolver: zodResolver(addUserSchema),
   });

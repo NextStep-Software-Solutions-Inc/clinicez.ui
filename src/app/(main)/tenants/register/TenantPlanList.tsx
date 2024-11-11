@@ -25,7 +25,7 @@ export default function TenantPlanList({ frequency, nextStep }: TenantPlanListPr
       <Each
         of={tenantPlans?.data ?? []}
         render={(plan) => {
-          const discount = plan.discount;
+          const discount = plan.firstPaymentDiscount;
           const price = Math.ceil(plan?.price * (1 - discount/100));
           return (
             <div className={cn("relative bg-primary flex-grow max-w-sm h-96 basis-72 rounded-md shadow-2xl",{

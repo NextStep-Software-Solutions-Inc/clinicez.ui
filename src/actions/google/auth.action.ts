@@ -7,7 +7,7 @@ import { getCachedSession } from "@actions/session.action";
 import prisma from "@lib/prisma";
 import { getPermissionsAction } from "@actions/permission.action";
 import { PERMISSIONS } from "@lib/permissions";
-import { formatDateTime } from "@lib/utils";
+import { formatDateTime } from "@/lib/day-utils";
 
 type Credentials  = {
   refresh_token?: string | null;

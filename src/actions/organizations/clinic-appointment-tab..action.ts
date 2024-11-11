@@ -6,7 +6,7 @@ import { cache } from "react";
 import { getCachedSession } from "@actions/session.action";
 import { hasCodeProperty } from "@lib/utils";
 
-export type GetOrgAppointmentTabs = Awaited<ReturnType<typeof getClinicAppointmentTabsAction>>
+export type GetClinicAppointmentTabs = Awaited<ReturnType<typeof getClinicAppointmentTabsAction>>
 export const getClinicAppointmentTabsAction = cache(async (clinicUid: string) => {
   let message = "Clinic appointment tabs fetched successfully";
   try {

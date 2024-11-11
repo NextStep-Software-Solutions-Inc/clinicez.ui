@@ -6,6 +6,7 @@ import ActionButton from "@components/ActionButton";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { Illness } from "./IllnessList";
+import { Severity } from "@/types";
 
 interface DoneEditingIllnessButtonProps {
     onUpdate: (index: number, illness: Illness) => void;
@@ -25,7 +26,7 @@ export default function DoneEditingIllnessButton({index, form, onUpdate}:DoneEdi
         id: data.id,
         userId,
         illness: data.HealthCondition.name.trim(),
-        severity: data.severity,
+        severity: data.severity as Severity,
         notes: data.notes,
         ...data.dateDiagnosed && {dateDiagnosed: data.dateDiagnosed}
       }), {

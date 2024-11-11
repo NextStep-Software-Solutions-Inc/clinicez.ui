@@ -7,7 +7,6 @@ import { CircleDashed, CircleOff, Files, User, UserCheck, Users, UserXIcon } fro
 import ConditionalRender from "@components/utils/ConditionalRender";
 import { isMember, isOrgAdmin } from "@lib/protect-org";
 import { getDashboardData } from "@actions/dashboard/overview.actions";
-import { UserOrganizationStatus } from "@prisma/client";
 import Link from "next/link";
 import Each from "@components/utils/Each";
 // import MyMemberships from "./components/MyMemberships";
@@ -26,11 +25,18 @@ export const DashboardStats = async ({ userId, orgId }: DashboardStatsProps) => 
 
   const { files, memberships, members, roles } = stats;
 
+  const UserOrganizationStatus = {
+    ACTIVE: "ACTIVE",
+    PENDING: "PENDING",
+    SUSPENDED: "SUSPENDED",
+    INACTIVE: "INACTIVE"
+  }
+
   const membershipIcons = {
-    [UserOrganizationStatus.ACTIVE]: UserCheck,
-    [UserOrganizationStatus.PENDING]: CircleDashed,
-    [UserOrganizationStatus.SUSPENDED]: CircleOff,
-    [UserOrganizationStatus.INACTIVE]: UserXIcon
+    ACTIVE: UserCheck,
+    PENDING: CircleDashed,
+    SUSPENDED: CircleOff,
+    INACTIVE: UserXIcon
   }
 
   const membershipStatuses = Object.values(UserOrganizationStatus).map(status => ({
@@ -130,7 +136,7 @@ export const DashboardStats = async ({ userId, orgId }: DashboardStatsProps) => 
             <Each
               of={membershipStatuses}
               render={(status) => {
-                const Icon = membershipIcons[status.status];
+                const Icon = membershipIcons[status.status as keyof typeof UserOrganizationStatus];
                 return (
                   <Card key={status.status} className="group/icon hover:ring-1">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -164,7 +170,7 @@ export const DashboardStats = async ({ userId, orgId }: DashboardStatsProps) => 
                       <Users className="text-primary group-hover/icon:scale-150 transition-all" />
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold">{role._count.UserOrganizations}</div>
+                      <div className="text-2xl font-bold">{role._count.OrganizationMembers}</div>
                       <p className="text-xs text-muted-foreground">
                       Out of {membershipSum} membership
                       </p>

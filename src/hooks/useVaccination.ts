@@ -3,7 +3,7 @@ import { self } from "@services/request"
 import useSWR from "swr"
 
 export const useVaccinations= (userId: string) => {
-  const fetcher = (...args: any) => self.get<GetUserVaccinations>(args)
-
-  return useSWR(`/api/vaccinations?userId=${userId}`, fetcher)
+  const fetcher = (args: string) => self.get<GetUserVaccinations>(args)
+  const searchParams = new URLSearchParams({ userId })
+  return useSWR(`/api/vaccinations?${searchParams.toString()}`, fetcher)
 }

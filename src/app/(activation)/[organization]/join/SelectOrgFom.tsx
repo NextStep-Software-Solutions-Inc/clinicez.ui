@@ -8,14 +8,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { GetClinicRoles } from "@actions/organizations/organization-role.action";
+import { GetOrganizationRoles } from "@actions/organizations/organization-role.action";
 import { useAtom } from "jotai";
 import { joinOrgApplicationAtom } from "@state/join-org-application";
 
 interface SelectOrgFormProps {
   userId: string
-  orgId: string
-  orgRoles: GetClinicRoles
+  orgUid: string
+  orgRoles: GetOrganizationRoles
   existingRoles: number[]
   isFirstStep?: boolean;
   isLastStep?: boolean;
@@ -23,7 +23,7 @@ interface SelectOrgFormProps {
 }
 
 
-export const SelectOrgForm = ({existingRoles, orgRoles, orgId, userId, nextStep, isFirstStep, isLastStep}:SelectOrgFormProps) => {
+export const SelectOrgForm = ({existingRoles, orgRoles, orgUid, userId, nextStep, isFirstStep, isLastStep}:SelectOrgFormProps) => {
   const [orgApplication, setOrgApplication] = useAtom(joinOrgApplicationAtom);
   
   const selectRoleSchema = z.object({
@@ -48,7 +48,7 @@ export const SelectOrgForm = ({existingRoles, orgRoles, orgId, userId, nextStep,
     form.handleSubmit(async (values) => {
       setOrgApplication(prev => ({
         ...prev,
-        orgId,
+        orgUid,
         userId,
         roleId: values.roleId, 
         roleRequirements: orgRoles.find(role => role.id === values.roleId)?.requirements ?? []

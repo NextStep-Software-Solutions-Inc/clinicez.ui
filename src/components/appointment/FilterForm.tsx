@@ -31,7 +31,7 @@ import { useAtom } from "jotai"
 import ActionButton from "@components/ActionButton"
 import { toast } from "sonner"
 import { useOrgAppointmentModes } from "@hooks/useOrgAppointmentMode"
-import { useOrgServiceCategories } from "@hooks/useOrgServiceCategory"
+import { useClinicServiceCategories } from "@/hooks/useClinicServiceCategory"
 import { useMemo } from "react"
 import { Checkbox } from "@components/ui/checkbox"
 import { useUsers } from "@hooks/useUser"
@@ -79,7 +79,7 @@ export default function FilterForm({onContinue}: FilterFormProps) {
   const organization = params?.organization as string
   const {data: appointmentTypes} = useOrgAppointmentTypes(organization)
   const {data: appointmentModes } = useOrgAppointmentModes(organization);
-  const {data: serviceCategories} = useOrgServiceCategories(organization)
+  const {data: serviceCategories} = useClinicServiceCategories(organization)
   const {data: users } = useUsers({
     orgUid: organization,
   })

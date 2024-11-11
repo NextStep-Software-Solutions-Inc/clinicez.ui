@@ -12,7 +12,7 @@ type CreateOrganizationPayload = {
   orgUid: string;
   name: string;
   description: string;
-  logo: string;
+  logo?: string;
   customUrl?: string;
   email: string;
 }

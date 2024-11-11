@@ -3,6 +3,7 @@ import { self } from "@services/request"
 import useSWR from "swr"
 
 export const useOrgDepartments = (orgId: string) => {
-  const fetcher = (...args: any) => self.get<GetOrgDepartments>(args)
-  return useSWR(`/api/org-departments?orgId=${orgId}`, fetcher)
+  const fetcher = (args: string) => self.get<GetOrgDepartments>(args)
+  const searchParams = new URLSearchParams({orgId})
+  return useSWR(`/api/org-departments?${searchParams.toString()}`, fetcher)
 }

@@ -25,7 +25,7 @@ interface EMRPreviewProps {
   }
 function EMRPreview({patientId}: EMRPreviewProps) {
 
-  const params = useParams<{organization: string}>();
+  const params = useParams<{clinicUid: string}>();
   const { data: patient, isLoading } = useUser({userId: patientId})
   const { data: allergies, } = useAllergies(patientId)
   const { data: disabilities } = useDisabilities(patientId)
@@ -87,7 +87,7 @@ function EMRPreview({patientId}: EMRPreviewProps) {
       <Section title={`Medical History`} >
         <MedicalHistory
           patientId={patientId}
-          orgUid={params.organization}
+          clinicUid={params.clinicUid}
         />
       </Section>
      

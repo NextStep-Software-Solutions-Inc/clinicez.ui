@@ -56,9 +56,9 @@ async function AppointmentsPage({ searchParams, params }: AppRouterPageRouteOpts
             tabs={tabs.data.map(tab => ({
               name: tab.AppointmentTab.name,
               description: tab.AppointmentTab.description,
-              roles: tab.OrgRoleAppointmentTabs.map(role => ({
-                id: role.Role.id,
-                name: role.Role.name
+              roles: tab.ClinicRoleAppointmentTabs.map(role => ({
+                id: role.ClinicMemberRole.id,
+                name: role.ClinicMemberRole.name
               }))      
             }))}
             appointmentStatusCounts={appointmentCounts.data ?? {}}

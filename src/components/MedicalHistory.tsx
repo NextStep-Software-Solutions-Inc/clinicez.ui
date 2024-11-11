@@ -11,17 +11,16 @@ import Each from "./utils/Each";
 import dayjs from "dayjs";
 import { Badge } from "./ui/badge";
 import { cn } from "@lib/utils";
-import { faker } from "@faker-js/faker";
   
 interface MedicalHistoryProps {
     patientId: string
-    orgUid: string
+    clinicUid: string
 }
 
-export default function MedicalHistory({orgUid, patientId}: MedicalHistoryProps) {
+export default function MedicalHistory({clinicUid, patientId}: MedicalHistoryProps) {
 
   const {data: consultationTickets} = useConsultations({
-    orgUid: orgUid,
+    clinicUid,
     userId: patientId,
   })
 
@@ -42,7 +41,7 @@ export default function MedicalHistory({orgUid, patientId}: MedicalHistoryProps)
                 <div className="p-4">
                   <MedicalHistorySummary 
                     consultationTicketId={ticket.id}
-                    orgUid={orgUid}
+                    clinicUid={clinicUid}
                   />
                 </div>
               </AccordionContent>
@@ -57,12 +56,12 @@ export default function MedicalHistory({orgUid, patientId}: MedicalHistoryProps)
 
 interface MedicalHistorySummaryProps {
     consultationTicketId:  number
-    orgUid: string
+    clinicUid: string
 }
-export const MedicalHistorySummary = ({consultationTicketId, orgUid}: MedicalHistorySummaryProps) => {
+export const MedicalHistorySummary = ({consultationTicketId, clinicUid}: MedicalHistorySummaryProps) => {
   const {data: consultationTicket} = useConsultation({
     consultationId: consultationTicketId,
-    orgUid
+    clinicUid
   })
   return (
     <div className="space-y-2">

@@ -4,22 +4,22 @@ import { GetAppointment, GetAppointmentFilter, GetAppointments } from "@actions/
 import { self } from "@services/request"
 import useSWR from "swr"
 
-export const useOrgAppointments = (filter: GetAppointmentFilter) => {
-  const { orgUid, userId } = filter
+export const useClinicAppointments = (filter: GetAppointmentFilter) => {
+  const { clinicUid } = filter
   const fetcher = (args: string) => self.get<GetAppointments>(args)
   const searchParams = new URLSearchParams()
   Object.entries(filter).forEach(([key, value]) => {
     if(value) searchParams.set(key, value?.toString())
   })
-  return useSWR(`/api/organizations/${orgUid}/appointments?${searchParams.toString()}`, fetcher)
+  return useSWR(`/api/clinics/${clinicUid}/appointments?${searchParams.toString()}`, fetcher)
 }
 
 type UseOrgAppointment = {
-    orgId: string,
-    appointmentId: number
+  clinicUid: string,
+  appointmentId: number
 }
-export const useOrgAppointment = ({orgId, appointmentId}:UseOrgAppointment) => {
+export const useClinicAppointment = ({clinicUid, appointmentId}:UseOrgAppointment) => {
   
   const fetcher = (args: string) => self.get<GetAppointment>(args)
-  return useSWR(() => !!appointmentId ? `/api/organizations/${orgId}/appointments/${appointmentId}` : null, fetcher)
+  return useSWR(() => !!appointmentId ? `/api/clinics/${clinicUid}/appointments/${appointmentId}` : null, fetcher)
 }

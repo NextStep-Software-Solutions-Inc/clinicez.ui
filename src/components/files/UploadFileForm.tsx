@@ -29,21 +29,21 @@ import { uploadMediaAction } from "@actions/blob.action";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import { Checkbox } from "@components/ui/checkbox";
 import ConditionalRender from "@components/utils/ConditionalRender";
-import { useOrgs } from "@hooks/useOrg";
+import { useOrganizations } from "@/hooks/useOrganization";
 import { useFileTypes } from "@hooks/useFileType";
 
 interface UploadFileFormProps {
     folder: {
       id: number
       name: string
-      scopeOrgId?: number
+      scopeClinicId?: number
     }
 }
 
 export default function UploadFileForm({folder}: UploadFileFormProps) {
   
   const user = useUser()
-  const { data: userOrganizations } = useOrgs(user?.user?.sub)
+  const { data: userOrganizations } = useOrganizations(user?.user?.sub)
   const { data: fileTypes } = useFileTypes()
   const userId = user?.user?.sub
   const closeBtnRef = useRef<HTMLInputElement>(null)
@@ -68,8 +68,8 @@ export default function UploadFileForm({folder}: UploadFileFormProps) {
   const form = useForm<z.infer<typeof uploadFileFormSchema>>({
     resolver: zodResolver(uploadFileFormSchema),
     defaultValues: {
-      bindOrg: !!folder?.scopeOrgId,
-      ...folder?.scopeOrgId ? {orgId: folder.scopeOrgId} : {},
+      bindOrg: !!folder?.scopeClinicId,
+      ...folder?.scopeClinicId ? {orgId: folder.scopeClinicId} : {},
     }
   })
     
@@ -111,7 +111,7 @@ export default function UploadFileForm({folder}: UploadFileFormProps) {
   })), [userOrganizations])
   
   const filteredFileTypes = useMemo(() => {
-    return (fileTypes ?? [])?.filter(fileType => fileType.FileTypeAttribute?.Organization?.id === (watchedBindOrg ? watchedOrgId : undefined)) 
+    return (fileTypes ?? [])?.filter(fileType => fileType.FileTypeAttribute?.Clinic?.id === (watchedBindOrg ? watchedOrgId : undefined)) 
   }, [fileTypes, watchedBindOrg, watchedOrgId])
   
   const watchedFileType = +(form.watch("fileTypeId") ?? 0)
@@ -141,7 +141,7 @@ export default function UploadFileForm({folder}: UploadFileFormProps) {
             </FormItem>
           )}
         />
-        <ConditionalRender condition={!folder.scopeOrgId}>
+        <ConditionalRender condition={!folder.scopeClinicId}>
           <ConditionalRender condition={mappedOrgs.length > 0}>
             <FormField
               control={form.control}
@@ -215,7 +215,7 @@ export default function UploadFileForm({folder}: UploadFileFormProps) {
                       of={filteredFileTypes}
                       render={item => (
                         <SelectItem value={item.id?.toString()} className="cursor-pointer">
-                          {item.name} {item.FileTypeAttribute?.Organization?.orgId && `- (${item.FileTypeAttribute?.Organization?.orgId })`}
+                          {item.name} {item.FileTypeAttribute?.Clinic?.clinicUid && `- (${item.FileTypeAttribute?.Clinic.clinicUid })`}
                         </SelectItem>
                       )}
                     />

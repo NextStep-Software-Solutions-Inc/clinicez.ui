@@ -160,6 +160,11 @@ export const getConsultationTicketAction = cache(async (consultationId: number, 
       },
       select: {
         id: true,
+        Clinic: {
+          select: {
+            clinicUid: true
+          }
+        },
         subject: true,
         appointmentId: true,
         clinicId: true,
@@ -175,7 +180,12 @@ export const getConsultationTicketAction = cache(async (consultationId: number, 
         },
         ConsultationTicketAttribute: {
           select: {
-            noteTemplateId: true,
+            NoteTemplate: {
+              select: {
+                id: true,
+                name: true,
+              }
+            },
             status: true,
           }
         },
@@ -183,7 +193,17 @@ export const getConsultationTicketAction = cache(async (consultationId: number, 
           select: {
             Requesters: {
               select: {
-                userId: true
+                User: {
+                  select: {
+                    id: true,
+                    userId: true,
+                    firstName: true,
+                    middleName: true,
+                    lastName: true,
+                    suffix: true,
+                    email: true,
+                  }
+                }
               }
             },
             AppointmentAttribute: {
@@ -330,6 +350,11 @@ export const getConsultationTicketsAction = async ({clinicUid, filters}: {clinic
         id: true,
         subject: true,
         clinicId: true,
+        Clinic: {
+          select: {
+            clinicUid: true
+          }
+        },
         appointmentId: true,
         ConsultationTicketHPs: true,
         createdAt: true,
@@ -351,7 +376,17 @@ export const getConsultationTicketsAction = async ({clinicUid, filters}: {clinic
           select: {
             Requesters: {
               select: {
-                userId: true
+                User: {
+                  select: {
+                    id: true,
+                    userId: true,
+                    firstName: true,
+                    middleName: true,
+                    lastName: true,
+                    suffix: true,
+                    email: true,
+                  }
+                }
               }
             },
             AppointmentAttribute: {

@@ -7,12 +7,10 @@ import BackSubmitAndNext from "@components/SubmitAndNext";
 import { useAtom } from "jotai";
 import { bookAppointmentAtom } from "@state/book-appointment";
 import { Alert, AlertDescription, AlertTitle } from "@components/ui/alert";
-import dayjs from "dayjs"
-import utc from "dayjs/plugin/utc"
+import dayjs from "@lib/day-utils";
 import { useTimeSlots } from "@hooks/useTimeSlots";
 import { BarLoader } from "react-spinners";
 import { Info } from "lucide-react";
-dayjs.extend(utc)
 
 interface SelectTimeSlotProps {
     nextStep?: () => void;
@@ -29,7 +27,7 @@ export default function SelectTimeSlot({nextStep, prevStep, isFirstStep, isLastS
   const {data: timeSlots, isValidating} = useTimeSlots({
     appointmentTypeId,
     userId: hpUserId ?? "",
-    hpId: String(hpId),
+    hpId: Number(hpId),
     serviceId,
   });
 

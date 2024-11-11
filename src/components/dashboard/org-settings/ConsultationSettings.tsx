@@ -11,7 +11,7 @@ import Each from "@components/utils/Each";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
 import PageLoading from "@components/PageLoading";
-import { upsertOrgConsultationConfigAction } from "@actions/consultation/consultation-config.action";
+import { upsertClinicConsultationConfigAction } from "@actions/consultation/consultation-config.action";
 import { useOrgConsultationConfig } from "@hooks/useOrgConsultationConfig";
 import { useNoteTemplates } from "@hooks/useNoteTemplate";
 import Suspend from "@components/Suspend";
@@ -24,8 +24,8 @@ const consultationSettingsForm = z.object({
 })
 
 export default function ConsultationSettings() {
-  const params = useParams<{organization: string}>()
-  const {data: orgConsultationConfig, mutate, isLoading} = useOrgConsultationConfig(params.organization)
+  const params = useParams<{clinicUid: string}>()
+  const {data: orgConsultationConfig, mutate, isLoading} = useOrgConsultationConfig(params.clinicUid)
   const {data: noteTemplates, isLoading: loadingTemplates} = useNoteTemplates()
   const form = useForm<ConsultationSettingsForm>({
     resolver: zodResolver(consultationSettingsForm),
@@ -38,8 +38,8 @@ export default function ConsultationSettings() {
   const action = async () => {
     form.handleSubmit(async (data) => {
       const configId = orgConsultationConfig?.id ?? 0
-      toast.promise(upsertOrgConsultationConfigAction(configId, {
-        orgUid: params.organization,
+      toast.promise(upsertClinicConsultationConfigAction(configId, {
+        clinicUid: params.clinicUid,
         noteTemplateId: data.noteTemplateId
       }), {
         loading: "Saving changes...",

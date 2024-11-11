@@ -30,21 +30,19 @@ interface ConsultationDetailsProps {
   consultation: NonNullable<GetConsultationTicket["data"]>
 }
 export default async function ConsultationDetails({ consultation }: ConsultationDetailsProps) {
-  const appointment = await getAppointmentAction(consultation?.appointmentId ?? 0);
+  const appointment = await getAppointmentAction(consultation?.appointmentId ?? 0, consultation.Clinic.clinicUid);
   
-  const [user, creators] = await Promise.all([
-    await getUserAction(appointment.data?.Requesters[0].userId ?? ""),
-    await getHpsByIdsAction(consultation.ConsultationTicketAuthors.map(c => Number(c.hpId))),
+  const [creators] = await Promise.all([
+    await getHpsByIdsAction(consultation.ConsultationTicketHPs.map(c => Number(c.hpId))),
   ]);
 
-  if(!user.data) notFound();
   return (
     <>
-      <PatientHpDetails creators={creators} user={user.data}/>
+      <PatientHpDetails creators={creators} user={appointment.data?.Requesters[0].User!}/>
       <BackgroundInfo 
         appointment={appointment.data} 
         consultation={consultation} 
-        user={user.data}
+        user={appointment.data?.Requesters[0].User!}
       />
     </>
   );
@@ -53,7 +51,18 @@ export default async function ConsultationDetails({ consultation }: Consultation
 interface BackgroundInfoProps {
   appointment: GetAppointment["data"]
   consultation: ConsultationDetailsProps["consultation"]
-  user: NonNullable<GetUser["data"]>
+  user: {
+    id: number;
+    userId: string;
+    firstName: string | null;
+    middleName: string | null;
+    lastName: string | null;
+    suffix: string | null;
+    gender: string | null;
+    picture: string | null;
+    nickname: string | null;
+    dob: Date | null;
+  }
 }
 export const BackgroundInfo = ({ appointment, consultation, user }: BackgroundInfoProps) => {
   return (
@@ -134,7 +143,18 @@ export const BackgroundInfo = ({ appointment, consultation, user }: BackgroundIn
 
 interface PatientHpDetailsProps {
   creators: GetHpsByIds
-  user: NonNullable<GetUser["data"]>
+  user: {
+    id: number;
+    userId: string;
+    firstName: string | null;
+    middleName: string | null;
+    lastName: string | null;
+    suffix: string | null;
+    gender: string | null;
+    picture: string | null;
+    nickname: string | null;
+    dob: Date | null;
+  }
 }
 export const PatientHpDetails = ({ creators = [], user }: PatientHpDetailsProps) => {
   const patientId = user.userId

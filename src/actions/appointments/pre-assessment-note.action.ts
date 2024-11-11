@@ -99,6 +99,18 @@ export const getPreAssessmentNotesAction = async (appointmentId: number) => {
       },
       where: {
         appointmentId
+      },
+      include: {
+        CreatedBy: {
+          select: {
+            id: true,
+            userId: true,
+            firstName: true,
+            middleName: true,
+            lastName: true,
+            suffix: true
+          }
+        }
       }
     })
     return {

@@ -8,7 +8,7 @@ interface VitalSignsProps {
 }
 export default async function VitalSigns({ consultation, userId}: VitalSignsProps) {
 
-  const requesterUserId = consultation.Appointment?.Requesters?.[0].userId
+  const requesterUserId = consultation.Appointment?.Requesters?.[0].User.userId
   
   if (!requesterUserId) {
     return null;

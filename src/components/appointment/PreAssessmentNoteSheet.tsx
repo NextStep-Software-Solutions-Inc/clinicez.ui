@@ -18,7 +18,7 @@ import { useForm, useWatch } from "react-hook-form";
 import ActionButton from "@components/ActionButton";
 import { toast } from "sonner";
 import { upsertPreAssessmentNoteAction } from "@actions/appointments/pre-assessment-note.action";
-import { useOrgAppointment } from "@hooks/useAppointment";
+import { useClinicAppointment } from "@hooks/useAppointment";
 import { Checkbox } from "@components/ui/checkbox";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import { useLocalStorage } from "@hooks/useLocalStorage";
@@ -43,13 +43,15 @@ interface PreAssessmentNoteSheetProps {
     homeInstructions?: string
     remarks: string
     appointmentId: number
-    orgUid: string
-    createdBy?: string
+    clinicUid: string
+    CreatedBy?: {
+      userId: string;
+    }
   }
   disabled?: boolean
 }
-export default function PreAssessmentNoteSheet({children, disabled, preAssessmentNotes:{ assessment, homeInstructions, remarks , appointmentId: appointmentId, orgUid, createdBy} }: PreAssessmentNoteSheetProps) {
-  const preConSultKey = `preAssessmentNote-${appointmentId}-${orgUid}`
+export default function PreAssessmentNoteSheet({children, disabled, preAssessmentNotes:{ assessment, homeInstructions, remarks , appointmentId: appointmentId, clinicUid, CreatedBy} }: PreAssessmentNoteSheetProps) {
+  const preConSultKey = `preAssessmentNote-${appointmentId}-${clinicUid}`
   const [preAssessmentNote, setPreAssessmentNote] = useLocalStorage<Partial<PreConsultationNotes>>(preConSultKey, {
     assessment,
     homeInstructions,
@@ -59,9 +61,9 @@ export default function PreAssessmentNoteSheet({children, disabled, preAssessmen
 
   const { user } = useUser()
   const closeBtnRef = useRef<HTMLButtonElement>(null)
-  const {mutate} = useOrgAppointment({
-    orgId: orgUid,
-    appointmentId: appointmentId
+  const {mutate} = useClinicAppointment({
+    appointmentId: appointmentId,
+    clinicUid
   })
   const form = useForm<PreConsultationNotes>({
     defaultValues: {
@@ -85,7 +87,7 @@ export default function PreAssessmentNoteSheet({children, disabled, preAssessmen
         assessment: data.assessment,
         homeInstructions: data.homeInstructions,
         remarks: data.remarks,
-        orgUid
+        clinicUid
       }), {
         loading: "Saving Pre-Assessment Note...",
         success: (res) => {
@@ -179,7 +181,7 @@ export default function PreAssessmentNoteSheet({children, disabled, preAssessmen
               )}
             />
             {
-              createdBy !== user?.email &&
+              CreatedBy?.userId !== user?.sub &&
               <FormField
                 control={form.control}
                 name="createNew"

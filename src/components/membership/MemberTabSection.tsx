@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@comp
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@components/ui/tabs";
 import ConditionalRender from "@components/utils/ConditionalRender";
 import Each from "@components/utils/Each";
-import { useOrgRoles } from "@hooks/useOrgRole";
+import { useOrganizationRoles } from "@/hooks/useOrganizationRole";
 import { useParams } from "next/navigation";
 import { useMemo } from "react";
 import EmployeeRecordForm from "../../app/(activation)/[organization]/join/EmployeeRecordForm";
@@ -21,7 +21,7 @@ interface MemberTabSectionProps {
 }
 export default function MemberTabSection({orgUid, userId}:MemberTabSectionProps) {
   const params = useParams<{organization: string}>();
-  const {data: myOrgRoles} = useOrgRoles(params.organization, {
+  const {data: myOrgRoles} = useOrganizationRoles(params.organization, {
     userId: userId
   })
 
@@ -64,13 +64,13 @@ export default function MemberTabSection({orgUid, userId}:MemberTabSectionProps)
                     <>
                       <ConditionalRender condition={value === "employee_record"}>
                         <EmployeeRecordForm 
-                          orgId={params.organization}
+                          orgUid={params.organization}
                           userId={userId}
                         />
                       </ConditionalRender>
                       <ConditionalRender condition={value === "student_record"}>
                         <StudentRecordForm 
-                          orgId={params.organization}
+                          orgUid={params.organization}
                           userId={userId}
                         />
                       </ConditionalRender>

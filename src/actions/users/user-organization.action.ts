@@ -11,7 +11,6 @@ import { cache } from "react";
 import { getPermissionsAction } from "@actions/permission.action";
 import { PERMISSIONS } from "@lib/permissions";
 import { OrganizationMemberStatus } from "@/types";
-import { parseObject } from "@/lib/utils";
 
 export type GetUserOrgFilterType = {
     userId?: string | null;

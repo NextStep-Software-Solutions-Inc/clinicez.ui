@@ -1,3 +1,4 @@
+import { parseObject } from "@/lib/utils";
 import { getUserTimeSlotsAction } from "@actions/schedule/time-slot.actions";
 import { withJwtAuth } from "@middlewares/withJwtAuth";
 import { NextRequest, NextResponse } from "next/server";
@@ -10,12 +11,13 @@ export const GET = withJwtAuth(async (req: NextRequest, { params }: {
 }) => {
   const userId = params.userId;
   const searchParams = req.nextUrl.searchParams;
+
   const serviceId = Number(searchParams.get("serviceId"));
   const appointmentTypeId = Number(searchParams.get("appointmentTypeId"));
-  const hpId = String(searchParams.get("hpId"));
+  const hpId = Number(searchParams.get("hpId"));
 
   const availabilities = await getUserTimeSlotsAction({
-    userId: userId,
+    userId,
     serviceId,
     hpId,
     appointmentTypeId

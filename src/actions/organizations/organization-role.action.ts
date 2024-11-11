@@ -12,7 +12,7 @@ type CreateOrgRolePayload = {
   description: string;
 }
 
-export const createClinicRoleAction = async (payload: CreateOrgRolePayload) => {
+export const createOrganizationRoleAction = async (payload: CreateOrgRolePayload) => {
   let message = "Organization role created successfully"
   try {
 
@@ -47,8 +47,8 @@ type FiltersType = {
     status?: OrganizationMemberStatus;
   }
   
-export type GetClinicRoles = Awaited<ReturnType<typeof getClinicRolesAction>>
-export const getClinicRolesAction = cache(async (filter?: FiltersType) => {
+export type GetOrganizationRoles = Awaited<ReturnType<typeof getOrganizationRolesAction>>
+export const getOrganizationRolesAction = cache(async (filter?: FiltersType) => {
   const {userId, orgUid, status} = filter || { status: "ACTIVE"};
   const roles = await prisma.organizationRole.findMany({
     orderBy: {
@@ -114,7 +114,7 @@ export const getClinicRolesAction = cache(async (filter?: FiltersType) => {
 })
 
 
-export const setClinicRoleRequirementsAction = async (orgRoleId: number, requirements: string[]) => {
+export const setOrganizationRoleRequirementsAction = async (orgRoleId: number, requirements: string[]) => {
   let message = "Role requirements updated successfully"
   try {
 
@@ -137,7 +137,7 @@ export const setClinicRoleRequirementsAction = async (orgRoleId: number, require
   }
 }
 
-export const deleteClinicRoleAction = async (orgRoleId: number) => {
+export const deleteOrganizationRoleAction = async (orgRoleId: number) => {
 
   let message = "Role deleted successfully"
 

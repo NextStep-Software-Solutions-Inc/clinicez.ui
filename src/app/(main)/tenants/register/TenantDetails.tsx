@@ -57,7 +57,7 @@ export default function TenantDetails({ setComplete, prevStep }: TenantDetailsPr
       const planId = Number(searchParams.get("plan"));
       toast.promise(createTenantAction({
         name: data.name,
-        tenantId: data.tenantUid,
+        tenantUid: data.tenantUid,
         description: data.description,
         receiptCode: tenantApplication.receiptCode,
         planId: tenantApplication.planId || planId

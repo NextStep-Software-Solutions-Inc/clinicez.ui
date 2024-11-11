@@ -42,10 +42,10 @@ const addAppointmentTypeSchema = z.object({
 });
 
 interface AddAppointmentTypeModalProps {
-    orgUid: string;
-    onAddAppointmentType?: () => void;
+  clinicUid: string;
+  onAddAppointmentType?: () => void;
 }
-export default function AddAppointmentTypeModal({orgUid, onAddAppointmentType}:AddAppointmentTypeModalProps) {
+export default function AddAppointmentTypeModal({clinicUid, onAddAppointmentType}:AddAppointmentTypeModalProps) {
   const closeBtnRef = React.useRef<HTMLInputElement>(null);
   const form = useForm<z.infer<typeof addAppointmentTypeSchema>>({
     resolver: zodResolver(addAppointmentTypeSchema),
@@ -60,7 +60,7 @@ export default function AddAppointmentTypeModal({orgUid, onAddAppointmentType}:A
       toast.promise(createAppointmentTypeAction({
         name: values.name,
         description: values.description,
-        orgUid
+        clinicUid
       }), {
         loading: "Creating appointment type...",
         success: res => {

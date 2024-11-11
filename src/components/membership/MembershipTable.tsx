@@ -7,14 +7,14 @@ import { useUserOrganizations } from "@hooks/useUserOrganization";
 import PageLoading from "@components/PageLoading";
 import { useSearchParams } from "next/navigation";
 interface MembershipTableProps {
-  orgId: string;
+  orgUid: string;
 }
 
-export const MembershipTable = ({ orgId }: MembershipTableProps) => {
+export const MembershipTable = ({ orgUid }: MembershipTableProps) => {
   const searchParams = useSearchParams();
   const pageNumber = Number(searchParams.get("pageNumber")) || 1;
   const pageSize = Number(searchParams.get("pageSize")) || 10;
-  const {data: membershipRequests, isLoading} = useUserOrganizations({ orgId, pageSize, pageNumber });
+  const {data: membershipRequests, isLoading} = useUserOrganizations({ orgUid, pageSize, pageNumber });
 
   // pust the page number and page size to the query params
   const pushQueryParams = (page: number, pageSize: number) => {

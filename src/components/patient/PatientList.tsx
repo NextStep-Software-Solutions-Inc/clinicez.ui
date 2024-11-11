@@ -6,15 +6,15 @@ const Paginate = dynamic(() => import("@components/Paginate"), { ssr: false, loa
 
 
 interface PatientListProps {
-  orgId: string
+  orgUid: string
   search?: string
   page?: number
 }
 
 export type PatientsType = Awaited<ReturnType<typeof getUsersAction>>[0] 
-export const PatientList = async ({orgId, search, page = 1}:PatientListProps) => {
+export const PatientList = async ({orgUid, search, page = 1}:PatientListProps) => {
   const pageSize = 100;
-  const [patients, total] = await getUsersAction({orgId, search, page, pageSize})
+  const [patients, total] = await getUsersAction({orgUid, search, page, pageSize})
   return (
     <>
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-2 p-5">

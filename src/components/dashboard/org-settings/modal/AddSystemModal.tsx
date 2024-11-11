@@ -25,10 +25,10 @@ const addSystemSchema = z.object({
 });
 
 interface AddSystemModalProps {
-    orgUid: string;
+  clinicUid: string;
     onAddSystem?: () => void;
 }
-export default function AddSystemModal({orgUid, onAddSystem}: AddSystemModalProps) {
+export default function AddSystemModal({clinicUid, onAddSystem}: AddSystemModalProps) {
   const closeBtnRef = React.useRef<HTMLInputElement>(null);
   const form = useForm<z.infer<typeof addSystemSchema>>({
     resolver: zodResolver(addSystemSchema),
@@ -39,7 +39,7 @@ export default function AddSystemModal({orgUid, onAddSystem}: AddSystemModalProp
 
   const action = async () => {
     form.handleSubmit(async (values) => {
-      toast.promise(createSystemAction({...values, orgUid}), {
+      toast.promise(createSystemAction({...values, clinicUid}), {
         loading: "Creating system...",
         success: res => {
           if(res.status) {

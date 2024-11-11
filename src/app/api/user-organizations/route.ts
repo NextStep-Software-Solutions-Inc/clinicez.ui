@@ -2,7 +2,6 @@
 import 'server-only'
 
 import { NextRequest, NextResponse } from "next/server";
-import { UserOrganizationStatus } from '@prisma/client';
 import { withJwtAuth } from '@middlewares/withJwtAuth';
 import { getUserOrganizationsAction } from '@actions/users/user-organization.action';
 

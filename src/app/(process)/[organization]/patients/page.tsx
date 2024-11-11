@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 };
 
 async function PatientsPage({params, searchParams}: AppRouterPageRouteOpts) {
-  const orgId = params?.organization as string;
+  const orgUid = params?.organization as string;
   const search = searchParams?.search as string;
   const page = parseInt(searchParams?.page as string) || 1;
 
@@ -37,7 +37,7 @@ async function PatientsPage({params, searchParams}: AppRouterPageRouteOpts) {
           </p>
         </div>
         <AddPatientModal
-          orgUid={orgId}
+          orgUid={orgUid}
         />
       </div>
       <Separator/>
@@ -46,7 +46,7 @@ async function PatientsPage({params, searchParams}: AppRouterPageRouteOpts) {
           <SearchBar placeholder="Search for patient name of email"/>
         </div>
         <Suspend loadingFallback={<PageLoading label="Loading Records ..."/>}>
-          <PatientList orgId={orgId} search={search} page={page}/>
+          <PatientList orgUid={orgUid} search={search} page={page}/>
         </Suspend>
       </div>
     </div>

@@ -28,13 +28,13 @@ export default function ConsultationNotes({ consultation }: ConsultationNotesPro
   const authUserHPS = useHPs({
     userId: user?.sub ?? ""
   })
-  const consultationTicketHps = consultation.ConsultationTicketAuthors.map(c => c.hpId)
-  const isConsultationAuthor = (authUserHPS.data ?? []).some(hp => consultationTicketHps.includes(hp.id.toString()))
+  const consultationTicketHps = consultation.ConsultationTicketHPs.map(c => c.hpId)
+  const isConsultationAuthor = (authUserHPS.data ?? []).some(hp => consultationTicketHps.includes(hp.id))
 
-  const params = useParams<{organization: string}>()
-  const orgUid = params.organization;
-  const {data: consultationNotes, mutate} = useConsultationNotes({ orgUid, consultationId: consultation.id })
-  const {data: noteTemplate, isLoading:loadingNoteTemplate} = useNoteTemplate(consultation.ConsultationTicketAttribute?.noteTemplateName ?? "")
+  const params = useParams<{clinicUid: string}>()
+  const clinicUid = params.clinicUid;
+  const {data: consultationNotes, mutate} = useConsultationNotes({ clinicUid, consultationId: consultation.id })
+  const {data: noteTemplate, isLoading:loadingNoteTemplate} = useNoteTemplate(consultation.ConsultationTicketAttribute?.NoteTemplate.name ?? "")
   const notes = (noteTemplate?.NoteSections ?? []).map(section => {
     const note = consultationNotes?.find(note => note.section === section.name)
     return {
@@ -69,6 +69,7 @@ export default function ConsultationNotes({ consultation }: ConsultationNotesPro
                   <GenericSection 
                     readonly={!isConsultationAuthor}
                     onUpdated={mutate}
+                    hpId={consultationTicketHps[0]}
                     value={note.value} 
                     consultationId={consultation.id} 
                     name={note.name} label={note.label} 

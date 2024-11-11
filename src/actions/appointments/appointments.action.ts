@@ -22,7 +22,7 @@ type CreateAppointmentPayload = {
   modeId: number;
   typeId: number;
   serviceId: number;
-  requesters: number[];
+  requesters: string[];
   attachments: string[];
   hpId?: number;
   schedule?: {
@@ -65,8 +65,10 @@ export const createAppointmentAction = async (payload: CreateAppointmentPayload)
           },
           Requesters: {
             some: {
-              userId: {
-                in: requesters
+              User: {
+                userId: {
+                  in: requesters
+                }
               }
             }
           }
@@ -87,6 +89,13 @@ export const createAppointmentAction = async (payload: CreateAppointmentPayload)
       
       if(numberOfAppointments >= maxNumberOfAppointment.maxAppointmentsPerDay) throw new Error("The appointments quota of the organization for today has been reached");
       
+      const patientIds = await prisma.user.findMany({
+        where: {
+          userId: {
+            in: requesters
+          }
+        }
+      })
       const newAppointment = await prisma.appointment.create({
         data: {
           subject,
@@ -109,7 +118,7 @@ export const createAppointmentAction = async (payload: CreateAppointmentPayload)
           },
           Requesters: {
             createMany: {
-              data: requesters.map((userId) => ({ userId })),
+              data: patientIds.map((userId) => ({ userId: userId.id })),
               skipDuplicates: true
             }
           },
@@ -388,7 +397,21 @@ export const getAppointmentAction = cache(async (id: number, clinicUid: string) 
         createdAt: true,
         Requesters: {
           select: {
-            userId: true
+            User: {
+              select: {
+                id: true,
+                userId: true,
+                firstName: true,
+                middleName: true,
+                lastName: true,
+                suffix: true,
+                email: true,
+                gender: true,
+                picture: true,
+                nickname: true,
+                dob: true,
+              }
+            }
           }
         },
         clinicId: true,
@@ -423,14 +446,63 @@ export const getAppointmentAction = cache(async (id: number, clinicUid: string) 
                 name: true
               }
             },
-            rejectedAt: true,
             receivedAt: true,
-            rejectedBy: true,
-            receivedBy: true,
-            rejectedReason: true,
-            preferredAppointee: true,
+            ReceivedBy: {
+              select: {
+                userId: true,
+                firstName: true,
+                middleName: true,
+                lastName: true,
+                suffix: true,
+                email: true,
+              }
+            },
+            rejectedAt: true,
+            RejectedBy: {
+              select: {
+                userId: true,
+                firstName: true,
+                middleName: true,
+                lastName: true,
+                suffix: true,
+                email: true,
+              }
+            },
             completedAt: true,
-            completedBy: true
+            CompletedBy: {
+              select: {
+                userId: true,
+                firstName: true,
+                middleName: true,
+                lastName: true,
+                suffix: true,
+                email: true,
+              }
+            },
+            PreferredAppointee: {
+              select: {
+                id: true,
+                User: {
+                  select: {
+                    userId: true,
+                    firstName: true,
+                    middleName: true,
+                    lastName: true,
+                    suffix: true,
+                    email: true,
+                  }
+                },
+                HPProfile: {
+                  select: {
+                    title: true,
+                    name: true,
+                    suffix: true,
+                    fields: true
+                  }
+                }
+              }
+            },
+            rejectedReason: true,
           }
         },
         AppointmentRouting: {
@@ -439,8 +511,41 @@ export const getAppointmentAction = cache(async (id: number, clinicUid: string) 
             id: true,
             routingCode: true,
             amendment: true,
-            routedBy: true,
-            routedTo: true,
+            RoutedBy: {
+              select: {
+                userId: true,
+                firstName: true,
+                middleName: true,
+                lastName: true,
+                suffix: true,
+                email: true,
+              }
+            },
+            RoutedTo: {
+              select: {
+                id: true,
+                hpTypeId: true,
+                HPProfile: {
+                  select: {
+                    id: true,
+                    title: true,
+                    name: true,
+                    suffix: true,
+                    fields: true
+                  }
+                },
+                User: {
+                  select: {
+                    userId: true,
+                    firstName: true,
+                    middleName: true,
+                    lastName: true,
+                    suffix: true,
+                    email: true,
+                  }
+                },
+              }
+            },
             status: true,
             updatedAt: true
           }
@@ -457,7 +562,16 @@ export const getAppointmentAction = cache(async (id: number, clinicUid: string) 
             assessment: true,
             remarks: true,
             homeInstructions: true,
-            createdBy: true,
+            CreatedBy: {
+              select: {
+                userId: true,
+                firstName: true,
+                middleName: true,
+                lastName: true,
+                suffix: true,
+                email: true,
+              }
+            },
             PreAssessmentNoteAttribute: {}
           }
         },

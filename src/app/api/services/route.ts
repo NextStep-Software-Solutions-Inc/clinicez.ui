@@ -1,4 +1,4 @@
-import { getClinicServicesAction } from "@actions/organizations/org-service.action";
+import { getClinicServicesAction } from "@actions/organizations/clinic-service.action";
 import { withJwtAuth } from "@middlewares/withJwtAuth";
 import { AppointmentStatus } from "@public/json/appointment-list";
 import { NextRequest, NextResponse } from "next/server";

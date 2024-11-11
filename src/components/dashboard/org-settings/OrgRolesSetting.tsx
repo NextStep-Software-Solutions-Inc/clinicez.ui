@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@components/ui/card";
 import Each from "@components/utils/Each";
-import { useOrgRoles } from "@hooks/useOrgRole";
+import { useOrganizationRoles } from "@/hooks/useOrganizationRole";
 import { useParams } from "next/navigation";
 import PageLoading from "@components/PageLoading";
 import { OrgRoleCard } from "./OrgRoleCard";
@@ -11,7 +11,7 @@ import AddRoleModal from "./modal/AddRoleModal";
 
 export default function OrganizationRolesSetting(){
   const params = useParams<{organization: string}>();
-  const {data: orgRoles, isLoading: loadingOrgRoles, mutate} = useOrgRoles(params.organization);
+  const {data: orgRoles, isLoading: loadingOrgRoles, mutate} = useOrganizationRoles(params.organization);
   
   if(loadingOrgRoles) return <PageLoading label="Loading page, please wait a moment..."/>
   return (
@@ -32,7 +32,8 @@ export default function OrganizationRolesSetting(){
           of={orgRoles ?? []}
           render={(role) => {
             return (
-              <OrgRoleCard key={role.id} role={role} onDeleteRole={mutate}/>
+              // <OrgRoleCard key={role.id} role={role} onDeleteRole={mutate}/>
+              <></>
             )
           }}
         />

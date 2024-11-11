@@ -16,16 +16,16 @@ export const metadata: Metadata = {
 }
 
 export default async function FilesPage({params}: AppRouterPageRouteOpts) {
-  const organizationId = params?.organization as string
+  const orgUid = params?.organization as string
   const session = await getCachedSession()
-  const folders = await getFoldersAction(session?.user.sub, organizationId)
+  const folders = await getFoldersAction(session?.user.sub, orgUid)
   return (
     <>
       <div className="space-y-6">
         <div className="group/create-folder">
           <div className="flex items-center">
             <h2 className="text-2xl font-bold tracking-tight">Files</h2>
-            <CreateFolderModal orgUid={organizationId} />
+            <CreateFolderModal orgUid={orgUid} />
           </div>
           <p className="text-sm text-muted-foreground">
             Manage and organize your files. All files are private by default and only accessible to you. You can share files with other users by sharing the link or allowing healthcare professionals to access the file.
@@ -46,9 +46,9 @@ export default async function FilesPage({params}: AppRouterPageRouteOpts) {
                 name: folder.name,
                 isPublic: folder.FolderSetting?.isPublic,
                 description: `Last update: ${dayjs(folder.updatedAt).format("lll")}`,
-                scopeOrgId: folder.FolderSetting?.scopeOrgId ?? 0,
+                scopeClinicId: folder.FolderSetting?.scopeClinicId ?? 0,
                 files: folder.Files.map(file => {
-                  const validUntil = file.FileType.FileTypeAttribute?.validUntil ?? 0;
+                  const validUntil = file.FileType.FileTypeAttribute?.validityDays ?? 0;
                   const valid = !!file.dateTaken && dayjs().add(validUntil, "days").isAfter(file.dateTaken);
                   return {
                     id: file.id,

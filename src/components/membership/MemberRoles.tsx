@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@components/ui/card";
 import Each from "@components/utils/Each";
-import { useOrgRoles } from "@hooks/useOrgRole";
+import { useOrganizationRoles } from "@/hooks/useOrganizationRole";
 
 interface MemberRolesProps {
     userId: string;
@@ -10,7 +10,7 @@ interface MemberRolesProps {
 }
 export default function MemberRoles({orgUid,userId}:MemberRolesProps){
 
-  const {data: roles, isLoading: loadingRoles} = useOrgRoles(orgUid,  {userId});
+  const {data: roles, isLoading: loadingRoles} = useOrganizationRoles(orgUid,  {userId});
 
   if(loadingRoles) return <div>Loading...</div>
   return (

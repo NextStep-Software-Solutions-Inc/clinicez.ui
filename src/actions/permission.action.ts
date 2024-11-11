@@ -2,7 +2,7 @@
 
 import "server-only";
 import prisma from "@lib/prisma";
-import { PermissionType } from "../types";
+import { PermissionType } from "@/types";
 
 export type GetPermissions = Awaited<ReturnType<typeof getPermissionsAction>>;
 export async function getPermissionsAction({userId, type}: {userId?: string, type?: PermissionType}) {

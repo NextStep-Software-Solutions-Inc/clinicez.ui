@@ -18,18 +18,18 @@ import { useRef } from "react"
 import { toast } from "sonner";
 
 interface CreateWhitelistFilterModalProps {
-  orgUid: string;
+  clinicUid: string;
   userId: string;
   onUpdated?: () => void;
 }
 
-export default function CreateWhitelistFilterModal({ onUpdated, orgUid, userId}:CreateWhitelistFilterModalProps) {
+export default function CreateWhitelistFilterModal({ onUpdated, clinicUid, userId}:CreateWhitelistFilterModalProps) {
 
   const closeBtnRef = useRef<HTMLInputElement>(null)
   const action = async (formData: FormData) => {
     const name = formData.get("name") as string
     const decodedUserId = decodeURIComponent(userId)
-    toast.promise(createWhitelistAction({ name,orgId: orgUid,userId:decodedUserId }), {
+    toast.promise(createWhitelistAction({ name, clinicUid, userId:decodedUserId }), {
       loading: "Creating whitelist...",
       success: (res) => {
         if(res.status){

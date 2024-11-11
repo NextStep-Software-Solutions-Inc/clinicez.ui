@@ -16,8 +16,8 @@ export const metadata: Metadata = {
 };
 
 async function MembershipPage({params}: AppRouterPageRouteOpts) {
-  const orgId = params?.organization as string;
-  const orgAdmin = await isOrgAdmin(orgId);
+  const orgUid = params?.organization as string;
+  const orgAdmin = await isOrgAdmin(orgUid);
   if(!orgAdmin) {
     redirect("/unauthorized");
   }
@@ -32,7 +32,7 @@ async function MembershipPage({params}: AppRouterPageRouteOpts) {
         </div>
         <Separator />
         <Suspend>
-          <MembershipTable orgId={orgId}/>
+          <MembershipTable orgUid={orgUid}/>
         </Suspend>
       </div>
     </>

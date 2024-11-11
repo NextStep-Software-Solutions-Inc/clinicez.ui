@@ -31,9 +31,9 @@ import { FormControl } from "@components/ui/form"
 interface ConsultationTicketSettingSheetProps extends DialogProps {
   children?: React.ReactNode;
   consultationId: number;
-  orgUid: string;
+  clinicUid: string;
 }
-export default function ConsultationTicketSettingSheet({ children, consultationId, orgUid, ...res }: ConsultationTicketSettingSheetProps) {
+export default function ConsultationTicketSettingSheet({ children, consultationId, clinicUid, ...res }: ConsultationTicketSettingSheetProps) {
   
   const action = async (formData: FormData) => {
   }
@@ -82,7 +82,7 @@ export default function ConsultationTicketSettingSheet({ children, consultationI
               </Button>
             </CardFooter>
           </Card>
-          <ConsultationNotesSetting consultationId={consultationId} orgUid={orgUid}/>
+          <ConsultationNotesSetting consultationId={consultationId} clinicUid={clinicUid}/>
         </div>
         <SheetFooter>
           <SheetClose asChild>
@@ -95,14 +95,14 @@ export default function ConsultationTicketSettingSheet({ children, consultationI
 }
 
 
-export const ConsultationNotesSetting = ({consultationId, orgUid}: { consultationId: number, orgUid: string }) => {
+export const ConsultationNotesSetting = ({consultationId, clinicUid}: { consultationId: number, clinicUid: string }) => {
 
   const {data: consultation} = useConsultation({
     consultationId,
-    orgUid
+    clinicUid
   });
 
-  const {data: noteTemplate} = useNoteTemplate(consultation?.data?.ConsultationTicketAttribute?.noteTemplateName ?? "");
+  const {data: noteTemplate} = useNoteTemplate(consultation?.data?.ConsultationTicketAttribute?.NoteTemplate.name ?? "");
 
   const mappedNotes = (consultation?.data?.ConsultationNotes ?? []).map(note => {
     const noteSection = noteTemplate?.NoteSections?.find(section => section.name === note.section)
@@ -140,7 +140,7 @@ export const ConsultationNotesSetting = ({consultationId, orgUid}: { consultatio
       <CardContent >
         <form id="notes-settings" action={action} className="grid gap-6">
           <Label className="flex flex-col space-y-1">
-            Allow Patients to view Consultation Notes ({consultation?.data?.ConsultationTicketAttribute?.noteTemplateName})
+            Allow Patients to view Consultation Notes ({consultation?.data?.ConsultationTicketAttribute?.NoteTemplate.name})
           </Label>
           <Each
             of={mappedNotes}

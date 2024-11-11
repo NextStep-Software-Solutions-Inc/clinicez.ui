@@ -2,7 +2,7 @@
 
 import { useSetAtom } from "jotai";
 import { sessionClinicAtom } from "@state/session-clinic";
-import { useOrganization } from "@hooks/useOrg";
+import { useOrganization } from "@/hooks/useOrganization";
 import { useParams } from "next/navigation";
 import { useEffect } from "react";
 
@@ -18,9 +18,9 @@ export default function SyncSessionClinic({}: SyncSessionClinicProps) {
     if (organization) {
       setSessionClinic(() => ({
         clinicId: organization?.id,
-        clinicUid: organization?.orgId,
+        clinicUid: organization?.orgUid,
         tenantId: organization?.Tenant.id,
-        tenantUid: organization?.Tenant.tenantId
+        tenantUid: organization?.Tenant.tenantUid
       }));
     }
   }, [organization, setSessionClinic]);

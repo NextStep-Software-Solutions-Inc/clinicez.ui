@@ -80,7 +80,7 @@ export function PersonalInformationForm({readOnly, ...props}: PersonalInformatio
               <FormItem className="w-full">
                 <FormLabel>First Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="John" {...field} value={field.value ?? ""} />
+                  <Input {...field} value={field.value ?? ""} />
                 </FormControl>
                 <FormDescription>
                   Your first name is used for identification purposes.
@@ -97,7 +97,7 @@ export function PersonalInformationForm({readOnly, ...props}: PersonalInformatio
               <FormItem className="w-full">
                 <FormLabel>Middle Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="Micheal" {...field} value={field.value ?? ""} />
+                  <Input {...field} value={field.value ?? ""} />
                 </FormControl>
                 <FormDescription>
                   Your middle name is used for identification purposes.
@@ -114,7 +114,7 @@ export function PersonalInformationForm({readOnly, ...props}: PersonalInformatio
               <FormItem className="w-full">
                 <FormLabel>Last Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="Doe" {...field} />
+                  <Input {...field} />
                 </FormControl>
                 <FormDescription>
                   Your last name is used for identification purposes.
@@ -131,7 +131,7 @@ export function PersonalInformationForm({readOnly, ...props}: PersonalInformatio
               <FormItem className="w-1/4">
                 <FormLabel>Suffix</FormLabel>
                 <FormControl>
-                  <Input placeholder="Jr." {...field} value={field.value ?? ""} />
+                  <Input {...field} value={field.value ?? ""} />
                 </FormControl>
                 <FormDescription>
                 Jr., Sr., III, etc.

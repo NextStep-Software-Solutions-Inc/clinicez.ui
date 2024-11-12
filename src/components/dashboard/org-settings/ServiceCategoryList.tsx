@@ -8,7 +8,7 @@ import { useParams } from "next/navigation";
 import React from "react";
 import { toast } from "sonner";
 import { useClinicServiceCategories } from "@/hooks/useClinicServiceCategory";
-import { deleteServiceCategoryAction, GetClinicServiceCategories } from "@actions/organizations/clinic-service-category.action";
+import { deleteServiceCategoryAction, GetClinicServiceCategories } from "@/actions/clinics/clinic-service-category.action";
 import AddServiceCategoryModal from "./modal/AddServiceCategoryModal";
 import UpdateServiceCategoryModal from "./modal/UpdateServiceCategoryModal";
 import ServiceList from "./ServiceList";

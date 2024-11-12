@@ -1,4 +1,4 @@
-import { getClinicServiceCategoriesAction } from "@actions/organizations/clinic-service-category.action";
+import { getClinicServiceCategoriesAction } from "@/actions/clinics/clinic-service-category.action";
 import { withJwtAuth } from "@middlewares/withJwtAuth";
 import { NextRequest, NextResponse } from "next/server";
 

@@ -15,7 +15,7 @@ import { toast } from "sonner";
 import PageLoading from "@components/PageLoading";
 import { useAppointmentTabs, useClinicAppointmentTabs } from "@hooks/useAppointmentTab";
 import Each from "@components/utils/Each";
-import { setClinicAppointmentTabsAction } from "@actions/organizations/clinic-appointment-tab..action";
+import { setClinicAppointmentTabsAction } from "@/actions/clinics/clinic-appointment-tab..action";
 
 
 const FormSchema = z.object({

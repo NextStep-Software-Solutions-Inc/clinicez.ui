@@ -1,4 +1,4 @@
-import { getClinicAppointmentTabsAction } from "@actions/organizations/clinic-appointment-tab..action";
+import { getClinicAppointmentTabsAction } from "@/actions/clinics/clinic-appointment-tab..action";
 import { withJwtAuth } from "@middlewares/withJwtAuth";
 import { NextRequest, NextResponse } from "next/server";
 

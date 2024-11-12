@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import OrgRoleAppointmentTabs from "./OrgRoleAppointmentTabs"
 import { Separator } from "@components/ui/separator"
 // import { deleteOrganizationRoleAction, GetOrganizationRoles } from "@actions/organizations/organization-role.action"
-import { deleteClinicRoleAction, GetClinicRoles } from "@actions/organizations/clinic-role.action"
+import { deleteClinicRoleAction, GetClinicRoles } from "@/actions/clinics/clinic-role.action"
 import OrgRoleInitialPermissions from "./OrgRoleInitialPermissions";
 import OrgRoleRequirements from "./OrgRoleRequirements";
 import { toast } from "sonner";

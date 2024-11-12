@@ -1,4 +1,4 @@
-import { GetClinicSetting } from "@actions/organizations/clinic-setting.action"
+import { GetClinicSetting } from "@/actions/clinics/clinic-setting.action"
 import { self } from "@services/request"
 import useSWR from "swr"
 

@@ -8,7 +8,7 @@ import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth
 import AppointmentDisplay from "../../../../components/appointment/AppointmentDisplay";
 import Suspend from "@components/Suspend";
 import { Metadata } from "next";
-import { getClinicAppointmentTabsAction } from "@actions/organizations/clinic-appointment-tab..action";
+import { getClinicAppointmentTabsAction } from "@/actions/clinics/clinic-appointment-tab..action";
 import PageLoading from "@components/PageLoading";
 
 export const maxDuration = 30

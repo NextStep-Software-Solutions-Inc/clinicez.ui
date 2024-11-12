@@ -1,4 +1,4 @@
-import { getClinicRolesAction } from "@actions/organizations/clinic-role.action";
+import { getClinicRolesAction } from "@/actions/clinics/clinic-role.action";
 import { withJwtAuth } from "@middlewares/withJwtAuth";
 import { NextRequest, NextResponse } from "next/server";
 

@@ -1,4 +1,4 @@
-import { GetClinicServiceCategories } from "@actions/organizations/clinic-service-category.action"
+import { GetClinicServiceCategories } from "@/actions/clinics/clinic-service-category.action"
 import { self } from "@services/request"
 import useSWR from "swr"
 

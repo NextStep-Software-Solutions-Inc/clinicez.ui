@@ -1,12 +1,12 @@
-import { getClinicSettingAction } from "@actions/organizations/clinic-setting.action";
+import { getClinicSettingAction } from "@actions/clinics/clinic-setting.action";
 import { permanentRedirect } from "next/navigation";
 
-export default async function AppointmentLayout({ children, params: {organization} }: Readonly<{ children: React.ReactNode, params: {organization: string} }>) {
-  const [orgSetting] = await Promise.all([
-    await getClinicSettingAction(organization) // Fetch organization settings
+export default async function AppointmentLayout({ children, params: {clinicUid} }: Readonly<{ children: React.ReactNode, params: {clinicUid: string} }>) {
+  const [clinicSetting] = await Promise.all([
+    await getClinicSettingAction(clinicUid) // Fetch clinic settings
   ])
   
-  if(!orgSetting.data?.enableAppointment) {
+  if(!clinicSetting.data?.enableAppointment) {
     permanentRedirect("/unauthorized")
   }
   return (

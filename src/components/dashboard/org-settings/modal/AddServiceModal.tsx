@@ -1,6 +1,6 @@
 "use client";
 
-import { createClinicServiceAction } from "@actions/organizations/clinic-service.action";
+import { createClinicServiceAction } from "@/actions/clinics/clinic-service.action";
 import ActionButton from "@components/ActionButton";
 import CustomModalContent from "@components/CustomModalContent";
 import { Button } from "@components/ui/button";

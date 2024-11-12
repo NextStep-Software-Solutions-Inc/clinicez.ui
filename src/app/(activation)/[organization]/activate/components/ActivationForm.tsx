@@ -12,7 +12,7 @@ import { Separator } from "@components/ui/separator";
 import ConditionalRender from "@components/utils/ConditionalRender";
 import Each from "@components/utils/Each";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { BloodType, CivilStatus, Gender } from "@prisma/common/client";
+import { BloodType, CivilStatus, Gender } from "@prisma/client";
 import { useParams } from "next/navigation";
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -32,7 +32,7 @@ export default function ActivationForm() {
   const [inputValues, setInputValues] = useState<Record<string, any>>({});
   const user = useUser()
   const params = useParams();
-  const orgId = params.organization as string;
+  const orgUid = String(params.organization);
   const email = user?.user?.email;
   const userId = user?.user?.sub;
 
@@ -118,7 +118,7 @@ export default function ActivationForm() {
 
     toast.promise(startMigrationTransactionAction({
       userId, 
-      orgId,
+      orgUid,
       data: {
         email: json.email,
         firstName: json.first_name,

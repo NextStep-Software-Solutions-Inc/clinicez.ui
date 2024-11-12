@@ -11,7 +11,7 @@ import { useFieldArray, useForm } from "react-hook-form";
 import IllnessItem from "./IllnessItem";
 import { Badge } from "@components/ui/badge";
 import { Plus } from "lucide-react";
-import { Severity } from "@prisma/common/client";
+import { Severity } from "@prisma/client";
 import ConditionalRender from "@components/utils/ConditionalRender";
 import { Illness } from "./IllnessList";
 

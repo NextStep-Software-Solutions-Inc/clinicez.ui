@@ -1,7 +1,7 @@
 import { upsertConsultationNotesAction } from "@actions/consultation/consultation-notes.action"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useDebounceFunc } from "@hooks/useDebounceFunc"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@components/ui/form"
@@ -11,6 +11,7 @@ import { toast } from "sonner"
 import { cn } from "@lib/utils"
 
 interface GenericSectionProps {
+    hpId: number;
     name: string
     label: string
     consultationId: number
@@ -19,7 +20,7 @@ interface GenericSectionProps {
     onUpdated?: () => void
     readonly?: boolean
   }
-export default function GenericSection({name, label, consultationId, value = "", showOnPatient, onUpdated, readonly = true}: GenericSectionProps) {
+export default function GenericSection({hpId, name, label, consultationId, value = "", showOnPatient, onUpdated, readonly = true}: GenericSectionProps) {
   
 
   const formRef = useRef<HTMLFormElement>(null)
@@ -50,11 +51,14 @@ export default function GenericSection({name, label, consultationId, value = "",
   const handleSave = async (formData: FormData) => {
     form.handleSubmit(async (data) => {
       formData.append("consultationTicketId", consultationId.toString())
-      Object.entries(data).forEach(([key, value]) => {
-        formData.append("section", key)
-        formData.append("content", value)
-      })
-      toast.promise(upsertConsultationNotesAction(formData), {
+      
+      const [[section, content]] = Object.entries(data)
+      toast.promise(upsertConsultationNotesAction({
+        consultationTicketId: consultationId,
+        section,
+        content,
+        hpId
+      }), {
         loading: "Saving consultation notes...",
         success: (res)  => {
           if(res.status) {

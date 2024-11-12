@@ -8,13 +8,13 @@ import PageLoading from "@components/PageLoading";
 
 
 interface ConsultationTableProps {
-    orgUid: string
+  clinicUid: string
 }
 
-export default function ConsultationTable({ orgUid }: ConsultationTableProps) {
+export default function ConsultationTable({ clinicUid }: ConsultationTableProps) {
   const [showArchived, setShowArchived] = useState(false)
   const {data: consultations, isLoading} = useConsultations({
-    orgUid,
+    clinicUid,
     showArchived
   })
   const handleOptionsChange = (options: ConsultationTableOptions) => {

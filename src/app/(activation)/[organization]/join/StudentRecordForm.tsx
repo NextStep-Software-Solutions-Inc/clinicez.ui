@@ -47,15 +47,15 @@ const employeeRecordSchema = z.object({
 
 export type StudentRecordType = z.infer<typeof employeeRecordSchema>;
 
-export default function StudentRecordForm({orgId, userId} : {orgId: string, userId: string}) {
+export default function StudentRecordForm({orgUid, userId} : {orgUid: string, userId: string}) {
 
   const [additionalInfoValid, setAdditionalInfoValid] = useAtom(additionalInfoValidAtom)
   const [orgApplication, setOrgApplication] = useAtom(joinOrgApplicationAtom)
-  const {data: orgYearLevels} = useOrgYearLevels(orgId)
+  const {data: orgYearLevels} = useOrgYearLevels(orgUid)
   const {data: studentLevels} = useStudentLevels()
-  const {data: orgPrograms} = useOrgPrograms(orgId)
-  const {data: orgColleges} = useOrgColleges(orgId)
-  const {data: orgDepartment} = useOrgDepartments(orgId)
+  const {data: orgPrograms} = useOrgPrograms(orgUid)
+  const {data: orgColleges} = useOrgColleges(orgUid)
+  const {data: orgDepartment} = useOrgDepartments(orgUid)
   const {data: user} = useUser({userId})
 
   const form = useForm<StudentRecordType>({
@@ -74,7 +74,7 @@ export default function StudentRecordForm({orgId, userId} : {orgId: string, user
       }
      
       const userId = user.data.id
-      toast.promise(upsertStudentRecordAction({...values, orgUid: orgId, userId}), {
+      toast.promise(upsertStudentRecordAction({...values, orgUid, userId}), {
         loading: "Saving student record...",
         success: async (res) => {
           if(!res.success) {

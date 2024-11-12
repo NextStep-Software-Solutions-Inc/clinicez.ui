@@ -21,7 +21,7 @@ interface EditConsultationTicketModalProps extends DialogProps {
   record: {
     id: number,
     subject: string,
-    orgUid: string
+    clinicUid: string
   }
   children: React.ReactNode
 }
@@ -32,7 +32,7 @@ const EditConsultationTicketModal = React.forwardRef<any, EditConsultationTicket
 
   const revalidate = async () => {
     // revalidatePath(`${record.orgUid}/consultations`,  "page")
-    mutate((key) =>  typeof key === 'string' && key.startsWith(`/api/organizations/${record.orgUid}/consultations`), undefined, {
+    mutate((key) =>  typeof key === 'string' && key.startsWith(`/api/clinics/${record.clinicUid}/consultations`), undefined, {
       revalidate: true
     })
   }

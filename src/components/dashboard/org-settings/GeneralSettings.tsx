@@ -9,7 +9,7 @@ import { Checkbox } from "@components/ui/checkbox";
 import { Textarea } from "@components/ui/textarea";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@components/ui/card";
 import { Separator } from "@components/ui/separator";
-import { useOrganization } from "@hooks/useOrg";
+import { useOrganization } from "@/hooks/useOrganization";
 import { useParams } from "next/navigation";
 import { updateOrganizationAction } from "@actions/organizations/organization.action";
 import { toast } from "sonner";
@@ -28,8 +28,7 @@ const generalSettingsForm = z.object({
     required_error: "Organization name is required"
   }).trim().readonly(),
   description: z.string().trim().optional(),
-  picture: z.string().trim().url(),
-  cover: z.string().trim().url().optional(),
+  logo: z.string().trim().url(),
   customUrl: z.string().trim().optional(),
   email: z.string({
     required_error: "Organization email is required"
@@ -38,8 +37,6 @@ const generalSettingsForm = z.object({
   isPublic: z.boolean().default(true),
   sendEmailNotification: z.boolean().default(true),
   emailToOrgOnly: z.boolean().default(true),
-  enableAppointment: z.boolean().default(true),
-  enableConsultation: z.boolean().default(true),
 })
 
 export default function GeneralSettings() {
@@ -48,18 +45,15 @@ export default function GeneralSettings() {
   const form = useForm<GeneralSettingsForm>({
     resolver: zodResolver(generalSettingsForm),
     values: {
-      orgUid: organization?.orgId ?? "",
+      orgUid: organization?.orgUid ?? "",
       name: organization?.name ?? "",
       description: organization?.description ?? "",
-      picture: organization?.picture ?? "",
-      cover: organization?.cover ?? "",
+      logo: organization?.logo ?? "",
       customUrl: organization?.customUrl ?? "",
       email: organization?.email ?? "",
       isPublic: organization?.OrganizationSetting?.isPublic ?? false,
       sendEmailNotification: organization?.OrganizationSetting?.sendEmailNotification ?? false,
       emailToOrgOnly: organization?.OrganizationSetting?.emailToOrgOnly ?? false,
-      enableAppointment: organization?.OrganizationSetting?.enableAppointment ?? false,
-      enableConsultation: organization?.OrganizationSetting?.enableConsultation ?? false,
     }
   })
 
@@ -170,26 +164,10 @@ export default function GeneralSettings() {
             <div className="flex flex-wrap gap-2 items-baseline">
               <FormField
                 control={form.control}
-                name="picture"
+                name="logo"
                 render={({ field }) => (
                   <FormItem className="grow">
                     <FormLabel>Organization Logo URL</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      The logo for your organization.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="cover"
-                render={({ field }) => (
-                  <FormItem className="grow">
-                    <FormLabel>Organization Cover Photo URL</FormLabel>
                     <FormControl>
                       <Input {...field} />
                     </FormControl>
@@ -269,7 +247,7 @@ export default function GeneralSettings() {
               <h5 className="text-lg font-semibold">Feature Flags</h5>
               <Separator/>
             </div>
-            <FormField
+            {/* <FormField
               control={form.control}
               name="enableAppointment"
               render={({ field }) => (
@@ -290,8 +268,8 @@ export default function GeneralSettings() {
                   </div>
                 </FormItem>
               )}
-            />
-            <FormField
+            /> */}
+            {/* <FormField
               control={form.control}
               name="enableConsultation"
               render={({ field }) => (
@@ -312,7 +290,7 @@ export default function GeneralSettings() {
                   </div>
                 </FormItem>
               )}
-            />
+            /> */}
             {
               form.formState.isDirty &&
               <ActionButton type="submit">Save Changes</ActionButton>

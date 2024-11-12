@@ -39,9 +39,9 @@ export default function AssignAppointment({disabled = false, appointment, onAssi
     }
 
     const skip = appointment.AppointmentRouting.some(a => 
-      a.routedToRole === hp.hpTypeId.toString() && 
+      a.RoutedTo.hpTypeId === hp.hpTypeId && 
       (["PENDING", "ACCEPTED"].includes(a.status) || 
-      (["CANCELLED", "DECLINED"].includes(a.status) && Number(a.routedTo) === hp.id))
+      (["CANCELLED", "DECLINED"].includes(a.status) && Number(a.RoutedTo.HPProfile?.id) === hp.id))
     );
     if(skip) return acc
 
@@ -59,11 +59,12 @@ export default function AssignAppointment({disabled = false, appointment, onAssi
     
     if (!selectedHp) return;
 
-    formData.append("routedTo", selectedHp.id.toString());
-    formData.append("routedToRole", selectedHp.hpTypeId);
-    formData.append("appointmentId", appointment.id.toString());
-
-    toast.promise(assignAppointmentAction(formData), {
+    const payload = {
+      routedTo: selectedHp.id,
+      appointmentId: appointment.id,
+    }
+  
+    toast.promise(assignAppointmentAction(payload), {
       loading: "Assigning...",
       success: (res) => {
         if(res.status) {
@@ -76,7 +77,7 @@ export default function AssignAppointment({disabled = false, appointment, onAssi
     });
   }
 
-  const defaultHp = useMemo(() => (hps ?? []).find(hp => hp.id.toString() === appointment.AppointmentAttribute?.preferredAppointee) ?? null, [hps, appointment.AppointmentAttribute?.preferredAppointee])
+  const defaultHp = useMemo(() => (hps ?? []).find(hp => hp.id === appointment.AppointmentAttribute?.PreferredAppointee?.id) ?? null, [hps, appointment.AppointmentAttribute?.PreferredAppointee?.id])
   
   useEffect(() => {
     if(defaultHp) {

@@ -1,6 +1,6 @@
 "use server";
 import "server-only";
-import prismaTenant from "@lib/prisma-tenant";
+import prisma from "@lib/prisma";
 import { getCachedSession } from "@actions/session.action";
 
 
@@ -18,7 +18,7 @@ export const getPrescriptionsActions = async (filters?: GetPrescriptionsFilter) 
 
     const { clinicId, hpId, isArchived } = filters || {}
     
-    const prescriptions = await prismaTenant.prescription.findMany({
+    const prescriptions = await prisma.prescription.findMany({
       orderBy: {
         createdAt: 'desc'
       },
@@ -66,7 +66,7 @@ export const createPrescriptionAction = async (payload: CreatePrescriptionPayloa
     const defaultTemplate = 2
 
     const template = templateId ?? defaultTemplate
-    await prismaTenant.prescription.create({
+    await prisma.prescription.create({
       data: {
         templateId: template,
         medicationId,
@@ -91,7 +91,7 @@ export const updatePrescriptionActions = async (payload: {id: number, name?: str
     const session = await getCachedSession()
     if(!session) throw new Error("Unauthorized")
     const {id, name} = payload
-    await prismaTenant.prescription.update({
+    await prisma.prescription.update({
       where: {id},
       data: {name}
     })

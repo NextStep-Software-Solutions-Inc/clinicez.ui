@@ -19,7 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tooltip, TooltipContent, TooltipTrigger } from "@components/ui/tooltip"
 import Each from "@components/utils/Each";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useOrgAppointment } from "@hooks/useAppointment";
+import { useClinicAppointment } from "@hooks/useAppointment";
 import { useHPs } from "@hooks/useHP";
 import { useSystems } from "@hooks/useSystem";
 import { ClipboardPlus } from "lucide-react"
@@ -46,18 +46,18 @@ interface CreateConsultationTicketModalProps {
 export default function CreateConsultationTicketModal({disabled = false, subject, appointment}: CreateConsultationTicketModalProps) {
   const closeBtnRef = useRef<HTMLInputElement>(null)
   const router = useRouter();
-  const params = useParams<{organization: string}>();
+  const params = useParams<{clinicUid: string}>();
   const searchParams = useSearchParams();
-  const orgUid = params.organization
+  const clinicUid = params.clinicUid
   const { user } = useUser()
-  const {data: systems} = useSystems(orgUid)
+  const {data: systems} = useSystems(clinicUid)
   const { data: myHps } = useHPs({
     userId: user?.sub ?? ""
   })
 
   const appointmentId = Number(searchParams.get("_appointment"))
-  const {mutate} = useOrgAppointment({
-    orgId: orgUid,
+  const {mutate} = useClinicAppointment({
+    clinicUid,
     appointmentId
   })
 
@@ -82,15 +82,15 @@ export default function CreateConsultationTicketModal({disabled = false, subject
     form.handleSubmit(async (data) => {
       const subject = data.subject
       const systemId = data.systemId
-      const hpId = String(data.hpId)
-      const hpIds = new Set([hpId, ...appointment.AppointmentRouting.filter(r => r.status === "ACCEPTED").map(r => r.routedTo)])
-      toast.promise(createConsultationTicketAction({appointmentId, orgUid, subject, systemId, hpIds : [...hpIds]}), {
+      const hpId = Number(data.hpId)
+      const hpIds = new Set([hpId, ...appointment.AppointmentRouting.filter(r => r.status === "ACCEPTED").map(r => r.RoutedTo.HPProfile?.id!)])
+      toast.promise(createConsultationTicketAction({appointmentId, clinicUid, subject, systemId, hpIds : [...hpIds]}), {
         loading: "Creating consultation ticket...",
         success: (res) => {
           if(res.status) {
             closeBtnRef.current?.click()
             mutate()
-            data.openTicket && router.push(`/${params.organization}/consultations/${res.data?.id}?${searchParams.toString()}`);
+            data.openTicket && router.push(`/${params.clinicUid}/consultations/${res.data?.id}?${searchParams.toString()}`);
           }
           return res.message
         },

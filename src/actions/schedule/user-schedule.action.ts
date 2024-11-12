@@ -1,16 +1,14 @@
 "use server";
 import "server-only";
-
-import prismaCommon from "@lib/prisma-common";
-import prismaTenant from "@lib/prisma-tenant";
+import prisma from "@lib/prisma";
 
 export type UpsertUserScheduleArgs = {
   id: number;
   type: string;
   startDate: Date;
   endDate: Date;
-  startTime: Date;
-  endTime: Date;
+  startTime: string;
+  endTime: string;
   isRecurring: boolean;
   pattern?: string;
   daysOfWeek?: number[];
@@ -19,7 +17,7 @@ export type UpsertUserScheduleArgs = {
 };
 export const upsertBaseUserScheduleAction = async (args: UpsertUserScheduleArgs) => {
   const { id, type, startDate, endDate, startTime, endTime, isRecurring, pattern, daysOfWeek, weekOfMonth, userId } = args;
-  const userSchedule = await prismaCommon.userSchedule.upsert({
+  const userSchedule = await prisma.userSchedule.upsert({
     where: {
       User: { userId },
       id
@@ -59,7 +57,7 @@ export const upsertBaseUserScheduleAction = async (args: UpsertUserScheduleArgs)
 
 export type GetUserSchedules = Awaited<ReturnType<typeof getUserSchedulesAction>>;
 export const getUserSchedulesAction = async (unique: string) => {
-  return await prismaCommon.userSchedule.findMany({
+  return await prisma.userSchedule.findMany({
     where: {
       OR: [
         {
@@ -74,8 +72,8 @@ export const getUserSchedulesAction = async (unique: string) => {
 }
 
 export type GetUserAppointmentsSchedule = Awaited<ReturnType<typeof getHPAppointmentsSchedule>>;
-export const getHPAppointmentsSchedule = async (hpId: string) => {
-  return await prismaTenant.appointment.findMany({
+export const getHPAppointmentsSchedule = async (hpId: number) => {
+  return await prisma.appointment.findMany({
     orderBy: {
       createdAt: 'desc'
     },
@@ -133,7 +131,7 @@ export const getHPAppointmentsSchedule = async (hpId: string) => {
 }
 
 export const deleteUserScheduleAction = async (id: number) => {
-  await prismaCommon.userSchedule.delete({
+  await prisma.userSchedule.delete({
     where: {
       id,
       isActive: true

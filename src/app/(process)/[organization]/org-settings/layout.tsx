@@ -12,7 +12,7 @@ export default async function OrgSettingLayout({children, params: {organization}
   const session = await getCachedSession();
   const myRoles = await getOrganizationRolesAction({
     userId: session?.user.sub,
-    orgId: organization,
+    orgUid: organization,
     status: "ACTIVE"
   })
   if(!myRoles.some(role => role.name.toLocaleLowerCase() === "admin")) redirect("/unauthorized");

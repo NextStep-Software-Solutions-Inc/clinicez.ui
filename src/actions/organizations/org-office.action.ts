@@ -1,15 +1,16 @@
 "use server";
 
-import prisma from "@lib/prisma-common";
+import "server-only";
+import prisma from "@lib/prisma";
 
 export type GetOrgOffices = Awaited<ReturnType<typeof getOrgOfficesAction>>
-export const getOrgOfficesAction = async (orgId: string) => {
+export const getOrgOfficesAction = async (orgUid: string) => {
   const orgOffice = await prisma.organizationOffice.findMany({
     orderBy: { name: "asc" },
     where: {
       isActive: true,
       Organization: {
-        orgId
+        orgUid
       }
     },
     select: {

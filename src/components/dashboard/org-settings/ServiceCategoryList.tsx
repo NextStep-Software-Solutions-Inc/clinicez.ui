@@ -7,15 +7,15 @@ import { Trash } from "lucide-react";
 import { useParams } from "next/navigation";
 import React from "react";
 import { toast } from "sonner";
-import { useOrgServiceCategories } from "@hooks/useOrgServiceCategory";
-import { deleteServiceCategoryAction, GetOrgServiceCategories } from "@actions/organizations/org-service-category.action";
+import { useClinicServiceCategories } from "@/hooks/useClinicServiceCategory";
+import { deleteServiceCategoryAction, GetClinicServiceCategories } from "@actions/organizations/clinic-service-category.action";
 import AddServiceCategoryModal from "./modal/AddServiceCategoryModal";
 import UpdateServiceCategoryModal from "./modal/UpdateServiceCategoryModal";
 import ServiceList from "./ServiceList";
 
 export default function ServiceCategoryList() {
-  const params = useParams<{organization: string}>()
-  const {data: serviceCategories, isLoading, mutate} = useOrgServiceCategories(params.organization)
+  const params = useParams<{clinicUid: string}>()
+  const {data: serviceCategories, isLoading, mutate} = useClinicServiceCategories(params.clinicUid)
 
   const deleteServiceCategory = (id: number) => {
     toast.promise(deleteServiceCategoryAction(id), {
@@ -38,7 +38,7 @@ export default function ServiceCategoryList() {
           <span>
             Service Categories 
           </span>
-          <AddServiceCategoryModal orgUid={params.organization} onAddServiceCategory={mutate}/>
+          <AddServiceCategoryModal clinicUid={params.clinicUid} onAddServiceCategory={mutate}/>
         </CardTitle>
         <CardDescription>
           Service categories are used to categorize services. You can create, edit, and delete service categories here.
@@ -79,7 +79,7 @@ export default function ServiceCategoryList() {
 
 
 interface ActionsProps {
-  serviceCategory: GetOrgServiceCategories[number];
+  serviceCategory: GetClinicServiceCategories[number];
   editAction?: () => void;
   deleteAction?: () => void;
 }

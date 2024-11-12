@@ -4,7 +4,7 @@ import { ColumnDef } from "@tanstack/react-table"
 
 import { Badge } from "@components/ui/badge"
 
-import { $Enums } from "@prisma/common/client"
+import { $Enums } from "@prisma/client"
 
 import Link from "next/link"
 import { DropdownMenuProvider } from "@components/DropdownMenuProvider"
@@ -20,7 +20,7 @@ import { DataTableColumnHeader } from "./data-table-column-header"
 import MembershipTableRowActions from "./MembershipTableRowActions"
 dayjs.extend(utc)
 
-export const statuses = Object.values($Enums.UserOrganizationStatus).map((status) => ({
+export const statuses = Object.values({ACTIVE: "ACTIVE", INACTIVE:"INACTIVE", PENDING: "PENDING", SUSPENDED:"SUSPENDED"}).map((status) => ({
   label: status.split("").map((char, index) => (index === 0 ? char : char.toLowerCase())).join(""),
   value: status,
 }))
@@ -147,7 +147,7 @@ export const columns: ColumnDef<GetUserOrganizations["data"][number]>[] = [
   {
     accessorKey: "role",
     size: 1,
-    accessorFn: (row) => row.UserRole.name,
+    accessorFn: (row) => row.OrganizationRole.name,
     filterFn: (row, id, value) => {
       return value.includes(row.getValue(id))
     },
@@ -155,7 +155,7 @@ export const columns: ColumnDef<GetUserOrganizations["data"][number]>[] = [
       <DataTableColumnHeader column={column} title="Role" />
     ),
     cell: ({ row }) => {
-      const label = row.original.UserRole.name
+      const label = row.original.OrganizationRole.name
 
       return (
         <div className="flex space-x-2">

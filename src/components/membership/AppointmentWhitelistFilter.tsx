@@ -4,7 +4,7 @@ import ListItem from "@components/ListItem";
 import { Button } from "@components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@components/ui/card";
 import Each from "@components/utils/Each";
-import { useUserOrgAppointmentWhitelist } from "@hooks/useUserOrgAppointmentWhitelist";
+import { useUserClinicAppointmentWhitelist } from "@hooks/useUserClinicAppointmentWhitelist";
 import { Trash } from "lucide-react";
 import { useParams } from "next/navigation";
 import UpdateWhitelistFilterModal from "./modal/UpdateWhitelistModal";
@@ -15,8 +15,8 @@ import { deleteWhitelistFilterAction } from "@actions/filter.action";
 import UpdateWhitelistFilter from "./modal/UpdateWhitelistFilterModal";
 
 export default function AppointmentWhitelistFilters() {
-  const params = useParams<{organization: string, userId: string}>();
-  const {data: whitelists, mutate, isLoading: loadingWhitelist} = useUserOrgAppointmentWhitelist(params.organization, decodeURIComponent(params.userId));
+  const params = useParams<{clinicUid: string, userId: string}>();
+  const {data: whitelists, mutate, isLoading: loadingWhitelist} = useUserClinicAppointmentWhitelist(params.clinicUid, decodeURIComponent(params.userId));
 
   if(loadingWhitelist) return <div>Loading whitelist...</div>
   return (
@@ -31,7 +31,7 @@ export default function AppointmentWhitelistFilters() {
             whitelists?.data?.length === 0 &&
             <CreateWhitelistFilterModal
               onUpdated={mutate}
-              orgUid={params.organization}
+              clinicUid={params.clinicUid}
               userId={params.userId}
             />
           }

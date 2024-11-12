@@ -1,7 +1,7 @@
 "use server";
 
 import "server-only";
-import prismaCommon from "@lib/prisma-common";
+import prisma from "@lib/prisma";
 import { getCachedSession } from "./session.action";
 
 export type GetHPTypes = Awaited<ReturnType<typeof getHPTypesAction>>;
@@ -10,7 +10,7 @@ export const getHPTypesAction = async () => {
   try {
     if(!session) throw new Error("User not authenticated.");
 
-    const hpTypes = await prismaCommon.healthcareProviderType.findMany({
+    const hpTypes = await prisma.healthcareProviderType.findMany({
       orderBy: {
         name: "asc"
       },

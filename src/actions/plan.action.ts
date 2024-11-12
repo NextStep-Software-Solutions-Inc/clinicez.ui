@@ -1,6 +1,6 @@
 "use server";
 
-import prisma from "@lib/prisma-common";
+import prisma from "@lib/prisma";
 
 type PlanFilter = {
   type: "TENANT" | "HEALTHCARE_PROVIDER";

@@ -9,10 +9,10 @@ import OrganizationSteps from "./OrganizationSteps";
 import { getOrganizationAction } from "@actions/organizations/organization.action";
 
 async function JoinOrgPage({params}: AppRouterPageRouteOpts) {
-  const orgId = params?.organization as string;
+  const orgUid = params?.organization as string;
   const [session, org] = await Promise.all([
     getCachedSession(),
-    getOrganizationAction(orgId),
+    getOrganizationAction(orgUid),
   ])
   if(!session) return redirect("/api/auth/login");
   const userId = session?.user.sub;
@@ -39,7 +39,7 @@ async function JoinOrgPage({params}: AppRouterPageRouteOpts) {
       </Alert>
 
       <Suspend>
-        <OrganizationSteps orgId={orgId} userId={userId}/>
+        <OrganizationSteps orgUid={orgUid} userId={userId}/>
       </Suspend>
     
     </div>

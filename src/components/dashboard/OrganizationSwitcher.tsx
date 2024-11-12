@@ -20,7 +20,7 @@ export function OrganizationSwitcher({isCollapsed,}: OrganizationSwitcherProps) 
   const orgs: SwitcherOptionsType[] = (myOrgs?.data ?? []).filter(o => ["ACTIVE"].includes(o.status))
     .map(org => ({
       label: org.Organization.name,
-      value: org.Organization.orgId,
+      value: org.Organization.orgUid,
       icon: Building
     }))
     .reduce((acc: SwitcherOptionsType[], current) => {

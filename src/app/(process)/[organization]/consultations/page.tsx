@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 }
 
 async function ConsultationsPage({params}: AppRouterPageRouteOpts) {
-  const orgUid = params?.organization as string
+  const clinicUid = params?.organization as string
   return (
     <>
       <div className="space-y-6">
@@ -21,7 +21,7 @@ async function ConsultationsPage({params}: AppRouterPageRouteOpts) {
           </p>
         </div>
         <Separator />
-        <ConsultationTable orgUid={orgUid}/>
+        <ConsultationTable clinicUid={clinicUid}/>
       </div>
     </>
   );

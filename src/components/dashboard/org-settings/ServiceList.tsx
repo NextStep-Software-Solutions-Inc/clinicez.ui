@@ -7,8 +7,8 @@ import { Trash } from "lucide-react";
 import { useParams } from "next/navigation";
 import React from "react";
 import { toast } from "sonner";
-import { useOrgServices } from "@hooks/useOrgService";
-import { deleteOrgServiceAction, GetOrgServices } from "@actions/organizations/org-service.action";
+import { useClinicServices } from "@/hooks/useClinicService";
+import { deleteClinicServiceAction, GetClinicServices } from "@actions/organizations/clinic-service.action";
 import AddServiceModal from "./modal/AddServiceModal";
 import UpdateServiceModal from "./modal/UpdateServiceModal";
 
@@ -16,15 +16,15 @@ interface ServiceListProps {
   categoryId?: number;
 }
 export default function ServiceList({categoryId}:ServiceListProps) {
-  const params = useParams<{organization: string}>()
-  const {data: services, isLoading, mutate} = useOrgServices({
-    orgUid: params.organization,
+  const params = useParams<{clinicUid: string}>()
+  const {data: services, isLoading, mutate} = useClinicServices({
+    clinicUid: params.clinicUid,
     categoryId
     
   })
 
   const deleteServiceCategory = (id: number) => {
-    toast.promise(deleteOrgServiceAction(id), {
+    toast.promise(deleteClinicServiceAction(id), {
       loading: "Deleting service...",
       success: res => {
         if(res.status) {
@@ -44,7 +44,7 @@ export default function ServiceList({categoryId}:ServiceListProps) {
           <span>
             Services 
           </span>
-          <AddServiceModal orgUid={params.organization} onAddService={mutate}/>
+          <AddServiceModal clinicUid={params.clinicUid} onAddService={mutate}/>
         </CardTitle>
         <CardDescription>
           Services are used to categorize appointments. You can create, edit, and delete services here.
@@ -99,7 +99,7 @@ export const ListItem = ({name,actions, description}: ListItemProps) => {
 }
 
 interface ActionsProps {
-  service: GetOrgServices[number];
+  service: GetClinicServices[number];
   editAction?: () => void;
   deleteAction?: () => void;
 }

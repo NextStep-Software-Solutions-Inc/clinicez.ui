@@ -14,7 +14,7 @@ import { joinOrgApplicationAtom } from "@state/join-org-application";
 
 interface SelectOrgFormProps {
   userId: string
-  orgId: string
+  orgUid: string
   orgRoles: GetOrganizationRoles
   existingRoles: number[]
   isFirstStep?: boolean;
@@ -23,7 +23,7 @@ interface SelectOrgFormProps {
 }
 
 
-export const SelectOrgForm = ({existingRoles, orgRoles, orgId, userId, nextStep, isFirstStep, isLastStep}:SelectOrgFormProps) => {
+export const SelectOrgForm = ({existingRoles, orgRoles, orgUid, userId, nextStep, isFirstStep, isLastStep}:SelectOrgFormProps) => {
   const [orgApplication, setOrgApplication] = useAtom(joinOrgApplicationAtom);
   
   const selectRoleSchema = z.object({
@@ -48,7 +48,7 @@ export const SelectOrgForm = ({existingRoles, orgRoles, orgId, userId, nextStep,
     form.handleSubmit(async (values) => {
       setOrgApplication(prev => ({
         ...prev,
-        orgId,
+        orgUid,
         userId,
         roleId: values.roleId, 
         roleRequirements: orgRoles.find(role => role.id === values.roleId)?.requirements ?? []

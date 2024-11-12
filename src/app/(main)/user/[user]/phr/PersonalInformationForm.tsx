@@ -16,7 +16,7 @@ import { Input } from "@components/ui/input"
 import ActionButton from "@components/ActionButton"
 import { toast } from "sonner"
 import { updateUserAction } from "@actions/users/user.action"
-import { BloodType, CivilStatus, Gender, User } from "@prisma/common/client"
+import { BloodType, CivilStatus, Gender, User } from "@prisma/client"
 import Each from "@components/utils/Each"
 import { RadioGroup, RadioGroupItem } from "@components/ui/radio-group"
 import { useUser } from "@auth0/nextjs-auth0/client"
@@ -80,7 +80,7 @@ export function PersonalInformationForm({readOnly, ...props}: PersonalInformatio
               <FormItem className="w-full">
                 <FormLabel>First Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="John" {...field} value={field.value ?? ""} />
+                  <Input {...field} value={field.value ?? ""} />
                 </FormControl>
                 <FormDescription>
                   Your first name is used for identification purposes.
@@ -97,7 +97,7 @@ export function PersonalInformationForm({readOnly, ...props}: PersonalInformatio
               <FormItem className="w-full">
                 <FormLabel>Middle Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="Micheal" {...field} value={field.value ?? ""} />
+                  <Input {...field} value={field.value ?? ""} />
                 </FormControl>
                 <FormDescription>
                   Your middle name is used for identification purposes.
@@ -114,7 +114,7 @@ export function PersonalInformationForm({readOnly, ...props}: PersonalInformatio
               <FormItem className="w-full">
                 <FormLabel>Last Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="Doe" {...field} />
+                  <Input {...field} />
                 </FormControl>
                 <FormDescription>
                   Your last name is used for identification purposes.
@@ -131,7 +131,7 @@ export function PersonalInformationForm({readOnly, ...props}: PersonalInformatio
               <FormItem className="w-1/4">
                 <FormLabel>Suffix</FormLabel>
                 <FormControl>
-                  <Input placeholder="Jr." {...field} value={field.value ?? ""} />
+                  <Input {...field} value={field.value ?? ""} />
                 </FormControl>
                 <FormDescription>
                 Jr., Sr., III, etc.

@@ -14,7 +14,7 @@ export default async function DashboardLink(){
 
   return (
     <ConditionalRender condition={await isHP() || await isMember()}>
-      <a {...!defaultOrg ? { href:`/settings/organizations` }:{ href:`/${defaultOrg?.Organization.orgId}/dashboard` }}>
+      <a {...!defaultOrg ? { href:`/settings/organizations` }:{ href:`/${defaultOrg?.Organization.orgUid}/dashboard` }}>
         <DropdownMenuItem>
           <Container className="mr-2 h-4 w-4" />
           Dashboard

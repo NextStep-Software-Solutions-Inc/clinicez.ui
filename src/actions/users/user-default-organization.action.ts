@@ -1,20 +1,20 @@
 "use server";
 
-import prisma from "@lib/prisma-common";
+import prisma from "@lib/prisma";
 
 export const setDefaultOrgRoleAction = async ({
   id = 0,
   userId,
-  orgId,
+  orgUid,
   roleId
-}: {id?: number,userId:string, orgId: string, roleId: number}) => {
+}: {id?: number,userId:string, orgUid: string, roleId: number}) => {
   return await prisma.userDefaultOrganizationRole.upsert({
     where: { id, User: { userId }, isActive: true, },
     update: { roleId  },
     create: {
       Organization: {
         connect: {
-          orgId
+          orgUid
         }
       },
       User: {
@@ -22,7 +22,7 @@ export const setDefaultOrgRoleAction = async ({
           userId
         }
       },
-      UserRole: {
+      OrganizationRole: {
         connect: {
           id: roleId
         }
@@ -39,7 +39,7 @@ export const getDefaultOrgRoleAction = async (userId: string) => {
     },
     select: {
       id: true,
-      UserRole: {
+      OrganizationRole: {
         select: {
           id: true,
           name: true

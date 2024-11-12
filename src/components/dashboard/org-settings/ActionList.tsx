@@ -15,8 +15,8 @@ import UpdateSystemModal from "./modal/UpdateSystemModal";
 interface ActionListProps {
 }
 export default function ActionList({}:ActionListProps) {
-  const params = useParams<{organization: string}>()
-  const {data: systems, isLoading, mutate} = useSystems(params.organization)
+  const params = useParams<{clinicUid: string}>()
+  const {data: systems, isLoading, mutate} = useSystems(params.clinicUid)
 
   const deleteServiceCategory = (id: number) => {
     toast.promise(deleteSystemAction(id), {
@@ -39,7 +39,7 @@ export default function ActionList({}:ActionListProps) {
           <span>
             Systems 
           </span>
-          <AddSystemModal orgUid={params.organization} onAddSystem={mutate}/>
+          <AddSystemModal clinicUid={params.clinicUid} onAddSystem={mutate}/>
         </CardTitle>
         <CardDescription>
           Systems are used to categorize appointments. You can create, edit, and delete systems here.

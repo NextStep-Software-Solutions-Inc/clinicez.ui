@@ -1,7 +1,7 @@
 "use server";
 import "server-only";
 
-import prismaCommon from '@lib/prisma-common';
+import prisma from '@lib/prisma';
 import { getCachedSession } from './session.action';
 import dayjs from 'dayjs';
 import { claimReceiptCodeAction } from './reciept-code.action';
@@ -10,7 +10,7 @@ import { hasCodeProperty } from '@lib/utils';
 export type GetTenants = Awaited<ReturnType<typeof getTenantsAction>>;
 export const getTenantsAction = async () => {
 
-  const tenants = await prismaCommon.tenant.findMany({
+  const tenants = await prisma.tenant.findMany({
     where: {
       isActive: true,
     },
@@ -34,7 +34,7 @@ export const getMyTenantsAction = async (userId: string) => {
   const session = await getCachedSession();
   try {
     if(!session) throw new Error("Unauthorized");
-    const tenants = await prismaCommon.tenant.findMany({
+    const tenants = await prisma.tenant.findMany({
       orderBy: {
         createdAt: "asc"
       },
@@ -46,7 +46,7 @@ export const getMyTenantsAction = async (userId: string) => {
       },
       select: {
         id: true,
-        tenantId: true,
+        tenantUid: true,
         name: true,
         createdAt: true,
         updatedAt: true,
@@ -67,7 +67,7 @@ export const getMyTenantsAction = async (userId: string) => {
 }
 
 export const getTenantAction = async (id: number) => {
-  const tenant = await prismaCommon.tenant.findUnique({
+  const tenant = await prisma.tenant.findUnique({
     where: {
       id: id
     }
@@ -77,7 +77,7 @@ export const getTenantAction = async (id: number) => {
 
 type CreateTenantPayload = {
   receiptCode: string;
-  tenantId: string;
+  tenantUid: string;
   name: string;
   description?: string;
   planId?: number;
@@ -88,12 +88,12 @@ export const createTenantAction = async (data: CreateTenantPayload) => {
   try {
     if(!session) throw new Error("Unauthorized");
     const userId = String(session?.user.sub);
-    const { tenantId, name, description, planId, receiptCode } = data;
+    const { tenantUid, name, description, planId, receiptCode } = data;
 
     const {success, message} = await claimReceiptCodeAction(receiptCode);
     if(!success) throw new Error(message);
 
-    const newUserPlan = await prismaCommon.$transaction(async (prisma) => {
+    const newUserPlan = await prisma.$transaction(async (prisma) => {
       const plan = await prisma.plan.findUniqueOrThrow({
         where: {isActive: true, id: planId},
         select: { id: true, frequency: true }
@@ -115,7 +115,7 @@ export const createTenantAction = async (data: CreateTenantPayload) => {
           endDate: dayjs().add(1, freq).toDate(),
           Tenants: {
             create: {
-              tenantId,
+              tenantUid,
               name,
               description,
               Owner: {

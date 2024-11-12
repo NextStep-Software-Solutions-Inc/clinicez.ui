@@ -13,8 +13,8 @@ import AddAppointmentModeModal from "./modal/AddAppointmentModeModal";
 import UpdateAppointmentModeModal from "./modal/UpdateAppointmentModeModal";
 
 export default function AppointmentModeList() {
-  const params = useParams<{organization: string}>()
-  const {data: appointmentModes, isLoading, mutate} = useOrgAppointmentModes(params.organization)
+  const params = useParams<{clinicUid: string}>()
+  const {data: appointmentModes, isLoading, mutate} = useOrgAppointmentModes(params.clinicUid)
 
   const deleteAppointmentMode = (id: number) => {
     toast.promise(deleteAppointmentModeAction(id), {
@@ -37,7 +37,7 @@ export default function AppointmentModeList() {
           <span>
             Appointment Modes 
           </span>
-          <AddAppointmentModeModal orgUid={params.organization} onAddAppointmentMode={mutate}/>
+          <AddAppointmentModeModal clinicUid={params.clinicUid} onAddAppointmentMode={mutate}/>
         </CardTitle>
         <CardDescription>
           Appointment modes are used to categorize appointments. You can create, edit, and delete appointment modes here.

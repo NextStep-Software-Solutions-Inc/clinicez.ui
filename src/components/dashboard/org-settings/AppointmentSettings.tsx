@@ -14,8 +14,8 @@ dayjs.extend(relativeTime);
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
 import PageLoading from "@components/PageLoading";
-import { upsertOrgAppointmentConfigAction } from "@actions/appointments/appointment-config.action";
-import { useOrgAppointmentConfig } from "@hooks/useOrgAppointmentConfig";
+import { upsertClinicAppointmentConfigAction } from "@actions/appointments/appointment-config.action";
+import { useOrgAppointmentConfig } from "@/hooks/useClinicAppointmentConfig";
 
 type AppointmentSettingsForm = z.infer<typeof appointmentSettingsForm>
 const appointmentSettingsForm = z.object({
@@ -31,8 +31,8 @@ const appointmentSettingsForm = z.object({
 })
 
 export default function AppointmentSettings(){
-  const params = useParams<{organization: string}>()
-  const {data: orgAppointmentConfig, mutate, isLoading} = useOrgAppointmentConfig(params.organization)
+  const params = useParams<{clinicUid: string}>()
+  const {data: orgAppointmentConfig, mutate, isLoading} = useOrgAppointmentConfig(params.clinicUid)
   const form = useForm<AppointmentSettingsForm>({
     resolver: zodResolver(appointmentSettingsForm),
     mode:"onChange",
@@ -46,8 +46,8 @@ export default function AppointmentSettings(){
   const action = async () => {
     form.handleSubmit(async (data) => {
       const configId = orgAppointmentConfig?.id ?? 0
-      toast.promise(upsertOrgAppointmentConfigAction(configId, {
-        orgUid: params.organization,
+      toast.promise(upsertClinicAppointmentConfigAction(configId, {
+        clinicUid: params.clinicUid,
         maxAppointmentsPerClient: data.maxAppointmentsPerClient,
         perClientResetInterval: data.perClientResetInterval,
         maxAppointmentsPerDay: data.maxAppointmentsPerDay,

@@ -12,9 +12,9 @@ dayjs.extend(relativeTime);
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
 import PageLoading from "@components/PageLoading";
-import {useOrgAppointmentTabs } from "@hooks/useAppointmentTab";
+import {useClinicAppointmentTabs } from "@hooks/useAppointmentTab";
 import Each from "@components/utils/Each";
-import { setOrgRoleAppointmentTabsAction } from "@actions/organizations/org-appointment-tab..action";
+import { setClinicRoleAppointmentTabsAction } from "@actions/organizations/clinic-appointment-tab..action";
 
 
 const FormSchema = z.object({
@@ -29,7 +29,7 @@ const FormSchema = z.object({
   }
 export default function OrgRoleAppointmentTabs({orgRoleTabId, currentOrgTabIds}:OrgRoleAppointmentTabsProps ) {
   const params = useParams<{organization: string}>()
-  const {data: orgAppointmentTabs ,isLoading} = useOrgAppointmentTabs(params.organization)
+  const {data: orgAppointmentTabs ,isLoading} = useClinicAppointmentTabs(params.organization)
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     values: {
@@ -39,7 +39,7 @@ export default function OrgRoleAppointmentTabs({orgRoleTabId, currentOrgTabIds}:
   
   const action = async () => {
     form.handleSubmit(async (data) => {
-      toast.promise(setOrgRoleAppointmentTabsAction(orgRoleTabId, data.orgTabIds), {
+      toast.promise(setClinicRoleAppointmentTabsAction(orgRoleTabId, data.orgTabIds), {
         loading: "Saving changes...",
         success: res => {
           return res.message

@@ -17,7 +17,7 @@ import { joinOrgApplicationAtom } from "@state/join-org-application";
 import { Button } from "@components/ui/button";
 
 interface ConfirmationAndReviewStepProps {
-  orgId: string
+  orgUid: string
   isLastStep?: boolean;
   isComplete?: boolean;
   isFirstStep?: boolean;
@@ -39,7 +39,7 @@ export const confirmationFormSchema = z.object({
   })
 })
 
-export default function ConfirmationAndReviewStep({ orgId, isComplete, isFirstStep, isLastStep, nextStep, prevStep, startOver, setComplete }:ConfirmationAndReviewStepProps) {
+export default function ConfirmationAndReviewStep({ orgUid, isComplete, isFirstStep, isLastStep, nextStep, prevStep, startOver, setComplete }:ConfirmationAndReviewStepProps) {
   const [orgApplication, setOrgApplication] = useAtom(joinOrgApplicationAtom);
   const [playSuccess] = useSound("/audio/success-1.mp3", {
     interrupt: true,
@@ -67,7 +67,7 @@ export default function ConfirmationAndReviewStep({ orgId, isComplete, isFirstSt
       
       const payload: JoinOrganizationPayload = {
         userId: orgApplication.userId,
-        orgId: orgApplication.orgId,
+        orgUid: orgApplication.orgId,
         orgRoleId: orgApplication.roleId,
       }
       
@@ -174,7 +174,7 @@ export default function ConfirmationAndReviewStep({ orgId, isComplete, isFirstSt
           />
           <ConditionalRender condition={agreeAllConditions}>
             <p>
-            By clicking submit, you agree to the terms and conditions and privacy policy of {orgId} organization.
+            By clicking submit, you agree to the terms and conditions and privacy policy of {orgUid} organization.
             </p>
           </ConditionalRender>
           <div className="mt-4 flex flex-wrap items-center justify-between gap-2">

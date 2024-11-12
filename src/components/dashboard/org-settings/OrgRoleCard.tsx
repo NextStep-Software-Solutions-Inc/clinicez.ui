@@ -3,7 +3,8 @@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@components/ui/card"
 import OrgRoleAppointmentTabs from "./OrgRoleAppointmentTabs"
 import { Separator } from "@components/ui/separator"
-import { deleteOrgRoleAction, GetOrganizationRoles } from "@actions/organizations/organization-role.action"
+// import { deleteOrganizationRoleAction, GetOrganizationRoles } from "@actions/organizations/organization-role.action"
+import { deleteClinicRoleAction, GetClinicRoles } from "@actions/organizations/clinic-role.action"
 import OrgRoleInitialPermissions from "./OrgRoleInitialPermissions";
 import OrgRoleRequirements from "./OrgRoleRequirements";
 import { toast } from "sonner";
@@ -11,13 +12,13 @@ import ActionButton from "@components/ActionButton";
 import { Trash } from "lucide-react";
 
 interface OrgRoleCardProps {
-    role: NonNullable<GetOrganizationRoles>[number]
+    role: NonNullable<GetClinicRoles>[number]
     onDeleteRole?: () => void
   }
 export const OrgRoleCard = ({role, onDeleteRole}:OrgRoleCardProps) => {
-  const assignedOrgTabIds = role.OrgRoleAppointmentTabs.map((item) => item.OrgAppointmentTab.id)
+  const assignedOrgTabIds = role.ClinicRoleAppointmentTabs.map((item) => item.ClinicAppointmentTab.id)
   const handleDelete = async () => {
-    toast.promise(deleteOrgRoleAction(role.id), {
+    toast.promise(deleteClinicRoleAction(role.id), {
       loading: "Deleting role...",
       success: res => {
         if(res.status) {
@@ -43,14 +44,14 @@ export const OrgRoleCard = ({role, onDeleteRole}:OrgRoleCardProps) => {
           </div>
         </CardTitle>
         <CardDescription>
-          {role.description ?? "No description provided."}
+          {/* {role.description ?? "No description provided."} */}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-5">
         
         <OrgRoleRequirements 
           orgRoleId={role.id}
-          currentRequirements={role.requirements}
+          currentRequirements={[]}
         />
         <Separator/>
         <OrgRoleAppointmentTabs 

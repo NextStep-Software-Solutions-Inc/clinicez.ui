@@ -1,22 +1,15 @@
 "use server";
 
-import dayjs from "dayjs"
-import isBetween from "dayjs/plugin/isBetween"
-import localizeFormat from "dayjs/plugin/localizedFormat"
-import utc from "dayjs/plugin/utc"
-dayjs.extend(utc)
-dayjs.extend(isBetween)
-dayjs.extend(localizeFormat)
-
-import prismaTenant from "@lib/prisma-tenant";
+import dayjs, { formatDateTime } from "@lib/day-utils";
+import prisma from "@lib/prisma";
 import { getHPAppointmentsSchedule, GetUserSchedules, getUserSchedulesAction } from "./user-schedule.action";
 import { eachDayOfInterval, getWeekOfMonth } from "date-fns";
 import { cache } from "react";
-import { formatDateTime } from "@lib/utils";
+import { getCachedSession } from "../session.action";
 
 type GenerateTimeSlotsArgs = {
   userId: string, 
-  hpId: string,
+  hpId: number,
   serviceId:number, 
   appointmentTypeId:number, 
 }
@@ -28,123 +21,108 @@ interface Availability {
 const TIME_ALLOWANCE = 30
 
 export type GetUserTimeSlots = Awaited<ReturnType<typeof getUserTimeSlotsAction>>;
-export const getUserTimeSlotsAction = cache(async ({serviceId, userId, hpId}: GenerateTimeSlotsArgs): Promise<{
-  status: boolean;
-  message: string;
-  data: Availability[]
-}> => {
+export const getUserTimeSlotsAction = cache(async ({serviceId, userId, hpId}: GenerateTimeSlotsArgs) => {
+  let message = "Unable to generate time slots";
 
-  const response = {
-    status: false,
-    message: "Unable to generate time slots",
-    data: []
-  }
+  try {
+    const session = await getCachedSession()
+    if(!session) throw new Error("User not authenticated.")
 
-  const [serviceAttribute, userSchedules, appointmentSchedules] = await Promise.all([
-    prismaTenant.serviceAttribute.findUnique({
-      where: {
-        serviceId: serviceId
-      }
-    }),
-    getUserSchedulesAction(userId),
-    getHPAppointmentsSchedule(hpId)
-  ])
-  
-  const totalDuration = (serviceAttribute?.duration ?? 0) + (serviceAttribute?.durationPadding ?? 0)
-
-  if(totalDuration <= 0) {
-    return {
-      ...response,
-      message: "Service attribute duration is invalid, value must be greater than 0",
-      data: []
-    }
-  }
-
-  const baseSchedule = userSchedules?.find(schedule => schedule.type === "base")
-  if (!baseSchedule) {
-    return {
-      ...response,
-      message: "Healthcare provider base schedule not found",
-      data: []
-    };
-  }
-  
-  const exceptionSchedules = userSchedules.filter(s => s.type === "exception")
-  const defaultDateTime = dayjs().startOf("day").toDate()
-  const startDate = baseSchedule.startDate  ?? defaultDateTime 
-  const endDate = baseSchedule.endDate ?? defaultDateTime
-  const isRecurring = baseSchedule.isRecurring 
-  const recurringPattern = baseSchedule.pattern 
-  const weeksOfMonth = baseSchedule.weekOfMonth  ?? []
-  
-  const checkAvailability = (date: Date, schedule: NonNullable<GetUserSchedules>[number]): boolean => {
-    const currentDateTime = dayjs(date);
-    const end = formatDateTime(currentDateTime.toDate(), schedule?.endTime);
-    const isBeforeEnd = dayjs().isBefore(end, "minutes");
+    const [serviceAttribute, userSchedules, appointmentSchedules] = await Promise.all([
+      prisma.serviceAttribute.findUnique({
+        where: {
+          serviceId: serviceId
+        }
+      }),
+      getUserSchedulesAction(userId),
+      getHPAppointmentsSchedule(hpId)
+    ])
     
-    let available = isRecurring ? false : isBeforeEnd;
-    if (!available) {
-      const daysOfWeek = schedule.daysOfWeek ?? [];
-      const isDayIncluded = daysOfWeek.includes(currentDateTime.day());
-      if (isDayIncluded) {
-        switch (recurringPattern) {
-        case 'daily':
-          available = isBeforeEnd
-          break;
-        case 'weekly':
-          const isWithinWeeklyPattern = currentDateTime.isBefore(dayjs(schedule.endDate)) && daysOfWeek.includes(currentDateTime.day());
-          available = isBeforeEnd && isWithinWeeklyPattern;
-          break;
-        case 'monthly':
-          const isWithinMonthlyPattern = currentDateTime.isBefore(dayjs(schedule.endDate)) && weeksOfMonth.includes(getWeekOfMonth(currentDateTime.toDate()));
-          available = isBeforeEnd  && isWithinMonthlyPattern;
-          break;
-        default:
-          available = false;
-          break;
+    const totalDuration = (serviceAttribute?.duration ?? 0) + (serviceAttribute?.durationPadding ?? 0)
+    if(totalDuration <= 0) throw new Error("Service attribute duration is invalid, value must be greater than 0")
+  
+    const baseSchedule = userSchedules?.find(schedule => schedule.type === "base")
+    if (!baseSchedule) throw new Error("Healthcare provider base schedule not found")
+    
+    const exceptionSchedules = userSchedules.filter(s => s.type === "exception")
+    const defaultDateTime = dayjs().startOf("day").toDate()
+    const startDate = baseSchedule.startDate  ?? defaultDateTime 
+    const endDate = baseSchedule.endDate ?? defaultDateTime
+    const isRecurring = baseSchedule.isRecurring 
+    const recurringPattern = baseSchedule.pattern 
+    const weeksOfMonth = baseSchedule.weekOfMonth  ?? []
+    
+    const checkAvailability = (date: Date, schedule: NonNullable<GetUserSchedules>[number]): boolean => {
+      const currentDateTime = dayjs(date);
+      const end = formatDateTime(currentDateTime.toDate(), schedule?.endTime);
+      const isBeforeEnd = dayjs().isBefore(end, "minutes");
+      
+      let available = isRecurring ? false : isBeforeEnd;
+      if (!available) {
+        const daysOfWeek = schedule.daysOfWeek ?? [];
+        const isDayIncluded = daysOfWeek.includes(currentDateTime.day());
+        if (isDayIncluded) {
+          switch (recurringPattern) {
+          case 'daily':
+            available = isBeforeEnd
+            break;
+          case 'weekly':
+            const isWithinWeeklyPattern = currentDateTime.isBefore(dayjs(schedule.endDate)) && daysOfWeek.includes(currentDateTime.day());
+            available = isBeforeEnd && isWithinWeeklyPattern;
+            break;
+          case 'monthly':
+            const isWithinMonthlyPattern = currentDateTime.isBefore(dayjs(schedule.endDate)) && weeksOfMonth.includes(getWeekOfMonth(currentDateTime.toDate()));
+            available = isBeforeEnd  && isWithinMonthlyPattern;
+            break;
+          default:
+            available = false;
+            break;
+          }
         }
       }
+      return available
     }
-    return available
-  };
 
-  const allDates = eachDayOfInterval({ start: startDate, end: endDate })
-  const availability: Availability[] = allDates.map(date => {
-    const currentDateTime = dayjs(date);
-    const isAvailable = checkAvailability(date, baseSchedule);
-    const start = formatDateTime(date, baseSchedule?.startTime).toDate();
-    const end = formatDateTime(date, baseSchedule?.endTime).toDate();
-    const exceptionSlots = generateExceptionSlots(exceptionSchedules)
+    const allDates = eachDayOfInterval({ start: startDate, end: endDate })
+    const availability: Availability[] = allDates.map(date => {
+      const currentDateTime = dayjs(date);
+      const isAvailable = checkAvailability(date, baseSchedule);
+      const start = formatDateTime(date, baseSchedule?.startTime).toDate();
+      const end = formatDateTime(date, baseSchedule?.endTime).toDate();
+      const exceptionSlots = generateExceptionSlots(exceptionSchedules)
     
-    const bookedTimeSlots = appointmentSchedules.map(appointment => {
+      const bookedTimeSlots = appointmentSchedules
+        .filter(a => a.AppointmentAttribute && (a.AppointmentAttribute.date || a.AppointmentAttribute.timeEnd || a.AppointmentAttribute.timeStart))
+        .map(appointment => {
+          return {
+            dateStart: dayjs(appointment.AppointmentAttribute!.date).toDate()!,
+            dateEnd: dayjs(appointment.AppointmentAttribute!.date).toDate()!,
+            timeStart: appointment.AppointmentAttribute!.timeStart!,
+            timeEnd: appointment.AppointmentAttribute!.timeEnd!
+          }
+        });
+      const timeSlots = isAvailable ? generateTimeSlotsV2(start, end, totalDuration, [...bookedTimeSlots, ...exceptionSlots]) : [];
       return {
-        dateStart: dayjs(appointment.AppointmentAttribute?.date).toDate()!,
-        dateEnd: dayjs(appointment.AppointmentAttribute?.date).toDate()!,
-        timeStart: dayjs(appointment.AppointmentAttribute?.timeStart).toDate()!,
-        timeEnd: dayjs(appointment.AppointmentAttribute?.timeEnd).toDate()!
-      }
+        date: currentDateTime.toDate(),
+        status: isAvailable && !!timeSlots.length,
+        timeSlots
+      };
     });
-    const timeSlots = isAvailable ? generateTimeSlotsV2(start, end, totalDuration, [...bookedTimeSlots, ...exceptionSlots]) : [];
-    return {
-      date: currentDateTime.utc().toDate(),
-      status: isAvailable && !!timeSlots.length,
-      timeSlots
-    };
-  });
 
-  
-  return {
-    status: true,
-    message: "Time slots generated",
-    data: availability
+    return { status: true, message: "Time slots generated", data: availability }
+  } catch (error) {
+    console.error(`Error while fetching user schedules: ${error}`);
+    message = "Unable to generate time slots";
+    if(error instanceof Error) message = error.message;
+    return { status: false, message, data: [] }
   }
 })
 
 type Schedule = {
   dateStart: Date;
   dateEnd: Date;
-  timeStart: Date;
-  timeEnd: Date;
+  timeStart: string;
+  timeEnd: string;
 }
 const isOccupied = (timeSlot: { start: Date, end: Date }, schedules: Schedule[], ): boolean => {
   return schedules.some(schedule => {
@@ -176,8 +154,8 @@ const generateExceptionSlots = (exceptions: GetUserSchedules): Schedule[] => {
       exceptionSchedules.push({
         dateStart: isNowBetween ? now.toDate() : start.toDate(),
         dateEnd: end.toDate(),
-        timeStart: isNowBetween ? now.toDate() : start.toDate(),
-        timeEnd: end.toDate()
+        timeStart: isNowBetween ? now.toDate().toISOString().split("T")[1] : start.toDate().toISOString().split("T")[1],
+        timeEnd: end.toDate().toISOString().split("T")[1]
       });
     }
     const dateRange = eachDayOfInterval({ start: exception.startDate, end: exception.endDate });

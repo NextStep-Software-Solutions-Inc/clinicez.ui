@@ -12,7 +12,7 @@ dayjs.extend(relativeTime);
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
 import Each from "@components/utils/Each";
-import { setOrgRoleRequirementsAction } from "@actions/organizations/organization-role.action";
+import { setOrganizationRoleRequirementsAction } from "@actions/organizations/organization-role.action";
 
 export const requirements = ["student_record", "employee_record"]
 
@@ -38,7 +38,7 @@ export default function OrgRoleRequirements({orgRoleId, currentRequirements}:Org
   
   const action = async () => {
     form.handleSubmit(async (data) => {
-      toast.promise(setOrgRoleRequirementsAction(orgRoleId, data.requirements), {
+      toast.promise(setOrganizationRoleRequirementsAction(orgRoleId, data.requirements), {
         loading: "Saving changes...",
         success: res => {
           if(res.status){

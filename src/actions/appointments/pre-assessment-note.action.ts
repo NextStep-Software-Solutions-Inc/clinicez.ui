@@ -1,8 +1,8 @@
 "use server";
 
-import prismaTenant from '@lib/prisma-tenant';
-import { getCachedSession } from '@actions/session.action';
 import 'server-only'
+import prisma from '@lib/prisma';
+import { getCachedSession } from '@actions/session.action';
 import { getPermissionsAction } from '@actions/permission.action';
 import { PERMISSIONS } from '@lib/permissions';
 
@@ -11,10 +11,10 @@ type UpsertPreAssessmentNotePayload = {
     assessment: string;
     homeInstructions?: string;
     remarks: string;
-    orgUid: string;
+    clinicUid: string;
 }
 
-export const upsertPreAssessmentNoteAction = async ({appointmentId, orgUid, assessment, homeInstructions, remarks}: UpsertPreAssessmentNotePayload) => {
+export const upsertPreAssessmentNoteAction = async ({appointmentId, clinicUid, assessment, homeInstructions, remarks}: UpsertPreAssessmentNotePayload) => {
   const session = await getCachedSession()
   
   try {
@@ -27,7 +27,7 @@ export const upsertPreAssessmentNoteAction = async ({appointmentId, orgUid, asse
     
     if(!canWritePermission) throw new Error("You do not have permission to write pre-assessment note.")
     
-    await prismaTenant.preAssessmentNote.upsert({
+    await prisma.preAssessmentNote.upsert({
       where: {
         unique_appointment_created_by: {
           appointmentId,
@@ -35,13 +35,25 @@ export const upsertPreAssessmentNoteAction = async ({appointmentId, orgUid, asse
         }
       },
       create: {
-        appointmentId,
-        orgUid,
+        Appointment: {
+          connect: {
+            id: appointmentId
+          }
+        },
+        Clinic: {
+          connect: {
+            clinicUid
+          }
+        },
         assessment,
         homeInstructions,
         remarks,
-        createdBy: session.user.email,
-        PreConsultationNoteAttribute:{
+        CreatedBy: {
+          connect: {
+            userId: session.user.sub
+          }
+        },
+        PreAssessmentNoteAttribute:{
           create: {}
         }
       },
@@ -56,7 +68,7 @@ export const upsertPreAssessmentNoteAction = async ({appointmentId, orgUid, asse
       message: "Pre-consultation note created successfully",
     }
   } catch (error) {
-    console.error(`Error upserting pre-assessment note: ${error}`);
+    console.error(`Error upsert-ing pre-assessment note: ${error}`);
     let message = "An error occurred while updating pre-assessment note.";
     if(error instanceof Error) message = error.message;
     return {
@@ -81,12 +93,24 @@ export const getPreAssessmentNotesAction = async (appointmentId: number) => {
     if(!canReadPermission) throw new Error("You do not have permission to read pre-assessment note.")
 
   
-    const preAssessmentNote = await prismaTenant.preAssessmentNote.findMany({
+    const preAssessmentNote = await prisma.preAssessmentNote.findMany({
       orderBy: {
         createdAt: 'desc'
       },
       where: {
         appointmentId
+      },
+      include: {
+        CreatedBy: {
+          select: {
+            id: true,
+            userId: true,
+            firstName: true,
+            middleName: true,
+            lastName: true,
+            suffix: true
+          }
+        }
       }
     })
     return {

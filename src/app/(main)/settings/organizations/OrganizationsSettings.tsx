@@ -44,7 +44,7 @@ export default function OrganizationsSettings() {
   const form = useForm<DefaultOrgFormSchema>({
     resolver: zodResolver(organizationFormSchema),
     values: {
-      defaultOrgUid: defaultOrg?.Organization?.orgId ?? ""
+      defaultOrgUid: defaultOrg?.Organization?.orgUid ?? ""
     }
   })
 
@@ -81,8 +81,8 @@ export default function OrganizationsSettings() {
                   <SelectContent>
                     <Each
                       of={myOrgs?.data ?? []}
-                      render={({ Organization: {id, orgId, name} }) => (
-                        <SelectItem value={orgId}>{name}</SelectItem>
+                      render={({ Organization: {id, orgUid, name} }) => (
+                        <SelectItem value={orgUid}>{name}</SelectItem>
                       )}
                     />
                   </SelectContent>

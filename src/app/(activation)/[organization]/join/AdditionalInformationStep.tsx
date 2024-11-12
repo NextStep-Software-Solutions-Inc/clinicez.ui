@@ -10,7 +10,7 @@ import Each from "@components/utils/Each";
 import { joinOrgApplicationAtom } from "@state/join-org-application";
 
 interface OrganizationStepProps {
-  orgId: string;
+  orgUid: string;
   isFirstStep?: boolean;
   isLastStep?: boolean;
   nextStep?: () => void;
@@ -22,7 +22,7 @@ export const additionalInfoValidAtom = atom({
   student_record: false,
 })
 
-export default function AdditionalInformationStep({ orgId, isLastStep, isFirstStep, nextStep, prevStep }: OrganizationStepProps) {
+export default function AdditionalInformationStep({ orgUid, isLastStep, isFirstStep, nextStep, prevStep }: OrganizationStepProps) {
 
   const additionalInfoValidValue = useAtomValue(additionalInfoValidAtom)
   const orgApplication = useAtomValue(joinOrgApplicationAtom)
@@ -45,13 +45,13 @@ export default function AdditionalInformationStep({ orgId, isLastStep, isFirstSt
               <>
                 <ConditionalRender condition={requirement === "employee_record"}>
                   <EmployeeRecordForm 
-                    orgId={orgId}
+                    orgUid={orgUid}
                     userId={orgApplication.userId ?? ""}
                   />
                 </ConditionalRender>
                 <ConditionalRender condition={requirement === "student_record"}>
                   <StudentRecordForm 
-                    orgId={orgId}
+                    orgUid={orgUid}
                     userId={orgApplication.userId ?? ""}
                   />
                 </ConditionalRender>

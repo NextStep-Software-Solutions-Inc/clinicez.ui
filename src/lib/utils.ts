@@ -2,12 +2,7 @@ import { Badge } from "@components/ui/badge";
 import { type ClassValue, clsx } from "clsx"
 import { ComponentProps } from "react";
 import { twMerge } from "tailwind-merge"
-import dayjs from "dayjs"
-import utc from "dayjs/plugin/utc"
-dayjs.extend(utc)
-
-import localizeFormat from "dayjs/plugin/localizedFormat"
-dayjs.extend(localizeFormat)
+import dayjs from "@lib/day-utils"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -32,18 +27,6 @@ export function getBadgeVariantFromLabel(
   return badgeColors[label.toLowerCase() as keyof typeof badgeColors] ?? "default"
 }
 
-export const formatDateTime = (date: Date, time: Date): dayjs.Dayjs => {
-
-
-  const dateStr = dayjs(date).endOf("date").toISOString();
-  const timeStr = dayjs(time).toISOString();
-  const dateTimeStr = `${dateStr.split("T")[0]}T${timeStr.split("T")[1]}`;
-  const combinedDateTime = dayjs(dateTimeStr);
-
-    
-
-  return combinedDateTime;
-}
 
 export function convertStringToNumber(str: string| null): number | undefined {
   const num = Number(str);

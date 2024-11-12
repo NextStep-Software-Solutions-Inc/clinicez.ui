@@ -8,8 +8,8 @@ import { LabelValue } from "@components/LabelValue";
 import { differenceInCalendarYears } from "date-fns";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@components/ui/card";
 import { Separator } from "@components/ui/separator";
-import { useOrgRoles } from "@hooks/useOrgRole";
-import { useOrgAppointments } from "@hooks/useAppointment";
+import { useClinicRoles } from "@/hooks/useClinicRole";
+import { useClinicAppointments } from "@hooks/useAppointment";
 
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -18,13 +18,13 @@ dayjs.extend(relativeTime);
 
 interface MemberDetailsProps {
   userId: string;
-  orgUid: string;
+  clinicUid: string;
 }
-export default function MemberDetails({userId, orgUid}:MemberDetailsProps) {
-  const {data: user, isLoading} = useDBUser({ userId, orgUid });
+export default function MemberDetails({userId, clinicUid}:MemberDetailsProps) {
+  const {data: user, isLoading} = useDBUser({ userId });
   
-  const {data: roles} = useOrgRoles(orgUid,  {userId});
-  const {data: appointments} = useOrgAppointments({orgUid, userId });
+  const {data: roles} = useClinicRoles(clinicUid,  {userId});
+  const {data: appointments} = useClinicAppointments({clinicUid, userId });
   
   if(isLoading) return <div>Loading user...</div>
   if(!user?.data) notFound()
@@ -54,7 +54,7 @@ export default function MemberDetails({userId, orgUid}:MemberDetailsProps) {
           </div>
         </CardContent>
       </Card>
-      <MemberTabSection orgUid={orgUid} userId={userId}/>
+      <MemberTabSection orgUid={clinicUid} userId={userId}/>
     </>
   );
 }

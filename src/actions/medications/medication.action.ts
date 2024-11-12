@@ -1,7 +1,7 @@
 "use server";
 
 import "server-only";
-import prismaTenant from "@lib/prisma-tenant";
+import prisma from "@lib/prisma";
 import { getCachedSession } from "@actions/session.action";
 import { getPermissionsAction } from "@actions/permission.action";
 import { getUserAction } from "@actions/users/user.action";
@@ -40,7 +40,7 @@ export const getMedicationsAction = async (filters?: GetMedicationsFilters) => {
     if(!canReadAllClinicMedications && !canReadOwnMedications && !canReadCreatedMedications) throw new Error("You do not have permission to view medications");
     
     const { clinicId, patientId, consultationTicketId, hpId } = filters || {};
-    const medications = await prismaTenant.medication.findMany({
+    const medications = await prisma.medication.findMany({
       orderBy: {
         createdAt: 'desc'
       },
@@ -100,7 +100,7 @@ export const createMedicationAction = async (payload: CreateMedicationPayload) =
     if(!canCreateMedication) throw new Error("You do not have permission to create medication"); 
 
     const { clinicId, hpId, patientId, consultationTicketId, name } = payload;
-    await prismaTenant.medication.create({
+    await prisma.medication.create({
       data: {
         clinicId,
         hpId,
@@ -147,7 +147,7 @@ export const getMedicationAction = async (medicationId: number, filters?: GetMed
     if(!canReadAllClinicMedication && !canReadOwnMedication && !canReadCreatedMedication) throw new Error("You do not have permission to view medications");
     
     const { clinicId } = filters || {};
-    const medication = await prismaTenant.medication.findUniqueOrThrow({
+    const medication = await prisma.medication.findUniqueOrThrow({
       where: { 
         id: medicationId,
         clinicId,
@@ -198,7 +198,7 @@ export const setMedicationCompletedAction = async (medicationId: number) => {
 
     if(!canCompleteMedication) throw new Error("You do not have permission to complete medication");
 
-    await prismaTenant.medication.update({
+    await prisma.medication.update({
       where: { id: medicationId },
       data: {
         completedAt: new Date()

@@ -1,60 +1,54 @@
 "use server";
+
 import "server-only";
 import { getCachedSession } from "@actions/session.action";
-import prismaCommon from "@lib/prisma-common";
+import prisma from "@lib/prisma";
 
-type SetUserOrgPermissionsPayload = {
+type SetOrgMemberPermissionsPayload = {
     userId: string,
     orgUid: string,
     permissionIds: number[]
 }
-export const setUserOrgPermissionsAction = async ({orgUid, userId, permissionIds}:SetUserOrgPermissionsPayload) => {
-  const session = await getCachedSession();
+export const setOrgMemberPermissionsAction = async ({orgUid, userId, permissionIds}:SetOrgMemberPermissionsPayload) => {
+  let message = "Member permissions set successfully";
 
   try {
+
+    const session = await getCachedSession();
     if (!session) throw new Error("User not authenticated");
-    await prismaCommon.$transaction(async (prisma) => {
-      const userOrganization = await prisma.userOrganization.findFirstOrThrow({
+
+    await prisma.$transaction(async (prisma) => {
+      const userOrganization = await prisma.organizationMember.findFirstOrThrow({
         where: {
           Organization: {
-            orgId: orgUid,
+            orgUid,
           },
           User: {
             userId,
           }
+        },
+        select: {
+          id: true
         }
       })
-      await prisma.orgUserPermission.deleteMany({
-        where: {
-          orgId: userOrganization.organizationId,
-          userId: userOrganization.userId
-        }
+      await prisma.orgMemberPermission.deleteMany({
+        where: { orgMemberId: userOrganization.id }
       });
       
-      await prisma.orgUserPermission.createMany({
+      await prisma.orgMemberPermission.createMany({
         skipDuplicates: true,
         data: permissionIds.map((permissionId) => ({
-          orgId: userOrganization.organizationId,
-          userId: userOrganization.userId,
+          orgMemberId: userOrganization.id,
           permissionId
         }))
       });
     });
 
-    return {
-      status: true,
-      message: "User organization permissions set successfully"
-    }
+    return { status: true, message }
   } catch (error) {
-    console.error(`Error setting user organization permissions: ${error}`);
-    let message = "Error setting user organization permissions";
-    if (error instanceof Error) {
-      message = error.message;
-    }
-    return {
-      status: false,
-      message
-    }
-    
+    console.error(`Error setting organization member permissions: ${error}`);
+    message = "Error setting organization member permissions";
+    if (error instanceof Error) message = error.message;
+    return { status: false,  message }
   }
 };

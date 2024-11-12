@@ -48,7 +48,7 @@ export default async function RootLayout({ children }: Props) {
               accessToken: session?.accessToken ?? ""
             }}
           />
-          <SyncSessionClinic/>
+          {!!session && <SyncSessionClinic/>}
           <SWRProvider>
             <UserProvider>
               {children}

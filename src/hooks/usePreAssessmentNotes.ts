@@ -5,11 +5,11 @@ import { self } from "@services/request"
 import useSWR from "swr"
 
 type UsePreAssessmentNotes = {
-  orgUid: string,
+  clinicUid: string,
   appointmentId: number
 }
 
-export const usePreAssessmentNotes = ({orgUid, appointmentId}: UsePreAssessmentNotes) => {
+export const usePreAssessmentNotes = ({clinicUid, appointmentId}: UsePreAssessmentNotes) => {
   const fetcher = (args: string) => self.get<GetPreAssessmentNotes>(args)
-  return useSWR(() => (orgUid && appointmentId) ? `/api/organizations/${orgUid}/appointments/${appointmentId}/pre-consultation-notes` : null, fetcher)
+  return useSWR(() => (clinicUid && appointmentId) ? `/api/clinics/${clinicUid}/appointments/${appointmentId}/pre-consultation-notes` : null, fetcher)
 }

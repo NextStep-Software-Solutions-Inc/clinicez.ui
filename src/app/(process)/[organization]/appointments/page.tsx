@@ -8,7 +8,7 @@ import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth
 import AppointmentDisplay from "../../../../components/appointment/AppointmentDisplay";
 import Suspend from "@components/Suspend";
 import { Metadata } from "next";
-import { getOrgAppointmentTabsAction } from "@actions/organizations/org-appointment-tab..action";
+import { getClinicAppointmentTabsAction } from "@actions/organizations/clinic-appointment-tab..action";
 import PageLoading from "@components/PageLoading";
 
 export const maxDuration = 30
@@ -28,7 +28,7 @@ async function AppointmentsPage({ searchParams, params }: AppRouterPageRouteOpts
   const [appointmentCounts, routedAptCounts, tabs] = await Promise.all([
     getAppointmentCountsAction(organization),
     getRoutedAppointmentCountsAction(organization),
-    getOrgAppointmentTabsAction(organization)
+    getClinicAppointmentTabsAction(organization)
   ])
   
   const defaultLayout = layout ? JSON.parse(layout.value) : undefined
@@ -56,9 +56,9 @@ async function AppointmentsPage({ searchParams, params }: AppRouterPageRouteOpts
             tabs={tabs.data.map(tab => ({
               name: tab.AppointmentTab.name,
               description: tab.AppointmentTab.description,
-              roles: tab.OrgRoleAppointmentTabs.map(role => ({
-                id: role.Role.id,
-                name: role.Role.name
+              roles: tab.ClinicRoleAppointmentTabs.map(role => ({
+                id: role.ClinicMemberRole.id,
+                name: role.ClinicMemberRole.name
               }))      
             }))}
             appointmentStatusCounts={appointmentCounts.data ?? {}}

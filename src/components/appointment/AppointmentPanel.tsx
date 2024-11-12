@@ -30,7 +30,7 @@ import { TooltipProvider } from "@components/ui/tooltip"
 import { AppointmentStatusNav, AppointmentStatusNavProps } from "./AppointmentStatusNav"
 import { useParams, useSearchParams } from "next/navigation"
 import Switcher from "@components/dashboard/Switcher"
-import { useOrgRoles } from "@hooks/useOrgRole"
+import { useOrganizationRoles } from "@/hooks/useOrganizationRole"
 import { useUser } from "@auth0/nextjs-auth0/client"
 import { useAtom } from "jotai"
 import { userDefaultOrganizationRoleAtom } from "@state/user-role"
@@ -123,7 +123,7 @@ export default function AppointmentPanel({
   const routedAptStatus = searchParams.get("_routedAptStatus");
   const organization = params.organization as string;
   const activeRoleId = userDefaultOrgRole[organization]?.roleId ?? 0;
-  const {data: orgRoles} = useOrgRoles(organization, {userId})
+  const {data: orgRoles} = useOrganizationRoles(organization, {userId})
   
   const roles = React.useMemo(() => (orgRoles ?? [])?.map((role) => {
     return {
@@ -161,9 +161,9 @@ export default function AppointmentPanel({
     const defaultRole = orgRoles?.flatMap(orgRole => orgRole.UserDefaultOrganizationRoles).find((r) => r.User.userId === userId)
     if(defaultRole) {
       setUserDefaultOrgRole({
-        [defaultRole.Organization.orgId]: {
-          roleId: defaultRole?.UserRole.id,
-          roleName: defaultRole?.UserRole.name,
+        [defaultRole.Organization.orgUid]: {
+          roleId: defaultRole?.OrganizationRole.id,
+          roleName: defaultRole?.OrganizationRole.name,
         }
       })
     }
@@ -270,7 +270,7 @@ export default function AppointmentPanel({
               </div>
             </div>
             <Separator />
-            <AppointmentListWrapper orgUid={organization}/>
+            <AppointmentListWrapper clinicUid={organization}/>
           </Tabs>
         </ResizablePanel>
         <ResizableHandle withHandle />

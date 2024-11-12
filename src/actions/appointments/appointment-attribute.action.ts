@@ -2,8 +2,7 @@
 import 'server-only'
 
 import { getCachedSession } from '@actions/session.action';
-import prismaTenant from '@lib/prisma-tenant';
-import prismaCommon from '@lib/prisma-common';
+import prisma from '@lib/prisma';
 import { getPermissionsAction } from '@actions/permission.action';
 import { PERMISSIONS } from '@lib/permissions';
 
@@ -20,7 +19,7 @@ export const receiveAppointmentAction = async (formData: FormData) => {
 
     if(!canReceiveAppointment) throw new Error("You do not have permission to receive appointment.");
 
-    const userPreference = await prismaCommon.userPreference.findFirst({
+    const userPreference = await prisma.userPreference.findFirst({
       where: {
         User: {
           userId: session.user.sub,
@@ -49,22 +48,33 @@ export const receiveAppointmentAction = async (formData: FormData) => {
     
     const appointmentId = parseInt(formData.get('appointmentId') as string);
     const newStatus = formData.get('status') as string;
-    await prismaTenant.appointmentAttribute.update({
+    await prisma.appointmentAttribute.update({
       where: {
         appointmentId
       },
       data: {
         status: autoAssignToSelf ? "ROUTED" : newStatus,
         receivedAt: new Date(),
-        receivedBy: session.user.sub,
+        ReceivedBy: {
+          connect: {
+            userId: session.user.sub
+          }
+        },
         ...(autoAssignToSelf && {
           Appointment: {
             update: {
               AppointmentRouting: {
                 create: {
-                  routedTo: String(defaultHp?.id),
-                  routedBy: session.user.sub,
-                  routedToRole: defaultHp?.HPType.id.toString(),
+                  RoutedTo: {
+                    connect: {
+                      id: defaultHp?.id
+                    }
+                  },
+                  RoutedBy: {
+                    connect: {
+                      userId: session.user.sub
+                    }
+                  },
                   status: (autoAssignToSelf || autoAcceptAppointment) ? "ACCEPTED" : "PENDING",
                 }
               }
@@ -102,7 +112,7 @@ export const completeAppointmentAction = async (formData: FormData) => {
     if(!canCompleteAppointment) throw new Error("You do not have permission to complete appointment.");
     
     const appointmentId = parseInt(formData.get('appointmentId') as string);
-    await prismaTenant.appointmentAttribute.update({
+    await prisma.appointmentAttribute.update({
       where: {
         appointmentId,
         status: {
@@ -146,7 +156,7 @@ export const rejectAppointmentAction = async (formData: FormData) => {
     const appointmentId = parseInt(formData.get('appointmentId') as string);
     const reason = formData.get('reason') as string;
     
-    await prismaTenant.appointmentAttribute.update({
+    await prisma.appointmentAttribute.update({
       where: {
         appointmentId,
         status: {

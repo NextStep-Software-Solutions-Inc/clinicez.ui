@@ -2,7 +2,7 @@ import Image from "next/image";
 import clinicPlaceholder from "@public/assets/organization_placeholder.jpg";
 import Link from "next/link";
 import ActionButton from "@components/ActionButton";
-import { GetClinic, GetClinics } from "@/actions/clinics/clinic.action";
+import { GetClinics } from "@/actions/clinics/clinic.action";
 
 interface ClinicCardProps {
   clinic: GetClinics[number]

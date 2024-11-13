@@ -11,18 +11,7 @@ export const getFileTypesAction = async () => {
     select: {
       id: true,
       name: true,
-      FileTypeAttribute: {
-        select: {
-          dateTakenRequired: true,
-          required: true,
-          Clinic: {
-            select: {
-              id: true,
-              clinicUid: true
-            }
-          }
-        }
-      }
+      validUntil: true,
     }
     
   });

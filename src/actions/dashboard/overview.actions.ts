@@ -8,10 +8,12 @@ export const getDashboardData = async (clinicUid: string) => {
       where: {
         isActive: true,
         FileType: {
-          FileTypeAttribute: {
-            Clinic: {
-              clinicUid
-            } 
+          ClinicFileTypes: {
+            some: {
+              Clinic: {
+                clinicUid
+              }
+            }
           }
         }
       },

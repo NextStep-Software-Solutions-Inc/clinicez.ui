@@ -75,7 +75,12 @@ export const getClinicAction = cache(async (key: string | number) => {
         {clinicUid: String(key)}
       ]
     },
-    include: {
+    select: {
+      clinicUid: true,
+      name: true,
+      description: true,
+      customUrl: true,
+      logo: true,
       Tenant: {
         select: {
           id: true,

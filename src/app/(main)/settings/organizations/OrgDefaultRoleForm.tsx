@@ -54,9 +54,11 @@ export const OrgDefaultRoleForm = ({ org }: OrgDefaultRoleFormProps) => {
         roleId: data.defaultRole
       }) , {
         loading: "Updating default role...",
-        success: () => {
-          form.reset(data);
-          return "Default role updated successfully";
+        success: (res) => {
+          if(res.status) {
+            form.reset(data);
+          }
+          return res.message
         },
         error: "Failed to update default role"
       })

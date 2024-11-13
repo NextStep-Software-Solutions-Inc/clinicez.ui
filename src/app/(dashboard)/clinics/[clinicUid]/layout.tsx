@@ -13,7 +13,6 @@ import {
   TooltipTrigger
 } from "@components/ui/tooltip";
 import Breadcrumb from "@components/dashboard/Breadcrumb";
-import { OrganizationSwitcher } from "@components/dashboard/OrganizationSwitcher";
 import SideNav from "@components/dashboard/SideNav";
 import DrawerNav from "@components/dashboard/DrawerNav";
 import { filterNavList } from "./nav";
@@ -59,7 +58,7 @@ export default async function ProcessLayout({
               />
               <span className="sr-only">Clinic EZ</span>
             </Link>
-            <SideNav navItems={filterNavList()}/>
+            <SideNav navItems={filterNavList()} params={["clinics", "clinicUid"]}/>
           </nav>
           <nav className="mt-auto flex flex-col items-center gap-4 px-2 sm:py-5">
             <Tooltip>

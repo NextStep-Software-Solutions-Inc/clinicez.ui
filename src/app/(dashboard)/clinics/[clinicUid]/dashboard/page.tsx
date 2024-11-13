@@ -7,13 +7,13 @@ import {
 } from "@components/ui/tabs"
 import { MainNav } from "@components/dashboard/MainNav"
 import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth0"
-import { redirect } from "next/navigation"
 import { DashboardStats } from "@components/dashboard/DashboardStats"
 import { getCachedSession } from "@actions/session.action"
 import Suspend from "@components/Suspend"
 import { PatientHealthAnalytics } from "@components/dashboard/PatientHealthAnalytics"
 import { PatientsAnalytics } from "@components/dashboard/PatientsAnalytics"
 import { OrgMembershipAnalytics } from "@components/dashboard/OrgMembershipAnalytics"
+import { filterNavList } from "../nav"
 
 export const maxDuration = 30; // page timeout in seconds
 export const revalidate  = 60; // revalidation interval in seconds
@@ -25,16 +25,19 @@ export const metadata: Metadata = {
 async function DashboardPage({params, searchParams}: AppRouterPageRouteOpts) {
   const clinicUid = String(params?.clinicUid)
   const session = await getCachedSession()
-  if (!session) return redirect("/api/auth/login")
-  const userId = session.user.sub
+  const userId = session?.user.sub
+
+  const mappedNavItems = filterNavList().map((item) => ({
+    ...item,
+    href: `/clinics/${clinicUid}${item.href}`
+  }));
 
   return (
     <div className="rounded-[0.5rem] border bg-background shadow]">
       <div className="flex-col flex">
         <div className="border-b">
           <div className="flex h-16 items-center px-4">
-            {/* <TeamSwitcher /> */}
-            <MainNav className="mx-6" />
+            <MainNav className="mx-6" navItems={mappedNavItems} />
           </div>
         </div>
         <div className="flex-1 space-y-4 p-8 pt-6">

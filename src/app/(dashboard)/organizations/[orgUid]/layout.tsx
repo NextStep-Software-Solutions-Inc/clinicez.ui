@@ -58,7 +58,7 @@ export default async function ProcessLayout({
               />
               <span className="sr-only">Clinic EZ</span>
             </Link>
-            <SideNav navItems={filterNavList()}/>
+            <SideNav navItems={filterNavList()} params={["organizations", "orgUid"]}/>
           </nav>
           <nav className="mt-auto flex flex-col items-center gap-4 px-2 sm:py-5">
             <Tooltip>

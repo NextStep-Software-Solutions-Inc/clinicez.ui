@@ -14,6 +14,7 @@ import Icon from "@components/Icon";
 import dynamicIconImports from "lucide-react/dynamicIconImports";
 
 interface SideNavProps {
+  params: string[]
   navItems: {
     name: string;
     href?: string;
@@ -21,14 +22,16 @@ interface SideNavProps {
     items?: { name: string; href: string, icon?: keyof typeof dynamicIconImports, description: string }[]
   }[];
 }
-export default function SideNav({ navItems }: SideNavProps) {
-  const { clinicUid } = useParams<{clinicUid: string}>();
+export default function SideNav({ navItems, params: paramArray }: SideNavProps) {
   const pathname = usePathname();
-
-  const mappedNavItems = useMemo(() => navItems.map((item) => ({
-    ...item,
-    href: `/${clinicUid}${item.href}`
-  })), [clinicUid, navItems]);
+  const params = useParams();
+  
+  const mappedNavItems = useMemo(() => navItems.map((item) => {
+    return {
+      ...item,
+      href: `/${paramArray[0]}/${params[paramArray[1]]}${item.href}`
+    }
+  }), [navItems, paramArray, params]);
 
   return (
     <Each

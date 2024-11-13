@@ -24,11 +24,16 @@ export const navList: {
     icon: "file",
     permissions: ["org:files"]
   },
- 
+  {
+    name: "Clinics",
+    href: `/clinics`,
+    icon: "hospital",
+    permissions: ["org:clinics"]
+  }
 ]
 
 export const filterNavList = () => {
-  const myPermissionsArray = ["org:dashboard", "org:membership", "org:patients", "org:appointments", "org:consultations", "org:files", "org:prescriptions"];
+  const myPermissionsArray = ["org:dashboard", "org:membership", "org:files", "org:clinics"];
   return navList.filter((items) =>
     items.permissions.some((permission) => myPermissionsArray.includes(permission))
   );

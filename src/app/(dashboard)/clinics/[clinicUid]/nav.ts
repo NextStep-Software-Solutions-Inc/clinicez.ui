@@ -39,7 +39,7 @@ export const navList: {
 ]
 
 export const filterNavList = () => {
-  const myPermissionsArray = ["clinic:dashboard", "clinic:membership", "clinic:patients", "clinic:appointments", "clinic:consultations", "clinic:files", "clinic:prescriptions"];
+  const myPermissionsArray = ["clinic:dashboard", "clinic:patients", "clinic:appointments", "clinic:consultations", "clinic:prescriptions"];
   return navList.filter((items) =>
     items.permissions.some((permission) => myPermissionsArray.includes(permission))
   );

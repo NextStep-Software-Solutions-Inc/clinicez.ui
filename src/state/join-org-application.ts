@@ -3,7 +3,7 @@ import { EmployeeRecordType } from "@/app/(activation)/[organization]/join/Emplo
 import { StudentRecordType } from "@/app/(activation)/[organization]/join/StudentRecordForm"
 
 export type JoinOrgApplicationForm = Partial<{
-    orgId: string
+    orgUid: string
     roleId: number
     userId: string
     roleRequirements: string[]

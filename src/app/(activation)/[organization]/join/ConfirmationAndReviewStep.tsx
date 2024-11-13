@@ -59,15 +59,15 @@ export default function ConfirmationAndReviewStep({ orgUid, isComplete, isFirstS
 
   const action = async () => {
     form.handleSubmit(async () => {
-
-      if(!(orgApplication.roleId  && orgApplication.userId  && orgApplication.orgId)) {
+      
+      if(!orgApplication.roleId  || !orgApplication.userId  || !orgApplication.orgUid) {
         toast.error("Role or User ID or Org ID is missing!")
         return;
       }
       
       const payload: JoinOrganizationPayload = {
         userId: orgApplication.userId,
-        orgUid: orgApplication.orgId,
+        orgUid: orgApplication.orgUid,
         orgRoleId: orgApplication.roleId,
       }
       

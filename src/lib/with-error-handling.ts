@@ -22,3 +22,19 @@ export const withErrorHandling = <T>(fn: AsyncFunction<T>, customErrorHandler?: 
     return { status: false, message, data: null };
   }
 };
+
+
+// Define the expected structure of the response
+
+
+// Modify the promiseWrapper function to accept a custom function with the expected signature
+export const promiseWrapper = <T, A extends any[]>(customFunction: (...args: A) => Promise<{status: boolean, message: string, data: T}>, ...args: A): Promise<{ status: boolean, message: string, data: T  | null }> => {
+  return new Promise(async (resolve, reject) => {
+    const res = await customFunction(...args);
+    if (res.status) {
+      resolve(res);
+    } else {
+      reject(res.message);
+    }
+  });
+};

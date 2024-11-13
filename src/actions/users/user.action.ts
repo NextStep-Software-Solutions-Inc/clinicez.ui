@@ -351,22 +351,23 @@ const sendCreateUserNotification = async ({email, password, orgName}: SendCreate
   }
 }
 
-export const findAndCreateUserAction = cache(async () => {
+export const findOrCreateUserAction = cache(async () => {
   const session = await getCachedSession();
- 
+  let message = "User found and created";
 
   try {
     if(!session) throw new Error("Unauthorized");
     
     const user = await prisma.$transaction(async (prisma) => {
+      // step 1: find user in db
       let dbUser = await prisma.user.findUnique({
         where: {
           userId: session.user.sub
         }
       })
 
-      // create user if not found
-      if(!dbUser) {
+      // step 2: create user in db if not found
+      if(dbUser === null) {
         const newUser = await insertUserInDb(prisma, {
           userId: session.user.sub,
           email: session.user.email,
@@ -374,6 +375,8 @@ export const findAndCreateUserAction = cache(async () => {
           firstName: session.user.given_name,
           lastName: session.user.family_name
         })
+
+        // delete user in auth0 if email is taken
         if(!newUser.success) {
           await managementClient.users.delete({ id: session.user.sub });
           throw new Error("User not found in db and email is taken. Action: User deleted in auth0");
@@ -388,30 +391,18 @@ export const findAndCreateUserAction = cache(async () => {
       isolationLevel: Prisma.TransactionIsolationLevel.Serializable, // optional, default defined by database
     })
 
-    return {
-      success: true,
-      message: "User found and created",
-      data: user
-    }
+    return { success: true, message, data: user }
   } catch (error) {
     console.error(`Error finding and creating user: ${error}`);
-    let message = "Failed to find and create user";
+    message = "Failed to find and create user";
     if(error instanceof Error) message = error.message
-    if(hasCodeProperty(error) && error.code === "P2002") {
-      message = "User already exists in the db and associated with another user";
-    }
-    return {
-      success: false,
-      message,
-      data: null
-    }
+    if(hasCodeProperty(error) && error.code === "P2002") message = "User already exists in the db and associated with another user";
+    return { success: false, message,  data: null }
   }
 })
 
-export type PrismaTransactionalClient = Parameters<
-    Parameters<typeof prisma['$transaction']>[0]
->[0];
-const insertUserInDb = async (prisma: PrismaTransactionalClient, payload: {
+export type PrismaTransactionalClient = Parameters<Parameters<typeof prisma['$transaction']>[0]>[0];
+type InsertUserPayload = {
   userId: string
   email: string
   mobile: string
@@ -419,18 +410,14 @@ const insertUserInDb = async (prisma: PrismaTransactionalClient, payload: {
   lastName: string,
   gender?: $Enums.Gender,
   dob?: Date
-}) => {
+}
+const insertUserInDb = async (prisma: PrismaTransactionalClient, payload: InsertUserPayload) => {
   try {
+    const { userId, email, mobile, firstName, lastName, dob = null, gender = null} = payload;
+    console.log({ userId, email, mobile, firstName, lastName, dob, gender });
+    
     const newUser = await prisma.user.create({
-      data: {
-        userId: payload.userId,
-        email: payload.email,
-        mobile: payload.mobile,
-        firstName: payload.firstName,
-        lastName: payload.lastName,
-        dob: payload.dob,
-        gender: payload.gender
-      }
+      data: { userId, email, mobile, firstName, lastName, dob, gender  }
     });
     return {
       success: true,

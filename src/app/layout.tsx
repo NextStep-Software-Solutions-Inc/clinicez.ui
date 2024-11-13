@@ -13,7 +13,7 @@ import dynamic from "next/dynamic";
 import { Analytics } from "@vercel/analytics/react";
 
 import "@styles/globals.css";
-import { findAndCreateUserAction } from "@actions/users/user.action";
+import { findOrCreateUserAction } from "@actions/users/user.action";
 import { redirect } from "next/navigation";
 import SyncSessionClinic from "@components/SyncSessionClinic";
 const HotJar = dynamic(() => import("@components/HotJar"), { ssr: true });
@@ -30,9 +30,10 @@ interface Props {
 }
 
 export default async function RootLayout({ children }: Props) {
+  
   const session = await getCachedSession();
   if (session) {
-    const dbUser = await findAndCreateUserAction();
+    const dbUser = await findOrCreateUserAction();
     if (!dbUser.data) redirect(`/api/auth/logout?returnTo=/email-is-taken`);
   }
 

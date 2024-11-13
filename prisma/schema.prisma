@@ -548,31 +548,27 @@ model FileSetting {
 }
 
 model FileType {
-  id                Int                @id @default(autoincrement())
-  name              String
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-  deletedAt         DateTime?
-  isActive          Boolean            @default(true)
-  Files             File[]
-  FileTypeAttribute FileTypeAttribute?
+  id              Int              @id @default(autoincrement())
+  name            String
+  validUntil      Int?             @default(0)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  deletedAt       DateTime?
+  isActive        Boolean          @default(true)
+  Files           File[]
+  ClinicFileTypes ClinicFileType[]
 }
 
-model FileTypeAttribute {
-  id                Int       @id @default(autoincrement())
-  fileTypeId        Int       @unique
-  required          Boolean   @default(false)
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-  deletedAt         DateTime?
-  isActive          Boolean   @default(true)
-  scopeClinicId     Int?
-  validityDays      Int       @default(0)
-  dateTakenRequired Boolean   @default(true)
-  FileType          FileType  @relation(fields: [fileTypeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  Clinic            Clinic?   @relation(fields: [scopeClinicId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+model ClinicFileType {
+  id                Int      @id @default(autoincrement())
+  fileTypeId        Int
+  clinicId          Int
+  validityDays      Int      @default(0)
+  dateTakenRequired Boolean  @default(true)
+  FileType          FileType @relation(fields: [fileTypeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Clinic            Clinic   @relation(fields: [clinicId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
-  @@unique([fileTypeId, scopeClinicId], name: "unique_file_type_attribute")
+  @@unique([fileTypeId, clinicId], name: "unique_file_type_attribute")
 }
 
 model UserEmergencyContact {
@@ -1106,10 +1102,10 @@ model Clinic {
   ClinicOrganizations             ClinicOrganization[]
   ClinicSetting                   ClinicSetting?
   UserClinicAppointmentWhitelists UserClinicAppointmentWhitelist[]
-  FileTypeAttributes              FileTypeAttribute[]
   FolderSettings                  FolderSetting[]
   UserDefaultClinicRoles          UserDefaultClinicRole[]
   ClinicRoleInitialPermissions    ClinicRoleInitialPermission[]
+  ClinicFileTypes                 ClinicFileType[]
 
   @@index([tenantId, clinicUid], name: "clinic_index")
 }

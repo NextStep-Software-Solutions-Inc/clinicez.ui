@@ -73,13 +73,7 @@ export const getFoldersAction = async (userId: string, clinicUid?:string) => {
           FileType: {
             select: {
               name: true,
-              FileTypeAttribute: {
-                select: {
-                  required: true,
-                  validityDays: true,
-                  scopeClinicId: true
-                }
-              }
+              validUntil: true
             }
           },
           FileSetting: {

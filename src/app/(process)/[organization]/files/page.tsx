@@ -3,12 +3,11 @@ import { Separator } from "@components/ui/separator";
 import { Metadata } from "next";
 import { AppRouterPageRouteOpts } from "@auth0/nextjs-auth0";
 import CreateFolderModal from "@components/files/modals/CreateFolderModal";
-// import AlertBanner from "@components/files/AlertBanner";
 import Each from "@components/utils/Each";
 import Folder from "@components/Folder";
 import { getFoldersAction } from "@actions/folder.action";
 import { getCachedSession } from "@actions/session.action";
-import dayjs from "dayjs";
+import dayjs from "@lib/day-utils";
 
 export const metadata: Metadata = {
   title: "Files",
@@ -33,9 +32,6 @@ export default async function FilesPage({params}: AppRouterPageRouteOpts) {
         </div>
         
         <Separator />
-        {/* <Suspend>
-          <AlertBanner/>
-        </Suspend> */}
         <Suspend>
           <Each
             of={folders}
@@ -48,7 +44,7 @@ export default async function FilesPage({params}: AppRouterPageRouteOpts) {
                 description: `Last update: ${dayjs(folder.updatedAt).format("lll")}`,
                 scopeClinicId: folder.FolderSetting?.scopeClinicId ?? 0,
                 files: folder.Files.map(file => {
-                  const validUntil = file.FileType.FileTypeAttribute?.validityDays ?? 0;
+                  const validUntil = file.FileType.validUntil ?? 0;
                   const valid = !!file.dateTaken && dayjs().add(validUntil, "days").isAfter(file.dateTaken);
                   return {
                     id: file.id,

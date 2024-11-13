@@ -30,8 +30,8 @@ interface ConsultationTicketSheetProps {
 }
 
 export default function ConsultationTicketSheet({ children, onClose, consultationTickets }: ConsultationTicketSheetProps) {
-  const params = useParams<{organization: string}>()
-  const orgUid = params.organization
+  const params = useParams<{orgUid: string}>()
+  const orgUid = String(params?.orgUid)
 
   return (
     <Sheet >

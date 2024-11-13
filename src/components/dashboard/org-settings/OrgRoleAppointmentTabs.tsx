@@ -28,8 +28,8 @@ const FormSchema = z.object({
     currentOrgTabIds: number[]
   }
 export default function OrgRoleAppointmentTabs({orgRoleTabId, currentOrgTabIds}:OrgRoleAppointmentTabsProps ) {
-  const params = useParams<{organization: string}>()
-  const {data: orgAppointmentTabs ,isLoading} = useClinicAppointmentTabs(params.organization)
+  const params = useParams<{orgUid: string}>()
+  const {data: orgAppointmentTabs ,isLoading} = useClinicAppointmentTabs(String(params?.orgUid))
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     values: {

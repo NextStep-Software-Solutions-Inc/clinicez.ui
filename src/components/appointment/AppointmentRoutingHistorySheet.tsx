@@ -35,7 +35,7 @@ interface AppointmentRoutingHistorySheetProps {
 }
 
 export default function AppointmentRoutingHistorySheet({ children, onClose, routing }: AppointmentRoutingHistorySheetProps) {
-  const params = useParams<{organization: string}>()
+  const params = useParams<{orgUid: string}>()
   const searchParams = useSearchParams()
   const appointmentId = Number(searchParams.get("_appointment"))
   
@@ -65,7 +65,7 @@ export default function AppointmentRoutingHistorySheet({ children, onClose, rout
                 key={record.id}
                 record={record}
                 appointmentId={appointmentId}
-                organization={params.organization}
+                organization={String(params?.orgUid)}
               />
             )}
           />

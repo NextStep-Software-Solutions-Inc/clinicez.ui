@@ -10,8 +10,8 @@ import AddRoleModal from "./modal/AddRoleModal";
 
 
 export default function OrganizationRolesSetting(){
-  const params = useParams<{organization: string}>();
-  const {data: orgRoles, isLoading: loadingOrgRoles, mutate} = useOrganizationRoles(params.organization);
+  const params = useParams<{orgUid: string}>();
+  const {data: orgRoles, isLoading: loadingOrgRoles, mutate} = useOrganizationRoles(String(params?.orgUid));
   
   if(loadingOrgRoles) return <PageLoading label="Loading page, please wait a moment..."/>
   return (
@@ -20,7 +20,7 @@ export default function OrganizationRolesSetting(){
         <CardTitle>
           <div className="flex flex-wrap gap-2 items-center">
             <span className="flex-1">Organization Roles</span>
-            <AddRoleModal orgUid={params.organization} onAddRole={mutate}/>
+            <AddRoleModal orgUid={String(params?.orgUid)} onAddRole={mutate}/>
           </div>
         </CardTitle>
         <CardDescription>

@@ -28,8 +28,8 @@ export function DataTableToolbar<TData>({
 }: DataTableToolbarProps<TData>) {
   const isFiltered = table.getState().columnFilters.length > 0
   const [showArchived, setShowArchived] = useState(options?.showArchived === true)
-  const params = useParams<{organization: string}>()
-  const {data: systems} = useSystems(params.organization)
+  const params = useParams<{orgUid: string}>()
+  const {data: systems} = useSystems(String(params?.orgUid))
 
   const handleShowArchivedChange = (checked: CheckedState) => {
     setShowArchived(checked === true)

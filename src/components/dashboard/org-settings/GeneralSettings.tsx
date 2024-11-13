@@ -40,8 +40,8 @@ const generalSettingsForm = z.object({
 })
 
 export default function GeneralSettings() {
-  const params = useParams<{organization: string}>()
-  const {data: organization, isLoading, mutate} = useOrganization(params.organization)
+  const params = useParams<{orgUid: string}>()
+  const {data: organization, isLoading, mutate} = useOrganization(String(params?.orgUid))
   const form = useForm<GeneralSettingsForm>({
     resolver: zodResolver(generalSettingsForm),
     values: {
@@ -59,7 +59,7 @@ export default function GeneralSettings() {
 
   const action = async () => {
     form.handleSubmit(async (data) => {
-      toast.promise(updateOrganizationAction(params.organization, data), {
+      toast.promise(updateOrganizationAction(String(params?.orgUid), data), {
         loading: "Saving changes...",
         success: (res) => {
           if(res.status){

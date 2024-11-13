@@ -11,11 +11,11 @@ interface OrganizationSwitcherProps {
 
 
 export function OrganizationSwitcher({isCollapsed,}: OrganizationSwitcherProps) {
-  const {organization} = useParams() as { organization: string }
+  const {orgUid} = useParams<{orgUid: string}>()
   const router = useRouter();
   const pathname = usePathname();
   const user = useUser()
-  const {data: myOrgs} = useUserOrganizations({userId: user.user?.sub}, !!user.user?.sub)  
+  const {data: myOrgs} = useUserOrganizations({userId: user.user?.sub, status: "ACTIVE"}, !!user.user?.sub)  
   
   const orgs: SwitcherOptionsType[] = (myOrgs?.data ?? []).filter(o => ["ACTIVE"].includes(o.status))
     .map(org => ({
@@ -34,12 +34,12 @@ export function OrganizationSwitcher({isCollapsed,}: OrganizationSwitcherProps) 
   
   const handleChangeOrganization = (newValue: string) => {
     const searchParams  = new URLSearchParams(window.location.search);
-    router.replace(pathname.replace(organization, newValue).concat("?", searchParams.toString()))
+    router.replace(pathname.replace(orgUid, newValue).concat("?", searchParams.toString()))
   }
 
   return (
     <Switcher
-      value={organization}
+      value={orgUid}
       onSwitch={handleChangeOrganization}
       isCollapsed={isCollapsed}
       options={orgs}

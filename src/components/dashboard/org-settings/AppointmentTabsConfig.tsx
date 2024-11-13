@@ -25,9 +25,9 @@ const FormSchema = z.object({
 })
   
 export default function AppointmentTabsConfig() {
-  const params = useParams<{organization: string}>()
+  const params = useParams<{orgUid: string}>()
   const {data: appointmentTabs, isLoading: loadingAppointmentTabs} = useAppointmentTabs()
-  const {data: orgAppointmentTabs ,isLoading} = useClinicAppointmentTabs(params.organization)
+  const {data: orgAppointmentTabs ,isLoading} = useClinicAppointmentTabs(String(params?.orgUid))
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     values: {
@@ -37,7 +37,7 @@ export default function AppointmentTabsConfig() {
     
   const action = async () => {
     form.handleSubmit(async (data) => {
-      toast.promise(setClinicAppointmentTabsAction(params.organization, data.tabIds), {
+      toast.promise(setClinicAppointmentTabsAction(String(params?.orgUid), data.tabIds), {
         loading: "Saving changes...",
         success: res => {
           if(res.status) {

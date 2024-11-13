@@ -11,7 +11,7 @@ export const GET = withJwtAuth(async (req: NextRequest, { params }: {
     }
   }) => {
 
-  const orgUid = params.orgUid;
+  const orgUid = String(params?.orgUid);
   const orgSetting = await getOrgSettingAction(orgUid)
   return NextResponse.json(orgSetting, {status: 200});
 });

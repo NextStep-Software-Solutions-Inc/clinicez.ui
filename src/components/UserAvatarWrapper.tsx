@@ -1,7 +1,7 @@
 
 import { DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from "./ui/dropdown-menu";
 import { Settings } from "lucide-react";
-import PHRLink from "../app/(activation)/[organization]/activate/PHRLink";
+import PHRLink from "../app/(activation)/organizations/[orgUid]/activate/PHRLink";
 import HPProfilesLink from "./HPProfilesLink";
 import DashboardLink from "./DashboardLink";
 import UserAvatarDropdown from "./UserAvatarDropdown";

@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { cn } from "@lib/utils"
 import Each from "@components/utils/Each"
-import { navList } from "../../app/(process)/[organization]/nav"
+import { navList } from "../../app/(dashboard)/organizations/[orgUid]/nav"
 import { useParams, usePathname } from "next/navigation"
 
 export function MainNav({ className,...props }: React.HTMLAttributes<HTMLElement>) {

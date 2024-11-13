@@ -8,21 +8,31 @@ import {
 import Each from "@components/utils/Each";
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
-import React from "react";
-import { filterNavList } from "../../app/(process)/[organization]/nav";
+import React, { useMemo } from "react";
 import { cn } from "@lib/utils";
 import Icon from "@components/Icon";
+import dynamicIconImports from "lucide-react/dynamicIconImports";
 
-export default function SideNav() {
-  const { organization } = useParams() as { organization: string };
+interface SideNavProps {
+  navItems: {
+    name: string;
+    href?: string;
+    icon: keyof typeof dynamicIconImports;
+    items?: { name: string; href: string, icon?: keyof typeof dynamicIconImports, description: string }[]
+  }[];
+}
+export default function SideNav({ navItems }: SideNavProps) {
+  const { clinicUid } = useParams<{clinicUid: string}>();
   const pathname = usePathname();
+
+  const mappedNavItems = useMemo(() => navItems.map((item) => ({
+    ...item,
+    href: `/${clinicUid}${item.href}`
+  })), [clinicUid, navItems]);
 
   return (
     <Each
-      of={filterNavList().map((item) => ({
-        ...item,
-        href: `/${organization}${item.href}`
-      }))}
+      of={mappedNavItems}
       render={({ name, href, icon }) => (
         <Tooltip>
           <TooltipTrigger asChild>

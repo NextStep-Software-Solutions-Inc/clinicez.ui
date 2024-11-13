@@ -7,8 +7,8 @@ import Each from "@components/utils/Each";
 import { useOrganizationRoles } from "@/hooks/useOrganizationRole";
 import { useParams } from "next/navigation";
 import { useMemo } from "react";
-import EmployeeRecordForm from "../../app/(activation)/[organization]/join/EmployeeRecordForm";
-import StudentRecordForm from "../../app/(activation)/[organization]/join/StudentRecordForm";
+import EmployeeRecordForm from "../../app/(activation)/organizations/[orgUid]/join/EmployeeRecordForm";
+import StudentRecordForm from "../../app/(activation)/organizations/[orgUid]/join/StudentRecordForm";
 import MemberRoles from "./MemberRoles";
 import { MemberPermissions } from "./MemberPermissions";
 import MemberActivities from "./MemberActivities";
@@ -20,8 +20,8 @@ interface MemberTabSectionProps {
     orgUid: string;
 }
 export default function MemberTabSection({orgUid, userId}:MemberTabSectionProps) {
-  const params = useParams<{organization: string}>();
-  const {data: myOrgRoles} = useOrganizationRoles(params.organization, {
+  const params = useParams<{orgUid: string}>();
+  const {data: myOrgRoles} = useOrganizationRoles(String(params?.orgUid), {
     userId: userId
   })
 
@@ -64,13 +64,13 @@ export default function MemberTabSection({orgUid, userId}:MemberTabSectionProps)
                     <>
                       <ConditionalRender condition={value === "employee_record"}>
                         <EmployeeRecordForm 
-                          orgUid={params.organization}
+                          orgUid={String(params?.orgUid)}
                           userId={userId}
                         />
                       </ConditionalRender>
                       <ConditionalRender condition={value === "student_record"}>
                         <StudentRecordForm 
-                          orgUid={params.organization}
+                          orgUid={String(params?.orgUid)}
                           userId={userId}
                         />
                       </ConditionalRender>

@@ -8,7 +8,7 @@ export const GET = withJwtAuth(async (req: NextRequest, { params }: {
     orgUid: string;
   }
 }) => {
-  const orgUid = params.orgUid;
+  const orgUid = String(params?.orgUid);
   const searchParams = req.nextUrl.searchParams
   const userId = searchParams.get('userId');
   const organizationRoles = await getOrganizationRolesAction({orgUid: orgUid, userId: userId ?? undefined});

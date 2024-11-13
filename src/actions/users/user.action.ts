@@ -414,7 +414,6 @@ type InsertUserPayload = {
 const insertUserInDb = async (prisma: PrismaTransactionalClient, payload: InsertUserPayload) => {
   try {
     const { userId, email, mobile, firstName, lastName, dob = null, gender = null} = payload;
-    console.log({ userId, email, mobile, firstName, lastName, dob, gender });
     
     const newUser = await prisma.user.create({
       data: { userId, email, mobile, firstName, lastName, dob, gender  }

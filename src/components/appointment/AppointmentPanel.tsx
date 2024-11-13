@@ -121,7 +121,7 @@ export default function AppointmentPanel({
   const aptStatus = searchParams.get("_aptStatus");
   const sort = searchParams.get("_sort")  ?? "request";
   const routedAptStatus = searchParams.get("_routedAptStatus");
-  const organization = params.organization as string;
+  const organization = String(params?.orgUid);
   const activeRoleId = userDefaultOrgRole[organization]?.roleId ?? 0;
   const {data: orgRoles} = useOrganizationRoles(organization, {userId})
   

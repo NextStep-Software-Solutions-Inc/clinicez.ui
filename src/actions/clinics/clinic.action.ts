@@ -41,7 +41,7 @@ type FiltersType = {
 
 export type GetClinics = Awaited<ReturnType<typeof getClinicsAction>>
 export const getClinicsAction = cache(async (filters?: FiltersType) => {
-
+  
   const { userId, clinicUid } = filters || {};
   const clinics = await prisma.clinic.findMany({
     orderBy: {

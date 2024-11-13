@@ -1,6 +1,6 @@
 import { atom } from "jotai"
-import { EmployeeRecordType } from "@/app/(activation)/[organization]/join/EmployeeRecordForm"
-import { StudentRecordType } from "@/app/(activation)/[organization]/join/StudentRecordForm"
+import { EmployeeRecordType } from "@/app/(activation)/organizations/[orgUid]/join/EmployeeRecordForm"
+import { StudentRecordType } from "@/app/(activation)/organizations/[orgUid]/join/StudentRecordForm"
 
 export type JoinOrgApplicationForm = Partial<{
     orgUid: string

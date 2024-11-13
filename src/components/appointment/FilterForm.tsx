@@ -76,7 +76,7 @@ export default function FilterForm({onContinue}: FilterFormProps) {
   const params = useParams()
   const {user} = useUser()
   const [bookAppointmentForm, setBookAppointmentForm] = useAtom(bookAppointmentAtom)
-  const organization = params?.organization as string
+  const organization = String(params?.orgUid)
   const {data: appointmentTypes} = useOrgAppointmentTypes(organization)
   const {data: appointmentModes } = useOrgAppointmentModes(organization);
   const {data: serviceCategories} = useClinicServiceCategories(organization)

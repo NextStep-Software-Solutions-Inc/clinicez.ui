@@ -11,7 +11,7 @@ export const GET = withJwtAuth(async (req: NextRequest, { params }: {
     }
   }) => {
 
-  const orgUid = params.orgUid;
+  const orgUid = String(params?.orgUid);
   const searchParams = req.nextUrl.searchParams
   const orgRoleId = Number(searchParams.get("orgRoleId"))
   const orgRoleInitialPermissions = await getOrgRoleInitialPermissionsAction({

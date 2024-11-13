@@ -12,7 +12,7 @@ export const GET = withJwtAuth(async (req: NextRequest, { params }: {
     }
   }) => {
     
-  const orgUid = params.orgUid;
+  const orgUid = String(params?.orgUid);
   const organization = await getOrganizationAction(orgUid)
   return NextResponse.json(organization, {status: 200});
 });

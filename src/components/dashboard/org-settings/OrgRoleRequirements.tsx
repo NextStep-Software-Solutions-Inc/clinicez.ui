@@ -28,7 +28,7 @@ interface OrgRoleRequirementsProps {
 }
 
 export default function OrgRoleRequirements({orgRoleId, currentRequirements}:OrgRoleRequirementsProps ) {
-  const params = useParams<{organization: string}>()
+  const params = useParams<{orgUid: string}>()
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     values: {

@@ -84,8 +84,6 @@ export const upsertStudentRecordAction = async (payload:CreateUserStudentRecord 
     return  {...response, data: studentRecord};
   } catch (error) {
     if(error instanceof PrismaClientKnownRequestError) {
-      console.log({error});
-    
       if(error.code === "P2002") {
         return {
           ...response,

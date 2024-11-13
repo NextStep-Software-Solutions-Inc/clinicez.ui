@@ -28,9 +28,9 @@ interface OrgRoleInitialPermissionsProps {
   currentPermissionIds: number[]
 }
 export default function OrgRoleInitialPermissions({orgRoleId, currentPermissionIds}:OrgRoleInitialPermissionsProps ) {
-  const params = useParams<{organization: string}>()
+  const params = useParams<{orgUid: string}>()
   const {data: roleInitialPermissions ,isLoading, mutate} = useOrgRoleInitialPermissions({
-    orgUid: params.organization,
+    orgUid: String(params?.orgUid),
     orgRoleId
   })
   const {data: permissions ,isLoading: loadingPermissions} = usePermissions({
@@ -48,7 +48,7 @@ export default function OrgRoleInitialPermissions({orgRoleId, currentPermissionI
     form.handleSubmit(async (data) => {
       toast.promise(setOrgRoleInitialPermissionsAction({
         orgRoleId,
-        orgUid: params.organization,
+        orgUid: String(params?.orgUid),
         permissionIds: data.permissionIds,
       }), {
         loading: "Saving changes...",

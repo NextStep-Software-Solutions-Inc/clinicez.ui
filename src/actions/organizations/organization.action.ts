@@ -5,6 +5,7 @@ import prisma from "@lib/prisma";
 import { cache } from "react";
 import { OrganizationMemberStatus } from "@/types";
 import { getCachedSession } from "@actions/session.action";
+import { withErrorHandling } from "@/lib/with-error-handling";
 
 
 type CreateOrganizationPayload = {
@@ -95,11 +96,15 @@ export const getOrganizationAction = cache(async (key: string | number) => {
 })
 
 
-export const getMyDefaultOrganizationAction = cache(async (userId: string) => {
+export const getMyDefaultOrganizationAction = cache(withErrorHandling(async () => {
+  
+  const session = await getCachedSession();
+  if (!session) throw new Error("User not authenticated.");
+
   const org = await prisma.userDefaultOrganization.findFirst({
     where: {
       User: {
-        userId
+        userId: session.user.sub
       }
     },
     select: {
@@ -113,8 +118,8 @@ export const getMyDefaultOrganizationAction = cache(async (userId: string) => {
       }
     }
   })
-  return org;
-})
+  return { message: "Default organization fetched successfully", data: org };
+}))
 
 export const setMyDefaultOrganizationAction = async (id: number, orgUid: string, userId?: string) => {
   const org = await prisma.userDefaultOrganization.upsert({

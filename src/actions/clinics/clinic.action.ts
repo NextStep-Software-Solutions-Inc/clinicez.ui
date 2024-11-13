@@ -76,6 +76,7 @@ export const getClinicAction = cache(async (key: string | number) => {
       ]
     },
     select: {
+      id: true,
       clinicUid: true,
       name: true,
       description: true,

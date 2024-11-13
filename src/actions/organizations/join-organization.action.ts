@@ -4,7 +4,8 @@ import prisma from "@lib/prisma";
 import fs from 'fs/promises';
 import { sendMail } from '@actions/email.action';
 import path from 'path';
-import { capitalize } from "@lib/utils";
+import { capitalize, hasCodeProperty } from "@lib/utils";
+import { getCachedSession } from "../session.action";
 
 export type JoinOrganizationPayload = {
   userId: string;
@@ -14,73 +15,87 @@ export type JoinOrganizationPayload = {
 
 export async function joinOrganizationAction(payload: JoinOrganizationPayload) {
   
-  const { userId, orgUid, orgRoleId} = payload
-  const userOrganization = await prisma.organizationMember.create({
-    data: {
-      OrganizationRole: {
-        connect: { id: orgRoleId  }
-      },
-      User: {
-        connect: { userId }
-      },
-      Organization: {
-        connect: { orgUid }
-      }
-    },
-    include: {
-      User: {
-        select: {
-          firstName: true,
-          lastName: true,
-          email: true
+  let message = "Successfully sent membership request";
+  try {
+
+    const session = await getCachedSession();
+    if(!session) throw new Error("Unauthorized");
+
+    const { userId, orgUid, orgRoleId} = payload
+    const userOrganization = await prisma.organizationMember.create({
+      data: {
+        OrganizationRole: {
+          connect: { id: orgRoleId  }
+        },
+        User: {
+          connect: { userId }
+        },
+        Organization: {
+          connect: { orgUid }
         }
       },
-      OrganizationRole: {
-        select: {
-          requirements: true
-        }
-      },
-      Organization: {
-        select: {
-          name: true,
-          OrganizationMembers: {
-            select: {
-              User: {
-                select: {
-                  email: true
-                }
-              },
-              status: true,
-              OrganizationRole: {
-                select: {
-                  name: true,
+      include: {
+        User: {
+          select: {
+            firstName: true,
+            lastName: true,
+            email: true
+          }
+        },
+        OrganizationRole: {
+          select: {
+            requirements: true
+          }
+        },
+        Organization: {
+          select: {
+            name: true,
+            OrganizationMembers: {
+              select: {
+                User: {
+                  select: {
+                    email: true
+                  }
+                },
+                status: true,
+                OrganizationRole: {
+                  select: {
+                    name: true,
+                  }
                 }
               }
             }
           }
         }
       }
-    }
-  });
+    });
 
-  if(!(userOrganization)) throw new Error("Error sending membership request");
-  const adminEmails = userOrganization.Organization.OrganizationMembers.filter(u => u.OrganizationRole.name.toUpperCase() === "ADMIN" && u.status === "ACTIVE").map(u => u.User.email);
-  const userName = `${userOrganization.User.firstName} ${userOrganization.User.lastName}`;
-  const applicantEmail = userOrganization.User.email;
-  const applicantName = capitalize(`${userOrganization.User.firstName} ${userOrganization.User.lastName}`);
+    if(!(userOrganization)) throw new Error("Error sending membership request");
+    
+    const adminEmails = userOrganization.Organization.OrganizationMembers.filter(u => u.OrganizationRole.name.toUpperCase() === "ADMIN" && u.status === "ACTIVE").map(u => u.User.email);
+    const applicantEmail = userOrganization.User.email;
+    const applicantName = capitalize(`${userOrganization.User.firstName} ${userOrganization.User.lastName}`);
+  
+    await sendEmailNotifications(adminEmails, userOrganization.Organization.name, applicantName, applicantEmail);
+    message = `Successfully sent membership request to ${userOrganization.Organization.name}`;
+    return { status: true, message, data: userOrganization }
+  } catch (error) {
+    console.error(`Error sending membership request: ${error}`);
+    message = "Error sending membership request";
+    if(error instanceof Error) message = error.message;
+    if(hasCodeProperty(error) && error.code === "P2002") message = "User is already a member of the organization";
+    return { status: false, message, data: null}
+  }
+}
+
+const sendEmailNotifications = async (adminEmails: string[], orgName: string, applicantName: string, applicantEmail: string) => {
   try {
     await Promise.all([
-      notifyApplicant([applicantEmail], userOrganization.Organization.name, userName),
-      notifyAdmins([...adminEmails], userOrganization.Organization.name, applicantName)
+      notifyApplicant([applicantEmail], orgName, applicantName),
+      notifyAdmins([...adminEmails], orgName, applicantName)
     ])
   } catch (error) {
-    console.error(JSON.stringify(error, null, 2));
-  }
-
-  return {
-    status: true,
-    message: `Application to ${orgUid} was successfully sent. Please wait for the approval from the organization.`,
-    data: userOrganization
+    console.error(`Error sending email notifications: ${error}`);
   }
 }
 

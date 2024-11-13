@@ -4,7 +4,6 @@ import { Alert, AlertDescription, AlertTitle } from "@components/ui/alert"
 import { Separator } from "@components/ui/separator"
 import { AlertTriangle } from "lucide-react"
 import { getCachedSession } from "@actions/session.action";
-import { redirect } from "next/navigation";
 import OrganizationSteps from "./OrganizationSteps";
 import { getOrganizationAction } from "@actions/organizations/organization.action";
 
@@ -14,7 +13,7 @@ async function JoinOrgPage({params}: AppRouterPageRouteOpts) {
     getCachedSession(),
     getOrganizationAction(orgUid),
   ])
-  if(!session) return redirect("/api/auth/login");
+
   const userId = session?.user.sub;
 
   return (

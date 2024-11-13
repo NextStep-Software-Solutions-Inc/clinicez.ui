@@ -79,7 +79,6 @@ export default function ConfirmationAndReviewStep({ orgUid, isComplete, isFirstS
             return res.message
           }
           setOrgApplication(pres => ({...pres,  complete: true}))
-          revalidatePath(`/[organization]/join`, "page")
           setComplete?.(true);
           playSuccess()
           return res.message

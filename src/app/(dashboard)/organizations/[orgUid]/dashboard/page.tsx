@@ -5,36 +5,42 @@ import {
   TabsList,
   TabsTrigger,
 } from "@components/ui/tabs"
-import { MainNav } from "../../../../../components/dashboard/MainNav"
+import { MainNav } from "@components/dashboard/MainNav"
 import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth0"
-import { redirect } from "next/navigation"
-import { DashboardStats } from "../../../../../components/dashboard/DashboardStats"
+import { DashboardStats } from "@components/dashboard/DashboardStats"
 import { getCachedSession } from "@actions/session.action"
 import Suspend from "@components/Suspend"
-import { PatientHealthAnalytics } from "../../../../../components/dashboard/PatientHealthAnalytics"
-import { PatientsAnalytics } from "../../../../../components/dashboard/PatientsAnalytics"
-import { OrgMembershipAnalytics } from "../../../../../components/dashboard/OrgMembershipAnalytics"
+import { PatientHealthAnalytics } from "@components/dashboard/PatientHealthAnalytics"
+import { PatientsAnalytics } from "@components/dashboard/PatientsAnalytics"
+import { OrgMembershipAnalytics } from "@components/dashboard/OrgMembershipAnalytics"
+import { filterNavList } from "../nav"
 
 export const maxDuration = 30; // page timeout in seconds
 export const revalidate  = 60; // revalidation interval in seconds
 export const metadata: Metadata = {
-  title: "Dashboard | Clinic EZ",
+  title: "Organization Dashboard",
   description: "Overview of your organization's activities and analytics."
 }
 
 async function DashboardPage({params, searchParams}: AppRouterPageRouteOpts) {
-  const orgId = String(params?.orgUid)
+  const orgUid = String(params?.orgUid)
   const session = await getCachedSession()
-  if (!session) return redirect("/api/auth/login")
-  const userId = session.user.sub
+  const userId = session?.user.sub
+
+
+  const mappedNavList = filterNavList().map((item) => {
+    return {
+      name: item.name,
+      href: `/organizations/${orgUid}${item.href}`,
+    }
+  })
 
   return (
     <div className="rounded-[0.5rem] border bg-background shadow]">
       <div className="flex-col flex">
         <div className="border-b">
           <div className="flex h-16 items-center px-4">
-            {/* <TeamSwitcher /> */}
-            <MainNav className="mx-6" />
+            <MainNav className="mx-6" navItems={mappedNavList} />
           </div>
         </div>
         <div className="flex-1 space-y-4 p-8 pt-6">
@@ -56,7 +62,7 @@ async function DashboardPage({params, searchParams}: AppRouterPageRouteOpts) {
             </TabsList>
             <TabsContent value="overview" className="space-y-4">
               <Suspend>
-                <DashboardStats userId={userId} orgId={orgId}/>
+                <DashboardStats userId={userId} orgId={orgUid}/>
               </Suspend>
               {/* <ConditionalRender condition={await isMember() && await isHP()}>
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
@@ -87,13 +93,13 @@ async function DashboardPage({params, searchParams}: AppRouterPageRouteOpts) {
             </TabsContent>
             <TabsContent value="analytics" className="space-y-4">
               <Suspend>
-                <PatientHealthAnalytics orgId={orgId}/>
+                <PatientHealthAnalytics orgId={orgUid}/>
               </Suspend>
               <Suspend>
-                <PatientsAnalytics orgId={orgId}/>
+                <PatientsAnalytics orgId={orgUid}/>
               </Suspend>
               <Suspend>
-                <OrgMembershipAnalytics orgId={orgId}/>
+                <OrgMembershipAnalytics orgId={orgUid}/>
               </Suspend>
             </TabsContent>
           </Tabs>

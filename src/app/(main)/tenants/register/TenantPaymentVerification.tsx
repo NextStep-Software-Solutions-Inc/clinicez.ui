@@ -10,7 +10,7 @@ import { Button } from "@components/ui/button";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useSearchParams } from "next/navigation";
-import { verifyReceiptCodeAction } from "@actions/reciept-code.action";
+import { verifyReceiptCodeAction } from "@/actions/receipt-code.action";
 import { useAtom } from "jotai";
 import { tenantApplyAtom } from "@state/tenant-apply";
 import { usePlans } from "@hooks/usePlan";

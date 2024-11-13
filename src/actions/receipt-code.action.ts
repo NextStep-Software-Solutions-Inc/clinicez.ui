@@ -2,8 +2,9 @@
 
 import prisma from "@lib/prisma";
 import { Prisma } from "@prisma/client";
-import { getCachedSession } from "./session.action";
+import { getCachedSession } from "@actions/session.action";
 import { hasCodeProperty } from "@lib/utils";
+import { PrismaTransactionalClient } from "@actions/users/user.action";
 
 export const createReceiptCodeAction = async (payload: Prisma.ReceiptCodeCreateArgs["data"]) => {
   await prisma.receiptCode.create({
@@ -52,43 +53,39 @@ export const verifyReceiptCodeAction = async (code: string) => {
   
 }
 
-export const claimReceiptCodeAction = async (code: string) => {
+export const claimReceiptCodeAction = async (prisma: PrismaTransactionalClient, code: string) => {
   const session = await getCachedSession();
   try {
+    
     if(!session) throw new Error("Unauthorized");
     const userId = String(session.user.sub);
-    return await prisma.$transaction(async (prisma) => {
-      const claimedCount = await prisma.receiptCodeClaim.count({
-        where: {
-          isActive: true,
-          ReceiptCode: {
-            code
-          }
+
+    const claimedCount = await prisma.receiptCodeClaim.count({
+      where: {
+        isActive: true,
+        ReceiptCode: {
+          code
         }
-      })
+      }
+    })
       
-      const receiptCode = await prisma.receiptCode.findFirst({
-        where: { code, maxUses: { gt: claimedCount }, status: "UNUSED" }
-      })
+    const receiptCode = await prisma.receiptCode.findFirst({
+      where: { code, maxUses: { gt: claimedCount }, status: "UNUSED" }
+    })
       
-      if(!receiptCode) throw new Error("Receipt code is invalid or reached maximum claims");
-      await prisma.receiptCodeClaim.create({
-        data: {
-          ReceiptCode: {
-            connect: { code: receiptCode.code } 
-          },
-          User: {
-            connect: { userId }
-          }
+    if(!receiptCode) throw new Error("Receipt code is invalid or reached maximum claims");
+    await prisma.receiptCodeClaim.create({
+      data: {
+        ReceiptCode: {
+          connect: { code: receiptCode.code } 
+        },
+        User: {
+          connect: { userId }
         }
-      });
-      return { success: true, message: "Receipt code claimed successfully" }
-    },
-    {
-      timeout: 5000,
-      maxWait: 10000,
-      isolationLevel: Prisma.TransactionIsolationLevel.Serializable
+      }
     });
+    return { success: true, message: "Receipt code claimed successfully" }
+    
 
   } catch (error) {
     console.error(`Error claiming receipt code: ${error}`);

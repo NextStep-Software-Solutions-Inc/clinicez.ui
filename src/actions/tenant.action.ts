@@ -4,7 +4,7 @@ import "server-only";
 import prisma from '@lib/prisma';
 import { getCachedSession } from './session.action';
 import dayjs from 'dayjs';
-import { claimReceiptCodeAction } from './reciept-code.action';
+import { claimReceiptCodeAction } from './receipt-code.action';
 import { hasCodeProperty } from '@lib/utils';
 
 export type GetTenants = Awaited<ReturnType<typeof getTenantsAction>>;
@@ -89,11 +89,11 @@ export const createTenantAction = async (data: CreateTenantPayload) => {
     if(!session) throw new Error("Unauthorized");
     const userId = String(session?.user.sub);
     const { tenantUid, name, description, planId, receiptCode } = data;
-
-    const {success, message} = await claimReceiptCodeAction(receiptCode);
-    if(!success) throw new Error(message);
-
+    
     const newUserPlan = await prisma.$transaction(async (prisma) => {
+
+      const {success, message} = await claimReceiptCodeAction(prisma, receiptCode);
+      if(!success) throw new Error(message);
       const plan = await prisma.plan.findUniqueOrThrow({
         where: {isActive: true, id: planId},
         select: { id: true, frequency: true }

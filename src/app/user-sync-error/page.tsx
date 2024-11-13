@@ -1,24 +1,24 @@
 import { Button } from "@components/ui/button";
-import { MailWarning } from "lucide-react";
+import { RefreshCwOff } from "lucide-react";
 import { Metadata } from "next";
 import Link from "next/link";
 import React from "react";
 
 export const metadata: Metadata = {
-  title: "Email is taken | Clinic EZ",
-  description: "You are not authorized to view this page."
+  title: "User Synchronization Error | Clinic EZ",
+  description: "Oops, something went wrong while synchronizing your user account."
 };
 
-export default function EmailIsTakenPage() {
+export default function UserSyncErrorPage() {
   return (
     <div className="container h-screen flex items-center justify-center">
       <div className="text-center space-y-6">
-        <MailWarning size={90} className="w-full"/>
-        <h2 className="text-4xl font-bold tracking-tight">Email is already taken</h2>
+        <RefreshCwOff size={90} className="w-full"/>
+        <h2 className="text-4xl font-bold tracking-tight">Oops, Something went wrong!</h2>
         <p className="text-sm text-muted-foreground">
           {`
-            The email you are trying to use is already associated with an existing account.
-            Please use a different email address.
+            We encountered an error while synchronizing your user account.
+            Please try again later or contact support if the issue persists.
           `}
         </p>
         <Link href="/">

@@ -34,7 +34,7 @@ export default async function RootLayout({ children }: Props) {
   const session = await getCachedSession();
   if (session) {
     const dbUser = await findOrCreateUserAction();
-    if (!dbUser.data) redirect(`/api/auth/logout?returnTo=/email-is-taken`);
+    if (!dbUser.data) redirect(`/api/auth/logout?returnTo=/user-sync-error`);
   }
 
   return (

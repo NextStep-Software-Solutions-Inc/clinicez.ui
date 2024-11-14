@@ -35,6 +35,7 @@ export function withErrorHandling<T extends FunctionWithMessageAndData<any>>(
       const result = await fn(...args);
       return { ...result, status: true };
     } catch (error) {
+      console.error(`Error in function: ${fn.name}: ${error}`);
       if (error instanceof Error) message = error.message;
       if (customErrorHandler) message = customErrorHandler(error);
       return { status: false, message, data: null };

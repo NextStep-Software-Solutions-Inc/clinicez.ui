@@ -42,8 +42,3 @@ export function withErrorHandling<T extends FunctionWithMessageAndData<any>>(
     }
   };
 }
-
-
-const add = async(a:number, b: number) => {
-  return { data: a + b, message: "Operation completed successfully" };
-}

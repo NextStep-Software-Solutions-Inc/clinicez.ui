@@ -11,37 +11,39 @@ import relativeTime from "dayjs/plugin/relativeTime";
 dayjs.extend(relativeTime);
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
-import PageLoading from "@components/PageLoading";
 import {useClinicAppointmentTabs } from "@hooks/useAppointmentTab";
 import Each from "@components/utils/Each";
 import { setClinicRoleAppointmentTabsAction } from "@/actions/clinics/clinic-appointment-tab..action";
 
 
 const FormSchema = z.object({
-  orgTabIds: z.array(z.number()).refine((value) => value.some((item) => item), {
+  clinicTabIds: z.array(z.number()).refine((value) => value.some((item) => item), {
     message: "You have to select at least one item.",
   }),
 })
   
-  interface OrgRoleAppointmentTabsProps {
-    orgRoleTabId: number
-    currentOrgTabIds: number[]
+  interface ClinicRoleAppointmentTabsProps {
+    clinicRoleTabId: number
+    currentClinicTabIds: number[]
   }
-export default function OrgRoleAppointmentTabs({orgRoleTabId, currentOrgTabIds}:OrgRoleAppointmentTabsProps ) {
-  const params = useParams<{orgUid: string}>()
-  const {data: orgAppointmentTabs ,isLoading} = useClinicAppointmentTabs(String(params?.orgUid))
+export default function ClinicRoleAppointmentTabs({clinicRoleTabId, currentClinicTabIds}:ClinicRoleAppointmentTabsProps ) {
+  const {clinicUid} = useParams<{clinicUid: string}>()
+  const {data: orgAppointmentTabs ,isLoading} = useClinicAppointmentTabs(clinicUid)
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     values: {
-      orgTabIds: currentOrgTabIds,
+      clinicTabIds: currentClinicTabIds,
     },
   })
   
   const action = async () => {
     form.handleSubmit(async (data) => {
-      toast.promise(setClinicRoleAppointmentTabsAction(orgRoleTabId, data.orgTabIds), {
+      toast.promise(setClinicRoleAppointmentTabsAction(clinicRoleTabId, data.clinicTabIds), {
         loading: "Saving changes...",
         success: res => {
+          if(res.status) {
+            form.reset(data)
+          }
           return res.message
         },
         error: "Error while saving changes",
@@ -55,7 +57,7 @@ export default function OrgRoleAppointmentTabs({orgRoleTabId, currentOrgTabIds}:
       <form action={action} className="space-y-8">
         <FormField
           control={form.control}
-          name="orgTabIds"
+          name="clinicTabIds"
           render={() => (
             <FormItem>
               <div className="mb-4 ">
@@ -72,7 +74,7 @@ export default function OrgRoleAppointmentTabs({orgRoleTabId, currentOrgTabIds}:
                       <FormField
                         key={tab.id}
                         control={form.control}
-                        name="orgTabIds"
+                        name="clinicTabIds"
                         render={({ field }) => {
                           return (
                             <FormItem

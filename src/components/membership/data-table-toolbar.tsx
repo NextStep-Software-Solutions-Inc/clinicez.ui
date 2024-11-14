@@ -25,8 +25,8 @@ export function DataTableToolbar<TData>({
     label: status.split("").map((char, index) => (index === 0 ? char : char.toLowerCase())).join(""),
     value: status,
   }))
-  const params = useParams<{orgUid: string}>()
-  const {data: orgRoles } = useOrganizationRoles(String(params?.orgUid))
+  const {orgUid} = useParams<{orgUid: string}>()
+  const {data: orgRoles } = useOrganizationRoles({orgUid})
   
   return (
     <div className="flex items-center justify-between">

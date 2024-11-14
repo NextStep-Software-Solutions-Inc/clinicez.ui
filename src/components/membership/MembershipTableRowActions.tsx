@@ -88,7 +88,7 @@ export default function MembershipTableRowActions<TData>({
         />
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link href={`/${applicationRequest.Organization.orgUid}/membership/${applicationRequest.User.userId}`}>
+          <Link href={`/organizations/${applicationRequest.Organization.orgUid}/membership/${applicationRequest.User.userId}`}>
             <User className="mr-1 w-4 h-4"/>
             View Details
           </Link>

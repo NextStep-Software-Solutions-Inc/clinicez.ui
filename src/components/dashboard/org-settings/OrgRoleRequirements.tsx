@@ -9,7 +9,6 @@ import { Checkbox } from "@components/ui/checkbox";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 dayjs.extend(relativeTime);
-import { useParams } from "next/navigation";
 import { toast } from "sonner";
 import Each from "@components/utils/Each";
 import { setOrganizationRoleRequirementsAction } from "@actions/organizations/organization-role.action";
@@ -28,7 +27,6 @@ interface OrgRoleRequirementsProps {
 }
 
 export default function OrgRoleRequirements({orgRoleId, currentRequirements}:OrgRoleRequirementsProps ) {
-  const params = useParams<{orgUid: string}>()
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     values: {

@@ -12,7 +12,7 @@ import { getCachedSession } from "@actions/session.action"
 import Suspend from "@components/Suspend"
 import { PatientHealthAnalytics } from "@components/dashboard/PatientHealthAnalytics"
 import { PatientsAnalytics } from "@components/dashboard/PatientsAnalytics"
-import { OrgMembershipAnalytics } from "@components/dashboard/OrgMembershipAnalytics"
+import { OrgMembershipAnalytics } from "@/components/organization/OrgMembershipAnalytics"
 import { filterNavList } from "../nav"
 
 export const maxDuration = 30; // page timeout in seconds

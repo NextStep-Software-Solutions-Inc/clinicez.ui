@@ -18,8 +18,9 @@ import { format } from "date-fns";
 import Each from "@components/utils/Each";
 import { RadioGroup, RadioGroupItem } from "@components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@components/ui/select";
-import { useOrganizationRoles } from "@/hooks/useOrganizationRole";
 import { createUserAction } from "@actions/users/user.action";
+import { useClinicRoles } from "@/hooks/useClinicRole";
+import { promiseWrapper } from "@/lib/with-error-handling";
 
 const addUserSchema = z.object({
   firstName: z.string({
@@ -51,35 +52,35 @@ const addUserSchema = z.object({
     coerce: true,
     required_error: "Date of birth is required"
   }),
-  userRoleId: z.number({
+  clinicRoleId: z.number({
     coerce: true,
   }).int().positive()
   
 });
 
 interface AddPatientModalProps {
-    orgUid: string;
-    onAddPatient?: () => void;
+  clinicUid: string;
+  onAddPatient?: () => void;
+  roleName?: string;
 }
-export default function AddPatientModal({orgUid, onAddPatient}:AddPatientModalProps) {
+export default function AddPatientModal({clinicUid, onAddPatient, roleName}:AddPatientModalProps) {
+
   const closeBtnRef = React.useRef<HTMLInputElement>(null);
-  const {data: orgRoles} = useOrganizationRoles(orgUid);
+  const {data: clinicRoles} = useClinicRoles({clinicUid, roleName});
   const form = useForm<z.infer<typeof addUserSchema>>({
     resolver: zodResolver(addUserSchema),
   });
 
   const action = async () => {
     form.handleSubmit(async (values) => {
-      toast.promise(createUserAction({...values, orgUid}), {
+      toast.promise(promiseWrapper(createUserAction)({...values, clinicUid}), {
         loading: "Adding patient...",
         success: res => {
-          if(res.success){
-            onAddPatient?.();
-            closeBtnRef.current?.click();
-          }
+          onAddPatient?.();
+          closeBtnRef.current?.click();
           return res.message
         },
-        error: "Failed to add patient"
+        error: err => err
       })
       
     })();
@@ -100,7 +101,7 @@ export default function AddPatientModal({orgUid, onAddPatient}:AddPatientModalPr
       <CustomModalContent 
         className="sm:max-w-[625px]"
         label="Add Patient" 
-        description="Add a new patient to the organization"
+        description="Add a new patient to the clinic."
       >
         <Form {...form}>
           <form 
@@ -183,7 +184,7 @@ export default function AddPatientModal({orgUid, onAddPatient}:AddPatientModalPr
                   <FormItem
                     className="grow"
                   >
-                    <FormLabel>Mobile Number (optional)</FormLabel>
+                    <FormLabel>Mobile Number</FormLabel>
                     <Input
                       id="mobile"
                       inputMode="tel"
@@ -237,7 +238,7 @@ export default function AddPatientModal({orgUid, onAddPatient}:AddPatientModalPr
             />
             <FormField
               control={form.control}
-              name="userRoleId"
+              name="clinicRoleId"
               render={({ field }) => (
                 <FormItem
                   className="grow"
@@ -251,10 +252,10 @@ export default function AddPatientModal({orgUid, onAddPatient}:AddPatientModalPr
                     </FormControl>
                     <SelectContent>
                       <Each
-                        of={orgRoles ?? []}
+                        of={clinicRoles ?? []}
                         render={(role) => (
-                          <SelectItem key={role.id} value={role.id.toString()}>{role.name}</SelectItem>
-                        ) }
+                          <SelectItem key={role.id} className="capitalize" value={role.id.toString()}>{role.name}</SelectItem>
+                        )}
                       />
                     </SelectContent>
                   </Select>

@@ -1,3 +1,5 @@
+"use client"
+
 import { Button } from "@components/ui/button"
 import {
   Sheet,
@@ -7,37 +9,38 @@ import {
   SheetFooter,
   SheetHeader,
   SheetTitle,
-  SheetTrigger,
 } from "@components/ui/sheet"
 import { DialogProps } from "@radix-ui/react-dialog"
 import Suspend from "./Suspend";
 import EMRPreview from "./EMRPreview";
-interface EMRPreviewSheetProps extends DialogProps {
-  children?: React.ReactNode;
-  record: {
-    id: string;
-    subject: string;
+import { useSearchParams } from "next/navigation";
+import { useMemo } from "react";
+
+interface EMRPreviewSheetProps extends DialogProps { }
+export default function EMRPreviewSheet({ }: EMRPreviewSheetProps) {
+
+  const searchParams = useSearchParams()
+  const open = useMemo(() => searchParams.has("emr"), [searchParams])
+
+  const userId = searchParams.get("emr") ? searchParams.get("emr")! : ""
+  
+  const handleClose = (state: boolean) => {
+    const searchParams = new URLSearchParams(window.location.search)
+    searchParams.delete("emr")
+    window.history.pushState({}, "", `${window.location.pathname}?${searchParams.toString()}`)
   }
-}
-export default function EMRPreviewSheet({ children, record, ...res }: EMRPreviewSheetProps) {
-  // preloadUserAction(record.id);
-  // preloadUserAllergiesAction(record.id);
-  // preloadUserVaccinationsAction(record.id);
-  // preloadUserDisabilitiesAction(record.id);
-  // preloadUserIllnessesAction(record.id);
 
   return (
-    <Sheet {...res}>
-      <SheetTrigger asChild>{children}</SheetTrigger>
+    <Sheet open={open} onOpenChange={handleClose}>
       <SheetContent side="right" className="min-w-[calc(100dvw-30%)]">
         <SheetHeader>
-          <SheetTitle>{`${record.subject}'s EMR Preview`}</SheetTitle>
+          <SheetTitle>{`Electronic Medical Record (EMR) Preview`}</SheetTitle>
           <SheetDescription>
             Patient Record Summary
           </SheetDescription>
         </SheetHeader>
         <Suspend>
-          <EMRPreview patientId={record.id} />
+          {!!userId && <EMRPreview patientId={userId} />}
         </Suspend>
         <SheetFooter>
           <SheetClose asChild>

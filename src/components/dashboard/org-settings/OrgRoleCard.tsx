@@ -1,22 +1,21 @@
 "use client";
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@components/ui/card"
-import OrgRoleAppointmentTabs from "./OrgRoleAppointmentTabs"
 import { Separator } from "@components/ui/separator"
-// import { deleteOrganizationRoleAction, GetOrganizationRoles } from "@actions/organizations/organization-role.action"
 import { deleteClinicRoleAction, GetClinicRoles } from "@/actions/clinics/clinic-role.action"
 import OrgRoleInitialPermissions from "./OrgRoleInitialPermissions";
 import OrgRoleRequirements from "./OrgRoleRequirements";
 import { toast } from "sonner";
 import ActionButton from "@components/ActionButton";
 import { Trash } from "lucide-react";
+import { GetOrganizationRoles } from "@/actions/organizations/organization-role.action";
 
 interface OrgRoleCardProps {
-    role: NonNullable<GetClinicRoles>[number]
+    role: NonNullable<GetOrganizationRoles>[number]
     onDeleteRole?: () => void
   }
 export const OrgRoleCard = ({role, onDeleteRole}:OrgRoleCardProps) => {
-  const assignedOrgTabIds = role.ClinicRoleAppointmentTabs.map((item) => item.ClinicAppointmentTab.id)
+  const activeRoleRequirements = role.UserDefaultOrganizationRoles.flatMap((item) => item.OrganizationRole.requirements)
   const handleDelete = async () => {
     toast.promise(deleteClinicRoleAction(role.id), {
       loading: "Deleting role...",
@@ -44,25 +43,16 @@ export const OrgRoleCard = ({role, onDeleteRole}:OrgRoleCardProps) => {
           </div>
         </CardTitle>
         <CardDescription>
-          {/* {role.description ?? "No description provided."} */}
+          {role.description ?? "No description provided."}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-5">
-        
         <OrgRoleRequirements 
           orgRoleId={role.id}
-          currentRequirements={[]}
+          currentRequirements={activeRoleRequirements}
         />
         <Separator/>
-        <OrgRoleAppointmentTabs 
-          orgRoleTabId={role.id}
-          currentOrgTabIds={assignedOrgTabIds}
-        />
-        <Separator/>
-        <OrgRoleInitialPermissions
-          orgRoleId={role.id}
-          currentPermissionIds={assignedOrgTabIds}
-        />
+        <OrgRoleInitialPermissions orgRoleId={role.id} />
       </CardContent>
       <CardFooter>
       </CardFooter>

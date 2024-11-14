@@ -30,7 +30,7 @@ import { TooltipProvider } from "@components/ui/tooltip"
 import { AppointmentStatusNav, AppointmentStatusNavProps } from "./AppointmentStatusNav"
 import { useParams, useSearchParams } from "next/navigation"
 import Switcher from "@components/dashboard/Switcher"
-import { useOrganizationRoles } from "@/hooks/useOrganizationRole"
+import { useClinicRoles } from "@/hooks/useClinicRole"
 import { useUser } from "@auth0/nextjs-auth0/client"
 import { useAtom } from "jotai"
 import { userDefaultOrganizationRoleAtom } from "@state/user-role"
@@ -115,22 +115,21 @@ export default function AppointmentPanel({
   const [isCollapsed, setIsCollapsed] = React.useState(defaultCollapsed)
   const searchParams = useSearchParams();
   const [userDefaultOrgRole, setUserDefaultOrgRole] = useAtom(userDefaultOrganizationRoleAtom)
-  const params = useParams();
+  const {clinicUid} = useParams<{clinicUid: string}>();
   const user = useUser();
-  const userId = user?.user?.sub;
+  const userId = user?.user?.sub ?? undefined;
   const aptStatus = searchParams.get("_aptStatus");
   const sort = searchParams.get("_sort")  ?? "request";
   const routedAptStatus = searchParams.get("_routedAptStatus");
-  const organization = String(params?.orgUid);
-  const activeRoleId = userDefaultOrgRole[organization]?.roleId ?? 0;
-  const {data: orgRoles} = useOrganizationRoles(organization, {userId})
+  const activeRoleId = userDefaultOrgRole[clinicUid]?.roleId ?? 0;
+  const {data: orgRoles} = useClinicRoles({userId, clinicUid})
   
   const roles = React.useMemo(() => (orgRoles ?? [])?.map((role) => {
     return {
       label: role.name,
       value: role.id.toString(),
       icon: UserIcon,
-      isDefault: role.UserDefaultOrganizationRoles.some((r) => r.User.userId === userId),
+      isDefault: role.UserDefaultClinicRoles.some((r) => r.User.userId === userId),
     }
   }), [orgRoles, userId])
 
@@ -151,19 +150,19 @@ export default function AppointmentPanel({
   const changeRole = React.useCallback((roleId: string) => {
     const role = (orgRoles ?? []).find((role) => role.id === Number(roleId))
     setUserDefaultOrgRole({
-      [organization]: {
+      [clinicUid]: {
         roleId: role?.id,
         roleName: role?.name
       }})
-  }, [orgRoles, organization, setUserDefaultOrgRole])
+  }, [orgRoles, clinicUid, setUserDefaultOrgRole])
   
   React.useEffect(() => {
-    const defaultRole = orgRoles?.flatMap(orgRole => orgRole.UserDefaultOrganizationRoles).find((r) => r.User.userId === userId)
+    const defaultRole = orgRoles?.flatMap(orgRole => orgRole.UserDefaultClinicRoles).find((r) => r.User.userId === userId)
     if(defaultRole) {
       setUserDefaultOrgRole({
-        [defaultRole.Organization.orgUid]: {
-          roleId: defaultRole?.OrganizationRole.id,
-          roleName: defaultRole?.OrganizationRole.name,
+        [defaultRole.Clinic.clinicUid]: {
+          roleId: defaultRole?.ClinicMemberRole.id,
+          roleName: defaultRole?.ClinicMemberRole.name,
         }
       })
     }
@@ -270,7 +269,7 @@ export default function AppointmentPanel({
               </div>
             </div>
             <Separator />
-            <AppointmentListWrapper clinicUid={organization}/>
+            <AppointmentListWrapper clinicUid={clinicUid}/>
           </Tabs>
         </ResizablePanel>
         <ResizableHandle withHandle />

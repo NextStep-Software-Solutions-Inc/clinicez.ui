@@ -9,19 +9,21 @@ import { useParams } from "next/navigation";
 import { useMemo } from "react";
 import EmployeeRecordForm from "../../app/(activation)/organizations/[orgUid]/join/EmployeeRecordForm";
 import StudentRecordForm from "../../app/(activation)/organizations/[orgUid]/join/StudentRecordForm";
-import MemberRoles from "./MemberRoles";
-import { MemberPermissions } from "./MemberPermissions";
+import MemberRoles from "./OrgMemberRoles";
+import { MemberPermissions } from "./OrgMemberPermissions";
 import MemberActivities from "./MemberActivities";
 import AppointmentWhitelistFilters from "./AppointmentWhitelistFilter";
 
 
-interface MemberTabSectionProps {
+interface OrgMemberTabSectionProps {
     userId: string;
     orgUid: string;
 }
-export default function MemberTabSection({orgUid, userId}:MemberTabSectionProps) {
+export default function OrgMemberTabSection({orgUid, userId}:OrgMemberTabSectionProps) {
+  
   const params = useParams<{orgUid: string}>();
-  const {data: myOrgRoles} = useOrganizationRoles(String(params?.orgUid), {
+  const {data: myOrgRoles} = useOrganizationRoles({
+    orgUid: params.orgUid,
     userId: userId
   })
 
@@ -34,16 +36,14 @@ export default function MemberTabSection({orgUid, userId}:MemberTabSectionProps)
         <TabsTrigger value="permissions">Permissions</TabsTrigger>
         <Each
           of={orgRequirements}
+          fallback={""}
           render={(value) => {
             const name = value.split("_").map((word) => word[0].toUpperCase() + word.slice(1)).join(" ")
             return (
-              (
-                <TabsTrigger key={value} value={value}>{name}</TabsTrigger>
-              )
+              <TabsTrigger key={value} value={value}>{name}</TabsTrigger>
             )
           }}
         />
-        <TabsTrigger value="appointment-whitelist-filter">Appointment Whitelist Filter</TabsTrigger>
         <TabsTrigger value="activities">Activities</TabsTrigger>
       </TabsList>
       <Each
@@ -87,9 +87,6 @@ export default function MemberTabSection({orgUid, userId}:MemberTabSectionProps)
       </TabsContent>
       <TabsContent value="permissions">
         <MemberPermissions userId={userId} orgUid={orgUid} />
-      </TabsContent>
-      <TabsContent value="appointment-whitelist-filter">
-        <AppointmentWhitelistFilters/>
       </TabsContent>
       <TabsContent value="activities">
         <MemberActivities/>

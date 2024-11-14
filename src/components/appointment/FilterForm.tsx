@@ -73,21 +73,19 @@ interface FilterFormProps {
 }
 
 export default function FilterForm({onContinue}: FilterFormProps) {
-  const params = useParams()
+  const {clinicUid} = useParams<{clinicUid: string}>()
   const {user} = useUser()
   const [bookAppointmentForm, setBookAppointmentForm] = useAtom(bookAppointmentAtom)
-  const organization = String(params?.orgUid)
-  const {data: appointmentTypes} = useOrgAppointmentTypes(organization)
-  const {data: appointmentModes } = useOrgAppointmentModes(organization);
-  const {data: serviceCategories} = useClinicServiceCategories(organization)
-  const {data: users } = useUsers({
-    orgUid: organization,
-  })
+  const {data: appointmentTypes} = useOrgAppointmentTypes(clinicUid)
+  const {data: appointmentModes } = useOrgAppointmentModes(clinicUid);
+  const {data: serviceCategories} = useClinicServiceCategories(clinicUid)
+  const {data: users } = useUsers()
   const {data: myOrgPermissions, isLoading: loadingPermissions} = usePermissions({
     userId: user?.sub ?? undefined,
-    type: "ORGANIZATION"
+    type: "CLINIC"
   })
 
+  
   const {data: hps} = useHPs()
   const groupedHps = useMemo(() => {
     // array of array of hps

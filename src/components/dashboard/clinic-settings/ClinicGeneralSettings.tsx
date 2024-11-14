@@ -9,57 +9,62 @@ import { Checkbox } from "@components/ui/checkbox";
 import { Textarea } from "@components/ui/textarea";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@components/ui/card";
 import { Separator } from "@components/ui/separator";
-import { useOrganization } from "@/hooks/useOrganization";
+import { useClinic } from "@/hooks/useClinic";
 import { useParams } from "next/navigation";
-import { updateOrganizationAction } from "@actions/organizations/organization.action";
+import { updateClinicAction } from "@actions/clinics/clinic.action";
 import { toast } from "sonner";
 import PageLoading from "@components/PageLoading";
 import { Badge } from "@components/ui/badge";
-import dayjs from "dayjs";
-import relativeTime from "dayjs/plugin/relativeTime";
-dayjs.extend(relativeTime);
+import dayjs from "@lib/day-utils";
 
-type GeneralSettingsForm = z.infer<typeof generalSettingsForm>
+type ClinicGeneralSettingsForm = z.infer<typeof generalSettingsForm>
 const generalSettingsForm = z.object({
   orgUid: z.string({
-    required_error: "Organization unique ID is required"
+    required_error: "Clinic unique ID is required"
   }).trim().readonly(),
   name: z.string({
-    required_error: "Organization name is required"
+    required_error: "Clinic name is required"
   }).trim().readonly(),
   description: z.string().trim().optional(),
   logo: z.string().trim().url(),
   customUrl: z.string().trim().optional(),
   email: z.string({
-    required_error: "Organization email is required"
+    required_error: "Clinic email is required"
   }).email(),
 
   isPublic: z.boolean().default(true),
   sendEmailNotification: z.boolean().default(true),
-  emailToOrgOnly: z.boolean().default(true),
+  emailToClinicOnly: z.boolean().default(true),
+  enableAppointment: z.boolean().default(true),
+  enableConsultation: z.boolean().default(true),
 })
 
-export default function GeneralSettings() {
-  const params = useParams<{orgUid: string}>()
-  const {data: organization, isLoading, mutate} = useOrganization(String(params?.orgUid))
-  const form = useForm<GeneralSettingsForm>({
+export default function ClinicGeneralSettings() {
+
+  const {clinicUid} = useParams<{clinicUid: string}>()
+
+  const {data: clinic, isLoading, mutate} = useClinic(clinicUid)
+    
+  const form = useForm<ClinicGeneralSettingsForm>({
     resolver: zodResolver(generalSettingsForm),
     values: {
-      orgUid: organization?.orgUid ?? "",
-      name: organization?.name ?? "",
-      description: organization?.description ?? "",
-      logo: organization?.logo ?? "",
-      customUrl: organization?.customUrl ?? "",
-      email: organization?.email ?? "",
-      isPublic: organization?.OrganizationSetting?.isPublic ?? false,
-      sendEmailNotification: organization?.OrganizationSetting?.sendEmailNotification ?? false,
-      emailToOrgOnly: organization?.OrganizationSetting?.emailToOrgOnly ?? false,
+      orgUid: clinic?.clinicUid ?? "",
+      name: clinic?.name ?? "",
+      description: clinic?.description ?? "",
+      logo: clinic?.logo ?? "",
+      customUrl: clinic?.customUrl ?? "",
+      email: clinic?.email ?? "",
+      isPublic: clinic?.ClinicSetting?.isPublic ?? false,
+      sendEmailNotification: clinic?.ClinicSetting?.sendEmailNotification ?? false,
+      emailToClinicOnly: clinic?.ClinicSetting?.emailToClinicOnly ?? false,
+      enableAppointment: clinic?.ClinicSetting?.enableAppointment ?? false,
+      enableConsultation: clinic?.ClinicSetting?.enableConsultation ?? false,
     }
   })
 
   const action = async () => {
     form.handleSubmit(async (data) => {
-      toast.promise(updateOrganizationAction(String(params?.orgUid), data), {
+      toast.promise(updateClinicAction(clinicUid, data), {
         loading: "Saving changes...",
         success: (res) => {
           if(res.status){
@@ -80,7 +85,7 @@ export default function GeneralSettings() {
       <CardHeader>
         <CardTitle>General</CardTitle>
         <CardDescription>
-          General settings for your organization.
+          General settings for your clinic.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -97,7 +102,7 @@ export default function GeneralSettings() {
                       <Input disabled readOnly {...field} />
                     </FormControl>
                     <FormDescription>
-                      The unique identifier for your organization.
+                      The unique identifier for your clinic.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -106,7 +111,7 @@ export default function GeneralSettings() {
               <FormField
                 control={form.control}
                 rules={{
-                  required: "Organization name is required"
+                  required: "Clinic name is required"
                 }}
                 name="name"
                 render={({ field }) => (
@@ -116,7 +121,7 @@ export default function GeneralSettings() {
                       <Input {...field} />
                     </FormControl>
                     <FormDescription>
-                      The unique identifier for your organization.
+                      The unique identifier for your clinic.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -136,10 +141,10 @@ export default function GeneralSettings() {
                   </FormControl>
                   <div className="space-y-1 leading-none">
                     <FormLabel>
-                    Make organization public
+                    Make clinic public
                     </FormLabel>
                     <FormDescription>
-                    Allow users to find and join your organization.
+                    Allow users to find and join your clinic.
                     </FormDescription>
                   </div>
                 </FormItem>
@@ -150,12 +155,12 @@ export default function GeneralSettings() {
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Organization Description</FormLabel>
+                  <FormLabel>Clinic Description</FormLabel>
                   <FormControl>
                     <Textarea {...field} />
                   </FormControl>
                   <FormDescription>
-                A brief description of your organization.
+                  A brief description of your clinic.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -167,7 +172,7 @@ export default function GeneralSettings() {
                 name="logo"
                 render={({ field }) => (
                   <FormItem className="grow">
-                    <FormLabel>Organization Logo URL</FormLabel>
+                    <FormLabel>Clinic Logo URL</FormLabel>
                     <FormControl>
                       <Input {...field} />
                     </FormControl>
@@ -184,7 +189,7 @@ export default function GeneralSettings() {
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Organization Email</FormLabel>
+                  <FormLabel>Clinic Email</FormLabel>
                   <FormControl>
                     <Input type="email" {...field} />
                   </FormControl>
@@ -196,7 +201,7 @@ export default function GeneralSettings() {
               )}
             />
             <div>
-              <h5 className="text-lg font-semibold">Organization Preferences</h5>
+              <h5 className="text-lg font-semibold">Clinic Preferences</h5>
               <Separator/>
             </div>
             <FormField
@@ -223,7 +228,7 @@ export default function GeneralSettings() {
             />
             <FormField
               control={form.control}
-              name="emailToOrgOnly"
+              name="emailToClinicOnly"
               render={({ field }) => (
                 <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
                   <FormControl>
@@ -234,10 +239,10 @@ export default function GeneralSettings() {
                   </FormControl>
                   <div className="space-y-1 leading-none">
                     <FormLabel>
-                    Send email notifications to organization only.
+                    Send email notifications to clinic only.
                     </FormLabel>
                     <FormDescription>
-                    Only send email notifications to organization official email address.
+                    Only send email notifications to clinic official email address.
                     </FormDescription>
                   </div>
                 </FormItem>
@@ -247,7 +252,7 @@ export default function GeneralSettings() {
               <h5 className="text-lg font-semibold">Feature Flags</h5>
               <Separator/>
             </div>
-            {/* <FormField
+            <FormField
               control={form.control}
               name="enableAppointment"
               render={({ field }) => (
@@ -263,13 +268,13 @@ export default function GeneralSettings() {
                     Enable Appointments management feature
                     </FormLabel>
                     <FormDescription>
-                    Enable or disable the appointment management feature for your organization.
+                    Enable or disable the appointment management feature for your clinic.
                     </FormDescription>
                   </div>
                 </FormItem>
               )}
-            /> */}
-            {/* <FormField
+            />
+            <FormField
               control={form.control}
               name="enableConsultation"
               render={({ field }) => (
@@ -285,12 +290,12 @@ export default function GeneralSettings() {
                     Enable Consultation management feature
                     </FormLabel>
                     <FormDescription>
-                      Enable or disable the consultation management feature for your organization.
+                      Enable or disable the consultation management feature for your clinic.
                     </FormDescription>
                   </div>
                 </FormItem>
               )}
-            /> */}
+            />
             {
               form.formState.isDirty &&
               <ActionButton type="submit">Save Changes</ActionButton>
@@ -300,10 +305,10 @@ export default function GeneralSettings() {
       </CardContent>
       <CardFooter>
         {
-          organization?.updatedAt && 
+          clinic?.updatedAt && 
           (
             <Badge variant="secondary">
-              Updated last {dayjs(organization.updatedAt).fromNow()}
+              Updated last {dayjs(clinic.updatedAt).fromNow()}
             </Badge>
           )
         }

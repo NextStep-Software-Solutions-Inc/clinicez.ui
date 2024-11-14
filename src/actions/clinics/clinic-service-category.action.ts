@@ -4,7 +4,7 @@ import { getCachedSession } from "@actions/session.action";
 import prisma from "@lib/prisma";
 
 export type GetClinicServiceCategories = Awaited<ReturnType<typeof getClinicServiceCategoriesAction>>
-export const getClinicServiceCategoriesAction = async (clinicUid?: string) => {
+export const getClinicServiceCategoriesAction = async (clinicUid: string) => {
   const clinicServiceCategories = await prisma.serviceCategory.findMany({
     orderBy: { name: "asc" },
     where: {

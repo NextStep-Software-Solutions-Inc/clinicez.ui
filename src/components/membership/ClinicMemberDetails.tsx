@@ -13,17 +13,17 @@ import { useClinicAppointments } from "@hooks/useAppointment";
 
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
-import MemberTabSection from "./MemberTabSection";
+import ClinicMemberTabSection from "./ClinicMemberTabSection";
 dayjs.extend(relativeTime);
 
-interface MemberDetailsProps {
+interface ClinicMemberDetailsProps {
   userId: string;
   clinicUid: string;
 }
-export default function MemberDetails({userId, clinicUid}:MemberDetailsProps) {
+export default function ClinicMemberDetails({userId, clinicUid}:ClinicMemberDetailsProps) {
   const {data: user, isLoading} = useDBUser({ userId });
   
-  const {data: roles} = useClinicRoles(clinicUid,  {userId});
+  const {data: roles} = useClinicRoles({userId, clinicUid});
   const {data: appointments} = useClinicAppointments({clinicUid, userId });
   
   if(isLoading) return <div>Loading user...</div>
@@ -54,7 +54,7 @@ export default function MemberDetails({userId, clinicUid}:MemberDetailsProps) {
           </div>
         </CardContent>
       </Card>
-      <MemberTabSection orgUid={clinicUid} userId={userId}/>
+      <ClinicMemberTabSection clinicUid={clinicUid} userId={userId}/>
     </>
   );
 }

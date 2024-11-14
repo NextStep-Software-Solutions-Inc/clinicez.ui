@@ -10,6 +10,7 @@ export const useClinics = (userId?: string | null) => {
 }
 
 export const useClinic = (key: number | string) => {
+  
   const fetcher = (args:string) => self.get<GetClinic>(args)
   return useSWR(`/api/clinics/${key}`, fetcher)
 }

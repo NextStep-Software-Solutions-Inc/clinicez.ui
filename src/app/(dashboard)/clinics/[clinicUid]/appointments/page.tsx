@@ -19,16 +19,16 @@ export const metadata: Metadata = {
 }
 
 async function AppointmentsPage({ searchParams, params }: AppRouterPageRouteOpts ) {
-  const organization = String(params?.orgUid)
+  const clinicUid = String(params?.clinicUid)
   // if(!appointmentStatus || !role ) return redirect(`/${organization}/appointments?_type=pending&_role=admin`)
 
   const layout = cookies().get("react-resizable-panels:layout")
   const collapsed = cookies().get("react-resizable-panels:collapsed")
 
   const [appointmentCounts, routedAptCounts, tabs] = await Promise.all([
-    getAppointmentCountsAction(organization),
-    getRoutedAppointmentCountsAction(organization),
-    getClinicAppointmentTabsAction(organization)
+    getAppointmentCountsAction(clinicUid),
+    getRoutedAppointmentCountsAction(clinicUid),
+    getClinicAppointmentTabsAction(clinicUid)
   ])
   
   const defaultLayout = layout ? JSON.parse(layout.value) : undefined

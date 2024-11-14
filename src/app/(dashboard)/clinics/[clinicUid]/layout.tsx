@@ -25,7 +25,7 @@ import { Suspense } from "react";
 import UserAvatarWrapper from "@components/UserAvatarWrapper";
 import Suspend from "@components/Suspend";
 import { getCachedSession } from "@actions/session.action";
-import { ClinicSwitcher } from "@/components/dashboard/ClinicSwitcher";
+import { ClinicSwitcher } from "@/components/clinic/ClinicSwitcher";
 
 interface ProcessLayoutProps {
   children: React.ReactNode;
@@ -68,23 +68,23 @@ export default async function ProcessLayout({
                   className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
                 >
                   <LifeBuoy className="h-5 w-5" />
-                  <span className="sr-only">Organization Support</span>
+                  <span className="sr-only">Clinic Support</span>
                 </Link>
               </TooltipTrigger>
-              <TooltipContent side="right">Organization Support</TooltipContent>
+              <TooltipContent side="right">Clinic Support</TooltipContent>
             </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Link
-                  href={`/clinics/${clinicUid}/members`}
+                  href={`/clinics/${clinicUid}/members/${session?.user.sub}`}
                   className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
                 >
                   <UserRound className="h-5 w-5" />
-                  <span className="sr-only">User Organization Profile</span>
+                  <span className="sr-only">My Clinic Profile</span>
                 </Link>
               </TooltipTrigger>
               <TooltipContent side="right">
-                User Organization Profile
+                My Clinic Profile
               </TooltipContent>
             </Tooltip>
             <Tooltip>
@@ -94,11 +94,11 @@ export default async function ProcessLayout({
                   className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
                 >
                   <Settings className="h-5 w-5" />
-                  <span className="sr-only">Organization Settings</span>
+                  <span className="sr-only">Clinic Settings</span>
                 </Link>
               </TooltipTrigger>
               <TooltipContent side="right">
-                Organization Settings
+              Clinic Settings
               </TooltipContent>
             </Tooltip>
           </nav>

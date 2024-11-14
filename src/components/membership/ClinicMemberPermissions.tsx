@@ -1,6 +1,6 @@
 "use client";
 
-import { setOrgMemberPermissionsAction } from "@actions/organizations/user-organization-permission.action";
+import { setClinicMemberPermissionsAction } from "@/actions/clinics/clinic-member-permission.action";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import ActionButton from "@components/ActionButton";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@components/ui/card";
@@ -19,11 +19,12 @@ const FormSchema = z.object({
     message: "You have to select at least one item.",
   }),
 })
-  interface MemberPermissionsProps {
-      userId: string;
-      orgUid: string;
-  }
-export const MemberPermissions = ({orgUid, userId}: MemberPermissionsProps) => {
+interface ClinicMemberPermissionsProps {
+  userId: string;
+  clinicUid: string;
+}
+
+export const ClinicMemberPermissions = ({clinicUid, userId}: ClinicMemberPermissionsProps) => {
   const {user} = useUser()
   const {data: myPermissions} = usePermissions({
     userId: user?.sub ?? undefined,
@@ -32,12 +33,13 @@ export const MemberPermissions = ({orgUid, userId}: MemberPermissionsProps) => {
   const updateOrgPermissions = [PERMISSIONS.ORGANIZATION["UPDATE:ORG:PERMISSIONS"].name]
   const canUpdateOrgPermissions = updateOrgPermissions.every((item) => myPermissionArray.includes(item))
 
-  const {data: permissions, mutate: mutateMemberPermissions, isLoading: loadingMemberPermissions } = usePermissions({
+  const {data: permissions, mutate: mutateClinicMemberPermissions, isLoading: loadingClinicMemberPermissions } = usePermissions({
     userId,
-    type: "ORGANIZATION",
+    type: "CLINIC",
   })
-  const {data: orgAvailablePermissions, mutate: mutateAvailablePermissions, isLoading: loadingAvailablePermissions} = usePermissions({
-    type: "ORGANIZATION",
+  
+  const {data: clinicAvailablePermissions, mutate: mutateAvailablePermissions, isLoading: loadingAvailablePermissions} = usePermissions({
+    type: "CLINIC",
   })
   
   const form = useForm<z.infer<typeof FormSchema>>({
@@ -49,15 +51,15 @@ export const MemberPermissions = ({orgUid, userId}: MemberPermissionsProps) => {
   
   const action = async () => {
     form.handleSubmit(async (data) => {
-      toast.promise(setOrgMemberPermissionsAction({
+      toast.promise(setClinicMemberPermissionsAction({
         userId,
-        orgUid,
+        clinicUid,
         permissionIds: data.permissionIds,
       }), {
         loading: "Saving changes...",
         success: res => {
           if(res.status) {
-            mutateMemberPermissions()
+            mutateClinicMemberPermissions()
             form.reset(data)
           }
           return res.message
@@ -67,12 +69,12 @@ export const MemberPermissions = ({orgUid, userId}: MemberPermissionsProps) => {
     })();
   }
 
-  if(loadingMemberPermissions || loadingAvailablePermissions) return <div>Loading...</div>
+  if(loadingClinicMemberPermissions || loadingAvailablePermissions) return <div>Loading...</div>
   return (
     <Card>
       <CardHeader>
         <CardTitle>
-              Permissions
+              Permissions <span className="text-base font-light">(clinic level)</span>
         </CardTitle>
         <CardDescription>
               Manage permissions for this member.
@@ -93,7 +95,7 @@ export const MemberPermissions = ({orgUid, userId}: MemberPermissionsProps) => {
                     </FormDescription>
                   </div>
                   <Each
-                    of={orgAvailablePermissions ?? []}
+                    of={clinicAvailablePermissions ?? []}
                     render={(permission) => {
                       return (
                         <FormField

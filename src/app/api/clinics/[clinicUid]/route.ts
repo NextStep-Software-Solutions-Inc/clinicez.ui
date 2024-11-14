@@ -10,8 +10,8 @@ export const GET = withJwtAuth(async (req: NextRequest, { params }: {
       clinicUid: string;
     }
   }) => {
-    
   const clinicUid = params.clinicUid;
+  
   const organization = await getClinicAction(clinicUid)
   return NextResponse.json(organization, {status: 200});
 });

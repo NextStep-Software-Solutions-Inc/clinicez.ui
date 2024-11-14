@@ -2,7 +2,7 @@ import Suspend from "@components/Suspend";
 import { Separator } from "@components/ui/separator";
 import { Metadata } from "next";
 import { AppRouterPageRouteOpts } from "@auth0/nextjs-auth0";
-import OrgSettings from "@components/dashboard/OrgSettings";
+import OrgSettings from "@/components/organization/OrgSettings";
 
 export const metadata: Metadata = {
   title: "Organization Settings",

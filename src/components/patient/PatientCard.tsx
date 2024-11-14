@@ -1,13 +1,12 @@
-import EMRPreviewSheet from "@components/EMRPreviewSheet";
 import { Avatar, AvatarFallback } from "@components/ui/avatar";
 import { Badge } from "@components/ui/badge";
-import { Button } from "@components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@components/ui/card";
 import ConditionalRender from "@components/utils/ConditionalRender";
 import { differenceInCalendarYears } from "date-fns";
-import { PatientsType } from "./PatientList";
 import Image from "next/image";
 import { GetClinicPatients } from "@/actions/clinics/clinic-patient.action";
+import dayjs from "@lib/day-utils";
+import { ViewEMRButton } from "./ViewEMRButton";
 
 interface PatientCardProps {
     patient: NonNullable<GetClinicPatients["data"]>[number] & {
@@ -15,23 +14,23 @@ interface PatientCardProps {
     }
 }
 export const PatientCard = async ({patient}: PatientCardProps) => {
-  const { Patient: {dob, gender, firstName, middleName, lastName, suffix, updatedAt, bloodType, picture = "https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png", nickname, userId}, immunocompromised} = patient
+  
+  const { 
+    Patient: {
+      dob, gender, firstName, middleName, lastName, suffix, updatedAt, bloodType, nickname, userId, picture = "https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png"
+    },
+    immunocompromised
+  } = patient
 
   const nameInitials = `${firstName?.charAt(0) ?? ""}${lastName?.charAt(0) ?? ""}`
   const name = `${lastName || "-"}, ${firstName || "-"} ${middleName ?? ""} ${suffix ?? ""}`
+
   return (
     <Card className="shadow-2xl select-none flex-grow lg:flex-grow-0 basis-[35rem]">
       <CardHeader>
         <CardTitle className="line-clamp-1">{name}</CardTitle>
         <CardDescription>
-        Last update: {new Date(updatedAt).toLocaleDateString("en-PH", {
-            month:"short",
-            day:"numeric",
-            year:"numeric",
-            hour:"numeric",
-            minute:"numeric",
-            timeZone: "Asia/Manila"
-          })}
+          Last update: {dayjs(updatedAt).format("lll")}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -48,7 +47,6 @@ export const PatientCard = async ({patient}: PatientCardProps) => {
             <div className="">
               <p className="text-sm text-muted-foreground italic font-medium truncate overflow-hidden capitalize">{gender?.toLowerCase()} / {dob && `${differenceInCalendarYears(new Date(), dob)} years old`}</p>
               <p className="text-sm text-muted-foreground italic font-medium capitalize">{bloodType?.split("_").join(" ").toLowerCase()}</p>
-              {/* <Badge variant="default" className="capitalize">{patient.OrganizationMembers[0].status.toLowerCase()}</Badge> */}
             </div>
             <div className="flex gap-2 flex-wrap">
               <ConditionalRender condition={immunocompromised ?? false}>
@@ -56,9 +54,7 @@ export const PatientCard = async ({patient}: PatientCardProps) => {
               </ConditionalRender>
             </div>
             <div>
-              <EMRPreviewSheet record={{ id: userId, subject: name }}>
-                <Button size="sm" variant="link">Preview EMR</Button>
-              </EMRPreviewSheet>
+              <ViewEMRButton userId={userId}/>
             </div>
           </div>
         </div>
@@ -68,3 +64,4 @@ export const PatientCard = async ({patient}: PatientCardProps) => {
     </Card>
   );
 }
+

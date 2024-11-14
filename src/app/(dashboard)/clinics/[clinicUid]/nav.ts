@@ -31,12 +31,6 @@ export const navList: {
     permissions: ["clinic:consultations"]
   },
   {
-    name: "Consultations",
-    href: `/consultations`,
-    icon: "stethoscope",
-    permissions: ["clinic:consultations"]
-  },
-  {
     name: "Prescriptions Builder",
     href: `/prescription-builder`,
     icon: "pill",

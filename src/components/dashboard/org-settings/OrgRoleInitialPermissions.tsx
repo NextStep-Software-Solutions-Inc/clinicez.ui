@@ -25,9 +25,8 @@ const FormSchema = z.object({
   
 interface OrgRoleInitialPermissionsProps {
   orgRoleId: number
-  currentPermissionIds: number[]
 }
-export default function OrgRoleInitialPermissions({orgRoleId, currentPermissionIds}:OrgRoleInitialPermissionsProps ) {
+export default function OrgRoleInitialPermissions({orgRoleId}:OrgRoleInitialPermissionsProps ) {
   const params = useParams<{orgUid: string}>()
   const {data: roleInitialPermissions ,isLoading, mutate} = useOrgRoleInitialPermissions({
     orgUid: String(params?.orgUid),

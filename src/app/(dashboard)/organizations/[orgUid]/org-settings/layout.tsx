@@ -5,16 +5,17 @@ import { redirect } from "next/navigation";
 interface OrgSettingLayoutProps {
     children: React.ReactNode;
     params: {
-        organization: string;
+        orgUid: string;
     }
 }
-export default async function OrgSettingLayout({children, params: {organization}}:OrgSettingLayoutProps) {
+export default async function OrgSettingLayout({children, params: {orgUid}}:OrgSettingLayoutProps) {
   const session = await getCachedSession();
   const myRoles = await getOrganizationRolesAction({
     userId: session?.user.sub,
-    orgUid: organization,
+    orgUid,
     status: "ACTIVE"
   })
+  
   if(!myRoles.some(role => role.name.toLocaleLowerCase() === "admin")) redirect("/unauthorized");
   return (
     <>{children}</>

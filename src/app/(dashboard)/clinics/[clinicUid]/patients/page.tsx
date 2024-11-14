@@ -37,7 +37,8 @@ async function PatientsPage({params, searchParams}: AppRouterPageRouteOpts) {
           </p>
         </div>
         <AddPatientModal
-          orgUid={clinicUid}
+          clinicUid={clinicUid}
+          roleName="patient"
         />
       </div>
       <Separator/>

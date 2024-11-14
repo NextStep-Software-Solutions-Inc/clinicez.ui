@@ -34,7 +34,7 @@ function EMRPreview({patientId}: EMRPreviewProps) {
   const { data: vitalSigns } = useUserVitalSigns(patientId)
   
   if(isLoading) return <PageLoading label="Loading Records ..."/>
-  if(!patient?.data) notFound()
+  if(!patient?.data) return <div className="text-muted-foreground">Patient record cannot be found.</div>
 
   const name = `${patient?.data?.lastName || "-"}, ${patient?.data?.firstName || "-"} ${patient?.data?.middleName ?? ""} ${patient?.data?.suffix ?? ""}`
   return (

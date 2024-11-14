@@ -13,10 +13,21 @@ export async function getPermissionsAction({userId, type}: {userId?: string, typ
       ...type ? { type } : {},
       ...userId ? {
         OR: [
-          {
+          { 
             OrgMemberPermissions: {
               some: {
                 OrganizationMember: {
+                  User: {
+                    userId
+                  }
+                }
+              }
+            }
+          },
+          {
+            ClinicMemberPermissions: {
+              some: {
+                ClinicMember: {
                   User: {
                     userId
                   }
@@ -34,7 +45,7 @@ export async function getPermissionsAction({userId, type}: {userId?: string, typ
             }
           }
         ]
-      } : {} ,
+      } : {},
     }, 
     select: {
       id: true,

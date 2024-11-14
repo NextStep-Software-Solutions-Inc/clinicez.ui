@@ -1,7 +1,7 @@
 import { DetailedHTMLProps, HTMLAttributes, Suspense } from "react";
 
 import AnimatedLogo from "@components/AnimatedLogo";
-import { OrganizationSwitcher } from "@components/dashboard/OrganizationSwitcher";
+import { OrganizationSwitcher } from "@/components/organization/OrganizationSwitcher";
 import UserAvatarWrapper from "@components/UserAvatarWrapper";
 
 

@@ -4,10 +4,13 @@ import utc from "dayjs/plugin/utc"
 import timezone from "dayjs/plugin/timezone"
 import localizedFormat from "dayjs/plugin/localizedFormat"
 import isBetween from "dayjs/plugin/isBetween"
+import relativeTime from "dayjs/plugin/relativeTime";
+
 dayjs.extend(utc)
 dayjs.extend(timezone)
 dayjs.extend(localizedFormat)
 dayjs.extend(isBetween)
+dayjs.extend(relativeTime)
 
 export default dayjs;
 

@@ -1,10 +1,7 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-
 import { Badge } from "@components/ui/badge"
-
-import { $Enums } from "@prisma/client"
 
 import Link from "next/link"
 import { DropdownMenuProvider } from "@components/DropdownMenuProvider"
@@ -14,11 +11,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@components/ui/avatar"
 import ConditionalRender from "@components/utils/ConditionalRender"
 import { Button } from "@components/ui/button"
 import { GetUserOrganizations } from "@actions/users/user-organization.action"
-import dayjs from "dayjs"
-import utc from "dayjs/plugin/utc"
 import { DataTableColumnHeader } from "./data-table-column-header"
 import MembershipTableRowActions from "./MembershipTableRowActions"
-dayjs.extend(utc)
+import dayjs from "@lib/day-utils"
 
 export const statuses = Object.values({ACTIVE: "ACTIVE", INACTIVE:"INACTIVE", PENDING: "PENDING", SUSPENDED:"SUSPENDED"}).map((status) => ({
   label: status.split("").map((char, index) => (index === 0 ? char : char.toLowerCase())).join(""),
@@ -169,6 +164,9 @@ export const columns: ColumnDef<GetUserOrganizations["data"][number]>[] = [
   {
     accessorKey: "status",
     size: 1,
+    filterFn: (row, id, value) => {
+      return value.includes(row.getValue(id))
+    },
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Status" />
     ),

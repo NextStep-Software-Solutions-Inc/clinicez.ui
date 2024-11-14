@@ -5,8 +5,8 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const GET = withJwtAuth(async (req: NextRequest) => {
   const searchParams = req.nextUrl.searchParams
-  const orgUid = searchParams.get('orgUid') as string;
+  const clinicUid = searchParams.get('clinicUid') as string;
 
-  const serviceCategories = await getClinicServiceCategoriesAction(orgUid);
+  const serviceCategories = await getClinicServiceCategoriesAction(clinicUid);
   return NextResponse.json(serviceCategories, {status: 200});
 });

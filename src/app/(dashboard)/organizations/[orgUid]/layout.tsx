@@ -13,7 +13,7 @@ import {
   TooltipTrigger
 } from "@components/ui/tooltip";
 import Breadcrumb from "@components/dashboard/Breadcrumb";
-import { OrganizationSwitcher } from "@components/dashboard/OrganizationSwitcher";
+import { OrganizationSwitcher } from "@/components/organization/OrganizationSwitcher";
 import SideNav from "@components/dashboard/SideNav";
 import DrawerNav from "@components/dashboard/DrawerNav";
 import { filterNavList } from "./nav";
@@ -80,11 +80,11 @@ export default async function ProcessLayout({
                   className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
                 >
                   <UserRound className="h-5 w-5" />
-                  <span className="sr-only">User Organization Profile</span>
+                  <span className="sr-only">My Organization Profile</span>
                 </Link>
               </TooltipTrigger>
               <TooltipContent side="right">
-                User Organization Profile
+                My Organization Profile
               </TooltipContent>
             </Tooltip>
             <Tooltip>

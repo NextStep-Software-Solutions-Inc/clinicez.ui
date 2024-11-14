@@ -1,0 +1,60 @@
+"use client";
+
+import React from "react";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@components/ui/tabs"
+import Each from "@components/utils/Each";
+import ClinicGeneralSettings from "../dashboard/clinic-settings/ClinicGeneralSettings";
+import ClinicRolesSetting from "../dashboard/clinic-settings/ClinicRolesSetting";
+import ClinicPermissionsSetting from "../dashboard/clinic-settings/ClinicPermissionsSetting";
+import ClinicMembershipSettings from "../dashboard/clinic-settings/ClinicMembershipSettings";
+import AppointmentSettings from "../dashboard/clinic-settings/AppointmentSettings";
+import ConsultationSettings from "../dashboard/clinic-settings/ConsultationSettings";
+
+const tabs = ["general", "members", "roles","appointment", "consultation", "permissions"]
+export default function ClinicSettings() {
+  return (
+
+    <div className="container mx-auto space-y-5">
+      {/* <h5 className="text-lg font-bold">Organization Membership Requirements</h5> */}
+      <Tabs defaultValue={tabs[0]} className="w-full">
+        <TabsList className="flex gap-1 justify-start">
+          <Each
+            of={tabs}
+            render={(value) => {
+              const name = value.split("_").map((word) => word[0].toUpperCase() + word.slice(1)).join(" ")
+              return (
+                (
+                  <TabsTrigger key={value} value={value}>{name}</TabsTrigger>
+                )
+              )
+            }}
+          />
+        </TabsList>
+        <TabsContent value="general">
+          <ClinicGeneralSettings/>
+        </TabsContent>
+        <TabsContent value="membership">
+          <ClinicMembershipSettings/>
+        </TabsContent>
+        <TabsContent value="appointment">
+          <AppointmentSettings/>
+        </TabsContent>
+        <TabsContent value="consultation">
+          <ConsultationSettings/>
+        </TabsContent>
+        <TabsContent value="roles">
+          <ClinicRolesSetting/>
+        </TabsContent>
+        <TabsContent value="permissions">
+          <ClinicPermissionsSetting/>
+        </TabsContent>
+      </Tabs>
+    </div>
+
+  );
+}

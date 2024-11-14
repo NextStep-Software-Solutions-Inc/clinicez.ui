@@ -4,7 +4,7 @@ import "server-only";
 import prisma from "@lib/prisma";
 import { cache } from "react";
 import { getCachedSession } from "@actions/session.action";
-import { OrganizationMemberStatus } from "@/types";
+import { ClinicMemberStatus, OrganizationMemberStatus } from "@/types";
 
 type CreateClinicRolePayload = {
   clinicUid: string;
@@ -41,18 +41,21 @@ export const createClinicRoleAction = async (payload: CreateClinicRolePayload) =
 type FiltersType = {
     userId?: string;
     clinicUid?: string;
-    status?: OrganizationMemberStatus;
+    status?: ClinicMemberStatus;
+    roleName?: string;
   }
   
 export type GetClinicRoles = Awaited<ReturnType<typeof getClinicRolesAction>>
 export const getClinicRolesAction = cache(async (filter?: FiltersType) => {
-  const {userId, clinicUid, status} = filter || { status: "ACTIVE"};
+  const {userId, clinicUid, status, roleName} = filter || { status: "ACTIVE"};
+  
   const roles = await prisma.clinicMemberRole.findMany({
     orderBy: {
       name: "asc"
     },
     where: {
       isActive: true,
+      ...roleName ? { name: roleName } : {},
       AND: [
         {
           ...clinicUid ? { Clinic: { clinicUid } } : {}

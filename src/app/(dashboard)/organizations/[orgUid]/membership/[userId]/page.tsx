@@ -1,13 +1,13 @@
-import MemberDetails from "@components/membership/MemberDetails";
+import OrgMemberDetails from "@components/membership/OrgMemberDetails";
 import Suspend from "@components/Suspend";
 import { Separator } from "@components/ui/separator";
 import React from "react";
 
-interface MemberDetailsPageProps {
-    params: {
-        userId: string;
-        orgUid: string;
-    };
+interface OrgMemberDetailsPageProps {
+  params: {
+      userId: string;
+      orgUid: string;
+  };
 }
 
 export const metadata = {
@@ -15,7 +15,7 @@ export const metadata = {
   description: "View and manage member details."
 }
 
-export default function MemberDetailsPage({params}: MemberDetailsPageProps) {
+export default function OrgMemberDetailsPage({params}: OrgMemberDetailsPageProps) {
   return (
     <>
       <div className="space-y-6">
@@ -27,7 +27,7 @@ export default function MemberDetailsPage({params}: MemberDetailsPageProps) {
         </div>
         <Separator />
         <Suspend>
-          <MemberDetails userId={decodeURIComponent(params.userId)} clinicUid={String(params?.orgUid)}/>
+          <OrgMemberDetails userId={decodeURIComponent(params.userId)} orgUid={String(params?.orgUid)}/>
         </Suspend>
       </div>
     </>

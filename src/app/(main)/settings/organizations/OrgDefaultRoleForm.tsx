@@ -20,6 +20,7 @@ import { setDefaultOrgRoleAction } from "@actions/users/user-default-organizatio
 import ConditionalRender from "@components/utils/ConditionalRender";
 import { getUserOrganizationsAction } from "@actions/users/user-organization.action";
 import { useOrganizationRoles } from "@/hooks/useOrganizationRole";
+import { promiseWrapper } from "@/lib/with-error-handling";
 
 interface OrgDefaultRoleFormProps {
   org: Awaited<ReturnType<typeof getUserOrganizationsAction>>["data"][number];
@@ -47,7 +48,7 @@ export const OrgDefaultRoleForm = ({ org }: OrgDefaultRoleFormProps) => {
 
   const action = async () => {
     form.handleSubmit(async (data) => {
-      toast.promise(setDefaultOrgRoleAction({
+      toast.promise(promiseWrapper(setDefaultOrgRoleAction)({
         id: defaultRole?.id,
         userId: org.User.userId,
         orgUid: org.Organization.orgUid,
@@ -61,7 +62,7 @@ export const OrgDefaultRoleForm = ({ org }: OrgDefaultRoleFormProps) => {
           return res.message
         },
         error: "Failed to update default role"
-      })
+      });
     })();
   };
 

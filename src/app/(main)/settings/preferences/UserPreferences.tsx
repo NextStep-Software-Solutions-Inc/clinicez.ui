@@ -66,7 +66,7 @@ export default function UserPreferences({userPreference}: UserPreferenceFormProp
   
   async function action(){
     form.handleSubmit(async (data)  => {
-      toast.promise(promiseWrapper(upsertMyUserPreference, data), {
+      toast.promise(promiseWrapper(upsertMyUserPreference)(data), {
         loading: "Updating user preferences...",
         success: (res) => {
           form.reset(data)

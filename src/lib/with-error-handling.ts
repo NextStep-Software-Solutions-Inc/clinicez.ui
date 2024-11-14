@@ -1,7 +1,8 @@
+
 type CustomErrorHandler = (error: unknown) => string;
 type AsyncFunction<T, A extends any[]> = (...args: A) => Promise<{ status: boolean, message: string, data: T }>;
 type Result<T> = { status: boolean, message: string, data: T | null };
-type FinalResult<T extends (...args: any[]) => Promise<any>> = (...args: Parameters<T>) => Promise<Awaited<ReturnType<T>>>;
+type FinalResult<T extends (...args: any[]) => Promise<any>> = (...args: Parameters<T>) => Promise<Result<Awaited<ReturnType<T>>>>;
 
 // Simplified promiseWrapper function
 export const promiseWrapper = <T, A extends any[]>(originalFn: AsyncFunction<T, A>): AsyncFunction<T | null, A> => {
@@ -21,15 +22,15 @@ export const promiseWrapper = <T, A extends any[]>(originalFn: AsyncFunction<T, 
   };
 };
 
-export function withErrorHandling<T extends (...args: any[]) => Promise<any>>(fn: T,customErrorHandler?: CustomErrorHandler): FinalResult<T> {
+export function withErrorHandling<T extends (...args: any[]) => Promise<any>>(fn: T, customErrorHandler?: CustomErrorHandler): FinalResult<T> {
   return async (...args: Parameters<T>) => {
     let message = "Operation completed successfully";
     try {
       const result = await fn(...args);
       return { ...result, status: true, message };
     } catch (error) {
-      if(error instanceof Error) message = error.message;
-      if(customErrorHandler) message = customErrorHandler(error);
+      if (error instanceof Error) message = error.message;
+      if (customErrorHandler) message = customErrorHandler(error);
       return { status: false, message, data: null };
     }
   };

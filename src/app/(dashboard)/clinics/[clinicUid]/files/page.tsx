@@ -15,16 +15,16 @@ export const metadata: Metadata = {
 }
 
 export default async function FilesPage({params}: AppRouterPageRouteOpts) {
-  const orgUid = String(params?.orgUid)
+  const clinicUid = String(params?.clinicUid)
   const session = await getCachedSession()
-  const folders = await getFoldersAction(session?.user.sub, orgUid)
+  const folders = await getFoldersAction(session?.user.sub, clinicUid)
   return (
     <>
       <div className="space-y-6">
         <div className="group/create-folder">
           <div className="flex items-center">
             <h2 className="text-2xl font-bold tracking-tight">Files</h2>
-            <CreateFolderModal orgUid={orgUid} />
+            <CreateFolderModal clinicUid={clinicUid} />
           </div>
           <p className="text-sm text-muted-foreground">
             Manage and organize your files. All files are private by default and only accessible to you. You can share files with other users by sharing the link or allowing healthcare professionals to access the file.

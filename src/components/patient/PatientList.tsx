@@ -2,24 +2,27 @@ import { getUsersAction } from "@actions/users/user.action";
 import Each from "@components/utils/Each";
 import dynamic from "next/dynamic";
 import { PatientCard } from "./PatientCard";
+import { useClinicPatients } from "@/hooks/useClinicPatient";
+import { getClinicPatientsAction } from "@/actions/clinics/clinic-patient.action";
 const Paginate = dynamic(() => import("@components/Paginate"), { ssr: false, loading: () => <div>Loading...</div>});
 
 
 interface PatientListProps {
-  orgUid: string
+  clinicUid: string
   search?: string
   page?: number
 }
 
-export type PatientsType = Awaited<ReturnType<typeof getUsersAction>>[0] 
-export const PatientList = async ({orgUid, search, page = 1}:PatientListProps) => {
+export type PatientsType = Awaited<ReturnType<typeof getClinicPatientsAction>> 
+export const PatientList = async ({clinicUid, search, page = 1}:PatientListProps) => {
   const pageSize = 100;
-  const [patients, total] = await getUsersAction({orgUid, search, page, pageSize})
+  const total = 20;
+  const  clinicPatients = await getClinicPatientsAction();
   return (
     <>
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-2 p-5">
         <Each
-          of={patients}
+          of={clinicPatients.data ?? []}
           render={(patient) => (
             <PatientCard 
               key={patient.id}

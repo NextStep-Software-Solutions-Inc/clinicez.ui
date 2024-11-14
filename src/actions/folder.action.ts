@@ -1,45 +1,35 @@
 "use server";
 
+import { withErrorHandling } from "@/lib/with-error-handling";
 import prisma from "@lib/prisma";
 
-export const createFolderAction = async (name: string, userId: string, clinicUid?:string) => {
-  try {
-    const folder = await prisma.folder.create({
-      data: {
-        name,
-        User: {
-          connect: {
-            userId
-          }
-        },
-        FolderSetting: {
-          create: {
-            isPublic: true,
-            ...clinicUid ? {
-              Organization: {
-                connect: {
-                  orgId: clinicUid
-                }
+export const createFolderAction = withErrorHandling(async ({name, userId, clinicUid}: {name: string, userId: string, clinicUid?:string}) => {
+  const folder = await prisma.folder.create({
+    data: {
+      name,
+      User: {
+        connect: {
+          userId
+        }
+      },
+      FolderSetting: {
+        create: {
+          isPublic: true,
+          ...clinicUid ? {
+            Clinic: {
+              connect: {
+                clinicUid
               }
-            } : {}
-          }
+            }
+          } : {}
         }
       }
-    });
-    return {
-      status: true,
-      message: "Folder created successfully",
-      data: folder
     }
-  } catch (error) {
-    console.error(`Error creating folder: ${error}`);
-    return {
-      status: false,
-      message: "Failed to create folder",
-      data: null
-    }
-  }
-}
+  });
+  return { message: "Folder created successfully", data: folder }
+}, (error) => {
+  return "Failed to create folder";
+})
 
 export const getFoldersAction = async (userId: string, clinicUid?:string) => {
   const folders = await prisma.folder.findMany({

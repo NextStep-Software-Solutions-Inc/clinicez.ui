@@ -7,24 +7,24 @@ import ConditionalRender from "@components/utils/ConditionalRender";
 import { differenceInCalendarYears } from "date-fns";
 import { PatientsType } from "./PatientList";
 import Image from "next/image";
+import { GetClinicPatients } from "@/actions/clinics/clinic-patient.action";
 
 interface PatientCardProps {
-    patient: PatientsType[number] & {
-      immunocompromised?: boolean;
+    patient: NonNullable<GetClinicPatients["data"]>[number] & {
+      immunocompromised?: boolean
     }
 }
 export const PatientCard = async ({patient}: PatientCardProps) => {
-  const { dob, gender, immunocompromised} = patient
+  const { Patient: {dob, gender, firstName, middleName, lastName, suffix, updatedAt, bloodType, picture = "https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png", nickname, userId}, immunocompromised} = patient
 
-  const nameInitials = `${patient.firstName?.charAt(0) ?? ""}${patient.lastName?.charAt(0) ?? ""}`
-  const name = `${patient.lastName || "-"}, ${patient.firstName || "-"} ${patient.middleName ?? ""} ${patient.suffix ?? ""}`
-  const picture = patient.picture || "https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png"
+  const nameInitials = `${firstName?.charAt(0) ?? ""}${lastName?.charAt(0) ?? ""}`
+  const name = `${lastName || "-"}, ${firstName || "-"} ${middleName ?? ""} ${suffix ?? ""}`
   return (
     <Card className="shadow-2xl select-none flex-grow lg:flex-grow-0 basis-[35rem]">
       <CardHeader>
         <CardTitle className="line-clamp-1">{name}</CardTitle>
         <CardDescription>
-        Last update: {new Date(patient.updatedAt).toLocaleDateString("en-PH", {
+        Last update: {new Date(updatedAt).toLocaleDateString("en-PH", {
             month:"short",
             day:"numeric",
             year:"numeric",
@@ -39,7 +39,7 @@ export const PatientCard = async ({patient}: PatientCardProps) => {
           <Avatar className="rounded w-40 h-40">
             {
               picture ? 
-                (<Image width={200} height={200} className="object-cover w-full" src={picture} alt={patient.nickname ?? ""} />)
+                (<Image width={200} height={200} className="object-cover w-full" src={picture} alt={nickname ?? ""} />)
                 : <AvatarFallback>{nameInitials}</AvatarFallback>
             }
             
@@ -47,8 +47,8 @@ export const PatientCard = async ({patient}: PatientCardProps) => {
           <div className="flex-1 flex flex-col justify-between">
             <div className="">
               <p className="text-sm text-muted-foreground italic font-medium truncate overflow-hidden capitalize">{gender?.toLowerCase()} / {dob && `${differenceInCalendarYears(new Date(), dob)} years old`}</p>
-              <p className="text-sm text-muted-foreground italic font-medium capitalize">{patient.bloodType?.split("_").join(" ").toLowerCase()}</p>
-              <Badge variant="default" className="capitalize">{patient.OrganizationMembers[0].status.toLowerCase()}</Badge>
+              <p className="text-sm text-muted-foreground italic font-medium capitalize">{bloodType?.split("_").join(" ").toLowerCase()}</p>
+              {/* <Badge variant="default" className="capitalize">{patient.OrganizationMembers[0].status.toLowerCase()}</Badge> */}
             </div>
             <div className="flex gap-2 flex-wrap">
               <ConditionalRender condition={immunocompromised ?? false}>
@@ -56,7 +56,7 @@ export const PatientCard = async ({patient}: PatientCardProps) => {
               </ConditionalRender>
             </div>
             <div>
-              <EMRPreviewSheet record={{ id: patient.userId, subject: name }}>
+              <EMRPreviewSheet record={{ id: userId, subject: name }}>
                 <Button size="sm" variant="link">Preview EMR</Button>
               </EMRPreviewSheet>
             </div>

@@ -3,7 +3,7 @@ import Suspend from "@components/Suspend";
 import { Separator } from "@components/ui/separator";
 import { Metadata } from "next";
 import { isHP } from "@lib/protect-org";
-import SearchBar from "../../../../../components/dashboard/SearchBar";
+import SearchBar from "@components/dashboard/SearchBar";
 import PageLoading from "@components/PageLoading";
 import { redirect } from "next/navigation";
 import { PatientList } from "@components/patient/PatientList";
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 };
 
 async function PatientsPage({params, searchParams}: AppRouterPageRouteOpts) {
-  const orgUid = String(params?.orgUid);
+  const clinicUid = String(params?.clinicUid);
   const search = searchParams?.search as string;
   const page = parseInt(searchParams?.page as string) || 1;
 
@@ -37,7 +37,7 @@ async function PatientsPage({params, searchParams}: AppRouterPageRouteOpts) {
           </p>
         </div>
         <AddPatientModal
-          orgUid={orgUid}
+          orgUid={clinicUid}
         />
       </div>
       <Separator/>
@@ -46,7 +46,7 @@ async function PatientsPage({params, searchParams}: AppRouterPageRouteOpts) {
           <SearchBar placeholder="Search for patient name of email"/>
         </div>
         <Suspend loadingFallback={<PageLoading label="Loading Records ..."/>}>
-          <PatientList orgUid={orgUid} search={search} page={page}/>
+          <PatientList clinicUid={clinicUid} search={search} page={page}/>
         </Suspend>
       </div>
     </div>

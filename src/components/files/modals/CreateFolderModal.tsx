@@ -21,10 +21,10 @@ import { toast } from "sonner";
 
 interface CreateFolderModalProps {
   disabled?: boolean;
-  orgUid?: string;
+  clinicUid?: string;
   onCreated?: () => void;
 }
-export default function CreateFolderModal({disabled = false, orgUid, onCreated}: CreateFolderModalProps) {
+export default function CreateFolderModal({disabled = false, clinicUid, onCreated}: CreateFolderModalProps) {
   const user = useUser()
   const userId = user?.user?.sub
 
@@ -32,7 +32,7 @@ export default function CreateFolderModal({disabled = false, orgUid, onCreated}:
   const action = async (formData: FormData) => {
     if(!userId) throw new Error("User ID is required to create a folder.")
     const name = formData.get("name") as string
-    toast.promise(createFolderAction(name, userId, orgUid), {
+    toast.promise(createFolderAction({name, userId, clinicUid}), {
       loading: "Creating folder...",
       success: (res) => {
         if(res.status) {

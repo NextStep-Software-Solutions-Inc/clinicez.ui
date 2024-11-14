@@ -100,7 +100,33 @@ model User {
   RejectedByAppointments           AppointmentAttribute[]           @relation("RejectedBy")
   CompletedByAppointments          AppointmentAttribute[]           @relation("CompletedBy")
   PreAssessmentNotes               PreAssessmentNote[]
-  UserDefaultClinicRole            UserDefaultClinicRole[]
+  UserDefaultClinicRoles           UserDefaultClinicRole[]
+  ClinicPatienta                   ClinicPatient[]
+}
+
+model ClinicPatient {
+  id                       Int                       @id @default(autoincrement())
+  clinicId                 Int
+  patientId                Int
+  createdAt                DateTime                  @default(now())
+  updatedAt                DateTime                  @updatedAt
+  isActive                 Boolean                   @default(true)
+  deletedAt                DateTime?
+  Clinic                   Clinic                    @relation(fields: [clinicId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Patient                  User                      @relation(fields: [patientId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  ClinicPatientPermissions ClinicPatientPermission[]
+
+  @@unique([clinicId, patientId], name: "unique_clinic_patient")
+}
+
+model ClinicPatientPermission {
+  id              Int           @id @default(autoincrement())
+  clinicPatientId Int
+  permissionId    Int
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  Permission      Permission    @relation(fields: [permissionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  ClinicPatient   ClinicPatient @relation(fields: [clinicPatientId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model UserPreference {
@@ -159,8 +185,6 @@ model OrgMemberPermission {
   id                 Int                @id @default(autoincrement())
   orgMemberId        Int
   permissionId       Int
-  createdAt          DateTime           @default(now())
-  updatedAt          DateTime           @updatedAt
   Permission         Permission         @relation(fields: [permissionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   OrganizationMember OrganizationMember @relation(fields: [orgMemberId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
@@ -169,8 +193,6 @@ model ClinicMemberPermission {
   id             Int          @id @default(autoincrement())
   clinicMemberId Int
   permissionId   Int
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
   Permission     Permission   @relation(fields: [permissionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   ClinicMember   ClinicMember @relation(fields: [clinicMemberId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
@@ -179,9 +201,6 @@ model UserPermission {
   id           Int        @id @default(autoincrement())
   userId       Int
   permissionId Int
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-  isActive     Boolean    @default(true)
   User         User       @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   Permission   Permission @relation(fields: [permissionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
@@ -224,6 +243,7 @@ model Permission {
   OrgRoleInitialPermissions    OrgRoleInitialPermission[]
   ClinicMemberPermissions      ClinicMemberPermission[]
   ClinicRoleInitialPermissions ClinicRoleInitialPermission[]
+  ClinicPatientPermissions     ClinicPatientPermission[]
 }
 
 model OrganizationMember {
@@ -1106,6 +1126,7 @@ model Clinic {
   UserDefaultClinicRoles          UserDefaultClinicRole[]
   ClinicRoleInitialPermissions    ClinicRoleInitialPermission[]
   ClinicFileTypes                 ClinicFileType[]
+  ClinicPatient                   ClinicPatient[]
 
   @@index([tenantId, clinicUid], name: "clinic_index")
 }

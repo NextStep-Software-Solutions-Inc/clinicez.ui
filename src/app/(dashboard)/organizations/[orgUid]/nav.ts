@@ -19,12 +19,6 @@ export const navList: {
     permissions: ["org:membership"]
   },
   {
-    name: "Files",
-    href: `/files`,
-    icon: "file",
-    permissions: ["org:files"]
-  },
-  {
     name: "Clinics",
     href: `/clinics`,
     icon: "hospital",

@@ -1,6 +1,6 @@
 "use client";
 
-import { setOrgMemberPermissionsAction } from "@actions/organizations/user-organization-permission.action";
+import { setOrgMemberPermissionsAction } from "@actions/organizations/organization-member-permission.action";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import ActionButton from "@components/ActionButton";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@components/ui/card";

@@ -183,7 +183,7 @@ export const PatientHpDetails = ({ creators = [], user }: PatientHpDetailsProps)
           </div>
           <div>
             <Tooltip>
-              <EMRPreviewSheet record={{ id: patientId, subject:patientName}}>
+              <EMRPreviewSheet>
                 <TooltipTrigger asChild>
                   <Button size="icon" variant="link">
                     <FolderHeart className="w-6 h-6"/>

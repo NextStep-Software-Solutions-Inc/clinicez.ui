@@ -22,6 +22,7 @@ import RequestAdditionalInfo from "./RequestAdditionalInfo"
 import Link from "next/link"
 import { User } from "lucide-react"
 import { OrganizationMemberStatus } from "@/types"
+import { promiseWrapper } from "@/lib/with-error-handling"
 interface MembershipTableRowActionsProps<TData> {
   applicationRequest: GetUserOrganizations["data"][number]
 }
@@ -39,15 +40,13 @@ export default function MembershipTableRowActions<TData>({
   }
 
   const setStatus = async (status: OrganizationMemberStatus) => {
-    toast.promise(setMembershipRequestStatusAction(applicationRequest.id, status), {
+    toast.promise(promiseWrapper(setMembershipRequestStatusAction)(applicationRequest.id, status), {
       loading: "Updating status...",
       success: (res) => {
-        if(res.status) {
-          revalidateMembershipTable()
-        }
+        revalidateMembershipTable()
         return res.message
       },
-      error: "Failed to update status",
+      error: (error) => error,
       position: "top-center",
     })
     

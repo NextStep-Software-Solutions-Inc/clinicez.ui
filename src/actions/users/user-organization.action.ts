@@ -11,6 +11,7 @@ import { cache } from "react";
 import { getPermissionsAction } from "@actions/permission.action";
 import { PERMISSIONS } from "@lib/permissions";
 import { OrganizationMemberStatus } from "@/types";
+import { withErrorHandling } from "@/lib/with-error-handling";
 
 export type GetUserOrgFilterType = {
     userId?: string | null;
@@ -234,102 +235,101 @@ export const getUserOrganizationsAction = cache(async (filter?: GetUserOrgFilter
   return paginatedData;
 })
 
-export const setMembershipRequestStatusAction = async (id: number, status: OrganizationMemberStatus) => {
-  try {
+export const setMembershipRequestStatusAction =  withErrorHandling(async (id: number, status: OrganizationMemberStatus) => {
 
-    const session = await getCachedSession();
-    if(!session) throw new Error("User not authenticated.");
+  const session = await getCachedSession();
+  if(!session) throw new Error("User not authenticated.");
 
-    const userId = session.user.sub as string;
-    const updateMembershipPermissions = [PERMISSIONS.CLINIC["UPDATE:ORG:MEMBERSHIP_REQUEST"].name];
-    const myPermissions = await getPermissionsAction({userId});
-    const myPermissionArray = myPermissions.map((item) => item.name);
-    const hasMembershipPermission = updateMembershipPermissions.every((item) => myPermissionArray.includes(item));
+  const userId = session.user.sub as string;
+  const updateMembershipPermissions = [PERMISSIONS.CLINIC["UPDATE:ORG:MEMBERSHIP_REQUEST"].name];
+  const myPermissions = await getPermissionsAction({userId});
+  const myPermissionArray = myPermissions.map((item) => item.name);
+  const hasMembershipPermission = updateMembershipPermissions.every((item) => myPermissionArray.includes(item));
   
-    if(!hasMembershipPermission) throw new Error("You do not have permission to update membership request status");
+  if(!hasMembershipPermission) throw new Error("You do not have permission to update membership request status");
   
-    await prisma.$transaction(async (prisma) => {
-      const userOrganization = await prisma.organizationMember.update({
-        where: { id },
-        data: {
-          status,
-          ...status === "ACTIVE" && {
-            AcceptedBy: {
-              connect: {
-                userId
-              }
-            },
+  await prisma.$transaction(async (prisma) => {
+    const userOrganization = await prisma.organizationMember.update({
+      where: { id },
+      data: {
+        status,
+        ...status === "ACTIVE" && {
+          AcceptedBy: {
+            connect: {
+              userId
+            }
+          },
+        }
+      }, 
+      select: {
+        id: true,
+        status: true,
+        OrganizationRole: {
+          select: {
+            id: true,
           }
-        }, 
+        },
+        Organization: {
+          select: {
+            name: true, email: true
+          }
+        },
+        User: {
+          select: {
+            firstName: true,
+            lastName: true,
+            email: true
+          }
+        }
+      }
+    })
+    if (status === "ACTIVE") {
+      const permissions = await prisma.orgRoleInitialPermission.findMany({
+        where: {
+          orgRoleId: userOrganization.OrganizationRole.id,
+        },
         select: {
-          id: true,
-          status: true,
-          OrganizationRole: {
+          Permission: {
             select: {
               id: true,
-            }
-          },
-          Organization: {
-            select: {
-              name: true, email: true
-            }
-          },
-          User: {
-            select: {
-              firstName: true,
-              lastName: true,
-              email: true
+              name: true,
+              description: true
             }
           }
         }
       })
-      if (status === "ACTIVE") {
-        const permissions = await prisma.orgRoleInitialPermission.findMany({
-          where: {
-            orgRoleId: userOrganization.OrganizationRole.id,
-          },
-          select: {
-            Permission: {
-              select: {
-                id: true,
-                name: true,
-                description: true
-              }
-            }
+    
+      await prisma.orgMemberPermission.createMany({
+        skipDuplicates: true,
+        data: permissions.map((item) => {
+          return {
+            permissionId: item.Permission.id,
+            orgMemberId: userOrganization.id
           }
         })
-    
-        await prisma.orgMemberPermission.createMany({
-          skipDuplicates: true,
-          data: permissions.map((item) => {
-            return {
-              permissionId: item.Permission.id,
-              orgMemberId: userOrganization.id
-            }
-          })
-        })
-      }
-
-      await sendMembershipUpdateEmailNotification({
-        name: `${userOrganization.User.firstName} ${userOrganization.User.lastName}`,
-        email: userOrganization.User.email,
-        organization: userOrganization.Organization.name,
-        status: userOrganization.status as OrganizationMemberStatus,
-        orgMail: userOrganization.Organization.email ?? ""
       })
+    }
+
+    await sendMembershipUpdateEmailNotification({
+      name: `${userOrganization.User.firstName} ${userOrganization.User.lastName}`,
+      email: userOrganization.User.email,
+      organization: userOrganization.Organization.name,
+      status: userOrganization.status as OrganizationMemberStatus,
+      orgMail: userOrganization.Organization.email ?? ""
     })
-    return {
-      status: true,
-      message: `Membership request status updated to ${status}`,
-    }
-  } catch (error) {
-    console.error(`Error updating membership request status: ${error}`);
-    return {
-      status: false,
-      message: "Error updating membership request status"
-    }
+  })
+  return {
+    status: true,
+    message: `Membership request status updated to ${status}`,
+    data: null
   }
+  
 }
+, (error) => {
+  if(error instanceof Error) return error.message;
+  return "Error updating membership request status";
+})
+
 
 export const deleteMembershipAction = async (id: number) => {
   try {

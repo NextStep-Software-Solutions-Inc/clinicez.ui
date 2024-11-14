@@ -114,7 +114,7 @@ export default function AppointmentPanel({
 
   const [isCollapsed, setIsCollapsed] = React.useState(defaultCollapsed)
   const searchParams = useSearchParams();
-  const [userDefaultOrgRole, setUserDefaultOrgRole] = useAtom(userDefaultOrganizationRoleAtom)
+  const [userDefaultOrgRole, setUserDefaultClinicRole] = useAtom(userDefaultOrganizationRoleAtom)
   const {clinicUid} = useParams<{clinicUid: string}>();
   const user = useUser();
   const userId = user?.user?.sub ?? undefined;
@@ -122,16 +122,16 @@ export default function AppointmentPanel({
   const sort = searchParams.get("_sort")  ?? "request";
   const routedAptStatus = searchParams.get("_routedAptStatus");
   const activeRoleId = userDefaultOrgRole[clinicUid]?.roleId ?? 0;
-  const {data: orgRoles} = useClinicRoles({userId, clinicUid})
+  const {data: clinicRoles} = useClinicRoles({userId, clinicUid})
   
-  const roles = React.useMemo(() => (orgRoles ?? [])?.map((role) => {
+  const roles = React.useMemo(() => (clinicRoles ?? [])?.map((role) => {
     return {
       label: role.name,
       value: role.id.toString(),
       icon: UserIcon,
       isDefault: role.UserDefaultClinicRoles.some((r) => r.User.userId === userId),
     }
-  }), [orgRoles, userId])
+  }), [clinicRoles, userId])
 
   const appointmentStatusLinks = React.useMemo(() => createStatusLinks(
     appointmentStatusAsTabs,
@@ -148,25 +148,33 @@ export default function AppointmentPanel({
   ), [routedAppointmentStatusCounts, routedAptStatus, inRouteAppointmentStatuses]);
 
   const changeRole = React.useCallback((roleId: string) => {
-    const role = (orgRoles ?? []).find((role) => role.id === Number(roleId))
-    setUserDefaultOrgRole({
+    const role = (clinicRoles ?? []).find((role) => role.id === Number(roleId))
+    setUserDefaultClinicRole({
       [clinicUid]: {
         roleId: role?.id,
         roleName: role?.name
       }})
-  }, [orgRoles, clinicUid, setUserDefaultOrgRole])
+  }, [clinicRoles, clinicUid, setUserDefaultClinicRole])
   
   React.useEffect(() => {
-    const defaultRole = orgRoles?.flatMap(orgRole => orgRole.UserDefaultClinicRoles).find((r) => r.User.userId === userId)
-    if(defaultRole) {
-      setUserDefaultOrgRole({
+    const defaultRole = clinicRoles?.flatMap(orgRole => orgRole.UserDefaultClinicRoles).find((r) => r.User.userId === userId)
+    
+    if(!defaultRole && clinicRoles?.length) {
+      setUserDefaultClinicRole({
+        [clinicUid]: {
+          roleId: clinicRoles[0].id,
+          roleName: clinicRoles[0].name
+        }
+      })
+    } else if(defaultRole) {
+      setUserDefaultClinicRole({
         [defaultRole.Clinic.clinicUid]: {
           roleId: defaultRole?.ClinicMemberRole.id,
           roleName: defaultRole?.ClinicMemberRole.name,
         }
       })
     }
-  }, [orgRoles, setUserDefaultOrgRole, userId])
+  }, [clinicRoles, clinicUid, setUserDefaultClinicRole, userId])
 
   const handleSortTabChange = (value: string) => {
     const searchParams = new URLSearchParams(window.location.search)

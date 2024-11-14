@@ -21,7 +21,7 @@ export const upsertPreAssessmentNoteAction = async ({appointmentId, clinicUid, a
     if(!session) throw new Error("User not authenticated.")
   
     const myPermissions = await getPermissionsAction({  userId:session.user.sub, type: "ORGANIZATION" })
-    const writePreAssessmentNotePermissions = [PERMISSIONS.CLINIC["WRITE:ORG:PRE_ASSESSMENT_NOTE"].name]
+    const writePreAssessmentNotePermissions = [PERMISSIONS.CLINIC["WRITE:CLINIC:PRE_ASSESSMENT_NOTE"].name]
     const myPermissionArray = myPermissions.map(permission => permission.name)
     const canWritePermission = writePreAssessmentNotePermissions.every(permission => myPermissionArray.includes(permission))
     
@@ -86,7 +86,7 @@ export const getPreAssessmentNotesAction = async (appointmentId: number) => {
     if(!session) throw new Error("User not authenticated.")
 
     const myPermissions = await getPermissionsAction({userId: session.user.sub, type: "ORGANIZATION"})
-    const readPreAssessmentNotePermissions = [PERMISSIONS.CLINIC["READ:ORG:PRE_ASSESSMENT_NOTE"].name]
+    const readPreAssessmentNotePermissions = [PERMISSIONS.CLINIC["READ:CLINIC:PRE_ASSESSMENT_NOTE"].name]
     const myPermissionArray = myPermissions.map(permission => permission.name)
     const canReadPermission = readPreAssessmentNotePermissions.every(permission => myPermissionArray.includes(permission))
 

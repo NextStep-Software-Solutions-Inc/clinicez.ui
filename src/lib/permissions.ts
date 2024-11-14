@@ -10,133 +10,125 @@ export const PERMISSIONS = {
     }
   },
   CLINIC: {
-    "CONFIRM:ORG:APPOINTMENT": {
-      name: "confirm:org:appointment",
-      description: "User can confirm appointment within the organization.",
+    "CONFIRM:CLINIC:APPOINTMENT": {
+      name: "confirm:clinic:appointment",
+      description: "User can confirm appointment within the clinic.",
     },
-    "ASSIGN:ORG:APPOINTMENT": {
-      name: "assign:org:appointment",
-      description: "User can assign appointment to another user within then organization.",
+    "ASSIGN:CLINIC:APPOINTMENT": {
+      name: "assign:clinic:appointment",
+      description: "User can assign appointment to another user within then clinic.",
     },
-    "DECLINE:ORG:APPOINTMENT_ASSIGNMENT": {
-      name: "decline:org:appointment_assignment",
-      description: "User can decline appointment assignment within the organization.",
+    "DECLINE:CLINIC:APPOINTMENT_ASSIGNMENT": {
+      name: "decline:clinic:appointment_assignment",
+      description: "User can decline appointment assignment within the clinic.",
     },
-    "CANCEL:ORG:APPOINTMENT_ASSIGNMENT": {
-      name: "cancel:org:appointment_assignment",
-      description: "User can cancel appointment assignment within the organization.",
+    "CANCEL:CLINIC:APPOINTMENT_ASSIGNMENT": {
+      name: "cancel:clinic:appointment_assignment",
+      description: "User can cancel appointment assignment within the clinic.",
     },
-    "ACCEPT:ORG:APPOINTMENT_ASSIGNMENT": {
-      name: "accept:org:appointment_assignment",
-      description: "User can accept appointment assignment within the organization.",
+    "ACCEPT:CLINIC:APPOINTMENT_ASSIGNMENT": {
+      name: "accept:clinic:appointment_assignment",
+      description: "User can accept appointment assignment within the clinic.",
     },
-    "WRITE:ORG:APPOINTMENT": {
-      name: "write:org:appointment",
-      description: "User can write appointment within the organization.",
+    "WRITE:CLINIC:APPOINTMENT": {
+      name: "write:clinic:appointment",
+      description: "User can write appointment within the clinic.",
     },
-    "READ:ORG:APPOINTMENT:ALL": {
-      name: "read:org:appointment:all",
-      description: "User can read all appointment within the organization.",
+    "READ:CLINIC:APPOINTMENT:ALL": {
+      name: "read:clinic:appointment:all",
+      description: "User can read all appointment within the clinic.",
     },
-    "READ:ORG:APPOINTMENT:OWN": {
-      name: "read:org:appointment:own",
-      description: "User can read their own appointment within the organization.",
+    "READ:CLINIC:APPOINTMENT:OWN": {
+      name: "read:clinic:appointment:own",
+      description: "User can read their own appointment within the clinic.",
     },
-    "READ:ORG:APPOINTMENT:ASSIGNED": {
-      name: "read:org:appointment:assigned",
-      description: "User can read appointment assigned to them within the organization.",
+    "READ:CLINIC:APPOINTMENT:ASSIGNED": {
+      name: "read:clinic:appointment:assigned",
+      description: "User can read appointment assigned to them within the clinic.",
     },
-    "READ:ORG:CONSULTATION_TICKET:ALL": {
-      name: "read:org:consultation_ticket:all",
-      description: "User can read all consultation ticket within the organization.",
+    "READ:CLINIC:CONSULTATION_TICKET:ALL": {
+      name: "read:clinic:consultation_ticket:all",
+      description: "User can read all consultation ticket within the clinic.",
     },
-    "READ:ORG:CONSULTATION_TICKET:OWN": {
-      name: "read:org:consultation_ticket:own",
-      description: "User can read their own consultation ticket within the organization.",
+    "READ:CLINIC:CONSULTATION_TICKET:OWN": {
+      name: "read:clinic:consultation_ticket:own",
+      description: "User can read their own consultation ticket within the clinic.",
     },
-    "READ:ORG:CONSULTATION_TICKET:CREATED": {
-      name: "read:org:consultation_ticket:created",
-      description: "User can read consultation ticket created by them within the organization.",
+    "READ:CLINIC:CONSULTATION_TICKET:CREATED": {
+      name: "read:clinic:consultation_ticket:created",
+      description: "User can read consultation ticket created by them within the clinic.",
     },
-    "READ:ORG:CONSULTATION_TICKET:CO_CREATED": {
-      name: "read:org:consultation_ticket:co_created",
-      description: "User can read consultation ticket co-created by them within the organization.",
+    "READ:CLINIC:CONSULTATION_TICKET:CO_CREATED": {
+      name: "read:clinic:consultation_ticket:co_created",
+      description: "User can read consultation ticket co-created by them within the clinic.",
     },
-    "UPDATE:ORG:CONSULTATION_TICKET:CREATED": {
-      name: "update:org:consultation_ticket:created",
-      description: "User can update consultation ticket created by them within the organization.",
+    "UPDATE:CLINIC:CONSULTATION_TICKET:CREATED": {
+      name: "update:clinic:consultation_ticket:created",
+      description: "User can update consultation ticket created by them within the clinic.",
     },
-    "UPDATE:ORG:CONSULTATION_TICKET:CO_CREATED": {
-      name: "update:org:consultation_ticket:co_created",
-      description: "User can update consultation ticket co-created by them within the organization.",
+    "UPDATE:CLINIC:CONSULTATION_TICKET:CO_CREATED": {
+      name: "update:clinic:consultation_ticket:co_created",
+      description: "User can update consultation ticket co-created by them within the clinic.",
     },
-    "DELETE:ORG:CONSULTATION_TICKET:CREATED": {
-      name: "delete:org:consultation_ticket:created",
-      description: "User can delete consultation ticket created by them within the organization.",
+    "DELETE:CLINIC:CONSULTATION_TICKET:CREATED": {
+      name: "delete:clinic:consultation_ticket:created",
+      description: "User can delete consultation ticket created by them within the clinic.",
     },
-    "DELETE:ORG:CONSULTATION_TICKET:CO_CREATED": {
-      name: "delete:org:consultation_ticket:co_created",
-      description: "User can delete consultation ticket co-created by them within the organization.",
+    "DELETE:CLINIC:CONSULTATION_TICKET:CO_CREATED": {
+      name: "delete:clinic:consultation_ticket:co_created",
+      description: "User can delete consultation ticket co-created by them within the clinic.",
     },
-    "RESOLVE:ORG:CONSULTATION_TICKET:CREATED": {
-      name: "resolve:org:consultation_ticket:created",
-      description: "User can resolve consultation ticket created by them within the organization.",
+    "RESOLVE:CLINIC:CONSULTATION_TICKET:CREATED": {
+      name: "resolve:clinic:consultation_ticket:created",
+      description: "User can resolve consultation ticket created by them within the clinic.",
     },
-    "RESOLVE:ORG:CONSULTATION_TICKET:CO_CREATED": {
-      name: "resolve:org:consultation_ticket:co_created",
-      description: "User can resolve consultation ticket co-created by them within the organization.",
+    "RESOLVE:CLINIC:CONSULTATION_TICKET:CO_CREATED": {
+      name: "resolve:clinic:consultation_ticket:co_created",
+      description: "User can resolve consultation ticket co-created by them within the clinic.",
     },
-    "TOGGLE_ARCHIVE:ORG:CONSULTATION_TICKET:CREATED": {
-      name: "toggle_archive:org:consultation_ticket:created",
-      description: "User can archive consultation ticket created by them within the organization.",
+    "TOGGLE_ARCHIVE:CLINIC:CONSULTATION_TICKET:CREATED": {
+      name: "toggle_archive:clinic:consultation_ticket:created",
+      description: "User can archive consultation ticket created by them within the clinic.",
     },
-    "TOGGLE_ARCHIVE:ORG:CONSULTATION_TICKET:CO_CREATED": {
-      name: "toggle_archive:org:consultation_ticket:co_created",
-      description: "User can archive consultation ticket co-created by them within the organization.",
+    "TOGGLE_ARCHIVE:CLINIC:CONSULTATION_TICKET:CO_CREATED": {
+      name: "toggle_archive:clinic:consultation_ticket:co_created",
+      description: "User can archive consultation ticket co-created by them within the clinic.",
     },
-    "CREATE:ORG:CONSULTATION_TICKET": {
-      name: "create:org:consultation_ticket",
-      description: "User can create consultation ticket within the organization.",
+    "CREATE:CLINIC:CONSULTATION_TICKET": {
+      name: "create:clinic:consultation_ticket",
+      description: "User can create consultation ticket within the clinic.",
     },
-    "WRITE:ORG:PRE_ASSESSMENT_NOTE": {
-      name: "write:org:pre_assessment_note",
-      description: "User can write pre-assessment note within the organization.",
+    "WRITE:CLINIC:PRE_ASSESSMENT_NOTE": {
+      name: "write:clinic:pre_assessment_note",
+      description: "User can write pre-assessment note within the clinic.",
     },
-    "READ:ORG:PRE_ASSESSMENT_NOTE": {
-      name: "read:org:pre_assessment_note",
-      description: "User can read pre-assessment note within the organization.",
+    "READ:CLINIC:PRE_ASSESSMENT_NOTE": {
+      name: "read:clinic:pre_assessment_note",
+      description: "User can read pre-assessment note within the clinic.",
     },
-    "RECEIVE:ORG:APPOINTMENT": {
-      name: "receive:org:appointment",
-      description: "User can receive appointment within the organization.",
+    "RECEIVE:CLINIC:APPOINTMENT": {
+      name: "receive:clinic:appointment",
+      description: "User can receive appointment within the clinic.",
     },
-    "COMPLETE:ORG:APPOINTMENT": {
-      name: "complete:org:appointment",
-      description: "User can complete appointment within the organization.",
+    "COMPLETE:CLINIC:APPOINTMENT": {
+      name: "complete:clinic:appointment",
+      description: "User can complete appointment within the clinic.",
     },
-    "REJECT:ORG:APPOINTMENT": {
-      name: "reject:org:appointment",
-      description: "User can reject appointment within the organization.",
+    "REJECT:CLINIC:APPOINTMENT": {
+      name: "reject:clinic:appointment",
+      description: "User can reject appointment within the clinic.",
     },
-    "WRITE:ORG:VITAL_SIGNS": {
-      name: "write:org:vital_signs",
-      description: "User can write vital signs within the organization.",
+    "WRITE:CLINIC:VITAL_SIGNS": {
+      name: "write:clinic:vital_signs",
+      description: "User can write vital signs within the clinic.",
     },
-    "RESCHEDULE:ORG:APPOINTMENT": {
-      name: "reschedule:org:appointment",
-      description: "User can reschedule appointment within the organization.",
+    "RESCHEDULE:CLINIC:APPOINTMENT": {
+      name: "reschedule:clinic:appointment",
+      description: "User can reschedule appointment within the clinic.",
     },
-    "UPDATE:ORG:MEMBERSHIP_REQUEST": {
-      name: "update:org:membership_request",
-      description: "User can update membership request within the organization.",
-    },
-    "UPDATE:ORG:PERMISSIONS": {
-      name: "update:org:permissions",
-      description: "User can update permissions within the organization.",
-    },
-    "WRITE:ORG:APPOINTMENT:BOOK_A_FRIEND": {
-      name: "write:org:appointment:book_a_friend",
-      description: "User can write appointment for a friend within the organization.",
+    "WRITE:CLINIC:APPOINTMENT:BOOK_A_FRIEND": {
+      name: "write:clinic:appointment:book_a_friend",
+      description: "User can write appointment for a friend within the clinic.",
     },
     "READ:CLINIC:MEDICATION:ALL": {
       name: "read:clinic:medication:all",
@@ -173,6 +165,16 @@ export const PERMISSIONS = {
     "CREATE:CLINIC:PRESCRIPTION": {
       name: "create:clinic:prescription",
       description: "User can create prescription within the clinic.",
+    },
+  },
+  ORGANIZATION: {
+    "UPDATE:ORG:MEMBERSHIP_REQUEST": {
+      name: "update:org:membership_request",
+      description: "User can update membership request within the organization.",
+    },
+    "UPDATE:ORG:PERMISSIONS": {
+      name: "update:org:permissions",
+      description: "User can update permissions within the organization.",
     },
   },
 }

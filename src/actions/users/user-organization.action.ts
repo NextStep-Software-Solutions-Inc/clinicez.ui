@@ -235,13 +235,13 @@ export const getUserOrganizationsAction = cache(async (filter?: GetUserOrgFilter
   return paginatedData;
 })
 
-export const setMembershipRequestStatusAction =  withErrorHandling(async (id: number, status: OrganizationMemberStatus) => {
+export const setMembershipRequestStatusAction = withErrorHandling(async (id: number, status: OrganizationMemberStatus) => {
 
   const session = await getCachedSession();
   if(!session) throw new Error("User not authenticated.");
 
   const userId = session.user.sub as string;
-  const updateMembershipPermissions = [PERMISSIONS.CLINIC["UPDATE:ORG:MEMBERSHIP_REQUEST"].name];
+  const updateMembershipPermissions = [PERMISSIONS.ORGANIZATION["UPDATE:ORG:MEMBERSHIP_REQUEST"].name];
   const myPermissions = await getPermissionsAction({userId});
   const myPermissionArray = myPermissions.map((item) => item.name);
   const hasMembershipPermission = updateMembershipPermissions.every((item) => myPermissionArray.includes(item));

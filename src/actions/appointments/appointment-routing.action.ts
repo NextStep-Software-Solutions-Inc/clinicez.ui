@@ -22,7 +22,7 @@ export const assignAppointmentAction = async (data: AssignAppointmentPayload) =>
 
     const myPermissions = await getPermissionsAction({userId: session.user.sub, type: 'ORGANIZATION'});
     const myPermissionArray = myPermissions.map(permission => permission.name);
-    const assignAppointmentPermissions = [PERMISSIONS.CLINIC["ASSIGN:ORG:APPOINTMENT"].name]
+    const assignAppointmentPermissions = [PERMISSIONS.CLINIC["ASSIGN:CLINIC:APPOINTMENT"].name]
     const canAssignAppointment = assignAppointmentPermissions.every(permission => myPermissionArray.includes(permission));
 
     if(!canAssignAppointment) throw new Error('You do not have permission to assign appointment');
@@ -98,7 +98,7 @@ export const acceptAppointmentAction = async (formData: FormData) => {
 
     const myPermissions = await getPermissionsAction({userId: session.user.sub, type: 'ORGANIZATION'});
     const myPermissionArray = myPermissions.map(permission => permission.name);
-    const acceptAppointmentPermissions = [PERMISSIONS.CLINIC["ACCEPT:ORG:APPOINTMENT_ASSIGNMENT"].name]
+    const acceptAppointmentPermissions = [PERMISSIONS.CLINIC["ACCEPT:CLINIC:APPOINTMENT_ASSIGNMENT"].name]
     const canAcceptAppointment = acceptAppointmentPermissions.every(permission => myPermissionArray.includes(permission));
 
     if(!canAcceptAppointment) throw new Error('You do not have permission to accept appointment');
@@ -146,7 +146,7 @@ export const declineAppointmentAction = async (formData: FormData) => {
 
     const myPermissions = await getPermissionsAction({userId: session.user.sub, type: 'ORGANIZATION'});
     const myPermissionArray = myPermissions.map(permission => permission.name);
-    const declineAppointmentPermissions = [PERMISSIONS.CLINIC["DECLINE:ORG:APPOINTMENT_ASSIGNMENT"].name]
+    const declineAppointmentPermissions = [PERMISSIONS.CLINIC["DECLINE:CLINIC:APPOINTMENT_ASSIGNMENT"].name]
     const canDeclineAppointment = declineAppointmentPermissions.every(permission => myPermissionArray.includes(permission));
 
     if(!canDeclineAppointment) throw new Error('You do not have permission to decline appointment');
@@ -189,7 +189,7 @@ export const cancelAppointmentRoutingAction = async (appointmentRoutingId: numbe
 
     const myPermissions = await getPermissionsAction({userId: session.user.sub, type: 'ORGANIZATION'});
     const myPermissionArray = myPermissions.map(permission => permission.name);
-    const cancelAppointmentRouting = [PERMISSIONS.CLINIC["CANCEL:ORG:APPOINTMENT_ASSIGNMENT"].name]
+    const cancelAppointmentRouting = [PERMISSIONS.CLINIC["CANCEL:CLINIC:APPOINTMENT_ASSIGNMENT"].name]
     const canCancelAppointment = cancelAppointmentRouting.every(permission => myPermissionArray.includes(permission));
 
     if(!canCancelAppointment) throw new Error('You do not have permission to cancel appointment assignment');

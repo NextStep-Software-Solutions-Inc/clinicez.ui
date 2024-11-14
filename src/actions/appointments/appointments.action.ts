@@ -40,8 +40,8 @@ export const createAppointmentAction = async (payload: CreateAppointmentPayload)
     const { clinicUid, subject, complaint, requesters, modeId, typeId, serviceId, attachments, hpId, schedule } = payload;
     const { date, timeStart, timeEnd } = schedule ?? {};
     
-    const createAppointmentPermissions = [PERMISSIONS.CLINIC["WRITE:ORG:APPOINTMENT"].name];
-    const bookAFriendPermissions = [PERMISSIONS.CLINIC["WRITE:ORG:APPOINTMENT:BOOK_A_FRIEND"].name];
+    const createAppointmentPermissions = [PERMISSIONS.CLINIC["WRITE:CLINIC:APPOINTMENT"].name];
+    const bookAFriendPermissions = [PERMISSIONS.CLINIC["WRITE:CLINIC:APPOINTMENT:BOOK_A_FRIEND"].name];
     const myPermissions = await getPermissionsAction({ userId: session.user.sub });
     const userPermissionArray = myPermissions.map(p => p.name);
     const canCreateAppointment = createAppointmentPermissions.every(p => userPermissionArray.includes(p));
@@ -215,9 +215,9 @@ export const getAppointmentsAction = cache(async (filter?: GetAppointmentFilter)
 
     const userPermissionArray = permissions.map(p => p.name);
   
-    const readAllOrgAppointmentPermission = [PERMISSIONS.CLINIC["READ:ORG:APPOINTMENT:ALL"].name];
-    const readAOwnOrgAppointmentPermission = [PERMISSIONS.CLINIC["READ:ORG:APPOINTMENT:OWN"].name];
-    const readAssignedOrgAppointmentPermission = [PERMISSIONS.CLINIC["READ:ORG:APPOINTMENT:ASSIGNED"].name];
+    const readAllOrgAppointmentPermission = [PERMISSIONS.CLINIC["READ:CLINIC:APPOINTMENT:ALL"].name];
+    const readAOwnOrgAppointmentPermission = [PERMISSIONS.CLINIC["READ:CLINIC:APPOINTMENT:OWN"].name];
+    const readAssignedOrgAppointmentPermission = [PERMISSIONS.CLINIC["READ:CLINIC:APPOINTMENT:ASSIGNED"].name];
   
     const canReadAllOrgAppointment = readAllOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
     const canReadAOwnOrgAppointment = readAOwnOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
@@ -352,9 +352,9 @@ export const getAppointmentAction = cache(async (id: number, clinicUid: string) 
     const permissions = await getPermissionsAction({ userId:session.user.sub });
     const userPermissionArray = permissions.map(p => p.name);
     
-    const readAllOrgAppointmentPermission = [PERMISSIONS.CLINIC["READ:ORG:APPOINTMENT:ALL"].name]; // read all appointments in the org
-    const readAOwnOrgAppointmentPermission = [PERMISSIONS.CLINIC["READ:ORG:APPOINTMENT:OWN"].name]; // read appointments that the user is a requester
-    const readAssignedOrgAppointmentPermission = [PERMISSIONS.CLINIC["READ:ORG:APPOINTMENT:ASSIGNED"].name]; // read appointments that the user is assigned to or assigned by
+    const readAllOrgAppointmentPermission = [PERMISSIONS.CLINIC["READ:CLINIC:APPOINTMENT:ALL"].name]; // read all appointments in the org
+    const readAOwnOrgAppointmentPermission = [PERMISSIONS.CLINIC["READ:CLINIC:APPOINTMENT:OWN"].name]; // read appointments that the user is a requester
+    const readAssignedOrgAppointmentPermission = [PERMISSIONS.CLINIC["READ:CLINIC:APPOINTMENT:ASSIGNED"].name]; // read appointments that the user is assigned to or assigned by
     
     const canReadAllOrgAppointment = readAllOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
     const canReadAOwnOrgAppointment = readAOwnOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
@@ -627,9 +627,9 @@ export const getAppointmentCountsAction = cache(async (clinicUid: string) => {
     ])
     const userPermissionArray = permissions.map(p => p.name);
     
-    const readAllOrgAppointmentPermission = [PERMISSIONS.CLINIC["READ:ORG:APPOINTMENT:ALL"].name];
-    const readAOwnOrgAppointmentPermission = [PERMISSIONS.CLINIC["READ:ORG:APPOINTMENT:OWN"].name];
-    const readAssignedOrgAppointmentPermission = [PERMISSIONS.CLINIC["READ:ORG:APPOINTMENT:ASSIGNED"].name];
+    const readAllOrgAppointmentPermission = [PERMISSIONS.CLINIC["READ:CLINIC:APPOINTMENT:ALL"].name];
+    const readAOwnOrgAppointmentPermission = [PERMISSIONS.CLINIC["READ:CLINIC:APPOINTMENT:OWN"].name];
+    const readAssignedOrgAppointmentPermission = [PERMISSIONS.CLINIC["READ:CLINIC:APPOINTMENT:ASSIGNED"].name];
     
     const canReadAllOrgAppointment = readAllOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
     const canReadAOwnOrgAppointment = readAOwnOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
@@ -726,9 +726,9 @@ export const getRoutedAppointmentCountsAction = cache(async (clinicUid: string) 
     ])
     const userPermissionArray = permissions.map(p => p.name);
       
-    const readAllOrgAppointmentPermission = [PERMISSIONS.CLINIC["READ:ORG:APPOINTMENT:ALL"].name];
-    const readAOwnOrgAppointmentPermission = [PERMISSIONS.CLINIC["READ:ORG:APPOINTMENT:OWN"].name];
-    const readAssignedOrgAppointmentPermission = [PERMISSIONS.CLINIC["READ:ORG:APPOINTMENT:ASSIGNED"].name];
+    const readAllOrgAppointmentPermission = [PERMISSIONS.CLINIC["READ:CLINIC:APPOINTMENT:ALL"].name];
+    const readAOwnOrgAppointmentPermission = [PERMISSIONS.CLINIC["READ:CLINIC:APPOINTMENT:OWN"].name];
+    const readAssignedOrgAppointmentPermission = [PERMISSIONS.CLINIC["READ:CLINIC:APPOINTMENT:ASSIGNED"].name];
       
     const canReadAllOrgAppointment = readAllOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
     const canReadAOwnOrgAppointment = readAOwnOrgAppointmentPermission.every(p => userPermissionArray.includes(p))

@@ -29,7 +29,7 @@ export const MemberPermissions = ({orgUid, userId}: MemberPermissionsProps) => {
     userId: user?.sub ?? undefined,
   })
   const myPermissionArray = myPermissions?.map((item) => item.name) ?? []
-  const updateOrgPermissions = [PERMISSIONS.CLINIC["UPDATE:ORG:PERMISSIONS"].name]
+  const updateOrgPermissions = [PERMISSIONS.ORGANIZATION["UPDATE:ORG:PERMISSIONS"].name]
   const canUpdateOrgPermissions = updateOrgPermissions.every((item) => myPermissionArray.includes(item))
 
   const {data: permissions, mutate: mutateMemberPermissions, isLoading: loadingMemberPermissions } = usePermissions({

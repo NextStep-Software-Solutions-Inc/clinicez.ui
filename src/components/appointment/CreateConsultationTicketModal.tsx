@@ -46,9 +46,8 @@ interface CreateConsultationTicketModalProps {
 export default function CreateConsultationTicketModal({disabled = false, subject, appointment}: CreateConsultationTicketModalProps) {
   const closeBtnRef = useRef<HTMLInputElement>(null)
   const router = useRouter();
-  const params = useParams<{clinicUid: string}>();
+  const {clinicUid} = useParams<{clinicUid: string}>();
   const searchParams = useSearchParams();
-  const clinicUid = params.clinicUid
   const { user } = useUser()
   const {data: systems} = useSystems(clinicUid)
   const { data: myHps } = useHPs({
@@ -90,7 +89,7 @@ export default function CreateConsultationTicketModal({disabled = false, subject
           if(res.status) {
             closeBtnRef.current?.click()
             mutate()
-            data.openTicket && router.push(`/${params.clinicUid}/consultations/${res.data?.id}?${searchParams.toString()}`);
+            data.openTicket && router.push(`/clinics/${clinicUid}/consultations/${res.data?.id}?${searchParams.toString()}`);
           }
           return res.message
         },

@@ -3,6 +3,7 @@ import { Separator } from "@components/ui/separator";
 import { Metadata } from "next";
 import { AppRouterPageRouteOpts } from "@auth0/nextjs-auth0";
 import ClinicSettings from "@/components/clinic/ClinicSettings";
+import ClinicMemberActions from "@/components/dashboard/clinic-settings/ClinicMemberActions";
 
 export const metadata: Metadata = {
   title: "Clinic Settings",
@@ -20,6 +21,7 @@ export default async function ClinicSettingsPage({params}: AppRouterPageRouteOpt
           <p className="text-sm text-muted-foreground">
             {`Configure your clinic settings. This includes your clinic's profile, settings, and more.`}
           </p>
+
         </div>
         <Separator />
         <Suspend>

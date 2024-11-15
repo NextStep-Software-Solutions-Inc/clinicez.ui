@@ -82,7 +82,9 @@ export default function AppointmentDisplay() {
     return <div className="p-8 text-center text-muted-foreground">Appointment not found</div>
   }
 
-  const myClinicPermission = myClinicPermissions?.map(p => p.name) ?? []
+  const myClinicPermissionArray = myClinicPermissions?.map(p => p.name) ?? []
+  console.log({myClinicPermissionArray});
+  
   const preferredHPName = `${preferredHp?.HPProfile?.title || preferredHp?.User.firstName} ${preferredHp?.HPProfile?.name || preferredHp?.User.lastName} ${preferredHp?.HPProfile?.suffix || preferredHp?.User.suffix || ""}`
   const meetingUrl = freshAppointment.data.AppointmentAttribute?.meetingUrl
   
@@ -98,13 +100,13 @@ export default function AppointmentDisplay() {
           <Each
             key={freshAppointment.data.id}
             of={appointmentTools.filter((tool) => {     
-              const enable = tool.permissions.every(p => myClinicPermission.includes(p))
+              const enable = tool.permissions.every(p => myClinicPermissionArray.includes(p))
                 && tool.appointmentStatuses.includes(freshAppointment.data!.AppointmentAttribute?.status.toLocaleLowerCase() ?? "") 
                 && (
                   tool.routedAptStatuses.length === 0 
                   || (
                     freshAppointment.data?.AppointmentAttribute?.status !== "ROUTED" 
-                    || freshAppointment.data?.AppointmentRouting.some(apt =>tool.routedAptStatuses.includes(apt.status.toLocaleLowerCase()) && (myHps?? []).some(hp => hp.id === apt.RoutedTo.HPProfile?.id))
+                    || freshAppointment.data?.AppointmentRouting.some(apt =>tool.routedAptStatuses.includes(apt.status.toLocaleLowerCase()) && (myHps?? []).some(hp => hp.id === apt.RoutedTo.id))
                   )
                 )
               return enable
@@ -116,7 +118,7 @@ export default function AppointmentDisplay() {
         </div>
         <div className="ml-auto flex items-center gap-2">
           {
-            freshAppointment.data.AppointmentAttribute?.status === "ROUTED" && [PERMISSIONS.CLINIC["COMPLETE:CLINIC:APPOINTMENT"].name].every(p => myClinicPermission.includes(p)) &&
+            freshAppointment.data.AppointmentAttribute?.status === "ROUTED" && [PERMISSIONS.CLINIC["COMPLETE:CLINIC:APPOINTMENT"].name].every(p => myClinicPermissionArray.includes(p)) &&
             <CompleteAppointment appointmentId={freshAppointment.data.id} onCompleted={revalidate} disabled={!freshAppointment.data.id}/>
           }
         </div>
@@ -176,7 +178,7 @@ export default function AppointmentDisplay() {
               of={(freshAppointment.data.PreAssessmentNotes ?? []).slice(-1)}
               fallback={(
                 <PreAssessmentNoteSheet 
-                  disabled={!freshAppointment || [PERMISSIONS.CLINIC["WRITE:CLINIC:PRE_ASSESSMENT_NOTE"].name].every(p => !myClinicPermission.includes(p))}
+                  disabled={!freshAppointment || [PERMISSIONS.CLINIC["WRITE:CLINIC:PRE_ASSESSMENT_NOTE"].name].every(p => !myClinicPermissionArray.includes(p))}
                   key={freshAppointment.data.id}
                   preAssessmentNotes={{
                     assessment: "",
@@ -193,7 +195,7 @@ export default function AppointmentDisplay() {
                 return (
                   <PreAssessmentNoteSheet 
                     key={preAssessmentNote.id}
-                    disabled={!freshAppointment || [PERMISSIONS.CLINIC["WRITE:CLINIC:PRE_ASSESSMENT_NOTE"].name].every(p => !myClinicPermission.includes(p))}
+                    disabled={!freshAppointment || [PERMISSIONS.CLINIC["WRITE:CLINIC:PRE_ASSESSMENT_NOTE"].name].every(p => !myClinicPermissionArray.includes(p))}
                     preAssessmentNotes={{
                       ...preAssessmentNote,
                       homeInstructions: preAssessmentNote.homeInstructions ?? "",

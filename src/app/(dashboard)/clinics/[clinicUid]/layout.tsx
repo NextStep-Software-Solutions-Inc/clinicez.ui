@@ -60,6 +60,7 @@ export default async function ProcessLayout({
             </Link>
             <SideNav navItems={filterNavList()} params={["clinics", "clinicUid"]}/>
           </nav>
+
           <nav className="mt-auto flex flex-col items-center gap-4 px-2 sm:py-5">
             <Tooltip>
               <TooltipTrigger asChild>

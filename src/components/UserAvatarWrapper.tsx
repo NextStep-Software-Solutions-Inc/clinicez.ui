@@ -3,7 +3,7 @@ import { DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSep
 import { Settings } from "lucide-react";
 import PHRLink from "../app/(activation)/organizations/[orgUid]/activate/PHRLink";
 import HPProfilesLink from "./HPProfilesLink";
-import DashboardLink from "./DashboardLink";
+import OrgDashboardLink from "./OrgDashboardLink";
 import UserAvatarDropdown from "./UserAvatarDropdown";
 import Suspend from "./Suspend";
 import { Skeleton } from "./ui/skeleton";
@@ -37,7 +37,7 @@ export default async function UserAvatarWrapper() {
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <Suspend loadingFallback={<Skeleton className="h-6 mx-2 my-1 bg-slate-400" />}>
-          <DashboardLink />
+          <OrgDashboardLink />
         </Suspend>
         <Suspend loadingFallback={<Skeleton className="h-6 mx-2 my-1 bg-slate-400" />}>
           <TenantConsoleLink />

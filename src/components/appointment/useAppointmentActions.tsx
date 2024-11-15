@@ -34,7 +34,7 @@ export const useAppointmentTools = ({ appointment, revalidate}:UseAppointmentToo
   const {data: authHps} = useHPs({
     userId: user?.sub ?? undefined
   })
-  const routingCode = appointment?.AppointmentRouting.find(r => authHps?.some(hp => hp.id === Number(r.RoutedTo.User.userId) && r.status === "PENDING"))?.routingCode
+  const routingCode = appointment?.AppointmentRouting.find(r => authHps?.some(hp => hp.id === r.RoutedTo.id && r.status === "PENDING"))?.routingCode
   if(!appointment) return { tools: [] }
   const patientId = appointment.Requesters[0].User.userId
   const tools: AppointmentStatusTools = [

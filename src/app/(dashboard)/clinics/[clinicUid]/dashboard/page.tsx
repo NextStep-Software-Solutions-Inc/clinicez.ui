@@ -14,6 +14,7 @@ import { PatientHealthAnalytics } from "@components/dashboard/PatientHealthAnaly
 import { PatientsAnalytics } from "@components/dashboard/PatientsAnalytics"
 import { OrgMembershipAnalytics } from "@/components/organization/OrgMembershipAnalytics"
 import { filterNavList } from "../nav"
+import ClinicMemberActions from "@/components/dashboard/clinic-settings/ClinicMemberActions"
 
 export const maxDuration = 30; // page timeout in seconds
 export const revalidate  = 60; // revalidation interval in seconds
@@ -40,6 +41,7 @@ async function DashboardPage({params, searchParams}: AppRouterPageRouteOpts) {
             <MainNav className="mx-6" navItems={mappedNavItems} />
           </div>
         </div>
+
         <div className="flex-1 space-y-4 p-8 pt-6">
           <div className="flex items-center justify-between space-y-2">
             <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>

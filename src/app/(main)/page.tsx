@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import { getCachedSession } from "@actions/session.action";
 import FeatureItems, { HeroImage, HeroTitle } from "@components/FeatureItems";
+import ClinicMemberActions from "@/components/dashboard/clinic-settings/ClinicMemberActions";
 
 export const metadata: Metadata = {
   title: "Home | Clinic EZ ",
@@ -23,6 +24,8 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+      <ClinicMemberActions/>
+
       <section className="overflow-hidden">
         <FeatureItems/>
       </section>

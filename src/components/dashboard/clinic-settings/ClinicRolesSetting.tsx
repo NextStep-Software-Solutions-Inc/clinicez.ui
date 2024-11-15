@@ -19,12 +19,12 @@ export default function ClinicRolesSetting(){
       <CardHeader>
         <CardTitle>
           <div className="flex flex-wrap gap-2 items-center">
-            <span className="flex-1">Organization Roles</span>
+            <span className="flex-1">Clinic Roles</span>
             <AddClinicRoleModal clinicUid={clinicUid} onAddRole={mutate}/>
           </div>
         </CardTitle>
         <CardDescription>
-          Manage roles for your organization.
+          Manage roles for your clinic.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-5">

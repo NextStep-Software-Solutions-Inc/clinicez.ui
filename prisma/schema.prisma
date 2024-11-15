@@ -1581,6 +1581,8 @@ model Drug {
   brandName       String
   genericName     String
   MedicationDrugs MedicationDrug[]
+
+  @@unique([brandName, genericName], name: "unique_drug")
 }
 
 model Medication {

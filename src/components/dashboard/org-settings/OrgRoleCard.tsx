@@ -33,7 +33,7 @@ export const OrgRoleCard = ({role, onDeleteRole}:OrgRoleCardProps) => {
       <CardHeader>
         <CardTitle>
           <div className="flex flex-wrap items-center gap-2">
-            <span className="flex-1">{role.name}</span>
+            <span className="flex-1 capitalize">{role.name}</span>
             <form action={handleDelete} className="invisible group-hover/action:visible transition-all">
               <ActionButton variant="destructive" type="submit">
                 <Trash size={16} className="mr-2"/>

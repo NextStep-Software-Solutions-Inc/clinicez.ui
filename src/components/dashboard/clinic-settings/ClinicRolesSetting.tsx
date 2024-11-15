@@ -20,7 +20,7 @@ export default function ClinicRolesSetting(){
         <CardTitle>
           <div className="flex flex-wrap gap-2 items-center">
             <span className="flex-1">Clinic Roles</span>
-            <AddClinicRoleModal clinicUid={clinicUid} onAddRole={mutate}/>
+            {/* <AddClinicRoleModal clinicUid={clinicUid} onAddRole={mutate}/> */}
           </div>
         </CardTitle>
         <CardDescription>

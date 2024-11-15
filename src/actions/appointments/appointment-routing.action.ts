@@ -20,7 +20,7 @@ export const assignAppointmentAction = async (data: AssignAppointmentPayload) =>
     const { routedTo, appointmentId } = data;
     if(!routedTo || !appointmentId) throw new Error('Invalid data provided');
 
-    const myPermissions = await getPermissionsAction({userId: session.user.sub, type: 'ORGANIZATION'});
+    const myPermissions = await getPermissionsAction({userId: session.user.sub, type: 'CLINIC'});
     const myPermissionArray = myPermissions.map(permission => permission.name);
     const assignAppointmentPermissions = [PERMISSIONS.CLINIC["ASSIGN:CLINIC:APPOINTMENT"].name]
     const canAssignAppointment = assignAppointmentPermissions.every(permission => myPermissionArray.includes(permission));
@@ -96,7 +96,7 @@ export const acceptAppointmentAction = async (formData: FormData) => {
   try {
     if(!session) throw new Error('Unauthorized');
 
-    const myPermissions = await getPermissionsAction({userId: session.user.sub, type: 'ORGANIZATION'});
+    const myPermissions = await getPermissionsAction({userId: session.user.sub, type: 'CLINIC'});
     const myPermissionArray = myPermissions.map(permission => permission.name);
     const acceptAppointmentPermissions = [PERMISSIONS.CLINIC["ACCEPT:CLINIC:APPOINTMENT_ASSIGNMENT"].name]
     const canAcceptAppointment = acceptAppointmentPermissions.every(permission => myPermissionArray.includes(permission));
@@ -144,7 +144,7 @@ export const declineAppointmentAction = async (formData: FormData) => {
   try {
     if(!session) throw new Error('Unauthorized');
 
-    const myPermissions = await getPermissionsAction({userId: session.user.sub, type: 'ORGANIZATION'});
+    const myPermissions = await getPermissionsAction({userId: session.user.sub, type: 'CLINIC'});
     const myPermissionArray = myPermissions.map(permission => permission.name);
     const declineAppointmentPermissions = [PERMISSIONS.CLINIC["DECLINE:CLINIC:APPOINTMENT_ASSIGNMENT"].name]
     const canDeclineAppointment = declineAppointmentPermissions.every(permission => myPermissionArray.includes(permission));
@@ -187,7 +187,7 @@ export const cancelAppointmentRoutingAction = async (appointmentRoutingId: numbe
   try {
     if(!session) throw new Error('Unauthorized');
 
-    const myPermissions = await getPermissionsAction({userId: session.user.sub, type: 'ORGANIZATION'});
+    const myPermissions = await getPermissionsAction({userId: session.user.sub, type: 'CLINIC'});
     const myPermissionArray = myPermissions.map(permission => permission.name);
     const cancelAppointmentRouting = [PERMISSIONS.CLINIC["CANCEL:CLINIC:APPOINTMENT_ASSIGNMENT"].name]
     const canCancelAppointment = cancelAppointmentRouting.every(permission => myPermissionArray.includes(permission));

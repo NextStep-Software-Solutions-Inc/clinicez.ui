@@ -12,7 +12,7 @@ export const receiveAppointmentAction = async (formData: FormData) => {
   try {
     if(!session) throw new Error("User not authenticated.");
 
-    const myPermissions = await getPermissionsAction({userId: session.user.sub, type: "ORGANIZATION"});
+    const myPermissions = await getPermissionsAction({userId: session.user.sub, type: "CLINIC"});
     const receiveAppointmentPermissions = [PERMISSIONS.CLINIC["RECEIVE:CLINIC:APPOINTMENT"].name];
     const myPermissionArray = myPermissions.map(permission => permission.name);
     const canReceiveAppointment = receiveAppointmentPermissions.some(permission => myPermissionArray.includes(permission));
@@ -104,7 +104,7 @@ export const completeAppointmentAction = async (formData: FormData) => {
   try {
     if(!session) throw new Error("User not authenticated.");
 
-    const myPermissions = await getPermissionsAction({userId: session.user.sub, type: "ORGANIZATION"});
+    const myPermissions = await getPermissionsAction({userId: session.user.sub, type: "CLINIC"});
     const completeAppointmentPermissions = [PERMISSIONS.CLINIC["COMPLETE:CLINIC:APPOINTMENT"].name];
     const myPermissionArray = myPermissions.map(permission => permission.name);
     const canCompleteAppointment = completeAppointmentPermissions.some(permission => myPermissionArray.includes(permission));
@@ -146,7 +146,7 @@ export const rejectAppointmentAction = async (formData: FormData) => {
   try {
     if(!session) throw new Error("User not authenticated.");
 
-    const myPermissions = await getPermissionsAction({userId: session.user.sub, type: "ORGANIZATION"});
+    const myPermissions = await getPermissionsAction({userId: session.user.sub, type: "CLINIC"});
     const rejectAppointmentPermissions = [PERMISSIONS.CLINIC["REJECT:CLINIC:APPOINTMENT"].name];
     const myPermissionArray = myPermissions.map(permission => permission.name);
     const canRejectAppointment = rejectAppointmentPermissions.some(permission => myPermissionArray.includes(permission));

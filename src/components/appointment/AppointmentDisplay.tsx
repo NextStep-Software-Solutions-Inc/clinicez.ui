@@ -1,7 +1,6 @@
 "use client";
 
-import dayjs from "dayjs"
-import utc from "dayjs/plugin/utc"
+import dayjs, { formatDateTime } from "@lib/day-utils"
 
 import {differenceInCalendarYears } from "date-fns"
 import { MoreVertical, Pencil} from "lucide-react"
@@ -33,19 +32,15 @@ import { Fragment, useRef } from "react";
 import { GetAppointment } from "@actions/appointments/appointments.action";
 import AppointmentRoutingHistorySheet from "./AppointmentRoutingHistorySheet";
 import CompleteAppointment from "./CompleteAppointment";
-import { useHP } from "@hooks/useHP";
 import { PERMISSIONS } from "@lib/permissions";
 import Link from "next/link";
-import { formatDateTime } from "@/lib/day-utils";
 
-dayjs.extend(utc)
 
 export default function AppointmentDisplay() {
 
   const { user } = useUser()
-  const params = useParams()
+  const { clinicUid } = useParams<{clinicUid: string}>()
   const searchParams = useSearchParams()
-  const clinicUid = String(params?.clinic)
   const appointmentId = parseInt(searchParams.get("_appointment") ?? "")
 
   const {data: freshAppointment, isLoading: loadingAppointment} = useClinicAppointment({
@@ -58,7 +53,7 @@ export default function AppointmentDisplay() {
   const preferredHp = freshAppointment?.data?.AppointmentAttribute?.PreferredAppointee
   
   const revalidate = async () => {
-    revalidatePath(`${clinicUid}/appointments`,  "page")
+    revalidatePath(`/clinic/${clinicUid}/appointments`,  "page")
     mutate((key) =>  typeof key === 'string' && key.startsWith(`/api/clinics/${clinicUid}/appointments`), undefined, {
       revalidate:true
     })

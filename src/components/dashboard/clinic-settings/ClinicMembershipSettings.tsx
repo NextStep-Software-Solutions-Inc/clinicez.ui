@@ -19,7 +19,7 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrig
 import { useUsers } from "@/hooks/useUser";
 import { Button } from "@/components/ui/button";
 import { useOrganizations } from "@/hooks/useOrganization";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { promiseWrapper } from "@/lib/with-error-handling";
 import { GetClinicMembers, addClinicMemberAction } from "@/actions/clinics/clinic-member.action";
@@ -118,7 +118,7 @@ export const AddClinicMember = ({onAdded}: AddClinicMemberProps) => {
   })
 
   const {data: clinicRoles} = useClinicRoles({})
-
+  const filteredRoles = useMemo(() => clinicRoles?.filter(r => !["owner", "patient"].includes(r.name.toLocaleLowerCase())), [clinicRoles])
   const users = data?.[0]
   const handleAddClinicMember = async () => {
     if(!selectedRoleId || !selectedUserId) {
@@ -189,7 +189,7 @@ export const AddClinicMember = ({onAdded}: AddClinicMemberProps) => {
                     <Each
                       of={users ?? []}
                       render={(user) => (
-                        <SelectItem key={user.id} value={user.userId}>{user.firstName} {user.middleName} {user.lastName} {user.suffix}</SelectItem>
+                        <SelectItem className="font-medium" key={user.id} value={user.userId}>{user.firstName} {user.middleName} {user.lastName} {user.suffix}</SelectItem>
                       )}
                     />
                   </SelectGroup>
@@ -208,7 +208,7 @@ export const AddClinicMember = ({onAdded}: AddClinicMemberProps) => {
                   <SelectGroup>
                     <SelectLabel>Roles</SelectLabel>
                     <Each
-                      of={clinicRoles ?? []}
+                      of={filteredRoles ?? []}
                       render={(role, index) => (
                         <SelectItem value={role.id.toString()}>{role.name}</SelectItem>
                       )}

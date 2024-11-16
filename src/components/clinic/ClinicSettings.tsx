@@ -14,8 +14,6 @@ import ClinicPermissionsSetting from "../dashboard/clinic-settings/ClinicPermiss
 import ClinicMembershipSettings from "../dashboard/clinic-settings/ClinicMembershipSettings";
 import AppointmentSettings from "../dashboard/clinic-settings/AppointmentSettings";
 import ConsultationSettings from "../dashboard/clinic-settings/ConsultationSettings";
-import { MoreHorizontal } from "lucide-react";
-import ClinicMemberActions from "../dashboard/clinic-settings/ClinicMemberActions";
 import SystemList from "../dashboard/org-settings/SystemList";
 
 const tabs = ["general", "membership", "roles","appointment", "consultation", "permissions"]
@@ -26,7 +24,7 @@ export default function ClinicSettings() {
 
 
       {/* <h5 className="text-lg font-bold">Organization Membership Requirements</h5> */}
-      <Tabs defaultValue={tabs[1]} className="w-full">
+      <Tabs defaultValue={tabs[0]} className="w-full">
         <TabsList className="">
           <Each
             of={tabs}
@@ -50,8 +48,10 @@ export default function ClinicSettings() {
           <AppointmentSettings/>
         </TabsContent>
         <TabsContent value="consultation">
-          <ConsultationSettings/>
-          <SystemList/>
+          <div className="space-y-2">
+            <ConsultationSettings/>
+            <SystemList/>
+          </div>
         </TabsContent>
         <TabsContent value="roles">
           <ClinicRolesSetting/>

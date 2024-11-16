@@ -1,5 +1,4 @@
 import { getClinicMembersAction } from "@/actions/clinics/clinic-member.action";
-import { getClinicRolesAction } from "@/actions/clinics/clinic-role.action";
 import { getCachedSession } from "@actions/session.action";
 import { redirect } from "next/navigation";
 

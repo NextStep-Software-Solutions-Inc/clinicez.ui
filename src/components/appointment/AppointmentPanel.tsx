@@ -122,7 +122,7 @@ export default function AppointmentPanel({
   const sort = searchParams.get("_sort")  ?? "request";
   const routedAptStatus = searchParams.get("_routedAptStatus");
   const activeRoleId = userDefaultOrgRole[clinicUid]?.roleId ?? 0;
-  const {data: clinicRoles} = useClinicRoles({userId, clinicUid})
+  const {data: clinicRoles} = useClinicRoles({userId})
   
   const roles = React.useMemo(() => (clinicRoles ?? [])?.map((role) => {
     return {
@@ -169,8 +169,8 @@ export default function AppointmentPanel({
     } else if(defaultRole) {
       setUserDefaultClinicRole({
         [defaultRole.Clinic.clinicUid]: {
-          roleId: defaultRole?.ClinicMemberRole.id,
-          roleName: defaultRole?.ClinicMemberRole.name,
+          roleId: defaultRole?.ClinicRole.id,
+          roleName: defaultRole?.ClinicRole.name,
         }
       })
     }

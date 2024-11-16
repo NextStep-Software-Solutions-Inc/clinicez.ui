@@ -62,28 +62,28 @@ export const getClinicRolesAction = cache(async (filter?: FiltersType) => {
           }
         }
       },
-      // UserDefaultClinicRoles: {
+      UserDefaultClinicRoles: {
     
-      //   select: {
-      //     id: true,
-      //     Clinic: {
-      //       select: {
-      //         clinicUid: true,
-      //       }
-      //     },
-      //     ClinicRole: {
-      //       select: {
-      //         id: true,
-      //         name: true
-      //       }
-      //     },
-      //     User: {
-      //       select: {
-      //         userId: true
-      //       }
-      //     }
-      //   }
-      // },
+        select: {
+          id: true,
+          Clinic: {
+            select: {
+              clinicUid: true,
+            }
+          },
+          ClinicRole: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          User: {
+            select: {
+              userId: true
+            }
+          }
+        }
+      },
       ClinicRoleAppointmentTabs: {
         select: {
           clinicRoleId: true,

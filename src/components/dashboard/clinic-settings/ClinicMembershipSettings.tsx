@@ -24,6 +24,7 @@ import { toast } from "sonner";
 import { promiseWrapper } from "@/lib/with-error-handling";
 import { GetClinicMembers, addClinicMemberAction } from "@/actions/clinics/clinic-member.action";
 import { useClinicRoles } from "@/hooks/useClinicRole";
+import { cn } from "@/lib/utils";
 
 export default function ClinicMembershipSettings() {
   
@@ -79,10 +80,14 @@ export const MembersList = ({clinicMembers, onUpdated}: MembersListProps) => {
                 </div>
               </div>
               <div className=" space-y-1 flex-1">
-                <div className="text-sm flex gap-1 items-center">
-                  <User size={16}/><span>{Role?.name}</span>
+                <div className={
+                  cn("text-sm flex gap-1 items-center ",{"text-cyan-500": Role?.name === "owner"})
+                }>
+                  <User size={16}/><span >{Role?.name}</span>
                 </div>
-                <div className="text-sm lowercase flex gap-1 items-center">
+                <div className={
+                  cn("text-sm flex gap-1 items-center lowercase",{"text-teal-500": status.toLocaleLowerCase() === "active"})
+                }>
                   <BadgeCheck size={16}/>{status}
                 </div>
               </div>
@@ -127,7 +132,7 @@ export const AddClinicMember = ({onAdded}: AddClinicMemberProps) => {
     }
     toast.promise(promiseWrapper(addClinicMemberAction)({
       clinicUid,
-      roleId: 1,
+      roleId: Number(selectedRoleId),
       userId: selectedUserId
     }), {
       loading: "Adding member...",
@@ -219,7 +224,9 @@ export const AddClinicMember = ({onAdded}: AddClinicMemberProps) => {
             </div>
           </div>
           <DialogFooter>
-            <DialogClose ref={closeButtonRef}>Cancel</DialogClose>
+            <DialogClose ref={closeButtonRef}>
+              <Button variant="outline">Cancel</Button>
+            </DialogClose>
             <ActionButton type="submit">Add Member</ActionButton>
           </DialogFooter>
         </form>  

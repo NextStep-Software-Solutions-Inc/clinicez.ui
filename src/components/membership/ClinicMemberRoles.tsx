@@ -11,7 +11,7 @@ interface ClinicMemberRolesProps {
 }
 export default function ClinicMemberRoles({clinicUid,userId}:ClinicMemberRolesProps){
 
-  const {data: roles, isLoading: loadingRoles} = useClinicRoles({userId, clinicUid});
+  const {data: roles, isLoading: loadingRoles} = useClinicRoles({userId});
 
   if(loadingRoles) return <div>Loading...</div>
   return (

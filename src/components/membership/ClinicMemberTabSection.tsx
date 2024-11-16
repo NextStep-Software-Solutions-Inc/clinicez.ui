@@ -14,8 +14,7 @@ interface ClinicMemberTabSectionProps {
 }
 export default function ClinicMemberTabSection({clinicUid, userId}:ClinicMemberTabSectionProps) {
   const {data: myOrgRoles} = useClinicRoles({
-    userId,
-    clinicUid
+    userId
   })
 
   // const orgRequirements = useMemo(() => [...new Set(myOrgRoles?.flatMap((role) => role.requirements))], [myOrgRoles]);

@@ -120,7 +120,7 @@ export const insertToCalendar = async (appointmentId:number) => {
     if(!session) throw new Error("Session not found");
 
 
-    const myPermissions = await getPermissionsAction({userId: session.user.sub, type: "ORGANIZATION"});
+    const myPermissions = await getPermissionsAction({userId: session.user.sub, type: "CLINIC"});
     const myPermissionArray = myPermissions.map(p => p.name);
     const confirmBookingPermissions = [PERMISSIONS.CLINIC["CONFIRM:CLINIC:APPOINTMENT"].name];
     const canConfirmBooking = confirmBookingPermissions.every(p => myPermissionArray.includes(p));

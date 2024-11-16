@@ -35,7 +35,7 @@ export default function ModifyMedicationSheet({ readonly }: ModifyMedicationShee
 
   const {data: medication, mutate: mutateMedication} = useMedication(medicationId, sessionClinicValue?.clinicId ?? 0)
   const {data: medicationDrugs, mutate} = useMedicationDrugs(medicationId)
-  const {data: myPermissions } = usePermissions({ userId: user?.sub ?? "", type: "ORGANIZATION" })
+  const {data: myPermissions } = usePermissions({ userId: user?.sub ?? "", type: "CLINIC" })
 
   const handleClose = (state: boolean) => {
     const searchParams = new URLSearchParams(window.location.search)

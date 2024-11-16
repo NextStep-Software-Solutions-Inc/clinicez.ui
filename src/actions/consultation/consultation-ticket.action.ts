@@ -23,7 +23,7 @@ export const createConsultationTicketAction = async ({systemId, appointmentId, c
   try {
     if(!session) throw new Error("Unauthorized")
 
-    const myPermissions = await getPermissionsAction({ userId:session.user.sub, type: "ORGANIZATION" })
+    const myPermissions = await getPermissionsAction({ userId:session.user.sub, type: "CLINIC" })
     const userPermissionArray = myPermissions.map(p => p.name);
     const createConsultationTicketPermissions = [PERMISSIONS.CLINIC["CREATE:CLINIC:CONSULTATION_TICKET"].name]
     const canCreateConsultationTicket = createConsultationTicketPermissions.some(p => userPermissionArray.includes(p))
@@ -97,7 +97,7 @@ export const getConsultationTicketAction = cache(async (consultationId: number, 
     if(!session) throw new Error("Unauthorized")
 
     const [permissions] = await Promise.all([
-      getPermissionsAction({ userId:session.user.sub, type: "ORGANIZATION" }),
+      getPermissionsAction({ userId:session.user.sub, type: "CLINIC" }),
     ])
 
     const userPermissionArray = permissions.map(p => p.name);
@@ -271,7 +271,7 @@ export const getConsultationTicketsAction = async ({clinicUid, filters}: {clinic
     const { showArchived, userId } = filters ?? {}
     
     const [permissions] = await Promise.all([
-      getPermissionsAction({ userId:session.user.sub }),
+      getPermissionsAction({ userId:session.user.sub, type:"CLINIC" }),
     ])
     const userPermissionArray = permissions.map(p => p.name);
     const readAllOrgConsultationsPermissions = [PERMISSIONS.CLINIC["READ:CLINIC:CONSULTATION_TICKET:ALL"].name]
@@ -445,7 +445,7 @@ export const updateConsultationTicketAction = async ({consultationId, subject}: 
     if(!session) throw new Error("Unauthorized")
 
     const [myPermissions] = await Promise.all([
-      getPermissionsAction({ userId:session.user.sub, type: "ORGANIZATION" }),
+      getPermissionsAction({ userId:session.user.sub, type: "CLINIC" }),
     ])
 
     const userPermissionArray = myPermissions.map(p => p.name);
@@ -488,7 +488,7 @@ export const deleteConsultationTicketAction = async (consultationId: number) => 
     if(!session) throw new Error("Unauthorized")
 
     const [myPermissions,myHps] = await Promise.all([
-      getPermissionsAction({ userId:session.user.sub, type: "ORGANIZATION" }),
+      getPermissionsAction({ userId:session.user.sub, type: "CLINIC" }),
       getHPsAction({userId: session.user.sub})
     ])
 
@@ -535,7 +535,7 @@ export const toggleArchiveConsultationTicketAction = async (consultationId: numb
     if(!session) throw new Error("Unauthorized")
 
     const [myPermissions] = await Promise.all([
-      getPermissionsAction({ userId:session.user.sub, type: "ORGANIZATION" }),
+      getPermissionsAction({ userId:session.user.sub, type: "CLINIC" }),
     ])
 
     const userPermissionArray = myPermissions.map(p => p.name);
@@ -584,7 +584,7 @@ export const resolveConsultationTicket = async (consultationId: number) => {
       PERMISSIONS.CLINIC["RESOLVE:CLINIC:CONSULTATION_TICKET:CREATED"].name,
       PERMISSIONS.CLINIC["RESOLVE:CLINIC:CONSULTATION_TICKET:CO_CREATED"].name
     ]
-    const myPermissions = await getPermissionsAction({ userId:session.user.sub })
+    const myPermissions = await getPermissionsAction({ userId:session.user.sub, type: "CLINIC" })
     const userPermissionArray = myPermissions.map(p => p.name);
     const canResolveConsultationTicket = resolveConsultationTicketPermissions.some(p => userPermissionArray.includes(p))
 

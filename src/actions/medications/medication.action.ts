@@ -24,7 +24,7 @@ export const getMedicationsAction = async (filters?: GetMedicationsFilters) => {
     const [user, hps, myPermissions] = await Promise.all([
       getUserAction(session.user.sub),
       getHPsAction({ userId: session.user.sub }),
-      getPermissionsAction({ userId: session.user.sub, type: "ORGANIZATION" })
+      getPermissionsAction({ userId: session.user.sub, type: "CLINIC" })
     ]);
 
     const myPermissionArray = myPermissions.map(permission => permission.name);
@@ -90,7 +90,7 @@ export const createMedicationAction = async (payload: CreateMedicationPayload) =
     const session = await getCachedSession();
     if(!session) throw new Error("Unauthorized");
 
-    const myPermissions = await getPermissionsAction({ userId: session.user.sub, type: "ORGANIZATION" });
+    const myPermissions = await getPermissionsAction({ userId: session.user.sub, type: "CLINIC" });
     const myPermissionArray = myPermissions.map(permission => permission.name);
 
     const createClinicMedicationPermissions = [PERMISSIONS.CLINIC["CREATE:CLINIC:MEDICATION"].name]
@@ -131,7 +131,7 @@ export const getMedicationAction = async (medicationId: number, filters?: GetMed
     const [user, hps, myPermissions] = await Promise.all([
       getUserAction(session.user.sub),
       getHPsAction({ userId: session.user.sub }),
-      getPermissionsAction({ userId: session.user.sub, type: "ORGANIZATION" })
+      getPermissionsAction({ userId: session.user.sub, type: "CLINIC" })
     ]);
 
     const myPermissionArray = myPermissions.map(permission => permission.name);
@@ -189,7 +189,7 @@ export const setMedicationCompletedAction = async (medicationId: number) => {
     const session = await getCachedSession();
     if(!session) throw new Error("Unauthorized");
 
-    const myPermissions = await getPermissionsAction({ userId: session.user.sub, type: "ORGANIZATION" });
+    const myPermissions = await getPermissionsAction({ userId: session.user.sub, type: "CLINIC" });
     const myPermissionArray = myPermissions.map(permission => permission.name);
 
     const completeOrgMedicationPermissions = [PERMISSIONS.CLINIC["COMPLETE:CLINIC:MEDICATION"].name]

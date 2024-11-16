@@ -15,7 +15,7 @@ export const getMedicationDrugsAction = async (medicationId: number) => {
     if(!session) throw new Error("Unauthorized");
 
     const [myPermissions] = await Promise.all([
-      getPermissionsAction({ userId: session.user.sub, type: "ORGANIZATION" }),
+      getPermissionsAction({ userId: session.user.sub, type: "CLINIC" }),
     ]);
 
     const myPermissionArray = myPermissions.map(permission => permission.name);
@@ -71,7 +71,7 @@ export const addMedicationDrugAction = async (payload: AddMedicationDrugPayload)
     if(!session) throw new Error("Unauthorized");
 
     const [myPermissions] = await Promise.all([
-      getPermissionsAction({ userId: session.user.sub, type: "ORGANIZATION" }),
+      getPermissionsAction({ userId: session.user.sub, type: "CLINIC" }),
     ]);
 
     const myPermissionArray = myPermissions.map(permission => permission.name);
@@ -113,7 +113,7 @@ export const removeMedicationDrugAction = async (medicationDrugId: number) => {
     if(!session) throw new Error("Unauthorized");
 
     const [myPermissions] = await Promise.all([
-      getPermissionsAction({ userId: session.user.sub, type: "ORGANIZATION" }),
+      getPermissionsAction({ userId: session.user.sub, type: "CLINIC" }),
     ]);
 
     const myPermissionArray = myPermissions.map(permission => permission.name);

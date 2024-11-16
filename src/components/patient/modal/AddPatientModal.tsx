@@ -66,7 +66,7 @@ interface AddPatientModalProps {
 export default function AddPatientModal({clinicUid, onAddPatient, roleName}:AddPatientModalProps) {
 
   const closeBtnRef = React.useRef<HTMLInputElement>(null);
-  const {data: clinicRoles} = useClinicRoles({clinicUid, roleName});
+  const {data: clinicRoles} = useClinicRoles({roleName});
   const form = useForm<z.infer<typeof addUserSchema>>({
     resolver: zodResolver(addUserSchema),
   });

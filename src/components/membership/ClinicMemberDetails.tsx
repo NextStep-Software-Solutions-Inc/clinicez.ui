@@ -23,7 +23,7 @@ interface ClinicMemberDetailsProps {
 export default function ClinicMemberDetails({userId, clinicUid}:ClinicMemberDetailsProps) {
   const {data: user, isLoading} = useDBUser({ userId });
   
-  const {data: roles} = useClinicRoles({userId, clinicUid});
+  const {data: roles} = useClinicRoles({userId});
   const {data: appointments} = useClinicAppointments({clinicUid, userId });
   
   if(isLoading) return <div>Loading user...</div>

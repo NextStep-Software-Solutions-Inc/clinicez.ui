@@ -11,7 +11,7 @@ import { useClinicRoles } from "@/hooks/useClinicRole";
 
 export default function ClinicRolesSetting(){
   const {clinicUid} = useParams<{clinicUid: string}>();
-  const {data: clinicRoles, isLoading: loadingOrgRoles, mutate} = useClinicRoles({clinicUid});
+  const {data: clinicRoles, isLoading: loadingOrgRoles, mutate} = useClinicRoles({});
   
   if(loadingOrgRoles) return <PageLoading label="Loading page, please wait a moment..."/>
   return (

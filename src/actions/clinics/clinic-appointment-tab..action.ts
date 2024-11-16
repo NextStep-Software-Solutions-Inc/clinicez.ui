@@ -31,7 +31,7 @@ export const getClinicAppointmentTabsAction = cache(async (clinicUid: string) =>
         },
         ClinicRoleAppointmentTabs: {
           select: {
-            ClinicMemberRole: {
+            ClinicRole: {
               select: {
                 id: true,
                 name: true

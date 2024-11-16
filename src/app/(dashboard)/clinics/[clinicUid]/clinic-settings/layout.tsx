@@ -1,3 +1,4 @@
+import { getClinicMembersAction } from "@/actions/clinics/clinic-member.action";
 import { getClinicRolesAction } from "@/actions/clinics/clinic-role.action";
 import { getCachedSession } from "@actions/session.action";
 import { redirect } from "next/navigation";
@@ -11,13 +12,13 @@ interface OrgSettingLayoutProps {
 export default async function OrgSettingLayout({children, params: {clinicUid}}:OrgSettingLayoutProps) {
 
   const session = await getCachedSession();
-  const myRoles = await getClinicRolesAction({
+  const myClinicMembership = await getClinicMembersAction({
     userId: session?.user.sub,
     clinicUid,
     status: "ACTIVE"
   })
 
-  if(!myRoles.some(role =>  ["admin", "owner"].includes(role.name.toLocaleLowerCase()))) redirect("/unauthorized");
+  if(!myClinicMembership.data?.some(membership =>  membership.Role && ["admin", "owner"].includes(membership.Role.name.toLocaleLowerCase()))) redirect("/unauthorized");
   return (
     <>{children}</>
   );

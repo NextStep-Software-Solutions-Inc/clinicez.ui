@@ -83,7 +83,6 @@ export default function AppointmentDisplay() {
   }
 
   const myClinicPermissionArray = myClinicPermissions?.map(p => p.name) ?? []
-  console.log({myClinicPermissionArray});
   
   const preferredHPName = `${preferredHp?.HPProfile?.title || preferredHp?.User.firstName} ${preferredHp?.HPProfile?.name || preferredHp?.User.lastName} ${preferredHp?.HPProfile?.suffix || preferredHp?.User.suffix || ""}`
   const meetingUrl = freshAppointment.data.AppointmentAttribute?.meetingUrl

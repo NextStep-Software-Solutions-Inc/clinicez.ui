@@ -40,26 +40,36 @@ export const createOrganizationAction = async (data: CreateOrganizationPayload) 
 };
   
 
-type FiltersType = {
+export type GetOrganizationsFilters = {
   userId?: string;
   orgUid?: string;
-  status?: OrganizationMemberStatus;
+  clinicUid?: string;
 }
 
 export type GetOrganizations = Awaited<ReturnType<typeof getOrganizationsAction>>
-export const getOrganizationsAction = cache(async (filters?: FiltersType) => {
+export const getOrganizationsAction = cache(async (filters?: GetOrganizationsFilters) => {
 
-  const { userId } = filters || {};
+  const { userId, clinicUid, orgUid } = filters || {};
   const organizations = await prisma.organization.findMany({
     orderBy: {
       name: "asc"
     },
     where: {
+      ...(orgUid && { orgUid }),
       ...(userId && {
         Users: {
           every: {
             User: {
               userId
+            }
+          }
+        }
+      }),
+      ...(clinicUid && {
+        ClinicOrganizations: {
+          some: {
+            Clinic: {
+              clinicUid
             }
           }
         }

@@ -6,6 +6,7 @@ import { createUserAction, getUsersAction } from "@actions/users/user.action";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { withJwtAuth } from '@middlewares/withJwtAuth';
+import { parseObject } from '@/lib/utils';
 
 const newUserSchema = z.object({
   email: z.string({
@@ -33,16 +34,10 @@ export const POST = withUnkey(async (req) => {
 
 export const GET = withJwtAuth(async (req: NextRequest) => {
   const searchParams = req.nextUrl.searchParams
-  const orgId = searchParams.get('orgId') ?? '';
-  const userId = searchParams.get('userId') ?? '';
-  const email = searchParams.get('email') ?? '';
-  
-  const filter = {
-    ...(orgId? {orgId}: {}),
-    ...(userId? {userId}: {}),
-    ...(email ? {email}: {})
-  }
+
+  const filters = parseObject(Object.fromEntries(searchParams.entries()));
+
   const response = new NextResponse()
-  const users = await getUsersAction(filter);
+  const users = await getUsersAction(filters);
   return NextResponse.json(users, response);
 });

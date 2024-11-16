@@ -1,5 +1,4 @@
 import { getClinicRolesAction } from "@/actions/clinics/clinic-role.action";
-import { getOrganizationRolesAction } from "@actions/organizations/organization-role.action";
 import { getCachedSession } from "@actions/session.action";
 import { redirect } from "next/navigation";
 
@@ -18,7 +17,7 @@ export default async function OrgSettingLayout({children, params: {clinicUid}}:O
     status: "ACTIVE"
   })
 
-  if(!myRoles.some(role => role.name.toLocaleLowerCase() === "admin")) redirect("/unauthorized");
+  if(!myRoles.some(role =>  ["admin", "owner"].includes(role.name.toLocaleLowerCase()))) redirect("/unauthorized");
   return (
     <>{children}</>
   );

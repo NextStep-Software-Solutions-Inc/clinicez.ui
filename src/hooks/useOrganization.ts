@@ -1,12 +1,14 @@
-import { GetOrganization, GetOrganizations } from "@actions/organizations/organization.action"
+import { GetOrganization, GetOrganizations, GetOrganizationsFilters } from "@actions/organizations/organization.action"
 import { self } from "@services/request"
 import useSWR from "swr"
 
-export const useOrganizations = (userId?: string | null) => {
+export const useOrganizations = (filters: GetOrganizationsFilters) => {
   const fetcher = (args:string) => self.get<GetOrganizations>(args)
   const searchParams = new URLSearchParams()
 
-  if(userId) searchParams.append("userId", userId) 
+  Object.entries(filters ?? {}).forEach(([key, value]) => {
+    if(value) searchParams.set(key, value.toString())
+  })
   return useSWR(`/api/organizations?${searchParams.toString()}`, fetcher)
 }
 

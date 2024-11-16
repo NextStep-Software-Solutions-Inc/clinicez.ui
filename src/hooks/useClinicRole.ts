@@ -5,17 +5,16 @@ import useSWR from "swr"
 
 type UserRoleFilter = {
   userId?: string
-  clinicUid: string, 
   roleName?: string,
   status?: ClinicMemberStatus
 }
 
 export const useClinicRoles = (filter: UserRoleFilter) => {
-  
+    
   const fetcher = (args: string) => self.get<GetClinicRoles>(args)
   const searParams = new URLSearchParams()
   Object.entries(filter ?? {}).forEach(([key, value]) => {
     if(value) searParams.set(key, value.toString())
   })
-  return useSWR(`/api/clinics/${filter.clinicUid}/roles?${searParams.toString()}`,fetcher)
+  return useSWR(`/api/clinic-roles?${searParams.toString()}`,fetcher)
 }

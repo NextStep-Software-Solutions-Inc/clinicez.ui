@@ -4,10 +4,9 @@ import "server-only";
 import prisma from "@lib/prisma";
 import { cache } from "react";
 import { getCachedSession } from "@actions/session.action";
-import { ClinicMemberStatus, OrganizationMemberStatus } from "@/types";
+import { ClinicMemberStatus } from "@/types";
 
 type CreateClinicRolePayload = {
-  clinicUid: string;
   name: string;
 }
 
@@ -18,14 +17,9 @@ export const createClinicRoleAction = async (payload: CreateClinicRolePayload) =
     const session = await getCachedSession();
     if(!session) throw new Error("Session not found");
 
-    const { clinicUid, name } = payload;
-    const newClinicRole = await prisma.clinicMemberRole.create({
+    const { name } = payload;
+    const newClinicRole = await prisma.clinicRole.create({
       data: {
-        Clinic: {
-          connect: {
-            clinicUid
-          }
-        },
         name,
       }
     })
@@ -39,73 +33,57 @@ export const createClinicRoleAction = async (payload: CreateClinicRolePayload) =
 }
 
 type FiltersType = {
-    userId?: string;
-    clinicUid?: string;
-    status?: ClinicMemberStatus;
     roleName?: string;
   }
   
 export type GetClinicRoles = Awaited<ReturnType<typeof getClinicRolesAction>>
 export const getClinicRolesAction = cache(async (filter?: FiltersType) => {
-  const {userId, clinicUid, status, roleName} = filter || { status: "ACTIVE"};
+  const {roleName} = filter || { status: "ACTIVE"};
   
-  const roles = await prisma.clinicMemberRole.findMany({
+  const roles = await prisma.clinicRole.findMany({
     orderBy: {
       name: "asc"
     },
     where: {
       isActive: true,
       ...roleName ? { name: roleName } : {},
-      AND: [
-        {
-          ...clinicUid ? { Clinic: { clinicUid } } : {}
-        },
-        {
-          ...userId ? { 
-            ClinicMembers: {
-              some: {
-                ...status ? { status }: {},
-                User: {
-                  userId
-                }
-              }
-            
-            }
-          } : {}
-        }
-      ]
     },
     select: {
       id: true,
-      clinicId: true,
       name: true,
-      UserDefaultClinicRoles: {
-        where: {
-          isActive: true,
-          User: {
-            ...userId ? { userId } : {}
-          }
-        },
+      ClinicMembers: {
         select: {
-          id: true,
-          Clinic: {
-            select: {
-              clinicUid: true,
-            }
-          },
-          ClinicMemberRole: {
+          status: true,
+          User: {
             select: {
               id: true,
-              name: true
-            }
-          },
-          User: {
-            select: {
-              userId: true
+              userId: true,
             }
           }
         }
       },
+      // UserDefaultClinicRoles: {
+    
+      //   select: {
+      //     id: true,
+      //     Clinic: {
+      //       select: {
+      //         clinicUid: true,
+      //       }
+      //     },
+      //     ClinicRole: {
+      //       select: {
+      //         id: true,
+      //         name: true
+      //       }
+      //     },
+      //     User: {
+      //       select: {
+      //         userId: true
+      //       }
+      //     }
+      //   }
+      // },
       ClinicRoleAppointmentTabs: {
         select: {
           clinicRoleId: true,
@@ -125,6 +103,7 @@ export const getClinicRolesAction = cache(async (filter?: FiltersType) => {
       },
     }
   })
+
   return roles;
 })
 
@@ -137,7 +116,7 @@ export const deleteClinicRoleAction = async (clinicRoleId: number) => {
     const session = await getCachedSession();
     if(!session) throw new Error("Session not found");
 
-    await prisma.clinicMemberRole.update({
+    await prisma.clinicRole.update({
       where: {
         isActive: true,
         id: clinicRoleId

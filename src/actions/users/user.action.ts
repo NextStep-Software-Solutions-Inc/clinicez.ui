@@ -14,7 +14,7 @@ import { hasCodeProperty } from '@lib/utils';
 import { withErrorHandling } from '@/lib/with-error-handling';
 
 
-export type GetUsersFiltersType = {
+export type GetUsersFilters = {
   orgUid?: string
   search?: string
   page?: number
@@ -24,8 +24,9 @@ export type GetUsersFiltersType = {
 }
 
 export type GetUsers = Awaited<ReturnType<typeof getUsersAction>>
-export const getUsersAction = cache(async (filter?:GetUsersFiltersType) => {
-  const { orgUid, search, page = 1, pageSize = 100, userId, email } = filter || {};
+export const getUsersAction = cache(async (filters:GetUsersFilters) => {
+  
+  const { orgUid, search, page = 1, pageSize = 100, userId, email } = filters || {};
   return await prisma.$transaction(async (prisma) => {
     const users = await prisma.user.findMany({
       orderBy: {
@@ -37,7 +38,7 @@ export const getUsersAction = cache(async (filter?:GetUsersFiltersType) => {
         userId, 
         email,
         ...orgUid ? { 
-          Organizations: { 
+          OrganizationMembers: { 
             some: { 
               Organization: {
                 orgUid
@@ -71,7 +72,7 @@ export const getUsersAction = cache(async (filter?:GetUsersFiltersType) => {
     })
     const total = await prisma.user.count({ where: {
       ...orgUid ? { 
-        Organizations: { 
+        OrganizationMembers: { 
           some: { 
             Organization: {
               orgUid

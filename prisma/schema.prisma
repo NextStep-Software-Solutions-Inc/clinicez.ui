@@ -126,7 +126,7 @@ model ClinicPatientPermission {
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
   Permission      Permission    @relation(fields: [permissionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  ClinicPatient   ClinicPatient @relation(fields: [clinicPatientId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  ClinicPatient   ClinicPatient @relation(fields: [clinicPatientId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model UserPreference {
@@ -136,7 +136,7 @@ model UserPreference {
   autoAssignAppointmentToSelf     Boolean             @default(false)
   defaultHpId                     Int?
   HealthCareProvider              HealthcareProvider? @relation(fields: [defaultHpId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  User                            User                @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  User                            User                @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model Organization {
@@ -185,24 +185,24 @@ model OrgMemberPermission {
   id                 Int                @id @default(autoincrement())
   orgMemberId        Int
   permissionId       Int
-  Permission         Permission         @relation(fields: [permissionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  OrganizationMember OrganizationMember @relation(fields: [orgMemberId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Permission         Permission         @relation(fields: [permissionId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  OrganizationMember OrganizationMember @relation(fields: [orgMemberId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model ClinicMemberPermission {
   id             Int          @id @default(autoincrement())
   clinicMemberId Int
   permissionId   Int
-  Permission     Permission   @relation(fields: [permissionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  ClinicMember   ClinicMember @relation(fields: [clinicMemberId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Permission     Permission   @relation(fields: [permissionId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  ClinicMember   ClinicMember @relation(fields: [clinicMemberId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model UserPermission {
   id           Int        @id @default(autoincrement())
   userId       Int
   permissionId Int
-  User         User       @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  Permission   Permission @relation(fields: [permissionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  User         User       @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  Permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model OrgRoleInitialPermission {
@@ -210,23 +210,23 @@ model OrgRoleInitialPermission {
   orgId            Int
   orgRoleId        Int
   permissionId     Int
-  Organization     Organization     @relation(fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  Permission       Permission       @relation(fields: [permissionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  OrganizationRole OrganizationRole @relation(fields: [orgRoleId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Organization     Organization     @relation(fields: [orgId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  Permission       Permission       @relation(fields: [permissionId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  OrganizationRole OrganizationRole @relation(fields: [orgRoleId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  @@unique([orgId, orgRoleId, permissionId], name: "unique_org_role_permission")
+  @@unique([orgId, orgRoleId, permissionId], name: "unique_org_role_initial_permission")
 }
 
 model ClinicRoleInitialPermission {
-  id           Int              @id @default(autoincrement())
+  id           Int        @id @default(autoincrement())
   clinicId     Int
   clinicRoleId Int
   permissionId Int
-  Clinic       Clinic           @relation(fields: [clinicId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  Permission   Permission       @relation(fields: [permissionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  ClinicRole   ClinicMemberRole @relation(fields: [clinicRoleId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Clinic       Clinic     @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  Permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  ClinicRole   ClinicRole @relation(fields: [clinicRoleId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  @@unique([clinicId, clinicRoleId, permissionId], name: "unique_org_role_permission")
+  @@unique([clinicId, clinicRoleId, permissionId], name: "unique_clinic_role_initial_permission")
 }
 
 model Permission {
@@ -256,9 +256,9 @@ model OrganizationMember {
   status               String                @default("PENDING")
   role                 Int
   AcceptedBy           User?                 @relation("AcceptedBy", fields: [acceptedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  Organization         Organization          @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Organization         Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   OrganizationRole     OrganizationRole      @relation(fields: [role], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  User                 User                  @relation("User", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  User                 User                  @relation("User", fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   OrgMemberPermissions OrgMemberPermission[]
 
   @@unique([userId, organizationId, role], name: "unique_user_organization_role")
@@ -271,7 +271,7 @@ model OrganizationRole {
   description                  String?
   isActive                     Boolean                       @default(true)
   requirements                 String[]                      @default([])
-  Organization                 Organization                  @relation(fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Organization                 Organization                  @relation(fields: [orgId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   UserDefaultOrganizationRoles UserDefaultOrganizationRole[]
   UserEmploymentRecords        UserEmploymentRecord[]
   OrganizationMembers          OrganizationMember[]
@@ -323,7 +323,7 @@ model UserPlan {
   isActive            Boolean              @default(true)
   status              UserPlanStatus
   Plan                Plan                 @relation(fields: [planId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  User                User                 @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  User                User                 @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   Tenants             Tenant[]
   HealthcareProviders HealthcareProvider[]
 }
@@ -339,7 +339,7 @@ model HealthcareProvider {
   deletedAt             DateTime?
   isActive              Boolean                @default(true)
   isPublished           Boolean                @default(false)
-  User                  User                   @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  User                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   UserPlan              UserPlan?              @relation(fields: [userPlanId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   HPType                HealthcareProviderType @relation(fields: [hpTypeId], references: [id])
   ProfessionalDetails   ProfessionalDetails?
@@ -380,7 +380,7 @@ model HPProfile {
   workEmail            String?
   workPhone            String?
   educations           String[]           @default([])
-  HealthcareProvider   HealthcareProvider @relation(fields: [healthcareProviderId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  HealthcareProvider   HealthcareProvider @relation(fields: [healthcareProviderId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model ProfessionalDetails {
@@ -391,7 +391,7 @@ model ProfessionalDetails {
   licenseExpires     DateTime
   ptrNumber          String
   taxNumber          String
-  HealthCareProvider HealthcareProvider @relation(fields: [healthcareProverId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  HealthCareProvider HealthcareProvider @relation(fields: [healthcareProverId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model UserDefaultOrganization {
@@ -402,8 +402,8 @@ model UserDefaultOrganization {
   updatedAt      DateTime     @updatedAt
   deletedAt      DateTime?
   isActive       Boolean      @default(true)
-  Organization   Organization @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  User           User         @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  User           User         @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model UserDefaultOrganizationRole {
@@ -415,25 +415,25 @@ model UserDefaultOrganizationRole {
   updatedAt        DateTime         @updatedAt
   deletedAt        DateTime?
   isActive         Boolean          @default(true)
-  Organization     Organization     @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Organization     Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   OrganizationRole OrganizationRole @relation(fields: [roleId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  User             User             @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  User             User             @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([userId, organizationId, roleId], name: "unique_user_organization_role")
 }
 
 model UserDefaultClinicRole {
-  id               Int              @id @default(autoincrement())
-  userId           Int
-  clinicId         Int
-  roleId           Int
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-  deletedAt        DateTime?
-  isActive         Boolean          @default(true)
-  Clinic           Clinic           @relation(fields: [clinicId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  ClinicMemberRole ClinicMemberRole @relation(fields: [roleId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  User             User             @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id         Int        @id @default(autoincrement())
+  userId     Int
+  clinicId   Int
+  roleId     Int
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  deletedAt  DateTime?
+  isActive   Boolean    @default(true)
+  Clinic     Clinic     @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  ClinicRole ClinicRole @relation(fields: [roleId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  User       User       @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([userId, clinicId, roleId], name: "unique_user_clinic_role")
 }
@@ -446,8 +446,8 @@ model UserDefaultTenant {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
   isActive  Boolean   @default(true)
-  Tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  User      User      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  User      User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model SocialLink {
@@ -459,7 +459,7 @@ model SocialLink {
   tiktok    String?
   twitter   String?
   website   String?
-  User      User    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  User      User    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model ReceiptCode {
@@ -641,7 +641,7 @@ model VaccineAttribute {
   id          Int     @id @default(autoincrement())
   vaccineId   Int     @unique
   effectivity Int
-  Vaccine     Vaccine @relation(fields: [vaccineId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Vaccine     Vaccine @relation(fields: [vaccineId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model Route {
@@ -672,8 +672,8 @@ model VaccineRoute {
   id        Int     @id @default(autoincrement())
   vaccineId Int
   routeId   Int
-  Route     Route   @relation(fields: [routeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  Vaccine   Vaccine @relation(fields: [vaccineId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Route     Route   @relation(fields: [routeId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  Vaccine   Vaccine @relation(fields: [vaccineId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([vaccineId, routeId], name: "unique_vaccine_route")
 }
@@ -682,8 +682,8 @@ model VaccineDose {
   id        Int     @id @default(autoincrement())
   vaccineId Int
   doseId    Int
-  Dose      Dose    @relation(fields: [doseId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  Vaccine   Vaccine @relation(fields: [vaccineId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Dose      Dose    @relation(fields: [doseId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  Vaccine   Vaccine @relation(fields: [vaccineId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([vaccineId, doseId], name: "unique_vaccine_dose")
 }
@@ -816,7 +816,7 @@ model OrganizationDepartment {
   updatedAt             DateTime               @updatedAt
   deletedAt             DateTime?
   isActive              Boolean                @default(true)
-  Organization          Organization           @relation(fields: [organizationId], references: [id])
+  Organization          Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   UserEmploymentRecords UserEmploymentRecord[]
   StudentRecords        UserStudentRecord[]
 }
@@ -831,7 +831,7 @@ model OrganizationProgram {
   updatedAt      DateTime            @updatedAt
   deletedAt      DateTime?
   isActive       Boolean             @default(true)
-  Organization   Organization        @relation(fields: [organizationId], references: [id])
+  Organization   Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   StudentRecords UserStudentRecord[]
 }
 
@@ -844,7 +844,7 @@ model OrganizationCollege {
   updatedAt             DateTime               @updatedAt
   deletedAt             DateTime?
   isActive              Boolean                @default(true)
-  Organization          Organization           @relation(fields: [organizationId], references: [id])
+  Organization          Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   UserEmploymentRecords UserEmploymentRecord[]
   UserStudentRecords    UserStudentRecord[]
 }
@@ -867,7 +867,7 @@ model OrganizationYearLevel {
   updatedAt          DateTime            @updatedAt
   deletedAt          DateTime?
   isActive           Boolean             @default(true)
-  Organization       Organization        @relation(fields: [organizationId], references: [id])
+  Organization       Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   UserStudentRecords UserStudentRecord[]
 }
 
@@ -892,7 +892,7 @@ model UserStudentRecord {
   Level                  StudentLevel            @relation(fields: [level], references: [id], onDelete: NoAction, onUpdate: NoAction)
   Organization           Organization            @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   Program                OrganizationProgram?    @relation(fields: [programId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  User                   User                    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  User                   User                    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   OrganizationRole       OrganizationRole?       @relation(fields: [userOrganizationRoleId], references: [id])
   OrganizationYearLevel  OrganizationYearLevel?  @relation(fields: [yearLevel], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
@@ -904,7 +904,7 @@ model UserClinicAppointmentWhitelist {
   userId           Int
   clinicId         Int
   name             String
-  User             User              @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  User             User              @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   Clinic           Clinic            @relation(fields: [clinicId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   WhitelistFilters WhitelistFilter[]
 
@@ -916,8 +916,8 @@ model WhitelistFilter {
   userClinicAppointmentWhitelistId Int
   filterId                         Int
   value                            String
-  Filter                           Filter                         @relation(fields: [filterId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  UserClinicAppointmentWhitelist   UserClinicAppointmentWhitelist @relation(fields: [userClinicAppointmentWhitelistId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Filter                           Filter                         @relation(fields: [filterId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  UserClinicAppointmentWhitelist   UserClinicAppointmentWhitelist @relation(fields: [userClinicAppointmentWhitelistId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([userClinicAppointmentWhitelistId, filterId, value], name: "unique_whitelist_filter")
 }
@@ -938,7 +938,7 @@ model OrganizationOffice {
   updatedAt             DateTime               @updatedAt
   deletedAt             DateTime?
   isActive              Boolean                @default(true)
-  Organization          Organization           @relation(fields: [organizationId], references: [id])
+  Organization          Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   UserEmploymentRecords UserEmploymentRecord[]
 }
 
@@ -961,8 +961,8 @@ model UserEmploymentRecord {
   Department             OrganizationDepartment? @relation(fields: [departmentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   Office                 OrganizationOffice?     @relation(fields: [officeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   Organization           Organization            @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  User                   User                    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  OrganizationRole       OrganizationRole?       @relation(fields: [userOrganizationRoleId], references: [id])
+  User                   User                    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  OrganizationRole       OrganizationRole?       @relation(fields: [userOrganizationRoleId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@unique([userId, organizationId], name: "unique_user_employment")
 }
@@ -1056,7 +1056,7 @@ model UserSchedule {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?
-  User        User      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  User        User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([userId, startDate, endDate], name: "user_schedule_index")
 }
@@ -1105,7 +1105,7 @@ model Clinic {
   email                           String?
   privacyPolicyUrl                String?
   termsAndConditionsUrl           String?
-  Tenant                          Tenant                           @relation(fields: [tenantId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Tenant                          Tenant                           @relation(fields: [tenantId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   Appointments                    Appointment[]
   AppointmentTypes                AppointmentType[]
   AppointmentModes                AppointmentMode[]
@@ -1115,7 +1115,6 @@ model Clinic {
   PreAssessmentNotes              PreAssessmentNote[]
   Interventions                   Intervention[]
   ClinicMembers                   ClinicMember[]
-  ClinicMemberRoles               ClinicMemberRole[]
   AppointmentConfig               AppointmentConfig?
   ConsultationConfig              ConsultationConfig?
   ClinicAppointmentTabs           ClinicAppointmentTab[]
@@ -1126,7 +1125,7 @@ model Clinic {
   UserDefaultClinicRoles          UserDefaultClinicRole[]
   ClinicRoleInitialPermissions    ClinicRoleInitialPermission[]
   ClinicFileTypes                 ClinicFileType[]
-  ClinicPatient                   ClinicPatient[]
+  ClinicPatients                  ClinicPatient[]
 
   @@index([tenantId, clinicUid], name: "clinic_index")
 }
@@ -1139,7 +1138,7 @@ model ClinicSetting {
   emailToClinicOnly     Boolean @default(false)
   enableAppointment     Boolean @default(true)
   enableConsultation    Boolean @default(true)
-  Clinic                Clinic  @relation(fields: [clinicId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Clinic                Clinic  @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model ClinicMember {
@@ -1152,9 +1151,9 @@ model ClinicMember {
   updatedAt               DateTime                 @updatedAt
   deletedAt               DateTime?
   isActive                Boolean                  @default(true)
-  Clinic                  Clinic                   @relation(fields: [clinicId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Clinic                  Clinic                   @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   User                    User                     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  Role                    ClinicMemberRole?        @relation(fields: [roleId], references: [id])
+  Role                    ClinicRole?              @relation(fields: [roleId], references: [id])
   ClinicMemberPermissions ClinicMemberPermission[]
 
   @@unique([clinicId, userId, roleId], name: "unique_clinic_member")
@@ -1168,27 +1167,25 @@ model ClinicOrganization {
   updatedAt      DateTime     @updatedAt
   deletedAt      DateTime?
   isActive       Boolean      @default(true)
-  Clinic         Clinic       @relation(fields: [clinicId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  Organization   Organization @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Clinic         Clinic       @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  Organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([clinicId, organizationId], name: "unique_clinic_organization")
 }
 
-model ClinicMemberRole {
+model ClinicRole {
   id                           Int                           @id @default(autoincrement())
-  clinicId                     Int
   name                         String
   createdAt                    DateTime                      @default(now())
   updatedAt                    DateTime                      @updatedAt
   deletedAt                    DateTime?
   isActive                     Boolean                       @default(true)
-  Clinic                       Clinic                        @relation(fields: [clinicId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   ClinicMembers                ClinicMember[]
   ClinicRoleAppointmentTabs    ClinicRoleAppointmentTab[]
   UserDefaultClinicRoles       UserDefaultClinicRole[]
   ClinicRoleInitialPermissions ClinicRoleInitialPermission[]
 
-  @@unique([clinicId, name], name: "unique_clinic_member_role")
+  @@unique([name], name: "unique_clinic_role")
 }
 
 model AppointmentConfig {
@@ -1201,7 +1198,7 @@ model AppointmentConfig {
   lastPerDayIntervalReset    DateTime? @db.Date
   privacyPolicyUrl           String?
   termsAndConditionsUrl      String?
-  Clinic                     Clinic    @relation(fields: [clinicId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Clinic                     Clinic    @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model ConsultationConfig {
@@ -1209,7 +1206,7 @@ model ConsultationConfig {
   clinicId       Int          @unique
   noteTemplateId Int
   NoteTemplate   NoteTemplate @relation(fields: [noteTemplateId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  Clinic         Clinic       @relation(fields: [clinicId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Clinic         Clinic       @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model NoteTemplate {
@@ -1232,7 +1229,7 @@ model NoteSection {
   showOnPatient  Boolean      @default(true)
   description    String?
   isActive       Boolean      @default(true)
-  NoteTemplate   NoteTemplate @relation(fields: [noteTemplateId], references: [id])
+  NoteTemplate   NoteTemplate @relation(fields: [noteTemplateId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@unique([noteTemplateId, name], name: "unique_note_section")
 }
@@ -1241,7 +1238,7 @@ model ClinicAppointmentTab {
   id                        Int                        @id @default(autoincrement())
   clinicId                  Int
   appointmentTabId          Int
-  Clinic                    Clinic                     @relation(fields: [clinicId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Clinic                    Clinic                     @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   AppointmentTab            AppointmentTab             @relation(fields: [appointmentTabId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   ClinicRoleAppointmentTabs ClinicRoleAppointmentTab[]
 
@@ -1252,8 +1249,8 @@ model ClinicRoleAppointmentTab {
   id                     Int                  @id @default(autoincrement())
   clinicRoleId           Int
   clinicAppointmentTabId Int
-  ClinicMemberRole       ClinicMemberRole     @relation(fields: [clinicRoleId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  ClinicAppointmentTab   ClinicAppointmentTab @relation(fields: [clinicAppointmentTabId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  ClinicRole             ClinicRole           @relation(fields: [clinicRoleId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  ClinicAppointmentTab   ClinicAppointmentTab @relation(fields: [clinicAppointmentTabId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([clinicRoleId, clinicAppointmentTabId], name: "unique_role_appointment_tab")
 }
@@ -1278,7 +1275,7 @@ model Appointment {
   createdAt              DateTime                @default(now())
   updatedAt              DateTime                @updatedAt
   deletedAt              DateTime?
-  Clinic                 Clinic                  @relation(fields: [clinicId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Clinic                 Clinic                  @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   Requesters             AppointmentRequester[]
   AppointmentAttribute   AppointmentAttribute?
   AppointmentRouting     AppointmentRouting[]
@@ -1294,7 +1291,7 @@ model AppointmentAttachment {
   appointmentId Int
   name          String
   url           String
-  Appointment   Appointment @relation(fields: [appointmentId], references: [id])
+  Appointment   Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model AppointmentRequester {
@@ -1332,7 +1329,7 @@ model AppointmentAttribute {
   preferredAppointee Int?
   eventId            String?             @default("")
   meetingUrl         String?             @default("")
-  Appointment        Appointment         @relation(fields: [appointmentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Appointment        Appointment         @relation(fields: [appointmentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   AppointmentMode    AppointmentMode     @relation(fields: [modeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   AppointmentType    AppointmentType     @relation(fields: [typeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   Service            Service?            @relation(fields: [serviceId], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -1351,7 +1348,7 @@ model AppointmentType {
   updatedAt                DateTime                  @updatedAt
   deletedAt                DateTime?
   isActive                 Boolean                   @default(true)
-  Clinic                   Clinic                    @relation(fields: [clinicId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Clinic                   Clinic                    @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   AppointmentAttributes    AppointmentAttribute[]
   AppointmentTypeAttribute AppointmentTypeAttribute?
 }
@@ -1365,7 +1362,7 @@ model AppointmentTypeAttribute {
   durationPadding   Int             @default(0)
   specializations   String[]        @default([])
   resources         String[]        @default([])
-  AppointmentType   AppointmentType @relation(fields: [appointmentTypeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  AppointmentType   AppointmentType @relation(fields: [appointmentTypeId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model AppointmentMode {
@@ -1378,7 +1375,7 @@ model AppointmentMode {
   deletedAt             DateTime?
   isActive              Boolean                @default(true)
   AppointmentAttributes AppointmentAttribute[]
-  Clinic                Clinic                 @relation(fields: [clinicId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Clinic                Clinic                 @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model AppointmentRouting {
@@ -1393,7 +1390,7 @@ model AppointmentRouting {
   amendedBy     Int?
   createdAt     DateTime           @default(now())
   updatedAt     DateTime           @updatedAt
-  Appointment   Appointment        @relation(fields: [appointmentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Appointment   Appointment        @relation(fields: [appointmentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   RoutedBy      User               @relation(name: "RoutedBy", fields: [routedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
   RoutedTo      HealthcareProvider @relation(name: "RoutedTo", fields: [routedTo], references: [id], onDelete: NoAction, onUpdate: NoAction)
   AmendedBy     User?              @relation(name: "AmendedBy", fields: [amendedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -1411,7 +1408,7 @@ model ServiceCategory {
   deletedAt   DateTime?
   isActive    Boolean   @default(true)
   Services    Service[]
-  Clinic      Clinic    @relation(fields: [clinicId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Clinic      Clinic    @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model Service {
@@ -1437,7 +1434,7 @@ model ServiceAttribute {
   durationPadding Int      @default(0)
   specializations String[] @default([])
   resources       String[] @default([])
-  Service         Service  @relation(fields: [serviceId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Service         Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model ConsultationTicket {
@@ -1451,7 +1448,7 @@ model ConsultationTicket {
   isActive                    Boolean                      @default(true)
   isArchived                  Boolean                      @default(false)
   Clinic                      Clinic                       @relation(fields: [clinicId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  Appointment                 Appointment?                 @relation(fields: [appointmentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Appointment                 Appointment?                 @relation(fields: [appointmentId], references: [id], onDelete: SetNull, onUpdate: NoAction)
   System                      System                       @relation(fields: [systemId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   ConsultationNotes           ConsultationNote[]
   ConsultationTicketAttribute ConsultationTicketAttribute?
@@ -1464,7 +1461,7 @@ model ConsultationTicketHP {
   id                   Int                @id @default(autoincrement())
   consultationTicketId Int
   hpId                 Int
-  ConsultationTicket   ConsultationTicket @relation(fields: [consultationTicketId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  ConsultationTicket   ConsultationTicket @relation(fields: [consultationTicketId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   HealthCareProvider   HealthcareProvider @relation(fields: [hpId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@unique([consultationTicketId, hpId], name: "unique_consultation_hp")
@@ -1478,7 +1475,7 @@ model ConsultationTicketAttribute {
   allowOtherHPToAddVitals Boolean            @default(false)
   allowPatientToAddVitals Boolean            @default(false)
   whitelistEmails         String[]           @default([])
-  ConsultationTicket      ConsultationTicket @relation(fields: [consultationTicketId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  ConsultationTicket      ConsultationTicket @relation(fields: [consultationTicketId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   NoteTemplate            NoteTemplate       @relation(fields: [noteTemplateId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
@@ -1487,7 +1484,7 @@ model System {
   clinicId            Int
   name                String
   isActive            Boolean              @default(true)
-  Clinic              Clinic               @relation(fields: [clinicId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Clinic              Clinic               @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   ConsultationTickets ConsultationTicket[]
 }
 
@@ -1500,8 +1497,8 @@ model ConsultationNote {
   showOnPatient        Boolean            @default(false)
   createdAt            DateTime           @default(now())
   updatedAt            DateTime           @updatedAt
-  ConsultationTicket   ConsultationTicket @relation(fields: [consultationTicketId], references: [id])
-  HealthCareProvider   HealthcareProvider @relation(fields: [hpId], references: [id])
+  ConsultationTicket   ConsultationTicket @relation(fields: [consultationTicketId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  HealthCareProvider   HealthcareProvider @relation(fields: [hpId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@unique([consultationTicketId, section, hpId], name: "unique_consultation_section")
 }
@@ -1528,7 +1525,7 @@ model PreAssessmentNoteAttribute {
   id                  Int               @id @default(autoincrement())
   preAssessmentNoteId Int               @unique
   whitelistEmails     String[]          @default([])
-  PreAssessmentNote   PreAssessmentNote @relation(fields: [preAssessmentNoteId], references: [id])
+  PreAssessmentNote   PreAssessmentNote @relation(fields: [preAssessmentNoteId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model Intervention {
@@ -1544,7 +1541,7 @@ model Intervention {
   isActive             Boolean            @default(true)
   ConsultationTicket   ConsultationTicket @relation(fields: [consultationTicketId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   Action               Action             @relation(fields: [actionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  Clinic               Clinic             @relation(fields: [clinicId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Clinic               Clinic             @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   HealthCareProvider   HealthcareProvider @relation(fields: [hpId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
@@ -1570,8 +1567,8 @@ model Prescription {
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
   dateArchived     DateTime?
-  DocumentTemplate DocumentTemplate @relation(fields: [templateId], references: [id])
-  Medication       Medication       @relation(fields: [medicationId], references: [id])
+  DocumentTemplate DocumentTemplate @relation(fields: [templateId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Medication       Medication       @relation(fields: [medicationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([clinicId, medicationId, templateId], name: "prescription_index")
 }
@@ -1597,7 +1594,7 @@ model Medication {
   completedAt          DateTime?
   MedicationDrugs      MedicationDrug[]
   Prescriptions        Prescription[]
-  ConsultationTicket   ConsultationTicket @relation(fields: [consultationTicketId], references: [id])
+  ConsultationTicket   ConsultationTicket @relation(fields: [consultationTicketId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([patientId, hpId, consultationTicketId], name: "medication_index")
 }
@@ -1612,8 +1609,8 @@ model MedicationDrug {
   unit         String?
   notes        String?
   daysCount    Int?
-  Drug         Drug       @relation(fields: [drugId], references: [id])
-  Medication   Medication @relation(fields: [medicationId], references: [id])
+  Drug         Drug       @relation(fields: [drugId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Medication   Medication @relation(fields: [medicationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model DocumentTemplate {
@@ -1626,7 +1623,7 @@ model DocumentTemplate {
   updatedAt                  DateTime                    @updatedAt
   deletedAt                  DateTime?
   isActive                   Boolean                     @default(true)
-  DocumentTemplateType       DocumentTemplateType        @relation(fields: [type], references: [id])
+  DocumentTemplateType       DocumentTemplateType        @relation(fields: [type], references: [id], onDelete: NoAction, onUpdate: NoAction)
   Prescriptions              Prescription[]
   ClinicPrescriptionSettings ClinicPrescriptionSetting[] @relation("prescription")
 }
@@ -1641,6 +1638,6 @@ model DocumentTemplateType {
 model ClinicPrescriptionSetting {
   id                     Int               @id @default(autoincrement())
   clinicId               Int
-  prescriptionTemplateId Int?
-  PrescriptioTemplate    DocumentTemplate? @relation(name: "prescription", fields: [prescriptionTemplateId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  prescriptionTemplateId Int
+  PrescriptionTemplate   DocumentTemplate? @relation(name: "prescription", fields: [prescriptionTemplateId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }

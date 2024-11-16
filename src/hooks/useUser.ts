@@ -1,13 +1,9 @@
-import { GetUser, GetUsers } from '@actions/users/user.action'
+import { GetUser, GetUsers, GetUsersFilters } from '@actions/users/user.action'
 import { self } from '@services/request'
 import useSWR from 'swr'
 
-type UseUsersFilter = {
-  userId?: string,
-  email?: string
-  orgUid?: string
-}
-export const useUsers = (filter?: UseUsersFilter) => {
+
+export const useUsers = (filter?: GetUsersFilters) => {
   const fetcher = (args: string) => self.get<GetUsers>(args)
   const searchParams = new URLSearchParams();
   Object.entries(filter || {}).forEach(([key, value]) => {

@@ -19,11 +19,11 @@ interface SelectTimeSlotProps {
     isLastStep?: boolean;
 }
 export default function SelectTimeSlot({nextStep, prevStep, isFirstStep, isLastStep}: SelectTimeSlotProps) {
-  const [bookAppointment, setBookAppointmentForm] = useAtom(bookAppointmentAtom);
+  const [bookAppointmentForm, setBookAppointmentForm] = useAtom(bookAppointmentAtom);
   const handleNext = () => {
     nextStep?.();
   }
-  const { appointmentTypeId, serviceId, hpUserId, hpId } = bookAppointment;
+  const { appointmentTypeId, serviceId, hpUserId, hpId } = bookAppointmentForm;
   const {data: timeSlots, isValidating} = useTimeSlots({
     appointmentTypeId,
     userId: hpUserId ?? "",
@@ -32,8 +32,13 @@ export default function SelectTimeSlot({nextStep, prevStep, isFirstStep, isLastS
   });
 
   const availableDates = useMemo(() => isValidating ? [] : timeSlots?.data?.filter(a => a.status).map(a => dayjs(a.date).startOf("day").toDate()), [isValidating, timeSlots?.data]) ?? []
-  const availableTimeSlots = useMemo(() => isValidating ? [] : timeSlots?.data?.find(a => dayjs(a.date).isSame(bookAppointment.preferredDate, "day"))?.timeSlots, [isValidating, timeSlots?.data, bookAppointment.preferredDate]) ?? []
+  const availableTimeSlots = useMemo(() => isValidating ? [] : timeSlots?.data?.find(a => dayjs(a.date).isSame(bookAppointmentForm.preferredDate, "day"))?.timeSlots.map(timeSlot => ({
+    start: dayjs(timeSlot.start).toDate(),
+    end: dayjs(timeSlot.end).toDate(),
+  })), [isValidating, timeSlots?.data, bookAppointmentForm.preferredDate]) ?? []
 
+  console.log({availableTimeSlots});
+  
   return (
     <div className="shadow-lg w-full p-8 bg-white rounded-md">
       <h5 className="text-lg font-semibold">Pick Time Slot (optional)</h5>
@@ -48,7 +53,7 @@ export default function SelectTimeSlot({nextStep, prevStep, isFirstStep, isLastS
           </AlertDescription>
         </Alert>
         {
-          (!bookAppointment.hpUserId || !bookAppointment.hpId) &&
+          (!bookAppointmentForm.hpUserId || !bookAppointmentForm.hpId) &&
           <Alert className="my-5 bg-destructive/15">
             <Info className="h-4 w-4" />
             <AlertTitle>
@@ -63,14 +68,14 @@ export default function SelectTimeSlot({nextStep, prevStep, isFirstStep, isLastS
         <div className="flex lg:flex-row flex-col items-center gap-5 justify-center my-5">
           <AppointmentCalendar
             availableDates={availableDates}
-            preferredDate={bookAppointment.preferredDate}
+            preferredDate={bookAppointmentForm.preferredDate}
             onSelect={(date) => {
               setBookAppointmentForm((prev) => ({...prev, preferredDate: date, selectedTimeSlot: undefined}))
             }}
           />
           <VacantTimeSlot
             timeSlots={availableTimeSlots}
-            selectedTimeSlot={bookAppointment.selectedTimeSlot}
+            selectedTimeSlot={bookAppointmentForm.selectedTimeSlot}
             onSelect={(timeSlot) => setBookAppointmentForm((prev) => ({...prev, selectedTimeSlot: timeSlot}))} 
           />
         </div>

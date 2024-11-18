@@ -37,8 +37,6 @@ export default function SelectTimeSlot({nextStep, prevStep, isFirstStep, isLastS
     end: dayjs(timeSlot.end).toDate(),
   })), [isValidating, timeSlots?.data, bookAppointmentForm.preferredDate]) ?? []
 
-  console.log({availableTimeSlots});
-  
   return (
     <div className="shadow-lg w-full p-8 bg-white rounded-md">
       <h5 className="text-lg font-semibold">Pick Time Slot (optional)</h5>

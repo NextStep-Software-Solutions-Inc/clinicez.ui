@@ -30,8 +30,7 @@ interface ConsultationTicketSheetProps {
 }
 
 export default function ConsultationTicketSheet({ children, onClose, consultationTickets }: ConsultationTicketSheetProps) {
-  const params = useParams<{orgUid: string}>()
-  const orgUid = String(params?.orgUid)
+  const {clinicUid} = useParams<{clinicUid: string}>()
 
   return (
     <Sheet >
@@ -50,7 +49,7 @@ export default function ConsultationTicketSheet({ children, onClose, consultatio
             render={(record) => (
               <Link 
                 href={{
-                  pathname: `/${orgUid}/consultations/${record.id}`,
+                  pathname: `/clinics/${clinicUid}/consultations/${record.id}`,
                 }} 
                 target="_blank"
               >

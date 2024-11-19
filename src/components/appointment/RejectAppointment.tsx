@@ -45,7 +45,7 @@ export default function RejectAppointment({disabled = false, appointmentId, onRe
       <Tooltip>
         <TooltipTrigger asChild>
           <PopoverTrigger asChild ref={triggerRef}>
-            <Button variant="destructive" size="icon" disabled={disabled}>
+            <Button variant="outline" className="text-destructive" size="icon" disabled={disabled}>
               <MailX className="h-4 w-4" />
               <span className="sr-only">Reject Appointment</span>
             </Button>

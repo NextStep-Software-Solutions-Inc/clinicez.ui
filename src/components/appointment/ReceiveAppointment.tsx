@@ -3,7 +3,7 @@
 import { receiveAppointmentAction } from "@actions/appointments/appointment-attribute.action";
 import ActionButton from "@components/ActionButton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@components/ui/tooltip";
-import { HandCoins } from "lucide-react";
+import { MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 
 interface ReceiveAppointmentProps {
@@ -33,7 +33,7 @@ export default function ReceiveAppointment({disabled = false, appointmentId, onR
       <TooltipTrigger asChild>
         <form action={action}>
           <ActionButton variant="ghost" size="icon" disabled={disabled}>
-            <HandCoins className="h-4 w-4" />
+            <MessageSquare className="h-4 w-4" />
             <span className="sr-only">Receive Appointment</span>
           </ActionButton>
         </form>

@@ -8,7 +8,7 @@ import { Input } from "@components/ui/input";
 import { Label } from "@components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@components/ui/popover";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@components/ui/tooltip";
-import { MailX } from "lucide-react";
+import { MessageSquareOff } from "lucide-react";
 import React from "react";
 import { toast } from "sonner";
 
@@ -39,7 +39,7 @@ export default function DeclineAppointmentAssignment({disabled = false, routingC
         <TooltipTrigger asChild>
           <PopoverTrigger asChild ref={triggerRef}>
             <Button variant="ghost" className="text-destructive" size="icon" disabled={disabled}>
-              <MailX className="h-4 w-4" />
+              <MessageSquareOff className="h-4 w-4" />
               <span className="sr-only">Decline Assignment</span>
             </Button>
           </PopoverTrigger>

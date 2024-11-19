@@ -33,6 +33,7 @@ export default function ModifyMedicationSheet({ readonly }: ModifyMedicationShee
   const open = useMemo(() => !!medicationId, [medicationId])
 
   const {data: medication, mutate: mutateMedication} = useMedication(medicationId, clinicUid)
+  
   const {data: medicationDrugs, mutate} = useMedicationDrugs(medicationId)
   const {data: myPermissions } = usePermissions({ userId: user?.sub ?? "", type: "CLINIC" })
 
@@ -101,7 +102,6 @@ export default function ModifyMedicationSheet({ readonly }: ModifyMedicationShee
       error: error => error
     })
   }
-  
  
   return (
     <Sheet open={open} onOpenChange={handleClose}>
@@ -124,8 +124,9 @@ export default function ModifyMedicationSheet({ readonly }: ModifyMedicationShee
                   <div>
                     <div className="flex items-center gap-2">
                       <Pill size={16} />
-                      <span className="text-sm">{medicationDrug.genericName} {!medicationDrug.isGeneric ? `- ${medicationDrug.brandName}` : ""}</span>
-                      <Badge variant="outline">{medicationDrug.dosage} {medicationDrug.unit}</Badge>
+                      <span className="text-sm">{medicationDrug.genericName} {!medicationDrug.isGeneric ? `- ${medicationDrug.brandName}` : ""} </span>
+                      <Badge variant="outline">{medicationDrug.unit}</Badge>
+                      <Badge variant="outline">{medicationDrug.dosage}</Badge>
                       <Badge variant="outline">{medicationDrug.frequency}</Badge>
                       <Badge variant="outline">For {medicationDrug.duration} day(s)</Badge>
                     </div>
@@ -146,8 +147,8 @@ export default function ModifyMedicationSheet({ readonly }: ModifyMedicationShee
           </div>
           <div className="flex gap-2 items-center">
             {/* add permission check here */}
-            {!readonly && myPermissions?.some(p => p.name === PERMISSIONS.CLINIC["ADD:CLINIC:MEDICATION_DRUG"].name) && (
-              <AddMedicationDrugModal medicationId={medication?.data?.id!} onCreated={mutate} />
+            {!readonly && myPermissions?.some(p => p.name === PERMISSIONS.CLINIC["ADD:CLINIC:MEDICATION_DRUG"].name) && medication?.data?.id && (
+              <AddMedicationDrugModal medicationId={medication?.data?.id} onCreated={mutate} />
             ) }
             {
               !readonly && myPermissions?.some(p => p.name === PERMISSIONS.CLINIC["CREATE:CLINIC:PRESCRIPTION"].name) && medication?.data?._count.Prescriptions === 0 && ( // add permission check here

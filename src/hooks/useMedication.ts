@@ -17,9 +17,8 @@ export const useMedications = (filters?: GetMedicationsFilters) => {
 
 
 export const useMedication = (medicationId: number, clinicUid: string) => {
-
   const searchParams = new URLSearchParams();
-  searchParams.set("clinicId", clinicUid)
+  searchParams.set("clinicUid", clinicUid)
   const fetcher = (args:string) => self.get<GetMedication>(args)
   return useSWR(!!medicationId ? `/api/medications/${medicationId}?${searchParams.toString()}`: null, fetcher)
 }

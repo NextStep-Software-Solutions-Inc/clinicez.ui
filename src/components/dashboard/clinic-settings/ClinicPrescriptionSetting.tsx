@@ -34,8 +34,6 @@ export default function ClinicPrescriptionSetting() {
     }
   })
 
-  console.log({clinicPrescriptionConfig});
-  
   const action = async () => {
     form.handleSubmit(async (data) => {
       const configId = clinicPrescriptionConfig?.data?.id ?? 0

@@ -209,25 +209,7 @@ export default function AddMedicationDrugModal({onCreated, medicationId}: AddMed
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="frequency"
-                render={({ field }) => (
-                  <FormItem className="flex-1">
-                    <FormLabel>Quantity*</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Enter frequency"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                    Dosage of the medicine
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              
               <FormField
                 control={form.control}
                 name="unit"
@@ -243,6 +225,25 @@ export default function AddMedicationDrugModal({onCreated, medicationId}: AddMed
                     </FormControl>
                     <FormDescription>
                       e.g tablet, capsule, drops etc.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="frequency"
+                render={({ field }) => (
+                  <FormItem className="flex-1">
+                    <FormLabel>Frequency*</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Enter frequency"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                    Dosage of the medicine
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

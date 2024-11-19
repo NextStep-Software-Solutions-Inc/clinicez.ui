@@ -11,7 +11,6 @@ type UseConsultations = GetConsultationTicketsFilters & {
 export const useConsultations = ({ clinicUid, showArchived, userId }:UseConsultations) => {
   const fetcher = (args: string) => self.get<GetConsultationTickets>(args)
   const searchParams = new URLSearchParams()
-  console.log({showArchived, userId, clinicUid});
   
   if(showArchived) searchParams.append('showArchived', showArchived.toString())
   if(userId) searchParams.append('userId', userId)

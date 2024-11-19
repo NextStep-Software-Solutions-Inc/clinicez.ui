@@ -157,6 +157,7 @@ export const getMedicationAction = withErrorHandling(async (medicationId: number
   if(!canReadAllClinicMedication && !canReadOwnMedication && !canReadCreatedMedication) throw new Error("You do not have permission to view medications");
     
   const { clinicUid } = filters || {};
+  
   const medication = await prisma.medication.findUniqueOrThrow({
     where: { 
       id: medicationId,

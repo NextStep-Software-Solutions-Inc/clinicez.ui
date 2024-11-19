@@ -9,7 +9,6 @@ import { getPrescriptionAction } from '@actions/medications/prescription.action'
 
 export const GET = withJwtAuth(async (req: NextRequest, {params}: {params: {prescriptionId: number}}) => {
   const { prescriptionId } = params;
-  console.log({prescriptionId});
   
   const searchParams = req.nextUrl.searchParams
 

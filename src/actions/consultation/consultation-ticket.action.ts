@@ -413,8 +413,6 @@ export const updateConsultationTicketAction = withErrorHandling(async ({consulta
 
   if(!canUpdateConsultationTicket) throw new Error("You do not have permission to update consultation tickets")
 
-  console.log({consultationId, subject, userId: session.user.sub});
-    
   await prismaClient.consultationTicket.update({
     where: { 
       id: consultationId, 

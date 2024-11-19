@@ -38,11 +38,11 @@ export const getMedicationDrugsAction = withErrorHandling(async (medicationId: n
         }
       },
       dosage: true,
-      quantity: true,
+      frequency: true,
       unit: true,
       isGeneric: true,
       notes: true,
-      daysCount: true
+      duration: true
     }
   })
   return {message: "Successfully fetched medication drugs", data: medicationDrugs }
@@ -56,10 +56,10 @@ type AddMedicationDrugPayload = {
   drugId: number,
   medicationId: number,
   dosage: string,
-  quantity: number,
+  duration: number,
   unit: string,
   notes?: string,
-  daysCount?: number
+  frequency: string
   isGeneric?: boolean
 }
 export const addMedicationDrugAction = withErrorHandling(async (payload: AddMedicationDrugPayload) => {
@@ -78,18 +78,18 @@ export const addMedicationDrugAction = withErrorHandling(async (payload: AddMedi
 
   if(!canAddMedicationDrug) throw new Error("You do not have permission to add medication drug");
 
-  const { drugId, medicationId, dosage, quantity, unit, notes, daysCount, isGeneric } = payload;
+  const { drugId, medicationId, dosage, frequency, unit, notes, duration, isGeneric } = payload;
 
   await prisma.medicationDrug.create({
     data: {
       medicationId,
       drugId,
       dosage,
-      quantity,
+      frequency,
       unit,
       notes,
       isGeneric,
-      daysCount
+      duration
     }
   })
 

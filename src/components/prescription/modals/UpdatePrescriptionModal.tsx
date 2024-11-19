@@ -1,5 +1,6 @@
 "use client";
 
+import { promiseWrapper } from "@/lib/with-error-handling";
 import { updatePrescriptionActions } from "@actions/medications/prescription.action";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import ActionButton from "@components/ActionButton";
@@ -61,18 +62,15 @@ export default function UpdatePrescriptionModal({onUpdated,prescription}: Update
   const action = async () => {
     form.handleSubmit((data) => {
      
-      toast.promise(updatePrescriptionActions({...data, id: prescription.id}), {
+      toast.promise(promiseWrapper(updatePrescriptionActions)({...data, id: prescription.id}), {
         loading: "Updating new prescription...",
         success: (res) => {
-          if (res.status) {
-            onUpdated?.();
-            closeBtnRef.current?.click();
-
-            form.reset(data);
-          }
+          onUpdated?.();
+          closeBtnRef.current?.click();
+          form.reset(data);
           return res.message;
         },
-        error: "Failed to update prescription"
+        error: error => error
       });
     })();
   };
@@ -124,7 +122,7 @@ export default function UpdatePrescriptionModal({onUpdated,prescription}: Update
                     />
                   </FormControl>
                   <FormDescription>
-                    This is your public display name.
+                    Prescription unique name
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -138,7 +136,7 @@ export default function UpdatePrescriptionModal({onUpdated,prescription}: Update
                   value="ok"
                 />
               </DialogClose>
-              <ActionButton type="submit">Create new prescription</ActionButton>
+              <ActionButton type="submit">Save Changes</ActionButton>
             </DialogFooter>
           </form>
         </Form>

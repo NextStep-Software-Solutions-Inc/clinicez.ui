@@ -15,8 +15,9 @@ import ClinicMembershipSettings from "../dashboard/clinic-settings/ClinicMembers
 import AppointmentSettings from "../dashboard/clinic-settings/AppointmentSettings";
 import ConsultationSettings from "../dashboard/clinic-settings/ConsultationSettings";
 import SystemList from "../dashboard/org-settings/SystemList";
+import ClinicPrescriptionSetting from "../dashboard/clinic-settings/ClinicPrescriptionSetting";
 
-const tabs = ["general", "membership", "roles","appointment", "consultation", "permissions"]
+const tabs = ["general", "membership", "roles","appointment", "consultation","prescription", "permissions"]
 export default function ClinicSettings() {
   return (
 
@@ -55,6 +56,9 @@ export default function ClinicSettings() {
         </TabsContent>
         <TabsContent value="roles">
           <ClinicRolesSetting/>
+        </TabsContent>
+        <TabsContent value="prescription">
+          <ClinicPrescriptionSetting/>
         </TabsContent>
         <TabsContent value="permissions">
           <ClinicPermissionsSetting/>

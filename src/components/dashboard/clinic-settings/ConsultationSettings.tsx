@@ -12,9 +12,10 @@ import { useParams } from "next/navigation";
 import { toast } from "sonner";
 import PageLoading from "@components/PageLoading";
 import { upsertClinicConsultationConfigAction } from "@actions/consultation/consultation-config.action";
-import { useOrgConsultationConfig } from "@hooks/useOrgConsultationConfig";
+import { useClinicConsultationConfig } from "@hooks/useClinicConsultationConfig";
 import { useNoteTemplates } from "@hooks/useNoteTemplate";
 import Suspend from "@components/Suspend";
+import { promiseWrapper } from "@/lib/with-error-handling";
 
 type ConsultationSettingsForm = z.infer<typeof consultationSettingsForm>
 const consultationSettingsForm = z.object({
@@ -24,33 +25,31 @@ const consultationSettingsForm = z.object({
 })
 
 export default function ConsultationSettings() {
-  const params = useParams<{clinicUid: string}>()
-  const {data: orgConsultationConfig, mutate, isLoading} = useOrgConsultationConfig(params.clinicUid)
+  const {clinicUid} = useParams<{clinicUid: string}>()
+  const {data: clinicConsultationConfig, mutate, isLoading} = useClinicConsultationConfig(clinicUid)
   const {data: noteTemplates, isLoading: loadingTemplates} = useNoteTemplates()
   const form = useForm<ConsultationSettingsForm>({
     resolver: zodResolver(consultationSettingsForm),
     mode: "all",
     values: {
-      noteTemplateId: orgConsultationConfig?.noteTemplateId ?? 0,
+      noteTemplateId: clinicConsultationConfig?.noteTemplateId ?? 0,
     }
   })
 
   const action = async () => {
     form.handleSubmit(async (data) => {
-      const configId = orgConsultationConfig?.id ?? 0
-      toast.promise(upsertClinicConsultationConfigAction(configId, {
-        clinicUid: params.clinicUid,
+      const configId = clinicConsultationConfig?.id ?? 0
+      toast.promise(promiseWrapper(upsertClinicConsultationConfigAction)(configId, {
+        clinicUid,
         noteTemplateId: data.noteTemplateId
       }), {
         loading: "Saving changes...",
         success: res => {
-          if(res.status) {
-            mutate(),
-            form.reset(data)
-          }
+          mutate(),
+          form.reset(data)
           return res.message;
         },
-        error: "Failed to save changes"
+        error: error => error
       })
     })();
   }

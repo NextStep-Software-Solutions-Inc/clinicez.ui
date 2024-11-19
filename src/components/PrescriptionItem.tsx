@@ -12,6 +12,10 @@ import dayjs from "dayjs";
 import localizedFormat from "dayjs/plugin/localizedFormat";
 import { Badge } from "@components/ui/badge";
 import UpdatePrescriptionModal from "./prescription/modals/UpdatePrescriptionModal";
+import { toast } from "sonner";
+import ActionButton from "./ActionButton";
+import { promiseWrapper } from "@/lib/with-error-handling";
+import { getPrescriptionAction } from "@/actions/medications/prescription.action";
 dayjs.extend(localizedFormat);
 
 export interface PrescriptionItemProps {
@@ -80,22 +84,39 @@ const ModifyPrescriptionAction = ({prescription, onUpdated}: {prescription: Pres
 }
 
 const DownloadPrescriptionAction = ({prescription}: {prescription: PrescriptionItemProps["prescription"]}) => {
+
+  const handleDownload = async () => {
+    toast.promise(promiseWrapper(getPrescriptionAction)(prescription.id), {
+      loading: "Downloading prescription...",
+      success: (res) => {
+        handlePrintHtml(res.data?.DocumentTemplate.htmlContent);
+        return res.message;
+      },
+      error: "Failed to download prescription"
+    })
+  }
+
+  const handlePrintHtml = async (html: string = "") => {
+
+    // print html content
+    const printWindow = window.open("", "_blank");
+    printWindow?.document.write(html);
+    printWindow?.document.close();
+    printWindow?.print();
+  }
   return (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Link
-            href={"#"}
-            download
-            className="invisible group-hover/item:visible"
-          >
-            <Button
+          <form action={handleDownload}>
+            <ActionButton
               variant="ghost"
               size="icon"
+              className="invisible group-hover/item:visible"
             >
               <DownloadIcon className="h-4 w-4  hover:scale-125 transition-all" />
-            </Button>
-          </Link>
+            </ActionButton>
+          </form>
         </TooltipTrigger>
         <TooltipContent side="top">Download</TooltipContent>
       </Tooltip>

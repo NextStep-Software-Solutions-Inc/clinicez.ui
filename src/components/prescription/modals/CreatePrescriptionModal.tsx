@@ -5,7 +5,6 @@ import { createPrescriptionAction } from "@actions/medications/prescription.acti
 import { useUser } from "@auth0/nextjs-auth0/client";
 import ActionButton from "@components/ActionButton";
 import CustomModalContent from "@components/CustomModalContent";
-import { Alert, AlertDescription, AlertTitle } from "@components/ui/alert";
 import { Button } from "@components/ui/button";
 import {
   Dialog,

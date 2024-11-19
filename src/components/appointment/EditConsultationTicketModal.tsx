@@ -1,5 +1,6 @@
 "use client";
 
+import { promiseWrapper } from "@/lib/with-error-handling";
 // import { revalidatePath } from "@actions/cache.action";
 import { updateConsultationTicketAction } from "@actions/consultation/consultation-ticket.action";
 import ActionButton from "@components/ActionButton"
@@ -38,19 +39,17 @@ const EditConsultationTicketModal = React.forwardRef<any, EditConsultationTicket
   }
   const action = async (formData: FormData) => {
     const subject = formData.get("subject") as string
-    toast.promise(updateConsultationTicketAction({
+    toast.promise(promiseWrapper(updateConsultationTicketAction)({
       consultationId: record.id,
       subject
     }), {
       loading: "Updating consultation ticket...",
       success: (res) => {
-        if (res.status) {
-          closeBtnRef.current?.click()
-          revalidate()
-        }
+        closeBtnRef.current?.click()
+        revalidate()
         return res.message
       },
-      error: "Failed to update consultation ticket."
+      error: error => error
     }) 
   }
 

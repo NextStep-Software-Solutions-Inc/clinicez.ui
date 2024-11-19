@@ -59,10 +59,10 @@ export default function ModifyMedicationSheet({ readonly }: ModifyMedicationShee
     genericName: string;
     unit: string | null;
     dosage: string;
-    quantity: number;
+    frequency: string;
     isGeneric: boolean;
     notes: string | null;
-    daysCount: number | null;
+    duration: number;
   }
 
   const mappedMedicationDrugs: MedicationDrug[] = useMemo(() => {
@@ -73,10 +73,10 @@ export default function ModifyMedicationSheet({ readonly }: ModifyMedicationShee
         genericName: medicationDrug.Drug.genericName,
         unit: medicationDrug.unit,
         dosage: medicationDrug.dosage,
-        quantity: medicationDrug.quantity,
+        frequency: medicationDrug.frequency,
         isGeneric: medicationDrug.isGeneric,
         notes: medicationDrug.notes,
-        daysCount: medicationDrug.daysCount
+        duration: medicationDrug.duration
       }
     })
   }, [medicationDrugs?.data])
@@ -125,9 +125,9 @@ export default function ModifyMedicationSheet({ readonly }: ModifyMedicationShee
                     <div className="flex items-center gap-2">
                       <Pill size={16} />
                       <span className="text-sm">{medicationDrug.genericName} {!medicationDrug.isGeneric ? `- ${medicationDrug.brandName}` : ""}</span>
-                      <Badge variant="outline">{medicationDrug.dosage}</Badge>
-                      <Badge variant="outline">{medicationDrug.quantity} {medicationDrug.unit}</Badge>
-                      <Badge variant="outline">{medicationDrug.daysCount} Days</Badge>
+                      <Badge variant="outline">{medicationDrug.dosage} {medicationDrug.unit}</Badge>
+                      <Badge variant="outline">{medicationDrug.frequency}</Badge>
+                      <Badge variant="outline">For {medicationDrug.duration} day(s)</Badge>
                     </div>
                     <p className="text-xs text-muted-foreground indent-6">Sig: {medicationDrug.notes}</p>
                   </div>

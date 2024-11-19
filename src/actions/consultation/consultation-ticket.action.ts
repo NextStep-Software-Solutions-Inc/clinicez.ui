@@ -405,6 +405,7 @@ export const updateConsultationTicketAction = withErrorHandling(async ({consulta
   ])
 
   const userPermissionArray = myPermissions.map(p => p.name);
+  
   const updateConsultationTicketPermissions = [
     PERMISSIONS.CLINIC["UPDATE:CLINIC:CONSULTATION_TICKET:CREATED"].name,
     PERMISSIONS.CLINIC["UPDATE:CLINIC:CONSULTATION_TICKET:CO_CREATED"].name]
@@ -412,6 +413,8 @@ export const updateConsultationTicketAction = withErrorHandling(async ({consulta
 
   if(!canUpdateConsultationTicket) throw new Error("You do not have permission to update consultation tickets")
 
+  console.log({consultationId, subject, userId: session.user.sub});
+    
   await prismaClient.consultationTicket.update({
     where: { 
       id: consultationId, 
@@ -430,8 +433,7 @@ export const updateConsultationTicketAction = withErrorHandling(async ({consulta
   return { message: "Consultation Ticket updated successfully", data: undefined }
   
 }, error => {
-  if(hasCodeProperty(error) && error.code === 'P2025') return "Consultation record not found";
-  return "Failed to update consultation record"
+  if(hasCodeProperty(error) && error.code === 'P2025') return "Consultation record not found or you do not have permission to update it";
 })
 
 export const deleteConsultationTicketAction = withErrorHandling(async (consultationId: number) => {

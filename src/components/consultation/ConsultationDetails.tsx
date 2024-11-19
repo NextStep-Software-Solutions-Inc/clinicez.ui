@@ -18,7 +18,6 @@ import Each from "@components/utils/Each";
 import { Fragment } from "react";
 import EMRPreviewSheet from "@components/EMRPreviewSheet";
 import { Button } from "@components/ui/button";
-import { notFound } from "next/navigation";
 
 const VitalSigns = dynamic(() => import('./VitalSigns'), { ssr: false, loading: () => <div>Loading...</div> });
 const Conversation = dynamic(() => import('./Conversation'), { ssr: false, loading: () => <div>Loading...</div> });

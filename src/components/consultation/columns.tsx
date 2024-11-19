@@ -138,7 +138,7 @@ export const Requester = ({ requester }: {requester: {
   lastName: string | null
   suffix: string | null
 }}) => {
-  const requesterName = `${requester.firstName} ${requester.middleName} ${requester.lastName} ${requester.suffix ?? ""}`
+  const requesterName = `${requester.firstName ?? ""} ${requester.middleName ?? ""} ${requester.lastName ?? ""} ${requester.suffix ?? ""}`
   return (
     <div className="text-wrap">{requesterName}</div>
   )

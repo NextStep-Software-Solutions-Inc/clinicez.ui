@@ -10,8 +10,8 @@ export type GetPrescriptionsFilter = {
     hpId?: number,
     isArchived?: boolean
 }
-export type GetPrescriptions = Awaited<ReturnType<typeof getPrescriptionsActions>>
-export const getPrescriptionsActions = withErrorHandling(async (filters?: GetPrescriptionsFilter) => {
+export type GetPrescriptions = Awaited<ReturnType<typeof getPrescriptionsAction>>
+export const getPrescriptionsAction = withErrorHandling(async (filters?: GetPrescriptionsFilter) => {
 
   const session = await getCachedSession()
   if(!session) throw new Error("Unauthorized")
@@ -33,7 +33,15 @@ export const getPrescriptionsActions = withErrorHandling(async (filters?: GetPre
       Medication: {
         select: {
           completedAt: true,
-          patientId: true,
+          Patient: {
+            select: {
+              userId: true,
+              firstName: true,
+              middleName: true,
+              lastName: true,
+              suffix: true
+            }
+          },
           _count: {
             select: {
               MedicationDrugs: true
@@ -117,3 +125,43 @@ const getClinicPrescriptionSetting = async (clinicUid: string) => {
     }
   })
 }
+
+export type GetPrescription = Awaited<ReturnType<typeof getPrescriptionAction>>
+export const getPrescriptionAction = withErrorHandling(async (id: number) => {
+  
+  const session = await getCachedSession()
+  if(!session) throw new Error("Unauthorized")
+  
+  const prescription = await prisma.prescription.findUnique({
+    where: {id},
+    include: {
+      DocumentTemplate: {
+        select: {
+          id: true,
+          name: true,
+          htmlContent: true
+        }
+      },
+      Medication: {
+        select: {
+          completedAt: true,
+          Patient: {
+            select: {
+              userId: true,
+              firstName: true,
+              middleName: true,
+              lastName: true,
+              suffix: true
+            }
+          },
+          _count: {
+            select: {
+              MedicationDrugs: true
+            }
+          }
+        }
+      }
+    }
+  })
+  return {message: "Successfully fetched prescription", data: prescription}
+})

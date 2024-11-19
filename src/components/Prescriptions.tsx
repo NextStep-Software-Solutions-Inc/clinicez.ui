@@ -35,15 +35,15 @@ export default function Prescriptions({}: PrescriptionsProps) {
           completedAt: prescription.Medication.completedAt,
           createdAt: prescription.createdAt,
           patient: {
-            userId: prescription.Medication.patientId + "",
-            name: "Patient Name"
+            userId: prescription.Medication.Patient.userId,
+            name: `${prescription.Medication.Patient.firstName ?? ""} ${prescription.Medication.Patient.middleName ?? ""} ${prescription.Medication.Patient.lastName ?? ""} ${prescription.Medication.Patient.suffix ?? ""}`
           }
         };
       });
     }, [prescriptions?.data]);
 
   return (
-    <Card className="group/folder">
+    <Card className="group/prescription h-1/3 overflow-hidden">
       <CardHeader>
         <div className="flex flex-wrap gap-2 items-center">
           <div>

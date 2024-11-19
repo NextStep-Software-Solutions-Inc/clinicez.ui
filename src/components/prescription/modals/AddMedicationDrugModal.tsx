@@ -40,11 +40,9 @@ import {
 import Each from "@components/utils/Each";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useDrugs } from "@hooks/useDrug";
-import { useHPs } from "@hooks/useHP";
-import { sessionClinicAtom } from "@state/session-clinic";
-import { useAtomValue } from "jotai";
+
 import { Pill } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -52,10 +50,6 @@ import { z } from "zod";
 interface AddMedicationDrugModalProps {
   onCreated?: () => void;
   medicationId: number;
-  // consultation: {
-  //   id: number;
-  //   patientId: number;
-  // }
 }
 
 type CreatePrescriptionForm = z.infer<typeof createPrescriptionFormSchema>;
@@ -68,18 +62,17 @@ const createPrescriptionFormSchema = z.object({
   dosage: z.string({
     message: "Dosage is required"
   }),
-  quantity: z.number({
-    coerce: true,
-    message: "Quantity is required"
+  frequency: z.string({
+    message: "Frequency is required"
   }),
   unit: z.string({
     message: "Unit is required"
   }).trim(),
   notes: z.string().optional(),
-  daysCount: z.number({
+  duration: z.number({
     coerce: true,
-  }).optional()
-
+    message: "Duration is required"
+  })
 });
 
 export default function AddMedicationDrugModal({onCreated, medicationId}: AddMedicationDrugModalProps) {
@@ -218,15 +211,13 @@ export default function AddMedicationDrugModal({onCreated, medicationId}: AddMed
               />
               <FormField
                 control={form.control}
-                name="quantity"
+                name="frequency"
                 render={({ field }) => (
                   <FormItem className="flex-1">
                     <FormLabel>Quantity*</FormLabel>
                     <FormControl>
                       <Input
-                        type="number"
-                        inputMode="numeric"
-                        placeholder="Enter quantity"
+                        placeholder="Enter frequency"
                         {...field}
                       />
                     </FormControl>
@@ -259,10 +250,10 @@ export default function AddMedicationDrugModal({onCreated, medicationId}: AddMed
               />
               <FormField
                 control={form.control}
-                name="daysCount"
+                name="duration"
                 render={({ field }) => (
                   <FormItem className="flex-1">
-                    <FormLabel>Days Count</FormLabel>
+                    <FormLabel>Duration (days)</FormLabel>
                     <FormControl>
                       <Input
                         type="number"

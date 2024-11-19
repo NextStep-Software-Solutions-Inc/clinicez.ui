@@ -5,6 +5,7 @@ import { AppRouterPageRouteOpts } from "@auth0/nextjs-auth0";
 import Prescriptions from "@components/Prescriptions";
 import { Button } from "@components/ui/button";
 import { MoreHorizontal } from "lucide-react";
+import DocumentTemplates from "@/components/DocumentTemplates";
 
 export const metadata: Metadata = {
   title: "Prescription builder",
@@ -15,7 +16,7 @@ export default async function FilesPage({ params }: AppRouterPageRouteOpts) {
 
   return (
     <>
-      <div className="space-y-6">
+      <div className="space-y-6 flex-1 h-screen">
         <div className="group/create-folder">
           <div className="flex items-center">
             <h2 className="text-2xl font-bold tracking-tight flex-1">
@@ -35,6 +36,7 @@ export default async function FilesPage({ params }: AppRouterPageRouteOpts) {
         </div>
         <Separator />
         <Prescriptions />
+        <DocumentTemplates documentType="prescription" label="Prescription" />
       </div>
     </>
   );

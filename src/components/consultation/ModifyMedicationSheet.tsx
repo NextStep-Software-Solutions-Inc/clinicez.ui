@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@components/ui/sheet";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@components/ui/sheet";
 import { Button } from "@components/ui/button";
 import { Separator } from "@components/ui/separator";
-import { useSearchParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { Download, FileText, Pill, Trash } from "lucide-react";
 import { useMedication, useMedicationDrugs, } from "@hooks/useMedication";
 import Each from "@components/utils/Each";
@@ -15,11 +15,10 @@ import { removeMedicationDrugAction } from "@actions/medications/medication-drug
 import AddMedicationDrugModal from "@components/prescription/modals/AddMedicationDrugModal";
 import { createPrescriptionAction } from "@actions/medications/prescription.action";
 import { useHP } from "@hooks/useHP";
-import { useAtomValue } from "jotai";
-import { sessionClinicAtom } from "@state/session-clinic";
 import { usePermissions } from "@hooks/usePermission";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import { PERMISSIONS } from "@lib/permissions";
+import { promiseWrapper } from "@/lib/with-error-handling";
 
 interface ModifyMedicationSheetProps {
   readonly?: boolean;
@@ -27,13 +26,13 @@ interface ModifyMedicationSheetProps {
 export default function ModifyMedicationSheet({ readonly }: ModifyMedicationSheetProps ) {
 
   const {user} = useUser()
-  const sessionClinicValue = useAtomValue(sessionClinicAtom)
+  const {clinicUid} = useParams<{clinicUid: string}>()
   const searchParams = useSearchParams()
   const medicationId = Number(searchParams.get("modify-medication") ?? 0)
 
   const open = useMemo(() => !!medicationId, [medicationId])
 
-  const {data: medication, mutate: mutateMedication} = useMedication(medicationId, sessionClinicValue?.clinicId ?? 0)
+  const {data: medication, mutate: mutateMedication} = useMedication(medicationId, clinicUid)
   const {data: medicationDrugs, mutate} = useMedicationDrugs(medicationId)
   const {data: myPermissions } = usePermissions({ userId: user?.sub ?? "", type: "CLINIC" })
 
@@ -44,15 +43,13 @@ export default function ModifyMedicationSheet({ readonly }: ModifyMedicationShee
   }
 
   const handleRemoveDrug = (medicationDrugId: number) => {
-    toast.promise(removeMedicationDrugAction(medicationDrugId), {
+    toast.promise(promiseWrapper(removeMedicationDrugAction)(medicationDrugId), {
       loading: "Removing medication drug...",
       success: res => {
-        if(res.status) {
-          mutate()
-        }
+        mutate()
         return res.message
       },
-      error: "Failed to remove medication drug"
+      error: error => error
     })
   }
 
@@ -90,20 +87,18 @@ export default function ModifyMedicationSheet({ readonly }: ModifyMedicationShee
       toast.error("Medication not found")
       return
     }
-    toast.promise(createPrescriptionAction({
-      clinicId: medication.data.clinicId,
+    toast.promise(promiseWrapper(createPrescriptionAction)({
+      clinicUid,
       hpId: medication.data.hpId,
       medicationId: medication.data.id,
       name: medication.data.name,
     }), {
       loading: "Creating prescription...",
       success: res => {
-        if(res.status) {
-          mutateMedication()
-        }
+        mutateMedication()
         return res.message
       },
-      error: "Failed to create prescription"
+      error: error => error
     })
   }
   

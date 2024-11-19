@@ -2,105 +2,107 @@
 import "server-only";
 import prisma from "@lib/prisma";
 import { getCachedSession } from "@actions/session.action";
+import { withErrorHandling } from "@/lib/with-error-handling";
 
 
 export type GetPrescriptionsFilter = {
-    clinicId?: number,
+    clinicUid?: string,
     hpId?: number,
     isArchived?: boolean
 }
 export type GetPrescriptions = Awaited<ReturnType<typeof getPrescriptionsActions>>
-export const getPrescriptionsActions = async (filters?: GetPrescriptionsFilter) => {
-  let message = "Successfully fetched prescriptions";
-  try {
-    const session = await getCachedSession()
-    if(!session) throw new Error("Unauthorized")
+export const getPrescriptionsActions = withErrorHandling(async (filters?: GetPrescriptionsFilter) => {
 
-    const { clinicId, hpId, isArchived } = filters || {}
+  const session = await getCachedSession()
+  if(!session) throw new Error("Unauthorized")
+
+  const { clinicUid, hpId, isArchived } = filters || {}
     
-    const prescriptions = await prisma.prescription.findMany({
-      orderBy: {
-        createdAt: 'desc'
+  const prescriptions = await prisma.prescription.findMany({
+    orderBy: {
+      createdAt: 'desc'
+    },
+    where: {
+      hpId,
+      Clinic: {
+        clinicUid
       },
-      where: {
-        hpId,
-        clinicId,
-        isArchived
-      },
-      include: {
-        Medication: {
-          select: {
-            completedAt: true,
-            patientId: true,
-            _count: {
-              select: {
-                MedicationDrugs: true
-              }
+      isArchived
+    },
+    include: {
+      Medication: {
+        select: {
+          completedAt: true,
+          patientId: true,
+          _count: {
+            select: {
+              MedicationDrugs: true
             }
           }
         }
       }
-    })
-    return {status: true, message, data: prescriptions}
-  } catch (error) {
-    console.error(`Error while fetching prescriptions: ${error}`);
-    if(error instanceof Error) message = error.message
-    return { status: true, message, data: []}
-  }
-}
+    }
+  })
+  return {message: "Successfully fetched prescriptions", data: prescriptions}
+
+})
 
 type CreatePrescriptionPayload = {
   templateId?: number,
   medicationId: number,
   name?: string,
   hpId: number,
-  clinicId: number,
+  clinicUid: string,
 }
-export const createPrescriptionAction = async (payload: CreatePrescriptionPayload) => {
-  let message = "Successfully created prescription";
-  try {
-    const session = await getCachedSession()
-    if(!session) throw new Error("Unauthorized")
-    const {clinicId, templateId, name, hpId, medicationId } = payload
+export const createPrescriptionAction = withErrorHandling(async (payload: CreatePrescriptionPayload) => {
+
+  const session = await getCachedSession()
+  if(!session) throw new Error("Unauthorized")
+  const {clinicUid, templateId, name, hpId, medicationId } = payload
   
-    const defaultTemplate = 2
+  const defaultTemplate = 2
 
-    const template = templateId ?? defaultTemplate
-    await prisma.prescription.create({
-      data: {
-        templateId: template,
-        medicationId,
-        name,
-        hpId,
-        clinicId,
-      }
-    })
+  const template = templateId ?? defaultTemplate
+  await prisma.prescription.create({
+    data: {
+      name,
+      HealthcareProvider: {
+        connect: {
+          id: hpId
+        }
+      },
+      Medication: {
+        connect: {
+          id: medicationId
+        }
+      },
+      DocumentTemplate: {
+        connect: {
+          id: template
+        }
+      },
+      Clinic: {
+        connect: {
+          clinicUid
+        }
+      },
+    }
+  })
 
-    return {status: true, message}
-  } catch (error) {
-    message = "Failed to create prescription"
-    console.error(`Error while creating prescription: ${error}`);
-    if(error instanceof Error) message = error.message
-    return { status: false, message}
-  }
-}
+  return { message: "Successfully created prescription", data: undefined }
 
-export const updatePrescriptionActions = async (payload: {id: number, name?: string}) => {
-  let message = "Successfully updated prescription";
-  try {
-    const session = await getCachedSession()
-    if(!session) throw new Error("Unauthorized")
-    const {id, name} = payload
-    await prisma.prescription.update({
-      where: {id},
-      data: {name}
-    })
+})
 
-    return {status: true, message}
-  } catch (error) {
-    message = "Failed to update prescription"
-    console.error(`Error while updating prescription: ${error}`);
-    if(error instanceof Error) message = error.message
-    return { status: false, message}
-  }
-}
+export const updatePrescriptionActions = withErrorHandling(async (payload: {id: number, name?: string}) => {
+
+  const session = await getCachedSession()
+  if(!session) throw new Error("Unauthorized")
+  const {id, name} = payload
+  await prisma.prescription.update({
+    where: {id},
+    data: {name}
+  })
+
+  return { message: "Successfully updated prescription", data: undefined}
+
+})

@@ -1619,10 +1619,10 @@ model MedicationDrug {
   drugId       Int
   isGeneric    Boolean    @default(false)
   dosage       String
-  quantity     Int        @default(1)
+  frequency    String     @default("")
   unit         String?
   notes        String?
-  daysCount    Int?
+  duration     Int        @default(1)
   Drug         Drug       @relation(fields: [drugId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   Medication   Medication @relation(fields: [medicationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }

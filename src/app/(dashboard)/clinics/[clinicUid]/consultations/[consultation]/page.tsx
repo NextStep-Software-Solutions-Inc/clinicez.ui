@@ -19,9 +19,9 @@ export const metadata: Metadata = {
 
 async function ConsultationPage({params}: AppRouterPageRouteOpts) {
   const consultationId = Number(params?.consultation)
-  const orgUid = String(params?.orgUid)
+  const clinicUid = String(params?.clinicUid)
 
-  const consultation = await getConsultationTicketAction(consultationId, orgUid)
+  const consultation = await getConsultationTicketAction(consultationId, clinicUid)
   const patient = consultation.data?.Appointment?.Requesters[0].User
   if(!consultation.data) notFound()
 
@@ -85,9 +85,9 @@ async function ConsultationPage({params}: AppRouterPageRouteOpts) {
 
 export default withPageAuthRequired(ConsultationPage, {
   returnTo: ({params, searchParams}) => {
-    const organization = String(params?.orgUid)
+    const clinicUid = String(params?.clinicUid)
     const consultation = params?.consultation
     const newSearchParams = new URLSearchParams(searchParams as Record<string, string>)
-    return `/${organization}/consultations/${consultation}?${newSearchParams.toString()}`
+    return `/clinics/${clinicUid}/consultations/${consultation}?${newSearchParams.toString()}`
   }
 });

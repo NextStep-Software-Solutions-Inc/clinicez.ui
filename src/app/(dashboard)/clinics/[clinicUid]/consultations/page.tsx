@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 }
 
 async function ConsultationsPage({params}: AppRouterPageRouteOpts) {
-  const clinicUid = String(params?.orgUid)
+  const clinicUid = String(params?.clinicUid)
   return (
     <>
       <div className="space-y-6">
@@ -29,8 +29,8 @@ async function ConsultationsPage({params}: AppRouterPageRouteOpts) {
 
 export default withPageAuthRequired(ConsultationsPage, {
   returnTo: ({params, searchParams}) => {
-    const organization = String(params?.orgUid)
+    const clinicUid = String(params?.clinicUid)
     const newSearchParams = new URLSearchParams(searchParams as Record<string, string>)
-    return `/${organization}/consultations?${newSearchParams.toString()}`
+    return `/clinics/${clinicUid}/consultations?${newSearchParams.toString()}`
   }
 });

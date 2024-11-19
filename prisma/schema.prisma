@@ -102,6 +102,7 @@ model User {
   PreAssessmentNotes               PreAssessmentNote[]
   UserDefaultClinicRoles           UserDefaultClinicRole[]
   ClinicPatienta                   ClinicPatient[]
+  RescheduledByAppointments        AppointmentAttribute[]           @relation("RescheduledBy")
 }
 
 model ClinicPatient {
@@ -1337,6 +1338,7 @@ model AppointmentAttribute {
   ReceivedBy         User?               @relation(name: "ReceivedBy", fields: [receivedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
   RejectedBy         User?               @relation(name: "RejectedBy", fields: [rejectedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
   CompletedBy        User?               @relation(name: "CompletedBy", fields: [completedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  RescheduledBy      User?               @relation(name: "RescheduledBy", fields: [rescheduledBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model AppointmentType {

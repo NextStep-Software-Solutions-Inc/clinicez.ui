@@ -225,7 +225,7 @@ export const getConsultationTicketAction = withErrorHandling(cache(async (consul
 }))
 
 
-type GetConsultationTicketsFilters = {
+export type GetConsultationTicketsFilters = {
   showArchived?: boolean,
   userId?: string,
   clinicUid: string

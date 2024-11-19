@@ -1,4 +1,5 @@
-import { getConsultationTicketsAction } from "@actions/consultation/consultation-ticket.action";
+import { parseObject } from "@/lib/utils";
+import { GetConsultationTicketsFilters, getConsultationTicketsAction } from "@actions/consultation/consultation-ticket.action";
 import { withJwtAuth } from "@middlewares/withJwtAuth";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -9,14 +10,9 @@ export const GET = withJwtAuth(async (req: NextRequest, { params }: {
   }
 }) => {
   const clinicUid = params.clinicUid;
-  const searchParams = req.nextUrl.searchParams
-  const showArchived = searchParams.get('showArchived')
-  const userId = String(searchParams.get('userId'))
+  const searchParams = new URLSearchParams(req.nextUrl.searchParams)
+  const filters = parseObject(Object.fromEntries(searchParams.entries())) as GetConsultationTicketsFilters
 
-  const consultations = await getConsultationTicketsAction({
-    showArchived: showArchived === 'true',
-    userId, 
-    clinicUid
-  });
+  const consultations = await getConsultationTicketsAction({...filters, clinicUid});
   return NextResponse.json(consultations, {status: 200});
 });

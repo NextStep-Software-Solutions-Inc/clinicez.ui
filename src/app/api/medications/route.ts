@@ -11,7 +11,7 @@ export const GET = withJwtAuth(async (req: NextRequest) => {
   const searchParams = req.nextUrl.searchParams
 
   const filters = parseObject(Object.fromEntries(searchParams.entries()))
-  const medications = await getMedicationsAction({...filters, clinicId: filters.clinicId as number});
+  const medications = await getMedicationsAction({...filters, clinicUid: filters.clinicUid as string});
 
   return NextResponse.json(medications, { status: 200});
 });

@@ -156,14 +156,20 @@ export const cancelAppointmentRoutingAction = withErrorHandling(async (appointme
   await prisma.appointmentRouting.update({
     where: { 
       id: appointmentRoutingId,
-      routedBy: session.user.sub,
+      RoutedBy: {
+        userId: session.user.sub
+      },
       status: {
         in: ["PENDING"]
       }
     },
     data: { 
       status: 'CANCELLED',
-      amendedBy: session.user.sub,
+      AmendedBy: {
+        connect: {
+          userId: session.user.sub
+        }
+      },
       amendedAt: new Date(),
       amendment: 'Cancelled by the assigner'
     },

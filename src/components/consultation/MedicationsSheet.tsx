@@ -4,7 +4,7 @@ import React, { useMemo } from "react";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@components/ui/sheet";
 import { Button } from "@components/ui/button";
 import { Separator } from "@components/ui/separator";
-import { useSearchParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { Check, Pill } from "lucide-react";
 import CreateMedicationModal from "@components/prescription/modals/CreateMedicationModal";
 import { useMedications } from "@hooks/useMedication";
@@ -29,11 +29,11 @@ interface MedicationsSheetProps {
 }
 export default function MedicationsSheet({consultation, readonly = true}: MedicationsSheetProps ) {
   
-  const sessionClinicValue = useAtomValue(sessionClinicAtom)
   const {user} = useUser()
+  const {clinicUid} = useParams<{clinicUid:string}>()
   const searchParams = useSearchParams()
   const open = useMemo(() => searchParams.get("show-medications") === "true", [searchParams])
-  const {data: medications, mutate} = useMedications({consultationTicketId: consultation.id, clinicId: sessionClinicValue?.clinicId!})
+  const {data: medications, mutate} = useMedications({consultationTicketId: consultation.id, clinicUid})
   const {data: myHps} = useHPs({userId: user?.sub ?? ""})
 
   const handleClose = (state: boolean) => {

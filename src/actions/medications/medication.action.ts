@@ -10,10 +10,10 @@ import { PERMISSIONS } from "@lib/permissions";
 import { withErrorHandling } from "@/lib/with-error-handling";
 
 export type GetMedicationsFilters = {
-    clinicId: number,
-    patientId?: number,
-    consultationTicketId?: number
-    hpId?: number
+  clinicUid: string,
+  patientId?: number,
+  consultationTicketId?: number
+  hpId?: number
 }
 export type GetMedications = Awaited<ReturnType<typeof getMedicationsAction>>;
 export const getMedicationsAction = withErrorHandling(async (filters?: GetMedicationsFilters) => {
@@ -21,8 +21,7 @@ export const getMedicationsAction = withErrorHandling(async (filters?: GetMedica
   const session = await getCachedSession();
   if(!session) throw new Error("Unauthorized");
 
-  const [user, hps, myPermissions] = await Promise.all([
-    getUserAction(session.user.sub),
+  const [hps, myPermissions] = await Promise.all([
     getHPsAction({ userId: session.user.sub }),
     getPermissionsAction({ userId: session.user.sub, type: "CLINIC" })
   ]);
@@ -39,23 +38,31 @@ export const getMedicationsAction = withErrorHandling(async (filters?: GetMedica
 
   if(!canReadAllClinicMedications && !canReadOwnMedications && !canReadCreatedMedications) throw new Error("You do not have permission to view medications");
     
-  const { clinicId, patientId, consultationTicketId, hpId } = filters || {};
+  const { clinicUid, patientId, consultationTicketId, hpId } = filters || {};
   const medications = await prisma.medication.findMany({
     orderBy: {
       createdAt: 'desc'
     },
     where: {
-      clinicId,
+      Clinic: {
+        clinicUid
+      },
       consultationTicketId,
       OR: [
         {
-          ...canReadAllClinicMedications ? {clinicId, patientId, hpId} : {},
+          ...canReadAllClinicMedications ? { Clinic: { clinicUid  }, patientId, hpId} : {},
         },
         {
-          ...canReadOwnMedications ? {patientId: user.data?.id} : {},
+          ...canReadOwnMedications ? { Patient: {
+            userId: session.user.sub
+          }} : {},
         },
         {
-          ...canReadCreatedMedications ? {hpId: {in: hps.map(hp => hp.id)}} : {},
+          ...canReadCreatedMedications ? { HealthCareProvider: {
+            User: {
+              userId: session.user.sub
+            }
+          }} : {},
         }
       ]
     },

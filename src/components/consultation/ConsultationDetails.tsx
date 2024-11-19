@@ -157,8 +157,6 @@ interface PatientHpDetailsProps {
   }
 }
 export const PatientHpDetails = ({ creators = [], user }: PatientHpDetailsProps) => {
-  const patientId = user.userId
-  const patientName = `${user.firstName} ${user.middleName} ${user.lastName} ${user.suffix ?? ""}`
   return (
     <div className="flex flex-wrap gap-2 justify-between">
       <Card className="grow">

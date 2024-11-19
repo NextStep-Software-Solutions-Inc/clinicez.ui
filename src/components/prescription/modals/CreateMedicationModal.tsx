@@ -1,5 +1,6 @@
 "use client";
 
+import { promiseWrapper } from "@/lib/with-error-handling";
 import { createMedicationAction } from "@actions/medications/medication.action";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import ActionButton from "@components/ActionButton";
@@ -82,7 +83,7 @@ export default function CreateMedicationModal({onCreated, consultation}: CreateM
   const action = async () => {
     form.handleSubmit((data) => {
       
-      toast.promise(createMedicationAction({
+      toast.promise(promiseWrapper(createMedicationAction)({
         ...data, 
         clinicUid,
         consultationTicketId: consultation.id,
@@ -90,15 +91,12 @@ export default function CreateMedicationModal({onCreated, consultation}: CreateM
       }), {
         loading: "Creating new medication...",
         success: (res) => {
-          if (res.status) {
-            onCreated?.();
-            closeBtnRef.current?.click();
-
-            form.reset(data);
-          }
+          onCreated?.();
+          closeBtnRef.current?.click();
+          form.reset(data);
           return res.message;
         },
-        error: "Failed to create medication"
+        error: error => error
       });
     })();
   };

@@ -117,7 +117,7 @@ export default function AppointmentDisplay() {
         </div>
         <div className="ml-auto flex items-center gap-2">
           {
-            freshAppointment.data.AppointmentAttribute?.status === "ROUTED" && [PERMISSIONS.CLINIC["COMPLETE:CLINIC:APPOINTMENT"].name].every(p => myClinicPermissionArray.includes(p)) &&
+            freshAppointment.data.AppointmentAttribute?.status === "ROUTED" && freshAppointment.data.AppointmentRouting.every(routing => routing.status !== "PENDING") && [PERMISSIONS.CLINIC["COMPLETE:CLINIC:APPOINTMENT"].name].every(p => myClinicPermissionArray.includes(p)) &&
             <CompleteAppointment appointmentId={freshAppointment.data.id} onCompleted={revalidate} disabled={!freshAppointment.data.id}/>
           }
         </div>

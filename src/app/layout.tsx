@@ -55,7 +55,15 @@ export default async function RootLayout({ children }: Props) {
               {children}
               <SpeedInsights />
               <Analytics />
-              <SonnerToaster />
+              <SonnerToaster 
+                toastOptions={{
+                  classNames: {
+                    error: "bg-destructive/70",
+                    success: "bg-green-400",
+                    warning: "bg-yellow-400",
+                    info: "bg-blue-400",
+                  }
+                }} />
               <Toaster />
             </UserProvider>
           </SWRProvider>

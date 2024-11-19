@@ -22,6 +22,7 @@ import { useClinicAppointment } from "@hooks/useAppointment";
 import { Checkbox } from "@components/ui/checkbox";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import { useLocalStorage } from "@hooks/useLocalStorage";
+import { promiseWrapper } from "@/lib/with-error-handling";
 
 const preAssessmentNotesSchema = z.object({
   createNew: z.boolean(),
@@ -82,7 +83,7 @@ export default function PreAssessmentNoteSheet({children, disabled, preAssessmen
 
   const action = () => {
     form.handleSubmit((data) => {
-      toast.promise(upsertPreAssessmentNoteAction({
+      toast.promise(promiseWrapper(upsertPreAssessmentNoteAction)({
         appointmentId,
         assessment: data.assessment,
         homeInstructions: data.homeInstructions,
@@ -91,14 +92,12 @@ export default function PreAssessmentNoteSheet({children, disabled, preAssessmen
       }), {
         loading: "Saving Pre-Assessment Note...",
         success: (res) => {
-          if (res.status) {
-            form.reset(data)
-            mutate()
-            closeBtnRef.current?.click()
-            return res.message
-          }
+          form.reset(data)
+          mutate()
+          closeBtnRef.current?.click()
+          return res.message
         },
-        error: "Failed to save Pre-Assessment Note"
+        error: error => error
       })
     })()
   }

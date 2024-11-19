@@ -24,7 +24,7 @@ import { toast } from "sonner"
 import { toggleArchiveConsultationTicketAction, GetConsultationTickets, GetConsultationTicket } from "@actions/consultation/consultation-ticket.action"
 import { Archive, Pencil, Pill } from "lucide-react"
 interface ConsultationTicketTableRowActionsProps<TData> {
-  consultation: NonNullable<GetConsultationTicket["data"]> | GetConsultationTickets["data"][number]
+  consultation: NonNullable<GetConsultationTicket["data"]> | NonNullable<GetConsultationTickets["data"]>[number]
 }
 
 export default function ConsultationTicketTableRowActions<TData>({consultation}: ConsultationTicketTableRowActionsProps<TData>) {

@@ -5,6 +5,7 @@ import prisma from '@lib/prisma';
 import { getCachedSession } from '@actions/session.action';
 import { getPermissionsAction } from '@actions/permission.action';
 import { PERMISSIONS } from '@lib/permissions';
+import { withErrorHandling } from '@/lib/with-error-handling';
 
 type UpsertPreAssessmentNotePayload = {
     appointmentId: number;
@@ -14,118 +15,89 @@ type UpsertPreAssessmentNotePayload = {
     clinicUid: string;
 }
 
-export const upsertPreAssessmentNoteAction = async ({appointmentId, clinicUid, assessment, homeInstructions, remarks}: UpsertPreAssessmentNotePayload) => {
+export const upsertPreAssessmentNoteAction = withErrorHandling(async ({appointmentId, clinicUid, assessment, homeInstructions, remarks}: UpsertPreAssessmentNotePayload) => {
+  
   const session = await getCachedSession()
+  if(!session) throw new Error("User not authenticated.")
   
-  try {
-    if(!session) throw new Error("User not authenticated.")
-  
-    const myPermissions = await getPermissionsAction({  userId:session.user.sub, type: "CLINIC" })
-    const writePreAssessmentNotePermissions = [PERMISSIONS.CLINIC["WRITE:CLINIC:PRE_ASSESSMENT_NOTE"].name]
-    const myPermissionArray = myPermissions.map(permission => permission.name)
-    const canWritePermission = writePreAssessmentNotePermissions.every(permission => myPermissionArray.includes(permission))
+  const myPermissions = await getPermissionsAction({  userId:session.user.sub, type: "CLINIC" })
+  const writePreAssessmentNotePermissions = [PERMISSIONS.CLINIC["WRITE:CLINIC:PRE_ASSESSMENT_NOTE"].name]
+  const myPermissionArray = myPermissions.map(permission => permission.name)
+  const canWritePermission = writePreAssessmentNotePermissions.every(permission => myPermissionArray.includes(permission))
     
-    if(!canWritePermission) throw new Error("You do not have permission to write pre-assessment note.")
+  if(!canWritePermission) throw new Error("You do not have permission to write pre-assessment note.")
     
-    await prisma.preAssessmentNote.upsert({
-      where: {
-        unique_appointment_created_by: {
-          appointmentId,
-          createdBy: session.user.email
-        }
-      },
-      create: {
-        Appointment: {
-          connect: {
-            id: appointmentId
-          }
-        },
-        Clinic: {
-          connect: {
-            clinicUid
-          }
-        },
-        assessment,
-        homeInstructions,
-        remarks,
-        CreatedBy: {
-          connect: {
-            userId: session.user.sub
-          }
-        },
-        PreAssessmentNoteAttribute:{
-          create: {}
-        }
-      },
-      update: {
-        assessment,
-        homeInstructions,
-        remarks,
+  await prisma.preAssessmentNote.upsert({
+    where: {
+      unique_appointment_created_by: {
+        appointmentId,
+        createdBy: session.user.email
       }
-    })
-    return {
-      status: true,
-      message: "Pre-consultation note created successfully",
+    },
+    create: {
+      Appointment: {
+        connect: {
+          id: appointmentId
+        }
+      },
+      Clinic: {
+        connect: {
+          clinicUid
+        }
+      },
+      assessment,
+      homeInstructions,
+      remarks,
+      CreatedBy: {
+        connect: {
+          userId: session.user.sub
+        }
+      },
+      PreAssessmentNoteAttribute:{
+        create: {}
+      }
+    },
+    update: {
+      assessment,
+      homeInstructions,
+      remarks,
     }
-  } catch (error) {
-    console.error(`Error upsert-ing pre-assessment note: ${error}`);
-    let message = "An error occurred while updating pre-assessment note.";
-    if(error instanceof Error) message = error.message;
-    return {
-      status: false,
-      message,
-    }
-    
-  }
-}
+  })
+  return { message: "Pre-consultation note created successfully", data: undefined }
+})
 
 export type GetPreAssessmentNotes = Awaited<ReturnType<typeof getPreAssessmentNotesAction>>
-export const getPreAssessmentNotesAction = async (appointmentId: number) => {
-  const session = await getCachedSession()
-  try {
-    if(!session) throw new Error("User not authenticated.")
-
-    const myPermissions = await getPermissionsAction({userId: session.user.sub, type: "CLINIC"})
-    const readPreAssessmentNotePermissions = [PERMISSIONS.CLINIC["READ:CLINIC:PRE_ASSESSMENT_NOTE"].name]
-    const myPermissionArray = myPermissions.map(permission => permission.name)
-    const canReadPermission = readPreAssessmentNotePermissions.every(permission => myPermissionArray.includes(permission))
-
-    if(!canReadPermission) throw new Error("You do not have permission to read pre-assessment note.")
-
+export const getPreAssessmentNotesAction = withErrorHandling(async (appointmentId: number) => {
   
-    const preAssessmentNote = await prisma.preAssessmentNote.findMany({
-      orderBy: {
-        createdAt: 'desc'
-      },
-      where: {
-        appointmentId
-      },
-      include: {
-        CreatedBy: {
-          select: {
-            id: true,
-            userId: true,
-            firstName: true,
-            middleName: true,
-            lastName: true,
-            suffix: true
-          }
+  const session = await getCachedSession()
+  if(!session) throw new Error("User not authenticated.")
+
+  const myPermissions = await getPermissionsAction({userId: session.user.sub, type: "CLINIC"})
+  const readPreAssessmentNotePermissions = [PERMISSIONS.CLINIC["READ:CLINIC:PRE_ASSESSMENT_NOTE"].name]
+  const myPermissionArray = myPermissions.map(permission => permission.name)
+  const canReadPermission = readPreAssessmentNotePermissions.every(permission => myPermissionArray.includes(permission))
+
+  if(!canReadPermission) throw new Error("You do not have permission to read pre-assessment note.")
+
+  const preAssessmentNote = await prisma.preAssessmentNote.findMany({
+    orderBy: {
+      createdAt: 'desc'
+    },
+    where: {
+      appointmentId
+    },
+    include: {
+      CreatedBy: {
+        select: {
+          id: true,
+          userId: true,
+          firstName: true,
+          middleName: true,
+          lastName: true,
+          suffix: true
         }
       }
-    })
-    return {
-      status: true,
-      message: "Pre-consultation note fetched successfully",
-      data: preAssessmentNote
     }
-  } catch (error) {
-    console.error(`Error fetching pre-assessment note: ${error}`);
-    let message = "An error occurred while fetching pre-assessment note.";
-    if(error instanceof Error) message = error.message;
-    return {
-      status: false,
-      message,
-      data: []
-    }
-  }
-}
+  })
+  return { message: "Pre-consultation note fetched successfully",  data: preAssessmentNote }
+})

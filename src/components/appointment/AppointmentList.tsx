@@ -1,6 +1,6 @@
 "use client";
 
-import { forwardRef, useMemo} from "react"
+import { forwardRef, useEffect, useMemo} from "react"
 
 import { cn, getBadgeVariantFromLabel } from "@lib/utils"
 import { Badge } from "@components/ui/badge"
@@ -13,6 +13,7 @@ import { ArrowRight } from "lucide-react";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { formatDateTime } from "@/lib/day-utils";
+import { toast } from "sonner";
 dayjs.extend(relativeTime)
 interface AppointmentListProps {
   appointments: GetAppointments["data"]
@@ -30,6 +31,9 @@ export const AppointmentList = forwardRef<any, AppointmentListProps>(({appointme
     window.history.pushState({}, "", `?${searchParams.toString()}`)
   }
   
+  useEffect(() => {
+    toast.error("This is a toast message")
+  })
  
   return (
     <ScrollArea ref={ref} className="flex-auto h-[100dvh]">

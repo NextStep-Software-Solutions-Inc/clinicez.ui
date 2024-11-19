@@ -60,9 +60,10 @@ export const createPrescriptionAction = withErrorHandling(async (payload: Create
   if(!session) throw new Error("Unauthorized")
   const {clinicUid, templateId, name, hpId, medicationId } = payload
   
-  const defaultTemplate = 2
+  const template = templateId ? templateId : (await getClinicPrescriptionSetting(clinicUid))?.prescriptionTemplateId
+  
+  if(!template) throw new Error("No prescription template found")
 
-  const template = templateId ?? defaultTemplate
   await prisma.prescription.create({
     data: {
       name,
@@ -106,3 +107,13 @@ export const updatePrescriptionActions = withErrorHandling(async (payload: {id: 
   return { message: "Successfully updated prescription", data: undefined}
 
 })
+
+const getClinicPrescriptionSetting = async (clinicUid: string) => {
+  return await prisma.clinicPrescriptionSetting.findFirst({
+    where: {
+      Clinic: {
+        clinicUid
+      }
+    }
+  })
+}

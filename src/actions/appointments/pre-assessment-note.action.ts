@@ -6,6 +6,8 @@ import { getCachedSession } from '@actions/session.action';
 import { getPermissionsAction } from '@actions/permission.action';
 import { PERMISSIONS } from '@lib/permissions';
 import { withErrorHandling } from '@/lib/with-error-handling';
+import { tr } from '@faker-js/faker';
+import { Prisma } from '@prisma/client';
 
 type UpsertPreAssessmentNotePayload = {
     appointmentId: number;
@@ -27,41 +29,50 @@ export const upsertPreAssessmentNoteAction = withErrorHandling(async ({appointme
     
   if(!canWritePermission) throw new Error("You do not have permission to write pre-assessment note.")
     
-  await prisma.preAssessmentNote.upsert({
-    where: {
-      unique_appointment_created_by: {
-        appointmentId,
-        createdBy: session.user.email
+  await prisma.$transaction(async (prisma) => {
+    const user = await prisma.user.findUniqueOrThrow({
+      where: {  userId: session.user.sub }, select: {id: true}
+    })
+    await prisma.preAssessmentNote.upsert({
+      where: {
+        unique_appointment_created_by: {
+          appointmentId,
+          createdBy: user.id
+        }
+      },
+      create: {
+        Appointment: {
+          connect: {
+            id: appointmentId
+          }
+        },
+        Clinic: {
+          connect: {
+            clinicUid
+          }
+        },
+        assessment,
+        homeInstructions,
+        remarks,
+        CreatedBy: {
+          connect: {
+            userId: session.user.sub
+          }
+        },
+        PreAssessmentNoteAttribute:{
+          create: {}
+        }
+      },
+      update: {
+        assessment,
+        homeInstructions,
+        remarks,
       }
-    },
-    create: {
-      Appointment: {
-        connect: {
-          id: appointmentId
-        }
-      },
-      Clinic: {
-        connect: {
-          clinicUid
-        }
-      },
-      assessment,
-      homeInstructions,
-      remarks,
-      CreatedBy: {
-        connect: {
-          userId: session.user.sub
-        }
-      },
-      PreAssessmentNoteAttribute:{
-        create: {}
-      }
-    },
-    update: {
-      assessment,
-      homeInstructions,
-      remarks,
-    }
+    })
+  }, {
+    maxWait: 10000,
+    timeout: 5000,
+    isolationLevel: Prisma.TransactionIsolationLevel.Serializable
   })
   return { message: "Pre-consultation note created successfully", data: undefined }
 })

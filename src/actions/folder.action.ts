@@ -1,57 +1,47 @@
 "use server";
 
-import prisma from "@lib/prisma-common";
+import { withErrorHandling } from "@/lib/with-error-handling";
+import prisma from "@lib/prisma";
 
-export const createFolderAction = async (name: string, userId: string, orgUid?:string) => {
-  try {
-    const folder = await prisma.folder.create({
-      data: {
-        name,
-        User: {
-          connect: {
-            userId
-          }
-        },
-        FolderSetting: {
-          create: {
-            isPublic: true,
-            ...orgUid ? {
-              Organization: {
-                connect: {
-                  orgId: orgUid
-                }
+export const createFolderAction = withErrorHandling(async ({name, userId, clinicUid}: {name: string, userId: string, clinicUid?:string}) => {
+  const folder = await prisma.folder.create({
+    data: {
+      name,
+      User: {
+        connect: {
+          userId
+        }
+      },
+      FolderSetting: {
+        create: {
+          isPublic: true,
+          ...clinicUid ? {
+            Clinic: {
+              connect: {
+                clinicUid
               }
-            } : {}
-          }
+            }
+          } : {}
         }
       }
-    });
-    return {
-      status: true,
-      message: "Folder created successfully",
-      data: folder
     }
-  } catch (error) {
-    console.error(`Error creating folder: ${error}`);
-    return {
-      status: false,
-      message: "Failed to create folder",
-      data: null
-    }
-  }
-}
+  });
+  return { message: "Folder created successfully", data: folder }
+}, (error) => {
+  return "Failed to create folder";
+})
 
-export const getFoldersAction = async (userId: string, orgUid?:string) => {
+export const getFoldersAction = async (userId: string, clinicUid?:string) => {
   const folders = await prisma.folder.findMany({
     where: {
       isActive: true,
       User: {
         userId
       },
-      ...orgUid ? {
+      ...clinicUid ? {
         FolderSetting: {
-          Organization: {
-            orgId: orgUid
+          Clinic: {
+            clinicUid
           }
         }
       } : {}
@@ -73,13 +63,7 @@ export const getFoldersAction = async (userId: string, orgUid?:string) => {
           FileType: {
             select: {
               name: true,
-              FileTypeAttribute: {
-                select: {
-                  required: true,
-                  validUntil: true,
-                  scopeOrgId: true
-                }
-              }
+              validUntil: true
             }
           },
           FileSetting: {
@@ -93,10 +77,10 @@ export const getFoldersAction = async (userId: string, orgUid?:string) => {
         select: {
           id: true,
           isPublic: true,
-          scopeOrgId: true,
-          Organization: {
+          scopeClinicId: true,
+          Clinic: {
             select: {
-              orgId: true
+              clinicUid: true
             }
           }
         }

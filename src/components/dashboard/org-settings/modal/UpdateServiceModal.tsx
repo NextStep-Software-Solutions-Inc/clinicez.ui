@@ -1,6 +1,6 @@
 "use client";
 
-import { GetOrgServices, updateOrgServiceAction } from "@actions/organizations/org-service.action";
+import { GetClinicServices, updateClinicServiceAction } from "@/actions/clinics/clinic-service.action";
 import ActionButton from "@components/ActionButton";
 import CustomModalContent from "@components/CustomModalContent";
 import { Button } from "@components/ui/button";
@@ -42,7 +42,7 @@ const updateServiceSchema = z.object({
 });
 
 interface UpdateServiceModalProps {
-  service: GetOrgServices[number];
+  service: GetClinicServices[number];
   onUpdateService?: () => void;
 }
 export default function UpdateServiceModal({service, onUpdateService}:UpdateServiceModalProps) {
@@ -59,7 +59,7 @@ export default function UpdateServiceModal({service, onUpdateService}:UpdateServ
 
   const action = async () => {
     form.handleSubmit(async (values) => {
-      toast.promise(updateOrgServiceAction({...values, id: service.id}), {
+      toast.promise(updateClinicServiceAction({...values, id: service.id}), {
         loading: "Updating service...",
         success: res => {
           if(res.status) {

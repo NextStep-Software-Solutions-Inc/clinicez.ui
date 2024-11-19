@@ -43,7 +43,7 @@ interface DataTableProps<TData, TValue> {
   onOptionsChange?: (options: ConsultationTableOptions) => void
 }
 
-export function DataTable<TData extends GetConsultationTickets["data"][number], TValue>({
+export function DataTable<TData extends NonNullable<GetConsultationTickets["data"]>[number], TValue>({
   columns,
   data,
   options,

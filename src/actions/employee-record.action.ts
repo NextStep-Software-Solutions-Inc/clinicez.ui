@@ -1,8 +1,8 @@
 "use server";
 
-import prisma from "@lib/prisma-common";
+import prisma from "@lib/prisma";
 import { hasCodeProperty } from "@lib/utils";
-import { PrismaClientKnownRequestError } from "@prisma/common/client/runtime/library";
+import { getCachedSession } from "@actions/session.action";
 
 export type CreateUserEmploymentRecord = {
   employeeId: string;
@@ -19,7 +19,7 @@ export const createEmploymentRecordAction = async (payload:CreateUserEmploymentR
   const { employeeId, position, designation, userId, orgUid, departmentId, collegeId } = payload
 
   const organization = await prisma.organization.findUniqueOrThrow({ 
-    where: {orgId: orgUid, isActive: true},
+    where: {orgUid, isActive: true},
     select: {id: true} 
   })
   const employeeRecord = await prisma.userEmploymentRecord.create({
@@ -38,11 +38,15 @@ export const createEmploymentRecordAction = async (payload:CreateUserEmploymentR
 
 export const upsertEmploymentRecordAction = async (payload:CreateUserEmploymentRecord ) => {
   
-  const { employeeId, position, designation, userId, orgUid, officeId, departmentId, collegeId } = payload
-
   try {
+
+    const session = await getCachedSession()
+    if(!session) throw new Error("User not authenticated.")
+
+
+    const { employeeId, position, designation, userId, orgUid, officeId, departmentId, collegeId } = payload
     const organization = await prisma.organization.findUniqueOrThrow({
-      where: { orgId: orgUid, isActive: true },
+      where: { orgUid, isActive: true },
       select: { id: true }
     })
     const employeeRecord = await prisma.userEmploymentRecord.upsert({

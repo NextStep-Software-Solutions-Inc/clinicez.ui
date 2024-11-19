@@ -1,16 +1,16 @@
 "use server";
 
-import prisma from "@lib/prisma-common";
+import "server-only";
+import prisma from "@lib/prisma";
 
-
-export type GetOrgYearLevels = Awaited<ReturnType<typeof getOrgYearLevelsAction>>
-export const getOrgYearLevelsAction = async (orgId: string) => {
-  const yearLevels = await prisma.orgYearLevel.findMany({
+export type GetOrganizationYearLevels = Awaited<ReturnType<typeof getOrganizationYearLevelsAction>>
+export const getOrganizationYearLevelsAction = async (orgUid: string) => {
+  const yearLevels = await prisma.organizationYearLevel.findMany({
     orderBy: { name: "asc" },
     where: {
       isActive: true,
       Organization: {
-        orgId
+        orgUid
       }
     },
     select: {

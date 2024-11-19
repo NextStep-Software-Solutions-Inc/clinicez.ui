@@ -41,6 +41,6 @@ async function PHRPage({ params, searchParams }: AppRouterPageRouteOpts) {
 export default withPageAuthRequired(PHRPage, {
   returnTo: ({params, searchParams}) => {
     const searchStr = Object.entries(searchParams ?? {}).map(([key, value]) => `${key}=${value}`).join("&");
-    return `/user/${params?.organization}/phr?${searchStr}`;
+    return `/user/${params?.userId}/phr?${searchStr}`;
   }
 })

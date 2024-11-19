@@ -1,36 +1,36 @@
 "use server";
 
 import "server-only";
-import prismaCommon from "@lib/prisma-common";
+import prisma from "@lib/prisma";
 
-export type GetOrgAppointmentConfig = Awaited<ReturnType<typeof getOrgAppointmentConfigAction>>
-export const getOrgAppointmentConfigAction = async (orgUid: string) => {
-  const orgAppointmentConfig = await prismaCommon.orgAppointmentConfig.findFirst({
+export type GetClinicAppointmentConfig = Awaited<ReturnType<typeof getClinicAppointmentConfigAction>>
+export const getClinicAppointmentConfigAction = async (clinicUid: string) => {
+  const clinicAppointmentConfig = await prisma.appointmentConfig.findFirst({
     where: {
-      Organization: {
-        orgId: orgUid
+      Clinic: {
+        clinicUid
       }
     },
   });
-  return orgAppointmentConfig;
+  return clinicAppointmentConfig;
 }
 
-type UpsertOrgAppointmentConfig = {
+type UpsertAppointmentConfig = {
   maxAppointmentsPerClient?: number;
   perClientResetInterval?: number;
   maxAppointmentsPerDay?: number;
-  orgUid: string;
+  clinicUid: string;
 }
-export const upsertOrgAppointmentConfigAction = async (orgAppointmentConfigId: number, data: UpsertOrgAppointmentConfig) => {
+export const upsertClinicAppointmentConfigAction = async (appointmentConfigId: number, data: UpsertAppointmentConfig) => {
   try {
-    const orgAppointmentConfig = await prismaCommon.orgAppointmentConfig.upsert({
+    const clinicAppointmentConfig = await prisma.appointmentConfig.upsert({
       where: {
-        id: orgAppointmentConfigId
+        id: appointmentConfigId
       },
       create: {
-        Organization: {
+        Clinic: {
           connect: {
-            orgId: data.orgUid
+            clinicUid: data.clinicUid
           }
         },
         maxAppointmentsPerClient: data.maxAppointmentsPerClient,
@@ -46,7 +46,7 @@ export const upsertOrgAppointmentConfigAction = async (orgAppointmentConfigId: n
     return {
       status: true,
       message: "Appointment settings updated successfully",
-      data: orgAppointmentConfig
+      data: clinicAppointmentConfig
     }
   } catch (error) {
     console.error(error);

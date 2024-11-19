@@ -1,7 +1,6 @@
-import { createPrismaCommonClient, createPrismaTenantClient } from '@lib/factory/prisma';
+import { createPrismaClient } from '@lib/factory/prisma';
 declare global {
-  var prismaCommon: ReturnType<typeof createPrismaCommonClient>;
-  var prismaTenant: ReturnType<typeof createPrismaTenantClient>;
+  var prismaClient: ReturnType<typeof createPrismaClient>;
 }
 
 export default global

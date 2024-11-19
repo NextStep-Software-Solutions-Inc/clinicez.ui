@@ -1,13 +1,13 @@
 "use client";
 
-import dayjs from "dayjs"
-import utc from "dayjs/plugin/utc"
+import dayjs, { formatDateTime } from "@lib/day-utils"
 
 import {differenceInCalendarYears } from "date-fns"
 import { MoreVertical, Pencil} from "lucide-react"
 
 import { Avatar, AvatarFallback } from "@components/ui/avatar"
 import { Button } from "@components/ui/button"
+import Link from "next/link";
 
 import { Separator } from "@components/ui/separator"
 import { ScrollArea } from "@components/ui/scroll-area"
@@ -17,55 +17,54 @@ import { Badge } from "@components/ui/badge"
 import ConsultationTicketSheet from "@components/appointment/ConsultationTicketSheet"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@components/ui/dropdown-menu"
 import { useParams, useSearchParams } from "next/navigation"
-import { useUser as useUserDb } from "@hooks/useUser";
-import { useOrgAppointment } from "@hooks/useAppointment";
+import { useClinicAppointment } from "@hooks/useAppointment";
 import PageLoading from "@components/PageLoading";
 import { revalidatePath } from "@actions/cache.action";
 import { mutate } from "swr";
 import { useAppointmentTools } from "./useAppointmentActions";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import Attachments from "./Attachments";
-import { formatDateTime, getBadgeVariantFromLabel } from "@lib/utils";
+import { getBadgeVariantFromLabel } from "@lib/utils";
 
 import { LabelValue } from "@components/LabelValue";
 import PreAssessmentNoteSheet from "./PreAssessmentNoteSheet";
-import { useRef } from "react";
+import { Fragment, useRef } from "react";
 import { GetAppointment } from "@actions/appointments/appointments.action";
 import AppointmentRoutingHistorySheet from "./AppointmentRoutingHistorySheet";
 import CompleteAppointment from "./CompleteAppointment";
-import { useHP } from "@hooks/useHP";
 import { PERMISSIONS } from "@lib/permissions";
-import Link from "next/link";
+import { usePermissions } from "@/hooks/usePermission";
+import { useHPs } from "@/hooks/useHP";
 
-dayjs.extend(utc)
 
 export default function AppointmentDisplay() {
 
   const { user } = useUser()
-  const params = useParams()
+  const { clinicUid } = useParams<{clinicUid: string}>()
   const searchParams = useSearchParams()
-  const organization = params?.organization as string
   const appointmentId = parseInt(searchParams.get("_appointment") ?? "")
-  const {data:freshAppointment, isLoading: loadingAppointment} = useOrgAppointment({
-    orgId: organization,
+
+  const {data: freshAppointment, isLoading: loadingAppointment} = useClinicAppointment({
+    clinicUid: clinicUid,
     appointmentId: appointmentId
   })
+  const {data: myClinicPermissions} = usePermissions({
+    userId: user?.sub ?? "",
+    type: "CLINIC"
+  })
+  const {data: myHps} = useHPs({
+    userId: user?.sub ?? "",
+  })
 
+  const requesters = freshAppointment?.data?.Requesters
+  const preferredHp = freshAppointment?.data?.AppointmentAttribute?.PreferredAppointee
+  
   const revalidate = async () => {
-    revalidatePath(`${organization}/appointments`,  "page")
-    mutate((key) =>  typeof key === 'string' && key.startsWith(`/api/organizations/${organization}/appointments`), undefined, {
+    revalidatePath(`/clinic/${clinicUid}/appointments`,  "page")
+    mutate((key) =>  typeof key === 'string' && key.startsWith(`/api/clinics/${clinicUid}/appointments`), undefined, {
       revalidate:true
     })
   }
-
-  const requestorId = freshAppointment?.data?.Requesters[0].userId
-  const {data: aptUser, isLoading: loadingUser} = useUserDb({email: requestorId})
-  
-  const {data: authUser } = useUserDb({userId: user?.sub ?? "", orgUid: organization})
-
-  const preferredHpId = Number(freshAppointment?.data?.AppointmentAttribute?.preferredAppointee)
-  const {data: preferredHp} = useHP(preferredHpId)
-
   const {tools: appointmentTools} = useAppointmentTools({
     appointment: freshAppointment?.data,
     revalidate
@@ -79,22 +78,15 @@ export default function AppointmentDisplay() {
     return <PageLoading label="Loading Appointment" />
   };
   
-  if (loadingUser) {
-    return <PageLoading label="Loading User" />
-  };
-
   if(!(freshAppointment && freshAppointment.data)) {
     return <div className="p-8 text-center text-muted-foreground">Appointment not found</div>
   }
 
-  if(!aptUser?.data) {
-    return <div className="p-8 text-center text-muted-foreground">User not found</div>
-  }
-
-  const myOrgPermission = authUser?.data?.OrgUserPermissions.flatMap(p => p.Permission).map(p => p.name) ?? []
+  const myClinicPermissionArray = myClinicPermissions?.map(p => p.name) ?? []
+  
   const preferredHPName = `${preferredHp?.HPProfile?.title || preferredHp?.User.firstName} ${preferredHp?.HPProfile?.name || preferredHp?.User.lastName} ${preferredHp?.HPProfile?.suffix || preferredHp?.User.suffix || ""}`
   const meetingUrl = freshAppointment.data.AppointmentAttribute?.meetingUrl
-
+  
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center p-2">
@@ -107,13 +99,13 @@ export default function AppointmentDisplay() {
           <Each
             key={freshAppointment.data.id}
             of={appointmentTools.filter((tool) => {     
-              const enable = tool.permissions.every(p => myOrgPermission.includes(p))
+              const enable = tool.permissions.every(p => myClinicPermissionArray.includes(p))
                 && tool.appointmentStatuses.includes(freshAppointment.data!.AppointmentAttribute?.status.toLocaleLowerCase() ?? "") 
                 && (
                   tool.routedAptStatuses.length === 0 
                   || (
                     freshAppointment.data?.AppointmentAttribute?.status !== "ROUTED" 
-                    || freshAppointment.data?.AppointmentRouting.some(apt =>tool.routedAptStatuses.includes(apt.status.toLocaleLowerCase()) && authUser?.data?.HealthcareProviders.some(hp => hp.id === Number(apt.routedTo)))
+                    || freshAppointment.data?.AppointmentRouting.some(apt =>tool.routedAptStatuses.includes(apt.status.toLocaleLowerCase()) && (myHps?? []).some(hp => hp.id === apt.RoutedTo.id))
                   )
                 )
               return enable
@@ -125,7 +117,7 @@ export default function AppointmentDisplay() {
         </div>
         <div className="ml-auto flex items-center gap-2">
           {
-            freshAppointment.data.AppointmentAttribute?.status === "ROUTED" && [PERMISSIONS.CLINIC["COMPLETE:ORG:APPOINTMENT"].name].every(p => myOrgPermission.includes(p)) &&
+            freshAppointment.data.AppointmentAttribute?.status === "ROUTED" && freshAppointment.data.AppointmentRouting.every(routing => routing.status !== "PENDING") && [PERMISSIONS.CLINIC["COMPLETE:CLINIC:APPOINTMENT"].name].every(p => myClinicPermissionArray.includes(p)) &&
             <CompleteAppointment appointmentId={freshAppointment.data.id} onCompleted={revalidate} disabled={!freshAppointment.data.id}/>
           }
         </div>
@@ -136,21 +128,30 @@ export default function AppointmentDisplay() {
       <div className="flex flex-1 flex-col">
         <div className="flex items-start p-4">
           <div className="flex items-start gap-4 text-sm">
-            <Avatar>
-              {
-                aptUser.data.picture 
-                  ? <Image src={aptUser.data.picture} width={50} height={50} className="object-cover" alt={aptUser.data.nickname ?? ""} />
-                  : <AvatarFallback>{aptUser.data.firstName?.charAt(0)} {aptUser.data.lastName?.charAt(0)}</AvatarFallback>
-              }
-            </Avatar>
-            <div className="grid gap-1">
-              <div className="font-semibold">{aptUser.data.firstName} {aptUser.data.middleName} {aptUser.data.lastName} {aptUser.data.suffix}</div>
-              <div className="line-clamp-1 text-xs">
-                <span className="font-medium">{aptUser.data.gender} / </span>{aptUser.data.dob ? differenceInCalendarYears(new Date(), aptUser.data.dob) : 0}
-              </div>
-              <div className="line-clamp-1 text-xs">{freshAppointment.data.subject}</div>
-
-            </div>
+            <Each
+              of={requesters ?? []}
+              render={(aptUser) => {
+                return (
+                  <Fragment key={aptUser.User.userId}>
+                    <Avatar>
+                      {
+                        aptUser.User.picture 
+                          ? <Image src={aptUser.User.picture} width={50} height={50} className="object-cover" alt={aptUser.User.nickname ?? ""} />
+                          : <AvatarFallback>{aptUser.User.firstName?.charAt(0)} {aptUser.User.lastName?.charAt(0)}</AvatarFallback>
+                      }
+                    </Avatar>
+                    <div className="grid gap-1">
+                      <div className="font-semibold">{aptUser.User.firstName} {aptUser.User.middleName} {aptUser.User.lastName} {aptUser.User.suffix}</div>
+                      <div className="line-clamp-1 text-xs">
+                        <span className="font-medium">{aptUser.User.gender} / </span>{aptUser.User.dob ? differenceInCalendarYears(new Date(), aptUser.User.dob) : 0}
+                      </div>
+                      <div className="line-clamp-1 text-xs">{freshAppointment.data?.subject}</div>
+                    </div>
+                  </Fragment>
+                )
+              }}
+            />
+            
           </div>
           {freshAppointment.data.createdAt && (
             <div className="ml-auto text-xs text-muted-foreground">
@@ -176,14 +177,14 @@ export default function AppointmentDisplay() {
               of={(freshAppointment.data.PreAssessmentNotes ?? []).slice(-1)}
               fallback={(
                 <PreAssessmentNoteSheet 
-                  disabled={!freshAppointment || [PERMISSIONS.CLINIC["WRITE:ORG:PRE_ASSESSMENT_NOTE"].name].every(p => !myOrgPermission.includes(p))}
+                  disabled={!freshAppointment || [PERMISSIONS.CLINIC["WRITE:CLINIC:PRE_ASSESSMENT_NOTE"].name].every(p => !myClinicPermissionArray.includes(p))}
                   key={freshAppointment.data.id}
                   preAssessmentNotes={{
                     assessment: "",
                     homeInstructions:  "",
                     remarks: "",
                     appointmentId: freshAppointment.data!.id,
-                    orgUid: organization
+                    clinicUid
                   }}
                 >
                   <span className="text-muted-foreground cursor-pointer hover:underline">No Pre-Consultation Notes, click here to create</span>
@@ -193,19 +194,19 @@ export default function AppointmentDisplay() {
                 return (
                   <PreAssessmentNoteSheet 
                     key={preAssessmentNote.id}
-                    disabled={!freshAppointment || [PERMISSIONS.CLINIC["WRITE:ORG:PRE_ASSESSMENT_NOTE"].name].every(p => !myOrgPermission.includes(p))}
+                    disabled={!freshAppointment || [PERMISSIONS.CLINIC["WRITE:CLINIC:PRE_ASSESSMENT_NOTE"].name].every(p => !myClinicPermissionArray.includes(p))}
                     preAssessmentNotes={{
                       ...preAssessmentNote,
                       homeInstructions: preAssessmentNote.homeInstructions ?? "",
                       appointmentId: freshAppointment.data!.id,
-                      orgUid: organization
+                      clinicUid
                     }}
                   >
                     <div className="cursor-pointer">
                       <LabelValue className="flex items-center gap-2" label={preAssessmentNote.assessment} value="Pre-Assessment:" />
                       {preAssessmentNote.homeInstructions && <LabelValue className="flex items-center gap-2" label={preAssessmentNote.homeInstructions} value="Home Instruction:" />}
                       <LabelValue className="flex items-center gap-2" label={preAssessmentNote.remarks} value="Remarks:" />
-                      <LabelValue className="flex items-center gap-2" label={preAssessmentNote.createdBy} value="Noted by:" />
+                      <LabelValue className="flex items-center gap-2" label={`${preAssessmentNote.CreatedBy.firstName} ${preAssessmentNote.CreatedBy.middleName} ${preAssessmentNote.CreatedBy.lastName} ${preAssessmentNote.CreatedBy.suffix}`} value="Noted by:" />
                     </div>
                   </PreAssessmentNoteSheet>
                 )
@@ -213,14 +214,14 @@ export default function AppointmentDisplay() {
           </div>
         }
         <Separator />
-        <AppointmentMetadata appointment={freshAppointment.data} organization={organization}>
+        <AppointmentMetadata appointment={freshAppointment.data}>
         </AppointmentMetadata>
         <Separator />
         <div className="px-5 py-2 text-xs max-h-40 scrollBox no-scrollbar">
           <span className="font-semibold text-base">{freshAppointment.data.AppointmentAttribute?.status !== "ROUTED" ? "Preferred": "Assigned"} Schedule</span> <br />
           {freshAppointment.data.AppointmentAttribute?.date && <LabelValue className="flex items-center gap-2" label={dayjs(freshAppointment.data.AppointmentAttribute.date).format("ll - dddd")} value="Date:" />}
           {(freshAppointment.data.AppointmentAttribute?.date && freshAppointment.data.AppointmentAttribute?.timeStart && freshAppointment.data.AppointmentAttribute?.timeEnd) && <LabelValue className="flex items-center gap-2" label={`${formatDateTime(freshAppointment.data.AppointmentAttribute.date, freshAppointment.data.AppointmentAttribute.timeStart).format("hh:mm A")} - ${formatDateTime(freshAppointment.data.AppointmentAttribute.date, freshAppointment.data.AppointmentAttribute.timeEnd).format("hh:mm A")}`} value="Time:" />}
-          {freshAppointment.data.AppointmentAttribute?.preferredAppointee && <LabelValue className="flex items-center gap-2" label={preferredHPName} value={`Preferred HP:`} />}
+          {freshAppointment.data.AppointmentAttribute?.PreferredAppointee && <LabelValue className="flex items-center gap-2" label={preferredHPName} value={`Preferred HP:`} />}
           {meetingUrl && <div className="flex gap-2 items-center">
             <LabelValue className="flex items-center gap-2" label={meetingUrl} value={`Meeting link:`} />
             <Badge><Link href={meetingUrl} target="_blank">Join Meeting</Link></Badge>
@@ -285,31 +286,22 @@ export const MoreTools = ({freshAppointment}: MoreToolsProps) => {
 
 interface AppointmentMetadataProps {
   appointment: NonNullable<GetAppointment["data"]>;
-  organization: string;
 }
-export const AppointmentMetadata = ({appointment, organization}: AppointmentMetadataProps) => {
-  const receiverId = appointment.AppointmentAttribute?.receivedBy ?? undefined
-  const {data: aptReceiver } = useUserDb({userId: receiverId, orgUid: organization})
-  const receiverName = `${aptReceiver?.data?.firstName} ${aptReceiver?.data?.middleName} ${aptReceiver?.data?.lastName} ${aptReceiver?.data?.suffix ?? ""}`
-
-  const rejectorId = appointment.AppointmentAttribute?.rejectedBy ?? undefined
-  const {data: aptRejector } = useUserDb({userId: rejectorId, orgUid: organization})
-  const rejectorName = `${aptRejector?.data?.firstName} ${aptRejector?.data?.middleName} ${aptRejector?.data?.lastName} ${aptRejector?.data?.suffix ?? ""}`
-  
-  const completerId = appointment.AppointmentAttribute?.rejectedBy ?? undefined
-  const {data: aptCompleter } = useUserDb({userId: completerId, orgUid: organization})
-  const completerName = `${aptCompleter?.data?.firstName} ${aptCompleter?.data?.middleName} ${aptCompleter?.data?.lastName} ${aptCompleter?.data?.suffix ?? ""}`
+export const AppointmentMetadata = ({appointment}: AppointmentMetadataProps) => {
+  const receiverName = `${appointment.AppointmentAttribute?.ReceivedBy?.firstName} ${appointment.AppointmentAttribute?.ReceivedBy?.middleName} ${appointment.AppointmentAttribute?.ReceivedBy?.lastName} ${appointment.AppointmentAttribute?.ReceivedBy?.suffix ?? ""}`
+  const rejectorName = `${appointment.AppointmentAttribute?.RejectedBy?.firstName} ${appointment.AppointmentAttribute?.RejectedBy?.middleName} ${appointment.AppointmentAttribute?.RejectedBy?.lastName} ${appointment.AppointmentAttribute?.RejectedBy?.suffix ?? ""}`
+  const completerName = `${appointment.AppointmentAttribute?.RejectedBy?.firstName} ${appointment.AppointmentAttribute?.RejectedBy?.middleName} ${appointment.AppointmentAttribute?.RejectedBy?.lastName} ${appointment.AppointmentAttribute?.RejectedBy?.suffix ?? ""}`
   
   return (
     <div className="px-5 py-2 text-xs max-h-40 scrollBox no-scrollbar">
       <span className="font-semibold text-base">Meta</span> <br />
       {appointment.AppointmentAttribute?.completedAt && <LabelValue className="flex items-center gap-2" label={dayjs(appointment.AppointmentAttribute.completedAt).format("llll")} value="Date received:" />}
-      {appointment.AppointmentAttribute?.completedBy && <LabelValue className="flex items-center gap-2" label={completerName} value="Completed by:" />}
+      {appointment.AppointmentAttribute?.CompletedBy && <LabelValue className="flex items-center gap-2" label={completerName} value="Completed by:" />}
       {appointment.AppointmentAttribute?.receivedAt && <LabelValue className="flex items-center gap-2" label={dayjs(appointment.AppointmentAttribute.receivedAt).format("llll")} value="Date received:" />}
-      {appointment.AppointmentAttribute?.receivedBy && <LabelValue className="flex items-center gap-2" label={receiverName} value="Received by:" />}
+      {appointment.AppointmentAttribute?.ReceivedBy && <LabelValue className="flex items-center gap-2" label={receiverName} value="Received by:" />}
       {appointment.AppointmentAttribute?.rejectedReason && <LabelValue className="flex items-center gap-2" label={appointment.AppointmentAttribute.rejectedReason} value="Reason of rejection:" />}
       {appointment.AppointmentAttribute?.rejectedAt && <LabelValue className="flex items-center gap-2" label={dayjs(appointment.AppointmentAttribute.rejectedAt).format("llll")} value="Date rejected:" />}
-      {appointment.AppointmentAttribute?.rejectedBy && <LabelValue className="flex items-center gap-2" label={rejectorName} value="Rejected by:" />}
+      {appointment.AppointmentAttribute?.RejectedBy && <LabelValue className="flex items-center gap-2" label={rejectorName} value="Rejected by:" />}
     </div>
   )
 }

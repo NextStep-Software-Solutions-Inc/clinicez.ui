@@ -1,6 +1,6 @@
 "use server";
 
-import prisma from "@lib/prisma-common";
+import prisma from "@lib/prisma";
 
 export type GetNoteTemplates = Awaited<ReturnType<typeof getNoteTemplatesAction>>
 export const getNoteTemplatesAction = async () => {

@@ -1,0 +1,1657 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-1.0.x"]
+  engineType    = "library"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
+}
+
+model Tenant {
+  id                 Int                 @id @default(autoincrement())
+  tenantUid          String              @unique
+  ownerId            Int
+  name               String
+  description        String?
+  userPlanId         Int?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  deletedAt          DateTime?
+  isActive           Boolean             @default(true)
+  UserPlan           UserPlan?           @relation(fields: [userPlanId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Owner              User                @relation(fields: [ownerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Organizations      Organization[]
+  TenantSetting      TenantSetting?
+  UserDefaultTenants UserDefaultTenant[]
+  Clinics            Clinic[]
+}
+
+model TenantSetting {
+  id                      Int     @id @default(autoincrement())
+  tenantId                Int     @unique
+  onPremise               Boolean @default(false)
+  storageConnectionString String?
+  dbConnectionString      String?
+  Tenant                  Tenant  @relation(fields: [tenantId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model User {
+  id                               Int                              @id @default(autoincrement())
+  userId                           String                           @unique
+  email                            String                           @unique
+  picture                          String?
+  createdAt                        DateTime                         @default(now())
+  deletedAt                        DateTime?
+  isActive                         Boolean                          @default(true)
+  updatedAt                        DateTime                         @default(now()) @updatedAt
+  bloodType                        BloodType?
+  civilStatus                      CivilStatus?
+  dob                              DateTime?                        @db.Date
+  firstName                        String?
+  gender                           Gender?
+  lastName                         String?
+  middleName                       String?
+  mobile                           String?
+  nationality                      String?
+  nickname                         String?
+  religion                         String?
+  suffix                           String?
+  telephone                        String?
+  ActivationCodes                  ActivationCode[]
+  Folders                          Folder[]
+  HealthcareProviders              HealthcareProvider[]
+  ReceiptCodeClaims                ReceiptCodeClaim[]
+  SocialLink                       SocialLink?
+  Tenants                          Tenant[]
+  UserAddresses                    UserAddress[]
+  UserAllergies                    UserAllergy[]
+  UserDefaultOrganization          UserDefaultOrganization?
+  UserDefaultOrganizationRoles     UserDefaultOrganizationRole[]
+  UserDefaultTenant                UserDefaultTenant?
+  DiagnosedUserDisabilities        UserDisability[]                 @relation("DiagnosedUserDisability")
+  UserDisabilities                 UserDisability[]                 @relation("UserDisability")
+  UserEmergencyContacts            UserEmergencyContact[]
+  UserEmployments                  UserEmploymentRecord[]
+  DiagnosedUserHealthConditions    UserHealthCondition[]            @relation("DiagnosedUserHealthCondition")
+  ResolvedUserHealthConditions     UserHealthCondition[]            @relation("ResolvedUserHealthCondition")
+  UserHealthConditions             UserHealthCondition[]            @relation("HealthCondition")
+  UserMigration                    UserMigration?
+  AcceptedOrganizationApplications OrganizationMember[]             @relation("AcceptedBy")
+  OrganizationMembers              OrganizationMember[]             @relation("User")
+  Plans                            UserPlan[]
+  StudentRecords                   UserStudentRecord[]
+  UserVaccinations                 UserVaccination[]
+  VitalSigns                       VitalSign[]
+  UserSchedules                    UserSchedule[]
+  UserPermissions                  UserPermission[]
+  ReservedTimeSlots                ReservedTimeSlot[]
+  BookedByBookings                 Booking[]                        @relation("BookedBy")
+  BookedForBookings                Booking[]                        @relation("BookedFor")
+  UserPreference                   UserPreference?
+  UserClinicAppointmentWhitelists  UserClinicAppointmentWhitelist[]
+  AppointmentRequesters            AppointmentRequester[]
+  RoutedAppointments               AppointmentRouting[]             @relation("RoutedBy")
+  AmendedAppointments              AppointmentRouting[]             @relation("AmendedBy")
+  ClinicMembers                    ClinicMember[]
+  ReceivedByAppointments           AppointmentAttribute[]           @relation("ReceivedBy")
+  RejectedByAppointments           AppointmentAttribute[]           @relation("RejectedBy")
+  CompletedByAppointments          AppointmentAttribute[]           @relation("CompletedBy")
+  PreAssessmentNotes               PreAssessmentNote[]
+  UserDefaultClinicRoles           UserDefaultClinicRole[]
+  ClinicPatienta                   ClinicPatient[]
+  RescheduledByAppointments        AppointmentAttribute[]           @relation("RescheduledBy")
+  Medications                      Medication[]
+}
+
+model ClinicPatient {
+  id                       Int                       @id @default(autoincrement())
+  clinicId                 Int
+  patientId                Int
+  createdAt                DateTime                  @default(now())
+  updatedAt                DateTime                  @updatedAt
+  isActive                 Boolean                   @default(true)
+  deletedAt                DateTime?
+  Clinic                   Clinic                    @relation(fields: [clinicId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Patient                  User                      @relation(fields: [patientId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  ClinicPatientPermissions ClinicPatientPermission[]
+
+  @@unique([clinicId, patientId], name: "unique_clinic_patient")
+}
+
+model ClinicPatientPermission {
+  id              Int           @id @default(autoincrement())
+  clinicPatientId Int
+  permissionId    Int
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  Permission      Permission    @relation(fields: [permissionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  ClinicPatient   ClinicPatient @relation(fields: [clinicPatientId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model UserPreference {
+  id                              Int                 @id @default(autoincrement())
+  userId                          Int                 @unique
+  autoAcceptAppointmentAssignment Boolean             @default(false)
+  autoAssignAppointmentToSelf     Boolean             @default(false)
+  defaultHpId                     Int?
+  HealthCareProvider              HealthcareProvider? @relation(fields: [defaultHpId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  User                            User                @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model Organization {
+  id                           Int                           @id @default(autoincrement())
+  tenantId                     Int
+  orgUid                       String                        @unique
+  name                         String
+  description                  String?
+  logo                         String?
+  createdAt                    DateTime                      @default(now())
+  updatedAt                    DateTime                      @updatedAt
+  deletedAt                    DateTime?
+  isActive                     Boolean                       @default(true)
+  customUrl                    String?
+  email                        String?
+  privacyPolicyUrl             String?
+  termsAndConditionsUrl        String?
+  Tenant                       Tenant                        @relation(fields: [tenantId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  YearLevels                   OrganizationYearLevel[]
+  Colleges                     OrganizationCollege[]
+  Departments                  OrganizationDepartment[]
+  Offices                      OrganizationOffice[]
+  Programs                     OrganizationProgram[]
+  OrganizationSetting          OrganizationSetting?
+  UserDefaultOrganizations     UserDefaultOrganization[]
+  UserDefaultOrganizationRoles UserDefaultOrganizationRole[]
+  UserEmployments              UserEmploymentRecord[]
+  UserMigrations               UserMigration[]
+  OrganizationMembers          OrganizationMember[]
+  OrganizationRoles            OrganizationRole[]
+  UserStudentRecords           UserStudentRecord[]
+  OrgRoleInitialPermissions    OrgRoleInitialPermission[]
+  ClinicOrganizations          ClinicOrganization[]
+}
+
+model OrganizationSetting {
+  id                    Int          @id @default(autoincrement())
+  orgId                 Int          @unique
+  isPublic              Boolean      @default(false)
+  sendEmailNotification Boolean      @default(true)
+  emailToOrgOnly        Boolean      @default(false)
+  Organization          Organization @relation(fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model OrgMemberPermission {
+  id                 Int                @id @default(autoincrement())
+  orgMemberId        Int
+  permissionId       Int
+  Permission         Permission         @relation(fields: [permissionId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  OrganizationMember OrganizationMember @relation(fields: [orgMemberId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model ClinicMemberPermission {
+  id             Int          @id @default(autoincrement())
+  clinicMemberId Int
+  permissionId   Int
+  Permission     Permission   @relation(fields: [permissionId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  ClinicMember   ClinicMember @relation(fields: [clinicMemberId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model UserPermission {
+  id           Int        @id @default(autoincrement())
+  userId       Int
+  permissionId Int
+  User         User       @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  Permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model OrgRoleInitialPermission {
+  id               Int              @id @default(autoincrement())
+  orgId            Int
+  orgRoleId        Int
+  permissionId     Int
+  Organization     Organization     @relation(fields: [orgId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  Permission       Permission       @relation(fields: [permissionId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  OrganizationRole OrganizationRole @relation(fields: [orgRoleId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([orgId, orgRoleId, permissionId], name: "unique_org_role_initial_permission")
+}
+
+model ClinicRoleInitialPermission {
+  id           Int        @id @default(autoincrement())
+  clinicId     Int
+  clinicRoleId Int
+  permissionId Int
+  Clinic       Clinic     @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  Permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  ClinicRole   ClinicRole @relation(fields: [clinicRoleId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([clinicId, clinicRoleId, permissionId], name: "unique_clinic_role_initial_permission")
+}
+
+model Permission {
+  id                           Int                           @id @default(autoincrement())
+  name                         String                        @unique
+  description                  String?
+  type                         String                        @default("USER")
+  createdAt                    DateTime                      @default(now())
+  updatedAt                    DateTime                      @updatedAt
+  deletedAt                    DateTime?
+  isActive                     Boolean                       @default(true)
+  OrgMemberPermissions         OrgMemberPermission[]
+  UserPermissions              UserPermission[]
+  OrgRoleInitialPermissions    OrgRoleInitialPermission[]
+  ClinicMemberPermissions      ClinicMemberPermission[]
+  ClinicRoleInitialPermissions ClinicRoleInitialPermission[]
+  ClinicPatientPermissions     ClinicPatientPermission[]
+}
+
+model OrganizationMember {
+  id                   Int                   @id @default(autoincrement())
+  userId               Int
+  organizationId       Int
+  acceptedAt           DateTime?             @db.Date
+  acceptedBy           Int?
+  createdAt            DateTime              @default(now())
+  status               String                @default("PENDING")
+  role                 Int
+  AcceptedBy           User?                 @relation("AcceptedBy", fields: [acceptedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Organization         Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  OrganizationRole     OrganizationRole      @relation(fields: [role], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  User                 User                  @relation("User", fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  OrgMemberPermissions OrgMemberPermission[]
+
+  @@unique([userId, organizationId, role], name: "unique_user_organization_role")
+}
+
+model OrganizationRole {
+  id                           Int                           @id @default(autoincrement())
+  orgId                        Int
+  name                         String
+  description                  String?
+  isActive                     Boolean                       @default(true)
+  requirements                 String[]                      @default([])
+  Organization                 Organization                  @relation(fields: [orgId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  UserDefaultOrganizationRoles UserDefaultOrganizationRole[]
+  UserEmploymentRecords        UserEmploymentRecord[]
+  OrganizationMembers          OrganizationMember[]
+  UserStudentRecords           UserStudentRecord[]
+  OrgRoleInitialPermissions    OrgRoleInitialPermission[]
+
+  @@unique([orgId, name], name: "unique_organization_role")
+}
+
+model Plan {
+  id                   Int        @id @default(autoincrement())
+  planUid              String     @unique
+  price                Float
+  firstPaymentDiscount Float      @default(0)
+  currency             String     @default("PHP")
+  name                 String
+  type                 PlanType
+  frequency            String     @default("MONTHLY")
+  description          String?
+  createdAt            DateTime   @default(now())
+  updatedAt            DateTime   @updatedAt
+  deletedAt            DateTime?
+  isActive             Boolean    @default(true)
+  Features             Feature[]
+  Users                UserPlan[]
+}
+
+model Feature {
+  id          Int       @id @default(autoincrement())
+  name        String
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  isActive    Boolean   @default(true)
+  planId      Int
+  Plan        Plan      @relation(fields: [planId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model UserPlan {
+  id                  Int                  @id @default(autoincrement())
+  userId              Int
+  planId              Int
+  startDate           DateTime
+  endDate             DateTime
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  deletedAt           DateTime?
+  isActive            Boolean              @default(true)
+  status              UserPlanStatus
+  Plan                Plan                 @relation(fields: [planId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  User                User                 @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  Tenants             Tenant[]
+  HealthcareProviders HealthcareProvider[]
+}
+
+model HealthcareProvider {
+  id                    Int                    @id @default(autoincrement())
+  userId                Int
+  userPlanId            Int?
+  hpTypeId              Int
+  description           String?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  deletedAt             DateTime?
+  isActive              Boolean                @default(true)
+  isPublished           Boolean                @default(false)
+  User                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  UserPlan              UserPlan?              @relation(fields: [userPlanId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  HPType                HealthcareProviderType @relation(fields: [hpTypeId], references: [id])
+  ProfessionalDetails   ProfessionalDetails?
+  ReservedTimeSlots     ReservedTimeSlot[]
+  HPProfile             HPProfile?
+  UserPreferences       UserPreference[]
+  AppointmentRoutings   AppointmentRouting[]   @relation("RoutedTo")
+  Interventions         Intervention[]
+  UserVaccinations      UserVaccination[]
+  ConsultationTicketHPs ConsultationTicketHP[]
+  ConsultationNote      ConsultationNote[]
+  AppointmentAttributes AppointmentAttribute[]
+  Medications           Medication[]
+  Prescriptions         Prescription[]
+
+  @@unique([userId, hpTypeId], name: "unique_user_hp_type")
+}
+
+model HPProfile {
+  id                   Int                @id @default(autoincrement())
+  healthcareProviderId Int                @unique
+  title                String
+  name                 String
+  suffix               String?
+  picture              String?
+  cover                String?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  deletedAt            DateTime?
+  isActive             Boolean            @default(true)
+  affiliations         String[]           @default([])
+  areaOfInterest       String?
+  certifications       String[]           @default([])
+  experience           String?
+  fields               String[]           @default([])
+  hobbies              String?
+  languages            String[]           @default([])
+  philosophy           String?
+  specialties          String[]           @default([])
+  workEmail            String?
+  workPhone            String?
+  educations           String[]           @default([])
+  HealthcareProvider   HealthcareProvider @relation(fields: [healthcareProviderId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model ProfessionalDetails {
+  id                 Int                @id @default(autoincrement())
+  healthcareProverId Int                @unique
+  licenseNumber      String
+  licenseIssued      DateTime
+  licenseExpires     DateTime
+  ptrNumber          String
+  taxNumber          String
+  HealthCareProvider HealthcareProvider @relation(fields: [healthcareProverId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model UserDefaultOrganization {
+  id             Int          @id @default(autoincrement())
+  userId         Int          @unique
+  organizationId Int
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  deletedAt      DateTime?
+  isActive       Boolean      @default(true)
+  Organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  User           User         @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model UserDefaultOrganizationRole {
+  id               Int              @id @default(autoincrement())
+  userId           Int
+  organizationId   Int
+  roleId           Int
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  deletedAt        DateTime?
+  isActive         Boolean          @default(true)
+  Organization     Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  OrganizationRole OrganizationRole @relation(fields: [roleId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  User             User             @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([userId, organizationId, roleId], name: "unique_user_organization_role")
+}
+
+model UserDefaultClinicRole {
+  id         Int        @id @default(autoincrement())
+  userId     Int
+  clinicId   Int
+  roleId     Int
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  deletedAt  DateTime?
+  isActive   Boolean    @default(true)
+  Clinic     Clinic     @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  ClinicRole ClinicRole @relation(fields: [roleId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  User       User       @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([userId, clinicId, roleId], name: "unique_user_clinic_role")
+}
+
+model UserDefaultTenant {
+  id        Int       @id @default(autoincrement())
+  userId    Int       @unique
+  tenantId  Int
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+  isActive  Boolean   @default(true)
+  Tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  User      User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model SocialLink {
+  id        Int     @id @default(autoincrement())
+  userId    Int     @unique
+  facebook  String?
+  instagram String?
+  linkedin  String?
+  tiktok    String?
+  twitter   String?
+  website   String?
+  User      User    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model ReceiptCode {
+  id                Int                @id @default(autoincrement())
+  coverage          Coverage
+  code              String             @unique
+  amount            Float
+  status            ReceiptCodeStatus  @default(UNUSED)
+  maxUses           Int                @default(1)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  deletedAt         DateTime?
+  isActive          Boolean            @default(true)
+  ReceiptCodeClaims ReceiptCodeClaim[]
+}
+
+model ReceiptCodeClaim {
+  id            Int         @id @default(autoincrement())
+  userId        Int
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  deletedAt     DateTime?
+  isActive      Boolean     @default(true)
+  receiptCodeId Int
+  ReceiptCode   ReceiptCode @relation(fields: [receiptCodeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  User          User        @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([userId, receiptCodeId], name: "unique_user_receipt_code")
+}
+
+model UserMigration {
+  id           Int          @id @default(autoincrement())
+  userId       Int          @unique
+  orgId        Int
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  deletedAt    DateTime?
+  isActive     Boolean      @default(true)
+  Organization Organization @relation(fields: [orgId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  User         User         @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([userId, orgId], name: "unique_user_migration")
+}
+
+model ActivationCode {
+  id        Int       @id @default(autoincrement())
+  code      String    @unique
+  userId    Int
+  expiresAt DateTime
+  isUsed    Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+  isActive  Boolean   @default(true)
+  User      User      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model Folder {
+  id            Int            @id @default(autoincrement())
+  userId        Int
+  name          String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  deletedAt     DateTime?
+  isActive      Boolean        @default(true)
+  Files         File[]
+  User          User           @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  FolderSetting FolderSetting?
+
+  @@unique([userId, name], name: "unique_user_folder")
+}
+
+model FolderSetting {
+  id            Int     @id @default(autoincrement())
+  folderId      Int     @unique
+  scopeClinicId Int?
+  isPublic      Boolean @default(false)
+  Folder        Folder  @relation(fields: [folderId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Clinic        Clinic? @relation(fields: [scopeClinicId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model File {
+  id          Int          @id @default(autoincrement())
+  folderId    Int
+  fileTypeId  Int
+  name        String
+  size        Int
+  url         String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  deletedAt   DateTime?
+  isActive    Boolean      @default(true)
+  dateTaken   DateTime?
+  FileType    FileType     @relation(fields: [fileTypeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Folder      Folder       @relation(fields: [folderId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  FileSetting FileSetting?
+
+  @@unique([folderId, name], name: "unique_folder_file")
+}
+
+model FileSetting {
+  id       Int     @id @default(autoincrement())
+  fileId   Int     @unique
+  isPublic Boolean @default(false)
+  File     File    @relation(fields: [fileId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model FileType {
+  id              Int              @id @default(autoincrement())
+  name            String
+  validUntil      Int?             @default(0)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  deletedAt       DateTime?
+  isActive        Boolean          @default(true)
+  Files           File[]
+  ClinicFileTypes ClinicFileType[]
+}
+
+model ClinicFileType {
+  id                Int      @id @default(autoincrement())
+  fileTypeId        Int
+  clinicId          Int
+  validityDays      Int      @default(0)
+  dateTakenRequired Boolean  @default(true)
+  FileType          FileType @relation(fields: [fileTypeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Clinic            Clinic   @relation(fields: [clinicId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([fileTypeId, clinicId], name: "unique_file_type_attribute")
+}
+
+model UserEmergencyContact {
+  id           Int       @id @default(autoincrement())
+  userId       Int
+  isPrimary    Boolean   @default(true)
+  name         String
+  relationship String
+  phone        String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+  isActive     Boolean   @default(true)
+  address      String?
+  User         User      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model UserAddress {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  isPrimary Boolean   @default(true)
+  address   String
+  city      String
+  state     String
+  zipCode   String
+  country   String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+  isActive  Boolean   @default(true)
+  User      User      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model Vaccine {
+  id               Int               @id @default(autoincrement())
+  name             String
+  description      String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  deletedAt        DateTime?
+  isActive         Boolean           @default(true)
+  type             String
+  UserVaccinations UserVaccination[]
+  VaccineAttribute VaccineAttribute?
+  VaccineDoses     VaccineDose[]
+  VaccineRoutes    VaccineRoute[]
+}
+
+model VaccineAttribute {
+  id          Int     @id @default(autoincrement())
+  vaccineId   Int     @unique
+  effectivity Int
+  Vaccine     Vaccine @relation(fields: [vaccineId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model Route {
+  id               Int               @id @default(autoincrement())
+  route            String
+  description      String?
+  isActive         Boolean           @default(true)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  deletedAt        DateTime?
+  UserVaccinations UserVaccination[]
+  VaccineRoutes    VaccineRoute[]
+}
+
+model Dose {
+  id               Int               @id @default(autoincrement())
+  dose             String
+  description      String?
+  isActive         Boolean           @default(true)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  deletedAt        DateTime?
+  UserVaccinations UserVaccination[]
+  VaccineDoses     VaccineDose[]
+}
+
+model VaccineRoute {
+  id        Int     @id @default(autoincrement())
+  vaccineId Int
+  routeId   Int
+  Route     Route   @relation(fields: [routeId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  Vaccine   Vaccine @relation(fields: [vaccineId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([vaccineId, routeId], name: "unique_vaccine_route")
+}
+
+model VaccineDose {
+  id        Int     @id @default(autoincrement())
+  vaccineId Int
+  doseId    Int
+  Dose      Dose    @relation(fields: [doseId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  Vaccine   Vaccine @relation(fields: [vaccineId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([vaccineId, doseId], name: "unique_vaccine_dose")
+}
+
+model UserVaccination {
+  id                 Int                 @id @default(autoincrement())
+  userId             Int
+  vaccineId          Int
+  doseId             Int
+  routeId            Int
+  dateGiven          DateTime
+  notes              String?
+  hpId               Int?
+  administeredBy     String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  deletedAt          DateTime?
+  isActive           Boolean             @default(true)
+  HealthCareProvider HealthcareProvider? @relation(fields: [hpId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Dose               Dose                @relation(fields: [doseId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Route              Route               @relation(fields: [routeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  User               User                @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Vaccine            Vaccine             @relation(fields: [vaccineId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model Allergen {
+  id            Int           @id @default(autoincrement())
+  name          String        @unique
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  deletedAt     DateTime?
+  isActive      Boolean       @default(true)
+  UserAllergies UserAllergy[]
+}
+
+model UserAllergy {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  reaction   String
+  notes      String?
+  allergenId Int
+  Allergen   Allergen @relation(fields: [allergenId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  User       User     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([userId, allergenId], name: "unique_user_allergy")
+}
+
+model HealthCondition {
+  id                   Int                   @id @default(autoincrement())
+  name                 String                @unique
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  deletedAt            DateTime?
+  isActive             Boolean               @default(true)
+  UserHealthConditions UserHealthCondition[] @relation("UserHealthCondition")
+}
+
+model UserHealthCondition {
+  id                Int             @id @default(autoincrement())
+  userId            Int
+  healthConditionId Int
+  dateDiagnosed     DateTime?
+  severity          Severity
+  notes             String?
+  dateResolved      DateTime?
+  diagnosedBy       Int?
+  resolvedBy        Int?
+  status            String?         @default("UNRESOLVED")
+  DiagnosedBy       User?           @relation("DiagnosedUserHealthCondition", fields: [diagnosedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  HealthCondition   HealthCondition @relation("UserHealthCondition", fields: [healthConditionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  ResolvedBy        User?           @relation("ResolvedUserHealthCondition", fields: [resolvedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  User              User            @relation("HealthCondition", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([userId, healthConditionId], name: "unique_user_health_condition")
+}
+
+model Disability {
+  id               Int              @id @default(autoincrement())
+  name             String           @unique
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  deletedAt        DateTime?
+  isActive         Boolean          @default(true)
+  UserDisabilities UserDisability[]
+}
+
+model UserDisability {
+  id            Int        @id @default(autoincrement())
+  userId        Int
+  disabilityId  Int
+  dateDiagnosed DateTime?
+  severity      Severity
+  notes         String?
+  isManaged     Boolean?   @default(false)
+  reason        String?
+  diagnosedBy   Int?
+  DiagnosedBy   User?      @relation("DiagnosedUserDisability", fields: [diagnosedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Disability    Disability @relation(fields: [disabilityId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  User          User       @relation("UserDisability", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([userId, disabilityId], name: "unique_user_disability")
+}
+
+model VitalSign {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  dateTaken   DateTime
+  height      Float?
+  weight      Float?
+  bmi         Float?
+  bpSystolic  Int?
+  bpDiastolic Int?
+  pulseRate   Int?
+  temp        Float?
+  spo2        Float?
+  respRate    Int?
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  isActive    Boolean   @default(true)
+  User        User      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model OrganizationDepartment {
+  id                    Int                    @id @default(autoincrement())
+  organizationId        Int
+  name                  String
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  deletedAt             DateTime?
+  isActive              Boolean                @default(true)
+  Organization          Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  UserEmploymentRecords UserEmploymentRecord[]
+  StudentRecords        UserStudentRecord[]
+}
+
+model OrganizationProgram {
+  id             Int                 @id @default(autoincrement())
+  organizationId Int
+  name           String
+  major          String?
+  description    String?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  deletedAt      DateTime?
+  isActive       Boolean             @default(true)
+  Organization   Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  StudentRecords UserStudentRecord[]
+}
+
+model OrganizationCollege {
+  id                    Int                    @id @default(autoincrement())
+  organizationId        Int
+  name                  String
+  description           String?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  deletedAt             DateTime?
+  isActive              Boolean                @default(true)
+  Organization          Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  UserEmploymentRecords UserEmploymentRecord[]
+  UserStudentRecords    UserStudentRecord[]
+}
+
+model StudentLevel {
+  id             Int                 @id @default(autoincrement())
+  name           String              @unique
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  deletedAt      DateTime?
+  isActive       Boolean             @default(true)
+  StudentRecords UserStudentRecord[]
+}
+
+model OrganizationYearLevel {
+  id                 Int                 @id @default(autoincrement())
+  organizationId     Int
+  name               String
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  deletedAt          DateTime?
+  isActive           Boolean             @default(true)
+  Organization       Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  UserStudentRecords UserStudentRecord[]
+}
+
+model UserStudentRecord {
+  id                     Int                     @id @default(autoincrement())
+  userId                 Int
+  organizationId         Int
+  studentId              String                  @unique
+  lrn                    String?                 @unique
+  level                  Int
+  yearLevel              Int?
+  programId              Int?
+  departmentId           Int?
+  collegeId              Int?
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  deletedAt              DateTime?
+  isActive               Boolean                 @default(true)
+  userOrganizationRoleId Int?
+  College                OrganizationCollege?    @relation(fields: [collegeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Department             OrganizationDepartment? @relation(fields: [departmentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Level                  StudentLevel            @relation(fields: [level], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Organization           Organization            @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Program                OrganizationProgram?    @relation(fields: [programId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  User                   User                    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  OrganizationRole       OrganizationRole?       @relation(fields: [userOrganizationRoleId], references: [id])
+  OrganizationYearLevel  OrganizationYearLevel?  @relation(fields: [yearLevel], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([userId, organizationId], name: "unique_user_student_record")
+}
+
+model UserClinicAppointmentWhitelist {
+  id               Int               @id @default(autoincrement())
+  userId           Int
+  clinicId         Int
+  name             String
+  User             User              @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  Clinic           Clinic            @relation(fields: [clinicId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  WhitelistFilters WhitelistFilter[]
+
+  @@unique([userId, clinicId], name: "unique_user_clinic_appointment_whitelist")
+}
+
+model WhitelistFilter {
+  id                               Int                            @id @default(autoincrement())
+  userClinicAppointmentWhitelistId Int
+  filterId                         Int
+  value                            String
+  Filter                           Filter                         @relation(fields: [filterId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  UserClinicAppointmentWhitelist   UserClinicAppointmentWhitelist @relation(fields: [userClinicAppointmentWhitelistId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([userClinicAppointmentWhitelistId, filterId, value], name: "unique_whitelist_filter")
+}
+
+model Filter {
+  id               Int               @id @default(autoincrement())
+  key              String            @unique
+  name             String
+  WhitelistFilters WhitelistFilter[]
+}
+
+model OrganizationOffice {
+  id                    Int                    @id @default(autoincrement())
+  organizationId        Int
+  name                  String
+  description           String?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  deletedAt             DateTime?
+  isActive              Boolean                @default(true)
+  Organization          Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  UserEmploymentRecords UserEmploymentRecord[]
+}
+
+model UserEmploymentRecord {
+  id                     Int                     @id @default(autoincrement())
+  userId                 Int
+  organizationId         Int
+  employeeId             String                  @unique
+  position               String
+  designation            String?
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  deletedAt              DateTime?
+  isActive               Boolean                 @default(true)
+  collegeId              Int?
+  departmentId           Int?
+  officeId               Int?
+  userOrganizationRoleId Int?
+  College                OrganizationCollege?    @relation(fields: [collegeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Department             OrganizationDepartment? @relation(fields: [departmentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Office                 OrganizationOffice?     @relation(fields: [officeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Organization           Organization            @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  User                   User                    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  OrganizationRole       OrganizationRole?       @relation(fields: [userOrganizationRoleId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([userId, organizationId], name: "unique_user_employment")
+}
+
+enum Severity {
+  MILD
+  MODERATE
+  SEVERE
+  CRITICAL
+  PROFOUND
+  UNKNOWN
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum CivilStatus {
+  SINGLE
+  MARRIED
+  DIVORCED
+  WIDOWED
+  SEPARATED
+}
+
+enum BloodType {
+  A_POSITIVE
+  A_NEGATIVE
+  B_POSITIVE
+  B_NEGATIVE
+  AB_POSITIVE
+  AB_NEGATIVE
+  O_POSITIVE
+  O_NEGATIVE
+  RH_POSITIVE
+  RH_NEGATIVE
+  UNKNOWN
+}
+
+enum PlanType {
+  TENANT
+  HEALTHCARE_PROVIDER
+}
+
+enum UserPlanStatus {
+  ACTIVE
+  INACTIVE
+  ON_HOLD
+  CANCELLED
+  EXPIRED
+  PENDING
+}
+
+enum Coverage {
+  ALL
+  TENANT
+  HEALTHCARE_PROVIDER
+}
+
+enum ReceiptCodeStatus {
+  UNUSED
+  USED
+  EXPIRED
+}
+
+model HealthcareProviderType {
+  id                  Int                  @id @default(autoincrement())
+  name                String               @unique
+  description         String?
+  deletedAt           DateTime?
+  isActive            Boolean              @default(true)
+  HealthcareProviders HealthcareProvider[]
+}
+
+model UserSchedule {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  daysOfWeek  Int[]     @default([])
+  weekOfMonth Int[]     @default([])
+  startTime   String
+  endTime     String
+  startDate   DateTime  @db.Date()
+  endDate     DateTime  @db.Date()
+  type        String    @default("base")
+  pattern     String    @default("weekly")
+  isRecurring Boolean   @default(false)
+  isActive    Boolean   @default(true)
+  isAvailable Boolean   @default(true)
+  priority    Int       @default(1)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  User        User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([userId, startDate, endDate], name: "user_schedule_index")
+}
+
+model ReservedTimeSlot {
+  id                 Int                @id @default(autoincrement())
+  jobId              String             @unique
+  hpId               Int
+  reservedBy         Int
+  startDateTime      DateTime
+  endDateTime        DateTime
+  reservedAt         DateTime
+  User               User               @relation(fields: [reservedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  HealthCareProvider HealthcareProvider @relation(fields: [hpId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([hpId, reservedBy, startDateTime, endDateTime], name: "reserved_time_slot_index")
+}
+
+model Booking {
+  id            Int      @id @default(autoincrement())
+  jobId         String   @unique
+  routingCode   String?
+  bookedFor     Int
+  bookedBy      Int
+  startDateTime DateTime
+  endDateTime   DateTime
+  bookedAt      DateTime
+  meetingLink   String?
+  platform      String?
+  BookedBy      User     @relation(name: "BookedBy", fields: [bookedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  BookedFor     User     @relation(name: "BookedFor", fields: [bookedFor], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model Clinic {
+  id                              Int                              @id @default(autoincrement())
+  tenantId                        Int
+  clinicUid                       String                           @unique
+  name                            String
+  description                     String?
+  logo                            String?
+  createdAt                       DateTime                         @default(now())
+  updatedAt                       DateTime                         @updatedAt
+  deletedAt                       DateTime?
+  isActive                        Boolean                          @default(true)
+  customUrl                       String?
+  email                           String?
+  privacyPolicyUrl                String?
+  termsAndConditionsUrl           String?
+  Tenant                          Tenant                           @relation(fields: [tenantId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  Appointments                    Appointment[]
+  AppointmentTypes                AppointmentType[]
+  AppointmentModes                AppointmentMode[]
+  ServiceCategories               ServiceCategory[]
+  ConsultationTickets             ConsultationTicket[]
+  Systems                         System[]
+  PreAssessmentNotes              PreAssessmentNote[]
+  Interventions                   Intervention[]
+  ClinicMembers                   ClinicMember[]
+  AppointmentConfig               AppointmentConfig?
+  ConsultationConfig              ConsultationConfig?
+  ClinicAppointmentTabs           ClinicAppointmentTab[]
+  ClinicOrganizations             ClinicOrganization[]
+  ClinicSetting                   ClinicSetting?
+  UserClinicAppointmentWhitelists UserClinicAppointmentWhitelist[]
+  FolderSettings                  FolderSetting[]
+  UserDefaultClinicRoles          UserDefaultClinicRole[]
+  ClinicRoleInitialPermissions    ClinicRoleInitialPermission[]
+  ClinicFileTypes                 ClinicFileType[]
+  ClinicPatients                  ClinicPatient[]
+  Medications                     Medication[]
+  DocumentTemplates               DocumentTemplate[]
+  ClinicPrescriptionSettings      ClinicPrescriptionSetting[]
+  Prescriptions                   Prescription[]
+
+  @@index([tenantId, clinicUid], name: "clinic_index")
+}
+
+model ClinicSetting {
+  id                    Int     @id @default(autoincrement())
+  clinicId              Int     @unique
+  isPublic              Boolean @default(false)
+  sendEmailNotification Boolean @default(true)
+  emailToClinicOnly     Boolean @default(false)
+  enableAppointment     Boolean @default(true)
+  enableConsultation    Boolean @default(true)
+  Clinic                Clinic  @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model ClinicMember {
+  id                      Int                      @id @default(autoincrement())
+  clinicId                Int
+  userId                  Int
+  roleId                  Int
+  status                  String                   @default("PENDING")
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
+  deletedAt               DateTime?
+  isActive                Boolean                  @default(true)
+  Clinic                  Clinic                   @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  User                    User                     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Role                    ClinicRole?              @relation(fields: [roleId], references: [id])
+  ClinicMemberPermissions ClinicMemberPermission[]
+
+  @@unique([clinicId, userId, roleId], name: "unique_clinic_member")
+}
+
+model ClinicOrganization {
+  id             Int          @id @default(autoincrement())
+  clinicId       Int
+  organizationId Int
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  deletedAt      DateTime?
+  isActive       Boolean      @default(true)
+  Clinic         Clinic       @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  Organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([clinicId, organizationId], name: "unique_clinic_organization")
+}
+
+model ClinicRole {
+  id                           Int                           @id @default(autoincrement())
+  name                         String
+  createdAt                    DateTime                      @default(now())
+  updatedAt                    DateTime                      @updatedAt
+  deletedAt                    DateTime?
+  isActive                     Boolean                       @default(true)
+  ClinicMembers                ClinicMember[]
+  ClinicRoleAppointmentTabs    ClinicRoleAppointmentTab[]
+  UserDefaultClinicRoles       UserDefaultClinicRole[]
+  ClinicRoleInitialPermissions ClinicRoleInitialPermission[]
+
+  @@unique([name], name: "unique_clinic_role")
+}
+
+model AppointmentConfig {
+  id                         Int       @id @default(autoincrement())
+  clinicId                   Int       @unique
+  maxAppointmentsPerClient   Int       @default(0)
+  lastPerClientIntervalReset DateTime? @db.Date
+  perClientResetInterval     Int       @default(0)
+  maxAppointmentsPerDay      Int       @default(0)
+  lastPerDayIntervalReset    DateTime? @db.Date
+  privacyPolicyUrl           String?
+  termsAndConditionsUrl      String?
+  Clinic                     Clinic    @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model ConsultationConfig {
+  id             Int          @id @default(autoincrement())
+  clinicId       Int          @unique
+  noteTemplateId Int
+  NoteTemplate   NoteTemplate @relation(fields: [noteTemplateId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Clinic         Clinic       @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model NoteTemplate {
+  id                           Int                           @id @default(autoincrement())
+  name                         String                        @unique
+  createdAt                    DateTime                      @default(now())
+  updatedAt                    DateTime                      @updatedAt
+  deletedAt                    DateTime?
+  isActive                     Boolean                       @default(true)
+  NoteSections                 NoteSection[]
+  ConsultationConfigs          ConsultationConfig[]
+  ConsultationTicketAttributes ConsultationTicketAttribute[]
+}
+
+model NoteSection {
+  id             Int          @id @default(autoincrement())
+  noteTemplateId Int
+  name           String
+  label          String       @default("")
+  showOnPatient  Boolean      @default(true)
+  description    String?
+  isActive       Boolean      @default(true)
+  NoteTemplate   NoteTemplate @relation(fields: [noteTemplateId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([noteTemplateId, name], name: "unique_note_section")
+}
+
+model ClinicAppointmentTab {
+  id                        Int                        @id @default(autoincrement())
+  clinicId                  Int
+  appointmentTabId          Int
+  Clinic                    Clinic                     @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  AppointmentTab            AppointmentTab             @relation(fields: [appointmentTabId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  ClinicRoleAppointmentTabs ClinicRoleAppointmentTab[]
+
+  @@unique([clinicId, appointmentTabId], name: "unique_clinic_appointment_tab")
+}
+
+model ClinicRoleAppointmentTab {
+  id                     Int                  @id @default(autoincrement())
+  clinicRoleId           Int
+  clinicAppointmentTabId Int
+  ClinicRole             ClinicRole           @relation(fields: [clinicRoleId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  ClinicAppointmentTab   ClinicAppointmentTab @relation(fields: [clinicAppointmentTabId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([clinicRoleId, clinicAppointmentTabId], name: "unique_role_appointment_tab")
+}
+
+model AppointmentTab {
+  id                    Int                    @id @default(autoincrement())
+  name                  String                 @unique
+  description           String?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  deletedAt             DateTime?
+  isActive              Boolean                @default(true)
+  ClinicAppointmentTabs ClinicAppointmentTab[]
+}
+
+model Appointment {
+  id                     Int                     @id @default(autoincrement())
+  clinicId               Int
+  subject                String
+  complaint              String?
+  isActive               Boolean                 @default(true)
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  deletedAt              DateTime?
+  Clinic                 Clinic                  @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  Requesters             AppointmentRequester[]
+  AppointmentAttribute   AppointmentAttribute?
+  AppointmentRouting     AppointmentRouting[]
+  AppointmentAttachments AppointmentAttachment[]
+  PreAssessmentNotes     PreAssessmentNote[]
+  ConsultationTickets    ConsultationTicket[]
+
+  @@index([clinicId], name: "clinic_appointment_index")
+}
+
+model AppointmentAttachment {
+  id            Int         @id @default(autoincrement())
+  appointmentId Int
+  name          String
+  url           String
+  Appointment   Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model AppointmentRequester {
+  id            Int         @id @default(autoincrement())
+  appointmentId Int
+  userId        Int
+  Appointment   Appointment @relation(fields: [appointmentId], references: [id])
+  User          User        @relation(fields: [userId], references: [id])
+
+  @@unique([appointmentId, userId], name: "unique_appointment_requester")
+}
+
+model AppointmentAttribute {
+  id                 Int                 @id @default(autoincrement())
+  appointmentId      Int                 @unique
+  recurring          Boolean             @default(false)
+  maxDuration        Int                 @default(30)
+  date               DateTime?           @db.Date
+  timeStart          String?
+  timeEnd            String?
+  modeId             Int
+  typeId             Int
+  serviceId          Int
+  receivedAt         DateTime?
+  receivedBy         Int?
+  rejectedAt         DateTime?
+  rejectedBy         Int?
+  rejectedReason     String?
+  completedAt        DateTime?
+  completedBy        Int?
+  rescheduledAt      DateTime?
+  rescheduledBy      Int?
+  rescheduledReason  String?
+  status             String              @default("PENDING")
+  preferredAppointee Int?
+  eventId            String?             @default("")
+  meetingUrl         String?             @default("")
+  Appointment        Appointment         @relation(fields: [appointmentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  AppointmentMode    AppointmentMode     @relation(fields: [modeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  AppointmentType    AppointmentType     @relation(fields: [typeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Service            Service?            @relation(fields: [serviceId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  PreferredAppointee HealthcareProvider? @relation(fields: [preferredAppointee], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  ReceivedBy         User?               @relation(name: "ReceivedBy", fields: [receivedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  RejectedBy         User?               @relation(name: "RejectedBy", fields: [rejectedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  CompletedBy        User?               @relation(name: "CompletedBy", fields: [completedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  RescheduledBy      User?               @relation(name: "RescheduledBy", fields: [rescheduledBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model AppointmentType {
+  id                       Int                       @id @default(autoincrement())
+  clinicId                 Int
+  name                     String
+  description              String?
+  createdAt                DateTime                  @default(now())
+  updatedAt                DateTime                  @updatedAt
+  deletedAt                DateTime?
+  isActive                 Boolean                   @default(true)
+  Clinic                   Clinic                    @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  AppointmentAttributes    AppointmentAttribute[]
+  AppointmentTypeAttribute AppointmentTypeAttribute?
+}
+
+model AppointmentTypeAttribute {
+  id                Int             @id @default(autoincrement())
+  appointmentTypeId Int             @unique
+  requirements      String[]        @default([])
+  reminders         String[]        @default([])
+  duration          Int             @default(30)
+  durationPadding   Int             @default(0)
+  specializations   String[]        @default([])
+  resources         String[]        @default([])
+  AppointmentType   AppointmentType @relation(fields: [appointmentTypeId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model AppointmentMode {
+  id                    Int                    @id @default(autoincrement())
+  clinicId              Int
+  name                  String
+  description           String?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  deletedAt             DateTime?
+  isActive              Boolean                @default(true)
+  AppointmentAttributes AppointmentAttribute[]
+  Clinic                Clinic                 @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model AppointmentRouting {
+  id            Int                @id @default(autoincrement())
+  routingCode   String             @unique @default(cuid())
+  appointmentId Int
+  routedBy      Int
+  routedTo      Int
+  status        String             @default("PENDING")
+  amendment     String?
+  amendedAt     DateTime?
+  amendedBy     Int?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  Appointment   Appointment        @relation(fields: [appointmentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  RoutedBy      User               @relation(name: "RoutedBy", fields: [routedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  RoutedTo      HealthcareProvider @relation(name: "RoutedTo", fields: [routedTo], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  AmendedBy     User?              @relation(name: "AmendedBy", fields: [amendedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([appointmentId, routedTo], name: "unique_appointment_routing")
+}
+
+model ServiceCategory {
+  id          Int       @id @default(autoincrement())
+  clinicId    Int
+  name        String
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  isActive    Boolean   @default(true)
+  Services    Service[]
+  Clinic      Clinic    @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model Service {
+  id                    Int                    @id @default(autoincrement())
+  name                  String
+  description           String?
+  categoryId            Int
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  deletedAt             DateTime?
+  isActive              Boolean                @default(true)
+  ServiceCategory       ServiceCategory        @relation(fields: [categoryId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  AppointmentAttributes AppointmentAttribute[]
+  ServiceAttribute      ServiceAttribute?
+}
+
+model ServiceAttribute {
+  id              Int      @id @default(autoincrement())
+  serviceId       Int      @unique
+  requirements    String[] @default([])
+  reminders       String[] @default([])
+  duration        Int      @default(30)
+  durationPadding Int      @default(0)
+  specializations String[] @default([])
+  resources       String[] @default([])
+  Service         Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model ConsultationTicket {
+  id                          Int                          @id @default(autoincrement())
+  systemId                    Int
+  appointmentId               Int?
+  clinicId                    Int
+  subject                     String?                      @default("")
+  createdAt                   DateTime                     @default(now())
+  updatedAt                   DateTime                     @updatedAt
+  isActive                    Boolean                      @default(true)
+  isArchived                  Boolean                      @default(false)
+  Clinic                      Clinic                       @relation(fields: [clinicId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Appointment                 Appointment?                 @relation(fields: [appointmentId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  System                      System                       @relation(fields: [systemId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  ConsultationNotes           ConsultationNote[]
+  ConsultationTicketAttribute ConsultationTicketAttribute?
+  Interventions               Intervention[]
+  ConsultationTicketHPs       ConsultationTicketHP[]
+  Medications                 Medication[]
+}
+
+model ConsultationTicketHP {
+  id                   Int                @id @default(autoincrement())
+  consultationTicketId Int
+  hpId                 Int
+  ConsultationTicket   ConsultationTicket @relation(fields: [consultationTicketId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  HealthCareProvider   HealthcareProvider @relation(fields: [hpId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([consultationTicketId, hpId], name: "unique_consultation_hp")
+}
+
+model ConsultationTicketAttribute {
+  id                      Int                @id @default(autoincrement())
+  consultationTicketId    Int                @unique
+  status                  String             @default("PROCESSING")
+  noteTemplateId          Int
+  allowOtherHPToAddVitals Boolean            @default(false)
+  allowPatientToAddVitals Boolean            @default(false)
+  whitelistEmails         String[]           @default([])
+  ConsultationTicket      ConsultationTicket @relation(fields: [consultationTicketId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  NoteTemplate            NoteTemplate       @relation(fields: [noteTemplateId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model System {
+  id                  Int                  @id @default(autoincrement())
+  clinicId            Int
+  name                String
+  isActive            Boolean              @default(true)
+  Clinic              Clinic               @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  ConsultationTickets ConsultationTicket[]
+}
+
+model ConsultationNote {
+  id                   Int                @id @default(autoincrement())
+  consultationTicketId Int
+  section              String
+  hpId                 Int
+  content              String
+  showOnPatient        Boolean            @default(false)
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  ConsultationTicket   ConsultationTicket @relation(fields: [consultationTicketId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  HealthCareProvider   HealthcareProvider @relation(fields: [hpId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([consultationTicketId, section, hpId], name: "unique_consultation_section")
+}
+
+model PreAssessmentNote {
+  id                         Int                         @id @default(autoincrement())
+  appointmentId              Int
+  clinicId                   Int
+  assessment                 String
+  homeInstructions           String?
+  remarks                    String
+  createdBy                  Int
+  createdAt                  DateTime                    @default(now())
+  updatedAt                  DateTime                    @updatedAt
+  Appointment                Appointment                 @relation(fields: [appointmentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Clinic                     Clinic                      @relation(fields: [clinicId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  CreatedBy                  User                        @relation(fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  PreAssessmentNoteAttribute PreAssessmentNoteAttribute?
+
+  @@unique([appointmentId, createdBy], name: "unique_appointment_created_by")
+}
+
+model PreAssessmentNoteAttribute {
+  id                  Int               @id @default(autoincrement())
+  preAssessmentNoteId Int               @unique
+  whitelistEmails     String[]          @default([])
+  PreAssessmentNote   PreAssessmentNote @relation(fields: [preAssessmentNoteId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model Intervention {
+  id                   Int                @id @default(autoincrement())
+  clinicId             Int
+  hpId                 Int
+  consultationTicketId Int
+  actionId             Int
+  details              String
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  deletedAt            DateTime?
+  isActive             Boolean            @default(true)
+  ConsultationTicket   ConsultationTicket @relation(fields: [consultationTicketId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Action               Action             @relation(fields: [actionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Clinic               Clinic             @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  HealthCareProvider   HealthcareProvider @relation(fields: [hpId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model Action {
+  id            Int            @id @default(autoincrement())
+  name          String
+  description   String?
+  deletedAt     DateTime?
+  isActive      Boolean        @default(true)
+  Interventions Intervention[]
+}
+
+model Prescription {
+  id                 Int                @id @default(autoincrement())
+  clinicId           Int
+  medicationId       Int
+  templateId         Int
+  hpId               Int
+  name               String?
+  isArchived         Boolean            @default(false)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  dateArchived       DateTime?
+  DocumentTemplate   DocumentTemplate   @relation(fields: [templateId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Medication         Medication         @relation(fields: [medicationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Clinic             Clinic             @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  HealthcareProvider HealthcareProvider @relation(fields: [hpId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([clinicId, medicationId, templateId], name: "prescription_index")
+}
+
+model Drug {
+  id              Int              @id @default(autoincrement())
+  brandName       String
+  genericName     String
+  MedicationDrugs MedicationDrug[]
+
+  @@unique([brandName, genericName], name: "unique_drug")
+}
+
+model Medication {
+  id                   Int                @id @default(autoincrement())
+  clinicId             Int
+  hpId                 Int
+  patientId            Int
+  consultationTicketId Int
+  name                 String
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  completedAt          DateTime?
+  MedicationDrugs      MedicationDrug[]
+  Prescriptions        Prescription[]
+  ConsultationTicket   ConsultationTicket @relation(fields: [consultationTicketId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Clinic               Clinic             @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  HealthCareProvider   HealthcareProvider @relation(fields: [hpId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Patient              User               @relation(fields: [patientId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([patientId, hpId, consultationTicketId], name: "medication_index")
+}
+
+model MedicationDrug {
+  id           Int        @id @default(autoincrement())
+  medicationId Int
+  drugId       Int
+  isGeneric    Boolean    @default(false)
+  dosage       String
+  frequency    String     @default("")
+  unit         String?
+  notes        String?
+  duration     Int        @default(1)
+  Drug         Drug       @relation(fields: [drugId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Medication   Medication @relation(fields: [medicationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model DocumentTemplate {
+  id                         Int                         @id @default(autoincrement())
+  clinicId                   Int
+  name                       String
+  type                       Int
+  htmlContent                String
+  createdAt                  DateTime                    @default(now())
+  updatedAt                  DateTime                    @updatedAt
+  deletedAt                  DateTime?
+  isActive                   Boolean                     @default(true)
+  DocumentTemplateType       DocumentTemplateType        @relation(fields: [type], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Clinic                     Clinic                      @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  Prescriptions              Prescription[]
+  ClinicPrescriptionSettings ClinicPrescriptionSetting[] @relation("prescription")
+}
+
+model DocumentTemplateType {
+  id                Int                @id @default(autoincrement())
+  name              String
+  description       String?
+  DocumentTemplates DocumentTemplate[]
+}
+
+model ClinicPrescriptionSetting {
+  id                     Int               @id @default(autoincrement())
+  clinicId               Int
+  prescriptionTemplateId Int
+  PrescriptionTemplate   DocumentTemplate? @relation(name: "prescription", fields: [prescriptionTemplateId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Clinic                 Clinic            @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}

@@ -1,5 +1,6 @@
 "use client";
 
+import { promiseWrapper } from "@/lib/with-error-handling";
 // import { revalidatePath } from "@actions/cache.action";
 import { updateConsultationTicketAction } from "@actions/consultation/consultation-ticket.action";
 import ActionButton from "@components/ActionButton"
@@ -21,7 +22,7 @@ interface EditConsultationTicketModalProps extends DialogProps {
   record: {
     id: number,
     subject: string,
-    orgUid: string
+    clinicUid: string
   }
   children: React.ReactNode
 }
@@ -32,25 +33,23 @@ const EditConsultationTicketModal = React.forwardRef<any, EditConsultationTicket
 
   const revalidate = async () => {
     // revalidatePath(`${record.orgUid}/consultations`,  "page")
-    mutate((key) =>  typeof key === 'string' && key.startsWith(`/api/organizations/${record.orgUid}/consultations`), undefined, {
+    mutate((key) =>  typeof key === 'string' && key.startsWith(`/api/clinics/${record.clinicUid}/consultations`), undefined, {
       revalidate: true
     })
   }
   const action = async (formData: FormData) => {
     const subject = formData.get("subject") as string
-    toast.promise(updateConsultationTicketAction({
+    toast.promise(promiseWrapper(updateConsultationTicketAction)({
       consultationId: record.id,
       subject
     }), {
       loading: "Updating consultation ticket...",
       success: (res) => {
-        if (res.status) {
-          closeBtnRef.current?.click()
-          revalidate()
-        }
+        closeBtnRef.current?.click()
+        revalidate()
         return res.message
       },
-      error: "Failed to update consultation ticket."
+      error: error => error
     }) 
   }
 

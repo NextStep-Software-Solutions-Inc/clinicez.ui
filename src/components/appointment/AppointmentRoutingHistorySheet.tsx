@@ -16,13 +16,9 @@ import {
   SheetTrigger,
 } from "@components/ui/sheet"
 import Each from "@components/utils/Each";
-import { useOrgAppointment } from "@hooks/useAppointment";
-import { useHP } from "@hooks/useHP";
-import { useUser } from "@hooks/useUser";
+import { useClinicAppointment } from "@hooks/useAppointment";
 import { cn } from "@lib/utils";
-import dayjs from "dayjs"
-import utc from "dayjs/plugin/utc"
-dayjs.extend(utc)
+import dayjs from "@lib/day-utils";
 
 import { ArrowRight, Ban, Info } from "lucide-react";
 import { useParams, useSearchParams } from "next/navigation";
@@ -35,7 +31,7 @@ interface AppointmentRoutingHistorySheetProps {
 }
 
 export default function AppointmentRoutingHistorySheet({ children, onClose, routing }: AppointmentRoutingHistorySheetProps) {
-  const params = useParams<{organization: string}>()
+  const {clinicUid} = useParams<{clinicUid: string}>()
   const searchParams = useSearchParams()
   const appointmentId = Number(searchParams.get("_appointment"))
   
@@ -65,7 +61,7 @@ export default function AppointmentRoutingHistorySheet({ children, onClose, rout
                 key={record.id}
                 record={record}
                 appointmentId={appointmentId}
-                organization={params.organization}
+                clinicUid={clinicUid}
               />
             )}
           />
@@ -82,10 +78,10 @@ export default function AppointmentRoutingHistorySheet({ children, onClose, rout
 
 interface RouteProps {
   record:  NonNullable<GetAppointment["data"]>["AppointmentRouting"][number]
-  organization: string
+  clinicUid: string
   appointmentId: number
 }
-export const Route = ({record, appointmentId, organization}: RouteProps ) => {
+export const Route = ({record, appointmentId, clinicUid}: RouteProps ) => {
 
   const badgeMap: Record<string, BadgeProps["variant"]> = {
     ACCEPTED: "default",
@@ -94,17 +90,14 @@ export const Route = ({record, appointmentId, organization}: RouteProps ) => {
     CANCELLED: "destructive",
   } as const
 
-  const { mutate } = useOrgAppointment({
-    orgId: organization,
+  const { mutate } = useClinicAppointment({
+    clinicUid,
     appointmentId: appointmentId
   })
 
-  const {data: routedBy} = useUser({
-    userId: record.routedBy
-  })
-  const routedByName = `${routedBy?.data?.firstName} ${routedBy?.data?.middleName} ${routedBy?.data?.lastName} ${routedBy?.data?.suffix ?? ""}`
-  const {data: routedTo} = useHP(Number(record.routedTo));
-  const routedToName = `${routedTo?.HPProfile?.title ?? routedTo?.User.firstName} ${routedTo?.HPProfile?.name ?? routedTo?.User.lastName} ${routedTo?.HPProfile?.suffix ?? routedTo?.User.suffix ?? ""}`
+
+  const routedByName = `${record.RoutedBy.firstName} ${record.RoutedBy.middleName} ${record.RoutedBy.lastName} ${record.RoutedBy.suffix ?? ""}`
+  const routedToName = `${record.RoutedTo.HPProfile?.title || record.RoutedTo.User.firstName} ${record.RoutedTo.HPProfile?.name || record.RoutedTo.User.lastName} ${record.RoutedTo.HPProfile?.suffix || record.RoutedTo.User.suffix || ""}`
 
   return (
     <ContextMenu key={record.id}>

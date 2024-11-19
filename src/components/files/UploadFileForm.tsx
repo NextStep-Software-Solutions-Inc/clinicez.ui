@@ -21,44 +21,37 @@ import {
 import Each from "@components/utils/Each";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useMemo, useRef, useState } from "react"
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import { uploadMediaAction } from "@actions/blob.action";
 import { useUser } from "@auth0/nextjs-auth0/client";
-import { Checkbox } from "@components/ui/checkbox";
-import ConditionalRender from "@components/utils/ConditionalRender";
-import { useOrgs } from "@hooks/useOrg";
+import { useOrganizations } from "@/hooks/useOrganization";
 import { useFileTypes } from "@hooks/useFileType";
 
 interface UploadFileFormProps {
     folder: {
       id: number
       name: string
-      scopeOrgId?: number
+      scopeClinicId?: number
     }
 }
 
 export default function UploadFileForm({folder}: UploadFileFormProps) {
   
   const user = useUser()
-  const { data: userOrganizations } = useOrgs(user?.user?.sub)
   const { data: fileTypes } = useFileTypes()
   const userId = user?.user?.sub
   const closeBtnRef = useRef<HTMLInputElement>(null)
-  const [isDateTakenRequired, setIsDateTakenRequired] = useState(false)
 
-  const dateTakenSchema = z.date({
-    message: "Please select a date"
-  })
   const uploadFileFormSchema = z.object({
     media: z.string({
       required_error: "Please select an action"
     }),
-    bindOrg: z.boolean().optional().default(false),
-    orgId: z.coerce.number().optional(),
-    dateTaken: isDateTakenRequired ? dateTakenSchema : dateTakenSchema.optional(),
+    dateTaken: z.date({
+      message: "Please select a date"
+    }),
     fileTypeId: z.coerce.number({
       message: "Please select a file type",
       required_error: "File type is required"
@@ -67,10 +60,6 @@ export default function UploadFileForm({folder}: UploadFileFormProps) {
 
   const form = useForm<z.infer<typeof uploadFileFormSchema>>({
     resolver: zodResolver(uploadFileFormSchema),
-    defaultValues: {
-      bindOrg: !!folder?.scopeOrgId,
-      ...folder?.scopeOrgId ? {orgId: folder.scopeOrgId} : {},
-    }
   })
     
   const action = async (formData: FormData) => {
@@ -103,23 +92,6 @@ export default function UploadFileForm({folder}: UploadFileFormProps) {
     })()
   }
 
-  const watchedOrgId = +(form.watch("orgId") ?? 0)
-  const watchedBindOrg = form.watch("bindOrg")
-  const mappedOrgs = useMemo(() => (userOrganizations ?? [])?.map(org => ({
-    id: org.id,
-    name: org.name,
-  })), [userOrganizations])
-  
-  const filteredFileTypes = useMemo(() => {
-    return (fileTypes ?? [])?.filter(fileType => fileType.FileTypeAttribute?.Organization?.id === (watchedBindOrg ? watchedOrgId : undefined)) 
-  }, [fileTypes, watchedBindOrg, watchedOrgId])
-  
-  const watchedFileType = +(form.watch("fileTypeId") ?? 0)
-
-  useEffect(() => {
-    setIsDateTakenRequired(filteredFileTypes.find(fileType => fileType.id === watchedFileType)?.FileTypeAttribute?.dateTakenRequired ?? false)
-  }, [filteredFileTypes, watchedFileType])
-  
   return (
     <Form {...form}>
       <form 
@@ -141,62 +113,6 @@ export default function UploadFileForm({folder}: UploadFileFormProps) {
             </FormItem>
           )}
         />
-        <ConditionalRender condition={!folder.scopeOrgId}>
-          <ConditionalRender condition={mappedOrgs.length > 0}>
-            <FormField
-              control={form.control}
-              name="bindOrg"
-              render={({ field }) => {
-                return (
-                  <FormItem className="my-5">
-                    <div className="flex items-center space-x-2">
-                      <FormControl>
-                        <Checkbox checked={field.value} onCheckedChange={field.onChange}/>
-                      </FormControl>
-                      <FormLabel 
-                        htmlFor="collegeId"
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >Bind this to file to one of my organization.</FormLabel>
-                    </div>
-                    <FormMessage/>
-                  </FormItem>
-                )
-              }}
-            />
-          </ConditionalRender>
-          <ConditionalRender condition={form.watch("bindOrg")}>
-            <FormField
-              control={form.control}
-              name="orgId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Binding organization</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value?.toString()} name="orgId">
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select one of your organization" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <Each
-                        of={mappedOrgs}
-                        render={item => (
-                          <SelectItem value={item.id?.toString()} className="cursor-pointer">
-                            {item.name}
-                          </SelectItem>
-                        )}
-                      />
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>
-                    {`Binding the file to an organization will limit the file type to the organization's file types. Note: Bounded files are subject to organization Privacy Policy & Terms of Conditions.`}
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </ConditionalRender>
-        </ConditionalRender>
         <div className="flex items-baseline gap-2">
           <FormField
             control={form.control}
@@ -212,17 +128,15 @@ export default function UploadFileForm({folder}: UploadFileFormProps) {
                   </FormControl>
                   <SelectContent>
                     <Each
-                      of={filteredFileTypes}
+                      of={(fileTypes ?? [])}
                       render={item => (
-                        <SelectItem value={item.id?.toString()} className="cursor-pointer">
-                          {item.name} {item.FileTypeAttribute?.Organization?.orgId && `- (${item.FileTypeAttribute?.Organization?.orgId })`}
-                        </SelectItem>
+                        <SelectItem value={item.id?.toString()} className="cursor-pointer">{item.name}</SelectItem>
                       )}
                     />
                   </SelectContent>
                 </Select>
                 <FormDescription>
-                  Select the appropriate file type. Some of the file types are specific to the organization.
+                  Select the appropriate file type for the file.
                 </FormDescription>
                 <FormMessage />
               </FormItem>

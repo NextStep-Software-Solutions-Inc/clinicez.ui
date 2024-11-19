@@ -1,8 +1,7 @@
-import { PrismaClient as PrismaCommonClient } from "@prisma/common/client";
-import { PrismaClient as PrismaTenantClient } from "@prisma/tenant/client";
+import { PrismaClient } from "@prisma/client";
 
-export const createPrismaCommonClient = (databaseUrl: string): PrismaCommonClient => {
-  return new PrismaCommonClient({
+export const createPrismaClient = (databaseUrl: string): PrismaClient => {
+  return new PrismaClient({
     // ...process.env.NODE_ENV !== 'production' ? {log: ['query', 'info', 'warn'],}:{},
     datasources: {
       db: {
@@ -12,13 +11,4 @@ export const createPrismaCommonClient = (databaseUrl: string): PrismaCommonClien
   })
 };
 
-export const createPrismaTenantClient = (databaseUrl: string): PrismaTenantClient => {
-  return new PrismaTenantClient({
-    // ...process.env.NODE_ENV !== 'production' ? {log: ['query', 'info', 'warn'],}:{},
-    datasources: {
-      db: {
-        url: databaseUrl,
-      }
-    }
-  })
-};
+

@@ -25,7 +25,7 @@ interface EMRPreviewProps {
   }
 function EMRPreview({patientId}: EMRPreviewProps) {
 
-  const params = useParams<{organization: string}>();
+  const params = useParams<{clinicUid: string}>();
   const { data: patient, isLoading } = useUser({userId: patientId})
   const { data: allergies, } = useAllergies(patientId)
   const { data: disabilities } = useDisabilities(patientId)
@@ -34,7 +34,7 @@ function EMRPreview({patientId}: EMRPreviewProps) {
   const { data: vitalSigns } = useUserVitalSigns(patientId)
   
   if(isLoading) return <PageLoading label="Loading Records ..."/>
-  if(!patient?.data) notFound()
+  if(!patient?.data) return <div className="text-muted-foreground">Patient record cannot be found.</div>
 
   const name = `${patient?.data?.lastName || "-"}, ${patient?.data?.firstName || "-"} ${patient?.data?.middleName ?? ""} ${patient?.data?.suffix ?? ""}`
   return (
@@ -87,7 +87,7 @@ function EMRPreview({patientId}: EMRPreviewProps) {
       <Section title={`Medical History`} >
         <MedicalHistory
           patientId={patientId}
-          orgUid={params.organization}
+          clinicUid={params.clinicUid}
         />
       </Section>
      

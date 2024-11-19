@@ -30,8 +30,7 @@ interface ConsultationTicketSheetProps {
 }
 
 export default function ConsultationTicketSheet({ children, onClose, consultationTickets }: ConsultationTicketSheetProps) {
-  const params = useParams<{organization: string}>()
-  const orgUid = params.organization
+  const {clinicUid} = useParams<{clinicUid: string}>()
 
   return (
     <Sheet >
@@ -50,7 +49,7 @@ export default function ConsultationTicketSheet({ children, onClose, consultatio
             render={(record) => (
               <Link 
                 href={{
-                  pathname: `/${orgUid}/consultations/${record.id}`,
+                  pathname: `/clinics/${clinicUid}/consultations/${record.id}`,
                 }} 
                 target="_blank"
               >
@@ -71,7 +70,7 @@ export default function ConsultationTicketSheet({ children, onClose, consultatio
 
 export const ConsultationTicket = ({record}: {record: NonNullable<GetAppointment["data"]>["ConsultationTickets"][number]}) => {
   
-  const {data: ticketAuthor} = useHP(Number(record.ConsultationTicketAuthors[0].hpId))
+  const {data: ticketAuthor} = useHP(Number(record.ConsultationTicketHPs[0].hpId))
   const ticketAuthorName = `${ticketAuthor?.HPProfile?.title ?? ticketAuthor?.User.firstName} ${ticketAuthor?.HPProfile?.name ?? ticketAuthor?.User.lastName} ${ticketAuthor?.HPProfile?.suffix ?? ticketAuthor?.User.suffix ?? ""}`
   
   return (

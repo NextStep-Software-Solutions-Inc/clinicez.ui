@@ -35,7 +35,8 @@ type DefaultOrgFormSchema = z.infer<typeof organizationFormSchema>
 export default function OrganizationsSettings() {
   const user = useUser();
   const userId = user?.user?.sub
-  const {data: myOrgs} = useUserOrganizations({userId, distinct: true}, !!userId,) 
+  const {data: myOrgs} = useUserOrganizations({userId, distinct: true, status: "ACTIVE"}, !!userId,) 
+  
   const defaultOrg = useMemo(() => {
     return myOrgs?.data?.flatMap(org => org.Organization.UserDefaultOrganizations).find(defOrg => defOrg.User.userId === userId)
   }, [myOrgs, userId])
@@ -44,7 +45,7 @@ export default function OrganizationsSettings() {
   const form = useForm<DefaultOrgFormSchema>({
     resolver: zodResolver(organizationFormSchema),
     values: {
-      defaultOrgUid: defaultOrg?.Organization?.orgId ?? ""
+      defaultOrgUid: defaultOrg?.Organization?.orgUid ?? ""
     }
   })
 
@@ -81,8 +82,8 @@ export default function OrganizationsSettings() {
                   <SelectContent>
                     <Each
                       of={myOrgs?.data ?? []}
-                      render={({ Organization: {id, orgId, name} }) => (
-                        <SelectItem value={orgId}>{name}</SelectItem>
+                      render={({ Organization: {id, orgUid, name} }) => (
+                        <SelectItem value={orgUid}>{name}</SelectItem>
                       )}
                     />
                   </SelectContent>

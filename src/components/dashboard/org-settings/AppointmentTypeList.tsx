@@ -4,7 +4,7 @@ import { deleteAppointmentTypeAction, GetAppointmentTypes } from "@actions/appoi
 import { Button } from "@components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@components/ui/card";
 import Each from "@components/utils/Each";
-import { useOrgAppointmentTypes } from "@hooks/useOrgAppointmentCategory";
+import { useOrgAppointmentTypes } from "@/hooks/useClinicAppointmentCategory";
 import { Trash } from "lucide-react";
 import { useParams } from "next/navigation";
 import React from "react";
@@ -13,8 +13,8 @@ import AddAppointmentTypeModal from "./modal/AddAppointmentTypeModal";
 import UpdateAppointmentTypeModal from "./modal/UpdateAppointmentTypeModal";
 
 export default function AppointmentTypeList() {
-  const params = useParams<{organization: string}>()
-  const {data: appointmentTypes, isLoading, mutate} = useOrgAppointmentTypes(params.organization)
+  const params = useParams<{clinicUid: string}>()
+  const {data: appointmentTypes, isLoading, mutate} = useOrgAppointmentTypes(params.clinicUid)
 
   const deleteAppointmentType = (id: number) => {
     toast.promise(deleteAppointmentTypeAction(id), {
@@ -37,7 +37,7 @@ export default function AppointmentTypeList() {
           <span>
             Appointment Types 
           </span>
-          <AddAppointmentTypeModal orgUid={params.organization} onAddAppointmentType={mutate}/>
+          <AddAppointmentTypeModal clinicUid={params.clinicUid} onAddAppointmentType={mutate}/>
         </CardTitle>
         <CardDescription>
           Appointment types are used to categorize appointments. You can create, edit, and delete appointment types here.

@@ -1,16 +1,18 @@
 "use server";
 
-import prismaTenant from "@lib/prisma-tenant";
+import prisma from "@lib/prisma";
 import { cache } from "react";
 
 export type GetAppointmentTypes = Awaited<ReturnType<typeof getAppointmentTypesAction>>;
-export const getAppointmentTypesAction = cache(async (orgUid: string) => {
-  return await prismaTenant.appointmentType.findMany({
+export const getAppointmentTypesAction = cache(async (clinicUid: string) => {
+  return await prisma.appointmentType.findMany({
     orderBy: {
       name: 'asc'
     },
     where: {
-      orgUid,
+      Clinic: {
+        clinicUid
+      },
       isActive: true
     },
     select: {
@@ -40,7 +42,7 @@ type UpdateAppointmentTypePayload = {
 export const updateAppointmentTypeAction = async (payload: UpdateAppointmentTypePayload) => {
   const { id, name, description, duration, durationPadding } = payload;
   try {
-    await prismaTenant.appointmentType.update({
+    await prisma.appointmentType.update({
       where: { id, isActive: true },
       data: {
         name,
@@ -78,7 +80,7 @@ export const updateAppointmentTypeAction = async (payload: UpdateAppointmentType
 
 export const deleteAppointmentTypeAction = async (id: number) => {
   try {
-    await prismaTenant.appointmentType.update({
+    await prisma.appointmentType.update({
       where: { id, isActive: true },
       data: {
         isActive: false
@@ -94,20 +96,24 @@ export const deleteAppointmentTypeAction = async (id: number) => {
 }
 
 type CreateAppointmentTypePayload = {
-  orgUid: string;
+  clinicUid: string;
   name: string;
   description?: string;
   duration?: number;
   durationPadding?: number;
 }
 export const createAppointmentTypeAction = async (payload: CreateAppointmentTypePayload) => {
-  const { orgUid, name, description, duration = 10, durationPadding = 5 } = payload;
+  const { clinicUid, name, description, duration = 10, durationPadding = 5 } = payload;
   try {
-    await prismaTenant.appointmentType.create({
+    await prisma.appointmentType.create({
       data: {
         name,
         description,
-        orgUid,
+        Clinic: {
+          connect: {
+            clinicUid
+          }
+        },
         AppointmentTypeAttribute: {
           create: {
             duration,

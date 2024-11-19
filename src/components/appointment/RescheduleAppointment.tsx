@@ -21,10 +21,14 @@ import { BarLoader } from "react-spinners";
 import dayjs from "dayjs";
 import { Checkbox } from "@components/ui/checkbox";
 import ActionButton from "@components/ActionButton";
+import { promiseWrapper } from "@/lib/with-error-handling";
 
 type ScheduleAppointment = z.infer<typeof scheduleAppointmentSchema>;
 const scheduleAppointmentSchema = z.object({
-  hpId: z.string(),
+  hpId: z.number({
+    coerce: true,
+    required_error: "Please select a healthcare provider"
+  }),
   date: z.date({
     required_error: "Please select a date"
   }),
@@ -49,26 +53,26 @@ export default function RescheduleAppointment({disabled = true, onRescheduled, a
 
   const filteredHps = useMemo(() => hps?.filter(hp => {
     const skip = appointment.AppointmentRouting.some(a => 
-      a.routedToRole === hp.hpTypeId.toString() && 
+      a.RoutedTo.hpTypeId === hp.hpTypeId && 
       (["PENDING", "ACCEPTED"].includes(a.status) || 
-      (["CANCELLED", "DECLINED"].includes(a.status) && Number(a.routedTo) === hp.id))
+      (["CANCELLED", "DECLINED"].includes(a.status) && a.RoutedTo.id === hp.id))
     );
-    return !skip || hp.id.toString() === appointment.AppointmentAttribute?.preferredAppointee
+    return !skip || hp.id === appointment.AppointmentAttribute?.PreferredAppointee?.id
 
-  }), [appointment.AppointmentAttribute?.preferredAppointee, appointment.AppointmentRouting, hps])
+  }), [appointment.AppointmentAttribute?.PreferredAppointee?.id, appointment.AppointmentRouting, hps])
   const form = useForm<ScheduleAppointment>({
     resolver: zodResolver(scheduleAppointmentSchema),
     reValidateMode: "onChange",
     defaultValues: {
-      hpId: appointment.AppointmentAttribute?.preferredAppointee ?? undefined,
+      hpId: appointment.AppointmentAttribute?.PreferredAppointee?.id ?? undefined,
       date: appointment.AppointmentAttribute?.date ? new Date(appointment.AppointmentAttribute.date) : undefined,
       assign: true
     }
   })
   
   const hpId = form.watch("hpId")
-  const existingRoute = appointment.AppointmentRouting.some(r => r.routedTo === hpId)
-  const selectedHp = useMemo(() => hps?.find(hp => hp.id.toString() === hpId), [hpId, hps])
+  const existingRoute = appointment.AppointmentRouting.some(r => r.RoutedTo.id === hpId)
+  const selectedHp = useMemo(() => hps?.find(hp => hp.id === hpId), [hpId, hps])
   const {data: timeSlots, isValidating} = useTimeSlots({
     hpId,
     userId: selectedHp?.User.userId ?? "",
@@ -88,24 +92,21 @@ export default function RescheduleAppointment({disabled = true, onRescheduled, a
         return
       }
 
-      toast.promise(rescheduleAppointmentAction({
+      toast.promise(promiseWrapper(rescheduleAppointmentAction)({
         appointmentId: appointment.id, 
         assign: existingRoute ? false : data.assign ?? false,
-        hpId: selectedHp?.id.toString(),
-        hpTypeId: selectedHp?.hpTypeId.toString(),
+        hpId: selectedHp?.id,
         date: data.date.toISOString(),
         startDateTime: data.startDateTime.toISOString(),
         endDateTime: data.endDateTime.toISOString()
       }), {
         loading: "Rescheduling appointment...",
         success: (res) => {
-          if(res.status) {
-            triggerRef.current?.click()
-            onRescheduled?.()
-          }
+          triggerRef.current?.click()
+          onRescheduled?.()
           return res.message
         },
-        error: "Failed to reschedule appointment"
+        error: error => error
       })
       
     },(errorFields) => {

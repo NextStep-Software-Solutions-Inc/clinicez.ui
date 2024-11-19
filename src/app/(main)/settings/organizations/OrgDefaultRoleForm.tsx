@@ -19,7 +19,8 @@ import { toast } from "sonner";
 import { setDefaultOrgRoleAction } from "@actions/users/user-default-organization.action";
 import ConditionalRender from "@components/utils/ConditionalRender";
 import { getUserOrganizationsAction } from "@actions/users/user-organization.action";
-import { useOrgRoles } from "@hooks/useOrgRole";
+import { useOrganizationRoles } from "@/hooks/useOrganizationRole";
+import { promiseWrapper } from "@/lib/with-error-handling";
 
 interface OrgDefaultRoleFormProps {
   org: Awaited<ReturnType<typeof getUserOrganizationsAction>>["data"][number];
@@ -33,33 +34,36 @@ type OrgDefaultRoleFormSchema = z.infer<typeof orgDefaultRoleFormSchema>;
 
 export const OrgDefaultRoleForm = ({ org }: OrgDefaultRoleFormProps) => {
   
-  const {data: orgRoles} = useOrgRoles(org.Organization.orgId, {
+  const {data: orgRoles} = useOrganizationRoles({
+    orgUid: org.Organization.orgUid,
     userId: org.User.userId
   });
 
-  const defaultRole = useMemo(() => org.Organization.UserDefaultOrganizationRoles.find(role => role.UserRole.id), [org.Organization.UserDefaultOrganizationRoles]);
+  const defaultRole = useMemo(() => org.Organization.UserDefaultOrganizationRoles.find(role => role.OrganizationRole.id), [org.Organization.UserDefaultOrganizationRoles]);
   const form = useForm<OrgDefaultRoleFormSchema>({
     resolver: zodResolver(orgDefaultRoleFormSchema),
     values: {
-      defaultRole: defaultRole?.UserRole.id ?? 0
+      defaultRole: defaultRole?.OrganizationRole.id ?? 0
     }
   });
 
   const action = async () => {
     form.handleSubmit(async (data) => {
-      toast.promise(setDefaultOrgRoleAction({
+      toast.promise(promiseWrapper(setDefaultOrgRoleAction)({
         id: defaultRole?.id,
         userId: org.User.userId,
-        orgId: org.Organization.orgId,
+        orgUid: org.Organization.orgUid,
         roleId: data.defaultRole
       }) , {
         loading: "Updating default role...",
-        success: () => {
-          form.reset(data);
-          return "Default role updated successfully";
+        success: (res) => {
+          if(res.status) {
+            form.reset(data);
+          }
+          return res.message
         },
         error: "Failed to update default role"
-      })
+      });
     })();
   };
 

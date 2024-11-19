@@ -22,6 +22,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import Each from "@components/utils/Each"
 import { useHPs } from "@hooks/useHP"
 import { useUser } from "@auth0/nextjs-auth0/client"
+import { promiseWrapper } from "@/lib/with-error-handling"
 
 
 const UserPreferenceFormSchema = z.object({
@@ -60,17 +61,18 @@ export default function UserPreferences({userPreference}: UserPreferenceFormProp
       defaultHpId: userPreference?.HealthCareProvider?.id
     }
   })
+
+
+  
   async function action(){
     form.handleSubmit(async (data)  => {
-      toast.promise(upsertMyUserPreference(data), {
+      toast.promise(promiseWrapper(upsertMyUserPreference)(data), {
         loading: "Updating user preferences...",
         success: (res) => {
-          if(res.status) {
-            form.reset(data)
-          }
+          form.reset(data)
           return res.message
         },
-        error: "An error occurred while updating user preferences."
+        error: (error) => error
       })
     })()
   } 

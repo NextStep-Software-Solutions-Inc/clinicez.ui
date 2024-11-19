@@ -6,8 +6,8 @@ import { RowDataPacket } from "mysql2";
 import { sendMail } from "./email.action";
 import fs from "fs/promises";
 import path from "path";
-import { Prisma } from "@prisma/common/client";
-import prisma from "@lib/prisma-common";
+import { Prisma } from "@prisma/client";
+import prisma from "@lib/prisma";
 
 export const getPatientAction = async (email: string) => {
   const conn = await mySQLConnection();   
@@ -99,10 +99,10 @@ export const sendActivationCodeAction = async (email: string, code: string) => {
   });
 }
 
-export const startMigrationTransactionAction = async ({userId, data, orgId}: {
+export const startMigrationTransactionAction = async ({userId, data, orgUid}: {
     userId: string,
     data: Prisma.UserUpdateArgs["data"]
-    orgId: string
+    orgUid: string
 }) => {
 
   await prisma.$transaction(async (prisma) => {
@@ -110,7 +110,7 @@ export const startMigrationTransactionAction = async ({userId, data, orgId}: {
     // check user if already migrated
     const userMigration = await prisma.userMigration.findFirst({
       where: {
-        Organization: { orgId },
+        Organization: { orgUid },
         User: { userId },
       }
     })
@@ -126,7 +126,7 @@ export const startMigrationTransactionAction = async ({userId, data, orgId}: {
     await prisma.userMigration.create({
       data: {
         Organization: {
-          connect: {orgId: orgId}
+          connect: {orgUid: orgUid}
         },
         User: {
           connect : { userId }

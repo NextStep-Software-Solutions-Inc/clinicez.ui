@@ -1,13 +1,9 @@
-import { GetUser, GetUsers } from '@actions/users/user.action'
+import { GetUser, GetUsers, GetUsersFilters } from '@actions/users/user.action'
 import { self } from '@services/request'
 import useSWR from 'swr'
 
-type UseUsersFilter = {
-  userId?: string,
-  email?: string
-  orgUid?: string
-}
-export const useUsers = (filter?: UseUsersFilter) => {
+
+export const useUsers = (filter?: GetUsersFilters) => {
   const fetcher = (args: string) => self.get<GetUsers>(args)
   const searchParams = new URLSearchParams();
   Object.entries(filter || {}).forEach(([key, value]) => {
@@ -22,7 +18,7 @@ type UseUser = {
 }
 export const useUser = ({userId, email, orgUid}: UseUser) => {
   
-  const fetcher = (...args: any) => self.get<GetUser>(args)
+  const fetcher = (args: string) => self.get<GetUser>(args)
   const searchParams = new URLSearchParams();
   if (orgUid) searchParams.append("orgUid", orgUid)
   return  useSWR(() => (userId || email) ? `/api/users/${userId || email}?${searchParams.toString()}`: null, fetcher);

@@ -1,5 +1,6 @@
 "use client";
 
+import { promiseWrapper } from "@/lib/with-error-handling";
 import { rejectAppointmentAction } from "@actions/appointments/appointment-attribute.action";
 import ActionButton from "@components/ActionButton";
 import { Button } from "@components/ui/button";
@@ -22,32 +23,29 @@ export default function RejectAppointment({disabled = false, appointmentId, onRe
 
   const action = async (formData: FormData) => {
     const reason = formData.get("reason") as string;
+
     if(!reason.trim()) {
       toast.error("Please provide a reason for rejecting the appointment.");
       return;
     }
+
     formData.append("appointmentId", appointmentId.toString());
-    toast.promise(rejectAppointmentAction(formData), {
+    toast.promise(promiseWrapper(rejectAppointmentAction)(formData), {
       loading: "Rejecting appointment...",
       success: (res) => {
-        if (res) {
-          onRejected?.();
-          return "Appointment rejected.";
-        }
-        return "Something went wrong.";
+        onRejected?.();
+        return res.message;
       },
-      error: "Failed to reject appointment.",
+      error: error => error,
     });
-    
   }
-
 
   return (
     <Popover>
       <Tooltip>
         <TooltipTrigger asChild>
           <PopoverTrigger asChild ref={triggerRef}>
-            <Button variant="destructive" size="icon" disabled={disabled}>
+            <Button variant="outline" className="text-destructive" size="icon" disabled={disabled}>
               <MailX className="h-4 w-4" />
               <span className="sr-only">Reject Appointment</span>
             </Button>

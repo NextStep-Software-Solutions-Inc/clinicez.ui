@@ -1,6 +1,6 @@
 "use server";
 
-import { sendMail } from "./email.action";
+import { sendMail } from "@actions/email.action";
 
 export const sendContactUsMessage = async (data: { name: string, email: string, message: string }) => {
   await sendMail({

@@ -1,9 +1,10 @@
 "use server";
 
-import prisma from "@lib/prisma-common";
+import "server-only";
+import prisma from "@lib/prisma";
 import { isHP } from "@lib/protect-org";
-import { HealthConditionStatus, Severity, User } from "@prisma/common/client";
 import { cache } from "react";
+import { HealthConditionStatus, Severity } from "@/types";
 
 export const addUserIllnessAction = async (payload: {
     userId: string;
@@ -159,9 +160,8 @@ export const upsertUserIllnessAction = async (payload: {
 
 
 type ResponseType = {status: boolean, message: string}
-type RESOLVED = typeof HealthConditionStatus.RESOLVED
-export function setUserIllnessStatusAction(id: number, status: RESOLVED, userId: string): Promise<ResponseType>;
-export function setUserIllnessStatusAction(id: number, status: Exclude<HealthConditionStatus, RESOLVED>): Promise<ResponseType>;
+export function setUserIllnessStatusAction(id: number, status: "RESOLVED", userId: string): Promise<ResponseType>;
+export function setUserIllnessStatusAction(id: number, status: Exclude<HealthConditionStatus, "RESOLVED">): Promise<ResponseType>;
 
 export async function setUserIllnessStatusAction(id: number, status: HealthConditionStatus, userId?: string): Promise<ResponseType> {
   const hp = await isHP()

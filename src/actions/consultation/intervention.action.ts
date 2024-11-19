@@ -1,49 +1,67 @@
 "use server";
 
 import "server-only";
-import prismaTenant from "@lib/prisma-tenant";
-import { PrismaClientKnownRequestError } from '@prisma/tenant/client/runtime/library';
+import prisma from "@lib/prisma";
+import { getCachedSession } from "@actions/session.action";
+import { hasCodeProperty } from "@lib/utils";
 
 export const createInterventionAction = async (data: FormData) => {
-  const { consultationTicketId, actionId, details, orgUid, hpId } = Object.fromEntries(data); 
-
-  
+  let message = "Intervention added successfully";
   try {
-    const intervention  = await prismaTenant.intervention.create({
+    const session = await getCachedSession();
+    if(!session) throw new Error("User not authenticated.");
+
+    const { consultationTicketId, actionId, details, clinicUid, hpId } = Object.fromEntries(data); 
+
+    const intervention  = await prisma.intervention.create({
       data: {
-        consultationTicketId: Number(consultationTicketId),
-        actionId: Number(actionId),
-        details: String(details),
-        orgUid: String(orgUid),
-        hpId: Number(hpId)
+        ConsultationTicket: {
+          connect: {id: Number(consultationTicketId)}
+        },
+        Action: {
+          connect: {id: Number(actionId)}
+        },
+        Clinic: {
+          connect: {clinicUid: String(clinicUid)}
+        },
+        HealthCareProvider: {
+          connect: { id: Number(hpId)}
+        },
+        details: String(details)
       }
     });
     
 
-    return {
-      status: true,
-      message: "Intervention added successfully",
-      data: intervention
-    }
+    return { status: true,  message, data: intervention }
   } catch (error) {
-    console.error(error);
-    return {
-      status: false,
-      message: "Failed to add intervention",
-      data: null
-    }
+    message = "Failed to create intervention";
+    console.error(`Error creating intervention: ${error}`);
+    if(error instanceof Error) message = error.message;
+    return { status: false, message,  data: null }
   }
 }
 
 export type GetInterventions = Awaited<ReturnType<typeof getInterventionsAction>>;
 export const getInterventionsAction = async (data: FormData) => {
-  const { consultationTicketId, orgUid } = Object.fromEntries(data);
+
+  let message = "Interventions fetched successfully";
+
   try {
-    const interventions = await prismaTenant.intervention.findMany({
+  
+    const session = await getCachedSession();
+    if(!session) throw new Error("User not authenticated.");
+    
+    const { consultationTicketId, clinicUid } = Object.fromEntries(data);
+
+    const interventions = await prisma.intervention.findMany({
       where: {
         isActive: true,
-        orgUid: String(orgUid),
-        consultationTicketId: Number(consultationTicketId)
+        Clinic: {
+          clinicUid: String(clinicUid)
+        },
+        ConsultationTicket: {
+          id: Number(consultationTicketId)
+        }
       },
       select: {
         id: true,
@@ -58,20 +76,11 @@ export const getInterventionsAction = async (data: FormData) => {
         },
       }
     });
-    return {
-      status: true,
-      message: "Interventions fetched successfully",
-      data: interventions
-    }
+    return { status: true, message, data: interventions }
   } catch (error) {
     let message = "Failed to fetch interventions";
-    if(error instanceof PrismaClientKnownRequestError && error.code === 'P2025') {
-      message = "Consultation record not found";
-    }
-    return {
-      status: false,
-      message,
-      data: []
-    }
+    if(error instanceof Error) message = error.message;
+    if(hasCodeProperty(error) && error.code === 'P2025') message = "Consultation record not found";
+    return { status: false, message, data: [] }
   }
 }

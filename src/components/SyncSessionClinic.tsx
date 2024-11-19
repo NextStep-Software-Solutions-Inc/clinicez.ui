@@ -2,28 +2,28 @@
 
 import { useSetAtom } from "jotai";
 import { sessionClinicAtom } from "@state/session-clinic";
-import { useOrganization } from "@hooks/useOrg";
 import { useParams } from "next/navigation";
 import { useEffect } from "react";
+import { useClinic } from "@/hooks/useClinic";
 
 interface SyncSessionClinicProps {}
 
 export default function SyncSessionClinic({}: SyncSessionClinicProps) {
   
   const setSessionClinic = useSetAtom(sessionClinicAtom);
-  const {organization: orgUid} = useParams<{organization: string}>();
-  const { data: organization } = useOrganization(orgUid);
+  const {clinicUid} = useParams<{clinicUid: string}>();
+  const { data: clinic } = useClinic(clinicUid);
 
   useEffect(() => {
-    if (organization) {
+    if (clinic) {
       setSessionClinic(() => ({
-        clinicId: organization?.id,
-        clinicUid: organization?.orgId,
-        tenantId: organization?.Tenant.id,
-        tenantUid: organization?.Tenant.tenantId
+        clinicId: clinic?.id,
+        clinicUid: clinic?.clinicUid,
+        tenantId: clinic?.Tenant.id,
+        tenantUid: clinic?.Tenant.tenantUid
       }));
     }
-  }, [organization, setSessionClinic]);
+  }, [clinic, setSessionClinic]);
  
 
   return null;

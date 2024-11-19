@@ -19,7 +19,7 @@ dayjs.extend(utc)
 import { LabelValue } from "@components/LabelValue";
 import Each from "@components/utils/Each";
 import { Separator } from "@components/ui/separator";
-import { useOrgServices } from "@hooks/useOrgService";
+import { useClinicServices } from "@/hooks/useClinicService";
 import { useOrgAppointmentTypes } from "@hooks/useOrgAppointmentType";
 import { useOrgAppointmentModes } from "@hooks/useOrgAppointmentMode";
 import { useHP } from "@hooks/useHP";
@@ -36,11 +36,11 @@ interface ReviewBookingProps {
 
 export default function ReviewBooking({ nextStep, prevStep, isLastStep, isFirstStep, setComplete, startOver }: ReviewBookingProps) {
   const [bookAppointmentForm, setBookAppointmentForm] = useAtom(bookAppointmentAtom);
-  const params = useParams<{organization: string}>();
+  const params = useParams<{clinicUid: string}>();
   const user = useUser()
-  const { data: services } = useOrgServices({orgUid: params.organization});
-  const { data: appointmentTypes } = useOrgAppointmentTypes(params.organization);
-  const { data: appointmentModes } = useOrgAppointmentModes(params.organization);
+  const { data: services } = useClinicServices({clinicUid: params.clinicUid});
+  const { data: appointmentTypes } = useOrgAppointmentTypes(params.clinicUid);
+  const { data: appointmentModes } = useOrgAppointmentModes(params.clinicUid);
   const {data: hp } = useHP(bookAppointmentForm.hpId ?? 0)
   const {data: dbUser } = useDbUser({ userId: bookAppointmentForm.requester }); 
 
@@ -49,8 +49,8 @@ export default function ReviewBooking({ nextStep, prevStep, isLastStep, isFirstS
   const handleBookAppointment = async (e:FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     
-    if(!params.organization) {
-      toast.error("Organization is required")
+    if(!params.clinicUid) {
+      toast.error("Clinic UID is required")
       return ;
     }
     if (!bookAppointmentForm.appointmentTypeId) {
@@ -95,7 +95,7 @@ export default function ReviewBooking({ nextStep, prevStep, isLastStep, isFirstS
     }
 
     toast.promise(createAppointmentAction({
-      orgUid: params.organization,
+      clinicUid: params.clinicUid,
       subject: bookAppointmentForm.subject ?? "Appointment Request",
       complaint: bookAppointmentForm.chiefComplaint,
       modeId: bookAppointmentForm.modeId,
@@ -103,10 +103,10 @@ export default function ReviewBooking({ nextStep, prevStep, isLastStep, isFirstS
       serviceId: bookAppointmentForm.serviceId,
       requesters: [requester],
       attachments: attachmentUrls.map(url => url.url),
-      hpId: String(bookAppointmentForm.hpId),
+      hpId: bookAppointmentForm.hpId,
       schedule: {
-        timeStart: bookAppointmentForm.selectedTimeSlot?.start,
-        timeEnd: bookAppointmentForm.selectedTimeSlot?.end,
+        timeStart: bookAppointmentForm.selectedTimeSlot?.start.toISOString().split("T")[1],
+        timeEnd: bookAppointmentForm.selectedTimeSlot?.end.toISOString().split("T")[1],
         date: dayjs(bookAppointmentForm.preferredDate).endOf("day").toDate(),
       }
     }), {
@@ -115,7 +115,7 @@ export default function ReviewBooking({ nextStep, prevStep, isLastStep, isFirstS
         if(res.status){
           setComplete?.(true);
           playSuccess();
-          mutate((key) =>  typeof key === 'string' && key.startsWith(`/api/organizations/${params.organization}/appointments`), undefined, {
+          mutate((key) =>  typeof key === 'string' && key.startsWith(`/api/clinics/${params.clinicUid}/appointments`), undefined, {
             revalidate:true
           })
         }

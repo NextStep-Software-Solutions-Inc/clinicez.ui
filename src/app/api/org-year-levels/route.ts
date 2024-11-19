@@ -3,7 +3,7 @@ import 'server-only'
 import { withJwtAuth } from '@middlewares/withJwtAuth';
 
 import { NextRequest, NextResponse } from "next/server";
-import { getOrgYearLevelsAction } from '@actions/organizations/org-year-level.action';
+import { getOrganizationYearLevelsAction } from '@actions/organizations/org-year-level.action';
 
 
 export const GET = withJwtAuth(async (req: NextRequest) => {
@@ -17,7 +17,7 @@ export const GET = withJwtAuth(async (req: NextRequest) => {
     }, { status: 400 });
   }
 
-  const orgYearLevel = await getOrgYearLevelsAction(orgId);
+  const orgYearLevel = await getOrganizationYearLevelsAction(orgId);
 
   return NextResponse.json(orgYearLevel, {
     status: 200

@@ -59,7 +59,7 @@ export default function AddInterventionModal({consultation}: AddInterventionModa
     userId: user?.sub ?? ""
   })
   const { mutate } = useInterventions({
-    orgUid: consultation.orgUid,
+    clinicUid: consultation.Clinic.clinicUid,
     consultationTicketId: consultation.id
   })
   const form = useForm<z.infer<typeof AddInterventionFormSchema>>({
@@ -70,7 +70,7 @@ export default function AddInterventionModal({consultation}: AddInterventionModa
   const action = async (formData: FormData) => {
     form.handleSubmit(async (data) => {
       formData.append("consultationTicketId", consultation.id.toString())
-      formData.append("orgUid", consultation.orgUid)
+      formData.append("clinicUid", consultation.Clinic.clinicUid)
       toast.promise(createInterventionAction(formData), {
         loading: "Saving...",
         success: (res) => {

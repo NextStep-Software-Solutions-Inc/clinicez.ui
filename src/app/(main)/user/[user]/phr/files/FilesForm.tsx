@@ -2,13 +2,7 @@ import Folder, { FolderProps } from "../../../../../../components/Folder";
 import { getFoldersAction } from "@actions/folder.action";
 import { format } from "date-fns";
 import Each from "@components/utils/Each";
-
-import dayjs from "dayjs"
-import utc from "dayjs/plugin/utc"
-dayjs.extend(utc)
-
-import { getCachedSession } from "@actions/session.action";
-import { getUserOrganizationsAction } from "@actions/users/user-organization.action";
+import dayjs from "@lib/day-utils";
 
 interface FilesFormProps {
   readOnly: boolean;
@@ -16,24 +10,20 @@ interface FilesFormProps {
 }
 
 export const FilesForm = async ({ readOnly = true, userId }:FilesFormProps) => {
-  const session = await getCachedSession();
   const folders = await getFoldersAction(userId);
-  const userOrgs= await getUserOrganizationsAction({
-    userId: session?.user.sub
-  });
-  const orgs = userOrgs.data.filter(uo => uo.UserRole.name.toLowerCase() === "admin" ).map(org => org.Organization.id);
 
   const mappedFolders: FolderProps["folder"][] = folders
-    .filter(f => !readOnly  || f.Files.some(f => orgs.includes(f.FileType.FileTypeAttribute?.scopeOrgId ?? 0)) || f.FolderSetting?.isPublic)
+    .filter(f => !readOnly  || f.FolderSetting?.isPublic)
     .map(folder => {
       return {
         id: folder.id,
         name: folder.name,
         isPublic: folder.FolderSetting?.isPublic,
         description: format(folder.updatedAt, "PPp"),
-        files: folder.Files.filter(f => !readOnly || orgs.includes(f.FileType.FileTypeAttribute?.scopeOrgId ?? 0) || f.FileSetting?.isPublic).map(file => {
-          const validUntil = file.FileType.FileTypeAttribute?.validUntil ?? 0;
-          const valid = !!file.dateTaken && dayjs().add(validUntil, "days").isAfter(file.dateTaken);
+        files: folder.Files.filter(f => !readOnly || f.FileSetting?.isPublic).map(file => {
+          
+          const validUntil = file.FileType.validUntil ?? 0;
+          const valid = !!file.dateTaken  && dayjs().add(validUntil, "days").isAfter(file.dateTaken);
           const description = `${(file.size / 1024 / 1024).toFixed(2)} MB - ${file.FileType.name} ${valid ? "- Valid" : validUntil > 0 ? "- Expired" : ""}`;
           return {
             id: file.id,

@@ -1,6 +1,6 @@
 "use client";
 
-import { createOrgServiceCategoryAction } from "@actions/organizations/org-service-category.action";
+import { createClinicServiceCategoryAction } from "@/actions/clinics/clinic-service-category.action";
 import ActionButton from "@components/ActionButton";
 import CustomModalContent from "@components/CustomModalContent";
 import { Button } from "@components/ui/button";
@@ -30,10 +30,10 @@ const addServiceCategorySchema = z.object({
 });
 
 interface AddServiceCategoryModalProps {
-    orgUid: string;
+  clinicUid: string;
     onAddServiceCategory?: () => void;
 }
-export default function AddServiceCategoryModal({orgUid, onAddServiceCategory}:AddServiceCategoryModalProps) {
+export default function AddServiceCategoryModal({clinicUid, onAddServiceCategory}:AddServiceCategoryModalProps) {
   const closeBtnRef = React.useRef<HTMLInputElement>(null);
   const form = useForm<z.infer<typeof addServiceCategorySchema>>({
     resolver: zodResolver(addServiceCategorySchema),
@@ -45,10 +45,10 @@ export default function AddServiceCategoryModal({orgUid, onAddServiceCategory}:A
 
   const action = async () => {
     form.handleSubmit(async (values) => {
-      toast.promise(createOrgServiceCategoryAction({
+      toast.promise(createClinicServiceCategoryAction({
         name: values.name,
         description: values.description,
-        orgUid
+        clinicUid
       }), {
         loading: "Creating appointment mode...",
         success: res => {

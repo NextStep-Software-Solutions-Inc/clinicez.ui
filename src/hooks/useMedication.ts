@@ -6,20 +6,19 @@ import useSWR from "swr"
 export const useMedications = (filters?: GetMedicationsFilters) => {
 
   const searchParams = new URLSearchParams();
-  const {clinicId} = filters ?? {}
+  const {clinicUid} = filters ?? {}
   Object.entries(filters ?? {}).forEach(([key, value]) => {
     if(value) searchParams.set(key, value.toString())
   })
 
   const fetcher = (args:string) => self.get<GetMedications>(args)
-  return useSWR(!!clinicId ?`/api/medications?${searchParams.toString()}`: null, fetcher)
+  return useSWR(!!clinicUid ?`/api/medications?${searchParams.toString()}`: null, fetcher)
 }
 
 
-export const useMedication = (medicationId: number, clinicId: number) => {
-
+export const useMedication = (medicationId: number, clinicUid: string) => {
   const searchParams = new URLSearchParams();
-  searchParams.set("clinicId", clinicId.toString())
+  searchParams.set("clinicUid", clinicUid)
   const fetcher = (args:string) => self.get<GetMedication>(args)
   return useSWR(!!medicationId ? `/api/medications/${medicationId}?${searchParams.toString()}`: null, fetcher)
 }

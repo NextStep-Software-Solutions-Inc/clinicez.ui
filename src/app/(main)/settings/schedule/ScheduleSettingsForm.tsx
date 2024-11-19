@@ -9,7 +9,6 @@ import { useUser } from "@auth0/nextjs-auth0/client"
 import Each from "@components/utils/Each"
 import { deleteUserScheduleAction, GetUserSchedules, upsertBaseUserScheduleAction } from "@actions/schedule/user-schedule.action"
 import { useUserSchedules } from "@hooks/useUserSchedule"
-import { formatDateTime } from "@lib/utils"
 import { Badge } from "@components/ui/badge"
 import { Button } from "@components/ui/button"
 import { Separator } from "@components/ui/separator"
@@ -19,6 +18,7 @@ import { useRef } from "react"
 import { Trash } from "lucide-react"
 import dayjs from "dayjs"
 import utc from "dayjs/plugin/utc"
+import { formatDateTime } from "@/lib/day-utils"
 dayjs.extend(utc)
 
 const daysOfWeek = [
@@ -61,8 +61,10 @@ export default function ScheduleSettingsForm() {
         to: baseSchedule?.endDate,
       },
       isRecurring: baseSchedule?.isRecurring || false,
-      startTime: (baseSchedule?.startDate && baseSchedule.startTime) ? formatDateTime(new Date(baseSchedule?.startDate), new Date(baseSchedule?.startTime)).format("HH:mm") : "",
-      endTime: (baseSchedule?.endDate && baseSchedule.endTime) ? formatDateTime(new Date(baseSchedule?.endDate), new Date(baseSchedule?.endTime)).format("HH:mm") : "",
+      // startTime: (baseSchedule?.startDate && baseSchedule.startTime) ? formatDateTime(new Date(baseSchedule?.startDate), new Date(baseSchedule?.startTime)).format("HH:mm") : "",
+      // endTime: (baseSchedule?.endDate && baseSchedule.endTime) ? formatDateTime(new Date(baseSchedule?.endDate), new Date(baseSchedule?.endTime)).format("HH:mm") : "",
+      startTime: baseSchedule?.startTime ?? "",
+      endTime: baseSchedule?.endTime  ?? "",
       daysOfWeek: baseSchedule?.daysOfWeek.length ? baseSchedule?.daysOfWeek :  [0,1,2,3,4,5,6],
       weekOfMonth: baseSchedule?.weekOfMonth.length ? baseSchedule?.weekOfMonth : [1,2,3,4,5], 
       pattern: baseSchedule?.pattern || "daily",
@@ -73,8 +75,8 @@ export default function ScheduleSettingsForm() {
     form.handleSubmit(async (values) => {
       if (!userId) return toast.error("User not found");
       if(!values.dateRange.from || !values.dateRange.to) return toast.error("Date range is required")
-      const startTime = dayjs(`${dayjs(values.dateRange.from).format("YYYY-MM-DD")}T${values.startTime}`).toDate()
-      const endTime = dayjs(`${dayjs(values.dateRange.to).format("YYYY-MM-DD")}T${values.endTime}`).toDate()
+      // const startTime = dayjs(`${dayjs(values.dateRange.from).format("YYYY-MM-DD")}T${values.startTime}`).toISOString()
+      // const endTime = dayjs(`${dayjs(values.dateRange.to).format("YYYY-MM-DD")}T${values.endTime}`).toISOString()
       
       toast.promise(upsertBaseUserScheduleAction({
         id: baseSchedule?.id || 0,
@@ -82,8 +84,8 @@ export default function ScheduleSettingsForm() {
         type: "base",
         startDate: dayjs(values.dateRange.from).endOf("day").toDate(),
         endDate: dayjs(values.dateRange.to).endOf("day").toDate(),
-        startTime,
-        endTime,
+        startTime: values.startTime,
+        endTime: values.endTime,
         isRecurring: values.isRecurring,
         pattern: values.pattern,
         daysOfWeek: values.daysOfWeek,
@@ -192,8 +194,10 @@ export const ExceptionScheduleSheet = ({schedule, children}: ExceptionScheduleIt
         to: schedule?.endDate,
       },
       isRecurring: schedule?.isRecurring || false,
-      startTime: (schedule?.startDate && schedule.startTime) ? formatDateTime(new Date(schedule?.startDate), new Date(schedule?.startTime)).format("HH:mm") : "",
-      endTime: (schedule?.startDate && schedule.startTime) ? formatDateTime(new Date(schedule?.startDate), new Date(schedule?.startTime)).format("HH:mm") : "",
+      // startTime: (schedule?.startDate && schedule.startTime) ? formatDateTime(new Date(schedule?.startDate), schedule?.startTime)).format("HH:mm") : "",
+      // endTime: (schedule?.startDate && schedule.startTime) ? formatDateTime(new Date(schedule?.startDate), new Date(schedule?.startTime)).format("HH:mm") : "",
+      startTime: schedule?.startTime ?? "",
+      endTime: schedule?.endTime  ?? "",
       daysOfWeek: schedule?.daysOfWeek.length ? schedule?.daysOfWeek :  [0,1,2,3,4,5,6],
       weekOfMonth: schedule?.weekOfMonth.length ? schedule?.weekOfMonth : [1,2,3,4,5], 
       pattern: schedule?.pattern || "daily",
@@ -204,8 +208,8 @@ export const ExceptionScheduleSheet = ({schedule, children}: ExceptionScheduleIt
     form.handleSubmit(async (values) => {
       if (!userId) return toast.error("User not found");
       if(!values.dateRange.from || !values.dateRange.to) return toast.error("Date range is required")
-      const startTime = dayjs(`${dayjs(values.dateRange.from).format("YYYY-MM-DD")}T${values.startTime}`).toDate()
-      const endTime = dayjs(`${dayjs(values.dateRange.to).format("YYYY-MM-DD")}T${values.endTime}`).toDate()
+      // const startTime = dayjs(`${dayjs(values.dateRange.from).format("YYYY-MM-DD")}T${values.startTime}`).toISOString()
+      // const endTime = dayjs(`${dayjs(values.dateRange.to).format("YYYY-MM-DD")}T${values.endTime}`).toISOString()
       
       toast.promise(upsertBaseUserScheduleAction({
         id: schedule?.id || 0,
@@ -213,8 +217,8 @@ export const ExceptionScheduleSheet = ({schedule, children}: ExceptionScheduleIt
         type: "exception",
         startDate: dayjs(values.dateRange.from).endOf("day").toDate(),
         endDate: dayjs(values.dateRange.to).endOf("day").toDate(),
-        startTime,
-        endTime,
+        startTime: values.startTime,
+        endTime: values.endTime,
         isRecurring: values.isRecurring,
         pattern: values.pattern,
         daysOfWeek: values.daysOfWeek,

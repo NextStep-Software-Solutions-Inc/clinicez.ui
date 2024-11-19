@@ -9,7 +9,7 @@ import BackSubmitAndNext from "@components/SubmitAndNext";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@components/ui/button";
-import { verifyReceiptCodeAction } from "@actions/reciept-code.action";
+import { verifyReceiptCodeAction } from "@/actions/receipt-code.action";
 import { useAtom } from "jotai";
 import { hpApply } from "@state/hp-apply";
 import { usePlans } from "@hooks/usePlan";

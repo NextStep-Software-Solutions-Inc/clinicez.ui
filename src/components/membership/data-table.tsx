@@ -156,7 +156,7 @@ export function DataTable<TData extends GetUserOrganizations["data"][number], TV
                       <TableCell colSpan={row.getVisibleCells().length}>
                         <div className="space-y-2">
                           <Each
-                            of={row.original.UserRole.requirements}
+                            of={row.original.OrganizationRole.requirements}
                             fallback="No additional requirements needed for this role."
                             render={(requirements) => {
                               if(requirements === "student_record") {
@@ -174,7 +174,7 @@ export function DataTable<TData extends GetUserOrganizations["data"][number], TV
                                               <LabelValue className="flex items-baseline gap-2" value="Student ID No:" label={studentRecord.studentId ?? "N/A"}/>
                                               <LabelValue className="flex items-baseline gap-2" value="Learner Ref. No.:" label={studentRecord.lrn ?? "N/A"}/>
                                               <LabelValue className="flex items-baseline gap-2" value="Student Level:" label={studentRecord.Level?.name}/>
-                                              <LabelValue className="flex items-baseline gap-2" value="Year/Grade Level:" label={studentRecord.YearLevel?.name ?? "N/A"}/>
+                                              <LabelValue className="flex items-baseline gap-2" value="Year/Grade Level:" label={studentRecord.OrganizationYearLevel?.name ?? "N/A"}/>
                                               <LabelValue className="flex items-baseline gap-2" value="Program/Strand:" label={studentRecord.Program?.name ?? "N/A"}/>
                                               <LabelValue className="flex items-baseline gap-2" value="Department:" label={studentRecord.Department?.name ?? "N/A"}/>
                                               <LabelValue className="flex items-baseline gap-2" value="College:" label={studentRecord.College?.name ?? "N/A"}/>

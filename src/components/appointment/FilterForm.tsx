@@ -31,7 +31,7 @@ import { useAtom } from "jotai"
 import ActionButton from "@components/ActionButton"
 import { toast } from "sonner"
 import { useOrgAppointmentModes } from "@hooks/useOrgAppointmentMode"
-import { useOrgServiceCategories } from "@hooks/useOrgServiceCategory"
+import { useClinicServiceCategories } from "@/hooks/useClinicServiceCategory"
 import { useMemo } from "react"
 import { Checkbox } from "@components/ui/checkbox"
 import { useUsers } from "@hooks/useUser"
@@ -73,21 +73,19 @@ interface FilterFormProps {
 }
 
 export default function FilterForm({onContinue}: FilterFormProps) {
-  const params = useParams()
+  const {clinicUid} = useParams<{clinicUid: string}>()
   const {user} = useUser()
   const [bookAppointmentForm, setBookAppointmentForm] = useAtom(bookAppointmentAtom)
-  const organization = params?.organization as string
-  const {data: appointmentTypes} = useOrgAppointmentTypes(organization)
-  const {data: appointmentModes } = useOrgAppointmentModes(organization);
-  const {data: serviceCategories} = useOrgServiceCategories(organization)
-  const {data: users } = useUsers({
-    orgUid: organization,
-  })
+  const {data: appointmentTypes} = useOrgAppointmentTypes(clinicUid)
+  const {data: appointmentModes } = useOrgAppointmentModes(clinicUid);
+  const {data: serviceCategories} = useClinicServiceCategories(clinicUid)
+  const {data: users } = useUsers()
   const {data: myOrgPermissions, isLoading: loadingPermissions} = usePermissions({
     userId: user?.sub ?? undefined,
-    type: "ORGANIZATION"
+    type: "CLINIC"
   })
 
+  
   const {data: hps} = useHPs()
   const groupedHps = useMemo(() => {
     // array of array of hps
@@ -139,8 +137,8 @@ export default function FilterForm({onContinue}: FilterFormProps) {
   const bookAFriend = form.watch('bookAFriend')
   const myPermissionArray = myOrgPermissions?.map(permission => permission.name)
   
-  const writeOrgAppointmentPermissions = [PERMISSIONS.CLINIC["WRITE:ORG:APPOINTMENT"].name]
-  const writeOrgAppointmentBookAFriendPermissions = [PERMISSIONS.CLINIC["WRITE:ORG:APPOINTMENT:BOOK_A_FRIEND"].name]
+  const writeOrgAppointmentPermissions = [PERMISSIONS.CLINIC["WRITE:CLINIC:APPOINTMENT"].name]
+  const writeOrgAppointmentBookAFriendPermissions = [PERMISSIONS.CLINIC["WRITE:CLINIC:APPOINTMENT:BOOK_A_FRIEND"].name]
   const canWritePermission = writeOrgAppointmentPermissions.every(permission => myPermissionArray?.includes(permission))
   const canWriteBookAFriendPermission = writeOrgAppointmentBookAFriendPermissions.every(permission => myPermissionArray?.includes(permission))
   

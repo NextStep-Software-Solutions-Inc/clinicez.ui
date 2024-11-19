@@ -1,9 +1,10 @@
 "use server";
 
 import "server-only";
-import prisma from "@lib/prisma-common";
-import { UserOrganizationStatus } from "@prisma/common/client";
+import prisma from "@lib/prisma";
 import { cache } from "react";
+import { getCachedSession } from "@actions/session.action";
+import { OrganizationMemberStatus } from "@/types";
 
 type CreateOrgRolePayload = {
   orgUid: string;
@@ -11,45 +12,45 @@ type CreateOrgRolePayload = {
   description: string;
 }
 
-export const createOrgRoleAction = async (payload: CreateOrgRolePayload) => {
+export const createOrganizationRoleAction = async (payload: CreateOrgRolePayload) => {
+  let message = "Organization role created successfully"
   try {
-    const newOrgRole = await prisma.userOrganizationRole.create({
+
+    const session = await getCachedSession();
+    if(!session) throw new Error("Session not found");
+
+    const { orgUid, name, description } = payload;
+    const newOrgRole = await prisma.organizationRole.create({
       data: {
         Organization: {
           connect: {
-            orgId: payload.orgUid
+            orgUid
           }
         },
-        name : payload.name,
-        description: payload.description,
+        name,
+        description,
         requirements: [],
       }
     })
-    return {
-      status: true,
-      message: "Role created successfully",
-      data: newOrgRole
-    }
+    return { status: true, message, data: newOrgRole }
   } catch (error) {
-    console.error(error);
-    return {
-      status: false,
-      message: "Error while creating role",
-      data: null
-    }
+    console.error(`Error while creating organization role: ${error}`);
+    message = "Error while creating role";
+    if(error instanceof Error) message = error.message;
+    return { status: false,  message: "Error while creating role", data: null }
   }
 }
 
 type FiltersType = {
-    userId?: string | null;
-    orgId?: string | null;
-    status?: UserOrganizationStatus | null;
+    userId?: string;
+    orgUid?: string;
+    status?: OrganizationMemberStatus;
   }
   
 export type GetOrganizationRoles = Awaited<ReturnType<typeof getOrganizationRolesAction>>
 export const getOrganizationRolesAction = cache(async (filter?: FiltersType) => {
-  const {userId, orgId, status} = filter || { status: "ACTIVE"};
-  const roles = await prisma.userOrganizationRole.findMany({
+  const {userId, orgUid, status} = filter || { status: "ACTIVE"};
+  const roles = await prisma.organizationRole.findMany({
     orderBy: {
       name: "asc"
     },
@@ -57,11 +58,11 @@ export const getOrganizationRolesAction = cache(async (filter?: FiltersType) => 
       isActive: true,
       AND: [
         {
-          ...orgId ? { Organization: { orgId } } : {}
+          ...orgUid ? { Organization: { orgUid } } : {}
         },
         {
           ...userId ? { 
-            UserOrganizations: {
+            OrganizationMembers: {
               some: {
                 ...status ? { status }: {},
                 User: {
@@ -91,13 +92,14 @@ export const getOrganizationRolesAction = cache(async (filter?: FiltersType) => 
           id: true,
           Organization: {
             select: {
-              orgId: true,
+              orgUid: true,
             }
           },
-          UserRole: {
+          OrganizationRole: {
             select: {
               id: true,
-              name: true
+              name: true,
+              requirements: true
             }
           },
           User: {
@@ -106,70 +108,57 @@ export const getOrganizationRolesAction = cache(async (filter?: FiltersType) => 
             }
           }
         }
-      },
-      OrgRoleAppointmentTabs: {
-        select: {
-          orgRoleId: true,
-          OrgAppointmentTab: {
-            select: {
-              id: true,
-              AppointmentTab: {
-                select: {
-                  id: true,
-                  name: true,
-                  description: true
-                }
-              }
-            }
-          }
-        }
-      },
+      }
     }
   })
   return roles;
 })
 
 
-export const setOrgRoleRequirementsAction = async (orgRoleId: number, requirements: string[]) => {
+export const setOrganizationRoleRequirementsAction = async (orgRoleId: number, requirements: string[]) => {
+  let message = "Role requirements updated successfully"
   try {
-    await prisma.userOrganizationRole.update({
+
+    const session = await getCachedSession();
+    if(!session) throw new Error("Session not found");
+
+    await prisma.organizationRole.update({
       where: {
         isActive: true,
         id: orgRoleId
       },
       data: { requirements }
     })
-    return {
-      status: true,
-      message: "Role requirements updated successfully"
-    }
+    return { status: true, message} 
   } catch (error) {
-    console.error(error);
-    return {
-      status: false,
-      message: "Error while updating role requirements"
-    }
+    console.error(`Error while updating role requirements: ${error}`);
+    message = "Error while updating role requirements";
+    if(error instanceof Error) message = error.message;
+    return { status: false, message}
   }
 }
 
-export const deleteOrgRoleAction = async (orgRoleId: number) => {
+export const deleteOrganizationRoleAction = async (orgRoleId: number) => {
+
+  let message = "Role deleted successfully"
+
   try {
-    await prisma.userOrganizationRole.update({
+
+    const session = await getCachedSession();
+    if(!session) throw new Error("Session not found");
+
+    await prisma.organizationRole.update({
       where: {
         isActive: true,
         id: orgRoleId
       },
       data: { isActive: false }
     })
-    return {
-      status: true,
-      message: "Role deleted successfully"
-    }
+    return { status: true, message }
   } catch (error) {
-    console.error(error);
-    return {
-      status: false,
-      message: "Error while deleting role"
-    }
+    console.error(`Error while deleting role: ${error}`);
+    message = "Error while deleting role";
+    if(error instanceof Error) message = error.message;
+    return { status: false, message }
   }
 }

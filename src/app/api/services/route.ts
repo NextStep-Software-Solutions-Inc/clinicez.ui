@@ -1,4 +1,4 @@
-import { getOrgServicesAction } from "@actions/organizations/org-service.action";
+import { getClinicServicesAction } from "@/actions/clinics/clinic-service.action";
 import { withJwtAuth } from "@middlewares/withJwtAuth";
 import { AppointmentStatus } from "@public/json/appointment-list";
 import { NextRequest, NextResponse } from "next/server";
@@ -14,6 +14,6 @@ export const GET = withJwtAuth(async (req: NextRequest) => {
     categoryId: categoryId ? parseInt(categoryId) : undefined
   }
 
-  const services = await getOrgServicesAction(filter);
+  const services = await getClinicServicesAction(filter);
   return NextResponse.json(services, {status: 200});
 });

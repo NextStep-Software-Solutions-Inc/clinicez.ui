@@ -8,12 +8,9 @@ import ConsultationTicketTableRowActions from "./ConsultationTicketTableRowActio
 import Link from "next/link"
 import { DropdownMenuProvider } from "@components/DropdownMenuProvider"
 import { GetConsultationTickets } from "@actions/consultation/consultation-ticket.action"
-import dayjs from "dayjs"
-import utc from "dayjs/plugin/utc"
-import { useUser } from "@hooks/useUser"
-dayjs.extend(utc)
+import dayjs from "@lib/day-utils"
 
-export const columns: ColumnDef<GetConsultationTickets["data"][number]>[] = [
+export const columns: ColumnDef<NonNullable<GetConsultationTickets["data"]>[number]>[] = [
   {
     id: "select",
     header: ({ table }) => (
@@ -75,7 +72,7 @@ export const columns: ColumnDef<GetConsultationTickets["data"][number]>[] = [
     cell: ({ row }) => {
       return (
         <div>
-          <Requester requester={row.original.Appointment?.Requesters[0].userId ?? ""} />
+          <Requester requester={row.original.Appointment?.Requesters[0].User!} />
           <div className="flex flex-wrap items-center gap-1">
             <Badge>{row.original.System.name}</Badge>
             <Badge variant="outline">{row.original.Appointment?.AppointmentAttribute?.Service?.name}</Badge>
@@ -134,9 +131,14 @@ export const columns: ColumnDef<GetConsultationTickets["data"][number]>[] = [
 ]
 
 
-export const Requester = ({ requester }: {requester: string}) => {
-  const {data: user} = useUser({userId: requester})
-  const requesterName = `${user?.data?.firstName} ${user?.data?.middleName} ${user?.data?.lastName} ${user?.data?.suffix ?? ""}`
+export const Requester = ({ requester }: {requester: {
+  id: number
+  firstName: string | null
+  middleName: string | null
+  lastName: string | null
+  suffix: string | null
+}}) => {
+  const requesterName = `${requester.firstName ?? ""} ${requester.middleName ?? ""} ${requester.lastName ?? ""} ${requester.suffix ?? ""}`
   return (
     <div className="text-wrap">{requesterName}</div>
   )

@@ -9,7 +9,7 @@ import { PopoverClose } from "@radix-ui/react-popover";
 import { Trash2 } from "lucide-react";
 import React from "react";
 import { toast } from "sonner";
-import { revalidate } from "../../app/(process)/[organization]/membership/page";
+import { revalidate } from "../../app/(dashboard)/organizations/[orgUid]/membership/page";
 import { revalidatePath } from "@actions/cache.action";
 
 interface ConfirmDeleteMembershipProps {

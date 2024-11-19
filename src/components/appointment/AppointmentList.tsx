@@ -1,8 +1,7 @@
 "use client";
 
-import { forwardRef, useMemo} from "react"
-
-import { cn, formatDateTime, getBadgeVariantFromLabel } from "@lib/utils"
+import { forwardRef } from "react"
+import { cn, getBadgeVariantFromLabel } from "@lib/utils"
 import { Badge } from "@components/ui/badge"
 import { ScrollArea } from "@components/ui/scroll-area"
 import { useSearchParams } from "next/navigation"
@@ -10,9 +9,9 @@ import Each from "@components/utils/Each"
 import { GetAppointments } from "@actions/appointments/appointments.action"
 import { Separator } from "@components/ui/separator"
 import { ArrowRight } from "lucide-react";
-import dayjs from "dayjs";
-import relativeTime from "dayjs/plugin/relativeTime";
-dayjs.extend(relativeTime)
+import dayjs from "@/lib/day-utils"
+import { formatDateTime } from "@/lib/day-utils";
+
 interface AppointmentListProps {
   appointments: GetAppointments["data"]
 }

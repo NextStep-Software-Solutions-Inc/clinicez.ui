@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import Each from "@components/utils/Each";
 import { usePermissions } from "@hooks/usePermission";
 import { useOrgRoleInitialPermissions } from "@hooks/useOrgRoleInitialPermission";
-import { setOrgRoleInitialPermissionsAction } from "@actions/role-initial-permission.action";
+import { setOrgRoleInitialPermissionsAction } from "@/actions/org-role-initial-permission.action";
 
 
 const FormSchema = z.object({
@@ -25,12 +25,11 @@ const FormSchema = z.object({
   
 interface OrgRoleInitialPermissionsProps {
   orgRoleId: number
-  currentPermissionIds: number[]
 }
-export default function OrgRoleInitialPermissions({orgRoleId, currentPermissionIds}:OrgRoleInitialPermissionsProps ) {
-  const params = useParams<{organization: string}>()
+export default function OrgRoleInitialPermissions({orgRoleId}:OrgRoleInitialPermissionsProps ) {
+  const params = useParams<{orgUid: string}>()
   const {data: roleInitialPermissions ,isLoading, mutate} = useOrgRoleInitialPermissions({
-    orgUid: params.organization,
+    orgUid: String(params?.orgUid),
     orgRoleId
   })
   const {data: permissions ,isLoading: loadingPermissions} = usePermissions({
@@ -48,7 +47,7 @@ export default function OrgRoleInitialPermissions({orgRoleId, currentPermissionI
     form.handleSubmit(async (data) => {
       toast.promise(setOrgRoleInitialPermissionsAction({
         orgRoleId,
-        orgUid: params.organization,
+        orgUid: String(params?.orgUid),
         permissionIds: data.permissionIds,
       }), {
         loading: "Saving changes...",

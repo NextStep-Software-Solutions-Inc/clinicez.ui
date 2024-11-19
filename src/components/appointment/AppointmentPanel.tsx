@@ -12,6 +12,7 @@ import {
   Route,
   Trash2,
   UserIcon,
+  Mailbox,
 } from "lucide-react"
 
 import { cn } from "@lib/utils"
@@ -30,7 +31,7 @@ import { TooltipProvider } from "@components/ui/tooltip"
 import { AppointmentStatusNav, AppointmentStatusNavProps } from "./AppointmentStatusNav"
 import { useParams, useSearchParams } from "next/navigation"
 import Switcher from "@components/dashboard/Switcher"
-import { useOrgRoles } from "@hooks/useOrgRole"
+import { useClinicRoles } from "@/hooks/useClinicRole"
 import { useUser } from "@auth0/nextjs-auth0/client"
 import { useAtom } from "jotai"
 import { userDefaultOrganizationRoleAtom } from "@state/user-role"
@@ -43,7 +44,7 @@ export type UserSwitcherType = {
 }
 
 const icons: Record<string, LucideIcon> = {
-  all: Inbox,
+  all: Mailbox,
   pending: Inbox,
   received: MailPlus,
   rescheduled: Clock,
@@ -114,25 +115,24 @@ export default function AppointmentPanel({
 
   const [isCollapsed, setIsCollapsed] = React.useState(defaultCollapsed)
   const searchParams = useSearchParams();
-  const [userDefaultOrgRole, setUserDefaultOrgRole] = useAtom(userDefaultOrganizationRoleAtom)
-  const params = useParams();
+  const [userDefaultOrgRole, setUserDefaultClinicRole] = useAtom(userDefaultOrganizationRoleAtom)
+  const {clinicUid} = useParams<{clinicUid: string}>();
   const user = useUser();
-  const userId = user?.user?.sub;
+  const userId = user?.user?.sub ?? undefined;
   const aptStatus = searchParams.get("_aptStatus");
   const sort = searchParams.get("_sort")  ?? "request";
   const routedAptStatus = searchParams.get("_routedAptStatus");
-  const organization = params.organization as string;
-  const activeRoleId = userDefaultOrgRole[organization]?.roleId ?? 0;
-  const {data: orgRoles} = useOrgRoles(organization, {userId})
+  const activeRoleId = userDefaultOrgRole[clinicUid]?.roleId ?? 0;
+  const {data: clinicRoles} = useClinicRoles({userId})
   
-  const roles = React.useMemo(() => (orgRoles ?? [])?.map((role) => {
+  const roles = React.useMemo(() => (clinicRoles ?? [])?.map((role) => {
     return {
       label: role.name,
       value: role.id.toString(),
       icon: UserIcon,
-      isDefault: role.UserDefaultOrganizationRoles.some((r) => r.User.userId === userId),
+      isDefault: role.UserDefaultClinicRoles.some((r) => r.User.userId === userId),
     }
-  }), [orgRoles, userId])
+  }), [clinicRoles, userId])
 
   const appointmentStatusLinks = React.useMemo(() => createStatusLinks(
     appointmentStatusAsTabs,
@@ -149,25 +149,33 @@ export default function AppointmentPanel({
   ), [routedAppointmentStatusCounts, routedAptStatus, inRouteAppointmentStatuses]);
 
   const changeRole = React.useCallback((roleId: string) => {
-    const role = (orgRoles ?? []).find((role) => role.id === Number(roleId))
-    setUserDefaultOrgRole({
-      [organization]: {
+    const role = (clinicRoles ?? []).find((role) => role.id === Number(roleId))
+    setUserDefaultClinicRole({
+      [clinicUid]: {
         roleId: role?.id,
         roleName: role?.name
       }})
-  }, [orgRoles, organization, setUserDefaultOrgRole])
+  }, [clinicRoles, clinicUid, setUserDefaultClinicRole])
   
   React.useEffect(() => {
-    const defaultRole = orgRoles?.flatMap(orgRole => orgRole.UserDefaultOrganizationRoles).find((r) => r.User.userId === userId)
-    if(defaultRole) {
-      setUserDefaultOrgRole({
-        [defaultRole.Organization.orgId]: {
-          roleId: defaultRole?.UserRole.id,
-          roleName: defaultRole?.UserRole.name,
+    const defaultRole = clinicRoles?.flatMap(orgRole => orgRole.UserDefaultClinicRoles).find((r) => r.User.userId === userId)
+    
+    if(!defaultRole && clinicRoles?.length) {
+      setUserDefaultClinicRole({
+        [clinicUid]: {
+          roleId: clinicRoles[0].id,
+          roleName: clinicRoles[0].name
+        }
+      })
+    } else if(defaultRole) {
+      setUserDefaultClinicRole({
+        [defaultRole.Clinic.clinicUid]: {
+          roleId: defaultRole?.ClinicRole.id,
+          roleName: defaultRole?.ClinicRole.name,
         }
       })
     }
-  }, [orgRoles, setUserDefaultOrgRole, userId])
+  }, [clinicRoles, clinicUid, setUserDefaultClinicRole, userId])
 
   const handleSortTabChange = (value: string) => {
     const searchParams = new URLSearchParams(window.location.search)
@@ -270,7 +278,7 @@ export default function AppointmentPanel({
               </div>
             </div>
             <Separator />
-            <AppointmentListWrapper orgUid={organization}/>
+            <AppointmentListWrapper clinicUid={clinicUid}/>
           </Tabs>
         </ResizablePanel>
         <ResizableHandle withHandle />

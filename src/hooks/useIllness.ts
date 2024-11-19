@@ -3,6 +3,7 @@ import { self } from "@services/request"
 import useSWR from "swr"
 
 export const useIllnesses = (userId: string) => {
-  const fetcher = (...args: any) => self.get<GetUserIllnesses>(args)
-  return useSWR(`/api/illnesses?userId=${userId}`,fetcher)
+  const fetcher = (args: string) => self.get<GetUserIllnesses>(args)
+  const searchParams = new URLSearchParams({userId})
+  return useSWR(`/api/illnesses?${searchParams.toString()}`,fetcher)
 }

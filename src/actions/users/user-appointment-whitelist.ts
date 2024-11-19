@@ -1,19 +1,20 @@
 "use server";
 
 import "server-only";
-import prismaCommon from "@lib/prisma-common";
+import prisma from "@lib/prisma";
+import { getCachedSession } from "../session.action";
 
 export type GetUserAppointmentWhitelist = Awaited<ReturnType<typeof getUserAppointmentWhitelistAction>>;
-export const getUserAppointmentWhitelistAction = async (orgUid: string, userId?: string, ) => {
+export const getUserAppointmentWhitelistAction = async (clinicUid: string, userId?: string, ) => {
   try {
     
-    const whitelist = await prismaCommon.userOrgAppointmentWhitelist.findMany({
+    const whitelist = await prisma.userClinicAppointmentWhitelist.findMany({
       where: {
         User: {
           userId
         },
-        Organization: {
-          orgId: orgUid
+        Clinic: {
+          clinicUid
         }
       },
       include: {
@@ -44,32 +45,38 @@ export const getUserAppointmentWhitelistAction = async (orgUid: string, userId?:
 
 type CreateWhitelistPayload = {
     userId: string;
-    orgId: string;
+    clinicUid: string;
     name: string;
 }
 export const createWhitelistAction = async (payload: CreateWhitelistPayload) => {
+  let message = "Whitelist filter created successfully.";
   try {
-    const whitelist = await prismaCommon.userOrgAppointmentWhitelist.create({
+
+    const session = await getCachedSession();
+    if(!session) throw new Error("User not authenticated.");
+
+    const { clinicUid, name, userId } = payload;
+    const whitelist = await prisma.userClinicAppointmentWhitelist.create({
       data: {
-        name: payload.name,
+        name,
         User: {
           connect: {
-            userId: payload.userId
+            userId
           }
         },
-        Organization: {
+        Clinic: {
           connect: {
-            orgId: payload.orgId
+            clinicUid
           }
         }
       }
     });
-    return { status: true, message: "Whitelist filter created successfully.", data: whitelist }
+    return { status: true, message, data: whitelist }
   } catch (error) {
     console.error(`Error creating whitelist filter: ${error}`);
-    let message = "An error occurred while creating whitelist filter.";
+    message = "An error occurred while creating whitelist filter.";
     if (error instanceof Error) message = error.message;
-    return { status: false,  message, data: null }
+    return { status: false, message, data: null }
   };
 }
 
@@ -78,29 +85,44 @@ type UpdateWhitelistPayload = {
     name: string
 }
 export const updateWhitelistAction = async (payload: UpdateWhitelistPayload) => {
+
+  let message = "Whitelist filter updated successfully.";
+
   try {
-    const whitelist = await prismaCommon.userOrgAppointmentWhitelist.update({
+
+    const session = await getCachedSession();
+    if(!session) throw new Error("User not authenticated.");
+
+    const whitelist = await prisma.userClinicAppointmentWhitelist.update({
       where: { id: payload.id },
       data: { name: payload.name }
     });
-    return { status: true, message: "Whitelist filter updated successfully.", data: whitelist }
+
+    return { status: true, message, data: whitelist }
   } catch (error) {
     console.error(`Error updating whitelist filter: ${error}`);
-    let message = "An error occurred while updating whitelist filter.";
+    message = "An error occurred while updating whitelist filter.";
     if (error instanceof Error) message = error.message;
-    return { status: false,  message, data: null }
+    return { status: false, message, data: null }
   };
 }
 
 export const deleteWhitelistAction = async (id: number) => {
+
+  let message = "Whitelist filter deleted successfully.";
+
   try {
-    await prismaCommon.userOrgAppointmentWhitelist.delete({
+
+    const session = await getCachedSession();
+    if(!session) throw new Error("User not authenticated.");
+
+    await prisma.userClinicAppointmentWhitelist.delete({
       where: { id }
     });
-    return { status: true, message: "Whitelist filter deleted successfully." }
+    return { status: true, message }
   } catch (error) {
     console.error(`Error deleting whitelist filter: ${error}`);
-    let message = "An error occurred while deleting whitelist filter.";
+    message = "An error occurred while deleting whitelist filter.";
     if (error instanceof Error) message = error.message;
     return { status: false,  message }
   };

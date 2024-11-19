@@ -1,10 +1,10 @@
 "use client";
 
+import { promiseWrapper } from "@/lib/with-error-handling";
 import { createPrescriptionAction } from "@actions/medications/prescription.action";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import ActionButton from "@components/ActionButton";
 import CustomModalContent from "@components/CustomModalContent";
-import { Alert, AlertDescription, AlertTitle } from "@components/ui/alert";
 import { Button } from "@components/ui/button";
 import {
   Dialog,
@@ -42,6 +42,7 @@ import { useMedications } from "@hooks/useMedication";
 import { sessionClinicAtom } from "@state/session-clinic";
 import { useAtomValue } from "jotai";
 import { Pill } from "lucide-react";
+import { useParams } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -68,6 +69,7 @@ export default function CreatePrescriptionModal({
   onCreated,
 }: CreatePrescriptionModalProps) {
   const { user } = useUser();
+  const {clinicUid} = useParams<{clinicUid: string}>()
   const closeBtnRef = useRef<HTMLInputElement>(null);
   const sessionClinicValue = useAtomValue(sessionClinicAtom);
   
@@ -76,7 +78,7 @@ export default function CreatePrescriptionModal({
   });
 
   const { data: medications } = useMedications({
-    clinicId: sessionClinicValue?.clinicId ?? 0
+    clinicUid
   });
 
   const form = useForm<CreatePrescriptionForm>({
@@ -92,18 +94,15 @@ export default function CreatePrescriptionModal({
         toast.error("Clinic UID is required");
         return;
       }
-      toast.promise(createPrescriptionAction({...data, clinicId: sessionClinicValue.clinicId}), {
+      toast.promise(promiseWrapper(createPrescriptionAction)({...data, clinicUid}), {
         loading: "Creating new prescription...",
         success: (res) => {
-          if (res.status) {
-            onCreated?.();
-            closeBtnRef.current?.click();
-
-            form.reset(data);
-          }
+          onCreated?.();
+          closeBtnRef.current?.click();
+          form.reset(data);
           return res.message;
         },
-        error: "Failed to create prescription"
+        error: error => error
       });
     })();
   };

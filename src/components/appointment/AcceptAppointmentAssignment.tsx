@@ -1,9 +1,10 @@
 "use client";
 
+import { promiseWrapper } from "@/lib/with-error-handling";
 import { acceptAppointmentAction } from "@actions/appointments/appointment-routing.action";
 import ActionButton from "@components/ActionButton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@components/ui/tooltip";
-import { MailCheck } from "lucide-react";
+import { MessageSquareMore } from "lucide-react";
 import { toast } from "sonner";
 
 interface AcceptAppointmentAssignmentProps {
@@ -16,15 +17,13 @@ export default function AcceptAppointmentAssignment({disabled = false, routingCo
   const action = async (formData: FormData) => {
 
     formData.append("routingCode", routingCode);
-
-    toast.promise(acceptAppointmentAction(formData), {
+    toast.promise(promiseWrapper(acceptAppointmentAction)(formData), {
       loading: "Accepting appointment assignment...",
       success: (res) => {
-        if(!res.status) return `Something went wrong: ${res.message}`;
         onAccepted?.();
-        return "Appointment assignment accepted successfully."
+        return res.message
       },
-      error: "Failed to accept appointment assignment.",
+      error: error => error
     })
   };
   return (
@@ -32,7 +31,7 @@ export default function AcceptAppointmentAssignment({disabled = false, routingCo
       <TooltipTrigger asChild>
         <form action={action}>
           <ActionButton variant="ghost" size="icon" disabled={disabled}>
-            <MailCheck className="h-4 w-4" />
+            <MessageSquareMore className="h-4 w-4" />
             <span className="sr-only">Accept Assignment</span>
           </ActionButton>
         </form>

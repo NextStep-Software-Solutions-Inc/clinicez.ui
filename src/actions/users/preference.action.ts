@@ -1,7 +1,7 @@
 "use server";
 
 import "server-only";
-import prismaCommon from "@lib/prisma-common";
+import prisma from "@lib/prisma";
 import { getCachedSession } from "@actions/session.action";
 import { getPermissionsAction } from "@actions/permission.action";
 import { PERMISSIONS } from "@lib/permissions";
@@ -12,7 +12,7 @@ export const getMyUserPreferenceAction = async () => {
   const session = await getCachedSession();
   try {
     if(!session) throw new Error("User not authenticated.");
-    const userPreference = await prismaCommon.userPreference.findFirstOrThrow({
+    const userPreference = await prisma.userPreference.findFirstOrThrow({
       where: {
         User: {
           userId: session.user.sub
@@ -73,7 +73,7 @@ export const upsertMyUserPreference = async (payload: UpsertUserPreferencePayloa
     if(!canUpsertUserPreference) throw new Error("You do not have permission to update user preference.");
 
     const { defaultHpId, autoAssignAppointmentToSelf, autoAcceptAppointmentAssignment } = payload;
-    const userPreference = await prismaCommon.userPreference.upsert({
+    const userPreference = await prisma.userPreference.upsert({
       where: {
         id: payload.userPreferenceId,
         User: {
@@ -109,7 +109,7 @@ export const upsertMyUserPreference = async (payload: UpsertUserPreferencePayloa
       data: userPreference
     }
   } catch (error) {
-    console.error(`Error upserting user preference: ${error}`);
+    console.error(`Error upsert-ing user preference: ${error}`);
     let message = "An error occurred while updating user preference.";
     if (error instanceof Error) {
       message = error.message;

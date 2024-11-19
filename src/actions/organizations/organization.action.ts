@@ -1,42 +1,75 @@
 "use server";
 
 import "server-only";
-import prisma from "@lib/prisma-common";
-import { Prisma, UserOrganizationStatus } from "@prisma/common/client";
+import prisma from "@lib/prisma";
 import { cache } from "react";
+import { OrganizationMemberStatus } from "@/types";
+import { getCachedSession } from "@actions/session.action";
+import { withErrorHandling } from "@/lib/with-error-handling";
 
-export const createOrganizationAction = async (data: Prisma.OrganizationCreateArgs["data"]) => {
 
+type CreateOrganizationPayload = {
+  tenantUid: string;
+  orgUid: string;
+  name: string;
+  description: string;
+  logo?: string;
+  customUrl?: string;
+  email: string;
+}
+export const createOrganizationAction = async (data: CreateOrganizationPayload) => {
+
+  const { orgUid, tenantUid, name, description, logo, customUrl, email } = data;
   const newOrganization = await prisma.organization.create({
     data: { 
-      ...data
+      Tenant: {
+        connect: {
+          tenantUid
+        }
+      },
+      orgUid,
+      name,
+      description,
+      logo,
+      customUrl,
+      email,
+      
     }
   });
-  
   return newOrganization;
 };
   
 
-type FiltersType = {
-  userId?: string | null;
-  orgId?: string | null;
-  status?: UserOrganizationStatus | null;
+export type GetOrganizationsFilters = {
+  userId?: string;
+  orgUid?: string;
+  clinicUid?: string;
 }
 
 export type GetOrganizations = Awaited<ReturnType<typeof getOrganizationsAction>>
-export const getOrganizationsAction = cache(async (filters?: FiltersType) => {
+export const getOrganizationsAction = cache(async (filters?: GetOrganizationsFilters) => {
 
-  const { userId } = filters || {};
+  const { userId, clinicUid, orgUid } = filters || {};
   const organizations = await prisma.organization.findMany({
     orderBy: {
       name: "asc"
     },
     where: {
+      ...(orgUid && { orgUid }),
       ...(userId && {
         Users: {
           every: {
             User: {
               userId
+            }
+          }
+        }
+      }),
+      ...(clinicUid && {
+        ClinicOrganizations: {
+          some: {
+            Clinic: {
+              clinicUid
             }
           }
         }
@@ -56,14 +89,14 @@ export const getOrganizationAction = cache(async (key: string | number) => {
       isActive: true,
       OR: [
         {...!isNaN(Number(key))? {id: Number(key)} : {}}, 
-        {orgId: String(key)}
+        {orgUid: String(key)}
       ]
     },
     include: {
       Tenant: {
         select: {
           id: true,
-          tenantId: true
+          tenantUid: true
         }
       },
       OrganizationSetting: true,
@@ -73,11 +106,15 @@ export const getOrganizationAction = cache(async (key: string | number) => {
 })
 
 
-export const getMyDefaultOrganizationAction = cache(async (userId: string) => {
+export const getMyDefaultOrganizationAction = cache(withErrorHandling(async () => {
+  
+  const session = await getCachedSession();
+  if (!session) throw new Error("User not authenticated.");
+
   const org = await prisma.userDefaultOrganization.findFirst({
     where: {
       User: {
-        userId
+        userId: session.user.sub
       }
     },
     select: {
@@ -85,16 +122,16 @@ export const getMyDefaultOrganizationAction = cache(async (userId: string) => {
       Organization: {
         select: {
           name: true,
-          orgId: true,
+          orgUid: true,
           id: true
         }
       }
     }
   })
-  return org;
-})
+  return { message: "Default organization fetched successfully", data: org };
+}))
 
-export const setMyDefaultOrganizationAction = async (id: number, orgId: string, userId?: string) => {
+export const setMyDefaultOrganizationAction = async (id: number, orgUid: string, userId?: string) => {
   const org = await prisma.userDefaultOrganization.upsert({
     where: { id, User: { userId } },
     create: {
@@ -102,7 +139,7 @@ export const setMyDefaultOrganizationAction = async (id: number, orgId: string, 
         connect: { userId }
       },
       Organization: {
-        connect: { orgId }
+        connect: { orgUid }
       },
     },
     update: {
@@ -110,57 +147,57 @@ export const setMyDefaultOrganizationAction = async (id: number, orgId: string, 
         connect: { userId }
       },
       Organization: {
-        connect: { orgId }
+        connect: { orgUid }
       },
     }
   })
   return org;
 }
 
-type UpdateOrganizationArgs = {
+type UpdateOrganizationPayload = {
   name: string;
   description?: string;
-  picture: string;
-  cover?: string;
+  logo: string;
   customUrl?: string;
   email: string;
   isPublic: boolean;
   sendEmailNotification: boolean;
   emailToOrgOnly: boolean;
-  enableAppointment: boolean;
-  enableConsultation: boolean;
 }
-export const updateOrganizationAction = async (orgId: string, data: UpdateOrganizationArgs) => {
+export const updateOrganizationAction = async (orgUid: string, data: UpdateOrganizationPayload) => {
+
+  let message = "Organization updated successfully";
+
   try {
+
+    const session = await getCachedSession();
+    if (!session) throw new Error("User not authenticated.");
+
+    const {name, logo, description, customUrl, email, isPublic, sendEmailNotification, emailToOrgOnly} = data;
     const organization = await prisma.organization.update({
-      where: { orgId, isActive: true },
+      where: { orgUid, isActive: true },
       data: {
-        name: data.name,
-        description: data.description,
-        picture: data.picture,
-        cover: data.cover,
-        customUrl: data.customUrl,
-        email: data.email,
+        name,
+        description,
+        logo,
+        customUrl,
+        email,
         OrganizationSetting: {
           upsert: {
             where:{
               Organization: {
-                orgId
+                orgUid
               }
             },
             create: {
-              isPublic: data.isPublic,
-              sendEmailNotification: data.sendEmailNotification,
-              emailToOrgOnly: data.emailToOrgOnly,
-              enableAppointment: data.enableAppointment,
-              enableConsultation: data.enableConsultation,
+              isPublic,
+              sendEmailNotification,
+              emailToOrgOnly,
             },
             update: {
-              isPublic: data.isPublic,
-              sendEmailNotification: data.sendEmailNotification,
-              emailToOrgOnly: data.emailToOrgOnly,
-              enableAppointment: data.enableAppointment,
-              enableConsultation: data.enableConsultation,
+              isPublic,
+              sendEmailNotification,
+              emailToOrgOnly,
             }
           }
         }
@@ -169,17 +206,11 @@ export const updateOrganizationAction = async (orgId: string, data: UpdateOrgani
         OrganizationSetting: true,
       }
     });
-    return {
-      status: true,
-      message: "Organization updated successfully",
-      data: organization
-    };
+    return { status: true, message, data: organization };
   } catch (error) {
     console.error("Error updating organization", error);
-    return {
-      status: false,
-      message: "Error updating organization",
-      data: null
-    }
+    message = "Error updating organization";
+    if(error instanceof Error) message = error.message;
+    return { status: false, message, data: null}
   }
 }

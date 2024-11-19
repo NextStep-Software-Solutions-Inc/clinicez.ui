@@ -1,14 +1,14 @@
 "use server";
 
-import prismaTenant from "@lib/prisma-tenant";
+import prisma from "@lib/prisma";
 import { cache } from "react";
 
 export type GetSystems = Awaited<ReturnType<typeof getSystemsAction>>;
-export const getSystemsAction = cache(async (orgUid?:string) => {
-  return await prismaTenant.system.findMany({
+export const getSystemsAction = cache(async (clinicUid?:string) => {
+  return await prisma.system.findMany({
     where: { 
       isActive: true,
-      ...orgUid? {orgUid} : {}
+      ...clinicUid? { Clinic: {clinicUid}} : {}
     },
     select: {
       id: true,
@@ -19,14 +19,18 @@ export const getSystemsAction = cache(async (orgUid?:string) => {
 
 type CreateSystemPayload = {
   name: string;
-  orgUid: string;
+  clinicUid: string;
 }
 export const createSystemAction = async (payload: CreateSystemPayload) => {
-  const { name, orgUid } = payload;
+  const { name, clinicUid } = payload;
   try {
-    await prismaTenant.system.create({
+    await prisma.system.create({
       data: {
-        orgUid,
+        Clinic: {
+          connect: {
+            clinicUid
+          }
+        },
         name
       }
     });
@@ -46,7 +50,7 @@ type UpdateSystemPayload = {
 export const updateSystemAction = async (payload: UpdateSystemPayload) => {
   const { id, name } = payload;
   try {
-    await prismaTenant.system.update({
+    await prisma.system.update({
       where: { id, isActive: true },
       data: { name }
     });
@@ -61,7 +65,7 @@ export const updateSystemAction = async (payload: UpdateSystemPayload) => {
 
 export const deleteSystemAction = async (id: number) => {
   try {
-    await prismaTenant.system.update({
+    await prisma.system.update({
       where: { id, isActive: true },
       data: { isActive: false }
     });

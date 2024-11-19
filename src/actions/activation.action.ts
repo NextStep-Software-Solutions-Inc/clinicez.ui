@@ -1,11 +1,9 @@
 "use server";
 
-import prismaCommon from "@lib/prisma-common";
-import { Prisma } from "@prisma/common/client";
+import prisma from "@lib/prisma";
+import { Prisma } from "@prisma/client";
+import dayjs from "@lib/day-utils";
 import crypt from "crypto";
-import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc"
-dayjs.extend(utc)
 
 const lastCallTimes = new Map<string, number>();
 const throttleDuration = 1000 * 60 * 5; // 5 minutes
@@ -18,7 +16,7 @@ export const createActivationCodeAction = async (email: string): Promise<string 
   }
 
   const code = await codePromise();
-  await prismaCommon.activationCode.create({
+  await prisma.activationCode.create({
     data: {
       code,
       User: {
@@ -43,8 +41,8 @@ const codePromise = () => new Promise<string>((resolve, reject) => {
 });
 
 export const verifyActivationCodeAction = async (email: string, code: string) => {
-  return await prismaCommon.$transaction(async (prismaCommon) => {
-    await prismaCommon.activationCode.findUniqueOrThrow({
+  return await prisma.$transaction(async (prisma) => {
+    await prisma.activationCode.findUniqueOrThrow({
       where: {
         code,
         expiresAt: { gte: new Date() },
@@ -53,7 +51,7 @@ export const verifyActivationCodeAction = async (email: string, code: string) =>
       }
     });
 
-    await prismaCommon.activationCode.update({ 
+    await prisma.activationCode.update({ 
       where: { code },
       data: { isUsed: true }
     });

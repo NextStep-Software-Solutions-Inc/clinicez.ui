@@ -1,7 +1,7 @@
 "use server";
 
-import prisma from "@lib/prisma-common";
-import { AddressItemProps } from "../app/(main)/user/[user]/phr/address/AddressItem";
+import prisma from "@lib/prisma";
+import { AddressItemProps } from "@/app/(main)/user/[user]/phr/address/AddressItem";
 
 export const getAddressesAction = async (userId: string) => {
   return await prisma.userAddress.findMany({

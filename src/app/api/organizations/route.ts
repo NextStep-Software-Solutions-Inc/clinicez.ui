@@ -1,5 +1,6 @@
 "use server";
 
+import { parseObject } from "@/lib/utils";
 import { createOrganizationAction, getOrganizationsAction } from "@actions/organizations/organization.action";
 import { withJwtAuth } from "@middlewares/withJwtAuth";
 import { NextRequest, NextResponse } from "next/server";
@@ -7,15 +8,18 @@ import { z } from "zod";
 
 
 const createOrganizationSchema = z.object({
-  orgId: z.string({
+  orgUid: z.string({
     required_error: "Organization ID is required",
   }),
   name: z.string({
     required_error: "Name is required",
   }),
-  description: z.string().optional().nullable(),
-  tenantId: z.number({
+  description: z.string(),
+  tenantUid: z.string({
     required_error: "Tenant ID is required",
+  }),
+  email: z.string({
+    required_error: "Email is required",
   }),
 })
 
@@ -30,7 +34,9 @@ export const POST = withJwtAuth(async (req: NextRequest) => {
 
 export const GET = withJwtAuth(async (req: NextRequest) => {
 
-  const organizations = await getOrganizationsAction();
+  const searchParams = new URLSearchParams(req.nextUrl.searchParams);
+  const filters = parseObject(Object.fromEntries(searchParams.entries()));
+  const organizations = await getOrganizationsAction(filters);
   return NextResponse.json(organizations, {status: 200});
 });
   

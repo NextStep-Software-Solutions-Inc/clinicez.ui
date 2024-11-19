@@ -34,13 +34,13 @@ export const useAppointmentTools = ({ appointment, revalidate}:UseAppointmentToo
   const {data: authHps} = useHPs({
     userId: user?.sub ?? undefined
   })
-  const routingCode = appointment?.AppointmentRouting.find(r => authHps?.some(hp => hp.id === Number(r.routedTo) && r.status === "PENDING"))?.routingCode
+  const routingCode = appointment?.AppointmentRouting.find(r => authHps?.some(hp => hp.id === r.RoutedTo.id && r.status === "PENDING"))?.routingCode
   if(!appointment) return { tools: [] }
-  const patientId = appointment.Requesters[0].userId
+  const patientId = appointment.Requesters[0].User.userId
   const tools: AppointmentStatusTools = [
     {
       action:"accept",
-      permissions: [PERMISSIONS.CLINIC["ACCEPT:ORG:APPOINTMENT_ASSIGNMENT"].name],
+      permissions: [PERMISSIONS.CLINIC["ACCEPT:CLINIC:APPOINTMENT_ASSIGNMENT"].name],
       appointmentStatuses: ["all", "routed"],
       routedAptStatuses: ["pending"],
       component: routingCode ? (
@@ -54,7 +54,7 @@ export const useAppointmentTools = ({ appointment, revalidate}:UseAppointmentToo
     },
     {
       action:"decline",
-      permissions: [PERMISSIONS.CLINIC["DECLINE:ORG:APPOINTMENT_ASSIGNMENT"].name],
+      permissions: [PERMISSIONS.CLINIC["DECLINE:CLINIC:APPOINTMENT_ASSIGNMENT"].name],
       appointmentStatuses: ["all", "routed"],
       routedAptStatuses: ["pending"],
       component: routingCode ? (
@@ -68,7 +68,7 @@ export const useAppointmentTools = ({ appointment, revalidate}:UseAppointmentToo
     },
     {
       action:"receive",
-      permissions: [PERMISSIONS.CLINIC["RECEIVE:ORG:APPOINTMENT"].name],
+      permissions: [PERMISSIONS.CLINIC["RECEIVE:CLINIC:APPOINTMENT"].name],
       appointmentStatuses: ["all", "pending"],
       routedAptStatuses: [],
       component: <ReceiveAppointment 
@@ -80,7 +80,7 @@ export const useAppointmentTools = ({ appointment, revalidate}:UseAppointmentToo
     },
     {
       action:"reject",
-      permissions: [PERMISSIONS.CLINIC["REJECT:ORG:APPOINTMENT"].name],
+      permissions: [PERMISSIONS.CLINIC["REJECT:CLINIC:APPOINTMENT"].name],
       appointmentStatuses: ["all", "accepted", "pending"],
       routedAptStatuses: [],
       component: (
@@ -94,7 +94,7 @@ export const useAppointmentTools = ({ appointment, revalidate}:UseAppointmentToo
     },
     {
       action:"create-consultation-ticket",
-      permissions: [PERMISSIONS.CLINIC["CREATE:ORG:CONSULTATION_TICKET"].name],
+      permissions: [PERMISSIONS.CLINIC["CREATE:CLINIC:CONSULTATION_TICKET"].name],
       appointmentStatuses: ["routed"],
       routedAptStatuses: ["accepted"],
       component: (
@@ -108,7 +108,7 @@ export const useAppointmentTools = ({ appointment, revalidate}:UseAppointmentToo
     },
     {
       action:"assign",
-      permissions: [PERMISSIONS.CLINIC["ASSIGN:ORG:APPOINTMENT"].name],
+      permissions: [PERMISSIONS.CLINIC["ASSIGN:CLINIC:APPOINTMENT"].name],
       appointmentStatuses: ["received", "routed"],
       routedAptStatuses: [],
       component: (
@@ -122,7 +122,7 @@ export const useAppointmentTools = ({ appointment, revalidate}:UseAppointmentToo
     },
     {
       action:"reschedule",
-      permissions: [PERMISSIONS.CLINIC["RESCHEDULE:ORG:APPOINTMENT"].name],
+      permissions: [PERMISSIONS.CLINIC["RESCHEDULE:CLINIC:APPOINTMENT"].name],
       appointmentStatuses: ["received", "routed"],
       routedAptStatuses: ["accepted"],
       component: (
@@ -136,7 +136,7 @@ export const useAppointmentTools = ({ appointment, revalidate}:UseAppointmentToo
     },
     {
       action:"add-vitals",
-      permissions: [PERMISSIONS.CLINIC["WRITE:ORG:VITAL_SIGNS"].name],
+      permissions: [PERMISSIONS.CLINIC["WRITE:CLINIC:VITAL_SIGNS"].name],
       appointmentStatuses: ["received", "routed"],
       routedAptStatuses: [],
       component: (
@@ -155,7 +155,7 @@ export const useAppointmentTools = ({ appointment, revalidate}:UseAppointmentToo
     },
     {
       action:"confirm-booking",
-      permissions: [PERMISSIONS.CLINIC["CONFIRM:ORG:APPOINTMENT"].name],
+      permissions: [PERMISSIONS.CLINIC["CONFIRM:CLINIC:APPOINTMENT"].name],
       appointmentStatuses: ["routed"],
       routedAptStatuses: ["accepted"],
       component: (

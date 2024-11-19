@@ -11,12 +11,14 @@ import { useSystems } from "@hooks/useSystem";
 import { deleteSystemAction, GetSystems } from "@actions/system.action";
 import AddSystemModal from "./modal/AddSystemModal";
 import UpdateSystemModal from "./modal/UpdateSystemModal";
+import { useActions } from "@/hooks/useAction";
+import { GetActions } from "@/actions/consultation/action.action";
 
 interface ActionListProps {
 }
 export default function ActionList({}:ActionListProps) {
-  const params = useParams<{organization: string}>()
-  const {data: systems, isLoading, mutate} = useSystems(params.organization)
+  const params = useParams<{clinicUid: string}>()
+  const {data: actions, isLoading, mutate} = useActions()
 
   const deleteServiceCategory = (id: number) => {
     toast.promise(deleteSystemAction(id), {
@@ -37,27 +39,27 @@ export default function ActionList({}:ActionListProps) {
       <CardHeader>
         <CardTitle className="flex flex-wrap items-center justify-between gap-2">
           <span>
-            Systems 
+            Actions 
           </span>
-          <AddSystemModal orgUid={params.organization} onAddSystem={mutate}/>
+          <AddSystemModal clinicUid={params.clinicUid} onAddSystem={mutate}/>
         </CardTitle>
         <CardDescription>
-          Systems are used to categorize appointments. You can create, edit, and delete systems here.
+          Actions are used in the intervention process. You can create, edit, and delete actions here.
         </CardDescription>
       </CardHeader>
       <CardContent>
         <div>
           <Each
-            of={systems ?? []}
-            render={(system) => {
+            of={actions?.data ?? []}
+            render={(action) => {
               return (
                 <ListItem 
-                  key={system.id}
-                  name={system.name}
+                  key={action.id}
+                  name={action.name}
                   actions={<Actions
-                    system={system}
+                    action={action}
                     deleteAction={() => {
-                      deleteServiceCategory(system.id)
+                      deleteServiceCategory(action.id)
                     }}
                     editAction={mutate}
                   />}
@@ -93,15 +95,15 @@ export const ListItem = ({name,actions, description}: ListItemProps) => {
 }
 
 interface ActionsProps {
-  system: GetSystems[number];
+  action: GetActions["data"][number];
   editAction?: () => void;
   deleteAction?: () => void;
 }
-export const Actions = ({deleteAction, editAction, system}: ActionsProps) => {
+export const Actions = ({deleteAction, editAction, action}: ActionsProps) => {
   return (
     <div className="flex gap-1">
       <UpdateSystemModal
-        system={system}
+        system={action}
         onUpdateSystem={editAction}
       />
       <Button onClick={deleteAction} variant="ghost" size="icon" >

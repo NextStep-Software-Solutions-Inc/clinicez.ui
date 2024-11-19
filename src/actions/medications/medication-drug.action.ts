@@ -1,142 +1,134 @@
 "use server";
 
 import "server-only";
-import prismaTenant from "@lib/prisma-tenant";
+import prisma from "@lib/prisma";
 import { getCachedSession } from "@actions/session.action";
 import { hasCodeProperty } from "@lib/utils";
 import { getPermissionsAction } from "@actions/permission.action";
 import { PERMISSIONS } from "@lib/permissions";
+import { withErrorHandling } from "@/lib/with-error-handling";
 
 export type GetMedicationDrugs = Awaited<ReturnType<typeof getMedicationDrugsAction>>;
-export const getMedicationDrugsAction = async (medicationId: number) => {
-  let message = "Successfully fetched medication drugs";
-  try {
-    const session = await getCachedSession();
-    if(!session) throw new Error("Unauthorized");
+export const getMedicationDrugsAction = withErrorHandling(async (medicationId: number) => {
 
-    const [myPermissions] = await Promise.all([
-      getPermissionsAction({ userId: session.user.sub, type: "ORGANIZATION" }),
-    ]);
+  const session = await getCachedSession();
+  if(!session) throw new Error("Unauthorized");
 
-    const myPermissionArray = myPermissions.map(permission => permission.name);
+  const [myPermissions] = await Promise.all([
+    getPermissionsAction({ userId: session.user.sub, type: "CLINIC" }),
+  ]);
 
-    const readMedicationDrugPermissions = [PERMISSIONS.CLINIC["READ:CLINIC:MEDICATION_DRUG"].name]
-    const canReadMedicationDrug = readMedicationDrugPermissions.every(permission => myPermissionArray.includes(permission));
+  const myPermissionArray = myPermissions.map(permission => permission.name);
 
-    if(!canReadMedicationDrug) throw new Error("You do not have permission to remove medication drug");
+  const readMedicationDrugPermissions = [PERMISSIONS.CLINIC["READ:CLINIC:MEDICATION_DRUG"].name]
+  const canReadMedicationDrug = readMedicationDrugPermissions.every(permission => myPermissionArray.includes(permission));
 
-    const medicationDrugs = await prismaTenant.medicationDrug.findMany({
-      where: {
-        medicationId
+  if(!canReadMedicationDrug) throw new Error("You do not have permission to remove medication drug");
+
+  const medicationDrugs = await prisma.medicationDrug.findMany({
+    where: {
+      medicationId
+    },
+    select: {
+      id: true,
+      Drug: {
+        select: {
+          brandName: true,
+          genericName: true,
+        }
       },
-      select: {
-        id: true,
-        Drug: {
-          select: {
-            brandName: true,
-            genericName: true,
-          }
-        },
-        dosage: true,
-        quantity: true,
-        unit: true,
-        isGeneric: true,
-        notes: true,
-        daysCount: true
-      }
-    })
-    return { status: true, message, data: medicationDrugs }
-  } catch (error) {
-    console.error(`Error while fetching medication drugs: ${error}`);
-    if (error instanceof Error) message = error.message;
-    if(hasCodeProperty(error) && error.code === "P2002") message = "Medication drugs not found";
-    return { status: false, message, data: [] };
-  }
-}
+      dosage: true,
+      frequency: true,
+      unit: true,
+      isGeneric: true,
+      notes: true,
+      duration: true
+    }
+  })
+  return {message: "Successfully fetched medication drugs", data: medicationDrugs }
+ 
+}, error => {
+  if(hasCodeProperty(error) && error.code === "P2002") return "Medication drugs not found";
+  return "Failed to fetch medication drugs";
+})
 
 type AddMedicationDrugPayload = {
   drugId: number,
   medicationId: number,
   dosage: string,
-  quantity: number,
+  duration: number,
   unit: string,
   notes?: string,
-  daysCount?: number
+  frequency: string
   isGeneric?: boolean
 }
-export const addMedicationDrugAction = async (payload: AddMedicationDrugPayload) => {
-  let message = "Successfully added medication drug";
-  try {
-    const session = await getCachedSession();
-    if(!session) throw new Error("Unauthorized");
+export const addMedicationDrugAction = withErrorHandling(async (payload: AddMedicationDrugPayload) => {
 
-    const [myPermissions] = await Promise.all([
-      getPermissionsAction({ userId: session.user.sub, type: "ORGANIZATION" }),
-    ]);
+  const session = await getCachedSession();
+  if(!session) throw new Error("Unauthorized");
 
-    const myPermissionArray = myPermissions.map(permission => permission.name);
+  const [myPermissions] = await Promise.all([
+    getPermissionsAction({ userId: session.user.sub, type: "CLINIC" }),
+  ]);
 
-    const addMedicationDrugPermissions = [PERMISSIONS.CLINIC["ADD:CLINIC:MEDICATION_DRUG"].name]
-    const canAddMedicationDrug = addMedicationDrugPermissions.every(permission => myPermissionArray.includes(permission));
+  const myPermissionArray = myPermissions.map(permission => permission.name);
 
-    if(!canAddMedicationDrug) throw new Error("You do not have permission to add medication drug");
+  const addMedicationDrugPermissions = [PERMISSIONS.CLINIC["ADD:CLINIC:MEDICATION_DRUG"].name]
+  const canAddMedicationDrug = addMedicationDrugPermissions.every(permission => myPermissionArray.includes(permission));
 
-    const { drugId, medicationId, dosage, quantity, unit, notes, daysCount, isGeneric } = payload;
+  if(!canAddMedicationDrug) throw new Error("You do not have permission to add medication drug");
 
-    await prismaTenant.medicationDrug.create({
-      data: {
-        medicationId,
-        drugId,
-        dosage,
-        quantity,
-        unit,
-        notes,
-        isGeneric,
-        daysCount
+  const { drugId, medicationId, dosage, frequency, unit, notes, duration, isGeneric } = payload;
+
+  await prisma.medicationDrug.create({
+    data: {
+      medicationId,
+      drugId,
+      dosage,
+      frequency,
+      unit,
+      notes,
+      isGeneric,
+      duration
+    }
+  })
+
+  return { message: "Successfully added medication drug", data: {} }
+
+}, error => {
+  if(hasCodeProperty(error) && error.code === "P2002") return "Medication drug already exists";
+  return "Failed to add medication drug";
+})
+
+
+export const removeMedicationDrugAction = withErrorHandling(async (medicationDrugId: number) => {
+
+  const session = await getCachedSession();
+  if(!session) throw new Error("Unauthorized");
+
+  const [myPermissions] = await Promise.all([
+    getPermissionsAction({ userId: session.user.sub, type: "CLINIC" }),
+  ]);
+
+  const myPermissionArray = myPermissions.map(permission => permission.name);
+
+  const addMedicationDrugPermissions = [PERMISSIONS.CLINIC["REMOVE:CLINIC:MEDICATION_DRUG"].name]
+  const canAddMedicationDrug = addMedicationDrugPermissions.every(permission => myPermissionArray.includes(permission));
+
+  if(!canAddMedicationDrug) throw new Error("You do not have permission to remove medication drug");
+
+  await prisma.medicationDrug.delete({
+    where: {
+      id: medicationDrugId,
+      Medication: {
+        completedAt: null
       }
-    })
+    }
+  })
 
-    return { status: true, message, data: {} }
-  } catch (error) {
-    console.error(`Error while adding medication drug: ${error}`);
-    if (error instanceof Error) message = error.message;
-    if(hasCodeProperty(error) && error.code === "P2002") message = "Medication drug already exists";
-    return { status: false, message, data: {} };
-  }
-}
+  return {message: "Successfully deleted medication drug", data: undefined }
 
-
-export const removeMedicationDrugAction = async (medicationDrugId: number) => {
-  let message = "Successfully deleted medication drug";
-  try {
-    const session = await getCachedSession();
-    if(!session) throw new Error("Unauthorized");
-
-    const [myPermissions] = await Promise.all([
-      getPermissionsAction({ userId: session.user.sub, type: "ORGANIZATION" }),
-    ]);
-
-    const myPermissionArray = myPermissions.map(permission => permission.name);
-
-    const addMedicationDrugPermissions = [PERMISSIONS.CLINIC["REMOVE:CLINIC:MEDICATION_DRUG"].name]
-    const canAddMedicationDrug = addMedicationDrugPermissions.every(permission => myPermissionArray.includes(permission));
-
-    if(!canAddMedicationDrug) throw new Error("You do not have permission to remove medication drug");
-
-    await prismaTenant.medicationDrug.delete({
-      where: {
-        id: medicationDrugId,
-        Medication: {
-          completedAt: null
-        }
-      }
-    })
-
-    return { status: true, message }
-  } catch (error) {
-    console.error(`Error while deleting medication drug: ${error}`);
-    if (error instanceof Error) message = error.message;
-    if(hasCodeProperty(error) && error.code === "P2025") message = "Medication drug not found";
-    return { status: false, message };
-  }
-}
+}, error => {
+  if(hasCodeProperty(error) && error.code === "P2025") return  "Medication drug not found";
+  return "Failed to delete medication drug";
+})

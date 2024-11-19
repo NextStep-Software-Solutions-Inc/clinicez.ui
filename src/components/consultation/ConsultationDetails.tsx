@@ -18,7 +18,6 @@ import Each from "@components/utils/Each";
 import { Fragment } from "react";
 import EMRPreviewSheet from "@components/EMRPreviewSheet";
 import { Button } from "@components/ui/button";
-import { notFound } from "next/navigation";
 
 const VitalSigns = dynamic(() => import('./VitalSigns'), { ssr: false, loading: () => <div>Loading...</div> });
 const Conversation = dynamic(() => import('./Conversation'), { ssr: false, loading: () => <div>Loading...</div> });
@@ -30,21 +29,19 @@ interface ConsultationDetailsProps {
   consultation: NonNullable<GetConsultationTicket["data"]>
 }
 export default async function ConsultationDetails({ consultation }: ConsultationDetailsProps) {
-  const appointment = await getAppointmentAction(consultation?.appointmentId ?? 0);
+  const appointment = await getAppointmentAction(consultation?.appointmentId ?? 0, consultation.Clinic.clinicUid);
   
-  const [user, creators] = await Promise.all([
-    await getUserAction(appointment.data?.Requesters[0].userId ?? ""),
-    await getHpsByIdsAction(consultation.ConsultationTicketAuthors.map(c => Number(c.hpId))),
+  const [creators] = await Promise.all([
+    await getHpsByIdsAction(consultation.ConsultationTicketHPs.map(c => Number(c.hpId))),
   ]);
 
-  if(!user.data) notFound();
   return (
     <>
-      <PatientHpDetails creators={creators} user={user.data}/>
+      <PatientHpDetails creators={creators} user={appointment.data?.Requesters[0].User!}/>
       <BackgroundInfo 
         appointment={appointment.data} 
         consultation={consultation} 
-        user={user.data}
+        user={appointment.data?.Requesters[0].User!}
       />
     </>
   );
@@ -53,7 +50,18 @@ export default async function ConsultationDetails({ consultation }: Consultation
 interface BackgroundInfoProps {
   appointment: GetAppointment["data"]
   consultation: ConsultationDetailsProps["consultation"]
-  user: NonNullable<GetUser["data"]>
+  user: {
+    id: number;
+    userId: string;
+    firstName: string | null;
+    middleName: string | null;
+    lastName: string | null;
+    suffix: string | null;
+    gender: string | null;
+    picture: string | null;
+    nickname: string | null;
+    dob: Date | null;
+  }
 }
 export const BackgroundInfo = ({ appointment, consultation, user }: BackgroundInfoProps) => {
   return (
@@ -134,18 +142,27 @@ export const BackgroundInfo = ({ appointment, consultation, user }: BackgroundIn
 
 interface PatientHpDetailsProps {
   creators: GetHpsByIds
-  user: NonNullable<GetUser["data"]>
+  user: {
+    id: number;
+    userId: string;
+    firstName: string | null;
+    middleName: string | null;
+    lastName: string | null;
+    suffix: string | null;
+    gender: string | null;
+    picture: string | null;
+    nickname: string | null;
+    dob: Date | null;
+  }
 }
 export const PatientHpDetails = ({ creators = [], user }: PatientHpDetailsProps) => {
-  const patientId = user.userId
-  const patientName = `${user.firstName} ${user.middleName} ${user.lastName} ${user.suffix ?? ""}`
   return (
     <div className="flex flex-wrap gap-2 justify-between">
       <Card className="grow">
         <CardHeader>
           <CardTitle className="">Patient Details</CardTitle>
         </CardHeader>
-        <CardContent className="flex gap-2 items-center justify-between">
+        <CardContent className="flex gap-3 items-center justify-between">
           <div className="flex gap-2 items-center">
             <Avatar>
               {user.picture
@@ -157,13 +174,13 @@ export const PatientHpDetails = ({ creators = [], user }: PatientHpDetailsProps)
             <div className="flex flex-col">
               <span className="text-sm font-semibold">{user.firstName} {user.lastName}</span>
               <div className="text-xs text-muted-foreground">
-                <Badge>{user.gender}</Badge> / <span>{user.dob && differenceInCalendarYears(new Date(), user.dob)}</span>
+                {user.gender?.charAt(0)} / <span>{user.dob && differenceInCalendarYears(new Date(), user.dob)}</span>
               </div>
             </div>
           </div>
           <div>
             <Tooltip>
-              <EMRPreviewSheet record={{ id: patientId, subject:patientName}}>
+              <EMRPreviewSheet>
                 <TooltipTrigger asChild>
                   <Button size="icon" variant="link">
                     <FolderHeart className="w-6 h-6"/>
@@ -186,7 +203,7 @@ export const PatientHpDetails = ({ creators = [], user }: PatientHpDetailsProps)
             of={creators}
             render={(creator, index) => (
               <Fragment key={creator.id} >
-                <div className="flex gap-2 items-center">
+                <div className="flex gap-3 items-center">
                   <Avatar>
                     {
                       creator?.HPProfile?.picture
@@ -198,7 +215,7 @@ export const PatientHpDetails = ({ creators = [], user }: PatientHpDetailsProps)
                   <div className="flex flex-col">
                     <span className="text-sm font-semibold">{creator?.HPProfile?.title} {creator?.HPProfile?.name} {creator?.HPProfile?.suffix}</span>
                     <div className="text-xs text-muted-foreground">
-                      <Badge>{creator?.HPProfile?.fields}</Badge> / <span>{creator.HPType.name}</span>
+                      <Badge variant="secondary">{creator?.HPProfile?.fields}</Badge> / <span>{creator.HPType.name}</span>
                     </div>
                   </div>
                 </div>

@@ -1,5 +1,5 @@
 "use server";
-import prisma from "@lib/prisma-common";
+import prisma from "@lib/prisma";
 import { revalidatePath } from "next/cache";
 
 type CreateFileType = {
@@ -51,13 +51,6 @@ export const getFilesAction = async (userId: string) => {
       FileType: {
         select: {
           name: true,
-          FileTypeAttribute: {
-            select: {
-              required: true,
-              validUntil: true,
-              scopeOrgId: true
-            }
-          }
         }
       
       }

@@ -1,6 +1,6 @@
 "use client";
 
-import { GetOrgServiceCategories, updateOrgServiceCategoryAction } from "@actions/organizations/org-service-category.action";
+import { GetClinicServiceCategories, updateClinicServiceCategoryAction } from "@/actions/clinics/clinic-service-category.action";
 import ActionButton from "@components/ActionButton";
 import CustomModalContent from "@components/CustomModalContent";
 import { Button } from "@components/ui/button";
@@ -30,7 +30,7 @@ const updatedServiceCategorySchema = z.object({
 });
 
 interface UpdateServiceCategoryModalProps {
-  serviceCategory: GetOrgServiceCategories[number];
+  serviceCategory: GetClinicServiceCategories[number];
   onUpdateServiceCategory?: () => void;
 }
 export default function UpdateServiceCategoryModal({serviceCategory, onUpdateServiceCategory}:UpdateServiceCategoryModalProps) {
@@ -45,7 +45,7 @@ export default function UpdateServiceCategoryModal({serviceCategory, onUpdateSer
 
   const action = async () => {
     form.handleSubmit(async (values) => {
-      toast.promise(updateOrgServiceCategoryAction({
+      toast.promise(updateClinicServiceCategoryAction({
         id: serviceCategory.id,
         name: values.name,
         description: values.description,

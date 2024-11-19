@@ -8,6 +8,7 @@ import { getHPsAction } from '@actions/hp.actions';
 import { getPermissionsAction } from '@actions/permission.action';
 import { PERMISSIONS } from '@lib/permissions';
 import { hasCodeProperty } from '@lib/utils';
+import { withErrorHandling } from '@/lib/with-error-handling';
 
 type CreateConsultationTicketPayload = {
   systemId: number;
@@ -17,77 +18,59 @@ type CreateConsultationTicketPayload = {
   hpIds: number[]
 }
 
-export const createConsultationTicketAction = async ({systemId, appointmentId, clinicUid, subject, hpIds}: CreateConsultationTicketPayload) => {
-  const session = await getCachedSession()
+export const createConsultationTicketAction = withErrorHandling(async ({systemId, appointmentId, clinicUid, subject, hpIds}: CreateConsultationTicketPayload) => {
   
-  try {
-    if(!session) throw new Error("Unauthorized")
+  const session = await getCachedSession()
+  if(!session) throw new Error("Unauthorized")
 
-    const myPermissions = await getPermissionsAction({ userId:session.user.sub, type: "CLINIC" })
-    const userPermissionArray = myPermissions.map(p => p.name);
-    const createConsultationTicketPermissions = [PERMISSIONS.CLINIC["CREATE:CLINIC:CONSULTATION_TICKET"].name]
-    const canCreateConsultationTicket = createConsultationTicketPermissions.some(p => userPermissionArray.includes(p))
+  const myPermissions = await getPermissionsAction({ userId:session.user.sub, type: "CLINIC" })
+  const userPermissionArray = myPermissions.map(p => p.name);
+  const createConsultationTicketPermissions = [PERMISSIONS.CLINIC["CREATE:CLINIC:CONSULTATION_TICKET"].name]
+  const canCreateConsultationTicket = createConsultationTicketPermissions.some(p => userPermissionArray.includes(p))
 
-    if(!canCreateConsultationTicket) throw new Error("You do not have permission to create consultation tickets")
+  if(!canCreateConsultationTicket) throw new Error("You do not have permission to create consultation tickets")
       
-      
-    const consultationTicket = await prisma.$transaction(async (prisma) => {
-      const consultationConfig = await prisma.consultationConfig.findFirstOrThrow({
-        where: {
-          Clinic: {
-            clinicUid
-          }
+  const consultationTicket = await prisma.$transaction(async (prisma) => {
+    const consultationConfig = await prisma.consultationConfig.findFirstOrThrow({
+      where: {
+        Clinic: {
+          clinicUid
         }
-      })
+      }
+    })
 
-      return await prisma.consultationTicket.create({
-        data: {
-          System: {
-            connect: {id: systemId}
-          },
-          Appointment: {
-            connect: {id: appointmentId}
-          },
-          Clinic: {
-            connect: { clinicUid }
-          },
-          ConsultationTicketHPs: {
-            createMany: {
-              data: hpIds.map(hpId => ({hpId}))
-            }
-          },
-          subject,
-          ConsultationTicketAttribute:{
-            create: {
-              status: "PROCESSING",
-              NoteTemplate: {
-                connect: {
-                  id: consultationConfig.noteTemplateId
-                }
+    return await prisma.consultationTicket.create({
+      data: {
+        System: {
+          connect: {id: systemId}
+        },
+        Appointment: {
+          connect: {id: appointmentId}
+        },
+        Clinic: {
+          connect: { clinicUid }
+        },
+        ConsultationTicketHPs: {
+          createMany: {
+            data: hpIds.map(hpId => ({hpId}))
+          }
+        },
+        subject,
+        ConsultationTicketAttribute:{
+          create: {
+            status: "PROCESSING",
+            NoteTemplate: {
+              connect: {
+                id: consultationConfig.noteTemplateId
               }
             }
           }
         }
-      })
+      }
     })
-    return {
-      status: true,
-      message: "Consultation Ticket created successfully",
-      data: consultationTicket
-    }
-  } catch (error) {
-    console.error(`Error creating consultation ticket: ${error}`);
-    let message = "Failed to create consultation record"
-    if(error instanceof Error) {
-      message = error.message
-    }
-    return {
-      status: false,
-      message,
-      data: null
-    }
-  }
-}
+  })
+  return { message: "Consultation Ticket created successfully", data: consultationTicket }
+})
 
 export type GetConsultationTicket = Awaited<ReturnType<typeof getConsultationTicketAction>>;
 export const getConsultationTicketAction = cache(async (consultationId: number, clinicUid: string) => {

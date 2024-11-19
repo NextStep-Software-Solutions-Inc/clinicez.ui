@@ -1,5 +1,6 @@
 "use client";
 
+import { promiseWrapper } from "@/lib/with-error-handling";
 import { GetAppointment } from "@actions/appointments/appointments.action";
 import { createConsultationTicketAction } from "@actions/consultation/consultation-ticket.action";
 import { useUser } from "@auth0/nextjs-auth0/client";
@@ -78,22 +79,21 @@ export default function CreateConsultationTicketModal({disabled = false, subject
 
 
   const action = async () => {
+    
     form.handleSubmit(async (data) => {
       const subject = data.subject
       const systemId = data.systemId
       const hpId = Number(data.hpId)
-      const hpIds = new Set([hpId, ...appointment.AppointmentRouting.filter(r => r.status === "ACCEPTED").map(r => r.RoutedTo.HPProfile?.id!)])
-      toast.promise(createConsultationTicketAction({appointmentId, clinicUid, subject, systemId, hpIds : [...hpIds]}), {
+      const hpIds = new Set([hpId, ...appointment.AppointmentRouting.filter(r => r.status === "ACCEPTED").map(r => r.RoutedTo?.id!)])
+      toast.promise(promiseWrapper(createConsultationTicketAction)({appointmentId, clinicUid, subject, systemId, hpIds : [...hpIds]}), {
         loading: "Creating consultation ticket...",
         success: (res) => {
-          if(res.status) {
-            closeBtnRef.current?.click()
-            mutate()
-            data.openTicket && router.push(`/clinics/${clinicUid}/consultations/${res.data?.id}?${searchParams.toString()}`);
-          }
+          closeBtnRef.current?.click()
+          mutate()
+          data.openTicket && router.push(`/clinics/${clinicUid}/consultations/${res.data?.id}?${searchParams.toString()}`);
           return res.message
         },
-        error: "Failed to create consultation ticket"
+        error: error => error
       })
     })()
   }

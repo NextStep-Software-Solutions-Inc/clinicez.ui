@@ -9,7 +9,7 @@ import Each from "@components/utils/Each"
 import { GetAppointments } from "@actions/appointments/appointments.action"
 import { Separator } from "@components/ui/separator"
 import { ArrowRight } from "lucide-react";
-import dayjs from "@/lib/day-utils
+import dayjs from "@/lib/day-utils"
 import { formatDateTime } from "@/lib/day-utils";
 
 interface AppointmentListProps {

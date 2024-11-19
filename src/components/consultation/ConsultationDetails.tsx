@@ -162,7 +162,7 @@ export const PatientHpDetails = ({ creators = [], user }: PatientHpDetailsProps)
         <CardHeader>
           <CardTitle className="">Patient Details</CardTitle>
         </CardHeader>
-        <CardContent className="flex gap-2 items-center justify-between">
+        <CardContent className="flex gap-3 items-center justify-between">
           <div className="flex gap-2 items-center">
             <Avatar>
               {user.picture
@@ -174,7 +174,7 @@ export const PatientHpDetails = ({ creators = [], user }: PatientHpDetailsProps)
             <div className="flex flex-col">
               <span className="text-sm font-semibold">{user.firstName} {user.lastName}</span>
               <div className="text-xs text-muted-foreground">
-                <Badge>{user.gender}</Badge> / <span>{user.dob && differenceInCalendarYears(new Date(), user.dob)}</span>
+                {user.gender?.charAt(0)} / <span>{user.dob && differenceInCalendarYears(new Date(), user.dob)}</span>
               </div>
             </div>
           </div>
@@ -203,7 +203,7 @@ export const PatientHpDetails = ({ creators = [], user }: PatientHpDetailsProps)
             of={creators}
             render={(creator, index) => (
               <Fragment key={creator.id} >
-                <div className="flex gap-2 items-center">
+                <div className="flex gap-3 items-center">
                   <Avatar>
                     {
                       creator?.HPProfile?.picture
@@ -215,7 +215,7 @@ export const PatientHpDetails = ({ creators = [], user }: PatientHpDetailsProps)
                   <div className="flex flex-col">
                     <span className="text-sm font-semibold">{creator?.HPProfile?.title} {creator?.HPProfile?.name} {creator?.HPProfile?.suffix}</span>
                     <div className="text-xs text-muted-foreground">
-                      <Badge>{creator?.HPProfile?.fields}</Badge> / <span>{creator.HPType.name}</span>
+                      <Badge variant="secondary">{creator?.HPProfile?.fields}</Badge> / <span>{creator.HPType.name}</span>
                     </div>
                   </div>
                 </div>

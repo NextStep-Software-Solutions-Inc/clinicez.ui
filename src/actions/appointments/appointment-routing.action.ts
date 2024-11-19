@@ -127,7 +127,11 @@ export const declineAppointmentAction = withErrorHandling(async (formData: FormD
     data: { 
       status: 'DECLINED',
       amendedAt: new Date(),
-      amendedBy: session.user.sub,
+      AmendedBy: {
+        connect: {
+          userId: session.user.sub
+        }
+      },
       amendment: reason
     },
   })

@@ -40,6 +40,7 @@ import { useHPs } from "@hooks/useHP";
 import { sessionClinicAtom } from "@state/session-clinic";
 import { useAtomValue } from "jotai";
 import { Pill } from "lucide-react";
+import { useParams } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -64,8 +65,8 @@ const createPrescriptionFormSchema = z.object({
 
 export default function CreateMedicationModal({onCreated, consultation}: CreateMedicationModalProps) {
   const { user } = useUser();
+  const {clinicUid} = useParams<{clinicUid: string}>()
   const closeBtnRef = useRef<HTMLInputElement>(null);
-  const sessionClinicValue = useAtomValue(sessionClinicAtom);
   
   const { data: myHps } = useHPs({
     userId: user?.sub ?? ""
@@ -80,13 +81,10 @@ export default function CreateMedicationModal({onCreated, consultation}: CreateM
 
   const action = async () => {
     form.handleSubmit((data) => {
-      if(!sessionClinicValue?.clinicId) {
-        toast.error("Clinic UID is required");
-        return;
-      }
+      
       toast.promise(createMedicationAction({
         ...data, 
-        clinicId: sessionClinicValue.clinicId,
+        clinicUid,
         consultationTicketId: consultation.id,
         patientId: consultation.patientId,
       }), {

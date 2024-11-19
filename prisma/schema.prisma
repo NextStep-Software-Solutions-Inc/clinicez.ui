@@ -103,6 +103,7 @@ model User {
   UserDefaultClinicRoles           UserDefaultClinicRole[]
   ClinicPatienta                   ClinicPatient[]
   RescheduledByAppointments        AppointmentAttribute[]           @relation("RescheduledBy")
+  Medications                      Medication[]
 }
 
 model ClinicPatient {
@@ -353,6 +354,7 @@ model HealthcareProvider {
   ConsultationTicketHPs ConsultationTicketHP[]
   ConsultationNote      ConsultationNote[]
   AppointmentAttributes AppointmentAttribute[]
+  Medications           Medication[]
 
   @@unique([userId, hpTypeId], name: "unique_user_hp_type")
 }
@@ -1127,6 +1129,10 @@ model Clinic {
   ClinicRoleInitialPermissions    ClinicRoleInitialPermission[]
   ClinicFileTypes                 ClinicFileType[]
   ClinicPatients                  ClinicPatient[]
+  Medications                     Medication[]
+  DocumentTemplates               DocumentTemplate[]
+  ClinicPrescriptionSettings      ClinicPrescriptionSetting[]
+  Prescriptions                   Prescription[]
 
   @@index([tenantId, clinicUid], name: "clinic_index")
 }
@@ -1571,6 +1577,7 @@ model Prescription {
   dateArchived     DateTime?
   DocumentTemplate DocumentTemplate @relation(fields: [templateId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   Medication       Medication       @relation(fields: [medicationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Clinic           Clinic           @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([clinicId, medicationId, templateId], name: "prescription_index")
 }
@@ -1597,6 +1604,9 @@ model Medication {
   MedicationDrugs      MedicationDrug[]
   Prescriptions        Prescription[]
   ConsultationTicket   ConsultationTicket @relation(fields: [consultationTicketId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Clinic               Clinic             @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  HealthCareProvider   HealthcareProvider @relation(fields: [hpId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Patient              User               @relation(fields: [patientId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([patientId, hpId, consultationTicketId], name: "medication_index")
 }
@@ -1626,6 +1636,7 @@ model DocumentTemplate {
   deletedAt                  DateTime?
   isActive                   Boolean                     @default(true)
   DocumentTemplateType       DocumentTemplateType        @relation(fields: [type], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Clinic                     Clinic                      @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   Prescriptions              Prescription[]
   ClinicPrescriptionSettings ClinicPrescriptionSetting[] @relation("prescription")
 }
@@ -1642,4 +1653,5 @@ model ClinicPrescriptionSetting {
   clinicId               Int
   prescriptionTemplateId Int
   PrescriptionTemplate   DocumentTemplate? @relation(name: "prescription", fields: [prescriptionTemplateId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Clinic                 Clinic            @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }

@@ -41,7 +41,7 @@ export default function NurseAssessment({ consultation}: NurseAssessmentProps) {
 
 
 interface PreConsultationNoteProps {
-  note: GetPreAssessmentNotes["data"][number];
+  note: NonNullable<GetPreAssessmentNotes["data"]>[number];
 }
 export const PreConsultationNote = ({note}: PreConsultationNoteProps) => {
   const name = `${note.CreatedBy?.firstName} ${note.CreatedBy?.middleName ?? ""} ${note.CreatedBy?.lastName} ${note.CreatedBy?.suffix ?? ""}`.trim()

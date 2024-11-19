@@ -10,7 +10,7 @@ import { DropdownMenuProvider } from "@components/DropdownMenuProvider"
 import { GetConsultationTickets } from "@actions/consultation/consultation-ticket.action"
 import dayjs from "@lib/day-utils"
 
-export const columns: ColumnDef<GetConsultationTickets["data"][number]>[] = [
+export const columns: ColumnDef<NonNullable<GetConsultationTickets["data"]>[number]>[] = [
   {
     id: "select",
     header: ({ table }) => (

@@ -12,6 +12,7 @@ import {
   Route,
   Trash2,
   UserIcon,
+  Mailbox,
 } from "lucide-react"
 
 import { cn } from "@lib/utils"
@@ -43,7 +44,7 @@ export type UserSwitcherType = {
 }
 
 const icons: Record<string, LucideIcon> = {
-  all: Inbox,
+  all: Mailbox,
   pending: Inbox,
   received: MailPlus,
   rescheduled: Clock,

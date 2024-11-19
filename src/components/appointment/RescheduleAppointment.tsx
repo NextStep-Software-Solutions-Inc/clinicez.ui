@@ -21,6 +21,7 @@ import { BarLoader } from "react-spinners";
 import dayjs from "dayjs";
 import { Checkbox } from "@components/ui/checkbox";
 import ActionButton from "@components/ActionButton";
+import { promiseWrapper } from "@/lib/with-error-handling";
 
 type ScheduleAppointment = z.infer<typeof scheduleAppointmentSchema>;
 const scheduleAppointmentSchema = z.object({
@@ -54,7 +55,7 @@ export default function RescheduleAppointment({disabled = true, onRescheduled, a
     const skip = appointment.AppointmentRouting.some(a => 
       a.RoutedTo.hpTypeId === hp.hpTypeId && 
       (["PENDING", "ACCEPTED"].includes(a.status) || 
-      (["CANCELLED", "DECLINED"].includes(a.status) && Number(a.RoutedTo.HPProfile?.id) === hp.id))
+      (["CANCELLED", "DECLINED"].includes(a.status) && a.RoutedTo.id === hp.id))
     );
     return !skip || hp.id === appointment.AppointmentAttribute?.PreferredAppointee?.id
 
@@ -91,7 +92,7 @@ export default function RescheduleAppointment({disabled = true, onRescheduled, a
         return
       }
 
-      toast.promise(rescheduleAppointmentAction({
+      toast.promise(promiseWrapper(rescheduleAppointmentAction)({
         appointmentId: appointment.id, 
         assign: existingRoute ? false : data.assign ?? false,
         hpId: selectedHp?.id,
@@ -101,13 +102,11 @@ export default function RescheduleAppointment({disabled = true, onRescheduled, a
       }), {
         loading: "Rescheduling appointment...",
         success: (res) => {
-          if(res.status) {
-            triggerRef.current?.click()
-            onRescheduled?.()
-          }
+          triggerRef.current?.click()
+          onRescheduled?.()
           return res.message
         },
-        error: "Failed to reschedule appointment"
+        error: error => error
       })
       
     },(errorFields) => {

@@ -1,5 +1,6 @@
 "use client";
 
+import { promiseWrapper } from "@/lib/with-error-handling";
 import { assignAppointmentAction } from "@actions/appointments/appointment-routing.action";
 import { GetAppointment } from "@actions/appointments/appointments.action";
 import ActionButton from "@components/ActionButton";
@@ -10,7 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@components/ui/popover"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@components/ui/tooltip";
 import Each from "@components/utils/Each";
 import { useHPs } from "@hooks/useHP";
-import { User, UserCheck } from "lucide-react";
+import { User, UserCheck, UserPlus } from "lucide-react";
 import React, { useEffect, useMemo } from "react";
 import { toast } from "sonner";
 
@@ -41,8 +42,9 @@ export default function AssignAppointment({disabled = false, appointment, onAssi
     const skip = appointment.AppointmentRouting.some(a => 
       a.RoutedTo.hpTypeId === hp.hpTypeId && 
       (["PENDING", "ACCEPTED"].includes(a.status) || 
-      (["CANCELLED", "DECLINED"].includes(a.status) && Number(a.RoutedTo.HPProfile?.id) === hp.id))
+      (["CANCELLED", "DECLINED"].includes(a.status) && Number(a.RoutedTo.id) === hp.id))
     );
+
     if(skip) return acc
 
     acc[hpTypeName].push({
@@ -55,7 +57,7 @@ export default function AssignAppointment({disabled = false, appointment, onAssi
     return acc;
   }, {} as Record<string, HealthcareProvider[]>);
 
-  const action = async (formData: FormData) => {
+  const action = async () => {
     
     if (!selectedHp) return;
 
@@ -64,16 +66,13 @@ export default function AssignAppointment({disabled = false, appointment, onAssi
       appointmentId: appointment.id,
     }
   
-    toast.promise(assignAppointmentAction(payload), {
-      loading: "Assigning...",
+    toast.promise(promiseWrapper(assignAppointmentAction)(payload), {
+      loading: "Assigning appointment...",
       success: (res) => {
-        if(res.status) {
-          onAssigned?.()
-          return `Assigned successfully to ${selectedHp?.name}`
-        }
+        onAssigned?.()
         return res.message
       },
-      error: "Failed to assign"
+      error:error => error
     });
   }
 
@@ -96,7 +95,7 @@ export default function AssignAppointment({disabled = false, appointment, onAssi
         <TooltipTrigger asChild>
           <PopoverTrigger asChild ref={triggerRef}>
             <Button variant="ghost" size="icon" disabled={disabled}>
-              <UserCheck className="h-4 w-4" />
+              <UserPlus className="h-4 w-4" />
               <span className="sr-only">Assign</span>
             </Button>
           </PopoverTrigger>

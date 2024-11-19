@@ -1,5 +1,6 @@
 "use client";
 
+import { promiseWrapper } from "@/lib/with-error-handling";
 import { declineAppointmentAction } from "@actions/appointments/appointment-routing.action";
 import ActionButton from "@components/ActionButton";
 import { Button } from "@components/ui/button";
@@ -22,16 +23,13 @@ export default function DeclineAppointmentAssignment({disabled = false, routingC
 
   const action = async (formData: FormData) => {
     formData.append("routingCode", routingCode);
-    toast.promise(declineAppointmentAction(formData), {
+    toast.promise(promiseWrapper(declineAppointmentAction)(formData), {
       loading: "Declining appointment assignment...",
       success: (res) => {
-        if(!res.status) {
-          return `Failed to decline appointment: ${res.message}`;
-        }
         onDeclined?.();
-        return "Appointment assigned declined successfully.";
+        return res.message;
       },
-      error: "Failed to decline appointment"
+      error: error => error
     })
   }
 
@@ -40,7 +38,7 @@ export default function DeclineAppointmentAssignment({disabled = false, routingC
       <Tooltip>
         <TooltipTrigger asChild>
           <PopoverTrigger asChild ref={triggerRef}>
-            <Button variant="destructive" size="icon" disabled={disabled}>
+            <Button variant="ghost" className="text-destructive" size="icon" disabled={disabled}>
               <MailX className="h-4 w-4" />
               <span className="sr-only">Decline Assignment</span>
             </Button>

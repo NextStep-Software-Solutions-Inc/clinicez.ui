@@ -1,5 +1,6 @@
 "use client";
 
+import { promiseWrapper } from "@/lib/with-error-handling";
 import { completeAppointmentAction } from "@actions/appointments/appointment-attribute.action";
 import ActionButton from "@components/ActionButton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@components/ui/tooltip";
@@ -15,16 +16,13 @@ export default function CompleteAppointment({disabled = false, appointmentId, on
   
   const action = async (formData: FormData) => {
     formData.append("appointmentId", appointmentId.toString());
-    toast.promise(completeAppointmentAction(formData), {
+    toast.promise(promiseWrapper(completeAppointmentAction)(formData), {
       loading: "Processing...",
       success: (res) => {
-        if (res) {
-          onCompleted?.();
-          return "Appointment completed.";
-        }
-        return "Something went wrong.";
+        onCompleted?.();
+        return res.message;
       },
-      error: "Failed to process the appointment.",
+      error: error => error,
     });
   };
 

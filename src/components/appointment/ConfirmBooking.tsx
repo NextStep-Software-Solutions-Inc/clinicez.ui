@@ -1,10 +1,10 @@
 "use client";
 
-import { acceptAppointmentAction } from "@actions/appointments/appointment-routing.action";
+import { promiseWrapper } from "@/lib/with-error-handling";
 import { insertToCalendar } from "@actions/google/auth.action";
 import ActionButton from "@components/ActionButton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@components/ui/tooltip";
-import { CalendarCheck, MailCheck } from "lucide-react";
+import { CalendarCheck } from "lucide-react";
 import { toast } from "sonner";
 
 interface ConfirmBookingProps {
@@ -14,17 +14,15 @@ interface ConfirmBookingProps {
 }
 
 export default function ConfirmBooking({disabled = false, appointmentId, onAccepted}: ConfirmBookingProps) {
-  const action = async (formData: FormData) => {
-
-
-    toast.promise(insertToCalendar(appointmentId), {
+  
+  const action = async () => {
+    toast.promise(promiseWrapper(insertToCalendar)(appointmentId), {
       loading: "Confirming booking...",
       success: (res) => {
-        if(!res.status) return `Something went wrong: ${res.message}`;
         onAccepted?.();
         return res.message;
       },
-      error: "Failed to confirm booking",
+      error: error => error,
     })
   };
   return (

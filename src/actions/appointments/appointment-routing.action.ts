@@ -174,7 +174,7 @@ export const cancelAppointmentRoutingAction = withErrorHandling(async (appointme
       amendment: 'Cancelled by the assigner'
     },
   })
-  return { message: 'Appointment cancelled' , data: undefined};
+  return { message: 'Appointment cancelled', data: undefined};
 }, error => {
   if(hasCodeProperty(error) && error.code === 'P2025') return 'Appointment assignment not found or you are not authorized to cancel it';
   return 'Failed to cancel appointment assignment';

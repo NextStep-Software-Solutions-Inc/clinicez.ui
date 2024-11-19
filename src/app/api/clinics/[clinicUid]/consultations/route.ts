@@ -14,11 +14,9 @@ export const GET = withJwtAuth(async (req: NextRequest, { params }: {
   const userId = String(searchParams.get('userId'))
 
   const consultations = await getConsultationTicketsAction({
-    clinicUid,
-    filters: {
-      showArchived: showArchived === 'true',
-      userId: userId
-    }
+    showArchived: showArchived === 'true',
+    userId, 
+    clinicUid
   });
   return NextResponse.json(consultations, {status: 200});
 });

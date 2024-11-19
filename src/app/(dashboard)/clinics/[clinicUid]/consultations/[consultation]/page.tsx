@@ -59,9 +59,7 @@ async function ConsultationPage({params}: AppRouterPageRouteOpts) {
               id: consultationId,
               patientId: patient?.id ?? 0
             }}/>
-          <ModifyMedicationSheet
-            readonly={isResolved}
-          />
+          <ModifyMedicationSheet readonly={isResolved} />
           {
             consultation.data.ConsultationTicketAttribute?.status !== "RESOLVED" &&
             <ResolveConsultationTicket ticketId={consultationId}/>

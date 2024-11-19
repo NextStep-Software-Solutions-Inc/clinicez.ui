@@ -183,7 +183,23 @@ export const getMedicationAction = withErrorHandling(async (medicationId: number
       ]
     },
     include: {
-      Prescriptions: true,
+      Prescriptions: {
+        select: {
+          id: true,
+          name: true,
+          HealthcareProvider: {
+            select: {
+              HPProfile: {
+                select: {
+                  title: true,
+                  name: true,
+                  suffix: true
+                }
+              }
+            }
+          }
+        }
+      },
       _count: {
         select: {
           MedicationDrugs: true,

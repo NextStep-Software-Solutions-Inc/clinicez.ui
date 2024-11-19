@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import ActionButton from "./ActionButton";
 import { promiseWrapper } from "@/lib/with-error-handling";
 import { getPrescriptionAction } from "@/actions/medications/prescription.action";
+import { handlePrintHtmlToPDF } from "@/lib/print-pdf";
 dayjs.extend(localizedFormat);
 
 export interface PrescriptionItemProps {
@@ -89,21 +90,14 @@ const DownloadPrescriptionAction = ({prescription}: {prescription: PrescriptionI
     toast.promise(promiseWrapper(getPrescriptionAction)(prescription.id), {
       loading: "Downloading prescription...",
       success: (res) => {
-        handlePrintHtml(res.data?.DocumentTemplate.htmlContent);
+        handlePrintHtmlToPDF(res.data?.DocumentTemplate.htmlContent);
         return res.message;
       },
       error: "Failed to download prescription"
     })
   }
 
-  const handlePrintHtml = async (html: string = "") => {
 
-    // print html content
-    const printWindow = window.open("", "_blank");
-    printWindow?.document.write(html);
-    printWindow?.document.close();
-    printWindow?.print();
-  }
   return (
     <TooltipProvider>
       <Tooltip>

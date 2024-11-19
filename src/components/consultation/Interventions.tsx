@@ -54,12 +54,12 @@ export default function Interventions({ consultation }: InterventionsProps) {
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-base font-normal">
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-2">
                         <Avatar className="h-8 w-8 object-cover">
                           {hp?.HPProfile?.picture ? <Image alt={hp.HPProfile.name} className="object-cover" src={hp.HPProfile.picture} height={50} width={50} /> : <AvatarFallback>{hp?.HPProfile?.name.substring(0,2)}</AvatarFallback>}
                         </Avatar> 
                         <div>
-                          <span className="font-semibold">{intervention.Action.name}</span>
+                          <span className="font-medium capitalize text-sm">{intervention.Action.name}</span>
                           <div className="text-muted-foreground text-xs">{hp?.HPProfile?.name} <span className="italic">({hp?.HPType.name})</span></div>
                         </div>
                       </div>

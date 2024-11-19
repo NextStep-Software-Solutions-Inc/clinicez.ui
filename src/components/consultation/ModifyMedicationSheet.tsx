@@ -13,12 +13,13 @@ import ActionButton from "@components/ActionButton";
 import { toast } from "sonner";
 import { removeMedicationDrugAction } from "@actions/medications/medication-drug.action";
 import AddMedicationDrugModal from "@components/prescription/modals/AddMedicationDrugModal";
-import { createPrescriptionAction } from "@actions/medications/prescription.action";
+import { createPrescriptionAction, getPrescriptionAction } from "@actions/medications/prescription.action";
 import { useHP } from "@hooks/useHP";
 import { usePermissions } from "@hooks/usePermission";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import { PERMISSIONS } from "@lib/permissions";
 import { promiseWrapper } from "@/lib/with-error-handling";
+import { handlePrintHtmlToPDF } from "@/lib/print-pdf";
 
 interface ModifyMedicationSheetProps {
   readonly?: boolean;
@@ -133,7 +134,7 @@ export default function ModifyMedicationSheet({ readonly }: ModifyMedicationShee
                     <p className="text-xs text-muted-foreground indent-6">Sig: {medicationDrug.notes}</p>
                   </div>
                   {
-                    !readonly && myPermissions?.some(p => p.name === PERMISSIONS.CLINIC["REMOVE:CLINIC:MEDICATION_DRUG"].name) && (
+                    !readonly && myPermissions?.some(p => p.name === PERMISSIONS.CLINIC["REMOVE:CLINIC:MEDICATION_DRUG"].name) && !medication?.data?.completedAt && (
                       <form action={()=>handleRemoveDrug(medicationDrug.id)}>
                         <ActionButton variant="outline" size="icon" className="">
                           <Trash className="w-4 h-4 text-destructive"/>
@@ -147,7 +148,7 @@ export default function ModifyMedicationSheet({ readonly }: ModifyMedicationShee
           </div>
           <div className="flex gap-2 items-center">
             {/* add permission check here */}
-            {!readonly && myPermissions?.some(p => p.name === PERMISSIONS.CLINIC["ADD:CLINIC:MEDICATION_DRUG"].name) && medication?.data?.id && (
+            {!readonly && myPermissions?.some(p => p.name === PERMISSIONS.CLINIC["ADD:CLINIC:MEDICATION_DRUG"].name) && medication?.data?.id && !medication.data.completedAt && (
               <AddMedicationDrugModal medicationId={medication?.data?.id} onCreated={mutate} />
             ) }
             {
@@ -178,14 +179,38 @@ export default function ModifyMedicationSheet({ readonly }: ModifyMedicationShee
   );
 }
 
-export const Prescription = ({prescription}: {
-  prescription: {id: number, hpId: number}
-}) => {
-  const {data: hp } = useHP(prescription.hpId)
+interface PrescriptionProps {
+  prescription: {
+    id: number;
+    name: string | null;
+    HealthcareProvider: {
+        HPProfile: {
+            name: string;
+            suffix: string | null;
+            title: string;
+        } | null;
+    }
+  }
+}
+export const Prescription = ({prescription}: PrescriptionProps) => {
+
+  const handleDownloadPrescription = async () => {
+    toast.promise(promiseWrapper(getPrescriptionAction)(prescription.id), {
+      loading: "Downloading prescription...",
+      success: res => {
+        handlePrintHtmlToPDF(res.data?.DocumentTemplate.htmlContent);
+        return res.message
+      },
+      error: error => error
+    })
+  }
+
   return (
-    <Button key={prescription.id} variant="outline" className="w-full">
-      <Download className="h-4 w-4 mr-2" />
-      Download Prescription of {hp?.HPProfile?.title} {hp?.HPProfile?.name} {hp?.HPProfile?.suffix}&apos;s
-    </Button>
+    <form action={handleDownloadPrescription}>
+      <ActionButton variant="outline" className="w-full">
+        <Download className="h-4 w-4 mr-2" />
+      Download Prescription of {prescription.HealthcareProvider?.HPProfile?.title} {prescription.HealthcareProvider?.HPProfile?.name} {prescription.HealthcareProvider?.HPProfile?.suffix}&apos;s
+      </ActionButton>
+    </form>
   )
 }

@@ -16,6 +16,7 @@ import AppointmentSettings from "../dashboard/clinic-settings/AppointmentSetting
 import ConsultationSettings from "../dashboard/clinic-settings/ConsultationSettings";
 import SystemList from "../dashboard/org-settings/SystemList";
 import ClinicPrescriptionSetting from "../dashboard/clinic-settings/ClinicPrescriptionSetting";
+import ActionList from "../dashboard/org-settings/ActionList";
 
 const tabs = ["general", "membership", "roles","appointment", "consultation","prescription", "permissions"]
 export default function ClinicSettings() {
@@ -52,6 +53,7 @@ export default function ClinicSettings() {
           <div className="space-y-2">
             <ConsultationSettings/>
             <SystemList/>
+            {/* <ActionList/> */}
           </div>
         </TabsContent>
         <TabsContent value="roles">

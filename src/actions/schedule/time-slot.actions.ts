@@ -6,6 +6,7 @@ import { getHPAppointmentsSchedule, GetUserSchedules, getUserSchedulesAction } f
 import { eachDayOfInterval, getWeekOfMonth } from "date-fns";
 import { cache } from "react";
 import { getCachedSession } from "../session.action";
+import { Dayjs } from "dayjs";
 
 type GenerateTimeSlotsArgs = {
   userId: string, 
@@ -149,7 +150,7 @@ const generateExceptionSlots = (exceptions: GetUserSchedules): Schedule[] => {
       )
       continue;
     }
-    function addExceptionSchedule(start: dayjs.Dayjs, end:dayjs.Dayjs,  isNowBetween: boolean) {
+    function addExceptionSchedule(start: Dayjs, end:Dayjs,  isNowBetween: boolean) {
       const now = dayjs();
       exceptionSchedules.push({
         dateStart: isNowBetween ? now.toDate() : start.toDate(),

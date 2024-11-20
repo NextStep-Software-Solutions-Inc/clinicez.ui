@@ -15,9 +15,7 @@ import { updateOrganizationAction } from "@actions/organizations/organization.ac
 import { toast } from "sonner";
 import PageLoading from "@components/PageLoading";
 import { Badge } from "@components/ui/badge";
-import dayjs from "dayjs";
-import relativeTime from "dayjs/plugin/relativeTime";
-dayjs.extend(relativeTime);
+import dayjs from "@lib/day-utils";
 
 type GeneralSettingsForm = z.infer<typeof generalSettingsForm>
 const generalSettingsForm = z.object({

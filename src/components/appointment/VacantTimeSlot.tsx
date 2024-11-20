@@ -2,11 +2,10 @@
 
 import { Badge } from "@components/ui/badge";
 import Each from "@components/utils/Each";
-import { toast } from "sonner";
-import dayjs from "dayjs"
-import utc from "dayjs/plugin/utc"
 import { GetUserTimeSlots } from "@actions/schedule/time-slot.actions";
-dayjs.extend(utc)
+import { toast } from "sonner";
+import dayjs from "@lib/day-utils";
+
 interface VacantTimeSlotProps {
   timeSlots: GetUserTimeSlots["data"][number]["timeSlots"]
   selectedTimeSlot?: {

@@ -7,8 +7,7 @@ import {
 import { cn } from "@lib/utils";
 import { Archive, DownloadIcon, File, Pill, User } from "lucide-react";
 import Link from "next/link";
-import dayjs from "dayjs";
-import localizedFormat from "dayjs/plugin/localizedFormat";
+import dayjs from "@lib/day-utils";
 import { Badge } from "@components/ui/badge";
 import UpdatePrescriptionModal from "./prescription/modals/UpdatePrescriptionModal";
 import { toast } from "sonner";
@@ -16,7 +15,6 @@ import ActionButton from "./ActionButton";
 import { promiseWrapper } from "@/lib/with-error-handling";
 import { GetPrescriptions, archivePrescriptionAction, getPrescriptionAction } from "@/actions/medications/prescription.action";
 import { handlePrintHtmlToPDF } from "@/lib/print-pdf";
-dayjs.extend(localizedFormat);
 
 export interface PrescriptionItemProps {
   onUpdated?: () => void;

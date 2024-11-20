@@ -8,12 +8,9 @@ import { LabelValue } from "@components/LabelValue";
 import { differenceInCalendarYears } from "date-fns";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@components/ui/card";
 import { Separator } from "@components/ui/separator";
-
-import dayjs from "dayjs";
-import relativeTime from "dayjs/plugin/relativeTime";
+import dayjs from "@lib/day-utils";
 import OrgMemberTabSection from "./OrgMemberTabSection";
 import { useOrganizationRoles } from "@/hooks/useOrganizationRole";
-dayjs.extend(relativeTime);
 
 interface OrgMemberDetailsProps {
   userId: string;

@@ -4,9 +4,7 @@ import { cache } from "react";
 import { getCachedSession } from "@actions/session.action";
 import prisma from "@lib/prisma";
 import { Prisma, UserPlanStatus } from "@prisma/client";
-import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc"
-dayjs.extend(utc)
+import dayjs from "@lib/day-utils";
 
 
 export const createUserPlanAction = async (planId: number, status: UserPlanStatus = "PENDING") => {

@@ -12,9 +12,8 @@ import { useUser as useDbUser } from "@hooks/useUser";
 import { useParams } from "next/navigation";
 import { uploadMediaAction } from "@actions/blob.action";
 import { mutate } from "swr";
-import dayjs from "dayjs"
-import utc from "dayjs/plugin/utc"
-dayjs.extend(utc)
+import dayjs from "@lib/day-utils";
+
 
 import { LabelValue } from "@components/LabelValue";
 import Each from "@components/utils/Each";

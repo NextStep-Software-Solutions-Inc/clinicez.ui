@@ -13,14 +13,8 @@ import {
 import Each from "@components/utils/Each";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import dayjs from "dayjs"
-import utc from "dayjs/plugin/utc"
-dayjs.extend(utc)
-
-import relativeTime from "dayjs/plugin/relativeTime";
-import { useUser } from "@hooks/useUser";
+import dayjs from "@lib/day-utils";
 import { useHP } from "@hooks/useHP";
-dayjs.extend(relativeTime);
 
 interface ConsultationTicketSheetProps {
   children?: React.ReactNode;

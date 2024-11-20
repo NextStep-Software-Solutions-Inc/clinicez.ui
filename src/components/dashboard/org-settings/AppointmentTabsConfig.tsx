@@ -7,9 +7,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import ActionButton from "@components/ActionButton";
 import { Checkbox } from "@components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@components/ui/card";
-import dayjs from "dayjs";
-import relativeTime from "dayjs/plugin/relativeTime";
-dayjs.extend(relativeTime);
+import dayjs from "@lib/day-utils";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
 import PageLoading from "@components/PageLoading";

@@ -1,22 +1,22 @@
 
-import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc"
+import dayjs, { Dayjs, DayjsTimezone } from "dayjs";
+// import utc from "dayjs/plugin/utc"
 import timezone from "dayjs/plugin/timezone"
 import localizedFormat from "dayjs/plugin/localizedFormat"
 import isBetween from "dayjs/plugin/isBetween"
 import relativeTime from "dayjs/plugin/relativeTime";
 
-dayjs.extend(utc)
+// dayjs.extend(utc)
 dayjs.extend(timezone)
 dayjs.extend(localizedFormat)
 dayjs.extend(isBetween)
 dayjs.extend(relativeTime)
-dayjs.tz.setDefault("Asia/Manila");
+// dayjs.tz.setDefault("Asia/Manila");
 
-export default dayjs.tz;
-const dayjsTz = dayjs.tz;
-export const formatDateTime = (date: Date, time: string): dayjs.Dayjs => {
-  const dateStr = dayjsTz(date).endOf("date").toISOString();
+export default dayjs;
+// const dayjsTz = dayjs.tz;
+export const formatDateTime = (date: Date, time: string): Dayjs => {
+  const dateStr = dayjs(date).endOf("date").toISOString();
   const dateTimeStr = `${dateStr.split("T")[0]}T${time}`;
   const combinedDateTime = dayjs(dateTimeStr);
   return combinedDateTime;

@@ -2,19 +2,14 @@
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@components/ui/card";
 import AddInterventionModal from "./modals/AddInterventionModal";
-import { Badge } from "@components/ui/badge";
 import Each from "@components/utils/Each";
 import { Avatar, AvatarFallback } from "@components/ui/avatar";
 import { GetConsultationTicket } from "@actions/consultation/consultation-ticket.action";
-import dayjs from "dayjs"
-import utc from "dayjs/plugin/utc"
-dayjs.extend(utc)
+import dayjs from "@lib/day-utils";
 
-import relativeTime from "dayjs/plugin/relativeTime";
 import Image from "next/image";
 import { useInterventions } from "@hooks/useIntervention";
 import { useHPsByIds } from "@hooks/useHP";
-dayjs.extend(relativeTime);
 
 interface InterventionsProps {
   consultation: NonNullable<GetConsultationTicket["data"]>;

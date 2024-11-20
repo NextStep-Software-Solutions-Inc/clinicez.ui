@@ -8,14 +8,13 @@ import { cn } from "@lib/utils";
 import { DownloadIcon, File, Trash } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@components/ui/button";
-import dayjs from "dayjs";
-import localizedFormat from "dayjs/plugin/localizedFormat";
+import dayjs from "@lib/day-utils";
 import UpdateDocumentTemplateModal from "./prescription/modals/UpdateDocumentTemplateModal";
 import { toast } from "sonner";
 import { promiseWrapper } from "@/lib/with-error-handling";
 import ActionButton from "./ActionButton";
 import { deleteDocumentTemplateAction } from "@/actions/document-template.action";
-dayjs.extend(localizedFormat);
+
 
 export interface DocumentTemplateItemProps {
   onUpdated?: () => void;

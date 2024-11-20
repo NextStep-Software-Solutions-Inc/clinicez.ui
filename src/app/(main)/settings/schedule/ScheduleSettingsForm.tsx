@@ -16,10 +16,8 @@ import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHe
 import ScheduleForm, { scheduleFormSchema, ScheduleFormType } from "./ScheduleForm"
 import { useRef } from "react"
 import { Trash } from "lucide-react"
-import dayjs from "dayjs"
-import utc from "dayjs/plugin/utc"
-import { formatDateTime } from "@/lib/day-utils"
-dayjs.extend(utc)
+import dayjs, { formatDateTime } from "@lib/day-utils";
+
 
 const daysOfWeek = [
   {

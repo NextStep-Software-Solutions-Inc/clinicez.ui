@@ -13,7 +13,7 @@ dayjs.extend(isBetween)
 dayjs.extend(relativeTime)
 dayjs.tz.setDefault("Asia/Manila");
 
-export default dayjs;
+export default dayjs.tz;
 
 export const formatDateTime = (date: Date, time: string): dayjs.Dayjs => {
   const dateStr = dayjs(date).endOf("date").toISOString();

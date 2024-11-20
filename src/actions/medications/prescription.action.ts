@@ -30,6 +30,22 @@ export const getPrescriptionsAction = withErrorHandling(async (filters?: GetPres
       isArchived
     },
     include: {
+      DocumentTemplate: {
+        select: {
+          name: true
+        }
+      },
+      HealthcareProvider: {
+        select: {
+          HPProfile: {
+            select: {
+              title: true,
+              name: true,
+              suffix: true
+            }
+          }
+        }
+      },
       Medication: {
         select: {
           completedAt: true,
@@ -165,3 +181,16 @@ export const getPrescriptionAction = withErrorHandling(async (id: number) => {
   })
   return {message: "Successfully fetched prescription", data: prescription}
 })
+
+export const archivePrescriptionAction = withErrorHandling(async (id: number) => {
+    
+  const session = await getCachedSession()
+  if(!session) throw new Error("Unauthorized")
+    
+  await prisma.prescription.update({
+    where: {id},
+    data: {isArchived: true}
+  })
+  
+  return {message: "Successfully archived prescription", data: undefined}
+});

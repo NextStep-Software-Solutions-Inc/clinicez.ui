@@ -1,5 +1,6 @@
 "use client";
 
+import { useDocumentTemplates } from "@/hooks/useDocumentTemplate";
 import { promiseWrapper } from "@/lib/with-error-handling";
 import { createPrescriptionAction } from "@actions/medications/prescription.action";
 import { useUser } from "@auth0/nextjs-auth0/client";
@@ -39,8 +40,6 @@ import Each from "@components/utils/Each";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useHPs } from "@hooks/useHP";
 import { useMedications } from "@hooks/useMedication";
-import { sessionClinicAtom } from "@state/session-clinic";
-import { useAtomValue } from "jotai";
 import { Pill } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useEffect, useRef } from "react";
@@ -59,6 +58,10 @@ const createPrescriptionFormSchema = z.object({
     coerce: true,
     required_error: "Medication is required"
   }),
+  templateId: z.number({
+    coerce: true,
+    required_error: "Prescription template is required"
+  }),
   hpId: z.number({
     coerce: true,
     required_error: "Healthcare provider is required"
@@ -71,7 +74,6 @@ export default function CreatePrescriptionModal({
   const { user } = useUser();
   const {clinicUid} = useParams<{clinicUid: string}>()
   const closeBtnRef = useRef<HTMLInputElement>(null);
-  const sessionClinicValue = useAtomValue(sessionClinicAtom);
   
   const { data: myHps } = useHPs({
     userId: user?.sub ?? ""
@@ -80,6 +82,11 @@ export default function CreatePrescriptionModal({
   const { data: medications } = useMedications({
     clinicUid
   });
+
+  const {data: documentTemplates } = useDocumentTemplates({
+    typeName: "prescription",
+    clinicUid
+  })
 
   const form = useForm<CreatePrescriptionForm>({
     resolver: zodResolver(createPrescriptionFormSchema),
@@ -90,10 +97,7 @@ export default function CreatePrescriptionModal({
 
   const action = async () => {
     form.handleSubmit((data) => {
-      if(!sessionClinicValue?.clinicId) {
-        toast.error("Clinic UID is required");
-        return;
-      }
+     
       toast.promise(promiseWrapper(createPrescriptionAction)({...data, clinicUid}), {
         loading: "Creating new prescription...",
         success: (res) => {
@@ -118,6 +122,12 @@ export default function CreatePrescriptionModal({
       form.setValue("medicationId", medications?.data[0].id);
     }
   }, [form, medications?.data]);
+
+  useEffect(() => {
+    if (documentTemplates?.data?.length === 1) {
+      form.setValue("templateId", documentTemplates?.data[0].id);
+    }
+  }, [form, documentTemplates?.data]);
 
   return (
     <Dialog>
@@ -238,6 +248,38 @@ export default function CreatePrescriptionModal({
                         render={(medication) => (
                           <SelectItem value={medication.id.toString()}>
                             {medication.name || `Medication #${medication.id}`}
+                          </SelectItem>
+                        )}
+                      />
+                    </SelectContent>
+                  </Select>
+                  <FormDescription></FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="templateId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Prescription Template</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    name={field.name}
+                    defaultValue={field.value?.toString()}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select template" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <Each
+                        of={documentTemplates?.data ?? []}
+                        render={(template) => (
+                          <SelectItem value={template.id.toString()}>
+                            {template.name || `Template #${template.id}`}
                           </SelectItem>
                         )}
                       />

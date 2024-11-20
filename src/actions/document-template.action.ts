@@ -8,6 +8,7 @@ import { hasCodeProperty } from "@/lib/utils";
 
 export type GetDocumentTemplatesFilters = {
     typeName?: string
+    clinicUid?: string
 }
 export type GetDocumentTemplates = Awaited<ReturnType<typeof getDocumentTemplatesAction>>
 export const getDocumentTemplatesAction = withErrorHandling(async (filters: GetDocumentTemplatesFilters) => {
@@ -15,9 +16,14 @@ export const getDocumentTemplatesAction = withErrorHandling(async (filters: GetD
   const session = await getCachedSession()
   if(!session) throw new Error("Unauthorized")
   
-  const { typeName } = filters
+  const { typeName, clinicUid } = filters
   const documentTemplates = await prismaClient.documentTemplate.findMany({
     where: {
+      ...clinicUid ? {
+        Clinic: {
+          clinicUid
+        }
+      }: {},
       isActive: true,
       ...typeName? {
         DocumentTemplateType: {

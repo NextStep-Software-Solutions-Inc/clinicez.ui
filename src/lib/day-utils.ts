@@ -12,7 +12,7 @@ dayjs.extend(localizedFormat)
 dayjs.extend(isBetween)
 dayjs.extend(relativeTime)
 
-const tz = "UTC";
+const tz = "Asia/Manila";
 dayjs.tz.setDefault(tz);
 
 export default dayjs
@@ -21,6 +21,5 @@ export const formatDateTime = (date: Date, time: string): Dayjs => {
   const dateStr = dayjs(date).endOf("date").toISOString();
   const dateTimeStr = `${dateStr.split("T")[0]}T${time}`;
   const combinedDateTime = dayjs(dateTimeStr).utc();
-  console.log({combinedDateTime: combinedDateTime.format(), date, time});
   return combinedDateTime;
 }

@@ -88,8 +88,12 @@ export const getUserTimeSlotsAction = cache(async ({serviceId, userId, hpId}: Ge
     const availability: Availability[] = allDates.map(date => {
       const currentDateTime = dayjs(date);
       const isAvailable = checkAvailability(date, baseSchedule);
+      
       const start = formatDateTime(date, baseSchedule?.startTime).toDate();
       const end = formatDateTime(date, baseSchedule?.endTime).toDate();
+      console.log({startTime: baseSchedule?.startTime, endTime: baseSchedule?.endTime, start, end});
+
+
       const exceptionSlots = generateExceptionSlots(exceptionSchedules)
     
       const bookedTimeSlots = appointmentSchedules

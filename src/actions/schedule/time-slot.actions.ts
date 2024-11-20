@@ -55,7 +55,8 @@ export const getUserTimeSlotsAction = cache(async ({serviceId, userId, hpId}: Ge
     
     const checkAvailability = (date: Date, schedule: NonNullable<GetUserSchedules>[number]): boolean => {
       const currentDateTime = dayjs(date);
-      const end = formatDateTime(currentDateTime.toDate(), schedule?.endTime);
+      const end = formatDateTime(currentDateTime.toDate(), schedule?.endTime).utc().toDate();
+    
       const isBeforeEnd = dayjs().isBefore(end, "minutes");
       
       let available = isRecurring ? false : isBeforeEnd;
@@ -89,10 +90,8 @@ export const getUserTimeSlotsAction = cache(async ({serviceId, userId, hpId}: Ge
       const currentDateTime = dayjs(date);
       const isAvailable = checkAvailability(date, baseSchedule);
       
-      const start = formatDateTime(date, baseSchedule?.startTime).toDate();
-      const end = formatDateTime(date, baseSchedule?.endTime).toDate();
-      console.log({startTime: baseSchedule?.startTime, endTime: baseSchedule?.endTime, start, end});
-
+      const start = formatDateTime(date, baseSchedule?.startTime).utc().toDate();
+      const end = formatDateTime(date, baseSchedule?.endTime).utc().toDate();
 
       const exceptionSlots = generateExceptionSlots(exceptionSchedules)
     
@@ -134,8 +133,10 @@ const isOccupied = (timeSlot: { start: Date, end: Date }, schedules: Schedule[],
     if(!schedule.timeStart || !schedule.timeEnd) {
       throw new Error("Invalid schedule time");
     }
-    const start = formatDateTime(dayjs(schedule.dateStart).startOf("day").toDate(), schedule.timeStart);
-    const end = formatDateTime(dayjs(schedule.dateEnd).startOf("day").toDate(), schedule?.timeEnd);
+    
+    const start = formatDateTime(dayjs(schedule.dateStart).startOf("day").toDate(), schedule.timeStart).utc().toDate();
+    const end = formatDateTime(dayjs(schedule.dateEnd).startOf("day").toDate(), schedule?.timeEnd).utc().toDate();
+
     return dayjs(timeSlot.start).isBetween(start, end, "minutes", "[)") || dayjs(timeSlot.end).isBetween(start, end, "minutes", "(]");
   });
 }
@@ -154,20 +155,20 @@ const generateExceptionSlots = (exceptions: GetUserSchedules): Schedule[] => {
       )
       continue;
     }
-    function addExceptionSchedule(start: Dayjs, end:Dayjs,  isNowBetween: boolean) {
+    function addExceptionSchedule(start: Date, end: Date,  isNowBetween: boolean) {
       const now = dayjs();
       exceptionSchedules.push({
-        dateStart: isNowBetween ? now.toDate() : start.toDate(),
-        dateEnd: end.toDate(),
-        timeStart: isNowBetween ? now.toDate().toISOString().split("T")[1] : start.toDate().toISOString().split("T")[1],
-        timeEnd: end.toDate().toISOString().split("T")[1]
+        dateStart: isNowBetween ? now.toDate() : start,
+        dateEnd: end,
+        timeStart: isNowBetween ? now.toDate().toISOString().split("T")[1] : start.toISOString().split("T")[1],
+        timeEnd: end.toISOString().split("T")[1]
       });
     }
     const dateRange = eachDayOfInterval({ start: exception.startDate, end: exception.endDate });
     dateRange.forEach(date => {
       const currentDateTime = dayjs(date);
-      const start = formatDateTime(currentDateTime.toDate(), exception.startTime);
-      const end = formatDateTime(currentDateTime.toDate(), exception.endTime);
+      const start = formatDateTime(currentDateTime.toDate(), exception.startTime).utc().toDate();
+      const end = formatDateTime(currentDateTime.toDate(), exception.endTime).utc().toDate();
       const isNowBetween = dayjs().isBetween(start, end, "minutes", "[]");
       
       switch (exception.pattern) {

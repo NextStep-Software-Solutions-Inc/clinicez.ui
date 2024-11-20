@@ -20,6 +20,6 @@ export default dayjs
 export const formatDateTime = (date: Date, time: string): Dayjs => {
   const dateStr = dayjs(date).endOf("date").toISOString();
   const dateTimeStr = `${dateStr.split("T")[0]}T${time}`;
-  const combinedDateTime = dayjs(dateTimeStr).utc();
+  const combinedDateTime = dayjs(dateTimeStr);
   return combinedDateTime;
 }

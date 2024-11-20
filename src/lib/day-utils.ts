@@ -11,6 +11,7 @@ dayjs.extend(timezone)
 dayjs.extend(localizedFormat)
 dayjs.extend(isBetween)
 dayjs.extend(relativeTime)
+dayjs.tz.setDefault("Asia/Manila");
 
 export default dayjs;
 

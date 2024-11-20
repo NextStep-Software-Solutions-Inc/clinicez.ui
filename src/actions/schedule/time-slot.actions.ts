@@ -169,6 +169,11 @@ const generateExceptionSlots = (exceptions: GetUserSchedules): Schedule[] => {
       const currentDateTime = dayjs(date);
       const start = formatDateTime(currentDateTime.toDate(), exception.startTime).utc().toDate();
       const end = formatDateTime(currentDateTime.toDate(), exception.endTime).utc().toDate();
+      // console.log({
+      //   start: start.toISOString(),
+      //   end: end.toISOString()
+      // });
+      
       const isNowBetween = dayjs().isBetween(start, end, "minutes", "[]");
       
       switch (exception.pattern) {

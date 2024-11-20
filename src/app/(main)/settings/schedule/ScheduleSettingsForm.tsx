@@ -59,8 +59,6 @@ export default function ScheduleSettingsForm() {
         to: baseSchedule?.endDate,
       },
       isRecurring: baseSchedule?.isRecurring || false,
-      // startTime: (baseSchedule?.startDate && baseSchedule.startTime) ? formatDateTime(new Date(baseSchedule?.startDate), new Date(baseSchedule?.startTime)).format("HH:mm") : "",
-      // endTime: (baseSchedule?.endDate && baseSchedule.endTime) ? formatDateTime(new Date(baseSchedule?.endDate), new Date(baseSchedule?.endTime)).format("HH:mm") : "",
       startTime: baseSchedule?.startTime ?? "",
       endTime: baseSchedule?.endTime  ?? "",
       daysOfWeek: baseSchedule?.daysOfWeek.length ? baseSchedule?.daysOfWeek :  [0,1,2,3,4,5,6],

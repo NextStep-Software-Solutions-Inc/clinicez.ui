@@ -12,6 +12,7 @@ dayjs.extend(localizedFormat)
 dayjs.extend(isBetween)
 dayjs.extend(relativeTime)
 
+console.log("Timezone", Intl.DateTimeFormat().resolvedOptions().timeZone);
 const tz = "Asia/Manila";
 dayjs.tz.setDefault(tz);
 

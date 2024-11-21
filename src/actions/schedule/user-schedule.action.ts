@@ -1,6 +1,8 @@
 "use server";
 import "server-only";
 import prisma from "@lib/prisma";
+import { withErrorHandling } from "@/lib/with-error-handling";
+import { getCachedSession } from "../session.action";
 
 export type UpsertUserScheduleArgs = {
   id: number;
@@ -15,7 +17,11 @@ export type UpsertUserScheduleArgs = {
   weekOfMonth?: number[];
   userId: string;
 };
-export const upsertBaseUserScheduleAction = async (args: UpsertUserScheduleArgs) => {
+export const upsertUserScheduleAction = withErrorHandling(async (args: UpsertUserScheduleArgs) => {
+
+  const session = await getCachedSession();
+  if (!session) throw new Error("User not authenticated");
+
   const { id, type, startDate, endDate, startTime, endTime, isRecurring, pattern, daysOfWeek, weekOfMonth, userId } = args;
   const userSchedule = await prisma.userSchedule.upsert({
     where: {
@@ -48,16 +54,16 @@ export const upsertBaseUserScheduleAction = async (args: UpsertUserScheduleArgs)
       }
     }
   });
-  return {
-    status: true,
-    message: "User schedule has been updated",
-    data: userSchedule
-  }
-}
+  return { message: "User schedule has been updated", data: userSchedule }
+})
 
 export type GetUserSchedules = Awaited<ReturnType<typeof getUserSchedulesAction>>;
-export const getUserSchedulesAction = async (unique: string) => {
-  return await prisma.userSchedule.findMany({
+export const getUserSchedulesAction = withErrorHandling(async (unique: string) => {
+
+  const session = await getCachedSession();
+  if (!session) throw new Error("User not authenticated");
+
+  const useSchedules = await prisma.userSchedule.findMany({
     where: {
       OR: [
         {
@@ -69,11 +75,16 @@ export const getUserSchedulesAction = async (unique: string) => {
       ]
     },
   });
-}
+  return { message: "User schedules", data: useSchedules }
+})
 
 export type GetUserAppointmentsSchedule = Awaited<ReturnType<typeof getHPAppointmentsSchedule>>;
-export const getHPAppointmentsSchedule = async (hpId: number) => {
-  return await prisma.appointment.findMany({
+export const getHPAppointmentsSchedule = withErrorHandling( async (hpId: number) => {
+
+  const session = await getCachedSession();
+  if (!session) throw new Error("User not authenticated");
+
+  const hpAppointmentSchedule = await prisma.appointment.findMany({
     orderBy: {
       createdAt: 'desc'
     },
@@ -128,17 +139,19 @@ export const getHPAppointmentsSchedule = async (hpId: number) => {
       }
     }
   });
-}
+  return { message: "Healthcare provider appointments schedule", data: hpAppointmentSchedule }
+})
 
-export const deleteUserScheduleAction = async (id: number) => {
+export const deleteUserScheduleAction = withErrorHandling(async (id: number) => {
+
+  const session = await getCachedSession();
+  if (!session) throw new Error("User not authenticated");
+
   await prisma.userSchedule.delete({
     where: {
       id,
       isActive: true
     }
   });
-  return {
-    status: true,
-    message: "User schedule has been deleted"
-  }
-}
+  return {  message: "User schedule has been deleted", data: null }
+})

@@ -7,7 +7,7 @@ import {toast} from "sonner"
 import ActionButton from "@components/ActionButton"
 import { useUser } from "@auth0/nextjs-auth0/client"
 import Each from "@components/utils/Each"
-import { deleteUserScheduleAction, GetUserSchedules, upsertBaseUserScheduleAction } from "@actions/schedule/user-schedule.action"
+import { deleteUserScheduleAction, GetUserSchedules, upsertUserScheduleAction } from "@actions/schedule/user-schedule.action"
 import { useUserSchedules } from "@hooks/useUserSchedule"
 import { Badge } from "@components/ui/badge"
 import { Button } from "@components/ui/button"
@@ -16,7 +16,8 @@ import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHe
 import ScheduleForm, { scheduleFormSchema, ScheduleFormType } from "./ScheduleForm"
 import { useRef } from "react"
 import { Trash } from "lucide-react"
-import dayjs, { formatDateTime } from "@lib/day-utils";
+import dayjs, { combineDateTime, utcDateTimeToLocalDateTime } from "@lib/day-utils";
+import { promiseWrapper } from "@/lib/with-error-handling"
 
 
 const daysOfWeek = [
@@ -48,8 +49,8 @@ export default function ScheduleSettingsForm() {
   const user = useUser()
   const userId = user?.user?.sub
   const { data: userSchedules, mutate } = useUserSchedules(userId ?? "")
-  const baseSchedule = userSchedules?.find(schedule => schedule.type === "base") 
-  const exceptionSchedules = userSchedules?.filter(schedule => schedule.type === "exception")
+  const baseSchedule = (userSchedules?.data ?? []).find(schedule => schedule.type === "base") 
+  const exceptionSchedules = (userSchedules?.data ?? []).filter(schedule => schedule.type === "exception")
   
   const form = useForm<ScheduleFormType>({
     resolver: zodResolver(scheduleFormSchema),
@@ -59,8 +60,8 @@ export default function ScheduleSettingsForm() {
         to: baseSchedule?.endDate,
       },
       isRecurring: baseSchedule?.isRecurring || false,
-      startTime: baseSchedule?.startTime ?? "",
-      endTime: baseSchedule?.endTime  ?? "",
+      startTime: baseSchedule?.startTime ? dayjs(utcDateTimeToLocalDateTime(combineDateTime(baseSchedule?.startDate ?? new Date(), baseSchedule?.startTime))).format("HH:mm") : "",
+      endTime: baseSchedule?.endTime ? dayjs(utcDateTimeToLocalDateTime(combineDateTime(baseSchedule?.endDate ?? new Date(), baseSchedule?.endTime))).format("HH:mm") : "",
       daysOfWeek: baseSchedule?.daysOfWeek.length ? baseSchedule?.daysOfWeek :  [0,1,2,3,4,5,6],
       weekOfMonth: baseSchedule?.weekOfMonth.length ? baseSchedule?.weekOfMonth : [1,2,3,4,5], 
       pattern: baseSchedule?.pattern || "daily",
@@ -74,14 +75,14 @@ export default function ScheduleSettingsForm() {
       // const startTime = dayjs(`${dayjs(values.dateRange.from).format("YYYY-MM-DD")}T${values.startTime}`).toISOString()
       // const endTime = dayjs(`${dayjs(values.dateRange.to).format("YYYY-MM-DD")}T${values.endTime}`).toISOString()
       
-      toast.promise(upsertBaseUserScheduleAction({
+      toast.promise(promiseWrapper(upsertUserScheduleAction)({
         id: baseSchedule?.id || 0,
         userId,
         type: "base",
         startDate: dayjs(values.dateRange.from).endOf("day").toDate(),
         endDate: dayjs(values.dateRange.to).endOf("day").toDate(),
-        startTime: values.startTime,
-        endTime: values.endTime,
+        startTime: dayjs(combineDateTime(values.dateRange.from, values.startTime)).toISOString().split("T")[1],
+        endTime: dayjs(combineDateTime(values.dateRange.to, values.endTime)).toISOString().split("T")[1],
         isRecurring: values.isRecurring,
         pattern: values.pattern,
         daysOfWeek: values.daysOfWeek,
@@ -89,25 +90,21 @@ export default function ScheduleSettingsForm() {
       }), {
         loading: "Saving...",
         success: (res) => {
-          if(res.status) {
-            mutate()
-          }
+          mutate()
           return res.message
         },
-        error: (error) => `Something went wrong. Error: ${error}`
+        error: (error) => error
       })
     })()
   }
   const handleDelete = (id: number) => {
-    toast.promise(deleteUserScheduleAction(id), {
+    toast.promise(promiseWrapper(deleteUserScheduleAction)(id), {
       loading: "Deleting...",
       success: (res) => {
-        if(res.status) {
-          mutate()
-        }
+        mutate()
         return res.message
       },
-      error: (error) => `Something went wrong. Error: ${error}`
+      error: (error) => error
     })
   }
 
@@ -142,7 +139,7 @@ export default function ScheduleSettingsForm() {
                 <div className="flex items-center justify-between bg-slate-50 p-3 rounded cursor-pointer hover:bg-slate-100">
                   <div>
                     <div className="text-sm font-semibold">
-                      {formatDateTime(schedule.startDate, schedule.startTime).format("llll")} - {formatDateTime(schedule.endDate, schedule.endTime).format("llll")}
+                      {dayjs(combineDateTime(schedule.startDate, schedule.startTime)).format("llll")} - {dayjs(combineDateTime(schedule.endDate, schedule.endTime)).format("llll")}
                     </div>
                     <div className="text-xs space-x-2">
                       <span>{schedule.isRecurring ? "Recurring" : "One Time"}</span> 
@@ -174,7 +171,7 @@ export default function ScheduleSettingsForm() {
 }
 
 interface ExceptionScheduleItemProps {
-  schedule?: GetUserSchedules[number],
+  schedule?: NonNullable<GetUserSchedules["data"]>[number],
   children?: React.ReactNode
 }
 export const ExceptionScheduleSheet = ({schedule, children}: ExceptionScheduleItemProps) => {
@@ -190,8 +187,6 @@ export const ExceptionScheduleSheet = ({schedule, children}: ExceptionScheduleIt
         to: schedule?.endDate,
       },
       isRecurring: schedule?.isRecurring || false,
-      // startTime: (schedule?.startDate && schedule.startTime) ? formatDateTime(new Date(schedule?.startDate), schedule?.startTime)).format("HH:mm") : "",
-      // endTime: (schedule?.startDate && schedule.startTime) ? formatDateTime(new Date(schedule?.startDate), new Date(schedule?.startTime)).format("HH:mm") : "",
       startTime: schedule?.startTime ?? "",
       endTime: schedule?.endTime  ?? "",
       daysOfWeek: schedule?.daysOfWeek.length ? schedule?.daysOfWeek :  [0,1,2,3,4,5,6],
@@ -207,7 +202,7 @@ export const ExceptionScheduleSheet = ({schedule, children}: ExceptionScheduleIt
       // const startTime = dayjs(`${dayjs(values.dateRange.from).format("YYYY-MM-DD")}T${values.startTime}`).toISOString()
       // const endTime = dayjs(`${dayjs(values.dateRange.to).format("YYYY-MM-DD")}T${values.endTime}`).toISOString()
       
-      toast.promise(upsertBaseUserScheduleAction({
+      toast.promise(promiseWrapper(upsertUserScheduleAction)({
         id: schedule?.id || 0,
         userId,
         type: "exception",
@@ -222,13 +217,11 @@ export const ExceptionScheduleSheet = ({schedule, children}: ExceptionScheduleIt
       }), {
         loading: "Saving...",
         success: (res) => {
-          if(res.status) {
-            mutate()
-            closeBtnRef.current?.click()
-          }
+          mutate()
+          closeBtnRef.current?.click()
           return res.message
         },
-        error: (error) => `Something went wrong. Error: ${error}`
+        error: error => error
       })
     })()
   }

@@ -160,6 +160,29 @@ export const getPrescriptionAction = withErrorHandling(async (id: number) => {
       },
       Medication: {
         select: {
+          HealthCareProvider: {
+            select: {
+              ProfessionalDetails: {
+                select: {
+                  licenseNumber: true,
+                  ptrNumber: true,
+                }
+              },
+              HPProfile: {
+                select: {
+                  title: true,
+                  name: true,
+                  suffix: true,
+                  specialties: true,
+                }
+              }
+            }
+          },
+          MedicationDrugs: {
+            include: {
+              Drug: true
+            }
+          },
           completedAt: true,
           Patient: {
             select: {
@@ -167,7 +190,24 @@ export const getPrescriptionAction = withErrorHandling(async (id: number) => {
               firstName: true,
               middleName: true,
               lastName: true,
-              suffix: true
+              suffix: true,
+              dob: true,
+              gender: true,
+              UserAddresses: {
+                distinct: ['userId'],
+                take: 1,
+                where: {
+                  isActive: true,
+                  isPrimary: true
+                },
+                select: {
+                  address: true,
+                  city: true,
+                  country: true,
+                  zipCode: true,
+                  state: true
+                }
+              }
             }
           },
           _count: {

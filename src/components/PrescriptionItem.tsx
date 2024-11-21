@@ -15,6 +15,8 @@ import ActionButton from "./ActionButton";
 import { promiseWrapper } from "@/lib/with-error-handling";
 import { GetPrescriptions, archivePrescriptionAction, getPrescriptionAction } from "@/actions/medications/prescription.action";
 import { handlePrintHtmlToPDF } from "@/lib/print-pdf";
+import { preparePrescription } from "@/lib/prepare-prescription";
+import { differenceInCalendarDays, differenceInCalendarYears } from "date-fns";
 
 export interface PrescriptionItemProps {
   onUpdated?: () => void;
@@ -84,7 +86,38 @@ const DownloadPrescriptionAction = ({prescription}: {prescription: PrescriptionI
     toast.promise(promiseWrapper(getPrescriptionAction)(prescription.id), {
       loading: "Downloading prescription...",
       success: (res) => {
-        handlePrintHtmlToPDF(res.data?.DocumentTemplate.htmlContent);
+        // hp info
+        const hpName = `${res.data?.Medication.HealthCareProvider.HPProfile?.title ?? ""} ${res.data?.Medication.HealthCareProvider.HPProfile?.name ?? ""} ${res.data?.Medication.HealthCareProvider.HPProfile?.suffix ?? ""}`.trim()
+        const hpSpecialization = res.data?.Medication.HealthCareProvider.HPProfile?.specialties?.[0] ?? ""
+        const hpLicenseNumber = res.data?.Medication.HealthCareProvider.ProfessionalDetails?.licenseNumber ?? ""
+        const hpPtrNumber = res.data?.Medication.HealthCareProvider.ProfessionalDetails?.ptrNumber ?? ""
+        
+        //patient info
+        const address = res.data?.Medication.Patient.UserAddresses[0]
+        const addressLine = `${address?.address ?? ""}, ${address?.city ?? ""}, ${address?.state ?? ""}, ${address?.country ?? ""}, ${address?.zipCode ?? ""}`
+        const patientName = `${res.data?.Medication.Patient.firstName ?? ""} ${res.data?.Medication.Patient.middleName ?? ""} ${res.data?.Medication.Patient.lastName ?? ""} ${res.data?.Medication.Patient.suffix ?? ""}`.trim()
+        const patientAge = differenceInCalendarYears(new Date(), new Date(res.data?.Medication.Patient.dob ?? "")) + " years"
+        const patientGender = res.data?.Medication.Patient.gender?.toLocaleLowerCase() ?? ""
+
+        const template = preparePrescription({
+          prescriptionDate: dayjs().format("lll"),
+          medications: res.data?.Medication.MedicationDrugs ?? [],
+          template: res.data?.DocumentTemplate.htmlContent ?? "",
+          patient: {
+            name: patientName,
+            age: patientAge,
+            gender: patientGender,
+            address: addressLine
+          },
+          hp: {
+            name: hpName,
+            specialization: hpSpecialization,
+            licenseNumber: hpLicenseNumber,
+            ptrNumber: hpPtrNumber,
+            signatureUrl: "https://via.placeholder.com/150"
+          }
+        })
+        handlePrintHtmlToPDF(template);
         return res.message;
       },
       error: "Failed to download prescription"

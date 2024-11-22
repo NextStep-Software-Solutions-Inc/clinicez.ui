@@ -7,14 +7,12 @@ import {
   CardHeader,
   CardTitle
 } from "@components/ui/card";
-import React, { useMemo } from "react";
+import React from "react";
 import Each from "@components/utils/Each";
 import Suspend from "@components/Suspend";
 import dynamic from "next/dynamic";
 import { Pill } from "lucide-react";
-import PrescriptionItem, {
-  PrescriptionItemProps
-} from "@components/PrescriptionItem";
+import PrescriptionItem from "@components/PrescriptionItem";
 import { usePrescriptions } from "@hooks/usePrescription";
 const CreatePrescriptionModal = dynamic(
   () => import("@components/prescription/modals/CreatePrescriptionModal")
@@ -24,23 +22,6 @@ export interface PrescriptionsProps {}
 
 export default function Prescriptions({}: PrescriptionsProps) {
   const { data: prescriptions, mutate } = usePrescriptions({});
-
-  const mappedPrescriptions: PrescriptionItemProps["prescription"][] =
-    useMemo(() => {
-      return (prescriptions?.data ?? []).map((prescription) => {
-        return {
-          id: prescription.id,
-          name: prescription.name ?? "",
-          medicationDrugs: prescription.Medication._count.MedicationDrugs,
-          completedAt: prescription.Medication.completedAt,
-          createdAt: prescription.createdAt,
-          patient: {
-            userId: prescription.Medication.Patient.userId,
-            name: `${prescription.Medication.Patient.firstName ?? ""} ${prescription.Medication.Patient.middleName ?? ""} ${prescription.Medication.Patient.lastName ?? ""} ${prescription.Medication.Patient.suffix ?? ""}`
-          }
-        };
-      });
-    }, [prescriptions?.data]);
 
   return (
     <Card className="group/prescription h-1/3 overflow-hidden">
@@ -64,7 +45,7 @@ export default function Prescriptions({}: PrescriptionsProps) {
       </CardHeader>
       <CardContent className="grid gap-1">
         <Each
-          of={mappedPrescriptions}
+          of={prescriptions?.data ?? []}
           fallback={
             <p className="text-center text-muted-foreground">
               No recent prescription to show.

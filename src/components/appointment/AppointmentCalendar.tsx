@@ -1,9 +1,8 @@
 "use client";
 
 import { Calendar } from "@components/ui/calendar"
-import dayjs from "dayjs"
-import utc from "dayjs/plugin/utc"
-dayjs.extend(utc)
+import dayjs from "@lib/day-utils";
+
 
 import { SelectSingleEventHandler } from "react-day-picker";
 

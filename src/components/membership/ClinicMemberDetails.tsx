@@ -6,15 +6,12 @@ import { useUser as useDBUser } from "@hooks/useUser";
 import { notFound } from "next/navigation";
 import { LabelValue } from "@components/LabelValue";
 import { differenceInCalendarYears } from "date-fns";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@components/ui/card";
+import { Card, CardContent } from "@components/ui/card";
 import { Separator } from "@components/ui/separator";
 import { useClinicRoles } from "@/hooks/useClinicRole";
 import { useClinicAppointments } from "@hooks/useAppointment";
-
-import dayjs from "dayjs";
-import relativeTime from "dayjs/plugin/relativeTime";
+import dayjs from "@lib/day-utils";
 import ClinicMemberTabSection from "./ClinicMemberTabSection";
-dayjs.extend(relativeTime);
 
 interface ClinicMemberDetailsProps {
   userId: string;

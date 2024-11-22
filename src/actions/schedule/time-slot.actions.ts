@@ -1,6 +1,6 @@
 "use server";
 
-import dayjs, { formatDateTime } from "@lib/day-utils";
+import dayjs, {combineDateTime, localDateTimeToUtcDateTime, utcDateTimeToLocalDateTime } from "@lib/day-utils";
 import prisma from "@lib/prisma";
 import { getHPAppointmentsSchedule, GetUserSchedules, getUserSchedulesAction } from "./user-schedule.action";
 import { eachDayOfInterval, getWeekOfMonth } from "date-fns";
@@ -23,7 +23,6 @@ const TIME_ALLOWANCE = 30
 export type GetUserTimeSlots = Awaited<ReturnType<typeof getUserTimeSlotsAction>>;
 export const getUserTimeSlotsAction = cache(async ({serviceId, userId, hpId}: GenerateTimeSlotsArgs) => {
   let message = "Unable to generate time slots";
-
   try {
     const session = await getCachedSession()
     if(!session) throw new Error("User not authenticated.")
@@ -41,10 +40,10 @@ export const getUserTimeSlotsAction = cache(async ({serviceId, userId, hpId}: Ge
     const totalDuration = (serviceAttribute?.duration ?? 0) + (serviceAttribute?.durationPadding ?? 0)
     if(totalDuration <= 0) throw new Error("Service attribute duration is invalid, value must be greater than 0")
   
-    const baseSchedule = userSchedules?.find(schedule => schedule.type === "base")
+    const baseSchedule = (userSchedules?.data ?? []).find(schedule => schedule.type === "base")
     if (!baseSchedule) throw new Error("Healthcare provider base schedule not found")
     
-    const exceptionSchedules = userSchedules.filter(s => s.type === "exception")
+    const exceptionSchedules = (userSchedules?.data ?? []).filter(s => s.type === "exception")
     const defaultDateTime = dayjs().startOf("day").toDate()
     const startDate = baseSchedule.startDate  ?? defaultDateTime 
     const endDate = baseSchedule.endDate ?? defaultDateTime
@@ -52,9 +51,10 @@ export const getUserTimeSlotsAction = cache(async ({serviceId, userId, hpId}: Ge
     const recurringPattern = baseSchedule.pattern 
     const weeksOfMonth = baseSchedule.weekOfMonth  ?? []
     
-    const checkAvailability = (date: Date, schedule: NonNullable<GetUserSchedules>[number]): boolean => {
+    const checkAvailability = (date: Date, schedule: NonNullable<GetUserSchedules["data"]>[number]): boolean => {
       const currentDateTime = dayjs(date);
-      const end = formatDateTime(currentDateTime.toDate(), schedule?.endTime);
+      const end = combineDateTime(currentDateTime.toDate(), schedule?.endTime);
+    
       const isBeforeEnd = dayjs().isBefore(end, "minutes");
       
       let available = isRecurring ? false : isBeforeEnd;
@@ -87,11 +87,13 @@ export const getUserTimeSlotsAction = cache(async ({serviceId, userId, hpId}: Ge
     const availability: Availability[] = allDates.map(date => {
       const currentDateTime = dayjs(date);
       const isAvailable = checkAvailability(date, baseSchedule);
-      const start = formatDateTime(date, baseSchedule?.startTime).toDate();
-      const end = formatDateTime(date, baseSchedule?.endTime).toDate();
+      
+      const start = new Date(combineDateTime(date, baseSchedule?.startTime));
+      const end = new Date(combineDateTime(date, baseSchedule?.endTime));
+   
       const exceptionSlots = generateExceptionSlots(exceptionSchedules)
     
-      const bookedTimeSlots = appointmentSchedules
+      const bookedTimeSlots = (appointmentSchedules?.data ?? [])
         .filter(a => a.AppointmentAttribute && (a.AppointmentAttribute.date || a.AppointmentAttribute.timeEnd || a.AppointmentAttribute.timeStart))
         .map(appointment => {
           return {
@@ -129,13 +131,15 @@ const isOccupied = (timeSlot: { start: Date, end: Date }, schedules: Schedule[],
     if(!schedule.timeStart || !schedule.timeEnd) {
       throw new Error("Invalid schedule time");
     }
-    const start = formatDateTime(dayjs(schedule.dateStart).startOf("day").toDate(), schedule.timeStart);
-    const end = formatDateTime(dayjs(schedule.dateEnd).startOf("day").toDate(), schedule?.timeEnd);
+    
+    const start = combineDateTime(dayjs(schedule.dateStart).startOf("day").toDate(), schedule.timeStart);
+    const end = combineDateTime(dayjs(schedule.dateEnd).startOf("day").toDate(), schedule?.timeEnd);
+
     return dayjs(timeSlot.start).isBetween(start, end, "minutes", "[)") || dayjs(timeSlot.end).isBetween(start, end, "minutes", "(]");
   });
 }
 
-const generateExceptionSlots = (exceptions: GetUserSchedules): Schedule[] => {
+const generateExceptionSlots = (exceptions: NonNullable<GetUserSchedules["data"]>): Schedule[] => {
   const exceptionSchedules:Schedule[] = [];
   for (const exception of exceptions) {
     if(!exception.isRecurring){
@@ -149,20 +153,22 @@ const generateExceptionSlots = (exceptions: GetUserSchedules): Schedule[] => {
       )
       continue;
     }
-    function addExceptionSchedule(start: dayjs.Dayjs, end:dayjs.Dayjs,  isNowBetween: boolean) {
+    function addExceptionSchedule(start: Date, end: Date,  isNowBetween: boolean) {
       const now = dayjs();
       exceptionSchedules.push({
-        dateStart: isNowBetween ? now.toDate() : start.toDate(),
-        dateEnd: end.toDate(),
-        timeStart: isNowBetween ? now.toDate().toISOString().split("T")[1] : start.toDate().toISOString().split("T")[1],
-        timeEnd: end.toDate().toISOString().split("T")[1]
+        dateStart: isNowBetween ? now.toDate() : start,
+        dateEnd: end,
+        timeStart: isNowBetween ? now.toDate().toISOString().split("T")[1] : start.toISOString().split("T")[1],
+        timeEnd: end.toISOString().split("T")[1]
       });
     }
     const dateRange = eachDayOfInterval({ start: exception.startDate, end: exception.endDate });
     dateRange.forEach(date => {
       const currentDateTime = dayjs(date);
-      const start = formatDateTime(currentDateTime.toDate(), exception.startTime);
-      const end = formatDateTime(currentDateTime.toDate(), exception.endTime);
+      
+      const start = new Date(combineDateTime(currentDateTime.toDate(), exception.startTime));
+      const end = new Date(combineDateTime(currentDateTime.toDate(), exception.endTime));
+   
       const isNowBetween = dayjs().isBetween(start, end, "minutes", "[]");
       
       switch (exception.pattern) {

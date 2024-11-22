@@ -3,9 +3,8 @@ import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessa
 import { Input } from "@components/ui/input"
 import { Separator } from "@components/ui/separator"
 import { Textarea } from "@components/ui/textarea"
-import dayjs from "dayjs"
-import utc from "dayjs/plugin/utc"
-dayjs.extend(utc)
+import dayjs from "@lib/day-utils";
+
 
 import { useForm } from "react-hook-form"
 import { z } from "zod"

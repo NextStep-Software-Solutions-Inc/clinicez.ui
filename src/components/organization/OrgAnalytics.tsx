@@ -2,9 +2,8 @@
 
 import { DailyMembershipRequestChart } from "@components/charts/DailyMembershipRequestChart";
 import { useDailyOrgMemberships } from "@hooks/useDailyOrgMembership";
-import dayjs from "dayjs"
-import utc from "dayjs/plugin/utc"
-dayjs.extend(utc)
+import dayjs from "@lib/day-utils";
+
 
 import React, {  useMemo } from "react";
 import { DateRange } from "react-day-picker";

@@ -7,13 +7,10 @@ import VitalsSignView from "./VitalsSignView";
 import { VitalChartInteractive } from "@components/charts/VitalChartInteractive";
 import VitalSign from "./VitalSign";
 import { GetUserVitalSigns } from "@actions/vitals.action";
-import dayjs from "dayjs"
-import utc from "dayjs/plugin/utc"
-import localizedFormat from 'dayjs/plugin/localizedFormat'
 import dynamic from "next/dynamic";
 import { Button } from "@components/ui/button";
-dayjs.extend(utc)
-dayjs.extend(localizedFormat)
+import dayjs from "@lib/day-utils";
+
 
 const ChangeViewMode = dynamic(() => import("./ChangeViewMode"), { ssr: false });
 interface RecentVitalSignsProps {

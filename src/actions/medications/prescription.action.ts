@@ -30,6 +30,22 @@ export const getPrescriptionsAction = withErrorHandling(async (filters?: GetPres
       isArchived
     },
     include: {
+      DocumentTemplate: {
+        select: {
+          name: true
+        }
+      },
+      HealthcareProvider: {
+        select: {
+          HPProfile: {
+            select: {
+              title: true,
+              name: true,
+              suffix: true
+            }
+          }
+        }
+      },
       Medication: {
         select: {
           completedAt: true,
@@ -144,6 +160,29 @@ export const getPrescriptionAction = withErrorHandling(async (id: number) => {
       },
       Medication: {
         select: {
+          HealthCareProvider: {
+            select: {
+              ProfessionalDetails: {
+                select: {
+                  licenseNumber: true,
+                  ptrNumber: true,
+                }
+              },
+              HPProfile: {
+                select: {
+                  title: true,
+                  name: true,
+                  suffix: true,
+                  specialties: true,
+                }
+              }
+            }
+          },
+          MedicationDrugs: {
+            include: {
+              Drug: true
+            }
+          },
           completedAt: true,
           Patient: {
             select: {
@@ -151,7 +190,24 @@ export const getPrescriptionAction = withErrorHandling(async (id: number) => {
               firstName: true,
               middleName: true,
               lastName: true,
-              suffix: true
+              suffix: true,
+              dob: true,
+              gender: true,
+              UserAddresses: {
+                distinct: ['userId'],
+                take: 1,
+                where: {
+                  isActive: true,
+                  isPrimary: true
+                },
+                select: {
+                  address: true,
+                  city: true,
+                  country: true,
+                  zipCode: true,
+                  state: true
+                }
+              }
             }
           },
           _count: {
@@ -165,3 +221,16 @@ export const getPrescriptionAction = withErrorHandling(async (id: number) => {
   })
   return {message: "Successfully fetched prescription", data: prescription}
 })
+
+export const archivePrescriptionAction = withErrorHandling(async (id: number) => {
+    
+  const session = await getCachedSession()
+  if(!session) throw new Error("Unauthorized")
+    
+  await prisma.prescription.update({
+    where: {id},
+    data: {isArchived: true}
+  })
+  
+  return {message: "Successfully archived prescription", data: undefined}
+});

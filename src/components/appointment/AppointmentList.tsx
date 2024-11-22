@@ -10,7 +10,7 @@ import { GetAppointments } from "@actions/appointments/appointments.action"
 import { Separator } from "@components/ui/separator"
 import { ArrowRight } from "lucide-react";
 import dayjs from "@/lib/day-utils"
-import { formatDateTime } from "@/lib/day-utils";
+import { combineDateTime } from "@/lib/day-utils";
 
 interface AppointmentListProps {
   appointments: GetAppointments["data"]
@@ -114,7 +114,7 @@ export const AppointmentList = forwardRef<any, AppointmentListProps>(({appointme
                   <span className="text-xs flex gap-1 items-center">
                     <ArrowRight className="inline-block w-3 h-3"/>
                     {/* {item.AppointmentAttribute?.preferredAppointee} */}
-                    {item.AppointmentAttribute?.date && item.AppointmentAttribute.timeStart && <span>{formatDateTime(item.AppointmentAttribute.date, item.AppointmentAttribute.timeStart).fromNow()}</span>}
+                    {item.AppointmentAttribute?.date && item.AppointmentAttribute.timeStart && <span>{dayjs(combineDateTime(item.AppointmentAttribute.date, item.AppointmentAttribute.timeStart)).fromNow()}</span>}
                   </span>
                   {appointmentStatus === "all" && <Badge variant="outline" className="capitalize">{item?.AppointmentAttribute?.status.toLocaleLowerCase()}</Badge>}
                   <span className="flex gap-1">

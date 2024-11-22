@@ -1,6 +1,6 @@
 "use client";
 
-import dayjs, { formatDateTime } from "@lib/day-utils"
+import dayjs, { combineDateTime } from "@lib/day-utils"
 
 import {differenceInCalendarYears } from "date-fns"
 import { MoreVertical, Pencil} from "lucide-react"
@@ -93,7 +93,6 @@ export default function AppointmentDisplay() {
         <div className="flex items-center gap-2">
           <Badge variant="default" className="capitalize">{freshAppointment.data.AppointmentAttribute?.status}</Badge>
           
-          {/* <RescheduleAppointment disabled={!freshAppointment} bookingDateTime={freshAppointment?.bookingDateTime? new Date(freshAppointment?.bookingDateTime): new Date()}/> */}
           <Separator orientation="vertical" className="mx-1 h-6" />
           
           <Each
@@ -220,7 +219,7 @@ export default function AppointmentDisplay() {
         <div className="px-5 py-2 text-xs max-h-40 scrollBox no-scrollbar">
           <span className="font-semibold text-base">{freshAppointment.data.AppointmentAttribute?.status !== "ROUTED" ? "Preferred": "Assigned"} Schedule</span> <br />
           {freshAppointment.data.AppointmentAttribute?.date && <LabelValue className="flex items-center gap-2" label={dayjs(freshAppointment.data.AppointmentAttribute.date).format("ll - dddd")} value="Date:" />}
-          {(freshAppointment.data.AppointmentAttribute?.date && freshAppointment.data.AppointmentAttribute?.timeStart && freshAppointment.data.AppointmentAttribute?.timeEnd) && <LabelValue className="flex items-center gap-2" label={`${formatDateTime(freshAppointment.data.AppointmentAttribute.date, freshAppointment.data.AppointmentAttribute.timeStart).format("hh:mm A")} - ${formatDateTime(freshAppointment.data.AppointmentAttribute.date, freshAppointment.data.AppointmentAttribute.timeEnd).format("hh:mm A")}`} value="Time:" />}
+          {(freshAppointment.data.AppointmentAttribute?.date && freshAppointment.data.AppointmentAttribute?.timeStart && freshAppointment.data.AppointmentAttribute?.timeEnd) && <LabelValue className="flex items-center gap-2" label={`${dayjs(combineDateTime(freshAppointment.data.AppointmentAttribute.date, freshAppointment.data.AppointmentAttribute.timeStart)).format("hh:mm A")} - ${dayjs(combineDateTime(freshAppointment.data.AppointmentAttribute.date, freshAppointment.data.AppointmentAttribute.timeEnd)).format("hh:mm A")}`} value="Time:" />}
           {freshAppointment.data.AppointmentAttribute?.PreferredAppointee && <LabelValue className="flex items-center gap-2" label={preferredHPName} value={`Preferred HP:`} />}
           {meetingUrl && <div className="flex gap-2 items-center">
             <LabelValue className="flex items-center gap-2" label={meetingUrl} value={`Meeting link:`} />

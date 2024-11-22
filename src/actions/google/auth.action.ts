@@ -7,7 +7,7 @@ import { getCachedSession } from "@actions/session.action";
 import prisma from "@lib/prisma";
 import { getPermissionsAction } from "@actions/permission.action";
 import { PERMISSIONS } from "@lib/permissions";
-import { formatDateTime } from "@/lib/day-utils";
+import { combineDateTime } from "@/lib/day-utils";
 import { withErrorHandling } from "@/lib/with-error-handling";
 
 type Credentials  = {
@@ -201,11 +201,11 @@ export const insertToCalendar = withErrorHandling(async (appointmentId:number) =
     location: appointment.AppointmentAttribute?.AppointmentMode.name,
     description:  appointment.complaint,
     start: {
-      dateTime: formatDateTime(appointment.AppointmentAttribute!.date!, appointment.AppointmentAttribute!.timeStart!).toISOString(),
+      dateTime: combineDateTime(appointment.AppointmentAttribute!.date!, appointment.AppointmentAttribute!.timeStart!),
       timeZone: "Asia/Manila"
     },
     end: {
-      dateTime: formatDateTime(appointment.AppointmentAttribute!.date!, appointment.AppointmentAttribute!.timeEnd!).toISOString(),
+      dateTime: combineDateTime(appointment.AppointmentAttribute!.date!, appointment.AppointmentAttribute!.timeEnd!),
       timeZone: "Asia/Manila"
     },
     attendees: [...appointment.AppointmentRouting.map(h => ({email: h.RoutedTo.User.email})), ...appointment.Requesters.map(p => ({email: p.User.email}))],

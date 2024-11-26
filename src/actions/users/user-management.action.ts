@@ -9,8 +9,26 @@ export const getRolesAction = async () => {
   return roles.data;
 }
 
-export const assignRolesAction = async (user_id: string, role_ids: [string]) => {
-  await managementClient.users.assignRoles({ id: user_id}, {
+export const assignRolesAction = async (userId: string, role_ids: [string]) => {
+  await managementClient.users.assignRoles({ id: userId}, {
     roles: role_ids
   })
+}
+
+type UpdateAuth0UserPayload = {
+  family_name?: string;
+  given_name?: string;
+  name?: string;
+  nickname?: string;
+  picture?: string;
+}
+export const updateAuth0UserAction = async (userId: string, data: UpdateAuth0UserPayload) => {
+  const { family_name, given_name, name, nickname, picture } = data;
+  await managementClient.users.update({ id: userId }, {
+    family_name,
+    given_name,
+    name,
+    nickname,
+    picture,
+  });
 }

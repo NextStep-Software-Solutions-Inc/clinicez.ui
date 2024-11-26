@@ -1,3 +1,5 @@
+"use client";
+
 import { Button } from "@components/ui/button"
 import {
   Sheet,
@@ -7,7 +9,6 @@ import {
   SheetFooter,
   SheetHeader,
   SheetTitle,
-  SheetTrigger,
 } from "@components/ui/sheet"
 import BookAppointmentSteps from "./BookAppointmentSteps";
 import SelectTimeSlot from "./SelectTimeSlot";
@@ -16,13 +17,25 @@ import ConsentForm from "./ConsentForm";
 import ReviewBooking from "./ReviewBooking";
 import { InsertAttachment } from "./InsertAttachment";
 import SelectService from "./SelectService";
+import { useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 
 export default function BookAppointmentSheet() {
+  
+  const searchParams = useSearchParams();
+  const open = useMemo(() => searchParams.has("book-appointment"), [searchParams]);
+
+  const handleClose = (state: boolean) => {
+    if(!state) {
+      const searchParams = new URLSearchParams(window.location.search);
+      searchParams.delete("book-appointment");
+      window.history.pushState({}, "", `${window.location.pathname}?${searchParams.toString()}`);
+    }
+  }
+
+  
   return (
-    <Sheet>
-      <SheetTrigger asChild>
-        <Button>Book Appointment</Button>
-      </SheetTrigger>
+    <Sheet open={open} onOpenChange={handleClose}>
       <SheetContent side="top" >
         <SheetHeader>
           <SheetTitle>Book an Appointment</SheetTitle>

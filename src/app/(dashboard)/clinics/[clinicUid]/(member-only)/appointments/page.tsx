@@ -1,15 +1,16 @@
 import React from "react";
-import AppointmentPanel  from "../../../../../components/appointment/AppointmentPanel";
+import AppointmentPanel  from "@components/appointment/AppointmentPanel";
 import { cookies } from "next/headers";
 import { Separator } from "@components/ui/separator";
-import BookAppointmentSheet from "../../../../../components/appointment/BookAppointmentSheet";
 import { getAppointmentCountsAction, getRoutedAppointmentCountsAction } from "@actions/appointments/appointments.action";
 import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth0";
-import AppointmentDisplay from "../../../../../components/appointment/AppointmentDisplay";
+import AppointmentDisplay from "@components/appointment/AppointmentDisplay";
 import Suspend from "@components/Suspend";
 import { Metadata } from "next";
 import { getClinicAppointmentTabsAction } from "@/actions/clinics/clinic-appointment-tab..action";
 import PageLoading from "@components/PageLoading";
+import { Button } from "@/components/ui/button";
+import BookAppointmentBtn from "@/components/BookAppointmentBtn";
 
 export const maxDuration = 30
 export const revalidate = 60
@@ -43,9 +44,9 @@ async function AppointmentsPage({ searchParams, params }: AppRouterPageRouteOpts
             View and respond to appointments.
           </p>
         </div>
-        <Suspend>
-          <BookAppointmentSheet/>
-        </Suspend>
+        <BookAppointmentBtn>
+          <Button>Book Appointment</Button>
+        </BookAppointmentBtn>
       </div>
       <Separator />
       <div className="rounded-[0.5rem] border bg-background shadow">

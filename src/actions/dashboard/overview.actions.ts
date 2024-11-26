@@ -4,6 +4,7 @@ import prisma from "@lib/prisma";
 
 export const getDashboardData = async (clinicUid: string) => {
   const [files, memberships, members, roles] = await Promise.all([
+
     prisma.file.aggregate({
       where: {
         isActive: true,
@@ -22,10 +23,11 @@ export const getDashboardData = async (clinicUid: string) => {
         size: true
       }
     }),
-    prisma.organizationMember.groupBy({
+
+    prisma.clinicMember.groupBy({
       by: ["status"],
       where: {
-        Organization: {
+        Clinic: {
           ClinicOrganizations: {
             some: {
               Clinic: {
@@ -37,10 +39,10 @@ export const getDashboardData = async (clinicUid: string) => {
       },
       _count: {
         status: true,
-        role: true,
         _all: true
       },
     }),
+
     prisma.user.count({
       where: {
         ClinicMembers: {

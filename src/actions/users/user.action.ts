@@ -12,6 +12,7 @@ import { sendMail } from '@actions/email.action';
 import { faker } from '@faker-js/faker';
 import { hasCodeProperty } from '@lib/utils';
 import { withErrorHandling } from '@/lib/with-error-handling';
+import { updateAuth0UserAction } from './user-management.action';
 
 
 export type GetUsersFilters = {
@@ -415,13 +416,28 @@ export const createUserAction = withErrorHandling(async (payload: CreateUserPayl
 //   }
 // }
 
-export const updateUserAction = async (userId: string, data: Prisma.UserUpdateArgs["data"]) => {
+export const updateUserAction = withErrorHandling(async (userId: string, data: Prisma.UserUpdateArgs["data"]) => {
+  
+  const session = await getCachedSession();
+  if(!session) throw new Error("Unauthorized");
+
   const updatedUser = await prisma.user.update({
     where: { userId },
     data
   });
-  return updatedUser;
-}
+  
+  const {firstName, lastName, middleName, suffix, picture, nickname} = updatedUser
+
+  await updateAuth0UserAction(updatedUser.userId, {
+    name: `${firstName ?? ""} ${middleName ?? ""} ${lastName ?? ""} ${suffix ?? ""}`.trim(),
+    given_name: firstName ?? undefined,
+    family_name: lastName ?? undefined,
+    nickname: nickname ?? `${firstName} ${lastName}`,
+    picture: picture ?? undefined
+  })
+
+  return {message: "User updated successfully", data: updatedUser};
+})
 
 export const resetPasswordAction = async (userId: string, password: string) => {
   const res = await managementClient.users.update({id: userId}, {

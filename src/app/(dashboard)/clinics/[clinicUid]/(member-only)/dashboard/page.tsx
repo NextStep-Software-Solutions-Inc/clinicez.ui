@@ -14,7 +14,8 @@ import { PatientHealthAnalytics } from "@components/dashboard/PatientHealthAnaly
 import { PatientsAnalytics } from "@components/dashboard/PatientsAnalytics"
 import { OrgMembershipAnalytics } from "@/components/organization/OrgMembershipAnalytics"
 import { filterNavList } from "../nav"
-import ClinicMemberActions from "@/components/dashboard/clinic-settings/ClinicMemberActions"
+import { ClinicOverview } from "@/components/dashboard/ClinicOverview"
+import { getClinicAction } from "@/actions/clinics/clinic.action"
 
 export const maxDuration = 30; // page timeout in seconds
 export const revalidate  = 60; // revalidation interval in seconds
@@ -26,7 +27,9 @@ export const metadata: Metadata = {
 async function DashboardPage({params, searchParams}: AppRouterPageRouteOpts) {
   const clinicUid = String(params?.clinicUid)
   const session = await getCachedSession()
+  const clinic = await getClinicAction(clinicUid)
   const userId = session?.user.sub
+  
 
   const mappedNavItems = filterNavList().map((item) => ({
     ...item,
@@ -43,8 +46,8 @@ async function DashboardPage({params, searchParams}: AppRouterPageRouteOpts) {
         </div>
 
         <div className="flex-1 space-y-4 p-8 pt-6">
-          <div className="flex items-center justify-between space-y-2">
-            <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
+          <div className="space-y-2">
+            <p className="text-3xl font-bold tracking-tight">{clinic?.name} Dashboard</p>
           </div>
           <Tabs defaultValue="overview" className="space-y-4">
             <TabsList>
@@ -61,34 +64,8 @@ async function DashboardPage({params, searchParams}: AppRouterPageRouteOpts) {
             </TabsList>
             <TabsContent value="overview" className="space-y-4">
               <Suspend>
-                <DashboardStats userId={userId} orgId={clinicUid}/>
+                <ClinicOverview userId={userId} clinicUid={clinicUid}/>
               </Suspend>
-              {/* <ConditionalRender condition={await isMember() && await isHP()}>
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-                  <Card className="col-span-2 lg:col-span-4">
-                    <CardHeader>
-                      <CardTitle>Appointment Overview</CardTitle>
-                      <CardDescription>
-                      Monthly counts of appointments.
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="pl-2">
-                      <Overview />
-                    </CardContent>
-                  </Card>
-                  <Card className="col-span-2 lg:col-span-3">
-                    <CardHeader>
-                      <CardTitle>Recent Appointments</CardTitle>
-                      <CardDescription>
-                      You made 12 appointments this month.
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <RecentSales />
-                    </CardContent>
-                  </Card>
-                </div>
-              </ConditionalRender> */}
             </TabsContent>
             <TabsContent value="analytics" className="space-y-4">
               <Suspend>

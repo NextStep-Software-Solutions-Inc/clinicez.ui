@@ -20,7 +20,6 @@ import { filterNavList } from "./nav";
 
 import ClinicEzMiniLogo from "@public/assets/clinic-ez_mini-logo.svg";
 import Image from "next/image";
-import { protectOrg } from "@lib/protect-org";
 import { Suspense } from "react";
 import UserAvatarWrapper from "@components/UserAvatarWrapper";
 import Suspend from "@components/Suspend";

@@ -3,7 +3,7 @@ import { Metadata } from "next"
 import { Separator } from "@components/ui/separator"
 import SidebarNav from "@components/SidebarNav"
 import ConditionalRender from "@components/utils/ConditionalRender"
-import { isHP, isOrgAdmin, isSameOrg, isUserOwner } from "@lib/protect-org"
+import { isHP, isOrgAdmin, isSameOrg, isUserOwner } from "@lib/org-utils"
 import { redirect } from "next/navigation"
 import { getCachedSession } from "@actions/session.action"
 

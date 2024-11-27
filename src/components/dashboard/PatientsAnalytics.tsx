@@ -3,13 +3,13 @@ import { BloodTypeChart } from "@components/charts/BloodTypeChart";
 import { CivilStatusChart } from "@components/charts/CivilStatusChart";
 import { GenderChart } from "@components/charts/GenderChart";
 import ConditionalRender from "@components/utils/ConditionalRender";
-import { isMember, isOrgAdmin } from "@lib/protect-org";
+import { isOrgMember, isOrgAdmin } from "@lib/org-utils";
 
-export const PatientsAnalytics = async ({ orgId }: { orgId: string; }) => {
+export const PatientsAnalytics = async ({ orgUid }: { orgUid: string; }) => {
   const [stats, member, orgAdmin] = await Promise.all([
-    getPatientAnalyticsData(orgId),
-    isMember(),
-    isOrgAdmin()
+    getPatientAnalyticsData(orgUid),
+    isOrgMember(),
+    isOrgAdmin(orgUid)
   ]);
   const { genderStats, bloodTypeStats, civilStatusStats } = stats;
 

@@ -1,6 +1,6 @@
 import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth0";
 import { Separator } from "@components/ui/separator";
-import { isOrgAdmin } from "@lib/protect-org";
+import { isOrgAdmin } from "@lib/org-utils";
 import React from "react";
 import Suspend from "@components/Suspend";
 import { redirect } from "next/navigation";

@@ -1,7 +1,7 @@
 import { Separator } from "@components/ui/separator"
 import { Metadata } from "next"
 import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth0"
-import { isUserOwner } from "@lib/protect-org"
+import { isUserOwner } from "@lib/org-utils"
 import { DisabilityList } from "./DisabilityList"
 import { IllnessList } from "./IllnessList"
 import Suspend from "@components/Suspend"

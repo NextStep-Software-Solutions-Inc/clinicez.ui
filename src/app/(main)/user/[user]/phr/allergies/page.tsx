@@ -3,7 +3,7 @@ import { Metadata } from "next"
 import Suspend from "@components/Suspend"
 import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth0"
 import { AllergyList } from "./AllergyList"
-import { isUserOwner } from "@lib/protect-org"
+import { isUserOwner } from "@lib/org-utils"
 
 export const metadata: Metadata = {
   title: "Allergies | PHR",

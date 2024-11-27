@@ -44,17 +44,21 @@ export type GetOrganizationsFilters = {
   userId?: string;
   orgUid?: string;
   clinicUid?: string;
+  isPublic?: boolean;
 }
 
 export type GetOrganizations = Awaited<ReturnType<typeof getOrganizationsAction>>
 export const getOrganizationsAction = cache(async (filters?: GetOrganizationsFilters) => {
 
-  const { userId, clinicUid, orgUid } = filters || {};
+  const { userId, clinicUid, orgUid, isPublic = true } = filters || {};
   const organizations = await prisma.organization.findMany({
     orderBy: {
       name: "asc"
     },
     where: {
+      OrganizationSetting: {
+        isPublic
+      },
       ...(orgUid && { orgUid }),
       ...(userId && {
         Users: {

@@ -2,17 +2,17 @@ import { getHealthAnalyticsData } from "@actions/dashboard/analytics.action";
 import DisabilityChart from "@components/charts/DisabilityChart";
 import IllnessChart from "@components/charts/IllnessChart";
 import ConditionalRender from "@components/utils/ConditionalRender";
-import { isMember, isOrgAdmin } from "@lib/protect-org";
+import { isOrgMember, isOrgAdmin } from "@lib/org-utils";
 
 interface PatientHealthAnalyticsProps {
-  orgId: string;
+  orgUid: string;
 }
 
-export const PatientHealthAnalytics = async ({ orgId }: PatientHealthAnalyticsProps) => {
+export const PatientHealthAnalytics = async ({ orgUid }: PatientHealthAnalyticsProps) => {
   const [stats, member, orgAdmin] = await Promise.all([
-    getHealthAnalyticsData(orgId),
-    isMember(),
-    isOrgAdmin()
+    getHealthAnalyticsData(orgUid),
+    isOrgMember(),
+    isOrgAdmin(orgUid)
   ]);
   const illnesses: { illness: string; count: number; }[] = stats.illness.map(item => ({
     illness: item.name,

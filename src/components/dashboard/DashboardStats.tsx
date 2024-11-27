@@ -5,7 +5,7 @@ import {
 } from "@components/ui/card";
 import { CircleDashed, CircleOff, Files, LucideIcon, User, UserCheck, Users, UserXIcon } from "lucide-react";
 import ConditionalRender from "@components/utils/ConditionalRender";
-import { isMember, isOrgAdmin } from "@lib/protect-org";
+import { isOrgMember, isOrgAdmin } from "@lib/org-utils";
 import { getDashboardData } from "@actions/dashboard/overview.actions";
 import Link from "next/link";
 import Each from "@components/utils/Each";
@@ -13,14 +13,14 @@ import Each from "@components/utils/Each";
 
 interface DashboardStatsProps {
   userId: string;
-  orgId: string;
+  orgUid: string;
 }
 
-export const DashboardStats = async ({ userId, orgId }: DashboardStatsProps) => {
+export const DashboardStats = async ({ userId, orgUid }: DashboardStatsProps) => {
   const [stats, member, orgAdmin] = await Promise.all([
-    getDashboardData(orgId),
-    isMember(),
-    isOrgAdmin()
+    getDashboardData(orgUid),
+    isOrgMember(),
+    isOrgAdmin(orgUid)
   ]);
 
   const { files, memberships, members, roles } = stats;
@@ -56,7 +56,7 @@ export const DashboardStats = async ({ userId, orgId }: DashboardStatsProps) => 
         <div>
           <h3 className="text-lg font-medium mb-2 ml-1">Organization Overview</h3>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Link href={`/${orgId}/membership`}>
+            <Link href={`/organizations/${orgUid}/membership`}>
 
               <DashboardTile
                 title={`Membership`}

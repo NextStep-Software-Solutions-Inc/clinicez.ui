@@ -62,9 +62,9 @@ async function DashboardPage({params, searchParams}: AppRouterPageRouteOpts) {
             </TabsList>
             <TabsContent value="overview" className="space-y-4">
               <Suspend>
-                <DashboardStats userId={userId} orgId={orgUid}/>
+                <DashboardStats userId={userId} orgUid={orgUid}/>
               </Suspend>
-              {/* <ConditionalRender condition={await isMember() && await isHP()}>
+              {/* <ConditionalRender condition={await isOrgMember() && await isHP()}>
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
                   <Card className="col-span-2 lg:col-span-4">
                     <CardHeader>
@@ -93,13 +93,13 @@ async function DashboardPage({params, searchParams}: AppRouterPageRouteOpts) {
             </TabsContent>
             <TabsContent value="analytics" className="space-y-4">
               <Suspend>
-                <PatientHealthAnalytics orgId={orgUid}/>
+                <PatientHealthAnalytics orgUid={orgUid}/>
               </Suspend>
               <Suspend>
-                <PatientsAnalytics orgId={orgUid}/>
+                <PatientsAnalytics orgUid={orgUid}/>
               </Suspend>
               <Suspend>
-                <OrgMembershipAnalytics orgId={orgUid}/>
+                <OrgMembershipAnalytics orgUid={orgUid}/>
               </Suspend>
             </TabsContent>
           </Tabs>

@@ -21,11 +21,12 @@ import { filterNavList } from "./nav";
 
 import ClinicEzMiniLogo from "@public/assets/clinic-ez_mini-logo.svg";
 import Image from "next/image";
-import { protectOrg } from "@lib/protect-org";
+import { isOrgMember } from "@lib/org-utils";
 import { Suspense } from "react";
 import UserAvatarWrapper from "@components/UserAvatarWrapper";
 import Suspend from "@components/Suspend";
 import { getCachedSession } from "@actions/session.action";
+import { redirect } from "next/navigation";
 
 interface ProcessLayoutProps {
   children: React.ReactNode;
@@ -37,8 +38,12 @@ export default async function ProcessLayout({
   children,
   params: { orgUid }
 }: ProcessLayoutProps) {
-  const session = await getCachedSession();
-  await protectOrg(orgUid); // Check if user is a member of the organization they are trying to access
+  const [session, isMember] = await Promise.all([
+    getCachedSession(),
+    isOrgMember()
+  ]);
+
+  if (!isMember) redirect("/unauthorized");
 
   return (
     <TooltipProvider>

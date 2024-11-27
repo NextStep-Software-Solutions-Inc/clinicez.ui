@@ -5,7 +5,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@component
 import AddUserVaccination from "./modal/AddUserVaccinationModal";
 import { Badge } from "@components/ui/badge";
 import { Separator } from "@components/ui/separator";
-import { isUserOwner } from "@lib/protect-org";
+import { isUserOwner } from "@lib/org-utils";
 import ConditionalRender from "@components/utils/ConditionalRender";
 import { VaccinationForm } from "./VaccinationForm";
 interface VaccinationProps {

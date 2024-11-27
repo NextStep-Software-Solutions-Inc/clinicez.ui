@@ -3,10 +3,10 @@ import { LayoutDashboard } from "lucide-react";
 import { DropdownMenuItem } from "@components/ui/dropdown-menu";
 import ConditionalRender from "./utils/ConditionalRender";
 import { getMyDefaultOrganizationAction } from "@actions/organizations/organization.action";
-import { isHP, isMember } from "@lib/protect-org";
+import { isHP, isOrgMember } from "@lib/org-utils";
 
 export default async function OrgDashboardLink(){
-  const [hp, member, defaultOrg] = await Promise.all([isHP(), isMember(), getMyDefaultOrganizationAction()]);
+  const [hp, member, defaultOrg] = await Promise.all([isHP(), isOrgMember(), getMyDefaultOrganizationAction()]);
 
   return (
     <ConditionalRender condition={hp || member}>

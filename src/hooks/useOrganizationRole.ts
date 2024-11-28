@@ -2,8 +2,6 @@ import { GetOrganizationRoles, GetOrganizationRolesFilters } from "@actions/orga
 import { self } from "@services/request"
 import useSWR from "swr"
 
-
-
 export const useOrganizationRoles = (filters: GetOrganizationRolesFilters) => {
 
   const fetcher = (args: string) => self.get<GetOrganizationRoles>(args)

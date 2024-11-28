@@ -12,6 +12,7 @@ type GetClinicPatientFilters = {
   pageSize?: number
   pageNumber?: number
   distinct?: boolean
+  userId?: string
 }
 export type GetClinicPatients = Awaited<ReturnType<typeof getClinicPatientsAction>>
 export const getClinicPatientsAction = withErrorHandling(async (filter: GetClinicPatientFilters) => {
@@ -19,7 +20,7 @@ export const getClinicPatientsAction = withErrorHandling(async (filter: GetClini
  
   const session = await getCachedSession()
   if(!session) throw new Error("Unauthorized")
-  const { search, pageNumber = 1, pageSize = 50, distinct = false, clinicUid } = filter ?? {}
+  const { search, pageNumber = 1, pageSize = 50, distinct = false, clinicUid, userId } = filter ?? {}
   
   const clinicPatients = await prismaClient.clinicPatient.findMany({
     ... pageSize ? { take: pageSize } : {},
@@ -33,6 +34,7 @@ export const getClinicPatientsAction = withErrorHandling(async (filter: GetClini
         clinicUid
       },
       Patient: {
+        ... userId ? { userId } : {},
         ... !!search ? {
           OR: [
             { firstName: { contains: search, mode: "insensitive" } },

@@ -28,6 +28,7 @@ import { ClinicSwitcher } from "@/components/clinic/ClinicSwitcher";
 import { getClinicMembersAction } from "@/actions/clinics/clinic-member.action";
 import { redirect } from "next/navigation";
 import { getOrgMembersAction } from "@/actions/organizations/org-member.action";
+import { getClinicPatientsAction } from "@/actions/clinics/clinic-patient.action";
 
 interface ProcessLayoutProps {
   children: React.ReactNode;
@@ -41,25 +42,26 @@ export default async function ProcessLayout({
 }: ProcessLayoutProps) {
 
   const session = await getCachedSession();
-
-  const myClinicMembership = await getClinicMembersAction({
-    userId: session?.user.sub,
-    clinicUid,
-    status: "ACTIVE"
-  })
-
-
-  if(!myClinicMembership.data?.length) {
-
-    const myOrganizationMembership = await getOrgMembersAction({
+  
+  const [myClinicMembership, clinicPatients, myOrganizationMembership] = await Promise.all([
+    getClinicMembersAction({
+      userId: session?.user.sub,
+      clinicUid,
+      status: "ACTIVE"
+    }),
+    getClinicPatientsAction({
+      clinicUid,
+      userId: session?.user.sub
+    }),
+    await getOrgMembersAction({
+      clinicUid,
       userId: session?.user.sub,
       status: "ACTIVE"
-    });
-
-    if(!myOrganizationMembership.data?.data.length) {
-      return redirect("/organizations");
-    }
-
+    })
+  ])
+  
+  if(!myOrganizationMembership.data?.data.length || !clinicPatients.data?.length || !myClinicMembership.data?.length) {
+    return redirect("/unauthorized");
   }
 
   return (

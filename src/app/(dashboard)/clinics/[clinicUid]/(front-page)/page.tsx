@@ -6,7 +6,11 @@ import React from "react";
 import "@/styles/shiny-button.css";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { getClinicMembersAction } from "@/actions/clinics/clinic-member.action";
+import { getCachedSession } from "@/actions/session.action";
+import { getClinicPatientsAction } from "@/actions/clinics/clinic-patient.action";
+import { getOrgMembersAction } from "@/actions/organizations/org-member.action";
 
 export const metadata: Metadata = {
   title: "Clinic",
@@ -15,9 +19,32 @@ export const metadata: Metadata = {
 
 export default async function ClinicPage({params}: {params: {clinicUid: string}}) {
   const {clinicUid} = params;
+  const session = await getCachedSession();
   const clinic = await getClinicAction(clinicUid);
 
-  if(!clinic.data?.ClinicSetting?.isPublic) notFound();
+  if(!clinic.data?.ClinicSetting?.isPublic) {
+  
+    const [myClinicMembership, clinicPatients, myOrganizationMembership] = await Promise.all([
+      getClinicMembersAction({
+        userId: session?.user.sub,
+        clinicUid,
+        status: "ACTIVE"
+      }),
+      getClinicPatientsAction({
+        clinicUid,
+        userId: session?.user.sub
+      }),
+      await getOrgMembersAction({
+        clinicUid,
+        userId: session?.user.sub,
+        status: "ACTIVE"
+      })
+    ])
+  
+    if(!myOrganizationMembership.data?.data.length || !clinicPatients.data?.length || !myClinicMembership.data?.length) {
+      return notFound();
+    }
+  }
   
   return (
     <div className="container mx-auto my-10">

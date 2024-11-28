@@ -21,6 +21,7 @@ export type GetOrgMembersFilters = {
     pageNumber?: number;
     pageSize?: number;
     distinct?: boolean;
+    clinicUid?: string;
 }
   
 export type GetOrgMembers  = Awaited<ReturnType<typeof getOrgMembersAction>>
@@ -29,7 +30,7 @@ export const getOrgMembersAction = withErrorHandling(cache(async (filter?: GetOr
   const session = await getCachedSession();
   if(!session) throw new Error("User not authenticated.");
   
-  const { userId, orgUid, status, distinct } = filter || {};
+  const { userId, orgUid, status, distinct, clinicUid } = filter || {};
 
   const castToNumber = (value: string | null | undefined | number) => value ? Number(value) : undefined;
   
@@ -48,7 +49,17 @@ export const getOrgMembersAction = withErrorHandling(cache(async (filter?: GetOr
       where: {
         Organization: {
           isActive: true,
-          ...orgUid ? { orgUid }: {}
+          ...orgUid ? { orgUid }: {},
+          ...clinicUid ? {
+            ClinicOrganizations: {
+              some: {
+                Clinic: {
+                  isActive: true,
+                  clinicUid
+                }
+              }
+            }
+          } : {}
         },
         User: {
           isActive: true,

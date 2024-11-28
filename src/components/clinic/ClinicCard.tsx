@@ -12,7 +12,7 @@ export async function ClinicCard({ clinic }: ClinicCardProps) {
 
   return (
     <div className="relative group/join hover:scale-105 hover:z-50 transition-all">
-      <Link href={customUrl ? customUrl: `/clinics/${clinicUid}/dashboard`}>
+      <Link href={customUrl ? customUrl: `/clinics/${clinicUid}`}>
         <div className="overflow-hidden relative h-[15rem] aspect-video rounded-lg shadow-2xl ">
           <Image src={logo ?? clinicPlaceholder} alt={name} fill className="object-scale-down rounded-lg" />
           

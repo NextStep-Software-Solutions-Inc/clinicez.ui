@@ -40,8 +40,8 @@ export default async function ClinicPage({params}: {params: {clinicUid: string}}
         status: "ACTIVE"
       })
     ])
-  
-    if(!myOrganizationMembership.data?.data.length || !clinicPatients.data?.length || !myClinicMembership.data?.length) {
+     
+    if(!myOrganizationMembership.data?.data.length && !clinicPatients.data?.length && !myClinicMembership.data?.length) {
       return notFound();
     }
   }

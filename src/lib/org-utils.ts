@@ -11,7 +11,7 @@ export const isOrgMember = cache(async () => {
   if(!session) throw new Error("No session found");
 
   const myOrgs = await getOrgMembersAction({userId: session.user.sub})
-  return myOrgs.data?.data?.length && myOrgs.data?.data.some(org => ["ACTIVE"].includes(org.status))
+  return !!myOrgs.data?.data?.length && myOrgs.data?.data.some(org => ["ACTIVE"].includes(org.status))
 })
 
 export const isUserOwner = cache(async (userId: string) => {
@@ -35,7 +35,7 @@ export const isOrgAdmin = cache(async (orgUid?:string) => {
     userId: session.user.sub,
     orgUid
   });
-  return myOrgs.data?.data.some((org) => ["ACTIVE"].includes(org.status) && org.OrganizationRole.name.toUpperCase() === "ADMIN");
+  return !!myOrgs.data?.data.some((org) => ["ACTIVE"].includes(org.status) && org.OrganizationRole.name.toUpperCase() === "ADMIN");
 })
 
 export const isSameOrg = cache(async (userId: string) => {

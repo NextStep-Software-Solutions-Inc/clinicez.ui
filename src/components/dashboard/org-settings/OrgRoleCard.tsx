@@ -11,11 +11,11 @@ import { Trash } from "lucide-react";
 import { GetOrganizationRoles } from "@/actions/organizations/organization-role.action";
 
 interface OrgRoleCardProps {
-    role: NonNullable<GetOrganizationRoles>[number]
+    role: NonNullable<GetOrganizationRoles["data"]>[number]
     onDeleteRole?: () => void
   }
 export const OrgRoleCard = ({role, onDeleteRole}:OrgRoleCardProps) => {
-  const activeRoleRequirements = role.UserDefaultOrganizationRoles.flatMap((item) => item.OrganizationRole.requirements)
+  const activeRoleRequirements = role.requirements
   const handleDelete = async () => {
     toast.promise(deleteClinicRoleAction(role.id), {
       loading: "Deleting role...",

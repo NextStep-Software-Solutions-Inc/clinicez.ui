@@ -15,7 +15,10 @@ export function OrganizationSwitcher({isCollapsed,}: OrganizationSwitcherProps) 
   const router = useRouter();
   const pathname = usePathname();
   const user = useUser()
-  const {data: myOrgs} = useOrgMembers({userId: user.user?.sub, status: "ACTIVE"}, !!user.user?.sub)  
+  const {data: myOrgs} = useOrgMembers({
+    userId: user.user?.sub ?? undefined, 
+    status: "ACTIVE"
+  }, !!user.user?.sub)  
   
   const orgs: SwitcherOptionsType[] = (myOrgs?.data?.data ?? []).filter(o => ["ACTIVE"].includes(o.status))
     .map(org => ({

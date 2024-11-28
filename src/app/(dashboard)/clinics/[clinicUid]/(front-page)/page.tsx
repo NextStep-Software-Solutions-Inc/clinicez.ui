@@ -47,7 +47,7 @@ export default async function ClinicPage({params}: {params: {clinicUid: string}}
   }
   
   return (
-    <div className="container mx-auto my-10">
+    <div className="container mx-auto my-10 h-1/2">
       <div className="flex gap-5 items-center flex-wrap">
         <div className="">
           <Image src={clinic.data?.logo ?? ""} width={500} height={500} alt="clinic-logo" className="object-scale-down w-[300px] border-dashed border rounded-sm "/>

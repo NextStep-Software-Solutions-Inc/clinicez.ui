@@ -40,7 +40,7 @@ export default async function ProcessLayout({
 }: ProcessLayoutProps) {
   const [session, isMember] = await Promise.all([
     getCachedSession(),
-    isOrgMember()
+    isOrgMember(orgUid)
   ]);
 
   if (!isMember) redirect("/unauthorized");

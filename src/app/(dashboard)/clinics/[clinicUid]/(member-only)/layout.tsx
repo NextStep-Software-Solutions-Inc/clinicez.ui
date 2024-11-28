@@ -27,6 +27,7 @@ import { getCachedSession } from "@actions/session.action";
 import { ClinicSwitcher } from "@/components/clinic/ClinicSwitcher";
 import { getClinicMembersAction } from "@/actions/clinics/clinic-member.action";
 import { redirect } from "next/navigation";
+import { getOrgMembersAction } from "@/actions/organizations/org-member.action";
 
 interface ProcessLayoutProps {
   children: React.ReactNode;
@@ -40,14 +41,27 @@ export default async function ProcessLayout({
 }: ProcessLayoutProps) {
 
   const session = await getCachedSession();
+
   const myClinicMembership = await getClinicMembersAction({
     userId: session?.user.sub,
     clinicUid,
     status: "ACTIVE"
   })
 
-  if(!myClinicMembership.data?.length) redirect("/unauthorized");
-  
+
+  if(!myClinicMembership.data?.length) {
+
+    const myOrganizationMembership = await getOrgMembersAction({
+      userId: session?.user.sub,
+      status: "ACTIVE"
+    });
+
+    if(!myOrganizationMembership.data?.data.length) {
+      return redirect("/organizations");
+    }
+
+  }
+
   return (
     <TooltipProvider>
       <div className="flex min-h-screen w-full flex-col bg-muted/40">

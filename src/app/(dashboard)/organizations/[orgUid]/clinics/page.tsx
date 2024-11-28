@@ -36,7 +36,8 @@ export default async function ClinicsPage({params}: AppRouterPageRouteOpts) {
         <Separator />
         <Suspend>
           <Each
-            of={clinics}
+            of={clinics.data ?? []}
+            fallback={<div className="text-muted-foreground text-center">No Clinic to show</div>}
             render={clinic => {
               return (
                 <div className="border border-gray-200 rounded-md p-4  cursor-pointer hover:bg-slate-100 transition-all">

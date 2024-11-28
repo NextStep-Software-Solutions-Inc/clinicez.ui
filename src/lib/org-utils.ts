@@ -5,13 +5,13 @@ import { getOrgMembersAction } from "@actions/organizations/org-member.action";
 import { getUserPlansAction } from "@actions/users/user-plan.action";
 import { cache } from "react";
 
-export const isOrgMember = cache(async () => {
+export const isOrgMember = cache(async (orgUid?:string) => {
 
   const session = await getCachedSession()
   if(!session) throw new Error("No session found");
 
   const myOrgs = await getOrgMembersAction({userId: session.user.sub})
-  return !!myOrgs.data?.data?.length && myOrgs.data?.data.some(org => ["ACTIVE"].includes(org.status))
+  return !!myOrgs.data?.data?.length && myOrgs.data?.data.some(org => ["ACTIVE"].includes(org.status) && (!orgUid || org.Organization.orgUid === orgUid))
 })
 
 export const isUserOwner = cache(async (userId: string) => {

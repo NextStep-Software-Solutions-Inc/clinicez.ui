@@ -1,3 +1,4 @@
+import { getCachedSession } from "@/actions/session.action";
 import { decode } from "jsonwebtoken";
 
 export function checkUserPermission(
@@ -21,3 +22,9 @@ export function parseAccessToken(accessToken: string, claim: string): string[] {
   return [];
 }
   
+
+export const sessionCheck = async () => {
+  const session = await getCachedSession();
+  if(!session) throw new Error("User not authenticated.");
+  return session;
+}

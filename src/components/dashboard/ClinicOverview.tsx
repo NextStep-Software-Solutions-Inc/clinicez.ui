@@ -42,16 +42,15 @@ export const ClinicOverview = async ({ userId, clinicUid }: ClinicOverviewProps)
       <div>
         <h3 className="text-lg font-medium mb-2 ml-1">Clinic Overview</h3>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Link href={`/clinics/${clinicUid}/membership`}>
-
-            <DashboardTile
-              title={`Upcoming Appointments`}
-              icon={CalendarDays}
-              value={`${upcomingAppointmentsCount}`}
-              description={`${upcomingAppointmentsCount} Pending applications`}
-            />
+          {/* <Link href={`/clinics/${clinicUid}/membership`}> */}
+          <DashboardTile
+            title={`Upcoming Appointments`}
+            icon={CalendarDays}
+            value={`${upcomingAppointmentsCount}`}
+            description={`${upcomingAppointmentsCount} Pending applications`}
+          />
               
-          </Link>
+          {/* </Link> */}
           <DashboardTile
             title={`Total Appointments`}
             icon={Calendar}
@@ -73,7 +72,7 @@ export const ClinicOverview = async ({ userId, clinicUid }: ClinicOverviewProps)
           <CardTitle>Upcoming Appointments</CardTitle>
           <CardDescription>
             <Link href={`/clinics/${clinicUid}/appointments`}>
-              <p className="text-primary">View all</p>
+              <span className="text-primary">View all</span>
             </Link>
           </CardDescription>
         </CardHeader>

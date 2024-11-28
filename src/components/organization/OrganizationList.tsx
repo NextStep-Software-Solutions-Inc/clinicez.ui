@@ -3,7 +3,7 @@ import { OrganizationCard } from "@components/OrganizationCard";
 import { getOrganizationsAction } from "@actions/organizations/organization.action";
 
 export default async function OrganizationList() {
-  const organizations = await getOrganizationsAction()
+  const organizations = await getOrganizationsAction({isPublic: true})
 
   return (
     <div className="flex flex-wrap justify-center gap-2 my-10"> {/* Changed the grid layout */}

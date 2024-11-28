@@ -3,7 +3,7 @@ import { getClinicsAction } from "@actions/clinics/clinic.action";
 import { ClinicCard } from "./ClinicCard";
 
 export default async function ClinicList() {
-  const clinics = await getClinicsAction()
+  const clinics = await getClinicsAction({isPublic: true})
 
   return (
     <div className="flex flex-wrap justify-center gap-2 my-10"> {/* Changed the grid layout */}

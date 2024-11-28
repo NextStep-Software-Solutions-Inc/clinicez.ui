@@ -129,7 +129,7 @@ type UpdateClinicPayload = {
   enableAppointment: boolean;
   enableConsultation: boolean;
 }
-export const updateClinicAction = async (clinicUid: string, data: UpdateClinicPayload) => {
+export const updateClinicAction = withErrorHandling(async (clinicUid: string, data: UpdateClinicPayload) => {
 
   const session = await sessionCheck();
 
@@ -172,5 +172,4 @@ export const updateClinicAction = async (clinicUid: string, data: UpdateClinicPa
     }
   });
   return { message: "Successfully updated clinic.", data: clinic };
- 
-}
+})

@@ -17,18 +17,18 @@ export default async function ClinicPage({params}: {params: {clinicUid: string}}
   const {clinicUid} = params;
   const clinic = await getClinicAction(clinicUid);
 
-  if(!clinic?.ClinicSetting?.isPublic) notFound();
+  if(!clinic.data?.ClinicSetting?.isPublic) notFound();
   
   return (
     <div className="container mx-auto my-10">
       <div className="flex gap-5 items-center flex-wrap">
         <div className="">
-          <Image src={clinic?.logo ?? ""} width={500} height={500} alt="clinic-logo" className="object-scale-down w-[300px] border-dashed border rounded-sm "/>
+          <Image src={clinic.data?.logo ?? ""} width={500} height={500} alt="clinic-logo" className="object-scale-down w-[300px] border-dashed border rounded-sm "/>
         </div>
         <div className="space-y-5">
-          <h1 className="text-3xl font-medium">{clinic?.name}</h1>
+          <h1 className="text-3xl font-medium">{clinic.data?.name}</h1>
           <p>
-            {clinic?.description}
+            {clinic.data?.description}
           </p>
           <BookAppointmentBtn className="shiny-cta"/>
           <div>

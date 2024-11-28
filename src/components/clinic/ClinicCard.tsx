@@ -4,7 +4,7 @@ import Link from "next/link";
 import { GetClinics } from "@/actions/clinics/clinic.action";
 
 interface ClinicCardProps {
-  clinic: GetClinics[number]
+  clinic: NonNullable<GetClinics["data"]>[number]
 }
 
 export async function ClinicCard({ clinic }: ClinicCardProps) {

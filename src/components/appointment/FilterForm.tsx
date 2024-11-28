@@ -85,7 +85,6 @@ export default function FilterForm({onContinue}: FilterFormProps) {
     type: "CLINIC"
   })
 
-  
   const {data: hps} = useHPs()
   const groupedHps = useMemo(() => {
     // array of array of hps

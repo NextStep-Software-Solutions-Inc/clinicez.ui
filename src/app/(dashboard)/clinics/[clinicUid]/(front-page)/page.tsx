@@ -6,7 +6,7 @@ import React from "react";
 import "@/styles/shiny-button.css";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { getClinicMembersAction } from "@/actions/clinics/clinic-member.action";
 import { getCachedSession } from "@/actions/session.action";
 import { getClinicPatientsAction } from "@/actions/clinics/clinic-patient.action";
@@ -47,7 +47,7 @@ export default async function ClinicPage({params}: {params: {clinicUid: string}}
   }
   
   return (
-    <div className="container mx-auto my-10 h-1/2">
+    <div className="container mx-auto my-10">
       <div className="flex gap-5 items-center flex-wrap">
         <div className="">
           <Image src={clinic.data?.logo ?? ""} width={500} height={500} alt="clinic-logo" className="object-scale-down w-[300px] border-dashed border rounded-sm "/>

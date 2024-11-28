@@ -4,6 +4,7 @@ import "server-only";
 import prismaClient from "@/lib/prisma";
 import { withErrorHandling } from "@/lib/with-error-handling";
 import { getCachedSession } from "../session.action";
+import { sessionCheck } from "@/lib/auth";
 
 
 type GetClinicPatientFilters = {
@@ -74,3 +75,54 @@ export const getClinicPatientsAction = withErrorHandling(async (filter: GetClini
 
   return {message: "Clinic Patients fetched successfully", data: clinicPatients}
 })
+
+
+export const addClinicPatientAction = withErrorHandling(async ({clinicUid, userId}: {clinicUid: string, userId: string}) => {
+  
+  await sessionCheck()
+
+  await prismaClient.$transaction(async (prisma) => {
+    const patientRole = await prisma.clinicRole.findFirstOrThrow({
+      where: {
+        name: {
+          equals: "Patient",
+          mode: "insensitive"
+        }
+      }
+    })
+    const rolePermissions = await prisma.clinicRoleInitialPermission.findMany({
+      where: {
+        Clinic: {
+          clinicUid,
+        },
+        clinicRoleId: patientRole.id
+      }
+    })
+    await prisma.clinicPatient.create({
+      data: {
+        Clinic: {
+          connect: {
+            clinicUid
+          }
+        },
+        Patient: {
+          connect: {
+            userId
+          }
+        },
+        ClinicPatientPermissions: {
+          createMany: {
+            data: rolePermissions.map(permission => ({
+              permissionId: permission.permissionId
+            }))
+          }
+        }
+      }
+    })
+  })
+
+  return {message: "Clinic Patient added successfully", data: null}
+  
+})
+
+

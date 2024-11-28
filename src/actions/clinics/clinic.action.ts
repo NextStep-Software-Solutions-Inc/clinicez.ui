@@ -7,7 +7,6 @@ import { ClinicMemberStatus } from "@/types";
 import { withErrorHandling } from "@/lib/with-error-handling";
 import { sessionCheck } from "@/lib/auth";
 
-
 type CreateClinicPayload = {
   clinicUid: string;
   tenantUid: string;
@@ -43,8 +42,6 @@ type FiltersType = {
   orgUid?: string;
   isPublic?: boolean;
 }
-
-
 
 export type GetClinics = Awaited<ReturnType<typeof getClinicsAction>>
 export const getClinicsAction = withErrorHandling(cache(async (filters?: FiltersType) => {
@@ -131,7 +128,7 @@ type UpdateClinicPayload = {
 }
 export const updateClinicAction = withErrorHandling(async (clinicUid: string, data: UpdateClinicPayload) => {
 
-  const session = await sessionCheck();
+  await sessionCheck();
 
   const {name, logo, description, customUrl, email, isPublic, sendEmailNotification, emailToClinicOnly, enableAppointment, enableConsultation} = data;
   

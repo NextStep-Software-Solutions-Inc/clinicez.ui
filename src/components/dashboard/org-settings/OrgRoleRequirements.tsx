@@ -10,6 +10,7 @@ import dayjs from "@lib/day-utils";
 import { toast } from "sonner";
 import Each from "@components/utils/Each";
 import { setOrganizationRoleRequirementsAction } from "@actions/organizations/organization-role.action";
+import { promiseWrapper } from "@/lib/with-error-handling";
 
 export const requirements = ["student_record", "employee_record"]
 
@@ -34,15 +35,13 @@ export default function OrgRoleRequirements({orgRoleId, currentRequirements}:Org
   
   const action = async () => {
     form.handleSubmit(async (data) => {
-      toast.promise(setOrganizationRoleRequirementsAction(orgRoleId, data.requirements), {
+      toast.promise(promiseWrapper(setOrganizationRoleRequirementsAction)(orgRoleId, data.requirements), {
         loading: "Saving changes...",
         success: res => {
-          if(res.status){
-            form.reset(data)
-          }
+          form.reset(data)
           return res.message
         },
-        error: "Error while saving changes",
+        error: error => error,
       })
     })();
   }

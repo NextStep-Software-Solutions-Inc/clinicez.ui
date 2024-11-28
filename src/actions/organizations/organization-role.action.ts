@@ -4,8 +4,8 @@ import "server-only";
 import prisma from "@lib/prisma";
 import { cache } from "react";
 import { getCachedSession } from "@actions/session.action";
-import { OrganizationMemberStatus } from "@/types";
 import { withErrorHandling } from "@/lib/with-error-handling";
+import { sessionCheck } from "@/lib/auth";
 
 type CreateOrgRolePayload = {
   orgUid: string;
@@ -50,6 +50,8 @@ export type GetOrganizationRolesFilters = {
 export type GetOrganizationRoles = Awaited<ReturnType<typeof getOrganizationRolesAction>>
 export const getOrganizationRolesAction = withErrorHandling(cache(async (filters: GetOrganizationRolesFilters) => {
 
+  await sessionCheck();
+
   const {orgUid, userId} = filters || {};
   
   const roles = await prisma.organizationRole.findMany({
@@ -84,50 +86,32 @@ export const getOrganizationRolesAction = withErrorHandling(cache(async (filters
 }))
 
 
-export const setOrganizationRoleRequirementsAction = async (orgRoleId: number, requirements: string[]) => {
-  let message = "Role requirements updated successfully"
-  try {
+export const setOrganizationRoleRequirementsAction = withErrorHandling(async (orgRoleId: number, requirements: string[]) => {
 
-    const session = await getCachedSession();
-    if(!session) throw new Error("Session not found");
+  await sessionCheck();
 
-    await prisma.organizationRole.update({
-      where: {
-        isActive: true,
-        id: orgRoleId
-      },
-      data: { requirements }
-    })
-    return { status: true, message} 
-  } catch (error) {
-    console.error(`Error while updating role requirements: ${error}`);
-    message = "Error while updating role requirements";
-    if(error instanceof Error) message = error.message;
-    return { status: false, message}
-  }
-}
+  await prisma.organizationRole.update({
+    where: {
+      isActive: true,
+      id: orgRoleId
+    },
+    data: { requirements }
+  })
+  return { message: "Role requirements updated successfully", data: null } 
+ 
+})
 
-export const deleteOrganizationRoleAction = async (orgRoleId: number) => {
+export const deleteOrganizationRoleAction = withErrorHandling(async (orgRoleId: number) => {
 
-  let message = "Role deleted successfully"
+  await sessionCheck();
 
-  try {
+  await prisma.organizationRole.update({
+    where: {
+      isActive: true,
+      id: orgRoleId
+    },
+    data: { isActive: false }
+  })
+  return { message: "Role deleted successfully", data: null }
 
-    const session = await getCachedSession();
-    if(!session) throw new Error("Session not found");
-
-    await prisma.organizationRole.update({
-      where: {
-        isActive: true,
-        id: orgRoleId
-      },
-      data: { isActive: false }
-    })
-    return { status: true, message }
-  } catch (error) {
-    console.error(`Error while deleting role: ${error}`);
-    message = "Error while deleting role";
-    if(error instanceof Error) message = error.message;
-    return { status: false, message }
-  }
-}
+})

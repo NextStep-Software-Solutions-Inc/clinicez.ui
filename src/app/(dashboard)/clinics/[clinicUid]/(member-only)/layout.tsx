@@ -60,7 +60,7 @@ export default async function ProcessLayout({
     })
   ])
   
-  if(!myOrganizationMembership.data?.data.length || !clinicPatients.data?.length || !myClinicMembership.data?.length) {
+  if(!myOrganizationMembership.data?.data.length && !clinicPatients.data?.length && !myClinicMembership.data?.length) {
     return redirect("/unauthorized");
   }
 

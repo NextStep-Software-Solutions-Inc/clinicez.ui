@@ -15,12 +15,15 @@ export default function SyncSessionClinic({}: SyncSessionClinicProps) {
   const { data: clinic } = useClinic(clinicUid);
 
   useEffect(() => {
-    if (clinic) {
+    if (clinic?.data) {
+
+      const c = clinic.data;
+      
       setSessionClinic(() => ({
-        clinicId: clinic?.id,
-        clinicUid: clinic?.clinicUid,
-        tenantId: clinic?.Tenant.id,
-        tenantUid: clinic?.Tenant.tenantUid
+        clinicId: c.id,
+        clinicUid: c.clinicUid,
+        tenantId: c.Tenant.id,
+        tenantUid: c.Tenant.tenantUid
       }));
     }
   }, [clinic, setSessionClinic]);

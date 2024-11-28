@@ -4,15 +4,15 @@ import React from "react";
 import "@/styles/shiny-button.css";
 import { useClinicPatients } from "@/hooks/useClinicPatient";
 import { useParams } from "next/navigation";
+import { toast } from "sonner";
 
 export default function BookAppointmentBtn({className, children}: Readonly<{className?: string; children?: React.ReactNode}>) {
   const {clinicUid} = useParams<{clinicUid: string}>();
 
-  const {data: clinicPatient} = useClinicPatients({
+  const {data: clinicPatient, isLoading} = useClinicPatients({
     clinicUid
   })
 
-  
   const handleBookAppointment = () => {
     const searchParams = new URLSearchParams(window.location.search);
     

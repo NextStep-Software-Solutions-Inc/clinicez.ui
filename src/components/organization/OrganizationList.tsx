@@ -9,8 +9,8 @@ export default async function OrganizationList() {
     <div className="flex flex-wrap justify-center gap-2 my-10"> {/* Changed the grid layout */}
       <Each
         of={organizations}
-        render={(organization, index) => (
-          <OrganizationCard organization={organization}/>
+        render={(organization) => (
+          <OrganizationCard key={organization.id} organization={organization}/>
         )}
       />
     </div>

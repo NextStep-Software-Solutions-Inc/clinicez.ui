@@ -135,7 +135,11 @@ export const getMyDefaultOrganizationAction = cache(withErrorHandling(async () =
   return { message: "Default organization fetched successfully", data: org };
 }))
 
-export const setMyDefaultOrganizationAction = async (id: number, orgUid: string, userId?: string) => {
+export const setMyDefaultOrganizationAction = withErrorHandling(async (id: number, orgUid: string, userId?: string) => {
+ 
+  const session = await getCachedSession();
+  if (!session) throw new Error("User not authenticated.");
+ 
   const org = await prisma.userDefaultOrganization.upsert({
     where: { id, User: { userId } },
     create: {
@@ -155,8 +159,8 @@ export const setMyDefaultOrganizationAction = async (id: number, orgUid: string,
       },
     }
   })
-  return org;
-}
+  return { message: "Default organization updated successfully", data: org };
+})
 
 type UpdateOrganizationPayload = {
   name: string;

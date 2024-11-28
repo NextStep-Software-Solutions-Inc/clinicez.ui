@@ -24,7 +24,7 @@ interface OrgMemberPermissionsProps {
   orgUid: string;
 }
 
-export const MemberPermissions = ({orgUid, userId}: OrgMemberPermissionsProps) => {
+export default function OrgMemberPermissions({orgUid, userId}: OrgMemberPermissionsProps) {
   const {user} = useUser()
   const {data: myPermissions} = usePermissions({
     userId: user?.sub ?? undefined,

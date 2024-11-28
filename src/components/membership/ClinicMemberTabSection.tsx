@@ -17,7 +17,6 @@ export default function ClinicMemberTabSection({clinicUid, userId}:ClinicMemberT
     userId
   })
 
-  // const orgRequirements = useMemo(() => [...new Set(myOrgRoles?.flatMap((role) => role.requirements))], [myOrgRoles]);
   
   return (
     <Tabs defaultValue="roles" className="w-full">

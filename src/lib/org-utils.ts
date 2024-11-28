@@ -1,7 +1,7 @@
 "use server";
 
 import { getCachedSession } from "@actions/session.action";
-import { getUserOrganizationsAction } from "@actions/users/user-organization.action";
+import { getOrgMembersAction } from "@actions/organizations/org-member.action";
 import { getUserPlansAction } from "@actions/users/user-plan.action";
 import { cache } from "react";
 
@@ -10,9 +10,8 @@ export const isOrgMember = cache(async () => {
   const session = await getCachedSession()
   if(!session) throw new Error("No session found");
 
-  const myOrgs = await getUserOrganizationsAction({userId: session.user.sub})
-  return !myOrgs.data.some(org => ["ACTIVE"].includes(org.status))
-  
+  const myOrgs = await getOrgMembersAction({userId: session.user.sub})
+  return myOrgs.data?.data?.length && myOrgs.data?.data.some(org => ["ACTIVE"].includes(org.status))
 })
 
 export const isUserOwner = cache(async (userId: string) => {
@@ -32,16 +31,16 @@ export const isHP = cache(async () => {
 export const isOrgAdmin = cache(async (orgUid?:string) => {
   const session = await getCachedSession();
   if(!session) throw new Error("No session found");
-  const myOrgs = await getUserOrganizationsAction({
+  const myOrgs = await getOrgMembersAction({
     userId: session.user.sub,
     orgUid
   });
-  return myOrgs.data.some((org) => ["ACTIVE"].includes(org.status) && org.OrganizationRole.name.toUpperCase() === "ADMIN");
+  return myOrgs.data?.data.some((org) => ["ACTIVE"].includes(org.status) && org.OrganizationRole.name.toUpperCase() === "ADMIN");
 })
 
 export const isSameOrg = cache(async (userId: string) => {
-  const session = await getCachedSession();
-  if(!session) throw new Error("No session found");
-  const orgs = await getUserOrganizationsAction({userId: session.user.sub});
-  return orgs.data.find((org) => org.Organization.OrganizationMembers.some((user) => user.User.userId === userId));
+
+  const orgs = await getOrgMembersAction({userId});
+  return !!orgs.data?.data.length
+  
 });

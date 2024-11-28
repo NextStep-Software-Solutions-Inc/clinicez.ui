@@ -1,6 +1,6 @@
 import { getOrganizationRolesAction } from "@actions/organizations/organization-role.action";
-import { getUserOrganizationsAction } from "@actions/users/user-organization.action";
 import { SelectOrgForm } from "./SelectOrgFom";
+import { getOrgMembersAction } from "@/actions/organizations/org-member.action";
   interface SelectOrgRoleStepProps {
   orgUid: string;
   userId: string;
@@ -10,10 +10,10 @@ import { SelectOrgForm } from "./SelectOrgFom";
 }
 export default async function SelectOrgRoleStep ({ orgUid, userId, isFirstStep, isLastStep, nextStep }: SelectOrgRoleStepProps) {
   const [myOrgs, orgRoles] = await Promise.all([
-    getUserOrganizationsAction({ userId }),
+    getOrgMembersAction({ userId }),
     getOrganizationRolesAction({ orgUid })
   ]);
-  const existingRoles = myOrgs.data.map(org => org.role);
+  const existingRoles = myOrgs.data?.data.map(org => org.role) ?? [];
 
   return (
     <SelectOrgForm 

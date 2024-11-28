@@ -12,9 +12,9 @@ export default async function Organizations() {
   return (
     <div className="container mx-auto my-10">
       <div className="prose max-w-full text-center">
-        <h1>Partner Organizations</h1>
+        <h1>Organizations</h1>
         <p>
-          Browse our list of partner organizations that you can join and find clinics/hospitals affiliations.
+          Browse our list of organizations that you can join and find clinics/hospitals affiliations.
         </p>
       </div>
       <div className='relative flex flex-col items-center justify-center'>

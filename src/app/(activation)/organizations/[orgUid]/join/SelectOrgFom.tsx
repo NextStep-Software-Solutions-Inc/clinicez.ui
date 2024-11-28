@@ -30,7 +30,7 @@ export const SelectOrgForm = ({existingRoles, orgRoles, orgUid, userId, nextStep
     roleId: z.coerce.number({
       required_error: "Please select your role"
     }).refine((role) => !existingRoles.includes(role), (value) => ({
-      message: `You already have applied for the role ${orgRoles.find(r => r.id === value)?.name} in this organization. Please select another role.`,
+      message: `You already have applied for the role ${orgRoles.data?.find(r => r.id === value)?.name} in this organization. Please select another role.`,
     }))
   })
 
@@ -51,7 +51,7 @@ export const SelectOrgForm = ({existingRoles, orgRoles, orgUid, userId, nextStep
         orgUid,
         userId,
         roleId: values.roleId, 
-        roleRequirements: orgRoles.find(role => role.id === values.roleId)?.requirements ?? []
+        roleRequirements: orgRoles.data?.find(role => role.id === values.roleId)?.requirements ?? []
       }));
       nextStep?.();
     })();
@@ -75,7 +75,7 @@ export const SelectOrgForm = ({existingRoles, orgRoles, orgUid, userId, nextStep
                     className="flex flex-row flex-wrap gap-5"
                   >
                     <Each
-                      of={orgRoles}
+                      of={orgRoles.data ?? []}
                       render={(role) => (
                         <FormItem className="flex items-center space-x-3 space-y-0">
                           <FormControl>

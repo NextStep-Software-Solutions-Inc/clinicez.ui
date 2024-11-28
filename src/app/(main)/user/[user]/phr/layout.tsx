@@ -36,7 +36,7 @@ export default async function PHRLayout({ children, params: {user} }: PHRLayoutP
       if (!sameOrg) throw new Error("You must be same organization as the PHR owner to view this page.");
       else {
         const [orgAdmin, hp] = await Promise.all([
-          isOrgAdmin(sameOrg?.Organization.orgUid),
+          isOrgAdmin(),
           isHP()
         ]);
         if (!orgAdmin && !hp) throw new Error("You must be an organization admin and healthcare provider to view this page.");

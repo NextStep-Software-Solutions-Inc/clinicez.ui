@@ -29,7 +29,7 @@ export default function OrganizationRolesSetting(){
       </CardHeader>
       <CardContent className="space-y-5">
         <Each
-          of={orgRoles ?? []}
+          of={orgRoles?.data ?? []}
           render={(role) => {
             return (
               <OrgRoleCard key={role.id} role={role} onDeleteRole={mutate}/>

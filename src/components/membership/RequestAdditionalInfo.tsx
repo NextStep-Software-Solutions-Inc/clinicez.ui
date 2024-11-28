@@ -1,6 +1,7 @@
 "use client";
 
-import { requestMembershipAdditionalInfo } from "@actions/users/user-organization.action";
+import { requestMembershipAdditionalInfo } from "@/actions/organizations/org-member.action";
+import { promiseWrapper } from "@/lib/with-error-handling";
 import ActionButton from "@components/ActionButton";
 import { Button } from "@components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@components/ui/popover";
@@ -21,15 +22,13 @@ export default function RequestAdditionalInfo({disabled = false, userOrganizatio
   const closeBtnRef = React.useRef<HTMLButtonElement>(null);
 
   const action = async () => {
-    toast.promise(requestMembershipAdditionalInfo(userOrganizationId), {
+    toast.promise(promiseWrapper(requestMembershipAdditionalInfo)(userOrganizationId), {
       loading: "Sending request...",
       success: (res) => {
-        if(res.status) {
-          onSend?.()
-        }
+        onSend?.()
         return res.message
       },
-      error: "Failed to delete membership",
+      error: error =>error,
     })
   }
 

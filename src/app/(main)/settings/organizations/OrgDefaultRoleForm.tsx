@@ -13,56 +13,55 @@ import {
 } from "@components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@components/ui/select";
 import Each from "@components/utils/Each";
-import { useMemo } from "react";
 import ActionButton from "@components/ActionButton";
 import { toast } from "sonner";
 import { setDefaultOrgRoleAction } from "@actions/users/user-default-organization.action";
 import ConditionalRender from "@components/utils/ConditionalRender";
-import { getUserOrganizationsAction } from "@actions/users/user-organization.action";
 import { useOrganizationRoles } from "@/hooks/useOrganizationRole";
 import { promiseWrapper } from "@/lib/with-error-handling";
+import { GetOrgMembers } from "@/actions/organizations/org-member.action";
 
 interface OrgDefaultRoleFormProps {
-  org: Awaited<ReturnType<typeof getUserOrganizationsAction>>["data"][number];
+  organization: {
+    name: string;
+    orgUid: string;
+  }
+  userId: string;
+  defaultRoleId?: number;
 }
 const orgDefaultRoleFormSchema = z.object({
-  defaultRole: z.coerce.number({
+  roleId: z.coerce.number({
     required_error: "Please select a default role"
   })
 });
 type OrgDefaultRoleFormSchema = z.infer<typeof orgDefaultRoleFormSchema>;
 
-export const OrgDefaultRoleForm = ({ org }: OrgDefaultRoleFormProps) => {
+export const OrgDefaultRoleForm = ({ defaultRoleId, organization: {name, orgUid}, userId }: OrgDefaultRoleFormProps) => {
   
-  const {data: orgRoles} = useOrganizationRoles({
-    orgUid: org.Organization.orgUid,
-    userId: org.User.userId
-  });
+  const {data: orgRoles} = useOrganizationRoles({orgUid,userId});
 
-  const defaultRole = useMemo(() => org.Organization.UserDefaultOrganizationRoles.find(role => role.OrganizationRole.id), [org.Organization.UserDefaultOrganizationRoles]);
+
   const form = useForm<OrgDefaultRoleFormSchema>({
     resolver: zodResolver(orgDefaultRoleFormSchema),
     values: {
-      defaultRole: defaultRole?.OrganizationRole.id ?? 0
+      roleId: defaultRoleId ?? 0
     }
   });
 
   const action = async () => {
     form.handleSubmit(async (data) => {
       toast.promise(promiseWrapper(setDefaultOrgRoleAction)({
-        id: defaultRole?.id,
-        userId: org.User.userId,
-        orgUid: org.Organization.orgUid,
-        roleId: data.defaultRole
+        id: defaultRoleId,
+        userId: userId,
+        orgUid: orgUid,
+        roleId: data.roleId
       }) , {
         loading: "Updating default role...",
         success: (res) => {
-          if(res.status) {
-            form.reset(data);
-          }
+          form.reset(data);
           return res.message
         },
-        error: "Failed to update default role"
+        error: error => error
       });
     })();
   };
@@ -71,10 +70,10 @@ export const OrgDefaultRoleForm = ({ org }: OrgDefaultRoleFormProps) => {
     <form action={action} className="space-y-8">
       <FormField
         control={form.control}
-        name="defaultRole"
+        name="roleId"
         render={({ field }) => (
           <FormItem>
-            <FormLabel><span className="font-bold">{org.Organization.name}</span> Default Role</FormLabel>
+            <FormLabel><span className="font-bold">{name}</span> Default Role</FormLabel>
             <Select onValueChange={field.onChange} value={field.value?.toString()}>
               <FormControl>
                 <SelectTrigger>
@@ -83,7 +82,7 @@ export const OrgDefaultRoleForm = ({ org }: OrgDefaultRoleFormProps) => {
               </FormControl>
               <SelectContent>
                 <Each
-                  of={orgRoles?? []}
+                  of={orgRoles?.data?? []}
                   render={({ id, name }) => (
                     <SelectItem value={id.toString()}>{name}</SelectItem>
                   )} />

@@ -32,7 +32,7 @@ import { DataTableToolbar } from "./data-table-toolbar"
 import Each from "@components/utils/Each"
 import { LabelValue } from "@components/LabelValue"
 import { Separator } from "@components/ui/separator"
-import { GetUserOrganizations } from "@actions/users/user-organization.action"
+import { GetOrgMembers } from "@/actions/organizations/org-member.action"
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
@@ -48,7 +48,7 @@ interface DataTableProps<TData, TValue> {
   rowCount?: number
 }
 
-export function DataTable<TData extends GetUserOrganizations["data"][number], TValue>({
+export function DataTable<TData extends NonNullable<GetOrgMembers["data"]>["data"][number], TValue>({
   columns,
   data,
   pagination: pg,

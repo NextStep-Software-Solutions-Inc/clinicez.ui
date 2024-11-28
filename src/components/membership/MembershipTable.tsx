@@ -3,7 +3,7 @@
 import React from "react";
 import { DataTable } from "./data-table";
 import { columns } from "./columns";
-import { useUserOrganizations } from "@hooks/useUserOrganization";
+import { useOrgMembers } from "@/hooks/useOrgMember";
 import PageLoading from "@components/PageLoading";
 import { useSearchParams } from "next/navigation";
 interface MembershipTableProps {
@@ -14,7 +14,7 @@ export const MembershipTable = ({ orgUid }: MembershipTableProps) => {
   const searchParams = useSearchParams();
   const pageNumber = Number(searchParams.get("pageNumber")) || 1;
   const pageSize = Number(searchParams.get("pageSize")) || 10;
-  const {data: membershipRequests, isLoading} = useUserOrganizations({ orgUid, pageSize, pageNumber });
+  const {data: membershipRequests, isLoading} = useOrgMembers({ orgUid, pageSize, pageNumber });
 
   // pust the page number and page size to the query params
   const pushQueryParams = (page: number, pageSize: number) => {
@@ -27,8 +27,8 @@ export const MembershipTable = ({ orgUid }: MembershipTableProps) => {
   if(isLoading) return <PageLoading label="Fetching membership data. Please wait..." />;
   return (
     <DataTable 
-      data={membershipRequests?.data ?? []} 
-      columns={columns} rowCount={membershipRequests?.total ?? 0}
+      data={membershipRequests?.data?.data ?? []} 
+      columns={columns} rowCount={membershipRequests?.data?.total ?? 0}
       pagination={{pageIndex: pageNumber - 1, pageSize}}
       onPaginationChange={(pagination)=> {
         pushQueryParams(pagination.pageIndex + 1, pagination.pageSize);

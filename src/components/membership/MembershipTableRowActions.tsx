@@ -14,7 +14,6 @@ import React from "react"
 import { useDropdownMenu } from "@components/DropdownMenuProvider"
 import { toast } from "sonner"
 import Each from "@components/utils/Each"
-import { GetUserOrganizations, setMembershipRequestStatusAction } from "@actions/users/user-organization.action"
 import { revalidatePath } from "@actions/cache.action"
 import ConfirmDeleteMembership from "./ConfirmDeleteMembership"
 import { mutate } from "swr"
@@ -23,8 +22,9 @@ import Link from "next/link"
 import { User } from "lucide-react"
 import { OrganizationMemberStatus } from "@/types"
 import { promiseWrapper } from "@/lib/with-error-handling"
+import { GetOrgMembers, setMembershipRequestStatusAction } from "@/actions/organizations/org-member.action"
 interface MembershipTableRowActionsProps<TData> {
-  applicationRequest: GetUserOrganizations["data"][number]
+  applicationRequest: NonNullable<GetOrgMembers["data"]>["data"][number]
 }
 
 export default function MembershipTableRowActions<TData>({

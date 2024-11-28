@@ -1,4 +1,4 @@
-import { getOrganizationRolesAction } from "@actions/organizations/organization-role.action";
+import { getOrgMembersAction } from "@/actions/organizations/org-member.action";
 import { getCachedSession } from "@actions/session.action";
 import { redirect } from "next/navigation";
 
@@ -10,13 +10,13 @@ interface OrgSettingLayoutProps {
 }
 export default async function OrgSettingLayout({children, params: {orgUid}}:OrgSettingLayoutProps) {
   const session = await getCachedSession();
-  const myRoles = await getOrganizationRolesAction({
+  const myRoles = await getOrgMembersAction({
     userId: session?.user.sub,
     orgUid,
     status: "ACTIVE"
   })
   
-  if(!myRoles.some(role => role.name.toLocaleLowerCase() === "admin")) redirect("/unauthorized");
+  if(!myRoles.data?.data?.some(role => role.OrganizationRole.name.toLocaleLowerCase() === "admin")) redirect("/unauthorized");
   return (
     <>{children}</>
   );

@@ -5,6 +5,7 @@ import prisma from "@lib/prisma";
 import { cache } from "react";
 import { getCachedSession } from "@actions/session.action";
 import { OrganizationMemberStatus } from "@/types";
+import { withErrorHandling } from "@/lib/with-error-handling";
 
 type CreateOrgRolePayload = {
   orgUid: string;
@@ -41,39 +42,22 @@ export const createOrganizationRoleAction = async (payload: CreateOrgRolePayload
   }
 }
 
-type FiltersType = {
-    userId?: string;
+type GetOrganizationRolesFilters = {
     orgUid?: string;
-    status?: OrganizationMemberStatus;
   }
   
 export type GetOrganizationRoles = Awaited<ReturnType<typeof getOrganizationRolesAction>>
-export const getOrganizationRolesAction = cache(async (filter?: FiltersType) => {
-  const {userId, orgUid, status} = filter || { status: "ACTIVE"};
+export const getOrganizationRolesAction = withErrorHandling(cache(async (filter?: GetOrganizationRolesFilters) => {
+
+  const {orgUid} = filter || {};
+  
   const roles = await prisma.organizationRole.findMany({
     orderBy: {
       name: "asc"
     },
     where: {
       isActive: true,
-      AND: [
-        {
-          ...orgUid ? { Organization: { orgUid } } : {}
-        },
-        {
-          ...userId ? { 
-            OrganizationMembers: {
-              some: {
-                ...status ? { status }: {},
-                User: {
-                  userId
-                }
-              }
-            
-            }
-          } : {}
-        }
-      ]
+      ...orgUid ? { Organization: { orgUid } } : {}
     },
     select: {
       id: true,
@@ -81,38 +65,11 @@ export const getOrganizationRolesAction = cache(async (filter?: FiltersType) => 
       name: true,
       description: true,
       requirements: true,
-      UserDefaultOrganizationRoles: {
-        where: {
-          isActive: true,
-          User: {
-            ...userId ? { userId } : {}
-          }
-        },
-        select: {
-          id: true,
-          Organization: {
-            select: {
-              orgUid: true,
-            }
-          },
-          OrganizationRole: {
-            select: {
-              id: true,
-              name: true,
-              requirements: true
-            }
-          },
-          User: {
-            select: {
-              userId: true
-            }
-          }
-        }
-      }
     }
   })
-  return roles;
-})
+  
+  return {message: "Organization roles fetched successfully", status: true, data: roles};
+}))
 
 
 export const setOrganizationRoleRequirementsAction = async (orgRoleId: number, requirements: string[]) => {

@@ -105,7 +105,7 @@ export default function OrganizationsSettings() {
         render={(membership) => (
           <OrgDefaultRoleForm 
             key={membership.id}
-            defaultRoleId={myDefaultOrgsRole?.data?.find(role => role.organizationId === membership.Organization.id)?.roleId}
+            defaultRoleId={myDefaultOrgsRole?.data?.find(role => role.organizationId === membership.Organization.id)?.id}
             userId={membership.User.userId}
             organization={{
               orgUid: membership.Organization.orgUid,

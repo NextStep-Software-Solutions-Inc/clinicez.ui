@@ -5,6 +5,7 @@ import prisma from "@lib/prisma";
 import { getCachedSession } from "../session.action";
 import { withErrorHandling } from "@/lib/with-error-handling";
 import { hasCodeProperty } from "@/lib/utils";
+import { sessionCheck } from "@/lib/auth";
 
 
 type SetDefaultOrgRolePayload = {
@@ -15,8 +16,8 @@ type SetDefaultOrgRolePayload = {
 }
 export const setDefaultOrgRoleAction = withErrorHandling(async ({ id = 0, userId, orgUid, roleId }: SetDefaultOrgRolePayload) => {
 
-  const session = await getCachedSession()
-  if(!session) throw new Error("Session not found") 
+  await sessionCheck()
+    
   const defaultRole = await prisma.userDefaultOrganizationRole.upsert({
     where: { id, User: { userId }, isActive: true, },
     update: { roleId  },
@@ -38,13 +39,14 @@ export const setDefaultOrgRoleAction = withErrorHandling(async ({ id = 0, userId
       }
     }
   })
+  
   return {message: "Default organization role successfully set", data: defaultRole}
  
 }, (error) => {
-  if(hasCodeProperty(error) && error.code === "P2025") {
+  if(hasCodeProperty(error) && error.code === "P2002") {
     return "Default organization role not found"
   }
-  return "An error occurred while setting default organization role"
+  return "Error while setting default organization role";
 });
 
 export const getDefaultOrgRoleAction = withErrorHandling(async (userId: string) => {

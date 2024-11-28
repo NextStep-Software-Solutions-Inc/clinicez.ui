@@ -38,7 +38,7 @@ type OrgDefaultRoleFormSchema = z.infer<typeof orgDefaultRoleFormSchema>;
 
 export const OrgDefaultRoleForm = ({ defaultRoleId, organization: {name, orgUid}, userId }: OrgDefaultRoleFormProps) => {
   
-  const {data: orgRoles} = useOrganizationRoles({orgUid,userId});
+  const {data: orgRoles} = useOrganizationRoles({orgUid, userId});
 
 
   const form = useForm<OrgDefaultRoleFormSchema>({

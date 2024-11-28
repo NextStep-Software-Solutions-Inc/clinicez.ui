@@ -42,14 +42,15 @@ export const createOrganizationRoleAction = async (payload: CreateOrgRolePayload
   }
 }
 
-type GetOrganizationRolesFilters = {
+export type GetOrganizationRolesFilters = {
     orgUid?: string;
+    userId?: string;
   }
   
 export type GetOrganizationRoles = Awaited<ReturnType<typeof getOrganizationRolesAction>>
-export const getOrganizationRolesAction = withErrorHandling(cache(async (filter?: GetOrganizationRolesFilters) => {
+export const getOrganizationRolesAction = withErrorHandling(cache(async (filters: GetOrganizationRolesFilters) => {
 
-  const {orgUid} = filter || {};
+  const {orgUid, userId} = filters || {};
   
   const roles = await prisma.organizationRole.findMany({
     orderBy: {
@@ -57,7 +58,17 @@ export const getOrganizationRolesAction = withErrorHandling(cache(async (filter?
     },
     where: {
       isActive: true,
+      ...userId ? {
+        OrganizationMembers: {
+          some: {
+            User: {
+              userId
+            }
+          }
+        }
+      }: {},
       ...orgUid ? { Organization: { orgUid } } : {}
+
     },
     select: {
       id: true,
@@ -67,6 +78,7 @@ export const getOrganizationRolesAction = withErrorHandling(cache(async (filter?
       requirements: true,
     }
   })
+  
   
   return {message: "Organization roles fetched successfully", status: true, data: roles};
 }))

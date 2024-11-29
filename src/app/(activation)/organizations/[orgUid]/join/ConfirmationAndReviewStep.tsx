@@ -15,6 +15,7 @@ import { revalidatePath } from "@actions/cache.action";
 import { useAtom } from "jotai";
 import { joinOrgApplicationAtom } from "@state/join-org-application";
 import { Button } from "@components/ui/button";
+import { promiseWrapper } from "@/lib/with-error-handling";
 
 interface ConfirmationAndReviewStepProps {
   orgUid: string
@@ -59,25 +60,19 @@ export default function ConfirmationAndReviewStep({ orgUid, isComplete, isFirstS
 
   const action = async () => {
     form.handleSubmit(async () => {
-      
-      if(!orgApplication.roleId  || !orgApplication.userId  || !orgApplication.orgUid) {
+
+      const {roleId, userId, orgUid} = orgApplication;
+      if(!roleId  || !userId  || !orgUid) {
         toast.error("Role or User ID or Org ID is missing!")
         return;
       }
       
-      const payload: JoinOrganizationPayload = {
-        userId: orgApplication.userId,
-        orgUid: orgApplication.orgUid,
-        orgRoleId: orgApplication.roleId,
-      }
+      const payload: JoinOrganizationPayload = { userId, orgUid, orgRoleId: roleId }
       
-      toast.promise(joinOrganizationAction(payload), {
+      toast.promise(promiseWrapper(joinOrganizationAction)(payload), {
         loading: "Submitting application...",
         success: async (res) => {
-          if(!res.status) {
-            playError()
-            return res.message
-          }
+          playError()
           setOrgApplication(pres => ({...pres,  complete: true}))
           setComplete?.(true);
           playSuccess()
@@ -85,7 +80,7 @@ export default function ConfirmationAndReviewStep({ orgUid, isComplete, isFirstS
         },
         error: (error) => {
           playError()
-          return `An error occurred while submitting your application. Error: ${error}`
+          return error
         },
       });
     })()

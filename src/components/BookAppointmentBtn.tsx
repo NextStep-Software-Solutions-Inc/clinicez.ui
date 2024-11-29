@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import "@/styles/shiny-button.css";
 import { useClinicPatients } from "@/hooks/useClinicPatient";
 import { toast } from "sonner";
@@ -14,23 +14,24 @@ type BookAppointmentBtnProps = Readonly<{
 
 export default function BookAppointmentBtn({className, children, userId, clinicUid}: BookAppointmentBtnProps) {
   
+  const [bookAppointment, setBookAppointment] = useState(false);
   const {data: clinicPatient, isLoading} = useClinicPatients({
     clinicUid, userId
   })
 
-  const handleBookAppointment = () => {
-    const searchParams = new URLSearchParams(window.location.search);
+  useEffect(() => {
 
-    let toastId: string | number | null = null;
+    if(!bookAppointment) {
+      return;
+    }
 
     if (isLoading) {
-      toastId = toast.loading("Please wait while we check your eligibility to book an appointment");
+      toast.info("Please wait while we check your eligibility to book an appointment");
       return;
-
-    } else if (toastId) {
-      toast.dismiss(toastId);
     }
-    
+
+    const searchParams = new URLSearchParams(window.location.search);
+
     if(!clinicPatient?.data?.length) {
       searchParams.set("join-as-patient", "true");
     } else {
@@ -38,10 +39,11 @@ export default function BookAppointmentBtn({className, children, userId, clinicU
     }
 
     window.history.pushState({}, "", `${window.location.pathname}?${searchParams.toString()}`);
-  }
+
+  }, [clinicPatient, isLoading, bookAppointment])
 
   return (
-    <div onClick={handleBookAppointment}>
+    <div onClick={() => setBookAppointment(true)}>
       {
         children ? children :
           <button className={className} > 

@@ -15,7 +15,6 @@ import path from "path";
 import fs from "fs/promises";
 import { sendMail } from "@actions/email.action";
 import { withErrorHandling } from "@/lib/with-error-handling";
-import { error } from "console";
 
 type CreateAppointmentPayload = {
   clinicUid: string;

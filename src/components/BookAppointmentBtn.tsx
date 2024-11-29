@@ -37,8 +37,8 @@ export default function BookAppointmentBtn({className, children, userId, clinicU
     } else {
       searchParams.set("book-appointment", "true");
     }
-
     window.history.pushState({}, "", `${window.location.pathname}?${searchParams.toString()}`);
+    setBookAppointment(false);
 
   }, [clinicPatient, isLoading, bookAppointment])
 

@@ -14,7 +14,7 @@ import { useClinicPatients } from "@/hooks/useClinicPatient";
 import { promiseWrapper } from "@/lib/with-error-handling";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import { useParams, useSearchParams } from "next/navigation";
-import { useMemo, useRef } from "react";
+import { useMemo } from "react";
 import { toast } from "sonner";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@components/ui/form";
 import { Checkbox } from "../ui/checkbox";

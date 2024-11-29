@@ -6,7 +6,7 @@ import React from "react";
 import "@/styles/shiny-button.css";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getClinicMembersAction } from "@/actions/clinics/clinic-member.action";
 import { getCachedSession } from "@/actions/session.action";
 import { getClinicPatientsAction } from "@/actions/clinics/clinic-patient.action";
@@ -45,6 +45,8 @@ export default async function ClinicPage({params}: {params: {clinicUid: string}}
       return notFound();
     }
   }
+
+  if(!session) redirect(`/api/auth/login?returnTo=${encodeURIComponent(`/clinics/${clinicUid}`)}`);
   
   return (
     <div className="container mx-auto my-10">
@@ -57,7 +59,10 @@ export default async function ClinicPage({params}: {params: {clinicUid: string}}
           <p>
             {clinic.data?.description}
           </p>
-          <BookAppointmentBtn className="shiny-cta"/>
+          <BookAppointmentBtn 
+            clinicUid={clinicUid}
+            userId={session.user.sub}
+            className="shiny-cta"/>
           <div>
             <Link href={`/clinics/${clinicUid}/dashboard`}>
               <Button variant="link">Go to Dashboard</Button>

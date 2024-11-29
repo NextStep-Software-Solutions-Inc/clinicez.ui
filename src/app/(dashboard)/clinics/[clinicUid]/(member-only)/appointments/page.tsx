@@ -11,6 +11,8 @@ import { getClinicAppointmentTabsAction } from "@/actions/clinics/clinic-appoint
 import PageLoading from "@components/PageLoading";
 import { Button } from "@/components/ui/button";
 import BookAppointmentBtn from "@/components/BookAppointmentBtn";
+import { getCachedSession } from "@/actions/session.action";
+import { redirect } from "next/navigation";
 
 export const maxDuration = 30
 export const revalidate = 60
@@ -21,6 +23,7 @@ export const metadata: Metadata = {
 
 async function AppointmentsPage({ searchParams, params }: AppRouterPageRouteOpts ) {
   const clinicUid = String(params?.clinicUid)
+  const session = await getCachedSession()
   // if(!appointmentStatus || !role ) return redirect(`/${organization}/appointments?_type=pending&_role=admin`)
 
   const layout = cookies().get("react-resizable-panels:layout")
@@ -35,6 +38,8 @@ async function AppointmentsPage({ searchParams, params }: AppRouterPageRouteOpts
   const defaultLayout = layout ? JSON.parse(layout.value) : undefined
   const defaultCollapsed = collapsed ? JSON.parse(collapsed.value) : undefined
   
+  if(!session) redirect(`/api/auth/login?returnTo=${encodeURIComponent(`/clinics/${clinicUid}/appointments`)}`)
+  
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -44,7 +49,10 @@ async function AppointmentsPage({ searchParams, params }: AppRouterPageRouteOpts
             View and respond to appointments.
           </p>
         </div>
-        <BookAppointmentBtn>
+        <BookAppointmentBtn
+          clinicUid={clinicUid}
+          userId={session.user.sub}
+        >
           <Button>Book Appointment</Button>
         </BookAppointmentBtn>
       </div>

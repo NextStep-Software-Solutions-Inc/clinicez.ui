@@ -5,9 +5,10 @@ import prismaClient from "@/lib/prisma";
 import { withErrorHandling } from "@/lib/with-error-handling";
 import { getCachedSession } from "../session.action";
 import { sessionCheck } from "@/lib/auth";
+import { hasCodeProperty } from "@/lib/utils";
 
 
-type GetClinicPatientFilters = {
+export type GetClinicPatientFilters = {
   search?: string
   clinicUid: string
   pageSize?: number
@@ -16,12 +17,12 @@ type GetClinicPatientFilters = {
   userId?: string
 }
 export type GetClinicPatients = Awaited<ReturnType<typeof getClinicPatientsAction>>
-export const getClinicPatientsAction = withErrorHandling(async (filter: GetClinicPatientFilters) => {
+export const getClinicPatientsAction = withErrorHandling(async (filters: GetClinicPatientFilters) => {
 
  
   const session = await getCachedSession()
   if(!session) throw new Error("Unauthorized")
-  const { search, pageNumber = 1, pageSize = 50, distinct = false, clinicUid, userId } = filter ?? {}
+  const { search, pageNumber = 1, pageSize = 50, distinct = false, clinicUid, userId } = filters ?? {}
   
   const clinicPatients = await prismaClient.clinicPatient.findMany({
     ... pageSize ? { take: pageSize } : {},
@@ -123,6 +124,10 @@ export const addClinicPatientAction = withErrorHandling(async ({clinicUid, userI
 
   return {message: "Clinic Patient added successfully", data: null}
   
+}, error => {
+  if(hasCodeProperty(error) && error.code === "P2002") {
+    return "Clinic Patient already exists"
+  }
 })
 
 

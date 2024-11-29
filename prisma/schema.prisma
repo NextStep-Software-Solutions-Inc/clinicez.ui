@@ -897,7 +897,7 @@ model UserStudentRecord {
   Organization           Organization            @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   Program                OrganizationProgram?    @relation(fields: [programId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   User                   User                    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  OrganizationRole       OrganizationRole?       @relation(fields: [userOrganizationRoleId], references: [id])
+  OrganizationRole       OrganizationRole?       @relation(fields: [userOrganizationRoleId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   OrganizationYearLevel  OrganizationYearLevel?  @relation(fields: [yearLevel], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@unique([userId, organizationId], name: "unique_user_student_record")

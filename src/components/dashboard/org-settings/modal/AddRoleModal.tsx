@@ -1,5 +1,6 @@
 "use client";
 
+import { promiseWrapper } from "@/lib/with-error-handling";
 import { createOrganizationRoleAction } from "@actions/organizations/organization-role.action";
 import ActionButton from "@components/ActionButton";
 import CustomModalContent from "@components/CustomModalContent";
@@ -45,20 +46,18 @@ export default function AddRoleModal({orgUid, onAddRole}:AddRoleModalProps) {
 
   const action = async () => {
     form.handleSubmit(async (values) => {
-      toast.promise(createOrganizationRoleAction({
+      toast.promise(promiseWrapper(createOrganizationRoleAction)({
         orgUid,
         name: values.name,
         description: values.description
       }), {
-        loading: "Creating role...",
+        loading: "Creating organization role...",
         success: res => {
-          if(res.status) {
-            onAddRole?.();
-            closeBtnRef.current?.click();
-          }
+          onAddRole?.();
+          closeBtnRef.current?.click();
           return res.message
         },
-        error: "Error while creating role"
+        error: error=>error
       })
     })();
   }

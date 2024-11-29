@@ -146,7 +146,6 @@ export const addClinicMemberAction = withErrorHandling(async (payload: AddClinic
 
   await sessionCheck()
 
-
   const {clinicUid, userId, roleId} = payload;
   await prismaClient.clinicMember.create({
     data: {

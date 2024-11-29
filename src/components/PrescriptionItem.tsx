@@ -62,16 +62,20 @@ export default function PrescriptionItem({prescription, onUpdated}: Prescription
           <p className="flex gap-1"><File size={16}/>{prescription.DocumentTemplate.name}</p>
         </div>
         <div className="flex items-center gap-1">
-          <DownloadPrescriptionAction prescription={prescription}/>
+          <DownloadPrescriptionAction prescription={prescription} onUpdated={onUpdated}/>
           <ModifyPrescriptionAction prescription={prescription} onUpdated={onUpdated}/>
-          <ARchivePrescriptionAction prescription={prescription}/>
+          <ArchivePrescriptionAction prescription={prescription} onUpdated={onUpdated}/>
         </div>
       </div>
     </div>
   );
 }
 
-const ModifyPrescriptionAction = ({prescription, onUpdated}: {prescription: PrescriptionItemProps["prescription"], onUpdated?: () => void}) => {
+interface ModifyPrescriptionActionProps {
+  onUpdated?: () => void;
+  prescription: PrescriptionItemProps["prescription"];
+}
+const ModifyPrescriptionAction = ({prescription, onUpdated}: ModifyPrescriptionActionProps) => {
   return (
     <UpdatePrescriptionModal onUpdated={onUpdated} prescription={{
       id: prescription.id,
@@ -80,7 +84,11 @@ const ModifyPrescriptionAction = ({prescription, onUpdated}: {prescription: Pres
   )
 }
 
-const DownloadPrescriptionAction = ({prescription}: {prescription: PrescriptionItemProps["prescription"]}) => {
+interface DownloadPrescriptionActionProps {
+  onUpdated?: () => void;
+  prescription: PrescriptionItemProps["prescription"];
+}
+const DownloadPrescriptionAction = ({prescription}: DownloadPrescriptionActionProps) => {
 
   const handleDownload = async () => {
     toast.promise(promiseWrapper(getPrescriptionAction)(prescription.id), {
@@ -144,12 +152,17 @@ const DownloadPrescriptionAction = ({prescription}: {prescription: PrescriptionI
   )
 }
 
-const ARchivePrescriptionAction = ({prescription}: {prescription: PrescriptionItemProps["prescription"]}) => {
+interface ArchivePrescriptionActionProps {
+  onUpdated?: () => void;
+  prescription: PrescriptionItemProps["prescription"];
+}
+const ArchivePrescriptionAction = ({prescription, onUpdated}: ArchivePrescriptionActionProps) => {
   
   const handleArchivePrescription = async () => {
     toast.promise(promiseWrapper(archivePrescriptionAction)(prescription.id), {
-      loading: "Deleting prescription...",
+      loading: "Archiving prescription...",
       success: (res) => {
+        onUpdated?.()
         return res.message;
       },
       error: error => error

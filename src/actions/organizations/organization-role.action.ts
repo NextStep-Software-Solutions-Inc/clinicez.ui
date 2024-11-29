@@ -6,6 +6,7 @@ import { cache } from "react";
 import { getCachedSession } from "@actions/session.action";
 import { withErrorHandling } from "@/lib/with-error-handling";
 import { sessionCheck } from "@/lib/auth";
+import { hasCodeProperty } from "@/lib/utils";
 
 type CreateOrgRolePayload = {
   orgUid: string;
@@ -13,34 +14,31 @@ type CreateOrgRolePayload = {
   description: string;
 }
 
-export const createOrganizationRoleAction = async (payload: CreateOrgRolePayload) => {
-  let message = "Organization role created successfully"
-  try {
+export const createOrganizationRoleAction = withErrorHandling(async (payload: CreateOrgRolePayload) => {
 
-    const session = await getCachedSession();
-    if(!session) throw new Error("Session not found");
+  await sessionCheck();
 
-    const { orgUid, name, description } = payload;
-    const newOrgRole = await prisma.organizationRole.create({
-      data: {
-        Organization: {
-          connect: {
-            orgUid
-          }
-        },
-        name,
-        description,
-        requirements: [],
-      }
-    })
-    return { status: true, message, data: newOrgRole }
-  } catch (error) {
-    console.error(`Error while creating organization role: ${error}`);
-    message = "Error while creating role";
-    if(error instanceof Error) message = error.message;
-    return { status: false,  message: "Error while creating role", data: null }
+  const { orgUid, name, description } = payload;
+  const newOrgRole = await prisma.organizationRole.create({
+    data: {
+      Organization: {
+        connect: {
+          orgUid
+        }
+      },
+      name,
+      description,
+      requirements: [],
+    }
+  })
+  return {  message: "Organization role created successfully", data: newOrgRole }
+  
+}, error => {
+  if(hasCodeProperty(error) && error.code === "P2002") {
+    return "Role with the same name or id already exists"
   }
-}
+  return "An error occurred while creating the organization role"
+})
 
 export type GetOrganizationRolesFilters = {
     orgUid?: string;

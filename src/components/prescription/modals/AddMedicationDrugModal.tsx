@@ -123,7 +123,7 @@ export default function AddMedicationDrugModal({onCreated, medicationId}: AddMed
         </Tooltip>
       </TooltipProvider>
       <CustomModalContent
-        className="sm:max-w-[625px] overflow-scroll max-h-[100vh] no-scrollbar"
+        className="sm:max-w-[725px] overflow-scroll max-h-[100vh] no-scrollbar"
         label="Add Medicine"
         description="Add a new medicine to the medication list"
       >
@@ -243,7 +243,7 @@ export default function AddMedicationDrugModal({onCreated, medicationId}: AddMed
                       />
                     </FormControl>
                     <FormDescription>
-                    Dosage of the medicine
+                      How often to take the medicine
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -264,7 +264,7 @@ export default function AddMedicationDrugModal({onCreated, medicationId}: AddMed
                       />
                     </FormControl>
                     <FormDescription>
-                      Number of days to take the medicine.
+                      Number of days to take the medicine in total.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

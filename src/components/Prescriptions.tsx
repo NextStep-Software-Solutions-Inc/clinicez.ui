@@ -4,6 +4,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle
 } from "@components/ui/card";
@@ -21,10 +22,12 @@ const CreatePrescriptionModal = dynamic(
 export interface PrescriptionsProps {}
 
 export default function Prescriptions({}: PrescriptionsProps) {
-  const { data: prescriptions, mutate } = usePrescriptions({});
+  const { data: prescriptions, mutate } = usePrescriptions({
+    isArchived: false
+  });
 
   return (
-    <Card className="group/prescription h-1/3 overflow-hidden">
+    <Card className="group/prescription">
       <CardHeader>
         <div className="flex flex-wrap gap-2 items-center">
           <div>
@@ -43,19 +46,22 @@ export default function Prescriptions({}: PrescriptionsProps) {
           </div>
         </div>
       </CardHeader>
-      <CardContent className="grid gap-1">
-        <Each
-          of={prescriptions?.data ?? []}
-          fallback={
-            <p className="text-center text-muted-foreground">
+      <CardContent className=" h-[25rem] overflow-y-auto no-scrollbar scrollBox">
+        <div className="grid gap-1">
+          <Each
+            of={prescriptions?.data ?? []}
+            fallback={
+              <p className="text-center text-muted-foreground">
               No recent prescription to show.
-            </p>
-          }
-          render={(prescription) => (
-            <PrescriptionItem prescription={prescription} onUpdated={mutate} />
-          )}
-        />
+              </p>
+            }
+            render={(prescription) => (
+              <PrescriptionItem prescription={prescription} onUpdated={mutate} />
+            )}
+          />
+        </div>
       </CardContent>
+      <CardFooter/>
     </Card>
   );
 }

@@ -4,6 +4,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle
 } from "@components/ui/card";
@@ -11,7 +12,7 @@ import React from "react";
 import Each from "@components/utils/Each";
 import Suspend from "@components/Suspend";
 import dynamic from "next/dynamic";
-import { File } from "lucide-react";
+import { Car, File } from "lucide-react";
 
 import { useDocumentTemplates } from "@/hooks/useDocumentTemplate";
 import DocumentTemplateItem from "./DocumentTemplateItem";
@@ -31,7 +32,7 @@ export default function DocumentTemplates({documentType, label}: DocumentTemplat
 
 
   return (
-    <Card className="group/prescription h-1/3 overflow-hidden">
+    <Card className="">
       <CardHeader>
         <div className="flex flex-wrap gap-2 items-center">
           <div>
@@ -54,19 +55,22 @@ export default function DocumentTemplates({documentType, label}: DocumentTemplat
           </div>
         </div>
       </CardHeader>
-      <CardContent className="grid gap-1">
-        <Each
-          of={documentTemplates?.data ?? []}
-          fallback={
-            <p className="text-center text-muted-foreground">
+      <CardContent className="h-[25rem] overflow-y-auto no-scrollbar scrollBox">
+        <div className="grid gap-1 ">
+          <Each
+            of={documentTemplates?.data ?? []}
+            fallback={
+              <p className="text-center text-muted-foreground">
               No {label?.toLocaleLowerCase() || "document"} template to show.
-            </p>
-          }
-          render={(template) => (
-            <DocumentTemplateItem documentTemplate={template} onUpdated={mutate} />
-          )}
-        />
+              </p>
+            }
+            render={(template) => (
+              <DocumentTemplateItem documentTemplate={template} onUpdated={mutate} />
+            )}
+          />
+        </div>
       </CardContent>
+      <CardFooter/>
     </Card>
   );
 }

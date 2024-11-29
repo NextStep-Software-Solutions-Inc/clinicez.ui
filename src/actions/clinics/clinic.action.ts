@@ -48,7 +48,7 @@ export const getClinicsAction = withErrorHandling(cache(async (filters?: Filters
   
   await sessionCheck();
 
-  const { userId, clinicUid, orgUid, isPublic } = filters || {};
+  const { clinicUid, orgUid, isPublic } = filters || {};
   const clinics = await prisma.clinic.findMany({
     orderBy: {
       name: "asc"
@@ -65,15 +65,6 @@ export const getClinicsAction = withErrorHandling(cache(async (filters?: Filters
           }
         }
       }}: {},
-      ...(userId && {
-        Users: {
-          every: {
-            User: {
-              userId
-            }
-          }
-        }
-      }),
       isActive: true
     }
   });

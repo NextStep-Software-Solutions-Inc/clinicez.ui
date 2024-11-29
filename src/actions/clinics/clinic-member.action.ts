@@ -144,10 +144,8 @@ type AddClinicMemberPayload = {
 }
 export const addClinicMemberAction = withErrorHandling(async (payload: AddClinicMemberPayload) => {
 
-  const session = await sessionCheck()
+  await sessionCheck()
 
-  const auth0User = await managementClient.users.get({id: payload.userId})
-  if(!auth0User.data.email_verified) throw new Error("User email is not verified")
 
   const {clinicUid, userId, roleId} = payload;
   await prismaClient.clinicMember.create({

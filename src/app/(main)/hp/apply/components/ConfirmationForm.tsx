@@ -12,6 +12,7 @@ import { hpApply } from "@state/hp-apply";
 import { Button } from "@components/ui/button";
 import { useAtom } from "jotai";
 import { hpApplicationTransactionAction } from "@actions/users/user-plan.action";
+import { promiseWrapper } from "@/lib/with-error-handling";
 
 interface ConfirmationFormProps {
   nextStep?: () => void;
@@ -45,23 +46,21 @@ export default function ConfirmationForm({ nextStep, prevStep, isFirstStep, isCo
 
   const action = () => {
     form.handleSubmit(async () => {
-      const planId = hpApplication.planId
-      const hpTypeId = hpApplication.hpTypeId
-      const code = hpApplication.receiptCode
       
-      if(!planId || !hpTypeId || !code) return toast.error("An error occurred. One or more required fields are missing.");
+      const { planId, hpTypeId, receiptCode: code } = hpApplication;
+
+      if(!planId || !hpTypeId || !code) {
+        toast.error("An error occurred. One or more required fields are missing.");
+        return;
+      }
       
-      // transaction method
-      toast.promise(hpApplicationTransactionAction({ code, hpTypeId,  planId }), {
+      toast.promise(promiseWrapper(hpApplicationTransactionAction)({ code, hpTypeId,  planId }), {
         loading: "Submitting application...",
         success: (res) => {
-          if(res.status) {
-            setComplete?.(true);
-
-          }
+          setComplete?.(true);
           return res.message;
         },
-        error: (error) => `An error occurred while submitting your application. Please try again later. Error: ${error}`,
+        error: (error) => error,
       });
     })()
   }

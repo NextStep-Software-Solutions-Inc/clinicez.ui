@@ -38,10 +38,14 @@ const confirmationFormSchema = z.object({
 
 export function JoinAsPatientDialog() {
   
+  const { user } = useUser();
   const searchParams = useSearchParams();
   const { clinicUid } = useParams<{clinicUid: string}>();
-  const {user} = useUser()
   const open = useMemo(() => searchParams.has("join-as-patient"), [searchParams]);
+
+  const { mutate } = useClinicPatients({
+    clinicUid, userId: user?.sub ?? undefined
+  })
 
   const form = useForm<z.infer<typeof confirmationFormSchema>>({
     resolver: zodResolver(confirmationFormSchema),
@@ -54,8 +58,8 @@ export function JoinAsPatientDialog() {
       window.history.pushState({}, "", `${window.location.pathname}?${searchParams.toString()}`);
     }
   }
-  const action = () => {
 
+  const action = () => {
     if(!user?.sub) {
       toast.error("User id not found")
       return;
@@ -72,13 +76,12 @@ export function JoinAsPatientDialog() {
         searchParams.set("book-appointment", "true");
         window.history.pushState({}, "", `${window.location.pathname}?${searchParams.toString()}`);
         handleClose(false);
+        mutate()
         return res.message
       },
       error:error => error
     })
   }
-
-
 
   return (
     <AlertDialog open={open} onOpenChange={handleClose}>

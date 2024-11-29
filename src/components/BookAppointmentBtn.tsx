@@ -20,7 +20,7 @@ export default function BookAppointmentBtn({className, children, userId, clinicU
   })
 
   useEffect(() => {
-
+ 
     if(!bookAppointment) {
       return;
     }
@@ -39,7 +39,6 @@ export default function BookAppointmentBtn({className, children, userId, clinicU
     }
     window.history.pushState({}, "", `${window.location.pathname}?${searchParams.toString()}`);
     setBookAppointment(false);
-
   }, [clinicPatient, isLoading, bookAppointment])
 
   return (

@@ -9,4 +9,4 @@ export type HpApplyForm = Partial<{
     planPrice: number;
     receiptCode: string;
 }>;
-export const hpApply = atom<HpApplyForm>({});
+export const hpApplyAtom = atom<HpApplyForm>({});

@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { Button } from "@components/ui/button";
 import { verifyReceiptCodeAction } from "@/actions/receipt-code.action";
 import { useAtom } from "jotai";
-import { hpApply } from "@state/hp-apply";
+import { hpApplyAtom } from "@state/hp-apply";
 import { usePlans } from "@hooks/usePlan";
 interface PaymentFormProps {
   nextStep?: () => void;
@@ -25,7 +25,7 @@ export default function PaymentForm({ nextStep, prevStep, isFirstStep, isLastSte
   const [paymentVerified, setPaymentVerified] = useState(false);
   const {data: hpPlans} = usePlans("HEALTHCARE_PROVIDER", "MONTHLY")
 
-  const [hpApplication,setHpApplication] = useAtom(hpApply);
+  const [hpApplication,setHpApplication] = useAtom(hpApplyAtom);
 
   const selectedPlan = useMemo(() => hpPlans?.data?.find(plan => plan.id === hpApplication?.planId), [hpPlans, hpApplication]);
   const cost = selectedPlan?.price ?? 0;

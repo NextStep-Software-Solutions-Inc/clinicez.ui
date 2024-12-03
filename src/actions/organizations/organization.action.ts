@@ -141,7 +141,7 @@ export const setMyDefaultOrganizationAction = withErrorHandling(async (id: numbe
   if (!session) throw new Error("User not authenticated.");
  
   const org = await prisma.userDefaultOrganization.upsert({
-    where: { id, User: { userId } },
+    where: { id },
     create: {
       User: {
         connect: { userId }

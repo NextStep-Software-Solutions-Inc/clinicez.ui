@@ -12,6 +12,7 @@ import { useAtom } from "jotai";
 import { tenantApplyAtom } from "@state/tenant-apply";
 import { Textarea } from "@components/ui/textarea";
 import { createTenantAction } from "@actions/tenant.action";
+import { promiseWrapper } from "@/lib/with-error-handling";
 
 
 type TenantDetails = z.infer<typeof tenantDetailsFormSchema>;
@@ -55,7 +56,7 @@ export default function TenantDetails({ setComplete, prevStep }: TenantDetailsPr
         return;
       }
       const planId = Number(searchParams.get("plan"));
-      toast.promise(createTenantAction({
+      toast.promise(promiseWrapper(createTenantAction)({
         name: data.name,
         tenantUid: data.tenantUid,
         description: data.description,
@@ -64,13 +65,11 @@ export default function TenantDetails({ setComplete, prevStep }: TenantDetailsPr
       }), {
         loading: "Creating tenant...",
         success: (res) => {
-          if(res.status){
-            setComplete?.(true);
-            form.reset(data);
-          }
+          setComplete?.(true);
+          form.reset(data);
           return res.message;
         },
-        error: "Failed to create tenant"
+        error: error => error
       })
     })()
   } 

@@ -17,7 +17,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import BackSubmitAndNext from "../../../../../components/SubmitAndNext";
 import { getPlansAction } from "@actions/plan.action";
 import { useAtom } from "jotai";
-import { hpApply } from "@state/hp-apply";
+import { hpApplyAtom } from "@state/hp-apply";
 import { usePlans } from "@hooks/usePlan";
 
 export const planFormSchema = z.object({
@@ -40,7 +40,7 @@ interface ISelectPlanProps {
 
 export default function SelectPlan({ nextStep, isFirstStep, isLastStep, prevStep,totalSteps}: ISelectPlanProps) {
   const {data: hpPlans} = usePlans("HEALTHCARE_PROVIDER", "MONTHLY")
-  const [applicationData,setApplicationData] = useAtom(hpApply);
+  const [applicationData,setApplicationData] = useAtom(hpApplyAtom);
   
   const form = useForm<z.infer<typeof planFormSchema>>({
     resolver: zodResolver(planFormSchema),

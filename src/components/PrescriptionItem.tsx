@@ -16,7 +16,7 @@ import { promiseWrapper } from "@/lib/with-error-handling";
 import { GetPrescriptions, archivePrescriptionAction, getPrescriptionAction } from "@/actions/medications/prescription.action";
 import { handlePrintHtmlToPDF } from "@/lib/print-pdf";
 import { preparePrescription } from "@/lib/prepare-prescription";
-import { differenceInCalendarDays, differenceInCalendarYears } from "date-fns";
+import { differenceInCalendarYears } from "date-fns";
 
 export interface PrescriptionItemProps {
   onUpdated?: () => void;

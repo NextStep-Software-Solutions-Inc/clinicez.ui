@@ -334,6 +334,7 @@ export const findOrCreateUserAction = withErrorHandling(cache(async () => {
         firstName: session.user.given_name,
         lastName: session.user.family_name
       })
+      await assignUserPermission(prisma, dbUser.userId);
     }
 
     return dbUser;

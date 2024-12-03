@@ -217,20 +217,6 @@ export default function AppointmentPanel({
             isCollapsed && "min-w-[50px] transition-all duration-300 ease-in-out"
           )}
         >
-          <div
-            className={cn(
-              "flex h-[52px] items-center justify-center",
-              isCollapsed ? "h-[52px]" : "px-2"
-            )}
-          >
-            <Switcher
-              value={activeRoleId.toString()}
-              isCollapsed={isCollapsed}
-              onSwitch={changeRole}
-              options={roles}
-            />
-          </div>
-          <Separator />
           <div className="px-5 pt-2 font-semibold">
             Appointments
           </div>

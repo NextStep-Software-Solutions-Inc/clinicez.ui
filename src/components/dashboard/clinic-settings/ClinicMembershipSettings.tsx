@@ -42,8 +42,7 @@ export default function ClinicMembershipSettings() {
         <AddClinicMember onAdded={mutate}/>
       </CardHeader>
       <CardContent>
-        <MembersList clinicMembers={clinicMembers?.data ?? []}/>
-
+        <MembersList clinicMembers={clinicMembers?.data ?? []} onUpdated={mutate}/>
       </CardContent>
       <CardFooter></CardFooter>
     </Card>

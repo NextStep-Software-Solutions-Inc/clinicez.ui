@@ -101,7 +101,7 @@ model User {
   CompletedByAppointments          AppointmentAttribute[]           @relation("CompletedBy")
   PreAssessmentNotes               PreAssessmentNote[]
   UserDefaultClinicRoles           UserDefaultClinicRole[]
-  ClinicPatienta                   ClinicPatient[]
+  ClinicPatients                   ClinicPatient[]
   RescheduledByAppointments        AppointmentAttribute[]           @relation("RescheduledBy")
   Medications                      Medication[]
 }

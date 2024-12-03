@@ -8,7 +8,7 @@ import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
 import BackSubmitAndNext from "@components/SubmitAndNext";
 import { toast } from "sonner";
-import { hpApply } from "@state/hp-apply";
+import { hpApplyAtom } from "@state/hp-apply";
 import { Button } from "@components/ui/button";
 import { useAtom } from "jotai";
 import { hpApplicationTransactionAction } from "@actions/users/user-plan.action";
@@ -38,7 +38,7 @@ export const confirmationFormSchema = z.object({
 type formType = z.infer<typeof confirmationFormSchema>
 
 export default function ConfirmationForm({ nextStep, prevStep, isFirstStep, isComplete, setComplete, startOver }: ConfirmationFormProps) {
-  const [hpApplication, setHpApplication] = useAtom(hpApply);
+  const [hpApplication, setHpApplication] = useAtom(hpApplyAtom);
   
   const form = useForm<formType>({
     resolver: zodResolver(confirmationFormSchema)

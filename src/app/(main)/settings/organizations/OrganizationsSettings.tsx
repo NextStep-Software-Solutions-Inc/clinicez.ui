@@ -49,11 +49,7 @@ export default function OrganizationsSettings() {
 
   async function action(){
     form.handleSubmit(async (data)  => {
-      if(!userId || !defaultOrg?.data?.id || !data.defaultOrgUid) {
-        toast.error("user id or default org id or default org uid is missing")
-        return;
-      }
-      toast.promise(promiseWrapper(setMyDefaultOrganizationAction)(defaultOrg.data.id, data.defaultOrgUid, userId), {
+      toast.promise(promiseWrapper(setMyDefaultOrganizationAction)(defaultOrg?.data?.id ?? 0, data.defaultOrgUid, userId), {
         loading: "Updating default organization...",
         success: (res) => {
           form.reset(data)

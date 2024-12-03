@@ -13,7 +13,10 @@ import { faker } from '@faker-js/faker';
 import { hasCodeProperty } from '@lib/utils';
 import { withErrorHandling } from '@/lib/with-error-handling';
 import { updateAuth0UserAction } from './user-management.action';
+import { getPermissionsAction } from '../permission.action';
+import { sessionCheck } from '@/lib/auth';
 
+export type PrismaTransactionalClient = Parameters<Parameters<typeof prisma['$transaction']>[0]>[0];
 
 export type GetUsersFilters = {
   orgUid?: string
@@ -193,34 +196,24 @@ type CreateUserPayload = {
   clinicUid?: string
 }
 export const createUserAction = withErrorHandling(async (payload: CreateUserPayload) => {
+
+  await sessionCheck();
   
-  const session = await getCachedSession();
-  if(!session) throw new Error("Unauthorized");
-
-  const {email, firstName, lastName, mobile, gender, dob, clinicUid, roleName = "patient" } = payload
-  // generate strong password // lowercase, uppercase, number, special character
-  const randomPassword = faker.internet.password({
-    length: 12,
-    pattern: /[A-Za-z\d!@#$%^&*()_+]/,
-  });
-
+  const { mobile, gender, dob, clinicUid} = payload
   let clinicName: string | null = null 
+
   const newUser = await prisma.$transaction(async (prisma) => {
+
+    // generate strong password 
+    const randomPassword = generateRandomPassword();
+
     // create user in auth0
-    const { data, status } = await managementClient.users.create({
-      given_name: firstName,
-      family_name: lastName,
-      name: `${firstName} ${lastName}`,
-      email,
-      password: randomPassword,
-      nickname: `${firstName} ${lastName}`,
-      connection: "Username-Password-Authentication",
-    })
+    const { data, status } = await createUserInAuth0({...payload, password: randomPassword});
 
     if(status !== 201) throw new Error("Failed to create user in auth0");
       
     // create user in database
-    const newUser = await insertUserInDb(prisma, {
+    const newUser = await createUserToDb(prisma, {
       userId: data.user_id,
       email: data.email,
       mobile: mobile,
@@ -231,56 +224,23 @@ export const createUserAction = withErrorHandling(async (payload: CreateUserPayl
       picture: data.picture
     });
 
-    if(!newUser.data) throw new Error("Failed to create user in db");
+    if(!newUser) throw new Error("Failed to create user in db");
+
+    // assign user permissions
+    await assignUserPermission(prisma, newUser.userId);
 
     // add user to clinic
     if(clinicUid) {
-      const clinicPatient = await prisma.clinicPatient.create({
-        data: {
-          Patient: {
-            connect: {
-              userId: newUser.data.userId
-            }
-          },
-          Clinic: {
-            connect: {
-              clinicUid
-            }
-          },
-        },
-        select: {
-          id: true,
-          clinicId: true,
-          Clinic: {
-            select: {
-              name: true
-            }
-          }
-        }
-      })
-
+     
+      const clinicPatient = await createClinicPatient(prisma, newUser.userId, clinicUid);
       clinicName = clinicPatient.Clinic.name
-      // find initial permissions for the role
-      const permissions = await prisma.clinicRoleInitialPermission.findMany({
-        where: {
-          ClinicRole: {
-            name: roleName
-          }
-        }
-      })
-
-      // create user clinic permissions
-      await prisma.clinicMemberPermission.createMany({
-        skipDuplicates: true,
-        data: permissions.map(permission => ({
-          clinicMemberId: clinicPatient.id,
-          permissionId: permission.permissionId,
-        }))
-      })
+      
+      // assign clinic patient permissions
+      await assignClinicPatientPermission(prisma, clinicPatient.id)
     }
 
     await sendCreateUserNotification({
-      email: newUser.data.email,
+      email: newUser.email,
       password: randomPassword,
       senderName: clinicName ?? undefined
     });
@@ -295,126 +255,6 @@ export const createUserAction = withErrorHandling(async (payload: CreateUserPayl
 }, (error) => {
   return "Failed to create user";
 })
-
-// export const createUserAction = async (payload: CreateUserPayload) => {
-//   const session = await getCachedSession();
-//   if(!session) return {
-//     success: false,
-//     message: "Unauthorized",
-//     data: null
-//   }
-
-//   try {
-//     const {email, firstName, lastName, mobile, gender, dob, clinicUid, } = payload
-//     // generate strong password // lowercase, uppercase, number, special character
-//     const randomPassword = faker.internet.password({
-//       length: 12,
-//       pattern: /[A-Za-z\d!@#$%^&*()_+]/,
-//     });
-//     let clinicName: string | null = null 
-//     const newUser = await prisma.$transaction(async (prisma) => {
-//       // create user in auth0
-//       const { data, status } = await managementClient.users.create({
-//         given_name: firstName,
-//         family_name: lastName,
-//         name: `${firstName} ${lastName}`,
-//         email,
-//         password: randomPassword,
-//         nickname: `${firstName} ${lastName}`,
-//         connection: "Username-Password-Authentication",
-//       })
-
-//       if(status !== 201) throw new Error("Failed to create user in auth0");
-      
-//       // create user in database
-//       const newUser = await insertUserInDb(prisma, {
-//         userId: data.user_id,
-//         email: data.email,
-//         mobile: mobile,
-//         firstName: data.given_name,
-//         lastName: data.family_name,
-//         gender: gender,
-//         dob: dayjs(dob).toDate(),
-//       });
-
-//       if(!newUser.data) throw new Error("Failed to create user in db");
-
-//       // add user to clinic
-//       if(clinicUid) {
-//         const userOrganization = await prisma.clinicPatient.create({
-//           data: {
-//             Patient: {
-//               connect: {
-//                 userId: newUser.data.userId
-//               }
-//             },
-//             Clinic: {
-//               connect: {
-//                 clinicUid
-//               }
-//             },
-//             // OrganizationRole: {
-//             //   connect: {
-//             //     id: userRoleId
-//             //   }
-//             // },
-//             // status: "ACTIVE"
-//           },
-//           select: {
-//             id: true,
-//             clinicId: true,
-//             Clinic: {
-//               select: {
-//                 name: true
-//               }
-//             }
-//           }
-//         })
-//         clinicName = userOrganization.Clinic.name
-//         // find initial permissions for the role
-//         const permissions = await prisma.orgRoleInitialPermission.findMany({
-//           where: {
-//             orgRoleId: userOrganization.role
-//           }
-//         })
-
-//         // create user organization permissions
-//         await prisma.orgMemberPermission.createMany({
-//           skipDuplicates: true,
-//           data: permissions.map(permission => ({
-//             orgMemberId: userOrganization.id,
-//             permissionId: permission.permissionId,
-//           }))
-//         })
-//       }
-
-//       await sendCreateUserNotification({
-//         email: newUser.data.email,
-//         password: randomPassword,
-//         clinicName: clinicName ?? undefined
-//       });
-      
-//       return newUser;
-//     })
-   
-//     return {
-//       success: true,
-//       message: "User created successfully",
-//       data: newUser
-//     }
-//   } catch (error) {
-//     console.error(`Error creating user: ${error}`);
-//     let message = "Failed to create user";
-//     if(error instanceof Error) {
-//       message = error.message
-//     }
-//     return {
-//       success: false,
-//       message,
-//       data: null
-//     }
-//   }
-// }
 
 export const updateUserAction = withErrorHandling(async (userId: string, data: Prisma.UserUpdateArgs["data"]) => {
   
@@ -472,58 +312,151 @@ const sendCreateUserNotification = async ({email, password, senderName}: SendCre
   }
 }
 
-export const findOrCreateUserAction = cache(async () => {
-  const session = await getCachedSession();
+export const findOrCreateUserAction = withErrorHandling(cache(async () => {
+  const session = await sessionCheck();
   let message = "User found and created";
 
-  try {
-    if(!session) throw new Error("Unauthorized");
+  const user = await prisma.$transaction(async (prisma) => {
     
-    const user = await prisma.$transaction(async (prisma) => {
-      // step 1: find user in db
-      let dbUser = await prisma.user.findUnique({
-        where: {
-          userId: session.user.sub
-        }
-      })
-
-      // step 2: create user in db if not found
-      if(dbUser === null) {
-        const newUser = await insertUserInDb(prisma, {
-          userId: session.user.sub,
-          email: session.user.email,
-          mobile: "",
-          firstName: session.user.given_name,
-          lastName: session.user.family_name
-        })
-
-        // delete user in auth0 if email is taken
-        if(!newUser.success) {
-          await managementClient.users.delete({ id: session.user.sub });
-          throw new Error("User not found in db and email is taken. Action: User deleted in auth0");
-        }
-        dbUser = newUser.data
+    // step 1: find user in db
+    let dbUser = await prisma.user.findUnique({
+      where: {
+        userId: session.user.sub
       }
-      return dbUser;
-      
-    }, {
-      timeout: 5000,
-      maxWait: 10000,
-      isolationLevel: Prisma.TransactionIsolationLevel.Serializable, // optional, default defined by database
     })
 
-    return { success: true, message, data: user }
-  } catch (error) {
-    console.error(`Error finding and creating user: ${error}`);
-    message = "Failed to find and create user";
-    if(error instanceof Error) message = error.message
-    if(hasCodeProperty(error) && error.code === "P2002") message = "User already exists in the db and associated with another user";
-    return { success: false, message,  data: null }
-  }
-})
+    // step 2: create user in db if not found
+    if(dbUser === null) {
+      dbUser = await createUserToDb(prisma, {
+        userId: session.user.sub,
+        email: session.user.email,
+        mobile: "",
+        firstName: session.user.given_name,
+        lastName: session.user.family_name
+      })
+    }
 
-export type PrismaTransactionalClient = Parameters<Parameters<typeof prisma['$transaction']>[0]>[0];
-type InsertUserPayload = {
+    return dbUser;
+      
+  }, {
+    timeout: 5000,
+    maxWait: 10000,
+    isolationLevel: Prisma.TransactionIsolationLevel.Serializable, // optional, default defined by database
+  })
+
+  return { success: true, message, data: user }
+  
+}), async (error) => {
+  if(hasCodeProperty(error) ) {
+    if(error.code === "P2002") {
+
+      const session = await sessionCheck();
+      await managementClient.users.delete({ id: session.user.sub });
+      return "User not found and failed to create user";
+
+    }
+    if(error.code === "P2025 ") 
+      return "User already exists in the system and associated with another account";
+  };
+});
+
+
+const assignUserPermission = async (prisma: PrismaTransactionalClient, userId: string) => {
+  
+  const permissions = await getPermissionsAction({type: "USER"});
+
+  const user = await getUserAction(userId);
+
+  if(!user.data?.id) throw new Error("User not found");
+
+  const userPermission = await prisma.userPermission.createMany({
+    skipDuplicates: true,
+    data: permissions.map(permission => ({
+      permissionId: permission.id,
+      userId: user.data?.id
+    }))
+  })
+  
+  return userPermission;
+
+}
+
+const assignClinicPatientPermission = async (prisma: PrismaTransactionalClient, clinicPatientId: number, clinicRoleName = "patient") => {
+  
+  const permissions = await prisma.clinicRoleInitialPermission.findMany({
+    where: {
+      ClinicRole: {
+        name: clinicRoleName
+      }
+    }
+  })
+
+  // create user clinic permissions
+  const clinicPatientPermissions = await prisma.clinicPatientPermission.createMany({
+    skipDuplicates: true,
+    data: permissions.map(permission => ({
+      clinicPatientId: clinicPatientId,
+      permissionId: permission.permissionId,
+    }))
+  })
+
+  return clinicPatientPermissions;
+
+}
+
+const assignClinicMemberPermission = async (prisma: PrismaTransactionalClient, clinicMemberId: number, clinicRoleName: string) => {
+  
+  const permissions = await prisma.clinicRoleInitialPermission.findMany({
+    where: {
+      ClinicRole: {
+        name: clinicRoleName
+      }
+    }
+  })
+
+  // create user clinic permissions
+  const clinicMemberPermissions = await prisma.clinicMemberPermission.createMany({
+    skipDuplicates: true,
+    data: permissions.map(permission => ({
+      clinicMemberId: clinicMemberId,
+      permissionId: permission.permissionId,
+    }))
+  })
+
+  return clinicMemberPermissions;
+
+}
+
+const createClinicPatient = async (prisma: PrismaTransactionalClient, userId: string, clinicUid: string) => {
+    
+  const clinicPatient = await prisma.clinicPatient.create({
+    data: {
+      Patient: {
+        connect: {
+          userId
+        }
+      },
+      Clinic: {
+        connect: {
+          clinicUid
+        }
+      }
+    },
+    select: {
+      id: true,
+      clinicId: true,
+      Clinic: {
+        select: {
+          name: true
+        }
+      }
+    }
+  })
+  
+  return clinicPatient;
+}
+
+type createUserToDbPayload = {
   userId: string
   email: string
   mobile: string
@@ -533,24 +466,45 @@ type InsertUserPayload = {
   dob?: Date,
   picture?: string
 }
-const insertUserInDb = async (prisma: PrismaTransactionalClient, payload: InsertUserPayload) => {
-  try {
-    const { userId, email, mobile, firstName, lastName, dob = null, gender = null, picture} = payload;
+const createUserToDb = async (prisma: PrismaTransactionalClient, payload: createUserToDbPayload) => {
+  
+  const { userId, email, mobile, firstName, lastName, dob = null, gender = null, picture} = payload;
     
-    const newUser = await prisma.user.create({
-      data: { userId, email, mobile, firstName, lastName, dob, gender, picture  }
-    });
-    return {
-      success: true,
-      message: "User created successfully",
-      data: newUser
-    }
-  } catch (error) {
-    console.error(`Error creating user in db: ${error}`);
-    return {
-      success: false,
-      message: "Failed to create user in db",
-      data: null
-    }
-  }
+  const newUser = await prisma.user.create({
+    data: { userId, email, mobile, firstName, lastName, dob, gender, picture  }
+  });
+
+  return newUser
+  
+}
+
+type CreateUserInAuth0Payload = {
+  email: string
+  firstName: string
+  lastName: string
+  password: string
+}
+const createUserInAuth0 = async (payload: CreateUserInAuth0Payload) => {
+
+  const {email, firstName, lastName, password} = payload
+  
+  const { data, status } = await managementClient.users.create({
+    email,
+    password,
+    given_name: firstName,
+    family_name: lastName,
+    name: `${firstName} ${lastName}`,
+    nickname: `${firstName} ${lastName}`,
+    connection: "Username-Password-Authentication",
+  })
+
+  return { data, status }
+}
+
+const generateRandomPassword = () => {
+  // generate strong password // lowercase, uppercase, number, special character
+  return faker.internet.password({
+    length: 12,
+    pattern: /[A-Za-z\d!@#$%^&*()_+]/,
+  });
 }

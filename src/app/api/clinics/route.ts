@@ -9,6 +9,7 @@ export const GET = withJwtAuth(async (req: NextRequest) => {
 
   const searchParams = new URLSearchParams(req.nextUrl.search);
   const filters = parseObject(Object.fromEntries(searchParams.entries()));
+
   const clinics = await getClinicsAction(filters);
   return NextResponse.json(clinics, {status: 200});
 });

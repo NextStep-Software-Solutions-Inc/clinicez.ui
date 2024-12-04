@@ -168,7 +168,7 @@ export default async function ProcessLayout({
             </div>
             <div className="max-w-xs">
               <Suspend>
-                <ClinicSwitcher isCollapsed />
+                <ClinicSwitcher isCollapsed userId={session?.user.sub}/>
               </Suspend>
             </div>
             <Suspense fallback={<div>Loading</div>}>

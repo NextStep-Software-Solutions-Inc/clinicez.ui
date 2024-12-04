@@ -2,7 +2,6 @@
 
 import React, { useMemo } from "react";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@components/ui/sheet";
-import { Button } from "@components/ui/button";
 import { Separator } from "@components/ui/separator";
 import { useParams, useSearchParams } from "next/navigation";
 import { Download, FileText, Pill, Trash } from "lucide-react";
@@ -14,12 +13,12 @@ import { toast } from "sonner";
 import { removeMedicationDrugAction } from "@actions/medications/medication-drug.action";
 import AddMedicationDrugModal from "@components/prescription/modals/AddMedicationDrugModal";
 import { createPrescriptionAction, getPrescriptionAction } from "@actions/medications/prescription.action";
-import { useHP } from "@hooks/useHP";
 import { usePermissions } from "@hooks/usePermission";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import { PERMISSIONS } from "@lib/permissions";
 import { promiseWrapper } from "@/lib/with-error-handling";
 import { handlePrintHtmlToPDF } from "@/lib/print-pdf";
+import DownloadPrescriptionAction from "../prescription/DownloadPrescriptionAction";
 
 interface ModifyMedicationSheetProps {
   readonly?: boolean;
@@ -169,7 +168,15 @@ export default function ModifyMedicationSheet({ readonly }: ModifyMedicationShee
           <div className="space-y-2">
             {
               medication?.data?.Prescriptions?.map((prescription) => (
-                <Prescription key={prescription.id} prescription={prescription} />
+                <DownloadPrescriptionAction
+                  key={prescription.id}
+                  prescription={prescription}
+                >
+                  <ActionButton variant="outline" className="w-full">
+                    <Download className="h-4 w-4 mr-2" />
+                    Download Prescription of {prescription.HealthcareProvider?.HPProfile?.title} {prescription.HealthcareProvider?.HPProfile?.name} {prescription.HealthcareProvider?.HPProfile?.suffix}&apos;s
+                  </ActionButton>
+                </DownloadPrescriptionAction>
               ))
             }
           </div>
@@ -177,40 +184,4 @@ export default function ModifyMedicationSheet({ readonly }: ModifyMedicationShee
       </SheetContent>
     </Sheet>
   );
-}
-
-interface PrescriptionProps {
-  prescription: {
-    id: number;
-    name: string | null;
-    HealthcareProvider: {
-        HPProfile: {
-            name: string;
-            suffix: string | null;
-            title: string;
-        } | null;
-    }
-  }
-}
-export const Prescription = ({prescription}: PrescriptionProps) => {
-
-  const handleDownloadPrescription = async () => {
-    toast.promise(promiseWrapper(getPrescriptionAction)(prescription.id), {
-      loading: "Downloading prescription...",
-      success: res => {
-        handlePrintHtmlToPDF(res.data?.DocumentTemplate.htmlContent);
-        return res.message
-      },
-      error: error => error
-    })
-  }
-
-  return (
-    <form action={handleDownloadPrescription}>
-      <ActionButton variant="outline" className="w-full">
-        <Download className="h-4 w-4 mr-2" />
-      Download Prescription of {prescription.HealthcareProvider?.HPProfile?.title} {prescription.HealthcareProvider?.HPProfile?.name} {prescription.HealthcareProvider?.HPProfile?.suffix}&apos;s
-      </ActionButton>
-    </form>
-  )
 }

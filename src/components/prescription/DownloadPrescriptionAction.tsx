@@ -1,5 +1,4 @@
 import { promiseWrapper } from "@/lib/with-error-handling";
-import { PrescriptionItemProps } from "../PrescriptionItem";
 import { toast } from "sonner";
 import { getPrescriptionAction } from "@/actions/medications/prescription.action";
 import { differenceInCalendarYears } from "date-fns";
@@ -7,7 +6,6 @@ import { preparePrescription } from "@/lib/prepare-prescription";
 import dayjs from "@lib/day-utils";
 import { handlePrintHtmlToPDF } from "@/lib/print-pdf";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
-import ActionButton from "../ActionButton";
 import { GetMedication } from "@/actions/medications/medication.action";
 
 interface DownloadPrescriptionActionProps {

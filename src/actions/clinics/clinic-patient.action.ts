@@ -7,6 +7,7 @@ import { getCachedSession } from "../session.action";
 import { sessionCheck } from "@/lib/auth";
 import { hasCodeProperty } from "@/lib/utils";
 import { managementClient } from "@/services/auth0/management-client";
+import { Prisma } from "@prisma/client";
 
 
 export type GetClinicPatientFilters = {
@@ -14,7 +15,7 @@ export type GetClinicPatientFilters = {
   clinicUid: string
   pageSize?: number
   pageNumber?: number
-  distinct?: boolean
+  distinct?: Prisma.ClinicPatientScalarFieldEnum[]
   userId?: string
 }
 export type GetClinicPatients = Awaited<ReturnType<typeof getClinicPatientsAction>>
@@ -23,11 +24,11 @@ export const getClinicPatientsAction = withErrorHandling(async (filters: GetClin
  
   const session = await getCachedSession()
   if(!session) throw new Error("Unauthorized")
-  const { search, pageNumber = 1, pageSize = 50, distinct = false, clinicUid, userId } = filters ?? {}
+  const { search, pageNumber = 1, pageSize = 50, distinct = [], clinicUid, userId } = filters ?? {}
   
   const clinicPatients = await prismaClient.clinicPatient.findMany({
     ... pageSize ? { take: pageSize } : {},
-    ... distinct ? { distinct: ["clinicId"]} : {},
+    ... !!distinct.length ? { distinct } : {},
     skip: pageNumber ? (pageNumber - 1) * (pageSize || 10) : 0,
     orderBy: {
       createdAt: "desc"

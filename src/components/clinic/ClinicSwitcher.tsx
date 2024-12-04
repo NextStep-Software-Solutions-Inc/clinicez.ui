@@ -1,18 +1,22 @@
 "use client"
+
 import { useParams, usePathname, useRouter } from "next/navigation"
 import Switcher, { SwitcherOptionsType } from "../dashboard/Switcher"
 import { Building } from "lucide-react"
-import {  useClinics } from "@/hooks/useClinic"
+import { useClinics } from "@/hooks/useClinic"
 
 interface ClinicSwitcherProps {
   isCollapsed: boolean
+  userId: string
 }
 
-export function ClinicSwitcher({isCollapsed,}: ClinicSwitcherProps) {
+export function ClinicSwitcher({isCollapsed,userId}: ClinicSwitcherProps) {
   const {clinicUid} = useParams<{clinicUid: string}>()
   const router = useRouter();
   const pathname = usePathname();
-  const {data: myClinics} = useClinics()  
+  const {data: myClinics} = useClinics({
+    userId,
+  })  
   
   const clinics: SwitcherOptionsType[] = (myClinics?.data ?? [])
     .map(org => ({

@@ -35,25 +35,40 @@ export const createClinicAction = withErrorHandling(async (data:CreateClinicPayl
 });
   
 
-type FiltersType = {
+export type GetClinicsFilters = {
   userId?: string;
   clinicUid?: string;
-  status?: ClinicMemberStatus;
   orgUid?: string;
   isPublic?: boolean;
 }
 
 export type GetClinics = Awaited<ReturnType<typeof getClinicsAction>>
-export const getClinicsAction = withErrorHandling(cache(async (filters?: FiltersType) => {
+export const getClinicsAction = withErrorHandling(cache(async (filters?: GetClinicsFilters) => {
   
   await sessionCheck();
 
-  const { clinicUid, orgUid, isPublic } = filters || {};
+  const { clinicUid, orgUid, isPublic, userId } = filters || {};
   const clinics = await prisma.clinic.findMany({
     orderBy: {
       name: "asc"
     },
     where: {
+      ...userId ? {
+        ClinicMembers: {
+          some: {
+            User: {
+              userId
+            },
+          }
+        },
+        ClinicPatients: {
+          some: {
+            Patient: {
+              userId
+            }
+          }
+        }
+      }: {},
       ClinicSetting: {
         ...isPublic ? {isPublic}:{}
       },

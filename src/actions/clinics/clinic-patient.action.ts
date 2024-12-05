@@ -65,6 +65,7 @@ export const getClinicPatientsAction = withErrorHandling(async (filters: GetClin
           middleName: true,
           lastName: true,
           suffix: true,
+          email: true,
           dob: true,
           gender: true,
           updatedAt: true,

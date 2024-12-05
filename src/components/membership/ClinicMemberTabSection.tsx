@@ -4,20 +4,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@components/ui/tabs";
 import { ClinicMemberPermissions } from "./ClinicMemberPermissions";
 import MemberActivities from "./MemberActivities";
 import AppointmentWhitelistFilters from "./AppointmentWhitelistFilter";
-import { useClinicRoles } from "@/hooks/useClinicRole";
 import ClinicMemberRoles from "./ClinicMemberRoles";
-
 
 interface ClinicMemberTabSectionProps {
     userId: string;
     clinicUid: string;
 }
-export default function ClinicMemberTabSection({clinicUid, userId}:ClinicMemberTabSectionProps) {
-  const {data: myOrgRoles} = useClinicRoles({
-    userId
-  })
 
-  
+export default function ClinicMemberTabSection({clinicUid, userId}:ClinicMemberTabSectionProps) {
+
   return (
     <Tabs defaultValue="roles" className="w-full">
       <TabsList className="flex gap-1 justify-start">

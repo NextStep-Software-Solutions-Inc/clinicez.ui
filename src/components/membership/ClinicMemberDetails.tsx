@@ -8,10 +8,10 @@ import { LabelValue } from "@components/LabelValue";
 import { differenceInCalendarYears } from "date-fns";
 import { Card, CardContent } from "@components/ui/card";
 import { Separator } from "@components/ui/separator";
-import { useClinicRoles } from "@/hooks/useClinicRole";
 import { useClinicAppointments } from "@hooks/useAppointment";
 import dayjs from "@lib/day-utils";
 import ClinicMemberTabSection from "./ClinicMemberTabSection";
+import { useClinicMembers } from "@/hooks/useClinicMember";
 
 interface ClinicMemberDetailsProps {
   userId: string;
@@ -20,11 +20,12 @@ interface ClinicMemberDetailsProps {
 export default function ClinicMemberDetails({userId, clinicUid}:ClinicMemberDetailsProps) {
   const {data: user, isLoading} = useDBUser({ userId });
   
-  const {data: roles} = useClinicRoles({userId});
+  const {data: clinicRoles} = useClinicMembers({clinicUid, userId });
   const {data: appointments} = useClinicAppointments({clinicUid, userId });
   
   if(isLoading) return <div>Loading user...</div>
   if(!user?.data) notFound()
+
   return (
     <>
       <Card className="bg-slate-100">
@@ -41,7 +42,7 @@ export default function ClinicMemberDetails({userId, clinicUid}:ClinicMemberDeta
               </div>
               <Separator />
               <div className="flex gap-5 flex-wrap items-center basis-[400px]">
-                <LabelValue label="Roles" value={roles?.length ?? 0} />
+                <LabelValue label="Roles" value={clinicRoles?.data?.length ?? 0} />
                 <Separator orientation="vertical" className="h-6"/>
                 <LabelValue label="Total Appointments" value={appointments?.data?.length ?? 0} />
               </div>

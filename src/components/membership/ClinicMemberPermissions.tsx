@@ -1,7 +1,6 @@
 "use client";
 
 import { setClinicMemberPermissionsAction } from "@/actions/clinics/clinic-member-permission.action";
-import { useUser } from "@auth0/nextjs-auth0/client";
 import ActionButton from "@components/ActionButton";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@components/ui/card";
 import { Checkbox } from "@components/ui/checkbox";
@@ -25,13 +24,13 @@ interface ClinicMemberPermissionsProps {
 }
 
 export const ClinicMemberPermissions = ({clinicUid, userId}: ClinicMemberPermissionsProps) => {
-  const {user} = useUser()
   const {data: myPermissions} = usePermissions({
-    userId: user?.sub ?? undefined,
+    userId,
+    type: "CLINIC"
   })
   const myPermissionArray = myPermissions?.map((item) => item.name) ?? []
-  const updateOrgPermissions = [PERMISSIONS.ORGANIZATION["UPDATE:ORG:PERMISSIONS"].name]
-  const canUpdateOrgPermissions = updateOrgPermissions.every((item) => myPermissionArray.includes(item))
+  const updateClinicPermissions = [PERMISSIONS.CLINIC["UPDATE:CLINIC:PERMISSIONS"].name]
+  const canUpdateClinicPermissions = updateClinicPermissions.every((item) => myPermissionArray.includes(item))
 
   const {data: permissions, mutate: mutateClinicMemberPermissions, isLoading: loadingClinicMemberPermissions } = usePermissions({
     userId,
@@ -74,10 +73,10 @@ export const ClinicMemberPermissions = ({clinicUid, userId}: ClinicMemberPermiss
     <Card>
       <CardHeader>
         <CardTitle>
-              Permissions <span className="text-base font-light">(clinic level)</span>
+          Permissions <span className="text-base font-light">(clinic level)</span>
         </CardTitle>
         <CardDescription>
-              Manage permissions for this member.
+          Manage permissions for this member.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -110,7 +109,7 @@ export const ClinicMemberPermissions = ({clinicUid, userId}: ClinicMemberPermiss
                               >
                                 <FormControl>
                                   <Checkbox
-                                    disabled={!canUpdateOrgPermissions}
+                                    disabled={!canUpdateClinicPermissions}
                                     checked={field.value?.includes(permission.id)}
                                     onCheckedChange={(checked) => {
                                       return checked

@@ -20,6 +20,7 @@ export default async function ClinicsPage({params}: AppRouterPageRouteOpts) {
   const clinics = await getClinicsAction({
     orgUid
   })
+
   
   return (
     <>

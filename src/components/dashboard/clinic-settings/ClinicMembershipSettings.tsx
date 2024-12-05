@@ -29,7 +29,7 @@ import { cn } from "@/lib/utils";
 export default function ClinicMembershipSettings() {
   
   const {clinicUid} = useParams<{clinicUid: string}>()
-  const {data: clinicMembers, mutate} = useClinicMembers(clinicUid)
+  const {data: clinicMembers, mutate} = useClinicMembers({clinicUid})
   return (
     <Card>
       <CardHeader className="flex flex-row justify-between items-start">

@@ -1,12 +1,14 @@
 "use server";
 
+import { sessionCheck } from "@/lib/auth";
+import { hasCodeProperty } from "@/lib/utils";
+import { withErrorHandling } from "@/lib/with-error-handling";
 import prisma from "@lib/prisma";
-import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 
 export type CreateUserStudentRecord = {
   studentId: string;
   levelId: number
-  userId: number
+  userId: string
   orgUid: string
   lrn?: string;
   departmentId?: number
@@ -15,82 +17,99 @@ export type CreateUserStudentRecord = {
   yearLevelId?: number
 }
 
-export const createStudentRecordAction = async (payload:CreateUserStudentRecord ) => {
+export const createStudentRecordAction = withErrorHandling(async (payload:CreateUserStudentRecord ) => {
+
+  await sessionCheck();
+
+  const { userId, orgUid, studentId, lrn, departmentId, programId, collegeId, levelId, yearLevelId } = payload
+  const studentRecord = await prisma.userStudentRecord.create({
+    data: {
+      lrn,
+      studentId,
+      Level: { connect: { id: levelId  } },
+      User: { connect: { userId } },
+      Organization: { connect: { orgUid } },
+      Department: { connect: { id: departmentId } },
+      Program: {  connect: { id: programId } },
+      College: { connect: { id: collegeId } },
+      OrganizationYearLevel: { connect: { id: yearLevelId  } }
+    }
+  });
+  return { success: true, message: "Something went wrong!", data: studentRecord };
+})
+
+
+export const upsertStudentRecordAction = withErrorHandling(async (payload:CreateUserStudentRecord ) => {
+
+  await sessionCheck();
   const { userId, orgUid, studentId, lrn, departmentId, programId, collegeId, levelId, yearLevelId } = payload
 
   const organization = await prisma.organization.findUniqueOrThrow({
     where: { orgUid, isActive: true },
     select: { id: true }
   })
-  const studentRecord = await prisma.userStudentRecord.create({
-    data: {
+
+  const user = await prisma.user.findUniqueOrThrow({where: {userId }, select: {id: true}})
+  const studentRecord = await prisma.userStudentRecord.upsert({
+    where: {
+      unique_user_student_record: {
+        userId: user.id,
+        organizationId: organization.id
+      }
+    },
+    create: {
       studentId,
-      lrn,
-      level: levelId,
-      userId,
+      userId: user.id,
       organizationId: organization.id,
+      level: levelId,
+      lrn,
       departmentId,
-      programId,
+      programId, 
       collegeId,
-      yearLevel: yearLevelId,
+      yearLevel: yearLevelId
+    },
+    update: {
+      studentId,
+      level: levelId,
+      lrn,
+      departmentId,
+      programId, 
+      collegeId,
+      yearLevel: yearLevelId
     }
   });
-  return studentRecord;
-}
 
-
-export const upsertStudentRecordAction = async (payload:CreateUserStudentRecord ) => {
-  const { userId, orgUid, studentId, lrn, departmentId, programId, collegeId, levelId, yearLevelId } = payload
-  const response = {
-    success: false,
-    message: "Something went wrong!",
-    data: null
+  return { success: true, message: "Student Record updated", data: studentRecord };
+ 
+}, error => {
+  if(hasCodeProperty(error)) {
+    if(error.code === "P2002") {
+      return"The provided Student ID or LRN is already taken. Please use a different Student ID or LRN. If you think this is an internal error, please contact the administrator."
+    }
   }
-  try {
-    const organization = await prisma.organization.findUniqueOrThrow({
-      where: { orgUid, isActive: true },
-      select: { id: true }
-    })
-    const studentRecord = await prisma.userStudentRecord.upsert({
-      where: {
-        unique_user_student_record: {
-          userId,
-          organizationId: organization.id
-        }
-      },
-      create: {
-        studentId,
-        userId,
-        organizationId: organization.id,
-        level: levelId,
-        lrn,
-        departmentId,
-        programId, 
-        collegeId,
-        yearLevel: yearLevelId
-      },
-      update: {
-        studentId,
-        level: levelId,
-        lrn,
-        departmentId,
-        programId, 
-        collegeId,
-        yearLevel: yearLevelId
-      }
-    });
-    response.success = true;
-    response.message = "Student record successfully created";
-    return  {...response, data: studentRecord};
-  } catch (error) {
-    if(error instanceof PrismaClientKnownRequestError) {
-      if(error.code === "P2002") {
-        return {
-          ...response,
-          message: "The provided Student ID or LRN is already taken. Please use a different Student ID or LRN. If you think this is an internal error, please contact the administrator."
-        }
+})
+
+export type GetOrgStudentRecord = Awaited<ReturnType<typeof getOrgStudentRecordAction>>
+export const getOrgStudentRecordAction = withErrorHandling(async (payload: { userId: string, orgUid: string }) => {
+
+  await sessionCheck();
+
+  const { userId, orgUid } = payload
+
+  const organization = await prisma.organization.findUniqueOrThrow({
+    where: { orgUid, isActive: true },
+    select: { id: true }
+  })
+  const user = await prisma.user.findUniqueOrThrow({where: {userId }, select: {id: true}})
+  const studentRecord = await prisma.userStudentRecord.findUnique({
+    where: {
+      unique_user_student_record: {
+        userId: user.id,
+        organizationId: organization.id
       }
     }
-    return response;
-  }
-}
+  });
+
+  return { success: true, message: "Something went wrong!", data: studentRecord };
+
+})

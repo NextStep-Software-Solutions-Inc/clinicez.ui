@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import ConditionalRender from "@components/utils/ConditionalRender";
 import Each from "@components/utils/Each";
 import { zodResolver } from "@hookform/resolvers/zod";
-import React from "react";
+import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { useAtom } from "jotai";
@@ -18,8 +18,9 @@ import { useOrgDepartments } from "@hooks/useOrgDepartment";
 import { useOrgOffices } from "@hooks/useOrgOffice";
 import { toast } from "sonner";
 import { upsertEmploymentRecordAction } from "@actions/employee-record.action";
-import { useUser } from "@hooks/useUser";
 import { joinOrgApplicationAtom } from "@state/join-org-application";
+import { promiseWrapper } from "@/lib/with-error-handling";
+import { useOrgEmployeeRecord } from "@/hooks/useOrgEmployeeRecord";
 
 const employeeRecordSchema = z.object({
   employeeId: z.string({
@@ -35,14 +36,18 @@ const employeeRecordSchema = z.object({
   designation : z.string({
     message: "What is your designation?"
   }).optional(),
-  departmentId: z.coerce.number({
+  departmentId: z.number({
+    coerce: true,
     message: "Your office department"
   }).optional(),
-  officeId: z.coerce.number({
+  officeId: z.number({
+    coerce: true,
     required_error: "Office is required"
   }),
   isCollege : z.boolean().optional().default(false),
-  collegeId: z.coerce.number().optional(),
+  collegeId: z.coerce.number({
+    coerce: true,
+  }).optional(),
 })
 
 export type EmployeeRecordType = z.infer<typeof employeeRecordSchema>;
@@ -53,30 +58,39 @@ export default function EmployeeRecordForm({orgUid, userId} : {orgUid: string, u
   const {data: orgColleges} = useOrgColleges(orgUid)
   const {data: orgDepartments} = useOrgDepartments(orgUid)
   const {data: orgOffices} = useOrgOffices(orgUid)
-  const {data: user } = useUser({userId})
+  const {data: employeeRecord} = useOrgEmployeeRecord({orgUid, userId})
 
   const form = useForm<EmployeeRecordType>({
     resolver: zodResolver(employeeRecordSchema),
     mode: "all",
     defaultValues: {
+      employeeId: "",
+      position: "",
+      designation: "",
       ...orgApplication.employee_record
     }
   })
 
+  useEffect(() => {
+    if (employeeRecord?.data) {
+      form.reset({
+        employeeId: employeeRecord.data.employeeId,
+        position: employeeRecord.data.position,
+        officeId: employeeRecord.data.officeId ?? undefined,
+        designation: employeeRecord.data.designation ?? undefined,
+        departmentId: employeeRecord.data.departmentId ?? undefined,
+        collegeId: employeeRecord.data.collegeId ?? undefined,
+        isCollege: !!employeeRecord.data.collegeId
+      })
+    }
+  }, [employeeRecord?.data, form])
+
   const action = async () => {
     form.handleSubmit(async (values) => {
-      if(!user?.data) {
-        toast.error("User not found")
-        return;
-      }
-      
-      const userId = user.data.id
-      toast.promise(upsertEmploymentRecordAction({...values, orgUid, userId,}), {
+     
+      toast.promise(promiseWrapper(upsertEmploymentRecordAction)({...values, orgUid, userId,}), {
         loading: "Saving...",
         success: async (res) => {
-          if(!res.success) {
-            return `An error occurred: ${res?.message}`
-          }
           setAdditionalInfoValid((prev) => ({
             ...prev,
             employee_record: true
@@ -88,7 +102,7 @@ export default function EmployeeRecordForm({orgUid, userId} : {orgUid: string, u
           }))
           return res.message
         },
-        error: (error) => `An error occurred: Error ${error}`
+        error: (error) => error
       })
     })()
   }
@@ -158,7 +172,7 @@ export default function EmployeeRecordForm({orgUid, userId} : {orgUid: string, u
                 <FormItem className="flex-grow">
                   <FormLabel htmlFor="officeId">Office</FormLabel>
                   <FormControl>
-                    <Select onValueChange={field.onChange} defaultValue={field.value?.toString()}>
+                    <Select onValueChange={field.onChange} value={field.value?.toString()}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select an office" />
@@ -189,7 +203,7 @@ export default function EmployeeRecordForm({orgUid, userId} : {orgUid: string, u
                 <FormItem className="flex-grow">
                   <FormLabel htmlFor="departmentId">Department (if applicable)</FormLabel>
                   <FormControl>
-                    <Select onValueChange={field.onChange} defaultValue={field.value?.toString()}>
+                    <Select onValueChange={field.onChange} value={field.value?.toString()}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select a department" />
@@ -242,7 +256,7 @@ export default function EmployeeRecordForm({orgUid, userId} : {orgUid: string, u
                 <FormItem className="">
                   <FormLabel htmlFor="collegeId">College (if applicable)</FormLabel>
                   <FormControl>
-                    <Select onValueChange={field.onChange} defaultValue={field.value?.toString()}>
+                    <Select onValueChange={field.onChange} value={field.value?.toString()}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select a college" />

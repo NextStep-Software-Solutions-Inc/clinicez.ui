@@ -10,7 +10,6 @@ import { Card, CardContent } from "@components/ui/card";
 import { Separator } from "@components/ui/separator";
 import dayjs from "@lib/day-utils";
 import OrgMemberTabSection from "./OrgMemberTabSection";
-import { useOrganizationRoles } from "@/hooks/useOrganizationRole";
 import { useOrgMembers } from "@/hooks/useOrgMember";
 
 interface OrgMemberDetailsProps {

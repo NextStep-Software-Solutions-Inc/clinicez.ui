@@ -4,7 +4,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@comp
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@components/ui/tabs";
 import ConditionalRender from "@components/utils/ConditionalRender";
 import Each from "@components/utils/Each";
-import { useOrganizationRoles } from "@/hooks/useOrganizationRole";
 import { useParams } from "next/navigation";
 import { useMemo } from "react";
 import EmployeeRecordForm from "../../app/(activation)/organizations/[orgUid]/join/EmployeeRecordForm";
@@ -48,6 +47,7 @@ export default function OrgMemberTabSection({orgUid, userId}:OrgMemberTabSection
       </TabsList>
       <Each
         of={orgRequirements}
+        fallback={null}
         render={(value) => {
           const name = value.split("_").map((word) => word[0].toUpperCase() + word.slice(1)).join(" ")
           return (

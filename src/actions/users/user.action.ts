@@ -5,7 +5,6 @@ import { Prisma, $Enums  } from "@prisma/client";
 import { managementClient } from "@services/auth0/management-client";
 import { cache } from 'react';
 import dayjs from 'dayjs';
-import { getCachedSession } from '@actions/session.action';
 import path from 'path';
 import fs from "fs/promises";
 import { sendMail } from '@actions/email.action';
@@ -29,6 +28,8 @@ export type GetUsersFilters = {
 
 export type GetUsers = Awaited<ReturnType<typeof getUsersAction>>
 export const getUsersAction = cache(async (filters:GetUsersFilters) => {
+
+  await sessionCheck();
   
   const { orgUid, search, page = 1, pageSize = 100, userId, email } = filters || {};
   return await prisma.$transaction(async (prisma) => {
@@ -103,87 +104,73 @@ export const getUsersAction = cache(async (filters:GetUsersFilters) => {
 })
 
 export type GetUser = Awaited<ReturnType<typeof getUserAction>>
-export const getUserAction = cache(async (key: string, orgUid?: string)=> {
-  try {
-    const user = await prisma.user.findFirstOrThrow({ 
-      where: { 
-        isActive: true,
-        OR: [
-          { userId: key },
-          { email: key }
-        ], 
-        ...orgUid ? {
-          Organizations: { 
-            some: { 
-              Organization: {
-                orgUid
-              } 
-            }
-          }
-        } : {},
-      },
-      include: {
-        HealthcareProviders: {
-          where: {
-            isActive: true,
-          },
-          select: {
-            id: true,
-          }
-        },
-        ClinicMembers: {
-          where: {},
-        },
-        OrganizationMembers: {
-          where: {
+export const getUserAction = withErrorHandling(cache(async (key: string, orgUid?: string)=> {
+
+  await sessionCheck();
+
+  const user = await prisma.user.findFirstOrThrow({ 
+    where: { 
+      isActive: true,
+      OR: [
+        { userId: key },
+        { email: key }
+      ], 
+      ...orgUid ? {
+        Organizations: { 
+          some: { 
             Organization: {
-              isActive: true,
               orgUid
-            }
-          },
-          select: {
-            OrgMemberPermissions: {
-              select: {
-                OrganizationMember: {
-                  select: {
-                    Organization: {
-                      select: {
-                        orgUid: true,
-                        name: true
-                      }
+            } 
+          }
+        }
+      } : {},
+    },
+    include: {
+      HealthcareProviders: {
+        where: {
+          isActive: true,
+        },
+        select: {
+          id: true,
+        }
+      },
+      ClinicMembers: {
+        where: {},
+      },
+      OrganizationMembers: {
+        where: {
+          Organization: {
+            isActive: true,
+            orgUid
+          }
+        },
+        select: {
+          OrgMemberPermissions: {
+            select: {
+              OrganizationMember: {
+                select: {
+                  Organization: {
+                    select: {
+                      orgUid: true,
+                      name: true
                     }
                   }
-                },
-                Permission: {
-                  select: {
-                    name: true
-                  }
+                }
+              },
+              Permission: {
+                select: {
+                  name: true
                 }
               }
             }
           }
         }
       }
+    }
       
-    }); 
-    return {
-      success: true,
-      message: "User found",
-      data: user
-    }
-  } catch (error) {
-    console.error(`Error fetching user: ${error}`);
-    let message = "Failed to fetch user";
-    if(error instanceof Error) {
-      message = error.message
-    }
-    return {
-      success: false,
-      message,
-      data: null
-    }
-  }
-})
+  }); 
+  return { success: true,  message: "User found",  data: user }
+}))
 
 type CreateUserPayload = {
   email: string
@@ -227,7 +214,7 @@ export const createUserAction = withErrorHandling(async (payload: CreateUserPayl
     if(!newUser) throw new Error("Failed to create user in db");
 
     // assign user permissions
-    await assignUserPermission(prisma, newUser.userId);
+    await assignUserPermission(prisma, newUser.id);
 
     // add user to clinic
     if(clinicUid) {
@@ -258,8 +245,7 @@ export const createUserAction = withErrorHandling(async (payload: CreateUserPayl
 
 export const updateUserAction = withErrorHandling(async (userId: string, data: Prisma.UserUpdateArgs["data"]) => {
   
-  const session = await getCachedSession();
-  if(!session) throw new Error("Unauthorized");
+  await sessionCheck();
 
   const updatedUser = await prisma.user.update({
     where: { userId },
@@ -313,6 +299,7 @@ const sendCreateUserNotification = async ({email, password, senderName}: SendCre
 }
 
 export const findOrCreateUserAction = withErrorHandling(cache(async () => {
+
   const session = await sessionCheck();
   let message = "User found and created";
 
@@ -324,7 +311,7 @@ export const findOrCreateUserAction = withErrorHandling(cache(async () => {
         userId: session.user.sub
       }
     })
-
+    
     // step 2: create user in db if not found
     if(dbUser === null) {
       dbUser = await createUserToDb(prisma, {
@@ -334,7 +321,8 @@ export const findOrCreateUserAction = withErrorHandling(cache(async () => {
         firstName: session.user.given_name,
         lastName: session.user.family_name
       })
-      await assignUserPermission(prisma, dbUser.userId);
+      
+      await assignUserPermission(prisma, dbUser.id);
     }
 
     return dbUser;
@@ -362,19 +350,15 @@ export const findOrCreateUserAction = withErrorHandling(cache(async () => {
 });
 
 
-const assignUserPermission = async (prisma: PrismaTransactionalClient, userId: string) => {
+const assignUserPermission = async (prisma: PrismaTransactionalClient, userId: number) => {
   
   const permissions = await getPermissionsAction({type: "USER"});
-
-  const user = await getUserAction(userId);
-
-  if(!user.data?.id) throw new Error("User not found");
 
   const userPermission = await prisma.userPermission.createMany({
     skipDuplicates: true,
     data: permissions.map(permission => ({
       permissionId: permission.id,
-      userId: user.data?.id
+      userId
     }))
   })
   

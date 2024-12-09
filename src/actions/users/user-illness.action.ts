@@ -2,7 +2,7 @@
 
 import "server-only";
 import prisma from "@lib/prisma";
-import { isHP } from "@lib/protect-org";
+import { isHP } from "@lib/org-utils";
 import { cache } from "react";
 import { HealthConditionStatus, Severity } from "@/types";
 

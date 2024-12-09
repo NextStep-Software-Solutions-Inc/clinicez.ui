@@ -5,16 +5,16 @@ import { useDailyOrgMemberships } from "@hooks/useDailyOrgMembership";
 import dayjs from "@lib/day-utils";
 
 
-import React, {  useMemo } from "react";
+import {  useMemo, useState } from "react";
 import { DateRange } from "react-day-picker";
   
-export default function OrgAnalytics({ orgId }: { orgId: string; }) {
-  const [date, setDate] = React.useState<DateRange | undefined>({
+export default function OrgAnalytics({ orgUid }: { orgUid: string; }) {
+  const [date, setDate] = useState<DateRange | undefined>({
     from: dayjs().startOf("month").toDate(),
     to: dayjs().endOf("day").toDate(),
   })
   
-  const {data} = useDailyOrgMemberships(orgId, {
+  const {data} = useDailyOrgMemberships(orgUid, {
     startDate: dayjs(date?.from).startOf("day").format("YYYY-MM-DDTHH:mm:ss.SSSZ"),
     endDate: dayjs(date?.to).endOf("day").format("YYYY-MM-DDTHH:mm:ss.SSSZ")
   });

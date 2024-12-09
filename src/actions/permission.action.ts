@@ -36,6 +36,17 @@ export async function getPermissionsAction({userId, type}: {userId?: string, typ
             }
           },
           {
+            ClinicPatientPermissions: {
+              some: {
+                ClinicPatient: {
+                  Patient: {
+                    userId
+                  }
+                }
+              }
+            }
+          },
+          {
             UserPermissions: {
               some: {
                 User: {

@@ -16,10 +16,11 @@ import { toast } from "sonner";
 import PageLoading from "@components/PageLoading";
 import { Badge } from "@components/ui/badge";
 import dayjs from "@lib/day-utils";
+import { promiseWrapper } from "@/lib/with-error-handling";
 
 type ClinicGeneralSettingsForm = z.infer<typeof generalSettingsForm>
 const generalSettingsForm = z.object({
-  orgUid: z.string({
+  clinicUid: z.string({
     required_error: "Clinic unique ID is required"
   }).trim().readonly(),
   name: z.string({
@@ -48,32 +49,30 @@ export default function ClinicGeneralSettings() {
   const form = useForm<ClinicGeneralSettingsForm>({
     resolver: zodResolver(generalSettingsForm),
     values: {
-      orgUid: clinic?.clinicUid ?? "",
-      name: clinic?.name ?? "",
-      description: clinic?.description ?? "",
-      logo: clinic?.logo ?? "",
-      customUrl: clinic?.customUrl ?? "",
-      email: clinic?.email ?? "",
-      isPublic: clinic?.ClinicSetting?.isPublic ?? false,
-      sendEmailNotification: clinic?.ClinicSetting?.sendEmailNotification ?? false,
-      emailToClinicOnly: clinic?.ClinicSetting?.emailToClinicOnly ?? false,
-      enableAppointment: clinic?.ClinicSetting?.enableAppointment ?? false,
-      enableConsultation: clinic?.ClinicSetting?.enableConsultation ?? false,
+      clinicUid: clinic?.data?.clinicUid ?? "",
+      name: clinic?.data?.name ?? "",
+      description: clinic?.data?.description ?? "",
+      logo: clinic?.data?.logo ?? "",
+      customUrl: clinic?.data?.customUrl ?? "",
+      email: clinic?.data?.email ?? "",
+      isPublic: clinic?.data?.ClinicSetting?.isPublic ?? false,
+      sendEmailNotification: clinic?.data?.ClinicSetting?.sendEmailNotification ?? false,
+      emailToClinicOnly: clinic?.data?.ClinicSetting?.emailToClinicOnly ?? false,
+      enableAppointment: clinic?.data?.ClinicSetting?.enableAppointment ?? false,
+      enableConsultation: clinic?.data?.ClinicSetting?.enableConsultation ?? false,
     }
   })
 
   const action = async () => {
     form.handleSubmit(async (data) => {
-      toast.promise(updateClinicAction(clinicUid, data), {
+      toast.promise(promiseWrapper(updateClinicAction)(clinicUid, data), {
         loading: "Saving changes...",
         success: (res) => {
-          if(res.status){
-            mutate()
-            form.reset(data)
-          }
+          mutate()
+          form.reset(data)
           return res.message;
         },
-        error: "An error occurred while saving changes",
+        error: error => error.message,
         position: "top-center"
       })
     })();
@@ -94,7 +93,7 @@ export default function ClinicGeneralSettings() {
             <div className="flex flex-wrap gap-2 items-baseline">
               <FormField
                 control={form.control}
-                name="orgUid"
+                name="clinicUid"
                 render={({ field }) => (
                   <FormItem className="grow">
                     <FormLabel>Unique ID</FormLabel>
@@ -305,10 +304,10 @@ export default function ClinicGeneralSettings() {
       </CardContent>
       <CardFooter>
         {
-          clinic?.updatedAt && 
+          clinic?.data?.updatedAt && 
           (
             <Badge variant="secondary">
-              Updated last {dayjs(clinic.updatedAt).fromNow()}
+              Updated last {dayjs(clinic.data.updatedAt).fromNow()}
             </Badge>
           )
         }

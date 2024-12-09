@@ -1,11 +1,10 @@
 import Image from "next/image";
 import clinicPlaceholder from "@public/assets/organization_placeholder.jpg";
 import Link from "next/link";
-import ActionButton from "@components/ActionButton";
 import { GetClinics } from "@/actions/clinics/clinic.action";
 
 interface ClinicCardProps {
-  clinic: GetClinics[number]
+  clinic: NonNullable<GetClinics["data"]>[number]
 }
 
 export async function ClinicCard({ clinic }: ClinicCardProps) {
@@ -19,12 +18,11 @@ export async function ClinicCard({ clinic }: ClinicCardProps) {
           
         </div>
       </Link>
-      <Link href={`/clinics/${clinicUid}/join`} className="invisible group-hover/join:visible transition-all duration-300">
+      <div className="invisible group-hover/join:visible transition-all duration-300">
         <div className="rounded-b-lg absolute bottom-0 h-20 w-full bg-white bg-opacity-90 px-4 flex items-center justify-center">
           <p className="mb-2 text-center line-clamp-3 text-sm font-semibold" title={name}>{name}</p>
         </div>
-        <ActionButton size="sm" className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2">Join</ActionButton>
-      </Link>
+      </div>
     </div>
   );
 }

@@ -11,8 +11,8 @@ interface ClinicMemberDetailsPageProps {
 }
 
 export const metadata = {
-  title: "Clinic Patient Details | Clinic EZ",
-  description: "View and manage member details."
+  title: "My Clinic Profile | Clinic EZ",
+  description: "Manage your clinic profile and membership details.",
 }
 
 export default function ClinicMemberDetailsPage({params}: ClinicMemberDetailsPageProps) {
@@ -20,9 +20,9 @@ export default function ClinicMemberDetailsPage({params}: ClinicMemberDetailsPag
     <>
       <div className="space-y-6">
         <div className="">
-          <h2 className="text-2xl font-bold tracking-tight">Clinic Patient Details</h2>
+          <h2 className="text-2xl font-bold tracking-tight">My Clinic Profile</h2>
           <p className="text-sm text-muted-foreground">
-            View and manage member details.
+            Manage your clinic profile and membership details.
           </p>
         </div>
         <Separator />

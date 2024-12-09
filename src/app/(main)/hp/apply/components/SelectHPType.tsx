@@ -16,7 +16,7 @@ import { RadioGroup, RadioGroupItem } from "@components/ui/radio-group"
 import { zodResolver } from "@hookform/resolvers/zod";
 import BackSubmitAndNext from "@components/SubmitAndNext";
 import { useAtom } from "jotai";
-import { hpApply } from "@state/hp-apply";
+import { hpApplyAtom } from "@state/hp-apply";
 import { useHPTypes } from "@hooks/useHPTypes";
 
 interface ISelectHPTypeProps {
@@ -39,7 +39,7 @@ export default function SelectHPType({nextStep, prevStep, isFirstStep, isLastSte
     })),
   })
   
-  const [applicationData,setApplicationData] = useAtom(hpApply);
+  const [applicationData,setApplicationData] = useAtom(hpApplyAtom);
   const form = useForm<z.infer<typeof roleFormSchema>>({
     resolver: zodResolver(roleFormSchema),
     mode: "all",

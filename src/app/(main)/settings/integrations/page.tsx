@@ -2,11 +2,10 @@ import { Separator } from "@components/ui/separator";
 import React from "react";
 import Integrations from "./Integrations";
 import { Metadata } from "next";
-import { getMyUserPreferenceAction } from "@actions/users/preference.action";
 import { getGoogleAccessToken } from "@actions/google/auth.action";
 
 export const metadata: Metadata = {
-  title: "Intergrations | Account Settings",
+  title: "Integrations | Account Settings",
   description: "Account integrations settings",
 };
 
@@ -21,7 +20,7 @@ export default async function IntegrationsPage() {
         </p>
       </div>
       <Separator />
-      <Integrations intergrations={[{
+      <Integrations integrations={[{
         name: "Google Calendar",
         status: !!googleToken
       }]}/>

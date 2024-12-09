@@ -3,6 +3,8 @@ import "server-only";
 import prisma from "@lib/prisma";
 import { getCachedSession } from "@actions/session.action";
 import { withErrorHandling } from "@/lib/with-error-handling";
+import { error } from "console";
+import { hasCodeProperty } from "@/lib/utils";
 
 
 export type GetPrescriptionsFilter = {
@@ -228,9 +230,12 @@ export const archivePrescriptionAction = withErrorHandling(async (id: number) =>
   if(!session) throw new Error("Unauthorized")
     
   await prisma.prescription.update({
-    where: {id},
+    where: {id, isArchived: false},
     data: {isArchived: true}
   })
   
   return {message: "Successfully archived prescription", data: undefined}
+},  error => {
+  if(hasCodeProperty(error) && error.code === 'P2025') return 'Prescription not found';
+  return 'Failed to archive prescription';
 });

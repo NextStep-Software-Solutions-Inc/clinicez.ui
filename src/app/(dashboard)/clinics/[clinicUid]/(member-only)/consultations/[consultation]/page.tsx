@@ -2,12 +2,12 @@ import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth
 import Suspend from "@components/Suspend";
 import { Separator } from "@components/ui/separator";
 import { Metadata } from "next";
-import ConsultationDetails from "../../../../../../components/consultation/ConsultationDetails";
+import ConsultationDetails from "../../../../../../../components/consultation/ConsultationDetails";
 import { Badge } from "@components/ui/badge";
 import { getConsultationTicketAction } from "@actions/consultation/consultation-ticket.action";
 import { notFound } from "next/navigation";
 import { DropdownMenuProvider } from "@components/DropdownMenuProvider";
-import ConsultationTicketTableRowActions from "../../../../../../components/consultation/ConsultationTicketTableRowActions";
+import ConsultationTicketTableRowActions from "../../../../../../../components/consultation/ConsultationTicketTableRowActions";
 import ResolveConsultationTicket from "@components/consultation/ResolveConsultationTicket";
 import MedicationsSheet from "@components/consultation/MedicationsSheet";
 import ModifyMedicationSheet from "@components/consultation/ModifyMedicationSheet";

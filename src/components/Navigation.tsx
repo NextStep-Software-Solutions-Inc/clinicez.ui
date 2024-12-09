@@ -35,7 +35,7 @@ export const navLinks: {
 }[]
 = [
   { name: "Home", href: "/", icon: "home" },
-  { name: "Our Healthcare Providers", href: "/hp", icon: "users"  },
+  { name: "Healthcare Providers", href: "/hp", icon: "users"  },
   { name: "Clinics & Organizations", icon: "building", items: components },
   { name: "Pricing", href: "/pricing", icon: "coins"  },
   { name: "Contact Us", href: "/contact-us", icon: "contact"  }

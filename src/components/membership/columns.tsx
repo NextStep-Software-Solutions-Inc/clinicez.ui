@@ -10,17 +10,17 @@ import { ChevronDown, ChevronRight, ExternalLink } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@components/ui/avatar"
 import ConditionalRender from "@components/utils/ConditionalRender"
 import { Button } from "@components/ui/button"
-import { GetUserOrganizations } from "@actions/users/user-organization.action"
 import { DataTableColumnHeader } from "./data-table-column-header"
 import MembershipTableRowActions from "./MembershipTableRowActions"
 import dayjs from "@lib/day-utils"
+import { GetOrgMembers } from "@/actions/organizations/org-member.action"
 
 export const statuses = Object.values({ACTIVE: "ACTIVE", INACTIVE:"INACTIVE", PENDING: "PENDING", SUSPENDED:"SUSPENDED"}).map((status) => ({
   label: status.split("").map((char, index) => (index === 0 ? char : char.toLowerCase())).join(""),
   value: status,
 }))
 
-export const columns: ColumnDef<GetUserOrganizations["data"][number]>[] = [
+export const columns: ColumnDef<NonNullable<GetOrgMembers["data"]>["data"][number]>[] = [
   {
     id: "select",
     size: 1,

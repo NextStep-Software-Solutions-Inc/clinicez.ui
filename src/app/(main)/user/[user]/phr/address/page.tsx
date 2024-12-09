@@ -3,7 +3,7 @@ import { Metadata } from "next"
 import Suspend from "@components/Suspend"
 import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth0"
 import { redirect } from "next/navigation"
-import { isUserOwner } from "@lib/protect-org"
+import { isUserOwner } from "@lib/org-utils"
 import { getCachedSession } from "@actions/session.action"
 import { Addresses } from "./Addresses"
 export const metadata: Metadata = {

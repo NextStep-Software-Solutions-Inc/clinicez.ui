@@ -8,23 +8,23 @@ import OrgRoleRequirements from "./OrgRoleRequirements";
 import { toast } from "sonner";
 import ActionButton from "@components/ActionButton";
 import { Trash } from "lucide-react";
-import { GetOrganizationRoles } from "@/actions/organizations/organization-role.action";
+import { GetOrganizationRoles, deleteOrganizationRoleAction } from "@/actions/organizations/organization-role.action";
+import { promiseWrapper } from "@/lib/with-error-handling";
 
 interface OrgRoleCardProps {
-    role: NonNullable<GetOrganizationRoles>[number]
+    role: NonNullable<GetOrganizationRoles["data"]>[number]
     onDeleteRole?: () => void
   }
 export const OrgRoleCard = ({role, onDeleteRole}:OrgRoleCardProps) => {
-  const activeRoleRequirements = role.UserDefaultOrganizationRoles.flatMap((item) => item.OrganizationRole.requirements)
+  const activeRoleRequirements = role.requirements
   const handleDelete = async () => {
-    toast.promise(deleteClinicRoleAction(role.id), {
-      loading: "Deleting role...",
+    toast.promise(promiseWrapper(deleteOrganizationRoleAction)(role.id), {
+      loading: "Deleting organization role...",
       success: res => {
-        if(res.status) {
-          onDeleteRole?.();
-        }
+        onDeleteRole?.();
         return res.message
-      }
+      }, 
+      error: error => error
     })
   }
  

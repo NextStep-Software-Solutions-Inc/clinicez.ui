@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@components/ui/card"
-import { useUserOrganizations } from "@hooks/useUserOrganization";
+import { useOrgMembers } from "@/hooks/useOrgMember";
 import { Building2, Files } from "lucide-react"
 
 interface MyMembershipsProps {
@@ -9,7 +9,7 @@ interface MyMembershipsProps {
 }
 export default function MyMemberships({ userId }: MyMembershipsProps) { 
 
-  const {data: myOrganizations } = useUserOrganizations({userId})
+  const {data: myOrganizations } = useOrgMembers({userId})
   return (
     <div>
       <h3 className="text-lg font-medium mb-2 ml-1">My Memberships</h3>
@@ -22,9 +22,9 @@ export default function MyMemberships({ userId }: MyMembershipsProps) {
             <Building2 className="text-primary group-hover/icon:scale-150 transition-all" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{myOrganizations?.data?.length ?? 0}</div>
+            <div className="text-2xl font-bold">{myOrganizations?.data?.total ?? 0}</div>
             <p className="text-xs text-muted-foreground">
-              {!!myOrganizations && `Recently joined ${myOrganizations["data"][myOrganizations.data.length -1].Organization.name}`} 
+              {!!myOrganizations && `Recently joined ${myOrganizations.data?.data[myOrganizations.data.data.length -1].Organization.name}`} 
             </p>
           </CardContent>
         </Card>

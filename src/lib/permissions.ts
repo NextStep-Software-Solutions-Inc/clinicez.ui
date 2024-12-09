@@ -166,6 +166,10 @@ export const PERMISSIONS = {
       name: "create:clinic:prescription",
       description: "User can create prescription within the clinic.",
     },
+    "UPDATE:CLINIC:PERMISSIONS": {
+      name: "update:clinic:permissions",
+      description: "User can update permissions within the clinic.",
+    },
   },
   ORGANIZATION: {
     "UPDATE:ORG:MEMBERSHIP_REQUEST": {

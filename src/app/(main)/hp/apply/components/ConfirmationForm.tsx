@@ -8,10 +8,11 @@ import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
 import BackSubmitAndNext from "@components/SubmitAndNext";
 import { toast } from "sonner";
-import { hpApply } from "@state/hp-apply";
+import { hpApplyAtom } from "@state/hp-apply";
 import { Button } from "@components/ui/button";
 import { useAtom } from "jotai";
 import { hpApplicationTransactionAction } from "@actions/users/user-plan.action";
+import { promiseWrapper } from "@/lib/with-error-handling";
 
 interface ConfirmationFormProps {
   nextStep?: () => void;
@@ -37,7 +38,7 @@ export const confirmationFormSchema = z.object({
 type formType = z.infer<typeof confirmationFormSchema>
 
 export default function ConfirmationForm({ nextStep, prevStep, isFirstStep, isComplete, setComplete, startOver }: ConfirmationFormProps) {
-  const [hpApplication, setHpApplication] = useAtom(hpApply);
+  const [hpApplication, setHpApplication] = useAtom(hpApplyAtom);
   
   const form = useForm<formType>({
     resolver: zodResolver(confirmationFormSchema)
@@ -45,23 +46,21 @@ export default function ConfirmationForm({ nextStep, prevStep, isFirstStep, isCo
 
   const action = () => {
     form.handleSubmit(async () => {
-      const planId = hpApplication.planId
-      const hpTypeId = hpApplication.hpTypeId
-      const code = hpApplication.receiptCode
       
-      if(!planId || !hpTypeId || !code) return toast.error("An error occurred. One or more required fields are missing.");
+      const { planId, hpTypeId, receiptCode: code } = hpApplication;
+
+      if(!planId || !hpTypeId || !code) {
+        toast.error("An error occurred. One or more required fields are missing.");
+        return;
+      }
       
-      // transaction method
-      toast.promise(hpApplicationTransactionAction({ code, hpTypeId,  planId }), {
+      toast.promise(promiseWrapper(hpApplicationTransactionAction)({ code, hpTypeId,  planId }), {
         loading: "Submitting application...",
         success: (res) => {
-          if(res.status) {
-            setComplete?.(true);
-
-          }
+          setComplete?.(true);
           return res.message;
         },
-        error: (error) => `An error occurred while submitting your application. Please try again later. Error: ${error}`,
+        error: (error) => error,
       });
     })()
   }
@@ -144,7 +143,7 @@ export default function ConfirmationForm({ nextStep, prevStep, isFirstStep, isCo
                   Privacy Policy
                   </FormLabel>
                   <FormDescription>
-                  I agree to the <Link href="https://www.healthcare.gov.au/sites/default/files/2021-04/Privacy%20Policy%20for%20Healthcare%20Providers%20and%20Healthcare%20Organisations.pdf" target="_blank">Privacy Policy</Link> for Healthcare Providers and Healthcare Organisations.
+                  I agree to the <Link href="https://www.healthcare.gov.au/sites/default/files/2021-04/Privacy%20Policy%20for%20Healthcare%20Providers%20and%20Healthcare%20Organisations.pdf" target="_blank">Privacy Policy</Link> for Healthcare Providers and Healthcare Organizations.
                   </FormDescription>
                   <FormMessage/>
                 </div>

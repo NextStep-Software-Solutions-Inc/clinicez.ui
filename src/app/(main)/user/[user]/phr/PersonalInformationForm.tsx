@@ -22,6 +22,7 @@ import { RadioGroup, RadioGroupItem } from "@components/ui/radio-group"
 import { useUser } from "@auth0/nextjs-auth0/client"
 import ConditionalRender from "@components/utils/ConditionalRender"
 import { personalInformationFormSchema, PersonalInformationFormValues } from "@schemas/personal-information.schema"
+import { promiseWrapper } from "@/lib/with-error-handling"
 
 interface PersonalInformationFormProps {
   user: User,
@@ -57,13 +58,13 @@ export function PersonalInformationForm({readOnly, ...props}: PersonalInformatio
     if(!userId) return toast.error("User not found.")
 
     form.handleSubmit(data => {
-      toast.promise(updateUserAction(userId, data), {
+      toast.promise(promiseWrapper(updateUserAction)(userId, data), {
         loading: "Saving changes...",
-        success: () => {
+        success: (res) => {
           form.reset(data)
-          return "Changes saved successfully."
+          return res.message
         },
-        error: "Failed to save changes.",
+        error: error => error,
       })
     })()
   }

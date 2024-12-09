@@ -18,13 +18,13 @@ import {toast} from "sonner"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@components/ui/select"
 import Each from "@components/utils/Each"
 import { setMyDefaultOrganizationAction } from "@actions/organizations/organization.action"
-import {  useMemo } from "react"
 import { useUser } from "@auth0/nextjs-auth0/client"
 import ActionButton from "@components/ActionButton"
 import { OrgDefaultRoleForm } from "./OrgDefaultRoleForm"
 import ConditionalRender from "@components/utils/ConditionalRender"
-import { useUserOrganizations } from "@hooks/useUserOrganization"
-import { Checkbox } from "@components/ui/checkbox"
+import { useOrgMembers } from "@/hooks/useOrgMember"
+import { useUserDefaultOrg, useUserDefaultOrgsRole } from "@/hooks/useUserDefault"
+import { promiseWrapper } from "@/lib/with-error-handling"
 
 const organizationFormSchema = z.object({
   defaultOrgUid: z.string(),
@@ -34,35 +34,32 @@ type DefaultOrgFormSchema = z.infer<typeof organizationFormSchema>
 
 export default function OrganizationsSettings() {
   const user = useUser();
-  const userId = user?.user?.sub
-  const {data: myOrgs} = useUserOrganizations({userId, distinct: true, status: "ACTIVE"}, !!userId,) 
-  
-  const defaultOrg = useMemo(() => {
-    return myOrgs?.data?.flatMap(org => org.Organization.UserDefaultOrganizations).find(defOrg => defOrg.User.userId === userId)
-  }, [myOrgs, userId])
-   
+  const userId = user?.user?.sub ?? undefined;
 
+  const {data: myOrgs} = useOrgMembers({userId, distinct: true}, !!userId) 
+  const {data: defaultOrg} = useUserDefaultOrg(userId ?? "", !!userId) 
+  const {data: myDefaultOrgsRole} = useUserDefaultOrgsRole(userId ?? "", !!userId)
+  
   const form = useForm<DefaultOrgFormSchema>({
     resolver: zodResolver(organizationFormSchema),
     values: {
-      defaultOrgUid: defaultOrg?.Organization?.orgUid ?? ""
+      defaultOrgUid: defaultOrg?.data?.Organization.orgUid ?? ""
     }
   })
 
   async function action(){
     form.handleSubmit(async (data)  => {
-      if(!userId) return;
-      toast.promise(setMyDefaultOrganizationAction(defaultOrg?.id ?? 0, data.defaultOrgUid, userId), {
+      toast.promise(promiseWrapper(setMyDefaultOrganizationAction)(defaultOrg?.data?.id ?? 0, data.defaultOrgUid, userId), {
         loading: "Updating default organization...",
-        success: () => {
+        success: (res) => {
           form.reset(data)
-          return "Default organization updated successfully"
+          return res.message
         },
-        error: "An error occurred while updating default organization."
+        error: error => error
       })
     })()
   } 
-
+  
   return (
     <Form {...form}>
       <form action={action} className="space-y-8">
@@ -73,7 +70,7 @@ export default function OrganizationsSettings() {
             return (
               <FormItem>
                 <FormLabel>Default Organization</FormLabel>
-                <Select name="defaultOrgUid" onValueChange={field.onChange} value={field.value}>
+                <Select key={field.value} name="defaultOrgUid" onValueChange={field.onChange} value={field.value}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select an organization" />
@@ -81,7 +78,7 @@ export default function OrganizationsSettings() {
                   </FormControl>
                   <SelectContent>
                     <Each
-                      of={myOrgs?.data ?? []}
+                      of={myOrgs?.data?.data ?? []}
                       render={({ Organization: {id, orgUid, name} }) => (
                         <SelectItem value={orgUid}>{name}</SelectItem>
                       )}
@@ -100,8 +97,18 @@ export default function OrganizationsSettings() {
         </ConditionalRender>
       </form>
       <Each
-        of={myOrgs?.data ?? []}
-        render={(org) => <OrgDefaultRoleForm org={org} key={org.id}/>}
+        of={myOrgs?.data?.data ?? []}
+        render={(membership) => (
+          <OrgDefaultRoleForm 
+            key={membership.id}
+            defaultRoleId={myDefaultOrgsRole?.data?.find(role => role.organizationId === membership.Organization.id)?.id}
+            userId={membership.User.userId}
+            organization={{
+              orgUid: membership.Organization.orgUid,
+              name: membership.Organization.name
+            }} 
+          />
+        )}
       />
     </Form>
   )

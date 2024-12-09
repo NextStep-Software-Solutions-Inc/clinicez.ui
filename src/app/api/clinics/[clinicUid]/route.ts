@@ -12,6 +12,6 @@ export const GET = withJwtAuth(async (req: NextRequest, { params }: {
   }) => {
   const clinicUid = params.clinicUid;
   
-  const organization = await getClinicAction(clinicUid)
-  return NextResponse.json(organization, {status: 200});
+  const clinic = await getClinicAction(clinicUid)
+  return NextResponse.json(clinic, {status: 200});
 });

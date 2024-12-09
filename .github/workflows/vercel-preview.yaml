@@ -6,6 +6,9 @@ on:
   pull_request:
     branches-ignore:
       - master # Ignore pushes on branch main
+  push:
+    branches:
+      - development # Deploy on pushes to branch main
 jobs:
   Deploy-Preview:
     runs-on: ubuntu-latest

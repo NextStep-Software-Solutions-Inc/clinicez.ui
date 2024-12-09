@@ -4,8 +4,8 @@ import "server-only";
 import prisma from "@lib/prisma";
 import { cache } from "react";
 import { ClinicMemberStatus } from "@/types";
-import { getCachedSession } from "@actions/session.action";
-
+import { withErrorHandling } from "@/lib/with-error-handling";
+import { sessionCheck } from "@/lib/auth";
 
 type CreateClinicPayload = {
   clinicUid: string;
@@ -13,7 +13,9 @@ type CreateClinicPayload = {
   name: string;
   logo?: string;
 }
-export const createClinicAction = async (data:CreateClinicPayload) => {
+export const createClinicAction = withErrorHandling(async (data:CreateClinicPayload) => {
+
+  await sessionCheck();
 
   const { clinicUid, tenantUid, name, logo } = data;
   const newOrganization = await prisma.clinic.create({
@@ -29,26 +31,47 @@ export const createClinicAction = async (data:CreateClinicPayload) => {
     }
   });
   
-  return newOrganization;
-};
+  return {message: "Clinic created successfully", data: newOrganization};
+});
   
 
-type FiltersType = {
+export type GetClinicsFilters = {
   userId?: string;
   clinicUid?: string;
-  status?: ClinicMemberStatus;
   orgUid?: string;
+  isPublic?: boolean;
 }
 
 export type GetClinics = Awaited<ReturnType<typeof getClinicsAction>>
-export const getClinicsAction = cache(async (filters?: FiltersType) => {
+export const getClinicsAction = withErrorHandling(cache(async (filters?: GetClinicsFilters) => {
   
-  const { userId, clinicUid, orgUid } = filters || {};
+  await sessionCheck();
+
+  const { clinicUid, orgUid, isPublic, userId } = filters || {};
   const clinics = await prisma.clinic.findMany({
     orderBy: {
       name: "asc"
     },
     where: {
+      ...userId ? {
+        ClinicMembers: {
+          some: {
+            User: {
+              userId
+            },
+          }
+        },
+        ClinicPatients: {
+          some: {
+            Patient: {
+              userId
+            }
+          }
+        }
+      }: {},
+      ClinicSetting: {
+        ...isPublic ? {isPublic}:{}
+      },
       ...clinicUid ? { clinicUid } : {},
       ...orgUid ? { ClinicOrganizations : {
         some: {
@@ -57,23 +80,16 @@ export const getClinicsAction = cache(async (filters?: FiltersType) => {
           }
         }
       }}: {},
-      ...(userId && {
-        Users: {
-          every: {
-            User: {
-              userId
-            }
-          }
-        }
-      }),
       isActive: true
     }
   });
-  return clinics;
-});
+  return {message: "Clinics fetched successfully", data: clinics};
+}));
 
 export type GetClinic = Awaited<ReturnType<typeof getClinicAction>>
-export const getClinicAction = cache(async (key: string | number) => {
+export const getClinicAction = withErrorHandling(cache(async (key: string | number) => {
+
+  await sessionCheck();
 
   const clinic = await prisma.clinic.findFirst({
     where: {
@@ -101,8 +117,8 @@ export const getClinicAction = cache(async (key: string | number) => {
       ClinicSetting: true,
     }
   });
-  return clinic;
-})
+  return {message: "Clinic fetched successfully", data: clinic};
+}))
 
 type UpdateClinicPayload = {
   name: string;
@@ -116,57 +132,47 @@ type UpdateClinicPayload = {
   enableAppointment: boolean;
   enableConsultation: boolean;
 }
-export const updateClinicAction = async (clinicUid: string, data: UpdateClinicPayload) => {
+export const updateClinicAction = withErrorHandling(async (clinicUid: string, data: UpdateClinicPayload) => {
 
-  let message = "Clinic updated successfully";
+  await sessionCheck();
 
-  try {
-
-    const session = await getCachedSession();
-    if (!session) throw new Error("User not authenticated.");
-
-    const {name, logo, description, customUrl, email, isPublic, sendEmailNotification, emailToClinicOnly, enableAppointment, enableConsultation} = data;
-    const clinic = await prisma.clinic.update({
-      where: { clinicUid, isActive: true },
-      data: {
-        name,
-        description,
-        logo,
-        customUrl,
-        email,
-        ClinicSetting: {
-          upsert: {
-            where:{
-              Clinic: {
-                clinicUid
-              }
-            },
-            create: {
-              isPublic,
-              sendEmailNotification,
-              emailToClinicOnly,
-              enableAppointment,
-              enableConsultation,
-            },
-            update: {
-              isPublic: data.isPublic,
-              sendEmailNotification,
-              emailToClinicOnly,
-              enableAppointment,
-              enableConsultation,
+  const {name, logo, description, customUrl, email, isPublic, sendEmailNotification, emailToClinicOnly, enableAppointment, enableConsultation} = data;
+  
+  const clinic = await prisma.clinic.update({
+    where: { clinicUid, isActive: true },
+    data: {
+      name,
+      description,
+      logo,
+      customUrl,
+      email,
+      ClinicSetting: {
+        upsert: {
+          where:{
+            Clinic: {
+              clinicUid
             }
+          },
+          create: {
+            isPublic,
+            sendEmailNotification,
+            emailToClinicOnly,
+            enableAppointment,
+            enableConsultation,
+          },
+          update: {
+            isPublic: data.isPublic,
+            sendEmailNotification,
+            emailToClinicOnly,
+            enableAppointment,
+            enableConsultation,
           }
         }
-      },
-      include: {
-        ClinicSetting: true,
       }
-    });
-    return { status: true, message, data: clinic };
-  } catch (error) {
-    console.error("Error updating clinic", error);
-    message = "Error updating clinic";
-    if(error instanceof Error) message = error.message;
-    return { status: false, message, data: null }
-  }
-}
+    },
+    include: {
+      ClinicSetting: true,
+    }
+  });
+  return { message: "Successfully updated clinic.", data: clinic };
+})

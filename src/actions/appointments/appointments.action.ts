@@ -15,7 +15,6 @@ import path from "path";
 import fs from "fs/promises";
 import { sendMail } from "@actions/email.action";
 import { withErrorHandling } from "@/lib/with-error-handling";
-import { error } from "console";
 
 type CreateAppointmentPayload = {
   clinicUid: string;
@@ -134,6 +133,12 @@ export const createAppointmentAction = withErrorHandling(async (payload: CreateA
         }
       },
       select: {
+        Clinic: {
+          select: {
+            name: true,
+            email: true
+          }
+        },
         Requesters: {
           select: {
             User: {
@@ -142,22 +147,7 @@ export const createAppointmentAction = withErrorHandling(async (payload: CreateA
                 firstName: true,
                 middleName: true,
                 lastName: true,
-                suffix: true,
-                ClinicMembers: {
-                  where: {
-                    Clinic: {
-                      clinicUid
-                    }
-                  },
-                  select: {
-                    Clinic: {
-                      select: {
-                        name: true,
-                        email: true
-                      }
-                    }
-                  }
-                }
+                suffix: true
               }
             }
           }
@@ -170,10 +160,12 @@ export const createAppointmentAction = withErrorHandling(async (payload: CreateA
   const mappedUsers = newAppointment.Requesters.map((requester) => ({
     fullName:`${requester.User.firstName} ${requester.User.middleName ?? ""} ${requester.User.lastName ?? ""} ${requester.User.suffix ?? ""}`.trim(),
     email: requester.User.email,
-    organization:  requester.User.ClinicMembers[0].Clinic.name,
-    orgMail: requester.User.ClinicMembers[0].Clinic.email ?? ""
+    organization: newAppointment.Clinic.name,
+    orgMail: newAppointment.Clinic.email ?? ""
   }))
+
   await sendAppointmentRequestSent({ users: mappedUsers})
+
   return { message: "Appointment created", data: newAppointment };
 });
 

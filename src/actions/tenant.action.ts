@@ -6,6 +6,9 @@ import { getCachedSession } from './session.action';
 import dayjs from 'dayjs';
 import { claimReceiptCodeAction } from './receipt-code.action';
 import { hasCodeProperty } from '@lib/utils';
+import { managementClient } from "@/services/auth0/management-client";
+import { sessionCheck } from "@/lib/auth";
+import { withErrorHandling } from "@/lib/with-error-handling";
 
 export type GetTenants = Awaited<ReturnType<typeof getTenantsAction>>;
 export const getTenantsAction = async () => {
@@ -83,56 +86,54 @@ type CreateTenantPayload = {
   planId?: number;
 }
 
-export const createTenantAction = async (data: CreateTenantPayload) => {
-  const session = await getCachedSession();
-  try {
-    if(!session) throw new Error("Unauthorized");
-    const userId = String(session?.user.sub);
-    const { tenantUid, name, description, planId, receiptCode } = data;
+export const createTenantAction = withErrorHandling(async (data: CreateTenantPayload) => {
+  const session = await sessionCheck();
+  const userId = String(session.user.sub);
+
+  const { tenantUid, name, description, planId, receiptCode } = data;
     
-    const newUserPlan = await prisma.$transaction(async (prisma) => {
+  const newUserPlan = await prisma.$transaction(async (prisma) => {
 
-      const {success, message} = await claimReceiptCodeAction(prisma, receiptCode);
-      if(!success) throw new Error(message);
-      const plan = await prisma.plan.findUniqueOrThrow({
-        where: {isActive: true, id: planId},
-        select: { id: true, frequency: true }
-      })
+    const auth0User = await managementClient.users.get({id: userId})
+    if(!auth0User.data.email_verified) throw new Error("User email is not verified")
 
-      const freq = plan.frequency.trim().toLocaleLowerCase() === "yearly" ? "year": "month";
-      return await prisma.userPlan.create({
-        data: {
-          User: {
-            connect: { userId }
-          },
-          Plan: {
-            connect: {
-              id: plan.id
-            }
-          },
-          status: "ACTIVE",
-          startDate: dayjs().toDate(),
-          endDate: dayjs().add(1, freq).toDate(),
-          Tenants: {
-            create: {
-              tenantUid,
-              name,
-              description,
-              Owner: {
-                connect: { userId }
-              }
+    const {success, message} = await claimReceiptCodeAction(prisma, receiptCode);
+    if(!success) throw new Error(message);
+    const plan = await prisma.plan.findUniqueOrThrow({
+      where: {isActive: true, id: planId},
+      select: { id: true, frequency: true }
+    })
+
+    const freq = plan.frequency.trim().toLocaleLowerCase() === "yearly" ? "year": "month";
+    return await prisma.userPlan.create({
+      data: {
+        User: {
+          connect: { userId }
+        },
+        Plan: {
+          connect: {
+            id: plan.id
+          }
+        },
+        status: "ACTIVE",
+        startDate: dayjs().toDate(),
+        endDate: dayjs().add(1, freq).toDate(),
+        Tenants: {
+          create: {
+            tenantUid,
+            name,
+            description,
+            Owner: {
+              connect: { userId }
             }
           }
         }
-      });
+      }
     });
+  });
    
-    return { status: true, message: "Tenant created successfully", data: newUserPlan }
-  } catch (error) {
-    console.error(`Error creating tenant: ${error}`);
-    let message = "An error occurred while creating tenant";
-    if(error instanceof Error) message = error.message;
-    if(hasCodeProperty(error) && error.code === "P2025") message = "Tenant ID already exists";
-    return { status: false, message, data: null }
-  }
-}
+  return { message: "Tenant created successfully", data: newUserPlan }
+ 
+}, error => {
+  if(hasCodeProperty(error) && error.code === "P2025") return "Tenant ID already exists";
+})

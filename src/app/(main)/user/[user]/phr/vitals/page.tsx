@@ -1,7 +1,7 @@
 import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth0";
 import Suspend from "@components/Suspend";
 import { Separator } from "@components/ui/separator";
-import { isUserOwner } from "@lib/protect-org";
+import { isUserOwner } from "@lib/org-utils";
 import VitalSignsSSRWrapper from "./VitalSignsSSRWrapper";
 
 export const metadata = {

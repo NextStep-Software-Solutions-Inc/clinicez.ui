@@ -1,7 +1,7 @@
 import { Container } from "lucide-react";
 import { DropdownMenuItem } from "@components/ui/dropdown-menu";
 import ConditionalRender from "./utils/ConditionalRender";
-import { isTenant } from "@lib/protect-org";
+import { isTenant } from "@lib/tenant-utils";
 
 export default async function TenantConsoleLink(){
   const tenant = await isTenant();

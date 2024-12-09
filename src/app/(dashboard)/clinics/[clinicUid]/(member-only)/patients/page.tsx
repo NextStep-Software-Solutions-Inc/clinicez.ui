@@ -2,7 +2,7 @@ import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth
 import Suspend from "@components/Suspend";
 import { Separator } from "@components/ui/separator";
 import { Metadata } from "next";
-import { isHP } from "@lib/protect-org";
+import { isHP } from "@lib/org-utils";
 import SearchBar from "@components/dashboard/SearchBar";
 import PageLoading from "@components/PageLoading";
 import { redirect } from "next/navigation";

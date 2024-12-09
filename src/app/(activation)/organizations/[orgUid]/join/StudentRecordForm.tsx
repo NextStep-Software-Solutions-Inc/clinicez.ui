@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import ConditionalRender from "@components/utils/ConditionalRender";
 import Each from "@components/utils/Each";
 import { zodResolver } from "@hookform/resolvers/zod";
-import React from "react";
+import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { useAtom } from "jotai";
@@ -18,11 +18,12 @@ import { useOrgColleges } from "@hooks/useOrgCollege";
 import { useOrgDepartments } from "@hooks/useOrgDepartment";
 import { toast } from "sonner";
 import { upsertStudentRecordAction } from "@actions/student-record.action";
-import { useUser } from "@hooks/useUser";
 import { joinOrgApplicationAtom } from "@state/join-org-application";
+import { promiseWrapper } from "@/lib/with-error-handling";
+import { useOrgStudentRecord } from "@/hooks/useOrgStudentRecord";
 
 
-const employeeRecordSchema = z.object({
+const studentRecordSchema = z.object({
   studentId: z.string({
     required_error: "Student ID is required"
   }).min(1, {
@@ -31,21 +32,28 @@ const employeeRecordSchema = z.object({
   lrn: z.string({
     message: "Learner Ref. Number must be a string"
   }).optional(),
-  levelId: z.coerce.number({
+  levelId: z.number({
+    coerce: true,
     required_error: "School level is required"
   }),
-  yearLevelId: z.coerce.number({
+  yearLevelId: z.number({
+    coerce: true,
     required_error: "Year level/Grade is required"
   }),
-  programId: z.coerce.number({
+  programId: z.number({
+    coerce: true,
     required_error: "Program/Strand is required"
   }),
   isCollege : z.boolean().optional().default(false),
-  collegeId: z.coerce.number().optional(),
-  departmentId: z.coerce.number().optional(),
+  collegeId: z.number({
+    coerce: true
+  }).optional(),
+  departmentId: z.number({
+    coerce: true
+  }).optional(),
 })
 
-export type StudentRecordType = z.infer<typeof employeeRecordSchema>;
+export type StudentRecordType = z.infer<typeof studentRecordSchema>;
 
 export default function StudentRecordForm({orgUid, userId} : {orgUid: string, userId: string}) {
 
@@ -56,30 +64,39 @@ export default function StudentRecordForm({orgUid, userId} : {orgUid: string, us
   const {data: orgPrograms} = useOrgPrograms(orgUid)
   const {data: orgColleges} = useOrgColleges(orgUid)
   const {data: orgDepartment} = useOrgDepartments(orgUid)
-  const {data: user} = useUser({userId})
+  const {data: orgStudentRecord} = useOrgStudentRecord({userId, orgUid})
 
   const form = useForm<StudentRecordType>({
-    resolver: zodResolver(employeeRecordSchema),
+    resolver: zodResolver(studentRecordSchema),
     mode: "all",
     defaultValues: {
+      studentId: "",
+      lrn: "",
       ...orgApplication.student_record
     }
   })
 
+  useEffect(() => {
+    if(orgStudentRecord?.data) {
+      form.reset({
+        isCollege: !!orgStudentRecord.data.collegeId,
+        collegeId: orgStudentRecord.data.collegeId ?? undefined,
+        departmentId: orgStudentRecord.data.departmentId ?? undefined,
+        levelId: orgStudentRecord.data.level,
+        lrn: orgStudentRecord.data.lrn ?? undefined,
+        programId: orgStudentRecord.data.programId ?? undefined,
+        studentId: orgStudentRecord.data.studentId,
+        yearLevelId: orgStudentRecord.data.yearLevel  ?? undefined
+      })
+    }
+    
+  }, [form, orgStudentRecord?.data])
+
   const action = async () => {
     form.handleSubmit(async (values) => {
-      if(!user?.data) {
-        toast.error("User data not found")
-        return;
-      }
-     
-      const userId = user.data.id
-      toast.promise(upsertStudentRecordAction({...values, orgUid, userId}), {
+      toast.promise(promiseWrapper(upsertStudentRecordAction)({...values, orgUid, userId}), {
         loading: "Saving student record...",
         success: async (res) => {
-          if(!res.success) {
-            return `An error occurred: ${res?.message}`
-          }
           setAdditionalInfoValid((prev) => ({
             ...prev,
             student_record: true
@@ -90,7 +107,7 @@ export default function StudentRecordForm({orgUid, userId} : {orgUid: string, us
           }))
           return res.message
         },
-        error: (error) => `An error occurred: Error ${error}`
+        error: (error) => error
       })
       
     })()
@@ -140,7 +157,7 @@ export default function StudentRecordForm({orgUid, userId} : {orgUid: string, us
                 <FormItem className="">
                   <FormLabel htmlFor="levelId">Student Level</FormLabel>
                   <FormControl>
-                    <Select onValueChange={field.onChange} defaultValue={field.value?.toString()}>
+                    <Select onValueChange={field.onChange} value={field.value?.toString()}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select a level" />
@@ -175,7 +192,7 @@ export default function StudentRecordForm({orgUid, userId} : {orgUid: string, us
                 <FormItem className="flex-grow">
                   <FormLabel htmlFor="yearLevelId">Year/Grade Level</FormLabel>
                   <FormControl>
-                    <Select onValueChange={field.onChange} defaultValue={field.value?.toString()}>
+                    <Select onValueChange={field.onChange} value={field.value?.toString()}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select a year/grade level" />
@@ -206,7 +223,7 @@ export default function StudentRecordForm({orgUid, userId} : {orgUid: string, us
                 <FormItem className="flex-grow">
                   <FormLabel htmlFor="programId">Program</FormLabel>
                   <FormControl>
-                    <Select onValueChange={field.onChange} defaultValue={field.value?.toString()}>
+                    <Select onValueChange={field.onChange} value={field.value?.toString()}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select a program" />
@@ -222,7 +239,7 @@ export default function StudentRecordForm({orgUid, userId} : {orgUid: string, us
                       </SelectContent>
                     </Select>
                   </FormControl>
-                  <FormDescription>Select the progmam that you belong.</FormDescription>
+                  <FormDescription>Select the program that you belong.</FormDescription>
                   <FormMessage/>
                 </FormItem>
               )
@@ -259,7 +276,7 @@ export default function StudentRecordForm({orgUid, userId} : {orgUid: string, us
                 <FormItem className="">
                   <FormLabel htmlFor="collegeId">College (if applicable)</FormLabel>
                   <FormControl>
-                    <Select onValueChange={field.onChange} defaultValue={field.value?.toString()}>
+                    <Select onValueChange={field.onChange} value={field.value?.toString()}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select a college" />
@@ -289,7 +306,7 @@ export default function StudentRecordForm({orgUid, userId} : {orgUid: string, us
                 <FormItem className="flex-grow">
                   <FormLabel htmlFor="departmentId">Department</FormLabel>
                   <FormControl>
-                    <Select onValueChange={field.onChange} defaultValue={field.value?.toString()}>
+                    <Select onValueChange={field.onChange} value={field.value?.toString()}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select a department" />

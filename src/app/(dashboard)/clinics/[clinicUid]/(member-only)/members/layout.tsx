@@ -17,7 +17,7 @@ export default async function MembersLayout({children, params: {clinicUid}}:Memb
     status: "ACTIVE"
   })
 
-  if(!myClinicMembership.data?.some(membership =>  membership.Role && ["admin", "owner", ""].includes(membership.Role.name.toLocaleLowerCase()))) redirect("/unauthorized");
+  // if(!myClinicMembership.data?.some(membership =>  membership.Role && ["admin", "owner"].includes(membership.Role.name.toLocaleLowerCase()))) redirect("/unauthorized");
   return (
     <>{children}</>
   );

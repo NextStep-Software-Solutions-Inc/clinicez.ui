@@ -43,7 +43,7 @@ export function DataTableToolbar<TData>({
           <DataTableFacetedFilter
             column={table.getColumn("role")}
             title="Role"
-            options={(orgRoles?? []).map(role => ({
+            options={(orgRoles?.data?? []).map(role => ({
               label: role.name,
               value: role.name,
             }))}

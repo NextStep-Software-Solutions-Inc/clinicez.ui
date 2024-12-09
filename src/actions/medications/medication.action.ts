@@ -4,14 +4,12 @@ import "server-only";
 import prisma from "@lib/prisma";
 import { getCachedSession } from "@actions/session.action";
 import { getPermissionsAction } from "@actions/permission.action";
-import { getUserAction } from "@actions/users/user.action";
-import { getHPsAction } from "@actions/hp.actions";
 import { PERMISSIONS } from "@lib/permissions";
 import { withErrorHandling } from "@/lib/with-error-handling";
 
 export type GetMedicationsFilters = {
   clinicUid: string,
-  patientId?: number,
+  patientId?: string,
   consultationTicketId?: number
   hpId?: number
 }
@@ -21,8 +19,7 @@ export const getMedicationsAction = withErrorHandling(async (filters?: GetMedica
   const session = await getCachedSession();
   if(!session) throw new Error("Unauthorized");
 
-  const [hps, myPermissions] = await Promise.all([
-    getHPsAction({ userId: session.user.sub }),
+  const [myPermissions] = await Promise.all([
     getPermissionsAction({ userId: session.user.sub, type: "CLINIC" })
   ]);
 
@@ -50,7 +47,7 @@ export const getMedicationsAction = withErrorHandling(async (filters?: GetMedica
       consultationTicketId,
       OR: [
         {
-          ...canReadAllClinicMedications ? { Clinic: { clinicUid  }, patientId, hpId} : {},
+          ...canReadAllClinicMedications ? { Clinic: { clinicUid  }, Patient: { userId: patientId}, hpId} : {},
         },
         {
           ...canReadOwnMedications ? { Patient: {

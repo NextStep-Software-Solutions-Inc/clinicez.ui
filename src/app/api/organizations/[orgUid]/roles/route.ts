@@ -1,3 +1,4 @@
+import { parseObject } from "@/lib/utils";
 import { getOrganizationRolesAction } from "@actions/organizations/organization-role.action";
 import { withJwtAuth } from "@middlewares/withJwtAuth";
 import { NextRequest, NextResponse } from "next/server";
@@ -10,8 +11,10 @@ export const GET = withJwtAuth(async (req: NextRequest, { params }: {
 }) => {
   const orgUid = String(params?.orgUid);
   const searchParams = req.nextUrl.searchParams
-  const userId = searchParams.get('userId');
-  const organizationRoles = await getOrganizationRolesAction({orgUid: orgUid, userId: userId ?? undefined});
+
+  const filters = parseObject(Object.fromEntries(searchParams.entries()));
+
+  const organizationRoles = await getOrganizationRolesAction({...filters, orgUid: orgUid});
   return NextResponse.json(organizationRoles, {status: 200});
 });
     

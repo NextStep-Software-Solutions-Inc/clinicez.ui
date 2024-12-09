@@ -34,11 +34,11 @@ import { useOrgAppointmentModes } from "@hooks/useOrgAppointmentMode"
 import { useClinicServiceCategories } from "@/hooks/useClinicServiceCategory"
 import { useMemo } from "react"
 import { Checkbox } from "@components/ui/checkbox"
-import { useUsers } from "@hooks/useUser"
 import { Separator } from "@components/ui/separator"
 import { usePermissions } from "@hooks/usePermission"
 import { PERMISSIONS } from "@lib/permissions"
 import { useUser } from "@auth0/nextjs-auth0/client"
+import { useClinicPatients } from "@/hooks/useClinicPatient"
 
 const FilterFormSchema = z.object({
   appointmentTypeId: z.coerce.number({
@@ -79,14 +79,15 @@ export default function FilterForm({onContinue}: FilterFormProps) {
   const {data: appointmentTypes} = useOrgAppointmentTypes(clinicUid)
   const {data: appointmentModes } = useOrgAppointmentModes(clinicUid);
   const {data: serviceCategories} = useClinicServiceCategories(clinicUid)
-  const {data: users } = useUsers()
+  const {data: clinicPatients } = useClinicPatients({clinicUid})
+
   const {data: myOrgPermissions, isLoading: loadingPermissions} = usePermissions({
     userId: user?.sub ?? undefined,
     type: "CLINIC"
   })
 
-  
   const {data: hps} = useHPs()
+
   const groupedHps = useMemo(() => {
     // array of array of hps
     return (hps ?? [])?.reduce((acc, hp) => {
@@ -189,10 +190,10 @@ export default function FilterForm({onContinue}: FilterFormProps) {
                           </FormControl>
                           <SelectContent>
                             <Each
-                              of={users?.[0] ?? []}
-                              render={(user) => {
+                              of={clinicPatients?.data ?? []}
+                              render={(clinicPatient) => {
                                 return (
-                                  <SelectItem value={user.userId}>{user.firstName} {user.middleName} {user.lastName} {user.suffix} (<span className="font-medium">{user.email}</span>)</SelectItem>
+                                  <SelectItem value={clinicPatient.Patient.userId}>{clinicPatient.Patient.firstName} {clinicPatient.Patient.middleName} {clinicPatient.Patient.lastName} {clinicPatient.Patient.suffix}</SelectItem>
                                 )
                               }}
                             />

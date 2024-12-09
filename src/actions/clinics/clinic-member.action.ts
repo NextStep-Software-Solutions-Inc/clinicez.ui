@@ -5,6 +5,8 @@ import prismaClient from "@/lib/prisma";
 import { getCachedSession } from "../session.action";
 import { withErrorHandling } from "@/lib/with-error-handling";
 import { hasCodeProperty } from "@/lib/utils";
+import { sessionCheck } from "@/lib/auth";
+import { managementClient } from "@/services/auth0/management-client";
 
 export type GetClinicMembersFilters = {
   clinicUid: string;
@@ -142,8 +144,7 @@ type AddClinicMemberPayload = {
 }
 export const addClinicMemberAction = withErrorHandling(async (payload: AddClinicMemberPayload) => {
 
-  const session = await getCachedSession()
-  if(!session) throw new Error("User not authenticated")
+  await sessionCheck()
 
   const {clinicUid, userId, roleId} = payload;
   await prismaClient.clinicMember.create({

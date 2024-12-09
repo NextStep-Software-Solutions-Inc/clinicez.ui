@@ -1,22 +1,24 @@
 "use client"
+
 import { useParams, usePathname, useRouter } from "next/navigation"
 import Switcher, { SwitcherOptionsType } from "../dashboard/Switcher"
 import { Building } from "lucide-react"
-import { useUser } from "@auth0/nextjs-auth0/client"
-import {  useClinics } from "@/hooks/useClinic"
+import { useClinics } from "@/hooks/useClinic"
 
 interface ClinicSwitcherProps {
   isCollapsed: boolean
+  userId: string
 }
 
-export function ClinicSwitcher({isCollapsed,}: ClinicSwitcherProps) {
+export function ClinicSwitcher({isCollapsed,userId}: ClinicSwitcherProps) {
   const {clinicUid} = useParams<{clinicUid: string}>()
   const router = useRouter();
   const pathname = usePathname();
-  const user = useUser()
-  const {data: myClinics} = useClinics()  
+  const {data: myClinics} = useClinics({
+    userId,
+  })  
   
-  const clinics: SwitcherOptionsType[] = (myClinics ?? [])
+  const clinics: SwitcherOptionsType[] = (myClinics?.data ?? [])
     .map(org => ({
       label: org.name,
       value: org.clinicUid,

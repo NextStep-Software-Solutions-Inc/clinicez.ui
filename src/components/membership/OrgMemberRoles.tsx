@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@components/ui/card";
 import Each from "@components/utils/Each";
-import { useOrganizationRoles } from "@/hooks/useOrganizationRole";
+import { useOrgMembers } from "@/hooks/useOrgMember";
 
 interface OrgMemberRolesProps {
   userId: string;
@@ -10,7 +10,7 @@ interface OrgMemberRolesProps {
 }
 export default function OrgMemberRoles({orgUid,userId}:OrgMemberRolesProps){
 
-  const {data: roles, isLoading: loadingRoles} = useOrganizationRoles({userId, orgUid});
+  const {data: userMemberships, isLoading: loadingRoles} = useOrgMembers({userId, orgUid});
 
   if(loadingRoles) return <div>Loading...</div>
   return (
@@ -23,12 +23,12 @@ export default function OrgMemberRoles({orgUid,userId}:OrgMemberRolesProps){
       </CardHeader>
       <CardContent>
         <Each
-          of={roles ?? []}
+          of={userMemberships?.data?.data ?? []}
           render={(role) => {
             return (
               <div key={role.id} className="flex items-center gap-2">
-                <div>{role.name}</div>
-                <div className="text-xs text-muted-foreground">{role.description}</div>
+                <div>{role.OrganizationRole.name}</div>
+                <div className="text-xs text-muted-foreground">{role.OrganizationRole.description} <span className="lowercase italic text-muted-foreground">({role.status})</span></div>
               </div>
             )
           }}

@@ -1,6 +1,5 @@
 "use client";
 
-import { deleteMembershipAction } from "@actions/users/user-organization.action";
 import ActionButton from "@components/ActionButton";
 import { Button } from "@components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@components/ui/popover";
@@ -9,8 +8,7 @@ import { PopoverClose } from "@radix-ui/react-popover";
 import { Trash2 } from "lucide-react";
 import React from "react";
 import { toast } from "sonner";
-import { revalidate } from "../../app/(dashboard)/organizations/[orgUid]/membership/page";
-import { revalidatePath } from "@actions/cache.action";
+import { deleteMembershipAction } from "@/actions/organizations/org-member.action";
 
 interface ConfirmDeleteMembershipProps {
   disabled?: boolean

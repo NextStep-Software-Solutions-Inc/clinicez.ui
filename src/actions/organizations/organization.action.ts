@@ -44,17 +44,21 @@ export type GetOrganizationsFilters = {
   userId?: string;
   orgUid?: string;
   clinicUid?: string;
+  isPublic?: boolean;
 }
 
 export type GetOrganizations = Awaited<ReturnType<typeof getOrganizationsAction>>
 export const getOrganizationsAction = cache(async (filters?: GetOrganizationsFilters) => {
 
-  const { userId, clinicUid, orgUid } = filters || {};
+  const { userId, clinicUid, orgUid, isPublic } = filters || {};
   const organizations = await prisma.organization.findMany({
     orderBy: {
       name: "asc"
     },
     where: {
+      OrganizationSetting: {
+        ...isPublic ? { isPublic } : {}
+      },
       ...(orgUid && { orgUid }),
       ...(userId && {
         Users: {
@@ -131,9 +135,13 @@ export const getMyDefaultOrganizationAction = cache(withErrorHandling(async () =
   return { message: "Default organization fetched successfully", data: org };
 }))
 
-export const setMyDefaultOrganizationAction = async (id: number, orgUid: string, userId?: string) => {
+export const setMyDefaultOrganizationAction = withErrorHandling(async (id: number, orgUid: string, userId?: string) => {
+ 
+  const session = await getCachedSession();
+  if (!session) throw new Error("User not authenticated.");
+ 
   const org = await prisma.userDefaultOrganization.upsert({
-    where: { id, User: { userId } },
+    where: { id },
     create: {
       User: {
         connect: { userId }
@@ -151,8 +159,8 @@ export const setMyDefaultOrganizationAction = async (id: number, orgUid: string,
       },
     }
   })
-  return org;
-}
+  return { message: "Default organization updated successfully", data: org };
+})
 
 type UpdateOrganizationPayload = {
   name: string;

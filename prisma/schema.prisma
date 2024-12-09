@@ -1,6 +1,6 @@
 generator client {
   provider      = "prisma-client-js"
-  binaryTargets = ["native", "rhel-openssl-1.0.x"]
+  binaryTargets = ["native", "rhel-openssl-1.0.x", "rhel-openssl-3.0.x"]
   engineType    = "library"
 }
 
@@ -101,7 +101,7 @@ model User {
   CompletedByAppointments          AppointmentAttribute[]           @relation("CompletedBy")
   PreAssessmentNotes               PreAssessmentNote[]
   UserDefaultClinicRoles           UserDefaultClinicRole[]
-  ClinicPatienta                   ClinicPatient[]
+  ClinicPatients                   ClinicPatient[]
   RescheduledByAppointments        AppointmentAttribute[]           @relation("RescheduledBy")
   Medications                      Medication[]
 }
@@ -897,7 +897,7 @@ model UserStudentRecord {
   Organization           Organization            @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   Program                OrganizationProgram?    @relation(fields: [programId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   User                   User                    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  OrganizationRole       OrganizationRole?       @relation(fields: [userOrganizationRoleId], references: [id])
+  OrganizationRole       OrganizationRole?       @relation(fields: [userOrganizationRoleId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   OrganizationYearLevel  OrganizationYearLevel?  @relation(fields: [yearLevel], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@unique([userId, organizationId], name: "unique_user_student_record")

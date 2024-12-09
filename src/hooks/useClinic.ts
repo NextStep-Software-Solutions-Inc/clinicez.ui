@@ -1,11 +1,14 @@
-import { GetClinic, GetClinics } from "@/actions/clinics/clinic.action"
+import { GetClinic, GetClinics, GetClinicsFilters } from "@/actions/clinics/clinic.action"
 import { self } from "@services/request"
 import useSWR from "swr"
 
-export const useClinics = (userId?: string | null) => {
+export const useClinics = (filters: GetClinicsFilters) => {
   const fetcher = (args:string) => self.get<GetClinics>(args)
   const searchParams = new URLSearchParams()
-  if(userId) searchParams.append("userId", userId) 
+
+  Object.entries(filters).forEach(([key, value]) => {
+    if(value !== null || value !== undefined) searchParams.append(key, value.toString())
+  })
   return useSWR(`/api/clinics?${searchParams.toString()}`, fetcher)
 }
 

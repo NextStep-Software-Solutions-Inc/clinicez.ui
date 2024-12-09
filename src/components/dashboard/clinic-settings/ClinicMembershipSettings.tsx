@@ -8,12 +8,9 @@ import { useClinicMembers } from "@/hooks/useClinicMember";
 import { useParams } from "next/navigation";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import Image from "next/image";
-import { Badge } from "@/components/ui/badge";
-import { cva } from "class-variance-authority";
-import { BadgeCheck, RollerCoaster, User } from "lucide-react";
+import { BadgeCheck, User } from "lucide-react";
 import ActionButton from "@/components/ActionButton";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { AlertDialogHeader } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useUsers } from "@/hooks/useUser";
@@ -29,7 +26,7 @@ import { cn } from "@/lib/utils";
 export default function ClinicMembershipSettings() {
   
   const {clinicUid} = useParams<{clinicUid: string}>()
-  const {data: clinicMembers, mutate} = useClinicMembers(clinicUid)
+  const {data: clinicMembers, mutate} = useClinicMembers({clinicUid})
   return (
     <Card>
       <CardHeader className="flex flex-row justify-between items-start">
@@ -42,8 +39,7 @@ export default function ClinicMembershipSettings() {
         <AddClinicMember onAdded={mutate}/>
       </CardHeader>
       <CardContent>
-        <MembersList clinicMembers={clinicMembers?.data ?? []}/>
-
+        <MembersList clinicMembers={clinicMembers?.data ?? []} onUpdated={mutate}/>
       </CardContent>
       <CardFooter></CardFooter>
     </Card>

@@ -13,19 +13,24 @@ import { PERMISSIONS } from "@lib/permissions";
 import { OrganizationMemberStatus } from "@/types";
 import { withErrorHandling } from "@/lib/with-error-handling";
 
-export type GetUserOrgFilterType = {
-    userId?: string | null;
-    orgUid?: string | null;
+export type GetOrgMembersFilters = {
+    userId?: string;
+    orgUid?: string;
     status?: OrganizationMemberStatus;
-    roleId?: number | null;
-    pageNumber?: number | null;
-    pageSize?: number | null;
-    distinct?: boolean | null;
+    roleId?: number;
+    pageNumber?: number;
+    pageSize?: number;
+    distinct?: boolean;
+    clinicUid?: string;
 }
   
-export type GetUserOrganizations = Awaited<ReturnType<typeof getUserOrganizationsAction>>
-export const getUserOrganizationsAction = cache(async (filter?: GetUserOrgFilterType) => {
-  const { userId, orgUid, status, distinct } = filter || {};
+export type GetOrgMembers  = Awaited<ReturnType<typeof getOrgMembersAction>>
+export const getOrgMembersAction = withErrorHandling(cache(async (filter?: GetOrgMembersFilters) => {
+  
+  const session = await getCachedSession();
+  if(!session) throw new Error("User not authenticated.");
+  
+  const { userId, orgUid, status, distinct, clinicUid } = filter || {};
 
   const castToNumber = (value: string | null | undefined | number) => value ? Number(value) : undefined;
   
@@ -37,21 +42,31 @@ export const getUserOrganizationsAction = cache(async (filter?: GetUserOrgFilter
     const userOrganizations =await prisma.organizationMember.findMany({
       ... pageSize ? { take: pageSize } : {},
       ... distinct ? { distinct: ["organizationId"]} : {},
-      skip: pageNumber ? (pageNumber - 1) * (pageSize || 10) : 0,
+      skip: pageNumber ? ((pageNumber - 1) * (pageSize || 10)) : 0,
       orderBy: {
         createdAt: "desc"
       },
       where: {
-        ...roleId ? { roleId } : {},
-        ...status ? { status } : {},
         Organization: {
           isActive: true,
-          ...orgUid ? { orgUid }: {}
+          ...orgUid ? { orgUid }: {},
+          ...clinicUid ? {
+            ClinicOrganizations: {
+              some: {
+                Clinic: {
+                  isActive: true,
+                  clinicUid
+                }
+              }
+            }
+          } : {}
         },
         User: {
           isActive: true,
           ...userId ? { userId }: {}
-        }
+        },
+        ...roleId ? { roleId } : {},
+        ...status ? { status } : {}
       },
       select: {
         id: true,
@@ -70,7 +85,7 @@ export const getUserOrganizationsAction = cache(async (filter?: GetUserOrgFilter
               where: {
                 isActive: true,
                 Organization: {
-                  ...orgUid ? {orgUid}: {}
+                  ...orgUid ? { orgUid }: {}
                 }
               },
               select: {
@@ -107,7 +122,7 @@ export const getUserOrganizationsAction = cache(async (filter?: GetUserOrgFilter
               where: {
                 isActive: true,
                 Organization: {
-                  ...orgUid ? {orgUid}: {}
+                  ...orgUid ? { orgUid }: {}
                 }
               },
               select: {
@@ -147,6 +162,7 @@ export const getUserOrganizationsAction = cache(async (filter?: GetUserOrgFilter
           select: {
             id: true,
             name: true,
+            description: true,
             requirements: true
           }
         },
@@ -155,55 +171,6 @@ export const getUserOrganizationsAction = cache(async (filter?: GetUserOrgFilter
             name: true,
             orgUid: true,
             id: true,
-            OrganizationMembers: {
-              select: {
-                User: {
-                  select: {
-                    userId: true,
-                  },
-                },
-              }
-            },
-            UserDefaultOrganizations: {
-              where: {
-                isActive: true,
-                User: {
-                  ...userId ? {userId}: {}
-                }
-              },
-              select: {
-                id: true,
-                organizationId: true,
-                User: {
-                  select: {
-                    userId: true,
-                  }
-                },
-                Organization: {
-                  select: {
-                    orgUid: true,
-                  }
-                }
-              }
-            },
-            UserDefaultOrganizationRoles: {
-              where: {
-                isActive: true,
-                User: {
-                  ...userId ? {userId}: {}
-                }
-              },
-              select: {
-                id: true,
-                organizationId: true,
-                OrganizationRole: {
-                  select: {
-                    id: true,
-                    name: true
-                  }
-                }
-              }
-            }
           }
         },
       }
@@ -224,6 +191,7 @@ export const getUserOrganizationsAction = cache(async (filter?: GetUserOrgFilter
         }
       },
     });
+    
 
     return { data: userOrganizations,  total }
   }, {
@@ -232,8 +200,8 @@ export const getUserOrganizationsAction = cache(async (filter?: GetUserOrgFilter
     isolationLevel: Prisma.TransactionIsolationLevel.Serializable
     
   });
-  return paginatedData;
-})
+  return {message: "User organizations fetched successfully", status: true, data: paginatedData};
+}))
 
 export const setMembershipRequestStatusAction = withErrorHandling(async (id: number, status: OrganizationMemberStatus) => {
 
@@ -409,49 +377,41 @@ export const deleteMembershipAction = async (id: number) => {
   }
 }
 
-export const requestMembershipAdditionalInfo = async (id: number) => {
-  try {
-    const userOrganization = await prisma.organizationMember.findUniqueOrThrow({
-      where: { id },
-      select: {
-        User: {
-          select: {
-            email: true,
-            firstName: true,
-            lastName: true
-          }
-        },
-        Organization: {
-          select: {
-            name: true,
-            email: true
-          }
-        },
-        OrganizationRole: {
-          select: {
-            name: true
-          }
+export const requestMembershipAdditionalInfo = withErrorHandling(async (id: number) => {
+
+  const session = await getCachedSession();
+  if(!session) throw new Error("User not authenticated.");
+  const userOrganization = await prisma.organizationMember.findUniqueOrThrow({
+    where: { id },
+    select: {
+      User: {
+        select: {
+          email: true,
+          firstName: true,
+          lastName: true
+        }
+      },
+      Organization: {
+        select: {
+          name: true,
+          email: true
+        }
+      },
+      OrganizationRole: {
+        select: {
+          name: true
         }
       }
-    })
-    await sendMembershipAdditionalInfo({
-      name: `${userOrganization.User.firstName} ${userOrganization.User.lastName}`,
-      email: userOrganization.User.email,
-      organization: userOrganization.Organization.name,
-      orgMail: userOrganization.Organization.email ?? ""
-    })
-    return {
-      status: true,
-      message: "Additional information request sent"
     }
-  } catch (error) {
-    console.error(`Error sending additional information request: ${error}`);
-    return {
-      status: false,
-      message: "Error sending additional information request"
-    }
-  }
-}
+  })
+  await sendMembershipAdditionalInfo({
+    name: `${userOrganization.User.firstName} ${userOrganization.User.lastName}`,
+    email: userOrganization.User.email,
+    organization: userOrganization.Organization.name,
+    orgMail: userOrganization.Organization.email ?? ""
+  })
+  return { message: "Additional information request sent", data: null }
+})
 
 const sendMembershipUpdateEmailNotification = async ({name, email, organization, status, orgMail}:{
   organization: string

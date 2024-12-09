@@ -10,7 +10,7 @@ import { Card, CardContent } from "@components/ui/card";
 import { Separator } from "@components/ui/separator";
 import dayjs from "@lib/day-utils";
 import OrgMemberTabSection from "./OrgMemberTabSection";
-import { useOrganizationRoles } from "@/hooks/useOrganizationRole";
+import { useOrgMembers } from "@/hooks/useOrgMember";
 
 interface OrgMemberDetailsProps {
   userId: string;
@@ -18,10 +18,11 @@ interface OrgMemberDetailsProps {
 }
 export default function OrgMemberDetails({userId, orgUid}:OrgMemberDetailsProps) {
   const {data: user, isLoading} = useUser({ userId });
-  const {data: roles} = useOrganizationRoles({userId, orgUid});
+  const {data: userOrgMemberships} = useOrgMembers({userId, orgUid});
   
   if(isLoading) return <div>Loading user...</div>
   if(!user?.data) notFound()
+
   return (
     <>
       <Card className="bg-slate-100">
@@ -38,7 +39,7 @@ export default function OrgMemberDetails({userId, orgUid}:OrgMemberDetailsProps)
               </div>
               <Separator />
               <div className="flex gap-5 flex-wrap items-center basis-[400px]">
-                <LabelValue label="Roles" value={roles?.length ?? 0} />
+                <LabelValue label="Roles" value={userOrgMemberships?.data?.data?.length ?? 0} />
               </div>
               <Separator />
               <LabelValue label="Joined" value={dayjs(user?.data.createdAt).fromNow()} />

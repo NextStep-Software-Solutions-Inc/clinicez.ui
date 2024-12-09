@@ -1,7 +1,6 @@
 "use client"
 import {toast} from "sonner"
 import ActionButton from "@components/ActionButton"
-import { GetMyUserPreference, upsertMyUserPreference } from "@actions/users/preference.action"
 import Each from "@components/utils/Each"
 import { useUser } from "@auth0/nextjs-auth0/client"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@components/ui/card"
@@ -9,7 +8,7 @@ import { getGoogleAuthUrl } from "@actions/google/auth.action"
 import { Checkbox } from "@components/ui/checkbox"
 
 interface UserPreferenceFormProps {
-  intergrations: {
+  integrations: {
     name: string,
     status: boolean,
   }[]
@@ -22,7 +21,7 @@ const apps = [
   },
 ]
 
-export default function Integrations({intergrations = []}: UserPreferenceFormProps){
+export default function Integrations({integrations = []}: UserPreferenceFormProps){
   const {user} = useUser()
 
   const action = async () => {
@@ -56,7 +55,7 @@ export default function Integrations({intergrations = []}: UserPreferenceFormPro
             </CardHeader>
             <CardContent>
               {
-                intergrations.map((integration, index) => (
+                integrations.map((integration, index) => (
                   <div key={index} className="items-top flex space-x-2">
                     <Checkbox id="google-calendar" checked={integration.status} />
                     <div className="grid gap-1.5 leading-none">

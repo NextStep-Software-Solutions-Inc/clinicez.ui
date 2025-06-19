@@ -1,0 +1,1 @@
+export { Player as default } from "@lottiefiles/react-lottie-player";

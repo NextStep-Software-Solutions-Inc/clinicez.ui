@@ -20,7 +20,7 @@ import {
 
 import Each from "@components/utils/Each";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { format } from "date-fns";
+import { format, isValid } from "date-fns";
 import { useMemo, useRef, useState } from "react"
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -29,6 +29,7 @@ import { uploadMediaAction } from "@actions/blob.action";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import { useOrganizations } from "@/hooks/useOrganization";
 import { useFileTypes } from "@hooks/useFileType";
+import { formatFileName } from "@/lib/file-manipulation";
 
 interface UploadFileFormProps {
     folder: {
@@ -66,6 +67,7 @@ export default function UploadFileForm({folder}: UploadFileFormProps) {
     form.handleSubmit(async (data) => {
       if(!userId) throw new Error("User ID is required to upload a file")
       formData.append("directory", `${userId}`)
+      formatFileName(formData);
       toast.promise(uploadMediaAction(formData), {
         loading: "Uploading...",
         success: ({url}) => {
@@ -152,7 +154,8 @@ export default function UploadFileForm({folder}: UploadFileFormProps) {
                   <Input
                     name={field.name}
                     onChange={e => field.onChange(new Date(e.target.value))}
-                    defaultValue={field.value ? format(field.value, "yyyy-MM-dd") : ""}
+                    value={field.value instanceof Date && isValid(field.value)
+                      ? format(field.value, "yyyy-MM-dd"): ""}
                     type="date"
                     placeholder="Select date" 
                   />

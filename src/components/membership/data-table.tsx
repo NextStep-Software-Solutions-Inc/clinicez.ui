@@ -45,7 +45,9 @@ interface DataTableProps<TData, TValue> {
     pageIndex: number;
     pageSize: number;
   }) => void,
+  onFilterChange?: (filters: Record<string, string>) => void
   rowCount?: number
+  initialColumnFilters?: ColumnFiltersState;
 }
 
 export function DataTable<TData extends NonNullable<GetOrgMembers["data"]>["data"][number], TValue>({
@@ -53,11 +55,15 @@ export function DataTable<TData extends NonNullable<GetOrgMembers["data"]>["data
   data,
   pagination: pg,
   onPaginationChange,
+  onFilterChange,
+  initialColumnFilters,
   rowCount,
 }: DataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = React.useState({})
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
+    initialColumnFilters ?? []
+  );
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [expanded, setExpanded] = React.useState<ExpandedState>({})
   const [pagination, setPagination] = React.useState({ pageIndex: pg.pageIndex, pageSize: pg.pageSize })
@@ -65,6 +71,20 @@ export function DataTable<TData extends NonNullable<GetOrgMembers["data"]>["data
   React.useEffect(() => {
     onPaginationChange?.(pagination)
   }, [onPaginationChange, pagination])
+
+  React.useEffect(() => {
+    const filterState: Record<string, string> = {};
+    columnFilters.forEach((f) => {
+      if (Array.isArray(f.value)) {
+        filterState[f.id] = f.value[0] ?? "";
+      } else if (typeof f.value === "string") {
+        filterState[f.id] = f.value;
+      }
+    });
+    onFilterChange?.(filterState);
+  }, [columnFilters, onFilterChange]);
+
+
 
   const table = useReactTable({
     data,

@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import * as React from "react"
+import * as React from "react";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -15,8 +15,8 @@ import {
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
-  useReactTable,
-} from "@tanstack/react-table"
+  useReactTable
+} from "@tanstack/react-table";
 
 import {
   Table,
@@ -24,47 +24,60 @@ import {
   TableCell,
   TableHead,
   TableHeader,
-  TableRow,
-} from "@components/ui/table"
+  TableRow
+} from "@components/ui/table";
 
-import { DataTablePagination } from "./data-table-pagination"
-import { DataTableToolbar } from "./data-table-toolbar"
-import Each from "@components/utils/Each"
-import { LabelValue } from "@components/LabelValue"
-import { Separator } from "@components/ui/separator"
-import { GetOrgMembers } from "@/actions/organizations/org-member.action"
+import { DataTablePagination } from "./data-table-pagination";
+import { DataTableToolbar } from "./data-table-toolbar";
+import Each from "@components/utils/Each";
+import { LabelValue } from "@components/LabelValue";
+import { Separator } from "@components/ui/separator";
+import { GetOrgMembers } from "@/actions/organizations/org-member.action";
 
 interface DataTableProps<TData, TValue> {
-  columns: ColumnDef<TData, TValue>[]
-  data: TData[],
+  columns: ColumnDef<TData, TValue>[];
+  data: TData[];
   pagination: {
-    pageIndex: number,
-    pageSize: number
-  }
-  onPaginationChange?: (value: {
     pageIndex: number;
     pageSize: number;
-  }) => void,
-  rowCount?: number
+  };
+  onPaginationChange?: (value: { pageIndex: number; pageSize: number }) => void;
+  rowCount?: number;
+  initialColumnFilters?: ColumnFiltersState;
+  onColumnFiltersChange?: (value: ColumnFiltersState) => void;
 }
 
-export function DataTable<TData extends NonNullable<GetOrgMembers["data"]>["data"][number], TValue>({
+export function DataTable<
+  TData extends NonNullable<GetOrgMembers["data"]>["data"][number],
+  TValue
+>({
   columns,
   data,
   pagination: pg,
   onPaginationChange,
-  rowCount,
+  onColumnFiltersChange,
+  initialColumnFilters,
+  rowCount
 }: DataTableProps<TData, TValue>) {
-  const [rowSelection, setRowSelection] = React.useState({})
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
-  const [sorting, setSorting] = React.useState<SortingState>([])
-  const [expanded, setExpanded] = React.useState<ExpandedState>({})
-  const [pagination, setPagination] = React.useState({ pageIndex: pg.pageIndex, pageSize: pg.pageSize })
+  const [rowSelection, setRowSelection] = React.useState({});
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<VisibilityState>({});
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(initialColumnFilters ?? []
+  );
+  const [sorting, setSorting] = React.useState<SortingState>([]);
+  const [expanded, setExpanded] = React.useState<ExpandedState>({});
+  const [pagination, setPagination] = React.useState({
+    pageIndex: pg.pageIndex,
+    pageSize: pg.pageSize
+  });
 
   React.useEffect(() => {
-    onPaginationChange?.(pagination)
-  }, [onPaginationChange, pagination])
+    onPaginationChange?.(pagination);
+  }, [onPaginationChange, pagination]);
+
+  React.useEffect(() => {
+    onColumnFiltersChange?.(columnFilters);
+  }, [onColumnFiltersChange, columnFilters]);
 
   const table = useReactTable({
     data,
@@ -81,9 +94,10 @@ export function DataTable<TData extends NonNullable<GetOrgMembers["data"]>["data
     defaultColumn: {
       minSize: 1,
       maxSize: 200,
-      size: 20,
+      size: 20
     },
     manualPagination: true,
+    manualFiltering: true,
     onPaginationChange: setPagination,
     enableExpanding: true,
     getExpandedRowModel: getExpandedRowModel(),
@@ -98,9 +112,9 @@ export function DataTable<TData extends NonNullable<GetOrgMembers["data"]>["data
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFacetedRowModel: getFacetedRowModel(),
-    getFacetedUniqueValues: getFacetedUniqueValues(),
-  })
-  
+    getFacetedUniqueValues: getFacetedUniqueValues()
+  });
+
   return (
     <div className="space-y-4">
       <DataTableToolbar table={table} />
@@ -123,25 +137,25 @@ export function DataTable<TData extends NonNullable<GetOrgMembers["data"]>["data
                               header.getContext()
                             )}
                         </TableHead>
-                      )
+                      );
                     }}
                   />
                 </TableRow>
               )}
             />
           </TableHeader>
-          <TableBody style={{width: "100%"}}>
+          <TableBody style={{ width: "100%" }}>
             <Each
               of={table.getRowModel().rows}
               render={(row) => (
                 <>
-                  <TableRow
-                    data-state={row.getIsSelected() && "selected"}
-                  >
+                  <TableRow data-state={row.getIsSelected() && "selected"}>
                     <Each
                       of={row.getVisibleCells()}
                       render={(cell) => (
-                        <TableCell style={{width: `${cell.column.getSize()}%`}}>
+                        <TableCell
+                          style={{ width: `${cell.column.getSize()}%` }}
+                        >
                           {flexRender(
                             cell.column.columnDef.cell,
                             cell.getContext()
@@ -149,8 +163,7 @@ export function DataTable<TData extends NonNullable<GetOrgMembers["data"]>["data
                         </TableCell>
                       )}
                     />
-                   
-                  </TableRow >
+                  </TableRow>
                   {row.getIsExpanded() && (
                     <TableRow>
                       <TableCell colSpan={row.getVisibleCells().length}>
@@ -159,37 +172,89 @@ export function DataTable<TData extends NonNullable<GetOrgMembers["data"]>["data
                             of={row.original.OrganizationRole.requirements}
                             fallback="No additional requirements needed for this role."
                             render={(requirements) => {
-                              if(requirements === "student_record") {
+                              if (requirements === "student_record") {
                                 return (
                                   <>
-                                    <h2 className="text-lg font-semibold">Student Record</h2>
-                                    <Separator/>
+                                    <h2 className="text-lg font-semibold">
+                                      Student Record
+                                    </h2>
+                                    <Separator />
                                     <div className="grid grid-cols-2 lg:grid-cols-3 gap-1">
-                                      <Each 
+                                      <Each
                                         of={row.original.User.StudentRecords}
                                         fallback="No student record found."
                                         render={(studentRecord) => {
                                           return (
                                             <>
-                                              <LabelValue className="flex items-baseline gap-2" value="Student ID No:" label={studentRecord.studentId ?? "N/A"}/>
-                                              <LabelValue className="flex items-baseline gap-2" value="Learner Ref. No.:" label={studentRecord.lrn ?? "N/A"}/>
-                                              <LabelValue className="flex items-baseline gap-2" value="Student Level:" label={studentRecord.Level?.name}/>
-                                              <LabelValue className="flex items-baseline gap-2" value="Year/Grade Level:" label={studentRecord.OrganizationYearLevel?.name ?? "N/A"}/>
-                                              <LabelValue className="flex items-baseline gap-2" value="Program/Strand:" label={studentRecord.Program?.name ?? "N/A"}/>
-                                              <LabelValue className="flex items-baseline gap-2" value="Department:" label={studentRecord.Department?.name ?? "N/A"}/>
-                                              <LabelValue className="flex items-baseline gap-2" value="College:" label={studentRecord.College?.name ?? "N/A"}/>
+                                              <LabelValue
+                                                className="flex items-baseline gap-2"
+                                                value="Student ID No:"
+                                                label={
+                                                  studentRecord.studentId ??
+                                                  "N/A"
+                                                }
+                                              />
+                                              <LabelValue
+                                                className="flex items-baseline gap-2"
+                                                value="Learner Ref. No.:"
+                                                label={
+                                                  studentRecord.lrn ?? "N/A"
+                                                }
+                                              />
+                                              <LabelValue
+                                                className="flex items-baseline gap-2"
+                                                value="Student Level:"
+                                                label={
+                                                  studentRecord.Level?.name
+                                                }
+                                              />
+                                              <LabelValue
+                                                className="flex items-baseline gap-2"
+                                                value="Year/Grade Level:"
+                                                label={
+                                                  studentRecord
+                                                    .OrganizationYearLevel
+                                                    ?.name ?? "N/A"
+                                                }
+                                              />
+                                              <LabelValue
+                                                className="flex items-baseline gap-2"
+                                                value="Program/Strand:"
+                                                label={
+                                                  studentRecord.Program?.name ??
+                                                  "N/A"
+                                                }
+                                              />
+                                              <LabelValue
+                                                className="flex items-baseline gap-2"
+                                                value="Department:"
+                                                label={
+                                                  studentRecord.Department
+                                                    ?.name ?? "N/A"
+                                                }
+                                              />
+                                              <LabelValue
+                                                className="flex items-baseline gap-2"
+                                                value="College:"
+                                                label={
+                                                  studentRecord.College?.name ??
+                                                  "N/A"
+                                                }
+                                              />
                                             </>
-                                          )
+                                          );
                                         }}
                                       />
                                     </div>
                                   </>
-                                )
+                                );
                               }
-                              if(requirements === "employee_record") {
+                              if (requirements === "employee_record") {
                                 return (
                                   <>
-                                    <h2 className="text-lg font-semibold">Employee Record</h2>
+                                    <h2 className="text-lg font-semibold">
+                                      Employee Record
+                                    </h2>
                                     <Separator />
                                     <div className="grid grid-cols-2 lg:grid-cols-3 gap-1">
                                       <Each
@@ -198,19 +263,58 @@ export function DataTable<TData extends NonNullable<GetOrgMembers["data"]>["data
                                         render={(employee) => {
                                           return (
                                             <>
-                                              <LabelValue className="flex items-baseline gap-2" value="Employee ID No:" label={employee?.employeeId ?? "N/A"}/>
-                                              <LabelValue className="flex items-baseline gap-2" value="Position:" label={employee?.position ?? "N/A"}/>
-                                              <LabelValue className="flex items-baseline gap-2" value="Designation:" label={employee?.designation ?? "N/A"}/>
-                                              <LabelValue className="flex items-baseline gap-2" value="Office:" label={employee?.Office?.name ?? "N/A" }/>
-                                              <LabelValue className="flex items-baseline gap-2" value="Department:" label={employee?.Department?.name ?? "N/A"}/>
-                                              <LabelValue className="flex items-baseline gap-2" value="College:" label={employee?.College?.name ?? "N/A"}/>
+                                              <LabelValue
+                                                className="flex items-baseline gap-2"
+                                                value="Employee ID No:"
+                                                label={
+                                                  employee?.employeeId ?? "N/A"
+                                                }
+                                              />
+                                              <LabelValue
+                                                className="flex items-baseline gap-2"
+                                                value="Position:"
+                                                label={
+                                                  employee?.position ?? "N/A"
+                                                }
+                                              />
+                                              <LabelValue
+                                                className="flex items-baseline gap-2"
+                                                value="Designation:"
+                                                label={
+                                                  employee?.designation ?? "N/A"
+                                                }
+                                              />
+                                              <LabelValue
+                                                className="flex items-baseline gap-2"
+                                                value="Office:"
+                                                label={
+                                                  employee?.Office?.name ??
+                                                  "N/A"
+                                                }
+                                              />
+                                              <LabelValue
+                                                className="flex items-baseline gap-2"
+                                                value="Department:"
+                                                label={
+                                                  employee?.Department?.name ??
+                                                  "N/A"
+                                                }
+                                              />
+                                              <LabelValue
+                                                className="flex items-baseline gap-2"
+                                                value="College:"
+                                                label={
+                                                  employee?.College?.name ??
+                                                  "N/A"
+                                                }
+                                              />
                                             </>
-                                          )
+                                          );
                                         }}
                                       />
                                     </div>
                                   </>
-                                )
+                                );
                               }
                             }}
                           />
@@ -220,21 +324,21 @@ export function DataTable<TData extends NonNullable<GetOrgMembers["data"]>["data
                   )}
                 </>
               )}
-              fallback={(
+              fallback={
                 <TableRow>
                   <TableCell
                     colSpan={columns.length}
                     className="h-24 text-center"
                   >
-                  No results.
+                    No results.
                   </TableCell>
                 </TableRow>
-              )}
+              }
             />
           </TableBody>
         </Table>
       </div>
       <DataTablePagination table={table} />
     </div>
-  )
+  );
 }

@@ -15,7 +15,7 @@ import MembershipTableRowActions from "./MembershipTableRowActions"
 import dayjs from "@lib/day-utils"
 import { GetOrgMembers } from "@/actions/organizations/org-member.action"
 
-export const statuses = Object.values({ACTIVE: "ACTIVE", INACTIVE:"INACTIVE", PENDING: "PENDING", SUSPENDED:"SUSPENDED"}).map((status) => ({
+export const statuses = Object.values({ ACTIVE: "ACTIVE", INACTIVE: "INACTIVE", PENDING: "PENDING", SUSPENDED: "SUSPENDED" }).map((status) => ({
   label: status.split("").map((char, index) => (index === 0 ? char : char.toLowerCase())).join(""),
   value: status,
 }))
@@ -44,10 +44,10 @@ export const columns: ColumnDef<NonNullable<GetOrgMembers["data"]>["data"][numbe
           className="translate-y-[2px]"
         /> */}
         {
-          <Button 
+          <Button
             onClick={() => row.toggleExpanded()}
             size="icon" variant="ghost"
-          >{row.getIsExpanded()? <ChevronDown size={20}/>:<ChevronRight size={20}/>}
+          >{row.getIsExpanded() ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
           </Button>
         }
       </div>
@@ -85,7 +85,7 @@ export const columns: ColumnDef<NonNullable<GetOrgMembers["data"]>["data"][numbe
     ),
     cell: ({ row }) => {
       const user = `${row.original.User?.firstName} ${row.original.User?.lastName}`
-      
+
       if (!user) {
         return null
       }
@@ -102,18 +102,18 @@ export const columns: ColumnDef<NonNullable<GetOrgMembers["data"]>["data"][numbe
 
           </ConditionalRender>
           <div>
-            <Link 
+            <Link
               target="_blank"
-              href={`/user/${row.original.User?.userId}/phr`} 
+              href={`/user/${row.original.User?.userId}/phr`}
               className="hover:underline cursor-pointer line-clamp-1"
             >
-              {user} <ExternalLink className="w-4 h-4 ml-3 inline-block"/>
+              {user} <ExternalLink className="w-4 h-4 ml-3 inline-block" />
             </Link>
             <ConditionalRender condition={!!gender && !!dob}>
               <div className="text-xs text-muted-foreground">{gender && gender.charAt(0)} / {dob && differenceInCalendarYears(new Date(), dob)}</div>
             </ConditionalRender>
           </div>
-          
+
         </div>
       )
     }
@@ -127,7 +127,7 @@ export const columns: ColumnDef<NonNullable<GetOrgMembers["data"]>["data"][numbe
     ),
     cell: ({ row }) => {
       const user = `${row.original.AcceptedBy?.firstName ?? "-"} ${row.original.AcceptedBy?.lastName ?? "-"}`
-      
+
       if (!user) {
         return null
       }

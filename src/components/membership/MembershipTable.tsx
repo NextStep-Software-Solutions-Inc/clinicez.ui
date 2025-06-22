@@ -7,6 +7,7 @@ import { useOrgMembers } from "@/hooks/useOrgMember";
 import PageLoading from "@components/PageLoading";
 import { useSearchParams } from "next/navigation";
 import { ColumnFiltersState } from "@tanstack/react-table";
+import debounce from "lodash/debounce";
 import { OrganizationMemberStatus } from "@/types";
 
 interface MembershipTableProps {
@@ -21,22 +22,29 @@ export const MembershipTable = ({ orgUid }: MembershipTableProps) => {
 
   const role = searchParams.get("role") || "";
   const statusParam = searchParams.get("status");
+  const user = searchParams.get("user") || "";
 
   const isValidStatus = (value: any): value is OrganizationMemberStatus =>
     ["ACTIVE", "SUSPENDED", "PENDING", "INACTIVE"].includes(value);
 
   const status = isValidStatus(statusParam) ? statusParam : undefined;
 
-  const columnFilters: ColumnFiltersState = [];
+  const columnFilters = React.useMemo<ColumnFiltersState>(() => {
+    const filters: ColumnFiltersState = [];
 
-  if (role) columnFilters.push({ id: "role", value: [role] });
-  if (status && isValidStatus(status)) columnFilters.push({ id: "status", value: [status] });
+    if (user) filters.push({ id: "user", value: user });
+    if (role) filters.push({ id: "role", value: [role] });
+    if (status) filters.push({ id: "status", value: [status] });
+
+    return filters;
+  }, [user, role, status]);
 
 
   const { data: membershipRequests, isLoading } = useOrgMembers({
     orgUid,
     pageSize,
     pageNumber,
+    searchKey: user || undefined,
     roleId: role ? Number(role) : undefined,
     status,
   });
@@ -44,35 +52,39 @@ export const MembershipTable = ({ orgUid }: MembershipTableProps) => {
   const pushQueryParams = (
     page: number,
     pageSize: number,
-    filters: Record<string, string>
+    filters: ColumnFiltersState
   ) => {
     const params = new URLSearchParams();
     params.set("pageNumber", page.toString());
     params.set("pageSize", pageSize.toString());
 
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value) params.set(key, value);
+    filters.forEach(({ id, value }) => {
+      if (!value || (Array.isArray(value) && value.length === 0)) {
+        params.delete(id);
+      } else {
+        if (Array.isArray(value)) {
+          params.set(id, String(value[0]));
+        } else if (typeof value === "string" || typeof value === "number") {
+          params.set(id, String(value));
+        } else {
+          console.warn(`Skipping unsupported filter value for ${id}:`, value);
+        }
+      }
     });
 
-    window.history.pushState({}, "", `${window.location.pathname}?${params}`);
+    window.history.pushState({}, "", `${window.location.pathname}?${params.toString()}`);
   };
 
   const handlePaginationChange = useCallback(
     (pagination: { pageIndex: number; pageSize: number }) => {
-      pushQueryParams(pagination.pageIndex + 1, pagination.pageSize, {
-        role,
-        status: status ?? "",
-      });
+      pushQueryParams(pagination.pageIndex + 1, pagination.pageSize, columnFilters);
     },
-    [role, status]
+    [columnFilters]
   );
 
-  const handleFilterChange = useCallback(
-    (filters: Record<string, string>) => {
-      pushQueryParams(pageNumber, pageSize, filters);
-    },
-    [pageNumber, pageSize]
-  );
+  const handleFilterChange = debounce((filters: ColumnFiltersState) => {
+    pushQueryParams(pageNumber, pageSize, filters);
+  }, 500);
 
   if (isLoading)
     return <PageLoading label="Fetching membership data. Please wait..." />;
@@ -83,9 +95,9 @@ export const MembershipTable = ({ orgUid }: MembershipTableProps) => {
       columns={columns}
       rowCount={membershipRequests?.data?.total ?? 0}
       pagination={{ pageIndex: pageNumber - 1, pageSize }}
-      onPaginationChange={handlePaginationChange}
-      onFilterChange={handleFilterChange}
       initialColumnFilters={columnFilters}
+      onPaginationChange={handlePaginationChange}
+      onColumnFiltersChange={handleFilterChange}
     />
   );
 };

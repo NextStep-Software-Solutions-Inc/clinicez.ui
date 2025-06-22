@@ -141,7 +141,7 @@ export const ContactItem = ({ contact, readOnly }: {
             <FormItem className="w-full">
               <FormLabel>Contact Number</FormLabel>
               <FormControl>
-                <Input placeholder="09000" {...field} type="number" inputMode="tel" />
+                <Input placeholder="09000" {...field} type="text" inputMode="tel" />
               </FormControl>
               <FormDescription>
               The phone number of the person you want to be contacted in case of emergency.

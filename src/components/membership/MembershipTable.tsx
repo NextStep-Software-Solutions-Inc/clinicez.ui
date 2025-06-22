@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { DataTable } from "./data-table";
 import { columns } from "./columns";
 import { useOrgMembers } from "@/hooks/useOrgMember";
@@ -20,33 +20,32 @@ export const MembershipTable = ({ orgUid }: MembershipTableProps) => {
   const pageNumber = Number(searchParams.get("pageNumber")) || 1;
   const pageSize = Number(searchParams.get("pageSize")) || 10;
 
-  const role = searchParams.get("role") || "";
-  const statusParam = searchParams.get("status");
+  const roleIds = searchParams.getAll("roleId");
+  const statuses = searchParams.getAll("status");
   const user = searchParams.get("user") || "";
 
-  const isValidStatus = (value: any): value is OrganizationMemberStatus =>
+  const validateMembershipStatus = (value: unknown): value is OrganizationMemberStatus =>
+    typeof value === "string" &&
     ["ACTIVE", "SUSPENDED", "PENDING", "INACTIVE"].includes(value);
 
-  const status = isValidStatus(statusParam) ? statusParam : undefined;
-
-  const columnFilters = React.useMemo<ColumnFiltersState>(() => {
+  const columnFilters = useMemo<ColumnFiltersState>(() => {
     const filters: ColumnFiltersState = [];
-
     if (user) filters.push({ id: "user", value: user });
-    if (role) filters.push({ id: "role", value: [role] });
-    if (status) filters.push({ id: "status", value: [status] });
-
+    if (roleIds.length > 0) filters.push({ id: "roleId", value: roleIds });
+    const validStatuses = statuses.filter(validateMembershipStatus);
+    if (validStatuses.length > 0) filters.push({ id: "status", value: validStatuses });
     return filters;
-  }, [user, role, status]);
+  }, [user, roleIds, statuses]);
 
+  const [activeFilters, setActiveFilters] = useState<ColumnFiltersState>(columnFilters);
 
   const { data: membershipRequests, isLoading } = useOrgMembers({
     orgUid,
     pageSize,
     pageNumber,
+    roleId: roleIds.length ? Number(roleIds[0]) : undefined,
     searchKey: user || undefined,
-    roleId: role ? Number(role) : undefined,
-    status,
+    status: statuses.find(validateMembershipStatus),
   });
 
   const pushQueryParams = (
@@ -59,30 +58,25 @@ export const MembershipTable = ({ orgUid }: MembershipTableProps) => {
     params.set("pageSize", pageSize.toString());
 
     filters.forEach(({ id, value }) => {
-      if (!value || (Array.isArray(value) && value.length === 0)) {
-        params.delete(id);
+      if (Array.isArray(value)) {
+        value.forEach((v) => params.append(id, String(v)));
       } else {
-        if (Array.isArray(value)) {
-          params.set(id, String(value[0]));
-        } else if (typeof value === "string" || typeof value === "number") {
-          params.set(id, String(value));
-        } else {
-          console.warn(`Skipping unsupported filter value for ${id}:`, value);
-        }
+        params.set(id, String(value));
       }
     });
 
-    window.history.pushState({}, "", `${window.location.pathname}?${params.toString()}`);
+    window.history.replaceState({}, "", `${window.location.pathname}?${params.toString()}`);
   };
 
   const handlePaginationChange = useCallback(
     (pagination: { pageIndex: number; pageSize: number }) => {
-      pushQueryParams(pagination.pageIndex + 1, pagination.pageSize, columnFilters);
+      pushQueryParams(pagination.pageIndex + 1, pagination.pageSize, activeFilters);
     },
-    [columnFilters]
+    [activeFilters]
   );
 
   const handleFilterChange = debounce((filters: ColumnFiltersState) => {
+    setActiveFilters(filters);
     pushQueryParams(pageNumber, pageSize, filters);
   }, 500);
 

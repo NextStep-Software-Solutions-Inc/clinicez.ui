@@ -12,12 +12,13 @@ import { getPermissionsAction } from "@actions/permission.action";
 import { PERMISSIONS } from "@lib/permissions";
 import { OrganizationMemberStatus } from "@/types";
 import { withErrorHandling } from "@/lib/with-error-handling";
+import { parseObject } from '@/lib/utils';
 
 export type GetOrgMembersFilters = {
   userId?: string;
   orgUid?: string;
-  status?: OrganizationMemberStatus;
-  roleId?: number;
+  status?: OrganizationMemberStatus[];
+  role?: string[];
   pageNumber?: number;
   pageSize?: number;
   distinct?: boolean;
@@ -31,15 +32,21 @@ export const getOrgMembersAction = withErrorHandling(
     const session = await getCachedSession();
     if (!session) throw new Error("User not authenticated.");
 
-    const { userId, orgUid, status, distinct, clinicUid } = filter || {};
+    const { userId, orgUid, distinct, clinicUid } = filter || {};
 
-    const castToNumber = (value: string | null | undefined | number) =>
-      value ? Number(value) : undefined;
+    const castToNumber = (value: string | number) => Number(value);
 
-    const pageSize = castToNumber(filter?.pageSize);
-    const pageNumber = castToNumber(filter?.pageNumber);
-    const roleId = castToNumber(filter?.roleId);
+    const pageSize = filter?.pageSize ? castToNumber(filter.pageSize) : undefined;
+    const pageNumber = filter?.pageNumber ? castToNumber(filter.pageNumber) : undefined;
+    const normalizeToArray = <T>(val: T | T[] | undefined): T[] => {
+      if (val === undefined) return [];
+      return Array.isArray(val) ? val : [val];
+    };
 
+    const roles = normalizeToArray(filter?.role);
+    const statuses = normalizeToArray(filter?.status).filter(
+      (status) => ["ACTIVE", "SUSPENDED", "PENDING", "INACTIVE"].includes(status)
+    );
     const paginatedData = await prisma.$transaction(
       async (prisma) => {
         const userOrganizations = await prisma.organizationMember.findMany({
@@ -92,8 +99,8 @@ export const getOrgMembersAction = withErrorHandling(
                 ]
               } : {})
             },
-            ...(roleId ? { roleId } : {}),
-            ...(status ? { status } : {})
+            ...(roles.length > 0 ? { OrganizationRole: { name: { in: roles } } } : {}),
+            ...(statuses.length > 0 ? { status: { in: statuses } } : {}),
           },
           select: {
             id: true,
@@ -205,8 +212,8 @@ export const getOrgMembersAction = withErrorHandling(
 
         const total = await prisma.organizationMember.count({
           where: {
-            ...(roleId ? { roleId } : {}),
-            ...(status ? { status } : {}),
+            ...(statuses.length > 0 ? { status: { in: statuses } } : {}),
+            ...(roles.length > 0 ? { OrganizationRole: { name: { in: roles } } } : {}),
             Organization: {
               isActive: true,
               ...(orgUid ? { orgUid } : {})

@@ -20,7 +20,7 @@ export const MembershipTable = ({ orgUid }: MembershipTableProps) => {
   const pageNumber = Number(searchParams.get("pageNumber")) || 1;
   const pageSize = Number(searchParams.get("pageSize")) || 10;
 
-  const roleIds = searchParams.getAll("roleId");
+  const roles = searchParams.getAll("role");
   const statuses = searchParams.getAll("status");
   const user = searchParams.get("user") || "";
 
@@ -31,21 +31,24 @@ export const MembershipTable = ({ orgUid }: MembershipTableProps) => {
   const columnFilters = useMemo<ColumnFiltersState>(() => {
     const filters: ColumnFiltersState = [];
     if (user) filters.push({ id: "user", value: user });
-    if (roleIds.length > 0) filters.push({ id: "roleId", value: roleIds });
+    if (roles.length > 0) filters.push({ id: "role", value: roles });
     const validStatuses = statuses.filter(validateMembershipStatus);
     if (validStatuses.length > 0) filters.push({ id: "status", value: validStatuses });
     return filters;
-  }, [user, roleIds, statuses]);
+  }, [user, roles, statuses]);
 
   const [activeFilters, setActiveFilters] = useState<ColumnFiltersState>(columnFilters);
+
+  const roleArray = columnFilters.find(filter => filter.id === "role")?.value as string[] | undefined;
+  const statusArray = columnFilters.find(filter => filter.id === "status")?.value as OrganizationMemberStatus[] | undefined;
 
   const { data: membershipRequests, isLoading } = useOrgMembers({
     orgUid,
     pageSize,
     pageNumber,
-    roleId: roleIds.length ? Number(roleIds[0]) : undefined,
     searchKey: user || undefined,
-    status: statuses.find(validateMembershipStatus),
+    role: roleArray,
+    status: statusArray,
   });
 
   const pushQueryParams = (

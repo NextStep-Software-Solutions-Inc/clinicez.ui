@@ -29,6 +29,7 @@ import { uploadMediaAction } from "@actions/blob.action";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import { useFileTypes } from "@hooks/useFileType";
 import { heic2Jpeg, renameFile } from "@/lib/file-manipulation";
+import { compressImageAsync } from "@/lib/image-compression";
 
 interface UploadFileFormProps {
     folder: {
@@ -81,11 +82,11 @@ export default function UploadFileForm({folder}: UploadFileFormProps) {
       
       if (file.type === 'image/heic' || file.type === 'image/heif') {
         file = await heic2Jpeg(file);
-        formData.set('media', file);
       } else {
-        file = await renameFile(file);
-        formData.set('media', file);
+        file = renameFile(file);
       }
+      const compressedFile: File = await compressImageAsync(file);
+      formData.set('media', compressedFile);
       toast.promise(uploadMediaAction(formData), {
         loading: "Uploading...",
         success: ({url}) => {

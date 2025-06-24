@@ -7,6 +7,6 @@ function revalidate() {
   revalidatePath("/user/[user]/phr/files/page", "page");
 }
 
-export default function Folder() {
+export default function CreateFolder() {
   return <CreateFolderModal onCreated={revalidate} />
 }

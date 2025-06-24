@@ -155,6 +155,9 @@ importers:
       googleapis:
         specifier: ^144.0.0
         version: 144.0.0
+      heic2any:
+        specifier: ^0.0.4
+        version: 0.0.4
       jotai:
         specifier: ^2.9.0
         version: 2.9.0(@types/react@18.3.3)(react@18.3.1)
@@ -3236,6 +3239,9 @@ packages:
   hasown@2.0.2:
     resolution: {integrity: sha512-0hJU9SCPvmMzIBdZFqNPXWa6dqh7WdH0cII9y+CyS8rG3nL48Bclra9HmKhVVUHyPWNH5Y7xDwAB7bfgSjkUMQ==}
     engines: {node: '>= 0.4'}
+
+  heic2any@0.0.4:
+    resolution: {integrity: sha512-3lLnZiDELfabVH87htnRolZ2iehX9zwpRyGNz22GKXIu0fznlblf0/ftppXKNqS26dqFSeqfIBhAmAj/uSp0cA==}
 
   howler@2.2.4:
     resolution: {integrity: sha512-iARIBPgcQrwtEr+tALF+rapJ8qSc+Set2GJQl7xT1MQzWaVkFebdJhR3alVlSiUf5U7nAANKuj3aWpwerocD5w==}
@@ -8542,6 +8548,8 @@ snapshots:
   hasown@2.0.2:
     dependencies:
       function-bind: 1.1.2
+
+  heic2any@0.0.4: {}
 
   howler@2.2.4: {}
 

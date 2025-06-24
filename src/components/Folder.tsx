@@ -6,9 +6,9 @@ import Suspend from "@components/Suspend";
 import dynamic from "next/dynamic"
 import { FolderIcon, MoreVertical } from "lucide-react";
 import ConditionalRender from "./utils/ConditionalRender";
-import FolderSettingSheet from "./FolderSettingSheet";
 import { Button } from "./ui/button";
 import UpdateFolderModal from "@components/files/modals/UpdateFolderModal";
+import DeleteFolder from "@/components/DeleteFolder";
 
 const UploadFileModal = dynamic(() => import("@components/files/modals/UploadFileModal"));
 
@@ -44,15 +44,16 @@ export default async function Folder({folder, readOnly}: FolderProps) {
             <div className="ml-auto flex flex-grow sm:flex-grow-0 items-center gap-2">
               <Suspend>
                 <UploadFileModal folder={folder}/>
-                <FolderSettingSheet record={{
+                <DeleteFolder record={{
                   id: folder.id,
                   subject: folder.name,
                   settings: {
                     isPublic: folder.isPublic ?? false
                   }
-                }} >
+                }}>
+                
                   <Button size="icon" variant="ghost"><MoreVertical/></Button>
-                </FolderSettingSheet>
+                </DeleteFolder>
               </Suspend>
             </div>
           </ConditionalRender>

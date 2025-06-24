@@ -41,7 +41,7 @@ interface DataTableProps<TData, TValue> {
   data: TData[],
   options?: ConsultationTableOptions
   onOptionsChange?: (options: ConsultationTableOptions) => void
-  initialColumnFilters?: { id: string; value: string[] }[];
+  initialColumnFilters?: ColumnFiltersState;
 }
 
 export function DataTable<TData extends NonNullable<GetConsultationTickets["data"]>[number], TValue>({

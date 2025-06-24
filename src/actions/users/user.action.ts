@@ -239,7 +239,7 @@ export const createUserAction = withErrorHandling(async (payload: CreateUserPayl
     message: "User created successfully",
     data: newUser
   }
-}, (error) => {
+}, async (error) => {
   return "Failed to create user";
 })
 

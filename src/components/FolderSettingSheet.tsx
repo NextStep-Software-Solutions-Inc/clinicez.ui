@@ -31,7 +31,8 @@ import { toast } from "sonner"
 import { updateFolderSettingAction } from "@actions/folder-setting.action"
 import ConditionalRender from "./utils/ConditionalRender"
 import { deleteFolderAction } from "@actions/folder.action"
-interface FolderSettingSheetProps extends DialogProps {
+import { useRef } from "react"
+export interface FolderSettingSheetProps extends DialogProps {
   children?: React.ReactNode;
   record: {
     id: number;
@@ -40,6 +41,7 @@ interface FolderSettingSheetProps extends DialogProps {
       isPublic: boolean;
     }
   }
+  onDeleted?: () => void;
 }
 
 const privacySchema = z.object({
@@ -48,8 +50,9 @@ const privacySchema = z.object({
 
 type PrivacySchema = z.infer<typeof privacySchema>
 
-export default  function FolderSettingSheet({ children, record, ...res }: FolderSettingSheetProps) {
-    
+export default  function FolderSettingSheet({ children, record, onDeleted, ...res }: FolderSettingSheetProps) {
+
+  const closeSheetRef = useRef<HTMLButtonElement>(null);
   const action = async () => {
     form.handleSubmit(async (data) => {
       toast.promise(updateFolderSettingAction(record.id, data.isPublic), {
@@ -66,6 +69,8 @@ export default  function FolderSettingSheet({ children, record, ...res }: Folder
     toast.promise(deleteFolderAction(record.id), {
       loading: "Deleting...",
       success: () => {
+        onDeleted?.();
+        closeSheetRef.current?.click();
         return "Folder deleted"
       },
       error: "Failed to delete folder"
@@ -145,7 +150,7 @@ export default  function FolderSettingSheet({ children, record, ...res }: Folder
         
         <SheetFooter className="mt-5">
           <SheetClose asChild>
-            <Button variant="outline" type="button">Close</Button>
+            <Button variant="outline" type="button" ref={closeSheetRef}>Close</Button>
           </SheetClose>
         </SheetFooter>
       </SheetContent>

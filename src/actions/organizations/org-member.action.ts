@@ -360,7 +360,7 @@ export const setMembershipRequestStatusAction = withErrorHandling(
       data: null
     };
   },
-  (error) => {
+  async (error) => {
     if (error instanceof Error) return error.message;
     return "Error updating membership request status";
   }

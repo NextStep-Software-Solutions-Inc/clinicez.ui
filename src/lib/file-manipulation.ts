@@ -1,15 +1,17 @@
 import heic2any from "heic2any";
+import { compressImageAsync } from "./image-compression";
 
 function uniqueFileName(originalName: string, newExtension = "jpg") {
   const baseName = originalName.substring(0, originalName.lastIndexOf('.'));
   return `${baseName.replace(/\s+/g, '_')}_${Date.now()}.${newExtension}`;
 }
 
-export const renameFile = (file: File): File => {
+export const renameFile = async (file: File): Promise<File> => {
+  const compressed = await compressImageAsync(file);
   const formattedName = uniqueFileName(file.name);
-  return new File([file], formattedName, {
-    type: file.type,
-    lastModified: file.lastModified,
+  return new File([compressed], formattedName, {
+    type: compressed.type,
+    lastModified: Date.now(),
   });
 };
 
@@ -20,7 +22,8 @@ export const heic2Jpeg = async (image: File): Promise<File> => {
     quality: 0.8,
   }) as Blob;
 
-  return formatFileName(blob, image.name);
+  const compressedFile = await compressImageAsync(formatFileName(blob, image.name));
+  return compressedFile;
 };
 
 export const formatFileName = (blob: Blob, originalName: string): File => {

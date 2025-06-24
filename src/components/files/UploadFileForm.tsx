@@ -20,8 +20,8 @@ import {
 
 import Each from "@components/utils/Each";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { format, isValid, startOfToday, subMonths } from "date-fns";
-import { useMemo, useRef, useState } from "react"
+import { format, isValid, isWithinInterval, startOfToday, subMonths } from "date-fns";
+import { useRef } from "react"
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -56,9 +56,13 @@ export default function UploadFileForm({folder}: UploadFileFormProps) {
     }),
     dateTaken: z.date({
       message: "Please select a date"
-    }).refine(date => date >= subMonths(startOfToday(), 6) && date <= startOfToday(), {
-      message: "Date must be within the last 6 months.",
-    }),
+    }).refine(date =>
+      isWithinInterval(date, {
+        start: subMonths(startOfToday(), 6),
+        end: new Date(),
+      }),
+    { message: "Date must be within the last 6 months." }
+    ),
     fileTypeId: z.coerce.number({
       message: "Please select a file type",
       required_error: "File type is required"
@@ -79,7 +83,7 @@ export default function UploadFileForm({folder}: UploadFileFormProps) {
         file = await heic2Jpeg(file);
         formData.set('media', file);
       } else {
-        file = renameFile(file);
+        file = await renameFile(file);
         formData.set('media', file);
       }
       toast.promise(uploadMediaAction(formData), {

@@ -20,8 +20,8 @@ import {
 
 import Each from "@components/utils/Each";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { format, isValid } from "date-fns";
-import { useRef } from "react"
+import { format, isValid, startOfToday, subMonths } from "date-fns";
+import { useMemo, useRef, useState } from "react"
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -41,6 +41,11 @@ interface UploadFileFormProps {
 export default function UploadFileForm({folder}: UploadFileFormProps) {
   
   const user = useUser()
+
+  // minimum of 6 months
+  const minDate = format(subMonths(startOfToday(), 6), "yyyy-MM-dd");
+  const maxDate = format(startOfToday(), "yyyy-MM-dd");
+  
   const { data: fileTypes } = useFileTypes()
   const userId = user?.user?.sub
   const closeBtnRef = useRef<HTMLInputElement>(null)
@@ -51,6 +56,8 @@ export default function UploadFileForm({folder}: UploadFileFormProps) {
     }),
     dateTaken: z.date({
       message: "Please select a date"
+    }).refine(date => date >= subMonths(startOfToday(), 6) && date <= startOfToday(), {
+      message: "Date must be within the last 6 months.",
     }),
     fileTypeId: z.coerce.number({
       message: "Please select a file type",
@@ -164,6 +171,8 @@ export default function UploadFileForm({folder}: UploadFileFormProps) {
                       ? format(field.value, "yyyy-MM-dd"): ""}
                     type="date"
                     placeholder="Select date" 
+                    max={maxDate}
+                    min={minDate}
                   />
                 </FormControl>
                 <FormDescription>

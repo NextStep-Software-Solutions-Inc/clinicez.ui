@@ -33,6 +33,9 @@ export function PersonalInformationForm({readOnly, ...props}: PersonalInformatio
 
   const user = useUser();
 
+  // constant to disables users from accessing future dates
+  const today = new Date().toISOString().split('T')[0];
+
   const form = useForm<PersonalInformationFormValues>({
     resolver: zodResolver(personalInformationFormSchema),
     defaultValues: {
@@ -175,7 +178,8 @@ export function PersonalInformationForm({readOnly, ...props}: PersonalInformatio
                   onChange={e => field.onChange(new Date(e.target.value))}
                   defaultValue={field.value instanceof Date && isValid(field.value) ? format(field.value, "yyyy-MM-dd") : ""}
                   type="date"
-                  placeholder="Select date" 
+                  placeholder="Select date"
+                  max={today} 
                 />
               </FormControl>
               <FormDescription>

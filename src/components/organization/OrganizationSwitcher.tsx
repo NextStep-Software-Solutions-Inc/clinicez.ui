@@ -10,16 +10,16 @@ interface OrganizationSwitcherProps {
 }
 
 
-export function OrganizationSwitcher({isCollapsed,}: OrganizationSwitcherProps) {
-  const {orgUid} = useParams<{orgUid: string}>()
+export function OrganizationSwitcher({ isCollapsed, }: OrganizationSwitcherProps) {
+  const { orgUid } = useParams<{ orgUid: string }>()
   const router = useRouter();
   const pathname = usePathname();
   const user = useUser()
-  const {data: myOrgs} = useOrgMembers({
-    userId: user.user?.sub ?? undefined, 
-    status: "ACTIVE"
-  }, !!user.user?.sub)  
-  
+  const { data: myOrgs } = useOrgMembers({
+    userId: user.user?.sub ?? undefined,
+    status: ["ACTIVE"]
+  }, !!user.user?.sub)
+
   const orgs: SwitcherOptionsType[] = (myOrgs?.data?.data ?? []).filter(o => ["ACTIVE"].includes(o.status))
     .map(org => ({
       label: org.Organization.name,
@@ -34,9 +34,9 @@ export function OrganizationSwitcher({isCollapsed,}: OrganizationSwitcherProps) 
         return acc;
       }
     }, []);
-  
+
   const handleChangeOrganization = (newValue: string) => {
-    const searchParams  = new URLSearchParams(window.location.search);
+    const searchParams = new URLSearchParams(window.location.search);
     router.replace(pathname.replace(orgUid, newValue).concat("?", searchParams.toString()))
   }
 

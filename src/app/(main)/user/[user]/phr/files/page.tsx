@@ -5,11 +5,16 @@ import Suspend from "@components/Suspend"
 import { isUserOwner } from "@lib/org-utils"
 import ConditionalRender from "@components/utils/ConditionalRender"
 import { FilesForm } from "./FilesForm"
-import CreateFolderModal from "@components/files/modals/CreateFolderModal"
+import { revalidatePath } from "@/actions/cache.action"
+import Folder from "../../../../../../components/CreateFolder"
 
 export const metadata: Metadata = {
   title: "Files | PHR",
   description: "These are the files you have uploaded to your PHR."
+}
+
+function revalidate() {
+  revalidatePath(`/user/[user]/phr/files/page`, "page");
 }
 
 async function PHRPage({ params, searchParams }: AppRouterPageRouteOpts) {
@@ -22,7 +27,7 @@ async function PHRPage({ params, searchParams }: AppRouterPageRouteOpts) {
         <div className="flex items-center">
           <h2 className="text-2xl font-bold tracking-tight">Files</h2>
           <ConditionalRender condition={owner}>
-            <CreateFolderModal />
+            <Folder/>
           </ConditionalRender>
         </div>
         <p className="text-sm text-muted-foreground">

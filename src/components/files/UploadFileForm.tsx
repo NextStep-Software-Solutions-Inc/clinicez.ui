@@ -21,15 +21,14 @@ import {
 import Each from "@components/utils/Each";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format, isValid } from "date-fns";
-import { useMemo, useRef, useState } from "react"
+import { useRef } from "react"
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import { uploadMediaAction } from "@actions/blob.action";
 import { useUser } from "@auth0/nextjs-auth0/client";
-import { useOrganizations } from "@/hooks/useOrganization";
 import { useFileTypes } from "@hooks/useFileType";
-import { formatFileName } from "@/lib/file-manipulation";
+import { heic2Jpeg, renameFile } from "@/lib/file-manipulation";
 
 interface UploadFileFormProps {
     folder: {
@@ -67,11 +66,18 @@ export default function UploadFileForm({folder}: UploadFileFormProps) {
     form.handleSubmit(async (data) => {
       if(!userId) throw new Error("User ID is required to upload a file")
       formData.append("directory", `${userId}`)
-      formatFileName(formData);
+      let file = formData.get("media") as File
+      
+      if (file.type === 'image/heic' || file.type === 'image/heif') {
+        file = await heic2Jpeg(file);
+        formData.set('media', file);
+      } else {
+        file = renameFile(file);
+        formData.set('media', file);
+      }
       toast.promise(uploadMediaAction(formData), {
         loading: "Uploading...",
         success: ({url}) => {
-          const file = formData.get("media") as File
           toast.promise(createFileAction({
             fileTypeId: data.fileTypeId,
             ...data.dateTaken ? {dateTaken: data.dateTaken} : {},
@@ -107,7 +113,7 @@ export default function UploadFileForm({folder}: UploadFileFormProps) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>File</FormLabel>
-              <Input id="file" type="file" accept="image/jpeg,image/gif,image/png,application/pdf,image/x-eps" {...field} value={undefined} />
+              <Input id="file" type="file" accept="image/jpeg,image/gif,image/png,application/pdf,image/x-eps, image/heic, image/heif" {...field} value={undefined} />
               <FormDescription>
                 Select the file to upload.
               </FormDescription>

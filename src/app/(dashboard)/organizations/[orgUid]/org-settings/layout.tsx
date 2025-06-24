@@ -3,20 +3,20 @@ import { getCachedSession } from "@actions/session.action";
 import { redirect } from "next/navigation";
 
 interface OrgSettingLayoutProps {
-    children: React.ReactNode;
-    params: {
-        orgUid: string;
-    }
+  children: React.ReactNode;
+  params: {
+    orgUid: string;
+  }
 }
-export default async function OrgSettingLayout({children, params: {orgUid}}:OrgSettingLayoutProps) {
+export default async function OrgSettingLayout({ children, params: { orgUid } }: OrgSettingLayoutProps) {
   const session = await getCachedSession();
   const myRoles = await getOrgMembersAction({
     userId: session?.user.sub,
     orgUid,
-    status: "ACTIVE"
+    status: ["ACTIVE"]
   })
-  
-  if(!myRoles.data?.data?.some(role => role.OrganizationRole.name.toLocaleLowerCase() === "admin")) redirect("/unauthorized");
+
+  if (!myRoles.data?.data?.some(role => role.OrganizationRole.name.toLocaleLowerCase() === "admin")) redirect("/unauthorized");
   return (
     <>{children}</>
   );

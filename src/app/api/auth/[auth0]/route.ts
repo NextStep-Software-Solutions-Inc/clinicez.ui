@@ -10,7 +10,6 @@ export const GET = handleAuth({
   async callback(req: NextApiRequest, res: NextApiResponse) {
     try {
       const { redirectUri } = getUrls(req);
-      console.log({ redirectUri });
       return await handleCallback(req, res, { redirectUri: redirectUri });
     } catch (error: unknown) {
       if (typeof error === 'object' && error !== null && 'status' in error && 'message' in error) {
@@ -63,7 +62,7 @@ export const GET = handleAuth({
   },
   async logout(req: NextApiRequest, res: NextApiResponse) {
     const { returnTo } = getUrls(req);
-    await handleLogout(req, res, {
+    return await handleLogout(req, res, {
       returnTo: returnTo
     });
   }

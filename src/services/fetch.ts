@@ -4,12 +4,12 @@ import { jotaiStore } from "@state/store";
 
 type CustomRequestInit = RequestInit
 type CreateFetchOptions = CustomRequestInit & {
-  baseUrl: string;
+  baseUrl?: string;
 }
 
 export const createCustomFetch = (options: CreateFetchOptions) => {
   if (!options.baseUrl) {
-    throw new Error('baseUrl is required')
+    console.warn("Base URL is not defined. Using relative URLs may lead to unexpected behavior.");
   }
 
   type RequestOptionsType = RequestInit & {
@@ -38,7 +38,7 @@ export const createCustomFetch = (options: CreateFetchOptions) => {
         Authorization: `${type} ${token}`
       }
     }
-    const urlWithParams = `${options.baseUrl}${url}${createSearchParams(init?.params)}`
+    const urlWithParams = `${options.baseUrl ? options.baseUrl : ''}${url}${createSearchParams(init?.params)}`
     const res = await fetchWithAutoRefresh(urlWithParams, mergedOptions)
     if(!res.ok) {
       throw new Error(`Failed to fetch ${urlWithParams}`)

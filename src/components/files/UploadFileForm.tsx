@@ -20,16 +20,16 @@ import {
 
 import Each from "@components/utils/Each";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { format, isValid, startOfToday, subMonths } from "date-fns";
-import { useMemo, useRef, useState } from "react"
+import { format, isValid, isWithinInterval, startOfToday, subMonths } from "date-fns";
+import { useRef } from "react"
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import { uploadMediaAction } from "@actions/blob.action";
 import { useUser } from "@auth0/nextjs-auth0/client";
-import { useOrganizations } from "@/hooks/useOrganization";
 import { useFileTypes } from "@hooks/useFileType";
-import { formatFileName } from "@/lib/file-manipulation";
+import { heic2Jpeg, renameFile } from "@/lib/file-manipulation";
+import { compressImageAsync } from "@/lib/image-compression";
 
 interface UploadFileFormProps {
     folder: {
@@ -57,9 +57,13 @@ export default function UploadFileForm({folder}: UploadFileFormProps) {
     }),
     dateTaken: z.date({
       message: "Please select a date"
-    }).refine(date => date >= subMonths(startOfToday(), 6) && date <= startOfToday(), {
-      message: "Date must be within the last 6 months.",
-    }),
+    }).refine(date =>
+      isWithinInterval(date, {
+        start: subMonths(startOfToday(), 6),
+        end: new Date(),
+      }),
+    { message: "Date must be within the last 6 months." }
+    ),
     fileTypeId: z.coerce.number({
       message: "Please select a file type",
       required_error: "File type is required"
@@ -74,11 +78,18 @@ export default function UploadFileForm({folder}: UploadFileFormProps) {
     form.handleSubmit(async (data) => {
       if(!userId) throw new Error("User ID is required to upload a file")
       formData.append("directory", `${userId}`)
-      formatFileName(formData);
+      let file = formData.get("media") as File
+      
+      if (file.type === 'image/heic' || file.type === 'image/heif') {
+        file = await heic2Jpeg(file);
+      } else {
+        file = renameFile(file);
+      }
+      const compressedFile: File = await compressImageAsync(file);
+      formData.set('media', compressedFile);
       toast.promise(uploadMediaAction(formData), {
         loading: "Uploading...",
         success: ({url}) => {
-          const file = formData.get("media") as File
           toast.promise(createFileAction({
             fileTypeId: data.fileTypeId,
             ...data.dateTaken ? {dateTaken: data.dateTaken} : {},
@@ -114,7 +125,7 @@ export default function UploadFileForm({folder}: UploadFileFormProps) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>File</FormLabel>
-              <Input id="file" type="file" accept="image/jpeg,image/gif,image/png,application/pdf,image/x-eps" {...field} value={undefined} />
+              <Input id="file" type="file" accept="image/jpeg,image/gif,image/png,application/pdf,image/x-eps, image/heic, image/heif" {...field} value={undefined} />
               <FormDescription>
                 Select the file to upload.
               </FormDescription>

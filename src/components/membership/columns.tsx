@@ -194,7 +194,7 @@ export const columns: ColumnDef<NonNullable<GetOrgMembers["data"]>["data"][numbe
   {
     id: "actions",
     size: 1,
-    cell: ({ row }) => {
+    cell: ({ row}) => {
       return (
         (
           <DropdownMenuProvider>

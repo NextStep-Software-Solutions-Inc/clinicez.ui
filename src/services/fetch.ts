@@ -38,7 +38,7 @@ export const createCustomFetch = (options: CreateFetchOptions) => {
         Authorization: `${type} ${token}`
       }
     }
-    const urlWithParams = `${options.baseUrl ? options.baseUrl : ''}${url}${createSearchParams(init?.params)}`
+    const urlWithParams = `${options.baseUrl ?? ""}${url}${createSearchParams(init?.params)}`
     const res = await fetchWithAutoRefresh(urlWithParams, mergedOptions)
     if(!res.ok) {
       throw new Error(`Failed to fetch ${urlWithParams}`)

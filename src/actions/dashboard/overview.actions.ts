@@ -8,11 +8,14 @@ export const getDashboardData = async (clinicUid: string) => {
     prisma.file.aggregate({
       where: {
         isActive: true,
-        FileType: {
-          ClinicFileTypes: {
-            some: {
-              Clinic: {
-                clinicUid
+        Folder: {
+          isActive: true,
+          User: {
+            OrganizationMembers: {
+              some: {
+                Organization: {
+                  orgUid: clinicUid
+                }
               }
             }
           }
@@ -24,17 +27,12 @@ export const getDashboardData = async (clinicUid: string) => {
       }
     }),
 
-    prisma.clinicMember.groupBy({
+    prisma.organizationMember.groupBy({
       by: ["status"],
       where: {
-        Clinic: {
-          ClinicOrganizations: {
-            some: {
-              Clinic: {
-                clinicUid
-              }
-            }
-          }
+        Organization: {
+          isActive: true,
+          orgUid: clinicUid,
         },
       },
       _count: {
@@ -45,28 +43,25 @@ export const getDashboardData = async (clinicUid: string) => {
 
     prisma.user.count({
       where: {
-        ClinicMembers: {
+        OrganizationMembers: {
           some: {
-            Clinic: {
-              clinicUid
-            }
-          }
-        }
+            Organization: {
+              isActive: true,
+              orgUid: clinicUid,
+            },
+          },
+        },
       },
     }),
+
     prisma.organizationRole.findMany({
       orderBy: {
         name: "asc"
       },
       where: {
         Organization: {
-          ClinicOrganizations: {
-            some: {
-              Clinic: {
-                clinicUid
-              }
-            }
-          }
+          isActive: true,
+          orgUid: clinicUid,
         },
       },
       select: {
@@ -77,19 +72,13 @@ export const getDashboardData = async (clinicUid: string) => {
             OrganizationMembers: {
               where: {
                 Organization: {
-                  ClinicOrganizations: {
-                    some: {
-                      Clinic: {
-                        clinicUid
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
+                  orgUid: clinicUid,
+                },
+              },
+            },
+          },
+        },
+      },
     }),
   ])
   return {

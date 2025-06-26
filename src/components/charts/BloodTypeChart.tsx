@@ -94,7 +94,7 @@ export function BloodTypeChart({ chartData }: GenderChartProps) {
                           y={(viewBox.cy || 0) + 24}
                           className="fill-muted-foreground"
                         >
-                          Patients
+                          Members
                         </tspan>
                       </text>
                     )

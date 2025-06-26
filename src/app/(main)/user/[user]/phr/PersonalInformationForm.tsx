@@ -1,7 +1,7 @@
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
-import { format } from "date-fns"
+import { format, isValid } from "date-fns"
 import { useForm } from "react-hook-form"
 import {
   Form,
@@ -32,6 +32,9 @@ interface PersonalInformationFormProps {
 export function PersonalInformationForm({readOnly, ...props}: PersonalInformationFormProps) {
 
   const user = useUser();
+
+  // constant to disables users from accessing future dates
+  const today = new Date().toISOString().split('T')[0];
 
   const form = useForm<PersonalInformationFormValues>({
     resolver: zodResolver(personalInformationFormSchema),
@@ -173,9 +176,10 @@ export function PersonalInformationForm({readOnly, ...props}: PersonalInformatio
                   disabled={readOnly}
                   name={field.name}
                   onChange={e => field.onChange(new Date(e.target.value))}
-                  defaultValue={field.value ? format(field.value, "yyyy-MM-dd") : ""}
+                  defaultValue={field.value instanceof Date && isValid(field.value) ? format(field.value, "yyyy-MM-dd") : ""}
                   type="date"
-                  placeholder="Select date" 
+                  placeholder="Select date"
+                  max={today} 
                 />
               </FormControl>
               <FormDescription>

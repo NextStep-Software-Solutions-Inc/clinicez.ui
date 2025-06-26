@@ -28,31 +28,51 @@ export function getBadgeVariantFromLabel(
 }
 
 
-export function convertStringToNumber(str: string| null): number | undefined {
+export function convertStringToNumber(str: string | null): number | undefined {
   const num = Number(str);
   return Number.isNaN(num) ? undefined : num;
 }
 
 
 /**
- * Parses an object with string values to their respective types
+ * Parses an object with string values to their respective types, including arrays
  * @param obj - Object to parse
  * @returns Object with parsed values
  * @example
- * const obj = { name: 'John', age: '25', isStudent: 'true' };
+ * const obj = { name: 'John', age: '25', isStudent: 'true', tags: '["a","b"]', scores: '[1,2,3]' };
  * const parsed = parseObject(obj);
- * console.log(parsed); // { name: 'John', age: 25, isStudent: true }
- * @example
- * const obj = { name: 'John', age: '25', isStudent: 'false' };
- * const parsed = parseObject(obj);
- * console.log(parsed); // { name: 'John', age: 25, isStudent: false }
+ * console.log(parsed); // { name: 'John', age: 25, isStudent: true, tags: ['a','b'], scores: [1,2,3] }
  */
-export const parseObject = (obj: Record<string, string>) => {
-  const parsed: Record<string, string | number | boolean> = {};
+export const parseObject = (obj: Record<string, string | string[]>) => {
+  const parsed: Record<string, string | number | boolean | Array<string | number>> = {};
   Object.entries(obj).forEach(([key, value]) => {
-    if (value === 'true') {
+    // Try to parse as JSON array
+    try {
+      if (typeof value === "string") {
+        const json = JSON.parse(value);
+        if (Array.isArray(json)) {
+          // If all elements are numbers, return as number[]
+          if (json.every((el) => typeof el === "number")) {
+            parsed[key] = json as number[];
+          }
+          // If all elements are strings, return as string[]
+          else if (json.every((el) => typeof el === "string")) {
+            parsed[key] = json as string[];
+          }
+          // Otherwise, leave as is (array of mixed types)
+          else {
+            parsed[key] = json;
+          }
+          return;
+        }
+      }
+    } catch {
+      // Not a JSON array, continue parsing as primitive
+    }
+
+    if (value === "true") {
       parsed[key] = true;
-    } else if (value === 'false') {
+    } else if (value === "false") {
       parsed[key] = false;
     } else if (!isNaN(Number(value))) {
       parsed[key] = Number(value);
@@ -62,3 +82,11 @@ export const parseObject = (obj: Record<string, string>) => {
   });
   return parsed;
 };
+export function searchParamsToObject(params: URLSearchParams) {
+  const obj: Record<string, string | string[]> = {};
+  for (const key of params.keys()) {
+    const values = params.getAll(key);
+    obj[key] = values.length > 1 ? values : values[0];
+  }
+  return obj;
+}

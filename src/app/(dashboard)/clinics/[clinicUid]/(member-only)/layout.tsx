@@ -42,7 +42,7 @@ export default async function ProcessLayout({
 }: ProcessLayoutProps) {
 
   const session = await getCachedSession();
-  
+
   const [myClinicMembership, clinicPatients, myOrganizationMembership] = await Promise.all([
     getClinicMembersAction({
       userId: session?.user.sub,
@@ -56,11 +56,11 @@ export default async function ProcessLayout({
     await getOrgMembersAction({
       clinicUid,
       userId: session?.user.sub,
-      status: "ACTIVE"
+      status: ["ACTIVE"]
     })
   ])
-  
-  if(!myOrganizationMembership.data?.data.length && !clinicPatients.data?.length && !myClinicMembership.data?.length) {
+
+  if (!myOrganizationMembership.data?.data.length && !clinicPatients.data?.length && !myClinicMembership.data?.length) {
     return redirect("/unauthorized");
   }
 
@@ -82,7 +82,7 @@ export default async function ProcessLayout({
               />
               <span className="sr-only">Clinic EZ</span>
             </Link>
-            <SideNav navItems={filterNavList()} params={["clinics", "clinicUid"]}/>
+            <SideNav navItems={filterNavList()} params={["clinics", "clinicUid"]} />
           </nav>
 
           <nav className="mt-auto flex flex-col items-center gap-4 px-2 sm:py-5">
@@ -123,7 +123,7 @@ export default async function ProcessLayout({
                 </Link>
               </TooltipTrigger>
               <TooltipContent side="right">
-              Clinic Settings
+                Clinic Settings
               </TooltipContent>
             </Tooltip>
           </nav>
@@ -168,7 +168,7 @@ export default async function ProcessLayout({
             </div>
             <div className="max-w-xs">
               <Suspend>
-                <ClinicSwitcher isCollapsed userId={session?.user.sub}/>
+                <ClinicSwitcher isCollapsed userId={session?.user.sub} />
               </Suspend>
             </div>
             <Suspense fallback={<div>Loading</div>}>

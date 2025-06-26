@@ -26,7 +26,7 @@ export default function AdditionalInformationStep({ orgUid, isLastStep, isFirstS
 
   const additionalInfoValidValue = useAtomValue(additionalInfoValidAtom)
   const orgApplication = useAtomValue(joinOrgApplicationAtom)
-  const requirements = orgApplication.roleRequirements ?? [];
+  const requirements = [... new Set(orgApplication.roleRequirements ?? [])];
   const isValid = requirements.every(requirement => additionalInfoValidValue[requirement as keyof typeof additionalInfoValidValue])
 
   return (
@@ -44,13 +44,13 @@ export default function AdditionalInformationStep({ orgUid, isLastStep, isFirstS
             return (
               <>
                 <ConditionalRender condition={requirement === "employee_record"}>
-                  <EmployeeRecordForm 
+                  <EmployeeRecordForm
                     orgUid={orgUid}
                     userId={orgApplication.userId ?? ""}
                   />
                 </ConditionalRender>
                 <ConditionalRender condition={requirement === "student_record"}>
-                  <StudentRecordForm 
+                  <StudentRecordForm
                     orgUid={orgUid}
                     userId={orgApplication.userId ?? ""}
                   />
@@ -59,7 +59,7 @@ export default function AdditionalInformationStep({ orgUid, isLastStep, isFirstS
             )
           }}
         />
-        
+
       </div>
       <div className="mt-5">
         <BackSubmitAndNext

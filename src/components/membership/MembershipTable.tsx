@@ -1,38 +1,100 @@
 "use client";
 
-import React from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { DataTable } from "./data-table";
 import { columns } from "./columns";
 import { useOrgMembers } from "@/hooks/useOrgMember";
 import PageLoading from "@components/PageLoading";
 import { useSearchParams } from "next/navigation";
+import { ColumnFiltersState } from "@tanstack/react-table";
+import debounce from "lodash/debounce";
+import { OrganizationMemberStatus } from "@/types";
+
 interface MembershipTableProps {
   orgUid: string;
 }
 
 export const MembershipTable = ({ orgUid }: MembershipTableProps) => {
   const searchParams = useSearchParams();
+
   const pageNumber = Number(searchParams.get("pageNumber")) || 1;
   const pageSize = Number(searchParams.get("pageSize")) || 10;
-  const {data: membershipRequests, isLoading} = useOrgMembers({ orgUid, pageSize, pageNumber });
 
-  // pust the page number and page size to the query params
-  const pushQueryParams = (page: number, pageSize: number) => {
+  const roles = searchParams.getAll("role");
+  const statuses = searchParams.getAll("status");
+  const user = searchParams.get("user") || "";
+
+  const validateMembershipStatus = (value: unknown): value is OrganizationMemberStatus =>
+    typeof value === "string" &&
+    ["ACTIVE", "SUSPENDED", "PENDING", "INACTIVE"].includes(value);
+
+  const columnFilters = useMemo<ColumnFiltersState>(() => {
+    const filters: ColumnFiltersState = [];
+    if (user) filters.push({ id: "user", value: user });
+    if (roles.length > 0) filters.push({ id: "role", value: roles });
+    const validStatuses = statuses.filter(validateMembershipStatus);
+    if (validStatuses.length > 0) filters.push({ id: "status", value: validStatuses });
+    return filters;
+  }, [user, roles, statuses]);
+
+  const [activeFilters, setActiveFilters] = useState<ColumnFiltersState>(columnFilters);
+
+  const roleArray = columnFilters.find(filter => filter.id === "role")?.value as string[] | undefined;
+  const statusArray = columnFilters.find(filter => filter.id === "status")?.value as OrganizationMemberStatus[] | undefined;
+
+  const { data: membershipRequests, isLoading } = useOrgMembers({
+    orgUid,
+    pageSize,
+    pageNumber,
+    searchKey: user || undefined,
+    role: roleArray,
+    status: statusArray,
+  });
+
+  const pushQueryParams = (
+    page: number,
+    pageSize: number,
+    filters: ColumnFiltersState
+  ) => {
     const params = new URLSearchParams();
-    params.append("pageNumber", page.toString());
-    params.append("pageSize", pageSize.toString());
-    window.history.pushState({}, "", `${window.location.pathname}?${params}`);
-  }
+    params.set("pageNumber", page.toString());
+    params.set("pageSize", pageSize.toString());
 
-  if(isLoading) return <PageLoading label="Fetching membership data. Please wait..." />;
+    filters.forEach(({ id, value }) => {
+      if (Array.isArray(value)) {
+        value.forEach((v) => params.append(id, String(v)));
+      } else {
+        params.set(id, String(value));
+      }
+    });
+
+    window.history.replaceState({}, "", `${window.location.pathname}?${params.toString()}`);
+  };
+
+  const handlePaginationChange = useCallback(
+    (pagination: { pageIndex: number; pageSize: number }) => {
+      pushQueryParams(pagination.pageIndex + 1, pagination.pageSize, activeFilters);
+    },
+    [activeFilters]
+  );
+
+  const handleFilterChange = debounce((filters: ColumnFiltersState) => {
+    setActiveFilters(filters);
+    pushQueryParams(pageNumber, pageSize, filters);
+  }, 500);
+
+  if (isLoading)
+    return <PageLoading label="Fetching membership data. Please wait..." />;
+
   return (
-    <DataTable 
-      data={membershipRequests?.data?.data ?? []} 
-      columns={columns} rowCount={membershipRequests?.data?.total ?? 0}
-      pagination={{pageIndex: pageNumber - 1, pageSize}}
-      onPaginationChange={(pagination)=> {
-        pushQueryParams(pagination.pageIndex + 1, pagination.pageSize);
-      }}
+    <DataTable
+      data={membershipRequests?.data?.data ?? []}
+      columns={columns}
+      rowCount={membershipRequests?.data?.total ?? 0}
+      pagination={{ pageIndex: pageNumber - 1, pageSize }}
+      initialColumnFilters={columnFilters}
+      onPaginationChange={handlePaginationChange}
+      onColumnFiltersChange={handleFilterChange}
     />
   );
 };

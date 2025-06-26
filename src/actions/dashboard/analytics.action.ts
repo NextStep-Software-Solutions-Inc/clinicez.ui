@@ -207,22 +207,26 @@ export type GetDailyOrgMembershipRequest = Awaited<ReturnType<typeof getDailyOrg
 export const getDailyOrgMembershipRequestAction = async (orgUid: string, startDate:string, endDate: string) => {
   const query = Prisma.sql`
     SELECT
-      DATE_TRUNC('day', uo."createdAt") as date,
+      DATE_TRUNC('day', om."createdAt") as date,
       COUNT(*) as total_requests
     FROM
-      "UserOrganization" uo
+      "OrganizationMember" om
     INNER JOIN 
-      "Organization" o ON uo."organizationId" = o."id"
+      "Organization" o ON om."organizationId" = o."id"
     WHERE
-      o."orgId" = ${Prisma.raw(`'${orgUid}'`)} -- Correctly parameterized
-        AND uo."createdAt" >= ${Prisma.raw(`'${startDate}'`)} -- Start date filter
-        AND uo."createdAt" <= ${Prisma.raw(`'${endDate}'`)} -- End date filter
-      -- AND uo."status" NOT IN ('PENDING') -- Uncomment if needed
+      o."orgUid" = ${orgUid}
+      AND om."createdAt" >= ${new Date(startDate)}
+      AND om."createdAt" <= ${new Date(endDate)}
     GROUP BY
-      DATE_TRUNC('day', uo."createdAt")
+      DATE_TRUNC('day', om."createdAt")
     ORDER BY
       date ASC;
   `;
-  const dailyMembershipRequest = await prisma.$queryRaw(query, orgUid);
-  return dailyMembershipRequest as { date: Date, total_requests: BigInt }[];
+
+  const result = await prisma.$queryRaw<
+    { date: Date; total_requests: bigint }[]
+  >(query);
+
+  return result as { date: Date, total_requests: BigInt }[];
+  // const dailyMembershipRequest = await prisma.organization.
 }

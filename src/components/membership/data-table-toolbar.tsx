@@ -1,51 +1,57 @@
-"use client"
+"use client";
 
-import { Cross2Icon } from "@radix-ui/react-icons"
-import { Table } from "@tanstack/react-table"
+import { Cross2Icon } from "@radix-ui/react-icons";
+import { Table } from "@tanstack/react-table";
 
-import { Button } from "@components/ui/button"
-import { Input } from "@components/ui/input"
-import { DataTableViewOptions } from "./data-table-view-options"
+import { Button } from "@components/ui/button";
+import { Input } from "@components/ui/input";
+import { DataTableViewOptions } from "./data-table-view-options";
 
-import { DataTableFacetedFilter } from "./data-table-faceted-filter"
-import { $Enums } from "@prisma/client"
-import React from "react"
-import { useOrganizationRoles } from "@/hooks/useOrganizationRole"
-import { useParams } from "next/navigation"
+import { DataTableFacetedFilter } from "./data-table-faceted-filter";
+import { $Enums } from "@prisma/client";
+import React from "react";
+import { useOrganizationRoles } from "@/hooks/useOrganizationRole";
+import { useParams } from "next/navigation";
 
 interface DataTableToolbarProps<TData> {
-  table: Table<TData>
+  table: Table<TData>;
 }
 
 export function DataTableToolbar<TData>({
-  table,
+  table
 }: DataTableToolbarProps<TData>) {
-  const isFiltered = table.getState().columnFilters.length > 0
-  const membershipStatuses = Object.values({ACTIVE: "ACTIVE", INACTIVE: "INACTIVE", PENDING: "PENDING", SUSPENDED: "SUSPENDED"}).map((status) => ({
-    label: status.split("").map((char, index) => (index === 0 ? char : char.toLowerCase())).join(""),
-    value: status,
-  }))
-  const {orgUid} = useParams<{orgUid: string}>()
-  const {data: orgRoles } = useOrganizationRoles({orgUid})
-  
+  const isFiltered = table.getState().columnFilters.length > 0;
+  const membershipStatuses = Object.values({
+    ACTIVE: "ACTIVE",
+    INACTIVE: "INACTIVE",
+    PENDING: "PENDING",
+    SUSPENDED: "SUSPENDED"
+  }).map((status) => ({
+    label: status
+      .split("")
+      .map((char, index) => (index === 0 ? char : char.toLowerCase()))
+      .join(""),
+    value: status
+  }));
+  const { orgUid } = useParams<{ orgUid: string }>();
+  const { data: orgRoles } = useOrganizationRoles({ orgUid });
+
   return (
     <div className="flex items-center justify-between">
       <div className="flex flex-1 items-center space-x-2">
         <Input
           placeholder="Filter membership records..."
           value={(table.getColumn("user")?.getFilterValue() as string) ?? ""}
-          onChange={(event) =>
-            table.getColumn("user")?.setFilterValue(event.target.value)
-          }
+          onChange={(event) => table.getColumn("user")?.setFilterValue(event.target.value)}
           className="h-8 w-[150px] lg:w-[250px]"
         />
         {table.getColumn("role") && (
           <DataTableFacetedFilter
             column={table.getColumn("role")}
             title="Role"
-            options={(orgRoles?.data?? []).map(role => ({
+            options={(orgRoles?.data ?? []).map((role) => ({
               label: role.name,
-              value: role.name,
+              value: role.name
             }))}
           />
         )}
@@ -69,5 +75,5 @@ export function DataTableToolbar<TData>({
       </div>
       <DataTableViewOptions table={table} />
     </div>
-  )
+  );
 }

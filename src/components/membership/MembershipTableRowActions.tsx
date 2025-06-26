@@ -33,8 +33,9 @@ export default function MembershipTableRowActions<TData>({
   const { dropdownOpen, setDropdownOpen, hasOpenDialog, dropdownTriggerRef } = useDropdownMenu()!;
 
   const revalidateMembershipTable = async () => {
-    revalidatePath(`/[organization]/membership`, "page")
-    mutate((key) =>  typeof key === 'string' && key.startsWith(`/api/user-organizations`), undefined, {
+    
+    revalidatePath(`organizations/[orgUid]/membership/page.tsx`, "page")
+    mutate((key) =>  typeof key === 'string' && key.startsWith(`/api/org-members`), undefined, {
       revalidate:true
     })
   }

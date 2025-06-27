@@ -21,7 +21,7 @@ export const promiseWrapper = <T, A extends any[]>(originalFn: AsyncFunction<T, 
 };
 
 
-type CustomErrorHandler = (error: unknown) => Promise<string | undefined> | string | undefined;
+type CustomErrorHandler = (error: unknown, context: unknown) => Promise<string | undefined> | string | undefined;
 type FunctionWithMessageAndData<T> = (...args: any[]) => Promise<{ message: string; data: T }>;
 type FinalResult<T extends FunctionWithMessageAndData<any>> = (...args: Parameters<T>) => Promise<Result<Awaited<ReturnType<T>>['data']>>;
 
@@ -38,7 +38,7 @@ export function withErrorHandling<T extends FunctionWithMessageAndData<any>>(
       console.error(`Error in function: ${fn.name}: ${error}`);
       if (error instanceof Error) message = error.message;
       if (customErrorHandler) {
-        const m = customErrorHandler(error);
+        const m = customErrorHandler(error, { functionName: fn.name, args });
         message = ((m as any) instanceof Promise ? await (m as unknown as Promise<string | undefined>) : m)?.toString() || message;
       };
       return { status: false, message, data: null };

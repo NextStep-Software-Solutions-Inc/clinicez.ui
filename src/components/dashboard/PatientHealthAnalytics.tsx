@@ -1,4 +1,4 @@
-import { getHealthAnalyticsData } from "@actions/dashboard/analytics.action";
+import { getHealthAnalyticsData, resolveOrgUidFromClinicUid } from "@actions/dashboard/analytics.action";
 import DisabilityChart from "@components/charts/DisabilityChart";
 import IllnessChart from "@components/charts/IllnessChart";
 import ConditionalRender from "@components/utils/ConditionalRender";
@@ -9,10 +9,15 @@ interface PatientHealthAnalyticsProps {
 }
 
 export const PatientHealthAnalytics = async ({ orgUid }: PatientHealthAnalyticsProps) => {
+  const resolveOrgUid = await resolveOrgUidFromClinicUid(orgUid);
+  if (!resolveOrgUid) {
+    throw new Error("Organization UID could not be resolved from clinic UID.");
+  }
+
   const [stats, member, orgAdmin] = await Promise.all([
-    getHealthAnalyticsData(orgUid),
+    getHealthAnalyticsData(resolveOrgUid),
     isOrgMember(),
-    isOrgAdmin(orgUid)
+    isOrgAdmin(resolveOrgUid)
   ]);
   const illnesses: { illness: string; count: number; }[] = stats.illness.map(item => ({
     illness: item.name,

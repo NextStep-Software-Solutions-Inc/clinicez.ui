@@ -30,6 +30,7 @@ import { useUser } from "@auth0/nextjs-auth0/client";
 import { useFileTypes } from "@hooks/useFileType";
 import { heic2Jpeg, renameFile } from "@/lib/file-manipulation";
 import { compressImageAsync } from "@/lib/image-compression";
+import { useFileInput } from "@/hooks/useFileInput";
 
 interface UploadFileFormProps {
     folder: {
@@ -52,9 +53,10 @@ export default function UploadFileForm({folder}: UploadFileFormProps) {
   const closeBtnRef = useRef<HTMLInputElement>(null)
 
   const uploadFileFormSchema = z.object({
-    media: z.string({
-      required_error: "Please select an action"
-    }),
+    media: z
+      .instanceof(File, {
+        message: "Please select a valid file",
+      }),
     dateTaken: z.date({
       message: "Please select a date"
     }).refine(date =>
@@ -62,16 +64,29 @@ export default function UploadFileForm({folder}: UploadFileFormProps) {
         start: subMonths(startOfToday(), 6),
         end: new Date(),
       }),
-    { message: "Date must be within the last 6 months." }
-    ),
+    { message: "Date must be within the last 6 months." }),
     fileTypeId: z.coerce.number({
       message: "Please select a file type",
       required_error: "File type is required"
     }),
-  })
+  });
+
 
   const form = useForm<z.infer<typeof uploadFileFormSchema>>({
     resolver: zodResolver(uploadFileFormSchema),
+  })
+
+  const handleFileChange = useFileInput({
+    onValidFile: (file) => {
+      form.setValue("media", file);
+      form.clearErrors("media");
+    },
+    onError: (message) => {
+      form.setError("media", {
+        type: "manual",
+        message,
+      });
+    }
   })
     
   const action = async (formData: FormData) => {
@@ -85,6 +100,7 @@ export default function UploadFileForm({folder}: UploadFileFormProps) {
       } else {
         file = renameFile(file);
       }
+
       const compressedFile: File = await compressImageAsync(file);
       formData.set('media', compressedFile);
       toast.promise(uploadMediaAction(formData), {
@@ -125,7 +141,11 @@ export default function UploadFileForm({folder}: UploadFileFormProps) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>File</FormLabel>
-              <Input id="file" type="file" accept="image/jpeg,image/gif,image/png,application/pdf,image/x-eps, image/heic, image/heif" {...field} value={undefined} />
+              <Input id="file"
+                type="file" 
+                accept="image/jpeg,image/gif,image/png,application/pdf,image/x-eps, image/heic, image/heif" {...field} 
+                value={undefined}
+                onChange={handleFileChange} />
               <FormDescription>
                 Select the file to upload.
               </FormDescription>

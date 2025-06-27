@@ -57,7 +57,7 @@ export default function UploadFileModal({folder}: UploadFileModalProps) {
           <AlertTitle>Warning!</AlertTitle>
           <AlertDescription>
             <p>
-              Only files with the following extensions are allowed: .jpeg, .gif, .png, .pdf
+              Only files with the following extensions are allowed: .jpeg, .gif, .png, .pdf, .heic, .heif, .eps
             </p>
             <p>
               Maximum file size is 10MB.

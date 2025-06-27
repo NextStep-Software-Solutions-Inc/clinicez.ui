@@ -1,5 +1,6 @@
 "use client";
 
+import { promiseWrapper } from "@/lib/with-error-handling";
 import { createFolderAction } from "@actions/folder.action";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import ActionButton from "@components/ActionButton"
@@ -32,16 +33,18 @@ export default function CreateFolderModal({disabled = false, clinicUid, onCreate
   const action = async (formData: FormData) => {
     if(!userId) throw new Error("User ID is required to create a folder.")
     const name = formData.get("name") as string
-    toast.promise(createFolderAction({name, userId, clinicUid}), {
+    toast.promise(promiseWrapper(createFolderAction)({name, userId, clinicUid}), {
       loading: "Creating folder...",
-      success: (res) => {
+      success: async (res) => {
         if(res.status) {
           closeBtnRef.current?.click()
           onCreated?.()
         }
         return res.message
       },
-      error: "Failed to create folder"
+      error: (error) => {
+        return error
+      }
     })
   }
 

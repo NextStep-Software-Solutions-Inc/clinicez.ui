@@ -92,12 +92,12 @@ async function DashboardPage({params, searchParams}: AppRouterPageRouteOpts) {
               </ConditionalRender> */}
             </TabsContent>
             <TabsContent value="analytics" className="space-y-4">
-              <Suspend>
+              {/* <Suspend>
                 <PatientHealthAnalytics orgUid={orgUid}/>
-              </Suspend>
-              <Suspend>
+              </Suspend> */}
+              {/* <Suspend>
                 <PatientsAnalytics orgUid={orgUid}/>
-              </Suspend>
+              </Suspend> */}
               <Suspend>
                 <OrgMembershipAnalytics orgUid={orgUid}/>
               </Suspend>

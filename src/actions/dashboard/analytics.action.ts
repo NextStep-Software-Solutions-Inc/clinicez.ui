@@ -3,6 +3,26 @@
 import prisma from "@lib/prisma";
 import { Prisma } from "@prisma/client";
 
+
+export async function resolveOrgUidFromClinicUid(clinicUid: string): Promise<string | null> {
+  const org = await prisma.clinicOrganization.findFirst({
+    where: {
+      Clinic: {
+        clinicUid
+      }
+    },
+    select: {
+      Organization: {
+        select: {
+          orgUid: true
+        }
+      }
+    }
+  });
+
+  return org?.Organization?.orgUid ?? null;
+}
+
 export const getHealthAnalyticsData = async (orgUid: string) => {
   const [userHealthCondition, userDisability] = await Promise.all([
     prisma.healthCondition.findMany({

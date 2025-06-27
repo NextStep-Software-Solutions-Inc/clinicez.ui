@@ -74,9 +74,9 @@ async function DashboardPage({params, searchParams}: AppRouterPageRouteOpts) {
               <Suspend>
                 <PatientsAnalytics orgUid={clinicUid}/>
               </Suspend>
-              <Suspend>
+              {/* <Suspend>
                 <OrgMembershipAnalytics orgUid={clinicUid}/>
-              </Suspend>
+              </Suspend> */}
             </TabsContent>
           </Tabs>
         </div>

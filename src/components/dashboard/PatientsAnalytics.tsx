@@ -1,4 +1,4 @@
-import { getPatientAnalyticsData } from "@actions/dashboard/analytics.action";
+import { getPatientAnalyticsData, resolveOrgUidFromClinicUid } from "@actions/dashboard/analytics.action";
 import { BloodTypeChart } from "@components/charts/BloodTypeChart";
 import { CivilStatusChart } from "@components/charts/CivilStatusChart";
 import { GenderChart } from "@components/charts/GenderChart";
@@ -6,10 +6,15 @@ import ConditionalRender from "@components/utils/ConditionalRender";
 import { isOrgMember, isOrgAdmin } from "@lib/org-utils";
 
 export const PatientsAnalytics = async ({ orgUid }: { orgUid: string; }) => {
+  const resolveOrgUid = await resolveOrgUidFromClinicUid(orgUid);
+  if (!resolveOrgUid) {
+    throw new Error("Organization UID could not be resolved from clinic UID.");
+  }
+
   const [stats, member, orgAdmin] = await Promise.all([
-    getPatientAnalyticsData(orgUid),
+    getPatientAnalyticsData(resolveOrgUid),
     isOrgMember(),
-    isOrgAdmin(orgUid)
+    isOrgAdmin(resolveOrgUid)
   ]);
   const { genderStats, bloodTypeStats, civilStatusStats } = stats;
 

@@ -1,16 +1,16 @@
 import { Separator } from "@components/ui/separator"
 import { Metadata } from "next"
 import Suspend from "@components/Suspend"
-import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth0"
 import { AllergyList } from "./AllergyList"
 import { isUserOwner } from "@lib/org-utils"
+import { AppRouterPageRouteOpts } from "@/types"
 
 export const metadata: Metadata = {
   title: "Allergies | PHR",
   description: "Update your allergy information for your healthcare providers to better understand your health."
 }
 
-async function AllergiesPage({ params }: AppRouterPageRouteOpts) {
+export default async function AllergiesPage({ params }: AppRouterPageRouteOpts) {
   const userId = decodeURI(params?.user as string)
   const ownerUser = await isUserOwner(userId)
 
@@ -29,9 +29,3 @@ async function AllergiesPage({ params }: AppRouterPageRouteOpts) {
     </div>
   )
 }
-
-export default withPageAuthRequired(AllergiesPage, {
-  returnTo: ({ params }) => {
-    return `/user/${params?.user}/phr`;
-  }
-})

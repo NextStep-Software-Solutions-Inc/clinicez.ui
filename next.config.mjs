@@ -1,4 +1,4 @@
-import { PrismaPlugin } from '@prisma/nextjs-monorepo-workaround-plugin'
+import { PrismaPlugin } from "@prisma/nextjs-monorepo-workaround-plugin";
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -10,30 +10,40 @@ const nextConfig = {
         headers: [
           { key: "Access-Control-Allow-Credentials", value: "true" },
           { key: "Access-Control-Allow-Origin", value: "*" }, // replace this your actual origin
-          { key: "Access-Control-Allow-Methods", value: "GET,DELETE,PATCH,POST,PUT" },
-          { 
-            key: "Access-Control-Allow-Headers", 
-            value: "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Allow-Control-Allow-Origin, Authorization"
+          {
+            key: "Access-Control-Allow-Methods",
+            value: "GET,DELETE,PATCH,POST,PUT"
           },
+          {
+            key: "Access-Control-Allow-Headers",
+            value:
+              "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Allow-Control-Allow-Origin, Authorization"
+          }
         ]
       }
-    ]
+    ];
   },
   webpack: (config, { isServer }) => {
     if (isServer) {
-      config.plugins = [...config.plugins, new PrismaPlugin()]
+      config.plugins = [...config.plugins, new PrismaPlugin()];
     }
 
-    return config
+    return config;
   },
-  transpilePackages: ['lucide-react'],
+  transpilePackages: ["lucide-react"],
   images: {
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: '*',
-      },
-    ],
+        protocol: "https",
+        hostname: "*"
+      }
+    ]
+  },
+  env: {
+    APP_BASE_URL:
+      process.env.VERCEL_ENV === "preview"
+        ? `https://${process.env.VERCEL_BRANCH_URL}`
+        : process.env.APP_BASE_URL
   }
 };
 

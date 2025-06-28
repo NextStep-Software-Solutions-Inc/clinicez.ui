@@ -31,7 +31,7 @@
     "db:dev:seed": "npx dotenv -e .env.development.local -- npm run db:seed"
   },
   "dependencies": {
-    "@auth0/nextjs-auth0": "^3.5.0",
+    "@auth0/nextjs-auth0": "^4.7.0",
     "@azure/storage-blob": "^12.23.0",
     "@faker-js/faker": "^8.4.1",
     "@hookform/resolvers": "^3.9.0",
@@ -86,7 +86,7 @@
     "lodash": "^4.17.21",
     "lucide-react": "^0.366.0",
     "mysql2": "^3.10.3",
-    "next": "14.2.20",
+    "next": "15.3.4",
     "next-themes": "^0.3.0",
     "react": "^18.3.1",
     "react-day-picker": "^8.10.1",

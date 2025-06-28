@@ -18,7 +18,7 @@ import { Input } from "@components/ui/input"
 import {toast} from "sonner"
 import ActionButton from "@components/ActionButton"
 import { resetPasswordAction } from "@actions/users/user.action"
-import { useUser } from "@auth0/nextjs-auth0/client"
+import { useUser } from "@auth0/nextjs-auth0"
 import { useRouter } from "next/navigation"
 
 const accountFormSchema = z.object({
@@ -49,7 +49,7 @@ export default function SecuritySettingsForm() {
         loading: "Updating password...",
         success: () => {
           form.reset(values);
-          router.replace("/api/auth/logout");
+          router.replace("/auth/logout");
           return "Password updated successfully. Please login again for security reasons."
         },
         error: (error) => `Failed to update password. Error: ${error}`

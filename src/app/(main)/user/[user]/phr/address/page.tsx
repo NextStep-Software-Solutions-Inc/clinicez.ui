@@ -1,21 +1,21 @@
 import { Separator } from "@components/ui/separator"
 import { Metadata } from "next"
 import Suspend from "@components/Suspend"
-import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth0"
 import { redirect } from "next/navigation"
 import { isUserOwner } from "@lib/org-utils"
 import { getCachedSession } from "@actions/session.action"
 import { Addresses } from "./Addresses"
+import { AppRouterPageRouteOpts } from "@/types"
 export const metadata: Metadata = {
   title: "Address | PHR",
   description: "Update your address to help you organization locate you."
 }
 
-async function AddressPage({params}: AppRouterPageRouteOpts) {
+export default async function AddressPage({params}: AppRouterPageRouteOpts) {
 
   const session = await getCachedSession()
   const userId = decodeURI(params?.user as string)
-  if(!session) return redirect("/api/auth/login")
+  if(!session) return redirect("/auth/login")
   const owner = await isUserOwner(userId);
 
   return (
@@ -33,11 +33,3 @@ async function AddressPage({params}: AppRouterPageRouteOpts) {
     </div>
   )
 }
-
-
-export default withPageAuthRequired(AddressPage, {
-  returnTo: ({params, searchParams}) => {
-    const searchStr = Object.entries(searchParams ?? {}).map(([key, value]) => `${key}=${value}`).join("&");
-    return `/user/${params?.user}/phr/address?${searchStr}`;
-  }
-})

@@ -25,7 +25,7 @@ export default async function PHRLayout({ children, params: {user} }: PHRLayoutP
     isUserOwner(phrOwnerId)
   ]);
   
-  if(!session) return redirect("/api/auth/login");
+  if(!session) return redirect("/auth/login");
   
   try {
     // Check if the user is the owner of the PHR

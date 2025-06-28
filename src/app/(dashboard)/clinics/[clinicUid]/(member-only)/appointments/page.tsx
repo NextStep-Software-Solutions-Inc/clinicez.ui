@@ -3,7 +3,6 @@ import AppointmentPanel  from "@components/appointment/AppointmentPanel";
 import { cookies } from "next/headers";
 import { Separator } from "@components/ui/separator";
 import { getAppointmentCountsAction, getRoutedAppointmentCountsAction } from "@actions/appointments/appointments.action";
-import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth0";
 import AppointmentDisplay from "@components/appointment/AppointmentDisplay";
 import Suspend from "@components/Suspend";
 import { Metadata } from "next";
@@ -13,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import BookAppointmentBtn from "@/components/BookAppointmentBtn";
 import { getCachedSession } from "@/actions/session.action";
 import { redirect } from "next/navigation";
+import { AppRouterPageRouteOpts } from "@/types";
 
 export const maxDuration = 30
 export const revalidate = 60
@@ -21,13 +21,13 @@ export const metadata: Metadata = {
   description: "View and respond to appointments",
 }
 
-async function AppointmentsPage({ searchParams, params }: AppRouterPageRouteOpts ) {
+export default async function AppointmentsPage({ searchParams, params }: AppRouterPageRouteOpts ) {
   const clinicUid = String(params?.clinicUid)
   const session = await getCachedSession()
   // if(!appointmentStatus || !role ) return redirect(`/${organization}/appointments?_type=pending&_role=admin`)
 
-  const layout = cookies().get("react-resizable-panels:layout")
-  const collapsed = cookies().get("react-resizable-panels:collapsed")
+  const layout = (await cookies()).get("react-resizable-panels:layout")
+  const collapsed = (await cookies()).get("react-resizable-panels:collapsed")
 
   const [appointmentCounts, routedAptCounts, tabs] = await Promise.all([
     getAppointmentCountsAction(clinicUid),
@@ -38,7 +38,7 @@ async function AppointmentsPage({ searchParams, params }: AppRouterPageRouteOpts
   const defaultLayout = layout ? JSON.parse(layout.value) : undefined
   const defaultCollapsed = collapsed ? JSON.parse(collapsed.value) : undefined
   
-  if(!session) redirect(`/api/auth/login?returnTo=${encodeURIComponent(`/clinics/${clinicUid}/appointments`)}`)
+  if(!session) redirect(`/auth/login?returnTo=${encodeURIComponent(`/clinics/${clinicUid}/appointments`)}`)
   
   return (
     <div className="space-y-6">
@@ -83,12 +83,3 @@ async function AppointmentsPage({ searchParams, params }: AppRouterPageRouteOpts
     </div>
   );
 }
-
-
-export default withPageAuthRequired(AppointmentsPage, {
-  returnTo: ({params, searchParams}) => {
-    const organization = String(params?.orgUid)
-    const newSearchParams = new URLSearchParams(searchParams as Record<string, string>)
-    return `/${organization}/appointments?${newSearchParams.toString()}`
-  }
-});

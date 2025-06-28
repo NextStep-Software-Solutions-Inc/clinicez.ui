@@ -46,7 +46,7 @@ export default async function ClinicPage({ params }: { params: { clinicUid: stri
     }
   }
 
-  if (!session) redirect(`/api/auth/login?returnTo=${encodeURIComponent(`/clinics/${clinicUid}`)}`);
+  if (!session) redirect(`/auth/login?returnTo=${encodeURIComponent(`/clinics/${clinicUid}`)}`);
 
   return (
     <div className="container mx-auto my-10">

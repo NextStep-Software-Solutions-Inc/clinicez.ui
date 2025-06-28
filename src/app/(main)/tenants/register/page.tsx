@@ -1,11 +1,10 @@
-import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth0";
 import TenantApplicationWrapper from "./TenantApplicationWrapper";
 import TenantPaymentVerification from "./TenantPaymentVerification";
 import TenantPlanSelection from "./TenantPlanSelection";
 import TenantDetails from "./TenantDetails";
-;
+import { AppRouterPageRouteOpts } from "@/types";
 
-async function TenantsRegistrationPage(props: AppRouterPageRouteOpts) {
+export default async function TenantsRegistrationPage(props: AppRouterPageRouteOpts) {
   const {freq = "YEARLY" } = (props.searchParams || {}) as { freq: "MONTHLY" | "YEARLY" } 
 
   return (
@@ -24,7 +23,3 @@ async function TenantsRegistrationPage(props: AppRouterPageRouteOpts) {
     </div>
   );
 }
-
-export default withPageAuthRequired(TenantsRegistrationPage, {
-  returnTo: '/tenants/register',
-});

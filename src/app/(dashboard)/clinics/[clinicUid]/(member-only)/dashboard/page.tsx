@@ -6,7 +6,6 @@ import {
   TabsTrigger,
 } from "@components/ui/tabs"
 import { MainNav } from "@components/dashboard/MainNav"
-import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth0"
 import { DashboardStats } from "@components/dashboard/DashboardStats"
 import { getCachedSession } from "@actions/session.action"
 import Suspend from "@components/Suspend"
@@ -16,6 +15,7 @@ import { OrgMembershipAnalytics } from "@/components/organization/OrgMembershipA
 import { filterNavList } from "../nav"
 import { ClinicOverview } from "@/components/dashboard/ClinicOverview"
 import { getClinicAction } from "@/actions/clinics/clinic.action"
+import { AppRouterPageRouteOpts } from "@/types"
 
 export const maxDuration = 30; // page timeout in seconds
 export const revalidate  = 60; // revalidation interval in seconds
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   description: "Clinic Dashboard",
 }
 
-async function DashboardPage({params, searchParams}: AppRouterPageRouteOpts) {
+export default async function DashboardPage({params, searchParams}: AppRouterPageRouteOpts) {
   const clinicUid = String(params?.clinicUid)
   const session = await getCachedSession()
   const clinic = await getClinicAction(clinicUid)
@@ -64,7 +64,7 @@ async function DashboardPage({params, searchParams}: AppRouterPageRouteOpts) {
             </TabsList>
             <TabsContent value="overview" className="space-y-4">
               <Suspend>
-                <ClinicOverview userId={userId} clinicUid={clinicUid}/>
+                {userId && <ClinicOverview userId={userId} clinicUid={clinicUid}/>}
               </Suspend>
             </TabsContent>
             <TabsContent value="analytics" className="space-y-4">
@@ -84,11 +84,3 @@ async function DashboardPage({params, searchParams}: AppRouterPageRouteOpts) {
     </div>
   )
 }
-
-
-export default withPageAuthRequired(DashboardPage, {
-  returnTo: ({params, searchParams}) => {
-    const searchStr = Object.entries(searchParams ?? {}).map(([key, value]) => `${key}=${value}`).join("&");
-    return `/clinics/${params?.clinicUid}/dashboard?${searchStr}`;
-  }
-})

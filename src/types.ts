@@ -3,3 +3,11 @@ export type OrganizationMemberStatus = "ACTIVE" | "SUSPENDED" | "PENDiNG" | "INA
 export type ClinicMemberStatus = "ACTIVE" | "SUSPENDED" | "PENDING" | "INACTIVE";
 export type Severity = "MILD" | "MODERATE" | "SEVERE" | "CRITICAL";
 export type HealthConditionStatus = "RESOLVED" | "UNRESOLVED";
+
+/**
+ * @deprecated This type is obsolete and should no longer be used
+ */
+export type AppRouterPageRouteOpts = {
+  searchParams?: Record<string, string | string[] | undefined>;
+    params?: Record<string, string | string[] | undefined>;
+}

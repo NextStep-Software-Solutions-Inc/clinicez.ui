@@ -1,4 +1,3 @@
-import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth0";
 import Suspend from "@components/Suspend";
 import { Separator } from "@components/ui/separator";
 import { Metadata } from "next";
@@ -8,6 +7,7 @@ import PageLoading from "@components/PageLoading";
 import { redirect } from "next/navigation";
 import { PatientList } from "@components/patient/PatientList";
 import AddPatientModal from "@components/patient/modal/AddPatientModal";
+import { AppRouterPageRouteOpts } from "@/types";
 
 export const maxDuration = 30; // page timeout in seconds
 export const revalidate  = 60; // revalidation interval in seconds
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   description: "View and manage patient EMR",
 };
 
-async function PatientsPage({params, searchParams}: AppRouterPageRouteOpts) {
+export default async function PatientsPage({params, searchParams}: AppRouterPageRouteOpts) {
   const clinicUid = String(params?.clinicUid);
   const search = searchParams?.search as string;
   const page = parseInt(searchParams?.page as string) || 1;
@@ -54,4 +54,3 @@ async function PatientsPage({params, searchParams}: AppRouterPageRouteOpts) {
   );
 }
 
-export default withPageAuthRequired(PatientsPage);

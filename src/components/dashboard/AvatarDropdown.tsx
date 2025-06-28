@@ -1,6 +1,6 @@
 "use client";
 
-import { useUser } from "@auth0/nextjs-auth0/client";
+import { useUser } from "@auth0/nextjs-auth0";
 import { Button } from "@components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@components/ui/dropdown-menu";
 import { Loader2Icon } from "lucide-react";
@@ -43,7 +43,7 @@ export default function AvatarDropdown() {
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem>
-          <Link href="/api/auth/logout" onClick={() => localStorage.clear()}>
+          <Link href="/auth/logout" onClick={() => localStorage.clear()}>
             Logout
           </Link>
         </DropdownMenuItem>
@@ -55,6 +55,6 @@ export default function AvatarDropdown() {
 
 const SignInButton = () => {
   return (
-    <a href="/api/auth/login" title="" className="px-5 py-2.5 text-base transition-all duration-200 hover:bg-teal-400 hover:text-white focus:text-white focus:bg-teal-400 font-semibold text-white bg-teal-600 rounded-lg" role="button"> Sign In</a>
+    <a href="/auth/login" title="" className="px-5 py-2.5 text-base transition-all duration-200 hover:bg-teal-400 hover:text-white focus:text-white focus:bg-teal-400 font-semibold text-white bg-teal-600 rounded-lg" role="button"> Sign In</a>
   )
 }

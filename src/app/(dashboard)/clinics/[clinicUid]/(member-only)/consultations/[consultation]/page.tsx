@@ -1,4 +1,3 @@
-import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth0";
 import Suspend from "@components/Suspend";
 import { Separator } from "@components/ui/separator";
 import { Metadata } from "next";
@@ -11,13 +10,14 @@ import ConsultationTicketTableRowActions from "../../../../../../../components/c
 import ResolveConsultationTicket from "@components/consultation/ResolveConsultationTicket";
 import MedicationsSheet from "@components/consultation/MedicationsSheet";
 import ModifyMedicationSheet from "@components/consultation/ModifyMedicationSheet";
+import { AppRouterPageRouteOpts } from "@/types";
 
 export const metadata: Metadata = {
   title: "Consultation Details",
   description: "Consultation details of a consultation.",
 }
 
-async function ConsultationPage({params}: AppRouterPageRouteOpts) {
+export default async function ConsultationPage({params}: AppRouterPageRouteOpts) {
   const consultationId = Number(params?.consultation)
   const clinicUid = String(params?.clinicUid)
 
@@ -80,12 +80,3 @@ async function ConsultationPage({params}: AppRouterPageRouteOpts) {
     </div>
   );
 }
-
-export default withPageAuthRequired(ConsultationPage, {
-  returnTo: ({params, searchParams}) => {
-    const clinicUid = String(params?.clinicUid)
-    const consultation = params?.consultation
-    const newSearchParams = new URLSearchParams(searchParams as Record<string, string>)
-    return `/clinics/${clinicUid}/consultations/${consultation}?${newSearchParams.toString()}`
-  }
-});

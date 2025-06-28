@@ -1,4 +1,4 @@
-import { UserProvider } from "@auth0/nextjs-auth0/client";
+import { Auth0Provider  } from "@auth0/nextjs-auth0";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Montserrat } from "next/font/google";
 import { Toaster as SonnerToaster } from "sonner";
@@ -34,7 +34,7 @@ export default async function RootLayout({ children }: Props) {
   const session = await getCachedSession();
   if (session) {
     const dbUser = await findOrCreateUserAction();
-    if (!dbUser.data) redirect(`/api/auth/logout?returnTo=/user-sync-error`);
+    if (!dbUser.data) redirect(`/auth/logout?returnTo=/user-sync-error`);
   }
 
   return (
@@ -45,19 +45,19 @@ export default async function RootLayout({ children }: Props) {
         <JotaiProvider>
           <SyncToken
             token={{
-              type: session?.token_type,
-              accessToken: session?.accessToken ?? ""
+              type: "Bearer",
+              accessToken: session?.tokenSet.accessToken || ""
             }}
           />
           {/* {!!session && <SyncSessionClinic/>} */}
           <SWRProvider>
-            <UserProvider>
+            <Auth0Provider>
               {children}
               <SpeedInsights />
               <Analytics />
               <SonnerToaster richColors/>
               <Toaster />
-            </UserProvider>
+            </Auth0Provider>
           </SWRProvider>
         </JotaiProvider>
       </body>

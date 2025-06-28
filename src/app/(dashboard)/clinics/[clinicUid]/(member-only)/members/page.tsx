@@ -1,11 +1,10 @@
-import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth0";
 import { Separator } from "@components/ui/separator";
-import { isOrgAdmin } from "@lib/org-utils";
 import React from "react";
 import Suspend from "@components/Suspend";
 import { redirect } from "next/navigation";
 import { Metadata } from "next";
 import { MembershipTable } from "@components/membership/MembershipTable";
+import { AppRouterPageRouteOpts } from "@/types";
 
 export const maxDuration = 40; // page timeout in seconds
 export const revalidate  = 120; // revalidation interval in seconds
@@ -15,7 +14,7 @@ export const metadata: Metadata = {
   description: "View and manage organization memberships. (Only available to organization administrators)"
 };
 
-async function MembershipPage({params}: AppRouterPageRouteOpts) {
+export default async function MembershipPage({params}: AppRouterPageRouteOpts) {
   const clinicUid = String(params?.clinicUid);
   // const orgAdmin = await isOrgAdmin(orgUid);
   // if(!orgAdmin) {
@@ -38,9 +37,3 @@ async function MembershipPage({params}: AppRouterPageRouteOpts) {
     </>
   );
 }
-export default withPageAuthRequired(MembershipPage, {
-  returnTo: ({params, searchParams}) => {
-    const searchStr = Object.entries(searchParams ?? {}).map(([key, value]) => `${key}=${value}`).join("&");
-    return `/${String(params?.orgUid)}/membership?${searchStr}`;
-  }
-});

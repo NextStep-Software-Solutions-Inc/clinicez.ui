@@ -9,7 +9,8 @@ export const metadata: Metadata = {
   description: "Consultation Tickets within your organization.",
 }
 
-export default async function ConsultationsPage({params}: AppRouterPageRouteOpts) {
+export default async function ConsultationsPage(props: AppRouterPageRouteOpts) {
+  const params = await props.params;
   const clinicUid = String(params?.clinicUid)
   return (
     <>

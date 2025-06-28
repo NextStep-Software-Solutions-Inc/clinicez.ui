@@ -10,9 +10,10 @@ export const metadata: Metadata = {
   description: "Organization provides a way to activate users aside from the default manual application to become a member.",
 }
 
-export default async function ActivatePage({params}: AppRouterPageRouteOpts) {
+export default async function ActivatePage(props: AppRouterPageRouteOpts) {
+  const params = await props.params;
   const orgUid = String(params?.orgUid);
-  
+
   return (
 
     <div className="container mx-auto my-10 space-y-6">

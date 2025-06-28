@@ -13,10 +13,11 @@ export const metadata: Metadata = {
   description: "These are the files you have uploaded to your PHR."
 }
 
-export default async function PHRPage({ params, searchParams }: AppRouterPageRouteOpts) {
-  const userId = decodeURI(params?.user as string) 
+export default async function PHRPage(props: AppRouterPageRouteOpts) {
+  const params = await props.params;
+  const userId = decodeURI(params?.user as string)
   const owner = await isUserOwner(userId);
-    
+
   return (
     <div className="space-y-6">
       <div className="group/create-folder">

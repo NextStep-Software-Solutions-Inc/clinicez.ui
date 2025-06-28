@@ -13,17 +13,18 @@ import HPProfile from "./HPProfile";
 import { FEMALE_DOCTOR_AVATAR, MALE_DOCTOR_AVATAR } from "@lib/contants";
 
 type Props = {
-  params: { practitioner: string }
-  searchParams: { [key: string]: string | string[] | undefined }
+  params: Promise<{ practitioner: string }>
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }
 
-export async function generateMetadata({ params, searchParams }: Props, parent: ResolvingMetadata): Promise<Metadata> {
-  const hpId = parseInt((params?.practitioner ?? "") as string);  
+export async function generateMetadata(props: Props, parent: ResolvingMetadata): Promise<Metadata> {
+  const params = await props.params;
+  const hpId = parseInt((params?.practitioner ?? "") as string);
   const session = await getCachedSession();
   const profile = await getHPAction({
     id: hpId
   })
-  
+
   if(!profile || (profile.User.userId !== session?.user.sub && !profile.isPublished)) return notFound();
 
   const site = new URL(process.env.AUTH0_BASE_URL ?? "").hostname;
@@ -43,7 +44,8 @@ export async function generateMetadata({ params, searchParams }: Props, parent: 
   };
 }
 
-export default async function PractitionerPage({params, searchParams}: AppRouterPageRouteOpts) {
+export default async function PractitionerPage(props: AppRouterPageRouteOpts) {
+  const params = await props.params;
 
   const hpId = parseInt((params?.practitioner ?? "") as string);
   const session = await getCachedSession()
@@ -52,7 +54,7 @@ export default async function PractitionerPage({params, searchParams}: AppRouter
   })
   const isMyHp = profile?.User.userId === session?.user.sub
   if(!profile || (!isMyHp && !profile.isPublished)) return notFound();
- 
+
   return (
     <div className="content container mx-auto my-10 relative">
       <ConditionalRender condition={isMyHp}>

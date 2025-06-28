@@ -9,7 +9,8 @@ export const metadata: Metadata = {
   description: "Update your vaccination and immunization information to help you organization track your vaccination and immunization history."
 }
 
-export default async function VaccinationImmunizationPage({params}: AppRouterPageRouteOpts) {
+export default async function VaccinationImmunizationPage(props: AppRouterPageRouteOpts) {
+  const params = await props.params;
   const userId = decodeURI(params?.user as string)
   return (
     <div className="space-y-6">

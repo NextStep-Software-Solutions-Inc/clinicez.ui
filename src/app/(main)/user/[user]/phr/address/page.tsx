@@ -11,7 +11,8 @@ export const metadata: Metadata = {
   description: "Update your address to help you organization locate you."
 }
 
-export default async function AddressPage({params}: AppRouterPageRouteOpts) {
+export default async function AddressPage(props: AppRouterPageRouteOpts) {
+  const params = await props.params;
 
   const session = await getCachedSession()
   const userId = decodeURI(params?.user as string)

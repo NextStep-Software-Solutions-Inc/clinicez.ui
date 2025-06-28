@@ -9,7 +9,8 @@ export const metadata = {
   description: "Track your vital signs and anthropometric measurements."
 }
 
-export default async function VitalsPage({params, searchParams}: AppRouterPageRouteOpts) {
+export default async function VitalsPage(props: AppRouterPageRouteOpts) {
+  const params = await props.params;
   const userId = decodeURI(params?.user as string);
   const userOwner = await isUserOwner(userId);
 

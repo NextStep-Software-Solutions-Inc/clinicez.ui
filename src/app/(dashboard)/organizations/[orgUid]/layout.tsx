@@ -30,14 +30,21 @@ import { redirect } from "next/navigation";
 
 interface ProcessLayoutProps {
   children: React.ReactNode;
-  params: {
+  params: Promise<{
     orgUid: string;
-  };
+  }>;
 }
-export default async function ProcessLayout({
-  children,
-  params: { orgUid }
-}: ProcessLayoutProps) {
+export default async function ProcessLayout(props: ProcessLayoutProps) {
+  const params = await props.params;
+
+  const {
+    orgUid
+  } = params;
+
+  const {
+    children
+  } = props;
+
   const [session, isMember] = await Promise.all([
     getCachedSession(),
     isOrgMember(orgUid)

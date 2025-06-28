@@ -16,7 +16,9 @@ export const metadata: Metadata = {
   description: "View and manage patient EMR",
 };
 
-export default async function PatientsPage({params, searchParams}: AppRouterPageRouteOpts) {
+export default async function PatientsPage(props: AppRouterPageRouteOpts) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const clinicUid = String(params?.clinicUid);
   const search = searchParams?.search as string;
   const page = parseInt(searchParams?.page as string) || 1;
@@ -26,7 +28,7 @@ export default async function PatientsPage({params, searchParams}: AppRouterPage
   if(!hp) {
     redirect("/unauthorized");
   }
-  
+
   return (
     <div className="space-y-6">
       <div className=" flex justify-between items-center">

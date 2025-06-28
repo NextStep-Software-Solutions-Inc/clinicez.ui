@@ -24,12 +24,13 @@ export const metadata: Metadata = {
   description: "Clinic Dashboard",
 }
 
-export default async function DashboardPage({params, searchParams}: AppRouterPageRouteOpts) {
+export default async function DashboardPage(props: AppRouterPageRouteOpts) {
+  const params = await props.params;
   const clinicUid = String(params?.clinicUid)
   const session = await getCachedSession()
   const clinic = await getClinicAction(clinicUid)
   const userId = session?.user.sub
-  
+
 
   const mappedNavItems = filterNavList().map((item) => ({
     ...item,

@@ -21,7 +21,8 @@ export const metadata: Metadata = {
   description: "View and respond to appointments",
 }
 
-export default async function AppointmentsPage({ searchParams, params }: AppRouterPageRouteOpts ) {
+export default async function AppointmentsPage(props: AppRouterPageRouteOpts) {
+  const params = await props.params;
   const clinicUid = String(params?.clinicUid)
   const session = await getCachedSession()
   // if(!appointmentStatus || !role ) return redirect(`/${organization}/appointments?_type=pending&_role=admin`)
@@ -34,12 +35,12 @@ export default async function AppointmentsPage({ searchParams, params }: AppRout
     getRoutedAppointmentCountsAction(clinicUid),
     getClinicAppointmentTabsAction(clinicUid)
   ])
-  
+
   const defaultLayout = layout ? JSON.parse(layout.value) : undefined
   const defaultCollapsed = collapsed ? JSON.parse(collapsed.value) : undefined
-  
+
   if(!session) redirect(`/auth/login?returnTo=${encodeURIComponent(`/clinics/${clinicUid}/appointments`)}`)
-  
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">

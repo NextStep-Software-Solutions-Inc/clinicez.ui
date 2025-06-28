@@ -10,7 +10,8 @@ export const metadata: Metadata = {
   description: "Update your allergy information for your healthcare providers to better understand your health."
 }
 
-export default async function AllergiesPage({ params }: AppRouterPageRouteOpts) {
+export default async function AllergiesPage(props: AppRouterPageRouteOpts) {
+  const params = await props.params;
   const userId = decodeURI(params?.user as string)
   const ownerUser = await isUserOwner(userId)
 

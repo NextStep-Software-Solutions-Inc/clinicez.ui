@@ -3,13 +3,22 @@ import SidebarNav from "@components/SidebarNav"
 
 interface SettingsLayoutProps {
   children: React.ReactNode
-  params: {
+  params: Promise<{
     organization: string
-  }
+  }>
 }
 
-export default function SettingsLayout({ children, params: {organization} }: SettingsLayoutProps) {
-  
+export default async function SettingsLayout(props: SettingsLayoutProps) {
+  const params = await props.params;
+
+  const {
+    organization
+  } = params;
+
+  const {
+    children
+  } = props;
+
   const sidebarNavItems = [
     {
       title: "General",
@@ -44,7 +53,7 @@ export default function SettingsLayout({ children, params: {organization} }: Set
       href: `/settings/advanced`,
     }
   ]
-  
+
   return (
     <>
       <div className="container space-y-6 p-5 md:p-10 pb-16">

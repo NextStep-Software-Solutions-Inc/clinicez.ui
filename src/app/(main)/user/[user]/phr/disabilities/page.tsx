@@ -11,7 +11,8 @@ export const metadata: Metadata = {
   description: "Update your disabilities and illnesses information to help your organization track your health history."
 }
 
-export default async function DisabilitiesPage({params}: AppRouterPageRouteOpts) {
+export default async function DisabilitiesPage(props: AppRouterPageRouteOpts) {
+  const params = await props.params;
 
   const userId = decodeURI(params?.user as string)
   const ownerUser = await isUserOwner(userId)

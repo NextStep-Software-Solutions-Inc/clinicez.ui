@@ -12,7 +12,8 @@ export const metadata: Metadata = {
   description: "Update your emergency contact information to help you in case of emergency."
 }
 
-export default async function ContactInformationPage({params}:AppRouterPageRouteOpts) {
+export default async function ContactInformationPage(props:AppRouterPageRouteOpts) {
+  const params = await props.params;
   const session = await getCachedSession()
   if(!session) return redirect("/auth/login")
   const userId = decodeURI(params?.user as string)

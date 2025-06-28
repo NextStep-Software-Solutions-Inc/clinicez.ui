@@ -4,11 +4,20 @@ import { redirect } from "next/navigation";
 
 interface OrgSettingLayoutProps {
     children: React.ReactNode;
-    params: {
+    params: Promise<{
         clinicUid: string;
-    }
+    }>
 }
-export default async function OrgSettingLayout({children, params: {clinicUid}}:OrgSettingLayoutProps) {
+export default async function OrgSettingLayout(props:OrgSettingLayoutProps) {
+  const params = await props.params;
+
+  const {
+    clinicUid
+  } = params;
+
+  const {
+    children
+  } = props;
 
   const session = await getCachedSession();
   const myClinicMembership = await getClinicMembersAction({

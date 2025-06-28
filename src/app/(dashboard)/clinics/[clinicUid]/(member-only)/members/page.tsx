@@ -14,7 +14,8 @@ export const metadata: Metadata = {
   description: "View and manage organization memberships. (Only available to organization administrators)"
 };
 
-export default async function MembershipPage({params}: AppRouterPageRouteOpts) {
+export default async function MembershipPage(props: AppRouterPageRouteOpts) {
+  const params = await props.params;
   const clinicUid = String(params?.clinicUid);
   // const orgAdmin = await isOrgAdmin(orgUid);
   // if(!orgAdmin) {

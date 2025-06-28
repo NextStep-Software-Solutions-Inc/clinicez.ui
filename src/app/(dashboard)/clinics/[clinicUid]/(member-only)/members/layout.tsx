@@ -4,11 +4,20 @@ import { redirect } from "next/navigation";
 
 interface MembersLayoutProps {
     children: React.ReactNode;
-    params: {
+    params: Promise<{
         clinicUid: string;
-    }
+    }>
 }
-export default async function MembersLayout({children, params: {clinicUid}}:MembersLayoutProps) {
+export default async function MembersLayout(props:MembersLayoutProps) {
+  const params = await props.params;
+
+  const {
+    clinicUid
+  } = params;
+
+  const {
+    children
+  } = props;
 
   const session = await getCachedSession();
   const myClinicMembership = await getClinicMembersAction({

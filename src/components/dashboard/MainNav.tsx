@@ -30,12 +30,11 @@ export function MainNav({ className, navItems }: DashboardNavProps) {
               "text-sm font-medium transition-colors hover:text-primary",
               item.href !== pathname && "text-muted-foreground"
             )}
-          >
+            legacyBehavior>
             {item.name}
           </Link>
         )}
       />
-      
     </nav>
-  )
+  );
 }

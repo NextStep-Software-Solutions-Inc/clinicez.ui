@@ -42,7 +42,7 @@ export const getUsersAction = cache(async (filters:GetUsersFilters) => {
       where: {
         userId, 
         email,
-        ...orgUid ? { 
+        ...(orgUid ? { 
           OrganizationMembers: { 
             some: { 
               Organization: {
@@ -50,15 +50,15 @@ export const getUsersAction = cache(async (filters:GetUsersFilters) => {
               } 
             }
           } 
-        } : {},
-        ...search ? {
+        } : {}),
+        ...(search ? {
           OR: [
             { firstName: { mode: "insensitive", contains: search } },
             { lastName: { mode: "insensitive", contains: search } },
             { middleName: { mode: "insensitive", contains: search } },
             { email: { mode: "insensitive", contains: search } }
           ]
-        }: {},
+        } : {}),
         isActive: true
       },
       include: {
@@ -76,7 +76,7 @@ export const getUsersAction = cache(async (filters:GetUsersFilters) => {
       }
     })
     const total = await prisma.user.count({ where: {
-      ...orgUid ? { 
+      ...(orgUid ? { 
         OrganizationMembers: { 
           some: { 
             Organization: {
@@ -84,15 +84,15 @@ export const getUsersAction = cache(async (filters:GetUsersFilters) => {
             } 
           }
         } 
-      } : {},
-      ...search ? {
+      } : {}),
+      ...(search ? {
         OR: [
           { firstName: { mode: "insensitive", contains: search } },
           { lastName: { mode: "insensitive", contains: search } },
           { middleName: { mode: "insensitive", contains: search } },
           { email: { mode: "insensitive", contains: search } }
         ]
-      }: {},
+      } : {}),
       isActive: true
     } })
     return [ users, total ] as const;
@@ -115,7 +115,7 @@ export const getUserAction = withErrorHandling(cache(async (key: string, orgUid?
         { userId: key },
         { email: key }
       ], 
-      ...orgUid ? {
+      ...(orgUid ? {
         Organizations: { 
           some: { 
             Organization: {
@@ -123,7 +123,7 @@ export const getUserAction = withErrorHandling(cache(async (key: string, orgUid?
             } 
           }
         }
-      } : {},
+      } : {}),
     },
     include: {
       HealthcareProviders: {

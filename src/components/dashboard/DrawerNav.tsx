@@ -29,11 +29,13 @@ export default function DrawerNav({ navItems }: DrawerNavProps) {
             {
               !!href
                 ? (
-                  <Link href={href} className={cn(
-                    "flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground",
-                    href === pathname && "text-foreground"
-                  )}
-                  >
+                  <Link
+                    href={href}
+                    className={cn(
+                      "flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground",
+                      href === pathname && "text-foreground"
+                    )}
+                    legacyBehavior>
                     <Icon name={icon}  className="h-5 w-5" />
                     {name}
                   </Link>)
@@ -49,11 +51,11 @@ export default function DrawerNav({ navItems }: DrawerNavProps) {
                             "flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground",
                             href === pathname && "text-foreground"
                           )}
-                        >
+                          legacyBehavior>
                           {!!icon && <Icon name={icon} className="h-5 w-5"/>}
                           {name}
                         </Link>
-                      )
+                      );
                     }}
                   /> 
 

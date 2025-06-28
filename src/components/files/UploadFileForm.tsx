@@ -108,7 +108,7 @@ export default function UploadFileForm({folder}: UploadFileFormProps) {
         success: ({url}) => {
           toast.promise(createFileAction({
             fileTypeId: data.fileTypeId,
-            ...data.dateTaken ? {dateTaken: data.dateTaken} : {},
+            ...(data.dateTaken ? {dateTaken: data.dateTaken} : {}),
             folderId: folder.id,
             name: file.name as string,
             size: file.size as number,

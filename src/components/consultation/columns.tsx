@@ -44,11 +44,12 @@ export const columns: ColumnDef<NonNullable<GetConsultationTickets["data"]>[numb
     cell: ({ row }) => {
       return (
         <div className="flex space-x-2">
-          <Link className=""
+          <Link
+            className=""
             href={{
               pathname: `consultations/${row.original.id}`
             }}
-          >
+            legacyBehavior>
             <div className="max-w-[350px] line-clamp-2 ">
               <div className="text-primary font-medium">
                 Ticket #{row.original.id}
@@ -57,7 +58,7 @@ export const columns: ColumnDef<NonNullable<GetConsultationTickets["data"]>[numb
             </div>
           </Link>
         </div>
-      )
+      );
     },
   },
   {

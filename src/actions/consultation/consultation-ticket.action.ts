@@ -97,11 +97,10 @@ export const getConsultationTicketAction = withErrorHandling(cache(async (consul
       id: consultationId,
       OR: [
         {
-          ...canReadAllOrgConsultations ? {Clinic: {clinicUid}} : {},
+          ...(canReadAllOrgConsultations ? {Clinic: {clinicUid}} : {}),
         },
         { 
-          ...canReadCreatedOrgConsultations 
-            ? { 
+          ...(canReadCreatedOrgConsultations ? { 
               ConsultationTicketHPs: { 
                 some: { 
                   HealthCareProvider: {
@@ -111,17 +110,13 @@ export const getConsultationTicketAction = withErrorHandling(cache(async (consul
                   }
                 }
               } 
-            } 
-            : {}
+            } : {})
         },
         {
-          ...canReadOwnOrgConsultations
-            ? { Appointment: { Requesters: {  some: { User: {userId: session.user.sub} } } } }
-            : {}
+          ...(canReadOwnOrgConsultations ? { Appointment: { Requesters: {  some: { User: {userId: session.user.sub} } } } } : {})
         },
         {
-          ...canReadCoCreatedOrgConsultations
-            ? {
+          ...(canReadCoCreatedOrgConsultations ? {
               Appointment: {
                 AppointmentRouting: {
                   some: {
@@ -134,8 +129,7 @@ export const getConsultationTicketAction = withErrorHandling(cache(async (consul
                   }
                 }
               }
-            }
-            : {}
+            } : {})
         }
       ]
     },
@@ -263,8 +257,8 @@ export const getConsultationTicketsAction = withErrorHandling(async (filters: Ge
       Clinic: {
         clinicUid
       },
-      ...showArchived ? {}: { isArchived: false},
-      ...userId !== "null" ? {
+      ...(showArchived ? {} : { isArchived: false}),
+      ...(userId !== "null" ? {
         Appointment: {
           Requesters: {
             some: {
@@ -274,14 +268,13 @@ export const getConsultationTicketsAction = withErrorHandling(async (filters: Ge
             }
           }
         }
-      } : {},
+      } : {}),
       OR: [
         {
-          ...canReadAllOrgConsultations ? {Clinic: {clinicUid}} : {},
+          ...(canReadAllOrgConsultations ? {Clinic: {clinicUid}} : {}),
         },
         { 
-          ...canReadCreatedOrgConsultations 
-            ? { 
+          ...(canReadCreatedOrgConsultations ? { 
               ConsultationTicketHPs: {
                 some: {
                   HealthCareProvider: {
@@ -291,17 +284,13 @@ export const getConsultationTicketsAction = withErrorHandling(async (filters: Ge
                   }
                 }
               }
-            } 
-            : {}
+            } : {})
         },
         { 
-          ...canReadOwnOrgConsultations 
-            ? { Appointment: { Requesters: { some: { User: { userId: session.user.sub} } } } }
-            : {},
+          ...(canReadOwnOrgConsultations ? { Appointment: { Requesters: { some: { User: { userId: session.user.sub} } } } } : {}),
         },
         {
-          ...canReadCoCreatedOrgConsultations 
-            ? {
+          ...(canReadCoCreatedOrgConsultations ? {
               Appointment: {
                 AppointmentRouting: {
                   some: {
@@ -314,8 +303,7 @@ export const getConsultationTicketsAction = withErrorHandling(async (filters: Ge
                   }
                 }
               }
-            }
-            : {}
+            } : {})
         }
       ]
     },

@@ -54,7 +54,7 @@ export default function Conversation({ consultation}: ConversationProps) {
             event.preventDefault()
             if (inputLength === 0) return
             setMessages([
-              ...messages ?? [],
+              ...(messages ?? []),
               {
                 senderId: 2, //  change to user id
                 content: input,

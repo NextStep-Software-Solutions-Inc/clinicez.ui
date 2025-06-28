@@ -53,7 +53,7 @@ export const getClinicsAction = withErrorHandling(cache(async (filters?: GetClin
       name: "asc"
     },
     where: {
-      ...userId ? {
+      ...(userId ? {
         ClinicMembers: {
           some: {
             User: {
@@ -68,18 +68,18 @@ export const getClinicsAction = withErrorHandling(cache(async (filters?: GetClin
             }
           }
         }
-      }: {},
+      } : {}),
       ClinicSetting: {
-        ...isPublic ? {isPublic}:{}
+        ...(isPublic ? {isPublic} : {})
       },
-      ...clinicUid ? { clinicUid } : {},
-      ...orgUid ? { ClinicOrganizations : {
+      ...(clinicUid ? { clinicUid } : {}),
+      ...(orgUid ? { ClinicOrganizations : {
         some: {
           Organization: {
             orgUid
           }
         }
-      }}: {},
+      }} : {}),
       isActive: true
     }
   });
@@ -95,7 +95,7 @@ export const getClinicAction = withErrorHandling(cache(async (key: string | numb
     where: {
       isActive: true,
       OR: [
-        {...!isNaN(Number(key))? {id: Number(key)} : {}}, 
+        {...(!isNaN(Number(key)) ? {id: Number(key)} : {})}, 
         {clinicUid: String(key)}
       ]
     },

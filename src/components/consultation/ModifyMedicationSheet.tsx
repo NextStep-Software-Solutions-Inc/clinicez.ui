@@ -152,7 +152,7 @@ export default function ModifyMedicationSheet({ readonly }: ModifyMedicationShee
             ) }
             {
               !readonly && myPermissions?.some(p => p.name === PERMISSIONS.CLINIC["CREATE:CLINIC:PRESCRIPTION"].name) && medication?.data?._count.Prescriptions === 0 && ( // add permission check here
-                <form action={handleCreatePrescription} className="w-full">
+                (<form action={handleCreatePrescription} className="w-full">
                   <ActionButton 
                     variant="outline" 
                     className="w-full"
@@ -160,7 +160,7 @@ export default function ModifyMedicationSheet({ readonly }: ModifyMedicationShee
                     <FileText className="h-4 w-4 mr-2" />
                     Create Prescription
                   </ActionButton>
-                </form>
+                </form>)
               )
             }
           </div>

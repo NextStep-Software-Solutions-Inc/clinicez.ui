@@ -73,12 +73,15 @@ export const BackgroundInfo = ({ appointment, consultation, user }: BackgroundIn
         <CardDescription>
           <span className="flex items-center gap-2">
             {appointment?.subject} 
-            <Link target="_blank" href={{
-              pathname: `../appointments`,
-              query: {
-                _appointment: appointment?.id,
-              }
-            }}>
+            <Link
+              target="_blank"
+              href={{
+                pathname: `../appointments`,
+                query: {
+                  _appointment: appointment?.id,
+                }
+              }}
+              legacyBehavior>
               <Tooltip>
                 <TooltipTrigger>
                   <ExternalLink className="w-4 h-4 text-primary"/>
@@ -137,7 +140,7 @@ export const BackgroundInfo = ({ appointment, consultation, user }: BackgroundIn
         </Tabs>
       </CardFooter>
     </Card>
-  )
+  );
 }
 
 interface PatientHpDetailsProps {

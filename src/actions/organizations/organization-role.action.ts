@@ -58,7 +58,7 @@ export const getOrganizationRolesAction = withErrorHandling(cache(async (filters
     },
     where: {
       isActive: true,
-      ...userId ? {
+      ...(userId ? {
         OrganizationMembers: {
           some: {
             User: {
@@ -66,8 +66,8 @@ export const getOrganizationRolesAction = withErrorHandling(cache(async (filters
             }
           }
         }
-      }: {},
-      ...orgUid ? { Organization: { orgUid } } : {}
+      } : {}),
+      ...(orgUid ? { Organization: { orgUid } } : {})
 
     },
     select: {

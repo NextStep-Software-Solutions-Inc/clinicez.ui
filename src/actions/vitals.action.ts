@@ -31,7 +31,7 @@ export const createUserVitalSignAction = async (payload: BaseVitalSign & { userI
         }
       },
       ...res,
-      ...res.height && res.weight ? {bmi: calculateBMI(res.weight, res.height)} : {},
+      ...(res.height && res.weight ? {bmi: calculateBMI(res.weight, res.height)} : {}),
     },
   });
 }
@@ -71,7 +71,7 @@ export const updateUserVitalSignAction = async (vitalsId: number, payload: BaseV
     },
     data: {
       ...payload,
-      ...payload.height && payload.weight ? {bmi: calculateBMI(payload.weight, payload.height)} : {},
+      ...(payload.height && payload.weight ? {bmi: calculateBMI(payload.weight, payload.height)} : {}),
     }
   });
 }

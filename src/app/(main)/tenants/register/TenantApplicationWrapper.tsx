@@ -17,7 +17,7 @@ export default function TenantApplicationWrapper(props:TenantApplicationWrapperP
     currentStep: 1
   })
 
-  return(
+  return (
     <>
       <Stepper steps={steps} currentStep={currentStep} complete={isComplete} />
       {!isComplete ? currentStepComponent : (
@@ -26,14 +26,14 @@ export default function TenantApplicationWrapper(props:TenantApplicationWrapperP
           <p>
           You have successfully subscribed to the Clinic EZ Plan. You can now access the tenant console to manage your tenancy.
           </p>
-          <Link 
+          <Link
             target="_blank"
             href={process.env.NEXT_PUBLIC_APP_URL + "/console/tenants"}
-          >
+            legacyBehavior>
             <Button>Go to Tenant Console</Button>
           </Link>
         </div>
       )}
     </>
-  )
+  );
 }

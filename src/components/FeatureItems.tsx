@@ -64,7 +64,7 @@ export default function FeatureItems() {
                 <h2 className="text-3xl font-bold ">{feature.name}</h2>
                 <p className="text-gray-800">{feature.description}</p>
                 <p className="text-gray-800">{feature.content}</p>
-                <Link href={feature.action.path} target="_blank">
+                <Link href={feature.action.path} target="_blank" legacyBehavior>
                   <Button size="lg" className="mt-8 mx-auto ~text-xs/sm ~h-8/10">
                     {feature.action.label}
                     <ArrowRightCircle className="w-4 h-4 ml-2" />
@@ -90,10 +90,9 @@ export const HeroTitle = ({authenticated = false}) => {
       transition={{ duration: 1, delay: 0.5}}
     >
       <p className="text-center lg:text-left text-6xl font-extrabold tracking-wider text-gray-500">Optimized Healthcare Management System</p>
-      
       <ConditionalRender condition={!authenticated}>
         <div className="flex md:block items-center flex-col">
-          <Link href="/tenants/register">
+          <Link href="/tenants/register" legacyBehavior>
             <Button size="lg" className="mt-8 mx-auto text-sm h-10">
               Register your clinic now
               <ArrowRightCircle className="w-4 h-4 ml-2" />
@@ -103,13 +102,13 @@ export const HeroTitle = ({authenticated = false}) => {
       </ConditionalRender>
       <ConditionalRender condition={authenticated}>
         <div className="flex lg:block justify-center">
-          <Link href="/organizations">
+          <Link href="/organizations" legacyBehavior>
             <Button className="mx-auto h-10 mt-10"><Rocket size={18} className="mr-1"/>Get Started</Button>
           </Link>
         </div>
       </ConditionalRender>
     </motion.div>
-  )
+  );
 }
 
 export const HeroImage = () => {

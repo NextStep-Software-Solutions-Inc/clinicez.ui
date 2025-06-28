@@ -50,8 +50,8 @@ export const GotoHpProfile = () => {
 
   if (!hp) return null;
   return (
-    <Link href={`/hp/${hp.id}`}>
+    <Link href={`/hp/${hp.id}`} legacyBehavior>
       <Button className="mt-5">Go to Profile <ArrowRight/></Button>
     </Link>
-  )
+  );
 }

@@ -15,7 +15,7 @@ export default function OrganizationStepComplete(props: OrganizationStepComplete
           Your application has been successfully sent to the organization. You will be notified once your application has been reviewed.
           </p>
           <Button onClick={startOver} className="my-5">Apply another role</Button>
-          <Link href="/" className="">
+          <Link href="/" className="" legacyBehavior>
             <Button variant="link" className="my-5">Go Home</Button>
           </Link>
         </div>

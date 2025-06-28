@@ -28,7 +28,7 @@ export default function DoneEditingIllnessButton({index, form, onUpdate}:DoneEdi
         illness: data.HealthCondition.name.trim(),
         severity: data.severity as Severity,
         notes: data.notes,
-        ...data.dateDiagnosed && {dateDiagnosed: data.dateDiagnosed}
+        ...(data.dateDiagnosed && {dateDiagnosed: data.dateDiagnosed})
       }), {
         loading: "Saving...",
         success: (res) =>{

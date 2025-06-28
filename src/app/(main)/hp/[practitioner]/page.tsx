@@ -56,7 +56,7 @@ export default async function PractitionerPage({params, searchParams}: AppRouter
   return (
     <div className="content container mx-auto my-10 relative">
       <ConditionalRender condition={isMyHp}>
-        <Link href={`/hp/${hpId}/editor`}>
+        <Link href={`/hp/${hpId}/editor`} legacyBehavior>
           <Button className="z-10 fixed -right-[6.5rem] mr-2 hover:-right-[20px] transition-all">
             <Pencil size={20} className="mr-2"/>Edit profile
           </Button>
@@ -66,7 +66,7 @@ export default async function PractitionerPage({params, searchParams}: AppRouter
         <HPProfile hpId={hpId} />
       </Suspend>
     </div>
-  )
+  );
 }
 
 

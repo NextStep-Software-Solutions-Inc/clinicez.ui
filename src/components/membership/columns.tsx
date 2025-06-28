@@ -106,16 +106,15 @@ export const columns: ColumnDef<NonNullable<GetOrgMembers["data"]>["data"][numbe
               target="_blank"
               href={`/user/${row.original.User?.userId}/phr`}
               className="hover:underline cursor-pointer line-clamp-1"
-            >
+              legacyBehavior>
               {user} <ExternalLink className="w-4 h-4 ml-3 inline-block" />
             </Link>
             <ConditionalRender condition={!!gender && !!dob}>
               <div className="text-xs text-muted-foreground">{gender && gender.charAt(0)} / {dob && differenceInCalendarYears(new Date(), dob)}</div>
             </ConditionalRender>
           </div>
-
         </div>
-      )
+      );
     }
   },
   {

@@ -37,11 +37,11 @@ export default function SidebarNav({ className, items, ...props }: SidebarNavPro
                 : "hover:bg-transparent hover:underline",
               "justify-start text-wrap"
             )}
-          >
+            legacyBehavior>
             {item.title}
           </Link>
         )}
       />
     </nav>
-  )
+  );
 }

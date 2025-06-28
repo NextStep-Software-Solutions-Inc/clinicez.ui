@@ -13,13 +13,16 @@ export async function OrganizationCard({ organization }: OrganizationCardProps) 
 
   return (
     <div className="relative group/join hover:scale-105 hover:z-50 transition-all">
-      <Link href={customUrl ? customUrl: `/organizations/${orgUid}`}>
+      <Link href={customUrl ? customUrl: `/organizations/${orgUid}`} legacyBehavior>
         <div className="overflow-hidden relative h-[15rem] aspect-video rounded-lg shadow-2xl ">
           <Image src={logo ?? organizationPlaceholder} alt={name} fill className="object-scale-down rounded-lg" />
           
         </div>
       </Link>
-      <Link href={`/organizations/${orgUid}/join`} className="invisible group-hover/join:visible transition-all duration-300">
+      <Link
+        href={`/organizations/${orgUid}/join`}
+        className="invisible group-hover/join:visible transition-all duration-300"
+        legacyBehavior>
         <div className="rounded-b-lg absolute bottom-0 h-20 w-full bg-white bg-opacity-90 px-4 flex items-center justify-center">
           <p className="mb-2 text-center line-clamp-3 text-sm font-semibold" title={name}>{name}</p>
         </div>

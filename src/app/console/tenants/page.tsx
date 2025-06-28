@@ -43,11 +43,11 @@ async function TenantsPage() {
 const NewTenantButton = () => {
   return (
     <>
-      <Link href="/tenants/register" className="flex justify-start">
+      <Link href="/tenants/register" className="flex justify-start" legacyBehavior>
         <button className={cn("shiny-cta font-semibold")}>
           <span>Create New Tenant</span>
         </button>
       </Link>
     </>
-  )
+  );
 }

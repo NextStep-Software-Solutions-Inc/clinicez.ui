@@ -23,7 +23,10 @@ export default async function HPList({ hpTypeId }: HPListProps) {
       <Each
         of={mappedHp}
         render={(item) => (
-          <Link href={`/hp/${item.id}`} className="h-[20rem] aspect-square relative">
+          <Link
+            href={`/hp/${item.id}`}
+            className="h-[20rem] aspect-square relative"
+            legacyBehavior>
             <Image src={item.photoUrl} alt={item.name} width={1000} height={1000} className="w-full h-full object-cover rounded-lg" />
             <div className="absolute bottom-0 left-0 w-full text-center ">
               <div className="bg-white opacity-75 p-3 rounded-b-lg ">

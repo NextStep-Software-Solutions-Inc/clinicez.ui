@@ -24,19 +24,19 @@ export default function StepsIndicator({steps}: IStepsIndicatorProps) {
         of={steps}
         render={(step) => {
           return (
-            <Link href={{
-              query: {
-                ...searchParams,
-                index: step.label
-              }
-            }}
-            >
+            <Link
+              href={{
+                query: {
+                  ...searchParams,
+                  index: step.label
+                }
+              }}
+              legacyBehavior>
               <TabsTrigger className="w-full capitalize" value={step.label}>{step.label}</TabsTrigger>
             </Link>
-          )
+          );
         }}
       />
     </TabsList>
-      
   );
 }

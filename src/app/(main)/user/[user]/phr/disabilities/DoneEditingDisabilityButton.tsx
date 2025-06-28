@@ -26,8 +26,8 @@ export default function DoneEditingDisabilityButton({index, form, onUpdate}:Done
         disability: data.Disability.name.trim(),
         severity: data.severity,
         notes: data.notes,
-        ...data.dateDiagnosed ? {dateDiagnosed: data.dateDiagnosed} : {},
-        ...data.isManaged ? {isManaged: data.isManaged} : {},
+        ...(data.dateDiagnosed ? {dateDiagnosed: data.dateDiagnosed} : {}),
+        ...(data.isManaged ? {isManaged: data.isManaged} : {}),
       }), {
         loading: "Saving...",
         success: (res) =>{

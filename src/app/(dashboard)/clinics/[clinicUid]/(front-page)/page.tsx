@@ -64,7 +64,7 @@ export default async function ClinicPage({ params }: { params: { clinicUid: stri
             userId={session.user.sub}
             className="shiny-cta" />
           <div>
-            <Link href={`/clinics/${clinicUid}/dashboard`}>
+            <Link href={`/clinics/${clinicUid}/dashboard`} legacyBehavior>
               <Button variant="link">Go to Dashboard</Button>
             </Link>
           </div>

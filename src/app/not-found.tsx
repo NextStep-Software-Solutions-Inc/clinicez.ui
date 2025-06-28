@@ -21,7 +21,7 @@ export default function NotFound() {
           <Button onClick={goBack}>
             <ArrowLeft className='mr-2 w-4 h-4'/>
             Go Back</Button>
-          <Link href="/">
+          <Link href="/" legacyBehavior>
             <Button variant="outline">
               <Home className='mr-2 w-4 h-4'/>
               Go Home</Button>
@@ -29,5 +29,5 @@ export default function NotFound() {
         </div>
       </div>
     </div>
-  )
+  );
 }

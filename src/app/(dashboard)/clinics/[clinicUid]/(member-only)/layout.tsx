@@ -72,7 +72,7 @@ export default async function ProcessLayout({
             <Link
               href="/"
               className="flex h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full ring-primary ring-2 text-lg font-semibold md:h-8 md:w-8 md:text-base transition-all hover:scale-125"
-            >
+              legacyBehavior>
               <Image
                 src={ClinicEzMiniLogo}
                 width={100}
@@ -91,7 +91,7 @@ export default async function ProcessLayout({
                 <Link
                   href="profile"
                   className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
-                >
+                  legacyBehavior>
                   <LifeBuoy className="h-5 w-5" />
                   <span className="sr-only">Clinic Support</span>
                 </Link>
@@ -103,7 +103,7 @@ export default async function ProcessLayout({
                 <Link
                   href={`/clinics/${clinicUid}/members/${session?.user.sub}`}
                   className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
-                >
+                  legacyBehavior>
                   <UserRound className="h-5 w-5" />
                   <span className="sr-only">My Clinic Profile</span>
                 </Link>
@@ -117,7 +117,7 @@ export default async function ProcessLayout({
                 <Link
                   href={`/clinics/${clinicUid}/clinic-settings`}
                   className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
-                >
+                  legacyBehavior>
                   <Settings className="h-5 w-5" />
                   <span className="sr-only">Clinic Settings</span>
                 </Link>
@@ -150,7 +150,7 @@ export default async function ProcessLayout({
                   <Link
                     href="/dashboard/settings"
                     className="mt-auto flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
-                  >
+                    legacyBehavior>
                     <Settings className="h-5 w-5" />
                     Settings
                   </Link>

@@ -228,7 +228,7 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
         }
         : {}),
       OR: [
-        {...(canReadAllOrgAppointment ? {  Clinic: {clinicUid},...userId ? { Requesters: { every: { User: {userId} } } } : {} } : {}) },
+        {...(canReadAllOrgAppointment ? {  Clinic: {clinicUid},...(userId ? { Requesters: { every: { User: {userId} } } } : {}) } : {}) },
         {...(canReadAOwnOrgAppointment ? { Requesters: { every: { User: { userId: session.user.sub} } } } : {}) },
         {...(canReadAssignedOrgAppointment ? {
           AppointmentRouting: {
@@ -791,7 +791,7 @@ export const rescheduleAppointmentAction = withErrorHandling(async ({ appointmen
             userId: session.user.sub
           }
         },
-        ...assign ? { status: "ROUTED" } : {}
+        ...(assign ? { status: "ROUTED" } : {})
       }
     });
     if(assign) {

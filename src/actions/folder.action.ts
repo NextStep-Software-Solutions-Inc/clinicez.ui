@@ -16,13 +16,13 @@ export const createFolderAction = withErrorHandling(async ({name, userId, clinic
       FolderSetting: {
         create: {
           isPublic: true,
-          ...clinicUid ? {
+          ...(clinicUid ? {
             Clinic: {
               connect: {
                 clinicUid
               }
             }
-          } : {}
+          } : {})
         }
       }
     }
@@ -45,13 +45,13 @@ export const getFoldersAction = async (userId: string, clinicUid?:string) => {
       User: {
         userId
       },
-      ...clinicUid ? {
+      ...(clinicUid ? {
         FolderSetting: {
           Clinic: {
             clinicUid
           }
         }
-      } : {}
+      } : {})
     },
     select: {
       id: true,

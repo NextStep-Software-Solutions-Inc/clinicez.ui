@@ -42,7 +42,7 @@ export default async function ClinicsPage({params}: AppRouterPageRouteOpts) {
             render={clinic => {
               return (
                 <div className="border border-gray-200 rounded-md p-4  cursor-pointer hover:bg-slate-100 transition-all">
-                  <Link href={`/clinics/${clinic.clinicUid}/dashboard`}>
+                  <Link href={`/clinics/${clinic.clinicUid}/dashboard`} legacyBehavior>
                     <div className="flex items-center justify-between">
                       <div className="flex gap-2 items-center">
                         <Image src={clinic.logo ?? ""} width={100} height={100} alt="clinic-logo" className="border rounded object-scale-down"/>
@@ -60,12 +60,11 @@ export default async function ClinicsPage({params}: AppRouterPageRouteOpts) {
                     
                   </Link>
                 </div>
-              )
+              );
             }}
           />
         </Suspend>
       </div>
-    
     </>
   );
 }

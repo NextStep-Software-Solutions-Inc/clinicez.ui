@@ -27,8 +27,8 @@ export const getClinicPatientsAction = withErrorHandling(async (filters: GetClin
   const { search, pageNumber = 1, pageSize = 50, distinct = [], clinicUid, userId } = filters ?? {}
   
   const clinicPatients = await prismaClient.clinicPatient.findMany({
-    ... pageSize ? { take: pageSize } : {},
-    ... !!distinct.length ? { distinct } : {},
+    ... (pageSize ? { take: pageSize } : {}),
+    ... (!!distinct.length ? { distinct } : {}),
     skip: pageNumber ? (pageNumber - 1) * (pageSize || 10) : 0,
     orderBy: {
       createdAt: "desc"
@@ -38,15 +38,15 @@ export const getClinicPatientsAction = withErrorHandling(async (filters: GetClin
         clinicUid
       },
       Patient: {
-        ... userId ? { userId } : {},
-        ... !!search ? {
+        ... (userId ? { userId } : {}),
+        ... (!!search ? {
           OR: [
             { firstName: { contains: search, mode: "insensitive" } },
             { middleName: { contains: search, mode: "insensitive"} },
             { lastName: { contains: search, mode: "insensitive"} },
             { email: { contains: search, mode: "insensitive"} },
           ]
-        }: {},
+        } : {}),
       }
     },
     select: {

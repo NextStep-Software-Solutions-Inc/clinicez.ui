@@ -19,17 +19,17 @@ export const getDocumentTemplatesAction = withErrorHandling(async (filters: GetD
   const { typeName, clinicUid } = filters
   const documentTemplates = await prismaClient.documentTemplate.findMany({
     where: {
-      ...clinicUid ? {
+      ...(clinicUid ? {
         Clinic: {
           clinicUid
         }
-      }: {},
+      } : {}),
       isActive: true,
-      ...typeName? {
+      ...(typeName ? {
         DocumentTemplateType: {
           name: typeName
         }
-      }: {}
+      } : {})
     },
     select: {
       id: true,

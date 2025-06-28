@@ -46,12 +46,12 @@ export function PersonalInformationForm({readOnly, ...props}: PersonalInformatio
       nickname: props.user.nickname ?? "",
       nationality: props.user.nationality ?? "",
       telephone: props.user.telephone,
-      ...props.user.religion? {religion: props.user.religion} : {},
-      ...props.user.bloodType? {bloodType: props.user.bloodType} : {},
-      ...props.user.civilStatus? {civilStatus: props.user.civilStatus} : {},
-      ...props.user.gender? {gender: props.user.gender} : {},
-      ...props.user.dob? {dob: props.user.dob} : {},
-      ...props.user.mobile? {mobile: props.user.mobile} : {},
+      ...(props.user.religion ? {religion: props.user.religion} : {}),
+      ...(props.user.bloodType ? {bloodType: props.user.bloodType} : {}),
+      ...(props.user.civilStatus ? {civilStatus: props.user.civilStatus} : {}),
+      ...(props.user.gender ? {gender: props.user.gender} : {}),
+      ...(props.user.dob ? {dob: props.user.dob} : {}),
+      ...(props.user.mobile ? {mobile: props.user.mobile} : {}),
     },
     mode: "all"
   })

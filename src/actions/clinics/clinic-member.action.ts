@@ -78,7 +78,7 @@ export const suspendClinicMemberAction = withErrorHandling(async (clinicMemberId
   })
 
   return {message: "Successfully suspended clinic member.", data: null}
-}, (error) => {
+}, async (error) => {
   if(hasCodeProperty(error) && error.code === "P2003") {
     return "Cannot be remove due to existing dependencies."
   }
@@ -102,7 +102,7 @@ export const removeClinicMemberAction = withErrorHandling(async (clinicMemberId:
   })
 
   return {message: "Successfully deleted clinic member.", data: null}
-}, (error) => {
+}, async (error) => {
   if(hasCodeProperty(error) && error.code === "P2003") return "Cannot be delete due to existing dependencies."
   if(hasCodeProperty(error) && error.code === "P2025") return "An error occurred while deleted the clinic member. owner cannot be deleted."
   return "An error occurred while deleted the clinic member."
@@ -132,7 +132,7 @@ export const updateClinicMemberRoleAction = withErrorHandling(async (clinicMembe
   })
 
   return {message: "Successfully updated clinic member role.", data: null}
-}, error => {
+}, async (error) => {
   if(hasCodeProperty(error) && error.code === "P2025") return "An error occurred while updating the clinic member role. owner cannot be updated."
   return "An error occurred while updating the clinic member role."
 })
@@ -169,7 +169,7 @@ export const addClinicMemberAction = withErrorHandling(async (payload: AddClinic
   })
 
   return {message: "Successfully added clinic member.", data: null}
-}, (error) => {
+}, async (error) => {
   if(hasCodeProperty(error) && error.code === "P2002") return "User already a member of the clinic."
   return "An error occurred while adding the clinic member."
 })

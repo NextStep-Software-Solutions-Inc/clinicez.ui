@@ -84,8 +84,9 @@ export const joinOrganizationAction = withErrorHandling(async (payload: JoinOrga
   message = `Successfully sent membership request to ${userOrganization.Organization.name}`;
   return { message, data: userOrganization }
  
-}, error => {
+}, async error => {
   if(hasCodeProperty(error) && error.code === "P2002") return "User is already a member of the organization";
+  return "An error occurred while sending the membership request. Please try again later.";
 })
 
 const sendEmailNotifications = async (adminEmails: string[], orgName: string, applicantName: string, applicantEmail: string) => {

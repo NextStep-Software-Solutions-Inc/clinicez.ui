@@ -33,7 +33,7 @@ export const createOrganizationRoleAction = withErrorHandling(async (payload: Cr
   })
   return {  message: "Organization role created successfully", data: newOrgRole }
   
-}, error => {
+}, async error => {
   if(hasCodeProperty(error) && error.code === "P2002") {
     return "Role with the same name or id already exists"
   }

@@ -5,11 +5,12 @@ import { NextRequest, NextResponse } from "next/server";
 
 
 export const GET = withJwtAuth(async (req: NextRequest, { params }: {
-  params: {
+  params: Promise<{
     clinicUid: string;
-  }
+  }>
 }) => {
-  const clinicUid = params.clinicUid;
+  const resolvedParams = await params;
+  const clinicUid = resolvedParams.clinicUid;
   const searchParams = new URLSearchParams(req.nextUrl.searchParams);
 
   const filters = parseObject(Object.fromEntries(searchParams.entries()));

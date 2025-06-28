@@ -130,10 +130,11 @@ export const addClinicPatientAction = withErrorHandling(async ({clinicUid, userI
 
   return {message: "Clinic Patient added successfully", data: null}
   
-}, error => {
+}, async error => {
   if(hasCodeProperty(error) && error.code === "P2002") {
     return "Clinic Patient already exists"
   }
+  return "An error occurred while adding Clinic Patient"
 })
 
 

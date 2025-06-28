@@ -822,7 +822,7 @@ export const rescheduleAppointmentAction = withErrorHandling(async ({ appointmen
     isolationLevel: Prisma.TransactionIsolationLevel.Serializable
   });
   return { message: "Appointment rescheduled",data: undefined }
-}, error => {
+}, async (error) => {
   if (hasCodeProperty(error) && error.code === "P2025") return "Appointment not found or you are not authorized to reschedule it";
   return "Failed to reschedule appointment";
 });

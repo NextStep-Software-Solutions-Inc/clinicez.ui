@@ -9,7 +9,7 @@ import Link from "next/link";
 import React from "react";
 import { cn } from "@lib/utils";
 
-async function TenantsPage() {
+export default async function TenantsPage() {
   const session = await getCachedSession();
   if (!session) {
     return (
@@ -43,7 +43,7 @@ async function TenantsPage() {
 const NewTenantButton = () => {
   return (
     <>
-      <Link href="/tenants/register" className="flex justify-start" legacyBehavior>
+      <Link href="/tenants/register" className="flex justify-start" >
         <button className={cn("shiny-cta font-semibold")}>
           <span>Create New Tenant</span>
         </button>

@@ -17,7 +17,7 @@ export default function RootLayout({
         <div className="container flex items-center ~text-xs/sm">
           <span className="flex-1"></span>
           <div className="flex h-5 items-center space-x-4">
-            <Link href={`mailto:${APP_EMAIL}`} legacyBehavior>{APP_EMAIL}</Link>
+            <Link href={`mailto:${APP_EMAIL}`}>{APP_EMAIL}</Link>
             <Separator orientation="vertical"/>
             <Link href="/tenants/register">Become a Tenant</Link>
           </div>

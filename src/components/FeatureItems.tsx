@@ -64,7 +64,7 @@ export default function FeatureItems() {
                 <h2 className="text-3xl font-bold ">{feature.name}</h2>
                 <p className="text-gray-800">{feature.description}</p>
                 <p className="text-gray-800">{feature.content}</p>
-                <Link href={feature.action.path} target="_blank" legacyBehavior>
+                <Link href={feature.action.path} target="_blank" >
                   <Button size="lg" className="mt-8 mx-auto ~text-xs/sm ~h-8/10">
                     {feature.action.label}
                     <ArrowRightCircle className="w-4 h-4 ml-2" />
@@ -92,7 +92,7 @@ export const HeroTitle = ({authenticated = false}) => {
       <p className="text-center lg:text-left text-6xl font-extrabold tracking-wider text-gray-500">Optimized Healthcare Management System</p>
       <ConditionalRender condition={!authenticated}>
         <div className="flex md:block items-center flex-col">
-          <Link href="/tenants/register" legacyBehavior>
+          <Link href="/tenants/register" >
             <Button size="lg" className="mt-8 mx-auto text-sm h-10">
               Register your clinic now
               <ArrowRightCircle className="w-4 h-4 ml-2" />
@@ -102,7 +102,7 @@ export const HeroTitle = ({authenticated = false}) => {
       </ConditionalRender>
       <ConditionalRender condition={authenticated}>
         <div className="flex lg:block justify-center">
-          <Link href="/organizations" legacyBehavior>
+          <Link href="/organizations" >
             <Button className="mx-auto h-10 mt-10"><Rocket size={18} className="mr-1"/>Get Started</Button>
           </Link>
         </div>

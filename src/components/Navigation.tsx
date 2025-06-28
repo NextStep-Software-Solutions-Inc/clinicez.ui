@@ -53,13 +53,11 @@ export default function Navigation() {
               {
                 !!link.href 
                   ? (
-                    <Link href={link.href} legacyBehavior passHref>
-                      <NavigationMenuLink className={cn(navigationMenuTriggerStyle(),
-                        "bg-transparent"
-                      )}>
-                        {link.name}
-                      </NavigationMenuLink>
-                    </Link>
+                    <NavigationMenuLink href={link.href} className={cn(navigationMenuTriggerStyle(),
+                      "bg-transparent"
+                    )}>
+                      {link.name}
+                    </NavigationMenuLink>
                   )
                   : (
                     <>

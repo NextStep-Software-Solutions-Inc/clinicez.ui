@@ -49,7 +49,7 @@ export const columns: ColumnDef<NonNullable<GetConsultationTickets["data"]>[numb
             href={{
               pathname: `consultations/${row.original.id}`
             }}
-            legacyBehavior>
+          >
             <div className="max-w-[350px] line-clamp-2 ">
               <div className="text-primary font-medium">
                 Ticket #{row.original.id}

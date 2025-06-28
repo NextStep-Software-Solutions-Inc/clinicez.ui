@@ -45,7 +45,7 @@ export default function SideNav({ navItems, params: paramArray }: SideNavProps) 
                 "flex h-9 w-9 items-center justify-center rounded-lg bg-accent text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8",
                 href === pathname && "bg-accent text-accent-foreground"
               )}
-              legacyBehavior>
+            >
               <Icon
                 name={icon}
                 className="h-5 w-5"

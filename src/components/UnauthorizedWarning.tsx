@@ -11,7 +11,7 @@ export default function UnauthorizedWarning() {
         <p className="text-sm text-muted-foreground">
           {`You do not have permission to access the page`}
         </p>
-        <Link href="/" legacyBehavior>
+        <Link href="/" >
           <Button className="my-5">Go Home</Button>
         </Link>
       </div>

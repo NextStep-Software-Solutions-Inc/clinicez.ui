@@ -37,7 +37,7 @@ export default async function File({ file, readOnly = true }: FileProps) {
       <Icon className="mt-px h-5 w-5 text-primary" />
       <div className="flex w-full">
         <div className="space-y-1">
-          <Link href={file.url} target="_blank" rel="noreferrer" legacyBehavior>
+          <Link href={file.url} target="_blank" rel="noreferrer" >
             <p className="text-sm font-medium leading-none">
               <span className="italic hover:underline">{file.name}</span> -{" "}
               <span>{file.date && format(file.date, "PP")}</span>
@@ -53,7 +53,7 @@ export default async function File({ file, readOnly = true }: FileProps) {
                   href={file.url}
                   download
                   className="invisible group-hover/item:visible"
-                  legacyBehavior>
+                >
                   <Button
                     variant="ghost"
                     size="icon"

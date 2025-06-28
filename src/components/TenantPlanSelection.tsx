@@ -36,7 +36,7 @@ export default function TenantPlanSelection(props: TenantPlanSelectionProps) {
                 },
               }}
               className={`relative bg-teal-500 opacity-80 max-w-sm w-48 h-96 sm:w-1/2 lg:w-1/3 m-5 ${p.name.toLowerCase() === initialPlan ? 'lg:w-2/3 shadow-xl shadow-teal-500' : ''} transition-all duration-300 ease-in-out`}
-              legacyBehavior>
+            >
               {/* Updated onClick event to handle plan selection */}
               <div className={`bg-white hover:from-teal-600 hover:to-teal-700 shadow-md p-8 mr-6 h-80 relative z-10 ${p.name.toLowerCase() === initialPlan ? 'shadow-xl' : ''} transition-all duration-300 ease-in-out`}>
                 <p className="text-2xl font-bold mb-4">{p.price}</p>

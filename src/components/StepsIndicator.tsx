@@ -31,7 +31,7 @@ export default function StepsIndicator({steps}: IStepsIndicatorProps) {
                   index: step.label
                 }
               }}
-              legacyBehavior>
+            >
               <TabsTrigger className="w-full capitalize" value={step.label}>{step.label}</TabsTrigger>
             </Link>
           );

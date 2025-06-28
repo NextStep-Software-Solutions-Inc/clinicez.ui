@@ -21,7 +21,7 @@ export default function UserSyncErrorPage() {
             Please try again later or contact support if the issue persists.
           `}
         </p>
-        <Link href="/" legacyBehavior>
+        <Link href="/" >
           <Button className="my-5">Go Home</Button>
         </Link>
       </div>

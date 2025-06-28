@@ -1,4 +1,5 @@
 "use server";
+
 import 'server-only'
 import prisma from "@lib/prisma";
 import { Prisma, $Enums  } from "@prisma/client";
@@ -106,7 +107,7 @@ export const getUsersAction = cache(async (filters:GetUsersFilters) => {
 export type GetUser = Awaited<ReturnType<typeof getUserAction>>
 export const getUserAction = withErrorHandling(cache(async (key: string, orgUid?: string)=> {
 
-  await sessionCheck();
+  // await sessionCheck();
 
   const user = await prisma.user.findFirstOrThrow({ 
     where: { 
@@ -313,7 +314,7 @@ export const findOrCreateUserAction = withErrorHandling(cache(async () => {
     })
     
     // step 2: create user in db if not found
-    if(dbUser === null) {
+    if(dbUser === null && session.user.email && session.user.given_name && session.user.family_name) {
       dbUser = await createUserToDb(prisma, {
         userId: session.user.sub,
         email: session.user.email,

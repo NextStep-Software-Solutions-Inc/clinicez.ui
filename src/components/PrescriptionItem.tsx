@@ -36,7 +36,7 @@ export default function PrescriptionItem({prescription, onUpdated}: Prescription
             href={`prescription-builder/${prescription.id}`}
             target="_blank"
             rel="noreferrer"
-            legacyBehavior>
+          >
             <div className="text-sm font-medium leading-none space-x-2">
               <span className="">
                 {prescription.name || `Prescription #${prescription.id}`} - {prescription.Medication.Patient.firstName}

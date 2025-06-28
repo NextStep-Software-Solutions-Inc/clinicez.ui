@@ -6,8 +6,9 @@ export type HealthConditionStatus = "RESOLVED" | "UNRESOLVED";
 
 /**
  * @deprecated This type is obsolete and should no longer be used
+ * Updated for Next.js 15.3.4 compatibility - params and searchParams are now Promise-based
  */
 export type AppRouterPageRouteOpts = {
-  searchParams?: Record<string, string | string[] | undefined>;
-    params?: Record<string, string | string[] | undefined>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+  params?: Promise<Record<string, string | string[] | undefined>>;
 }

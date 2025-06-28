@@ -5,7 +5,8 @@ import TenantDetails from "./TenantDetails";
 import { AppRouterPageRouteOpts } from "@/types";
 
 export default async function TenantsRegistrationPage(props: AppRouterPageRouteOpts) {
-  const {freq = "YEARLY" } = (props.searchParams || {}) as { freq: "MONTHLY" | "YEARLY" } 
+  const searchParams = await props.searchParams;
+  const {freq = "YEARLY" } = (searchParams || {}) as { freq: "MONTHLY" | "YEARLY" } 
 
   return (
     <div className="container mx-auto content my-10">

@@ -46,7 +46,7 @@ export default function ConsultationTicketSheet({ children, onClose, consultatio
                   pathname: `/clinics/${clinicUid}/consultations/${record.id}`,
                 }}
                 target="_blank"
-                legacyBehavior>
+              >
                 <ConsultationTicket record={record}/>
               </Link>
             )}

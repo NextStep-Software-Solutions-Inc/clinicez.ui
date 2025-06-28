@@ -19,6 +19,7 @@ interface PHRLayoutProps {
 }
 
 export default async function PHRLayout({ children, params: {user} }: PHRLayoutProps) {
+  
   const phrOwnerId = decodeURI(user)
   const [session, userOwner] = await Promise.all([
     getCachedSession(),

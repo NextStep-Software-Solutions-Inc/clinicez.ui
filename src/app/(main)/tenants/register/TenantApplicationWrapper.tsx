@@ -29,7 +29,7 @@ export default function TenantApplicationWrapper(props:TenantApplicationWrapperP
           <Link
             target="_blank"
             href={process.env.NEXT_PUBLIC_APP_URL + "/console/tenants"}
-            legacyBehavior>
+          >
             <Button>Go to Tenant Console</Button>
           </Link>
         </div>

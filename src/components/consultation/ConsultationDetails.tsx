@@ -81,7 +81,7 @@ export const BackgroundInfo = ({ appointment, consultation, user }: BackgroundIn
                   _appointment: appointment?.id,
                 }
               }}
-              legacyBehavior>
+            >
               <Tooltip>
                 <TooltipTrigger>
                   <ExternalLink className="w-4 h-4 text-primary"/>

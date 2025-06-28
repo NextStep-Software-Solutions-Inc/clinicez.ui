@@ -22,7 +22,7 @@ export default function Breadcrumb() {
                   <BreadcrumbLink asChild className="">
                     {
                       index !== pathSegment.length -1 ?
-                        <Link href="#" legacyBehavior>{decodedSegment}</Link> :
+                        <Link href="#" >{decodedSegment}</Link> :
                         <BreadcrumbPage>{decodedSegment}</BreadcrumbPage>
                     }
                   </BreadcrumbLink>

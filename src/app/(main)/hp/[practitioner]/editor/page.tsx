@@ -64,7 +64,7 @@ export default async function EditorPage({params, searchParams}: AppRouterPageRo
           <form action={handleTogglePublish}>
             <ActionButton variant={isPublished? "destructive": "default"}>{isPublished ? "Unpublish": "Publish"}</ActionButton>
           </form>
-          <Link href={`/hp/${hpId}`} legacyBehavior>
+          <Link href={`/hp/${hpId}`} >
             <Button className="fixed top-44 -right-[7rem] mr-2 hover:-right-[20px] transition-all"><ExternalLink size={20} className="mr-2"/>View profile</Button>
           </Link>
         </div>

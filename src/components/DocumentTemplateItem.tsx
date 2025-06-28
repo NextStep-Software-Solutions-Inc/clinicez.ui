@@ -44,7 +44,7 @@ export default function DocumentTemplateItem({documentTemplate, onUpdated}: Docu
             href={`prescription-builder/${documentTemplate.id}`}
             target="_blank"
             rel="noreferrer"
-            legacyBehavior>
+          >
             <div className="text-sm font-medium leading-none space-x-2">
               <span className="">
                 {documentTemplate.name || `Document #${documentTemplate.id}`} - {documentTemplate.DocumentTemplateType.name}
@@ -86,7 +86,7 @@ const DownloadPrescriptionAction = ({documentTemplate}: {documentTemplate: Docum
             href={"#"}
             download
             className="invisible group-hover/item:visible"
-            legacyBehavior>
+          >
             <Button
               variant="ghost"
               size="icon"

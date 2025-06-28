@@ -7,7 +7,7 @@ import RescheduleAppointment from "@components/appointment/RescheduleAppointment
 import DeclineAppointmentAssignment from "@components/appointment/DeclineAppointmentAssignment"
 import CreateConsultationTicketModal from './CreateConsultationTicketModal';
 import { useHPs } from '@hooks/useHP';
-import { useUser } from '@auth0/nextjs-auth0/client';
+import { useUser } from '@auth0/nextjs-auth0';
 import AddVitalSignsModal from '../../app/(main)/user/[user]/phr/vitals/AddVitalSignsModal';
 import { Button } from '@components/ui/button';
 import { Activity } from 'lucide-react';

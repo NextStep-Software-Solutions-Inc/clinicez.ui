@@ -28,7 +28,7 @@ export const createFolderAction = withErrorHandling(async ({name, userId, clinic
     }
   });
   return { message: "Folder created successfully", data: folder }
-}, (error, context) => {
+}, async (error, context) => {
   if(hasCodeProperty(error) && error.code === "P2002") {
     if (hasContextProperty(context)) {
       return `Folder with name "${context.args[0]?.name}" already exists.`;

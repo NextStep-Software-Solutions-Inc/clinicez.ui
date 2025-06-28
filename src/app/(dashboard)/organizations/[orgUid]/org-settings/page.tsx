@@ -9,7 +9,8 @@ export const metadata: Metadata = {
   description: "Configure your organization settings",
 }
 
-export default async function OrgSettingsPage({params}: AppRouterPageRouteOpts) {
+export default async function OrgSettingsPage(props: AppRouterPageRouteOpts) {
+  const params = await props.params;
   const organization = String(params?.orgUid)
   return (
     <>

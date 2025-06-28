@@ -22,7 +22,8 @@ export const metadata: Metadata = {
   description: "Overview of your organization's activities and analytics."
 }
 
-export default async function DashboardPage({params, searchParams}: AppRouterPageRouteOpts) {
+export default async function DashboardPage(props: AppRouterPageRouteOpts) {
+  const params = await props.params;
   const orgUid = String(params?.orgUid)
   const session = await getCachedSession()
   const userId = session?.user.sub

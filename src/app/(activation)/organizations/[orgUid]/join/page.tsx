@@ -7,7 +7,8 @@ import OrganizationSteps from "./OrganizationSteps";
 import { getOrganizationAction } from "@actions/organizations/organization.action";
 import { AppRouterPageRouteOpts } from "@/types";
 
-export default async function JoinOrgPage({params}: AppRouterPageRouteOpts) {
+export default async function JoinOrgPage(props: AppRouterPageRouteOpts) {
+  const params = await props.params;
   const orgUid = String(params?.orgUid);
   const [session, org] = await Promise.all([
     getCachedSession(),

@@ -17,7 +17,8 @@ export const metadata: Metadata = {
   description: "Clinic",
 }
 
-export default async function ClinicPage({ params }: { params: { clinicUid: string } }) {
+export default async function ClinicPage(props: { params: Promise<{ clinicUid: string }> }) {
+  const params = await props.params;
   const { clinicUid } = params;
   const session = await getCachedSession();
   const clinic = await getClinicAction(clinicUid);

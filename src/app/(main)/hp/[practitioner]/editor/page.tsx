@@ -13,13 +13,14 @@ import { notFound, redirect } from "next/navigation";
 import { getCachedSession } from "@actions/session.action";
 import { AppRouterPageRouteOpts } from "@/types";
 
-export default async function EditorPage({params, searchParams}: AppRouterPageRouteOpts) {
+export default async function EditorPage(props: AppRouterPageRouteOpts) {
+  const params = await props.params;
   const hpId = parseInt(params?.practitioner as string);
 
   const session = await getCachedSession();
   const userId = session?.user.sub
   if(!userId) return redirect("/auth/login");
-  
+
   const myHps = await getHPsAction({ userId });
   const isMyHp = myHps.some((hp) => hp.id === hpId);
   if(!isMyHp) return notFound();
@@ -27,7 +28,7 @@ export default async function EditorPage({params, searchParams}: AppRouterPageRo
   const hp = await getHPAction({
     id: hpId,
   });
-  
+
   const mappedProfile: HPProfileType = {
     id: hp?.HPProfile?.id ?? 0,
     title: hp?.HPProfile?.title ?? "",

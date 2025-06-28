@@ -32,14 +32,20 @@ import { getClinicPatientsAction } from "@/actions/clinics/clinic-patient.action
 
 interface ProcessLayoutProps {
   children: React.ReactNode;
-  params: {
+  params: Promise<{
     clinicUid: string;
-  };
+  }>;
 }
-export default async function ProcessLayout({
-  children,
-  params: { clinicUid }
-}: ProcessLayoutProps) {
+export default async function ProcessLayout(props: ProcessLayoutProps) {
+  const params = await props.params;
+
+  const {
+    clinicUid
+  } = params;
+
+  const {
+    children
+  } = props;
 
   const session = await getCachedSession();
 

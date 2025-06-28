@@ -13,21 +13,30 @@ export const metadata: Metadata = {
 }
 interface PHRLayoutProps {
   children: React.ReactNode
-  params: {
+  params: Promise<{
     user: string
-  }
+  }>
 }
 
-export default async function PHRLayout({ children, params: {user} }: PHRLayoutProps) {
-  
+export default async function PHRLayout(props: PHRLayoutProps) {
+  const params = await props.params;
+
+  const {
+    user
+  } = params;
+
+  const {
+    children
+  } = props;
+
   const phrOwnerId = decodeURI(user)
   const [session, userOwner] = await Promise.all([
     getCachedSession(),
     isUserOwner(phrOwnerId)
   ]);
-  
+
   if(!session) return redirect("/auth/login");
-  
+
   try {
     // Check if the user is the owner of the PHR
     if (!userOwner) {
@@ -91,7 +100,7 @@ export default async function PHRLayout({ children, params: {user} }: PHRLayoutP
       href: `/user/${user}/phr/files`,
     }
   ]
-  
+
   return (
     <div className="container space-y-6 p-5 md:p-10 pb-16">
       <div className="space-y-0.5">

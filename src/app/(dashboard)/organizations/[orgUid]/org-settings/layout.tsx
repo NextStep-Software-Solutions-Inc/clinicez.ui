@@ -4,11 +4,21 @@ import { redirect } from "next/navigation";
 
 interface OrgSettingLayoutProps {
   children: React.ReactNode;
-  params: {
+  params: Promise<{
     orgUid: string;
-  }
+  }>
 }
-export default async function OrgSettingLayout({ children, params: { orgUid } }: OrgSettingLayoutProps) {
+export default async function OrgSettingLayout(props: OrgSettingLayoutProps) {
+  const params = await props.params;
+
+  const {
+    orgUid
+  } = params;
+
+  const {
+    children
+  } = props;
+
   const session = await getCachedSession();
   const myRoles = await getOrgMembersAction({
     userId: session?.user.sub,

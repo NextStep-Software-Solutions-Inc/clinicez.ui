@@ -1,14 +1,12 @@
 import Suspend from "@components/Suspend";
 import { Separator } from "@components/ui/separator";
 import { Metadata } from "next";
-import { AppRouterPageRouteOpts } from "@auth0/nextjs-auth0";
 import Each from "@components/utils/Each";
-import { getFoldersAction } from "@actions/folder.action";
-import { getCachedSession } from "@actions/session.action";
 import dayjs from "@lib/day-utils";
 import { getClinicsAction } from "@/actions/clinics/clinic.action";
 import Link from "next/link";
 import Image from "next/image";
+import { AppRouterPageRouteOpts } from "@/types";
 
 export const metadata: Metadata = {
   title: "Partner Clinic",
@@ -16,7 +14,11 @@ export const metadata: Metadata = {
 }
 
 export default async function ClinicsPage({params}: AppRouterPageRouteOpts) {
-  const orgUid = String(params?.orgUid)
+  const resolvedParams = await params ?? {};
+  let orgUid = resolvedParams.orgUid;
+  if (Array.isArray(orgUid)) {
+    orgUid = orgUid[0];
+  }
   const clinics = await getClinicsAction({
     orgUid
   })

@@ -9,9 +9,9 @@ const devCert = fs.readFileSync(path.join(process.cwd(), "certificates/dev-clini
 
 const cert = process.env.NEXT_PUBLIC_BUILD_ENV === 'production' ? prodCert : devCert;
 
-export const withJwtAuth = (handler: (req: NextRequest, ...rest: any) => Promise<NextResponse>) => {
+export const withJwtAuth = (handler: (req: NextRequest, context: { params: { orgUid: string } }) => Promise<NextResponse>) => {
 
-  return async (req: NextRequest, ...rest: any) => {
+  return async (req: NextRequest, context: { params: { orgUid: string } }) => {
     const authHeader = req.headers.get('Authorization');
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -30,6 +30,6 @@ export const withJwtAuth = (handler: (req: NextRequest, ...rest: any) => Promise
       });
     }
 
-    return handler(req, ...rest);
+    return handler(req, context);
   };
 };

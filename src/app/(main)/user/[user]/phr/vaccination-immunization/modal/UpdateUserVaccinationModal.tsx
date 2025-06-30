@@ -1,3 +1,5 @@
+'use client';
+
 import React from "react";
 import {
   Dialog,
@@ -18,7 +20,7 @@ interface UpdateUserVaccinationModalProps {
   vaccination: UserVaccinationType
 }
 
-export default async function UpdateUserVaccinationModal({vaccination}:UpdateUserVaccinationModalProps) {
+export default function UpdateUserVaccinationModal({vaccination}:UpdateUserVaccinationModalProps) {
   
   return (
     <Dialog>

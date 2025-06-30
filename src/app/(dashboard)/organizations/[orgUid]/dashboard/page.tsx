@@ -9,11 +9,8 @@ import { MainNav } from "@components/dashboard/MainNav"
 import { DashboardStats } from "@components/dashboard/DashboardStats"
 import { getCachedSession } from "@actions/session.action"
 import Suspend from "@components/Suspend"
-import { PatientHealthAnalytics } from "@components/dashboard/PatientHealthAnalytics"
-import { PatientsAnalytics } from "@components/dashboard/PatientsAnalytics"
 import { OrgMembershipAnalytics } from "@/components/organization/OrgMembershipAnalytics"
 import { filterNavList } from "../nav"
-import { AppRouterPageRouteOpts } from "@/types"
 
 export const maxDuration = 30; // page timeout in seconds
 export const revalidate  = 60; // revalidation interval in seconds
@@ -22,9 +19,15 @@ export const metadata: Metadata = {
   description: "Overview of your organization's activities and analytics."
 }
 
-export default async function DashboardPage(props: AppRouterPageRouteOpts) {
-  const params = await props.params;
-  const orgUid = String(params?.orgUid)
+interface DashboardPageProps {
+  params: Promise<{ orgUid: string }>,
+  searchParams?: Promise<Record<string, string | string[] | undefined>>
+}
+
+export default async function DashboardPage({ params }: DashboardPageProps) {
+  const resolvedParams = await params;
+  const orgUid = String(resolvedParams?.orgUid);
+  
   const session = await getCachedSession()
   const userId = session?.user.sub
 

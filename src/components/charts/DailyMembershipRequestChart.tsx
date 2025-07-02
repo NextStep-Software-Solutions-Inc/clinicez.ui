@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Bar, BarChart, CartesianGrid, LabelList, XAxis } from "recharts"
+import { Bar, BarChart, CartesianGrid, Cell, XAxis } from "recharts"
 
 import {
   Card,
@@ -24,34 +24,39 @@ import { Button } from "@components/ui/button"
 import { cn } from "@lib/utils"
 import { CalendarIcon } from "lucide-react"
 import { Calendar } from "@components/ui/calendar"
-import dayjs from "@lib/day-utils";
-
-
+import dayjs from "dayjs"
 
 const chartConfig = {
-  request: {
-    label: "Request",
+  male: {
+    label: "Male",
+    color: "hsl(var(--chart-1))",
+  },
+  female: {
+    label: "Female",
     color: "hsl(var(--chart-2))",
   },
 } satisfies ChartConfig
 
-
 interface DailyMembershipRequestChartProps {
     chartData: {
         date: string;
-        request: number;
+        male: number;
+        female: number;
+        [key: string]: string | number;
     }[];
     onChangeDate?: (date: DateRange) => void;
     dateRange?: DateRange;
 }
-export function DailyMembershipRequestChart({ chartData, onChangeDate, dateRange }: DailyMembershipRequestChartProps) {
 
+export function DailyMembershipRequestChart({ chartData, onChangeDate, dateRange }: DailyMembershipRequestChartProps) {
   const [date, setDate] = React.useState<DateRange | undefined>(dateRange)
 
   const handleDateChange = (date: DateRange | undefined) => {
     setDate(date)
     if(date) onChangeDate?.(date)
   }
+
+  const chartKeys = Object.keys(chartConfig) as Array<keyof typeof chartConfig>;
 
   return (
     <Card>
@@ -136,7 +141,6 @@ export function DailyMembershipRequestChart({ chartData, onChangeDate, dateRange
               content={
                 <ChartTooltipContent
                   className="w-[150px]"
-                  nameKey="request"
                   labelFormatter={(value) => {
                     return new Date(value).toLocaleDateString("en-US", {
                       month: "short",
@@ -148,15 +152,37 @@ export function DailyMembershipRequestChart({ chartData, onChangeDate, dateRange
                 />
               }
             />
-            <Bar dataKey="request" fill={`var(--color-request)`} radius={4} >
-              <LabelList
-                dataKey="request"
-                position="insideTop"
-                offset={8}
-                className="fill-primary-foreground truncate"
-                fontSize={10}
-              />
-            </Bar>
+            {chartKeys.map((key) => (
+              <Bar
+                key={key}
+                dataKey={key}
+                stackId="count"
+                fill={chartConfig[key].color}
+              >
+                {chartData.map((entry, index) => {
+                  let currentSum = 0;
+                  let topBarKey: string | null = null;
+                  
+                  for (let i = chartKeys.length - 1; i >= 0; i--) {
+                    const currentKey = chartKeys[i];
+                    if (entry[currentKey] > 0) {
+                      topBarKey = currentKey;
+                      break; 
+                    }
+                  }
+
+                  const isTopBar = (topBarKey === key);
+
+                  return (
+                    <Cell 
+                      key={`cell-${key}-${index}`} 
+                      // @ts-ignore
+                      radius={isTopBar ? [6, 6, 0, 0] : [0, 0, 0, 0]} 
+                    />
+                  );
+                })}
+              </Bar>
+            ))}
           </BarChart>
         </ChartContainer>
       </CardContent>

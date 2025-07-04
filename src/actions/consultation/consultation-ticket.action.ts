@@ -101,35 +101,35 @@ export const getConsultationTicketAction = withErrorHandling(cache(async (consul
         },
         { 
           ...(canReadCreatedOrgConsultations ? { 
-              ConsultationTicketHPs: { 
-                some: { 
-                  HealthCareProvider: {
-                    User: {
-                      userId: session.user.sub
-                    }
+            ConsultationTicketHPs: { 
+              some: { 
+                HealthCareProvider: {
+                  User: {
+                    userId: session.user.sub
                   }
                 }
-              } 
-            } : {})
+              }
+            } 
+          } : {})
         },
         {
           ...(canReadOwnOrgConsultations ? { Appointment: { Requesters: {  some: { User: {userId: session.user.sub} } } } } : {})
         },
         {
           ...(canReadCoCreatedOrgConsultations ? {
-              Appointment: {
-                AppointmentRouting: {
-                  some: {
-                    status: "ACCEPTED",
-                    RoutedTo: {
-                      User: {
-                        userId: session.user.sub
-                      }
+            Appointment: {
+              AppointmentRouting: {
+                some: {
+                  status: "ACCEPTED",
+                  RoutedTo: {
+                    User: {
+                      userId: session.user.sub
                     }
                   }
                 }
               }
-            } : {})
+            }
+          } : {})
         }
       ]
     },
@@ -275,35 +275,35 @@ export const getConsultationTicketsAction = withErrorHandling(async (filters: Ge
         },
         { 
           ...(canReadCreatedOrgConsultations ? { 
-              ConsultationTicketHPs: {
-                some: {
-                  HealthCareProvider: {
-                    User: {
-                      userId: session.user.sub
-                    }
+            ConsultationTicketHPs: {
+              some: {
+                HealthCareProvider: {
+                  User: {
+                    userId: session.user.sub
                   }
                 }
               }
-            } : {})
+            }
+          } : {})
         },
         { 
           ...(canReadOwnOrgConsultations ? { Appointment: { Requesters: { some: { User: { userId: session.user.sub} } } } } : {}),
         },
         {
           ...(canReadCoCreatedOrgConsultations ? {
-              Appointment: {
-                AppointmentRouting: {
-                  some: {
-                    status: "ACCEPTED",
-                    RoutedTo: {
-                      User: {
-                        userId: session.user.sub
-                      }
+            Appointment: {
+              AppointmentRouting: {
+                some: {
+                  status: "ACCEPTED",
+                  RoutedTo: {
+                    User: {
+                      userId: session.user.sub
                     }
                   }
                 }
               }
-            } : {})
+            }
+          } : {})
         }
       ]
     },
@@ -417,8 +417,8 @@ export const updateConsultationTicketAction = withErrorHandling(async ({consulta
     data: { subject }
   })
   return { message: "Consultation Ticket updated successfully", data: undefined }
-  
-}, error => {
+
+}, async error => {
   if(hasCodeProperty(error) && error.code === 'P2025') return "Consultation record not found or you do not have permission to update it";
 })
 
@@ -458,7 +458,7 @@ export const deleteConsultationTicketAction = withErrorHandling(async (consultat
     }
   })
   return { message: "Consultation Ticket deleted successfully", data: undefined }
-}, error => {
+}, async error => {
   if(hasCodeProperty(error) && error.code === 'P2025') return "Consultation record not found"
   return "Failed to delete consultation record"
 })
@@ -502,7 +502,7 @@ export const toggleArchiveConsultationTicketAction = withErrorHandling(async (co
   })
   return { message: "Consultation Ticket archive status toggled successfully", data: undefined }
   
-}, error => {
+}, async error => {
   if(hasCodeProperty(error) && error.code === 'P2025')  return "Consultation record not found"
   return "Failed to toggle archive status"
 })
@@ -533,7 +533,7 @@ export const resolveConsultationTicket = withErrorHandling(async (consultationId
   })
   return {message: "Consultation Ticket resolved successfully", data: undefined }
 
-}, error => {
+}, async error => {
   if(hasCodeProperty(error) && error.code === 'P2025') return "Consultation record not found";
   return "Failed to resolve consultation record"
 })

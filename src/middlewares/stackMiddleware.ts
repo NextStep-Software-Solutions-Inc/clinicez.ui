@@ -21,7 +21,7 @@ export class MiddlewareStack {
           
           // If the response is not a NextResponse.next(), stop the chain
           // NextResponse.next() typically has no body and continues the chain
-          if (result.status !== 200 || result.body !== null) {
+          if (result.status !== 200 || result !== NextResponse.next()) {
             return result;
           }
         }

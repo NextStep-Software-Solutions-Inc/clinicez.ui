@@ -7,7 +7,15 @@ interface IEachProps<T> {
 }
 export default function Each<T>({of, render, fallback = <Fallback/>}: IEachProps<T>) {
   if(!of || !of.length) return <>{fallback}</>;
-  return <>{of.map((item, index) => <React.Fragment key={index}>{render(item, index)}</React.Fragment>)}</>;
+  return (
+    <>
+      {of.map((item, index) => (
+        <React.Fragment key={(item as any).id ?? index}>
+          {render(item, index)}
+        </React.Fragment>
+      ))}
+    </>
+  );
 }
 
 const Fallback = () => <div style={{

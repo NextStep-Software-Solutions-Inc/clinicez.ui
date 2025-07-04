@@ -235,7 +235,7 @@ export const archivePrescriptionAction = withErrorHandling(async (id: number) =>
   })
   
   return {message: "Successfully archived prescription", data: undefined}
-},  error => {
+}, async error => {
   if(hasCodeProperty(error) && error.code === 'P2025') return 'Prescription not found';
   return 'Failed to archive prescription';
 });

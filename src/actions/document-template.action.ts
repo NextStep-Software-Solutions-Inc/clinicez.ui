@@ -101,7 +101,7 @@ export const updateDocumentTemplateAction = withErrorHandling(async (payload: Up
     }
   })
   return {message: "Document template updated successfully", data: documentTemplate}
-}, (error) => {
+}, async (error) => {
   if(hasCodeProperty(error) && error.code === "P2025") return "Document template not found"
 });
 
@@ -121,7 +121,7 @@ export const deleteDocumentTemplateAction = withErrorHandling(async (id: number)
     }
   })
   return {message: "Document template deleted successfully", data: documentTemplate}
-}, (error) => {
+}, async (error) => {
   if(hasCodeProperty(error) && error.code === "P2025") return "Document template not found"
 });
 

@@ -45,9 +45,13 @@ export type GetClinicsFilters = {
 export type GetClinics = Awaited<ReturnType<typeof getClinicsAction>>
 export const getClinicsAction = withErrorHandling(cache(async (filters?: GetClinicsFilters) => {
   
-  await sessionCheck();
-
   const { clinicUid, orgUid, isPublic, userId } = filters || {};
+  
+  // Only check session if not public access
+  if (!isPublic) {
+    await sessionCheck();
+  }
+
   const clinics = await prisma.clinic.findMany({
     orderBy: {
       name: "asc"

@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Bar, BarChart, CartesianGrid, Cell, XAxis } from "recharts"
+import { Bar, BarChart, CartesianGrid, Cell, LabelList, XAxis } from "recharts"
 
 import {
   Card,
@@ -102,7 +102,7 @@ export function DailyMembershipRequestChart({ chartData, onChangeDate, dateRange
               numberOfMonths={2}
               disabled={{
                 after: new Date(),
-                before: dayjs().startOf("year").toDate(),
+                // before: dayjs().startOf("year").toDate(),
               }}
             />
           </PopoverContent>
@@ -114,11 +114,13 @@ export function DailyMembershipRequestChart({ chartData, onChangeDate, dateRange
           className="aspect-auto h-[250px] w-full"
         >
           <BarChart
+
             accessibilityLayer
             data={chartData}
             margin={{
               left: 12,
               right: 12,
+              top: 20,
             }}
           >
             <CartesianGrid vertical={false} />
@@ -152,35 +154,33 @@ export function DailyMembershipRequestChart({ chartData, onChangeDate, dateRange
                 />
               }
             />
-            {chartKeys.map((key) => (
-              <Bar
-                key={key}
-                dataKey={key}
-                stackId="count"
-                fill={chartConfig[key].color}
-              >
-                {chartData.map((entry, index) => {
-                  let topBarKey: string | null = null;
-                  
-                  for (let i = chartKeys.length - 1; i >= 0; i--) {
-                    const currentKey = chartKeys[i];
-                    if (entry[currentKey] > 0) {
-                      topBarKey = currentKey;
-                      break; 
-                    }
-                  }
+           
+            {
+              chartKeys.map((key) => {
+                const isTopbar = key === "female";
+                const radius = isTopbar ? 
+                [5, 5, 0, 0] as [number, number, number, number] :
+                [0, 0, 5, 5] as [number, number, number, number];
 
-                  const isTopBar = (topBarKey === key);
-
-                  return (
-                    <Cell 
-                      key={`cell-${key}-${index}`}
-                      radius={isTopBar ? [6, 6, 0, 0] : [0, 0, 0, 0]} 
+                return (
+                  <Bar
+                    key={key}
+                    dataKey={key}
+                    stackId="count"
+                    fill={chartConfig[key].color}
+                    radius={radius}
+                  >
+                    <LabelList
+                      position="top"
+                      offset={5}
+                      className="fill-foreground"
+                      fontSize={10}
                     />
-                  );
-                })}
-              </Bar>
-            ))}
+                  </Bar>
+                )
+              })
+            }
+              
           </BarChart>
         </ChartContainer>
       </CardContent>

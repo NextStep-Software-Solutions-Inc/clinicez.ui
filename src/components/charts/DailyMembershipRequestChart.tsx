@@ -56,7 +56,7 @@ export function DailyMembershipRequestChart({ chartData, onChangeDate, dateRange
     if(date) onChangeDate?.(date)
   }
 
-  const chartKeys = Object.keys(chartConfig) as Array<keyof typeof chartConfig>;
+  const chartKeys = ['male', 'female'] as const;
 
   return (
     <Card>
@@ -160,7 +160,6 @@ export function DailyMembershipRequestChart({ chartData, onChangeDate, dateRange
                 fill={chartConfig[key].color}
               >
                 {chartData.map((entry, index) => {
-                  let currentSum = 0;
                   let topBarKey: string | null = null;
                   
                   for (let i = chartKeys.length - 1; i >= 0; i--) {
@@ -175,8 +174,7 @@ export function DailyMembershipRequestChart({ chartData, onChangeDate, dateRange
 
                   return (
                     <Cell 
-                      key={`cell-${key}-${index}`} 
-                      // @ts-ignore
+                      key={`cell-${key}-${index}`}
                       radius={isTopBar ? [6, 6, 0, 0] : [0, 0, 0, 0]} 
                     />
                   );

@@ -258,31 +258,3 @@ export const getDailyOrgMembershipRequestAction = async (orgUid: string, startDa
     total_female_request: Number(row.total_female_request),
   }));
 }
-
-// export const getDailyOrgMembershipRequestAction = async (orgUid: string, startDate:string, endDate: string, gender: Gender) => {
-//   const query = Prisma.sql`
-//     SELECT
-//       DATE_TRUNC('day', om."createdAt") as date,
-//       COUNT(*) as total_requests
-//     FROM
-//       "OrganizationMember" om
-//     INNER JOIN 
-//       "Organization" o ON om."organizationId" = o."id"
-//     WHERE
-//       o."orgUid" = ${orgUid}
-//       AND om."createdAt" >= ${new Date(startDate)}
-//       AND om."createdAt" <= ${new Date(endDate)}
-//       AND om."gender" = ${gender}
-//     GROUP BY
-//       DATE_TRUNC('day', om."createdAt")
-//     ORDER BY
-//       date ASC;
-//   `;
-
-//   const result = await prisma.$queryRaw<
-//     { date: Date; total_requests: bigint }[]
-//   >(query);
-
-//   return result as { date: Date, total_requests: BigInt }[];
-//   // const dailyMembershipRequest = await prisma.organization.
-// }

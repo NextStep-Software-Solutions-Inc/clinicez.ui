@@ -6,12 +6,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { getClinicAppointmentConfigAction } from "@actions/appointments/appointment-config.action";
 
 export const GET = withJwtAuth(async (req: NextRequest, { params }: {
-    params: {
+    params: Promise<{
       clinicUid: string;
-    }
+    }>
   }) => {
 
-  const clinicUid = params.clinicUid;
+  const { clinicUid } = await params;
   const orgAppointmentConfig = await getClinicAppointmentConfigAction(clinicUid)
   return NextResponse.json(orgAppointmentConfig, {status: 200});
 });

@@ -3,15 +3,15 @@ import { withJwtAuth } from "@middlewares/withJwtAuth";
 import { NextRequest, NextResponse } from "next/server";
 
 export const GET = withJwtAuth(async (req: NextRequest, { params }: {
-  params: {
+  params: Promise<{
     clinicUid: string
     consultationId: string;
-  }
+  }>
 }) => {
-  const consultationId = parseInt(params.consultationId);
-  const clinicUid = params.clinicUid;
+  const { clinicUid, consultationId } = await params;
+  const consultationIdInt = parseInt(consultationId);
 
-  const consultationTicket = await getConsultationTicketAction(consultationId, clinicUid);
+  const consultationTicket = await getConsultationTicketAction(consultationIdInt, clinicUid);
   
   if(!consultationTicket) return NextResponse.json({error: 'Consultation ticket not found'}, {status: 404});
   return NextResponse.json(consultationTicket, {status: 200});

@@ -1,6 +1,6 @@
 import Suspend from "@components/Suspend";
 import React from "react";
-import { AppRouterPageRouteOpts } from "@auth0/nextjs-auth0";
+import { AppRouterPageRouteOpts } from "@/types";
 import { Metadata, ResolvingMetadata } from "next";
 import Link from "next/link";
 import { Button } from "@components/ui/button";

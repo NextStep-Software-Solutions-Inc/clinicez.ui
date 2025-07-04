@@ -4,7 +4,7 @@ import { PatientCard } from "./PatientCard";
 import { getClinicPatientsAction } from "@/actions/clinics/clinic-patient.action";
 import EMRPreviewSheet from "@components/EMRPreviewSheet";
 
-const Paginate = dynamic(() => import("@components/Paginate"), { ssr: false, loading: () => <div>Loading...</div>});
+const Paginate = dynamic(() => import("@components/Paginate"), { loading: () => <div>Loading...</div>});
 interface PatientListProps {
   clinicUid: string
   search?: string

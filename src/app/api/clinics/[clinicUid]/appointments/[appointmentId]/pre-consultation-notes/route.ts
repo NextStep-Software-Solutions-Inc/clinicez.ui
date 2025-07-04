@@ -4,13 +4,13 @@ import { NextRequest, NextResponse } from "next/server";
 
 
 export const GET = withJwtAuth(async (req: NextRequest, { params }: {
-  params: {
+  params: Promise<{
     clinicUid: string;
     appointmentId: string;
-  }
+  }>
 }) => {
-  const clinicUid = params.clinicUid;
-  const appointmentId = parseInt(params.appointmentId);
-  const preConsultationNotes = await getPreAssessmentNotesAction(appointmentId);
+  const { clinicUid, appointmentId } = await params;
+  const appointmentIdInt = parseInt(appointmentId);
+  const preConsultationNotes = await getPreAssessmentNotesAction(appointmentIdInt);
   return NextResponse.json(preConsultationNotes, {status: 200});
 });

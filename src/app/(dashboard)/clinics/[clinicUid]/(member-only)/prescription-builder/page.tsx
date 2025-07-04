@@ -1,6 +1,6 @@
 import { Separator } from "@components/ui/separator";
 import { Metadata } from "next";
-import { AppRouterPageRouteOpts } from "@auth0/nextjs-auth0";
+import { AppRouterPageRouteOpts } from "@/types";
 
 import Prescriptions from "@components/Prescriptions";
 import { Button } from "@components/ui/button";

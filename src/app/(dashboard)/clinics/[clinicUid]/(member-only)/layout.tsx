@@ -49,19 +49,23 @@ export default async function ProcessLayout(props: ProcessLayoutProps) {
 
   const session = await getCachedSession();
 
+  if (!session?.user?.sub) {
+    return redirect("/unauthorized");
+  }
+
   const [myClinicMembership, clinicPatients, myOrganizationMembership] = await Promise.all([
     getClinicMembersAction({
-      userId: session?.user.sub,
+      userId: session.user.sub,
       clinicUid,
       status: "ACTIVE"
     }),
     getClinicPatientsAction({
       clinicUid,
-      userId: session?.user.sub
+      userId: session.user.sub
     }),
     await getOrgMembersAction({
       clinicUid,
-      userId: session?.user.sub,
+      userId: session.user.sub,
       status: ["ACTIVE"]
     })
   ])
@@ -174,7 +178,7 @@ export default async function ProcessLayout(props: ProcessLayoutProps) {
             </div>
             <div className="max-w-xs">
               <Suspend>
-                <ClinicSwitcher isCollapsed userId={session?.user.sub} />
+                <ClinicSwitcher isCollapsed userId={session.user.sub} />
               </Suspend>
             </div>
             <Suspense fallback={<div>Loading</div>}>

@@ -2,7 +2,7 @@ import { getClinicSettingAction } from "@/actions/clinics/clinic-setting.action"
 import { permanentRedirect } from "next/navigation";
 
 export default async function ConsultationLayout(
-  props: Readonly<{ children: React.ReactNode, params: {clinicUid: string} }>
+  props: Readonly<{ children: React.ReactNode, params: Promise<{clinicUid: string}> }>
 ) {
   const params = await props.params;
 

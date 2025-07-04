@@ -1,4 +1,4 @@
-import { AppRouterPageRouteOpts } from "@auth0/nextjs-auth0";
+import { AppRouterPageRouteOpts } from "@/types";
 import { Separator } from "@components/ui/separator";
 import React from "react";
 

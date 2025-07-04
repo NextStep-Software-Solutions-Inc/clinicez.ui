@@ -7,14 +7,15 @@ import { getOrgMembersAction, GetOrgMembersFilters } from "@/actions/organizatio
 import { parseObject, searchParamsToObject } from "@/lib/utils";
 
 export const GET = withJwtAuth(async (req: NextRequest, { params }: {
-  params: {
+  params: Promise<{
     orgUid: string;
-  }
+  }>
 }) => {
 
   const filters = parseObject(searchParamsToObject(req.nextUrl.searchParams)) as GetOrgMembersFilters;
 
-  const orgMembers = await getOrgMembersAction(filters)
+  const { orgUid } = await params;
+  const orgMembers = await getOrgMembersAction({ ...filters, orgUid })
 
   return NextResponse.json(orgMembers, { status: 200 });
 });

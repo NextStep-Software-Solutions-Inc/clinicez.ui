@@ -20,7 +20,13 @@ export const GET = withJwtAuth(async (req: NextRequest) => {
   }
 
   const orgDailyRequests = await getDailyOrgMembershipRequestAction(orgId, startDate, endDate);
-  return NextResponse.json(orgDailyRequests.map(data => ({...data, total_requests: Number(data.total_requests)})), {
-    status: 200
-  });
+  return NextResponse.json(
+    orgDailyRequests.map(data => ({
+      ...data,
+      total_requests: data.total_male_request + data.total_female_request
+    })),
+    {
+      status: 200
+    }
+  );
 });

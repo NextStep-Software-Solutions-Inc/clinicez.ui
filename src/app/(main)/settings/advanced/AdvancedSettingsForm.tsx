@@ -10,19 +10,14 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@components/ui/dialog"
 
 import {toast} from "sonner"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@components/ui/select"
-import Each from "@components/utils/Each"
 import { Alert, AlertDescription, AlertTitle } from "@components/ui/alert"
 import { AlertCircle } from "lucide-react"
-import { Label } from "@components/ui/label"
-import { Input } from "@components/ui/input"
 import ConfirmDeactivateAccountForm from "./ConfirmDeactivateAccountForm"
 
 const organizationFormSchema = z.object({
@@ -69,7 +64,7 @@ export default function AdvancedSettingsForm() {
       </Alert>
       
       <Dialog>
-        <DialogTrigger><Button variant="destructive" type="submit">Deactivate Account</Button></DialogTrigger>
+        <DialogTrigger asChild><Button variant="destructive" type="submit">Deactivate Account</Button></DialogTrigger>
         <DialogContent className="sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>Deactivate Account</DialogTitle>

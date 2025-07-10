@@ -47,6 +47,59 @@ export type GetOrganizationsFilters = {
   isPublic?: boolean;
 }
 
+export const getOrganizationsV2Action = cache(async (filters?: GetOrganizationsFilters) => {
+  const { userId, clinicUid, orgUid, isPublic } = filters || {}
+
+  const organizations = await prisma.organization.findMany({
+    orderBy: { name: "asc" },
+    where: {
+      isActive: true,
+      ...(orgUid && { orgUid }),
+      ...(isPublic !== undefined && {
+        OrganizationSetting: {
+          isPublic,
+        },
+      }),
+      ...(userId && {
+        Users: {
+          every: {
+            User: {
+              userId,
+            },
+          },
+        },
+      }),
+      ...(clinicUid && {
+        ClinicOrganizations: {
+          some: {
+            Clinic: {
+              clinicUid,
+            },
+          },
+        },
+      }),
+    },
+    select: {
+      orgUid: true,
+      name: true,
+      description: true,
+      logo: true,
+      OrganizationMembers: {
+        select: { id: true },
+      },
+    },
+  })
+
+  return organizations.map((org) => ({
+    orgUid: org.orgUid,
+    name: org.name,
+    description: org.description,
+    memberCount: org.OrganizationMembers.length,
+    logo: org.logo
+  }))
+})
+export type GetOrganizationsV2 = Awaited<ReturnType<typeof getOrganizationsV2Action>>
+
 export type GetOrganizations = Awaited<ReturnType<typeof getOrganizationsAction>>
 export const getOrganizationsAction = cache(async (filters?: GetOrganizationsFilters) => {
 

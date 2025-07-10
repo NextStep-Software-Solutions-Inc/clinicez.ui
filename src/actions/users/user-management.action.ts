@@ -9,6 +9,12 @@ export const getRolesAction = async () => {
   return roles.data;
 }
 
+export const resendEmailVerificationAction = async (userId: string) => {
+  const response = await managementClient.jobs.verifyEmail({ user_id: userId });
+
+  return response.status === 200;
+}
+
 export const assignRolesAction = async (userId: string, role_ids: [string]) => {
   await managementClient.users.assignRoles({ id: userId}, {
     roles: role_ids

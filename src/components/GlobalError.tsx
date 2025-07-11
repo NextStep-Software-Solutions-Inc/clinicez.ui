@@ -21,18 +21,6 @@ export default function GlobalError({ error, reset}: GlobalErrorProps) {
           // Attempt to recover by trying to re-render the segment
           () => reset()
         }>
-        {/* <div className='text-destructive border border-destructive rounded-lg p-5'>
-        <h3></h3>
-        <div className='prose max-w-full'>
-          <pre>{error.message}</pre>
-        </div>
-        <Button 
-          className='mt-5'
-          onClick={
-            // Attempt to recover by trying to re-render the segment
-            () => reset()
-          }>Try Again</Button>
-      </div> */}
         {error.message}. Try again.
       </Button>
     </div>

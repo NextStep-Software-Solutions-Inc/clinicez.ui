@@ -1,3 +1,5 @@
+"use client";
+
 import { ErrorBoundary } from "next/dist/client/components/error-boundary";
 import React, { Suspense } from "react";
 import GlobalError from "./GlobalError";

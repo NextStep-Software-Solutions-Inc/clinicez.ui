@@ -3,7 +3,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@components/ui/tabs";
 import Suspend from "@components/Suspend";
 import { GetAppointment, getAppointmentAction } from "@actions/appointments/appointments.action";
-import { GetUser, getUserAction } from "@actions/users/user.action";
 import { differenceInCalendarYears } from "date-fns";
 import { GetConsultationTicket } from "@actions/consultation/consultation-ticket.action";
 import { ExternalLink, FolderHeart } from "lucide-react";
@@ -18,6 +17,10 @@ import Each from "@components/utils/Each";
 import { Fragment } from "react";
 import EMRPreviewSheet from "@components/EMRPreviewSheet";
 import { Button } from "@components/ui/button";
+import Prescriptions from "../Prescriptions";
+import MedicalCertificate from "../MedicalCertificate";
+import ImagingStudies from "../ImagingStudies";
+import LaboratoryRequest from "../LaboratoryRequest";
 
 const VitalSigns = dynamic(() => import('./VitalSigns'), { ssr: false, loading: () => <div>Loading...</div> });
 const Conversation = dynamic(() => import('./Conversation'), { ssr: false, loading: () => <div>Loading...</div> });
@@ -42,6 +45,13 @@ export default async function ConsultationDetails({ consultation }: Consultation
         appointment={appointment.data} 
         consultation={consultation} 
         user={appointment.data?.Requesters[0].User!}
+      />
+      <ClinicalRecords 
+        consultationTicketId={consultation.id} 
+        clinicUid={consultation.Clinic.clinicUid}
+        hpId={consultation.ConsultationTicketHPs[0]?.hpId}
+        isArchived={false}
+        patientId={appointment.data?.Requesters[0].User?.userId}
       />
     </>
   );
@@ -138,6 +148,93 @@ export const BackgroundInfo = ({ appointment, consultation, user }: BackgroundIn
       </CardFooter>
     </Card>
   )
+}
+
+interface ClinicalRecordsProps {
+  consultationTicketId: number;
+  clinicUid?: string;
+  hpId?: number;
+  isArchived?: boolean;
+  patientId?: string;
+}
+
+export const ClinicalRecords = ({
+  consultationTicketId,
+  clinicUid,
+  hpId,
+  isArchived = false,
+  patientId
+}: ClinicalRecordsProps) => {
+  const tabConfigs = [
+    {
+      value: "prescription",
+      tabTitle: "Prescription",
+      cardTitle: "Prescription Builder",
+      description: "Create and manage prescriptions for your patients.",
+      Component: Prescriptions,
+    },
+    {
+      value: "medical-certificate",
+      tabTitle: "Medical Certificate",
+      cardTitle: "Medical Certificate Builder",
+      description: "Create and manage medical certificates for your patients.",
+      Component: MedicalCertificate,
+    },
+    {
+      value: "imaging-studies",
+      tabTitle: "Imaging Studies",
+      cardTitle: "Imaging Studies Builder",
+      description: "Create and manage imaging study requests for your patients.",
+      Component: ImagingStudies,
+    },
+    {
+      value: "laboratory",
+      tabTitle: "Laboratory",
+      cardTitle: "Laboratory Request",
+      description: "Create and manage laboratory test requests for your patients.",
+      Component: LaboratoryRequest,
+    },
+  ];
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>
+          Clinical Records
+        </CardTitle>
+      </CardHeader>
+      <CardFooter>
+        <Tabs defaultValue="prescription" className="w-full">
+          <TabsList>
+            <Each
+              of={tabConfigs}
+              render={tab => (
+                <TabsTrigger value={tab.value}>{tab.tabTitle}</TabsTrigger>
+              )}
+            />
+          </TabsList>
+          <Each
+            of={tabConfigs}
+            render={tab => (
+              <TabsContent value={tab.value} key={tab.value}>
+                <div className="py-4 space-y-4">
+                  <span className="block text-xl font-semibold leading-tight mb-2">{tab.cardTitle}</span>
+                  <span className="block text-muted-foreground mb-2">{tab.description}</span>
+                </div>
+                <tab.Component
+                  consultationTicketId={consultationTicketId}
+                  clinicUid={clinicUid}
+                  hpId={hpId}
+                  isArchived={isArchived}
+                  patientId={patientId}
+                />
+              </TabsContent>
+            )}
+          />
+        </Tabs>
+      </CardFooter>
+    </Card>
+  );
 }
 
 interface PatientHpDetailsProps {

@@ -1,9 +1,17 @@
 "use server";
 
 import { getCachedSession } from "@actions/session.action";
-import { getOrgMembersAction } from "@actions/organizations/org-member.action";
+import { getOrgMembersAction, isOrgHealthcareProviderAction } from "@actions/organizations/org-member.action";
 import { getUserPlansAction } from "@actions/users/user-plan.action";
 import { cache } from "react";
+
+export const isOrgHealthcareProvider = cache(async (orgUid?: string) => {
+  const session = await getCachedSession();
+  if (!session) throw new Error("No session found");
+  const userId = session.user.sub;
+  const isProvider = await isOrgHealthcareProviderAction(userId, orgUid!);
+  return isProvider;
+});
 
 export const isOrgMember = cache(async (orgUid?:string) => {
 

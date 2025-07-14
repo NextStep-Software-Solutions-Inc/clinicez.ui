@@ -104,19 +104,24 @@ model User {
   ClinicPatients                   ClinicPatient[]
   RescheduledByAppointments        AppointmentAttribute[]           @relation("RescheduledBy")
   Medications                      Medication[]
+
+  MedicalCertificatesCreated ClinicMedicalCertificate[] @relation("MedicalCertificateCreatedBy")
+  MedicalCertificatesUpdated ClinicMedicalCertificate[] @relation("MedicalCertificateUpdatedBy")
+  MedicalCertificatesDeleted ClinicMedicalCertificate[] @relation("MedicalCertificateDeletedBy")
 }
 
 model ClinicPatient {
-  id                       Int                       @id @default(autoincrement())
+  id                       Int                        @id @default(autoincrement())
   clinicId                 Int
   patientId                Int
-  createdAt                DateTime                  @default(now())
-  updatedAt                DateTime                  @updatedAt
-  isActive                 Boolean                   @default(true)
+  createdAt                DateTime                   @default(now())
+  updatedAt                DateTime                   @updatedAt
+  isActive                 Boolean                    @default(true)
   deletedAt                DateTime?
-  Clinic                   Clinic                    @relation(fields: [clinicId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  Patient                  User                      @relation(fields: [patientId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Clinic                   Clinic                     @relation(fields: [clinicId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Patient                  User                       @relation(fields: [patientId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   ClinicPatientPermissions ClinicPatientPermission[]
+  ClinicMedicalCertificate ClinicMedicalCertificate[]
 
   @@unique([clinicId, patientId], name: "unique_clinic_patient")
 }
@@ -331,31 +336,32 @@ model UserPlan {
 }
 
 model HealthcareProvider {
-  id                    Int                    @id @default(autoincrement())
-  userId                Int
-  userPlanId            Int?
-  hpTypeId              Int
-  description           String?
-  createdAt             DateTime               @default(now())
-  updatedAt             DateTime               @updatedAt
-  deletedAt             DateTime?
-  isActive              Boolean                @default(true)
-  isPublished           Boolean                @default(false)
-  User                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  UserPlan              UserPlan?              @relation(fields: [userPlanId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  HPType                HealthcareProviderType @relation(fields: [hpTypeId], references: [id])
-  ProfessionalDetails   ProfessionalDetails?
-  ReservedTimeSlots     ReservedTimeSlot[]
-  HPProfile             HPProfile?
-  UserPreferences       UserPreference[]
-  AppointmentRoutings   AppointmentRouting[]   @relation("RoutedTo")
-  Interventions         Intervention[]
-  UserVaccinations      UserVaccination[]
-  ConsultationTicketHPs ConsultationTicketHP[]
-  ConsultationNote      ConsultationNote[]
-  AppointmentAttributes AppointmentAttribute[]
-  Medications           Medication[]
-  Prescriptions         Prescription[]
+  id                       Int                        @id @default(autoincrement())
+  userId                   Int
+  userPlanId               Int?
+  hpTypeId                 Int
+  description              String?
+  createdAt                DateTime                   @default(now())
+  updatedAt                DateTime                   @updatedAt
+  deletedAt                DateTime?
+  isActive                 Boolean                    @default(true)
+  isPublished              Boolean                    @default(false)
+  User                     User                       @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  UserPlan                 UserPlan?                  @relation(fields: [userPlanId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  HPType                   HealthcareProviderType     @relation(fields: [hpTypeId], references: [id])
+  ProfessionalDetails      ProfessionalDetails?
+  ReservedTimeSlots        ReservedTimeSlot[]
+  HPProfile                HPProfile?
+  UserPreferences          UserPreference[]
+  AppointmentRoutings      AppointmentRouting[]       @relation("RoutedTo")
+  Interventions            Intervention[]
+  UserVaccinations         UserVaccination[]
+  ConsultationTicketHPs    ConsultationTicketHP[]
+  ConsultationNote         ConsultationNote[]
+  AppointmentAttributes    AppointmentAttribute[]
+  Medications              Medication[]
+  Prescriptions            Prescription[]
+  ClinicMedicalCertificate ClinicMedicalCertificate[]
 
   @@unique([userId, hpTypeId], name: "unique_user_hp_type")
 }
@@ -1134,6 +1140,7 @@ model Clinic {
   DocumentTemplates               DocumentTemplate[]
   ClinicPrescriptionSettings      ClinicPrescriptionSetting[]
   Prescriptions                   Prescription[]
+  ClinicMedicalCertificates       ClinicMedicalCertificate[]
 
   @@index([tenantId, clinicUid], name: "clinic_index")
 }
@@ -1626,19 +1633,23 @@ model MedicationDrug {
 }
 
 model DocumentTemplate {
-  id                         Int                         @id @default(autoincrement())
-  clinicId                   Int
-  name                       String
-  type                       Int
-  htmlContent                String
-  createdAt                  DateTime                    @default(now())
-  updatedAt                  DateTime                    @updatedAt
-  deletedAt                  DateTime?
-  isActive                   Boolean                     @default(true)
-  DocumentTemplateType       DocumentTemplateType        @relation(fields: [type], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  Clinic                     Clinic                      @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  Prescriptions              Prescription[]
-  ClinicPrescriptionSettings ClinicPrescriptionSetting[] @relation("prescription")
+  id                                Int                                @id @default(autoincrement())
+  clinicId                          Int
+  name                              String
+  type                              Int
+  htmlContent                       String
+  createdAt                         DateTime                           @default(now())
+  updatedAt                         DateTime                           @updatedAt
+  deletedAt                         DateTime?
+  isActive                          Boolean                            @default(true)
+  DocumentTemplateType              DocumentTemplateType               @relation(fields: [type], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Clinic                            Clinic                             @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  Prescriptions                     Prescription[]
+  ClinicPrescriptionSettings        ClinicPrescriptionSetting[]        @relation("prescription")
+  ClinicMedicalCertificates         ClinicMedicalCertificate[]
+  MedicalCertificateReasons         MedicalCertificateReason[]
+  MedicalCertificateFindings        MedicalCertificateFinding[]
+  MedicalCertificateClassifications MedicalCertificateClassification[]
 }
 
 model DocumentTemplateType {
@@ -1654,4 +1665,69 @@ model ClinicPrescriptionSetting {
   prescriptionTemplateId Int
   PrescriptionTemplate   DocumentTemplate? @relation(name: "prescription", fields: [prescriptionTemplateId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   Clinic                 Clinic            @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model ClinicMedicalCertificate {
+  id                 Int       @id @default(autoincrement())
+  clinicId           Int
+  documentTemplateId Int
+  clinicPatientId    Int
+  hpId               Int
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  createdBy          Int
+  isActive           Boolean   @default(true)
+  updatedBy          Int?
+  deletedAt          DateTime?
+  deletedBy          Int?
+  reasonId           Int
+  findingId          Int
+  classificationId   Int
+
+  Clinic             Clinic                           @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  Reason             MedicalCertificateReason         @relation(fields: [reasonId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  DocumentTemplate   DocumentTemplate                 @relation(fields: [documentTemplateId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  ClinicPatient      ClinicPatient                    @relation(fields: [clinicPatientId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  HealthCareProvider HealthcareProvider               @relation(fields: [hpId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  CreatedBy          User                             @relation("MedicalCertificateCreatedBy", fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  UpdatedBy          User?                            @relation("MedicalCertificateUpdatedBy", fields: [updatedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  DeletedBy          User?                            @relation("MedicalCertificateDeletedBy", fields: [deletedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Finding            MedicalCertificateFinding        @relation(fields: [findingId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Classification     MedicalCertificateClassification @relation(fields: [classificationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model MedicalCertificateReason {
+  id                  Int                        @id @default(autoincrement())
+  name                String                     @unique
+  description         String?
+  isActive            Boolean                    @default(true)
+  documentTemplateId  Int
+  DocumentTemplate    DocumentTemplate           @relation(fields: [documentTemplateId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  MedicalCertificates ClinicMedicalCertificate[]
+
+  @@unique([name, documentTemplateId], name: "unique_medical_certificate_reason")
+}
+
+model MedicalCertificateFinding {
+  id                  Int                        @id @default(autoincrement())
+  documentTemplateId  Int
+  name                String
+  description         String?
+  isActive            Boolean                    @default(true)
+  DocumentTemplate    DocumentTemplate           @relation(fields: [documentTemplateId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  MedicalCertificates ClinicMedicalCertificate[]
+
+  @@unique([documentTemplateId, name], name: "unique_medical_certificate_finding")
+}
+
+model MedicalCertificateClassification {
+  id                  Int                        @id @default(autoincrement())
+  documentTemplateId  Int
+  name                String
+  description         String?
+  isActive            Boolean                    @default(true)
+  DocumentTemplate    DocumentTemplate           @relation(fields: [documentTemplateId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  MedicalCertificates ClinicMedicalCertificate[]
+
+  @@unique([documentTemplateId, name], name: "unique_medical_certificate_classification")
 }

@@ -14,6 +14,35 @@ import { OrganizationMemberStatus } from "@/types";
 import { withErrorHandling } from "@/lib/with-error-handling";
 import { parseObject } from '@/lib/utils';
 
+const HEALTHCARE_PROVIDER_ROLES = [
+  "Nurse",
+  "Dental Aide",
+  "Psychologist",
+  "Dentist",
+  "Doctor",
+];
+
+export const isOrgHealthcareProviderAction = async (userId: string, orgUid: string) => {
+  const orgMember = await prisma.organizationMember.findFirst({
+    where: {
+      User: {
+        userId
+      },
+      Organization: {
+        orgUid,
+        isActive: true
+      },
+      OrganizationRole: {
+        name: {
+          in: HEALTHCARE_PROVIDER_ROLES,
+        },
+        isActive: true,
+      },
+    },
+  });
+  return !!orgMember;
+}
+
 export type GetOrgMembersFilters = {
   userId?: string;
   orgUid?: string;

@@ -7,6 +7,47 @@ import { ClinicMemberStatus } from "@/types";
 import { withErrorHandling } from "@/lib/with-error-handling";
 import { sessionCheck } from "@/lib/auth";
 
+type CreateMedicalCertificatePayload = {
+  patientName: string;
+  address: string;
+  selectedReason: string;
+  findings: string;
+  medicalClassification: string;
+  clinicUid: string;
+}
+export const createMedicalCertificateAction = withErrorHandling(async (data: CreateMedicalCertificatePayload) => {
+  await sessionCheck();
+
+  const { patientName, address, selectedReason, findings, medicalClassification, clinicUid } = data;
+
+  // Replace with actual creation logic, but this time, since this is a mock, we will just return a success message.
+  const newMedicalCertificate = null;
+
+  return { message: "Medical certificate created successfully", data: newMedicalCertificate };
+});
+
+type CreateImagingStudiesPayload = {
+  name: string;
+  age: number;
+  address: string;
+  birthdate: Date;
+  diagnostics: number;
+  history?: string;
+  impression?: string;
+  requestFor?: string;
+}
+
+export const createImagingStudiesAction = withErrorHandling(async (data: CreateImagingStudiesPayload & { clinicUid: string }) => {
+  await sessionCheck();
+
+  const { name, age, address, birthdate, diagnostics, history, impression, requestFor, clinicUid } = data;
+
+  // Replace with actual creation logic, but this time, since this is a mock, we will just return a success message.
+  const newImagingStudy = null;
+
+  return { message: "Imaging study created successfully", data: newImagingStudy };
+});
+
 type CreateClinicPayload = {
   clinicUid: string;
   tenantUid: string;
@@ -176,3 +217,24 @@ export const updateClinicAction = withErrorHandling(async (clinicUid: string, da
   });
   return { message: "Successfully updated clinic.", data: clinic };
 })
+
+type CreateLaboratoryRequestPayload = {
+  name: string;
+  age: number;
+  address: string;
+  hematology?: string[];
+  clinicalMicroscopy?: string[];
+  bloodChemistry?: string[];
+  clinicUid: string;
+};
+
+export const createLaboratoryRequestAction = withErrorHandling(async (data: CreateLaboratoryRequestPayload) => {
+  await sessionCheck();
+
+  const { name, age, address, hematology, clinicalMicroscopy, bloodChemistry, clinicUid } = data;
+
+  // Mock for now- only static. Need permission from sir Wave.
+  const newLaboratoryRequest = null;
+
+  return { message: "Laboratory request created successfully", data: newLaboratoryRequest };
+});

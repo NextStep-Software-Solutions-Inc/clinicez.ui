@@ -94,3 +94,27 @@ export function searchParamsToObject(params: URLSearchParams) {
   }
   return obj;
 }
+
+export function generateSerialNumber(): string {
+  const prefix = 'EZ';
+  const suffixLetter = 'H';
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  const middleLength = 5;
+  let middle = '';
+
+  const randomValues = new Uint8Array(middleLength + 1);
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+    crypto.getRandomValues(randomValues);
+    for (let i = 0; i < middleLength; i++) {
+      middle += chars.charAt(randomValues[i] % chars.length);
+    }
+    const suffixDigit = (randomValues[middleLength] % 10).toString();
+    return `${prefix}${middle}${suffixLetter}${suffixDigit}`;
+  } else {
+    for (let i = 0; i < middleLength; i++) {
+      middle += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    const suffixDigit = Math.floor(Math.random() * 10).toString();
+    return `${prefix}${middle}${suffixLetter}${suffixDigit}`;
+  }
+}

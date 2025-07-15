@@ -24,7 +24,7 @@ export interface PrescriptionsProps {
   clinicUid?: string;
   hpId?: number;
   isArchived?: boolean;
-  patientId?: string;
+  patientId?: number | string;
 }
 
 export default function Prescriptions({ consultationTicketId, clinicUid, hpId, patientId }: PrescriptionsProps) {
@@ -33,7 +33,7 @@ export default function Prescriptions({ consultationTicketId, clinicUid, hpId, p
     consultationTicketId,
     clinicUid,
     hpId,
-    patientId,
+    patientId: typeof patientId === "number" ? String(patientId) : patientId,
   });
 
   return (
@@ -62,7 +62,7 @@ export default function Prescriptions({ consultationTicketId, clinicUid, hpId, p
             of={prescriptions?.data ?? []}
             fallback={
               <p className="text-center text-muted-foreground">
-              No recent prescription to show.
+                No recent prescription to show.
               </p>
             }
             render={(prescription) => (
@@ -71,7 +71,7 @@ export default function Prescriptions({ consultationTicketId, clinicUid, hpId, p
           />
         </div>
       </CardContent>
-      <CardFooter/>
+      <CardFooter />
     </Card>
   );
 }

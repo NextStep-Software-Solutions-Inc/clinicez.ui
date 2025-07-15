@@ -1,56 +1,80 @@
 "use client"
 
-import { createMedicalCertificateAction } from "@/actions/clinics/clinic.action"
 import ActionButton from "@/components/ActionButton"
 import CustomModalContent from "@/components/CustomModalContent"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Dialog, DialogClose, DialogFooter, DialogTrigger } from "@/components/ui/dialog"
-import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form"
+import { Dialog, DialogTrigger } from "@/components/ui/dialog"
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Tooltip, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import Each from "@/components/utils/Each"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useParams } from "next/navigation"
 import React from "react"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
 import { z } from "zod"
 
-const REASONS = [
-  "Physical Examination Only",
-  "Physical Examination w/ X-Ray and Laboratory Results",
-  "Consultation/Treatment",
-]
+import {
+  getMedicalCertificateReasonsAction,
+  getMedicalCertificateFindingsAction,
+  getMedicalCertificateClassificationsAction,
+  createMedicalCertificateAction,
+} from "@/actions/clinics/clinical-record/medical-certificate.action";
+import { generateSerialNumber } from "@/lib/utils"
 
-const FINDINGS = ["Unremarkable", "Abnormal", "Normal"]
+type MedicalCertificateReason = {
+  id: number;
+  name: string;
+  description?: string | null;
+  isActive: boolean;
+  documentTemplateId?: number;
+};
 
-const MEDICAL_CLASSIFICATIONS = [
-  {
-    value: "Class A",
-    label: "Class A",
-    description: "Physically fit for any work",
-  },
-  {
-    value: "Class B",
-    label: "Class B",
-    description:
-      "Physically under-developed or with correctable defects, (error of refraction dental caries, defective hearing, and other similar defects) but otherwise fit to work",
-  },
-  {
-    value: "Class C",
-    label: "Class C",
-    description:
-      "Employable but owing to certain impairments or conditions, (heart disease, hypertension, anatomical defects) requires special placement or limited duty in a specified or selected assignment requiring follow-up treatment/periodic evaluation.",
-  },
-  {
-    value: "Class D",
-    label: "Class D",
-    description:
-      "Unfit or unsafe for any type of employment (active PTB, advanced heart disease with threatened failure, malignant hypertension, and other similar illnesses)",
-  },
-]
+type MedicalCertificateFinding = {
+  id: number;
+  name: string;
+  description?: string | null;
+  isActive: boolean;
+  documentTemplateId?: number;
+};
+
+type MedicalCertificateClassification = {
+  id: number;
+  name: string;
+  description?: string | null;
+  isActive: boolean;
+  documentTemplateId?: number;
+};
+
+function useMedicalCertificateOptions() {
+  const [reasons, setReasons] = React.useState<MedicalCertificateReason[]>([]);
+  const [findings, setFindings] = React.useState<MedicalCertificateFinding[]>([]);
+  const [classifications, setClassifications] = React.useState<MedicalCertificateClassification[]>([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    async function fetchOptions() {
+      setLoading(true);
+      try {
+        const [reasonsRes, findingsRes, classificationsRes] = await Promise.all([
+          getMedicalCertificateReasonsAction(),
+          getMedicalCertificateFindingsAction(),
+          getMedicalCertificateClassificationsAction(),
+        ]);
+        setReasons(reasonsRes?.data || []);
+        setFindings(findingsRes?.data || []);
+        setClassifications(classificationsRes?.data || []);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchOptions();
+  }, []);
+
+  return { reasons, findings, classifications, loading };
+}
 
 const createMedicalCertificateSchema = z.object({
   patientName: z
@@ -76,34 +100,38 @@ const createMedicalCertificateSchema = z.object({
     .min(5, {
       message: "Address must be at least 5 characters long",
     }),
-  selectedReason: z.enum(
-    ["Physical Examination Only", "Physical Examination w/ X-Ray and Laboratory Results", "Consultation/Treatment"],
-    {
-      required_error: "Please select a reason",
-    },
-  ),
-  findings: z.enum(["Unremarkable", "Abnormal", "Normal"], {
+  selectedReason: z.string({
+    required_error: "Please select a reason",
+  }).min(1, { message: "Please select a reason" }),
+  findings: z.string({
     required_error: "Please select findings",
-  }),
-  medicalClassification: z.enum(["Class A", "Class B", "Class C", "Class D"], {
+  }).min(1, { message: "Please select findings" }),
+  medicalClassification: z.string({
     required_error: "Please select a medical classification",
-  }),
+  }).min(1, { message: "Please select a medical classification" }),
 })
 
 interface CreateMedicalCertificateModalProps {
   clinicUid: string
   onCreateMedicalCertificate?: () => void
   userInfo?: any
+  patientId?: number
+  hpId?: number
+  consultationTicketId?: number
 }
+
 
 export default function CreateMedicalCertificateModal({
   onCreateMedicalCertificate,
   userInfo,
   clinicUid,
+  patientId,
+  hpId,
+  consultationTicketId,
 }: CreateMedicalCertificateModalProps) {
-  const closeBtnRef = React.useRef<HTMLInputElement>(null)
+  const [open, setOpen] = React.useState(false);
 
-  // Autofill logic for defaultValues
+  const { reasons, findings, classifications, loading } = useMedicalCertificateOptions();
   const autofillDefaults = React.useMemo(() => {
     return {
       patientName:
@@ -115,46 +143,78 @@ export default function CreateMedicalCertificateModal({
           ? Math.max(0, Math.floor((Date.now() - new Date(userInfo.dob).getTime()) / (365.25 * 24 * 60 * 60 * 1000)))
           : 0,
       address: String(userInfo?.address || userInfo?.homeAddress || ""),
-      selectedReason: "Physical Examination Only" as const,
-      findings: "Unremarkable" as const,
-      medicalClassification: "Class A" as const,
+      selectedReason: reasons.length > 0 ? reasons[0].name : "",
+      findings: findings.length > 0 ? findings[0].name : "",
+      medicalClassification: classifications.length > 0 ? classifications[0].name : "",
     }
-  }, [userInfo])
+  }, [userInfo, reasons, findings, classifications])
 
   const form = useForm<z.infer<typeof createMedicalCertificateSchema>>({
     resolver: zodResolver(createMedicalCertificateSchema),
     defaultValues: autofillDefaults,
   })
 
-  const action = async () => {
-    form.handleSubmit(async (values) => {
-      toast.promise(
-        createMedicalCertificateAction({
-          ...values,
-          clinicUid,
-        }),
-        {
-          loading: "Creating medical certificate...",
-          success: (res) => {
-            if (res.status) {
-              onCreateMedicalCertificate?.()
-              closeBtnRef.current?.click()
-            }
-            return res.message
-          },
-          error: (error) => error.message || "Failed to create medical certificate",
+  React.useEffect(() => {
+    if (open) {
+      form.reset(autofillDefaults);
+    }
+  }, [open, autofillDefaults, form]);
+
+  // Reset form when autofillDefaults change and modal is open (e.g., after userInfo async fetch)
+  React.useEffect(() => {
+    if (open) {
+      form.reset(autofillDefaults);
+    }
+  }, [autofillDefaults, open, form]);
+
+  const handleSubmit = form.handleSubmit(async (values) => {
+    const reason = reasons.find(r => r.name === values.selectedReason);
+    const finding = findings.find(f => f.name === values.findings);
+    const classification = classifications.find(c => c.name === values.medicalClassification);
+
+    const documentTemplateId = reason?.documentTemplateId || classification?.documentTemplateId || finding?.documentTemplateId;
+
+    const serialNumber = generateSerialNumber();
+    const remarks = ""; // Currently not used, can be added in future UI design.
+
+    if (!reason || !finding || !classification || !documentTemplateId) {
+      toast.error("Please select valid reason, finding, and classification.");
+      return;
+    }
+
+    toast.promise(
+      createMedicalCertificateAction({
+        clinicUid,
+        patientId,
+        documentTemplateId,
+        hpId,
+        reasonId: reason.id,
+        findingId: finding.id,
+        classificationId: classification.id,
+        serialNumber,
+        remarks,
+        consultationTicketId,
+      }),
+      {
+        loading: "Creating medical certificate...",
+        success: (res) => {
+          onCreateMedicalCertificate?.()
+          setOpen(false)
+          form.reset(autofillDefaults)
+          return res.message
         },
-      )
-    })()
-  }
+        error: (error) => error.message || "Failed to create medical certificate",
+      }
+    );
+  });
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
             <DialogTrigger asChild>
-              <Button size="sm" className="w-full">
+              <Button size="sm" className="w-full" onClick={() => setOpen(true)}>
                 Create Medical Certificate
               </Button>
             </DialogTrigger>
@@ -163,12 +223,13 @@ export default function CreateMedicalCertificateModal({
       </TooltipProvider>
 
       <CustomModalContent
-        className="sm:max-w-[625px] overflow-scroll max-h-[80vh]"
-        label="Create Medical Certificate"
-        description={`Make changes to your profile here. Click save when you're done.`}
+        className="sm:max-w-[625px] max-h-[80vh] flex flex-col"
+        label={<span className="text-lg font-semibold">Create Medical Certificate</span>}
+        description={<span className="text-sm text-muted-foreground">Make changes to your profile here. Click save when you&apos;re done.</span>}
+        headerClassName="sticky top-0 z-[20] bg-white px-4 pt-3 pb-2 border-b flex items-start"
       >
         <Form {...form}>
-          <form action={action} id="add-medical-certificate-form" className="space-y-4">
+          <form onSubmit={handleSubmit} id="add-medical-certificate-form" className="flex-1 overflow-y-auto px-4 pb-24 pt-3 space-y-3">
             <div className="flex gap-4">
               <FormField
                 control={form.control}
@@ -179,6 +240,9 @@ export default function CreateMedicalCertificateModal({
                     <FormControl>
                       <Input id="patientName" placeholder="Juan Dela Cruz" {...field} />
                     </FormControl>
+                    <FormMessage>
+                      Please provide the patient&apos;s name
+                    </FormMessage>
                   </FormItem>
                 )}
               />
@@ -215,7 +279,6 @@ export default function CreateMedicalCertificateModal({
               )}
             />
 
-            {/* Fixed Reasons Section - Yes, have to do it this way though */}
             <FormField
               control={form.control}
               name="selectedReason"
@@ -224,25 +287,33 @@ export default function CreateMedicalCertificateModal({
                   <FormLabel>Reason</FormLabel>
                   <FormControl>
                     <div className="flex flex-col gap-2">
-                      {REASONS.map((reason) => (
-                        <div
-                          key={reason}
-                          className="w-full rounded-lg border p-3 flex items-center gap-2"
-                          tabIndex={-1}
-                          style={{ outline: "none" }}
-                        >
-                          <Checkbox
-                            checked={field.value === reason}
-                            onCheckedChange={(checked) => {
-                              if (checked) {
-                                field.onChange(reason)
-                              }
-                            }}
-                            className="cursor-pointer"
-                          />
-                          <span className="font-normal text-sm select-none">{reason}</span>
-                        </div>
-                      ))}
+                      <Each
+                        of={reasons}
+                        render={(reason) => (
+                          <div
+                            key={reason.id}
+                            className="w-full rounded-lg border p-3 flex items-center gap-2"
+                            tabIndex={-1}
+                            style={{ outline: "none" }}
+                          >
+                            <Checkbox
+                              checked={field.value === reason.name}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  field.onChange(reason.name)
+                                }
+                              }}
+                              className="cursor-pointer"
+                            />
+                            <span className="font-normal text-sm select-none">{reason.name}</span>
+                          </div>
+                        )}
+                        fallback={
+                          <FormItem className="flex items-center justify-center">
+                            <FormLabel className="text-sm text-muted-foreground">No reasons available</FormLabel>
+                          </FormItem>
+                        }
+                      />
                     </div>
                   </FormControl>
                 </FormItem>
@@ -261,26 +332,37 @@ export default function CreateMedicalCertificateModal({
                       value={field.value}
                       className="grid grid-cols-3 gap-4"
                     >
-                      {FINDINGS.map((finding) => (
-                        <div
-                          key={finding}
-                          className="w-full rounded-lg border p-3 flex items-center justify-center"
-                          tabIndex={-1}
-                          style={{ outline: "none" }}
-                        >
-                          <FormItem className="flex flex-row items-center justify-center gap-2 w-full">
+                      <Each
+                        of={findings}
+                        render={(finding) => (
+                          <div
+                            key={finding.id}
+                            className="w-full rounded-lg border p-3 flex items-center justify-center"
+                            tabIndex={-1}
+                            style={{ outline: "none" }}
+                          >
+                            <FormItem className="flex flex-row items-center justify-center gap-2 w-full">
+                              <FormControl>
+                                <RadioGroupItem value={finding.name} className="cursor-pointer" />
+                              </FormControl>
+                              <FormLabel
+                                htmlFor={finding.name}
+                                className="font-normal text-center self-center text-sm select-none cursor-pointer"
+                              >
+                                {finding.name}
+                              </FormLabel>
+                            </FormItem>
+                          </div>
+                        )}
+                        fallback={
+                          <FormItem className="flex items-center justify-center">
                             <FormControl>
-                              <RadioGroupItem value={finding} className="cursor-pointer" />
+                              <RadioGroupItem value="" disabled className="cursor-not-allowed" />
                             </FormControl>
-                            <FormLabel
-                              htmlFor={finding}
-                              className="font-normal text-center self-center text-sm select-none cursor-pointer"
-                            >
-                              {finding}
-                            </FormLabel>
+                            <FormLabel className="text-sm text-muted-foreground">No findings available</FormLabel>
                           </FormItem>
-                        </div>
-                      ))}
+                        }
+                      />
                     </RadioGroup>
                   </FormControl>
                 </FormItem>
@@ -296,36 +378,44 @@ export default function CreateMedicalCertificateModal({
                   <FormControl>
                     <RadioGroup onValueChange={field.onChange} value={field.value} className="flex flex-col gap-3">
                       <Each
-                        of={MEDICAL_CLASSIFICATIONS}
+                        of={classifications}
                         render={(item) => (
-                          <div key={item.value} className="w-full rounded-lg border p-3 flex items-center gap-3">
+                          <div key={item.id} className="w-full rounded-lg border p-3 flex items-center gap-3">
                             <FormItem className="flex items-center gap-3 w-full">
                               <FormControl>
-                                <RadioGroupItem value={item.value} />
+                                <RadioGroupItem value={item.name} />
                               </FormControl>
                               <div className="flex flex-col w-full">
-                                <FormLabel className="font-normal cursor-pointer">{item.label}</FormLabel>
-                                <span className="text-xs text-muted-foreground mt-1">{item.description}</span>
+                                <FormLabel className="font-normal cursor-pointer">{item.name}</FormLabel>
+                                {item.description && (
+                                  <span className="text-xs text-muted-foreground mt-1">{item.description}</span>
+                                )}
                               </div>
                             </FormItem>
                           </div>
                         )}
+                        fallback={
+                          <FormItem className="flex items-center justify-center">
+                            <FormControl>
+                              <RadioGroupItem value="" disabled className="cursor-not-allowed" />
+                            </FormControl>
+                            <FormLabel className="text-sm text-muted-foreground">No classifications available</FormLabel>
+                          </FormItem>
+                        }
                       />
                     </RadioGroup>
                   </FormControl>
                 </FormItem>
               )}
             />
-
-            <div className="flex justify-end gap-2 mt-6">
-              <input ref={closeBtnRef} type="hidden" value="ok" className="hidden" />
-              <ActionButton type="submit" form="add-medical-certificate-form">
-                Create
-              </ActionButton>
-            </div>
           </form>
+          <div className="sticky bottom-0 right-0 w-full bg-white px-4 py-3 flex justify-end border-t z-10">
+            <ActionButton type="submit" form="add-medical-certificate-form" className="bg-black text-white hover:bg-black/90">
+              <span className="text-sm">Save changes</span>
+            </ActionButton>
+          </div>
         </Form>
       </CustomModalContent>
     </Dialog>
-  )
+  );
 }

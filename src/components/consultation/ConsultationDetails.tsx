@@ -33,25 +33,40 @@ interface ConsultationDetailsProps {
 }
 export default async function ConsultationDetails({ consultation }: ConsultationDetailsProps) {
   const appointment = await getAppointmentAction(consultation?.appointmentId ?? 0, consultation.Clinic.clinicUid);
-  
+
   const [creators] = await Promise.all([
     await getHpsByIdsAction(consultation.ConsultationTicketHPs.map(c => Number(c.hpId))),
   ]);
 
+  // Fetch ClinicPatient by user id and clinicUid
+  let clinicPatientId: number | undefined = undefined;
+  const userId = appointment.data?.Requesters[0].User?.id;
+  if (userId && consultation.Clinic.clinicUid) {
+    try {
+      const res = await import("@/actions/clinics/clinic-patient.action");
+      const result = await res.getClinicPatientByUserIdAction({ userId, clinicUid: consultation.Clinic.clinicUid });
+      if (result?.data?.id) {
+        clinicPatientId = result.data.id;
+      }
+    } catch (e) {
+      clinicPatientId = undefined;
+    }
+  }
+
   return (
     <>
-      <PatientHpDetails creators={creators} user={appointment.data?.Requesters[0].User!}/>
-      <BackgroundInfo 
-        appointment={appointment.data} 
-        consultation={consultation} 
+      <PatientHpDetails creators={creators} user={appointment.data?.Requesters[0].User!} />
+      <BackgroundInfo
+        appointment={appointment.data}
+        consultation={consultation}
         user={appointment.data?.Requesters[0].User!}
       />
-      <ClinicalRecords 
-        consultationTicketId={consultation.id} 
+      <ClinicalRecords
+        consultationTicketId={consultation.id}
         clinicUid={consultation.Clinic.clinicUid}
         hpId={consultation.ConsultationTicketHPs[0]?.hpId}
         isArchived={false}
-        patientId={appointment.data?.Requesters[0].User?.userId}
+        patientId={clinicPatientId}
       />
     </>
   );
@@ -82,7 +97,7 @@ export const BackgroundInfo = ({ appointment, consultation, user }: BackgroundIn
         </CardTitle>
         <CardDescription>
           <span className="flex items-center gap-2">
-            {appointment?.subject} 
+            {appointment?.subject}
             <Link target="_blank" href={{
               pathname: `../appointments`,
               query: {
@@ -91,7 +106,7 @@ export const BackgroundInfo = ({ appointment, consultation, user }: BackgroundIn
             }}>
               <Tooltip>
                 <TooltipTrigger>
-                  <ExternalLink className="w-4 h-4 text-primary"/>
+                  <ExternalLink className="w-4 h-4 text-primary" />
                 </TooltipTrigger>
                 <TooltipContent>
                   View Appointment
@@ -102,7 +117,7 @@ export const BackgroundInfo = ({ appointment, consultation, user }: BackgroundIn
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {appointment?.complaint} 
+        {appointment?.complaint}
       </CardContent>
       <CardFooter>
         <Tabs defaultValue="notes" className="w-full">
@@ -116,32 +131,32 @@ export const BackgroundInfo = ({ appointment, consultation, user }: BackgroundIn
           </TabsList>
           <TabsContent value="notes">
             <Suspend>
-              <ConsultationNotes consultation={consultation}/>
+              <ConsultationNotes consultation={consultation} />
             </Suspend>
           </TabsContent>
           <TabsContent value="pre-assessment-notes">
             <Suspend>
-              <NurseAssessment consultation={consultation}/>
+              <NurseAssessment consultation={consultation} />
             </Suspend>
           </TabsContent>
           <TabsContent value="interventions">
             <Suspend>
-              <Interventions consultation={consultation}/>
+              <Interventions consultation={consultation} />
             </Suspend>
           </TabsContent>
           <TabsContent value="conversation">
             <Suspend>
-              <Conversation consultation={consultation}/>
+              <Conversation consultation={consultation} />
             </Suspend>
           </TabsContent>
           <TabsContent value="vital-signs">
             <Suspend>
-              <VitalSigns consultation={consultation} userId={user.userId}/>
+              <VitalSigns consultation={consultation} userId={user.userId} />
             </Suspend>
           </TabsContent>
           <TabsContent value="files">
             <Suspend>
-              <Files consultation={consultation}/>
+              <Files consultation={consultation} />
             </Suspend>
           </TabsContent>
         </Tabs>
@@ -152,10 +167,10 @@ export const BackgroundInfo = ({ appointment, consultation, user }: BackgroundIn
 
 interface ClinicalRecordsProps {
   consultationTicketId: number;
-  clinicUid?: string;
-  hpId?: number;
+  clinicUid: string;
+  hpId: number;
   isArchived?: boolean;
-  patientId?: string;
+  patientId?: number | string;
 }
 
 export const ClinicalRecords = ({
@@ -263,10 +278,10 @@ export const PatientHpDetails = ({ creators = [], user }: PatientHpDetailsProps)
           <div className="flex gap-2 items-center">
             <Avatar>
               {user.picture
-                ? <Image className="object-cover" width={80} height={80} src={user.picture} alt={user.nickname ?? ""}/>
+                ? <Image className="object-cover" width={80} height={80} src={user.picture} alt={user.nickname ?? ""} />
                 : <AvatarFallback>{user.firstName?.charAt(0)}{user.lastName?.charAt(0)}</AvatarFallback>
               }
-              
+
             </Avatar>
             <div className="flex flex-col">
               <span className="text-sm font-semibold">{user.firstName} {user.lastName}</span>
@@ -280,11 +295,11 @@ export const PatientHpDetails = ({ creators = [], user }: PatientHpDetailsProps)
               <EMRPreviewSheet>
                 <TooltipTrigger asChild>
                   <Button size="icon" variant="link">
-                    <FolderHeart className="w-6 h-6"/>
+                    <FolderHeart className="w-6 h-6" />
                   </Button>
                 </TooltipTrigger>
               </EMRPreviewSheet>
-              <TooltipContent> 
+              <TooltipContent>
                 EMR Preview
               </TooltipContent>
             </Tooltip>
@@ -304,10 +319,10 @@ export const PatientHpDetails = ({ creators = [], user }: PatientHpDetailsProps)
                   <Avatar>
                     {
                       creator?.HPProfile?.picture
-                        ? <Image className="object-cover" width={80} height={80} src={creator.HPProfile.picture} alt={creator?.HPProfile?.name ?? ""}/>
-                        : <AvatarFallback>{creator?.HPProfile?.name.slice(0,2)}</AvatarFallback>
+                        ? <Image className="object-cover" width={80} height={80} src={creator.HPProfile.picture} alt={creator?.HPProfile?.name ?? ""} />
+                        : <AvatarFallback>{creator?.HPProfile?.name.slice(0, 2)}</AvatarFallback>
                     }
-                    
+
                   </Avatar>
                   <div className="flex flex-col">
                     <span className="text-sm font-semibold">{creator?.HPProfile?.title} {creator?.HPProfile?.name} {creator?.HPProfile?.suffix}</span>
@@ -316,7 +331,7 @@ export const PatientHpDetails = ({ creators = [], user }: PatientHpDetailsProps)
                     </div>
                   </div>
                 </div>
-                {index !== (creators.length - 1)  && <Separator orientation="vertical" className="h-10"/>}
+                {index !== (creators.length - 1) && <Separator orientation="vertical" className="h-10" />}
               </Fragment>
             )}
           />

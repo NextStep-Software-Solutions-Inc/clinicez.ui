@@ -27,7 +27,7 @@ export interface ImagingStudiesProps {
   clinicUid?: string;
   hpId?: number;
   isArchived?: boolean;
-  patientId?: string;
+  patientId?: number | string;
 }
 
 export default function ImagingStudies({ consultationTicketId, clinicUid, hpId, patientId }: ImagingStudiesProps) {
@@ -40,24 +40,9 @@ export default function ImagingStudies({ consultationTicketId, clinicUid, hpId, 
   //   patientId,
   // });
   const studies = { data: [] };
-  const mutate = () => {};
+  const mutate = () => { };
 
   const [userInfo, setUserInfo] = useState<any>(null);
-  useEffect(() => {
-    async function fetchUser() {
-      if (patientId) {
-        try {
-          const res = await getUserAction(patientId);
-          if (res?.message === "User found" && res?.data) {
-            setUserInfo(res.data);
-          }
-        } catch (e) {
-          setUserInfo(null);
-        }
-      }
-    }
-    fetchUser();
-  }, [patientId]);
 
   return (
     <Card className="group/imaging-studies">
@@ -97,7 +82,7 @@ export default function ImagingStudies({ consultationTicketId, clinicUid, hpId, 
           />
         </div>
       </CardContent>
-      <CardFooter/>
+      <CardFooter />
     </Card>
   );
 }

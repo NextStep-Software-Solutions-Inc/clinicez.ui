@@ -27,7 +27,7 @@ export interface LaboratoryRequestProps {
   clinicUid?: string;
   hpId?: number;
   isArchived?: boolean;
-  patientId?: string;
+  patientId?: number | string;
 }
 
 export default function LaboratoryRequest({ consultationTicketId, clinicUid, hpId, patientId }: LaboratoryRequestProps) {
@@ -40,24 +40,8 @@ export default function LaboratoryRequest({ consultationTicketId, clinicUid, hpI
   //   patientId,
   // });
   const requests = { data: [] };
-  const mutate = () => {};
+  const mutate = () => { };
   const [userInfo, setUserInfo] = useState<any>(null);
-
-  useEffect(() => {
-    async function fetchUser() {
-      if (patientId) {
-        try {
-          const res = await getUserAction(patientId);
-          if (res?.message === "User found" && res?.data) {
-            setUserInfo(res.data);
-          }
-        } catch (e) {
-          setUserInfo(null);
-        }
-      }
-    }
-    fetchUser();
-  }, [patientId]);
 
   return (
     <Card className="group/laboratory-request">
@@ -97,7 +81,7 @@ export default function LaboratoryRequest({ consultationTicketId, clinicUid, hpI
           />
         </div>
       </CardContent>
-      <CardFooter/>
+      <CardFooter />
     </Card>
   );
 }

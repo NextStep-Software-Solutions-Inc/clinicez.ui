@@ -13,51 +13,56 @@ import Each from "@components/utils/Each";
 import Suspend from "@components/Suspend";
 import dynamic from "next/dynamic";
 import { FileText } from "lucide-react";
-import { getUserAction } from "@/actions/users/user.action";
-// Placeholder for MedicalCertificateItem and useMedicalCertificates
-// Too lazy to implement right now, will be replaced with actual imports when implemented ~ Kyle
-// import MedicalCertificateItem from "@components/MedicalCertificateItem";
-// import { useMedicalCertificates } from "@hooks/useMedicalCertificates";
+import { getClinicPatientByUserIdAction } from "@/actions/clinics/clinic-patient.action";
+import MedicalCertificateItem from "./MedicalCertificateItem";
+import { useMedicalCertificates } from "@/hooks/useMedicalCertificate";
 const CreateMedicalCertificateModal = dynamic(
   () => import("@components/clinic/clinical-records/CreateMedicalCertificateModal")
 );
 
 export interface MedicalCertificateProps {
-  consultationTicketId?: number;
-  clinicUid?: string;
-  hpId?: number;
+  consultationTicketId: number;
+  clinicUid: string;
+  hpId: number;
   isArchived?: boolean;
-  patientId?: string;
+  patientId?: number | string;
 }
 
 export default function MedicalCertificate({ consultationTicketId, clinicUid, hpId, patientId }: MedicalCertificateProps) {
-  // So many comments!
-  // const { data: certificates, mutate } = useMedicalCertificates({
-  //   isArchived: false,
-  //   consultationTicketId,
-  //   clinicUid,
-  //   hpId,
-  //   patientId,
-  // });
-  const certificates = { data: [] };
-  const mutate = () => {};
+
+  const resolvedPatientId = typeof patientId === "string" ? Number(patientId) : patientId;
+
+  const { data: certificates, mutate } = useMedicalCertificates({
+    clinicUid,
+    consultationTicketId,
+    hpId,
+    patientId: resolvedPatientId
+  });
 
   const [userInfo, setUserInfo] = useState<any>(null);
+  const [clinicPatientId, setClinicPatientId] = useState<number | undefined>(undefined);
   useEffect(() => {
-    async function fetchUser() {
-      if (patientId) {
+    async function fetchClinicPatient() {
+      if (patientId && clinicUid) {
+        if (typeof resolvedPatientId !== "number" || isNaN(resolvedPatientId)) {
+          setUserInfo(null);
+          setClinicPatientId(undefined);
+          return;
+        }
         try {
-          const res = await getUserAction(patientId);
-          if (res?.message === "User found" && res?.data) {
-            setUserInfo(res.data);
+          const res = await getClinicPatientByUserIdAction({ userId: resolvedPatientId, clinicUid });
+          if (res?.message === "Clinic Patient found" && res?.data) {
+            setUserInfo(res.data.Patient);
+            setClinicPatientId(res.data.id);
           }
         } catch (e) {
           setUserInfo(null);
+          setClinicPatientId(undefined);
         }
       }
     }
-    fetchUser();
-  }, [patientId]);
+    fetchClinicPatient();
+  }, [resolvedPatientId, clinicUid, patientId]);
 
   return (
     <Card className="group/medical-certificate">
@@ -74,8 +79,11 @@ export default function MedicalCertificate({ consultationTicketId, clinicUid, hp
             <Suspend>
               <CreateMedicalCertificateModal
                 clinicUid={clinicUid ?? ""}
+                consultationTicketId={consultationTicketId}
                 onCreateMedicalCertificate={mutate}
                 userInfo={userInfo}
+                patientId={resolvedPatientId}
+                hpId={hpId}
               />
             </Suspend>
           </div>
@@ -91,13 +99,12 @@ export default function MedicalCertificate({ consultationTicketId, clinicUid, hp
               </p>
             }
             render={(certificate) => (
-              // <MedicalCertificateItem certificate={certificate} onUpdated={mutate} />
-              <div className="border rounded p-2">Medical Certificate Item Placeholder</div>
+              <MedicalCertificateItem certificate={certificate} onUpdated={mutate} />
             )}
           />
         </div>
       </CardContent>
-      <CardFooter/>
+      <CardFooter />
     </Card>
   );
 }

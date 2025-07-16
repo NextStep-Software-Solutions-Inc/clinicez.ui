@@ -5,7 +5,6 @@ import Suspend from "@components/Suspend"
 import { isUserOwner } from "@lib/org-utils"
 import ConditionalRender from "@components/utils/ConditionalRender"
 import { FilesForm } from "./FilesForm"
-import { revalidatePath } from "@/actions/cache.action"
 import Folder from "../../../../../../components/CreateFolder"
 
 export const metadata: Metadata = {

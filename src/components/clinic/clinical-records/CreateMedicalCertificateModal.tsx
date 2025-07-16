@@ -222,7 +222,7 @@ export default function CreateMedicalCertificateModal({
         headerClassName="sticky top-0 z-[20] bg-white px-4 pt-3 pb-2 border-b flex items-start"
       >
         <Form {...form}>
-          <form onSubmit={handleSubmit} id="add-medical-certificate-form" className="flex-1 overflow-y-auto px-4 pb-24 pt-3 space-y-3">
+          <form onSubmit={handleSubmit} id="add-medical-certificate-form" className="flex-1 overflow-y-auto px-4 pt-3 pb-[calc(var(--footer-height)+1rem)] space-y-3">
             <div className="flex gap-4">
               <FormField
                 control={form.control}

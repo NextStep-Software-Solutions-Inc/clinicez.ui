@@ -67,6 +67,8 @@ interface CreateImagingStudiesModalProps {
   userInfo?: any;
 }
 
+const DIAGNOSTICS_THRESHOLD = 3;
+
 export default function CreateImagingStudiesModal({ clinicUid, onCreateImagingStudy, userInfo }: CreateImagingStudiesModalProps) {
   const closeBtnRef = React.useRef<HTMLInputElement>(null);
 
@@ -126,7 +128,7 @@ export default function CreateImagingStudiesModal({ clinicUid, onCreateImagingSt
 
   // 3 diagnostics fallback logic FOR NOW
   const diagnosticsList = React.useMemo(() => (
-    diagnostics && diagnostics.length >= 3
+    diagnostics && diagnostics.length >= DIAGNOSTICS_THRESHOLD
       ? diagnostics
       : [
         { id: 1, name: "Chest X-Ray" },

@@ -4,6 +4,7 @@ import { getMedicalCertificateAction } from "@/actions/clinics/clinical-record/m
 import dayjs from "@lib/day-utils";
 import { handlePrintHtmlToPDF } from "@/lib/print-pdf";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
+import { formatAddress } from "@/lib/utils/format-address";
 
 interface DownloadMedicalCertificateActionProps {
   onUpdated?: () => void;
@@ -34,7 +35,7 @@ const DownloadMedicalCertificateAction = ({ certificate, children, onUpdated }: 
 
         // TODO: Need to be mapped to an address
         const addressObj = Array.isArray(patient.UserAddresses) && patient.UserAddresses.length > 0 ? patient.UserAddresses[0] : undefined;
-        const address = addressObj ? `${addressObj.address ?? ""}, ${addressObj.city ?? ""}, ${addressObj.state ?? ""}, ${addressObj.country ?? ""}, ${addressObj.zipCode ?? ""}`.replace(/(, )+/g, ', ').replace(/^, |, $/g, '') : "";
+        const address = formatAddress(addressObj);
         // Classification checkboxes
         const classA = data.Classification?.name === "Class A" ? "checked" : "";
         const classB = data.Classification?.name === "Class B" ? "checked" : "";

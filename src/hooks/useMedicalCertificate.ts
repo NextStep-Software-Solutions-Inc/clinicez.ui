@@ -1,5 +1,4 @@
-import { GetMedicalCertificateFilters } from "@/actions/clinics/clinical-record/medical-certificate.action";
-import { GetPrescriptions } from "@actions/medications/prescription.action"
+import { GetMedicalCertificateFilters, GetMedicalCertificates } from "@/actions/clinics/clinical-record/medical-certificate.action";
 import { self } from "@services/request"
 import useSWR from "swr"
 
@@ -10,6 +9,6 @@ export const useMedicalCertificates = (filters?: GetMedicalCertificateFilters) =
     if (value !== undefined && value !== null) searchParams.set(key, value.toString())
   })
 
-  const fetcher = (args: string) => self.get<GetPrescriptions>(args)
+  const fetcher = (args: string) => self.get<GetMedicalCertificates>(args)
   return useSWR(`/api/medical-certificates?${searchParams.toString()}`, fetcher)
 }

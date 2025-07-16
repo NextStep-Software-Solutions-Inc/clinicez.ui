@@ -45,9 +45,9 @@ export const setDefaultOrgRoleAction = withErrorHandling(async ({ userId, orgUid
     });
   }
 
-  return {message: "Default organization role successfully set", data: defaultRole}
+  return { message: "Default organization role successfully set", data: defaultRole }
 }, async (error) => {
-  if(hasCodeProperty(error) && error.code === "P2002") {
+  if (hasCodeProperty(error) && error.code === "P2002") {
     return "Default organization role not found"
   }
   return "Error while setting default organization role";

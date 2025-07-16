@@ -25,7 +25,7 @@ const DownloadMedicalCertificateAction = ({ certificate, children, onUpdated }: 
         const licenseNo = professionalDetails?.licenseNumber ?? "";
         const ptrNo = professionalDetails?.ptrNumber ?? "";
 
-        // TODO: Need to be mapped to an address
+        // Hardcoded for now, can be pushed to production, and subject to change
         const doctorAddress = "";
         // Patient info
         const patient = data.ClinicPatient?.Patient ?? {};

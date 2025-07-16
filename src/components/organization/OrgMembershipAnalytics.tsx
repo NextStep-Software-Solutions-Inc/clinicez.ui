@@ -5,7 +5,7 @@ import ConditionalRender from "@components/utils/ConditionalRender";
 
 export const OrgMembershipAnalytics = async ({ orgUid }: { orgUid: string; }) => {
   const [member, orgAdmin, hp] = await Promise.all([
-    isOrgMember(),
+    isOrgMember(orgUid),
     isOrgAdmin(orgUid),
     isOrgHealthcareProvider(orgUid),
   ]);

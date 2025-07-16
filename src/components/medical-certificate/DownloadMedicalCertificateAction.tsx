@@ -5,6 +5,7 @@ import dayjs from "@lib/day-utils";
 import { handlePrintHtmlToPDF } from "@/lib/print-pdf";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
 import { formatAddress } from "@/lib/utils/format-address";
+import { calculateAge } from "@/lib/utils";
 
 interface DownloadMedicalCertificateActionProps {
   onUpdated?: () => void;
@@ -30,7 +31,7 @@ const DownloadMedicalCertificateAction = ({ certificate, children, onUpdated }: 
         // Patient info
         const patient = data.ClinicPatient?.Patient ?? {};
         const patientName = `${patient.firstName ?? ""} ${patient.middleName ?? ""} ${patient.lastName ?? ""} ${patient.suffix ?? ""}`.trim();
-        const age = patient.dob ? (new Date().getFullYear() - new Date(patient.dob).getFullYear()) : "";
+        const age = patient.dob ? calculateAge(patient.dob) : "";
         const gender = patient.gender ?? "";
 
         // TODO: Need to be mapped to an address

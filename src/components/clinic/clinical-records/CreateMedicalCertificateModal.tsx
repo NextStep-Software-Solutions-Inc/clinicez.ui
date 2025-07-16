@@ -134,10 +134,14 @@ export default function CreateMedicalCertificateModal({
   const { reasons, findings, classifications, loading } = useMedicalCertificateOptions();
   const autofillDefaults = React.useMemo(() => {
     return {
-      patientName:
-        userInfo?.firstName && userInfo?.lastName
-          ? `${userInfo.firstName} ${userInfo.lastName}`
-          : "",
+      patientName: [
+        userInfo?.firstName,
+        userInfo?.middleName,
+        userInfo?.lastName,
+        userInfo?.suffix,
+      ]
+        .filter((namePart) => namePart)
+        .join(" "),
       age:
         userInfo?.dob
           ? calculateAge(userInfo?.dob) : 0,

@@ -128,30 +128,33 @@ export const createMedicalCertificateAction = withErrorHandling(async (input: Cr
     remarks,
     consultationTicketId } = input;
 
-  const appUser = await prismaClient.user.findUnique({
-    where: { userId: session.user.sub },
-    select: { id: true }
-  });
-  if (!appUser) throw new Error("Session user id is missing or invalid");
-  const createdBy = appUser.id;
+  const result = await prismaClient.$transaction(async (prisma) => {
+    const appUser = await prisma.user.findUnique({
+      where: { userId: session.user.sub },
+      select: { id: true }
+    });
+    if (!appUser) throw new Error("Session user id is missing or invalid");
+    const createdBy = appUser.id;
 
-  const certificate = await prismaClient.clinicMedicalCertificate.create({
-    data: {
-      serialNumber: serialNumber,
-      Clinic: { connect: { clinicUid } },
-      ClinicPatient: { connect: { id: patientId } },
-      DocumentTemplate: { connect: { id: documentTemplateId } },
-      HealthCareProvider: { connect: { id: hpId } },
-      Reason: { connect: { id: reasonId } },
-      Finding: { connect: { id: findingId } },
-      Classification: { connect: { id: classificationId } },
-      CreatedBy: { connect: { id: createdBy } },
-      isActive: true,
-      remarks: remarks || "",
-      ConsultationTicket: consultationTicketId ? { connect: { id: consultationTicketId } } : undefined,
-    },
+    const certificate = await prisma.clinicMedicalCertificate.create({
+      data: {
+        serialNumber: serialNumber,
+        Clinic: { connect: { clinicUid } },
+        ClinicPatient: { connect: { id: patientId } },
+        DocumentTemplate: { connect: { id: documentTemplateId } },
+        HealthCareProvider: { connect: { id: hpId } },
+        Reason: { connect: { id: reasonId } },
+        Finding: { connect: { id: findingId } },
+        Classification: { connect: { id: classificationId } },
+        CreatedBy: { connect: { id: createdBy } },
+        isActive: true,
+        remarks: remarks || "",
+        ConsultationTicket: consultationTicketId ? { connect: { id: consultationTicketId } } : undefined,
+      },
+    });
+    return certificate;
   });
-  return { message: "Medical Certificate created successfully", data: certificate };
+  return { message: "Medical Certificate created successfully", data: result };
 });
 
 export type UpdateMedicalCertificateInput = {

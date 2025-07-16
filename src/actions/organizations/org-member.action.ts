@@ -12,15 +12,6 @@ import { getPermissionsAction } from "@actions/permission.action";
 import { PERMISSIONS } from "@lib/permissions";
 import { OrganizationMemberStatus } from "@/types";
 import { withErrorHandling } from "@/lib/with-error-handling";
-import { parseObject } from '@/lib/utils';
-
-const HEALTHCARE_PROVIDER_ROLES = [
-  "Nurse",
-  "Dental Aide",
-  "Psychologist",
-  "Dentist",
-  "Doctor",
-];
 
 export const isOrgHealthcareProviderAction = async (userId: string, orgUid: string) => {
   const orgMember = await prisma.organizationMember.findFirst({
@@ -31,12 +22,6 @@ export const isOrgHealthcareProviderAction = async (userId: string, orgUid: stri
       Organization: {
         orgUid,
         isActive: true
-      },
-      OrganizationRole: {
-        name: {
-          in: HEALTHCARE_PROVIDER_ROLES,
-        },
-        isActive: true,
       },
     },
   });

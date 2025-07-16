@@ -17,8 +17,12 @@ export const useDiagnostics = () => {
       if (!res.ok) throw new Error("Failed to fetch diagnostics");
       const data = await res.json();
       setDiagnostics(data);
-    } catch (err: any) {
-      setError(err.message || "Unknown error");
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("Unknown error");
+      }
     } finally {
       setLoading(false);
     }

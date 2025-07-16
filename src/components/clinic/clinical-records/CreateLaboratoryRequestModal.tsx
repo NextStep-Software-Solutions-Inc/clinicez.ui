@@ -12,6 +12,7 @@ import { z } from "zod";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@components/ui/input";
 import { Checkbox } from "@components/ui/checkbox";
+import { calculateAge } from "@/lib/utils";
 
 const HEMATOLOGY = [
   "CBC (Complete Blood Count)",
@@ -69,8 +70,7 @@ export default function CreateLaboratoryRequestModal({ clinicUid, onCreateLabora
           : "",
       age:
         userInfo?.dob
-          ? Math.max(0, Math.floor((Date.now() - new Date(userInfo.dob).getTime()) / (365.25 * 24 * 60 * 60 * 1000)))
-          : 0,
+          ? calculateAge(userInfo?.dob) : 0,
       address: String(userInfo?.address || userInfo?.homeAddress || ""),
       hematology: [],
       clinicalMicroscopy: [],

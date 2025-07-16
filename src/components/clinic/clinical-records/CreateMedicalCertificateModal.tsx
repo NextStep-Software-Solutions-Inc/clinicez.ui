@@ -22,7 +22,7 @@ import {
   getMedicalCertificateClassificationsAction,
   createMedicalCertificateAction,
 } from "@/actions/clinics/clinical-record/medical-certificate.action";
-import { generateSerialNumber } from "@/lib/utils"
+import { calculateAge, generateSerialNumber } from "@/lib/utils"
 
 type MedicalCertificateReason = {
   id: number;
@@ -140,8 +140,7 @@ export default function CreateMedicalCertificateModal({
           : "",
       age:
         userInfo?.dob
-          ? Math.max(0, Math.floor((Date.now() - new Date(userInfo.dob).getTime()) / (365.25 * 24 * 60 * 60 * 1000)))
-          : 0,
+          ? calculateAge(userInfo?.dob) : 0,
       address: String(userInfo?.address || userInfo?.homeAddress || ""),
       selectedReason: reasons.length > 0 ? reasons[0].name : "",
       findings: findings.length > 0 ? findings[0].name : "",

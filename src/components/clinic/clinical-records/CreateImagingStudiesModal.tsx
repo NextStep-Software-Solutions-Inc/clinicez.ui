@@ -15,6 +15,7 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { calculateAge } from "@/lib/utils";
 
 const GENDERS = [
   "Male",
@@ -79,10 +80,7 @@ export default function CreateImagingStudiesModal({ clinicUid, onCreateImagingSt
         userInfo?.firstName && userInfo?.lastName
           ? `${userInfo.firstName} ${userInfo.lastName}`
           : "",
-      age:
-        userInfo?.dob
-          ? Math.max(0, Math.floor((Date.now() - new Date(userInfo.dob).getTime()) / (365.25 * 24 * 60 * 60 * 1000)))
-          : 0,
+      age: userInfo?.dob ? calculateAge(userInfo?.dob) : 0,
       address: String(userInfo?.address || userInfo?.homeAddress || ""),
       birthdate: userInfo?.dob ? new Date(userInfo.dob) : new Date(),
       gender: userInfo?.gender === "Male" || userInfo?.gender === "Female" ? userInfo.gender : undefined,

@@ -39,7 +39,7 @@ export default async function ConsultationDetails({ consultation }: Consultation
   ]);
 
   // Fetch ClinicPatient by user id and clinicUid
-  let clinicPatientId: number | undefined = undefined;
+  let clinicPatientId: number | undefined;
   const userId = appointment.data?.Requesters[0].User?.id;
   if (userId && consultation.Clinic.clinicUid) {
     try {

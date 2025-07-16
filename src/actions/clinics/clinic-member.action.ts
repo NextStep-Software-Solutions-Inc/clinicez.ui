@@ -145,7 +145,6 @@ type AddClinicMemberPayload = {
 export const addClinicMemberAction = withErrorHandling(async (payload: AddClinicMemberPayload) => {
 
   await sessionCheck()
-
   const { clinicUid, userId, roleId } = payload;
 
   const initialPermission = await prismaClient.clinicRoleInitialPermission.findMany({
@@ -161,6 +160,7 @@ export const addClinicMemberAction = withErrorHandling(async (payload: AddClinic
       permissionId: true,
     }
   });
+
   await prismaClient.clinicMember.create({
     data: {
       status: "ACTIVE",

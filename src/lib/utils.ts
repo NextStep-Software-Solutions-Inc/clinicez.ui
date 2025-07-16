@@ -94,3 +94,29 @@ export function searchParamsToObject(params: URLSearchParams) {
   }
   return obj;
 }
+
+export function generateSerialNumber(): string {
+  const prefix = 'EZ';
+  const suffixLetter = 'H';
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  const middleLength = 5;
+  let middle = '';
+
+  if (typeof crypto === 'undefined' || !crypto.getRandomValues) {
+    throw new Error('Secure random number generation is not available in this environment.');
+  }
+  const randomValues = new Uint8Array(middleLength + 1);
+  crypto.getRandomValues(randomValues);
+  for (let i = 0; i < middleLength; i++) {
+    middle += chars.charAt(randomValues[i] % chars.length);
+  }
+  const suffixDigit = (randomValues[middleLength] % 10).toString();
+  return `${prefix}${middle}${suffixLetter}${suffixDigit}`;
+}
+
+export function calculateAge(birthDate: Date | string): number {
+  const date = typeof birthDate === 'string' ? new Date(birthDate) : birthDate;
+  const today = dayjs();
+  const birthDay = dayjs(date);
+  return today.diff(birthDay, 'year');
+}

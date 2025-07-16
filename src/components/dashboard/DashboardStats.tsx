@@ -52,7 +52,7 @@ export const DashboardStats = async ({ userId, orgUid }: DashboardStatsProps) =>
       {/* <ConditionalRender condition>
         <MyMemberships userId={userId}/>
       </ConditionalRender> */}
-      <ConditionalRender condition={member && orgAdmin}>
+      <ConditionalRender condition={member || orgAdmin}>
         <div>
           <h3 className="text-lg font-medium mb-2 ml-1">Organization Overview</h3>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -82,7 +82,7 @@ export const DashboardStats = async ({ userId, orgUid }: DashboardStatsProps) =>
           </div>
         </div>
       </ConditionalRender>
-      <ConditionalRender condition={member && orgAdmin}>
+      <ConditionalRender condition={member || orgAdmin}>
         <div>
           <h3 className="text-lg font-medium mb-2 ml-1">Membership Statuses</h3>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -104,7 +104,7 @@ export const DashboardStats = async ({ userId, orgUid }: DashboardStatsProps) =>
           </div>
         </div>
       </ConditionalRender>
-      <ConditionalRender condition={member && orgAdmin}>
+      <ConditionalRender condition={member || orgAdmin}>
         <div>
           <h3 className="text-lg font-medium mb-2 ml-1">Organization Roles</h3>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

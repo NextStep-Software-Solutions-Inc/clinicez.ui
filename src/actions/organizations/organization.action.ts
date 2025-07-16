@@ -111,11 +111,10 @@ export const getOrganizationAction = cache(async (key: string | number) => {
 
 
 export const getMyDefaultOrganizationAction = cache(withErrorHandling(async () => {
-  
   const session = await getCachedSession();
   if (!session) throw new Error("User not authenticated.");
 
-  const org = await prisma.userDefaultOrganization.findFirst({
+  let org = await prisma.userDefaultOrganization.findFirst({
     where: {
       User: {
         userId: session.user.sub
@@ -131,7 +130,35 @@ export const getMyDefaultOrganizationAction = cache(withErrorHandling(async () =
         }
       }
     }
-  })
+  });
+
+  // Fallback: if no default org, get first active org membership
+  if (!org) {
+    const membership = await prisma.organizationMember.findFirst({
+      where: {
+        User: {
+          userId: session.user.sub
+        },
+        Organization: {
+          isActive: true
+        },
+        status: "ACTIVE"
+      },
+      select: {
+        Organization: {
+          select: {
+            name: true,
+            orgUid: true,
+            id: true
+          }
+        }
+      }
+    });
+    if (membership) {
+      org = { id: 0, Organization: membership.Organization };
+    }
+  }
+
   return { message: "Default organization fetched successfully", data: org };
 }))
 

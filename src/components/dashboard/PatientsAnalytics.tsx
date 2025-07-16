@@ -3,7 +3,7 @@ import { BloodTypeChart } from "@components/charts/BloodTypeChart";
 import { CivilStatusChart } from "@components/charts/CivilStatusChart";
 import { GenderChart } from "@components/charts/GenderChart";
 import ConditionalRender from "@components/utils/ConditionalRender";
-import { isOrgMember, isOrgAdmin } from "@lib/org-utils";
+import { isOrgMember, isOrgAdmin, isOrgHealthcareProvider } from "@lib/org-utils";
 
 export const PatientsAnalytics = async ({ orgUid }: { orgUid: string; }) => {
   const resolveOrgUid = await resolveOrgUidFromClinicUid(orgUid);
@@ -11,10 +11,11 @@ export const PatientsAnalytics = async ({ orgUid }: { orgUid: string; }) => {
     throw new Error("Organization UID could not be resolved from clinic UID.");
   }
 
-  const [stats, member, orgAdmin] = await Promise.all([
+  const [stats, member, orgAdmin, hp] = await Promise.all([
     getPatientAnalyticsData(resolveOrgUid),
     isOrgMember(),
-    isOrgAdmin(resolveOrgUid)
+    isOrgAdmin(resolveOrgUid),
+    isOrgHealthcareProvider(resolveOrgUid),
   ]);
   const { genderStats, bloodTypeStats, civilStatusStats } = stats;
 
@@ -41,7 +42,7 @@ export const PatientsAnalytics = async ({ orgUid }: { orgUid: string; }) => {
   
   
   return (
-    <ConditionalRender condition={member && orgAdmin}>
+    <ConditionalRender condition={(member && hp) || orgAdmin}>
       <div className="grid gap-2 grid-cols-1 lg:grid-cols-3">
         <GenderChart chartData={genderChartData} />
         <BloodTypeChart chartData={bloodTypeChartData} />

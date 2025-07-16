@@ -147,7 +147,7 @@ export const addClinicMemberAction = withErrorHandling(async (payload: AddClinic
   await sessionCheck()
   const { clinicUid, userId, roleId } = payload;
 
-  const initialPermission = await prismaClient.clinicRoleInitialPermission.findMany({
+  const initialPermissions = await prismaClient.clinicRoleInitialPermission.findMany({
     where: {
       ClinicRole: {
         id: roleId,
@@ -160,6 +160,8 @@ export const addClinicMemberAction = withErrorHandling(async (payload: AddClinic
       permissionId: true,
     }
   });
+
+  console.log({ initialPermissions })
 
   await prismaClient.clinicMember.create({
     data: {
@@ -179,7 +181,7 @@ export const addClinicMemberAction = withErrorHandling(async (payload: AddClinic
           id: roleId
         }
       },
-      ClinicMemberPermissions: { connect: initialPermission.map(p => ({ id: p.id })) }
+      ClinicMemberPermissions: { connect: initialPermissions.map(p => ({ id: p.permissionId })) }
     }
   })
 

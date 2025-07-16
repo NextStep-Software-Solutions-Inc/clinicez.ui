@@ -188,7 +188,7 @@ export const deleteMedicalCertificateAction = withErrorHandling(async ({ id }: {
   return { message: "Medical Certificate deleted successfully", data: certificate };
 });
 
-{/* Medical Certificate Reason */ }
+// Medical Certificate Reason
 export type GetMedicalCertificateReasons = Awaited<ReturnType<typeof getMedicalCertificateReasonsAction>>;
 export const getMedicalCertificateReasonsAction = withErrorHandling(async () => {
   const session = await getCachedSession();
@@ -200,7 +200,7 @@ export const getMedicalCertificateReasonsAction = withErrorHandling(async () => 
   return { message: "Medical Certificate Reasons fetched successfully", data: reasons };
 });
 
-{/* Medical Certificate Findings */ }
+/* Medical Certificate Findings */
 export type GetMedicalCertificateFindings = Awaited<ReturnType<typeof getMedicalCertificateFindingsAction>>;
 export const getMedicalCertificateFindingsAction = withErrorHandling(async () => {
   const session = await getCachedSession();
@@ -212,7 +212,7 @@ export const getMedicalCertificateFindingsAction = withErrorHandling(async () =>
   return { message: "Medical Certificate Findings fetched successfully", data: findings };
 });
 
-{/* Medical Certificate Classifications */ }
+/* Medical Certificate Classifications */
 export type GetMedicalCertificateClassifications = Awaited<ReturnType<typeof getMedicalCertificateClassificationsAction>>;
 export const getMedicalCertificateClassificationsAction = withErrorHandling(async () => {
   const session = await getCachedSession();

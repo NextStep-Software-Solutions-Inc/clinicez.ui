@@ -25,6 +25,7 @@ export interface PrescriptionsProps {
   hpId?: number;
   isArchived?: boolean;
   patientId?: number | string;
+  userId?: string;
 }
 
 export default function Prescriptions({ consultationTicketId, clinicUid, hpId, patientId }: PrescriptionsProps) {

@@ -16,7 +16,7 @@ export const getClinicPatientByUserIdAction = withErrorHandling(async ({ userId,
   const clinicPatient = await prismaClient.clinicPatient.findFirst({
     where: {
       Clinic: { clinicUid },
-      Patient: { ClinicPatients: { some: { patientId: userId } } },
+      Patient: { id: userId },
     },
     select: {
       id: true,

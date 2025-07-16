@@ -110,7 +110,7 @@ export default function CreateImagingStudiesModal({ clinicUid, onCreateImagingSt
           clinicUid,
         }),
         {
-          loading: "Creating medical certificate...",
+          loading: "Creating imaging study...",
           success: (res) => {
             if (res.status) {
               onCreateImagingStudy?.()
@@ -118,7 +118,7 @@ export default function CreateImagingStudiesModal({ clinicUid, onCreateImagingSt
             }
             return res.message
           },
-          error: (error) => error.message || "Failed to create medical certificate",
+          error: (error) => error.message || "Failed to create imaging study",
         },
       )
     })()

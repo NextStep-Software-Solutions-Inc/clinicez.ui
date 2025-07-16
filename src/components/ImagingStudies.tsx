@@ -28,6 +28,7 @@ export interface ImagingStudiesProps {
   hpId?: number;
   isArchived?: boolean;
   patientId?: number | string;
+  userId?: string;
 }
 
 export default function ImagingStudies({ consultationTicketId, clinicUid, hpId, patientId }: ImagingStudiesProps) {

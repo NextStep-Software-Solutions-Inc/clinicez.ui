@@ -5,7 +5,7 @@ import CustomModalContent from "@/components/CustomModalContent"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Dialog, DialogTrigger } from "@/components/ui/dialog"
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Tooltip, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
@@ -160,13 +160,6 @@ export default function CreateMedicalCertificateModal({
     }
   }, [open, autofillDefaults, form]);
 
-  // Reset form when autofillDefaults change and modal is open (e.g., after userInfo async fetch)
-  React.useEffect(() => {
-    if (open) {
-      form.reset(autofillDefaults);
-    }
-  }, [autofillDefaults, open, form]);
-
   const handleSubmit = form.handleSubmit(async (values) => {
     const reason = reasons.find(r => r.name === values.selectedReason);
     const finding = findings.find(f => f.name === values.findings);
@@ -225,7 +218,7 @@ export default function CreateMedicalCertificateModal({
       <CustomModalContent
         className="sm:max-w-[625px] max-h-[80vh] flex flex-col"
         label={<span className="text-lg font-semibold">Create Medical Certificate</span>}
-        description={<span className="text-sm text-muted-foreground">Make changes to your profile here. Click save when you&apos;re done.</span>}
+        description={<span className="text-sm text-muted-foreground">Fill out the details below to create a medical certificate. Click save when you&apos;re done.</span>}
         headerClassName="sticky top-0 z-[20] bg-white px-4 pt-3 pb-2 border-b flex items-start"
       >
         <Form {...form}>
@@ -240,9 +233,6 @@ export default function CreateMedicalCertificateModal({
                     <FormControl>
                       <Input id="patientName" placeholder="Juan Dela Cruz" {...field} />
                     </FormControl>
-                    <FormMessage>
-                      Please provide the patient&apos;s name
-                    </FormMessage>
                   </FormItem>
                 )}
               />

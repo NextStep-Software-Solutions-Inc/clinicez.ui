@@ -13,4 +13,3 @@ export const useMedicalCertificates = (filters?: GetMedicalCertificateFilters) =
   const fetcher = (args: string) => self.get<GetPrescriptions>(args)
   return useSWR(`/api/medical-certificates?${searchParams.toString()}`, fetcher)
 }
-``

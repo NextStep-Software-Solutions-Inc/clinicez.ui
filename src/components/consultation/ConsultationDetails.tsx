@@ -67,6 +67,7 @@ export default async function ConsultationDetails({ consultation }: Consultation
         hpId={consultation.ConsultationTicketHPs[0]?.hpId}
         isArchived={false}
         patientId={clinicPatientId}
+        userId={appointment.data?.Requesters[0].User?.userId}
       />
     </>
   );
@@ -171,6 +172,7 @@ interface ClinicalRecordsProps {
   hpId: number;
   isArchived?: boolean;
   patientId?: number | string;
+  userId?: string;
 }
 
 export const ClinicalRecords = ({
@@ -178,7 +180,8 @@ export const ClinicalRecords = ({
   clinicUid,
   hpId,
   isArchived = false,
-  patientId
+  patientId,
+  userId,
 }: ClinicalRecordsProps) => {
   const tabConfigs = [
     {
@@ -242,6 +245,7 @@ export const ClinicalRecords = ({
                   hpId={hpId}
                   isArchived={isArchived}
                   patientId={patientId}
+                  userId={userId}
                 />
               </TabsContent>
             )}

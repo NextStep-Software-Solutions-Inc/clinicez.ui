@@ -9,6 +9,7 @@ import {
   CardTitle
 } from "@components/ui/card";
 import React, { useEffect, useState } from "react";
+import { getUserAction, GetUser } from "@/actions/users/user.action";
 import Each from "@components/utils/Each";
 import Suspend from "@components/Suspend";
 import dynamic from "next/dynamic";
@@ -26,9 +27,10 @@ export interface MedicalCertificateProps {
   hpId: number;
   isArchived?: boolean;
   patientId?: number | string;
+  userId?: string;
 }
 
-export default function MedicalCertificate({ consultationTicketId, clinicUid, hpId, patientId }: MedicalCertificateProps) {
+export default function MedicalCertificate({ consultationTicketId, clinicUid, hpId, patientId, userId }: MedicalCertificateProps) {
 
   const resolvedPatientId = typeof patientId === "string" ? Number(patientId) : patientId;
 
@@ -39,30 +41,26 @@ export default function MedicalCertificate({ consultationTicketId, clinicUid, hp
     patientId: resolvedPatientId
   });
 
-  const [userInfo, setUserInfo] = useState<any>(null);
-  const [clinicPatientId, setClinicPatientId] = useState<number | undefined>(undefined);
+  const [userInfo, setUserInfo] = useState<GetUser["data"] | null>(null);
   useEffect(() => {
-    async function fetchClinicPatient() {
-      if (patientId && clinicUid) {
-        if (typeof resolvedPatientId !== "number" || isNaN(resolvedPatientId)) {
-          setUserInfo(null);
-          setClinicPatientId(undefined);
-          return;
-        }
+    async function fetchUserInfo() {
+      if (userId && typeof userId === "string" && userId.trim() !== "") {
         try {
-          const res = await getClinicPatientByUserIdAction({ userId: resolvedPatientId, clinicUid });
-          if (res?.message === "Clinic Patient found" && res?.data) {
-            setUserInfo(res.data.Patient);
-            setClinicPatientId(res.data.id);
+          const res = await getUserAction(userId);
+          if (res && res?.data) {
+            setUserInfo(res.data);
+          } else {
+            setUserInfo(null);
           }
         } catch (e) {
           setUserInfo(null);
-          setClinicPatientId(undefined);
         }
+      } else {
+        setUserInfo(null);
       }
     }
-    fetchClinicPatient();
-  }, [resolvedPatientId, clinicUid, patientId]);
+    fetchUserInfo();
+  }, [userId]);
 
   return (
     <Card className="group/medical-certificate">

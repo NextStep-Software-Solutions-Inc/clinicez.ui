@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 
-{/* This is just a mock hook for diagnostics.
-    * Replace with actual implementation when available.
-    * This is a placeholder to demonstrate the structure of the hook.
-*/}
+/* This is just a mock hook for diagnostics.
+ * Replace with actual implementation when available.
+ * This is a placeholder to demonstrate the structure of the hook.
+ */
 export const useDiagnostics = () => {
   const [diagnostics, setDiagnostics] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);

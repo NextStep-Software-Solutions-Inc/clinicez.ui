@@ -28,6 +28,7 @@ export interface LaboratoryRequestProps {
   hpId?: number;
   isArchived?: boolean;
   patientId?: number | string;
+  userId?: string;
 }
 
 export default function LaboratoryRequest({ consultationTicketId, clinicUid, hpId, patientId }: LaboratoryRequestProps) {

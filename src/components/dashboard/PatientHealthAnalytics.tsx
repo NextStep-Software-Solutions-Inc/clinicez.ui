@@ -2,7 +2,7 @@ import { getHealthAnalyticsData, resolveOrgUidFromClinicUid } from "@actions/das
 import DisabilityChart from "@components/charts/DisabilityChart";
 import IllnessChart from "@components/charts/IllnessChart";
 import ConditionalRender from "@components/utils/ConditionalRender";
-import { isOrgMember, isOrgAdmin, isHP, isOrgHealthcareProvider } from "@lib/org-utils";
+import { isOrgMember, isOrgAdmin, isOrgHealthcareProvider } from "@lib/org-utils";
 
 interface PatientHealthAnalyticsProps {
   orgUid: string;
@@ -21,7 +21,6 @@ export const PatientHealthAnalytics = async ({ orgUid }: PatientHealthAnalyticsP
     isOrgHealthcareProvider(resolveOrgUid)
   ]);
 
-  console.log("Healthcare Provider? ", hp);
   const illnesses: { illness: string; count: number; }[] = stats.illness.map(item => ({
     illness: item.name,
     count: item._count.UserHealthConditions

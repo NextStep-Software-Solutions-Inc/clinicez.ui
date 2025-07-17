@@ -9,14 +9,15 @@ import {
   CardTitle
 } from "@components/ui/card";
 import React, { useEffect, useState } from "react";
-import { getUserAction, GetUser } from "@/actions/users/user.action";
+import { getUserAndAddressAction } from "@/actions/users/user.action";
 import Each from "@components/utils/Each";
 import Suspend from "@components/Suspend";
 import dynamic from "next/dynamic";
 import { FileText } from "lucide-react";
-import { getClinicPatientByUserIdAction } from "@/actions/clinics/clinic-patient.action";
 import MedicalCertificateItem from "./MedicalCertificateItem";
+import type { MedicalCertificate } from "./MedicalCertificateItem";
 import { useMedicalCertificates } from "@/hooks/useMedicalCertificate";
+import { PatientProfile } from "@components/clinic/clinical-records/CreateMedicalCertificateModal";
 const CreateMedicalCertificateModal = dynamic(
   () => import("@components/clinic/clinical-records/CreateMedicalCertificateModal")
 );
@@ -31,7 +32,6 @@ export interface MedicalCertificateProps {
 }
 
 export default function MedicalCertificate({ consultationTicketId, clinicUid, hpId, patientId, userId }: MedicalCertificateProps) {
-
   const resolvedPatientId = typeof patientId === "string" ? Number(patientId) : patientId;
 
   const { data: certificates, mutate } = useMedicalCertificates({
@@ -41,14 +41,29 @@ export default function MedicalCertificate({ consultationTicketId, clinicUid, hp
     patientId: resolvedPatientId
   });
 
-  const [userInfo, setUserInfo] = useState<GetUser["data"] | null>(null);
+  const [userInfo, setUserInfo] = useState<PatientProfile | null>(null);
   useEffect(() => {
     async function fetchUserInfo() {
       if (userId && typeof userId === "string" && userId.trim() !== "") {
         try {
-          const res = await getUserAction(userId);
+          const res = await getUserAndAddressAction(userId);
           if (res && res?.data) {
-            setUserInfo(res.data);
+            const user = res.data;
+            const mapped: PatientProfile = {
+              firstName: user.firstName ?? "Unknown",
+              middleName: user.middleName ?? undefined,
+              lastName: user.lastName ?? undefined,
+              suffix: user.suffix ?? undefined,
+              dob: user.dob ? user.dob.toString() : undefined,
+              address: user.UserAddresses && user.UserAddresses.length > 0 ? {
+                homeAddress: user.UserAddresses[0].address ?? undefined,
+                city: user.UserAddresses[0].city ?? undefined,
+                state: user.UserAddresses[0].state ?? undefined,
+                zipCode: user.UserAddresses[0].zipCode ?? undefined,
+                country: user.UserAddresses[0].country ?? undefined,
+              } : undefined,
+            };
+            setUserInfo(mapped);
           } else {
             setUserInfo(null);
           }
@@ -90,13 +105,13 @@ export default function MedicalCertificate({ consultationTicketId, clinicUid, hp
       <CardContent className=" h-[25rem] overflow-y-auto no-scrollbar scrollBox">
         <div className="grid gap-1">
           <Each
-            of={certificates?.data ?? []}
+            of={certificates?.data as MedicalCertificate[] ?? []}
             fallback={
               <p className="text-center text-muted-foreground">
                 No recent medical certificate to show.
               </p>
             }
-            render={(certificate) => (
+            render={(certificate: MedicalCertificate) => (
               <MedicalCertificateItem certificate={certificate} onUpdated={mutate} />
             )}
           />

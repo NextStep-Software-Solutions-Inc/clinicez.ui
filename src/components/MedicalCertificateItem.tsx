@@ -1,3 +1,4 @@
+
 import {
   Tooltip,
   TooltipContent,
@@ -10,14 +11,47 @@ import dayjs from "@lib/day-utils";
 import { Badge } from "@components/ui/badge";
 import ActionButton from "./ActionButton";
 import DownloadMedicalCertificateAction from "./medical-certificate/DownloadMedicalCertificateAction";
+import { toast } from "sonner";
+import { promiseWrapper } from "@/lib/with-error-handling";
+import { deleteMedicalCertificateAction } from "@/actions/clinics/clinical-record/medical-certificate.action";
+
+export interface MedicalCertificate {
+  id: number;
+  serialNumber: string;
+  createdAt: string | Date;
+  ClinicPatient?: {
+    id: number;
+    Patient?: {
+      id: number;
+      userId: string;
+      firstName?: string;
+      lastName?: string;
+      email?: string;
+      UserAddresses?: Array<{
+        address?: string;
+        city?: string;
+        state?: string;
+        zipCode?: string;
+        country?: string;
+      }>;
+      age?: number;
+    };
+  };
+  Reason?: { name?: string };
+  Finding?: { name?: string };
+  Classification?: { name?: string };
+  DocumentTemplate?: { id: number; name?: string };
+  HealthCareProvider?: { id: number; };
+}
+
 
 export interface MedicalCertificateItemProps {
-  certificate: any;
+  certificate: MedicalCertificate;
   onUpdated?: () => void;
 }
 
 export default function MedicalCertificateItem({ certificate, onUpdated }: MedicalCertificateItemProps) {
-  const patient = certificate.ClinicPatient?.Patient || {};
+  const patient = certificate.ClinicPatient?.Patient;
   return (
     <div
       className={cn(
@@ -28,11 +62,11 @@ export default function MedicalCertificateItem({ certificate, onUpdated }: Medic
         <User className="h-5 w-5 text-primary" />
       </div>
       <div className="flex flex-col flex-1 min-w-0">
-        <span className="font-semibold text-base leading-tight">{patient.firstName} {patient.lastName}</span>
+        <span className="font-semibold text-base leading-tight">{patient?.firstName ?? "Unknown"} {patient?.lastName ?? ""}</span>
         <span className="text-xs text-muted-foreground truncate">ID: {certificate.serialNumber}</span>
       </div>
       <div className="flex items-center justify-center w-12 text-center text-sm text-muted-foreground font-medium">
-        {patient.age || "32"}
+        {typeof patient?.age === "number" ? patient.age : "-"}
       </div>
       <div className="flex items-center min-w-[90px]">
         <Badge variant="secondary">{certificate.Classification?.name}</Badge>
@@ -74,18 +108,48 @@ export default function MedicalCertificateItem({ certificate, onUpdated }: Medic
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <ActionButton
-                variant="ghost"
-                size="icon"
-                className="invisible group-hover/item:visible text-destructive hover:text-destructive/90"
-              >
-                <Trash2 className="h-4 w-4 hover:scale-125 transition-all" />
-              </ActionButton>
+              <DeleteMedicalCertificateAction certificate={certificate} onUpdated={onUpdated} />
             </TooltipTrigger>
             <TooltipContent side="top">Delete</TooltipContent>
           </Tooltip>
         </TooltipProvider>
       </div>
     </div>
+  );
+}
+
+interface MedicalCertificateItemActionProps {
+  certificate: MedicalCertificateItemProps["certificate"];
+  onUpdated?: () => void;
+}
+const DeleteMedicalCertificateAction = ({ certificate, onUpdated }: MedicalCertificateItemActionProps) => {
+  const handleDeleteMedicalCertificate = async () => {
+    toast.promise(promiseWrapper(deleteMedicalCertificateAction)({ medicalCertificateId: certificate.id }), {
+      loading: "Deleting medical certificate...",
+      success: (res) => {
+        onUpdated?.();
+        return res.message;
+      },
+      error: error => error
+    });
+  };
+
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <form action={handleDeleteMedicalCertificate}>
+            <ActionButton
+              variant="ghost"
+              size="icon"
+              className="invisible group-hover/item:visible text-destructive hover:text-destructive/90"
+            >
+              <Trash2 className="h-4 w-4 hover:scale-125 transition-all" />
+            </ActionButton>
+          </form>
+        </TooltipTrigger>
+        <TooltipContent side="top">Delete</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }

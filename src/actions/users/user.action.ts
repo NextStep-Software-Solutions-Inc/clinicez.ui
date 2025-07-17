@@ -1,7 +1,7 @@
 "use server";
 import 'server-only'
 import prisma from "@lib/prisma";
-import { Prisma, $Enums  } from "@prisma/client";
+import { Prisma, $Enums } from "@prisma/client";
 import { managementClient } from "@services/auth0/management-client";
 import { cache } from 'react';
 import dayjs from 'dayjs';
@@ -27,10 +27,10 @@ export type GetUsersFilters = {
 }
 
 export type GetUsers = Awaited<ReturnType<typeof getUsersAction>>
-export const getUsersAction = cache(async (filters:GetUsersFilters) => {
+export const getUsersAction = cache(async (filters: GetUsersFilters) => {
 
   await sessionCheck();
-  
+
   const { orgUid, search, page = 1, pageSize = 100, userId, email } = filters || {};
   return await prisma.$transaction(async (prisma) => {
     const users = await prisma.user.findMany({
@@ -40,16 +40,16 @@ export const getUsersAction = cache(async (filters:GetUsersFilters) => {
       take: pageSize,
       skip: (page - 1) * pageSize,
       where: {
-        userId, 
+        userId,
         email,
-        ...orgUid ? { 
-          OrganizationMembers: { 
-            some: { 
+        ...orgUid ? {
+          OrganizationMembers: {
+            some: {
               Organization: {
                 orgUid
-              } 
+              }
             }
-          } 
+          }
         } : {},
         ...search ? {
           OR: [
@@ -58,7 +58,7 @@ export const getUsersAction = cache(async (filters:GetUsersFilters) => {
             { middleName: { mode: "insensitive", contains: search } },
             { email: { mode: "insensitive", contains: search } }
           ]
-        }: {},
+        } : {},
         isActive: true
       },
       include: {
@@ -75,27 +75,29 @@ export const getUsersAction = cache(async (filters:GetUsersFilters) => {
         }
       }
     })
-    const total = await prisma.user.count({ where: {
-      ...orgUid ? { 
-        OrganizationMembers: { 
-          some: { 
-            Organization: {
-              orgUid
-            } 
+    const total = await prisma.user.count({
+      where: {
+        ...orgUid ? {
+          OrganizationMembers: {
+            some: {
+              Organization: {
+                orgUid
+              }
+            }
           }
-        } 
-      } : {},
-      ...search ? {
-        OR: [
-          { firstName: { mode: "insensitive", contains: search } },
-          { lastName: { mode: "insensitive", contains: search } },
-          { middleName: { mode: "insensitive", contains: search } },
-          { email: { mode: "insensitive", contains: search } }
-        ]
-      }: {},
-      isActive: true
-    } })
-    return [ users, total ] as const;
+        } : {},
+        ...search ? {
+          OR: [
+            { firstName: { mode: "insensitive", contains: search } },
+            { lastName: { mode: "insensitive", contains: search } },
+            { middleName: { mode: "insensitive", contains: search } },
+            { email: { mode: "insensitive", contains: search } }
+          ]
+        } : {},
+        isActive: true
+      }
+    })
+    return [users, total] as const;
   }, {
     timeout: 10000,
     maxWait: 5000,
@@ -103,24 +105,71 @@ export const getUsersAction = cache(async (filters:GetUsersFilters) => {
   });
 })
 
-export type GetUser = Awaited<ReturnType<typeof getUserAction>>
-export const getUserAction = withErrorHandling(cache(async (key: string, orgUid?: string)=> {
-
+export type GetUserAndAddress = Awaited<ReturnType<typeof getUserAndAddressAction>>
+export const getUserAndAddressAction = withErrorHandling(cache(async (key: string, orgUid?: string) => {
   await sessionCheck();
 
-  const user = await prisma.user.findFirstOrThrow({ 
-    where: { 
+  const user = await prisma.user.findFirstOrThrow({
+    where: {
       isActive: true,
       OR: [
         { userId: key },
         { email: key }
-      ], 
+      ],
       ...orgUid ? {
-        Organizations: { 
-          some: { 
+        Organizations: {
+          some: {
             Organization: {
               orgUid
-            } 
+            }
+          }
+        }
+      } : {},
+    },
+    select: {
+      firstName: true,
+      middleName: true,
+      lastName: true,
+      suffix: true,
+      dob: true,
+      UserAddresses: {
+        distinct: ['userId'],
+        take: 1,
+        where: {
+          isActive: true,
+          isPrimary: true,
+        },
+        select: {
+          address: true,
+          city: true,
+          state: true,
+          zipCode: true,
+          country: true,
+        }
+      }
+    }
+  });
+  return { success: true, message: "User found", data: user }
+}))
+
+export type GetUser = Awaited<ReturnType<typeof getUserAction>>
+export const getUserAction = withErrorHandling(cache(async (key: string, orgUid?: string) => {
+
+  await sessionCheck();
+
+  const user = await prisma.user.findFirstOrThrow({
+    where: {
+      isActive: true,
+      OR: [
+        { userId: key },
+        { email: key }
+      ],
+      ...orgUid ? {
+        Organizations: {
+          some: {
+            Organization: {
+              orgUid
+            }
           }
         }
       } : {},
@@ -167,9 +216,9 @@ export const getUserAction = withErrorHandling(cache(async (key: string, orgUid?
         }
       }
     }
-      
-  }); 
-  return { success: true,  message: "User found",  data: user }
+
+  });
+  return { success: true, message: "User found", data: user }
 }))
 
 type CreateUserPayload = {
@@ -185,9 +234,9 @@ type CreateUserPayload = {
 export const createUserAction = withErrorHandling(async (payload: CreateUserPayload) => {
 
   await sessionCheck();
-  
-  const { mobile, gender, dob, clinicUid} = payload
-  let clinicName: string | null = null 
+
+  const { mobile, gender, dob, clinicUid } = payload
+  let clinicName: string | null = null
 
   const newUser = await prisma.$transaction(async (prisma) => {
 
@@ -195,10 +244,10 @@ export const createUserAction = withErrorHandling(async (payload: CreateUserPayl
     const randomPassword = generateRandomPassword();
 
     // create user in auth0
-    const { data, status } = await createUserInAuth0({...payload, password: randomPassword});
+    const { data, status } = await createUserInAuth0({ ...payload, password: randomPassword });
 
-    if(status !== 201) throw new Error("Failed to create user in auth0");
-      
+    if (status !== 201) throw new Error("Failed to create user in auth0");
+
     // create user in database
     const newUser = await createUserToDb(prisma, {
       userId: data.user_id,
@@ -211,17 +260,17 @@ export const createUserAction = withErrorHandling(async (payload: CreateUserPayl
       picture: data.picture
     });
 
-    if(!newUser) throw new Error("Failed to create user in db");
+    if (!newUser) throw new Error("Failed to create user in db");
 
     // assign user permissions
     await assignUserPermission(prisma, newUser.id);
 
     // add user to clinic
-    if(clinicUid) {
-     
+    if (clinicUid) {
+
       const clinicPatient = await createClinicPatient(prisma, newUser.userId, clinicUid);
       clinicName = clinicPatient.Clinic.name
-      
+
       // assign clinic patient permissions
       await assignClinicPatientPermission(prisma, clinicPatient.id)
     }
@@ -231,10 +280,10 @@ export const createUserAction = withErrorHandling(async (payload: CreateUserPayl
       password: randomPassword,
       senderName: clinicName ?? undefined
     });
-      
+
     return newUser;
   })
-   
+
   return {
     message: "User created successfully",
     data: newUser
@@ -244,15 +293,15 @@ export const createUserAction = withErrorHandling(async (payload: CreateUserPayl
 })
 
 export const updateUserAction = withErrorHandling(async (userId: string, data: Prisma.UserUpdateArgs["data"]) => {
-  
+
   await sessionCheck();
 
   const updatedUser = await prisma.user.update({
     where: { userId },
     data
   });
-  
-  const {firstName, lastName, middleName, suffix, picture, nickname} = updatedUser
+
+  const { firstName, lastName, middleName, suffix, picture, nickname } = updatedUser
 
   await updateAuth0UserAction(updatedUser.userId, {
     name: `${firstName ?? ""} ${middleName ?? ""} ${lastName ?? ""} ${suffix ?? ""}`.trim(),
@@ -262,22 +311,22 @@ export const updateUserAction = withErrorHandling(async (userId: string, data: P
     picture: picture ?? undefined
   })
 
-  return {message: "User updated successfully", data: updatedUser};
+  return { message: "User updated successfully", data: updatedUser };
 })
 
 export const resetPasswordAction = async (userId: string, password: string) => {
-  const res = await managementClient.users.update({id: userId}, {
+  const res = await managementClient.users.update({ id: userId }, {
     password
   })
   return [200, 201, 200].includes(res.status);
 }
 
 type SendCreateUserNotification = {
-  email: string, 
+  email: string,
   password: string
   senderName?: string
 }
-const sendCreateUserNotification = async ({email, password, senderName}: SendCreateUserNotification) => {
+const sendCreateUserNotification = async ({ email, password, senderName }: SendCreateUserNotification) => {
   // send email notification
   try {
     const filePath = path.join(process.cwd(), "email-templates/org-membership-user-created.html");
@@ -304,16 +353,16 @@ export const findOrCreateUserAction = withErrorHandling(cache(async () => {
   let message = "User found and created";
 
   const user = await prisma.$transaction(async (prisma) => {
-    
+
     // step 1: find user in db
     let dbUser = await prisma.user.findUnique({
       where: {
         userId: session.user.sub
       }
     })
-    
+
     // step 2: create user in db if not found
-    if(dbUser === null) {
+    if (dbUser === null) {
       dbUser = await createUserToDb(prisma, {
         userId: session.user.sub,
         email: session.user.email,
@@ -321,12 +370,12 @@ export const findOrCreateUserAction = withErrorHandling(cache(async () => {
         firstName: session.user.given_name,
         lastName: session.user.family_name
       })
-      
+
       await assignUserPermission(prisma, dbUser.id);
     }
 
     return dbUser;
-      
+
   }, {
     timeout: 5000,
     maxWait: 10000,
@@ -334,25 +383,25 @@ export const findOrCreateUserAction = withErrorHandling(cache(async () => {
   })
 
   return { success: true, message, data: user }
-  
+
 }), async (error) => {
-  if(hasCodeProperty(error) ) {
-    if(error.code === "P2002") {
+  if (hasCodeProperty(error)) {
+    if (error.code === "P2002") {
 
       const session = await sessionCheck();
       await managementClient.users.delete({ id: session.user.sub });
       return "User not found and failed to create user";
 
     }
-    if(error.code === "P2025 ") 
+    if (error.code === "P2025 ")
       return "User already exists in the system and associated with another account";
   };
 });
 
 
 const assignUserPermission = async (prisma: PrismaTransactionalClient, userId: number) => {
-  
-  const permissions = await getPermissionsAction({type: "USER"});
+
+  const permissions = await getPermissionsAction({ type: "USER" });
 
   const userPermission = await prisma.userPermission.createMany({
     skipDuplicates: true,
@@ -361,13 +410,13 @@ const assignUserPermission = async (prisma: PrismaTransactionalClient, userId: n
       userId
     }))
   })
-  
+
   return userPermission;
 
 }
 
 const assignClinicPatientPermission = async (prisma: PrismaTransactionalClient, clinicPatientId: number, clinicRoleName = "patient") => {
-  
+
   const permissions = await prisma.clinicRoleInitialPermission.findMany({
     where: {
       ClinicRole: {
@@ -390,7 +439,7 @@ const assignClinicPatientPermission = async (prisma: PrismaTransactionalClient, 
 }
 
 const assignClinicMemberPermission = async (prisma: PrismaTransactionalClient, clinicMemberId: number, clinicRoleName: string) => {
-  
+
   const permissions = await prisma.clinicRoleInitialPermission.findMany({
     where: {
       ClinicRole: {
@@ -413,7 +462,7 @@ const assignClinicMemberPermission = async (prisma: PrismaTransactionalClient, c
 }
 
 const createClinicPatient = async (prisma: PrismaTransactionalClient, userId: string, clinicUid: string) => {
-    
+
   const clinicPatient = await prisma.clinicPatient.create({
     data: {
       Patient: {
@@ -437,7 +486,7 @@ const createClinicPatient = async (prisma: PrismaTransactionalClient, userId: st
       }
     }
   })
-  
+
   return clinicPatient;
 }
 
@@ -452,15 +501,15 @@ type createUserToDbPayload = {
   picture?: string
 }
 const createUserToDb = async (prisma: PrismaTransactionalClient, payload: createUserToDbPayload) => {
-  
-  const { userId, email, mobile, firstName, lastName, dob = null, gender = null, picture} = payload;
-    
+
+  const { userId, email, mobile, firstName, lastName, dob = null, gender = null, picture } = payload;
+
   const newUser = await prisma.user.create({
-    data: { userId, email, mobile, firstName, lastName, dob, gender, picture  }
+    data: { userId, email, mobile, firstName, lastName, dob, gender, picture }
   });
 
   return newUser
-  
+
 }
 
 type CreateUserInAuth0Payload = {
@@ -471,8 +520,8 @@ type CreateUserInAuth0Payload = {
 }
 const createUserInAuth0 = async (payload: CreateUserInAuth0Payload) => {
 
-  const {email, firstName, lastName, password} = payload
-  
+  const { email, firstName, lastName, password } = payload
+
   const { data, status } = await managementClient.users.create({
     email,
     password,

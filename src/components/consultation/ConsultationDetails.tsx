@@ -38,7 +38,6 @@ export default async function ConsultationDetails({ consultation }: Consultation
     await getHpsByIdsAction(consultation.ConsultationTicketHPs.map(c => Number(c.hpId))),
   ]);
 
-  // Fetch ClinicPatient by user id and clinicUid
   let clinicPatientId: number | undefined;
   const userId = appointment.data?.Requesters[0].User?.id;
   if (userId && consultation.Clinic.clinicUid) {

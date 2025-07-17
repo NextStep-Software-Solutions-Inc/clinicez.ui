@@ -1,14 +1,12 @@
 "use client"
 
 import ActionButton from "@/components/ActionButton"
-import CustomModalContent from "@/components/CustomModalContent"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Dialog, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Tooltip, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import Each from "@/components/utils/Each"
 import { zodResolver } from "@hookform/resolvers/zod"
 import React from "react"
@@ -22,7 +20,7 @@ import {
   getMedicalCertificateClassificationsAction,
   createMedicalCertificateAction,
 } from "@/actions/clinics/clinical-record/medical-certificate.action";
-import { calculateAge, generateSerialNumber } from "@/lib/utils"
+import { calculateAge } from "@/lib/utils"
 
 type MedicalCertificateReason = {
   id: number;
@@ -93,11 +91,10 @@ const createMedicalCertificateSchema = z.object({
       message: "Age must be a positive number",
     }),
   address: z
-    .string({
-      required_error: "Please provide the patient's address",
-    })
+    .string()
     .trim()
-    .min(5, {
+    .optional()
+    .refine(val => !val || val.length >= 5, {
       message: "Address must be at least 5 characters long",
     }),
   selectedReason: z.string({
@@ -109,12 +106,27 @@ const createMedicalCertificateSchema = z.object({
   medicalClassification: z.string({
     required_error: "Please select a medical classification",
   }).min(1, { message: "Please select a medical classification" }),
+  remarks: z.string().optional(),
 })
 
+export interface PatientProfile {
+  firstName?: string;
+  middleName?: string;
+  lastName?: string;
+  suffix?: string;
+  dob?: string;
+  address?: {
+    homeAddress?: string;
+    city?: string;
+    state?: string;
+    zipCode?: string;
+    country?: string;
+  };
+}
 interface CreateMedicalCertificateModalProps {
   clinicUid: string
   onCreateMedicalCertificate?: () => void
-  userInfo?: any
+  userInfo?: PatientProfile | null
   patientId?: number
   hpId?: number
   consultationTicketId?: number
@@ -140,17 +152,22 @@ export default function CreateMedicalCertificateModal({
         userInfo?.lastName,
         userInfo?.suffix,
       ]
-        .filter((namePart) => namePart)
+        .filter(Boolean)
         .join(" "),
       age:
         userInfo?.dob
-          ? calculateAge(userInfo?.dob) : 0,
-      address: String(userInfo?.address || userInfo?.homeAddress || ""),
-      selectedReason: reasons.length > 0 ? reasons[0].name : "",
-      findings: findings.length > 0 ? findings[0].name : "",
-      medicalClassification: classifications.length > 0 ? classifications[0].name : "",
+          ? calculateAge(userInfo.dob) : 0,
+      address: userInfo?.address
+        ? [
+          userInfo.address?.homeAddress,
+          userInfo.address?.city,
+          userInfo.address?.state,
+          userInfo.address?.zipCode,
+          userInfo.address?.country,
+        ].filter(Boolean).join(", ")
+        : "",
     }
-  }, [userInfo, reasons, findings, classifications])
+  }, [userInfo])
 
   const form = useForm<z.infer<typeof createMedicalCertificateSchema>>({
     resolver: zodResolver(createMedicalCertificateSchema),
@@ -170,8 +187,7 @@ export default function CreateMedicalCertificateModal({
 
     const documentTemplateId = reason?.documentTemplateId || classification?.documentTemplateId || finding?.documentTemplateId;
 
-    const serialNumber = generateSerialNumber();
-    const remarks = ""; // Currently not used, can be added in future UI design.
+    const remarks = values.remarks;
 
     if (!reason || !finding || !classification || !documentTemplateId) {
       toast.error("Please select valid reason, finding, and classification.");
@@ -187,12 +203,11 @@ export default function CreateMedicalCertificateModal({
         reasonId: reason.id,
         findingId: finding.id,
         classificationId: classification.id,
-        serialNumber,
         remarks,
         consultationTicketId,
       }),
       {
-        loading: "Creating medical certificate...",
+        loading: `Creating medical certificate for ${patientId}`,
         success: (res) => {
           onCreateMedicalCertificate?.()
           setOpen(false)
@@ -206,209 +221,231 @@ export default function CreateMedicalCertificateModal({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <DialogTrigger asChild>
-              <Button size="sm" className="w-full" onClick={() => setOpen(true)}>
-                Create Medical Certificate
-              </Button>
-            </DialogTrigger>
-          </TooltipTrigger>
-        </Tooltip>
-      </TooltipProvider>
+      <Form {...form}>
+        <form onSubmit={handleSubmit} id="create-medical-certificate-form">
+          <DialogTrigger asChild>
+            <Button size="sm" className="w-full" onClick={() => setOpen(true)}>
+              Create Medical Certificate
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl w-full">
+            {/* Header */}
+            <DialogHeader>
+              <DialogTitle>Create Medical Certificate</DialogTitle>
+              <DialogDescription>
+                Fill out the details below to create a medical certificate. Click save when you&apos;re done.
+              </DialogDescription>
+            </DialogHeader>
 
-      <CustomModalContent
-        className="sm:max-w-[625px] max-h-[80vh] flex flex-col"
-        label={<span className="text-lg font-semibold">Create Medical Certificate</span>}
-        description={<span className="text-sm text-muted-foreground">Fill out the details below to create a medical certificate. Click save when you&apos;re done.</span>}
-        headerClassName="sticky top-0 z-[20] bg-white px-4 pt-3 pb-2 border-b flex items-start"
-      >
-        <Form {...form}>
-          <form onSubmit={handleSubmit} id="add-medical-certificate-form" className="flex-1 overflow-y-auto px-4 pt-3 pb-[calc(var(--footer-height)+1rem)] space-y-3">
-            <div className="flex gap-4">
+            {/* Body */}
+            <div className="max-h-[60vh] overflow-y-auto flex flex-col gap-4 py-2">
+              <div className="flex gap-2">
+                <FormField
+                  control={form.control}
+                  name="patientName"
+                  render={({ field }) => (
+                    <FormItem className="flex-1">
+                      <FormLabel>Name</FormLabel>
+                      <FormControl>
+                        <Input id="patientName" placeholder="Juan Dela Cruz" {...field} disabled />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="age"
+                  render={({ field }) => (
+                    <FormItem className="w-32">
+                      <FormLabel>Age</FormLabel>
+                      <FormControl>
+                        <Input
+                          id="age"
+                          placeholder="32"
+                          disabled
+                          {...field}
+                          onChange={(e) => field.onChange(Number.parseInt(e.target.value) || 0)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
               <FormField
                 control={form.control}
-                name="patientName"
+                name="address"
                 render={({ field }) => (
-                  <FormItem className="flex-1">
-                    <FormLabel>Name</FormLabel>
+                  <FormItem>
+                    <FormLabel>Address</FormLabel>
                     <FormControl>
-                      <Input id="patientName" placeholder="Juan Dela Cruz" {...field} />
+                      <Input id="address" placeholder="123 Main Street, Quezon City, Metro Manila" {...field} disabled />
                     </FormControl>
+                    <FormMessage />
                   </FormItem>
                 )}
               />
               <FormField
                 control={form.control}
-                name="age"
+                name="selectedReason"
                 render={({ field }) => (
-                  <FormItem className="w-32">
-                    <FormLabel>Age</FormLabel>
+                  <FormItem>
+                    <FormLabel>Reason</FormLabel>
                     <FormControl>
-                      <Input
-                        type="number"
-                        id="age"
-                        placeholder="32"
+                      <div className="flex flex-col gap-2">
+                        <Each
+                          of={reasons}
+                          render={(reason) => (
+                            <div
+                              key={reason.id}
+                              className="w-full rounded-lg border p-3 flex items-center gap-2"
+                              tabIndex={-1}
+                              style={{ outline: "none" }}
+                            >
+                              <Checkbox
+                                checked={field.value === reason.name}
+                                onCheckedChange={(checked) => {
+                                  if (checked) {
+                                    field.onChange(reason.name)
+                                  }
+                                }}
+                                className="cursor-pointer"
+                              />
+                              <span className="font-normal text-sm select-none">{reason.name}</span>
+                            </div>
+                          )}
+                          fallback={
+                            <FormItem className="flex items-center justify-center">
+                              <FormLabel className="text-sm text-muted-foreground">No reasons available</FormLabel>
+                            </FormItem>
+                          }
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="findings"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Findings</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        className="grid grid-cols-3 gap-4"
+                      >
+                        <Each
+                          of={findings}
+                          render={(finding) => (
+                            <div
+                              key={finding.id}
+                              className="w-full rounded-lg border p-3 flex items-center justify-center"
+                              tabIndex={-1}
+                              style={{ outline: "none" }}
+                            >
+                              <FormItem className="flex flex-row items-center justify-center gap-2 w-full">
+                                <FormControl>
+                                  <RadioGroupItem value={finding.name} className="cursor-pointer" />
+                                </FormControl>
+                                <FormLabel
+                                  htmlFor={finding.name}
+                                  className="font-normal text-center self-center text-sm select-none cursor-pointer"
+                                >
+                                  {finding.name}
+                                </FormLabel>
+                              </FormItem>
+                            </div>
+                          )}
+                          fallback={
+                            <FormItem className="flex items-center justify-center">
+                              <FormControl>
+                                <RadioGroupItem value="" disabled className="cursor-not-allowed" />
+                              </FormControl>
+                              <FormLabel className="text-sm text-muted-foreground">No findings available</FormLabel>
+                            </FormItem>
+                          }
+                        />
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="medicalClassification"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Medical Classification</FormLabel>
+                    <FormControl>
+                      <RadioGroup onValueChange={field.onChange} value={field.value} className="flex flex-col gap-3">
+                        <Each
+                          of={classifications}
+                          render={(item) => (
+                            <div key={item.id} className="w-full rounded-lg border p-3 flex items-center gap-3">
+                              <FormItem className="flex items-center gap-3 w-full">
+                                <FormControl>
+                                  <RadioGroupItem value={item.name} />
+                                </FormControl>
+                                <div className="flex flex-col w-full">
+                                  <FormLabel className="font-normal cursor-pointer">{item.name}</FormLabel>
+                                  {item.description && (
+                                    <span className="text-xs text-muted-foreground mt-1">{item.description}</span>
+                                  )}
+                                </div>
+                              </FormItem>
+                            </div>
+                          )}
+                          fallback={
+                            <FormItem className="flex items-center justify-center">
+                              <FormControl>
+                                <RadioGroupItem value="" disabled className="cursor-not-allowed" />
+                              </FormControl>
+                              <FormLabel className="text-sm text-muted-foreground">No classifications available</FormLabel>
+                            </FormItem>
+                          }
+                        />
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="remarks"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Recommendations/Remarks</FormLabel>
+                    <FormControl>
+                      <textarea
+                        id="remarks"
+                        placeholder="Enter Recommendations/Remarks"
                         {...field}
-                        onChange={(e) => field.onChange(Number.parseInt(e.target.value) || 0)}
+                        className="w-full min-h-[80px] border rounded-md p-2 text-sm focus:outline-primary"
                       />
                     </FormControl>
+                    <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
 
-            <FormField
-              control={form.control}
-              name="address"
-              render={({ field }) => (
-                <FormItem className="space-y-2">
-                  <FormLabel>Address</FormLabel>
-                  <FormControl>
-                    <Input id="address" placeholder="123 Main Street, Quezon City, Metro Manila" {...field} />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="selectedReason"
-              render={({ field }) => (
-                <FormItem className="space-y-2">
-                  <FormLabel>Reason</FormLabel>
-                  <FormControl>
-                    <div className="flex flex-col gap-2">
-                      <Each
-                        of={reasons}
-                        render={(reason) => (
-                          <div
-                            key={reason.id}
-                            className="w-full rounded-lg border p-3 flex items-center gap-2"
-                            tabIndex={-1}
-                            style={{ outline: "none" }}
-                          >
-                            <Checkbox
-                              checked={field.value === reason.name}
-                              onCheckedChange={(checked) => {
-                                if (checked) {
-                                  field.onChange(reason.name)
-                                }
-                              }}
-                              className="cursor-pointer"
-                            />
-                            <span className="font-normal text-sm select-none">{reason.name}</span>
-                          </div>
-                        )}
-                        fallback={
-                          <FormItem className="flex items-center justify-center">
-                            <FormLabel className="text-sm text-muted-foreground">No reasons available</FormLabel>
-                          </FormItem>
-                        }
-                      />
-                    </div>
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="findings"
-              render={({ field }) => (
-                <FormItem className="space-y-2">
-                  <FormLabel>Findings</FormLabel>
-                  <FormControl>
-                    <RadioGroup
-                      onValueChange={field.onChange}
-                      value={field.value}
-                      className="grid grid-cols-3 gap-4"
-                    >
-                      <Each
-                        of={findings}
-                        render={(finding) => (
-                          <div
-                            key={finding.id}
-                            className="w-full rounded-lg border p-3 flex items-center justify-center"
-                            tabIndex={-1}
-                            style={{ outline: "none" }}
-                          >
-                            <FormItem className="flex flex-row items-center justify-center gap-2 w-full">
-                              <FormControl>
-                                <RadioGroupItem value={finding.name} className="cursor-pointer" />
-                              </FormControl>
-                              <FormLabel
-                                htmlFor={finding.name}
-                                className="font-normal text-center self-center text-sm select-none cursor-pointer"
-                              >
-                                {finding.name}
-                              </FormLabel>
-                            </FormItem>
-                          </div>
-                        )}
-                        fallback={
-                          <FormItem className="flex items-center justify-center">
-                            <FormControl>
-                              <RadioGroupItem value="" disabled className="cursor-not-allowed" />
-                            </FormControl>
-                            <FormLabel className="text-sm text-muted-foreground">No findings available</FormLabel>
-                          </FormItem>
-                        }
-                      />
-                    </RadioGroup>
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="medicalClassification"
-              render={({ field }) => (
-                <FormItem className="space-y-2">
-                  <FormLabel>Medical Classification</FormLabel>
-                  <FormControl>
-                    <RadioGroup onValueChange={field.onChange} value={field.value} className="flex flex-col gap-3">
-                      <Each
-                        of={classifications}
-                        render={(item) => (
-                          <div key={item.id} className="w-full rounded-lg border p-3 flex items-center gap-3">
-                            <FormItem className="flex items-center gap-3 w-full">
-                              <FormControl>
-                                <RadioGroupItem value={item.name} />
-                              </FormControl>
-                              <div className="flex flex-col w-full">
-                                <FormLabel className="font-normal cursor-pointer">{item.name}</FormLabel>
-                                {item.description && (
-                                  <span className="text-xs text-muted-foreground mt-1">{item.description}</span>
-                                )}
-                              </div>
-                            </FormItem>
-                          </div>
-                        )}
-                        fallback={
-                          <FormItem className="flex items-center justify-center">
-                            <FormControl>
-                              <RadioGroupItem value="" disabled className="cursor-not-allowed" />
-                            </FormControl>
-                            <FormLabel className="text-sm text-muted-foreground">No classifications available</FormLabel>
-                          </FormItem>
-                        }
-                      />
-                    </RadioGroup>
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-          </form>
-          <div className="sticky bottom-0 right-0 w-full bg-white px-4 py-3 flex justify-end border-t z-10">
-            <ActionButton type="submit" form="add-medical-certificate-form" className="bg-black text-white hover:bg-black/90">
-              <span className="text-sm">Save changes</span>
-            </ActionButton>
-          </div>
-        </Form>
-      </CustomModalContent>
+            {/* Footer */}
+            <DialogFooter>
+              <ActionButton type="submit" form="create-medical-certificate-form" className="bg-black text-white hover:bg-black/90">
+                Save Changes
+              </ActionButton>
+            </DialogFooter>
+          </DialogContent>
+        </form>
+      </Form>
     </Dialog>
   );
 }

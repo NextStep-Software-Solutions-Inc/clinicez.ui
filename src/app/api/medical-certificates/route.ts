@@ -18,7 +18,7 @@ export const GET = withJwtAuth(async (req: NextRequest) => {
     search: parsed.search as string | undefined,
     pageSize: parsed.pageSize !== undefined ? Number(parsed.pageSize) : undefined,
     pageNumber: parsed.pageNumber !== undefined ? Number(parsed.pageNumber) : undefined,
-    distinct: parsed.distinct as any // handle as needed
+    distinct: parsed.distinct as GetMedicalCertificateFilters['distinct'] | undefined,
   };
   if (!filters.clinicUid) {
     return NextResponse.json({ message: 'Missing required clinicUid' }, { status: 400 });

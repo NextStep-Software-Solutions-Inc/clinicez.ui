@@ -78,7 +78,6 @@ export const getMedicalCertificatesAction = withErrorHandling(async (filters: Ge
   return { message: "Medical Certificates fetched successfully", data: certificates };
 });
 
-export type GetMedicalCertificate = Awaited<ReturnType<typeof getMedicalCertificateAction>>;
 export const getMedicalCertificateAction = withErrorHandling(async (id: number) => {
   const session = await getCachedSession();
   if (!session) throw new Error("Unauthorized");
@@ -125,7 +124,7 @@ export const getMedicalCertificateAction = withErrorHandling(async (id: number) 
   return { message: "Medical Certificate fetched successfully", data: certificate };
 });
 
-export type CreateMedicalCertificateInput = {
+type CreateMedicalCertificateInput = {
   clinicUid: string;
   patientId?: number;
   documentTemplateId: number;
@@ -215,7 +214,6 @@ export const deleteMedicalCertificateAction = withErrorHandling(async ({ medical
   return { message: "Medical Certificate deleted successfully", data: certificate };
 });
 
-// Medical Certificate Reason
 export type GetMedicalCertificateReasons = Awaited<ReturnType<typeof getMedicalCertificateReasonsAction>>;
 export const getMedicalCertificateReasonsAction = withErrorHandling(async () => {
   const session = await getCachedSession();

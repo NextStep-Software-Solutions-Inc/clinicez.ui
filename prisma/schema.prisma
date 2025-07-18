@@ -1788,6 +1788,7 @@ model ClinicImagingRequest {
   history            String?
   impression         String?
   reason             String?
+  status             String   @default("PENDING")
 
   updatedBy            Int?
   deletedAt            DateTime?
@@ -1809,17 +1810,17 @@ model ClinicImagingRequest {
 }
 
 model ClinicLaboratoryRequest {
-  id                 Int      @id @default(autoincrement())
-  clinicId           Int
-  documentTemplateId Int
-  clinicPatientId    Int
-  hpId               Int
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-  createdBy          Int
-  isActive           Boolean  @default(true)
-  impression         String?
-
+  id                   Int       @id @default(autoincrement())
+  clinicId             Int
+  documentTemplateId   Int
+  clinicPatientId      Int
+  hpId                 Int
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  createdBy            Int
+  isActive             Boolean   @default(true)
+  impression           String?
+  status               String?   @default("PENDING")
   updatedBy            Int?
   deletedAt            DateTime?
   deletedBy            Int?

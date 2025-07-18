@@ -1,4 +1,3 @@
-
 import {
   Tooltip,
   TooltipContent,
@@ -9,16 +8,18 @@ import { cn } from "@lib/utils";
 import { Archive, DownloadIcon, Trash2, User } from "lucide-react";
 import dayjs from "@lib/day-utils";
 import { Badge } from "@components/ui/badge";
-import ActionButton from "./ActionButton";
-import DownloadMedicalCertificateAction from "./medical-certificate/DownloadMedicalCertificateAction";
+import ActionButton from "../ActionButton";
+import DownloadImagingStudiesAction from "./DownloadImagingStudiesAction";
 import { toast } from "sonner";
 import { promiseWrapper } from "@/lib/with-error-handling";
-import { deleteMedicalCertificateAction } from "@/actions/clinics/clinical-record/medical-certificate.action";
+import { deleteImagingStudyAction } from "@/actions/clinics/clinical-record/imaging-studies.action";
 
-export interface MedicalCertificate {
+
+export interface ImagingStudy {
   id: number;
-  serialNumber: string;
+  serialNumber?: string;
   createdAt: string | Date;
+  status?: string;
   ClinicPatient?: {
     id: number;
     Patient?: {
@@ -37,21 +38,27 @@ export interface MedicalCertificate {
       age?: number;
     };
   };
-  Reason?: { name?: string };
-  Finding?: { name?: string };
-  Classification?: { name?: string };
-  DocumentTemplate?: { id: number; name?: string };
-  HealthCareProvider?: { id: number; };
 }
 
 
-export interface MedicalCertificateItemProps {
-  certificate: MedicalCertificate;
+export interface ImagingStudiesItemProps {
+  study: ImagingStudy;
   onUpdated?: () => void;
 }
 
-export default function MedicalCertificateItem({ certificate, onUpdated }: MedicalCertificateItemProps) {
-  const patient = certificate.ClinicPatient?.Patient;
+export default function ImagingStudiesItem({ study, onUpdated }: ImagingStudiesItemProps) {
+  const patient = study.ClinicPatient?.Patient;
+  const handleDeleteImagingStudy = async () => {
+    toast.promise(promiseWrapper(deleteImagingStudyAction)({ imagingStudyId: study.id }), {
+      loading: "Deleting imaging study...",
+      success: (res) => {
+        onUpdated?.();
+        return res.message;
+      },
+      error: error => error
+    });
+  };
+
   return (
     <div
       className={cn(
@@ -63,22 +70,22 @@ export default function MedicalCertificateItem({ certificate, onUpdated }: Medic
       </div>
       <div className="flex flex-col flex-1 min-w-0">
         <span className="font-semibold text-base leading-tight">{patient?.firstName ?? "Unknown"} {patient?.lastName ?? ""}</span>
-        <span className="text-xs text-muted-foreground truncate">ID: {certificate.serialNumber}</span>
+        <span className="text-xs text-muted-foreground truncate">ID: {study.serialNumber ?? '-'}</span>
       </div>
       <div className="flex items-center justify-center w-12 text-center text-sm text-muted-foreground font-medium">
         {typeof patient?.age === "number" ? patient.age : "-"}
       </div>
       <div className="flex items-center min-w-[90px]">
-        <Badge variant="secondary">{certificate.Classification?.name}</Badge>
+        <Badge variant="secondary">{study.status ?? "-"}</Badge>
       </div>
       <div className="flex flex-col items-end min-w-[160px]">
-        <span className="text-xs text-muted-foreground">{certificate.createdAt && dayjs(certificate.createdAt).format("MM/D/YYYY | h:mm A")}</span>
+        <span className="text-xs text-muted-foreground">{study.createdAt && dayjs(study.createdAt).format("MM/D/YYYY | h:mm A")}</span>
       </div>
       <div className="flex items-center gap-1 ml-2">
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <DownloadMedicalCertificateAction certificate={{ id: certificate.id }} onUpdated={onUpdated}>
+              <DownloadImagingStudiesAction study={{ id: study.id }} onUpdated={onUpdated}>
                 <ActionButton
                   variant="ghost"
                   size="icon"
@@ -86,7 +93,7 @@ export default function MedicalCertificateItem({ certificate, onUpdated }: Medic
                 >
                   <DownloadIcon className="h-4 w-4 hover:scale-125 transition-all" />
                 </ActionButton>
-              </DownloadMedicalCertificateAction>
+              </DownloadImagingStudiesAction>
             </TooltipTrigger>
             <TooltipContent side="top">Download</TooltipContent>
           </Tooltip>
@@ -108,48 +115,20 @@ export default function MedicalCertificateItem({ certificate, onUpdated }: Medic
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <DeleteMedicalCertificateAction certificate={certificate} onUpdated={onUpdated} />
+              <form action={handleDeleteImagingStudy}>
+                <ActionButton
+                  variant="ghost"
+                  size="icon"
+                  className="invisible group-hover/item:visible text-destructive hover:text-destructive/90"
+                >
+                  <Trash2 className="h-4 w-4 hover:scale-125 transition-all" />
+                </ActionButton>
+              </form>
             </TooltipTrigger>
             <TooltipContent side="top">Delete</TooltipContent>
           </Tooltip>
         </TooltipProvider>
       </div>
     </div>
-  );
-}
-
-interface MedicalCertificateItemActionProps {
-  certificate: MedicalCertificateItemProps["certificate"];
-  onUpdated?: () => void;
-}
-const DeleteMedicalCertificateAction = ({ certificate, onUpdated }: MedicalCertificateItemActionProps) => {
-  const handleDeleteMedicalCertificate = async () => {
-    toast.promise(promiseWrapper(deleteMedicalCertificateAction)({ medicalCertificateId: certificate.id }), {
-      loading: "Deleting medical certificate...",
-      success: (res) => {
-        onUpdated?.();
-        return res.message;
-      },
-      error: error => error
-    });
-  };
-
-  return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <form action={handleDeleteMedicalCertificate}>
-            <ActionButton
-              variant="ghost"
-              size="icon"
-              className="invisible group-hover/item:visible text-destructive hover:text-destructive/90"
-            >
-              <Trash2 className="h-4 w-4 hover:scale-125 transition-all" />
-            </ActionButton>
-          </form>
-        </TooltipTrigger>
-        <TooltipContent side="top">Delete</TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
   );
 }

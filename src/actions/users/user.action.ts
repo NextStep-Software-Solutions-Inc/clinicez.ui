@@ -132,6 +132,7 @@ export const getUserAndAddressAction = withErrorHandling(cache(async (key: strin
       lastName: true,
       suffix: true,
       dob: true,
+      gender: true,
       UserAddresses: {
         distinct: ['userId'],
         take: 1,

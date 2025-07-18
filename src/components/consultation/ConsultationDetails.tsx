@@ -18,8 +18,8 @@ import { Fragment } from "react";
 import EMRPreviewSheet from "@components/EMRPreviewSheet";
 import { Button } from "@components/ui/button";
 import Prescriptions from "../Prescriptions";
-import MedicalCertificate from "../MedicalCertificate";
-import ImagingStudies from "../ImagingStudies";
+import MedicalCertificate from "../medical-certificate/MedicalCertificate";
+import ImagingStudies from "../imaging-studies/ImagingStudies";
 import LaboratoryRequest from "../LaboratoryRequest";
 
 const VitalSigns = dynamic(() => import('./VitalSigns'), { ssr: false, loading: () => <div>Loading...</div> });

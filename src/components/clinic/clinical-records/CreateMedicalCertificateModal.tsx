@@ -115,6 +115,7 @@ export interface PatientProfile {
   lastName?: string;
   suffix?: string;
   dob?: string;
+  gender?: string;
   address?: {
     homeAddress?: string;
     city?: string;
@@ -207,7 +208,7 @@ export default function CreateMedicalCertificateModal({
         consultationTicketId,
       }),
       {
-        loading: `Creating medical certificate for ${patientId}`,
+        loading: `Creating medical certificate...`,
         success: (res) => {
           onCreateMedicalCertificate?.()
           setOpen(false)

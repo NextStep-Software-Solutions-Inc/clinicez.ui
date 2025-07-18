@@ -6,28 +6,6 @@ import { cache } from "react";
 import { withErrorHandling } from "@/lib/with-error-handling";
 import { sessionCheck } from "@/lib/auth";
 
-type CreateImagingStudiesPayload = {
-  name: string;
-  age: number;
-  address: string;
-  birthdate: Date;
-  diagnostics: number;
-  history?: string;
-  impression?: string;
-  requestFor?: string;
-}
-
-export const createImagingStudiesAction = withErrorHandling(async (data: CreateImagingStudiesPayload & { clinicUid: string }) => {
-  await sessionCheck();
-
-  const { name, age, address, birthdate, diagnostics, history, impression, requestFor, clinicUid } = data;
-
-  // Replace with actual creation logic, but this time, since this is a mock, we will just return a success message.
-  const newImagingStudy = null;
-
-  return { message: "Imaging study created successfully", data: newImagingStudy };
-});
-
 type CreateClinicPayload = {
   clinicUid: string;
   tenantUid: string;

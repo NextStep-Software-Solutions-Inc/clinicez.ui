@@ -36,7 +36,7 @@ export default async function FilesPage({ params }: AppRouterPageRouteOpts) {
         </div>
         <Separator />
         <Prescriptions />
-        <DocumentTemplates documentType="prescription" label="Prescription" />
+        <DocumentTemplates documentType="laboratory" label="Prescription" />
       </div>
     </>
   );

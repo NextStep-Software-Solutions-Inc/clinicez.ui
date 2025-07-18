@@ -8,18 +8,18 @@ import {
   CardHeader,
   CardTitle
 } from "@components/ui/card";
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import Each from "@components/utils/Each";
 import Suspend from "@components/Suspend";
 import dynamic from "next/dynamic";
 import { FileText, Pill } from "lucide-react";
-import { getUserAction } from "@/actions/users/user.action";
-// Placeholder for LaboratoryRequestItem and useLaboratoryRequests
-// Will be replaced with actual imports when implemented ~ Kyle
-// import LaboratoryRequestItem from "@components/LaboratoryRequestItem";
+import type { PatientProfile } from "@components/clinic/clinical-records/CreateLaboratoryRequestModal";
+import { getUserAndAddressAction } from "@/actions/users/user.action";
+import LaboratoryRequestItem from "@components/laboratory-requests/LaboratoryRequestItem";
+import { useLaboratoryRequests } from "@/hooks/use-laboratory-requests";
 // import { useLaboratoryRequests } from "@hooks/useLaboratoryRequests";
 const CreateLaboratoryRequestModal = dynamic(
-  () => import("@components/clinic/clinical-records/CreateLaboratoryRequestModal")
+  () => import("@components/clinic/clinical-records/CreateLaboratoryRequestModal").then(module => ({ default: module.default }))
 );
 
 export interface LaboratoryRequestProps {
@@ -31,18 +31,53 @@ export interface LaboratoryRequestProps {
   userId?: string;
 }
 
-export default function LaboratoryRequest({ consultationTicketId, clinicUid, hpId, patientId }: LaboratoryRequestProps) {
-  // Will be replaced with actual hook when implemented ~ Kyle
-  // const { data: requests, mutate } = useLaboratoryRequests({
-  //   isArchived: false,
-  //   consultationTicketId,
-  //   clinicUid,
-  //   hpId,
-  //   patientId,
-  // });
-  const requests = { data: [] };
-  const mutate = () => { };
-  const [userInfo, setUserInfo] = useState<any>(null);
+export default function LaboratoryRequest({ consultationTicketId, clinicUid, hpId, patientId, userId }: LaboratoryRequestProps) {
+  const [userInfo, setUserInfo] = useState<PatientProfile | null>(null);
+
+  const resolvedPatientId = typeof patientId === "string" ? Number(patientId) : patientId;
+  const { data: requests, mutate } = useLaboratoryRequests({
+    clinicUid,
+    consultationTicketId,
+    hpId,
+    patientId: resolvedPatientId
+  });
+
+  useEffect(() => {
+    async function fetchUserInfo() {
+      if (userId && typeof userId === "string" && userId.trim() !== "") {
+        try {
+          const res = await getUserAndAddressAction(userId);
+          if (res && res?.data) {
+            const user = res.data;
+            const mapped: PatientProfile = {
+              firstName: user.firstName ?? "Unknown",
+              middleName: user.middleName ?? undefined,
+              lastName: user.lastName ?? undefined,
+              suffix: user.suffix ?? undefined,
+              dob: user.dob ? user.dob.toString() : undefined,
+              gender: user.gender ?? undefined,
+              address: user.UserAddresses && user.UserAddresses.length > 0 ? {
+                homeAddress: user.UserAddresses[0].address ?? undefined,
+                city: user.UserAddresses[0].city ?? undefined,
+                state: user.UserAddresses[0].state ?? undefined,
+                zipCode: user.UserAddresses[0].zipCode ?? undefined,
+                country: user.UserAddresses[0].country ?? undefined,
+              } : undefined,
+            };
+            setUserInfo(mapped);
+          } else {
+            setUserInfo(null);
+          }
+        } catch (e) {
+          setUserInfo(null);
+        }
+      } else {
+        setUserInfo(null);
+      }
+    }
+
+    fetchUserInfo();
+  }, [userId]);
 
   return (
     <Card className="group/laboratory-request">
@@ -59,8 +94,11 @@ export default function LaboratoryRequest({ consultationTicketId, clinicUid, hpI
             <Suspend>
               <CreateLaboratoryRequestModal
                 clinicUid={clinicUid ?? ""}
-                onCreateLaboratoryRequest={mutate}
+                patientId={resolvedPatientId}
+                hpId={hpId}
+                onCreated={mutate}
                 userInfo={userInfo}
+                consultationTicketId={consultationTicketId}
               />
             </Suspend>
           </div>
@@ -76,8 +114,7 @@ export default function LaboratoryRequest({ consultationTicketId, clinicUid, hpI
               </p>
             }
             render={(request) => (
-              // <LaboratoryRequestItem request={request} onUpdated={mutate} />
-              <div className="border rounded p-2">Laboratory Request Item Placeholder</div>
+              <LaboratoryRequestItem request={request} onUpdated={mutate} />
             )}
           />
         </div>

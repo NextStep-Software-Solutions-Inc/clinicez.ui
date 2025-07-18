@@ -4,15 +4,17 @@ import {
   TooltipProvider,
   TooltipTrigger
 } from "@components/ui/tooltip";
-import { cn } from "@lib/utils";
-import { Archive, DownloadIcon, Trash2, User } from "lucide-react";
+import { cn, calculateAge, capitalize } from "@lib/utils";
+import { Edit, DownloadIcon, Trash2, User } from "lucide-react";
 import dayjs from "@lib/day-utils";
 import { Badge } from "@components/ui/badge";
 import ActionButton from "../ActionButton";
 import DownloadLaboratoryRequestAction from "@/components/laboratory-requests/DownloadLaboratoryRequestAction";
+import EditLaboratoryRequestModal from "./EditLaboratoryRequestModal";
 import { toast } from "sonner";
 import { promiseWrapper } from "@/lib/with-error-handling";
 import { deleteLaboratoryRequestAction } from "@/actions/clinics/clinical-record/laboratory-requests.action";
+import { useState } from "react";
 
 
 export interface LaboratoryRequest {
@@ -28,6 +30,7 @@ export interface LaboratoryRequest {
       firstName?: string;
       lastName?: string;
       email?: string;
+      dob?: string;
       UserAddresses?: Array<{
         address?: string;
         city?: string;
@@ -35,7 +38,6 @@ export interface LaboratoryRequest {
         zipCode?: string;
         country?: string;
       }>;
-      age?: number;
     };
   };
 }
@@ -48,6 +50,8 @@ export interface LaboratoryRequestItemProps {
 
 export default function LaboratoryRequestItem({ request, onUpdated }: LaboratoryRequestItemProps) {
   const patient = request.ClinicPatient?.Patient;
+  const [editModalOpen, setEditModalOpen] = useState(false);
+
   const handleDeleteLaboratoryRequest = async () => {
     toast.promise(promiseWrapper(deleteLaboratoryRequestAction)({ laboratoryRequestId: request.id }), {
       loading: "Deleting laboratory request...",
@@ -59,6 +63,16 @@ export default function LaboratoryRequestItem({ request, onUpdated }: Laboratory
     });
   };
 
+  let statusText = request.status ? capitalize(request.status) : "-";
+  let statusClass = "";
+  if (request.status === "PENDING") {
+    statusClass = "bg-yellow-400 text-black";
+  } else if (request.status === "COMPLETED") {
+    statusClass = "bg-primary text-primary-foreground";
+  } else {
+    statusClass = "bg-secondary text-secondary-foreground";
+  }
+
   return (
     <div
       className={cn(
@@ -69,17 +83,23 @@ export default function LaboratoryRequestItem({ request, onUpdated }: Laboratory
         <User className="h-5 w-5 text-primary" />
       </div>
       <div className="flex flex-col flex-1 min-w-0">
-        <span className="font-semibold text-base leading-tight">{patient?.firstName ?? "Unknown"} {patient?.lastName ?? ""}</span>
-        <span className="text-xs text-muted-foreground truncate">ID: {request.serialNumber ?? '-'}</span>
-      </div>
-      <div className="flex items-center justify-center w-12 text-center text-sm text-muted-foreground font-medium">
-        {typeof patient?.age === "number" ? patient.age : "-"}
-      </div>
-      <div className="flex items-center min-w-[90px]">
-        <Badge variant="secondary">{request.status ?? "-"}</Badge>
-      </div>
-      <div className="flex flex-col items-end min-w-[160px]">
-        <span className="text-xs text-muted-foreground">{request.createdAt && dayjs(request.createdAt).format("MM/D/YYYY | h:mm A")}</span>
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold leading-tight">{patient?.firstName ?? "Unknown"} {patient?.lastName ?? ""}</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-muted-foreground truncate">ID: {request.serialNumber ?? '-'}</span>
+          <div className="flex items-center justify-center w-12 text-center text-xs text-muted-foreground font-medium">
+            <span className="flex items-center justify-center w-full h-full">{patient?.dob ? calculateAge(patient.dob) : "-"}</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center min-w-[90px]">
+              <Badge variant="secondary" className={cn(statusClass, "hover:bg-inherit hover:text-inherit")}>{statusText ?? "-"}</Badge>
+            </div>
+            <div className="flex flex-col items-end min-w-[160px]">
+              <span className="text-xs text-muted-foreground">{request.createdAt && dayjs(request.createdAt).format("MM/D/YYYY | h:mm A")}</span>
+            </div>
+          </div>
+        </div>
       </div>
       <div className="flex items-center gap-1 ml-2">
         <TooltipProvider>
@@ -104,12 +124,13 @@ export default function LaboratoryRequestItem({ request, onUpdated }: Laboratory
               <ActionButton
                 variant="ghost"
                 size="icon"
-                className="invisible group-hover/item:visible text-destructive hover:text-destructive/90"
+                className="invisible group-hover/item:visible text-blue-600 hover:text-blue-500"
+                onClick={() => setEditModalOpen(true)}
               >
-                <Archive className="h-4 w-4 hover:scale-125 transition-all" />
+                <Edit className="h-4 w-4 hover:scale-125 transition-all" />
               </ActionButton>
             </TooltipTrigger>
-            <TooltipContent side="top">Archive</TooltipContent>
+            <TooltipContent side="top">Edit</TooltipContent>
           </Tooltip>
         </TooltipProvider>
         <TooltipProvider>
@@ -129,6 +150,13 @@ export default function LaboratoryRequestItem({ request, onUpdated }: Laboratory
           </Tooltip>
         </TooltipProvider>
       </div>
+
+      <EditLaboratoryRequestModal
+        request={request}
+        open={editModalOpen}
+        onOpenChange={setEditModalOpen}
+        onUpdated={onUpdated}
+      />
     </div>
   );
 }

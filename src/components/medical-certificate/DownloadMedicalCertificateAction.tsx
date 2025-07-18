@@ -47,32 +47,21 @@ const DownloadMedicalCertificateAction = ({
             : undefined
         const address = formatAddress(addressObj)
 
-        // Helper function to get checkbox class with debugging
-        const getCheckboxClass = (condition: boolean, debugSymbol = "✓"): string => {
-          return condition ? "checked" : ""
+        // Helper function to get the selected text value
+        const getSelectedText = (value: string | undefined): string => {
+          return value || ""
         }
 
-        // Classification checkboxes
-        const classA = getCheckboxClass(data.Classification?.name === "Class A", "A")
-        const classB = getCheckboxClass(data.Classification?.name === "Class B", "B")
-        const classC = getCheckboxClass(data.Classification?.name === "Class C", "C")
-        const classD = getCheckboxClass(data.Classification?.name === "Class D", "D")
-
-        // Reason checkboxes
-        const physicalExamOnly = getCheckboxClass(data.Reason?.name === "Physical Exam Only", "1")
-        const physicalExamWithTests = getCheckboxClass(data.Reason?.name === "Physical Exam with Tests", "2")
-        const consultation = getCheckboxClass(data.Reason?.name === "Consultation/Treatment", "3")
-
-        // Finding checkboxes
-        const unremarkable = getCheckboxClass(data.Finding?.name === "Unremarkable")
-        const abnormal = getCheckboxClass(data.Finding?.name === "Abnormal")
-        const normal = getCheckboxClass(data.Finding?.name === "Normal")
+        // Get selected values
+        const selectedClassification = getSelectedText(data.Classification?.name)
+        const selectedClassificationDescription = data.Classification?.description || ""
+        const selectedReason = getSelectedText(data.Reason?.name)
+        const selectedFinding = getSelectedText(data.Finding?.name)
 
         const recommendations = data.remarks || ""
         const createdDate = data.createdAt ? dayjs(data.createdAt).format("MM/DD/YYYY") : ""
         const createdDateTime = data.createdAt ? dayjs(data.createdAt).format("MM/DD/YYYY h:mm A") : ""
 
-        // Create replacement map for cleaner code
         const replacements = {
           "@{createdDate}": createdDate,
           "@{createdDateTime}": createdDateTime,
@@ -84,22 +73,15 @@ const DownloadMedicalCertificateAction = ({
           "@{licenseNo}": licenseNo,
           "@{ptrNo}": ptrNo,
           "@{doctorAddress}": doctorAddress,
-          "@{classA}": classA,
-          "@{classB}": classB,
-          "@{classC}": classC,
-          "@{classD}": classD,
-          "@{physicalExamOnly}": physicalExamOnly,
-          "@{physicalExamWithTests}": physicalExamWithTests,
-          "@{consultation}": consultation,
-          "@{unremarkable}": unremarkable,
-          "@{abnormal}": abnormal,
-          "@{normal}": normal,
+          "@{selectedClassification}": selectedClassification,
+          "@{selectedClassificationDescription}": selectedClassificationDescription,
+          "@{selectedReason}": selectedReason,
+          "@{selectedFinding}": selectedFinding,
           "@{recommendations}": recommendations,
         }
 
         let html = data.DocumentTemplate?.htmlContent ?? ""
 
-        // Apply all replacements
         Object.entries(replacements).forEach(([placeholder, value]) => {
           html = html.replaceAll(placeholder, value)
         })

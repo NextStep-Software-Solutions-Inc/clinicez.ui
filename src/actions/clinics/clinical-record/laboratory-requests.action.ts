@@ -25,6 +25,7 @@ export const getLaboratoryRequestsAction = withErrorHandling(async (filters: Get
   const requests = await prisma.clinicLaboratoryRequest.findMany({
     where: {
       isActive: true,
+      deletedAt: null,
       Clinic: { clinicUid },
       ...patientId ? { clinicPatientId: patientId } : {},
       ...consultationTicketId ? { consultationTicketId } : {},
@@ -42,6 +43,7 @@ export const getLaboratoryRequestsAction = withErrorHandling(async (filters: Get
               userId: true,
               firstName: true,
               lastName: true,
+              dob: true,
               UserAddresses: {
                 where: { isActive: true, isPrimary: true },
                 orderBy: { createdAt: "desc" },
@@ -154,17 +156,14 @@ export const createLaboratoryRequestAction = withErrorHandling(async (input: Cre
     if (!appUser) throw new Error("Session user id is missing or invalid");
     const createdBy = appUser.id;
 
-    // First get the clinic ID from clinicUid
     const clinic = await prisma.clinic.findUnique({
       where: { clinicUid },
       select: { id: true }
     });
     if (!clinic) throw new Error("Clinic not found");
 
-    // Find the laboratory document template for this clinic
     const laboratoryTemplate = await prisma.documentTemplate.findFirst({
       where: {
-        clinicId: clinic.id,
         isActive: true,
         DocumentTemplateType: {
           name: "laboratory"
@@ -172,7 +171,7 @@ export const createLaboratoryRequestAction = withErrorHandling(async (input: Cre
       },
       select: { id: true }
     });
-    if (!laboratoryTemplate) throw new Error("Laboratory document template not found for this clinic");
+    if (!laboratoryTemplate) throw new Error("Laboratory document template not found");
 
     const request = await prisma.clinicLaboratoryRequest.create({
       data: {
@@ -222,37 +221,59 @@ export const updateLaboratoryRequestAction = withErrorHandling(async (input: Upd
   const session = await getCachedSession();
   if (!session) throw new Error("Unauthorized");
   const { id, ...updateData } = input;
-  const updatedBy = session.user.id || session.user.sub;
-  const request = await prisma.clinicLaboratoryRequest.update({
-    where: { id },
-    data: { ...updateData, updatedBy },
-    select: {
-      id: true,
-      impression: true,
-      status: true,
-      serialNumber: true,
-      isActive: true,
-    }
+
+  const result = await prisma.$transaction(async (prisma) => {
+    const appUser = await prisma.user.findUnique({
+      where: { userId: session.user.sub },
+      select: { id: true }
+    });
+    if (!appUser) throw new Error("Session user id is missing or invalid");
+    const updatedBy = appUser.id;
+
+    const request = await prisma.clinicLaboratoryRequest.update({
+      where: { id },
+      data: { ...updateData, updatedBy },
+      select: {
+        id: true,
+        impression: true,
+        status: true,
+        serialNumber: true,
+        isActive: true,
+      }
+    });
+
+    return request;
   });
 
-  return { message: "Successfully updated laboratory request", data: request };
+  return { message: "Successfully updated laboratory request", data: result };
 });
 
 export const deleteLaboratoryRequestAction = withErrorHandling(async ({ laboratoryRequestId }: { laboratoryRequestId: number }) => {
   const session = await getCachedSession();
   if (!session) throw new Error("Unauthorized");
-  const deletedBy = session.user.id || session.user.sub;
-  const request = await prisma.clinicLaboratoryRequest.update({
-    where: { id: laboratoryRequestId },
-    data: { deletedAt: new Date(), deletedBy, isActive: false },
-    select: {
-      id: true,
-      impression: true,
-      status: true,
-      serialNumber: true,
-      isActive: true,
-    }
+
+  const result = await prisma.$transaction(async (prisma) => {
+    const appUser = await prisma.user.findUnique({
+      where: { userId: session.user.sub },
+      select: { id: true }
+    });
+    if (!appUser) throw new Error("Session user id is missing or invalid");
+    const deletedBy = appUser.id;
+
+    const request = await prisma.clinicLaboratoryRequest.update({
+      where: { id: laboratoryRequestId },
+      data: { deletedAt: new Date(), deletedBy, isActive: false },
+      select: {
+        id: true,
+        impression: true,
+        status: true,
+        serialNumber: true,
+        isActive: true,
+      }
+    });
+
+    return request;
   });
 
-  return { message: "Successfully deleted laboratory request", data: request };
+  return { message: "Successfully deleted laboratory request", data: result };
 });

@@ -25,6 +25,7 @@ export const getImagingStudiesAction = withErrorHandling(async (filters: GetImag
   const studies = await prisma.clinicImagingRequest.findMany({
     where: {
       isActive: true,
+      deletedAt: null,
       Clinic: { clinicUid },
       ...patientId ? { clinicPatientId: patientId } : {},
       ...consultationTicketId ? { consultationTicketId } : {},
@@ -32,7 +33,11 @@ export const getImagingStudiesAction = withErrorHandling(async (filters: GetImag
       ...status ? { status } : {},
     },
     orderBy: { createdAt: "desc" },
-    include: {
+    select: {
+      id: true,
+      serialNumber: true,
+      createdAt: true,
+      status: true,
       ClinicPatient: {
         select: {
           id: true,
@@ -42,6 +47,7 @@ export const getImagingStudiesAction = withErrorHandling(async (filters: GetImag
               userId: true,
               firstName: true,
               lastName: true,
+              dob: true,
               UserAddresses: {
                 where: { isActive: true, isPrimary: true },
                 orderBy: { createdAt: "desc" },
@@ -163,7 +169,6 @@ export const createImagingStudyAction = withErrorHandling(async (input: CreateIm
 
     const imagingTemplate = await prisma.documentTemplate.findFirst({
       where: {
-        clinicId: clinic.id,
         isActive: true,
         DocumentTemplateType: {
           name: "imaging"
@@ -171,7 +176,7 @@ export const createImagingStudyAction = withErrorHandling(async (input: CreateIm
       },
       select: { id: true }
     });
-    if (!imagingTemplate) throw new Error("Imaging document template not found for this clinic");
+    if (!imagingTemplate) throw new Error("Imaging document template not found");
 
     const study = await prisma.clinicImagingRequest.create({
       data: {
@@ -227,41 +232,63 @@ export const updateImagingStudyAction = withErrorHandling(async (input: UpdateIm
   const session = await getCachedSession();
   if (!session) throw new Error("Unauthorized");
   const { id, ...updateData } = input;
-  const updatedBy = session.user.id || session.user.sub;
-  const study = await prisma.clinicImagingRequest.update({
-    where: { id },
-    data: { ...updateData, updatedBy },
-    select: {
-      id: true,
-      history: true,
-      reason: true,
-      impression: true,
-      status: true,
-      serialNumber: true,
-      isActive: true,
-    }
+
+  const result = await prisma.$transaction(async (prisma) => {
+    const appUser = await prisma.user.findUnique({
+      where: { userId: session.user.sub },
+      select: { id: true }
+    });
+    if (!appUser) throw new Error("Session user id is missing or invalid");
+    const updatedBy = appUser.id;
+
+    const study = await prisma.clinicImagingRequest.update({
+      where: { id },
+      data: { ...updateData, updatedBy },
+      select: {
+        id: true,
+        history: true,
+        reason: true,
+        impression: true,
+        status: true,
+        serialNumber: true,
+        isActive: true,
+      }
+    });
+
+    return study;
   });
 
-  return { message: "Successfully updated imaging study", data: study };
+  return { message: "Successfully updated imaging study", data: result };
 });
 
 export const deleteImagingStudyAction = withErrorHandling(async ({ imagingStudyId }: { imagingStudyId: number }) => {
   const session = await getCachedSession();
   if (!session) throw new Error("Unauthorized");
-  const deletedBy = session.user.id || session.user.sub;
-  const study = await prisma.clinicImagingRequest.update({
-    where: { id: imagingStudyId },
-    data: { deletedAt: new Date(), deletedBy, isActive: false },
-    select: {
-      id: true,
-      history: true,
-      reason: true,
-      impression: true,
-      status: true,
-      serialNumber: true,
-      isActive: true,
-    }
+
+  const result = await prisma.$transaction(async (prisma) => {
+    const appUser = await prisma.user.findUnique({
+      where: { userId: session.user.sub },
+      select: { id: true }
+    });
+    if (!appUser) throw new Error("Session user id is missing or invalid");
+    const deletedBy = appUser.id;
+
+    const study = await prisma.clinicImagingRequest.update({
+      where: { id: imagingStudyId },
+      data: { deletedAt: new Date(), deletedBy, isActive: false },
+      select: {
+        id: true,
+        history: true,
+        reason: true,
+        impression: true,
+        status: true,
+        serialNumber: true,
+        isActive: true,
+      }
+    });
+
+    return study;
   });
 
-  return { message: "Successfully deleted imaging study", data: study };
+  return { message: "Successfully deleted imaging study", data: result };
 });

@@ -40,7 +40,6 @@ const DownloadLaboratoryRequestAction = ({
           `${patient.firstName ?? ""} ${patient.middleName ?? ""} ${patient.lastName ?? ""} ${patient.suffix ?? ""}`.trim()
         const age = patient.dob ? calculateAge(patient.dob) : ""
         const gender = patient.gender ?? ""
-        const birthdate = patient.dob ? dayjs(patient.dob).format("MM/DD/YYYY") : ""
 
         const addressObj =
           Array.isArray(patient.UserAddresses) && patient.UserAddresses.length > 0
@@ -48,14 +47,30 @@ const DownloadLaboratoryRequestAction = ({
             : undefined
         const address = formatAddress(addressObj)
 
-        // Laboratory request specific data
-        const laboratoryTests = data.LaboratoryRequestDiagnostics?.map(item => item.LaboratoryDiagnostic?.name).filter(Boolean).join(", ") || ""
-        const impression = data.impression || ""
+        // Group diagnostics by category
+        const diagnosticsByCategory: Record<string, string[]> = {}
+        data.LaboratoryRequestDiagnostics?.forEach((item) => {
+          const diagnostic = item.LaboratoryDiagnostic
+          if (diagnostic) {
+            const category = diagnostic.category?.toUpperCase() || "OTHER"
+            if (!diagnosticsByCategory[category]) {
+              diagnosticsByCategory[category] = []
+            }
+            diagnosticsByCategory[category].push(diagnostic.name)
+          }
+        })
 
+        // Helper function to format category tests as comma-separated bold text
+        const formatCategoryTests = (category: string): string => {
+          const tests = diagnosticsByCategory[category] || []
+          return tests.length > 0 ? `<strong>${tests.join(", ")}</strong>` : ""
+        }
+
+        const impression = data.impression || ""
         const requestDate = data.createdAt ? dayjs(data.createdAt).format("MM/DD/YYYY") : ""
         const createdDateTime = data.createdAt ? dayjs(data.createdAt).format("MM/DD/YYYY h:mm A") : ""
+        const birthdate = patient.dob ? dayjs(patient.dob).format("MM/DD/YYYY") : ""
 
-        // Create replacement map for cleaner code
         const replacements = {
           "@{name}": patientName,
           "@{age}": String(age),
@@ -63,19 +78,23 @@ const DownloadLaboratoryRequestAction = ({
           "@{address}": address,
           "@{birthdate}": birthdate,
           "@{requestDate}": requestDate,
-          "@{laboratoryTests}": laboratoryTests,
           "@{impression}": impression,
-          "@{requestFor}": impression, // Use impression as request reason
           "@{doctorName}": doctorName,
           "@{licenseNo}": licenseNo,
           "@{ptrNo}": ptrNo,
           "@{doctorAddress}": doctorAddress,
           "@{createdDateTime}": createdDateTime,
+
+          "@{hematologyTests}": formatCategoryTests("HEMATOLOGY"),
+          "@{clinicalMicroscopyTests}": formatCategoryTests("CLINICAL MICROSCOPY") || formatCategoryTests("MICROSCOPY"),
+          "@{bloodChemistryTests}": formatCategoryTests("BLOOD CHEMISTRY") || formatCategoryTests("CHEMISTRY"),
+          "@{microbiologyTests}": formatCategoryTests("MICROBIOLOGY"),
+          "@{hormoneAssaysTests}": formatCategoryTests("HORMONE ASSAYS") || formatCategoryTests("HORMONES"),
+          "@{cardiacDiagnosticsTests}": formatCategoryTests("CARDIAC DIAGNOSTICS") || formatCategoryTests("CARDIAC") || formatCategoryTests("ECG"),
         }
 
         let html = data.DocumentTemplate?.htmlContent ?? ""
 
-        // Apply all replacements
         Object.entries(replacements).forEach(([placeholder, value]) => {
           html = html.replaceAll(placeholder, value)
         })

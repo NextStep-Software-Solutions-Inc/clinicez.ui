@@ -29,6 +29,8 @@ export const getMedicalCertificatesAction = withErrorHandling(async (filters: Ge
     skip: pageNumber ? (pageNumber - 1) * (pageSize || 10) : 0,
     orderBy: { createdAt: "desc" },
     where: {
+      isActive: true,
+      deletedAt: null,
       Clinic: { clinicUid },
       ...(patientId ? { clinicPatientId: patientId } : {}),
       ...(consultationTicketId ? { consultationTicketId } : {}),
@@ -52,6 +54,7 @@ export const getMedicalCertificatesAction = withErrorHandling(async (filters: Ge
               firstName: true,
               lastName: true,
               email: true,
+              dob: true,
               UserAddresses: {
                 where: { isActive: true, isPrimary: true },
                 orderBy: { createdAt: "desc" },

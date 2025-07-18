@@ -145,45 +145,58 @@ type AddClinicMemberPayload = {
 export const addClinicMemberAction = withErrorHandling(async (payload: AddClinicMemberPayload) => {
 
   await sessionCheck()
-
   const { clinicUid, userId, roleId } = payload;
 
-  const initialPermission = await prismaClient.clinicRoleInitialPermission.findMany({
-    where: {
-      ClinicRole: {
-        id: roleId,
-        isActive: true,
-      },
-      Permission: { isActive: true }
-    },
-    select: {
-      id: true,
-      permissionId: true,
-    }
-  });
-  await prismaClient.clinicMember.create({
-    data: {
-      status: "ACTIVE",
-      Clinic: {
-        connect: {
+  // Start transaction
+  const result = await prismaClient.$transaction(async (prisma) => {
+    const initialPermissions = await prisma.clinicRoleInitialPermission.findMany({
+      where: {
+        Clinic: {
           clinicUid
-        }
+        },
+        ClinicRole: {
+          id: roleId,
+          isActive: true,
+        },
+        Permission: { isActive: true }
       },
-      User: {
-        connect: {
-          userId
-        }
-      },
-      Role: {
-        connect: {
-          id: roleId
-        }
-      },
-      ClinicMemberPermissions: { connect: initialPermission.map(p => ({ id: p.id })) }
-    }
-  })
+      select: {
+        id: true,
+        permissionId: true,
+      }
+    });
 
+    const createdMember = await prisma.clinicMember.create({
+      data: {
+        status: "ACTIVE",
+        Clinic: {
+          connect: {
+            clinicUid
+          }
+        },
+        User: {
+          connect: {
+            userId
+          }
+        },
+        Role: {
+          connect: {
+            id: roleId
+          }
+        },
+      }
+    });
 
+    await prisma.clinicMemberPermission.createMany({
+      skipDuplicates: true,
+      data: initialPermissions.map(permission => ({
+        clinicMemberId: createdMember.id,
+        permissionId: permission.permissionId
+      }))
+    });
+
+    return createdMember;
+  });
 
   return { message: "Successfully added clinic member.", data: null }
 }, (error) => {

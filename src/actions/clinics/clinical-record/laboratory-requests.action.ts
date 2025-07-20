@@ -11,7 +11,6 @@ export type GetLaboratoryRequestsFilters = {
   clinicUid?: string;
   patientId?: number;
   hpId?: number;
-  status?: string;
   consultationTicketId?: number;
 }
 
@@ -20,7 +19,7 @@ export const getLaboratoryRequestsAction = withErrorHandling(async (filters: Get
   const session = await getCachedSession();
   if (!session) throw new Error("Unauthorized");
 
-  const { clinicUid, patientId, hpId, status, consultationTicketId } = filters;
+  const { clinicUid, patientId, hpId, consultationTicketId } = filters;
 
   const requests = await prisma.clinicLaboratoryRequest.findMany({
     where: {
@@ -30,10 +29,17 @@ export const getLaboratoryRequestsAction = withErrorHandling(async (filters: Get
       ...patientId ? { clinicPatientId: patientId } : {},
       ...consultationTicketId ? { consultationTicketId } : {},
       ...hpId ? { hpId } : {},
-      ...status ? { status } : {},
     },
     orderBy: { createdAt: "desc" },
-    include: {
+    select: {
+      id: true,
+      serialNumber: true,
+      _count: {
+        select: {
+          LaboratoryRequestDiagnostics: true,
+        }
+      },
+      createdAt: true,
       ClinicPatient: {
         select: {
           id: true,
@@ -135,7 +141,6 @@ type CreateLaboratoryRequestInput = {
   patientId: number;
   hpId: number;
   impression?: string;
-  status?: string;
   diagnosticIds: number[];
   consultationTicketId?: number;
 }
@@ -145,7 +150,7 @@ export const createLaboratoryRequestAction = withErrorHandling(async (input: Cre
   const session = await getCachedSession();
   if (!session) throw new Error("Unauthorized");
 
-  const { clinicUid, patientId, hpId, impression, status, diagnosticIds, consultationTicketId } = input;
+  const { clinicUid, patientId, hpId, impression, diagnosticIds, consultationTicketId } = input;
   const serialNumber = generateSerialNumber();
 
   const result = await prisma.$transaction(async (prisma) => {
@@ -177,7 +182,6 @@ export const createLaboratoryRequestAction = withErrorHandling(async (input: Cre
       data: {
         impression,
         serialNumber,
-        status,
         clinicId: clinic.id,
         clinicPatientId: patientId,
         hpId,
@@ -194,7 +198,6 @@ export const createLaboratoryRequestAction = withErrorHandling(async (input: Cre
       select: {
         id: true,
         impression: true,
-        status: true,
         serialNumber: true,
         isActive: true,
       }
@@ -213,14 +216,14 @@ export type UpdateLaboratoryRequestInput = {
   hpId?: number;
   documentTemplateId?: number;
   impression?: string;
-  status?: string;
+  diagnosticIds?: number[];
   isActive?: boolean;
 };
 
 export const updateLaboratoryRequestAction = withErrorHandling(async (input: UpdateLaboratoryRequestInput) => {
   const session = await getCachedSession();
   if (!session) throw new Error("Unauthorized");
-  const { id, ...updateData } = input;
+  const { id, diagnosticIds, ...updateData } = input;
 
   const result = await prisma.$transaction(async (prisma) => {
     const appUser = await prisma.user.findUnique({
@@ -236,11 +239,25 @@ export const updateLaboratoryRequestAction = withErrorHandling(async (input: Upd
       select: {
         id: true,
         impression: true,
-        status: true,
         serialNumber: true,
         isActive: true,
       }
     });
+
+    if (diagnosticIds !== undefined) {
+      await prisma.clinicLaboratoryRequestDiagnostic.deleteMany({
+        where: { clinicLaboratoryRequestId: id }
+      });
+
+      if (diagnosticIds.length > 0) {
+        await prisma.clinicLaboratoryRequestDiagnostic.createMany({
+          data: diagnosticIds.map(diagnosticId => ({
+            clinicLaboratoryRequestId: id,
+            laboratoryDiagnosticId: diagnosticId,
+          }))
+        });
+      }
+    }
 
     return request;
   });
@@ -266,7 +283,6 @@ export const deleteLaboratoryRequestAction = withErrorHandling(async ({ laborato
       select: {
         id: true,
         impression: true,
-        status: true,
         serialNumber: true,
         isActive: true,
       }

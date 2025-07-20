@@ -41,7 +41,11 @@ export const getMedicalCertificatesAction = withErrorHandling(async (filters: Ge
         ],
       } : {}),
     },
-    include: {
+    select: {
+      id: true,
+      serialNumber: true,
+      createdAt: true,
+      remarks: true,
       Clinic: { select: { id: true, name: true } },
       ClinicPatient: {
         select: {
@@ -192,6 +196,7 @@ export type UpdateMedicalCertificateInput = {
   reasonId?: number;
   findingId?: number;
   classificationId?: number;
+  remarks?: string;
   isActive?: boolean;
 };
 export const updateMedicalCertificateAction = withErrorHandling(async (input: UpdateMedicalCertificateInput) => {

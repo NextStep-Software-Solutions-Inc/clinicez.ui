@@ -1,4 +1,4 @@
-import type React from "react"
+import React from "react"
 import { promiseWrapper } from "@/lib/with-error-handling"
 import { toast } from "sonner"
 import { getImagingStudyAction } from "@/actions/clinics/clinical-record/imaging-studies.action"
@@ -7,6 +7,7 @@ import { handlePrintHtmlToPDF } from "@/lib/print-pdf"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip"
 import { formatAddress } from "@/lib/utils/format-address"
 import { calculateAge } from "@/lib/utils"
+import { prepareImagingStudy } from "@/lib/prepare-imaging-study"
 
 interface DownloadImagingStudiesActionProps {
   onUpdated?: () => void
@@ -14,11 +15,10 @@ interface DownloadImagingStudiesActionProps {
   children?: React.ReactNode
 }
 
-const DownloadImagingStudiesAction = ({
-  study,
-  children,
-  onUpdated,
-}: DownloadImagingStudiesActionProps) => {
+const DownloadImagingStudiesAction = React.forwardRef<
+  HTMLFormElement,
+  DownloadImagingStudiesActionProps
+>(({ study, children, onUpdated }, ref) => {
   const handleDownload = async () => {
     toast.promise(promiseWrapper(getImagingStudyAction)(study.id), {
       loading: "Downloading imaging study request...",
@@ -50,38 +50,32 @@ const DownloadImagingStudiesAction = ({
 
         // Imaging study specific data
         const diagnostics = data.ImagingRequestDiagnostics?.map(item => item.ImagingDiagnostic?.name).filter(Boolean).join(", ") || ""
-        const history = data.history || ""
-        const impression = data.impression || ""
-        const requestFor = data.reason || ""
 
-        const requestDate = data.createdAt ? dayjs(data.createdAt).format("MM/DD/YYYY") : ""
-        const createdDateTime = data.createdAt ? dayjs(data.createdAt).format("MM/DD/YYYY h:mm A") : ""
-
-        const replacements = {
-          "@{name}": patientName,
-          "@{age}": String(age),
-          "@{gender}": gender,
-          "@{address}": address,
-          "@{birthdate}": birthdate,
-          "@{requestDate}": requestDate,
-          "@{diagnostics}": diagnostics,
-          "@{history}": history,
-          "@{impression}": impression,
-          "@{requestFor}": requestFor,
-          "@{doctorName}": doctorName,
-          "@{licenseNo}": licenseNo,
-          "@{ptrNo}": ptrNo,
-          "@{doctorAddress}": doctorAddress,
-          "@{createdDateTime}": createdDateTime,
-        }
-
-        let html = data.DocumentTemplate?.htmlContent ?? ""
-
-        Object.entries(replacements).forEach(([placeholder, value]) => {
-          html = html.replaceAll(placeholder, value)
+        const template = prepareImagingStudy({
+          template: data.DocumentTemplate?.htmlContent ?? "",
+          patient: {
+            name: patientName,
+            age: String(age),
+            gender,
+            address,
+            birthdate,
+          },
+          doctor: {
+            name: doctorName,
+            licenseNo,
+            ptrNo,
+            address: doctorAddress,
+          },
+          study: {
+            diagnostics,
+            history: data.history || "",
+            impression: data.impression || "",
+            requestFor: data.reason || "",
+            createdAt: data.createdAt || new Date(),
+          },
         })
 
-        handlePrintHtmlToPDF(html)
+        handlePrintHtmlToPDF(template)
         return res.message
       },
       error: "Failed to download imaging study request",
@@ -92,12 +86,14 @@ const DownloadImagingStudiesAction = ({
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <form action={handleDownload}>{children}</form>
+          <form ref={ref} action={handleDownload}>{children}</form>
         </TooltipTrigger>
         <TooltipContent side="top">Download</TooltipContent>
       </Tooltip>
     </TooltipProvider>
   )
-}
+})
+
+DownloadImagingStudiesAction.displayName = "DownloadImagingStudiesAction"
 
 export default DownloadImagingStudiesAction

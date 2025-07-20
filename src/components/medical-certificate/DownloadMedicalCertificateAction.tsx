@@ -1,12 +1,12 @@
-import type React from "react"
+import React from "react"
 import { promiseWrapper } from "@/lib/with-error-handling"
 import { toast } from "sonner"
 import { getMedicalCertificateAction } from "@/actions/clinics/clinical-record/medical-certificate.action"
-import dayjs from "@lib/day-utils"
 import { handlePrintHtmlToPDF } from "@/lib/print-pdf"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip"
 import { formatAddress } from "@/lib/utils/format-address"
 import { calculateAge } from "@/lib/utils"
+import { prepareMedicalCertificate } from "@/lib/prepare-medical-certificate"
 
 interface DownloadMedicalCertificateActionProps {
   onUpdated?: () => void
@@ -14,11 +14,10 @@ interface DownloadMedicalCertificateActionProps {
   children?: React.ReactNode
 }
 
-const DownloadMedicalCertificateAction = ({
-  certificate,
-  children,
-  onUpdated,
-}: DownloadMedicalCertificateActionProps) => {
+const DownloadMedicalCertificateAction = React.forwardRef<
+  HTMLFormElement,
+  DownloadMedicalCertificateActionProps
+>(({ certificate, children, onUpdated }, ref) => {
   const handleDownload = async () => {
     toast.promise(promiseWrapper(getMedicalCertificateAction)(certificate.id), {
       loading: "Downloading medical certificate...",
@@ -47,46 +46,31 @@ const DownloadMedicalCertificateAction = ({
             : undefined
         const address = formatAddress(addressObj)
 
-        // Helper function to get the selected text value
-        const getSelectedText = (value: string | undefined): string => {
-          return value || ""
-        }
-
-        // Get selected values
-        const selectedClassification = getSelectedText(data.Classification?.name)
-        const selectedClassificationDescription = data.Classification?.description || ""
-        const selectedReason = getSelectedText(data.Reason?.name)
-        const selectedFinding = getSelectedText(data.Finding?.name)
-
-        const recommendations = data.remarks || ""
-        const createdDate = data.createdAt ? dayjs(data.createdAt).format("MM/DD/YYYY") : ""
-        const createdDateTime = data.createdAt ? dayjs(data.createdAt).format("MM/DD/YYYY h:mm A") : ""
-
-        const replacements = {
-          "@{createdDate}": createdDate,
-          "@{createdDateTime}": createdDateTime,
-          "@{patientName}": patientName,
-          "@{age}": String(age),
-          "@{gender}": gender,
-          "@{address}": address,
-          "@{doctorName}": doctorName,
-          "@{licenseNo}": licenseNo,
-          "@{ptrNo}": ptrNo,
-          "@{doctorAddress}": doctorAddress,
-          "@{selectedClassification}": selectedClassification,
-          "@{selectedClassificationDescription}": selectedClassificationDescription,
-          "@{selectedReason}": selectedReason,
-          "@{selectedFinding}": selectedFinding,
-          "@{recommendations}": recommendations,
-        }
-
-        let html = data.DocumentTemplate?.htmlContent ?? ""
-
-        Object.entries(replacements).forEach(([placeholder, value]) => {
-          html = html.replaceAll(placeholder, value)
+        const template = prepareMedicalCertificate({
+          template: data.DocumentTemplate?.htmlContent ?? "",
+          patient: {
+            name: patientName,
+            age: String(age),
+            gender,
+            address,
+          },
+          doctor: {
+            name: doctorName,
+            licenseNo,
+            ptrNo,
+            address: doctorAddress,
+          },
+          certificate: {
+            classification: data.Classification?.name || "",
+            classificationDescription: data.Classification?.description || "",
+            reason: data.Reason?.name || "",
+            finding: data.Finding?.name || "",
+            recommendations: data.remarks || "",
+            createdAt: data.createdAt || new Date(),
+          },
         })
 
-        handlePrintHtmlToPDF(html)
+        handlePrintHtmlToPDF(template)
         return res.message
       },
       error: "Failed to download medical certificate",
@@ -97,12 +81,14 @@ const DownloadMedicalCertificateAction = ({
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <form action={handleDownload}>{children}</form>
+          <form ref={ref} action={handleDownload}>{children}</form>
         </TooltipTrigger>
         <TooltipContent side="top">Download</TooltipContent>
       </Tooltip>
     </TooltipProvider>
   )
-}
+})
+
+DownloadMedicalCertificateAction.displayName = "DownloadMedicalCertificateAction"
 
 export default DownloadMedicalCertificateAction

@@ -1,4 +1,4 @@
-import type React from "react"
+import React from "react"
 import { promiseWrapper } from "@/lib/with-error-handling"
 import { toast } from "sonner"
 import { getLaboratoryRequestAction } from "@/actions/clinics/clinical-record/laboratory-requests.action"
@@ -7,6 +7,7 @@ import { handlePrintHtmlToPDF } from "@/lib/print-pdf"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip"
 import { formatAddress } from "@/lib/utils/format-address"
 import { calculateAge } from "@/lib/utils"
+import { prepareLaboratoryRequest } from "@/lib/prepare-laboratory-request"
 
 interface DownloadLaboratoryRequestActionProps {
   onUpdated?: () => void
@@ -14,11 +15,10 @@ interface DownloadLaboratoryRequestActionProps {
   children?: React.ReactNode
 }
 
-const DownloadLaboratoryRequestAction = ({
-  request,
-  children,
-  onUpdated,
-}: DownloadLaboratoryRequestActionProps) => {
+const DownloadLaboratoryRequestAction = React.forwardRef<
+  HTMLFormElement,
+  DownloadLaboratoryRequestActionProps
+>(({ request, children, onUpdated }, ref) => {
   const handleDownload = async () => {
     toast.promise(promiseWrapper(getLaboratoryRequestAction)(request.id), {
       loading: "Downloading laboratory request...",
@@ -46,6 +46,7 @@ const DownloadLaboratoryRequestAction = ({
             ? patient.UserAddresses[0]
             : undefined
         const address = formatAddress(addressObj)
+        const birthdate = patient.dob ? dayjs(patient.dob).format("MM/DD/YYYY") : ""
 
         // Group diagnostics by category
         const diagnosticsByCategory: Record<string, string[]> = {}
@@ -60,46 +61,29 @@ const DownloadLaboratoryRequestAction = ({
           }
         })
 
-        // Helper function to format category tests as comma-separated bold text
-        const formatCategoryTests = (category: string): string => {
-          const tests = diagnosticsByCategory[category] || []
-          return tests.length > 0 ? `<strong>${tests.join(", ")}</strong>` : ""
-        }
-
-        const impression = data.impression || ""
-        const requestDate = data.createdAt ? dayjs(data.createdAt).format("MM/DD/YYYY") : ""
-        const createdDateTime = data.createdAt ? dayjs(data.createdAt).format("MM/DD/YYYY h:mm A") : ""
-        const birthdate = patient.dob ? dayjs(patient.dob).format("MM/DD/YYYY") : ""
-
-        const replacements = {
-          "@{name}": patientName,
-          "@{age}": String(age),
-          "@{gender}": gender,
-          "@{address}": address,
-          "@{birthdate}": birthdate,
-          "@{requestDate}": requestDate,
-          "@{impression}": impression,
-          "@{doctorName}": doctorName,
-          "@{licenseNo}": licenseNo,
-          "@{ptrNo}": ptrNo,
-          "@{doctorAddress}": doctorAddress,
-          "@{createdDateTime}": createdDateTime,
-
-          "@{hematologyTests}": formatCategoryTests("HEMATOLOGY"),
-          "@{clinicalMicroscopyTests}": formatCategoryTests("CLINICAL MICROSCOPY") || formatCategoryTests("MICROSCOPY"),
-          "@{bloodChemistryTests}": formatCategoryTests("BLOOD CHEMISTRY") || formatCategoryTests("CHEMISTRY"),
-          "@{microbiologyTests}": formatCategoryTests("MICROBIOLOGY"),
-          "@{hormoneAssaysTests}": formatCategoryTests("HORMONE ASSAYS") || formatCategoryTests("HORMONES"),
-          "@{cardiacDiagnosticsTests}": formatCategoryTests("CARDIAC DIAGNOSTICS") || formatCategoryTests("CARDIAC") || formatCategoryTests("ECG"),
-        }
-
-        let html = data.DocumentTemplate?.htmlContent ?? ""
-
-        Object.entries(replacements).forEach(([placeholder, value]) => {
-          html = html.replaceAll(placeholder, value)
+        const template = prepareLaboratoryRequest({
+          template: data.DocumentTemplate?.htmlContent ?? "",
+          patient: {
+            name: patientName,
+            age: String(age),
+            gender,
+            address,
+            birthdate,
+          },
+          doctor: {
+            name: doctorName,
+            licenseNo,
+            ptrNo,
+            address: doctorAddress,
+          },
+          request: {
+            impression: data.impression || "",
+            diagnosticsByCategory,
+            createdAt: data.createdAt || new Date(),
+          },
         })
 
-        handlePrintHtmlToPDF(html)
+        handlePrintHtmlToPDF(template)
         return res.message
       },
       error: "Failed to download laboratory request",
@@ -110,12 +94,14 @@ const DownloadLaboratoryRequestAction = ({
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <form action={handleDownload}>{children}</form>
+          <form ref={ref} action={handleDownload}>{children}</form>
         </TooltipTrigger>
         <TooltipContent side="top">Download</TooltipContent>
       </Tooltip>
     </TooltipProvider>
   )
-}
+})
+
+DownloadLaboratoryRequestAction.displayName = "DownloadLaboratoryRequestAction"
 
 export default DownloadLaboratoryRequestAction

@@ -5,8 +5,7 @@ import { getImagingStudyAction } from "@/actions/clinics/clinical-record/imaging
 import { withJwtAuth } from "@/middlewares/withJwtAuth";
 import { NextRequest, NextResponse } from "next/server";
 
-export const GET = withJwtAuth(async (req: NextRequest, { params }: { params: { imagingStudiesId: string } }) => {
-  const { imagingStudiesId } = params;
-  const study = await getImagingStudyAction(Number(imagingStudiesId));
+export const GET = withJwtAuth(async (req: NextRequest, { params }: { params: { imagingStudyId: string } }) => {
+  const study = await getImagingStudyAction(Number(params.imagingStudyId));
   return NextResponse.json(study, { status: 200 });
 });

@@ -1788,7 +1788,6 @@ model ClinicImagingRequest {
   history            String?
   impression         String?
   reason             String?
-  status             String   @default("PENDING")
 
   updatedBy            Int?
   deletedAt            DateTime?
@@ -1820,7 +1819,6 @@ model ClinicLaboratoryRequest {
   createdBy            Int
   isActive             Boolean   @default(true)
   impression           String?
-  status               String?   @default("PENDING")
   updatedBy            Int?
   deletedAt            DateTime?
   deletedBy            Int?

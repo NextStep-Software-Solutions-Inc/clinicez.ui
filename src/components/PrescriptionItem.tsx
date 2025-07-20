@@ -1,3 +1,4 @@
+import React from "react";
 import {
   Tooltip,
   TooltipContent,
@@ -21,7 +22,7 @@ export interface PrescriptionItemProps {
   onUpdated?: () => void;
   prescription: NonNullable<GetPrescriptions["data"]>[number];
 }
-export default function PrescriptionItem({prescription, onUpdated}: PrescriptionItemProps) {
+export default function PrescriptionItem({ prescription, onUpdated }: PrescriptionItemProps) {
   const Icon = Pill;
   return (
     <div
@@ -57,8 +58,8 @@ export default function PrescriptionItem({prescription, onUpdated}: Prescription
           </p>
         </div>
         <div className="flex flex-1 flex-col text-sm">
-          <p className="flex gap-1"><User size={16}/>{prescription.HealthcareProvider.HPProfile?.title} {prescription.HealthcareProvider.HPProfile?.name} {prescription.HealthcareProvider.HPProfile?.suffix}</p>
-          <p className="flex gap-1"><File size={16}/>{prescription.DocumentTemplate.name}</p>
+          <p className="flex gap-1"><User size={16} />{prescription.HealthcareProvider.HPProfile?.title} {prescription.HealthcareProvider.HPProfile?.name} {prescription.HealthcareProvider.HPProfile?.suffix}</p>
+          <p className="flex gap-1"><File size={16} />{prescription.DocumentTemplate.name}</p>
         </div>
         <div className="flex items-center gap-1">
           <DownloadPrescriptionAction prescription={prescription} onUpdated={onUpdated}>
@@ -70,8 +71,8 @@ export default function PrescriptionItem({prescription, onUpdated}: Prescription
               <DownloadIcon className="h-4 w-4  hover:scale-125 transition-all" />
             </ActionButton>
           </DownloadPrescriptionAction>
-          <ModifyPrescriptionAction prescription={prescription} onUpdated={onUpdated}/>
-          <ArchivePrescriptionAction prescription={prescription} onUpdated={onUpdated}/>
+          <ModifyPrescriptionAction prescription={prescription} onUpdated={onUpdated} />
+          <ArchivePrescriptionAction prescription={prescription} onUpdated={onUpdated} />
         </div>
       </div>
     </div>
@@ -82,12 +83,12 @@ interface ModifyPrescriptionActionProps {
   onUpdated?: () => void;
   prescription: PrescriptionItemProps["prescription"];
 }
-const ModifyPrescriptionAction = ({prescription, onUpdated}: ModifyPrescriptionActionProps) => {
+const ModifyPrescriptionAction = ({ prescription, onUpdated }: ModifyPrescriptionActionProps) => {
   return (
     <UpdatePrescriptionModal onUpdated={onUpdated} prescription={{
       id: prescription.id,
       name: prescription.name ?? "",
-    }}/>
+    }} />
   )
 }
 interface ArchivePrescriptionActionProps {
@@ -95,8 +96,11 @@ interface ArchivePrescriptionActionProps {
   prescription: PrescriptionItemProps["prescription"];
 }
 
-const ArchivePrescriptionAction = ({prescription, onUpdated}: ArchivePrescriptionActionProps) => {
-  
+const ArchivePrescriptionAction = React.forwardRef<
+  HTMLFormElement,
+  ArchivePrescriptionActionProps
+>(({ prescription, onUpdated }, ref) => {
+
   const handleArchivePrescription = async () => {
     toast.promise(promiseWrapper(archivePrescriptionAction)(prescription.id), {
       loading: "Archiving prescription...",
@@ -107,12 +111,12 @@ const ArchivePrescriptionAction = ({prescription, onUpdated}: ArchivePrescriptio
       error: error => error
     })
   }
-  
+
   return (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <form action={handleArchivePrescription}>
+          <form ref={ref} action={handleArchivePrescription}>
             <ActionButton
               variant="ghost"
               size="icon"
@@ -126,4 +130,6 @@ const ArchivePrescriptionAction = ({prescription, onUpdated}: ArchivePrescriptio
       </Tooltip>
     </TooltipProvider>
   )
-}
+})
+
+ArchivePrescriptionAction.displayName = "ArchivePrescriptionAction"

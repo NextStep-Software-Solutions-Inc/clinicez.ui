@@ -44,6 +44,7 @@ export interface MedicalCertificate {
   Classification?: { name?: string };
   DocumentTemplate?: { id: number; name?: string };
   HealthCareProvider?: { id: number; };
+  remarks?: string;
 }
 
 
@@ -95,7 +96,11 @@ export default function MedicalCertificateItem({ certificate, onUpdated }: Medic
           <span className="text-xs font-semibold leading-tight">{patient?.firstName ?? "Unknown"} {patient?.lastName ?? ""}</span>
         </div>
         <div className="flex items-center justify-between">
-          <span className="text-xs text-muted-foreground truncate">ID: {certificate.serialNumber}</span>
+          <span className="text-xs text-muted-foreground truncate line-clamp-1">
+            {patient?.UserAddresses && patient.UserAddresses.length > 0
+              ? `${patient.UserAddresses[0].address}, ${patient.UserAddresses[0].city}, ${patient.UserAddresses[0].state}, ${patient.UserAddresses[0].zipCode}`
+              : "No Address"}
+          </span>
           <div className="flex items-center justify-center w-12 text-center text-xs text-muted-foreground font-medium">
             <span className="flex items-center justify-center w-full h-full">{patient?.dob ? calculateAge(patient.dob) : "-"}</span>
           </div>

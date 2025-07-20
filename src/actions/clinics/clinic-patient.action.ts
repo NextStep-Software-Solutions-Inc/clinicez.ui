@@ -9,7 +9,8 @@ import { hasCodeProperty } from "@/lib/utils";
 import { managementClient } from "@/services/auth0/management-client";
 import { Prisma } from "@prisma/client";
 
-export const getClinicPatientByUserIdAction = withErrorHandling(async ({ userId, clinicUid }: { userId: number, clinicUid: string }) => {
+export type GetClinicPatient = Awaited<ReturnType<typeof getClinicPatientAction>>;
+export const getClinicPatientAction = withErrorHandling(async ({ userId, clinicUid }: { userId: number, clinicUid: string }) => {
   const session = await getCachedSession();
   if (!session) throw new Error("Unauthorized");
 

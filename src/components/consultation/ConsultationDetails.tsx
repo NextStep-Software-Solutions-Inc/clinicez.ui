@@ -20,7 +20,7 @@ import { Button } from "@components/ui/button";
 import Prescriptions from "../Prescriptions";
 import MedicalCertificate from "../medical-certificate/MedicalCertificate";
 import ImagingStudies from "../imaging-studies/ImagingStudies";
-import LaboratoryRequest from "../LaboratoryRequest";
+import LaboratoryRequest from "../laboratory-requests/LaboratoryRequest";
 
 const VitalSigns = dynamic(() => import('./VitalSigns'), { ssr: false, loading: () => <div>Loading...</div> });
 const Conversation = dynamic(() => import('./Conversation'), { ssr: false, loading: () => <div>Loading...</div> });
@@ -31,26 +31,45 @@ const ConsultationNotes = dynamic(() => import('./ConsultationNotes'), { ssr: fa
 interface ConsultationDetailsProps {
   consultation: NonNullable<GetConsultationTicket["data"]>
 }
+
+export interface PatientProfile {
+  firstName: string | null;
+  middleName?: string | null;
+  lastName?: string | null;
+  suffix?: string | null;
+  dob?: Date | null;
+  gender?: string | null;
+  address?: {
+    homeAddress?: string | null;
+    city?: string | null;
+    state?: string | null;
+    zipCode?: string | null;
+    country?: string | null;
+  }
+}
+
 export default async function ConsultationDetails({ consultation }: ConsultationDetailsProps) {
   const appointment = await getAppointmentAction(consultation?.appointmentId ?? 0, consultation.Clinic.clinicUid);
+  const user = appointment.data?.Requesters[0].User;
+  const userDetails: PatientProfile = {
+    firstName: user?.firstName ?? null,
+    middleName: user?.middleName ?? null,
+    lastName: user?.lastName ?? null,
+    suffix: user?.suffix ?? null,
+    dob: user?.dob ?? null,
+    gender: user?.gender ?? null,
+    address: {
+      homeAddress: user?.UserAddresses[0]?.address ?? null,
+      city: user?.UserAddresses[0]?.city ?? null,
+      state: user?.UserAddresses[0]?.state ?? null,
+      zipCode: user?.UserAddresses[0]?.zipCode ?? null,
+      country: user?.UserAddresses[0]?.country ?? null,
+    }
+  };
 
   const [creators] = await Promise.all([
     await getHpsByIdsAction(consultation.ConsultationTicketHPs.map(c => Number(c.hpId))),
   ]);
-
-  let clinicPatientId: number | undefined;
-  const userId = appointment.data?.Requesters[0].User?.id;
-  if (userId && consultation.Clinic.clinicUid) {
-    try {
-      const res = await import("@/actions/clinics/clinic-patient.action");
-      const result = await res.getClinicPatientByUserIdAction({ userId, clinicUid: consultation.Clinic.clinicUid });
-      if (result?.data?.id) {
-        clinicPatientId = result.data.id;
-      }
-    } catch (e) {
-      clinicPatientId = undefined;
-    }
-  }
 
   return (
     <>
@@ -65,8 +84,9 @@ export default async function ConsultationDetails({ consultation }: Consultation
         clinicUid={consultation.Clinic.clinicUid}
         hpId={consultation.ConsultationTicketHPs[0]?.hpId}
         isArchived={false}
-        patientId={clinicPatientId}
+        patientId={appointment.data?.Requesters[0].User?.ClinicPatients[0]?.id}
         userId={appointment.data?.Requesters[0].User?.userId}
+        userInfo={userDetails}
       />
     </>
   );
@@ -170,8 +190,9 @@ interface ClinicalRecordsProps {
   clinicUid: string;
   hpId: number;
   isArchived?: boolean;
-  patientId?: number | string;
+  patientId?: number;
   userId?: string;
+  userInfo?: PatientProfile | null;
 }
 
 export const ClinicalRecords = ({
@@ -181,6 +202,7 @@ export const ClinicalRecords = ({
   isArchived = false,
   patientId,
   userId,
+  userInfo
 }: ClinicalRecordsProps) => {
   const tabConfigs = [
     {
@@ -245,6 +267,7 @@ export const ClinicalRecords = ({
                   isArchived={isArchived}
                   patientId={patientId}
                   userId={userId}
+                  userInfo={userInfo}
                 />
               </TabsContent>
             )}

@@ -13,7 +13,9 @@ export const getImagingDiagnosticsAction = withErrorHandling(async () => {
 
   const diagnostics = await prisma.imagingDiagnostic.findMany({
     orderBy: { name: "asc" },
-    where: { isActive: true },
+    where: {
+      isActive: true,
+    },
     select: {
       id: true,
       name: true,

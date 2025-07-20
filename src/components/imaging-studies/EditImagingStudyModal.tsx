@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Button } from "@components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -18,14 +17,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@components/ui/select";
-import { Textarea } from "@components/ui/textarea";
+import ActionButton from "@/components/ActionButton";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -33,32 +25,27 @@ import { toast } from "sonner";
 import { promiseWrapper } from "@/lib/with-error-handling";
 import { updateImagingStudyAction } from "@/actions/clinics/clinical-record/imaging-studies.action";
 import { ImagingStudy } from "./ImagingStudiesItem";
+import { PatientProfile } from "../consultation/ConsultationDetails";
 
 const formSchema = z.object({
   history: z.string().optional(),
   reason: z.string().optional(),
   impression: z.string().optional(),
-  status: z.string().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
 
 interface EditImagingStudyModalProps {
   study: ImagingStudy;
+  userInfo?: PatientProfile | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onUpdated?: () => void;
 }
 
-const statusOptions = [
-  { value: "PENDING", label: "Pending" },
-  { value: "IN_PROGRESS", label: "In Progress" },
-  { value: "COMPLETED", label: "Completed" },
-  { value: "CANCELLED", label: "Cancelled" },
-];
-
 export default function EditImagingStudyModal({
   study,
+  userInfo,
   open,
   onOpenChange,
   onUpdated,
@@ -71,13 +58,21 @@ export default function EditImagingStudyModal({
       history: "",
       reason: "",
       impression: "",
-      status: "",
     },
+    mode: "onChange",
   });
 
   useEffect(() => {
     if (open && study) {
-      form.setValue("status", study.status || "");
+      form.setValue("history", study.history || "");
+      form.setValue("reason", study.reason || "");
+      form.setValue("impression", study.impression || "");
+    } else if (!open) {
+      form.reset({
+        history: "",
+        reason: "",
+        impression: "",
+      });
     }
   }, [open, study, form]);
 
@@ -89,13 +84,11 @@ export default function EditImagingStudyModal({
         history: data.history,
         reason: data.reason,
         impression: data.impression,
-        status: data.status,
       });
 
       toast.success(result.message);
       onUpdated?.();
       onOpenChange(false);
-      form.reset();
     } catch (error) {
       toast.error(error as string);
     } finally {
@@ -109,103 +102,77 @@ export default function EditImagingStudyModal({
         <DialogHeader>
           <DialogTitle>Edit Imaging Study</DialogTitle>
           <DialogDescription>
-            Update the imaging study details for {study.ClinicPatient?.Patient?.firstName} {study.ClinicPatient?.Patient?.lastName}
+            Update the imaging study details for {userInfo?.firstName} {userInfo?.lastName}
           </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Status</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    value={field.value}
-                  >
+          <form onSubmit={form.handleSubmit(onSubmit)} id="edit-imaging-study-form">
+            <div className="max-h-[60vh] overflow-y-auto flex flex-col gap-4 py-2">
+              <FormField
+                control={form.control}
+                name="history"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>History (Optional)</FormLabel>
                     <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select status" />
-                      </SelectTrigger>
+                      <textarea
+                        placeholder="Enter patient history..."
+                        {...field}
+                        className="w-full min-h-[80px] border rounded-md p-2 text-sm focus:outline-primary"
+                      />
                     </FormControl>
-                    <SelectContent>
-                      {statusOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <FormField
-              control={form.control}
-              name="history"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>History (Optional)</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Enter patient history..."
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              <FormField
+                control={form.control}
+                name="reason"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Reason (Optional)</FormLabel>
+                    <FormControl>
+                      <textarea
+                        placeholder="Enter reason for imaging..."
+                        {...field}
+                        className="w-full min-h-[80px] border rounded-md p-2 text-sm focus:outline-primary"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <FormField
-              control={form.control}
-              name="reason"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Reason (Optional)</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Enter reason for imaging..."
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="impression"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Impression (Optional)</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Enter clinical impression..."
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              <FormField
+                control={form.control}
+                name="impression"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Impression (Optional)</FormLabel>
+                    <FormControl>
+                      <textarea
+                        placeholder="Enter clinical impression..."
+                        {...field}
+                        className="w-full min-h-[80px] border rounded-md p-2 text-sm focus:outline-primary"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
+              <ActionButton
+                type="submit"
                 disabled={isLoading}
+                form="edit-imaging-study-form"
+                className="bg-black text-white hover:bg-black/90"
               >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isLoading}>
                 {isLoading ? "Updating..." : "Update Study"}
-              </Button>
+              </ActionButton>
             </DialogFooter>
           </form>
         </Form>

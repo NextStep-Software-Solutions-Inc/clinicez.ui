@@ -8,8 +8,6 @@ import {
   CardHeader,
   CardTitle
 } from "@components/ui/card";
-import React, { useEffect, useState } from "react";
-import { getUserAndAddressAction } from "@/actions/users/user.action";
 import Each from "@components/utils/Each";
 import Suspend from "@components/Suspend";
 import dynamic from "next/dynamic";
@@ -17,9 +15,9 @@ import { FileText } from "lucide-react";
 import MedicalCertificateItem from "./MedicalCertificateItem";
 import type { MedicalCertificate } from "./MedicalCertificateItem";
 import { useMedicalCertificates } from "@/hooks/useMedicalCertificate";
-import { PatientProfile } from "@components/clinic/clinical-records/CreateMedicalCertificateModal";
+import { PatientProfile } from "../consultation/ConsultationDetails";
 const CreateMedicalCertificateModal = dynamic(
-  () => import("@components/clinic/clinical-records/CreateMedicalCertificateModal")
+  () => import("@/components/medical-certificate/CreateMedicalCertificateModal")
 );
 
 export interface MedicalCertificateProps {
@@ -27,55 +25,18 @@ export interface MedicalCertificateProps {
   clinicUid: string;
   hpId: number;
   isArchived?: boolean;
-  patientId?: number | string;
-  userId?: string;
+  patientId?: number;
+  userInfo?: PatientProfile | null;
 }
 
-export default function MedicalCertificate({ consultationTicketId, clinicUid, hpId, patientId, userId }: MedicalCertificateProps) {
-  const resolvedPatientId = typeof patientId === "string" ? Number(patientId) : patientId;
+export default function MedicalCertificate({ consultationTicketId, clinicUid, hpId, patientId, userInfo }: MedicalCertificateProps) {
 
   const { data: certificates, mutate } = useMedicalCertificates({
     clinicUid,
     consultationTicketId,
     hpId,
-    patientId: resolvedPatientId
+    patientId
   });
-
-  const [userInfo, setUserInfo] = useState<PatientProfile | null>(null);
-  useEffect(() => {
-    async function fetchUserInfo() {
-      if (userId && typeof userId === "string" && userId.trim() !== "") {
-        try {
-          const res = await getUserAndAddressAction(userId);
-          if (res && res?.data) {
-            const user = res.data;
-            const mapped: PatientProfile = {
-              firstName: user.firstName ?? "Unknown",
-              middleName: user.middleName ?? undefined,
-              lastName: user.lastName ?? undefined,
-              suffix: user.suffix ?? undefined,
-              dob: user.dob ? user.dob.toString() : undefined,
-              address: user.UserAddresses && user.UserAddresses.length > 0 ? {
-                homeAddress: user.UserAddresses[0].address ?? undefined,
-                city: user.UserAddresses[0].city ?? undefined,
-                state: user.UserAddresses[0].state ?? undefined,
-                zipCode: user.UserAddresses[0].zipCode ?? undefined,
-                country: user.UserAddresses[0].country ?? undefined,
-              } : undefined,
-            };
-            setUserInfo(mapped);
-          } else {
-            setUserInfo(null);
-          }
-        } catch (e) {
-          setUserInfo(null);
-        }
-      } else {
-        setUserInfo(null);
-      }
-    }
-    fetchUserInfo();
-  }, [userId]);
 
   return (
     <Card className="group/medical-certificate">
@@ -95,7 +56,7 @@ export default function MedicalCertificate({ consultationTicketId, clinicUid, hp
                 consultationTicketId={consultationTicketId}
                 onCreateMedicalCertificate={mutate}
                 userInfo={userInfo}
-                patientId={resolvedPatientId}
+                patientId={patientId}
                 hpId={hpId}
               />
             </Suspend>

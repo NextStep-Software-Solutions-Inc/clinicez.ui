@@ -15,41 +15,26 @@ import { toast } from "sonner";
 import { promiseWrapper } from "@/lib/with-error-handling";
 import { deleteImagingStudyAction } from "@/actions/clinics/clinical-record/imaging-studies.action";
 import { useState } from "react";
+import { PatientProfile } from "../consultation/ConsultationDetails";
 
 
 export interface ImagingStudy {
   id: number;
   serialNumber?: string;
   createdAt: string | Date;
-  status?: string;
-  ClinicPatient?: {
-    id: number;
-    Patient?: {
-      id: number;
-      userId: string;
-      firstName?: string;
-      lastName?: string;
-      email?: string;
-      dob?: Date | string | undefined;
-      UserAddresses?: Array<{
-        address?: string;
-        city?: string;
-        state?: string;
-        zipCode?: string;
-        country?: string;
-      }>;
-    };
-  };
+  history?: string;
+  reason?: string;
+  impression?: string;
 }
 
 
 export interface ImagingStudiesItemProps {
   study: ImagingStudy;
+  userInfo?: PatientProfile | null;
   onUpdated?: () => void;
 }
 
-export default function ImagingStudiesItem({ study, onUpdated }: ImagingStudiesItemProps) {
-  const patient = study.ClinicPatient?.Patient;
+export default function ImagingStudiesItem({ study, userInfo, onUpdated }: ImagingStudiesItemProps) {
   const [editModalOpen, setEditModalOpen] = useState(false);
 
   const handleDeleteImagingStudy = async () => {
@@ -63,26 +48,7 @@ export default function ImagingStudiesItem({ study, onUpdated }: ImagingStudiesI
     });
   };
 
-  let ageDisplay = "-";
-  if (patient?.dob) {
-    let dobValue: string | undefined;
-    if (typeof patient.dob === "string") {
-      dobValue = patient.dob;
-    } else if (patient.dob instanceof Date) {
-      dobValue = patient.dob.toISOString();
-    }
-    ageDisplay = dobValue ? String(calculateAge(dobValue)) : "-";
-  }
-
-  let statusText = study.status ? capitalize(study.status) : "-";
-  let statusClass = "";
-  if (study.status === "PENDING") {
-    statusClass = "bg-yellow-400 text-black";
-  } else if (study.status === "COMPLETED") {
-    statusClass = "bg-primary text-primary-foreground";
-  } else {
-    statusClass = "bg-secondary text-secondary-foreground";
-  }
+  const ageDisplay = userInfo?.dob ? String(calculateAge(userInfo.dob)) : "-";
 
   return (
     <div
@@ -95,17 +61,16 @@ export default function ImagingStudiesItem({ study, onUpdated }: ImagingStudiesI
       </div>
       <div className="flex flex-col flex-1 min-w-0">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold leading-tight">{patient?.firstName ?? "Unknown"} {patient?.lastName ?? ""}</span>
+          <span className="text-xs font-semibold leading-tight">{userInfo?.firstName ?? "Unknown"} {userInfo?.lastName ?? ""}</span>
         </div>
         <div className="flex items-center justify-between">
-          <span className="text-xs text-muted-foreground truncate">ID: {study.serialNumber ?? '-'}</span>
+          <span className="text-xs text-muted-foreground truncate">
+            {study.serialNumber ? `ID: ${study.serialNumber}` : "No ID"}
+          </span>
           <div className="flex items-center justify-center w-12 text-center text-xs text-muted-foreground font-medium">
             <span className="flex items-center justify-center w-full h-full">{ageDisplay}</span>
           </div>
           <div className="flex items-center gap-4">
-            <div className="flex items-center min-w-[90px]">
-              <Badge className={cn(statusClass, "hover:bg-inherit hover:text-inherit")}>{statusText}</Badge>
-            </div>
             <div className="flex flex-col items-end min-w-[160px]">
               <span className="text-xs text-muted-foreground">{study.createdAt && dayjs(study.createdAt).format("MM/D/YYYY | h:mm A")}</span>
             </div>
@@ -167,6 +132,7 @@ export default function ImagingStudiesItem({ study, onUpdated }: ImagingStudiesI
         open={editModalOpen}
         onOpenChange={setEditModalOpen}
         onUpdated={onUpdated}
+        userInfo={userInfo ?? null}
       />
     </div>
   );

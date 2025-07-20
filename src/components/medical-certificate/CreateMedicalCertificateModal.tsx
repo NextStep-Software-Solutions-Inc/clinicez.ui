@@ -21,6 +21,9 @@ import {
   createMedicalCertificateAction,
 } from "@/actions/clinics/clinical-record/medical-certificate.action";
 import { calculateAge } from "@/lib/utils"
+import { PatientProfile } from "@/components/consultation/ConsultationDetails"
+import { promiseWrapper } from "@/lib/with-error-handling"
+import { FileIcon } from "lucide-react"
 
 type MedicalCertificateReason = {
   id: number;
@@ -109,21 +112,6 @@ const createMedicalCertificateSchema = z.object({
   remarks: z.string().optional(),
 })
 
-export interface PatientProfile {
-  firstName?: string;
-  middleName?: string;
-  lastName?: string;
-  suffix?: string;
-  dob?: string;
-  gender?: string;
-  address?: {
-    homeAddress?: string;
-    city?: string;
-    state?: string;
-    zipCode?: string;
-    country?: string;
-  };
-}
 interface CreateMedicalCertificateModalProps {
   clinicUid: string
   onCreateMedicalCertificate?: () => void
@@ -143,6 +131,7 @@ export default function CreateMedicalCertificateModal({
   consultationTicketId,
 }: CreateMedicalCertificateModalProps) {
   const [open, setOpen] = React.useState(false);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const { reasons, findings, classifications, loading } = useMedicalCertificateOptions();
   const autofillDefaults = React.useMemo(() => {
@@ -195,8 +184,9 @@ export default function CreateMedicalCertificateModal({
       return;
     }
 
-    toast.promise(
-      createMedicalCertificateAction({
+    setIsSubmitting(true);
+    try {
+      const result = await promiseWrapper(createMedicalCertificateAction)({
         clinicUid,
         patientId,
         documentTemplateId,
@@ -206,18 +196,17 @@ export default function CreateMedicalCertificateModal({
         classificationId: classification.id,
         remarks,
         consultationTicketId,
-      }),
-      {
-        loading: `Creating medical certificate...`,
-        success: (res) => {
-          onCreateMedicalCertificate?.()
-          setOpen(false)
-          form.reset(autofillDefaults)
-          return res.message
-        },
-        error: (error) => error.message || "Failed to create medical certificate",
-      }
-    );
+      });
+
+      toast.success(result.message);
+      onCreateMedicalCertificate?.();
+      setOpen(false);
+      form.reset(autofillDefaults);
+    } catch (error) {
+      toast.error(error as string);
+    } finally {
+      setIsSubmitting(false);
+    }
   });
 
   return (
@@ -225,12 +214,12 @@ export default function CreateMedicalCertificateModal({
       <Form {...form}>
         <form onSubmit={handleSubmit} id="create-medical-certificate-form">
           <DialogTrigger asChild>
-            <Button size="sm" className="w-full" onClick={() => setOpen(true)}>
-              Create Medical Certificate
+            <Button size="sm" className="gap-2">
+              <FileIcon className="h-4 w-4" />
+              Add Medical Certificate
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl w-full">
-            {/* Header */}
             <DialogHeader>
               <DialogTitle>Create Medical Certificate</DialogTitle>
               <DialogDescription>
@@ -238,7 +227,6 @@ export default function CreateMedicalCertificateModal({
               </DialogDescription>
             </DialogHeader>
 
-            {/* Body */}
             <div className="max-h-[60vh] overflow-y-auto flex flex-col gap-4 py-2">
               <div className="flex gap-2">
                 <FormField
@@ -438,10 +426,14 @@ export default function CreateMedicalCertificateModal({
               />
             </div>
 
-            {/* Footer */}
             <DialogFooter>
-              <ActionButton type="submit" form="create-medical-certificate-form" className="bg-black text-white hover:bg-black/90">
-                Save Changes
+              <ActionButton
+                type="submit"
+                form="create-medical-certificate-form"
+                className="bg-black text-white hover:bg-black/90"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Saving..." : "Save Changes"}
               </ActionButton>
             </DialogFooter>
           </DialogContent>

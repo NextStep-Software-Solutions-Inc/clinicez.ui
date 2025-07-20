@@ -21,16 +21,26 @@ export interface LaboratoryRequest {
   id: number;
   serialNumber?: string;
   createdAt: string | Date;
-  status?: string;
+  impression?: string;
+  _count?: {
+    LaboratoryRequestDiagnostics?: number;
+  };
+  LaboratoryRequestDiagnostics?: Array<{
+    LaboratoryDiagnostic: {
+      id: number;
+      name: string;
+      category?: string;
+    };
+  }>;
   ClinicPatient?: {
     id: number;
     Patient?: {
       id: number;
       userId: string;
-      firstName?: string;
-      lastName?: string;
+      firstName?: string | null;
+      lastName?: string | null;
       email?: string;
-      dob?: string;
+      dob?: Date | null;
       UserAddresses?: Array<{
         address?: string;
         city?: string;
@@ -63,16 +73,6 @@ export default function LaboratoryRequestItem({ request, onUpdated }: Laboratory
     });
   };
 
-  let statusText = request.status ? capitalize(request.status) : "-";
-  let statusClass = "";
-  if (request.status === "PENDING") {
-    statusClass = "bg-yellow-400 text-black";
-  } else if (request.status === "COMPLETED") {
-    statusClass = "bg-primary text-primary-foreground";
-  } else {
-    statusClass = "bg-secondary text-secondary-foreground";
-  }
-
   return (
     <div
       className={cn(
@@ -87,14 +87,13 @@ export default function LaboratoryRequestItem({ request, onUpdated }: Laboratory
           <span className="text-xs font-semibold leading-tight">{patient?.firstName ?? "Unknown"} {patient?.lastName ?? ""}</span>
         </div>
         <div className="flex items-center justify-between">
-          <span className="text-xs text-muted-foreground truncate">ID: {request.serialNumber ?? '-'}</span>
+          <span className="text-xs text-muted-foreground truncate">
+            {request._count?.LaboratoryRequestDiagnostics ?? 0} {request._count?.LaboratoryRequestDiagnostics === 1 ? "test" : "tests"} requested
+          </span>
           <div className="flex items-center justify-center w-12 text-center text-xs text-muted-foreground font-medium">
             <span className="flex items-center justify-center w-full h-full">{patient?.dob ? calculateAge(patient.dob) : "-"}</span>
           </div>
           <div className="flex items-center gap-4">
-            <div className="flex items-center min-w-[90px]">
-              <Badge variant="secondary" className={cn(statusClass, "hover:bg-inherit hover:text-inherit")}>{statusText ?? "-"}</Badge>
-            </div>
             <div className="flex flex-col items-end min-w-[160px]">
               <span className="text-xs text-muted-foreground">{request.createdAt && dayjs(request.createdAt).format("MM/D/YYYY | h:mm A")}</span>
             </div>

@@ -11,7 +11,6 @@ export type GetImagingStudiesFilters = {
   clinicUid?: string;
   patientId?: number;
   hpId?: number;
-  status?: string;
   consultationTicketId?: number;
 }
 
@@ -20,7 +19,7 @@ export const getImagingStudiesAction = withErrorHandling(async (filters: GetImag
   const session = await getCachedSession();
   if (!session) throw new Error("Unauthorized");
 
-  const { clinicUid, patientId, hpId, status, consultationTicketId } = filters;
+  const { clinicUid, patientId, hpId, consultationTicketId } = filters;
 
   const studies = await prisma.clinicImagingRequest.findMany({
     where: {
@@ -30,14 +29,15 @@ export const getImagingStudiesAction = withErrorHandling(async (filters: GetImag
       ...patientId ? { clinicPatientId: patientId } : {},
       ...consultationTicketId ? { consultationTicketId } : {},
       ...hpId ? { hpId } : {},
-      ...status ? { status } : {},
     },
     orderBy: { createdAt: "desc" },
     select: {
       id: true,
       serialNumber: true,
       createdAt: true,
-      status: true,
+      history: true,
+      reason: true,
+      impression: true,
       ClinicPatient: {
         select: {
           id: true,
@@ -63,7 +63,7 @@ export const getImagingStudiesAction = withErrorHandling(async (filters: GetImag
             },
           }
         }
-      }
+      },
     },
   });
 
@@ -140,7 +140,6 @@ type CreateImagingStudyInput = {
   history?: string;
   reason?: string;
   impression?: string;
-  status?: string;
   diagnosticIds: number[];
   consultationTicketId?: number;
 }
@@ -150,7 +149,7 @@ export const createImagingStudyAction = withErrorHandling(async (input: CreateIm
   const session = await getCachedSession();
   if (!session) throw new Error("Unauthorized");
 
-  const { clinicUid, patientId, hpId, history, reason, impression, status, diagnosticIds, consultationTicketId } = input;
+  const { clinicUid, patientId, hpId, history, reason, impression, diagnosticIds, consultationTicketId } = input;
   const serialNumber = generateSerialNumber();
 
   const result = await prisma.$transaction(async (prisma) => {
@@ -184,7 +183,6 @@ export const createImagingStudyAction = withErrorHandling(async (input: CreateIm
         reason,
         impression,
         serialNumber,
-        status,
         consultationTicketId: consultationTicketId || undefined,
         clinicId: clinic.id,
         clinicPatientId: patientId,
@@ -203,7 +201,6 @@ export const createImagingStudyAction = withErrorHandling(async (input: CreateIm
         history: true,
         reason: true,
         impression: true,
-        status: true,
         serialNumber: true,
         isActive: true,
       }
@@ -224,7 +221,6 @@ export type UpdateImagingStudyInput = {
   history?: string;
   reason?: string;
   impression?: string;
-  status?: string;
   isActive?: boolean;
 };
 
@@ -249,7 +245,6 @@ export const updateImagingStudyAction = withErrorHandling(async (input: UpdateIm
         history: true,
         reason: true,
         impression: true,
-        status: true,
         serialNumber: true,
         isActive: true,
       }
@@ -281,7 +276,6 @@ export const deleteImagingStudyAction = withErrorHandling(async ({ imagingStudyI
         history: true,
         reason: true,
         impression: true,
-        status: true,
         serialNumber: true,
         isActive: true,
       }

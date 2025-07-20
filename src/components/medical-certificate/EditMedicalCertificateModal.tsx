@@ -1,0 +1,341 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@components/ui/form";
+import { Checkbox } from "@components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@components/ui/radio-group";
+import Each from "@components/utils/Each";
+import ActionButton from "@/components/ActionButton";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { toast } from "sonner";
+import { promiseWrapper } from "@/lib/with-error-handling";
+import {
+  updateMedicalCertificateAction,
+  getMedicalCertificateReasonsAction,
+  getMedicalCertificateFindingsAction,
+  getMedicalCertificateClassificationsAction,
+  type GetMedicalCertificateReasons,
+  type GetMedicalCertificateFindings,
+  type GetMedicalCertificateClassifications
+} from "@/actions/clinics/clinical-record/medical-certificate.action";
+import { MedicalCertificate } from "./MedicalCertificateItem";
+
+const formSchema = z.object({
+  selectedReason: z.string({
+    required_error: "Please select a reason",
+  }).min(1, { message: "Please select a reason" }),
+  findings: z.string({
+    required_error: "Please select findings",
+  }).min(1, { message: "Please select findings" }),
+  medicalClassification: z.string({
+    required_error: "Please select a medical classification",
+  }).min(1, { message: "Please select a medical classification" }),
+  remarks: z.string().optional(),
+});
+
+type FormData = z.infer<typeof formSchema>;
+
+interface EditMedicalCertificateModalProps {
+  certificate: MedicalCertificate;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onUpdated?: () => void;
+}
+
+export default function EditMedicalCertificateModal({
+  certificate,
+  open,
+  onOpenChange,
+  onUpdated,
+}: EditMedicalCertificateModalProps) {
+  const [isLoading, setIsLoading] = useState(false);
+  const [reasons, setReasons] = useState<GetMedicalCertificateReasons["data"]>([]);
+  const [findings, setFindings] = useState<GetMedicalCertificateFindings["data"]>([]);
+  const [classifications, setClassifications] = useState<GetMedicalCertificateClassifications["data"]>([]);
+
+  const form = useForm<FormData>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      selectedReason: "",
+      findings: "",
+      medicalClassification: "",
+      remarks: "",
+    },
+    mode: "onChange",
+  });
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [reasonsRes, findingsRes, classificationsRes] = await Promise.all([
+          getMedicalCertificateReasonsAction(),
+          getMedicalCertificateFindingsAction(),
+          getMedicalCertificateClassificationsAction(),
+        ]);
+
+        setReasons(reasonsRes.data);
+        setFindings(findingsRes.data);
+        setClassifications(classificationsRes.data);
+
+        if (certificate.Reason && reasonsRes.data) {
+          const reason = reasonsRes.data.find(r => r.name === certificate.Reason?.name);
+          if (reason) form.setValue("selectedReason", reason.name);
+        }
+        if (certificate.Finding && findingsRes.data) {
+          const finding = findingsRes.data.find(f => f.name === certificate.Finding?.name);
+          if (finding) form.setValue("findings", finding.name);
+        }
+        if (certificate.Classification && classificationsRes.data) {
+          const classification = classificationsRes.data.find(c => c.name === certificate.Classification?.name);
+          if (classification) form.setValue("medicalClassification", classification.name);
+        }
+
+        // Set remarks value
+        if (certificate.remarks) {
+          form.setValue("remarks", certificate.remarks);
+        }
+      } catch (error) {
+        toast.error("Failed to load form data");
+      }
+    };
+
+    if (open) {
+      loadData();
+    } else {
+      form.reset({
+        selectedReason: "",
+        findings: "",
+        medicalClassification: "",
+        remarks: "",
+      });
+    }
+  }, [open, certificate, form, reasons?.length, findings?.length, classifications?.length]);
+
+  const onSubmit = async (data: FormData) => {
+    setIsLoading(true);
+    try {
+      const reason = reasons?.find(r => r.name === data.selectedReason);
+      const finding = findings?.find(f => f.name === data.findings);
+      const classification = classifications?.find(c => c.name === data.medicalClassification);
+
+      if (!reason || !finding || !classification) {
+        toast.error("Please select valid reason, finding, and classification.");
+        return;
+      }
+
+      const result = await promiseWrapper(updateMedicalCertificateAction)({
+        id: certificate.id,
+        reasonId: reason.id,
+        findingId: finding.id,
+        classificationId: classification.id,
+        remarks: data.remarks,
+      });
+
+      toast.success(result.message);
+      onUpdated?.();
+      onOpenChange(false);
+    } catch (error) {
+      toast.error(error as string);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[600px]">
+        <DialogHeader>
+          <DialogTitle>Edit Medical Certificate</DialogTitle>
+          <DialogDescription>
+            Update the medical certificate details for {certificate.ClinicPatient?.Patient?.firstName} {certificate.ClinicPatient?.Patient?.lastName}
+          </DialogDescription>
+        </DialogHeader>
+
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} id="edit-medical-certificate-form">
+            <div className="max-h-[60vh] overflow-y-auto flex flex-col gap-4 py-2">
+              <FormField
+                control={form.control}
+                name="selectedReason"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Reason</FormLabel>
+                    <FormControl>
+                      <div className="flex flex-col gap-2">
+                        <Each
+                          of={reasons || []}
+                          render={(reason) => (
+                            <div
+                              key={reason.id}
+                              className="w-full rounded-lg border p-3 flex items-center gap-2"
+                              tabIndex={-1}
+                              style={{ outline: "none" }}
+                            >
+                              <Checkbox
+                                checked={field.value === reason.name}
+                                onCheckedChange={(checked) => {
+                                  if (checked) {
+                                    field.onChange(reason.name)
+                                  }
+                                }}
+                                className="cursor-pointer"
+                              />
+                              <span className="font-normal text-sm select-none">{reason.name}</span>
+                            </div>
+                          )}
+                          fallback={
+                            <FormItem className="flex items-center justify-center">
+                              <FormLabel className="text-sm text-muted-foreground">No reasons available</FormLabel>
+                            </FormItem>
+                          }
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="findings"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Findings</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        className="grid grid-cols-3 gap-4"
+                      >
+                        <Each
+                          of={findings || []}
+                          render={(finding) => (
+                            <div
+                              key={finding.id}
+                              className="w-full rounded-lg border p-3 flex items-center justify-center"
+                              tabIndex={-1}
+                              style={{ outline: "none" }}
+                            >
+                              <FormItem className="flex flex-row items-center justify-center gap-2 w-full">
+                                <FormControl>
+                                  <RadioGroupItem value={finding.name} className="cursor-pointer" />
+                                </FormControl>
+                                <FormLabel
+                                  htmlFor={finding.name}
+                                  className="font-normal text-center self-center text-sm select-none cursor-pointer"
+                                >
+                                  {finding.name}
+                                </FormLabel>
+                              </FormItem>
+                            </div>
+                          )}
+                          fallback={
+                            <FormItem className="flex items-center justify-center">
+                              <FormControl>
+                                <RadioGroupItem value="" disabled className="cursor-not-allowed" />
+                              </FormControl>
+                              <FormLabel className="text-sm text-muted-foreground">No findings available</FormLabel>
+                            </FormItem>
+                          }
+                        />
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="medicalClassification"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Medical Classification</FormLabel>
+                    <FormControl>
+                      <RadioGroup onValueChange={field.onChange} value={field.value} className="flex flex-col gap-3">
+                        <Each
+                          of={classifications || []}
+                          render={(item) => (
+                            <div key={item.id} className="w-full rounded-lg border p-3 flex items-center gap-3">
+                              <FormItem className="flex items-center gap-3 w-full">
+                                <FormControl>
+                                  <RadioGroupItem value={item.name} />
+                                </FormControl>
+                                <div className="flex flex-col w-full">
+                                  <FormLabel className="font-normal cursor-pointer">{item.name}</FormLabel>
+                                  {item.description && (
+                                    <span className="text-xs text-muted-foreground mt-1">{item.description}</span>
+                                  )}
+                                </div>
+                              </FormItem>
+                            </div>
+                          )}
+                          fallback={
+                            <FormItem className="flex items-center justify-center">
+                              <FormControl>
+                                <RadioGroupItem value="" disabled className="cursor-not-allowed" />
+                              </FormControl>
+                              <FormLabel className="text-sm text-muted-foreground">No classifications available</FormLabel>
+                            </FormItem>
+                          }
+                        />
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="remarks"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Recommendations/Remarks (Optional)</FormLabel>
+                    <FormControl>
+                      <textarea
+                        placeholder="Enter Recommendations/Remarks"
+                        {...field}
+                        className="w-full min-h-[80px] border rounded-md p-2 text-sm focus:outline-primary"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <DialogFooter>
+              <ActionButton
+                type="submit"
+                disabled={isLoading}
+                form="edit-medical-certificate-form"
+                className="bg-black text-white hover:bg-black/90"
+              >
+                {isLoading ? "Updating..." : "Update Certificate"}
+              </ActionButton>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}

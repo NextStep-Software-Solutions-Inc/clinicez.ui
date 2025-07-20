@@ -24,7 +24,7 @@ export interface PrescriptionsProps {
   clinicUid?: string;
   hpId?: number;
   isArchived?: boolean;
-  patientId?: number | string;
+  patientId?: number;
   userId?: string;
 }
 

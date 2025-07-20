@@ -6,6 +6,7 @@ import { withErrorHandling } from "@/lib/with-error-handling";
 import prisma from "@lib/prisma";
 import { getCachedSession } from "@/actions/session.action";
 import { Prisma } from "@prisma/client";
+import { generateSerialNumber } from "@/lib/utils";
 
 export type GetMedicalCertificateFilters = {
   clinicUid: string;
@@ -28,6 +29,8 @@ export const getMedicalCertificatesAction = withErrorHandling(async (filters: Ge
     skip: pageNumber ? (pageNumber - 1) * (pageSize || 10) : 0,
     orderBy: { createdAt: "desc" },
     where: {
+      isActive: true,
+      deletedAt: null,
       Clinic: { clinicUid },
       ...(patientId ? { clinicPatientId: patientId } : {}),
       ...(consultationTicketId ? { consultationTicketId } : {}),
@@ -38,23 +41,50 @@ export const getMedicalCertificatesAction = withErrorHandling(async (filters: Ge
         ],
       } : {}),
     },
-    include: {
+    select: {
+      id: true,
+      serialNumber: true,
+      createdAt: true,
+      remarks: true,
       Clinic: { select: { id: true, name: true } },
-      ClinicPatient: { select: { id: true, Patient: { select: { id: true, userId: true, firstName: true, lastName: true, email: true } } } },
+      ClinicPatient: {
+        select: {
+          id: true,
+          Patient: {
+            select:
+            {
+              id: true,
+              userId: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+              dob: true,
+              UserAddresses: {
+                where: { isActive: true, isPrimary: true },
+                orderBy: { createdAt: "desc" },
+                take: 1,
+                select: {
+                  address: true,
+                  city: true,
+                  state: true,
+                  zipCode: true,
+                  country: true,
+                }
+              },
+            },
+          },
+        },
+      },
       Reason: true,
       Finding: true,
       Classification: true,
       DocumentTemplate: true,
       HealthCareProvider: true,
-      CreatedBy: true,
-      UpdatedBy: true,
-      DeletedBy: true,
     },
   });
   return { message: "Medical Certificates fetched successfully", data: certificates };
 });
 
-export type GetMedicalCertificate = Awaited<ReturnType<typeof getMedicalCertificateAction>>;
 export const getMedicalCertificateAction = withErrorHandling(async (id: number) => {
   const session = await getCachedSession();
   if (!session) throw new Error("Unauthorized");
@@ -101,7 +131,7 @@ export const getMedicalCertificateAction = withErrorHandling(async (id: number) 
   return { message: "Medical Certificate fetched successfully", data: certificate };
 });
 
-export type CreateMedicalCertificateInput = {
+type CreateMedicalCertificateInput = {
   clinicUid: string;
   patientId?: number;
   documentTemplateId: number;
@@ -109,7 +139,6 @@ export type CreateMedicalCertificateInput = {
   reasonId: number;
   findingId: number;
   classificationId: number;
-  serialNumber: string;
   remarks?: string;
   consultationTicketId?: number;
 };
@@ -124,9 +153,10 @@ export const createMedicalCertificateAction = withErrorHandling(async (input: Cr
     reasonId,
     findingId,
     classificationId,
-    serialNumber,
     remarks,
     consultationTicketId } = input;
+
+  const serialNumber = generateSerialNumber();
 
   const result = await prismaClient.$transaction(async (prisma) => {
     const appUser = await prisma.user.findUnique({
@@ -166,6 +196,7 @@ export type UpdateMedicalCertificateInput = {
   reasonId?: number;
   findingId?: number;
   classificationId?: number;
+  remarks?: string;
   isActive?: boolean;
 };
 export const updateMedicalCertificateAction = withErrorHandling(async (input: UpdateMedicalCertificateInput) => {
@@ -180,18 +211,17 @@ export const updateMedicalCertificateAction = withErrorHandling(async (input: Up
   return { message: "Medical Certificate updated successfully", data: certificate };
 });
 
-export const deleteMedicalCertificateAction = withErrorHandling(async ({ id }: { id: number }) => {
+export const deleteMedicalCertificateAction = withErrorHandling(async ({ medicalCertificateId }: { medicalCertificateId: number }) => {
   const session = await getCachedSession();
   if (!session) throw new Error("Unauthorized");
   const deletedBy = session.user.id;
   const certificate = await prismaClient.clinicMedicalCertificate.update({
-    where: { id },
+    where: { id: medicalCertificateId },
     data: { deletedAt: new Date(), deletedBy, isActive: false },
   });
   return { message: "Medical Certificate deleted successfully", data: certificate };
 });
 
-// Medical Certificate Reason
 export type GetMedicalCertificateReasons = Awaited<ReturnType<typeof getMedicalCertificateReasonsAction>>;
 export const getMedicalCertificateReasonsAction = withErrorHandling(async () => {
   const session = await getCachedSession();

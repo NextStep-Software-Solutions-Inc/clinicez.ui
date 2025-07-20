@@ -8,17 +8,16 @@ import {
   CardHeader,
   CardTitle
 } from "@components/ui/card";
-import React, { useEffect, useState } from "react";
-import { getUserAction, GetUser } from "@/actions/users/user.action";
 import Each from "@components/utils/Each";
 import Suspend from "@components/Suspend";
 import dynamic from "next/dynamic";
 import { FileText } from "lucide-react";
-import { getClinicPatientByUserIdAction } from "@/actions/clinics/clinic-patient.action";
 import MedicalCertificateItem from "./MedicalCertificateItem";
+import type { MedicalCertificate } from "./MedicalCertificateItem";
 import { useMedicalCertificates } from "@/hooks/useMedicalCertificate";
+import { PatientProfile } from "../consultation/ConsultationDetails";
 const CreateMedicalCertificateModal = dynamic(
-  () => import("@components/clinic/clinical-records/CreateMedicalCertificateModal")
+  () => import("@/components/medical-certificate/CreateMedicalCertificateModal")
 );
 
 export interface MedicalCertificateProps {
@@ -26,41 +25,18 @@ export interface MedicalCertificateProps {
   clinicUid: string;
   hpId: number;
   isArchived?: boolean;
-  patientId?: number | string;
-  userId?: string;
+  patientId?: number;
+  userInfo?: PatientProfile | null;
 }
 
-export default function MedicalCertificate({ consultationTicketId, clinicUid, hpId, patientId, userId }: MedicalCertificateProps) {
-
-  const resolvedPatientId = typeof patientId === "string" ? Number(patientId) : patientId;
+export default function MedicalCertificate({ consultationTicketId, clinicUid, hpId, patientId, userInfo }: MedicalCertificateProps) {
 
   const { data: certificates, mutate } = useMedicalCertificates({
     clinicUid,
     consultationTicketId,
     hpId,
-    patientId: resolvedPatientId
+    patientId
   });
-
-  const [userInfo, setUserInfo] = useState<GetUser["data"] | null>(null);
-  useEffect(() => {
-    async function fetchUserInfo() {
-      if (userId && typeof userId === "string" && userId.trim() !== "") {
-        try {
-          const res = await getUserAction(userId);
-          if (res && res?.data) {
-            setUserInfo(res.data);
-          } else {
-            setUserInfo(null);
-          }
-        } catch (e) {
-          setUserInfo(null);
-        }
-      } else {
-        setUserInfo(null);
-      }
-    }
-    fetchUserInfo();
-  }, [userId]);
 
   return (
     <Card className="group/medical-certificate">
@@ -80,7 +56,7 @@ export default function MedicalCertificate({ consultationTicketId, clinicUid, hp
                 consultationTicketId={consultationTicketId}
                 onCreateMedicalCertificate={mutate}
                 userInfo={userInfo}
-                patientId={resolvedPatientId}
+                patientId={patientId}
                 hpId={hpId}
               />
             </Suspend>
@@ -90,13 +66,13 @@ export default function MedicalCertificate({ consultationTicketId, clinicUid, hp
       <CardContent className=" h-[25rem] overflow-y-auto no-scrollbar scrollBox">
         <div className="grid gap-1">
           <Each
-            of={certificates?.data ?? []}
+            of={certificates?.data as MedicalCertificate[] ?? []}
             fallback={
               <p className="text-center text-muted-foreground">
                 No recent medical certificate to show.
               </p>
             }
-            render={(certificate) => (
+            render={(certificate: MedicalCertificate) => (
               <MedicalCertificateItem certificate={certificate} onUpdated={mutate} />
             )}
           />

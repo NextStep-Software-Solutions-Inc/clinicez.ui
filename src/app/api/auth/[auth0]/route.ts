@@ -42,8 +42,8 @@ export const GET = handleAuth({
     }
   },
 
-  async sigup (req: NextApiRequest, res: NextApiResponse) {
-    try { 
+  async sigup(req: NextApiRequest, res: NextApiResponse) {
+    try {
       const { redirectUri } = getUrls(req);
       return await handleLogin(req, res, {
         authorizationParams: {

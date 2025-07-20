@@ -8,18 +8,15 @@ import {
   CardHeader,
   CardTitle
 } from "@components/ui/card";
-import React, { useEffect, useState } from "react";
 import Each from "@components/utils/Each";
 import Suspend from "@components/Suspend";
 import dynamic from "next/dynamic";
-import { Camera, Pill } from "lucide-react";
-import { getUserAction } from "@/actions/users/user.action";
-// Placeholder for ImagingStudiesItem and useImagingStudies
-// Will be replaced with actual imports when implemented ~ Kyle
-// import ImagingStudiesItem from "@components/ImagingStudiesItem";
-// import { useImagingStudies } from "@hooks/useImagingStudies";
+import { Camera } from "lucide-react";
+import { useImagingStudies } from "@/hooks/useImagingStudies";
+import ImagingStudiesItem, { ImagingStudy } from "./ImagingStudiesItem";
+import { PatientProfile } from "../consultation/ConsultationDetails";
 const CreateImagingStudiesModal = dynamic(
-  () => import("@components/clinic/clinical-records/CreateImagingStudiesModal")
+  () => import("@/components/clinic/clinical-records/CreateImagingStudiesModal")
 );
 
 export interface ImagingStudiesProps {
@@ -27,23 +24,17 @@ export interface ImagingStudiesProps {
   clinicUid?: string;
   hpId?: number;
   isArchived?: boolean;
-  patientId?: number | string;
-  userId?: string;
+  patientId?: number;
+  userInfo?: PatientProfile | null;
 }
 
-export default function ImagingStudies({ consultationTicketId, clinicUid, hpId, patientId }: ImagingStudiesProps) {
-  // Will be replaced with actual hook when implemented ~ Kyle
-  // const { data: studies, mutate } = useImagingStudies({
-  //   isArchived: false,
-  //   consultationTicketId,
-  //   clinicUid,
-  //   hpId,
-  //   patientId,
-  // });
-  const studies = { data: [] };
-  const mutate = () => { };
-
-  const [userInfo, setUserInfo] = useState<any>(null);
+export default function ImagingStudies({ consultationTicketId, clinicUid, hpId, patientId, userInfo }: ImagingStudiesProps) {
+  const { data: studies, mutate } = useImagingStudies({
+    clinicUid,
+    consultationTicketId,
+    hpId,
+    patientId
+  });
 
   return (
     <Card className="group/imaging-studies">
@@ -61,7 +52,10 @@ export default function ImagingStudies({ consultationTicketId, clinicUid, hpId, 
               <CreateImagingStudiesModal
                 clinicUid={clinicUid ?? ""}
                 onCreateImagingStudy={mutate}
-                userInfo={userInfo}
+                userInfo={userInfo ?? null}
+                patientId={patientId}
+                hpId={hpId}
+                consultationTicketId={consultationTicketId}
               />
             </Suspend>
           </div>
@@ -70,15 +64,17 @@ export default function ImagingStudies({ consultationTicketId, clinicUid, hpId, 
       <CardContent className=" h-[25rem] overflow-y-auto no-scrollbar scrollBox">
         <div className="grid gap-1">
           <Each
-            of={studies?.data ?? []}
+            of={studies?.data as ImagingStudy[] ?? []}
             fallback={
               <p className="text-center text-muted-foreground">
                 No recent imaging study to show.
               </p>
             }
             render={(study) => (
-              // <ImagingStudiesItem study={study} onUpdated={mutate} />
-              <div className="border rounded p-2">Imaging Study Item Placeholder</div>
+              <ImagingStudiesItem
+                study={study}
+                userInfo={userInfo}
+                onUpdated={mutate} />
             )}
           />
         </div>

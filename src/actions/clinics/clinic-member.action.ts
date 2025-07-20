@@ -6,7 +6,6 @@ import { getCachedSession } from "../session.action";
 import { withErrorHandling } from "@/lib/with-error-handling";
 import { hasCodeProperty } from "@/lib/utils";
 import { sessionCheck } from "@/lib/auth";
-import { managementClient } from "@/services/auth0/management-client";
 
 export type GetClinicMembersFilters = {
   clinicUid: string;

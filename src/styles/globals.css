@@ -92,6 +92,7 @@
 html,
 body {
   margin: 0;
+  overscroll-behavior: none;
 }
 
 /* Hide scrollbar for Chrome, Safari and Opera */

@@ -41,6 +41,60 @@ export type GetClinicsFilters = {
   isPublic?: boolean;
 }
 
+export type GetClinicsV2 = Awaited<ReturnType<typeof getClinicsV2Action>>;
+export const getClinicsV2Action = withErrorHandling(
+  cache(async (filters?: GetClinicsFilters) => {
+    await sessionCheck();
+
+    const { clinicUid, orgUid, isPublic } = filters || {};
+
+    const clinics = await prisma.clinic.findMany({
+      where: {
+        isActive: true,
+        ...(clinicUid ? { clinicUid } : {}),
+        ...(orgUid
+          ? {
+            ClinicOrganizations: {
+              some: {
+                Organization: { orgUid },
+              },
+            },
+          }
+          : {}),
+        ...(typeof isPublic === "boolean"
+          ? {
+            ClinicSetting: {
+              isPublic,
+            },
+          }
+          : {}),
+      },
+      select: {
+        clinicUid: true,
+        name: true,
+        description: true,
+        ClinicMembers: {
+          where: { isActive: true },
+          select: { id: true },
+        },
+      },
+      orderBy: { name: "asc" },
+    });
+
+    return {
+      message: "Clinics fetched successfully.",
+      data: clinics.map((clinic) => ({
+        clinicUid: clinic.clinicUid,
+        name: clinic.name,
+        description: clinic.description,
+        memberCount: clinic.ClinicMembers.length,
+      })),
+    };
+
+  })
+);
+
+
 export type GetClinics = Awaited<ReturnType<typeof getClinicsAction>>
 export const getClinicsAction = withErrorHandling(cache(async (filters?: GetClinicsFilters) => {
 

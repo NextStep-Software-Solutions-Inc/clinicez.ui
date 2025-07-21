@@ -3,49 +3,37 @@ import "server-only";
 import prisma from "@lib/prisma";
 import { getCachedSession } from "@actions/session.action";
 import { withErrorHandling } from "@/lib/with-error-handling";
-import { error } from "console";
 import { hasCodeProperty } from "@/lib/utils";
 
-
 export type GetPrescriptionsFilter = {
-    clinicUid?: string,
-    hpId?: number,
-    isArchived?: boolean
+  clinicUid?: string,
+  hpId?: number,
+  isArchived?: boolean,
+  consultationTicketId?: number,
+  patientId?: string
 }
 export type GetPrescriptions = Awaited<ReturnType<typeof getPrescriptionsAction>>
 export const getPrescriptionsAction = withErrorHandling(async (filters?: GetPrescriptionsFilter) => {
-
   const session = await getCachedSession()
-  if(!session) throw new Error("Unauthorized")
+  if (!session) throw new Error("Unauthorized")
 
-  const { clinicUid, hpId, isArchived } = filters || {}
-    
+  const { clinicUid, hpId, isArchived, consultationTicketId } = filters || {}
+
+  const where: any = {
+    hpId: hpId ?? undefined,
+    isArchived: isArchived,
+    Clinic: clinicUid ? { clinicUid } : undefined,
+    Medication: consultationTicketId ? { consultationTicketId } : undefined,
+  };
+
   const prescriptions = await prisma.prescription.findMany({
-    orderBy: {
-      createdAt: 'desc'
-    },
-    where: {
-      hpId,
-      Clinic: {
-        clinicUid
-      },
-      isArchived
-    },
+    orderBy: { createdAt: "desc" },
+    where,
     include: {
-      DocumentTemplate: {
-        select: {
-          name: true
-        }
-      },
+      DocumentTemplate: { select: { name: true } },
       HealthcareProvider: {
         select: {
-          HPProfile: {
-            select: {
-              title: true,
-              name: true,
-              suffix: true
-            }
-          }
+          HPProfile: { select: { title: true, name: true, suffix: true } }
         }
       },
       Medication: {
@@ -60,17 +48,12 @@ export const getPrescriptionsAction = withErrorHandling(async (filters?: GetPres
               suffix: true
             }
           },
-          _count: {
-            select: {
-              MedicationDrugs: true
-            }
-          }
+          _count: { select: { MedicationDrugs: true } }
         }
       }
     }
-  })
-  return {message: "Successfully fetched prescriptions", data: prescriptions}
-
+  });
+  return { message: "Successfully fetched prescriptions", data: prescriptions };
 })
 
 type CreatePrescriptionPayload = {
@@ -83,12 +66,12 @@ type CreatePrescriptionPayload = {
 export const createPrescriptionAction = withErrorHandling(async (payload: CreatePrescriptionPayload) => {
 
   const session = await getCachedSession()
-  if(!session) throw new Error("Unauthorized")
-  const {clinicUid, templateId, name, hpId, medicationId } = payload
-  
+  if (!session) throw new Error("Unauthorized")
+  const { clinicUid, templateId, name, hpId, medicationId } = payload
+
   const template = templateId ? templateId : (await getClinicPrescriptionSetting(clinicUid))?.prescriptionTemplateId
-  
-  if(!template) throw new Error("No prescription template found")
+
+  if (!template) throw new Error("No prescription template found")
 
   await prisma.prescription.create({
     data: {
@@ -120,17 +103,17 @@ export const createPrescriptionAction = withErrorHandling(async (payload: Create
 
 })
 
-export const updatePrescriptionActions = withErrorHandling(async (payload: {id: number, name?: string}) => {
+export const updatePrescriptionActions = withErrorHandling(async (payload: { id: number, name?: string }) => {
 
   const session = await getCachedSession()
-  if(!session) throw new Error("Unauthorized")
-  const {id, name} = payload
+  if (!session) throw new Error("Unauthorized")
+  const { id, name } = payload
   await prisma.prescription.update({
-    where: {id},
-    data: {name}
+    where: { id },
+    data: { name }
   })
 
-  return { message: "Successfully updated prescription", data: undefined}
+  return { message: "Successfully updated prescription", data: undefined }
 
 })
 
@@ -146,12 +129,12 @@ const getClinicPrescriptionSetting = async (clinicUid: string) => {
 
 export type GetPrescription = Awaited<ReturnType<typeof getPrescriptionAction>>
 export const getPrescriptionAction = withErrorHandling(async (id: number) => {
-  
+
   const session = await getCachedSession()
-  if(!session) throw new Error("Unauthorized")
-  
+  if (!session) throw new Error("Unauthorized")
+
   const prescription = await prisma.prescription.findUnique({
-    where: {id},
+    where: { id },
     include: {
       DocumentTemplate: {
         select: {
@@ -221,21 +204,21 @@ export const getPrescriptionAction = withErrorHandling(async (id: number) => {
       }
     }
   })
-  return {message: "Successfully fetched prescription", data: prescription}
+  return { message: "Successfully fetched prescription", data: prescription }
 })
 
 export const archivePrescriptionAction = withErrorHandling(async (id: number) => {
-    
+
   const session = await getCachedSession()
-  if(!session) throw new Error("Unauthorized")
-    
+  if (!session) throw new Error("Unauthorized")
+
   await prisma.prescription.update({
-    where: {id, isArchived: false},
-    data: {isArchived: true}
+    where: { id, isArchived: false },
+    data: { isArchived: true }
   })
-  
-  return {message: "Successfully archived prescription", data: undefined}
-}, async error => {
-  if(hasCodeProperty(error) && error.code === 'P2025') return 'Prescription not found';
+
+  return { message: "Successfully archived prescription", data: undefined }
+}, error => {
+  if (hasCodeProperty(error) && error.code === 'P2025') return 'Prescription not found';
   return 'Failed to archive prescription';
 });

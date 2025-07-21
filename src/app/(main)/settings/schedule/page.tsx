@@ -1,10 +1,9 @@
 "use client"
 
 import Suspend from "@components/Suspend";
-import dynamic from "next/dynamic";
 import { Separator } from "@components/ui/separator";
 import React from "react";
-const ScheduleSettingsForm = dynamic(() => import("./ScheduleSettingsForm"), { ssr: false });
+import ScheduleSettings from "./ScheduleSettings";
 
 export default function ScheduleSettingsPage() {
   return (
@@ -17,7 +16,7 @@ export default function ScheduleSettingsPage() {
       </div>
       <Separator />
       <Suspend>
-        <ScheduleSettingsForm />
+        <ScheduleSettings />
       </Suspend>
     </div>
   )

@@ -13,7 +13,7 @@ export const GET = withJwtAuth(async (req: NextRequest, { params }: {
     }>
   }) => {
     
-  const { orgUid, userId } = await params
+  const { orgUid, userId } = await params;
   const organization = await getOrgUserEmploymentRecordAction({orgUid, userId})
   return NextResponse.json(organization, {status: 200});
 });

@@ -42,7 +42,7 @@ export default function DisabilityChart({ chartData }: DisabilityChartProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Top {chartData.length} Patient Disability</CardTitle>
+        <CardTitle>Top {chartData.length} Disability</CardTitle>
         {/* <CardDescription>January - June 2024</CardDescription> */}
       </CardHeader>
       <CardContent>

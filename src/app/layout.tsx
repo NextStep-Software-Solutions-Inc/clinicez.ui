@@ -1,6 +1,6 @@
 import { getAccessTokenAction } from "@/actions/session.action";
 import { SpeedInsights } from "@vercel/speed-insights/next";
-import { Montserrat } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import { Toaster as SonnerToaster } from "sonner";
 import { Toaster } from "@components/ui/toaster";
 
@@ -17,7 +17,7 @@ import { findOrCreateUserAction } from "@actions/users/user.action";
 import { redirect } from "next/navigation";
 const HotJar = dynamic(() => import("@components/HotJar"), { ssr: true });
 
-const montserrat = Montserrat({ subsets: ["latin"] });
+const plusJakartaSans = Plus_Jakarta_Sans({ subsets: ["latin"] });
 
 export const maxDuration = 40;
 export const metadata = {
@@ -41,7 +41,7 @@ export default async function RootLayout({ children }: Props) {
   return (
     <html lang="en">
       <HotJar />
-      <body className={`${montserrat.className}`}>
+      <body className={`${plusJakartaSans.className}`}>
         <BypassAutoplay />
         <JotaiProvider>
           <SyncToken

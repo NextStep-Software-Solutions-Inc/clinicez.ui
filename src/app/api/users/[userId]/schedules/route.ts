@@ -7,7 +7,7 @@ export const GET = withJwtAuth(async (req: NextRequest, { params }: {
     userId: string;
   }>
 }) => {
-  const { userId } = await params;
+  const {userId} = await params;
 
   const userSchedules = await getUserSchedulesAction(userId);
   return NextResponse.json(userSchedules, {status: 200});

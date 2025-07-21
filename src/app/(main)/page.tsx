@@ -12,7 +12,7 @@ export default async function HomePage() {
   const session = await getCachedSession();
   const authenticated = !!session  
   return (
-    <main className="flex flex-col ">
+    <main className="flex flex-col">
       <section className="flex-1 lg:bg-gradient-to-l from-[#6DEBF4] via-[#C3FBFF] to-[#D3FCFF] bg-opacity-30 ">
         <div className="relative container mx-auto p-4 py-56">
           <div className="mx-auto sm:px-6 lg:px-8">

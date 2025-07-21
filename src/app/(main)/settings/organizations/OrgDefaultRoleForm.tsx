@@ -36,10 +36,9 @@ const orgDefaultRoleFormSchema = z.object({
 });
 type OrgDefaultRoleFormSchema = z.infer<typeof orgDefaultRoleFormSchema>;
 
-export const OrgDefaultRoleForm = ({ defaultRoleId, organization: {name, orgUid}, userId }: OrgDefaultRoleFormProps) => {
-  
-  const {data: orgRoles} = useOrganizationRoles({orgUid, userId});
+export const OrgDefaultRoleForm = ({ defaultRoleId, organization: { name, orgUid }, userId }: OrgDefaultRoleFormProps) => {
 
+  const { data: orgRoles } = useOrganizationRoles({ orgUid, userId });
 
   const form = useForm<OrgDefaultRoleFormSchema>({
     resolver: zodResolver(orgDefaultRoleFormSchema),
@@ -55,7 +54,7 @@ export const OrgDefaultRoleForm = ({ defaultRoleId, organization: {name, orgUid}
         userId: userId,
         orgUid: orgUid,
         roleId: data.roleId
-      }) , {
+      }), {
         loading: "Updating default role...",
         success: (res) => {
           form.reset(data);
@@ -82,7 +81,7 @@ export const OrgDefaultRoleForm = ({ defaultRoleId, organization: {name, orgUid}
               </FormControl>
               <SelectContent>
                 <Each
-                  of={orgRoles?.data?? []}
+                  of={orgRoles?.data ?? []}
                   render={({ id, name }) => (
                     <SelectItem value={id.toString()}>{name}</SelectItem>
                   )} />
@@ -93,7 +92,7 @@ export const OrgDefaultRoleForm = ({ defaultRoleId, organization: {name, orgUid}
             </FormDescription>
             <FormMessage />
           </FormItem>
-        )} 
+        )}
       />
       <ConditionalRender condition={form.formState.isDirty}>
         <ActionButton disabled={!form.formState.isDirty} type="submit">Update</ActionButton>

@@ -12,7 +12,21 @@ import { getPermissionsAction } from "@actions/permission.action";
 import { PERMISSIONS } from "@lib/permissions";
 import { OrganizationMemberStatus } from "@/types";
 import { withErrorHandling } from "@/lib/with-error-handling";
-import { parseObject } from '@/lib/utils';
+
+export const isOrgHealthcareProviderAction = async (userId: string, orgUid: string) => {
+  const orgMember = await prisma.organizationMember.findFirst({
+    where: {
+      User: {
+        userId
+      },
+      Organization: {
+        orgUid,
+        isActive: true
+      },
+    },
+  });
+  return !!orgMember;
+}
 
 export type GetOrgMembersFilters = {
   userId?: string;

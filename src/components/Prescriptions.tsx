@@ -19,11 +19,22 @@ const CreatePrescriptionModal = dynamic(
   () => import("@components/prescription/modals/CreatePrescriptionModal")
 );
 
-export interface PrescriptionsProps {}
+export interface PrescriptionsProps {
+  consultationTicketId?: number;
+  clinicUid?: string;
+  hpId?: number;
+  isArchived?: boolean;
+  patientId?: number;
+  userId?: string;
+}
 
-export default function Prescriptions({}: PrescriptionsProps) {
+export default function Prescriptions({ consultationTicketId, clinicUid, hpId, patientId }: PrescriptionsProps) {
   const { data: prescriptions, mutate } = usePrescriptions({
-    isArchived: false
+    isArchived: false,
+    consultationTicketId,
+    clinicUid,
+    hpId,
+    patientId: typeof patientId === "number" ? String(patientId) : patientId,
   });
 
   return (
@@ -52,7 +63,7 @@ export default function Prescriptions({}: PrescriptionsProps) {
             of={prescriptions?.data ?? []}
             fallback={
               <p className="text-center text-muted-foreground">
-              No recent prescription to show.
+                No recent prescription to show.
               </p>
             }
             render={(prescription) => (
@@ -61,7 +72,7 @@ export default function Prescriptions({}: PrescriptionsProps) {
           />
         </div>
       </CardContent>
-      <CardFooter/>
+      <CardFooter />
     </Card>
   );
 }

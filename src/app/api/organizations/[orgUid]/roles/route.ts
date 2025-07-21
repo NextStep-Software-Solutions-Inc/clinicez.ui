@@ -9,7 +9,7 @@ export const GET = withJwtAuth(async (req: NextRequest, { params }: {
     orgUid: string;
   }>
 }) => {
-  const { orgUid } = await params;
+  const {orgUid} = await params;
   const searchParams = req.nextUrl.searchParams
 
   const filters = parseObject(Object.fromEntries(searchParams.entries()));

@@ -7,7 +7,8 @@ export const GET = withJwtAuth(async (req: NextRequest, { params }: {
     userId: string;
   }>
 }) => {
-  const { userId } = await params;
+  const {userId} = await params;
+  const searchParams = req.nextUrl.searchParams
   
   const defaultOrgRole = await getUserDefaultOrgsRole(userId);
   return NextResponse.json(defaultOrgRole, {status: 200});

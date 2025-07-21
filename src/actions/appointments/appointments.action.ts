@@ -801,58 +801,62 @@ export const rescheduleAppointmentAction = withErrorHandling(async ({ appointmen
   const session = await getCachedSession();
   if (!session) throw new Error("Unauthorized");
 
-  await prisma.$transaction(async (prisma) => {
-    await prisma.appointmentAttribute.update({
-      where: {
-        appointmentId,
-        Appointment: {
-          isActive: true
-        }
-      },
-      data: {
-        date: dayjs(date).endOf("day").toDate(),
-        timeStart: startDateTime,
-        timeEnd: endDateTime,
-        rescheduledAt: new Date(),
-        RescheduledBy: {
-          connect: {
-            userId: session.user.sub
+  try {
+    await prisma.$transaction(async (prisma) => {
+      await prisma.appointmentAttribute.update({
+        where: {
+          appointmentId,
+          Appointment: {
+            isActive: true
           }
         },
-        ...(assign ? { status: "ROUTED" } : {})
-      }
-    });
-    if (assign) {
-      await prisma.appointmentRouting.create({
         data: {
-          Appointment: {
-            connect: {
-              id: appointmentId,
-            }
-          },
-          RoutedBy: {
+          date: dayjs(date).endOf("day").toDate(),
+          timeStart: startDateTime,
+          timeEnd: endDateTime,
+          rescheduledAt: new Date(),
+          RescheduledBy: {
             connect: {
               userId: session.user.sub
             }
           },
-          RoutedTo: {
-            connect: {
-              id: hpId
-            }
-          },
-          status: "PENDING"
+          ...(assign ? { status: "ROUTED" } : {})
         }
       });
+      if (assign) {
+        await prisma.appointmentRouting.create({
+          data: {
+            Appointment: {
+              connect: {
+                id: appointmentId,
+              }
+            },
+            RoutedBy: {
+              connect: {
+                userId: session.user.sub
+              }
+            },
+            RoutedTo: {
+              connect: {
+                id: hpId
+              }
+            },
+            status: "PENDING"
+          }
+        });
+      }
+    }, {
+      timeout: 5000,
+      maxWait: 10000,
+      isolationLevel: Prisma.TransactionIsolationLevel.Serializable
+    });
+    return { message: "Appointment rescheduled", data: undefined }
+  } catch (error) {
+    if (hasCodeProperty(error) && error.code === "P2025") {
+      throw new Error("Appointment not found or you are not authorized to reschedule it");
     }
-  }, {
-    timeout: 5000,
-    maxWait: 10000,
-    isolationLevel: Prisma.TransactionIsolationLevel.Serializable
-  });
-  return { message: "Appointment rescheduled", data: undefined }
-}, error => {
-  if (hasCodeProperty(error) && error.code === "P2025") return "Appointment not found or you are not authorized to reschedule it";
-  return "Failed to reschedule appointment";
+    throw new Error("Failed to reschedule appointment");
+  }
 });
 
 const getUserWhitelistFilters = withErrorHandling(async (userId: string, clinicUid?: string) => {

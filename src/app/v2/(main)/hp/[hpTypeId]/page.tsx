@@ -2,13 +2,14 @@ import { getHPsAction } from "@/actions/hp.actions";
 import { notFound } from "next/navigation";
 
 interface Props {
-  params: {
+  params: Promise<{
     hpTypeId: string;
-  };
+  }>;
 }
 
 export default async function HPByTypePage({ params }: Props) {
-  const id = Number(params.hpTypeId);
+  const { hpTypeId } = await params;
+  const id = Number(hpTypeId);
   if (isNaN(id)) return notFound();
 
   const hps = await getHPsAction({ hpTypeId: id });

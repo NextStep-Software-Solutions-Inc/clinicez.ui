@@ -67,21 +67,23 @@ export const suspendClinicMemberAction = withErrorHandling(async (clinicMemberId
   const session = await getCachedSession()
   if (!session) throw new Error("User not authenticated")
 
-  await prismaClient.clinicMember.update({
-    where: {
-      id: clinicMemberId
-    },
-    data: {
-      status: "SUSPENDED",
-    }
-  })
+  try {
+    await prismaClient.clinicMember.update({
+      where: {
+        id: clinicMemberId
+      },
+      data: {
+        status: "SUSPENDED",
+      }
+    })
 
-  return { message: "Successfully suspended clinic member.", data: null }
-}, (error) => {
-  if (hasCodeProperty(error) && error.code === "P2003") {
-    return "Cannot be remove due to existing dependencies."
+    return { message: "Successfully suspended clinic member.", data: null }
+  } catch (error) {
+    if (hasCodeProperty(error) && error.code === "P2003") {
+      throw new Error("Cannot be remove due to existing dependencies.")
+    }
+    throw new Error("An error occurred while suspending the clinic member.")
   }
-  return "An error occurred while suspending the clinic member."
 });
 
 export const removeClinicMemberAction = withErrorHandling(async (clinicMemberId: number) => {
@@ -89,22 +91,24 @@ export const removeClinicMemberAction = withErrorHandling(async (clinicMemberId:
   const session = await getCachedSession()
   if (!session) throw new Error("User not authenticated")
 
-  await prismaClient.clinicMember.delete({
-    where: {
-      id: clinicMemberId,
-      Role: {
-        name: {
-          not: "owner"
+  try {
+    await prismaClient.clinicMember.delete({
+      where: {
+        id: clinicMemberId,
+        Role: {
+          name: {
+            not: "owner"
+          }
         }
       }
-    }
-  })
+    })
 
-  return { message: "Successfully deleted clinic member.", data: null }
-}, (error) => {
-  if (hasCodeProperty(error) && error.code === "P2003") return "Cannot be delete due to existing dependencies."
-  if (hasCodeProperty(error) && error.code === "P2025") return "An error occurred while deleted the clinic member. owner cannot be deleted."
-  return "An error occurred while deleted the clinic member."
+    return { message: "Successfully deleted clinic member.", data: null }
+  } catch (error) {
+    if (hasCodeProperty(error) && error.code === "P2003") throw new Error("Cannot be delete due to existing dependencies.")
+    if (hasCodeProperty(error) && error.code === "P2025") throw new Error("An error occurred while deleted the clinic member. owner cannot be deleted.")
+    throw new Error("An error occurred while deleted the clinic member.")
+  }
 });
 
 export const updateClinicMemberRoleAction = withErrorHandling(async (clinicMemberId: number, roleId: number) => {
@@ -112,28 +116,30 @@ export const updateClinicMemberRoleAction = withErrorHandling(async (clinicMembe
   const session = await getCachedSession()
   if (!session) throw new Error("User not authenticated")
 
-  await prismaClient.clinicMember.update({
-    where: {
-      id: clinicMemberId,
-      Role: {
-        name: {
-          not: "owner"
+  try {
+    await prismaClient.clinicMember.update({
+      where: {
+        id: clinicMemberId,
+        Role: {
+          name: {
+            not: "owner"
+          }
+        }
+      },
+      data: {
+        Role: {
+          connect: {
+            id: roleId
+          }
         }
       }
-    },
-    data: {
-      Role: {
-        connect: {
-          id: roleId
-        }
-      }
-    }
-  })
+    })
 
-  return { message: "Successfully updated clinic member role.", data: null }
-}, error => {
-  if (hasCodeProperty(error) && error.code === "P2025") return "An error occurred while updating the clinic member role. owner cannot be updated."
-  return "An error occurred while updating the clinic member role."
+    return { message: "Successfully updated clinic member role.", data: null }
+  } catch (error) {
+    if (hasCodeProperty(error) && error.code === "P2025") throw new Error("An error occurred while updating the clinic member role. owner cannot be updated.")
+    throw new Error("An error occurred while updating the clinic member role.")
+  }
 })
 
 type AddClinicMemberPayload = {
@@ -146,59 +152,61 @@ export const addClinicMemberAction = withErrorHandling(async (payload: AddClinic
   await sessionCheck()
   const { clinicUid, userId, roleId } = payload;
 
-  // Start transaction
-  const result = await prismaClient.$transaction(async (prisma) => {
-    const initialPermissions = await prisma.clinicRoleInitialPermission.findMany({
-      where: {
-        Clinic: {
-          clinicUid
-        },
-        ClinicRole: {
-          id: roleId,
-          isActive: true,
-        },
-        Permission: { isActive: true }
-      },
-      select: {
-        id: true,
-        permissionId: true,
-      }
-    });
-
-    const createdMember = await prisma.clinicMember.create({
-      data: {
-        status: "ACTIVE",
-        Clinic: {
-          connect: {
+  try {
+    // Start transaction
+    const result = await prismaClient.$transaction(async (prisma) => {
+      const initialPermissions = await prisma.clinicRoleInitialPermission.findMany({
+        where: {
+          Clinic: {
             clinicUid
-          }
+          },
+          ClinicRole: {
+            id: roleId,
+            isActive: true,
+          },
+          Permission: { isActive: true }
         },
-        User: {
-          connect: {
-            userId
-          }
-        },
-        Role: {
-          connect: {
-            id: roleId
-          }
-        },
-      }
+        select: {
+          id: true,
+          permissionId: true,
+        }
+      });
+
+      const createdMember = await prisma.clinicMember.create({
+        data: {
+          status: "ACTIVE",
+          Clinic: {
+            connect: {
+              clinicUid
+            }
+          },
+          User: {
+            connect: {
+              userId
+            }
+          },
+          Role: {
+            connect: {
+              id: roleId
+            }
+          },
+        }
+      });
+
+      await prisma.clinicMemberPermission.createMany({
+        skipDuplicates: true,
+        data: initialPermissions.map(permission => ({
+          clinicMemberId: createdMember.id,
+          permissionId: permission.permissionId
+        }))
+      });
+
+      return createdMember;
     });
 
-    await prisma.clinicMemberPermission.createMany({
-      skipDuplicates: true,
-      data: initialPermissions.map(permission => ({
-        clinicMemberId: createdMember.id,
-        permissionId: permission.permissionId
-      }))
-    });
-
-    return createdMember;
-  });
-
-  return { message: "Successfully added clinic member.", data: null }
-}, (error) => {
-  if (hasCodeProperty(error) && error.code === "P2002") return "User already a member of the clinic."
-  return "An error occurred while adding the clinic member."
+    return { message: "Successfully added clinic member.", data: null }
+  } catch (error) {
+    if (hasCodeProperty(error) && error.code === "P2002") throw new Error("User already a member of the clinic.")
+    throw new Error("An error occurred while adding the clinic member.")
+  }
 })

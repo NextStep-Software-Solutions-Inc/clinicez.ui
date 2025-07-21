@@ -212,13 +212,15 @@ export const archivePrescriptionAction = withErrorHandling(async (id: number) =>
   const session = await getCachedSession()
   if (!session) throw new Error("Unauthorized")
 
-  await prisma.prescription.update({
-    where: { id, isArchived: false },
-    data: { isArchived: true }
-  })
+  try {
+    await prisma.prescription.update({
+      where: { id, isArchived: false },
+      data: { isArchived: true }
+    })
 
-  return { message: "Successfully archived prescription", data: undefined }
-}, error => {
-  if (hasCodeProperty(error) && error.code === 'P2025') return 'Prescription not found';
-  return 'Failed to archive prescription';
+    return { message: "Successfully archived prescription", data: undefined }
+  } catch (error) {
+    if (hasCodeProperty(error) && error.code === 'P2025') throw new Error('Prescription not found');
+    throw new Error('Failed to archive prescription');
+  }
 });

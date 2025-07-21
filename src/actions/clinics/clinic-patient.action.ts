@@ -128,51 +128,53 @@ export const addClinicPatientAction = withErrorHandling(async ({ clinicUid, user
   const auth0User = await managementClient.users.get({ id: userId })
   if (!auth0User.data.email_verified) throw new Error("User email is not verified")
 
-  await prismaClient.$transaction(async (prisma) => {
-    const patientRole = await prisma.clinicRole.findFirstOrThrow({
-      where: {
-        name: {
-          equals: "Patient",
-          mode: "insensitive"
-        }
-      }
-    })
-    const rolePermissions = await prisma.clinicRoleInitialPermission.findMany({
-      where: {
-        Clinic: {
-          clinicUid,
-        },
-        clinicRoleId: patientRole.id
-      }
-    })
-    await prisma.clinicPatient.create({
-      data: {
-        Clinic: {
-          connect: {
-            clinicUid
-          }
-        },
-        Patient: {
-          connect: {
-            userId
-          }
-        },
-        ClinicPatientPermissions: {
-          createMany: {
-            data: rolePermissions.map(permission => ({
-              permissionId: permission.permissionId
-            }))
+  try {
+    await prismaClient.$transaction(async (prisma) => {
+      const patientRole = await prisma.clinicRole.findFirstOrThrow({
+        where: {
+          name: {
+            equals: "Patient",
+            mode: "insensitive"
           }
         }
-      }
+      })
+      const rolePermissions = await prisma.clinicRoleInitialPermission.findMany({
+        where: {
+          Clinic: {
+            clinicUid,
+          },
+          clinicRoleId: patientRole.id
+        }
+      })
+      await prisma.clinicPatient.create({
+        data: {
+          Clinic: {
+            connect: {
+              clinicUid
+            }
+          },
+          Patient: {
+            connect: {
+              userId
+            }
+          },
+          ClinicPatientPermissions: {
+            createMany: {
+              data: rolePermissions.map(permission => ({
+                permissionId: permission.permissionId
+              }))
+            }
+          }
+        }
+      })
     })
-  })
 
-  return { message: "Clinic Patient added successfully", data: null }
-
-}, error => {
-  if (hasCodeProperty(error) && error.code === "P2002") {
-    return "Clinic Patient already exists"
+    return { message: "Clinic Patient added successfully", data: null }
+  } catch (error) {
+    if (hasCodeProperty(error) && error.code === "P2002") {
+      throw new Error("Clinic Patient already exists")
+    }
+    throw new Error("An error occurred while adding the clinic patient.")
   }
 })
 

@@ -22,12 +22,12 @@ import MedicalCertificate from "../medical-certificate/MedicalCertificate";
 import ImagingStudies from "../imaging-studies/ImagingStudies";
 import LaboratoryRequest from "../laboratory-requests/LaboratoryRequest";
 
-const VitalSigns = dynamic(() => import('./VitalSigns'), { ssr: false, loading: () => <div>Loading...</div> });
-const Conversation = dynamic(() => import('./Conversation'), { ssr: false, loading: () => <div>Loading...</div> });
-const Files = dynamic(() => import('./Files'), { ssr: false, loading: () => <div>Loading...</div> });
-const Interventions = dynamic(() => import('./Interventions'), { ssr: false, loading: () => <div>Loading...</div> });
-const NurseAssessment = dynamic(() => import('./NurseAssessment'), { ssr: false, loading: () => <div>Loading...</div> });
-const ConsultationNotes = dynamic(() => import('./ConsultationNotes'), { ssr: false, loading: () => <div>Loading...</div> });
+const VitalSigns = dynamic(() => import('./VitalSigns'), { loading: () => <div>Loading...</div> });
+const Conversation = dynamic(() => import('./Conversation'), { loading: () => <div>Loading...</div> });
+const Files = dynamic(() => import('./Files'), { loading: () => <div>Loading...</div> });
+const Interventions = dynamic(() => import('./Interventions'), { loading: () => <div>Loading...</div> });
+const NurseAssessment = dynamic(() => import('./NurseAssessment'), { loading: () => <div>Loading...</div> });
+const ConsultationNotes = dynamic(() => import('./ConsultationNotes'), { loading: () => <div>Loading...</div> });
 interface ConsultationDetailsProps {
   consultation: NonNullable<GetConsultationTicket["data"]>
 }

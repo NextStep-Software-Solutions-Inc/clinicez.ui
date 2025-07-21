@@ -18,7 +18,7 @@ import {
 import { Input } from "@components/ui/input"
 
 import {toast} from "sonner"
-import { useUser } from "@auth0/nextjs-auth0/client"
+import { useUser } from "@auth0/nextjs-auth0"
 import { Check } from "lucide-react"
 import dayjs from "@lib/day-utils";
 

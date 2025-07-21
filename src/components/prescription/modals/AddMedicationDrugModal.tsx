@@ -2,7 +2,7 @@
 
 import { addMedicationDrugAction } from "@actions/medications/medication-drug.action";
 import { createMedicationAction } from "@actions/medications/medication.action";
-import { useUser } from "@auth0/nextjs-auth0/client";
+import { useUser } from "@auth0/nextjs-auth0";
 import ActionButton from "@components/ActionButton";
 import CustomModalContent from "@components/CustomModalContent";
 import { Button } from "@components/ui/button";

@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useClinicPatients } from "@/hooks/useClinicPatient";
 import { promiseWrapper } from "@/lib/with-error-handling";
-import { useUser } from "@auth0/nextjs-auth0/client";
+import { useUser } from "@auth0/nextjs-auth0";
 import { useParams, useSearchParams } from "next/navigation";
 import { useMemo } from "react";
 import { toast } from "sonner";

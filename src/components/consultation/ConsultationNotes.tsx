@@ -18,7 +18,7 @@ import Each from "@components/utils/Each";
 import GenericSection from "@components/GenericSection";
 import { useNoteTemplate } from "@hooks/useNoteTemplate";
 import { useHPs } from "@hooks/useHP";
-import { useUser } from "@auth0/nextjs-auth0/client";
+import { useUser } from "@auth0/nextjs-auth0";
 interface ConsultationNotesProps {
   consultation: NonNullable<GetConsultationTicket["data"]>;
 }

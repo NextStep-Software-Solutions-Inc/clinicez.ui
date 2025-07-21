@@ -1,7 +1,7 @@
 "use client";
 
 import { upsertUserDisabilityAction } from "@actions/users/user-disability.action";
-import { useUser } from "@auth0/nextjs-auth0/client";
+import { useUser } from "@auth0/nextjs-auth0";
 import ActionButton from "@components/ActionButton";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";

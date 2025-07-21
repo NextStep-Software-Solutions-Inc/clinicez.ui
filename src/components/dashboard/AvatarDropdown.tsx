@@ -1,6 +1,6 @@
 "use client";
 
-import { useUser } from "@auth0/nextjs-auth0/client";
+import { useUser } from "@auth0/nextjs-auth0";
 import { Button } from "@components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@components/ui/dropdown-menu";
 import { Loader2Icon } from "lucide-react";
@@ -9,9 +9,9 @@ import Link from "next/link";
 import React from "react";
 
 export default function AvatarDropdown() {
-  const {isLoading, user} = useUser();
-  if (isLoading) return <Loader2Icon className="w-5 h-5 animate-spin"/>
-  if (!user) return <SignInButton/>
+  const { isLoading, user } = useUser();
+  if (isLoading) return <Loader2Icon className="w-5 h-5 animate-spin" />
+  if (!user) return <SignInButton />
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>

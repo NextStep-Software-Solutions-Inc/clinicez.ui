@@ -14,7 +14,7 @@ import { removeMedicationDrugAction } from "@actions/medications/medication-drug
 import AddMedicationDrugModal from "@components/prescription/modals/AddMedicationDrugModal";
 import { createPrescriptionAction, getPrescriptionAction } from "@actions/medications/prescription.action";
 import { usePermissions } from "@hooks/usePermission";
-import { useUser } from "@auth0/nextjs-auth0/client";
+import { useUser } from "@auth0/nextjs-auth0";
 import { PERMISSIONS } from "@lib/permissions";
 import { promiseWrapper } from "@/lib/with-error-handling";
 import { handlePrintHtmlToPDF } from "@/lib/print-pdf";

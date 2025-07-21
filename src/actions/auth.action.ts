@@ -3,8 +3,8 @@
 import { getAccessToken } from "@auth0/nextjs-auth0";
 export const refreshTokensAction = async () => {
   try {
-    const token = await getAccessToken()
-    return token;
+    const result = await getAccessToken()
+    return result?.accessToken || null;
   } catch (error) {
     let message = "Something went wrong!"
     if(error instanceof Error) {

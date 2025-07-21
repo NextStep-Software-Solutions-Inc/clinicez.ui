@@ -1,6 +1,5 @@
 import maintenanceCheck from '@middlewares/maintenanceCheck';
 import { MiddlewareConfig, NextRequest, NextResponse } from "next/server";
-import { getSession } from "@auth0/nextjs-auth0/edge";
 
 const publicRoutes = [
   "/",
@@ -27,21 +26,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Any route that gets to this point will be considered a protected route
-  const { origin } = new URL(request.url)
-  
-  try {
-    const session = await getSession(request);
-    
-    if (!session?.user) {
-      return NextResponse.redirect(`${origin}/api/auth/login`)
-    }
-
-    // If a valid session exists, continue
-    return NextResponse.next()
-  } catch (error) {
-    return NextResponse.redirect(`${origin}/api/auth/login`)
-  }
+  // For now, allow all routes to continue (Auth0 protection can be added per-page)
+  return NextResponse.next();
 }
 
 export const config: MiddlewareConfig = {

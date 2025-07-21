@@ -4,7 +4,7 @@ import { createAppointmentAction } from "@actions/appointments/appointments.acti
 import BackSubmitAndNext from "@components/SubmitAndNext";
 import React, { FormEvent } from "react";
 import { toast } from "sonner";
-import { useUser } from "@auth0/nextjs-auth0";
+import { useUser } from "@auth0/nextjs-auth0/client";
 import useSound from "use-sound";
 import { useAtom } from "jotai";
 import { bookAppointmentAtom } from "@state/book-appointment";

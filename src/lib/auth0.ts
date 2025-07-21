@@ -1,10 +1,13 @@
-import { Auth0Client } from "@auth0/nextjs-auth0/server";
+import { initAuth0 } from "@auth0/nextjs-auth0";
 
-export const auth0 = new Auth0Client({
-  appBaseUrl: process.env.APP_BASE_URL,
-  authorizationParameters: {
-    redirect_uri: `${process.env.APP_BASE_URL}/auth/callback`,
-    scope: process.env.AUTH0_SCOPE,
-    audience: process.env.AUTH0_AUDIENCE,
+export const auth0 = initAuth0({
+  baseURL: process.env.AUTH0_BASE_URL,
+  issuerBaseURL: process.env.AUTH0_ISSUER_BASE_URL,
+  clientID: process.env.AUTH0_CLIENT_ID,
+  clientSecret: process.env.AUTH0_CLIENT_SECRET,
+  secret: process.env.AUTH0_SECRET,
+  routes: {
+    callback: process.env.AUTH0_CALLBACK_URL || '/api/auth/callback',
+    postLogoutRedirect: process.env.AUTH0_POST_LOGOUT_REDIRECT_URI || '/'
   }
 });

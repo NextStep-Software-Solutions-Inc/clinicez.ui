@@ -32,7 +32,7 @@ import { AppointmentStatusNav, AppointmentStatusNavProps } from "./AppointmentSt
 import { useParams, useSearchParams } from "next/navigation"
 import Switcher from "@components/dashboard/Switcher"
 import { useClinicRoles } from "@/hooks/useClinicRole"
-import { useUser } from "@auth0/nextjs-auth0"
+import { useUser } from "@auth0/nextjs-auth0/client"
 import { useAtom } from "jotai"
 import { userDefaultOrganizationRoleAtom } from "@state/user-role"
 import AppointmentListWrapper from "../AppointmentListWrapper"

@@ -16,7 +16,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@compo
 import { toast } from "sonner";
 import { setMedicationCompletedAction } from "@actions/medications/medication.action";
 import { useHPs } from "@hooks/useHP";
-import { useUser } from "@auth0/nextjs-auth0";
+import { useUser } from "@auth0/nextjs-auth0/client";
 import { useAtomValue } from "jotai";
 import { sessionClinicAtom } from "@state/session-clinic";
 

@@ -3,7 +3,7 @@
 import { promiseWrapper } from "@/lib/with-error-handling";
 import { GetAppointment } from "@actions/appointments/appointments.action";
 import { createConsultationTicketAction } from "@actions/consultation/consultation-ticket.action";
-import { useUser } from "@auth0/nextjs-auth0";
+import { useUser } from "@auth0/nextjs-auth0/client";
 import ActionButton from "@components/ActionButton"
 import CustomModalContent from "@components/CustomModalContent";
 import { Button } from "@components/ui/button"

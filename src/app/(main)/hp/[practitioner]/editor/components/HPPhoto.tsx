@@ -7,7 +7,7 @@ import { HPProfileType } from "../hp-form.schema";
 import ActionButton from "@components/ActionButton";
 import { uploadMediaAction } from "@actions/blob.action";
 import { Label } from "@components/ui/label";
-import { useUser } from "@auth0/nextjs-auth0";
+import { useUser } from "@auth0/nextjs-auth0/client";
 import { upsertHPAction } from "@actions/hp.actions";
 
 interface HPPhotoProps {

@@ -8,7 +8,7 @@ import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import Suspend from "@components/Suspend";
 import { getHPAction } from "@actions/hp.actions";
-import { useUser } from "@auth0/nextjs-auth0";
+import { useUser } from "@auth0/nextjs-auth0/client";
 
 const steps = ["Healthcare Provider Type", "Plan", "Payment", "Confirmation"];
 interface ApplicationFormProps {

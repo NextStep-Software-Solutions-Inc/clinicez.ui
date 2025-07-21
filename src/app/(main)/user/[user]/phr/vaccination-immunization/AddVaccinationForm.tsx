@@ -11,7 +11,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { createUserVaccinationAction } from "@actions/users/user-vaccination.action";
-import { useUser } from "@auth0/nextjs-auth0";
+import { useUser } from "@auth0/nextjs-auth0/client";
 import { revalidatePath } from "@actions/cache.action";
 import { VaccineType } from "./modal/AddUserVaccinationModal";
 import { UserVaccinationForm, VaccinationForm, vaccinationFormSchema } from "./UserVaccinationForm";

@@ -2,7 +2,7 @@
 import {toast} from "sonner"
 import ActionButton from "@components/ActionButton"
 import Each from "@components/utils/Each"
-import { useUser } from "@auth0/nextjs-auth0"
+import { useUser } from "@auth0/nextjs-auth0/client"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@components/ui/card"
 import { getGoogleAuthUrl } from "@actions/google/auth.action"
 import { Checkbox } from "@components/ui/checkbox"

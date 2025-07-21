@@ -2,7 +2,7 @@
 
 import { GetConsultationTicket } from "@actions/consultation/consultation-ticket.action";
 import { createInterventionAction } from "@actions/consultation/intervention.action";
-import { useUser } from "@auth0/nextjs-auth0";
+import { useUser } from "@auth0/nextjs-auth0/client";
 import ActionButton from "@components/ActionButton"
 import CustomModalContent from "@components/CustomModalContent";
 import { Button } from "@components/ui/button"

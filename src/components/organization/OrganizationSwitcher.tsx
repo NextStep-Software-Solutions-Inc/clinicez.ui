@@ -2,7 +2,7 @@
 import { useParams, usePathname, useRouter } from "next/navigation"
 import Switcher, { SwitcherOptionsType } from "../dashboard/Switcher"
 import { Building } from "lucide-react"
-import { useUser } from "@auth0/nextjs-auth0"
+import { useUser } from "@auth0/nextjs-auth0/client"
 import { useOrgMembers } from "@/hooks/useOrgMember"
 
 interface OrganizationSwitcherProps {

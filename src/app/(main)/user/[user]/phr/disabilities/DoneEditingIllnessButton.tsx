@@ -1,7 +1,7 @@
 "use client";
 
 import { upsertUserIllnessAction } from "@actions/users/user-illness.action";
-import { useUser } from "@auth0/nextjs-auth0";
+import { useUser } from "@auth0/nextjs-auth0/client";
 import ActionButton from "@components/ActionButton";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";

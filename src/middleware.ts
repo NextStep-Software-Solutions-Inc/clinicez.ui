@@ -1,7 +1,6 @@
 import maintenanceCheck from '@middlewares/maintenanceCheck';
 import { MiddlewareConfig, NextRequest, NextResponse } from "next/server";
-import { auth0 } from "./lib/auth0";
-
+import { getSession } from "@auth0/nextjs-auth0/edge";
 
 const publicRoutes = [
   "/",
@@ -16,34 +15,33 @@ export async function middleware(request: NextRequest) {
     return maintenanceResponse;
   }
   
-  // If maintenance check passed, continue to Auth0
-  const authRes = await auth0.middleware(request); // Returns a NextResponse object
-
   const path = request.nextUrl.pathname;
 
-  // Ensure your own middleware does not handle the `/auth` routes, auto-mounted and handled by the SDK
-  if (path.startsWith("/auth")) {
-    return authRes;
+  // Allow access to auth routes 
+  if (path.startsWith("/api/auth")) {
+    return NextResponse.next();
   }
 
   // Allow access to public routes without requiring a session
   if (publicRoutes.includes(path)) {
-    return authRes;
+    return NextResponse.next();
   }
 
-  // Any route that gets to this point will be considered a protected route, and require the user to be logged-in to be able to access it
+  // Any route that gets to this point will be considered a protected route
   const { origin } = new URL(request.url)
   
-  // Check for Auth0 session cookie instead of calling getSession()
-  const sessionCookie = request.cookies.get('__session')?.value;
+  try {
+    const session = await getSession(request);
+    
+    if (!session?.user) {
+      return NextResponse.redirect(`${origin}/api/auth/login`)
+    }
 
-  if (!sessionCookie) {
-    return NextResponse.redirect(`${origin}/auth/login`)
+    // If a valid session exists, continue
+    return NextResponse.next()
+  } catch (error) {
+    return NextResponse.redirect(`${origin}/api/auth/login`)
   }
-
-  // If a valid session exists, continue with the response from Auth0 middleware
-  // You can also add custom logic here...
-  return authRes
 }
 
 export const config: MiddlewareConfig = {

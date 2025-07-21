@@ -20,7 +20,7 @@ import { toast } from "sonner";
 import { upsertPreAssessmentNoteAction } from "@actions/appointments/pre-assessment-note.action";
 import { useClinicAppointment } from "@hooks/useAppointment";
 import { Checkbox } from "@components/ui/checkbox";
-import { useUser } from "@auth0/nextjs-auth0";
+import { useUser } from "@auth0/nextjs-auth0/client";
 import { useLocalStorage } from "@hooks/useLocalStorage";
 import { promiseWrapper } from "@/lib/with-error-handling";
 

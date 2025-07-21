@@ -2,7 +2,7 @@
 
 import { useForm } from "react-hook-form";
 import { Allergy } from "./EditAllergyForm";
-import { useUser } from "@auth0/nextjs-auth0";
+import { useUser } from "@auth0/nextjs-auth0/client";
 import { upsertUserAllergyAction } from "@actions/users/user-allergy.action";
 import ActionButton from "@components/ActionButton";
 import { toast } from "sonner";

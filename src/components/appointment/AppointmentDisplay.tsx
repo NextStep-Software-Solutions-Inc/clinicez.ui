@@ -22,7 +22,7 @@ import PageLoading from "@components/PageLoading";
 import { revalidatePath } from "@actions/cache.action";
 import { mutate } from "swr";
 import { useAppointmentTools } from "./useAppointmentActions";
-import { useUser } from "@auth0/nextjs-auth0";
+import { useUser } from "@auth0/nextjs-auth0/client";
 import Attachments from "./Attachments";
 import { getBadgeVariantFromLabel } from "@lib/utils";
 

@@ -12,7 +12,7 @@ import { Illness } from "./IllnessList";
 import { Badge } from "@components/ui/badge";
 import { toast } from "sonner";
 import { setUserIllnessStatusAction } from "@actions/users/user-illness.action";
-import { useUser } from "@auth0/nextjs-auth0";
+import { useUser } from "@auth0/nextjs-auth0/client";
 import { Check } from "lucide-react";
 
 

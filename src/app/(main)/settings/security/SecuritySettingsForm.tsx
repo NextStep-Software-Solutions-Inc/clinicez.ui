@@ -18,7 +18,7 @@ import { Input } from "@components/ui/input"
 import {toast} from "sonner"
 import ActionButton from "@components/ActionButton"
 import { resetPasswordAction } from "@actions/users/user.action"
-import { useUser } from "@auth0/nextjs-auth0"
+import { useUser } from "@auth0/nextjs-auth0/client"
 import { useRouter } from "next/navigation"
 
 const accountFormSchema = z.object({

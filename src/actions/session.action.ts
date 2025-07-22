@@ -19,6 +19,13 @@ export const getAccessTokenAction = cache(async () => {
     if (error?.code === 'missing_session') {
       return null;
     }
+
+    if (error?.code === 'failed_to_refresh_token' ||
+      error?.code === 'invalid_grant' ||
+      error?.message?.includes('refresh token')) {
+      console.warn("Token refresh failed, user needs to re-authenticate");
+      return null;
+    }
     console.error("Failed to get access token:", error);
     return null;
   }

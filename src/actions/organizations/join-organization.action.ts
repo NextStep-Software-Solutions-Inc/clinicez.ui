@@ -15,21 +15,21 @@ export type JoinOrganizationPayload = {
   orgRoleId: number;
 }
 
-export const joinOrganizationAction = withErrorHandling(async (payload: JoinOrganizationPayload)  =>{
-  
+export const joinOrganizationAction = withErrorHandling(async (payload: JoinOrganizationPayload) => {
+
   let message = "Successfully sent membership request";
 
   const session = await getCachedSession();
-  if(!session) throw new Error("Unauthorized");
-    
-  const auth0User = await managementClient.users.get({id: payload.userId})
-  if(!auth0User.data.email_verified) throw new Error("User email is not verified")
+  if (!session) throw new Error("Unauthorized");
 
-  const { userId, orgUid, orgRoleId} = payload
+  const auth0User = await managementClient.users.get({ id: payload.userId })
+  if (!auth0User.data.email_verified) throw new Error("User email is not verified")
+
+  const { userId, orgUid, orgRoleId } = payload
   const userOrganization = await prisma.organizationMember.create({
     data: {
       OrganizationRole: {
-        connect: { id: orgRoleId  }
+        connect: { id: orgRoleId }
       },
       User: {
         connect: { userId }
@@ -74,18 +74,19 @@ export const joinOrganizationAction = withErrorHandling(async (payload: JoinOrga
     }
   });
 
-  if(!(userOrganization)) throw new Error("Error sending membership request");
-    
+  if (!(userOrganization)) throw new Error("Error sending membership request");
+
   const adminEmails = userOrganization.Organization.OrganizationMembers.filter(u => u.OrganizationRole.name.toUpperCase() === "ADMIN" && u.status === "ACTIVE").map(u => u.User.email);
   const applicantEmail = userOrganization.User.email;
   const applicantName = capitalize(`${userOrganization.User.firstName} ${userOrganization.User.lastName}`);
-  
+
   await sendEmailNotifications(adminEmails, userOrganization.Organization.name, applicantName, applicantEmail);
   message = `Successfully sent membership request to ${userOrganization.Organization.name}`;
   return { message, data: userOrganization }
- 
+
 }, async error => {
-  if(hasCodeProperty(error) && error.code === "P2002") return "User is already a member of the organization";
+  if (hasCodeProperty(error) && error.code === "P2002") return "User is already a member of the organization";
+  if (error instanceof Error && error.message === "User email is not verified") return "Your email address is not verified. Please verify your email before joining an organization.";
   return "An error occurred while sending the membership request. Please try again later.";
 })
 
@@ -122,7 +123,7 @@ const notifyApplicant = async (applicantEmail: string[], orgName: string, userNa
   const appName = process.env.NEXT_PUBLIC_APP_NAME!;
   const html = emailTemplate.replaceAll("@{userName}", userName).replaceAll("@{appName}", appName).replaceAll("@{orgName}", orgName)
   const subject = `Membership application to ${orgName}`;
-  
+
   await sendMail({
     subject,
     to: applicantEmail,

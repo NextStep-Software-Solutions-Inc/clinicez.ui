@@ -36,7 +36,18 @@ export default async function RootLayout({ children }: Props) {
     if (!dbUser.data) redirect(`/auth/logout?returnTo=/user-sync-error`);
   }
 
-  const tokenData = session ? await getAccessTokenAction() : null;
+  let tokenData = null;
+  if (session) {
+    try {
+      tokenData = await getAccessTokenAction();
+      if (!tokenData) {
+        redirect(`/auth/logout?returnTo=${encodeURIComponent(process.env.APP_BASE_URL || 'http://localhost:3000')}`);
+      }
+    } catch (error) {
+      console.error("Token error in layout:", error);
+      redirect(`/auth/logout?returnTo=${encodeURIComponent(process.env.APP_BASE_URL || 'http://localhost:3000')}`);
+    }
+  }
 
   return (
     <html lang="en">

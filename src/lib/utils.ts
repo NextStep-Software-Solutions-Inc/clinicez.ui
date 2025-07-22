@@ -37,6 +37,17 @@ export function convertStringToNumber(str: string | null): number | undefined {
   return Number.isNaN(num) ? undefined : num;
 }
 
+// Allows flexibility in displaying checkbox based data retrieval
+export const getGridCols = (length: number) => {
+  let gridCols = "grid-cols-1"; // Default to 1 column
+  if (length >= 10) {
+    gridCols = "grid-cols-1 md:grid-cols-3"; // 3 columns for 10+ items (starts at md instead of lg)
+  } else if (length > 3) {
+    gridCols = "grid-cols-1 md:grid-cols-2"; // 2 columns for 4-9 items
+  }
+  return gridCols;
+};
+
 
 /**
  * Parses an object with string values to their respective types, including arrays

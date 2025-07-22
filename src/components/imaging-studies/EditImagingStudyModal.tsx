@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -62,21 +62,25 @@ export default function EditImagingStudyModal({
     mode: "onChange",
   });
 
+  const resetForm = useCallback(() => {
+    form.reset({
+      history: "",
+      reason: "",
+      impression: "",
+    });
+  }, [form]);
+
   useEffect(() => {
     if (open && study) {
       form.setValue("history", study.history || "");
       form.setValue("reason", study.reason || "");
       form.setValue("impression", study.impression || "");
     } else if (!open) {
-      form.reset({
-        history: "",
-        reason: "",
-        impression: "",
-      });
+      resetForm();
     }
-  }, [open, study, form]);
+  }, [open, study, form, resetForm]);
 
-  const onSubmit = async (data: FormData) => {
+  const onSubmit = useCallback(async (data: FormData) => {
     setIsLoading(true);
     try {
       const result = await promiseWrapper(updateImagingStudyAction)({
@@ -94,7 +98,7 @@ export default function EditImagingStudyModal({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [study.id, onUpdated, onOpenChange]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

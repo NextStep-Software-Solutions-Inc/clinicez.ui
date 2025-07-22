@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -81,6 +81,15 @@ export default function EditMedicalCertificateModal({
     mode: "onChange",
   });
 
+  const resetForm = useCallback(() => {
+    form.reset({
+      selectedReason: "",
+      findings: "",
+      medicalClassification: "",
+      remarks: "",
+    });
+  }, [form]);
+
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -107,7 +116,6 @@ export default function EditMedicalCertificateModal({
           if (classification) form.setValue("medicalClassification", classification.name);
         }
 
-        // Set remarks value
         if (certificate.remarks) {
           form.setValue("remarks", certificate.remarks);
         }
@@ -119,16 +127,11 @@ export default function EditMedicalCertificateModal({
     if (open) {
       loadData();
     } else {
-      form.reset({
-        selectedReason: "",
-        findings: "",
-        medicalClassification: "",
-        remarks: "",
-      });
+      resetForm();
     }
-  }, [open, certificate, form, reasons?.length, findings?.length, classifications?.length]);
+  }, [open, certificate, form, resetForm, reasons?.length, findings?.length, classifications?.length]);
 
-  const onSubmit = async (data: FormData) => {
+  const onSubmit = useCallback(async (data: FormData) => {
     setIsLoading(true);
     try {
       const reason = reasons?.find(r => r.name === data.selectedReason);
@@ -156,7 +159,7 @@ export default function EditMedicalCertificateModal({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [certificate.id, reasons, findings, classifications, onUpdated, onOpenChange]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

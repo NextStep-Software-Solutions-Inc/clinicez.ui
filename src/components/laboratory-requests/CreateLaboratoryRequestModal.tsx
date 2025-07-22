@@ -12,7 +12,7 @@ import {
 } from "@components/ui/dialog";
 import { Input } from "@components/ui/input";
 import { Textarea } from "@components/ui/textarea";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { Plus } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -30,7 +30,7 @@ import { promiseWrapper } from "@/lib/with-error-handling";
 import { createLaboratoryRequestAction } from "@/actions/clinics/clinical-record/laboratory-requests.action";
 import { Checkbox } from "@components/ui/checkbox";
 import { useLaboratoryDiagnostics } from "@/hooks/useLaboratoryDiagnostics";
-import { calculateAge } from "@/lib/utils";
+import { calculateAge, cn, getGridCols } from "@/lib/utils";
 import Each from "@components/utils/Each";
 import { PatientProfile } from "../consultation/ConsultationDetails";
 import ActionButton from "../ActionButton";
@@ -108,13 +108,17 @@ export default function CreateLaboratoryRequestModal({
     defaultValues: autofillDefaults,
   });
 
+  const resetFormWithDefaults = useCallback(() => {
+    form.reset(autofillDefaults);
+  }, [form, autofillDefaults]);
+
   useEffect(() => {
     if (open) {
-      form.reset(autofillDefaults);
+      resetFormWithDefaults();
     }
-  }, [open, autofillDefaults, form]);
+  }, [open, resetFormWithDefaults]);
 
-  const handleSubmit = async (data: FormData) => {
+  const handleSubmit = useCallback(async (data: FormData) => {
     if (!patientId || !hpId) {
       toast.error("Missing required patient or healthcare provider information.");
       return;
@@ -131,7 +135,7 @@ export default function CreateLaboratoryRequestModal({
       });
 
       toast.success(result.message);
-      form.reset(autofillDefaults);
+      resetFormWithDefaults();
       setOpen(false);
       onCreated?.();
     } catch (error) {
@@ -139,7 +143,7 @@ export default function CreateLaboratoryRequestModal({
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [patientId, hpId, clinicUid, consultationTicketId, resetFormWithDefaults, onCreated]);
 
   const diagnostics = useMemo(() => diagnosticsData?.data || [], [diagnosticsData?.data]);
 
@@ -235,20 +239,12 @@ export default function CreateLaboratoryRequestModal({
                       <div className="space-y-6">
                         {Object.keys(groupedDiagnostics).length > 0 ? (
                           Object.entries(groupedDiagnostics).map(([category, categoryDiagnostics]) => {
-                            // Dynamic column calculation based on number of items
-                            let gridCols = "grid-cols-1"; // Default: 1 column
-                            if (categoryDiagnostics.length >= 10) {
-                              gridCols = "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"; // 3 columns for 10+ items
-                            } else if (categoryDiagnostics.length >= 6) {
-                              gridCols = "grid-cols-1 md:grid-cols-2"; // 2 columns for 6-9 items
-                            }
-
                             return (
                               <div key={category} className="space-y-3">
                                 <h4 className="font-semibold text-sm text-primary uppercase tracking-wide">
                                   {category}
                                 </h4>
-                                <div className={`grid ${gridCols} gap-3`}>
+                                <div className={cn("grid gap-3", getGridCols(categoryDiagnostics.length))}>
                                   <Each
                                     of={categoryDiagnostics}
                                     render={(diagnostic) => (

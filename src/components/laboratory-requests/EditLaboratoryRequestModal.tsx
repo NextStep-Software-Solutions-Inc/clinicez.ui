@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -28,6 +28,7 @@ import { promiseWrapper } from "@/lib/with-error-handling";
 import { updateLaboratoryRequestAction } from "@/actions/clinics/clinical-record/laboratory-requests.action";
 import { LaboratoryRequest } from "./LaboratoryRequestItem";
 import { useLaboratoryDiagnostics } from "@/hooks/useLaboratoryDiagnostics";
+import { cn, getGridCols } from "@/lib/utils";
 
 const formSchema = z.object({
   impression: z.string().optional(),
@@ -61,6 +62,13 @@ export default function EditLaboratoryRequestModal({
     mode: "onChange",
   });
 
+  const resetForm = useCallback(() => {
+    form.reset({
+      impression: "",
+      diagnosticIds: [],
+    });
+  }, [form]);
+
   const diagnostics = useMemo(() => diagnosticsData?.data || [], [diagnosticsData?.data]);
 
   const groupedDiagnostics = useMemo(() => {
@@ -84,16 +92,12 @@ export default function EditLaboratoryRequestModal({
       const existingDiagnosticIds = request.LaboratoryRequestDiagnostics?.map(
         item => item.LaboratoryDiagnostic.id
       ) || [];
+
       form.setValue("diagnosticIds", existingDiagnosticIds);
     } else if (!open) {
-      form.reset({
-        impression: "",
-        diagnosticIds: [],
-      });
+      resetForm();
     }
-  }, [open, request, form]);
-
-  const onSubmit = async (data: FormData) => {
+  }, [open, request, form, resetForm]); const onSubmit = useCallback(async (data: FormData) => {
     setIsLoading(true);
     try {
       const result = await promiseWrapper(updateLaboratoryRequestAction)({
@@ -110,7 +114,7 @@ export default function EditLaboratoryRequestModal({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [request.id, onUpdated, onOpenChange]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -135,19 +139,12 @@ export default function EditLaboratoryRequestModal({
                       <div className="space-y-6">
                         {Object.keys(groupedDiagnostics).length > 0 ? (
                           Object.entries(groupedDiagnostics).map(([category, categoryDiagnostics]) => {
-                            let gridCols = "grid-cols-1";
-                            if (categoryDiagnostics.length >= 10) {
-                              gridCols = "grid-cols-1 md:grid-cols-2 lg:grid-cols-3";
-                            } else if (categoryDiagnostics.length >= 6) {
-                              gridCols = "grid-cols-1 md:grid-cols-2";
-                            }
-
                             return (
                               <div key={category} className="space-y-3">
                                 <h4 className="font-semibold text-sm text-primary uppercase tracking-wide">
                                   {category}
                                 </h4>
-                                <div className={`grid ${gridCols} gap-3`}>
+                                <div className={cn("grid gap-3", getGridCols(categoryDiagnostics.length))}>
                                   <Each
                                     of={categoryDiagnostics}
                                     render={(diagnostic) => (

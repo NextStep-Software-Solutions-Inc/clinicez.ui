@@ -65,6 +65,17 @@ export const getLaboratoryRequestsAction = withErrorHandling(async (filters: Get
             },
           }
         }
+      },
+      LaboratoryRequestDiagnostics: {
+        include: {
+          LaboratoryDiagnostic: {
+            select: {
+              id: true,
+              name: true,
+              category: true,
+            }
+          }
+        }
       }
     },
   });

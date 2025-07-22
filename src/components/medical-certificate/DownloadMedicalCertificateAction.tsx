@@ -25,7 +25,6 @@ const DownloadMedicalCertificateAction = React.forwardRef<
         const data = res.data
         if (!data) throw new Error("No data returned")
 
-        // Doctor info
         const hpProfile = data.HealthCareProvider?.HPProfile
         const professionalDetails = data.HealthCareProvider?.ProfessionalDetails
         const doctorName = `${hpProfile?.title ?? ""} ${hpProfile?.name ?? ""} ${hpProfile?.suffix ?? ""}`.trim()
@@ -33,7 +32,6 @@ const DownloadMedicalCertificateAction = React.forwardRef<
         const ptrNo = professionalDetails?.ptrNumber ?? ""
         const doctorAddress = ""
 
-        // Patient info
         const patient = data.ClinicPatient?.Patient ?? {}
         const patientName =
           `${patient.firstName ?? ""} ${patient.middleName ?? ""} ${patient.lastName ?? ""} ${patient.suffix ?? ""}`.trim()

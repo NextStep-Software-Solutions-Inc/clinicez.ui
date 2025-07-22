@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { zodResolver } from "@hookform/resolvers/zod";
-import React from "react";
+import React, { useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -110,13 +110,17 @@ export default function CreateImagingStudiesModal({ clinicUid, onCreateImagingSt
     defaultValues: autofillDefaults,
   });
 
+  const resetFormWithDefaults = useCallback(() => {
+    form.reset(autofillDefaults);
+  }, [form, autofillDefaults]);
+
   React.useEffect(() => {
     if (open) {
-      form.reset(autofillDefaults);
+      resetFormWithDefaults();
     }
-  }, [open, autofillDefaults, form]);
+  }, [open, resetFormWithDefaults]);
 
-  const action = form.handleSubmit(async (values) => {
+  const action = useCallback(async (values: z.infer<typeof createImagingStudiesSchema>) => {
     if (!patientId || !hpId) {
       toast.error("Missing required patient or healthcare provider information.");
       return;
@@ -135,19 +139,19 @@ export default function CreateImagingStudiesModal({ clinicUid, onCreateImagingSt
 
       toast.success("Imaging study request created successfully.");
       setOpen(false);
-      form.reset(autofillDefaults);
+      resetFormWithDefaults();
       onCreateImagingStudy?.();
     } catch (error) {
-      console.error(error);
       toast.error("Failed to create imaging study request.");
     } finally {
       setIsSubmitting(false);
     }
-  });
+  }, [patientId, hpId, clinicUid, consultationTicketId, resetFormWithDefaults, onCreateImagingStudy]);
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <Form {...form}>
-        <form onSubmit={action} id="add-imaging-study-form">
+        <form onSubmit={form.handleSubmit(action)} id="add-imaging-study-form">
           <DialogTrigger asChild>
             <Button size="sm" className="gap-2">
               <Plus className="h-4 w-4" />

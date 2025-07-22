@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import Each from "@/components/utils/Each"
 import { zodResolver } from "@hookform/resolvers/zod"
-import React from "react"
+import React, { useCallback } from "react"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
 import { z } from "zod"
@@ -164,13 +164,17 @@ export default function CreateMedicalCertificateModal({
     defaultValues: autofillDefaults,
   })
 
+  const resetFormWithDefaults = useCallback(() => {
+    form.reset(autofillDefaults);
+  }, [form, autofillDefaults]);
+
   React.useEffect(() => {
     if (open) {
-      form.reset(autofillDefaults);
+      resetFormWithDefaults();
     }
-  }, [open, autofillDefaults, form]);
+  }, [open, resetFormWithDefaults]);
 
-  const handleSubmit = form.handleSubmit(async (values) => {
+  const handleSubmit = useCallback(async (values: z.infer<typeof createMedicalCertificateSchema>) => {
     const reason = reasons.find(r => r.name === values.selectedReason);
     const finding = findings.find(f => f.name === values.findings);
     const classification = classifications.find(c => c.name === values.medicalClassification);
@@ -201,18 +205,18 @@ export default function CreateMedicalCertificateModal({
       toast.success(result.message);
       onCreateMedicalCertificate?.();
       setOpen(false);
-      form.reset(autofillDefaults);
+      resetFormWithDefaults();
     } catch (error) {
       toast.error(error as string);
     } finally {
       setIsSubmitting(false);
     }
-  });
+  }, [reasons, findings, classifications, clinicUid, patientId, hpId, consultationTicketId, onCreateMedicalCertificate, resetFormWithDefaults]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <Form {...form}>
-        <form onSubmit={handleSubmit} id="create-medical-certificate-form">
+        <form onSubmit={form.handleSubmit(handleSubmit)} id="create-medical-certificate-form">
           <DialogTrigger asChild>
             <Button size="sm" className="gap-2">
               <FileIcon className="h-4 w-4" />

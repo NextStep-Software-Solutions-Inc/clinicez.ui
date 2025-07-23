@@ -38,14 +38,14 @@ const chartConfig = {
 } satisfies ChartConfig
 
 interface DailyMembershipRequestChartProps {
-    chartData: {
-        date: string;
-        male: number;
-        female: number;
-        [key: string]: string | number;
-    }[];
-    onChangeDate?: (date: DateRange) => void;
-    dateRange?: DateRange;
+  chartData: {
+    date: string;
+    male: number;
+    female: number;
+    [key: string]: string | number;
+  }[];
+  onChangeDate?: (date: DateRange) => void;
+  dateRange?: DateRange;
 }
 
 export function DailyMembershipRequestChart({ chartData, onChangeDate, dateRange }: DailyMembershipRequestChartProps) {
@@ -53,7 +53,7 @@ export function DailyMembershipRequestChart({ chartData, onChangeDate, dateRange
 
   const handleDateChange = (date: DateRange | undefined) => {
     setDate(date)
-    if(date) onChangeDate?.(date)
+    if (date) onChangeDate?.(date)
   }
 
   const chartKeys = ['male', 'female'] as const;
@@ -102,7 +102,7 @@ export function DailyMembershipRequestChart({ chartData, onChangeDate, dateRange
               numberOfMonths={2}
               disabled={{
                 after: new Date(),
-                // before: dayjs().startOf("year").toDate(),
+                before: dayjs().startOf("year").toDate(),
               }}
             />
           </PopoverContent>
@@ -154,13 +154,13 @@ export function DailyMembershipRequestChart({ chartData, onChangeDate, dateRange
                 />
               }
             />
-           
+
             {
               chartKeys.map((key) => {
                 const isTopbar = key === "female";
-                const radius = isTopbar ? 
-                [5, 5, 0, 0] as [number, number, number, number] :
-                [0, 0, 5, 5] as [number, number, number, number];
+                const radius = isTopbar ?
+                  [5, 5, 0, 0] as [number, number, number, number] :
+                  [0, 0, 5, 5] as [number, number, number, number];
 
                 return (
                   <Bar
@@ -180,7 +180,7 @@ export function DailyMembershipRequestChart({ chartData, onChangeDate, dateRange
                 )
               })
             }
-              
+
           </BarChart>
         </ChartContainer>
       </CardContent>

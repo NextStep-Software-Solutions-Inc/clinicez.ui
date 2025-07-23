@@ -34,6 +34,7 @@ export const getLaboratoryRequestsAction = withErrorHandling(async (filters: Get
     select: {
       id: true,
       serialNumber: true,
+      impression: true,
       _count: {
         select: {
           LaboratoryRequestDiagnostics: true,

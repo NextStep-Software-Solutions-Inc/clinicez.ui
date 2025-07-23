@@ -21,7 +21,7 @@ export interface LaboratoryRequest {
   id: number;
   serialNumber?: string;
   createdAt: string | Date;
-  impression?: string;
+  impression?: string | null;
   _count?: {
     LaboratoryRequestDiagnostics?: number;
   };

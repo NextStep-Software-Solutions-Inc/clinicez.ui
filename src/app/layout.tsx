@@ -38,15 +38,7 @@ export default async function RootLayout({ children }: Props) {
 
   let tokenData = null;
   if (session) {
-    try {
-      tokenData = await getAccessTokenAction();
-      if (!tokenData) {
-        redirect(`/auth/logout?returnTo=${encodeURIComponent(process.env.APP_BASE_URL || 'http://localhost:3000')}`);
-      }
-    } catch (error) {
-      console.error("Token error in layout:", error);
-      redirect(`/auth/logout?returnTo=${encodeURIComponent(process.env.APP_BASE_URL || 'http://localhost:3000')}`);
-    }
+    tokenData = await getAccessTokenAction();
   }
 
   return (
@@ -58,7 +50,7 @@ export default async function RootLayout({ children }: Props) {
           <SyncToken
             token={{
               type: tokenData?.type || "Bearer",
-              accessToken: tokenData?.token || ""
+              accessToken: (tokenData?.token || "") as string
             }}
           />
           {/* {!!session && <SyncSessionClinic/>} */}

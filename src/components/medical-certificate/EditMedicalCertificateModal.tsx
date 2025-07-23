@@ -9,6 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@components/ui/dialog";
+import { UnsavedChangesAlert } from "@/components/UnsavedChangesAlert";
 import {
   Form,
   FormControl,
@@ -66,6 +67,8 @@ export default function EditMedicalCertificateModal({
   onUpdated,
 }: EditMedicalCertificateModalProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [showAlert, setShowAlert] = useState(false);
+  const [originalValues, setOriginalValues] = useState<FormData | null>(null);
   const [reasons, setReasons] = useState<GetMedicalCertificateReasons["data"]>([]);
   const [findings, setFindings] = useState<GetMedicalCertificateFindings["data"]>([]);
   const [classifications, setClassifications] = useState<GetMedicalCertificateClassifications["data"]>([]);
@@ -103,22 +106,40 @@ export default function EditMedicalCertificateModal({
         setFindings(findingsRes.data);
         setClassifications(classificationsRes.data);
 
+        const values = {
+          selectedReason: "",
+          findings: "",
+          medicalClassification: "",
+          remarks: certificate.remarks || "",
+        };
+
         if (certificate.Reason && reasonsRes.data) {
           const reason = reasonsRes.data.find(r => r.name === certificate.Reason?.name);
-          if (reason) form.setValue("selectedReason", reason.name);
+          if (reason) {
+            values.selectedReason = reason.name;
+            form.setValue("selectedReason", reason.name);
+          }
         }
         if (certificate.Finding && findingsRes.data) {
           const finding = findingsRes.data.find(f => f.name === certificate.Finding?.name);
-          if (finding) form.setValue("findings", finding.name);
+          if (finding) {
+            values.findings = finding.name;
+            form.setValue("findings", finding.name);
+          }
         }
         if (certificate.Classification && classificationsRes.data) {
           const classification = classificationsRes.data.find(c => c.name === certificate.Classification?.name);
-          if (classification) form.setValue("medicalClassification", classification.name);
+          if (classification) {
+            values.medicalClassification = classification.name;
+            form.setValue("medicalClassification", classification.name);
+          }
         }
 
         if (certificate.remarks) {
           form.setValue("remarks", certificate.remarks);
         }
+
+        setOriginalValues(values);
       } catch (error) {
         toast.error("Failed to load form data");
       }
@@ -130,6 +151,31 @@ export default function EditMedicalCertificateModal({
       resetForm();
     }
   }, [open, certificate, form, resetForm, reasons?.length, findings?.length, classifications?.length]);
+
+  // Check if there are unsaved changes
+  const hasUnsavedChanges = useCallback(() => {
+    if (!originalValues) return false;
+    const currentValues = form.getValues();
+    return (
+      currentValues.selectedReason !== originalValues.selectedReason ||
+      currentValues.findings !== originalValues.findings ||
+      currentValues.medicalClassification !== originalValues.medicalClassification ||
+      currentValues.remarks !== originalValues.remarks
+    );
+  }, [form, originalValues]);
+
+  const handleClose = useCallback((newOpen: boolean) => {
+    if (!newOpen && hasUnsavedChanges()) {
+      setShowAlert(true);
+    } else {
+      onOpenChange?.(newOpen);
+    }
+  }, [hasUnsavedChanges, onOpenChange]);
+
+  const handleConfirmClose = useCallback(() => {
+    setShowAlert(false);
+    onOpenChange?.(false);
+  }, [onOpenChange]);
 
   const onSubmit = useCallback(async (data: FormData) => {
     setIsLoading(true);
@@ -162,183 +208,192 @@ export default function EditMedicalCertificateModal({
   }, [certificate.id, reasons, findings, classifications, onUpdated, onOpenChange]);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
-        <DialogHeader>
-          <DialogTitle>Edit Medical Certificate</DialogTitle>
-          <DialogDescription>
-            Update the medical certificate details for {certificate.ClinicPatient?.Patient?.firstName} {certificate.ClinicPatient?.Patient?.lastName}
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={handleClose}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Edit Medical Certificate</DialogTitle>
+            <DialogDescription>
+              Update the medical certificate details for {certificate.ClinicPatient?.Patient?.firstName} {certificate.ClinicPatient?.Patient?.lastName}
+            </DialogDescription>
+          </DialogHeader>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} id="edit-medical-certificate-form">
-            <div className="max-h-[60vh] overflow-y-auto flex flex-col gap-4 py-2">
-              <FormField
-                control={form.control}
-                name="selectedReason"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Reason</FormLabel>
-                    <FormControl>
-                      <div className="flex flex-col gap-2">
-                        <Each
-                          of={reasons || []}
-                          render={(reason) => (
-                            <div
-                              key={reason.id}
-                              className="w-full rounded-lg border p-3 flex items-center gap-2"
-                              tabIndex={-1}
-                              style={{ outline: "none" }}
-                            >
-                              <Checkbox
-                                checked={field.value === reason.name}
-                                onCheckedChange={(checked) => {
-                                  if (checked) {
-                                    field.onChange(reason.name)
-                                  }
-                                }}
-                                className="cursor-pointer"
-                              />
-                              <span className="font-normal text-sm select-none">{reason.name}</span>
-                            </div>
-                          )}
-                          fallback={
-                            <FormItem className="flex items-center justify-center">
-                              <FormLabel className="text-sm text-muted-foreground">No reasons available</FormLabel>
-                            </FormItem>
-                          }
-                        />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="findings"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Findings</FormLabel>
-                    <FormControl>
-                      <RadioGroup
-                        onValueChange={field.onChange}
-                        value={field.value}
-                        className="grid grid-cols-3 gap-4"
-                      >
-                        <Each
-                          of={findings || []}
-                          render={(finding) => (
-                            <div
-                              key={finding.id}
-                              className="w-full rounded-lg border p-3 flex items-center justify-center"
-                              tabIndex={-1}
-                              style={{ outline: "none" }}
-                            >
-                              <FormItem className="flex flex-row items-center justify-center gap-2 w-full">
-                                <FormControl>
-                                  <RadioGroupItem value={finding.name} className="cursor-pointer" />
-                                </FormControl>
-                                <FormLabel
-                                  htmlFor={finding.name}
-                                  className="font-normal text-center self-center text-sm select-none cursor-pointer"
-                                >
-                                  {finding.name}
-                                </FormLabel>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} id="edit-medical-certificate-form">
+              <div className="max-h-[60vh] overflow-y-auto flex flex-col gap-4 py-2">
+                <FormField
+                  control={form.control}
+                  name="selectedReason"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Reason</FormLabel>
+                      <FormControl>
+                        <div className="flex flex-col gap-2">
+                          <Each
+                            of={reasons || []}
+                            render={(reason) => (
+                              <div
+                                key={reason.id}
+                                className="w-full rounded-lg border p-3 flex items-center gap-2"
+                                tabIndex={-1}
+                                style={{ outline: "none" }}
+                              >
+                                <Checkbox
+                                  checked={field.value === reason.name}
+                                  onCheckedChange={(checked) => {
+                                    if (checked) {
+                                      field.onChange(reason.name)
+                                    }
+                                  }}
+                                  className="cursor-pointer"
+                                />
+                                <span className="font-normal text-sm select-none">{reason.name}</span>
+                              </div>
+                            )}
+                            fallback={
+                              <FormItem className="flex items-center justify-center">
+                                <FormLabel className="text-sm text-muted-foreground">No reasons available</FormLabel>
                               </FormItem>
-                            </div>
-                          )}
-                          fallback={
-                            <FormItem className="flex items-center justify-center">
-                              <FormControl>
-                                <RadioGroupItem value="" disabled className="cursor-not-allowed" />
-                              </FormControl>
-                              <FormLabel className="text-sm text-muted-foreground">No findings available</FormLabel>
-                            </FormItem>
-                          }
-                        />
-                      </RadioGroup>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                            }
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="medicalClassification"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Medical Classification</FormLabel>
-                    <FormControl>
-                      <RadioGroup onValueChange={field.onChange} value={field.value} className="flex flex-col gap-3">
-                        <Each
-                          of={classifications || []}
-                          render={(item) => (
-                            <div key={item.id} className="w-full rounded-lg border p-3 flex items-center gap-3">
-                              <FormItem className="flex items-center gap-3 w-full">
+                <FormField
+                  control={form.control}
+                  name="findings"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Findings</FormLabel>
+                      <FormControl>
+                        <RadioGroup
+                          onValueChange={field.onChange}
+                          value={field.value}
+                          className="grid grid-cols-3 gap-4"
+                        >
+                          <Each
+                            of={findings || []}
+                            render={(finding) => (
+                              <div
+                                key={finding.id}
+                                className="w-full rounded-lg border p-3 flex items-center justify-center"
+                                tabIndex={-1}
+                                style={{ outline: "none" }}
+                              >
+                                <FormItem className="flex flex-row items-center justify-center gap-2 w-full">
+                                  <FormControl>
+                                    <RadioGroupItem value={finding.name} className="cursor-pointer" />
+                                  </FormControl>
+                                  <FormLabel
+                                    htmlFor={finding.name}
+                                    className="font-normal text-center self-center text-sm select-none cursor-pointer"
+                                  >
+                                    {finding.name}
+                                  </FormLabel>
+                                </FormItem>
+                              </div>
+                            )}
+                            fallback={
+                              <FormItem className="flex items-center justify-center">
                                 <FormControl>
-                                  <RadioGroupItem value={item.name} />
+                                  <RadioGroupItem value="" disabled className="cursor-not-allowed" />
                                 </FormControl>
-                                <div className="flex flex-col w-full">
-                                  <FormLabel className="font-normal cursor-pointer">{item.name}</FormLabel>
-                                  {item.description && (
-                                    <span className="text-xs text-muted-foreground mt-1">{item.description}</span>
-                                  )}
-                                </div>
+                                <FormLabel className="text-sm text-muted-foreground">No findings available</FormLabel>
                               </FormItem>
-                            </div>
-                          )}
-                          fallback={
-                            <FormItem className="flex items-center justify-center">
-                              <FormControl>
-                                <RadioGroupItem value="" disabled className="cursor-not-allowed" />
-                              </FormControl>
-                              <FormLabel className="text-sm text-muted-foreground">No classifications available</FormLabel>
-                            </FormItem>
-                          }
+                            }
+                          />
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="medicalClassification"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Medical Classification</FormLabel>
+                      <FormControl>
+                        <RadioGroup onValueChange={field.onChange} value={field.value} className="flex flex-col gap-3">
+                          <Each
+                            of={classifications || []}
+                            render={(item) => (
+                              <div key={item.id} className="w-full rounded-lg border p-3 flex items-center gap-3">
+                                <FormItem className="flex items-center gap-3 w-full">
+                                  <FormControl>
+                                    <RadioGroupItem value={item.name} />
+                                  </FormControl>
+                                  <div className="flex flex-col w-full">
+                                    <FormLabel className="font-normal cursor-pointer">{item.name}</FormLabel>
+                                    {item.description && (
+                                      <span className="text-xs text-muted-foreground mt-1">{item.description}</span>
+                                    )}
+                                  </div>
+                                </FormItem>
+                              </div>
+                            )}
+                            fallback={
+                              <FormItem className="flex items-center justify-center">
+                                <FormControl>
+                                  <RadioGroupItem value="" disabled className="cursor-not-allowed" />
+                                </FormControl>
+                                <FormLabel className="text-sm text-muted-foreground">No classifications available</FormLabel>
+                              </FormItem>
+                            }
+                          />
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="remarks"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Recommendations/Remarks (Optional)</FormLabel>
+                      <FormControl>
+                        <textarea
+                          placeholder="Enter Recommendations/Remarks"
+                          {...field}
+                          className="w-full min-h-[80px] border rounded-md p-2 text-sm focus:outline-primary"
                         />
-                      </RadioGroup>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
-              <FormField
-                control={form.control}
-                name="remarks"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Recommendations/Remarks (Optional)</FormLabel>
-                    <FormControl>
-                      <textarea
-                        placeholder="Enter Recommendations/Remarks"
-                        {...field}
-                        className="w-full min-h-[80px] border rounded-md p-2 text-sm focus:outline-primary"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+              <DialogFooter>
+                <ActionButton
+                  type="submit"
+                  disabled={isLoading}
+                  form="edit-medical-certificate-form"
+                  className="bg-black text-white hover:bg-black/90"
+                >
+                  {isLoading ? "Updating..." : "Update Certificate"}
+                </ActionButton>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
 
-            <DialogFooter>
-              <ActionButton
-                type="submit"
-                disabled={isLoading}
-                form="edit-medical-certificate-form"
-                className="bg-black text-white hover:bg-black/90"
-              >
-                {isLoading ? "Updating..." : "Update Certificate"}
-              </ActionButton>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+      <UnsavedChangesAlert
+        open={showAlert}
+        onOpenChange={setShowAlert}
+        onConfirm={handleConfirmClose}
+        onCancel={() => setShowAlert(false)}
+      />
+    </>
   );
 }

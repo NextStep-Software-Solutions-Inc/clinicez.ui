@@ -1,4 +1,3 @@
-import { getAccessTokenAction } from "@/actions/session.action";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { Toaster as SonnerToaster } from "sonner";
@@ -6,7 +5,7 @@ import { Toaster } from "@components/ui/toaster";
 
 import { SWRProvider } from "../provider/swr-provider";
 import JotaiProvider from "../provider/JotaiProvider";
-import SyncToken from "@components/SyncToken";
+import SyncTokenClient from "@components/SyncTokenClient";
 import { getCachedSession } from "@actions/session.action";
 import BypassAutoplay from "@components/BypassAutoplay";
 import dynamic from "next/dynamic";
@@ -36,23 +35,13 @@ export default async function RootLayout({ children }: Props) {
     if (!dbUser.data) redirect(`/auth/logout?returnTo=/user-sync-error`);
   }
 
-  let tokenData = null;
-  if (session) {
-    tokenData = await getAccessTokenAction();
-  }
-
   return (
     <html lang="en">
       <HotJar />
       <body className={`${plusJakartaSans.className}`}>
         <BypassAutoplay />
         <JotaiProvider>
-          <SyncToken
-            token={{
-              type: tokenData?.type || "Bearer",
-              accessToken: (tokenData?.token || "") as string
-            }}
-          />
+          <SyncTokenClient />
           {/* {!!session && <SyncSessionClinic/>} */}
           <SWRProvider>
             {children}

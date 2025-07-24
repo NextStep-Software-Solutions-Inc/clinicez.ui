@@ -6,6 +6,7 @@ import prisma from "@/lib/prisma";
 import { getCachedSession } from "@/actions/session.action";
 import { withErrorHandling } from "@/lib/with-error-handling";
 import { generateSerialNumber } from "@/lib/utils";
+import { validateHealthcareProviderAuth, USER_WITH_HEALTHCARE_PROVIDERS_SELECT } from "@/lib/healthcare-provider-auth";
 
 export type GetLaboratoryRequestsFilters = {
   clinicUid?: string;
@@ -151,10 +152,10 @@ export const getLaboratoryRequestAction = withErrorHandling(async (id: number) =
 type CreateLaboratoryRequestInput = {
   clinicUid: string;
   patientId: number;
-  hpId: number;
+  hpIds: number[];
   impression?: string;
   diagnosticIds: number[];
-  consultationTicketId?: number;
+  consultationTicketId: number;
 }
 
 export type CreateLaboratoryRequest = Awaited<ReturnType<typeof createLaboratoryRequestAction>>;
@@ -162,16 +163,24 @@ export const createLaboratoryRequestAction = withErrorHandling(async (input: Cre
   const session = await getCachedSession();
   if (!session) throw new Error("Unauthorized");
 
-  const { clinicUid, patientId, hpId, impression, diagnosticIds, consultationTicketId } = input;
+  const { clinicUid, patientId, hpIds, impression, diagnosticIds, consultationTicketId } = input;
   const serialNumber = generateSerialNumber();
 
   const result = await prisma.$transaction(async (prisma) => {
     const appUser = await prisma.user.findUnique({
-      where: { userId: session.user.sub },
-      select: { id: true }
+      where: {
+        userId: session.user.sub,
+        isActive: true,
+        deletedAt: null,
+      },
+      select: USER_WITH_HEALTHCARE_PROVIDERS_SELECT
     });
-    if (!appUser) throw new Error("Session user id is missing or invalid");
-    const createdBy = appUser.id;
+
+    const { authorizedHpId, createdBy } = validateHealthcareProviderAuth(
+      appUser,
+      hpIds,
+      "create laboratory requests"
+    );
 
     const clinic = await prisma.clinic.findUnique({
       where: { clinicUid },
@@ -194,18 +203,18 @@ export const createLaboratoryRequestAction = withErrorHandling(async (input: Cre
       data: {
         impression,
         serialNumber,
-        clinicId: clinic.id,
-        clinicPatientId: patientId,
-        hpId,
-        consultationTicketId: consultationTicketId || undefined,
-        documentTemplateId: laboratoryTemplate.id,
+        Clinic: { connect: { id: clinic.id } },
+        ClinicPatient: { connect: { id: patientId } },
+        HealthCareProvider: { connect: { id: authorizedHpId } },
+        ConsultationTicket: { connect: { id: consultationTicketId } },
+        DocumentTemplate: { connect: { id: laboratoryTemplate.id } },
+        CreatedBy: { connect: { id: createdBy } },
         LaboratoryRequestDiagnostics: {
           create: diagnosticIds.map(diagnosticId => ({
             laboratoryDiagnosticId: diagnosticId,
           })),
         },
         isActive: true,
-        createdBy,
       },
       select: {
         id: true,
@@ -225,7 +234,7 @@ export type UpdateLaboratoryRequestInput = {
   id: number;
   clinicId?: number;
   clinicPatientId?: number;
-  hpId?: number;
+  hpIds: number[];
   documentTemplateId?: number;
   impression?: string;
   diagnosticIds?: number[];
@@ -235,19 +244,27 @@ export type UpdateLaboratoryRequestInput = {
 export const updateLaboratoryRequestAction = withErrorHandling(async (input: UpdateLaboratoryRequestInput) => {
   const session = await getCachedSession();
   if (!session) throw new Error("Unauthorized");
-  const { id, diagnosticIds, ...updateData } = input;
+  const { id, diagnosticIds, hpIds, ...updateData } = input;
 
   const result = await prisma.$transaction(async (prisma) => {
     const appUser = await prisma.user.findUnique({
-      where: { userId: session.user.sub },
-      select: { id: true }
+      where: {
+        userId: session.user.sub,
+        isActive: true,
+        deletedAt: null,
+      },
+      select: USER_WITH_HEALTHCARE_PROVIDERS_SELECT
     });
-    if (!appUser) throw new Error("Session user id is missing or invalid");
-    const updatedBy = appUser.id;
+
+    const { createdBy } = validateHealthcareProviderAuth(
+      appUser,
+      hpIds,
+      "update laboratory requests"
+    );
 
     const request = await prisma.clinicLaboratoryRequest.update({
       where: { id },
-      data: { ...updateData, updatedBy },
+      data: { ...updateData, updatedBy: createdBy },
       select: {
         id: true,
         impression: true,

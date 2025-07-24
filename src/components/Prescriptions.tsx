@@ -22,19 +22,19 @@ const CreatePrescriptionModal = dynamic(
 export interface PrescriptionsProps {
   consultationTicketId?: number;
   clinicUid?: string;
-  hpId?: number;
+  hpIds: number[];
   isArchived?: boolean;
   patientId?: number;
-  userId?: string;
+  userId?: number;
 }
 
-export default function Prescriptions({ consultationTicketId, clinicUid, hpId, patientId }: PrescriptionsProps) {
+export default function Prescriptions({ consultationTicketId, clinicUid, hpIds, userId }: PrescriptionsProps) {
   const { data: prescriptions, mutate } = usePrescriptions({
     isArchived: false,
     consultationTicketId,
     clinicUid,
-    hpId,
-    patientId: typeof patientId === "number" ? String(patientId) : patientId,
+    hpIds,
+    userId: userId,
   });
 
   return (

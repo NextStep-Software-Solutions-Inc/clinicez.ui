@@ -62,11 +62,11 @@ interface CreateImagingStudiesModalProps {
   onCreateImagingStudy?: () => void;
   userInfo: PatientProfile | null;
   patientId?: number;
-  hpId?: number;
-  consultationTicketId?: number;
+  hpIds: number[];
+  consultationTicketId: number;
 }
 
-export default function CreateImagingStudiesModal({ clinicUid, onCreateImagingStudy, userInfo, patientId, hpId, consultationTicketId }: CreateImagingStudiesModalProps) {
+export default function CreateImagingStudiesModal({ clinicUid, onCreateImagingStudy, userInfo, patientId, hpIds, consultationTicketId }: CreateImagingStudiesModalProps) {
   const [open, setOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [showAlert, setShowAlert] = React.useState(false);
@@ -151,7 +151,7 @@ export default function CreateImagingStudiesModal({ clinicUid, onCreateImagingSt
   }, [open, resetFormWithDefaults]);
 
   const action = useCallback(async (values: z.infer<typeof createImagingStudiesSchema>) => {
-    if (!patientId || !hpId) {
+    if (!patientId || !hpIds || hpIds.length === 0) {
       toast.error("Missing required patient or healthcare provider information.");
       return;
     }
@@ -161,7 +161,7 @@ export default function CreateImagingStudiesModal({ clinicUid, onCreateImagingSt
       const result = await promiseWrapper(createImagingStudyAction)({
         clinicUid,
         patientId,
-        hpId,
+        hpIds,
         consultationTicketId,
         diagnosticIds: values.diagnostics,
         ...values,
@@ -176,7 +176,7 @@ export default function CreateImagingStudiesModal({ clinicUid, onCreateImagingSt
     } finally {
       setIsSubmitting(false);
     }
-  }, [patientId, hpId, clinicUid, consultationTicketId, resetFormWithDefaults, onCreateImagingStudy]);
+  }, [patientId, hpIds, clinicUid, consultationTicketId, resetFormWithDefaults, onCreateImagingStudy]);
 
   return (
     <>

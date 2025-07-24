@@ -82,10 +82,10 @@ export default async function ConsultationDetails({ consultation }: Consultation
       <ClinicalRecords
         consultationTicketId={consultation.id}
         clinicUid={consultation.Clinic.clinicUid}
-        hpId={consultation.ConsultationTicketHPs[0]?.hpId}
+        hpIds={consultation.ConsultationTicketHPs.map(c => Number(c.hpId))}
         isArchived={false}
         patientId={appointment.data?.Requesters[0].User?.ClinicPatients[0]?.id}
-        userId={appointment.data?.Requesters[0].User?.userId}
+        userId={appointment.data?.Requesters[0].User?.id}
         userInfo={userDetails}
       />
       <EMRPreviewSheetWrapper />
@@ -189,17 +189,17 @@ export const BackgroundInfo = ({ appointment, consultation, user }: BackgroundIn
 interface ClinicalRecordsProps {
   consultationTicketId: number;
   clinicUid: string;
-  hpId: number;
+  hpIds: number[];
   isArchived?: boolean;
   patientId?: number;
-  userId?: string;
+  userId?: number;
   userInfo?: PatientProfile | null;
 }
 
 export const ClinicalRecords = ({
   consultationTicketId,
   clinicUid,
-  hpId,
+  hpIds,
   isArchived = false,
   patientId,
   userId,
@@ -264,7 +264,7 @@ export const ClinicalRecords = ({
                 <tab.Component
                   consultationTicketId={consultationTicketId}
                   clinicUid={clinicUid}
-                  hpId={hpId}
+                  hpIds={hpIds}
                   isArchived={isArchived}
                   patientId={patientId}
                   userId={userId}

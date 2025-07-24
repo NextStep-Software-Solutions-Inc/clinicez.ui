@@ -61,16 +61,16 @@ type FormData = z.infer<typeof formSchema>;
 interface CreateLaboratoryRequestModalProps {
   clinicUid: string;
   patientId?: number;
-  hpId?: number;
+  hpIds: number[];
   onCreated?: () => void;
   userInfo: PatientProfile | null;
-  consultationTicketId?: number;
+  consultationTicketId: number;
 }
 
 export default function CreateLaboratoryRequestModal({
   clinicUid,
   patientId,
-  hpId,
+  hpIds,
   onCreated,
   userInfo,
   consultationTicketId,
@@ -147,7 +147,7 @@ export default function CreateLaboratoryRequestModal({
   }, [open, resetFormWithDefaults]);
 
   const handleSubmit = useCallback(async (data: FormData) => {
-    if (!patientId || !hpId) {
+    if (!patientId || !hpIds || hpIds.length === 0) {
       toast.error("Missing required patient or healthcare provider information.");
       return;
     }
@@ -157,7 +157,7 @@ export default function CreateLaboratoryRequestModal({
       const result = await promiseWrapper(createLaboratoryRequestAction)({
         clinicUid,
         patientId,
-        hpId,
+        hpIds,
         consultationTicketId,
         ...data,
       });
@@ -171,7 +171,7 @@ export default function CreateLaboratoryRequestModal({
     } finally {
       setIsSubmitting(false);
     }
-  }, [patientId, hpId, clinicUid, consultationTicketId, resetFormWithDefaults, onCreated]);
+  }, [patientId, hpIds, clinicUid, consultationTicketId, resetFormWithDefaults, onCreated]);
 
   const diagnostics = useMemo(() => diagnosticsData?.data || [], [diagnosticsData?.data]);
 

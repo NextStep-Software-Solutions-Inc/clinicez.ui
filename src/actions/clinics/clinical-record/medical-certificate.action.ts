@@ -7,26 +7,23 @@ import prisma from "@lib/prisma";
 import { getCachedSession } from "@/actions/session.action";
 import { Prisma } from "@prisma/client";
 import { generateSerialNumber } from "@/lib/utils";
+import { validateHealthcareProviderAuth, USER_WITH_HEALTHCARE_PROVIDERS_SELECT } from "@/lib/healthcare-provider-auth";
 
 export type GetMedicalCertificateFilters = {
   clinicUid: string;
   patientId?: number;
   consultationTicketId?: number;
-  hpId?: number;
+  hpIds?: number[];
   search?: string;
-  pageSize?: number;
-  pageNumber?: number;
   distinct?: Prisma.ClinicMedicalCertificateScalarFieldEnum[];
 };
 export type GetMedicalCertificates = Awaited<ReturnType<typeof getMedicalCertificatesAction>>;
 export const getMedicalCertificatesAction = withErrorHandling(async (filters: GetMedicalCertificateFilters) => {
   const session = await getCachedSession();
   if (!session) throw new Error("Unauthorized");
-  const { clinicUid, patientId, consultationTicketId, search, pageNumber = 1, pageSize = 50, distinct = [] } = filters ?? {};
+  const { clinicUid, patientId, consultationTicketId, hpIds, distinct = [] } = filters ?? {};
   const certificates = await prisma.clinicMedicalCertificate.findMany({
-    ...(pageSize ? { take: pageSize } : {}),
     ...(!!distinct?.length ? { distinct } : {}),
-    skip: pageNumber ? (pageNumber - 1) * (pageSize || 10) : 0,
     orderBy: { createdAt: "desc" },
     where: {
       isActive: true,
@@ -34,12 +31,6 @@ export const getMedicalCertificatesAction = withErrorHandling(async (filters: Ge
       Clinic: { clinicUid },
       ...(patientId ? { clinicPatientId: patientId } : {}),
       ...(consultationTicketId ? { consultationTicketId } : {}),
-      ...(!!search ? {
-        OR: [
-          { Reason: { name: { contains: search, mode: "insensitive" } } },
-          { Classification: { name: { contains: search, mode: "insensitive" } } },
-        ],
-      } : {}),
     },
     select: {
       id: true,
@@ -135,12 +126,12 @@ type CreateMedicalCertificateInput = {
   clinicUid: string;
   patientId?: number;
   documentTemplateId: number;
-  hpId?: number;
+  hpIds: number[];
   reasonId: number;
   findingId: number;
   classificationId: number;
   remarks?: string;
-  consultationTicketId?: number;
+  consultationTicketId: number;
 };
 export const createMedicalCertificateAction = withErrorHandling(async (input: CreateMedicalCertificateInput) => {
   const session = await getCachedSession();
@@ -149,7 +140,7 @@ export const createMedicalCertificateAction = withErrorHandling(async (input: Cr
     clinicUid,
     patientId,
     documentTemplateId,
-    hpId,
+    hpIds,
     reasonId,
     findingId,
     classificationId,
@@ -160,11 +151,19 @@ export const createMedicalCertificateAction = withErrorHandling(async (input: Cr
 
   const result = await prismaClient.$transaction(async (prisma) => {
     const appUser = await prisma.user.findUnique({
-      where: { userId: session.user.sub },
-      select: { id: true }
+      where: {
+        userId: session.user.sub,
+        isActive: true,
+        deletedAt: null,
+      },
+      select: USER_WITH_HEALTHCARE_PROVIDERS_SELECT
     });
-    if (!appUser) throw new Error("Session user id is missing or invalid");
-    const createdBy = appUser.id;
+
+    const { authorizedHpId, createdBy } = validateHealthcareProviderAuth(
+      appUser,
+      hpIds,
+      "create medical certificates"
+    );
 
     const certificate = await prisma.clinicMedicalCertificate.create({
       data: {
@@ -172,14 +171,14 @@ export const createMedicalCertificateAction = withErrorHandling(async (input: Cr
         Clinic: { connect: { clinicUid } },
         ClinicPatient: { connect: { id: patientId } },
         DocumentTemplate: { connect: { id: documentTemplateId } },
-        HealthCareProvider: { connect: { id: hpId } },
+        HealthCareProvider: { connect: { id: authorizedHpId } },
         Reason: { connect: { id: reasonId } },
         Finding: { connect: { id: findingId } },
         Classification: { connect: { id: classificationId } },
         CreatedBy: { connect: { id: createdBy } },
+        ConsultationTicket: { connect: { id: consultationTicketId } },
         isActive: true,
         remarks: remarks || "",
-        ConsultationTicket: consultationTicketId ? { connect: { id: consultationTicketId } } : undefined,
       },
     });
     return certificate;
@@ -192,7 +191,7 @@ export type UpdateMedicalCertificateInput = {
   clinicUid?: string;
   clinicPatientId?: number;
   documentTemplateId?: number;
-  hpId?: number;
+  hpIds: number[];
   reasonId?: number;
   findingId?: number;
   classificationId?: number;
@@ -202,13 +201,33 @@ export type UpdateMedicalCertificateInput = {
 export const updateMedicalCertificateAction = withErrorHandling(async (input: UpdateMedicalCertificateInput) => {
   const session = await getCachedSession();
   if (!session) throw new Error("Unauthorized");
-  const { id, ...updateData } = input;
-  const updatedBy = session.user.id;
-  const certificate = await prismaClient.clinicMedicalCertificate.update({
-    where: { id },
-    data: { ...updateData, updatedBy },
+  const { id, hpIds, ...updateData } = input;
+
+  const result = await prismaClient.$transaction(async (prisma) => {
+    const appUser = await prisma.user.findUnique({
+      where: {
+        userId: session.user.sub,
+        isActive: true,
+        deletedAt: null,
+      },
+      select: USER_WITH_HEALTHCARE_PROVIDERS_SELECT
+    });
+
+    const { createdBy } = validateHealthcareProviderAuth(
+      appUser,
+      hpIds,
+      "update medical certificates"
+    );
+
+    const certificate = await prisma.clinicMedicalCertificate.update({
+      where: { id },
+      data: { ...updateData, updatedBy: createdBy },
+    });
+
+    return certificate;
   });
-  return { message: "Medical Certificate updated successfully", data: certificate };
+
+  return { message: "Medical Certificate updated successfully", data: result };
 });
 
 export const deleteMedicalCertificateAction = withErrorHandling(async ({ medicalCertificateId }: { medicalCertificateId: number }) => {

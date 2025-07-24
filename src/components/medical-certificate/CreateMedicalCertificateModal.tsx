@@ -118,8 +118,8 @@ interface CreateMedicalCertificateModalProps {
   onCreateMedicalCertificate?: () => void
   userInfo?: PatientProfile | null
   patientId?: number
-  hpId?: number
-  consultationTicketId?: number
+  hpIds: number[]
+  consultationTicketId: number
 }
 
 
@@ -128,7 +128,7 @@ export default function CreateMedicalCertificateModal({
   userInfo,
   clinicUid,
   patientId,
-  hpId,
+  hpIds,
   consultationTicketId,
 }: CreateMedicalCertificateModalProps) {
   const [open, setOpen] = React.useState(false);
@@ -224,7 +224,7 @@ export default function CreateMedicalCertificateModal({
         clinicUid,
         patientId,
         documentTemplateId,
-        hpId,
+        hpIds,
         reasonId: reason.id,
         findingId: finding.id,
         classificationId: classification.id,
@@ -241,7 +241,7 @@ export default function CreateMedicalCertificateModal({
     } finally {
       setIsSubmitting(false);
     }
-  }, [reasons, findings, classifications, clinicUid, patientId, hpId, consultationTicketId, onCreateMedicalCertificate, resetFormWithDefaults]);
+  }, [reasons, findings, classifications, clinicUid, patientId, hpIds, consultationTicketId, onCreateMedicalCertificate, resetFormWithDefaults]);
 
   return (
     <>

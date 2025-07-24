@@ -21,7 +21,7 @@ interface PageProps {
 async function PHRPage({ params, searchParams }: PageProps) {
   const session = await getCachedSession();
   if (!session) {
-    redirect("/api/auth/login");
+    redirect("/auth/login");
   }
 
   const { user } = await params;

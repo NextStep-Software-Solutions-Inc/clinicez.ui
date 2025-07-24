@@ -43,6 +43,7 @@ interface EditLaboratoryRequestModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onUpdated?: () => void;
+  hpIds: number[];
 }
 
 export default function EditLaboratoryRequestModal({
@@ -50,6 +51,7 @@ export default function EditLaboratoryRequestModal({
   open,
   onOpenChange,
   onUpdated,
+  hpIds,
 }: EditLaboratoryRequestModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [showAlert, setShowAlert] = useState(false);
@@ -135,6 +137,7 @@ export default function EditLaboratoryRequestModal({
         id: request.id,
         impression: data.impression,
         diagnosticIds: data.diagnosticIds,
+        hpIds: hpIds,
       });
 
       toast.success(result.message);
@@ -145,7 +148,7 @@ export default function EditLaboratoryRequestModal({
     } finally {
       setIsLoading(false);
     }
-  }, [request.id, onUpdated, onOpenChange]);
+  }, [request.id, onUpdated, onOpenChange, hpIds]);
 
   return (
     <>

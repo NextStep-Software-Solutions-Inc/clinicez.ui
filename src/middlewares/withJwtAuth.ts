@@ -9,11 +9,11 @@ const devCert = fs.readFileSync(path.join(process.cwd(), "certificates/dev-clini
 
 const cert = process.env.NEXT_PUBLIC_BUILD_ENV === 'production' ? prodCert : devCert;
 
-export const withJwtAuth = <T = any>(handler: (req: NextRequest, context: { params: Promise<T> }) => Promise<NextResponse>) => {
+export const withJwtAuth = <T extends Record<string, unknown>>(handler: (req: NextRequest, context: { params: Promise<T> }) => Promise<NextResponse>) => {
 
   return async (req: NextRequest, context: { params: Promise<T> }) => {
     const authHeader = req.headers.get('Authorization');
-    
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json({ error: 'Missing or invalid Authorization header' }, {
         status: 401
@@ -21,9 +21,9 @@ export const withJwtAuth = <T = any>(handler: (req: NextRequest, context: { para
     }
 
     const token = authHeader.split(' ')[1];
-    
+
     try {
-      jwt.verify(token, cert, { algorithms: ['RS256'], ignoreExpiration: false});
+      jwt.verify(token, cert, { algorithms: ['RS256'], ignoreExpiration: false });
     } catch (err) {
       return NextResponse.json({ error: 'Invalid or expired token' }, {
         status: 401

@@ -56,9 +56,10 @@ export interface LaboratoryRequest {
 export interface LaboratoryRequestItemProps {
   request: LaboratoryRequest;
   onUpdated?: () => void;
+  hpIds: number[];
 }
 
-export default function LaboratoryRequestItem({ request, onUpdated }: LaboratoryRequestItemProps) {
+export default function LaboratoryRequestItem({ request, onUpdated, hpIds }: LaboratoryRequestItemProps) {
   const patient = request.ClinicPatient?.Patient;
   const [editModalOpen, setEditModalOpen] = useState(false);
 
@@ -155,6 +156,7 @@ export default function LaboratoryRequestItem({ request, onUpdated }: Laboratory
         open={editModalOpen}
         onOpenChange={setEditModalOpen}
         onUpdated={onUpdated}
+        hpIds={hpIds}
       />
     </div>
   );

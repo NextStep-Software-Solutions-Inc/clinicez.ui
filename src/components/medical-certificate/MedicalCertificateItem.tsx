@@ -51,9 +51,10 @@ export interface MedicalCertificate {
 export interface MedicalCertificateItemProps {
   certificate: MedicalCertificate;
   onUpdated?: () => void;
+  hpIds: number[];
 }
 
-export default function MedicalCertificateItem({ certificate, onUpdated }: MedicalCertificateItemProps) {
+export default function MedicalCertificateItem({ certificate, onUpdated, hpIds }: MedicalCertificateItemProps) {
   const patient = certificate.ClinicPatient?.Patient;
   const [editModalOpen, setEditModalOpen] = useState(false);
 
@@ -169,6 +170,7 @@ export default function MedicalCertificateItem({ certificate, onUpdated }: Medic
         open={editModalOpen}
         onOpenChange={setEditModalOpen}
         onUpdated={onUpdated}
+        hpIds={hpIds}
       />
     </div>
   );

@@ -70,7 +70,7 @@ export default function LaboratoryRequest({ consultationTicketId, clinicUid, hpI
               </p>
             }
             render={(request) => (
-              <LaboratoryRequestItem request={request} onUpdated={mutate} />
+              <LaboratoryRequestItem request={request} onUpdated={mutate} hpIds={hpIds} />
             )}
           />
         </div>

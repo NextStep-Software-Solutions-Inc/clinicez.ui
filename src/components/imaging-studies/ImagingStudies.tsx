@@ -74,7 +74,8 @@ export default function ImagingStudies({ consultationTicketId, clinicUid, hpIds,
               <ImagingStudiesItem
                 study={study}
                 userInfo={userInfo}
-                onUpdated={mutate} />
+                onUpdated={mutate}
+                hpIds={hpIds} />
             )}
           />
         </div>

@@ -73,7 +73,7 @@ export default function MedicalCertificate({ consultationTicketId, clinicUid, hp
               </p>
             }
             render={(certificate: MedicalCertificate) => (
-              <MedicalCertificateItem certificate={certificate} onUpdated={mutate} />
+              <MedicalCertificateItem certificate={certificate} onUpdated={mutate} hpIds={hpIds} />
             )}
           />
         </div>

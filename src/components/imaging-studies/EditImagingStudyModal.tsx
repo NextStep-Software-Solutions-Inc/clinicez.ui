@@ -42,6 +42,7 @@ interface EditImagingStudyModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onUpdated?: () => void;
+  hpIds: number[];
 }
 
 export default function EditImagingStudyModal({
@@ -50,6 +51,7 @@ export default function EditImagingStudyModal({
   open,
   onOpenChange,
   onUpdated,
+  hpIds,
 }: EditImagingStudyModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [showAlert, setShowAlert] = useState(false);
@@ -121,6 +123,7 @@ export default function EditImagingStudyModal({
         history: data.history,
         reason: data.reason,
         impression: data.impression,
+        hpIds: hpIds,
       });
 
       toast.success(result.message);
@@ -131,7 +134,7 @@ export default function EditImagingStudyModal({
     } finally {
       setIsLoading(false);
     }
-  }, [study.id, onUpdated, onOpenChange]);
+  }, [study.id, onUpdated, onOpenChange, hpIds]);
 
   return (
     <>

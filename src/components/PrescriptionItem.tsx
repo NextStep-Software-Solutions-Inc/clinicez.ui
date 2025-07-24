@@ -21,8 +21,9 @@ import DownloadPrescriptionAction from "./prescription/DownloadPrescriptionActio
 export interface PrescriptionItemProps {
   onUpdated?: () => void;
   prescription: NonNullable<GetPrescriptions["data"]>[number];
+  hpIds: number[];
 }
-export default function PrescriptionItem({ prescription, onUpdated }: PrescriptionItemProps) {
+export default function PrescriptionItem({ prescription, onUpdated, hpIds }: PrescriptionItemProps) {
   const Icon = Pill;
   return (
     <div
@@ -71,7 +72,7 @@ export default function PrescriptionItem({ prescription, onUpdated }: Prescripti
               <DownloadIcon className="h-4 w-4  hover:scale-125 transition-all" />
             </ActionButton>
           </DownloadPrescriptionAction>
-          <ModifyPrescriptionAction prescription={prescription} onUpdated={onUpdated} />
+          <ModifyPrescriptionAction prescription={prescription} onUpdated={onUpdated} hpIds={hpIds} />
           <ArchivePrescriptionAction prescription={prescription} onUpdated={onUpdated} />
         </div>
       </div>
@@ -82,13 +83,14 @@ export default function PrescriptionItem({ prescription, onUpdated }: Prescripti
 interface ModifyPrescriptionActionProps {
   onUpdated?: () => void;
   prescription: PrescriptionItemProps["prescription"];
+  hpIds: number[];
 }
-const ModifyPrescriptionAction = ({ prescription, onUpdated }: ModifyPrescriptionActionProps) => {
+const ModifyPrescriptionAction = ({ prescription, onUpdated, hpIds }: ModifyPrescriptionActionProps) => {
   return (
     <UpdatePrescriptionModal onUpdated={onUpdated} prescription={{
       id: prescription.id,
       name: prescription.name ?? "",
-    }} />
+    }} hpIds={hpIds} />
   )
 }
 interface ArchivePrescriptionActionProps {

@@ -5,13 +5,13 @@ import React, { Suspense } from "react";
 import GlobalError from "./GlobalError";
 
 interface Props {
-    errorFallback?: ({ error, reset }: {error: Error, reset?: () => void}) => JSX.Element;
-    loadingFallback?: JSX.Element;
-    children: React.ReactNode;
+  errorFallback?: ({ error, reset }: { error: Error, reset?: () => void }) => JSX.Element;
+  loadingFallback?: JSX.Element;
+  children: React.ReactNode;
 }
 
-const defaultErrorFallback = ({ error, reset }: {error: Error, reset?: () => void}) => {
-  return <GlobalError error={error} reset={reset || (() => {})} />;
+const defaultErrorFallback = ({ error, reset }: { error: Error, reset?: () => void }) => {
+  return <GlobalError error={error} reset={reset ?? (() => { })} />;
 };
 
 export default function Suspend({ children, errorFallback = defaultErrorFallback, loadingFallback = <div>Loading resources...</div> }: Props) {
@@ -19,7 +19,7 @@ export default function Suspend({ children, errorFallback = defaultErrorFallback
     <ErrorBoundary errorComponent={errorFallback}>
       <Suspense fallback={loadingFallback}>
         {children}
-      </Suspense>    
+      </Suspense>
     </ErrorBoundary>
   );
 }

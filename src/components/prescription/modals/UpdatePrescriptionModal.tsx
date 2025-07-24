@@ -31,7 +31,7 @@ import {
 } from "@components/ui/tooltip";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Pencil, Pill } from "lucide-react";
-import {  useRef } from "react";
+import { useRef } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -41,7 +41,8 @@ interface UpdatePrescriptionModalProps {
   prescription: {
     id: number;
     name: string;
-  }
+  };
+  hpIds: number[];
 }
 
 type UpdatePrescriptionForm = z.infer<typeof updatePrescriptionFormSchema>;
@@ -49,9 +50,9 @@ const updatePrescriptionFormSchema = z.object({
   name: z.string().trim().optional(),
 });
 
-export default function UpdatePrescriptionModal({onUpdated,prescription}: UpdatePrescriptionModalProps) {
+export default function UpdatePrescriptionModal({ onUpdated, prescription, hpIds }: UpdatePrescriptionModalProps) {
   const closeBtnRef = useRef<HTMLInputElement>(null);
-  
+
   const form = useForm<UpdatePrescriptionForm>({
     resolver: zodResolver(updatePrescriptionFormSchema),
     defaultValues: {
@@ -61,8 +62,8 @@ export default function UpdatePrescriptionModal({onUpdated,prescription}: Update
 
   const action = async () => {
     form.handleSubmit((data) => {
-     
-      toast.promise(promiseWrapper(updatePrescriptionActions)({...data, id: prescription.id}), {
+
+      toast.promise(promiseWrapper(updatePrescriptionActions)({ ...data, id: prescription.id, hpIds: hpIds }), {
         loading: "Updating new prescription...",
         success: (res) => {
           onUpdated?.();

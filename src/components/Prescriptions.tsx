@@ -52,6 +52,7 @@ export default function Prescriptions({ consultationTicketId, clinicUid, hpIds, 
             <Suspend>
               <CreatePrescriptionModal
                 onCreated={mutate}
+                hpIds={hpIds}
               />
             </Suspend>
           </div>
@@ -67,7 +68,7 @@ export default function Prescriptions({ consultationTicketId, clinicUid, hpIds, 
               </p>
             }
             render={(prescription) => (
-              <PrescriptionItem prescription={prescription} onUpdated={mutate} />
+              <PrescriptionItem prescription={prescription} onUpdated={mutate} hpIds={hpIds} />
             )}
           />
         </div>

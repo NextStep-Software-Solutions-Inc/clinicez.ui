@@ -58,6 +58,7 @@ interface EditMedicalCertificateModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onUpdated?: () => void;
+  hpIds: number[];
 }
 
 export default function EditMedicalCertificateModal({
@@ -65,6 +66,7 @@ export default function EditMedicalCertificateModal({
   open,
   onOpenChange,
   onUpdated,
+  hpIds,
 }: EditMedicalCertificateModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [showAlert, setShowAlert] = useState(false);
@@ -195,6 +197,7 @@ export default function EditMedicalCertificateModal({
         findingId: finding.id,
         classificationId: classification.id,
         remarks: data.remarks,
+        hpIds: hpIds,
       });
 
       toast.success(result.message);
@@ -205,7 +208,7 @@ export default function EditMedicalCertificateModal({
     } finally {
       setIsLoading(false);
     }
-  }, [certificate.id, reasons, findings, classifications, onUpdated, onOpenChange]);
+  }, [certificate.id, reasons, findings, classifications, onUpdated, onOpenChange, hpIds]);
 
   return (
     <>

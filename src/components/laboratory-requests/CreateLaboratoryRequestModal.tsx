@@ -153,24 +153,27 @@ export default function CreateLaboratoryRequestModal({
     }
 
     setIsSubmitting(true);
-    try {
-      const result = await promiseWrapper(createLaboratoryRequestAction)({
-        clinicUid,
-        patientId,
-        hpIds,
-        consultationTicketId,
-        ...data,
-      });
-
-      toast.success(result.message);
-      resetFormWithDefaults();
-      setOpen(false);
-      onCreated?.();
-    } catch (error) {
-      toast.error(error as string);
-    } finally {
-      setIsSubmitting(false);
-    }
+    toast.promise(promiseWrapper(createLaboratoryRequestAction)({
+      clinicUid,
+      patientId,
+      hpIds,
+      consultationTicketId,
+      ...data,
+    }), {
+      loading: "Creating laboratory request...",
+      success: (result) => {
+        resetFormWithDefaults();
+        setOpen(false);
+        onCreated?.();
+        return result.message || "Laboratory request created successfully!";
+      },
+      error: (error) => {
+        return error as string;
+      },
+      finally: () => {
+        setIsSubmitting(false);
+      },
+    });
   }, [patientId, hpIds, clinicUid, consultationTicketId, resetFormWithDefaults, onCreated]);
 
   const diagnostics = useMemo(() => diagnosticsData?.data || [], [diagnosticsData?.data]);

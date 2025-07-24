@@ -64,6 +64,7 @@ const DownloadMedicalCertificateAction = React.forwardRef<
             reason: data.Reason?.name || "",
             finding: data.Finding?.name || "",
             recommendations: data.remarks || "",
+            impression: data.impression || "",
             createdAt: data.createdAt || new Date(),
           },
         })

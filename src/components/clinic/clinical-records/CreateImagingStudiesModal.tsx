@@ -157,25 +157,28 @@ export default function CreateImagingStudiesModal({ clinicUid, onCreateImagingSt
     }
 
     setIsSubmitting(true);
-    try {
-      const result = await promiseWrapper(createImagingStudyAction)({
-        clinicUid,
-        patientId,
-        hpIds,
-        consultationTicketId,
-        diagnosticIds: values.diagnostics,
-        ...values,
-      });
-
-      toast.success("Imaging study request created successfully.");
-      setOpen(false);
-      resetFormWithDefaults();
-      onCreateImagingStudy?.();
-    } catch (error) {
-      toast.error("Failed to create imaging study request.");
-    } finally {
-      setIsSubmitting(false);
-    }
+    toast.promise(promiseWrapper(createImagingStudyAction)({
+      clinicUid,
+      patientId,
+      hpIds,
+      consultationTicketId,
+      diagnosticIds: values.diagnostics,
+      ...values,
+    }), {
+      loading: "Creating imaging study request...",
+      success: (result) => {
+        setOpen(false);
+        resetFormWithDefaults();
+        onCreateImagingStudy?.();
+        return result.message || "Imaging study request created successfully!";
+      },
+      error: (error) => {
+        return error as string;
+      },
+      finally: () => {
+        setIsSubmitting(false);
+      },
+    });
   }, [patientId, hpIds, clinicUid, consultationTicketId, resetFormWithDefaults, onCreateImagingStudy]);
 
   return (

@@ -45,6 +45,7 @@ export interface MedicalCertificate {
   DocumentTemplate?: { id: number; name?: string };
   HealthCareProvider?: { id: number; };
   remarks?: string;
+  impression?: string;
 }
 
 

@@ -1695,6 +1695,7 @@ model ClinicMedicalCertificate {
   createdBy            Int
   isActive             Boolean   @default(true)
   remarks              String?
+  impression           String?
   updatedBy            Int?
   deletedAt            DateTime?
   deletedBy            Int?

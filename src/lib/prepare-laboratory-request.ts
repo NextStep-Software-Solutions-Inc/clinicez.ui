@@ -44,7 +44,7 @@ export const prepareLaboratoryRequest = (payload: PrepareLaboratoryRequestPayloa
     "@{address}": address,
     "@{birthdate}": birthdate,
     "@{requestDate}": requestDate,
-    "@{impression}": impression,
+    "@{impression}": impression || "No impression provided.",
     "@{doctorName}": doctorName,
     "@{licenseNo}": licenseNo,
     "@{ptrNo}": ptrNo,

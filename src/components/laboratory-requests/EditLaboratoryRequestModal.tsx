@@ -126,7 +126,9 @@ export default function EditLaboratoryRequestModal({
   const handleConfirmClose = useCallback(() => {
     setShowAlert(false);
     onOpenChange?.(false);
-  }, [onOpenChange]); const onSubmit = useCallback(async (data: FormData) => {
+  }, [onOpenChange]);
+
+  const onSubmit = useCallback(async (data: FormData) => {
     setIsLoading(true);
     try {
       const result = await promiseWrapper(updateLaboratoryRequestAction)({

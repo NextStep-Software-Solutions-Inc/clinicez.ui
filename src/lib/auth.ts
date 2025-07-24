@@ -10,7 +10,7 @@ export function checkUserPermission(
     parseAccessToken(accessToken, "permissions").includes(permission)
   );
 }
-  
+
 // lets create a function that parse the accessToken to get the permission claims
 export function parseAccessToken(accessToken: string, claim: string): string[] {
   const payload = decode(accessToken, {
@@ -21,10 +21,9 @@ export function parseAccessToken(accessToken: string, claim: string): string[] {
   }
   return [];
 }
-  
 
 export const sessionCheck = async () => {
   const session = await getCachedSession();
-  if(!session) throw new Error("User not authenticated.");
+  if (!session) throw new Error("User not authenticated.");
   return session;
 }

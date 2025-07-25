@@ -56,6 +56,8 @@ export function DataTable<TData extends NonNullable<GetConsultationTickets["data
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(initialColumnFilters ?? [])
   const [sorting, setSorting] = React.useState<SortingState>([])
 
+  console.log("Data Received: ", data);
+
   const table = useReactTable({
     data,
     columns,
@@ -84,8 +86,8 @@ export function DataTable<TData extends NonNullable<GetConsultationTickets["data
 
   return (
     <div className="space-y-4">
-      <DataTableToolbar 
-        table={table} 
+      <DataTableToolbar
+        table={table}
         options={{
           showArchived: options?.showArchived === true
         }}
@@ -136,7 +138,7 @@ export function DataTable<TData extends NonNullable<GetConsultationTickets["data
                         </TableCell>
                       )}
                     />
-  
+
                   </TableRow>
                 )
               }}
@@ -146,7 +148,7 @@ export function DataTable<TData extends NonNullable<GetConsultationTickets["data
                     colSpan={columns.length}
                     className="h-24 text-center"
                   >
-                  No results.
+                    No results.
                   </TableCell>
                 </TableRow>
               )}

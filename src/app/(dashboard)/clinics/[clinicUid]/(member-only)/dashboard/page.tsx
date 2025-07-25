@@ -6,31 +6,31 @@ import {
   TabsTrigger,
 } from "@components/ui/tabs"
 import { MainNav } from "@components/dashboard/MainNav"
-import { DashboardStats } from "@components/dashboard/DashboardStats"
 import { getCachedSession } from "@actions/session.action"
 import Suspend from "@components/Suspend"
 import { PatientHealthAnalytics } from "@components/dashboard/PatientHealthAnalytics"
 import { PatientsAnalytics } from "@components/dashboard/PatientsAnalytics"
-import { OrgMembershipAnalytics } from "@/components/organization/OrgMembershipAnalytics"
 import { filterNavList } from "../nav"
 import { ClinicOverview } from "@/components/dashboard/ClinicOverview"
 import { getClinicAction } from "@/actions/clinics/clinic.action"
-import { AppRouterPageRouteOpts } from "@/types"
+import { Reports } from "@/components/dashboard/Reports"
 
 export const maxDuration = 30; // page timeout in seconds
-export const revalidate  = 60; // revalidation interval in seconds
+export const revalidate = 60; // revalidation interval in seconds
 export const metadata: Metadata = {
   title: "Clinic Dashboard",
   description: "Clinic Dashboard",
 }
 
-export default async function DashboardPage(props: AppRouterPageRouteOpts) {
-  const params = await props.params;
-  const clinicUid = String(params?.clinicUid)
+interface DashboardPageProps {
+  params: Promise<{ clinicUid: string }>
+}
+
+export default async function DashboardPage({ params }: DashboardPageProps) {
+  const { clinicUid } = await params;
   const session = await getCachedSession()
   const clinic = await getClinicAction(clinicUid)
   const userId = session?.user.sub
-
 
   const mappedNavItems = filterNavList().map((item) => ({
     ...item,
@@ -65,15 +65,18 @@ export default async function DashboardPage(props: AppRouterPageRouteOpts) {
             </TabsList>
             <TabsContent value="overview" className="space-y-4">
               <Suspend>
-                {userId && <ClinicOverview userId={userId} clinicUid={clinicUid}/>}
+                {userId && <ClinicOverview userId={userId} clinicUid={clinicUid} />}
               </Suspend>
             </TabsContent>
             <TabsContent value="analytics" className="space-y-4">
               <Suspend>
-                <PatientHealthAnalytics orgUid={clinicUid}/>
+                <PatientHealthAnalytics orgUid={clinicUid} />
               </Suspend>
               <Suspend>
-                <PatientsAnalytics orgUid={clinicUid}/>
+                <PatientsAnalytics orgUid={clinicUid} />
+              </Suspend>
+              <Suspend>
+                <Reports clinicUid={clinicUid} />
               </Suspend>
               {/* <Suspend>
                 <OrgMembershipAnalytics orgUid={clinicUid}/>

@@ -1,5 +1,5 @@
 import React from "react";
-import AppointmentPanel  from "@components/appointment/AppointmentPanel";
+import AppointmentPanel from "@components/appointment/AppointmentPanel";
 import { cookies } from "next/headers";
 import { Separator } from "@components/ui/separator";
 import { getAppointmentCountsAction, getRoutedAppointmentCountsAction } from "@actions/appointments/appointments.action";
@@ -21,7 +21,11 @@ export const metadata: Metadata = {
   description: "View and respond to appointments",
 }
 
-export default async function AppointmentsPage(props: AppRouterPageRouteOpts) {
+interface AppointmentsPageProps {
+  params: Promise<{ clinicUid: string }>
+}
+
+export default async function AppointmentsPage(props: AppointmentsPageProps) {
   const params = await props.params;
   const clinicUid = String(params?.clinicUid)
   const session = await getCachedSession()
@@ -39,7 +43,7 @@ export default async function AppointmentsPage(props: AppRouterPageRouteOpts) {
   const defaultLayout = layout ? JSON.parse(layout.value) : undefined
   const defaultCollapsed = collapsed ? JSON.parse(collapsed.value) : undefined
 
-  if(!session) redirect(`/auth/login?returnTo=${encodeURIComponent(`/clinics/${clinicUid}/appointments`)}`)
+  if (!session) redirect(`/auth/login?returnTo=${encodeURIComponent(`/clinics/${clinicUid}/appointments`)}`)
 
   return (
     <div className="space-y-6">
@@ -60,7 +64,7 @@ export default async function AppointmentsPage(props: AppRouterPageRouteOpts) {
       <Separator />
       <div className="rounded-[0.5rem] border bg-background shadow">
         <Suspend
-          loadingFallback={<PageLoading label="Loading Appointments..."/>}
+          loadingFallback={<PageLoading label="Loading Appointments..." />}
         >
           <AppointmentPanel
             tabs={tabs.data.map(tab => ({
@@ -69,7 +73,7 @@ export default async function AppointmentsPage(props: AppRouterPageRouteOpts) {
               roles: tab.ClinicRoleAppointmentTabs.map(role => ({
                 id: role.ClinicRole.id,
                 name: role.ClinicRole.name
-              }))      
+              }))
             }))}
             appointmentStatusCounts={appointmentCounts.data ?? {}}
             routedAppointmentStatusCounts={routedAptCounts.data ?? {}}
@@ -77,7 +81,7 @@ export default async function AppointmentsPage(props: AppRouterPageRouteOpts) {
             defaultCollapsed={defaultCollapsed}
             navCollapsedSize={4}
           >
-            <AppointmentDisplay/>
+            <AppointmentDisplay />
           </AppointmentPanel>
         </Suspend>
       </div>

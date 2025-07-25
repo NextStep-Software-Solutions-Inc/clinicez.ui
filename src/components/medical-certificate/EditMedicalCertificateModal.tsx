@@ -49,6 +49,7 @@ const formSchema = z.object({
     required_error: "Please select a medical classification",
   }).min(1, { message: "Please select a medical classification" }),
   remarks: z.string().optional(),
+  impression: z.string().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -82,6 +83,7 @@ export default function EditMedicalCertificateModal({
       findings: "",
       medicalClassification: "",
       remarks: "",
+      impression: "",
     },
     mode: "onChange",
   });
@@ -92,6 +94,7 @@ export default function EditMedicalCertificateModal({
       findings: "",
       medicalClassification: "",
       remarks: "",
+      impression: "",
     });
   }, [form]);
 
@@ -113,6 +116,7 @@ export default function EditMedicalCertificateModal({
           findings: "",
           medicalClassification: "",
           remarks: certificate.remarks || "",
+          impression: certificate.impression || "",
         };
 
         if (certificate.Reason && reasonsRes.data) {
@@ -141,6 +145,11 @@ export default function EditMedicalCertificateModal({
           form.setValue("remarks", certificate.remarks);
         }
 
+        if (certificate.impression) {
+          values.impression = certificate.impression;
+          form.setValue("impression", certificate.impression);
+        }
+
         setOriginalValues(values);
       } catch (error) {
         toast.error("Failed to load form data");
@@ -162,7 +171,8 @@ export default function EditMedicalCertificateModal({
       currentValues.selectedReason !== originalValues.selectedReason ||
       currentValues.findings !== originalValues.findings ||
       currentValues.medicalClassification !== originalValues.medicalClassification ||
-      currentValues.remarks !== originalValues.remarks
+      currentValues.remarks !== originalValues.remarks ||
+      currentValues.impression !== originalValues.impression
     );
   }, [form, originalValues]);
 
@@ -180,34 +190,38 @@ export default function EditMedicalCertificateModal({
   }, [onOpenChange]);
 
   const onSubmit = useCallback(async (data: FormData) => {
-    setIsLoading(true);
-    try {
-      const reason = reasons?.find(r => r.name === data.selectedReason);
-      const finding = findings?.find(f => f.name === data.findings);
-      const classification = classifications?.find(c => c.name === data.medicalClassification);
+    const reason = reasons?.find(r => r.name === data.selectedReason);
+    const finding = findings?.find(f => f.name === data.findings);
+    const classification = classifications?.find(c => c.name === data.medicalClassification);
 
-      if (!reason || !finding || !classification) {
-        toast.error("Please select valid reason, finding, and classification.");
-        return;
-      }
-
-      const result = await promiseWrapper(updateMedicalCertificateAction)({
-        id: certificate.id,
-        reasonId: reason.id,
-        findingId: finding.id,
-        classificationId: classification.id,
-        remarks: data.remarks,
-        hpIds: hpIds,
-      });
-
-      toast.success(result.message);
-      onUpdated?.();
-      onOpenChange(false);
-    } catch (error) {
-      toast.error(error as string);
-    } finally {
-      setIsLoading(false);
+    if (!reason || !finding || !classification) {
+      toast.error("Please select valid reason, finding, and classification.");
+      return;
     }
+
+    setIsLoading(true);
+    toast.promise(promiseWrapper(updateMedicalCertificateAction)({
+      id: certificate.id,
+      reasonId: reason.id,
+      findingId: finding.id,
+      classificationId: classification.id,
+      remarks: data.remarks,
+      impression: data.impression,
+      hpIds: hpIds,
+    }), {
+      loading: "Updating medical certificate...",
+      success: (result) => {
+        onUpdated?.();
+        onOpenChange(false);
+        return result.message || "Medical certificate updated successfully!";
+      },
+      error: (error) => {
+        return error as string;
+      },
+      finally: () => {
+        setIsLoading(false);
+      },
+    });
   }, [certificate.id, reasons, findings, classifications, onUpdated, onOpenChange, hpIds]);
 
   return (
@@ -366,6 +380,24 @@ export default function EditMedicalCertificateModal({
                       <FormControl>
                         <textarea
                           placeholder="Enter Recommendations/Remarks"
+                          {...field}
+                          className="w-full min-h-[80px] border rounded-md p-2 text-sm focus:outline-primary"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="impression"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Impression (Optional)</FormLabel>
+                      <FormControl>
+                        <textarea
+                          placeholder="Enter Impression"
                           {...field}
                           className="w-full min-h-[80px] border rounded-md p-2 text-sm focus:outline-primary"
                         />

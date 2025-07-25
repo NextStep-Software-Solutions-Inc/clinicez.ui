@@ -37,6 +37,7 @@ export const getMedicalCertificatesAction = withErrorHandling(async (filters: Ge
       serialNumber: true,
       createdAt: true,
       remarks: true,
+      impression: true,
       Clinic: { select: { id: true, name: true } },
       ClinicPatient: {
         select: {
@@ -131,6 +132,7 @@ type CreateMedicalCertificateInput = {
   findingId: number;
   classificationId: number;
   remarks?: string;
+  impression?: string;
   consultationTicketId: number;
 };
 export const createMedicalCertificateAction = withErrorHandling(async (input: CreateMedicalCertificateInput) => {
@@ -145,6 +147,7 @@ export const createMedicalCertificateAction = withErrorHandling(async (input: Cr
     findingId,
     classificationId,
     remarks,
+    impression,
     consultationTicketId } = input;
 
   const serialNumber = generateSerialNumber();
@@ -179,6 +182,7 @@ export const createMedicalCertificateAction = withErrorHandling(async (input: Cr
         ConsultationTicket: { connect: { id: consultationTicketId } },
         isActive: true,
         remarks: remarks || "",
+        impression: impression || "",
       },
     });
     return certificate;
@@ -196,6 +200,7 @@ export type UpdateMedicalCertificateInput = {
   findingId?: number;
   classificationId?: number;
   remarks?: string;
+  impression?: string;
   isActive?: boolean;
 };
 export const updateMedicalCertificateAction = withErrorHandling(async (input: UpdateMedicalCertificateInput) => {

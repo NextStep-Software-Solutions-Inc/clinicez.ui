@@ -117,23 +117,26 @@ export default function EditImagingStudyModal({
 
   const onSubmit = useCallback(async (data: FormData) => {
     setIsLoading(true);
-    try {
-      const result = await promiseWrapper(updateImagingStudyAction)({
-        id: study.id,
-        history: data.history,
-        reason: data.reason,
-        impression: data.impression,
-        hpIds: hpIds,
-      });
-
-      toast.success(result.message);
-      onUpdated?.();
-      onOpenChange(false);
-    } catch (error) {
-      toast.error(error as string);
-    } finally {
-      setIsLoading(false);
-    }
+    toast.promise(promiseWrapper(updateImagingStudyAction)({
+      id: study.id,
+      history: data.history,
+      reason: data.reason,
+      impression: data.impression,
+      hpIds: hpIds,
+    }), {
+      loading: "Updating imaging study...",
+      success: (result) => {
+        onUpdated?.();
+        onOpenChange(false);
+        return result.message || "Imaging study updated successfully!";
+      },
+      error: (error) => {
+        return error as string;
+      },
+      finally: () => {
+        setIsLoading(false);
+      },
+    });
   }, [study.id, onUpdated, onOpenChange, hpIds]);
 
   return (

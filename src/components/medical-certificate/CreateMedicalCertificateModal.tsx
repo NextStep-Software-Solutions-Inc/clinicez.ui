@@ -111,6 +111,7 @@ const createMedicalCertificateSchema = z.object({
     required_error: "Please select a medical classification",
   }).min(1, { message: "Please select a medical classification" }),
   remarks: z.string().optional(),
+  impression: z.string().optional(),
 })
 
 interface CreateMedicalCertificateModalProps {
@@ -177,7 +178,8 @@ export default function CreateMedicalCertificateModal({
       formValues.selectedReason ||
       formValues.findings ||
       formValues.medicalClassification ||
-      (formValues.remarks && formValues.remarks.trim())
+      (formValues.remarks && formValues.remarks.trim()) ||
+      (formValues.impression && formValues.impression.trim())
     );
   }, [form]);
 
@@ -212,6 +214,7 @@ export default function CreateMedicalCertificateModal({
     const documentTemplateId = reason?.documentTemplateId || classification?.documentTemplateId || finding?.documentTemplateId;
 
     const remarks = values.remarks;
+    const impression = values.impression;
 
     if (!reason || !finding || !classification || !documentTemplateId) {
       toast.error("Please select valid reason, finding, and classification.");
@@ -219,28 +222,32 @@ export default function CreateMedicalCertificateModal({
     }
 
     setIsSubmitting(true);
-    try {
-      const result = await promiseWrapper(createMedicalCertificateAction)({
-        clinicUid,
-        patientId,
-        documentTemplateId,
-        hpIds,
-        reasonId: reason.id,
-        findingId: finding.id,
-        classificationId: classification.id,
-        remarks,
-        consultationTicketId,
-      });
-
-      toast.success(result.message);
-      onCreateMedicalCertificate?.();
-      setOpen(false);
-      resetFormWithDefaults();
-    } catch (error) {
-      toast.error(error as string);
-    } finally {
-      setIsSubmitting(false);
-    }
+    toast.promise(promiseWrapper(createMedicalCertificateAction)({
+      clinicUid,
+      patientId,
+      documentTemplateId,
+      hpIds,
+      reasonId: reason.id,
+      findingId: finding.id,
+      classificationId: classification.id,
+      remarks,
+      impression,
+      consultationTicketId,
+    }), {
+      loading: "Creating medical certificate...",
+      success: (data) => {
+        onCreateMedicalCertificate?.();
+        setOpen(false);
+        resetFormWithDefaults();
+        return data.message || "Medical certificate created successfully!";
+      },
+      error: (error) => {
+        return error as string;
+      },
+      finally: () => {
+        setIsSubmitting(false);
+      },
+    });
   }, [reasons, findings, classifications, clinicUid, patientId, hpIds, consultationTicketId, onCreateMedicalCertificate, resetFormWithDefaults]);
 
   return (
@@ -446,11 +453,30 @@ export default function CreateMedicalCertificateModal({
                   name="remarks"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Recommendations/Remarks</FormLabel>
+                      <FormLabel>Recommendations/Remarks (Optional)</FormLabel>
                       <FormControl>
                         <textarea
                           id="remarks"
                           placeholder="Enter Recommendations/Remarks"
+                          {...field}
+                          className="w-full min-h-[80px] border rounded-md p-2 text-sm focus:outline-primary"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="impression"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Impression/Diagnosis (Optional)</FormLabel>
+                      <FormControl>
+                        <textarea
+                          id="impression"
+                          placeholder="Enter Impression"
                           {...field}
                           className="w-full min-h-[80px] border rounded-md p-2 text-sm focus:outline-primary"
                         />

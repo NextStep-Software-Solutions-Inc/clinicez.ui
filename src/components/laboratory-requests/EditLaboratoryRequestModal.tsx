@@ -132,22 +132,25 @@ export default function EditLaboratoryRequestModal({
 
   const onSubmit = useCallback(async (data: FormData) => {
     setIsLoading(true);
-    try {
-      const result = await promiseWrapper(updateLaboratoryRequestAction)({
-        id: request.id,
-        impression: data.impression,
-        diagnosticIds: data.diagnosticIds,
-        hpIds: hpIds,
-      });
-
-      toast.success(result.message);
-      onUpdated?.();
-      onOpenChange(false);
-    } catch (error) {
-      toast.error(error as string);
-    } finally {
-      setIsLoading(false);
-    }
+    toast.promise(promiseWrapper(updateLaboratoryRequestAction)({
+      id: request.id,
+      impression: data.impression,
+      diagnosticIds: data.diagnosticIds,
+      hpIds: hpIds,
+    }), {
+      loading: "Updating laboratory request...",
+      success: (result) => {
+        onUpdated?.();
+        onOpenChange(false);
+        return result.message || "Laboratory request updated successfully!";
+      },
+      error: (error) => {
+        return error as string;
+      },
+      finally: () => {
+        setIsLoading(false);
+      },
+    });
   }, [request.id, onUpdated, onOpenChange, hpIds]);
 
   return (

@@ -15,7 +15,7 @@ import { Separator } from "@components/ui/separator";
 import { GetHpsByIds, getHpsByIdsAction } from "@actions/hp.actions";
 import Each from "@components/utils/Each";
 import { Fragment } from "react";
-import EMRPreviewSheetWrapper from "@components/EMRPreviewSheetWrapper";
+// import EMRPreviewSheetWrapper from "@components/EMRPreviewSheetWrapper";
 import EMRTriggerButton from "@components/EMRTriggerButton";
 import PrescriptionsWrapper from "@components/PrescriptionsWrapper";
 import MedicalCertificateWrapper from "@components/MedicalCertificateWrapper";
@@ -88,7 +88,7 @@ export default async function ConsultationDetails({ consultation }: Consultation
         userId={appointment.data?.Requesters[0].User?.id}
         userInfo={userDetails}
       />
-      <EMRPreviewSheetWrapper />
+      {/* <EMRPreviewSheetWrapper /> */}
     </>
   );
 }

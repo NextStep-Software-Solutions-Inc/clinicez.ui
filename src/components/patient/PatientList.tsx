@@ -33,7 +33,7 @@ export const PatientList = async ({ clinicUid, search, page = 1 }: PatientListPr
       <div className="mb-5 mx-5 flex justify-end">
         <Paginate initialPage={page} totalPages={Math.ceil(total / pageSize)} />
       </div>
-      <EMRPreviewSheetWrapper />
+      {/* <EMRPreviewSheetWrapper /> */}
     </>
   );
 };

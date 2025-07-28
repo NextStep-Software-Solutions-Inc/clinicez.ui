@@ -23,18 +23,18 @@ const CreateMedicalCertificateModal = dynamic(
 export interface MedicalCertificateProps {
   consultationTicketId: number;
   clinicUid: string;
-  hpId: number;
+  hpIds: number[];
   isArchived?: boolean;
   patientId?: number;
   userInfo?: PatientProfile | null;
 }
 
-export default function MedicalCertificate({ consultationTicketId, clinicUid, hpId, patientId, userInfo }: MedicalCertificateProps) {
+export default function MedicalCertificate({ consultationTicketId, clinicUid, hpIds, patientId, userInfo }: MedicalCertificateProps) {
 
   const { data: certificates, mutate } = useMedicalCertificates({
     clinicUid,
     consultationTicketId,
-    hpId,
+    hpIds,
     patientId
   });
 
@@ -57,7 +57,7 @@ export default function MedicalCertificate({ consultationTicketId, clinicUid, hp
                 onCreateMedicalCertificate={mutate}
                 userInfo={userInfo}
                 patientId={patientId}
-                hpId={hpId}
+                hpIds={hpIds}
               />
             </Suspend>
           </div>
@@ -73,7 +73,7 @@ export default function MedicalCertificate({ consultationTicketId, clinicUid, hp
               </p>
             }
             render={(certificate: MedicalCertificate) => (
-              <MedicalCertificateItem certificate={certificate} onUpdated={mutate} />
+              <MedicalCertificateItem certificate={certificate} onUpdated={mutate} hpIds={hpIds} />
             )}
           />
         </div>

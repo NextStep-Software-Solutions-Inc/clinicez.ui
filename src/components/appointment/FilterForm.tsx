@@ -37,7 +37,7 @@ import { Checkbox } from "@components/ui/checkbox"
 import { Separator } from "@components/ui/separator"
 import { usePermissions } from "@hooks/usePermission"
 import { PERMISSIONS } from "@lib/permissions"
-import { useUser } from "@auth0/nextjs-auth0/client"
+import { useUser } from "@auth0/nextjs-auth0"
 import { useClinicPatients } from "@/hooks/useClinicPatient"
 
 const FilterFormSchema = z.object({

@@ -21,7 +21,7 @@ import { GetMyUserPreference, upsertMyUserPreference } from "@actions/users/pref
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@components/ui/select"
 import Each from "@components/utils/Each"
 import { useHPs } from "@hooks/useHP"
-import { useUser } from "@auth0/nextjs-auth0/client"
+import { useUser } from "@auth0/nextjs-auth0"
 import { promiseWrapper } from "@/lib/with-error-handling"
 
 

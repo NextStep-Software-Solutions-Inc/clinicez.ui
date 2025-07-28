@@ -41,10 +41,10 @@ export default function ConsultationTicketSheet({ children, onClose, consultatio
             of={consultationTickets}
             fallback={<p className="text-center text-sm text-muted-foreground">No consultation tickets found.</p>}
             render={(record) => (
-              <Link 
+              <Link
                 href={{
                   pathname: `/clinics/${clinicUid}/consultations/${record.id}`,
-                }} 
+                }}
                 target="_blank"
               >
                 <ConsultationTicket record={record}/>

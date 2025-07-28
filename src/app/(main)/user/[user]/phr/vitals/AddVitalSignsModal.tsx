@@ -8,26 +8,26 @@ interface AddVitalSignsModalProps {
   userId: string
   children: React.ReactNode
 }
-export default async function AddVitalSignsModal({userId, children}: AddVitalSignsModalProps) {
+export default function AddVitalSignsModal({ userId, children }: AddVitalSignsModalProps) {
   return (
     <Dialog>
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <CustomModalContent 
+      <CustomModalContent
         className="sm:max-w-[800px] overflow-scroll max-h-[100vh] no-scrollbar"
-        label="Add Vital Signs" 
+        label="Add Vital Signs"
         description="Add your vital signs and anthropometric measurements."
       >
         <Alert className="my-2">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Caution</AlertTitle>
           <AlertDescription>
-              Ensure that you have the correct information before adding your vital signs.
+            Ensure that you have the correct information before adding your vital signs.
           </AlertDescription>
         </Alert>
         <Suspend>
-          <AddVitalSignsForm userId={userId}/>
+          <AddVitalSignsForm userId={userId} />
         </Suspend>
       </CustomModalContent>
     </Dialog>

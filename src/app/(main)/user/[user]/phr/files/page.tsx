@@ -1,19 +1,31 @@
 import { Separator } from "@components/ui/separator"
 import { Metadata } from "next"
-import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth0"
 import Suspend from "@components/Suspend"
 import { isUserOwner } from "@lib/org-utils"
 import ConditionalRender from "@components/utils/ConditionalRender"
 import { FilesForm } from "./FilesForm"
 import Folder from "../../../../../../components/CreateFolder"
+import { getCachedSession } from "@actions/session.action"
+import { redirect } from "next/navigation"
 
 export const metadata: Metadata = {
   title: "Files | PHR",
   description: "These are the files you have uploaded to your PHR."
 }
 
-async function PHRPage({ params, searchParams }: AppRouterPageRouteOpts) {
-  const userId = decodeURI(params?.user as string)
+interface PageProps {
+  params: Promise<{ user: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}
+
+async function PHRPage({ params, searchParams }: PageProps) {
+  const session = await getCachedSession();
+  if (!session) {
+    redirect("/auth/login");
+  }
+
+  const { user } = await params;
+  const userId = decodeURI(user);
   const owner = await isUserOwner(userId);
 
   return (
@@ -33,14 +45,8 @@ async function PHRPage({ params, searchParams }: AppRouterPageRouteOpts) {
       <Suspend>
         <FilesForm userId={userId} readOnly={!owner} />
       </Suspend>
-
     </div>
   )
 }
 
-export default withPageAuthRequired(PHRPage, {
-  returnTo: ({ params, searchParams }) => {
-    const searchStr = Object.entries(searchParams ?? {}).map(([key, value]) => `${key}=${value}`).join("&");
-    return `/user/${params?.userId}/phr?${searchStr}`;
-  }
-})
+export default PHRPage;

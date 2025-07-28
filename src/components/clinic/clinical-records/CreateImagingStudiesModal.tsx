@@ -2,8 +2,9 @@
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { UnsavedChangesAlert } from "@/components/UnsavedChangesAlert";
 import { zodResolver } from "@hookform/resolvers/zod";
-import React from "react";
+import React, { useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -61,13 +62,14 @@ interface CreateImagingStudiesModalProps {
   onCreateImagingStudy?: () => void;
   userInfo: PatientProfile | null;
   patientId?: number;
-  hpId?: number;
-  consultationTicketId?: number;
+  hpIds: number[];
+  consultationTicketId: number;
 }
 
-export default function CreateImagingStudiesModal({ clinicUid, onCreateImagingStudy, userInfo, patientId, hpId, consultationTicketId }: CreateImagingStudiesModalProps) {
+export default function CreateImagingStudiesModal({ clinicUid, onCreateImagingStudy, userInfo, patientId, hpIds, consultationTicketId }: CreateImagingStudiesModalProps) {
   const [open, setOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [showAlert, setShowAlert] = React.useState(false);
 
   const { result, loading } = useImagingDiagnostics();
   const diagnostics = result.map((diag) => ({
@@ -110,70 +112,207 @@ export default function CreateImagingStudiesModal({ clinicUid, onCreateImagingSt
     defaultValues: autofillDefaults,
   });
 
+  const resetFormWithDefaults = useCallback(() => {
+    form.reset(autofillDefaults);
+  }, [form, autofillDefaults]);
+
+  // Check if there are unsaved changes
+  const hasUnsavedChanges = useCallback(() => {
+    const formValues = form.getValues();
+    return !!(
+      formValues.diagnostics?.length > 0 ||
+      (formValues.history && formValues.history.trim()) ||
+      (formValues.impression && formValues.impression.trim()) ||
+      (formValues.reason && formValues.reason.trim())
+    );
+  }, [form]);
+
+  const handleClose = useCallback((newOpen: boolean) => {
+    if (!newOpen && hasUnsavedChanges()) {
+      setShowAlert(true);
+    } else {
+      setOpen(newOpen);
+      if (!newOpen) {
+        resetFormWithDefaults();
+      }
+    }
+  }, [hasUnsavedChanges, resetFormWithDefaults]);
+
+  const handleConfirmClose = useCallback(() => {
+    setShowAlert(false);
+    setOpen(false);
+    resetFormWithDefaults();
+  }, [resetFormWithDefaults]);
+
   React.useEffect(() => {
     if (open) {
-      form.reset(autofillDefaults);
+      resetFormWithDefaults();
     }
-  }, [open, autofillDefaults, form]);
+  }, [open, resetFormWithDefaults]);
 
-  const action = form.handleSubmit(async (values) => {
-    if (!patientId || !hpId) {
+  const action = useCallback(async (values: z.infer<typeof createImagingStudiesSchema>) => {
+    if (!patientId || !hpIds || hpIds.length === 0) {
       toast.error("Missing required patient or healthcare provider information.");
       return;
     }
 
     setIsSubmitting(true);
-    try {
-      const result = await promiseWrapper(createImagingStudyAction)({
-        clinicUid,
-        patientId,
-        hpId,
-        consultationTicketId,
-        diagnosticIds: values.diagnostics,
-        ...values,
-      });
+    toast.promise(promiseWrapper(createImagingStudyAction)({
+      clinicUid,
+      patientId,
+      hpIds,
+      consultationTicketId,
+      diagnosticIds: values.diagnostics,
+      ...values,
+    }), {
+      loading: "Creating imaging study request...",
+      success: (result) => {
+        setOpen(false);
+        resetFormWithDefaults();
+        onCreateImagingStudy?.();
+        return result.message || "Imaging study request created successfully!";
+      },
+      error: (error) => {
+        return error as string;
+      },
+      finally: () => {
+        setIsSubmitting(false);
+      },
+    });
+  }, [patientId, hpIds, clinicUid, consultationTicketId, resetFormWithDefaults, onCreateImagingStudy]);
 
-      toast.success("Imaging study request created successfully.");
-      setOpen(false);
-      form.reset(autofillDefaults);
-      onCreateImagingStudy?.();
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to create imaging study request.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  });
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <Form {...form}>
-        <form onSubmit={action} id="add-imaging-study-form">
-          <DialogTrigger asChild>
-            <Button size="sm" className="gap-2">
-              <Plus className="h-4 w-4" />
-              New Request
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl w-full">
-            {/* Header */}
-            <DialogHeader>
-              <DialogTitle>Create Imaging Studies Request</DialogTitle>
-              <DialogDescription>
-                Fill in the patient information and imaging study details.
-              </DialogDescription>
-            </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={handleClose}>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(action)} id="add-imaging-study-form">
+            <DialogTrigger asChild>
+              <Button size="sm" className="gap-2">
+                <Plus className="h-4 w-4" />
+                New Request
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl w-full">
+              {/* Header */}
+              <DialogHeader>
+                <DialogTitle>Create Imaging Studies Request</DialogTitle>
+                <DialogDescription>
+                  Fill in the patient information and imaging study details.
+                </DialogDescription>
+              </DialogHeader>
 
-            {/* Body */}
-            <div className="max-h-[60vh] overflow-y-auto flex flex-col gap-4 py-2">
-              <div className="flex gap-2">
+              {/* Body */}
+              <div className="max-h-[60vh] overflow-y-auto flex flex-col gap-4 py-2">
+                <div className="flex gap-2">
+                  <FormField
+                    control={form.control}
+                    name="patientName"
+                    render={({ field }) => (
+                      <FormItem className="flex-1">
+                        <FormLabel>Name</FormLabel>
+                        <FormControl>
+                          <Input id="patientName" placeholder="Juan Dela Cruz" {...field} disabled />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="age"
+                    render={({ field }) => (
+                      <FormItem className="w-32">
+                        <FormLabel>Age</FormLabel>
+                        <FormControl>
+                          <Input
+                            id="age"
+                            placeholder="32"
+                            disabled
+                            {...field}
+                            onChange={(e) => field.onChange(Number.parseInt(e.target.value) || 0)}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
                 <FormField
                   control={form.control}
-                  name="patientName"
+                  name="address"
                   render={({ field }) => (
-                    <FormItem className="flex-1">
-                      <FormLabel>Name</FormLabel>
+                    <FormItem>
+                      <FormLabel>Address</FormLabel>
                       <FormControl>
-                        <Input id="patientName" placeholder="Juan Dela Cruz" {...field} disabled />
+                        <Input id="address" placeholder="123 Main Street, Quezon City, Metro Manila" {...field} disabled />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="flex gap-2">
+                  <FormField
+                    control={form.control}
+                    name="birthdate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Birthdate</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="date"
+                            id="birthdate"
+                            value={field.value ? new Date(field.value).toISOString().split('T')[0] : ''}
+                            onChange={e => field.onChange(new Date(e.target.value))}
+                            max={new Date().toISOString().split('T')[0]}
+                            disabled
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="gender"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Gender</FormLabel>
+                        <FormControl>
+                          <RadioGroup
+                            onValueChange={field.onChange}
+                            value={field.value}
+                            className="flex flex-row gap-6"
+                            disabled
+                          >
+                            {GENDERS.map((gender) => (
+                              <div key={gender} className="flex items-center gap-2">
+                                <RadioGroupItem value={gender} className="cursor-pointer" />
+                                <FormLabel htmlFor={gender} className="font-normal text-sm select-none cursor-pointer">
+                                  {capitalize(gender)}
+                                </FormLabel>
+                              </div>
+                            ))}
+                          </RadioGroup>
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <FormField
+                  control={form.control}
+                  name="diagnostics"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Diagnostics</FormLabel>
+                      <FormControl>
+                        <MultiSelect
+                          options={diagnostics}
+                          value={field.value || []}
+                          onChange={field.onChange}
+                          placeholder={loading ? "Loading diagnostics..." : "Select diagnostics"}
+                          disabled={loading}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -181,17 +320,52 @@ export default function CreateImagingStudiesModal({ clinicUid, onCreateImagingSt
                 />
                 <FormField
                   control={form.control}
-                  name="age"
+                  name="history"
                   render={({ field }) => (
-                    <FormItem className="w-32">
-                      <FormLabel>Age</FormLabel>
+                    <FormItem>
+                      <FormLabel>History</FormLabel>
                       <FormControl>
-                        <Input
-                          id="age"
-                          placeholder="32"
-                          disabled
+                        <textarea
+                          id="history"
+                          placeholder="Medical history..."
+                          className="w-full min-h-[80px] border rounded-md p-2 text-sm focus:outline-primary"
                           {...field}
-                          onChange={(e) => field.onChange(Number.parseInt(e.target.value) || 0)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="impression"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Impression</FormLabel>
+                      <FormControl>
+                        <textarea
+                          id="impression"
+                          placeholder="Impression..."
+                          className="w-full min-h-[80px] border rounded-md p-2 text-sm focus:outline-primary"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="reason"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Reason</FormLabel>
+                      <FormControl>
+                        <textarea
+                          id="reason"
+                          placeholder="Reason for imaging study..."
+                          className="w-full min-h-[80px] border rounded-md p-2 text-sm focus:outline-primary"
+                          {...field}
                         />
                       </FormControl>
                       <FormMessage />
@@ -199,155 +373,27 @@ export default function CreateImagingStudiesModal({ clinicUid, onCreateImagingSt
                   )}
                 />
               </div>
+              <DialogFooter>
+                <ActionButton
+                  type="submit"
+                  form="add-imaging-study-form"
+                  className="bg-black text-white hover:bg-black/90"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Saving..." : "Save changes"}
+                </ActionButton>
+              </DialogFooter>
+            </DialogContent>
+          </form>
+        </Form>
+      </Dialog>
 
-              <FormField
-                control={form.control}
-                name="address"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Address</FormLabel>
-                    <FormControl>
-                      <Input id="address" placeholder="123 Main Street, Quezon City, Metro Manila" {...field} disabled />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <div className="flex gap-2">
-                <FormField
-                  control={form.control}
-                  name="birthdate"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Birthdate</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="date"
-                          id="birthdate"
-                          value={field.value ? new Date(field.value).toISOString().split('T')[0] : ''}
-                          onChange={e => field.onChange(new Date(e.target.value))}
-                          max={new Date().toISOString().split('T')[0]}
-                          disabled
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="gender"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Gender</FormLabel>
-                      <FormControl>
-                        <RadioGroup
-                          onValueChange={field.onChange}
-                          value={field.value}
-                          className="flex flex-row gap-6"
-                          disabled
-                        >
-                          {GENDERS.map((gender) => (
-                            <div key={gender} className="flex items-center gap-2">
-                              <RadioGroupItem value={gender} className="cursor-pointer" />
-                              <FormLabel htmlFor={gender} className="font-normal text-sm select-none cursor-pointer">
-                                {capitalize(gender)}
-                              </FormLabel>
-                            </div>
-                          ))}
-                        </RadioGroup>
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-              </div>
-              <FormField
-                control={form.control}
-                name="diagnostics"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Diagnostics</FormLabel>
-                    <FormControl>
-                      <MultiSelect
-                        options={diagnostics}
-                        value={field.value || []}
-                        onChange={field.onChange}
-                        placeholder={loading ? "Loading diagnostics..." : "Select diagnostics"}
-                        disabled={loading}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="history"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>History</FormLabel>
-                    <FormControl>
-                      <textarea
-                        id="history"
-                        placeholder="Medical history..."
-                        className="w-full min-h-[80px] border rounded-md p-2 text-sm focus:outline-primary"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="impression"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Impression</FormLabel>
-                    <FormControl>
-                      <textarea
-                        id="impression"
-                        placeholder="Impression..."
-                        className="w-full min-h-[80px] border rounded-md p-2 text-sm focus:outline-primary"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="reason"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Reason</FormLabel>
-                    <FormControl>
-                      <textarea
-                        id="reason"
-                        placeholder="Reason for imaging study..."
-                        className="w-full min-h-[80px] border rounded-md p-2 text-sm focus:outline-primary"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <DialogFooter>
-              <ActionButton
-                type="submit"
-                form="add-imaging-study-form"
-                className="bg-black text-white hover:bg-black/90"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? "Saving..." : "Save changes"}
-              </ActionButton>
-            </DialogFooter>
-          </DialogContent>
-        </form>
-      </Form>
-    </Dialog>
+      <UnsavedChangesAlert
+        open={showAlert}
+        onOpenChange={setShowAlert}
+        onConfirm={handleConfirmClose}
+        onCancel={() => setShowAlert(false)}
+      />
+    </>
   );
 }

@@ -110,7 +110,7 @@ export const getOrganizationsAction = cache(async (filters?: GetOrganizationsFil
     },
     where: {
       OrganizationSetting: {
-        ...isPublic ? { isPublic } : {}
+        ...(isPublic ? { isPublic } : {})
       },
       ...(orgUid && { orgUid }),
       ...(userId && {
@@ -145,7 +145,7 @@ export const getOrganizationAction = cache(async (key: string | number) => {
     where: {
       isActive: true,
       OR: [
-        {...!isNaN(Number(key))? {id: Number(key)} : {}}, 
+        {...(!isNaN(Number(key)) ? {id: Number(key)} : {})}, 
         {orgUid: String(key)}
       ]
     },

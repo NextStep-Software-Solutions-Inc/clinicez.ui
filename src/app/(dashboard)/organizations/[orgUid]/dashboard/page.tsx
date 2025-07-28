@@ -6,12 +6,9 @@ import {
   TabsTrigger,
 } from "@components/ui/tabs"
 import { MainNav } from "@components/dashboard/MainNav"
-import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth0"
 import { DashboardStats } from "@components/dashboard/DashboardStats"
 import { getCachedSession } from "@actions/session.action"
 import Suspend from "@components/Suspend"
-import { PatientHealthAnalytics } from "@components/dashboard/PatientHealthAnalytics"
-import { PatientsAnalytics } from "@components/dashboard/PatientsAnalytics"
 import { OrgMembershipAnalytics } from "@/components/organization/OrgMembershipAnalytics"
 import { filterNavList } from "../nav"
 
@@ -22,8 +19,15 @@ export const metadata: Metadata = {
   description: "Overview of your organization's activities and analytics."
 }
 
-async function DashboardPage({params, searchParams}: AppRouterPageRouteOpts) {
-  const orgUid = String(params?.orgUid)
+interface DashboardPageProps {
+  params: Promise<{ orgUid: string }>,
+  searchParams?: Promise<Record<string, string | string[] | undefined>>
+}
+
+export default async function DashboardPage({ params }: DashboardPageProps) {
+  const resolvedParams = await params;
+  const orgUid = String(resolvedParams?.orgUid);
+  
   const session = await getCachedSession()
   const userId = session?.user.sub
 
@@ -62,7 +66,7 @@ async function DashboardPage({params, searchParams}: AppRouterPageRouteOpts) {
             </TabsList>
             <TabsContent value="overview" className="space-y-4">
               <Suspend>
-                <DashboardStats userId={userId} orgUid={orgUid}/>
+                {userId && <DashboardStats userId={userId} orgUid={orgUid}/>}
               </Suspend>
               {/* <ConditionalRender condition={await isOrgMember() && await isHP()}>
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
@@ -108,11 +112,3 @@ async function DashboardPage({params, searchParams}: AppRouterPageRouteOpts) {
     </div>
   )
 }
-
-
-export default withPageAuthRequired(DashboardPage, {
-  returnTo: ({params, searchParams}) => {
-    const searchStr = Object.entries(searchParams ?? {}).map(([key, value]) => `${key}=${value}`).join("&");
-    return `/${String(params?.orgUid)}/dashboard?${searchStr}`;
-  }
-})

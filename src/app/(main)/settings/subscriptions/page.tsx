@@ -3,14 +3,13 @@ import React from "react";
 import SubscriptionsList from "./SubscriptionsList";
 import { Metadata } from "next";
 import { getCachedSession } from "@actions/session.action";
-import { withPageAuthRequired } from "@auth0/nextjs-auth0";
 
 export const metadata: Metadata = {
   title: "Subscriptions | Account Settings",
   description: "List of subscriptions for your account.",
 };
 
-async function SubscriptionsPage() {
+export default async function SubscriptionsPage() {
   const session = await getCachedSession();
   const userId = session?.user.sub;
   
@@ -23,9 +22,7 @@ async function SubscriptionsPage() {
         </p>
       </div>
       <Separator />
-      <SubscriptionsList userId={userId} />
+      {userId && <SubscriptionsList userId={userId} />}
     </div>
   )
 }
-
-export default withPageAuthRequired(SubscriptionsPage);

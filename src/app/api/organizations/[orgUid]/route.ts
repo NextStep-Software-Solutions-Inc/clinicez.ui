@@ -7,12 +7,12 @@ import { getOrganizationAction } from "@actions/organizations/organization.actio
 
 
 export const GET = withJwtAuth(async (req: NextRequest, { params }: {
-    params: {
+    params: Promise<{
       orgUid: string;
-    }
+    }>
   }) => {
     
-  const orgUid = String(params?.orgUid);
+  const { orgUid } = await params;
   const organization = await getOrganizationAction(orgUid)
   return NextResponse.json(organization, {status: 200});
 });

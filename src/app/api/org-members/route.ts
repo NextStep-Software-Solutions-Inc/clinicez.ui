@@ -6,11 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getOrgMembersAction, GetOrgMembersFilters } from "@/actions/organizations/org-member.action";
 import { parseObject, searchParamsToObject } from "@/lib/utils";
 
-export const GET = withJwtAuth(async (req: NextRequest, { params }: {
-  params: {
-    orgUid: string;
-  }
-}) => {
+export const GET = withJwtAuth(async (req: NextRequest) => {
 
   const filters = parseObject(searchParamsToObject(req.nextUrl.searchParams)) as GetOrgMembersFilters;
 

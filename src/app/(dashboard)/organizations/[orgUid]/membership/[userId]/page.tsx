@@ -4,10 +4,10 @@ import { Separator } from "@components/ui/separator";
 import React from "react";
 
 interface OrgMemberDetailsPageProps {
-  params: {
+  params: Promise<{
       userId: string;
       orgUid: string;
-  };
+  }>;
 }
 
 export const metadata = {
@@ -15,7 +15,8 @@ export const metadata = {
   description: "View and manage member details."
 }
 
-export default function OrgMemberDetailsPage({params}: OrgMemberDetailsPageProps) {
+export default async function OrgMemberDetailsPage(props: OrgMemberDetailsPageProps) {
+  const params = await props.params;
   return (
     <>
       <div className="space-y-6">

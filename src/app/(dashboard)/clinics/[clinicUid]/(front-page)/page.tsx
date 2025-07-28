@@ -17,7 +17,8 @@ export const metadata: Metadata = {
   description: "Clinic",
 }
 
-export default async function ClinicPage({ params }: { params: { clinicUid: string } }) {
+export default async function ClinicPage(props: { params: Promise<{ clinicUid: string }> }) {
+  const params = await props.params;
   const { clinicUid } = params;
   const session = await getCachedSession();
   const clinic = await getClinicAction(clinicUid);
@@ -46,7 +47,7 @@ export default async function ClinicPage({ params }: { params: { clinicUid: stri
     }
   }
 
-  if (!session) redirect(`/api/auth/login?returnTo=${encodeURIComponent(`/clinics/${clinicUid}`)}`);
+  if (!session) redirect(`/auth/login?returnTo=${encodeURIComponent(`/clinics/${clinicUid}`)}`);
 
   return (
     <div className="container mx-auto my-10">

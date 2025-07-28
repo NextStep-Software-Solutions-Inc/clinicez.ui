@@ -32,30 +32,40 @@ import { getClinicPatientsAction } from "@/actions/clinics/clinic-patient.action
 
 interface ProcessLayoutProps {
   children: React.ReactNode;
-  params: {
+  params: Promise<{
     clinicUid: string;
-  };
+  }>;
 }
-export default async function ProcessLayout({
-  children,
-  params: { clinicUid }
-}: ProcessLayoutProps) {
+export default async function ProcessLayout(props: ProcessLayoutProps) {
+  const params = await props.params;
+
+  const {
+    clinicUid
+  } = params;
+
+  const {
+    children
+  } = props;
 
   const session = await getCachedSession();
 
+  if (!session?.user?.sub) {
+    return redirect("/unauthorized");
+  }
+
   const [myClinicMembership, clinicPatients, myOrganizationMembership] = await Promise.all([
     getClinicMembersAction({
-      userId: session?.user.sub,
+      userId: session.user.sub,
       clinicUid,
       status: "ACTIVE"
     }),
     getClinicPatientsAction({
       clinicUid,
-      userId: session?.user.sub
+      userId: session.user.sub
     }),
     await getOrgMembersAction({
       clinicUid,
-      userId: session?.user.sub,
+      userId: session.user.sub,
       status: ["ACTIVE"]
     })
   ])
@@ -168,7 +178,7 @@ export default async function ProcessLayout({
             </div>
             <div className="max-w-xs">
               <Suspend>
-                <ClinicSwitcher isCollapsed userId={session?.user.sub} />
+                <ClinicSwitcher isCollapsed userId={session.user.sub} />
               </Suspend>
             </div>
             <Suspense fallback={<div>Loading</div>}>

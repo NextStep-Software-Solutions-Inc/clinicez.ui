@@ -10,7 +10,7 @@ export const GET = withJwtAuth(async (req: NextRequest) => {
   const orgUid = searchParams.get('orgUid');
 
   const filter = {
-    ...orgUid ? { orgUid } : {},
+    ...(orgUid ? { orgUid } : {}),
     categoryId: categoryId ? parseInt(categoryId) : undefined
   }
 

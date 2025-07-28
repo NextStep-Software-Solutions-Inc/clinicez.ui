@@ -3,7 +3,7 @@
 import { useDocumentTemplates } from "@/hooks/useDocumentTemplate";
 import { promiseWrapper } from "@/lib/with-error-handling";
 import { createPrescriptionAction } from "@actions/medications/prescription.action";
-import { useUser } from "@auth0/nextjs-auth0/client";
+import { useUser } from "@auth0/nextjs-auth0";
 import ActionButton from "@components/ActionButton";
 import CustomModalContent from "@components/CustomModalContent";
 import { Button } from "@components/ui/button";
@@ -49,6 +49,7 @@ import { z } from "zod";
 
 interface CreatePrescriptionModalProps {
   onCreated?: () => void;
+  hpIds: number[];
 }
 
 type CreatePrescriptionForm = z.infer<typeof createPrescriptionFormSchema>;
@@ -70,11 +71,12 @@ const createPrescriptionFormSchema = z.object({
 
 export default function CreatePrescriptionModal({
   onCreated,
+  hpIds,
 }: CreatePrescriptionModalProps) {
   const { user } = useUser();
-  const {clinicUid} = useParams<{clinicUid: string}>()
+  const { clinicUid } = useParams<{ clinicUid: string }>()
   const closeBtnRef = useRef<HTMLInputElement>(null);
-  
+
   const { data: myHps } = useHPs({
     userId: user?.sub ?? ""
   });
@@ -83,7 +85,7 @@ export default function CreatePrescriptionModal({
     clinicUid
   });
 
-  const {data: documentTemplates } = useDocumentTemplates({
+  const { data: documentTemplates } = useDocumentTemplates({
     typeName: "prescription",
     clinicUid
   })
@@ -97,8 +99,8 @@ export default function CreatePrescriptionModal({
 
   const action = async () => {
     form.handleSubmit((data) => {
-     
-      toast.promise(promiseWrapper(createPrescriptionAction)({...data, clinicUid}), {
+
+      toast.promise(promiseWrapper(createPrescriptionAction)({ ...data, clinicUid, hpIds: hpIds }), {
         loading: "Creating new prescription...",
         success: (res) => {
           onCreated?.();

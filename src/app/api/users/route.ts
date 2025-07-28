@@ -19,7 +19,7 @@ const newUserSchema = z.object({
   lastName: z.string().trim(),
 })
 
-export const POST = withUnkey(async (req) => {
+export const POST = async (req: NextRequest, context: { params: Promise<any> }) => {
 
   const response = new NextResponse()
   const body = await req.json();
@@ -30,9 +30,9 @@ export const POST = withUnkey(async (req) => {
     success: true,
     response: res
   }, response);
-})
+}
 
-export const GET = withJwtAuth(async (req: NextRequest) => {
+export const GET = async (req: NextRequest, context: { params: Promise<any> }) => {
   const searchParams = req.nextUrl.searchParams
 
   const filters = parseObject(Object.fromEntries(searchParams.entries()));
@@ -40,4 +40,4 @@ export const GET = withJwtAuth(async (req: NextRequest) => {
   const response = new NextResponse()
   const users = await getUsersAction(filters);
   return NextResponse.json(users, response);
-});
+};

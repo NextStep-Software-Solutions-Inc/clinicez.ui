@@ -1,15 +1,16 @@
-import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth0";
 import Suspend from "@components/Suspend";
 import { Separator } from "@components/ui/separator";
 import { isUserOwner } from "@lib/org-utils";
 import VitalSignsSSRWrapper from "./VitalSignsSSRWrapper";
+import { AppRouterPageRouteOpts } from "@/types";
 
 export const metadata = {
   title: "Vital Signs & Anthropometric Measurements | PHR",
   description: "Track your vital signs and anthropometric measurements."
 }
 
-async function VitalsPage({params, searchParams}: AppRouterPageRouteOpts) {
+export default async function VitalsPage(props: AppRouterPageRouteOpts) {
+  const params = await props.params;
   const userId = decodeURI(params?.user as string);
   const userOwner = await isUserOwner(userId);
 
@@ -28,5 +29,3 @@ async function VitalsPage({params, searchParams}: AppRouterPageRouteOpts) {
     </div>
   );
 }
-
-export default withPageAuthRequired(VitalsPage);

@@ -26,7 +26,6 @@ const DownloadImagingStudiesAction = React.forwardRef<
         const data = res.data
         if (!data) throw new Error("No data returned")
 
-        // Doctor info
         const hpProfile = data.HealthCareProvider?.HPProfile
         const professionalDetails = data.HealthCareProvider?.ProfessionalDetails
         const doctorName = `${hpProfile?.title ?? ""} ${hpProfile?.name ?? ""} ${hpProfile?.suffix ?? ""}`.trim()
@@ -34,7 +33,6 @@ const DownloadImagingStudiesAction = React.forwardRef<
         const ptrNo = professionalDetails?.ptrNumber ?? ""
         const doctorAddress = ""
 
-        // Patient info
         const patient = data.ClinicPatient?.Patient ?? {}
         const patientName =
           `${patient.firstName ?? ""} ${patient.middleName ?? ""} ${patient.lastName ?? ""} ${patient.suffix ?? ""}`.trim()
@@ -48,7 +46,6 @@ const DownloadImagingStudiesAction = React.forwardRef<
             : undefined
         const address = formatAddress(addressObj)
 
-        // Imaging study specific data
         const diagnostics = data.ImagingRequestDiagnostics?.map(item => item.ImagingDiagnostic?.name).filter(Boolean).join(", ") || ""
 
         const template = prepareImagingStudy({

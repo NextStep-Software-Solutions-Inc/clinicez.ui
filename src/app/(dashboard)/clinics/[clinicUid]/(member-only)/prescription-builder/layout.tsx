@@ -4,11 +4,20 @@ import { redirect } from "next/navigation";
 
 interface PrescriptionBuilderLayoutProps {
     children: React.ReactNode;
-    params: {
+    params: Promise<{
         clinicUid: string;
-    }
+    }>
 }
-export default async function PrescriptionBuilderLayout({children, params: {clinicUid}}:PrescriptionBuilderLayoutProps) {
+export default async function PrescriptionBuilderLayout(props:PrescriptionBuilderLayoutProps) {
+  const params = await props.params;
+
+  const {
+    clinicUid
+  } = params;
+
+  const {
+    children
+  } = props;
 
   const session = await getCachedSession();
   const myClinicMembership = await getClinicMembersAction({

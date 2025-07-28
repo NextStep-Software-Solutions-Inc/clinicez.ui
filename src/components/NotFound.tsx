@@ -18,11 +18,11 @@ export default function NotFound() {
         </p>
         <div className="my-5">
           {/* <Button onClick={goBack}>Go Back</Button> */}
-          <Link href="/">
+          <Link href="/" >
             <Button>Go Home</Button>
           </Link>
         </div>
       </div>
     </div>
-  )
+  );
 }

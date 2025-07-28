@@ -14,9 +14,7 @@ interface TenantCardProps {
 
 export default function TenantCard({details}: TenantCardProps) {
   return (
-    <Link
-      href={`tenants/${details.tenantUid}/dashboard`}
-    >
+    <Link href={`tenants/${details.tenantUid}/dashboard`} >
       <Card 
         className="cursor-pointer opacity-90 hover:opacity-100 hover:scale-105 hover:shadow-lg transition-all duration-200 ease-in-out"
       >

@@ -47,19 +47,19 @@ export const getMedicationsAction = withErrorHandling(async (filters?: GetMedica
       consultationTicketId,
       OR: [
         {
-          ...canReadAllClinicMedications ? { Clinic: { clinicUid  }, Patient: { userId: patientId}, hpId} : {},
+          ...(canReadAllClinicMedications ? { Clinic: { clinicUid  }, Patient: { userId: patientId}, hpId} : {}),
         },
         {
-          ...canReadOwnMedications ? { Patient: {
+          ...(canReadOwnMedications ? { Patient: {
             userId: session.user.sub
-          }} : {},
+          }} : {}),
         },
         {
-          ...canReadCreatedMedications ? { HealthCareProvider: {
+          ...(canReadCreatedMedications ? { HealthCareProvider: {
             User: {
               userId: session.user.sub
             }
-          }} : {},
+          }} : {}),
         }
       ]
     },
@@ -163,19 +163,19 @@ export const getMedicationAction = withErrorHandling(async (medicationId: number
       },
       OR: [
         {
-          ...canReadAllClinicMedication ? { Clinic: { clinicUid } } : {},
+          ...(canReadAllClinicMedication ? { Clinic: { clinicUid } } : {}),
         },
         {
-          ...canReadOwnMedication ? { Patient: { userId: session.user.sub } } : {},
+          ...(canReadOwnMedication ? { Patient: { userId: session.user.sub } } : {}),
         },
         {
-          ...canReadCreatedMedication ? { 
+          ...(canReadCreatedMedication ? { 
             HealthCareProvider: {
               User: {
                 userId: session.user.sub
               }
             }
-          } : {},
+          } : {}),
         }
       ]
     },

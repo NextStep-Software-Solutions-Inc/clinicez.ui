@@ -56,7 +56,7 @@ export const DashboardStats = async ({ userId, orgUid }: DashboardStatsProps) =>
         <div>
           <h3 className="text-lg font-medium mb-2 ml-1">Organization Overview</h3>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Link href={`/organizations/${orgUid}/membership`}>
+            <Link href={`/organizations/${orgUid}/membership`} >
 
               <DashboardTile
                 title={`Membership`}

@@ -32,9 +32,10 @@ export interface ImagingStudiesItemProps {
   study: ImagingStudy;
   userInfo?: PatientProfile | null;
   onUpdated?: () => void;
+  hpIds: number[];
 }
 
-export default function ImagingStudiesItem({ study, userInfo, onUpdated }: ImagingStudiesItemProps) {
+export default function ImagingStudiesItem({ study, userInfo, onUpdated, hpIds }: ImagingStudiesItemProps) {
   const [editModalOpen, setEditModalOpen] = useState(false);
 
   const handleDeleteImagingStudy = async () => {
@@ -133,6 +134,7 @@ export default function ImagingStudiesItem({ study, userInfo, onUpdated }: Imagi
         onOpenChange={setEditModalOpen}
         onUpdated={onUpdated}
         userInfo={userInfo ?? null}
+        hpIds={hpIds}
       />
     </div>
   );

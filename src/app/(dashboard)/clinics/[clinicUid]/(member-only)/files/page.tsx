@@ -1,7 +1,7 @@
 import Suspend from "@components/Suspend";
 import { Separator } from "@components/ui/separator";
 import { Metadata } from "next";
-import { AppRouterPageRouteOpts } from "@auth0/nextjs-auth0";
+import { AppRouterPageRouteOpts } from "@/types";
 import CreateFolderModal from "@components/files/modals/CreateFolderModal";
 import Each from "@components/utils/Each";
 import Folder from "@components/Folder";
@@ -14,10 +14,16 @@ export const metadata: Metadata = {
   description: "Manage and organize your files. All files are private by default and only accessible to you. You can share files with other users by sharing the link or allowing healthcare professionals to access the file.",
 }
 
-export default async function FilesPage({params}: AppRouterPageRouteOpts) {
+export default async function FilesPage(props: AppRouterPageRouteOpts) {
+  const params = await props.params;
   const clinicUid = String(params?.clinicUid)
   const session = await getCachedSession()
-  const folders = await getFoldersAction(session?.user.sub, clinicUid)
+  
+  if (!session?.user?.sub) {
+    throw new Error("User not authenticated");
+  }
+  
+  const folders = await getFoldersAction(session.user.sub, clinicUid)
   return (
     <>
       <div className="space-y-6">

@@ -6,13 +6,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { getHPAction } from "@actions/hp.actions";
 
 export const GET = withJwtAuth(async (req: NextRequest, { params }: {
-  params: {
+  params: Promise<{
     hpId: string;
-  }
+  }>
 }) => {
-  const hpId = Number(params.hpId);
+  const { hpId } = await params;
   //   const searchParams = req.nextUrl.searchParams
   
-  const hp = await getHPAction({ id: hpId });
+  const hp = await getHPAction({ id: Number(hpId) });
   return NextResponse.json(hp, {status: 200});
 });

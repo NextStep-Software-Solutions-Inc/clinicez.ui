@@ -20,19 +20,19 @@ const CreateLaboratoryRequestModal = dynamic(
 );
 
 export interface LaboratoryRequestProps {
-  consultationTicketId?: number;
-  clinicUid?: string;
-  hpId?: number;
+  consultationTicketId: number;
+  clinicUid: string;
+  hpIds: number[];
   isArchived?: boolean;
   patientId?: number;
   userInfo?: PatientProfile | null;
 }
 
-export default function LaboratoryRequest({ consultationTicketId, clinicUid, hpId, patientId, userInfo }: LaboratoryRequestProps) {
+export default function LaboratoryRequest({ consultationTicketId, clinicUid, hpIds, patientId, userInfo }: LaboratoryRequestProps) {
   const { data: requests, mutate } = useLaboratoryRequests({
     clinicUid,
     consultationTicketId,
-    hpId,
+    hpId: hpIds[0],
     patientId
   });
   return (
@@ -51,7 +51,7 @@ export default function LaboratoryRequest({ consultationTicketId, clinicUid, hpI
               <CreateLaboratoryRequestModal
                 clinicUid={clinicUid ?? ""}
                 patientId={patientId}
-                hpId={hpId}
+                hpIds={hpIds}
                 onCreated={mutate}
                 userInfo={userInfo ?? null}
                 consultationTicketId={consultationTicketId}
@@ -70,7 +70,7 @@ export default function LaboratoryRequest({ consultationTicketId, clinicUid, hpI
               </p>
             }
             render={(request) => (
-              <LaboratoryRequestItem request={request} onUpdated={mutate} />
+              <LaboratoryRequestItem request={request} onUpdated={mutate} hpIds={hpIds} />
             )}
           />
         </div>

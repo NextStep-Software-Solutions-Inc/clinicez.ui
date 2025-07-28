@@ -19,7 +19,7 @@ export const addUserDisabilityAction = async (payload: {
       severity,
       notes: notes,
       dateDiagnosed,
-      ...isManaged ? { isManage: true } : {},
+      ...(isManaged ? { isManage: true } : {}),
       User: {
         connect: {
           userId
@@ -32,7 +32,7 @@ export const addUserDisabilityAction = async (payload: {
         }
       }
     }
-  })
+  });
 };
 
 
@@ -103,7 +103,7 @@ export const upsertUserDisabilityAction = async (payload: {
       notes,
       severity,
       dateDiagnosed,
-      ...isManaged ? { isManaged: true } : {},
+      ...(isManaged ? { isManaged: true } : {}),
       Disability: {
         connectOrCreate: {
           where: { name: disability },
@@ -120,7 +120,7 @@ export const upsertUserDisabilityAction = async (payload: {
       severity: "MILD",
       notes: "",
       dateDiagnosed,
-      ...isManaged ? { isManaged: true } : {},
+      ...(isManaged ? { isManaged: true } : {}),
       Disability: {
         connectOrCreate: {
           where: { name: disability },
@@ -139,7 +139,7 @@ export const upsertUserDisabilityAction = async (payload: {
         }
       }
     }
-  })
+  });
 }
 
 export const setIsManagedAction = async (id: number, isManaged: boolean) => {

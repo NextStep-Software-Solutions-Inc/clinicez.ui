@@ -20,6 +20,7 @@ type PrepareMedicalCertificatePayload = {
     reason: string;
     finding: string;
     recommendations: string;
+    impression: string;
     createdAt: Date | string;
   };
 };
@@ -34,6 +35,7 @@ export const prepareMedicalCertificate = (payload: PrepareMedicalCertificatePayl
     reason,
     finding,
     recommendations,
+    impression,
     createdAt,
   } = certificate;
 
@@ -55,7 +57,8 @@ export const prepareMedicalCertificate = (payload: PrepareMedicalCertificatePayl
     "@{selectedClassificationDescription}": classificationDescription,
     "@{selectedReason}": reason,
     "@{selectedFinding}": finding,
-    "@{recommendations}": recommendations,
+    "@{recommendations}": recommendations || "No recommendations provided.",
+    "@{impression}": impression || "No impressions provided.",
   };
 
   let outputTemplate = template;

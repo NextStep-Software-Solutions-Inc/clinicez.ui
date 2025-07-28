@@ -5,7 +5,7 @@ import Suspend from "@components/Suspend";
 import { GetAppointment, getAppointmentAction } from "@actions/appointments/appointments.action";
 import { differenceInCalendarYears } from "date-fns";
 import { GetConsultationTicket } from "@actions/consultation/consultation-ticket.action";
-import { ExternalLink, FolderHeart } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import Link from "next/link";
 import dynamic from 'next/dynamic';
 import { Tooltip, TooltipContent, TooltipTrigger } from "@components/ui/tooltip";
@@ -15,19 +15,19 @@ import { Separator } from "@components/ui/separator";
 import { GetHpsByIds, getHpsByIdsAction } from "@actions/hp.actions";
 import Each from "@components/utils/Each";
 import { Fragment } from "react";
-import EMRPreviewSheet from "@components/EMRPreviewSheet";
-import { Button } from "@components/ui/button";
-import Prescriptions from "../Prescriptions";
-import MedicalCertificate from "../medical-certificate/MedicalCertificate";
-import ImagingStudies from "../imaging-studies/ImagingStudies";
-import LaboratoryRequest from "../laboratory-requests/LaboratoryRequest";
+// import EMRPreviewSheetWrapper from "@components/EMRPreviewSheetWrapper";
+import EMRTriggerButton from "@components/EMRTriggerButton";
+import PrescriptionsWrapper from "@components/PrescriptionsWrapper";
+import MedicalCertificateWrapper from "@components/MedicalCertificateWrapper";
+import ImagingStudiesWrapper from "@components/ImagingStudiesWrapper";
+import LaboratoryRequestWrapper from "@components/LaboratoryRequestWrapper";
 
-const VitalSigns = dynamic(() => import('./VitalSigns'), { ssr: false, loading: () => <div>Loading...</div> });
-const Conversation = dynamic(() => import('./Conversation'), { ssr: false, loading: () => <div>Loading...</div> });
-const Files = dynamic(() => import('./Files'), { ssr: false, loading: () => <div>Loading...</div> });
-const Interventions = dynamic(() => import('./Interventions'), { ssr: false, loading: () => <div>Loading...</div> });
-const NurseAssessment = dynamic(() => import('./NurseAssessment'), { ssr: false, loading: () => <div>Loading...</div> });
-const ConsultationNotes = dynamic(() => import('./ConsultationNotes'), { ssr: false, loading: () => <div>Loading...</div> });
+const VitalSigns = dynamic(() => import('./VitalSigns'), { loading: () => <div>Loading...</div> });
+const Conversation = dynamic(() => import('./Conversation'), { loading: () => <div>Loading...</div> });
+const Files = dynamic(() => import('./Files'), { loading: () => <div>Loading...</div> });
+const Interventions = dynamic(() => import('./Interventions'), { loading: () => <div>Loading...</div> });
+const NurseAssessment = dynamic(() => import('./NurseAssessment'), { loading: () => <div>Loading...</div> });
+const ConsultationNotes = dynamic(() => import('./ConsultationNotes'), { loading: () => <div>Loading...</div> });
 interface ConsultationDetailsProps {
   consultation: NonNullable<GetConsultationTicket["data"]>
 }
@@ -82,12 +82,13 @@ export default async function ConsultationDetails({ consultation }: Consultation
       <ClinicalRecords
         consultationTicketId={consultation.id}
         clinicUid={consultation.Clinic.clinicUid}
-        hpId={consultation.ConsultationTicketHPs[0]?.hpId}
+        hpIds={consultation.ConsultationTicketHPs.map(c => Number(c.hpId))}
         isArchived={false}
         patientId={appointment.data?.Requesters[0].User?.ClinicPatients[0]?.id}
-        userId={appointment.data?.Requesters[0].User?.userId}
+        userId={appointment.data?.Requesters[0].User?.id}
         userInfo={userDetails}
       />
+      {/* <EMRPreviewSheetWrapper /> */}
     </>
   );
 }
@@ -188,17 +189,17 @@ export const BackgroundInfo = ({ appointment, consultation, user }: BackgroundIn
 interface ClinicalRecordsProps {
   consultationTicketId: number;
   clinicUid: string;
-  hpId: number;
+  hpIds: number[];
   isArchived?: boolean;
   patientId?: number;
-  userId?: string;
+  userId?: number;
   userInfo?: PatientProfile | null;
 }
 
 export const ClinicalRecords = ({
   consultationTicketId,
   clinicUid,
-  hpId,
+  hpIds,
   isArchived = false,
   patientId,
   userId,
@@ -210,28 +211,28 @@ export const ClinicalRecords = ({
       tabTitle: "Prescription",
       cardTitle: "Prescription Builder",
       description: "Create and manage prescriptions for your patients.",
-      Component: Prescriptions,
+      Component: PrescriptionsWrapper,
     },
     {
       value: "medical-certificate",
       tabTitle: "Medical Certificate",
       cardTitle: "Medical Certificate Builder",
       description: "Create and manage medical certificates for your patients.",
-      Component: MedicalCertificate,
+      Component: MedicalCertificateWrapper,
     },
     {
       value: "imaging-studies",
       tabTitle: "Imaging Studies",
       cardTitle: "Imaging Studies Builder",
       description: "Create and manage imaging study requests for your patients.",
-      Component: ImagingStudies,
+      Component: ImagingStudiesWrapper,
     },
     {
       value: "laboratory",
       tabTitle: "Laboratory",
       cardTitle: "Laboratory Request",
       description: "Create and manage laboratory test requests for your patients.",
-      Component: LaboratoryRequest,
+      Component: LaboratoryRequestWrapper,
     },
   ];
 
@@ -263,7 +264,7 @@ export const ClinicalRecords = ({
                 <tab.Component
                   consultationTicketId={consultationTicketId}
                   clinicUid={clinicUid}
-                  hpId={hpId}
+                  hpIds={hpIds}
                   isArchived={isArchived}
                   patientId={patientId}
                   userId={userId}
@@ -318,13 +319,9 @@ export const PatientHpDetails = ({ creators = [], user }: PatientHpDetailsProps)
           </div>
           <div>
             <Tooltip>
-              <EMRPreviewSheet>
-                <TooltipTrigger asChild>
-                  <Button size="icon" variant="link">
-                    <FolderHeart className="w-6 h-6" />
-                  </Button>
-                </TooltipTrigger>
-              </EMRPreviewSheet>
+              <TooltipTrigger asChild>
+                <EMRTriggerButton patientId={user.userId} />
+              </TooltipTrigger>
               <TooltipContent>
                 EMR Preview
               </TooltipContent>

@@ -10,9 +10,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@components/ui/dialog";
+import { UnsavedChangesAlert } from "@/components/UnsavedChangesAlert";
 import { Input } from "@components/ui/input";
 import { Textarea } from "@components/ui/textarea";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { Plus } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -30,7 +31,7 @@ import { promiseWrapper } from "@/lib/with-error-handling";
 import { createLaboratoryRequestAction } from "@/actions/clinics/clinical-record/laboratory-requests.action";
 import { Checkbox } from "@components/ui/checkbox";
 import { useLaboratoryDiagnostics } from "@/hooks/useLaboratoryDiagnostics";
-import { calculateAge } from "@/lib/utils";
+import { calculateAge, cn, getGridCols } from "@/lib/utils";
 import Each from "@components/utils/Each";
 import { PatientProfile } from "../consultation/ConsultationDetails";
 import ActionButton from "../ActionButton";
@@ -60,22 +61,23 @@ type FormData = z.infer<typeof formSchema>;
 interface CreateLaboratoryRequestModalProps {
   clinicUid: string;
   patientId?: number;
-  hpId?: number;
+  hpIds: number[];
   onCreated?: () => void;
   userInfo: PatientProfile | null;
-  consultationTicketId?: number;
+  consultationTicketId: number;
 }
 
 export default function CreateLaboratoryRequestModal({
   clinicUid,
   patientId,
-  hpId,
+  hpIds,
   onCreated,
   userInfo,
   consultationTicketId,
 }: CreateLaboratoryRequestModalProps) {
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showAlert, setShowAlert] = useState(false);
   const { data: diagnosticsData, isLoading: diagnosticsLoading } = useLaboratoryDiagnostics();
 
   const autofillDefaults = useMemo(() => {
@@ -108,38 +110,71 @@ export default function CreateLaboratoryRequestModal({
     defaultValues: autofillDefaults,
   });
 
+  const resetFormWithDefaults = useCallback(() => {
+    form.reset(autofillDefaults);
+  }, [form, autofillDefaults]);
+
+  // Check if there are unsaved changes
+  const hasUnsavedChanges = useCallback(() => {
+    const formValues = form.getValues();
+    return !!(
+      formValues?.diagnosticIds.length > 0 ||
+      (formValues?.impression && formValues?.impression.trim())
+    );
+  }, [form]);
+
+  const handleClose = useCallback((newOpen: boolean) => {
+    if (!newOpen && hasUnsavedChanges()) {
+      setShowAlert(true);
+    } else {
+      setOpen(newOpen);
+      if (!newOpen) {
+        resetFormWithDefaults();
+      }
+    }
+  }, [hasUnsavedChanges, resetFormWithDefaults]);
+
+  const handleConfirmClose = useCallback(() => {
+    setShowAlert(false);
+    setOpen(false);
+    resetFormWithDefaults();
+  }, [resetFormWithDefaults]);
+
   useEffect(() => {
     if (open) {
-      form.reset(autofillDefaults);
+      resetFormWithDefaults();
     }
-  }, [open, autofillDefaults, form]);
+  }, [open, resetFormWithDefaults]);
 
-  const handleSubmit = async (data: FormData) => {
-    if (!patientId || !hpId) {
+  const handleSubmit = useCallback(async (data: FormData) => {
+    if (!patientId || !hpIds || hpIds.length === 0) {
       toast.error("Missing required patient or healthcare provider information.");
       return;
     }
 
     setIsSubmitting(true);
-    try {
-      const result = await promiseWrapper(createLaboratoryRequestAction)({
-        clinicUid,
-        patientId,
-        hpId,
-        consultationTicketId,
-        ...data,
-      });
-
-      toast.success(result.message);
-      form.reset(autofillDefaults);
-      setOpen(false);
-      onCreated?.();
-    } catch (error) {
-      toast.error(error as string);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+    toast.promise(promiseWrapper(createLaboratoryRequestAction)({
+      clinicUid,
+      patientId,
+      hpIds,
+      consultationTicketId,
+      ...data,
+    }), {
+      loading: "Creating laboratory request...",
+      success: (result) => {
+        resetFormWithDefaults();
+        setOpen(false);
+        onCreated?.();
+        return result.message || "Laboratory request created successfully!";
+      },
+      error: (error) => {
+        return error as string;
+      },
+      finally: () => {
+        setIsSubmitting(false);
+      },
+    });
+  }, [patientId, hpIds, clinicUid, consultationTicketId, resetFormWithDefaults, onCreated]);
 
   const diagnostics = useMemo(() => diagnosticsData?.data || [], [diagnosticsData?.data]);
 
@@ -158,51 +193,149 @@ export default function CreateLaboratoryRequestModal({
   }, [diagnostics]);
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleSubmit)} id="create-laboratory-request-form" className="space-y-4">
-          <DialogTrigger asChild>
-            <Button size="sm" className="gap-2">
-              <Plus className="h-4 w-4" />
-              New Request
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl w-full">
-            <DialogHeader>
-              <DialogTitle>Create Laboratory Request</DialogTitle>
-              <DialogDescription>
-                Create a new laboratory request for the patient.
-              </DialogDescription>
-            </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={handleClose}>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)} id="create-laboratory-request-form" className="space-y-4">
+            <DialogTrigger asChild>
+              <Button size="sm" className="gap-2">
+                <Plus className="h-4 w-4" />
+                New Request
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl w-full">
+              <DialogHeader>
+                <DialogTitle>Create Laboratory Request</DialogTitle>
+                <DialogDescription>
+                  Create a new laboratory request for the patient.
+                </DialogDescription>
+              </DialogHeader>
 
-            <div className="max-h-[60vh] overflow-y-auto flex flex-col gap-4 py-2">
-              <div className="flex gap-2">
+              <div className="max-h-[60vh] overflow-y-auto flex flex-col gap-4 py-2">
+                <div className="flex gap-2">
+                  <FormField
+                    control={form.control}
+                    name="patientName"
+                    render={({ field }) => (
+                      <FormItem className="flex-1">
+                        <FormLabel>Name</FormLabel>
+                        <FormControl>
+                          <Input id="patientName" placeholder="Juan Dela Cruz" {...field} disabled />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="age"
+                    render={({ field }) => (
+                      <FormItem className="w-32">
+                        <FormLabel>Age</FormLabel>
+                        <FormControl>
+                          <Input
+                            id="age"
+                            placeholder="32"
+                            disabled
+                            {...field}
+                            onChange={(e) => field.onChange(Number.parseInt(e.target.value) || 0)}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
                 <FormField
                   control={form.control}
-                  name="patientName"
+                  name="address"
                   render={({ field }) => (
-                    <FormItem className="flex-1">
-                      <FormLabel>Name</FormLabel>
+                    <FormItem>
+                      <FormLabel>Address</FormLabel>
                       <FormControl>
-                        <Input id="patientName" placeholder="Juan Dela Cruz" {...field} disabled />
+                        <Input id="address" placeholder="123 Main Street, Quezon City, Metro Manila" {...field} disabled />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+
                 <FormField
                   control={form.control}
-                  name="age"
+                  name="diagnosticIds"
                   render={({ field }) => (
-                    <FormItem className="w-32">
-                      <FormLabel>Age</FormLabel>
+                    <FormItem>
+                      <FormLabel>Laboratory Tests</FormLabel>
                       <FormControl>
-                        <Input
-                          id="age"
-                          placeholder="32"
-                          disabled
+                        <div className="space-y-6">
+                          {Object.keys(groupedDiagnostics).length > 0 ? (
+                            Object.entries(groupedDiagnostics).map(([category, categoryDiagnostics]) => {
+                              return (
+                                <div key={category} className="space-y-3">
+                                  <h4 className="font-semibold text-sm text-primary uppercase tracking-wide">
+                                    {category}
+                                  </h4>
+                                  <div className={cn("grid gap-3", getGridCols(categoryDiagnostics.length))}>
+                                    <Each
+                                      of={categoryDiagnostics}
+                                      render={(diagnostic) => (
+                                        <div
+                                          key={diagnostic.id}
+                                          className="w-full rounded-lg border p-3 flex items-center gap-2"
+                                          tabIndex={-1}
+                                          style={{ outline: "none" }}
+                                        >
+                                          <Checkbox
+                                            checked={field.value.includes(diagnostic.id)}
+                                            onCheckedChange={(checked) => {
+                                              if (checked) {
+                                                field.onChange([...field.value, diagnostic.id]);
+                                              } else {
+                                                field.onChange(field.value.filter(id => id !== diagnostic.id));
+                                              }
+                                            }}
+                                            className="cursor-pointer"
+                                          />
+                                          <div className="flex flex-col">
+                                            <span className="font-normal text-xs select-none">{diagnostic.name}</span>
+                                            {diagnostic.description && (
+                                              <span className="text-[10px] text-muted-foreground">{diagnostic.description}</span>
+                                            )}
+                                          </div>
+                                        </div>
+                                      )}
+                                    />
+                                  </div>
+                                </div>
+                              );
+                            })
+                          ) : (
+                            <div className="flex items-center justify-center py-8">
+                              <span className="text-sm text-muted-foreground">
+                                {diagnosticsLoading ? "Loading diagnostics..." : "No laboratory tests available"}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="impression"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Impression</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Enter impression or reason for laboratory tests..."
+                          className="resize-none"
+                          rows={4}
                           {...field}
-                          onChange={(e) => field.onChange(Number.parseInt(e.target.value) || 0)}
                         />
                       </FormControl>
                       <FormMessage />
@@ -210,124 +343,27 @@ export default function CreateLaboratoryRequestModal({
                   )}
                 />
               </div>
+              <DialogFooter>
+                <ActionButton
+                  type="submit"
+                  form="create-laboratory-request-form"
+                  className="bg-black text-white hover:bg-black/90"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Saving..." : "Save changes"}
+                </ActionButton>
+              </DialogFooter>
+            </DialogContent>
+          </form>
+        </Form>
+      </Dialog>
 
-              <FormField
-                control={form.control}
-                name="address"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Address</FormLabel>
-                    <FormControl>
-                      <Input id="address" placeholder="123 Main Street, Quezon City, Metro Manila" {...field} disabled />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="diagnosticIds"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Laboratory Tests</FormLabel>
-                    <FormControl>
-                      <div className="space-y-6">
-                        {Object.keys(groupedDiagnostics).length > 0 ? (
-                          Object.entries(groupedDiagnostics).map(([category, categoryDiagnostics]) => {
-                            // Dynamic column calculation based on number of items
-                            let gridCols = "grid-cols-1"; // Default: 1 column
-                            if (categoryDiagnostics.length >= 10) {
-                              gridCols = "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"; // 3 columns for 10+ items
-                            } else if (categoryDiagnostics.length >= 6) {
-                              gridCols = "grid-cols-1 md:grid-cols-2"; // 2 columns for 6-9 items
-                            }
-
-                            return (
-                              <div key={category} className="space-y-3">
-                                <h4 className="font-semibold text-sm text-primary uppercase tracking-wide">
-                                  {category}
-                                </h4>
-                                <div className={`grid ${gridCols} gap-3`}>
-                                  <Each
-                                    of={categoryDiagnostics}
-                                    render={(diagnostic) => (
-                                      <div
-                                        key={diagnostic.id}
-                                        className="w-full rounded-lg border p-3 flex items-center gap-2"
-                                        tabIndex={-1}
-                                        style={{ outline: "none" }}
-                                      >
-                                        <Checkbox
-                                          checked={field.value.includes(diagnostic.id)}
-                                          onCheckedChange={(checked) => {
-                                            if (checked) {
-                                              field.onChange([...field.value, diagnostic.id]);
-                                            } else {
-                                              field.onChange(field.value.filter(id => id !== diagnostic.id));
-                                            }
-                                          }}
-                                          className="cursor-pointer"
-                                        />
-                                        <div className="flex flex-col">
-                                          <span className="font-normal text-xs select-none">{diagnostic.name}</span>
-                                          {diagnostic.description && (
-                                            <span className="text-[10px] text-muted-foreground">{diagnostic.description}</span>
-                                          )}
-                                        </div>
-                                      </div>
-                                    )}
-                                  />
-                                </div>
-                              </div>
-                            );
-                          })
-                        ) : (
-                          <div className="flex items-center justify-center py-8">
-                            <span className="text-sm text-muted-foreground">
-                              {diagnosticsLoading ? "Loading diagnostics..." : "No laboratory tests available"}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="impression"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Impression</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Enter impression or reason for laboratory tests..."
-                        className="resize-none"
-                        rows={4}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <DialogFooter>
-              <ActionButton
-                type="submit"
-                form="create-laboratory-request-form"
-                className="bg-black text-white hover:bg-black/90"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? "Saving..." : "Save changes"}
-              </ActionButton>
-            </DialogFooter>
-          </DialogContent>
-        </form>
-      </Form>
-    </Dialog>
+      <UnsavedChangesAlert
+        open={showAlert}
+        onOpenChange={setShowAlert}
+        onConfirm={handleConfirmClose}
+        onCancel={() => setShowAlert(false)}
+      />
+    </>
   );
 }

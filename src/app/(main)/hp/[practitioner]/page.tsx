@@ -1,6 +1,6 @@
 import Suspend from "@components/Suspend";
 import React from "react";
-import { AppRouterPageRouteOpts } from "@auth0/nextjs-auth0";
+import { AppRouterPageRouteOpts } from "@/types";
 import { Metadata, ResolvingMetadata } from "next";
 import Link from "next/link";
 import { Button } from "@components/ui/button";
@@ -13,17 +13,18 @@ import HPProfile from "./HPProfile";
 import { FEMALE_DOCTOR_AVATAR, MALE_DOCTOR_AVATAR } from "@lib/contants";
 
 type Props = {
-  params: { practitioner: string }
-  searchParams: { [key: string]: string | string[] | undefined }
+  params: Promise<{ practitioner: string }>
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }
 
-export async function generateMetadata({ params, searchParams }: Props, parent: ResolvingMetadata): Promise<Metadata> {
-  const hpId = parseInt((params?.practitioner ?? "") as string);  
+export async function generateMetadata(props: Props, parent: ResolvingMetadata): Promise<Metadata> {
+  const params = await props.params;
+  const hpId = parseInt((params?.practitioner ?? "") as string);
   const session = await getCachedSession();
   const profile = await getHPAction({
     id: hpId
   })
-  
+
   if(!profile || (profile.User.userId !== session?.user.sub && !profile.isPublished)) return notFound();
 
   const site = new URL(process.env.AUTH0_BASE_URL ?? "").hostname;
@@ -43,7 +44,8 @@ export async function generateMetadata({ params, searchParams }: Props, parent: 
   };
 }
 
-export default async function PractitionerPage({params, searchParams}: AppRouterPageRouteOpts) {
+export default async function PractitionerPage(props: AppRouterPageRouteOpts) {
+  const params = await props.params;
 
   const hpId = parseInt((params?.practitioner ?? "") as string);
   const session = await getCachedSession()
@@ -52,11 +54,11 @@ export default async function PractitionerPage({params, searchParams}: AppRouter
   })
   const isMyHp = profile?.User.userId === session?.user.sub
   if(!profile || (!isMyHp && !profile.isPublished)) return notFound();
- 
+
   return (
     <div className="content container mx-auto my-10 relative">
       <ConditionalRender condition={isMyHp}>
-        <Link href={`/hp/${hpId}/editor`}>
+        <Link href={`/hp/${hpId}/editor`} >
           <Button className="z-10 fixed -right-[6.5rem] mr-2 hover:-right-[20px] transition-all">
             <Pencil size={20} className="mr-2"/>Edit profile
           </Button>
@@ -66,7 +68,7 @@ export default async function PractitionerPage({params, searchParams}: AppRouter
         <HPProfile hpId={hpId} />
       </Suspend>
     </div>
-  )
+  );
 }
 
 

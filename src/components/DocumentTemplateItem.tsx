@@ -99,7 +99,7 @@ const DownloadPrescriptionAction = ({ documentTemplate }: { documentTemplate: Do
         <TooltipContent side="top">Download</TooltipContent>
       </Tooltip>
     </TooltipProvider>
-  )
+  );
 }
 interface DeletePrescriptionActionProps {
   documentTemplate: DocumentTemplateItemProps["documentTemplate"];

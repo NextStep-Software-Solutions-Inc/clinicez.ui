@@ -366,10 +366,10 @@ export const findOrCreateUserAction = withErrorHandling(cache(async () => {
     if (dbUser === null) {
       dbUser = await createUserToDb(prisma, {
         userId: session.user.sub,
-        email: session.user.email,
+        email: session.user.email || "",
         mobile: "",
-        firstName: session.user.given_name,
-        lastName: session.user.family_name
+        firstName: session.user.given_name || "",
+        lastName: session.user.family_name || ""
       })
 
       await assignUserPermission(prisma, dbUser.id);

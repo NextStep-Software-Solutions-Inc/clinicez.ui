@@ -14,7 +14,7 @@ import { removeMedicationDrugAction } from "@actions/medications/medication-drug
 import AddMedicationDrugModal from "@components/prescription/modals/AddMedicationDrugModal";
 import { createPrescriptionAction, getPrescriptionAction } from "@actions/medications/prescription.action";
 import { usePermissions } from "@hooks/usePermission";
-import { useUser } from "@auth0/nextjs-auth0/client";
+import { useUser } from "@auth0/nextjs-auth0";
 import { PERMISSIONS } from "@lib/permissions";
 import { promiseWrapper } from "@/lib/with-error-handling";
 import { handlePrintHtmlToPDF } from "@/lib/print-pdf";
@@ -23,23 +23,23 @@ import DownloadPrescriptionAction from "../prescription/DownloadPrescriptionActi
 interface ModifyMedicationSheetProps {
   readonly?: boolean;
 }
-export default function ModifyMedicationSheet({ readonly }: ModifyMedicationSheetProps ) {
+export default function ModifyMedicationSheet({ readonly }: ModifyMedicationSheetProps) {
 
-  const {user} = useUser()
-  const {clinicUid} = useParams<{clinicUid: string}>()
+  const { user } = useUser()
+  const { clinicUid } = useParams<{ clinicUid: string }>()
   const searchParams = useSearchParams()
   const medicationId = Number(searchParams.get("modify-medication") ?? 0)
 
   const open = useMemo(() => !!medicationId, [medicationId])
 
-  const {data: medication, mutate: mutateMedication} = useMedication(medicationId, clinicUid)
-  
-  const {data: medicationDrugs, mutate} = useMedicationDrugs(medicationId)
-  const {data: myPermissions } = usePermissions({ userId: user?.sub ?? "", type: "CLINIC" })
+  const { data: medication, mutate: mutateMedication } = useMedication(medicationId, clinicUid)
+
+  const { data: medicationDrugs, mutate } = useMedicationDrugs(medicationId)
+  const { data: myPermissions } = usePermissions({ userId: user?.sub ?? "", type: "CLINIC" })
 
   const handleClose = (state: boolean) => {
     const searchParams = new URLSearchParams(window.location.search)
-    if(!state) searchParams.delete("modify-medication")
+    if (!state) searchParams.delete("modify-medication")
     window.history.replaceState({}, "", `${window.location.pathname}?${searchParams}`)
   }
 
@@ -84,13 +84,13 @@ export default function ModifyMedicationSheet({ readonly }: ModifyMedicationShee
 
 
   const handleCreatePrescription = () => {
-    if(!medication?.data) {
+    if (!medication?.data) {
       toast.error("Medication not found")
       return
     }
     toast.promise(promiseWrapper(createPrescriptionAction)({
       clinicUid,
-      hpId: medication.data.hpId,
+      hpIds: [medication.data.hpId],
       medicationId: medication.data.id,
       name: medication.data.name,
     }), {
@@ -102,7 +102,7 @@ export default function ModifyMedicationSheet({ readonly }: ModifyMedicationShee
       error: error => error
     })
   }
- 
+
   return (
     <Sheet open={open} onOpenChange={handleClose}>
       <SheetContent className="space-y-4 min-w-[calc(100dvw-50%)] select-none" >
@@ -112,8 +112,8 @@ export default function ModifyMedicationSheet({ readonly }: ModifyMedicationShee
             Modify the medication details.
           </SheetDescription>
         </SheetHeader>
-        <Separator/>
-        
+        <Separator />
+
         <div className="space-y-5">
           <div className="space-y-2">
             <Each
@@ -134,9 +134,9 @@ export default function ModifyMedicationSheet({ readonly }: ModifyMedicationShee
                   </div>
                   {
                     !readonly && myPermissions?.some(p => p.name === PERMISSIONS.CLINIC["REMOVE:CLINIC:MEDICATION_DRUG"].name) && !medication?.data?.completedAt && (
-                      <form action={()=>handleRemoveDrug(medicationDrug.id)}>
+                      <form action={() => handleRemoveDrug(medicationDrug.id)}>
                         <ActionButton variant="outline" size="icon" className="">
-                          <Trash className="w-4 h-4 text-destructive"/>
+                          <Trash className="w-4 h-4 text-destructive" />
                         </ActionButton>
                       </form>
                     )
@@ -149,22 +149,21 @@ export default function ModifyMedicationSheet({ readonly }: ModifyMedicationShee
             {/* add permission check here */}
             {!readonly && myPermissions?.some(p => p.name === PERMISSIONS.CLINIC["ADD:CLINIC:MEDICATION_DRUG"].name) && medication?.data?.id && !medication.data.completedAt && (
               <AddMedicationDrugModal medicationId={medication?.data?.id} onCreated={mutate} />
-            ) }
+            )}
             {
-              !readonly && myPermissions?.some(p => p.name === PERMISSIONS.CLINIC["CREATE:CLINIC:PRESCRIPTION"].name) && medication?.data?._count.Prescriptions === 0 && ( // add permission check here
+              !readonly && myPermissions?.some(p => p.name === PERMISSIONS.CLINIC["CREATE:CLINIC:PRESCRIPTION"].name) && medication?.data?._count.Prescriptions === 0 && (
                 <form action={handleCreatePrescription} className="w-full">
-                  <ActionButton 
-                    variant="outline" 
+                  <ActionButton
+                    variant="outline"
                     className="w-full"
                   >
                     <FileText className="h-4 w-4 mr-2" />
                     Create Prescription
                   </ActionButton>
-                </form>
-              )
+                </form>)
             }
           </div>
-          <Separator/>
+          <Separator />
           <div className="space-y-2">
             {
               medication?.data?.Prescriptions?.map((prescription) => (

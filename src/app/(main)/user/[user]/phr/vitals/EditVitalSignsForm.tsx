@@ -20,17 +20,17 @@ export default function EditVitalSignsForm({vitalSign}: {vitalSign: GetUserVital
   const form = useForm<VitalSignsTypeSchema>({
     resolver: zodResolver(vitalSignsSchema),
     defaultValues: {
-      ...vitalSign.bpSystolic? {bpSystolic: vitalSign.bpSystolic}: {},
-      ...vitalSign.bpDiastolic? {bpDiastolic: vitalSign.bpDiastolic}: {},
-      ...vitalSign.weight? {weight: vitalSign.weight}: {},
-      ...vitalSign.height? {height: vitalSign.height}: {},
-      ...vitalSign.bmi? {bmi: vitalSign.bmi}: {},
-      ...vitalSign.respRate? {respRate: vitalSign.respRate}: {},
-      ...vitalSign.spo2? {spo2: vitalSign.spo2}: {},
-      ...vitalSign.temp? {temp: vitalSign.temp}: {},
-      ...vitalSign.dateTaken? {dateTaken: vitalSign.dateTaken}: {},
-      ...vitalSign.pulseRate? {pulseRate: vitalSign.pulseRate}: {},
-      ...vitalSign.notes? {notes: vitalSign.notes}: {},
+      ...(vitalSign.bpSystolic ? {bpSystolic: vitalSign.bpSystolic} : {}),
+      ...(vitalSign.bpDiastolic ? {bpDiastolic: vitalSign.bpDiastolic} : {}),
+      ...(vitalSign.weight ? {weight: vitalSign.weight} : {}),
+      ...(vitalSign.height ? {height: vitalSign.height} : {}),
+      ...(vitalSign.bmi ? {bmi: vitalSign.bmi} : {}),
+      ...(vitalSign.respRate ? {respRate: vitalSign.respRate} : {}),
+      ...(vitalSign.spo2 ? {spo2: vitalSign.spo2} : {}),
+      ...(vitalSign.temp ? {temp: vitalSign.temp} : {}),
+      ...(vitalSign.dateTaken ? {dateTaken: vitalSign.dateTaken} : {}),
+      ...(vitalSign.pulseRate ? {pulseRate: vitalSign.pulseRate} : {}),
+      ...(vitalSign.notes ? {notes: vitalSign.notes} : {}),
     }
   })
 

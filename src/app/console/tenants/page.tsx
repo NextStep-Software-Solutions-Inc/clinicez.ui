@@ -2,7 +2,6 @@ import "@styles/shiny-button.css"
 
 import { getCachedSession } from "@actions/session.action";
 import { getMyTenantsAction } from "@actions/tenant.action";
-import { withPageAuthRequired } from "@auth0/nextjs-auth0";
 import TenantCard from "@components/console/TenantCard";
 import { TooltipProvider } from "@components/ui/tooltip";
 import Each from "@components/utils/Each";
@@ -10,8 +9,15 @@ import Link from "next/link";
 import React from "react";
 import { cn } from "@lib/utils";
 
-async function TenantsPage() {
+export default async function TenantsPage() {
   const session = await getCachedSession();
+  if (!session) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <p className="text-lg">You must be logged in to view this page.</p>
+      </div>
+    );
+  }
   const tenants = await getMyTenantsAction(session?.user.sub);
   return (
     <TooltipProvider>
@@ -34,22 +40,14 @@ async function TenantsPage() {
   );
 }
 
-
-export default withPageAuthRequired(TenantsPage, {
-  returnTo: ({params, searchParams}) => {
-    const searchStr = Object.entries(searchParams ?? {}).map(([key, value]) => `${key}=${value}`).join("&");
-    return `/console/tenants?${searchStr}`;
-  }
-});
-
 const NewTenantButton = () => {
   return (
     <>
-      <Link href="/tenants/register" className="flex justify-start">
+      <Link href="/tenants/register" className="flex justify-start" >
         <button className={cn("shiny-cta font-semibold")}>
           <span>Create New Tenant</span>
         </button>
       </Link>
     </>
-  )
+  );
 }

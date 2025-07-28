@@ -73,11 +73,11 @@ export default function Navigation({ version = "v1" }) {
           render={(link) => (
             <NavigationMenuItem key={link.name}>
               {!!link.href ? (
-                <Link href={link.href} legacyBehavior passHref>
-                  <NavigationMenuLink className={cn(navigationMenuTriggerStyle(), "bg-transparent")}>
+                <NavigationMenuLink className={cn(navigationMenuTriggerStyle(), "bg-transparent")} asChild>
+                  <Link href={link.href}>
                     {link.name}
-                  </NavigationMenuLink>
-                </Link>
+                  </Link>
+                </NavigationMenuLink>
               ) : (
                 <>
                   <NavigationMenuTrigger className="bg-transparent">{link.name}</NavigationMenuTrigger>

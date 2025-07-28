@@ -19,17 +19,17 @@ export const getDocumentTemplatesAction = withErrorHandling(async (filters: GetD
   const { typeName, clinicUid } = filters
   const documentTemplates = await prismaClient.documentTemplate.findMany({
     where: {
-      ...clinicUid ? {
+      ...(clinicUid ? {
         Clinic: {
           clinicUid
         }
-      }: {},
+      } : {}),
       isActive: true,
-      ...typeName? {
+      ...(typeName ? {
         DocumentTemplateType: {
           name: typeName
         }
-      }: {}
+      } : {})
     },
     select: {
       id: true,
@@ -101,7 +101,7 @@ export const updateDocumentTemplateAction = withErrorHandling(async (payload: Up
     }
   })
   return {message: "Document template updated successfully", data: documentTemplate}
-}, (error) => {
+}, async (error) => {
   if(hasCodeProperty(error) && error.code === "P2025") return "Document template not found"
 });
 
@@ -121,7 +121,7 @@ export const deleteDocumentTemplateAction = withErrorHandling(async (id: number)
     }
   })
   return {message: "Document template deleted successfully", data: documentTemplate}
-}, (error) => {
+}, async (error) => {
   if(hasCodeProperty(error) && error.code === "P2025") return "Document template not found"
 });
 

@@ -26,7 +26,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import { uploadMediaAction } from "@actions/blob.action";
-import { useUser } from "@auth0/nextjs-auth0/client";
+import { useUser } from "@auth0/nextjs-auth0";
 import { useFileTypes } from "@hooks/useFileType";
 import { heic2Jpeg, renameFile } from "@/lib/file-manipulation";
 import { compressImageAsync } from "@/lib/image-compression";
@@ -108,7 +108,7 @@ export default function UploadFileForm({folder}: UploadFileFormProps) {
         success: ({url}) => {
           toast.promise(createFileAction({
             fileTypeId: data.fileTypeId,
-            ...data.dateTaken ? {dateTaken: data.dateTaken} : {},
+            ...(data.dateTaken ? {dateTaken: data.dateTaken} : {}),
             folderId: folder.id,
             name: file.name as string,
             size: file.size as number,

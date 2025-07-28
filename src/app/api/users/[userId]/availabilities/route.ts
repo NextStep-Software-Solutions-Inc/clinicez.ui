@@ -5,11 +5,11 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const maxDuration = 40;
 export const GET = withJwtAuth(async (req: NextRequest, { params }: {
-  params: {
+  params: Promise<{
     userId: string;
-  }
+  }>
 }) => {
-  const userId = params.userId;
+  const { userId } = await params;
   const searchParams = req.nextUrl.searchParams;
 
   const serviceId = Number(searchParams.get("serviceId"));

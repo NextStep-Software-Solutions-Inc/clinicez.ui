@@ -1,15 +1,11 @@
+"use client"
+
 import Suspend from "@components/Suspend";
 import { Separator } from "@components/ui/separator";
-import { Metadata } from "next";
 import React from "react";
 import ScheduleSettings from "./ScheduleSettings";
 
-export const metadata: Metadata = {
-  title: "Schedule | Account Settings",
-  description: "Schedule Settings",
-};
-
-export default function SchedulePage() {
+export default function ScheduleSettingsPage() {
   return (
     <div className="space-y-6">
       <div>

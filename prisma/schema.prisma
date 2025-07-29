@@ -114,6 +114,9 @@ model User {
   LaboratoryRequestsCreated  ClinicLaboratoryRequest[]  @relation("LaboratoryRequestCreatedBy")
   LaboratoryRequestsUpdated  ClinicLaboratoryRequest[]  @relation("LaboratoryRequestUpdatedBy")
   LaboratoryRequestsDeleted  ClinicLaboratoryRequest[]  @relation("LaboratoryRequestDeletedBy")
+  ReferralSlipsCreated       ClinicReferralSlip[]       @relation("ReferralSlipCreatedBy")
+  ReferralSlipsUpdated       ClinicReferralSlip[]       @relation("ReferralSlipUpdatedBy")
+  ReferralSlipsDeleted       ClinicReferralSlip[]       @relation("ReferralSlipDeletedBy")
 }
 
 model ClinicPatient {
@@ -130,6 +133,7 @@ model ClinicPatient {
   MedicalCertificates      ClinicMedicalCertificate[]
   ImagingRequests          ClinicImagingRequest[]
   ClinicLaboratoryRequest  ClinicLaboratoryRequest[]
+  ClinicReferralSlips      ClinicReferralSlip[]
 
   @@unique([clinicId, patientId], name: "unique_clinic_patient")
 }
@@ -372,6 +376,7 @@ model HealthcareProvider {
   MedicalCertificates     ClinicMedicalCertificate[]
   ImagingRequests         ClinicImagingRequest[]
   ClinicLaboratoryRequest ClinicLaboratoryRequest[]
+  ClinicReferralSlips     ClinicReferralSlip[]
 
   @@unique([userId, hpTypeId], name: "unique_user_hp_type")
 }
@@ -1153,6 +1158,7 @@ model Clinic {
   MedicalCertificates             ClinicMedicalCertificate[]
   ImagingRequests                 ClinicImagingRequest[]
   ClinicLaboratoryRequest         ClinicLaboratoryRequest[]
+  ClinicReferralSlips             ClinicReferralSlip[]
 
   @@index([tenantId, clinicUid], name: "clinic_index")
 }
@@ -1309,6 +1315,7 @@ model Appointment {
   AppointmentAttachments AppointmentAttachment[]
   PreAssessmentNotes     PreAssessmentNote[]
   ConsultationTickets    ConsultationTicket[]
+  ClinicReferralSlips    ClinicReferralSlip[]
 
   @@index([clinicId], name: "clinic_appointment_index")
 }
@@ -1486,6 +1493,7 @@ model ConsultationTicket {
   MedicalCertificates         ClinicMedicalCertificate[]
   ImagingRequests             ClinicImagingRequest[]
   LaboratoryRequests          ClinicLaboratoryRequest[]
+  ClinicReferralSlips         ClinicReferralSlip[]
 }
 
 model ConsultationTicketHP {
@@ -1667,6 +1675,7 @@ model DocumentTemplate {
   MedicalCertificateClassifications MedicalCertificateClassification[]
   ImagingRequests                   ClinicImagingRequest[]
   ClinicLaboratoryRequest           ClinicLaboratoryRequest[]
+  ClinicReferralSlips               ClinicReferralSlip[]
 }
 
 model DocumentTemplateType {
@@ -1776,6 +1785,18 @@ model LaboratoryDiagnostic {
   @@unique([name, category], name: "unique_laboratory_diagnostic")
 }
 
+model ReferralReason {
+  id                  Int                  @id @default(autoincrement())
+  name                String               @unique
+  description         String?
+  isActive            Boolean              @default(true)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  ClinicReferralSlips ClinicReferralSlip[]
+
+  @@index([name], name: "referral_reason_name_index")
+}
+
 model ClinicImagingRequest {
   id                 Int      @id @default(autoincrement())
   clinicId           Int
@@ -1837,6 +1858,41 @@ model ClinicLaboratoryRequest {
   LaboratoryRequestDiagnostics ClinicLaboratoryRequestDiagnostic[]
 
   @@unique([serialNumber], name: "unique_laboratory_request_serial_number")
+}
+
+model ClinicReferralSlip {
+  id                   Int       @id @default(autoincrement())
+  clinicId             Int
+  documentTemplateId   Int
+  clinicPatientId      Int
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  createdBy            Int
+  isActive             Boolean   @default(true)
+  reasonId             Int
+  updatedBy            Int?
+  deletedAt            DateTime?
+  deletedBy            Int?
+  serialNumber         String
+  referredToId         Int
+  consultationTicketId Int
+  appointmentId        Int
+  history              String?
+  impression           String?
+  recommendation       String?
+
+  Clinic             Clinic             @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  DocumentTemplate   DocumentTemplate   @relation(fields: [documentTemplateId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  ClinicPatient      ClinicPatient      @relation(fields: [clinicPatientId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  CreatedBy          User               @relation("ReferralSlipCreatedBy", fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  UpdatedBy          User?              @relation("ReferralSlipUpdatedBy", fields: [updatedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  DeletedBy          User?              @relation("ReferralSlipDeletedBy", fields: [deletedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Reason             ReferralReason     @relation(fields: [reasonId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  ReferredTo         HealthcareProvider @relation(fields: [referredToId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  ConsultationTicket ConsultationTicket @relation(fields: [consultationTicketId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  Appointment        Appointment        @relation(fields: [appointmentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([serialNumber], name: "unique_referral_slip_serial_number")
 }
 
 model ClinicLaboratoryRequestDiagnostic {

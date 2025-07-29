@@ -21,6 +21,7 @@ import PrescriptionsWrapper from "@components/PrescriptionsWrapper";
 import MedicalCertificateWrapper from "@components/MedicalCertificateWrapper";
 import ImagingStudiesWrapper from "@components/ImagingStudiesWrapper";
 import LaboratoryRequestWrapper from "@components/LaboratoryRequestWrapper";
+import ReferralSlipWrapper from "../clinic/clinical-records/referral-slip/ReferralSlipWrapper";
 
 const VitalSigns = dynamic(() => import('./VitalSigns'), { loading: () => <div>Loading...</div> });
 const Conversation = dynamic(() => import('./Conversation'), { loading: () => <div>Loading...</div> });
@@ -87,6 +88,7 @@ export default async function ConsultationDetails({ consultation }: Consultation
         patientId={appointment.data?.Requesters[0].User?.ClinicPatients[0]?.id}
         userId={appointment.data?.Requesters[0].User?.id}
         userInfo={userDetails}
+        appointment={appointment.data}
       />
       {/* <EMRPreviewSheetWrapper /> */}
     </>
@@ -194,6 +196,7 @@ interface ClinicalRecordsProps {
   patientId?: number;
   userId?: number;
   userInfo?: PatientProfile | null;
+  appointment?: GetAppointment["data"];
 }
 
 export const ClinicalRecords = ({
@@ -203,7 +206,8 @@ export const ClinicalRecords = ({
   isArchived = false,
   patientId,
   userId,
-  userInfo
+  userInfo,
+  appointment
 }: ClinicalRecordsProps) => {
   const tabConfigs = [
     {
@@ -234,6 +238,13 @@ export const ClinicalRecords = ({
       description: "Create and manage laboratory test requests for your patients.",
       Component: LaboratoryRequestWrapper,
     },
+    {
+      value: "referral-slip",
+      tabTitle: "Referral Slip",
+      cardTitle: "Referral Slip Management",
+      description: "Create and manage referral slips for your patients.",
+      Component: ReferralSlipWrapper,
+    }
   ];
 
   return (
@@ -269,6 +280,7 @@ export const ClinicalRecords = ({
                   patientId={patientId}
                   userId={userId}
                   userInfo={userInfo}
+                  appointment={appointment}
                 />
               </TabsContent>
             )}

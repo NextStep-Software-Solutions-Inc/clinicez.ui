@@ -1,0 +1,335 @@
+"use server";
+
+import "server-only";
+import prisma from "@/lib/prisma";
+import { getCachedSession } from "@/actions/session.action";
+import { withErrorHandling } from "@/lib/with-error-handling";
+import { Prisma } from "@prisma/client";
+import { generateSerialNumber } from "@/lib/utils";
+import { validateHealthcareProviderAuth, USER_WITH_HEALTHCARE_PROVIDERS_SELECT } from "@/lib/healthcare-provider-auth";
+
+export type GetReferralSlipFilters = {
+  clinicUid: string;
+  patientId?: number;
+  consultationTicketId?: number;
+  hpIds?: number[];
+  search?: string;
+  distinct?: Prisma.ClinicReferralSlipScalarFieldEnum[];
+};
+
+export type GetReferralSlips = Awaited<ReturnType<typeof getReferralSlipsAction>>;
+export const getReferralSlipsAction = withErrorHandling(async (filters: GetReferralSlipFilters) => {
+  const session = await getCachedSession();
+  if (!session) throw new Error("Unauthorized");
+
+  const { clinicUid, patientId, consultationTicketId, hpIds, distinct = [] } = filters ?? {};
+
+  const referralSlips = await prisma.clinicReferralSlip.findMany({
+    ...(!!distinct?.length ? { distinct } : {}),
+    orderBy: { createdAt: "desc" },
+    where: {
+      isActive: true,
+      deletedAt: null,
+      Clinic: { clinicUid },
+      ...(patientId ? { clinicPatientId: patientId } : {}),
+      ...(consultationTicketId ? { consultationTicketId } : {}),
+    },
+    select: {
+      id: true,
+      serialNumber: true,
+      createdAt: true,
+      history: true,
+      impression: true,
+      recommendation: true,
+      Clinic: { select: { id: true, name: true } },
+      ClinicPatient: {
+        select: {
+          id: true,
+          Patient: {
+            select: {
+              id: true,
+              userId: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+              dob: true,
+              UserAddresses: {
+                where: { isActive: true, isPrimary: true },
+                orderBy: { createdAt: "desc" },
+                take: 1,
+                select: {
+                  address: true,
+                  city: true,
+                  state: true,
+                  zipCode: true,
+                  country: true,
+                }
+              },
+            },
+          },
+        },
+      },
+      Reason: true,
+      ReferredTo: {
+        select: {
+          id: true,
+          User: {
+            select: {
+              firstName: true,
+              lastName: true,
+            }
+          },
+          HPType: {
+            select: {
+              name: true,
+            }
+          }
+        }
+      },
+      DocumentTemplate: true,
+    },
+  });
+
+  return { message: "Referral slips fetched successfully", data: referralSlips };
+});
+
+export const getReferralSlipAction = withErrorHandling(async (id: number) => {
+  const session = await getCachedSession();
+  if (!session) throw new Error("Unauthorized");
+
+  const referralSlip = await prisma.clinicReferralSlip.findUnique({
+    where: { id },
+    include: {
+      Clinic: { select: { id: true, name: true } },
+      ClinicPatient: {
+        select: {
+          id: true,
+          Patient: {
+            select: {
+              id: true,
+              userId: true,
+              firstName: true,
+              lastName: true,
+              middleName: true,
+              suffix: true,
+              dob: true,
+              gender: true,
+              email: true,
+              UserAddresses: {
+                where: { isActive: true },
+                orderBy: { createdAt: "desc" },
+                take: 1
+              }
+            }
+          }
+        }
+      },
+      Reason: true,
+      ReferredTo: {
+        include: {
+          User: true,
+          HPProfile: true,
+          ProfessionalDetails: true,
+          HPType: true,
+        }
+      },
+      DocumentTemplate: true,
+      ConsultationTicket: true,
+      Appointment: true,
+    },
+  });
+
+  if (!referralSlip) throw new Error("Referral slip not found");
+  return { message: "Referral slip fetched successfully", data: referralSlip };
+});
+
+type CreateReferralSlipPayload = {
+  clinicUid: string;
+  referredToId: number;
+  patientId?: number;
+  hpIds: number[];
+  consultationTicketId: number;
+  appointmentId: number;
+  reasonId: number;
+  history?: string;
+  impression?: string;
+  recommendation?: string;
+}
+
+export const createReferralSlipAction = withErrorHandling(async (input: CreateReferralSlipPayload) => {
+  const session = await getCachedSession();
+  if (!session) throw new Error("Unauthorized");
+
+  const {
+    clinicUid,
+    referredToId,
+    patientId,
+    hpIds,
+    consultationTicketId,
+    appointmentId,
+    reasonId,
+    history,
+    impression,
+    recommendation
+  } = input;
+
+  if (!patientId) {
+    throw new Error("Patient ID is required");
+  }
+
+  const serialNumber = generateSerialNumber();
+
+  const result = await prisma.$transaction(async (prisma) => {
+    const appUser = await prisma.user.findUnique({
+      where: {
+        userId: session.user.sub,
+        isActive: true,
+        deletedAt: null,
+      },
+      select: USER_WITH_HEALTHCARE_PROVIDERS_SELECT
+    });
+
+    const { authorizedHpId, createdBy } = validateHealthcareProviderAuth(
+      appUser,
+      hpIds,
+      "create referral slips"
+    );
+
+    const documentTemplate = await prisma.documentTemplate.findFirst({
+      where: {
+        isActive: true,
+        Clinic: { clinicUid },
+        DocumentTemplateType: {
+          name: "referral"
+        }
+      }
+    });
+    if (!documentTemplate) throw new Error("Referral slip template not found");
+
+    const referralSlip = await prisma.clinicReferralSlip.create({
+      data: {
+        serialNumber: serialNumber,
+        Clinic: { connect: { clinicUid } },
+        ClinicPatient: { connect: { id: patientId } },
+        DocumentTemplate: { connect: { id: documentTemplate.id } },
+        ReferredTo: { connect: { id: referredToId } },
+        Reason: { connect: { id: reasonId } },
+        CreatedBy: { connect: { id: createdBy } },
+        ConsultationTicket: { connect: { id: consultationTicketId } },
+        Appointment: { connect: { id: appointmentId } },
+        isActive: true,
+        history: history || "",
+        impression: impression || "",
+        recommendation: recommendation || "",
+      },
+    });
+
+    return referralSlip;
+  });
+
+  return { message: "Referral slip created successfully", data: result };
+});
+
+export type UpdateReferralSlipInput = {
+  id: number;
+  clinicUid?: string;
+  clinicPatientId?: number;
+  documentTemplateId?: number;
+  hpIds: number[];
+  reasonId?: number;
+  referredToId?: number;
+  history?: string;
+  impression?: string;
+  recommendation?: string;
+};
+
+export const updateReferralSlipAction = withErrorHandling(async (input: UpdateReferralSlipInput) => {
+  const session = await getCachedSession();
+  if (!session) throw new Error("Unauthorized");
+
+  const {
+    id,
+    clinicUid,
+    clinicPatientId,
+    documentTemplateId,
+    hpIds,
+    reasonId,
+    referredToId,
+    history,
+    impression,
+    recommendation
+  } = input;
+
+  const result = await prisma.$transaction(async (prisma) => {
+    const appUser = await prisma.user.findUnique({
+      where: {
+        userId: session.user.sub,
+        isActive: true,
+        deletedAt: null,
+      },
+      select: USER_WITH_HEALTHCARE_PROVIDERS_SELECT
+    });
+
+    const { createdBy } = validateHealthcareProviderAuth(
+      appUser,
+      hpIds,
+      "update referral slips"
+    );
+
+    const referralSlip = await prisma.clinicReferralSlip.update({
+      where: { id },
+      data: {
+        ...(clinicUid && { Clinic: { connect: { clinicUid } } }),
+        ...(clinicPatientId && { ClinicPatient: { connect: { id: clinicPatientId } } }),
+        ...(documentTemplateId && { DocumentTemplate: { connect: { id: documentTemplateId } } }),
+        ...(reasonId && { Reason: { connect: { id: reasonId } } }),
+        ...(referredToId && { ReferredTo: { connect: { id: referredToId } } }),
+        UpdatedBy: { connect: { id: createdBy } },
+        ...(history !== undefined && { history }),
+        ...(impression !== undefined && { impression }),
+        ...(recommendation !== undefined && { recommendation }),
+      },
+    });
+
+    return referralSlip;
+  });
+
+  return { message: "Referral slip updated successfully", data: result };
+});
+
+export const deleteReferralSlipAction = withErrorHandling(async (input: { id: number; hpIds: number[] }) => {
+  const session = await getCachedSession();
+  if (!session) throw new Error("Unauthorized");
+
+  const { id, hpIds } = input;
+
+  const result = await prisma.$transaction(async (prisma) => {
+    const appUser = await prisma.user.findUnique({
+      where: {
+        userId: session.user.sub,
+        isActive: true,
+        deletedAt: null,
+      },
+      select: USER_WITH_HEALTHCARE_PROVIDERS_SELECT
+    });
+
+    const { createdBy } = validateHealthcareProviderAuth(
+      appUser,
+      hpIds,
+      "delete referral slips"
+    );
+
+    const referralSlip = await prisma.clinicReferralSlip.update({
+      where: { id },
+      data: {
+        isActive: false,
+        deletedAt: new Date(),
+        DeletedBy: { connect: { id: createdBy } },
+      },
+    });
+
+    return referralSlip;
+  });
+
+  return { message: "Referral slip deleted successfully", data: result };
+});

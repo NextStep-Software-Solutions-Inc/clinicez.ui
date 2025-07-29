@@ -11,13 +11,14 @@ import { z } from "zod";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { calculateAge, capitalize } from "@/lib/utils";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { calculateAge, capitalize, cn } from "@/lib/utils";
 import ActionButton from "@/components/ActionButton";
 import { createImagingStudyAction } from "@/actions/clinics/clinical-record/imaging-studies.action";
 import MultiSelect from "@/components/MultiSelect";
 import { useImagingDiagnostics } from "@/hooks/useImagingDiagnostics";
 import { PatientProfile } from "@/components/consultation/ConsultationDetails";
-import { Plus } from "lucide-react";
+import { Plus, User, ChevronDown, ChevronUp } from "lucide-react";
 import { promiseWrapper } from "@/lib/with-error-handling";
 
 const GENDERS = [
@@ -70,6 +71,7 @@ export default function CreateImagingStudiesModal({ clinicUid, onCreateImagingSt
   const [open, setOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [showAlert, setShowAlert] = React.useState(false);
+  const [showPatientInfo, setShowPatientInfo] = React.useState(false);
 
   const { result, loading } = useImagingDiagnostics();
   const diagnostics = result.map((diag) => ({
@@ -203,102 +205,167 @@ export default function CreateImagingStudiesModal({ clinicUid, onCreateImagingSt
 
               {/* Body */}
               <div className="max-h-[60vh] overflow-y-auto flex flex-col gap-4 py-2">
-                <div className="flex gap-2">
-                  <FormField
-                    control={form.control}
-                    name="patientName"
-                    render={({ field }) => (
-                      <FormItem className="flex-1">
-                        <FormLabel>Name</FormLabel>
-                        <FormControl>
-                          <Input id="patientName" placeholder="Juan Dela Cruz" {...field} disabled />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="age"
-                    render={({ field }) => (
-                      <FormItem className="w-32">
-                        <FormLabel>Age</FormLabel>
-                        <FormControl>
-                          <Input
-                            id="age"
-                            placeholder="32"
-                            disabled
-                            {...field}
-                            onChange={(e) => field.onChange(Number.parseInt(e.target.value) || 0)}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
 
-                <FormField
-                  control={form.control}
-                  name="address"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Address</FormLabel>
-                      <FormControl>
-                        <Input id="address" placeholder="123 Main Street, Quezon City, Metro Manila" {...field} disabled />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+                {/* Patient Information Card */}
+                <Card className="border-2 border-dashed border-gray-200 hover:border-primary/50 transition-colors">
+                  <CardHeader
+                    className="cursor-pointer pb-3 hover:bg-gray-50/50 transition-colors rounded-t-lg"
+                    onClick={() => setShowPatientInfo(!showPatientInfo)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-primary/10 rounded-full">
+                          <User className="h-4 w-4 text-primary" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-sm font-semibold text-gray-700">
+                            Patient Information
+                          </CardTitle>
+                          <CardDescription className="text-xs mt-1 flex items-center gap-4">
+                            <span className="font-medium text-gray-600">
+                              {userInfo?.firstName} {userInfo?.lastName}
+                            </span>
+                            <span className="text-gray-400">•</span>
+                            <span className="text-gray-500">
+                              Age: {userInfo?.dob ? calculateAge(userInfo.dob) : 'N/A'}
+                            </span>
+                          </CardDescription>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-400 hidden sm:block">
+                          {showPatientInfo ? 'Collapse' : 'Expand'}
+                        </span>
+                        <div className={cn(
+                          "p-1 rounded-full transition-all duration-200",
+                          showPatientInfo ? "bg-primary/10 text-primary" : "bg-gray-100 text-gray-400"
+                        )}>
+                          {showPatientInfo ?
+                            <ChevronUp className="h-4 w-4" /> :
+                            <ChevronDown className="h-4 w-4" />
+                          }
+                        </div>
+                      </div>
+                    </div>
+                  </CardHeader>
+
+                  {showPatientInfo && (
+                    <CardContent className="pt-0 space-y-4 border-t border-gray-100">
+                      <div className="flex gap-3 pt-4">
+                        <FormField
+                          control={form.control}
+                          name="patientName"
+                          render={({ field }) => (
+                            <FormItem className="flex-1">
+                              <FormLabel className="text-xs font-medium text-gray-600">Full Name</FormLabel>
+                              <FormControl>
+                                <Input
+                                  id="patientName"
+                                  placeholder="Juan Dela Cruz"
+                                  {...field}
+                                  disabled
+                                  className="bg-gray-50 text-gray-700 border-gray-200"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="age"
+                          render={({ field }) => (
+                            <FormItem className="w-32">
+                              <FormLabel className="text-xs font-medium text-gray-600">Age</FormLabel>
+                              <FormControl>
+                                <Input
+                                  id="age"
+                                  placeholder="32"
+                                  disabled
+                                  {...field}
+                                  onChange={(e) => field.onChange(Number.parseInt(e.target.value) || 0)}
+                                  className="bg-gray-50 text-gray-700 border-gray-200"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <FormField
+                        control={form.control}
+                        name="address"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs font-medium text-gray-600">Address</FormLabel>
+                            <FormControl>
+                              <Input
+                                id="address"
+                                placeholder="123 Main Street, Quezon City, Metro Manila"
+                                {...field}
+                                disabled
+                                className="bg-gray-50 text-gray-700 border-gray-200"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <div className="flex gap-3">
+                        <FormField
+                          control={form.control}
+                          name="birthdate"
+                          render={({ field }) => (
+                            <FormItem className="flex-1">
+                              <FormLabel className="text-xs font-medium text-gray-600">Birthdate</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="date"
+                                  id="birthdate"
+                                  value={field.value ? new Date(field.value).toISOString().split('T')[0] : ''}
+                                  onChange={e => field.onChange(new Date(e.target.value))}
+                                  max={new Date().toISOString().split('T')[0]}
+                                  disabled
+                                  className="bg-gray-50 text-gray-700 border-gray-200"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="gender"
+                          render={({ field }) => (
+                            <FormItem className="flex-1">
+                              <FormLabel className="text-xs font-medium text-gray-600">Gender</FormLabel>
+                              <FormControl>
+                                <RadioGroup
+                                  onValueChange={field.onChange}
+                                  value={field.value}
+                                  className="flex flex-row gap-6 pt-1"
+                                  disabled
+                                >
+                                  {GENDERS.map((gender) => (
+                                    <div key={gender} className="flex items-center gap-2">
+                                      <RadioGroupItem value={gender} className="cursor-pointer" />
+                                      <FormLabel htmlFor={gender} className="font-normal text-sm select-none cursor-pointer text-gray-600">
+                                        {capitalize(gender)}
+                                      </FormLabel>
+                                    </div>
+                                  ))}
+                                </RadioGroup>
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </CardContent>
                   )}
-                />
-                <div className="flex gap-2">
-                  <FormField
-                    control={form.control}
-                    name="birthdate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Birthdate</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="date"
-                            id="birthdate"
-                            value={field.value ? new Date(field.value).toISOString().split('T')[0] : ''}
-                            onChange={e => field.onChange(new Date(e.target.value))}
-                            max={new Date().toISOString().split('T')[0]}
-                            disabled
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="gender"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Gender</FormLabel>
-                        <FormControl>
-                          <RadioGroup
-                            onValueChange={field.onChange}
-                            value={field.value}
-                            className="flex flex-row gap-6"
-                            disabled
-                          >
-                            {GENDERS.map((gender) => (
-                              <div key={gender} className="flex items-center gap-2">
-                                <RadioGroupItem value={gender} className="cursor-pointer" />
-                                <FormLabel htmlFor={gender} className="font-normal text-sm select-none cursor-pointer">
-                                  {capitalize(gender)}
-                                </FormLabel>
-                              </div>
-                            ))}
-                          </RadioGroup>
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                </Card>
+
                 <FormField
                   control={form.control}
                   name="diagnostics"

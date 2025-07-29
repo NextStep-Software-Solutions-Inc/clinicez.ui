@@ -33,7 +33,7 @@ export const createOrganizationRoleAction = withErrorHandling(async (payload: Cr
   })
   return {  message: "Organization role created successfully", data: newOrgRole }
   
-}, error => {
+}, async error => {
   if(hasCodeProperty(error) && error.code === "P2002") {
     return "Role with the same name or id already exists"
   }
@@ -58,7 +58,7 @@ export const getOrganizationRolesAction = withErrorHandling(cache(async (filters
     },
     where: {
       isActive: true,
-      ...userId ? {
+      ...(userId ? {
         OrganizationMembers: {
           some: {
             User: {
@@ -66,8 +66,8 @@ export const getOrganizationRolesAction = withErrorHandling(cache(async (filters
             }
           }
         }
-      }: {},
-      ...orgUid ? { Organization: { orgUid } } : {}
+      } : {}),
+      ...(orgUid ? { Organization: { orgUid } } : {})
 
     },
     select: {

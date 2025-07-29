@@ -5,11 +5,11 @@ import { NextRequest, NextResponse } from "next/server";
 
 
 export const GET = withJwtAuth(async (req: NextRequest, { params }: {
-  params: {
+  params: Promise<{
     clinicUid: string;
-  }
+  }>
 }) => {
-  const clinicUid = params.clinicUid;
+  const { clinicUid } = await params;
   const searchParams = req.nextUrl.searchParams
   const filter = Object.fromEntries(searchParams.entries());
   const appointments = await getAppointmentsAction({

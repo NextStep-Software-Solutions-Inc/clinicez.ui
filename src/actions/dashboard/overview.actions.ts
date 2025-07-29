@@ -3,7 +3,6 @@
 import prisma from "@lib/prisma";
 
 export const getDashboardData = async (clinicUid: string) => {
-  console.log(`Clinic UID: ${clinicUid}`);
   const [files, memberships, members, roles] = await Promise.all([
 
     prisma.file.aggregate({
@@ -82,8 +81,7 @@ export const getDashboardData = async (clinicUid: string) => {
       },
     }),
   ])
-
-  console.log("Grouped Memberships:", memberships);
+  
   return {
     files,
     memberships,

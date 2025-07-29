@@ -3,10 +3,9 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@components/ui/tabs";
 import Suspend from "@components/Suspend";
 import { GetAppointment, getAppointmentAction } from "@actions/appointments/appointments.action";
-import { GetUser, getUserAction } from "@actions/users/user.action";
 import { differenceInCalendarYears } from "date-fns";
 import { GetConsultationTicket } from "@actions/consultation/consultation-ticket.action";
-import { ExternalLink, FolderHeart } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import Link from "next/link";
 import dynamic from 'next/dynamic';
 import { Tooltip, TooltipContent, TooltipTrigger } from "@components/ui/tooltip";
@@ -16,33 +15,80 @@ import { Separator } from "@components/ui/separator";
 import { GetHpsByIds, getHpsByIdsAction } from "@actions/hp.actions";
 import Each from "@components/utils/Each";
 import { Fragment } from "react";
-import EMRPreviewSheet from "@components/EMRPreviewSheet";
-import { Button } from "@components/ui/button";
+// import EMRPreviewSheetWrapper from "@components/EMRPreviewSheetWrapper";
+import EMRTriggerButton from "@components/EMRTriggerButton";
+import PrescriptionsWrapper from "@components/PrescriptionsWrapper";
+import MedicalCertificateWrapper from "@components/MedicalCertificateWrapper";
+import ImagingStudiesWrapper from "@components/ImagingStudiesWrapper";
+import LaboratoryRequestWrapper from "@components/LaboratoryRequestWrapper";
 
-const VitalSigns = dynamic(() => import('./VitalSigns'), { ssr: false, loading: () => <div>Loading...</div> });
-const Conversation = dynamic(() => import('./Conversation'), { ssr: false, loading: () => <div>Loading...</div> });
-const Files = dynamic(() => import('./Files'), { ssr: false, loading: () => <div>Loading...</div> });
-const Interventions = dynamic(() => import('./Interventions'), { ssr: false, loading: () => <div>Loading...</div> });
-const NurseAssessment = dynamic(() => import('./NurseAssessment'), { ssr: false, loading: () => <div>Loading...</div> });
-const ConsultationNotes = dynamic(() => import('./ConsultationNotes'), { ssr: false, loading: () => <div>Loading...</div> });
+const VitalSigns = dynamic(() => import('./VitalSigns'), { loading: () => <div>Loading...</div> });
+const Conversation = dynamic(() => import('./Conversation'), { loading: () => <div>Loading...</div> });
+const Files = dynamic(() => import('./Files'), { loading: () => <div>Loading...</div> });
+const Interventions = dynamic(() => import('./Interventions'), { loading: () => <div>Loading...</div> });
+const NurseAssessment = dynamic(() => import('./NurseAssessment'), { loading: () => <div>Loading...</div> });
+const ConsultationNotes = dynamic(() => import('./ConsultationNotes'), { loading: () => <div>Loading...</div> });
 interface ConsultationDetailsProps {
   consultation: NonNullable<GetConsultationTicket["data"]>
 }
+
+export interface PatientProfile {
+  firstName: string | null;
+  middleName?: string | null;
+  lastName?: string | null;
+  suffix?: string | null;
+  dob?: Date | null;
+  gender?: string | null;
+  address?: {
+    homeAddress?: string | null;
+    city?: string | null;
+    state?: string | null;
+    zipCode?: string | null;
+    country?: string | null;
+  }
+}
+
 export default async function ConsultationDetails({ consultation }: ConsultationDetailsProps) {
   const appointment = await getAppointmentAction(consultation?.appointmentId ?? 0, consultation.Clinic.clinicUid);
-  
+  const user = appointment.data?.Requesters[0].User;
+  const userDetails: PatientProfile = {
+    firstName: user?.firstName ?? null,
+    middleName: user?.middleName ?? null,
+    lastName: user?.lastName ?? null,
+    suffix: user?.suffix ?? null,
+    dob: user?.dob ?? null,
+    gender: user?.gender ?? null,
+    address: {
+      homeAddress: user?.UserAddresses[0]?.address ?? null,
+      city: user?.UserAddresses[0]?.city ?? null,
+      state: user?.UserAddresses[0]?.state ?? null,
+      zipCode: user?.UserAddresses[0]?.zipCode ?? null,
+      country: user?.UserAddresses[0]?.country ?? null,
+    }
+  };
+
   const [creators] = await Promise.all([
     await getHpsByIdsAction(consultation.ConsultationTicketHPs.map(c => Number(c.hpId))),
   ]);
 
   return (
     <>
-      <PatientHpDetails creators={creators} user={appointment.data?.Requesters[0].User!}/>
-      <BackgroundInfo 
-        appointment={appointment.data} 
-        consultation={consultation} 
+      <PatientHpDetails creators={creators} user={appointment.data?.Requesters[0].User!} />
+      <BackgroundInfo
+        appointment={appointment.data}
+        consultation={consultation}
         user={appointment.data?.Requesters[0].User!}
       />
+      <ClinicalRecords
+        consultationTicketId={consultation.id}
+        clinicUid={consultation.Clinic.clinicUid}
+        hpIds={consultation.ConsultationTicketHPs.map(c => Number(c.hpId))}
+        isArchived={false}
+        patientId={appointment.data?.Requesters[0].User?.ClinicPatients[0]?.id}
+        userId={appointment.data?.Requesters[0].User?.id}
+        userInfo={userDetails}
+      />
+      {/* <EMRPreviewSheetWrapper /> */}
     </>
   );
 }
@@ -72,7 +118,7 @@ export const BackgroundInfo = ({ appointment, consultation, user }: BackgroundIn
         </CardTitle>
         <CardDescription>
           <span className="flex items-center gap-2">
-            {appointment?.subject} 
+            {appointment?.subject}
             <Link target="_blank" href={{
               pathname: `../appointments`,
               query: {
@@ -81,7 +127,7 @@ export const BackgroundInfo = ({ appointment, consultation, user }: BackgroundIn
             }}>
               <Tooltip>
                 <TooltipTrigger>
-                  <ExternalLink className="w-4 h-4 text-primary"/>
+                  <ExternalLink className="w-4 h-4 text-primary" />
                 </TooltipTrigger>
                 <TooltipContent>
                   View Appointment
@@ -92,7 +138,7 @@ export const BackgroundInfo = ({ appointment, consultation, user }: BackgroundIn
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {appointment?.complaint} 
+        {appointment?.complaint}
       </CardContent>
       <CardFooter>
         <Tabs defaultValue="notes" className="w-full">
@@ -106,38 +152,131 @@ export const BackgroundInfo = ({ appointment, consultation, user }: BackgroundIn
           </TabsList>
           <TabsContent value="notes">
             <Suspend>
-              <ConsultationNotes consultation={consultation}/>
+              <ConsultationNotes consultation={consultation} />
             </Suspend>
           </TabsContent>
           <TabsContent value="pre-assessment-notes">
             <Suspend>
-              <NurseAssessment consultation={consultation}/>
+              <NurseAssessment consultation={consultation} />
             </Suspend>
           </TabsContent>
           <TabsContent value="interventions">
             <Suspend>
-              <Interventions consultation={consultation}/>
+              <Interventions consultation={consultation} />
             </Suspend>
           </TabsContent>
           <TabsContent value="conversation">
             <Suspend>
-              <Conversation consultation={consultation}/>
+              <Conversation consultation={consultation} />
             </Suspend>
           </TabsContent>
           <TabsContent value="vital-signs">
             <Suspend>
-              <VitalSigns consultation={consultation} userId={user.userId}/>
+              <VitalSigns consultation={consultation} userId={user.userId} />
             </Suspend>
           </TabsContent>
           <TabsContent value="files">
             <Suspend>
-              <Files consultation={consultation}/>
+              <Files consultation={consultation} />
             </Suspend>
           </TabsContent>
         </Tabs>
       </CardFooter>
     </Card>
   )
+}
+
+interface ClinicalRecordsProps {
+  consultationTicketId: number;
+  clinicUid: string;
+  hpIds: number[];
+  isArchived?: boolean;
+  patientId?: number;
+  userId?: number;
+  userInfo?: PatientProfile | null;
+}
+
+export const ClinicalRecords = ({
+  consultationTicketId,
+  clinicUid,
+  hpIds,
+  isArchived = false,
+  patientId,
+  userId,
+  userInfo
+}: ClinicalRecordsProps) => {
+  const tabConfigs = [
+    {
+      value: "prescription",
+      tabTitle: "Prescription",
+      cardTitle: "Prescription Builder",
+      description: "Create and manage prescriptions for your patients.",
+      Component: PrescriptionsWrapper,
+    },
+    {
+      value: "medical-certificate",
+      tabTitle: "Medical Certificate",
+      cardTitle: "Medical Certificate Builder",
+      description: "Create and manage medical certificates for your patients.",
+      Component: MedicalCertificateWrapper,
+    },
+    {
+      value: "imaging-studies",
+      tabTitle: "Imaging Studies",
+      cardTitle: "Imaging Studies Builder",
+      description: "Create and manage imaging study requests for your patients.",
+      Component: ImagingStudiesWrapper,
+    },
+    {
+      value: "laboratory",
+      tabTitle: "Laboratory",
+      cardTitle: "Laboratory Request",
+      description: "Create and manage laboratory test requests for your patients.",
+      Component: LaboratoryRequestWrapper,
+    },
+  ];
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>
+          Clinical Records
+        </CardTitle>
+      </CardHeader>
+      <CardFooter>
+        <Tabs defaultValue="prescription" className="w-full">
+          <TabsList>
+            <Each
+              of={tabConfigs}
+              render={tab => (
+                <TabsTrigger value={tab.value}>{tab.tabTitle}</TabsTrigger>
+              )}
+            />
+          </TabsList>
+          <Each
+            of={tabConfigs}
+            render={tab => (
+              <TabsContent value={tab.value} key={tab.value}>
+                <div className="py-4 space-y-4">
+                  <span className="block text-xl font-semibold leading-tight mb-2">{tab.cardTitle}</span>
+                  <span className="block text-muted-foreground mb-2">{tab.description}</span>
+                </div>
+                <tab.Component
+                  consultationTicketId={consultationTicketId}
+                  clinicUid={clinicUid}
+                  hpIds={hpIds}
+                  isArchived={isArchived}
+                  patientId={patientId}
+                  userId={userId}
+                  userInfo={userInfo}
+                />
+              </TabsContent>
+            )}
+          />
+        </Tabs>
+      </CardFooter>
+    </Card>
+  );
 }
 
 interface PatientHpDetailsProps {
@@ -166,10 +305,10 @@ export const PatientHpDetails = ({ creators = [], user }: PatientHpDetailsProps)
           <div className="flex gap-2 items-center">
             <Avatar>
               {user.picture
-                ? <Image className="object-cover" width={80} height={80} src={user.picture} alt={user.nickname ?? ""}/>
+                ? <Image className="object-cover" width={80} height={80} src={user.picture} alt={user.nickname ?? ""} />
                 : <AvatarFallback>{user.firstName?.charAt(0)}{user.lastName?.charAt(0)}</AvatarFallback>
               }
-              
+
             </Avatar>
             <div className="flex flex-col">
               <span className="text-sm font-semibold">{user.firstName} {user.lastName}</span>
@@ -180,14 +319,10 @@ export const PatientHpDetails = ({ creators = [], user }: PatientHpDetailsProps)
           </div>
           <div>
             <Tooltip>
-              <EMRPreviewSheet>
-                <TooltipTrigger asChild>
-                  <Button size="icon" variant="link">
-                    <FolderHeart className="w-6 h-6"/>
-                  </Button>
-                </TooltipTrigger>
-              </EMRPreviewSheet>
-              <TooltipContent> 
+              <TooltipTrigger asChild>
+                <EMRTriggerButton patientId={user.userId} />
+              </TooltipTrigger>
+              <TooltipContent>
                 EMR Preview
               </TooltipContent>
             </Tooltip>
@@ -207,10 +342,10 @@ export const PatientHpDetails = ({ creators = [], user }: PatientHpDetailsProps)
                   <Avatar>
                     {
                       creator?.HPProfile?.picture
-                        ? <Image className="object-cover" width={80} height={80} src={creator.HPProfile.picture} alt={creator?.HPProfile?.name ?? ""}/>
-                        : <AvatarFallback>{creator?.HPProfile?.name.slice(0,2)}</AvatarFallback>
+                        ? <Image className="object-cover" width={80} height={80} src={creator.HPProfile.picture} alt={creator?.HPProfile?.name ?? ""} />
+                        : <AvatarFallback>{creator?.HPProfile?.name.slice(0, 2)}</AvatarFallback>
                     }
-                    
+
                   </Avatar>
                   <div className="flex flex-col">
                     <span className="text-sm font-semibold">{creator?.HPProfile?.title} {creator?.HPProfile?.name} {creator?.HPProfile?.suffix}</span>
@@ -219,7 +354,7 @@ export const PatientHpDetails = ({ creators = [], user }: PatientHpDetailsProps)
                     </div>
                   </div>
                 </div>
-                {index !== (creators.length - 1)  && <Separator orientation="vertical" className="h-10"/>}
+                {index !== (creators.length - 1) && <Separator orientation="vertical" className="h-10" />}
               </Fragment>
             )}
           />

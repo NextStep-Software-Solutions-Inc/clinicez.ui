@@ -26,34 +26,34 @@ export default function SideNav({ navItems, params: paramArray }: SideNavProps) 
   const pathname = usePathname();
   const params = useParams();
   
-  const mappedNavItems = useMemo(() => navItems.map((item) => {
-    return {
+  const mappedNavItems = useMemo(() => {
+    return navItems.map((item) => ({
       ...item,
       href: `/${paramArray[0]}/${params[paramArray[1]]}${item.href}`
-    }
-  }), [navItems, paramArray, params]);
+    }));
+  }, [navItems, paramArray, params]);
 
   return (
     <Each
       of={mappedNavItems}
-      render={({ name, href, icon }) => (
-        <Tooltip>
+      render={(item, index) => (
+        <Tooltip key={`${item.name}-${index}`} delayDuration={100}>
           <TooltipTrigger asChild>
             <Link
-              href={href}
+              href={item.href || "#"}
               className={cn(
                 "flex h-9 w-9 items-center justify-center rounded-lg bg-accent text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8",
-                href === pathname && "bg-accent text-accent-foreground"
+                item.href === pathname && "bg-accent text-accent-foreground"
               )}
             >
               <Icon
-                name={icon}
+                name={item.icon}
                 className="h-5 w-5"
               />
-              <span className="sr-only">{name}</span>
+              <span className="sr-only">{item.name}</span>
             </Link>
           </TooltipTrigger>
-          <TooltipContent side="right">{name}</TooltipContent>
+          <TooltipContent side="right">{item.name}</TooltipContent>
         </Tooltip>
       )}
     />

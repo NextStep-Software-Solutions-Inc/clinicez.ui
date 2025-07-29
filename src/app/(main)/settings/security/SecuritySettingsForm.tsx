@@ -15,10 +15,10 @@ import {
 } from "@components/ui/form"
 import { Input } from "@components/ui/input"
 
-import {toast} from "sonner"
+import { toast } from "sonner"
 import ActionButton from "@components/ActionButton"
 import { resetPasswordAction } from "@actions/users/user.action"
-import { useUser } from "@auth0/nextjs-auth0/client"
+import { useUser } from "@auth0/nextjs-auth0"
 import { useRouter } from "next/navigation"
 
 const accountFormSchema = z.object({
@@ -34,7 +34,7 @@ type GeneraSettingsFormValues = z.infer<typeof accountFormSchema>
 export default function SecuritySettingsForm() {
   const user = useUser()
   const router = useRouter()
-  
+
   const form = useForm<GeneraSettingsFormValues>({
     resolver: zodResolver(accountFormSchema),
     mode: "onChange"
@@ -49,7 +49,7 @@ export default function SecuritySettingsForm() {
         loading: "Updating password...",
         success: () => {
           form.reset(values);
-          router.replace("/api/auth/logout");
+          router.replace("/auth/logout");
           return "Password updated successfully. Please login again for security reasons."
         },
         error: (error) => `Failed to update password. Error: ${error}`
@@ -63,7 +63,7 @@ export default function SecuritySettingsForm() {
         <h2>Change Password</h2>
       </div>
       <Form {...form}>
-        
+
         <form action={action} className="space-y-8">
           <FormField
             control={form.control}
@@ -75,7 +75,7 @@ export default function SecuritySettingsForm() {
                   <Input placeholder="Your new password" {...field} type="password" />
                 </FormControl>
                 <FormDescription>
-                The new password you want to use.
+                  The new password you want to use.
                 </FormDescription>
                 <FormMessage />
               </FormItem>
@@ -91,13 +91,13 @@ export default function SecuritySettingsForm() {
                   <Input placeholder="Confirm your password" {...field} type="password" />
                 </FormControl>
                 <FormDescription>
-                Confirm your new password.
+                  Confirm your new password.
                 </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
           />
-        
+
           {form.formState.isDirty && <ActionButton disabled={form.formState.isLoading} type="submit">Update</ActionButton>}
         </form>
       </Form>

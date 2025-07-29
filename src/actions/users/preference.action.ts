@@ -86,18 +86,18 @@ export const upsertMyUserPreference = async (payload: UpsertUserPreferencePayloa
             userId: session.user.sub
           }
         },
-        ...autoAssignAppointmentToSelf ? {
+        ...(autoAssignAppointmentToSelf ? {
           HealthCareProvider: {
             connect: {
               id: defaultHpId
             }
           }
-        } : {},
+        } : {}),
         autoAcceptAppointmentAssignment: autoAcceptAppointmentAssignment,
         autoAssignAppointmentToSelf: autoAssignAppointmentToSelf,
       },
       update: {
-        ...autoAssignAppointmentToSelf ? {defaultHpId } : {defaultHpId: null},
+        ...(autoAssignAppointmentToSelf ? {defaultHpId } : {defaultHpId: null}),
         autoAcceptAppointmentAssignment: autoAcceptAppointmentAssignment,
         autoAssignAppointmentToSelf: autoAssignAppointmentToSelf
       }

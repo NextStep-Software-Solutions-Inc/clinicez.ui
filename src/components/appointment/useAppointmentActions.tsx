@@ -7,39 +7,40 @@ import RescheduleAppointment from "@components/appointment/RescheduleAppointment
 import DeclineAppointmentAssignment from "@components/appointment/DeclineAppointmentAssignment"
 import CreateConsultationTicketModal from './CreateConsultationTicketModal';
 import { useHPs } from '@hooks/useHP';
-import { useUser } from '@auth0/nextjs-auth0/client';
+import { useUser } from '@auth0/nextjs-auth0';
 import AddVitalSignsModal from '../../app/(main)/user/[user]/phr/vitals/AddVitalSignsModal';
 import { Button } from '@components/ui/button';
 import { Activity } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@components/ui/tooltip';
 import { PERMISSIONS } from '@lib/permissions';
 import ConfirmBooking from './ConfirmBooking';
+import EMRTriggerButton from '../EMRTriggerButton';
 
-type AppointmentActions = "accept"|"decline"|"approve"|"receive"| "reject" | "assign" | "create-consultation-ticket"| "reschedule" | "add-vitals" | "confirm-booking"
+type AppointmentActions = "accept" | "decline" | "approve" | "receive" | "reject" | "assign" | "create-consultation-ticket" | "reschedule" | "add-vitals" | "emr-preview" | "confirm-booking"
 type AppointmentStatusTools = {
-    action: AppointmentActions
-    permissions: string[],
-    appointmentStatuses: string[],
-    routedAptStatuses: string[],
-    component: React.ReactNode
+  action: AppointmentActions
+  permissions: string[],
+  appointmentStatuses: string[],
+  routedAptStatuses: string[],
+  component: React.ReactNode
 }[]
 
 interface UseAppointmentToolsProps {
-    appointment?: GetAppointment["data"],
-    revalidate: () => void
+  appointment?: GetAppointment["data"],
+  revalidate: () => void
 }
-export const useAppointmentTools = ({ appointment, revalidate}:UseAppointmentToolsProps) => {
+export const useAppointmentTools = ({ appointment, revalidate }: UseAppointmentToolsProps) => {
 
-  const {user} = useUser()
-  const {data: authHps} = useHPs({
+  const { user } = useUser()
+  const { data: authHps } = useHPs({
     userId: user?.sub ?? undefined
   })
   const routingCode = appointment?.AppointmentRouting.find(r => authHps?.some(hp => hp.id === r.RoutedTo.id && r.status === "PENDING"))?.routingCode
-  if(!appointment) return { tools: [] }
+  if (!appointment) return { tools: [] }
   const patientId = appointment.Requesters[0].User.userId
   const tools: AppointmentStatusTools = [
     {
-      action:"accept",
+      action: "accept",
       permissions: [PERMISSIONS.CLINIC["ACCEPT:CLINIC:APPOINTMENT_ASSIGNMENT"].name],
       appointmentStatuses: ["all", "routed"],
       routedAptStatuses: ["pending"],
@@ -48,85 +49,85 @@ export const useAppointmentTools = ({ appointment, revalidate}:UseAppointmentToo
           key={`${appointment.id}-accept`}
           routingCode={routingCode}
           onAccepted={revalidate}
-          disabled={!appointment} 
+          disabled={!appointment}
         />
       ) : null
     },
     {
-      action:"decline",
+      action: "decline",
       permissions: [PERMISSIONS.CLINIC["DECLINE:CLINIC:APPOINTMENT_ASSIGNMENT"].name],
       appointmentStatuses: ["all", "routed"],
       routedAptStatuses: ["pending"],
       component: routingCode ? (
-        <DeclineAppointmentAssignment 
+        <DeclineAppointmentAssignment
           key={`${appointment.id}-decline`}
           routingCode={routingCode}
-          disabled={!appointment} 
+          disabled={!appointment}
           onDeclined={revalidate}
         />
       ) : null
     },
     {
-      action:"receive",
+      action: "receive",
       permissions: [PERMISSIONS.CLINIC["RECEIVE:CLINIC:APPOINTMENT"].name],
       appointmentStatuses: ["all", "pending"],
       routedAptStatuses: [],
-      component: <ReceiveAppointment 
+      component: <ReceiveAppointment
         key={`${appointment.id}-receive`}
         appointmentId={appointment.id}
-        onReceived={revalidate} 
+        onReceived={revalidate}
         disabled={!appointment}
       />
     },
     {
-      action:"reject",
+      action: "reject",
       permissions: [PERMISSIONS.CLINIC["REJECT:CLINIC:APPOINTMENT"].name],
       appointmentStatuses: ["all", "accepted", "pending"],
       routedAptStatuses: [],
       component: (
-        <RejectAppointment 
+        <RejectAppointment
           key={`${appointment.id}-reject`}
           appointmentId={appointment?.id}
-          onRejected={revalidate} 
+          onRejected={revalidate}
           disabled={!appointment}
-        /> 
+        />
       )
     },
     {
-      action:"create-consultation-ticket",
+      action: "create-consultation-ticket",
       permissions: [PERMISSIONS.CLINIC["CREATE:CLINIC:CONSULTATION_TICKET"].name],
       appointmentStatuses: ["routed"],
       routedAptStatuses: ["accepted"],
       component: (
-        <CreateConsultationTicketModal 
-          key={appointment.id} 
+        <CreateConsultationTicketModal
+          key={appointment.id}
           appointment={appointment}
-          disabled={!appointment} 
+          disabled={!appointment}
           subject={appointment?.subject ?? ""}
         />
       )
     },
     {
-      action:"assign",
+      action: "assign",
       permissions: [PERMISSIONS.CLINIC["ASSIGN:CLINIC:APPOINTMENT"].name],
       appointmentStatuses: ["received", "routed"],
       routedAptStatuses: [],
       component: (
-        <AssignAppointment 
+        <AssignAppointment
           key={`${appointment.id}-assign`}
           appointment={appointment}
-          onAssigned={revalidate} 
+          onAssigned={revalidate}
           disabled={!appointment}
         />
       )
     },
     {
-      action:"reschedule",
+      action: "reschedule",
       permissions: [PERMISSIONS.CLINIC["RESCHEDULE:CLINIC:APPOINTMENT"].name],
       appointmentStatuses: ["received", "routed"],
       routedAptStatuses: ["accepted"],
       component: (
-        <RescheduleAppointment 
+        <RescheduleAppointment
           key={`${appointment.id}-reschedule`}
           appointment={appointment}
           disabled={!appointment}
@@ -135,7 +136,7 @@ export const useAppointmentTools = ({ appointment, revalidate}:UseAppointmentToo
       )
     },
     {
-      action:"add-vitals",
+      action: "add-vitals",
       permissions: [PERMISSIONS.CLINIC["WRITE:CLINIC:VITAL_SIGNS"].name],
       appointmentStatuses: ["received", "routed"],
       routedAptStatuses: [],
@@ -154,16 +155,31 @@ export const useAppointmentTools = ({ appointment, revalidate}:UseAppointmentToo
       )
     },
     {
-      action:"confirm-booking",
+      action: "emr-preview",
+      permissions: [PERMISSIONS.CLINIC["READ:CLINIC:APPOINTMENT:OWN"].name],
+      appointmentStatuses: ["routed", "accepted", "pending", "received", "rescheduled"],
+      routedAptStatuses: [],
+      component: (
+        <EMRTriggerButton
+          key={`${appointment.id}-emr-preview`}
+          patientId={patientId}
+          variant="ghost"
+          className="h-4 w-4"
+          keyProp={`${appointment.id}-emr-preview`}
+        />
+      )
+    },
+    {
+      action: "confirm-booking",
       permissions: [PERMISSIONS.CLINIC["CONFIRM:CLINIC:APPOINTMENT"].name],
       appointmentStatuses: ["routed"],
       routedAptStatuses: ["accepted"],
       component: (
-        <ConfirmBooking 
+        <ConfirmBooking
           appointmentId={appointment.id}
           onAccepted={revalidate}
           key={`${appointment.id}-confirm`}
-          disabled={!appointment.AppointmentAttribute?.date || !appointment.AppointmentAttribute?.timeStart || !appointment.AppointmentAttribute?.timeEnd} 
+          disabled={!appointment.AppointmentAttribute?.date || !appointment.AppointmentAttribute?.timeStart || !appointment.AppointmentAttribute?.timeEnd}
         />
       )
     }

@@ -46,7 +46,7 @@ export const getClinicRolesAction = cache(async (filter?: FiltersType) => {
     },
     where: {
       isActive: true,
-      ...roleName ? { name: roleName } : {},
+      ...(roleName ? { name: roleName } : {}),
     },
     select: {
       id: true,

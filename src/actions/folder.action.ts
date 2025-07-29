@@ -1,5 +1,6 @@
 "use server";
 
+import { hasCodeProperty, hasContextProperty } from "@/lib/utils";
 import { withErrorHandling } from "@/lib/with-error-handling";
 import prisma from "@lib/prisma";
 
@@ -15,19 +16,25 @@ export const createFolderAction = withErrorHandling(async ({name, userId, clinic
       FolderSetting: {
         create: {
           isPublic: true,
-          ...clinicUid ? {
+          ...(clinicUid ? {
             Clinic: {
               connect: {
                 clinicUid
               }
             }
-          } : {}
+          } : {})
         }
       }
     }
   });
   return { message: "Folder created successfully", data: folder }
-}, (error) => {
+}, async (error, context) => {
+  if(hasCodeProperty(error) && error.code === "P2002") {
+    if (hasContextProperty(context)) {
+      return `Folder with name "${context.args[0]?.name}" already exists.`;
+    }
+    return "Folder with this name already exists.";
+  }
   return "Failed to create folder";
 })
 
@@ -38,13 +45,13 @@ export const getFoldersAction = async (userId: string, clinicUid?:string) => {
       User: {
         userId
       },
-      ...clinicUid ? {
+      ...(clinicUid ? {
         FolderSetting: {
           Clinic: {
             clinicUid
           }
         }
-      } : {}
+      } : {})
     },
     select: {
       id: true,

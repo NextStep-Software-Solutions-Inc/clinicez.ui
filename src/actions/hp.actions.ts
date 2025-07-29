@@ -5,6 +5,36 @@ import prisma from "@lib/prisma";
 import { Prisma } from "@prisma/client";
 import { cache } from "react";
 
+// Get total healthcare provider job titles
+export const getHPTypeCounts = async () => {
+  const types = await prisma.healthcareProviderType.findMany({
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      HealthcareProviders: {
+        where: {
+          isActive: true,
+        },
+        select: {
+          id: true,
+        },
+      },
+    },
+  });
+
+  return types.map((type) => ({
+    id: type.id,
+    name: type.name,
+    description: type.description,
+    count: type.HealthcareProviders.length,
+  })).sort((a, b) => b.count - a.count);
+};
+
+export type GetHPTypeCountsType = Awaited<ReturnType<typeof getHPTypeCounts>>;
+
+
+
 export type HPSFilters = {
   hpTypeId?: number,
   userId?: string

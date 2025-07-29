@@ -3,11 +3,11 @@ import { withJwtAuth } from "@middlewares/withJwtAuth";
 import { NextRequest, NextResponse } from "next/server";
 
 export const GET = withJwtAuth(async (req: NextRequest, { params }: {
-  params: {
+  params: Promise<{
     userId: string;
-  }
+  }>
 }) => {
-  const userId = params.userId;
+  const {userId} = await params;
   const searchParams = req.nextUrl.searchParams
   
   const defaultOrgRole = await getUserDefaultOrgsRole(userId);

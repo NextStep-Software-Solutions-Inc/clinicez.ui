@@ -33,23 +33,23 @@ type CreateAppointmentPayload = {
   };
 };
 export const createAppointmentAction = withErrorHandling(async (payload: CreateAppointmentPayload) => {
-  
+
   const session = await getCachedSession();
   if (!session) throw new Error("Unauthorized");
 
   const { clinicUid, subject, complaint, requesters, modeId, typeId, serviceId, attachments, hpId, schedule } = payload;
   const { date, timeStart, timeEnd } = schedule ?? {};
-    
+
   const createAppointmentPermissions = [PERMISSIONS.CLINIC["WRITE:CLINIC:APPOINTMENT"].name];
   const bookAFriendPermissions = [PERMISSIONS.CLINIC["WRITE:CLINIC:APPOINTMENT:BOOK_A_FRIEND"].name];
   const myPermissions = await getPermissionsAction({ userId: session.user.sub });
   const userPermissionArray = myPermissions.map(p => p.name);
   const canCreateAppointment = createAppointmentPermissions.every(p => userPermissionArray.includes(p));
   const canBookAFriend = bookAFriendPermissions.every(p => userPermissionArray.includes(p));
-  
+
   if (!canCreateAppointment) throw new Error("You do not have permission to create an appointment in this organization");
-  if(requesters.some((requester) => requester !== session.user.sub) && !canBookAFriend) throw new Error("You cannot book an appointment for another user");
-    
+  if (requesters.some((requester) => requester !== session.user.sub) && !canBookAFriend) throw new Error("You cannot book an appointment for another user");
+
   const newAppointment = await prisma.$transaction(async (prisma) => {
     const numberOfAppointments = await prisma.appointment.count({
       where: {
@@ -85,10 +85,10 @@ export const createAppointmentAction = withErrorHandling(async (payload: CreateA
         maxAppointmentsPerDay: true
       }
     })
-    if(numberOfAppointments >= maxNumberOfAppointment.maxAppointmentsPerClient) throw new Error("You have reached the maximum number of appointments you can book for today");
-      
-    if(numberOfAppointments >= maxNumberOfAppointment.maxAppointmentsPerDay) throw new Error("The appointments quota of the organization for today has been reached");
-      
+    if (numberOfAppointments >= maxNumberOfAppointment.maxAppointmentsPerClient) throw new Error("You have reached the maximum number of appointments you can book for today");
+
+    if (numberOfAppointments >= maxNumberOfAppointment.maxAppointmentsPerDay) throw new Error("The appointments quota of the organization for today has been reached");
+
     const patientIds = await prisma.user.findMany({
       where: {
         userId: {
@@ -158,13 +158,13 @@ export const createAppointmentAction = withErrorHandling(async (payload: CreateA
   })
 
   const mappedUsers = newAppointment.Requesters.map((requester) => ({
-    fullName:`${requester.User.firstName} ${requester.User.middleName ?? ""} ${requester.User.lastName ?? ""} ${requester.User.suffix ?? ""}`.trim(),
+    fullName: `${requester.User.firstName} ${requester.User.middleName ?? ""} ${requester.User.lastName ?? ""} ${requester.User.suffix ?? ""}`.trim(),
     email: requester.User.email,
     organization: newAppointment.Clinic.name,
     orgMail: newAppointment.Clinic.email ?? ""
   }))
 
-  await sendAppointmentRequestSent({ users: mappedUsers})
+  await sendAppointmentRequestSent({ users: mappedUsers })
 
   return { message: "Appointment created", data: newAppointment };
 });
@@ -179,27 +179,27 @@ export type GetAppointmentFilter = {
 };
 export type GetAppointments = Awaited<ReturnType<typeof getAppointmentsAction>>;
 export const getAppointmentsAction = withErrorHandling(cache(async (filter?: GetAppointmentFilter) => {
-  
+
   const session = await getCachedSession();
   if (!session) throw new Error("Unauthorized");
 
   const [permissions, myHps] = await Promise.all([
-    getPermissionsAction({ userId:session.user.sub }),
+    getPermissionsAction({ userId: session.user.sub }),
     getHPsAction({ userId: session.user.sub })
   ])
 
   const { clinicUid, userId, status, routedAptStatus, sort } = filter || {};
 
   const userPermissionArray = permissions.map(p => p.name);
-  
+
   const readAllOrgAppointmentPermission = [PERMISSIONS.CLINIC["READ:CLINIC:APPOINTMENT:ALL"].name];
   const readAOwnOrgAppointmentPermission = [PERMISSIONS.CLINIC["READ:CLINIC:APPOINTMENT:OWN"].name];
   const readAssignedOrgAppointmentPermission = [PERMISSIONS.CLINIC["READ:CLINIC:APPOINTMENT:ASSIGNED"].name];
-  
+
   const canReadAllOrgAppointment = readAllOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
   const canReadAOwnOrgAppointment = readAOwnOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
   const canReadAssignedOrgAppointment = readAssignedOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
-    
+
 
   const myHpIds = myHps.map((hp) => hp.id);
   const appointments = await prisma.appointment.findMany({
@@ -228,22 +228,24 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
         }
         : {}),
       OR: [
-        {...(canReadAllOrgAppointment ? {  Clinic: {clinicUid},...userId ? { Requesters: { every: { User: {userId} } } } : {} } : {}) },
-        {...(canReadAOwnOrgAppointment ? { Requesters: { every: { User: { userId: session.user.sub} } } } : {}) },
-        {...(canReadAssignedOrgAppointment ? {
-          AppointmentRouting: {
-            some: {
-              OR: [
-                { 
-                  routedTo: {
-                    in: myHpIds
-                  }
-                },
-                { RoutedBy: { userId: session.user.sub} }
-              ]
+        { ...(canReadAllOrgAppointment ? { Clinic: { clinicUid }, ...userId ? { Requesters: { every: { User: { userId } } } } : {} } : {}) },
+        { ...(canReadAOwnOrgAppointment ? { Requesters: { every: { User: { userId: session.user.sub } } } } : {}) },
+        {
+          ...(canReadAssignedOrgAppointment ? {
+            AppointmentRouting: {
+              some: {
+                OR: [
+                  {
+                    routedTo: {
+                      in: myHpIds
+                    }
+                  },
+                  { RoutedBy: { userId: session.user.sub } }
+                ]
+              }
             }
-          }
-        } : {}) },
+          } : {})
+        },
       ]
     },
     select: {
@@ -315,17 +317,17 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
 
 export type GetAppointment = Awaited<ReturnType<typeof getAppointmentAction>>;
 export const getAppointmentAction = withErrorHandling(cache(async (id: number, clinicUid: string) => {
-  
+
   const session = await getCachedSession();
   if (!session) throw new Error("Unauthorized");
-  
-  const permissions = await getPermissionsAction({ userId:session.user.sub });
+
+  const permissions = await getPermissionsAction({ userId: session.user.sub });
   const userPermissionArray = permissions.map(p => p.name);
-    
+
   const readAllOrgAppointmentPermission = [PERMISSIONS.CLINIC["READ:CLINIC:APPOINTMENT:ALL"].name]; // read all appointments in the org
   const readAOwnOrgAppointmentPermission = [PERMISSIONS.CLINIC["READ:CLINIC:APPOINTMENT:OWN"].name]; // read appointments that the user is a requester
   const readAssignedOrgAppointmentPermission = [PERMISSIONS.CLINIC["READ:CLINIC:APPOINTMENT:ASSIGNED"].name]; // read appointments that the user is assigned to or assigned by
-    
+
   const canReadAllOrgAppointment = readAllOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
   const canReadAOwnOrgAppointment = readAOwnOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
   const canReadAssignedOrgAppointment = readAssignedOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
@@ -335,28 +337,30 @@ export const getAppointmentAction = withErrorHandling(cache(async (id: number, c
       isActive: true,
       OR: [
         { ...(canReadAllOrgAppointment ? { Clinic: { clinicUid }, id } : {}) },
-        { ...(canReadAOwnOrgAppointment ? { Requesters: { some: { User: { userId: session.user.sub }  } }, id } : {}) },
-        { ...(canReadAssignedOrgAppointment ? {
-          AppointmentRouting: {
-            some: {
-              OR: [
-                { 
-                  RoutedTo: {
-                    User: {
+        { ...(canReadAOwnOrgAppointment ? { Requesters: { some: { User: { userId: session.user.sub } } }, id } : {}) },
+        {
+          ...(canReadAssignedOrgAppointment ? {
+            AppointmentRouting: {
+              some: {
+                OR: [
+                  {
+                    RoutedTo: {
+                      User: {
+                        userId: session.user.sub
+                      }
+                    }
+                  },
+                  {
+                    RoutedBy: {
                       userId: session.user.sub
                     }
                   }
-                },
-                { 
-                  RoutedBy: {
-                    userId: session.user.sub
-                  }
-                }
-              ]
-            }
-          },
-          id
-        } : {}) },
+                ]
+              }
+            },
+            id
+          } : {})
+        },
       ],
       id
     },
@@ -380,6 +384,26 @@ export const getAppointmentAction = withErrorHandling(cache(async (id: number, c
               picture: true,
               nickname: true,
               dob: true,
+              ClinicPatients: {
+                select: {
+                  id: true,
+                },
+                take: 1,
+              },
+              UserAddresses: {
+                where: {
+                  isPrimary: true,
+                  isActive: true,
+                },
+                select: {
+                  address: true,
+                  city: true,
+                  state: true,
+                  zipCode: true,
+                  country: true,
+                },
+                take: 1,
+              }
             }
           }
         }
@@ -476,7 +500,7 @@ export const getAppointmentAction = withErrorHandling(cache(async (id: number, c
         }
       },
       AppointmentRouting: {
-        orderBy: {id: "asc"},
+        orderBy: { id: "asc" },
         select: {
           id: true,
           routingCode: true,
@@ -572,20 +596,20 @@ export const getAppointmentAction = withErrorHandling(cache(async (id: number, c
 
 export type GetAppointmentCounts = Awaited<ReturnType<typeof getAppointmentCountsAction>>;
 export const getAppointmentCountsAction = withErrorHandling(cache(async (clinicUid: string) => {
-  
+
   const session = await getCachedSession();
   if (!session) throw new Error("Unauthorized");
 
   const [permissions] = await Promise.all([
-    getPermissionsAction({ userId:session.user.sub }),
+    getPermissionsAction({ userId: session.user.sub }),
   ])
 
   const userPermissionArray = permissions.map(p => p.name);
-    
+
   const readAllOrgAppointmentPermission = [PERMISSIONS.CLINIC["READ:CLINIC:APPOINTMENT:ALL"].name];
   const readAOwnOrgAppointmentPermission = [PERMISSIONS.CLINIC["READ:CLINIC:APPOINTMENT:OWN"].name];
   const readAssignedOrgAppointmentPermission = [PERMISSIONS.CLINIC["READ:CLINIC:APPOINTMENT:ASSIGNED"].name];
-    
+
   const canReadAllOrgAppointment = readAllOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
   const canReadAOwnOrgAppointment = readAOwnOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
   const canReadAssignedOrgAppointment = readAssignedOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
@@ -594,28 +618,30 @@ export const getAppointmentCountsAction = withErrorHandling(cache(async (clinicU
     where: {
       isActive: true,
       OR: [
-        { ...(canReadAllOrgAppointment ? { Clinic: {clinicUid} } : {}) },
-        { ...(canReadAOwnOrgAppointment ? { Requesters: { every: { User: {userId: session.user.sub }} } } : {}) },
-        { ...(canReadAssignedOrgAppointment ? {
-          AppointmentRouting: {
-            every: {
-              OR: [
-                { 
-                  RoutedTo: {
-                    User: {
+        { ...(canReadAllOrgAppointment ? { Clinic: { clinicUid } } : {}) },
+        { ...(canReadAOwnOrgAppointment ? { Requesters: { every: { User: { userId: session.user.sub } } } } : {}) },
+        {
+          ...(canReadAssignedOrgAppointment ? {
+            AppointmentRouting: {
+              every: {
+                OR: [
+                  {
+                    RoutedTo: {
+                      User: {
+                        userId: session.user.sub
+                      }
+                    }
+                  },
+                  {
+                    RoutedBy: {
                       userId: session.user.sub
                     }
                   }
-                },
-                { 
-                  RoutedBy: {
-                    userId: session.user.sub
-                  }
-                }
-              ]
+                ]
+              }
             }
-          }
-        } : {}) },
+          } : {})
+        },
       ]
     },
     select: {
@@ -660,23 +686,23 @@ export const getAppointmentCountsAction = withErrorHandling(cache(async (clinicU
     acc["ALL"] += 1;
     return acc;
   }, { ALL: 0 } as Record<string, number>);
-    
-  return {message: "Appointment counts fetched", data: countsMap };
+
+  return { message: "Appointment counts fetched", data: countsMap };
 }));
 
 export const getRoutedAppointmentCountsAction = withErrorHandling(cache(async (clinicUid: string) => {
   const session = await getCachedSession();
   if (!session) throw new Error("Unauthorized");
-    
+
   const [permissions] = await Promise.all([
-    getPermissionsAction({ userId:session.user.sub }),
+    getPermissionsAction({ userId: session.user.sub }),
   ])
   const userPermissionArray = permissions.map(p => p.name);
-      
+
   const readAllOrgAppointmentPermission = [PERMISSIONS.CLINIC["READ:CLINIC:APPOINTMENT:ALL"].name];
   const readAOwnOrgAppointmentPermission = [PERMISSIONS.CLINIC["READ:CLINIC:APPOINTMENT:OWN"].name];
   const readAssignedOrgAppointmentPermission = [PERMISSIONS.CLINIC["READ:CLINIC:APPOINTMENT:ASSIGNED"].name];
-      
+
   const canReadAllOrgAppointment = readAllOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
   const canReadAOwnOrgAppointment = readAOwnOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
   const canReadAssignedOrgAppointment = readAssignedOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
@@ -692,28 +718,30 @@ export const getRoutedAppointmentCountsAction = withErrorHandling(cache(async (c
           }
         },
         OR: [
-          { ...(canReadAllOrgAppointment ? { Clinic: {clinicUid} } : {}) },
-          { ...(canReadAOwnOrgAppointment ? { Requesters: { every: { User: {userId: session.user.sub} } } } : {}) },
-          { ...(canReadAssignedOrgAppointment ? {
-            AppointmentRouting: {
-              some: {
-                OR: [
-                  { 
-                    RoutedTo: {
-                      User: {
+          { ...(canReadAllOrgAppointment ? { Clinic: { clinicUid } } : {}) },
+          { ...(canReadAOwnOrgAppointment ? { Requesters: { every: { User: { userId: session.user.sub } } } } : {}) },
+          {
+            ...(canReadAssignedOrgAppointment ? {
+              AppointmentRouting: {
+                some: {
+                  OR: [
+                    {
+                      RoutedTo: {
+                        User: {
+                          userId: session.user.sub
+                        }
+                      }
+                    },
+                    {
+                      RoutedBy: {
                         userId: session.user.sub
                       }
                     }
-                  },
-                  { 
-                    RoutedBy: {
-                      userId: session.user.sub
-                    }
-                  }
-                ]
+                  ]
+                }
               }
-            }
-          } : {}) },
+            } : {})
+          },
         ]
       }
     },
@@ -732,30 +760,30 @@ export const getRoutedAppointmentCountsAction = withErrorHandling(cache(async (c
               }
             }
           },
-            
+
         }
       }
     }
   });
 
-    
+
   const [myWhitelistFilter] = await Promise.all([
     getUserWhitelistFilters(session.user.sub, clinicUid)
   ])
 
-    
+
   const filteredAppointments = routedAppointments.filter((routed) => {
     return (myWhitelistFilter.data?.WhitelistFilters ?? []).every((filter) => {
       return isFilterMatch(filter.Filter.key, filter.value, routed.Appointment.Requesters[0].User);
     });
   });
-  
+
   const countsMap = filteredAppointments.reduce((acc, routed) => {
     const status = routed.status;
     if (status) acc[status] = (acc[status] ?? 0) + 1;
     acc["ALL"] += 1;
     return acc;
-  }, {ALL: 0} as Record<string, number>);
+  }, { ALL: 0 } as Record<string, number>);
 
   return { message: "Appointment counts fetched", data: countsMap };
 }));
@@ -768,63 +796,67 @@ type RescheduleAppointmentPayload = {
   hpId: number;
   assign: boolean;
 };
-export const rescheduleAppointmentAction = withErrorHandling(async ({ appointmentId, startDateTime, endDateTime, date, hpId, assign }:RescheduleAppointmentPayload ) => {
-  
+export const rescheduleAppointmentAction = withErrorHandling(async ({ appointmentId, startDateTime, endDateTime, date, hpId, assign }: RescheduleAppointmentPayload) => {
+
   const session = await getCachedSession();
   if (!session) throw new Error("Unauthorized");
 
-  await prisma.$transaction(async (prisma) => {
-    await prisma.appointmentAttribute.update({
-      where: {
-        appointmentId,
-        Appointment: {
-          isActive: true
-        }
-      },
-      data: {
-        date: dayjs(date).endOf("day").toDate(),
-        timeStart: startDateTime,
-        timeEnd: endDateTime,
-        rescheduledAt: new Date(),
-        RescheduledBy: {
-          connect: {
-            userId: session.user.sub
+  try {
+    await prisma.$transaction(async (prisma) => {
+      await prisma.appointmentAttribute.update({
+        where: {
+          appointmentId,
+          Appointment: {
+            isActive: true
           }
         },
-        ...assign ? { status: "ROUTED" } : {}
-      }
-    });
-    if(assign) {
-      await prisma.appointmentRouting.create({
         data: {
-          Appointment: {
-            connect: {
-              id: appointmentId,
-            }
-          },
-          RoutedBy: {
+          date: dayjs(date).endOf("day").toDate(),
+          timeStart: startDateTime,
+          timeEnd: endDateTime,
+          rescheduledAt: new Date(),
+          RescheduledBy: {
             connect: {
               userId: session.user.sub
             }
           },
-          RoutedTo: {
-            connect: {
-              id: hpId
-            }
-          },
-          status: "PENDING"
+          ...(assign ? { status: "ROUTED" } : {})
         }
       });
+      if (assign) {
+        await prisma.appointmentRouting.create({
+          data: {
+            Appointment: {
+              connect: {
+                id: appointmentId,
+              }
+            },
+            RoutedBy: {
+              connect: {
+                userId: session.user.sub
+              }
+            },
+            RoutedTo: {
+              connect: {
+                id: hpId
+              }
+            },
+            status: "PENDING"
+          }
+        });
+      }
+    }, {
+      timeout: 5000,
+      maxWait: 10000,
+      isolationLevel: Prisma.TransactionIsolationLevel.Serializable
+    });
+    return { message: "Appointment rescheduled", data: undefined }
+  } catch (error) {
+    if (hasCodeProperty(error) && error.code === "P2025") {
+      throw new Error("Appointment not found or you are not authorized to reschedule it");
     }
-  }, {
-    timeout: 5000,
-    maxWait: 10000,
-    isolationLevel: Prisma.TransactionIsolationLevel.Serializable
-  });
-  return { message: "Appointment rescheduled",data: undefined }
-}, error => {
-  if (hasCodeProperty(error) && error.code === "P2025") return "Appointment not found or you are not authorized to reschedule it";
-  return "Failed to reschedule appointment";
+    throw new Error("Failed to reschedule appointment");
+  }
 });
 
 const getUserWhitelistFilters = withErrorHandling(async (userId: string, clinicUid?: string) => {
@@ -850,21 +882,21 @@ const getUserWhitelistFilters = withErrorHandling(async (userId: string, clinicU
       }
     }
   });
-  return {message: "Appointment whitelist successfully fetched.", data: appointmentWhitelist}
+  return { message: "Appointment whitelist successfully fetched.", data: appointmentWhitelist }
 })
 
 type Patient = {
   userId: string;
   UserEmployments: {
-      departmentId: number | null;
-      collegeId: number | null;
-      officeId: number | null;
+    departmentId: number | null;
+    collegeId: number | null;
+    officeId: number | null;
   }[];
   StudentRecords: {
-      organizationId: number;
-      programId: number | null;
-      departmentId: number | null;
-      collegeId: number | null;
+    organizationId: number;
+    programId: number | null;
+    departmentId: number | null;
+    collegeId: number | null;
   }[];
 }
 const isFilterMatch = <T extends Patient>(filterKey: string, filterValue: string, patient: T) => {
@@ -893,7 +925,7 @@ const isFilterMatch = <T extends Patient>(filterKey: string, filterValue: string
   }
 };
 
-const sendAppointmentRequestSent = async ({ users }:{
+const sendAppointmentRequestSent = async ({ users }: {
   users: {
     fullName: string,
     email: string,
@@ -921,3 +953,5 @@ const sendAppointmentRequestSent = async ({ users }:{
     return false;
   }
 }
+
+

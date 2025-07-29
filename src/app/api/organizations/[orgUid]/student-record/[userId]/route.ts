@@ -8,13 +8,13 @@ import { getOrgStudentRecordAction } from "@/actions/student-record.action";
 
 
 export const GET = withJwtAuth(async (req: NextRequest, { params }: {
-    params: {
+    params: Promise<{
       orgUid: string;
       userId: string;
-    }
+    }>
   }) => {
-    
-  const { orgUid, userId } = params
+
+  const { orgUid, userId } = await params;
   const organization = await getOrgStudentRecordAction({orgUid, userId})
   return NextResponse.json(organization, {status: 200});
 });

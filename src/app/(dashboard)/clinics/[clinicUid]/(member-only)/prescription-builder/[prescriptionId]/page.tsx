@@ -1,8 +1,9 @@
-import { AppRouterPageRouteOpts } from "@auth0/nextjs-auth0";
+import { AppRouterPageRouteOpts } from "@/types";
 import { Separator } from "@components/ui/separator";
 import React from "react";
 
-export default async function PrescriptionDetailsPage({params}: AppRouterPageRouteOpts) {
+export default async function PrescriptionDetailsPage(props: AppRouterPageRouteOpts) {
+  const params = await props.params;
   return(
     <>
       <div className="space-y-6">

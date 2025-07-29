@@ -1,15 +1,14 @@
 "use server";
 
-import { getAccessToken } from "@auth0/nextjs-auth0";
+import { getAccessToken } from "@/lib/auth0";
+
 export const refreshTokensAction = async () => {
   try {
-    const token = await getAccessToken({
-      refresh: true
-    })
-    return token;
+    const result = await getAccessToken()
+    return result?.token || null;
   } catch (error) {
     let message = "Something went wrong!"
-    if(error instanceof Error) {
+    if (error instanceof Error) {
       message = error.message
     }
     console.error("Failed to refresh token", message);

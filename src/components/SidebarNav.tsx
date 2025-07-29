@@ -43,5 +43,5 @@ export default function SidebarNav({ className, items, ...props }: SidebarNavPro
         )}
       />
     </nav>
-  )
+  );
 }

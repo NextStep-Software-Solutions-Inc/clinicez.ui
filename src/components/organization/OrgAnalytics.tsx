@@ -14,14 +14,15 @@ export default function OrgAnalytics({ orgUid }: { orgUid: string; }) {
     to: dayjs().endOf("day").toDate(),
   })
   
-  const {data} = useDailyOrgMemberships(orgUid, {
+  const { data } = useDailyOrgMemberships(orgUid, {
     startDate: dayjs(date?.from).startOf("day").format("YYYY-MM-DDTHH:mm:ss.SSSZ"),
     endDate: dayjs(date?.to).endOf("day").format("YYYY-MM-DDTHH:mm:ss.SSSZ")
   });
   
   const chartData = useMemo(() => (data ?? []).map((item) => ({
     date: dayjs(item.date).format("YYYY-MM-DDTHH:mm:ss.SSSZ"),
-    request: Number(item.total_requests),
+    male: Number(item.total_male_request),
+    female: Number(item.total_female_request),
   })), [data]);
 
   return (

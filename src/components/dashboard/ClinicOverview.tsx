@@ -71,7 +71,7 @@ export const ClinicOverview = async ({ userId, clinicUid }: ClinicOverviewProps)
         <CardHeader>
           <CardTitle>Upcoming Appointments</CardTitle>
           <CardDescription>
-            <Link href={`/clinics/${clinicUid}/appointments`}>
+            <Link href={`/clinics/${clinicUid}/appointments`} >
               <span className="text-primary">View all</span>
             </Link>
           </CardDescription>

@@ -8,7 +8,7 @@ export const getSystemsAction = cache(async (clinicUid?:string) => {
   return await prisma.system.findMany({
     where: { 
       isActive: true,
-      ...clinicUid? { Clinic: {clinicUid}} : {}
+      ...(clinicUid ? { Clinic: {clinicUid}} : {})
     },
     select: {
       id: true,

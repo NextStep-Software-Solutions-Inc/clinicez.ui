@@ -113,9 +113,8 @@ export const columns: ColumnDef<NonNullable<GetOrgMembers["data"]>["data"][numbe
               <div className="text-xs text-muted-foreground">{gender && gender.charAt(0)} / {dob && differenceInCalendarYears(new Date(), dob)}</div>
             </ConditionalRender>
           </div>
-
         </div>
-      )
+      );
     }
   },
   {

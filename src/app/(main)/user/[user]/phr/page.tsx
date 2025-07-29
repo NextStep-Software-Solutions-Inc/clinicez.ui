@@ -1,18 +1,19 @@
 import { Separator } from "@components/ui/separator"
 import { Metadata } from "next"
-import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth0"
 import Suspend from "@components/Suspend"
 import { isUserOwner } from "@lib/org-utils"
 import { PictureWrapper } from "./PictureWrapper"
 import { PHR } from "./PHR"
+import { AppRouterPageRouteOpts } from "@/types"
 
 export const metadata: Metadata = {
   title: "Basic Information | PHR",
   description: "Update your basic information to help you identify your account in your organization."
 }
 
-async function PHRPage({ params, searchParams }: AppRouterPageRouteOpts) {
-  const userId = decodeURI(params?.user as string) 
+export default async function PHRPage({ params, searchParams }: AppRouterPageRouteOpts) {
+  const resolvedParams = await params
+  const userId = decodeURI(resolvedParams?.user as string)
   if(!userId) throw new Error("User ID is required to view this page.")
   const userOwner = await isUserOwner(userId)
 
@@ -34,10 +35,3 @@ async function PHRPage({ params, searchParams }: AppRouterPageRouteOpts) {
     </div>
   )
 }
-
-export default withPageAuthRequired(PHRPage, {
-  returnTo: ({params, searchParams}) => {
-    const searchStr = Object.entries(searchParams ?? {}).map(([key, value]) => `${key}=${value}`).join("&");
-    return `/user/${String(params?.orgUid)}/phr?${searchStr}`;
-  }
-})

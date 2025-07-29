@@ -2,14 +2,15 @@ import { Separator } from "@components/ui/separator"
 import { Metadata } from "next"
 import Suspend from "@components/Suspend"
 import Vaccinations from "./Vaccinations"
-import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth0"
+import { AppRouterPageRouteOpts } from "@/types"
 
 export const metadata: Metadata = {
   title: "Vaccination & Immunization | PHR",
   description: "Update your vaccination and immunization information to help you organization track your vaccination and immunization history."
 }
 
-async function VaccinationImmunizationPage({params}: AppRouterPageRouteOpts) {
+export default async function VaccinationImmunizationPage(props: AppRouterPageRouteOpts) {
+  const params = await props.params;
   const userId = decodeURI(params?.user as string)
   return (
     <div className="space-y-6">
@@ -26,5 +27,3 @@ async function VaccinationImmunizationPage({params}: AppRouterPageRouteOpts) {
     </div>
   )
 }
-
-export default withPageAuthRequired(VaccinationImmunizationPage, {})

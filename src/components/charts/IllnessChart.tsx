@@ -41,7 +41,7 @@ export default function IllnessChart({ chartData }: IllnessChartProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Top {chartData.length} Patient Illness</CardTitle>
+        <CardTitle>Top {chartData.length} Disease / Illness</CardTitle>
         {/* <CardDescription>January - June 2024</CardDescription> */}
       </CardHeader>
       <CardContent>

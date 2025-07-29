@@ -19,11 +19,22 @@ const CreatePrescriptionModal = dynamic(
   () => import("@components/prescription/modals/CreatePrescriptionModal")
 );
 
-export interface PrescriptionsProps {}
+export interface PrescriptionsProps {
+  consultationTicketId?: number;
+  clinicUid?: string;
+  hpIds: number[];
+  isArchived?: boolean;
+  patientId?: number;
+  userId?: number;
+}
 
-export default function Prescriptions({}: PrescriptionsProps) {
+export default function Prescriptions({ consultationTicketId, clinicUid, hpIds, userId }: PrescriptionsProps) {
   const { data: prescriptions, mutate } = usePrescriptions({
-    isArchived: false
+    isArchived: false,
+    consultationTicketId,
+    clinicUid,
+    hpIds,
+    userId: userId,
   });
 
   return (
@@ -41,6 +52,7 @@ export default function Prescriptions({}: PrescriptionsProps) {
             <Suspend>
               <CreatePrescriptionModal
                 onCreated={mutate}
+                hpIds={hpIds}
               />
             </Suspend>
           </div>
@@ -52,16 +64,16 @@ export default function Prescriptions({}: PrescriptionsProps) {
             of={prescriptions?.data ?? []}
             fallback={
               <p className="text-center text-muted-foreground">
-              No recent prescription to show.
+                No recent prescription to show.
               </p>
             }
             render={(prescription) => (
-              <PrescriptionItem prescription={prescription} onUpdated={mutate} />
+              <PrescriptionItem prescription={prescription} onUpdated={mutate} hpIds={hpIds} />
             )}
           />
         </div>
       </CardContent>
-      <CardFooter/>
+      <CardFooter />
     </Card>
   );
 }

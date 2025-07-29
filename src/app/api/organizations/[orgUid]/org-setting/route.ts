@@ -6,12 +6,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { getOrgSettingAction } from "@actions/organizations/org-setting.action";
 
 export const GET = withJwtAuth(async (req: NextRequest, { params }: {
-    params: {
+    params: Promise<{
       orgUid: string;
-    }
+    }>
   }) => {
 
-  const orgUid = String(params?.orgUid);
+  const { orgUid } = await params;
   const orgSetting = await getOrgSettingAction(orgUid)
   return NextResponse.json(orgSetting, {status: 200});
 });

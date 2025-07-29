@@ -134,6 +134,7 @@ export const createTenantAction = withErrorHandling(async (data: CreateTenantPay
    
   return { message: "Tenant created successfully", data: newUserPlan }
  
-}, error => {
+}, async error => {
   if(hasCodeProperty(error) && error.code === "P2025") return "Tenant ID already exists";
+  return error instanceof Error ? error.message : "An error occurred while creating tenant";
 })

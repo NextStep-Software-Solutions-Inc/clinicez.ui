@@ -4,7 +4,7 @@ import { updateDocumentTemplateAction } from "@/actions/document-template.action
 import { Textarea } from "@/components/ui/textarea";
 import { promiseWrapper } from "@/lib/with-error-handling";
 import { updatePrescriptionActions } from "@actions/medications/prescription.action";
-import { useUser } from "@auth0/nextjs-auth0/client";
+import { useUser } from "@auth0/nextjs-auth0";
 import ActionButton from "@components/ActionButton";
 import CustomModalContent from "@components/CustomModalContent";
 import { Alert, AlertDescription, AlertTitle } from "@components/ui/alert";

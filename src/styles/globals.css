@@ -92,6 +92,7 @@
 html,
 body {
   margin: 0;
+  overscroll-behavior: none;
 }
 
 /* Hide scrollbar for Chrome, Safari and Opera */
@@ -114,14 +115,12 @@ body {
     linear-gradient(rgba(255, 255, 255, 0), white 70%) 0 100%,
     /* Shadows */
       radial-gradient(
-        50% 0,
-        farthest-side,
+        farthest-side at 50% 0,
         rgba(0, 0, 0, 0.2),
         rgba(0, 0, 0, 0)
       ),
     radial-gradient(
-        50% 100%,
-        farthest-side,
+        farthest-side at 50% 100%,
         rgba(0, 0, 0, 0.2),
         rgba(0, 0, 0, 0)
       )

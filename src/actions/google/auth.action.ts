@@ -75,8 +75,11 @@ export async function getGoogleAuthTokens(code: string, redirect_uri:string) {
 
 export const getGoogleAccessToken = async () => {
   const session = await getCachedSession();
+  if (!session?.user?.sub) {
+    throw new Error("No valid session found");
+  }
   try {
-    const auth0User = await managementClient.users.get({id: session?.user.sub, fields: "user_metadata"});
+    const auth0User = await managementClient.users.get({id: session.user.sub, fields: "user_metadata"});
 
     const user_metadata = auth0User.data.user_metadata as {idp: {provider: string, credentials: Credentials}};
     // find google credentials

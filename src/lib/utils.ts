@@ -16,6 +16,10 @@ export const hasCodeProperty = (error: unknown): error is { code: string } => {
   return typeof error === 'object' && error !== null && 'code' in error;
 }
 
+export const hasContextProperty = (context: unknown): context is { functionName: string, args: any[] } => {
+  return typeof context === 'object' && context !== null && 'functionName' in context && 'args' in context;
+}
+
 export function getBadgeVariantFromLabel(
   label: string
 ): ComponentProps<typeof Badge>["variant"] {
@@ -32,6 +36,17 @@ export function convertStringToNumber(str: string | null): number | undefined {
   const num = Number(str);
   return Number.isNaN(num) ? undefined : num;
 }
+
+// Allows flexibility in displaying checkbox based data retrieval
+export const getGridCols = (length: number) => {
+  let gridCols = "grid-cols-1"; // Default to 1 column
+  if (length >= 10) {
+    gridCols = "grid-cols-1 md:grid-cols-3"; // 3 columns for 10+ items (starts at md instead of lg)
+  } else if (length > 3) {
+    gridCols = "grid-cols-1 md:grid-cols-2"; // 2 columns for 4-9 items
+  }
+  return gridCols;
+};
 
 
 /**
@@ -89,4 +104,30 @@ export function searchParamsToObject(params: URLSearchParams) {
     obj[key] = values.length > 1 ? values : values[0];
   }
   return obj;
+}
+
+export function generateSerialNumber(): string {
+  const prefix = 'EZ';
+  const suffixLetter = 'H';
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  const middleLength = 5;
+  let middle = '';
+
+  if (typeof crypto === 'undefined' || !crypto.getRandomValues) {
+    throw new Error('Secure random number generation is not available in this environment.');
+  }
+  const randomValues = new Uint8Array(middleLength + 1);
+  crypto.getRandomValues(randomValues);
+  for (let i = 0; i < middleLength; i++) {
+    middle += chars.charAt(randomValues[i] % chars.length);
+  }
+  const suffixDigit = (randomValues[middleLength] % 10).toString();
+  return `${prefix}${middle}${suffixLetter}${suffixDigit}`;
+}
+
+export function calculateAge(birthDate: Date | string): number {
+  const date = typeof birthDate === 'string' ? new Date(birthDate) : birthDate;
+  const today = dayjs();
+  const birthDay = dayjs(date);
+  return today.diff(birthDay, 'year');
 }

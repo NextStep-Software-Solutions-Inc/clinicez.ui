@@ -4,7 +4,7 @@ import { get } from '@vercel/edge-config'
 export default async function maintenanceCheck(req: NextRequest) {
 
   if (process.env.NEXT_PUBLIC_BUILD_ENV !== "production") {
-    return NextResponse.next()
+    return; // Continue - don't interfere
   }
 
   if (!process.env.EDGE_CONFIG) {
@@ -28,4 +28,7 @@ export default async function maintenanceCheck(req: NextRequest) {
     // but log the error to the console
     console.error(error)
   }
+
+  // Don't return anything - let the request continue to the next middleware
+  return;
 }

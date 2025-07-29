@@ -7,8 +7,8 @@ import { parseObject } from '@lib/utils';
 import { getPrescriptionAction } from '@actions/medications/prescription.action';
 
 
-export const GET = withJwtAuth(async (req: NextRequest, {params}: {params: {prescriptionId: number}}) => {
-  const { prescriptionId } = params;
+export const GET = withJwtAuth(async (req: NextRequest, {params}: {params: Promise<{prescriptionId: number}>}) => {
+  const { prescriptionId } = await params;
   const searchParams = req.nextUrl.searchParams
 
   const filters = parseObject(Object.fromEntries(searchParams.entries()))

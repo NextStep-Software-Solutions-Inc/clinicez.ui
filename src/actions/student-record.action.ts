@@ -81,12 +81,13 @@ export const upsertStudentRecordAction = withErrorHandling(async (payload:Create
 
   return { success: true, message: "Student Record updated", data: studentRecord };
  
-}, error => {
+}, async error => {
   if(hasCodeProperty(error)) {
     if(error.code === "P2002") {
       return"The provided Student ID or LRN is already taken. Please use a different Student ID or LRN. If you think this is an internal error, please contact the administrator."
     }
   }
+  return "An error occurred while creating or updating the student record. Please try again later.";
 })
 
 export type GetOrgStudentRecord = Awaited<ReturnType<typeof getOrgStudentRecordAction>>

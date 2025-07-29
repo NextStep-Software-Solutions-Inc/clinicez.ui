@@ -1,8 +1,7 @@
 import { Separator } from "@components/ui/separator";
 import { Metadata } from "next";
-import { AppRouterPageRouteOpts } from "@auth0/nextjs-auth0";
+import PrescriptionsWrapper from "@components/PrescriptionsWrapper";
 
-import Prescriptions from "@components/Prescriptions";
 import { Button } from "@components/ui/button";
 import { MoreHorizontal } from "lucide-react";
 import DocumentTemplates from "@/components/DocumentTemplates";
@@ -12,7 +11,7 @@ export const metadata: Metadata = {
   description: "Create and manage prescriptions for your patients"
 };
 
-export default async function FilesPage({ params }: AppRouterPageRouteOpts) {
+export default async function FilesPage({ params }: { params: Promise<{ clinicUid: string }> }) {
 
   return (
     <>
@@ -35,7 +34,7 @@ export default async function FilesPage({ params }: AppRouterPageRouteOpts) {
           </p>
         </div>
         <Separator />
-        <Prescriptions />
+        <PrescriptionsWrapper />
         <DocumentTemplates documentType="prescription" label="Prescription" />
       </div>
     </>

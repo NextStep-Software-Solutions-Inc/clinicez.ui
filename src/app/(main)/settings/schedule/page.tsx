@@ -1,16 +1,11 @@
+"use client"
+
 import Suspend from "@components/Suspend";
-import dynamic from "next/dynamic";
 import { Separator } from "@components/ui/separator";
-import { Metadata } from "next";
 import React from "react";
-const ScheduleSettingsForm = dynamic(() => import("./ScheduleSettingsForm"), { ssr: false });
+import ScheduleSettings from "./ScheduleSettings";
 
-export const metadata: Metadata = {
-  title: "Schedule | Account Settings",
-  description: "Schedule Settings",
-};
-
-export default function SchedulePage() {
+export default function ScheduleSettingsPage() {
   return (
     <div className="space-y-6">
       <div>
@@ -21,7 +16,7 @@ export default function SchedulePage() {
       </div>
       <Separator />
       <Suspend>
-        <ScheduleSettingsForm />
+        <ScheduleSettings />
       </Suspend>
     </div>
   )

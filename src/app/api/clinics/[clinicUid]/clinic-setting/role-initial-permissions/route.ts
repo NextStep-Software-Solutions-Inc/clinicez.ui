@@ -6,12 +6,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { getClinicRoleInitialPermissionsAction } from "@/actions/clinic-role-initial-permission.action";
 
 export const GET = withJwtAuth(async (req: NextRequest, { params }: {
-    params: {
+    params: Promise<{
       clinicUid: string;
-    }
+    }>
   }) => {
 
-  const clinicUid = params.clinicUid;
+  const { clinicUid } = await params;
   const searchParams = req.nextUrl.searchParams
   const clinicRoleId = Number(searchParams.get("clinicRoleId"))
   const clinicRoleInitialPermissions = await getClinicRoleInitialPermissionsAction({

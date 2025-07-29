@@ -1,7 +1,7 @@
 import Suspend from "@components/Suspend";
 import { Separator } from "@components/ui/separator";
 import { Metadata } from "next";
-import { AppRouterPageRouteOpts } from "@auth0/nextjs-auth0";
+import { AppRouterPageRouteOpts } from "@/types";
 import OrgSettings from "@/components/organization/OrgSettings";
 
 export const metadata: Metadata = {
@@ -9,7 +9,8 @@ export const metadata: Metadata = {
   description: "Configure your organization settings",
 }
 
-export default async function OrgSettingsPage({params}: AppRouterPageRouteOpts) {
+export default async function OrgSettingsPage(props: AppRouterPageRouteOpts) {
+  const params = await props.params;
   const organization = String(params?.orgUid)
   return (
     <>

@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Bar, BarChart, CartesianGrid, LabelList, XAxis } from "recharts"
+import { Bar, BarChart, CartesianGrid, Cell, LabelList, XAxis } from "recharts"
 
 import {
   Card,
@@ -24,34 +24,39 @@ import { Button } from "@components/ui/button"
 import { cn } from "@lib/utils"
 import { CalendarIcon } from "lucide-react"
 import { Calendar } from "@components/ui/calendar"
-import dayjs from "@lib/day-utils";
-
-
+import dayjs from "dayjs"
 
 const chartConfig = {
-  request: {
-    label: "Request",
+  male: {
+    label: "Male",
+    color: "hsl(var(--chart-1))",
+  },
+  female: {
+    label: "Female",
     color: "hsl(var(--chart-2))",
   },
 } satisfies ChartConfig
 
-
 interface DailyMembershipRequestChartProps {
-    chartData: {
-        date: string;
-        request: number;
-    }[];
-    onChangeDate?: (date: DateRange) => void;
-    dateRange?: DateRange;
+  chartData: {
+    date: string;
+    male: number;
+    female: number;
+    [key: string]: string | number;
+  }[];
+  onChangeDate?: (date: DateRange) => void;
+  dateRange?: DateRange;
 }
-export function DailyMembershipRequestChart({ chartData, onChangeDate, dateRange }: DailyMembershipRequestChartProps) {
 
+export function DailyMembershipRequestChart({ chartData, onChangeDate, dateRange }: DailyMembershipRequestChartProps) {
   const [date, setDate] = React.useState<DateRange | undefined>(dateRange)
 
   const handleDateChange = (date: DateRange | undefined) => {
     setDate(date)
-    if(date) onChangeDate?.(date)
+    if (date) onChangeDate?.(date)
   }
+
+  const chartKeys = ['male', 'female'] as const;
 
   return (
     <Card>
@@ -109,11 +114,13 @@ export function DailyMembershipRequestChart({ chartData, onChangeDate, dateRange
           className="aspect-auto h-[250px] w-full"
         >
           <BarChart
+
             accessibilityLayer
             data={chartData}
             margin={{
               left: 12,
               right: 12,
+              top: 20,
             }}
           >
             <CartesianGrid vertical={false} />
@@ -136,7 +143,6 @@ export function DailyMembershipRequestChart({ chartData, onChangeDate, dateRange
               content={
                 <ChartTooltipContent
                   className="w-[150px]"
-                  nameKey="request"
                   labelFormatter={(value) => {
                     return new Date(value).toLocaleDateString("en-US", {
                       month: "short",
@@ -148,15 +154,33 @@ export function DailyMembershipRequestChart({ chartData, onChangeDate, dateRange
                 />
               }
             />
-            <Bar dataKey="request" fill={`var(--color-request)`} radius={4} >
-              <LabelList
-                dataKey="request"
-                position="insideTop"
-                offset={8}
-                className="fill-primary-foreground truncate"
-                fontSize={10}
-              />
-            </Bar>
+
+            {
+              chartKeys.map((key) => {
+                const isTopbar = key === "female";
+                const radius = isTopbar ?
+                  [5, 5, 0, 0] as [number, number, number, number] :
+                  [0, 0, 5, 5] as [number, number, number, number];
+
+                return (
+                  <Bar
+                    key={key}
+                    dataKey={key}
+                    stackId="count"
+                    fill={chartConfig[key].color}
+                    radius={radius}
+                  >
+                    <LabelList
+                      position="top"
+                      offset={5}
+                      className="fill-foreground"
+                      fontSize={10}
+                    />
+                  </Bar>
+                )
+              })
+            }
+
           </BarChart>
         </ChartContainer>
       </CardContent>

@@ -1,18 +1,35 @@
 import maintenanceCheck from '@middlewares/maintenanceCheck';
-// import { withMiddlewareAuthRequired } from '@auth0/nextjs-auth0/edge';
-import { MiddlewareConfig, NextFetchEvent, NextRequest } from "next/server";
-import { MiddlewareStack } from '@middlewares/stackMiddleware';
+import { MiddlewareConfig, NextRequest, NextResponse } from "next/server";
+import { auth0 } from '@/lib/auth0';
 
-const middleware = new MiddlewareStack();
+const publicRoutes = [
+  "/",
+]
 
-middleware.use(maintenanceCheck);
+export async function middleware(request: NextRequest) {
+  const maintenanceResponse = await maintenanceCheck(request);
 
-export default (async function m(req: NextRequest, event: NextFetchEvent) {
-  return middleware.execute(req, event);
-});
-  
+  if (maintenanceResponse) {
+    return maintenanceResponse;
+  }
+
+  const authResponse = await auth0.middleware(request);
+
+  const path = request.nextUrl.pathname;
+
+  if (path.startsWith("/auth")) {
+    return authResponse;
+  }
+
+  if (publicRoutes.includes(path)) {
+    return authResponse;
+  }
+
+  return authResponse;
+}
+
 export const config: MiddlewareConfig = {
   matcher: [
-    '/((?!api/auth|_next/static|_next/image|favicon.ico).*)',
+    "/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)",
   ],
 }

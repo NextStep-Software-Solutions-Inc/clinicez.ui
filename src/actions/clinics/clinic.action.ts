@@ -3,7 +3,6 @@
 import "server-only";
 import prisma from "@lib/prisma";
 import { cache } from "react";
-import { ClinicMemberStatus } from "@/types";
 import { withErrorHandling } from "@/lib/with-error-handling";
 import { sessionCheck } from "@/lib/auth";
 
@@ -13,13 +12,13 @@ type CreateClinicPayload = {
   name: string;
   logo?: string;
 }
-export const createClinicAction = withErrorHandling(async (data:CreateClinicPayload) => {
+export const createClinicAction = withErrorHandling(async (data: CreateClinicPayload) => {
 
   await sessionCheck();
 
   const { clinicUid, tenantUid, name, logo } = data;
   const newOrganization = await prisma.clinic.create({
-    data: { 
+    data: {
       Tenant: {
         connect: {
           tenantUid
@@ -30,10 +29,10 @@ export const createClinicAction = withErrorHandling(async (data:CreateClinicPayl
       logo
     }
   });
-  
-  return {message: "Clinic created successfully", data: newOrganization};
+
+  return { message: "Clinic created successfully", data: newOrganization };
 });
-  
+
 
 export type GetClinicsFilters = {
   userId?: string;
@@ -42,9 +41,63 @@ export type GetClinicsFilters = {
   isPublic?: boolean;
 }
 
+export type GetClinicsV2 = Awaited<ReturnType<typeof getClinicsV2Action>>;
+export const getClinicsV2Action = withErrorHandling(
+  cache(async (filters?: GetClinicsFilters) => {
+    await sessionCheck();
+
+    const { clinicUid, orgUid, isPublic } = filters || {};
+
+    const clinics = await prisma.clinic.findMany({
+      where: {
+        isActive: true,
+        ...(clinicUid ? { clinicUid } : {}),
+        ...(orgUid
+          ? {
+            ClinicOrganizations: {
+              some: {
+                Organization: { orgUid },
+              },
+            },
+          }
+          : {}),
+        ...(typeof isPublic === "boolean"
+          ? {
+            ClinicSetting: {
+              isPublic,
+            },
+          }
+          : {}),
+      },
+      select: {
+        clinicUid: true,
+        name: true,
+        description: true,
+        ClinicMembers: {
+          where: { isActive: true },
+          select: { id: true },
+        },
+      },
+      orderBy: { name: "asc" },
+    });
+
+    return {
+      message: "Clinics fetched successfully.",
+      data: clinics.map((clinic) => ({
+        clinicUid: clinic.clinicUid,
+        name: clinic.name,
+        description: clinic.description,
+        memberCount: clinic.ClinicMembers.length,
+      })),
+    };
+
+  })
+);
+
+
 export type GetClinics = Awaited<ReturnType<typeof getClinicsAction>>
 export const getClinicsAction = withErrorHandling(cache(async (filters?: GetClinicsFilters) => {
-  
+
   await sessionCheck();
 
   const { clinicUid, orgUid, isPublic, userId } = filters || {};
@@ -68,22 +121,24 @@ export const getClinicsAction = withErrorHandling(cache(async (filters?: GetClin
             }
           }
         }
-      }: {},
+      } : {},
       ClinicSetting: {
-        ...isPublic ? {isPublic}:{}
+        ...isPublic ? { isPublic } : {}
       },
       ...clinicUid ? { clinicUid } : {},
-      ...orgUid ? { ClinicOrganizations : {
-        some: {
-          Organization: {
-            orgUid
+      ...orgUid ? {
+        ClinicOrganizations: {
+          some: {
+            Organization: {
+              orgUid
+            }
           }
         }
-      }}: {},
+      } : {},
       isActive: true
     }
   });
-  return {message: "Clinics fetched successfully", data: clinics};
+  return { message: "Clinics fetched successfully", data: clinics };
 }));
 
 export type GetClinic = Awaited<ReturnType<typeof getClinicAction>>
@@ -95,8 +150,8 @@ export const getClinicAction = withErrorHandling(cache(async (key: string | numb
     where: {
       isActive: true,
       OR: [
-        {...!isNaN(Number(key))? {id: Number(key)} : {}}, 
-        {clinicUid: String(key)}
+        { ...!isNaN(Number(key)) ? { id: Number(key) } : {} },
+        { clinicUid: String(key) }
       ]
     },
     select: {
@@ -117,7 +172,7 @@ export const getClinicAction = withErrorHandling(cache(async (key: string | numb
       ClinicSetting: true,
     }
   });
-  return {message: "Clinic fetched successfully", data: clinic};
+  return { message: "Clinic fetched successfully", data: clinic };
 }))
 
 type UpdateClinicPayload = {
@@ -136,8 +191,8 @@ export const updateClinicAction = withErrorHandling(async (clinicUid: string, da
 
   await sessionCheck();
 
-  const {name, logo, description, customUrl, email, isPublic, sendEmailNotification, emailToClinicOnly, enableAppointment, enableConsultation} = data;
-  
+  const { name, logo, description, customUrl, email, isPublic, sendEmailNotification, emailToClinicOnly, enableAppointment, enableConsultation } = data;
+
   const clinic = await prisma.clinic.update({
     where: { clinicUid, isActive: true },
     data: {
@@ -148,7 +203,7 @@ export const updateClinicAction = withErrorHandling(async (clinicUid: string, da
       email,
       ClinicSetting: {
         upsert: {
-          where:{
+          where: {
             Clinic: {
               clinicUid
             }
@@ -176,3 +231,24 @@ export const updateClinicAction = withErrorHandling(async (clinicUid: string, da
   });
   return { message: "Successfully updated clinic.", data: clinic };
 })
+
+type CreateLaboratoryRequestPayload = {
+  name: string;
+  age: number;
+  address: string;
+  hematology?: string[];
+  clinicalMicroscopy?: string[];
+  bloodChemistry?: string[];
+  clinicUid: string;
+};
+
+export const createLaboratoryRequestAction = withErrorHandling(async (data: CreateLaboratoryRequestPayload) => {
+  await sessionCheck();
+
+  const { name, age, address, hematology, clinicalMicroscopy, bloodChemistry, clinicUid } = data;
+
+  // Mock for now- only static. Need permission from sir Wave.
+  const newLaboratoryRequest = null;
+
+  return { message: "Laboratory request created successfully", data: newLaboratoryRequest };
+});

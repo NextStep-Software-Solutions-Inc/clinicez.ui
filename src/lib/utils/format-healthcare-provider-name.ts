@@ -12,7 +12,10 @@ export function formatHealthcareProviderName(
 ): string {
   // Try HP Profile first (title + name + suffix)
   if (hpProfile) {
-    const hpName = `${hpProfile.title ?? ""} ${hpProfile.name ?? ""} ${hpProfile.suffix ?? ""}`.trim();
+    const hpName = [
+      hpProfile.title, hpProfile.name, hpProfile.suffix
+    ].filter(Boolean).join(" ");
+
     if (hpName) {
       return hpName;
     }
@@ -20,7 +23,10 @@ export function formatHealthcareProviderName(
 
   // Fallback to user's full name
   if (user) {
-    const userName = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim();
+    const userName = [
+      user.firstName, user.lastName
+    ].filter(Boolean).join(" ");
+
     if (userName) {
       return userName;
     }

@@ -1,5 +1,9 @@
 import dayjs from "@lib/day-utils";
 
+// Pre-compiled regex for template placeholder replacement
+// This regex matches all possible placeholders used in referral slip templates
+const PLACEHOLDER_REGEX = /@\{(?:date|createdDateTime|patientName|age|sex|dob|address|referredToSpecialty|chiefComplaint|briefHistory|impression|recommendation|reasonForReferral|referredBy)\}/g;
+
 type PrepareReferralSlipPayload = {
   template: string;
   patient: {
@@ -55,9 +59,8 @@ export const prepareReferralSlip = (payload: PrepareReferralSlipPayload): string
     "@{referredBy}": referredBy,
   };
 
-  const placeholderRegex = new RegExp(Object.keys(replacements).map(key => key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'), 'g');
   const outputTemplate = template.replace(
-    placeholderRegex,
+    PLACEHOLDER_REGEX,
     (match) => replacements[match as keyof typeof replacements]
   );
 

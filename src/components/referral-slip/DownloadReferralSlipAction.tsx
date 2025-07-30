@@ -34,8 +34,12 @@ const DownloadReferralSlipAction = React.forwardRef<
         )
 
         const patient = data.ClinicPatient?.Patient ?? {}
-        const patientName =
-          `${patient.firstName ?? ""} ${patient.middleName ?? ""} ${patient.lastName ?? ""} ${patient.suffix ?? ""}`.trim()
+        const patientName = [
+          patient.firstName,
+          patient.middleName,
+          patient.lastName,
+          patient.suffix,
+        ].filter(Boolean).join(" ");
         const age = patient.dob ? String(calculateAge(patient.dob)) : ""
 
         const gender = patient.gender ?? ""

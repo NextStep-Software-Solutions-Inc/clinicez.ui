@@ -108,7 +108,7 @@ export default function ReferralSlipItem({ referralSlip, onUpdated, hpIds, clini
             <div className="flex items-center min-w-[120px]">
               <span className="text-xs text-muted-foreground">
                 {referralSlip.ReferredTo?.User ?
-                  `${referralSlip.ReferredTo.User.firstName} ${referralSlip.ReferredTo.User.lastName}` :
+                  `${referralSlip.ReferredTo.User.firstName || ""}${referralSlip.ReferredTo.User.firstName && referralSlip.ReferredTo.User.lastName ? " " : ""}${referralSlip.ReferredTo.User.lastName || ""}`.trim() :
                   "Unknown Provider"
                 }
               </span>

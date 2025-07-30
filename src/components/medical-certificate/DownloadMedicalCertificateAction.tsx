@@ -5,6 +5,7 @@ import { getMedicalCertificateAction } from "@/actions/clinics/clinical-record/m
 import { handlePrintHtmlToPDF } from "@/lib/print-pdf"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip"
 import { formatPatientAddress } from "@/lib/utils/format-patient-address"
+import { formatHealthcareProviderName } from "@/lib/utils/format-healthcare-provider-name"
 import { calculateAge } from "@/lib/utils"
 import { prepareMedicalCertificate } from "@/lib/prepare-medical-certificate"
 
@@ -25,9 +26,11 @@ const DownloadMedicalCertificateAction = React.forwardRef<
         const data = res.data
         if (!data) throw new Error("No data returned")
 
-        const hpProfile = data.HealthCareProvider?.HPProfile
+        const doctorName = formatHealthcareProviderName(
+          data.HealthCareProvider?.HPProfile || undefined,
+          undefined // No user fallback available for medical certificate
+        )
         const professionalDetails = data.HealthCareProvider?.ProfessionalDetails
-        const doctorName = `${hpProfile?.title ?? ""} ${hpProfile?.name ?? ""} ${hpProfile?.suffix ?? ""}`.trim()
         const licenseNo = professionalDetails?.licenseNumber ?? ""
         const ptrNo = professionalDetails?.ptrNumber ?? ""
         const doctorAddress = ""

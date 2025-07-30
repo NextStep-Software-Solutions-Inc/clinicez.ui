@@ -5,6 +5,7 @@ import { getReferralSlipAction } from "@/actions/clinics/clinical-record/referra
 import { handlePrintHtmlToPDF } from "@/lib/print-pdf"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip"
 import { formatPatientAddress } from "@/lib/utils/format-patient-address"
+import { formatHealthcareProviderName } from "@/lib/utils/format-healthcare-provider-name"
 import { calculateAge } from "@/lib/utils"
 import { prepareReferralSlip } from "@/lib/prepare-referral-slip"
 import dayjs from "@lib/day-utils"
@@ -27,11 +28,10 @@ const DownloadReferralSlipAction = React.forwardRef<
         if (!data) throw new Error("No data returned")
 
         const referringHP = data.CreatedBy?.HealthcareProviders?.[0]
-        const referringHPProfile = referringHP?.HPProfile
-        const referringHPName = `${referringHPProfile?.title ?? ""} ${referringHPProfile?.name ?? ""} ${referringHPProfile?.suffix ?? ""}`.trim()
-        // Fallback to user's full name if HP profile name is empty
-        const referringUserName = `${data.CreatedBy?.firstName ?? ""} ${data.CreatedBy?.lastName ?? ""}`.trim()
-        const referringDoctorName = referringHPName || referringUserName || "N/A"
+        const referringDoctorName = formatHealthcareProviderName(
+          referringHP?.HPProfile || undefined,
+          data.CreatedBy || undefined
+        )
 
         const patient = data.ClinicPatient?.Patient ?? {}
         const patientName =
@@ -46,11 +46,10 @@ const DownloadReferralSlipAction = React.forwardRef<
         const address = formatPatientAddress(patient)
 
         const referredTo = data.ReferredTo
-        const referredToHPProfile = referredTo?.HPProfile
-        const referredToHPName = `${referredToHPProfile?.title ?? ""} ${referredToHPProfile?.name ?? ""} ${referredToHPProfile?.suffix ?? ""}`.trim()
-        // Fallback to user's full name if HP profile name is empty
-        const referredToUserName = `${referredTo?.User?.firstName ?? ""} ${referredTo?.User?.lastName ?? ""}`.trim()
-        const referredToDoctorName = referredToHPName || referredToUserName || "N/A"
+        const referredToDoctorName = formatHealthcareProviderName(
+          referredTo?.HPProfile || undefined,
+          referredTo?.User || undefined
+        )
 
         const template = prepareReferralSlip({
           template: data.DocumentTemplate?.htmlContent ?? "",

@@ -27,6 +27,7 @@ import { updateReferralSlipAction } from "@actions/clinics/clinical-record/refer
 import { useReferralReasons } from "@hooks/useReferralReasons";
 import { useHPs } from "@/hooks/useHP";
 import { UnsavedChangesAlert } from "@/components/UnsavedChangesAlert";
+import { HealthcareProvider, ReferralReason } from "@/types/referral-slip";
 
 const updateReferralSlipSchema = z.object({
   reasonId: z.number().optional(),
@@ -199,7 +200,7 @@ export default function EditReferralSlipModal({
                         <SearchableDropdown
                           placeholder="Select referral reason..."
                           options={
-                            referralReasons?.map((reason: any) => ({
+                            referralReasons?.map((reason: ReferralReason) => ({
                               label: reason.name || "",
                               value: reason.id,
                             })) || []
@@ -225,7 +226,7 @@ export default function EditReferralSlipModal({
                         <SearchableDropdown
                           placeholder="Select healthcare provider..."
                           options={
-                            healthcareProviders?.map((provider: any) => ({
+                            healthcareProviders?.map((provider: HealthcareProvider) => ({
                               label: `${provider.User?.firstName || ""} ${provider.User?.lastName || ""} - ${provider.HPType?.name || ""}`,
                               value: provider.id,
                             })) || []

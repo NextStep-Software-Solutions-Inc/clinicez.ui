@@ -5,7 +5,7 @@ import { getImagingStudyAction } from "@/actions/clinics/clinical-record/imaging
 import dayjs from "@lib/day-utils"
 import { handlePrintHtmlToPDF } from "@/lib/print-pdf"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip"
-import { formatAddress } from "@/lib/utils/format-address"
+import { formatPatientAddress } from "@/lib/utils/format-patient-address"
 import { calculateAge } from "@/lib/utils"
 import { prepareImagingStudy } from "@/lib/prepare-imaging-study"
 
@@ -40,11 +40,7 @@ const DownloadImagingStudiesAction = React.forwardRef<
         const gender = patient.gender ?? ""
         const birthdate = patient.dob ? dayjs(patient.dob).format("MM/DD/YYYY") : ""
 
-        const addressObj =
-          Array.isArray(patient.UserAddresses) && patient.UserAddresses.length > 0
-            ? patient.UserAddresses[0]
-            : undefined
-        const address = formatAddress(addressObj)
+        const address = formatPatientAddress(patient)
 
         const diagnostics = data.ImagingRequestDiagnostics?.map(item => item.ImagingDiagnostic?.name).filter(Boolean).join(", ") || ""
 

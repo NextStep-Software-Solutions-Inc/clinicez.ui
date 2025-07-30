@@ -14,6 +14,7 @@ import { promiseWrapper } from "@/lib/with-error-handling";
 import { deleteReferralSlipAction } from "@/actions/clinics/clinical-record/referral-slip.action";
 import { useState } from "react";
 import EditReferralSlipModal from "./EditReferralSlipModal";
+import { formatPatientAddress } from "@/lib/utils/format-patient-address";
 
 export interface ReferralSlip {
   id: number;
@@ -96,12 +97,7 @@ export default function ReferralSlipItem({ referralSlip, onUpdated, hpIds, clini
         </div>
         <div className="flex items-center justify-between">
           <span className="text-xs text-muted-foreground truncate line-clamp-1">
-            {Array.isArray(patient?.UserAddresses) && patient.UserAddresses.length > 0
-              ? `${patient.UserAddresses[0]?.address ?? "Unknown Address"}, 
-                ${patient.UserAddresses[0]?.city ?? "Unknown City"}, 
-                ${patient.UserAddresses[0]?.state ?? "Unknown State"}, 
-                ${patient.UserAddresses[0]?.zipCode ?? "Unknown ZipCode"}`
-              : "No Address"}
+            {formatPatientAddress(patient)}
           </span>
           <div className="flex items-center justify-center w-12 text-center text-xs text-muted-foreground font-medium">
             <span className="flex items-center justify-center w-full h-full">

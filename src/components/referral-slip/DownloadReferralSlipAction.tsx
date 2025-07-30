@@ -4,7 +4,7 @@ import { toast } from "sonner"
 import { getReferralSlipAction } from "@/actions/clinics/clinical-record/referral-slip.action"
 import { handlePrintHtmlToPDF } from "@/lib/print-pdf"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip"
-import { formatAddress } from "@/lib/utils/format-address"
+import { formatPatientAddress } from "@/lib/utils/format-patient-address"
 import { calculateAge } from "@/lib/utils"
 import { prepareReferralSlip } from "@/lib/prepare-referral-slip"
 import dayjs from "@lib/day-utils"
@@ -43,11 +43,7 @@ const DownloadReferralSlipAction = React.forwardRef<
 
         const dob = patient.dob ? dayjs(patient.dob).format("MM/DD/YYYY") : ""
 
-        const addressObj =
-          Array.isArray(patient.UserAddresses) && patient.UserAddresses.length > 0
-            ? patient.UserAddresses[0]
-            : undefined
-        const address = formatAddress(addressObj)
+        const address = formatPatientAddress(patient)
 
         const referredTo = data.ReferredTo
         const referredToHPProfile = referredTo?.HPProfile

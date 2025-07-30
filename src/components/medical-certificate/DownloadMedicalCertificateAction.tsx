@@ -4,7 +4,7 @@ import { toast } from "sonner"
 import { getMedicalCertificateAction } from "@/actions/clinics/clinical-record/medical-certificate.action"
 import { handlePrintHtmlToPDF } from "@/lib/print-pdf"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip"
-import { formatAddress } from "@/lib/utils/format-address"
+import { formatPatientAddress } from "@/lib/utils/format-patient-address"
 import { calculateAge } from "@/lib/utils"
 import { prepareMedicalCertificate } from "@/lib/prepare-medical-certificate"
 
@@ -38,11 +38,7 @@ const DownloadMedicalCertificateAction = React.forwardRef<
         const age = patient.dob ? calculateAge(patient.dob) : ""
         const gender = patient.gender ?? ""
 
-        const addressObj =
-          Array.isArray(patient.UserAddresses) && patient.UserAddresses.length > 0
-            ? patient.UserAddresses[0]
-            : undefined
-        const address = formatAddress(addressObj)
+        const address = formatPatientAddress(patient)
 
         const template = prepareMedicalCertificate({
           template: data.DocumentTemplate?.htmlContent ?? "",

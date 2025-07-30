@@ -5,7 +5,7 @@ import { getLaboratoryRequestAction } from "@/actions/clinics/clinical-record/la
 import dayjs from "@lib/day-utils"
 import { handlePrintHtmlToPDF } from "@/lib/print-pdf"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip"
-import { formatAddress } from "@/lib/utils/format-address"
+import { formatPatientAddress } from "@/lib/utils/format-patient-address"
 import { calculateAge } from "@/lib/utils"
 import { prepareLaboratoryRequest } from "@/lib/prepare-laboratory-request"
 
@@ -39,11 +39,7 @@ const DownloadLaboratoryRequestAction = React.forwardRef<
         const age = patient.dob ? calculateAge(patient.dob) : ""
         const gender = patient.gender ?? ""
 
-        const addressObj =
-          Array.isArray(patient.UserAddresses) && patient.UserAddresses.length > 0
-            ? patient.UserAddresses[0]
-            : undefined
-        const address = formatAddress(addressObj)
+        const address = formatPatientAddress(patient)
         const birthdate = patient.dob ? dayjs(patient.dob).format("MM/DD/YYYY") : ""
 
         const diagnosticsByCategory: Record<string, string[]> = {}

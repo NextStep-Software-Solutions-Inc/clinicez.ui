@@ -15,6 +15,7 @@ import { deleteReferralSlipAction } from "@/actions/clinics/clinical-record/refe
 import { useState } from "react";
 import EditReferralSlipModal from "./EditReferralSlipModal";
 import { formatPatientAddress } from "@/lib/utils/format-patient-address";
+import { formatHealthcareProviderName } from "@/lib/utils/format-healthcare-provider-name";
 
 export interface ReferralSlip {
   id: number;
@@ -107,10 +108,10 @@ export default function ReferralSlipItem({ referralSlip, onUpdated, hpIds, clini
           <div className="flex items-center gap-4">
             <div className="flex items-center min-w-[120px]">
               <span className="text-xs text-muted-foreground">
-                {referralSlip.ReferredTo?.User ?
-                  `${referralSlip.ReferredTo.User.firstName || ""}${referralSlip.ReferredTo.User.firstName && referralSlip.ReferredTo.User.lastName ? " " : ""}${referralSlip.ReferredTo.User.lastName || ""}`.trim() :
-                  "Unknown Provider"
-                }
+                {formatHealthcareProviderName(
+                  referralSlip.ReferredTo?.HPType,
+                  referralSlip.ReferredTo?.User
+                )}
               </span>
             </div>
             <div className="flex flex-col items-end min-w-[160px]">

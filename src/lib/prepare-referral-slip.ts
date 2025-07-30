@@ -61,7 +61,7 @@ export const prepareReferralSlip = (payload: PrepareReferralSlipPayload): string
 
   const outputTemplate = template.replace(
     PLACEHOLDER_REGEX,
-    (match) => replacements[match as keyof typeof replacements]
+    (match) => replacements[match as keyof typeof replacements] ?? "[MISSING VALUE]"
   );
 
   return outputTemplate;

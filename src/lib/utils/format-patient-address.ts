@@ -12,17 +12,13 @@ export function formatPatientAddress(patient?: {
     return "Address not provided";
   }
 
-  const addressObj = patient.UserAddresses[0];
-  if (!addressObj) {
-    return "Address not provided";
-  }
-
+  const patientAddress = patient.UserAddresses[0];
   const parts = [
-    addressObj.address,
-    addressObj.city,
-    addressObj.state,
-    addressObj.country,
-    addressObj.zipCode
+    patientAddress.address,
+    patientAddress.city,
+    patientAddress.state,
+    patientAddress.country,
+    patientAddress.zipCode
   ].map(part => (part || "").trim()).filter(Boolean);
 
   if (parts.length === 0) {

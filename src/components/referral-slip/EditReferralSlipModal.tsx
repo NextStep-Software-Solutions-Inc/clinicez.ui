@@ -28,6 +28,7 @@ import { useReferralReasons } from "@hooks/useReferralReasons";
 import { useHPs } from "@/hooks/useHP";
 import { UnsavedChangesAlert } from "@/components/UnsavedChangesAlert";
 import { HealthcareProvider, ReferralReason } from "@/types/referral-slip";
+import { promiseWrapper } from "@/lib/with-error-handling";
 
 const updateReferralSlipSchema = z.object({
   reasonId: z.number().optional(),
@@ -121,21 +122,24 @@ export default function EditReferralSlipModal({
       if (!referralSlip?.id) return;
 
       setIsLoading(true);
-      try {
-        const result = await updateReferralSlipAction({
-          id: referralSlip.id,
-          hpIds,
-          ...data,
-        });
-
-        toast.success(result.message);
-        onUpdated?.();
-        onOpenChange(false);
-      } catch (error) {
-        toast.error("Failed to update referral slip");
-      } finally {
-        setIsLoading(false);
-      }
+      toast.promise(promiseWrapper(updateReferralSlipAction)({
+        id: referralSlip.id,
+        hpIds,
+        ...data,
+      }), {
+        loading: "Updating referral slip...",
+        success: (res) => {
+          setIsLoading(false);
+          onUpdated?.();
+          onOpenChange(false);
+          return res.message;
+        },
+        error: (error) => {
+          setIsLoading(false);
+          console.error("Failed to update referral slip:", error);
+          return "Failed to update referral slip";
+        },
+      });
     },
     [referralSlip?.id, hpIds, onUpdated, onOpenChange]
   );
@@ -153,9 +157,9 @@ export default function EditReferralSlipModal({
     return !!(
       values.reasonId !== initialValues.reasonId ||
       values.referredToId !== initialValues.referredToId ||
-      values.history !== initialValues.history ||
-      values.impression !== initialValues.impression ||
-      values.recommendation !== initialValues.recommendation
+      (values.history ?? "") !== (initialValues.history ?? "") ||
+      (values.impression ?? "") !== (initialValues.impression ?? "") ||
+      (values.recommendation ?? "") !== (initialValues.recommendation ?? "")
     );
   }, [form, referralSlip]);
 

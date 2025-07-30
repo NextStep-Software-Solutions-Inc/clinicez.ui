@@ -26,15 +26,21 @@ const DownloadReferralSlipAction = React.forwardRef<
         const data = res.data
         if (!data) throw new Error("No data returned")
 
-        const hpProfile = data.ReferredTo?.HPProfile
-        const professionalDetails = data.ReferredTo?.ProfessionalDetails
-        const doctorName = `${hpProfile?.title ?? ""} ${hpProfile?.name ?? ""} ${hpProfile?.suffix ?? ""}`.trim()
+        const referringHP = data.CreatedBy?.HealthcareProviders?.[0]
+        const referringHPProfile = referringHP?.HPProfile
+        const referringHPName = `${referringHPProfile?.title ?? ""} ${referringHPProfile?.name ?? ""} ${referringHPProfile?.suffix ?? ""}`.trim()
+        // Fallback to user's full name if HP profile name is empty
+        const referringUserName = `${data.CreatedBy?.firstName ?? ""} ${data.CreatedBy?.lastName ?? ""}`.trim()
+        const referringDoctorName = referringHPName || referringUserName || "N/A"
 
         const patient = data.ClinicPatient?.Patient ?? {}
         const patientName =
           `${patient.firstName ?? ""} ${patient.middleName ?? ""} ${patient.lastName ?? ""} ${patient.suffix ?? ""}`.trim()
         const age = patient.dob ? String(calculateAge(patient.dob)) : ""
-        const sex = patient.gender ?? ""
+
+        const gender = patient.gender ?? ""
+        const sex = gender.charAt(0) ?? ""
+
         const dob = patient.dob ? dayjs(patient.dob).format("MM/DD/YYYY") : ""
 
         const addressObj =
@@ -44,8 +50,11 @@ const DownloadReferralSlipAction = React.forwardRef<
         const address = formatAddress(addressObj)
 
         const referredTo = data.ReferredTo
-        const referredToName = `${referredTo?.User?.firstName ?? ""} ${referredTo?.User?.lastName ?? ""}`.trim()
-        const referredToSpecialty = `${referredToName}${referredTo?.HPType?.name ? ` (${referredTo.HPType.name})` : ""}`
+        const referredToHPProfile = referredTo?.HPProfile
+        const referredToHPName = `${referredToHPProfile?.title ?? ""} ${referredToHPProfile?.name ?? ""} ${referredToHPProfile?.suffix ?? ""}`.trim()
+        // Fallback to user's full name if HP profile name is empty
+        const referredToUserName = `${referredTo?.User?.firstName ?? ""} ${referredTo?.User?.lastName ?? ""}`.trim()
+        const referredToDoctorName = referredToHPName || referredToUserName || "N/A"
 
         const template = prepareReferralSlip({
           template: data.DocumentTemplate?.htmlContent ?? "",
@@ -57,13 +66,13 @@ const DownloadReferralSlipAction = React.forwardRef<
             address,
           },
           referral: {
-            referredToSpecialty,
+            referredToSpecialty: referredToDoctorName, // Will show HP profile name or user full name
             chiefComplaint: data.Appointment?.complaint || "",
             briefHistory: data.history || "",
             impression: data.impression || "",
             recommendation: data.recommendation || "",
             reasonForReferral: data.Reason?.name || "",
-            referredBy: doctorName,
+            referredBy: referringDoctorName, // Will show HP profile name or user full name
             createdAt: data.createdAt || new Date(),
           },
         })

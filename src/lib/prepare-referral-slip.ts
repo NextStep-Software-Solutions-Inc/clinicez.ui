@@ -55,10 +55,11 @@ export const prepareReferralSlip = (payload: PrepareReferralSlipPayload): string
     "@{referredBy}": referredBy,
   };
 
-  let outputTemplate = template;
-  Object.entries(replacements).forEach(([placeholder, value]) => {
-    outputTemplate = outputTemplate.replaceAll(placeholder, value);
-  });
+  const placeholderRegex = new RegExp(Object.keys(replacements).map(key => key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'), 'g');
+  const outputTemplate = template.replace(
+    placeholderRegex,
+    (match) => replacements[match as keyof typeof replacements]
+  );
 
   return outputTemplate;
 };

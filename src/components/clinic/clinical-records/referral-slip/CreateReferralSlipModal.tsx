@@ -145,13 +145,13 @@ export default function CreateReferralSlipModal({
     form.reset({
       ...autofillDefaults,
       referredTo: undefined,
-      chiefComplaint: "",
+      chiefComplaint: appointment.complaint,
       history: "",
       impression: "",
       recommendation: "",
       reasonId: undefined,
     })
-  }, [form, autofillDefaults])
+  }, [form, autofillDefaults, appointment.complaint]);
 
   const action = React.useCallback(async (data: z.infer<typeof createReferralSlipSchema>) => {
     setIsSubmitting(true);

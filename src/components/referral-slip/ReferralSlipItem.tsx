@@ -96,8 +96,11 @@ export default function ReferralSlipItem({ referralSlip, onUpdated, hpIds, clini
         </div>
         <div className="flex items-center justify-between">
           <span className="text-xs text-muted-foreground truncate line-clamp-1">
-            {patient?.UserAddresses && patient.UserAddresses.length > 0
-              ? `${patient.UserAddresses[0].address}, ${patient.UserAddresses[0].city}, ${patient.UserAddresses[0].state}, ${patient.UserAddresses[0].zipCode}`
+            {Array.isArray(patient?.UserAddresses) && patient.UserAddresses.length > 0
+              ? `${patient.UserAddresses[0]?.address ?? "Unknown Address"}, 
+                ${patient.UserAddresses[0]?.city ?? "Unknown City"}, 
+                ${patient.UserAddresses[0]?.state ?? "Unknown State"}, 
+                ${patient.UserAddresses[0]?.zipCode ?? "Unknown ZipCode"}`
               : "No Address"}
           </span>
           <div className="flex items-center justify-center w-12 text-center text-xs text-muted-foreground font-medium">

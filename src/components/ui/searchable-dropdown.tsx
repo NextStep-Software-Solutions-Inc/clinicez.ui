@@ -87,11 +87,6 @@ export const SearchableDropdown = React.forwardRef<HTMLInputElement, SearchableD
       onSelect(option)
     }
 
-    const handleInputFocus = () => {
-      // Only open if disabled is false, but don't auto-open
-      // Let the user click or type to open
-    }
-
     const handleInputClick = () => {
       if (!disabled && !isOpen) {
         setIsOpen(true)
@@ -125,7 +120,6 @@ export const SearchableDropdown = React.forwardRef<HTMLInputElement, SearchableD
           type="text"
           value={displayValue}
           onChange={handleInputChange}
-          onFocus={handleInputFocus}
           onClick={handleInputClick}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}

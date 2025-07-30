@@ -32,7 +32,7 @@ export const getReferralSlipsAction = withErrorHandling(async (filters: GetRefer
       deletedAt: null,
       Clinic: { clinicUid },
       ...(patientId ? { clinicPatientId: patientId } : {}),
-      ...(consultationTicketId ? { consultationTicketId } : {}),
+      ...(consultationTicketId ? { consultationTicketId: consultationTicketId } : {}),
     },
     select: {
       id: true,
@@ -131,6 +131,17 @@ export const getReferralSlipAction = withErrorHandling(async (id: number) => {
           HPProfile: true,
           ProfessionalDetails: true,
           HPType: true,
+        }
+      },
+      CreatedBy: {
+        include: {
+          HealthcareProviders: {
+            include: {
+              HPProfile: true,
+              ProfessionalDetails: true,
+              HPType: true,
+            }
+          }
         }
       },
       DocumentTemplate: true,

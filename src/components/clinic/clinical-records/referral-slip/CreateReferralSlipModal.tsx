@@ -184,7 +184,7 @@ export default function CreateReferralSlipModal({
   const hasUnsavedChanges = React.useCallback(() => {
     const values = form.getValues();
     return !!(
-      values.referredTo ||
+      values.referredTo !== undefined ||
       values.chiefComplaint ||
       values.history ||
       values.impression ||

@@ -19,7 +19,7 @@ export function formatPatientAddress(patient?: {
     patientAddress.state,
     patientAddress.country,
     patientAddress.zipCode
-  ].map(part => (part || "").trim()).filter(Boolean);
+  ].filter(part => part?.trim());
 
   if (parts.length === 0) {
     return "Address not provided";

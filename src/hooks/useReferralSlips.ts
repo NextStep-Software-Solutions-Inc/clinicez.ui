@@ -16,7 +16,8 @@ export const useReferralSlips = (filters?: GetReferralSlipFilters, enable = true
         }
       }
     });
-    return enable ? `/api/referral-slips?${searchParams.toString()}` : null;
-  }, [filters, enable]);
-  return useSWR(url, fetcher);
+    return `/api/referral-slips?${searchParams.toString()}`;
+  }, [filters]);
+  const conditionalFetcher = enable ? fetcher : null;
+  return useSWR(enable ? url : null, conditionalFetcher);
 }

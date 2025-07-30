@@ -14,7 +14,7 @@ export function formatHealthcareProviderName(
   if (hpProfile) {
     const hpName = [
       hpProfile.title, hpProfile.name, hpProfile.suffix
-    ].filter(Boolean).join(" ");
+    ].filter(part => part && part.trim()).join(" ");
 
     if (hpName) {
       return hpName;

@@ -95,7 +95,7 @@ export const SearchableDropdown = React.forwardRef<HTMLInputElement, SearchableD
 
     React.useEffect(() => {
       const handleClickOutside = (event: MouseEvent) => {
-        if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        if (containerRef.current && event.target && !containerRef.current.contains(event.target as Node)) {
           setIsOpen(false)
         }
       }

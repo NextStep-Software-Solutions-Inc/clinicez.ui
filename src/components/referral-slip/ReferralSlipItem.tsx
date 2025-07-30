@@ -108,10 +108,18 @@ export default function ReferralSlipItem({ referralSlip, onUpdated, hpIds, clini
           <div className="flex items-center gap-4">
             <div className="flex items-center min-w-[120px]">
               <span className="text-xs text-muted-foreground">
-                {formatHealthcareProviderName(
-                  referralSlip.ReferredTo?.HPType,
-                  referralSlip.ReferredTo?.User
-                )}
+                {(() => {
+                  const user = referralSlip.ReferredTo?.User;
+                  const hpType = referralSlip.ReferredTo?.HPType;
+                  const userName = formatHealthcareProviderName(undefined, user);
+                  const specialty = hpType?.name;
+
+                  if (userName === "N/A") {
+                    return "Unknown Provider";
+                  }
+
+                  return specialty ? `${userName} (${specialty})` : userName;
+                })()}
               </span>
             </div>
             <div className="flex flex-col items-end min-w-[160px]">

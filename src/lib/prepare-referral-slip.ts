@@ -1,8 +1,29 @@
 import dayjs from "@lib/day-utils";
 
-// Pre-compiled regex for template placeholder replacement
-// This regex matches all possible placeholders used in referral slip templates
-const PLACEHOLDER_REGEX = /@\{(?:date|createdDateTime|patientName|age|sex|dob|address|referredToSpecialty|chiefComplaint|briefHistory|impression|recommendation|reasonForReferral|referredBy)\}/g;
+// Define all placeholder keys in one place to ensure consistency
+const PLACEHOLDER_KEYS = [
+  "@{date}",
+  "@{createdDateTime}",
+  "@{patientName}",
+  "@{age}",
+  "@{sex}",
+  "@{dob}",
+  "@{address}",
+  "@{referredToSpecialty}",
+  "@{chiefComplaint}",
+  "@{briefHistory}",
+  "@{impression}",
+  "@{recommendation}",
+  "@{reasonForReferral}",
+  "@{referredBy}"
+] as const;
+
+// Generate regex dynamically from placeholder keys to ensure they stay in sync
+const escapeRegex = (str: string) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const PLACEHOLDER_REGEX = new RegExp(
+  PLACEHOLDER_KEYS.map(key => escapeRegex(key)).join('|'),
+  'g'
+);
 
 type PrepareReferralSlipPayload = {
   template: string;
@@ -57,11 +78,15 @@ export const prepareReferralSlip = (payload: PrepareReferralSlipPayload): string
     "@{recommendation}": recommendation || "No recommendation provided.",
     "@{reasonForReferral}": reasonForReferral || "No reason provided.",
     "@{referredBy}": referredBy,
-  };
+  } as const;
+
+  // Type safety: ensure all placeholder keys are handled
+  type ReplacementKeys = keyof typeof replacements;
+  const _typeCheck: Record<typeof PLACEHOLDER_KEYS[number], string> = replacements;
 
   const outputTemplate = template.replace(
     PLACEHOLDER_REGEX,
-    (match) => replacements[match as keyof typeof replacements] ?? "[MISSING VALUE]"
+    (match) => replacements[match as ReplacementKeys] ?? "[MISSING VALUE]"
   );
 
   return outputTemplate;

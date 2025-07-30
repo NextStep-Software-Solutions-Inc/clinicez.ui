@@ -51,8 +51,8 @@ const DownloadReferralSlipAction = React.forwardRef<
 
         const referredTo = data.ReferredTo
         const referredToDoctorName = formatHealthcareProviderName(
-          referredTo?.HPProfile || undefined,
-          referredTo?.User || undefined
+          referredTo?.HPProfile ?? undefined,
+          referredTo?.User ?? undefined
         )
 
         const template = prepareReferralSlip({

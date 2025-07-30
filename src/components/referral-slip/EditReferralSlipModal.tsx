@@ -29,6 +29,7 @@ import { useHPs } from "@/hooks/useHP";
 import { UnsavedChangesAlert } from "@/components/UnsavedChangesAlert";
 import { HealthcareProvider, ReferralReason } from "@/types/referral-slip";
 import { promiseWrapper } from "@/lib/with-error-handling";
+import { formatHealthcareProviderName } from "@/lib/utils/format-healthcare-provider-name";
 
 const updateReferralSlipSchema = z.object({
   reasonId: z.number().optional(),
@@ -230,10 +231,16 @@ export default function EditReferralSlipModal({
                         <SearchableDropdown
                           placeholder="Select healthcare provider..."
                           options={
-                            healthcareProviders?.map((provider: HealthcareProvider) => ({
-                              label: `${provider.User?.firstName || ""} ${provider.User?.lastName || ""} - ${provider.HPType?.name || ""}`,
-                              value: provider.id,
-                            })) || []
+                            healthcareProviders?.map((provider: HealthcareProvider) => {
+                              const providerName = formatHealthcareProviderName(undefined, provider.User);
+                              const specialty = provider.HPType?.name;
+                              const label = specialty ? `${providerName} - ${specialty}` : providerName;
+
+                              return {
+                                label,
+                                value: provider.id,
+                              };
+                            }) || []
                           }
                           value={field.value}
                           onSelect={(option) => {
@@ -302,15 +309,7 @@ export default function EditReferralSlipModal({
               />
 
               <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => handleOpenChange(false)}
-                  disabled={isLoading}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={isLoading}>
+                <Button type="submit" disabled={isLoading} className="bg-black text-white hover:bg-gray-800">
                   {isLoading ? "Updating..." : "Update Referral Slip"}
                 </Button>
               </DialogFooter>

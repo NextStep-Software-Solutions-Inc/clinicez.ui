@@ -67,6 +67,13 @@ export default function ReferralSlipItem({ referralSlip, onUpdated, hpIds, clini
   const patient = referralSlip.ClinicPatient?.Patient;
   const [editModalOpen, setEditModalOpen] = useState(false);
 
+  const itemClassName = cn(
+    "-mx-2 flex items-center space-x-4 rounded-md p-2",
+    "transition-all group/item",
+    "hover:bg-accent hover:text-accent-foreground",
+    "odd:bg-accent odd:text-accent-foreground"
+  );
+
   const handleDeleteReferralSlip = async () => {
     toast.promise(promiseWrapper(deleteReferralSlipAction)({ id: referralSlip.id, hpIds }), {
       loading: "Deleting referral slip...",
@@ -79,11 +86,7 @@ export default function ReferralSlipItem({ referralSlip, onUpdated, hpIds, clini
   };
 
   return (
-    <div
-      className={cn(
-        "-mx-2 flex items-center space-x-4 rounded-md p-2 transition-all hover:bg-accent hover:text-accent-foreground odd:bg-accent odd:text-accent-foreground group/item "
-      )}
-    >
+    <div className={itemClassName}>
       <div className="flex items-center justify-center h-10 w-10 rounded-full bg-primary/10">
         <User className="h-5 w-5 text-primary" />
       </div>

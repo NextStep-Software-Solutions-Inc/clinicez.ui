@@ -31,7 +31,7 @@ export interface MedicalCertificateProps {
 
 export default function MedicalCertificate({ consultationTicketId, clinicUid, hpIds, patientId, userInfo }: MedicalCertificateProps) {
 
-  const { data: certificates, mutate } = useMedicalCertificates({
+  const { data: certificates, mutate, error, isLoading } = useMedicalCertificates({
     clinicUid,
     consultationTicketId,
     hpIds,
@@ -65,7 +65,13 @@ export default function MedicalCertificate({ consultationTicketId, clinicUid, hp
       </CardHeader>
       <CardContent className=" h-[25rem] overflow-y-auto no-scrollbar scrollBox">
         <div className="grid gap-1">
-          <Each
+          {isLoading && (
+            <p className="text-center text-muted-foreground">Loading referral slips...</p>
+          )}
+          {error && (
+            <p className="text-center text-destructive">Error: {error.message}</p>
+          )}
+          {!isLoading && !error && (<Each
             of={certificates?.data as MedicalCertificate[] ?? []}
             fallback={
               <p className="text-center text-muted-foreground">
@@ -76,6 +82,7 @@ export default function MedicalCertificate({ consultationTicketId, clinicUid, hp
               <MedicalCertificateItem certificate={certificate} onUpdated={mutate} hpIds={hpIds} />
             )}
           />
+          )}
         </div>
       </CardContent>
       <CardFooter />

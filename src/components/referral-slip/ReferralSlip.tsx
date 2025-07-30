@@ -79,14 +79,14 @@ export default function ReferralSlip({
             <p className="text-center text-muted-foreground">Loading referral slips...</p>
           )}
           {error && (
-            <p className="text-center text-red-500">Error: {error.message}</p>
+            <p className="text-center text-destructive">Error: {error.message}</p>
           )}
           {!isLoading && !error && (
             <Each
               of={referralSlips?.data as ReferralSlip[] ?? []}
               fallback={
                 <p className="text-center text-muted-foreground">
-                  No recent referral slip to show. (Total: {referralSlips?.data?.length || 0})
+                  No recent referral slip to show.
                 </p>
               }
               render={(referralSlip: ReferralSlip) => (

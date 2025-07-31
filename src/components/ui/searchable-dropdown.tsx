@@ -102,11 +102,12 @@ export const SearchableDropdown = React.forwardRef<HTMLInputElement, SearchableD
       }
     }
 
+    const interactionRef = React.useRef(false);
     const handleInputBlur = () => {
-      // Close dropdown when input loses focus
-      setTimeout(() => {
-        setIsOpen(false)
-      }, 150)
+      if (!interactionRef.current) {
+        setIsOpen(false);
+      }
+      interactionRef.current = false;
     }
 
     React.useEffect(() => {
@@ -156,6 +157,9 @@ export const SearchableDropdown = React.forwardRef<HTMLInputElement, SearchableD
               "absolute top-full left-0 right-0 z-50 mt-2 max-h-60 overflow-auto rounded-md border bg-popover text-popover-foreground shadow-md",
               dropdownClassName
             )}
+            onMouseDown={() => {
+              interactionRef.current = true;
+            }}
           >
             {filteredOptions.length === 0 ? (
               <div className="px-3 py-2 text-sm text-muted-foreground">

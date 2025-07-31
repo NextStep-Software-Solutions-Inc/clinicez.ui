@@ -73,7 +73,7 @@ export default function ReferralSlipItem({ referralSlip, onUpdated, hpIds, clini
     "-mx-2 flex items-center space-x-4 rounded-md p-2",
     "transition-all group/item",
     "hover:bg-accent hover:text-accent-foreground",
-    "odd:bg-accent odd:text-accent-foreground"
+    "odd:bg-muted odd:text-accent-foreground"
   );
 
   const handleDeleteReferralSlip = async () => {

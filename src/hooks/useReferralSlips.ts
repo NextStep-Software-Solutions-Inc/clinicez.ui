@@ -21,6 +21,6 @@ export const useReferralSlips = (filters?: GetReferralSlipFilters, enable = true
     });
     return `/api/referral-slips?${searchParams.toString()}`;
   }, [filters]);
-  const conditionalFetcher = enable ? fetcher : null;
-  return useSWR(enable ? url : null, conditionalFetcher);
+
+  return useSWR(enable ? url : null, enable ? fetcher : null);
 }

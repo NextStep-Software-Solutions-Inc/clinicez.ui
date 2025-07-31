@@ -63,7 +63,7 @@ export default function LaboratoryRequest({ consultationTicketId, clinicUid, hpI
       <CardContent className=" h-[25rem] overflow-y-auto no-scrollbar scrollBox">
         <div className="grid gap-1">
           {isLoading && (
-            <p className="text-center text-muted-foreground">Loading referral slips...</p>
+            <p className="text-center text-muted-foreground">Loading laboratory requests...</p>
           )}
           {error && (
             <p className="text-center text-destructive">Error: {error.message}</p>

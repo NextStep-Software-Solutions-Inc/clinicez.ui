@@ -80,9 +80,7 @@ export const prepareReferralSlip = (payload: PrepareReferralSlipPayload): string
     "@{referredBy}": referredBy,
   } as const;
 
-  // Type safety: ensure all placeholder keys are handled
   type ReplacementKeys = keyof typeof replacements;
-  const _typeCheck: Record<typeof PLACEHOLDER_KEYS[number], string> = replacements;
 
   const outputTemplate = template.replace(
     PLACEHOLDER_REGEX,

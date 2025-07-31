@@ -97,7 +97,6 @@ export default function EditReferralSlipModal({
     return referralReasons.map(reason => ({
       value: reason.name,
       label: reason.name,
-      description: reason.description,
     }));
   }, [referralReasons]);
 

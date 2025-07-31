@@ -50,7 +50,7 @@ export const GroupedSearchableDropdown = React.forwardRef<HTMLInputElement, Grou
     const [searchTerm, setSearchTerm] = React.useState("")
     const [displayValue, setDisplayValue] = React.useState("")
     const containerRef = React.useRef<HTMLDivElement>(null)
-    const isInternalChangeRef = React.useRef(false)
+    const prevValueRef = React.useRef<string | number | undefined>(value)
 
     const defaultFilterFunction = React.useCallback(
       (option: SearchableDropdownOption, term: string) => {
@@ -77,8 +77,8 @@ export const GroupedSearchableDropdown = React.forwardRef<HTMLInputElement, Grou
     // Initialize display value when value prop changes externally (form reset, initial load)
     React.useEffect(() => {
       // Skip updates if this is an internal change
-      if (isInternalChangeRef.current) {
-        isInternalChangeRef.current = false
+      if (prevValueRef.current !== value) {
+        prevValueRef.current = value
         return
       }
 
@@ -102,7 +102,7 @@ export const GroupedSearchableDropdown = React.forwardRef<HTMLInputElement, Grou
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const newValue = e.target.value
-      isInternalChangeRef.current = true
+      prevValueRef.current = newValue
       setSearchTerm(newValue)
       setDisplayValue(newValue)
 
@@ -117,14 +117,14 @@ export const GroupedSearchableDropdown = React.forwardRef<HTMLInputElement, Grou
     const handleInputBlur = () => {
       // When input loses focus, update the form with the current display value
       if (onChange && displayValue !== value) {
-        isInternalChangeRef.current = true
+        prevValueRef.current = displayValue
         onChange(displayValue)
       }
     }
 
     const handleOptionSelect = (option: SearchableDropdownOption) => {
       const newDisplayValue = option.label
-      isInternalChangeRef.current = true
+      prevValueRef.current = newDisplayValue
       setDisplayValue(newDisplayValue)
       setSearchTerm(newDisplayValue)
       setIsOpen(false)
@@ -161,7 +161,7 @@ export const GroupedSearchableDropdown = React.forwardRef<HTMLInputElement, Grou
         // If Enter is pressed and dropdown is closed, commit the current value
         e.preventDefault()
         if (onChange && displayValue !== value) {
-          isInternalChangeRef.current = true
+          prevValueRef.current = displayValue
           onChange(displayValue)
         }
       }

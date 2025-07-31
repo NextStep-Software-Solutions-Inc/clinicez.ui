@@ -2,6 +2,7 @@ import { useHPs } from "@/hooks/useHP";
 import { useClinics } from "@/hooks/useClinic";
 import { SearchableDropdownGroup } from "@/components/ui/grouped-searchable-dropdown";
 import React from "react";
+import { formatHealthcareProviderName } from "@/lib/utils/format-healthcare-provider-name";
 
 interface HealthcareProvider {
   id: number;
@@ -61,10 +62,7 @@ export const useReferralTargets = (clinicUid?: string) => {
           acc[typeName] = [];
         }
 
-        const fullName = [
-          hp.User.firstName || '',
-          hp.User.lastName || '',
-        ].join(' ').trim();
+        const fullName = formatHealthcareProviderName(undefined, hp.User);
 
         acc[typeName].push({
           value: `hp_${hp.id}`,

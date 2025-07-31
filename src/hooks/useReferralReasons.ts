@@ -5,8 +5,8 @@ import useSWR from "swr";
 interface ReferralReason {
   id: number;
   name: string;
-  description: string | null;
   isActive: boolean;
+  count: number;
 }
 
 export const useReferralReasons = () => {
@@ -15,7 +15,6 @@ export const useReferralReasons = () => {
     if (result.status && result.data) {
       return result.data.map((reason: ReferralReason) => ({
         ...reason,
-        description: typeof reason.description === "string" ? reason.description : undefined,
       }));
     }
     return [];

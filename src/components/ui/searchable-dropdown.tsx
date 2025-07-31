@@ -15,6 +15,7 @@ export interface SearchableDropdownProps {
   value?: string | number
   placeholder?: string
   onSelect: (option: SearchableDropdownOption) => void
+  onChange?: (value: string) => void
   filterFunction?: (option: SearchableDropdownOption, searchTerm: string) => boolean
   renderOption?: (option: SearchableDropdownOption) => React.ReactNode
   className?: string
@@ -30,6 +31,7 @@ export const SearchableDropdown = React.forwardRef<HTMLInputElement, SearchableD
     value,
     placeholder = "Search...",
     onSelect,
+    onChange,
     filterFunction,
     renderOption,
     className,
@@ -64,6 +66,9 @@ export const SearchableDropdown = React.forwardRef<HTMLInputElement, SearchableD
         if (selectedOption) {
           setDisplayValue(selectedOption.label)
           setSearchTerm(selectedOption.label)
+        } else if (typeof value === 'string') {
+          setDisplayValue(value)
+          setSearchTerm(value)
         } else {
           setDisplayValue("")
           setSearchTerm("")
@@ -77,6 +82,10 @@ export const SearchableDropdown = React.forwardRef<HTMLInputElement, SearchableD
       setDisplayValue(newValue)
       if (!isOpen && newValue) {
         setIsOpen(true)
+      }
+
+      if (onChange) {
+        onChange(newValue)
       }
     }
 

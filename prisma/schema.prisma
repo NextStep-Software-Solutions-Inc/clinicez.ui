@@ -1784,17 +1784,6 @@ model LaboratoryDiagnostic {
   @@unique([name, category], name: "unique_laboratory_diagnostic")
 }
 
-model ReferralReason {
-  id          Int      @id @default(autoincrement())
-  name        String   @unique
-  description String?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@index([name], name: "referral_reason_name_index")
-}
-
 model ClinicImagingRequest {
   id                 Int      @id @default(autoincrement())
   clinicId           Int

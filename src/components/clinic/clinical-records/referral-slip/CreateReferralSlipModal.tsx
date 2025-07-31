@@ -88,13 +88,11 @@ export default function CreateReferralSlipModal({
   const { result: referralReasons } = useReferralReasons();
   const { groups: referralTargetGroups } = useReferralTargets(clinicUid);
 
-  // Transform referral reasons to dropdown options
   const reasonOptions: SearchableDropdownOption[] = React.useMemo(() => {
     if (!referralReasons) return [];
     return referralReasons.map(reason => ({
       value: reason.name,
       label: reason.name,
-      description: reason.description,
     }));
   }, [referralReasons]);
 
@@ -395,6 +393,9 @@ export default function CreateReferralSlipModal({
                             onSelect={(option) => {
                               field.onChange(option.value);
                             }}
+                            onChange={(value) => {
+                              field.onChange(value);
+                            }}
                             renderOption={(option) => (
                               <div className="flex flex-col">
                                 <span>{option.label}</span>
@@ -506,7 +507,7 @@ export default function CreateReferralSlipModal({
               type="submit"
               form="create-referral-slip-form"
               className="bg-black text-white hover:bg-gray-800"
-              disabled={isSubmitting || !form.formState.isValid}
+              disabled={isSubmitting}
             >
               {isSubmitting ? "Saving..." : "Save changes"}
             </ActionButton>

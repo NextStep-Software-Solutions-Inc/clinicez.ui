@@ -249,6 +249,9 @@ export default function EditReferralSlipModal({
                           onSelect={(option) => {
                             field.onChange(option.value);
                           }}
+                          onChange={(value) => {
+                            field.onChange(value);
+                          }}
                           renderOption={(option) => (
                             <div className="flex flex-col">
                               <span>{option.label}</span>

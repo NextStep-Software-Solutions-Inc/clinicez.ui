@@ -6,155 +6,79 @@ import prisma from "@/lib/prisma";
 import { getCachedSession } from "@/actions/session.action";
 import { withErrorHandling } from "@/lib/with-error-handling";
 
-export type GetReferralReason = Awaited<ReturnType<typeof getReferralReasonAction>>;
-export const getReferralReasonAction = withErrorHandling(async (id: number) => {
-  const session = await getCachedSession();
-  if (!session) throw new Error("Unauthorized");
+interface FrequencyBasedReason {
+  id: number;
+  name: string;
+  isActive: boolean;
+  count: number;
+}
 
-  const reason = await prisma.referralReason.findUnique({
-    where: {
-      id,
-      isActive: true,
-    },
-    select: {
-      id: true,
-      name: true,
-      description: true,
-      isActive: true,
-    },
-  });
-
-  if (!reason) {
-    throw new Error("Referral reason not found");
-  }
-
-  return { message: "Referral reason fetched successfully", data: reason };
-});
+// Frequency threshold for a reason to be considered "common"
+const FREQUENCY_THRESHOLD = 3;
 
 export type GetReferralReasons = Awaited<ReturnType<typeof getReferralReasonsAction>>;
 export const getReferralReasonsAction = withErrorHandling(async () => {
   const session = await getCachedSession();
   if (!session) throw new Error("Unauthorized");
 
-  const reasons = await prisma.referralReason.findMany({
-    orderBy: { name: "asc" },
+  const rawReasons = await prisma.clinicReferralSlip.findMany({
     where: {
-      isActive: true,
+      AND: [
+        {
+          reason: {
+            not: null
+          }
+        },
+        {
+          reason: {
+            not: ""
+          }
+        }
+      ]
     },
     select: {
       id: true,
-      name: true,
-      description: true,
-      isActive: true,
+      reason: true,
+      isActive: true
     },
+    orderBy: {
+      id: 'asc'
+    }
   });
+
+  // Filter only active records
+  const activeReasons = rawReasons.filter(r => r.isActive);
+
+  const reasonCounts = new Map<string, { originalCase: string; count: number }>();
+
+  activeReasons.forEach(item => {
+    if (item.reason) {
+      const lowerCase = item.reason.toLowerCase().trim();
+      if (lowerCase) {
+        const existing = reasonCounts.get(lowerCase);
+        if (existing) {
+          existing.count += 1;
+        } else {
+          reasonCounts.set(lowerCase, {
+            originalCase: item.reason.trim(),
+            count: 1
+          });
+        }
+      }
+    }
+  });
+
+  // Filter by frequency threshold and transform
+  const filteredReasons = Array.from(reasonCounts.entries())
+    .filter(([_, data]) => data.count >= FREQUENCY_THRESHOLD)
+    .sort((a, b) => b[1].count - a[1].count);
+
+  const reasons: FrequencyBasedReason[] = filteredReasons.map(([_, data], index) => ({
+    id: index + 1,  // Fake ID
+    name: data.originalCase,
+    isActive: true,
+    count: data.count
+  }));
 
   return { message: "Referral reasons fetched successfully", data: reasons };
-});
-
-type CreateReferralReasonInput = {
-  name: string;
-  description?: string;
-};
-
-export const createReferralReasonAction = withErrorHandling(async (input: CreateReferralReasonInput) => {
-  const session = await getCachedSession();
-  if (!session) throw new Error("Unauthorized");
-
-  const { name, description } = input;
-
-  const existingReason = await prisma.referralReason.findFirst({
-    where: { name: { equals: name, mode: "insensitive" } }
-  });
-
-  if (existingReason) {
-    throw new Error("Referral reason with this name already exists");
-  }
-
-  const reason = await prisma.referralReason.create({
-    data: {
-      name,
-      description: description || null,
-      isActive: true,
-    },
-  });
-
-  return { message: "Referral reason created successfully", data: reason };
-});
-
-type UpdateReferralReasonInput = {
-  id: number;
-  name?: string;
-  description?: string;
-  isActive?: boolean;
-};
-
-export const updateReferralReasonAction = withErrorHandling(async (input: UpdateReferralReasonInput) => {
-  const session = await getCachedSession();
-  if (!session) throw new Error("Unauthorized");
-
-  const { id, name, description, isActive } = input;
-
-  const existingReason = await prisma.referralReason.findUnique({
-    where: { id }
-  });
-
-  if (!existingReason) {
-    throw new Error("Referral reason not found");
-  }
-
-  if (name && name !== existingReason.name) {
-    const nameExists = await prisma.referralReason.findFirst({
-      where: {
-        name: { equals: name, mode: "insensitive" },
-        id: { not: id }
-      }
-    });
-
-    if (nameExists) {
-      throw new Error("Referral reason with this name already exists");
-    }
-  }
-
-  const reason = await prisma.referralReason.update({
-    where: { id },
-    data: {
-      ...(name !== undefined && { name }),
-      ...(description !== undefined && { description }),
-      ...(isActive !== undefined && { isActive }),
-    },
-  });
-
-  return { message: "Referral reason updated successfully", data: reason };
-});
-
-export const deleteReferralReasonAction = withErrorHandling(async (id: number) => {
-  const session = await getCachedSession();
-  if (!session) throw new Error("Unauthorized");
-
-  const existingReason = await prisma.referralReason.findUnique({
-    where: { id }
-  });
-
-  if (!existingReason) {
-    throw new Error("Referral reason not found");
-  }
-
-  const usageCount = await prisma.clinicReferralSlip.count({
-    where: {
-      reason: existingReason.name,
-      isActive: true
-    }
-  });
-
-  if (usageCount > 0) {
-    throw new Error("Cannot delete referral reason as it is being used in referral slips");
-  }
-
-  const reason = await prisma.referralReason.update({
-    where: { id },
-    data: { isActive: false },
-  });
-
-  return { message: "Referral reason deleted successfully", data: reason };
 });

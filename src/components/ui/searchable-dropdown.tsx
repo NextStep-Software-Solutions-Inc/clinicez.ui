@@ -102,6 +102,13 @@ export const SearchableDropdown = React.forwardRef<HTMLInputElement, SearchableD
       }
     }
 
+    const handleInputBlur = () => {
+      // Close dropdown when input loses focus
+      setTimeout(() => {
+        setIsOpen(false)
+      }, 150)
+    }
+
     React.useEffect(() => {
       const handleClickOutside = (event: MouseEvent) => {
         if (containerRef.current && event.target instanceof Node &&
@@ -120,6 +127,9 @@ export const SearchableDropdown = React.forwardRef<HTMLInputElement, SearchableD
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === "Escape") {
         setIsOpen(false)
+      } else if (e.key === "Tab") {
+        // Close dropdown when Tab key is pressed
+        setIsOpen(false)
       }
     }
 
@@ -131,6 +141,7 @@ export const SearchableDropdown = React.forwardRef<HTMLInputElement, SearchableD
           value={displayValue}
           onChange={handleInputChange}
           onClick={handleInputClick}
+          onBlur={handleInputBlur}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           disabled={disabled}

@@ -115,6 +115,11 @@ export const GroupedSearchableDropdown = React.forwardRef<HTMLInputElement, Grou
     }
 
     const handleInputBlur = () => {
+      // Close dropdown when input loses focus
+      setTimeout(() => {
+        setIsOpen(false)
+      }, 150)
+
       // When input loses focus, update the form with the current display value
       if (onChange && displayValue !== value) {
         prevValueRef.current = displayValue
@@ -157,8 +162,10 @@ export const GroupedSearchableDropdown = React.forwardRef<HTMLInputElement, Grou
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === "Escape") {
         setIsOpen(false)
+      } else if (e.key === "Tab") {
+        // Close dropdown when Tab key is pressed
+        setIsOpen(false)
       } else if (e.key === "Enter" && !isOpen) {
-        // If Enter is pressed and dropdown is closed, commit the current value
         e.preventDefault()
         if (onChange && displayValue !== value) {
           prevValueRef.current = displayValue

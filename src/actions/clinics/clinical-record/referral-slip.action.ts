@@ -71,7 +71,11 @@ export const getReferralSlipsAction = withErrorHandling(async (filters: GetRefer
           },
         },
       },
-      DocumentTemplate: true,
+      DocumentTemplate: {
+        select: {
+          id: true,
+        },
+      },
     },
   });
 

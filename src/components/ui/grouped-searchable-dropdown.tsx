@@ -51,6 +51,7 @@ export const GroupedSearchableDropdown = React.forwardRef<HTMLInputElement, Grou
     const [displayValue, setDisplayValue] = React.useState("")
     const containerRef = React.useRef<HTMLDivElement>(null)
     const prevValueRef = React.useRef<string | number | undefined>(value)
+    const isFirstRender = React.useRef(true)
 
     const defaultFilterFunction = React.useCallback(
       (option: SearchableDropdownOption, term: string) => {
@@ -74,29 +75,24 @@ export const GroupedSearchableDropdown = React.forwardRef<HTMLInputElement, Grou
       return filteredGroups.reduce((total, group) => total + group.options.length, 0)
     }, [filteredGroups])
 
-    // Initialize display value when value prop changes externally (form reset, initial load)
     React.useEffect(() => {
-      // Skip updates if this is an internal change
-      if (prevValueRef.current !== value) {
+      if (isFirstRender.current || prevValueRef.current !== value) {
+        isFirstRender.current = false
         prevValueRef.current = value
-        return
-      }
 
-      if (value !== undefined && value !== null) {
-        // Find the selected option across all groups
-        const selectedOption = groups.flatMap(g => g.options).find(option => option.value === value)
-        if (selectedOption) {
-          setDisplayValue(selectedOption.label)
-          setSearchTerm(selectedOption.label)
-        } else if (typeof value === 'string' && value !== '') {
-          // Handle free text input
-          setDisplayValue(value)
-          setSearchTerm(value)
+        if (value !== undefined && value !== null) {
+          const selectedOption = groups.flatMap(g => g.options).find(option => option.value === value)
+          if (selectedOption) {
+            setDisplayValue(selectedOption.label)
+            setSearchTerm(selectedOption.label)
+          } else if (typeof value === 'string' && value !== '') {
+            setDisplayValue(value)
+            setSearchTerm(value)
+          }
+        } else if (value === '' || value === null || value === undefined) {
+          setDisplayValue("")
+          setSearchTerm("")
         }
-      } else if (value === '' || value === null || value === undefined) {
-        // Clear the field when value is explicitly cleared
-        setDisplayValue("")
-        setSearchTerm("")
       }
     }, [value, groups])
 

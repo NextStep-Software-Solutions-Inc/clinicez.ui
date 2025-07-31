@@ -30,6 +30,7 @@ import { UnsavedChangesAlert } from "@/components/UnsavedChangesAlert";
 import { promiseWrapper } from "@/lib/with-error-handling";
 import { useReferralReasons } from "@/hooks/useReferralReasons";
 import { useReferralTargets } from "@/hooks/useReferralTargets";
+import { formatHealthcareProviderName } from "@/lib/utils/format-healthcare-provider-name";
 
 const updateReferralSlipSchema = z.object({
   reason: z.string().optional(),
@@ -107,16 +108,10 @@ export default function EditReferralSlipModal({
     }
 
     if (slip.ReferredTo?.User) {
-      const fullName = [
-        slip.ReferredTo.User.firstName || '',
-        slip.ReferredTo.User.lastName || ''
-      ].join(' ').trim();
-
-      if (slip.ReferredTo.HPType?.name) {
-        return `${fullName} (${slip.ReferredTo.HPType.name})`;
-      }
-
-      return fullName || "Unknown Provider";
+      const formattedName = formatHealthcareProviderName(
+        { user: slip.ReferredTo.User }
+      );
+      return formattedName || "Unknown Provider";
     }
 
     return "";

@@ -158,7 +158,7 @@ export default function EditImagingStudyModal({
                   name="history"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>History (Optional)</FormLabel>
+                      <FormLabel>History</FormLabel>
                       <FormControl>
                         <textarea
                           placeholder="Enter patient history..."
@@ -176,7 +176,7 @@ export default function EditImagingStudyModal({
                   name="reason"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Reason (Optional)</FormLabel>
+                      <FormLabel>Reason</FormLabel>
                       <FormControl>
                         <textarea
                           placeholder="Enter reason for imaging..."
@@ -194,7 +194,7 @@ export default function EditImagingStudyModal({
                   name="impression"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Impression (Optional)</FormLabel>
+                      <FormLabel>Impression</FormLabel>
                       <FormControl>
                         <textarea
                           placeholder="Enter clinical impression..."

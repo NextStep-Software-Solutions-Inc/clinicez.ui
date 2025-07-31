@@ -380,7 +380,7 @@ export default function CreateLaboratoryRequestModal({
                   name="diagnosticIds"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Laboratory Tests</FormLabel>
+                      <FormLabel>Laboratory Tests <span className="text-destructive">*</span></FormLabel>
                       <FormControl>
                         <div className="space-y-6">
                           {Object.keys(groupedDiagnostics).length > 0 ? (
@@ -443,7 +443,7 @@ export default function CreateLaboratoryRequestModal({
                   name="impression"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Impression</FormLabel>
+                      <FormLabel>Impression (Optional)</FormLabel>
                       <FormControl>
                         <Textarea
                           placeholder="Enter impression or reason for laboratory tests..."

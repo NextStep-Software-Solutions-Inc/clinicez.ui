@@ -29,8 +29,7 @@ const DownloadReferralSlipAction = React.forwardRef<
 
         const referringHP = data.CreatedBy?.HealthcareProviders?.[0]
         const referringDoctorName = formatHealthcareProviderName(
-          referringHP?.HPProfile || undefined,
-          data.CreatedBy || undefined
+          { hpProfile: referringHP?.HPProfile || undefined, user: data.CreatedBy || undefined }
         )
 
         const patient = data.ClinicPatient?.Patient ?? {}

@@ -28,7 +28,6 @@ import { z } from "zod";
 import { updateReferralSlipAction } from "@actions/clinics/clinical-record/referral-slip.action";
 import { UnsavedChangesAlert } from "@/components/UnsavedChangesAlert";
 import { promiseWrapper } from "@/lib/with-error-handling";
-import { formatHealthcareProviderName } from "@/lib/utils/format-healthcare-provider-name";
 import { useReferralReasons } from "@/hooks/useReferralReasons";
 import { useReferralTargets } from "@/hooks/useReferralTargets";
 

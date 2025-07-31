@@ -121,7 +121,7 @@ export default function ReferralSlipItem({ referralSlip, onUpdated, hpIds, clini
                   // Fallback for backwards compatibility
                   const user = referralSlip.ReferredTo?.User;
                   const hpType = referralSlip.ReferredTo?.HPType;
-                  const userName = formatHealthcareProviderName(undefined, user);
+                  const userName = formatHealthcareProviderName({ user: user });
                   const specialty = hpType?.name;
 
                   if (userName === "N/A") {

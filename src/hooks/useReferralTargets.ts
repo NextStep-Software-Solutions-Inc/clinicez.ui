@@ -62,7 +62,7 @@ export const useReferralTargets = (clinicUid?: string) => {
           acc[typeName] = [];
         }
 
-        const fullName = formatHealthcareProviderName(undefined, hp.User);
+        const fullName = formatHealthcareProviderName({ user: hp.User });
 
         acc[typeName].push({
           value: `hp_${hp.id}`,

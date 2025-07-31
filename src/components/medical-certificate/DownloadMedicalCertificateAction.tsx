@@ -26,10 +26,10 @@ const DownloadMedicalCertificateAction = React.forwardRef<
         const data = res.data
         if (!data) throw new Error("No data returned")
 
-        const doctorName = formatHealthcareProviderName(
-          data.HealthCareProvider?.HPProfile || undefined,
-          undefined // No user fallback available for medical certificate
-        )
+        const doctorName = formatHealthcareProviderName({
+          hpProfile: data.HealthCareProvider?.HPProfile || undefined,
+          user: data.HealthCareProvider?.User || undefined
+        })
         const professionalDetails = data.HealthCareProvider?.ProfessionalDetails
         const licenseNo = professionalDetails?.licenseNumber ?? ""
         const ptrNo = professionalDetails?.ptrNumber ?? ""

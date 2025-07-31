@@ -371,7 +371,7 @@ export default function CreateImagingStudiesModal({ clinicUid, onCreateImagingSt
                   name="diagnostics"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Diagnostics</FormLabel>
+                      <FormLabel>Diagnostics <span className="text-destructive">*</span></FormLabel>
                       <FormControl>
                         <MultiSelect
                           options={diagnostics}
@@ -390,7 +390,7 @@ export default function CreateImagingStudiesModal({ clinicUid, onCreateImagingSt
                   name="history"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>History</FormLabel>
+                      <FormLabel>History (Optional)</FormLabel>
                       <FormControl>
                         <textarea
                           id="history"
@@ -408,7 +408,7 @@ export default function CreateImagingStudiesModal({ clinicUid, onCreateImagingSt
                   name="impression"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Impression</FormLabel>
+                      <FormLabel>Impression (Optional)</FormLabel>
                       <FormControl>
                         <textarea
                           id="impression"
@@ -426,7 +426,7 @@ export default function CreateImagingStudiesModal({ clinicUid, onCreateImagingSt
                   name="reason"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Reason</FormLabel>
+                      <FormLabel>Reason (Optional)</FormLabel>
                       <FormControl>
                         <textarea
                           id="reason"

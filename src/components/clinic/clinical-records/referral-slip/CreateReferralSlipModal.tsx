@@ -384,7 +384,7 @@ export default function CreateReferralSlipModal({
                     name="reason"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Reason for Referral</FormLabel>
+                        <FormLabel>Reason for Referral <span className="text-destructive">*</span></FormLabel>
                         <FormControl>
                           <SearchableDropdown
                             options={reasonOptions}
@@ -417,7 +417,7 @@ export default function CreateReferralSlipModal({
                     name="referredTo"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Referred To</FormLabel>
+                        <FormLabel>Referred To <span className="text-destructive">*</span></FormLabel>
                         <FormControl>
                           <GroupedSearchableDropdown
                             groups={referralTargetGroups}
@@ -460,7 +460,7 @@ export default function CreateReferralSlipModal({
                     name="history"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Brief History & Pertinent PE</FormLabel>
+                        <FormLabel>Brief History & Pertinent PE (Optional)</FormLabel>
                         <FormControl>
                           <Textarea placeholder="Enter history" {...field} className="resize-none" />
                         </FormControl>
@@ -474,7 +474,7 @@ export default function CreateReferralSlipModal({
                     name="impression"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Impression</FormLabel>
+                        <FormLabel>Impression (Optional)</FormLabel>
                         <FormControl>
                           <Textarea placeholder="Enter impression" {...field} className="resize-none" />
                         </FormControl>
@@ -488,7 +488,7 @@ export default function CreateReferralSlipModal({
                     name="recommendation"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Recommendation/Treatment Given</FormLabel>
+                        <FormLabel>Recommendation (Optional)</FormLabel>
                         <FormControl>
                           <Textarea placeholder="Enter recommendation" {...field} className="resize-none" />
                         </FormControl>

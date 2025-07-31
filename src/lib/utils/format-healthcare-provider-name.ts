@@ -1,15 +1,16 @@
-// Formats a healthcare provider's name with fallbacks to user information
-export function formatHealthcareProviderName(
+interface HealthcareProviderProfile {
   hpProfile?: {
-    title?: string | null;
-    name?: string | null;
-    suffix?: string | null;
+    title?: string | null
+    name?: string | null
+    suffix?: string | null
   },
   user?: {
-    firstName?: string | null;
-    lastName?: string | null;
+    firstName?: string | null
+    lastName?: string | null
   }
-): string {
+}
+
+export function formatHealthcareProviderName({ hpProfile, user }: HealthcareProviderProfile) {
   // Try HP Profile first (title + name + suffix)
   if (hpProfile) {
     const hpName = [

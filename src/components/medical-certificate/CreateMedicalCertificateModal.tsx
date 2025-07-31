@@ -439,7 +439,7 @@ export default function CreateMedicalCertificateModal({
                   name="selectedReason"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Reason</FormLabel>
+                      <FormLabel>Reason <span className="text-destructive">*</span></FormLabel>
                       <FormControl>
                         <div className="flex flex-col gap-2">
                           <Each
@@ -480,7 +480,7 @@ export default function CreateMedicalCertificateModal({
                   name="findings"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Findings</FormLabel>
+                      <FormLabel>Findings <span className="text-destructive">*</span></FormLabel>
                       <FormControl>
                         <RadioGroup
                           onValueChange={field.onChange}
@@ -529,7 +529,7 @@ export default function CreateMedicalCertificateModal({
                   name="medicalClassification"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Medical Classification</FormLabel>
+                      <FormLabel>Medical Classification <span className="text-destructive">*</span></FormLabel>
                       <FormControl>
                         <RadioGroup onValueChange={field.onChange} value={field.value} className="flex flex-col gap-3">
                           <Each
@@ -569,7 +569,7 @@ export default function CreateMedicalCertificateModal({
                   name="remarks"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Recommendations/Remarks (Optional)</FormLabel>
+                      <FormLabel>Recommendations (Optional)</FormLabel>
                       <FormControl>
                         <textarea
                           id="remarks"
@@ -588,7 +588,7 @@ export default function CreateMedicalCertificateModal({
                   name="impression"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Impression/Diagnosis (Optional)</FormLabel>
+                      <FormLabel>Impression (Optional)</FormLabel>
                       <FormControl>
                         <textarea
                           id="impression"

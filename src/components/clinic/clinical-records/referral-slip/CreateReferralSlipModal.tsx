@@ -9,9 +9,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { SearchableDropdown, SearchableDropdownOption } from "@/components/ui/searchable-dropdown";
+import { GroupedSearchableDropdown } from "@/components/ui/grouped-searchable-dropdown";
 import { UnsavedChangesAlert } from "@/components/UnsavedChangesAlert";
-import { useHPs } from "@/hooks/useHP";
 import { useReferralReasons } from "@/hooks/useReferralReasons";
+import { useReferralTargets } from "@/hooks/useReferralTargets";
 import { calculateAge, cn } from "@/lib/utils";
 import { promiseWrapper } from "@/lib/with-error-handling";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -24,10 +25,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
 const createReferralSlipSchema = z.object({
-  referredTo: z.number({
-    required_error: "You need to select a healthcare provider.",
-    invalid_type_error: "Invalid healthcare provider",
-  }).int().positive("Healthcare provider is required"),
   patientName: z.string({
     required_error: "Patient name is required",
     invalid_type_error: "Invalid patient name",
@@ -50,10 +47,14 @@ const createReferralSlipSchema = z.object({
   history: z.string().optional(),
   impression: z.string().optional(),
   recommendation: z.string().optional(),
-  reasonId: z.number({
-    required_error: "You need to select a referral reason.",
+  reason: z.string({
+    required_error: "You need to enter a referral reason.",
     invalid_type_error: "Invalid referral reason",
-  }).int().positive("Referral reason is required"),
+  }).min(1, "Referral reason is required"),
+  referredTo: z.string({
+    required_error: "You need to enter who to refer to.",
+    invalid_type_error: "Invalid referred to field",
+  }).min(1, "Referred to field is required"),
 })
 
 interface CreateReferralSlipModalProps {
@@ -84,34 +85,21 @@ export default function CreateReferralSlipModal({
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [showPatientInfo, setShowPatientInfo] = React.useState(false);
 
-  const { data: hps } = useHPs({ clinicUid });
   const { result: referralReasons } = useReferralReasons();
-
-  // Transform healthcare providers to dropdown options
-  const hpOptions: SearchableDropdownOption[] = React.useMemo(() => {
-    if (!hps) return [];
-    return hps.map(hp => ({
-      value: hp.id,
-      label: `${hp.User.firstName} ${hp.User.lastName}`,
-      type: hp.HPType.name,
-      hp: hp
-    }));
-  }, [hps]);
+  const { groups: referralTargetGroups } = useReferralTargets(clinicUid);
 
   // Transform referral reasons to dropdown options
   const reasonOptions: SearchableDropdownOption[] = React.useMemo(() => {
     if (!referralReasons) return [];
     return referralReasons.map(reason => ({
-      value: reason.id,
+      value: reason.name,
       label: reason.name,
       description: reason.description,
-      reason: reason
     }));
   }, [referralReasons]);
 
   const autofillDefaults = React.useMemo(() => {
     return {
-      referredTo: undefined as number | undefined,
       patientName: [
         userInfo?.firstName ?? "",
         userInfo?.middleName ?? "",
@@ -131,7 +119,8 @@ export default function CreateReferralSlipModal({
       history: "",
       impression: "",
       recommendation: "",
-      reasonId: undefined as number | undefined,
+      reason: "",
+      referredTo: "",
     }
   }, [userInfo, appointment.complaint])
 
@@ -144,12 +133,12 @@ export default function CreateReferralSlipModal({
   const resetFormWithDefaults = React.useCallback(() => {
     form.reset({
       ...autofillDefaults,
-      referredTo: undefined,
       chiefComplaint: appointment.complaint,
       history: "",
       impression: "",
       recommendation: "",
-      reasonId: undefined,
+      reason: "",
+      referredTo: "",
     })
   }, [form, autofillDefaults, appointment.complaint]);
 
@@ -160,12 +149,12 @@ export default function CreateReferralSlipModal({
       patientId,
       hpIds,
       consultationTicketId,
-      referredToId: data.referredTo,
+      referredTo: data.referredTo,
       appointmentId: appointment.id,
       history: data.history ?? "",
       impression: data.impression ?? "",
       recommendation: data.recommendation ?? "",
-      reasonId: data.reasonId,
+      reason: data.reason,
     }), {
       loading: "Creating referral slip...",
       success: (res) => {
@@ -184,12 +173,12 @@ export default function CreateReferralSlipModal({
   const hasUnsavedChanges = React.useCallback(() => {
     const values = form.getValues();
     return !!(
-      values.referredTo !== undefined ||
+      values.referredTo ||
       values.chiefComplaint ||
       values.history ||
       values.impression ||
       values.recommendation ||
-      values.reasonId
+      values.reason
     );
   }, [form]);
 
@@ -394,27 +383,27 @@ export default function CreateReferralSlipModal({
                 <div className="space-y-4">
                   <FormField
                     control={form.control}
-                    name="referredTo"
+                    name="reason"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Referred to Specialty/ER</FormLabel>
+                        <FormLabel>Reason for Referral</FormLabel>
                         <FormControl>
                           <SearchableDropdown
-                            options={hpOptions}
+                            options={reasonOptions}
                             value={field.value}
-                            placeholder="Search healthcare providers..."
+                            placeholder="Search or enter referral reason..."
                             onSelect={(option) => {
                               field.onChange(option.value);
                             }}
                             renderOption={(option) => (
-                              <div className="flex items-center justify-between w-full">
+                              <div className="flex flex-col">
                                 <span>{option.label}</span>
-                                <Badge variant="secondary" className="ml-2">
-                                  {option.type}
-                                </Badge>
+                                {option.description && (
+                                  <span className="text-sm text-muted-foreground">{option.description}</span>
+                                )}
                               </div>
                             )}
-                            emptyMessage="No healthcare providers found."
+                            emptyMessage="No referral reasons found."
                           />
                         </FormControl>
                         <FormMessage />
@@ -424,27 +413,37 @@ export default function CreateReferralSlipModal({
 
                   <FormField
                     control={form.control}
-                    name="reasonId"
+                    name="referredTo"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Reason for Referral</FormLabel>
+                        <FormLabel>Referred To</FormLabel>
                         <FormControl>
-                          <SearchableDropdown
-                            options={reasonOptions}
+                          <GroupedSearchableDropdown
+                            groups={referralTargetGroups}
                             value={field.value}
-                            placeholder="Search referral reasons..."
+                            placeholder="Search clinics or healthcare providers..."
+                            onChange={(value) => {
+                              field.onChange(value);
+                            }}
                             onSelect={(option) => {
-                              field.onChange(option.value);
+                              field.onChange(option.label);
                             }}
                             renderOption={(option) => (
-                              <div className="flex flex-col gap-1 w-full">
-                                <span className="font-medium">{option.label}</span>
-                                {option.description && (
-                                  <span className="text-xs text-muted-foreground">{option.description}</span>
+                              <div className="flex items-center justify-between w-full">
+                                <span>{option.label}</span>
+                                {option.type === 'healthcare_provider' && option.specialty && (
+                                  <Badge variant="secondary" className="ml-2">
+                                    {option.specialty}
+                                  </Badge>
+                                )}
+                                {option.type === 'clinic' && option.description && (
+                                  <span className="text-xs text-muted-foreground ml-2 truncate">
+                                    {option.description}
+                                  </span>
                                 )}
                               </div>
                             )}
-                            emptyMessage="No referral reasons found."
+                            emptyMessage="No clinics or healthcare providers found."
                           />
                         </FormControl>
                         <FormMessage />

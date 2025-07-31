@@ -20,20 +20,21 @@ import {
   FormMessage,
 } from "@components/ui/form";
 import { Textarea } from "@components/ui/textarea";
+import { SearchableDropdown, SearchableDropdownOption } from "@components/ui/searchable-dropdown";
+import { GroupedSearchableDropdown } from "@/components/ui/grouped-searchable-dropdown";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { z } from "zod";
-import { SearchableDropdown } from "@components/ui/searchable-dropdown";
 import { updateReferralSlipAction } from "@actions/clinics/clinical-record/referral-slip.action";
-import { useReferralReasons } from "@hooks/useReferralReasons";
-import { useHPs } from "@/hooks/useHP";
 import { UnsavedChangesAlert } from "@/components/UnsavedChangesAlert";
-import { HealthcareProvider, ReferralReason } from "@/types/referral-slip";
 import { promiseWrapper } from "@/lib/with-error-handling";
 import { formatHealthcareProviderName } from "@/lib/utils/format-healthcare-provider-name";
+import { useReferralReasons } from "@/hooks/useReferralReasons";
+import { useReferralTargets } from "@/hooks/useReferralTargets";
 
 const updateReferralSlipSchema = z.object({
-  reasonId: z.number().optional(),
-  referredToId: z.number().optional(),
+  reason: z.string().optional(),
+  referredTo: z.string().optional(),
   history: z.string().optional(),
   impression: z.string().optional(),
   recommendation: z.string().optional(),
@@ -48,12 +49,17 @@ interface EditReferralSlipModalProps {
     history?: string;
     impression?: string;
     recommendation?: string;
+    reason?: string;
+    referredTo?: string;
     Reason?: { id: number; name?: string; description?: string };
     ReferredTo?: {
       id: number;
       User?: {
         firstName?: string;
         lastName?: string;
+      };
+      HPType?: {
+        name?: string;
       };
     };
     ClinicPatient?: {
@@ -82,41 +88,75 @@ export default function EditReferralSlipModal({
 }: EditReferralSlipModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [showAlert, setShowAlert] = useState(false);
-  const { result: referralReasons } = useReferralReasons();
-  const { data: hps } = useHPs({ clinicUid });
 
-  const healthcareProviders = React.useMemo(() => {
-    if (!hps) return [];
-    return hps.map(hp => ({
-      id: hp.id,
-      User: hp.User,
-      HPType: hp.HPType,
+  const { result: referralReasons } = useReferralReasons();
+  const { groups: referralTargetGroups } = useReferralTargets(clinicUid);
+
+  const reasonOptions: SearchableDropdownOption[] = React.useMemo(() => {
+    if (!referralReasons) return [];
+    return referralReasons.map(reason => ({
+      value: reason.name,
+      label: reason.name,
+      description: reason.description,
     }));
-  }, [hps]);
+  }, [referralReasons]);
+
+  const getReferralTargetValue = useCallback((slip?: typeof referralSlip): string => {
+    if (!slip) return "";
+
+    if (slip.referredTo) {
+      return slip.referredTo;
+    }
+
+    if (slip.ReferredTo?.User) {
+      const fullName = [
+        slip.ReferredTo.User.firstName || '',
+        slip.ReferredTo.User.lastName || ''
+      ].join(' ').trim();
+
+      if (slip.ReferredTo.HPType?.name) {
+        return `${fullName} (${slip.ReferredTo.HPType.name})`;
+      }
+
+      return fullName || "Unknown Provider";
+    }
+
+    return "";
+  }, []);
+
+  const getReasonValue = useCallback((slip?: typeof referralSlip): string => {
+    if (!slip) return "";
+
+    if (slip.reason) {
+      return slip.reason;
+    }
+
+    // Fallback
+    return slip.Reason?.name || "";
+  }, []);
 
   const form = useForm<ReferralSlipFormData>({
     resolver: zodResolver(updateReferralSlipSchema),
     defaultValues: {
-      reasonId: referralSlip?.Reason?.id || undefined,
-      referredToId: referralSlip?.ReferredTo?.id || undefined,
+      reason: getReasonValue(referralSlip),
+      referredTo: getReferralTargetValue(referralSlip),
       history: referralSlip?.history || "",
       impression: referralSlip?.impression || "",
       recommendation: referralSlip?.recommendation || "",
     },
   });
 
-  // Update form values when referralSlip changes
   useEffect(() => {
     if (referralSlip && open) {
       form.reset({
-        reasonId: referralSlip.Reason?.id || undefined,
-        referredToId: referralSlip.ReferredTo?.id || undefined,
+        reason: getReasonValue(referralSlip),
+        referredTo: getReferralTargetValue(referralSlip),
         history: referralSlip.history || "",
         impression: referralSlip.impression || "",
         recommendation: referralSlip.recommendation || "",
       });
     }
-  }, [referralSlip, open, form]);
+  }, [referralSlip, open, form, getReasonValue, getReferralTargetValue]);
 
   const handleSubmit = useCallback(
     async (data: ReferralSlipFormData) => {
@@ -148,21 +188,21 @@ export default function EditReferralSlipModal({
   const hasUnsavedChanges = useCallback(() => {
     const values = form.getValues();
     const initialValues = {
-      reasonId: referralSlip?.Reason?.id || undefined,
-      referredToId: referralSlip?.ReferredTo?.id || undefined,
+      reason: getReasonValue(referralSlip),
+      referredTo: getReferralTargetValue(referralSlip),
       history: referralSlip?.history || "",
       impression: referralSlip?.impression || "",
       recommendation: referralSlip?.recommendation || "",
     };
 
     return !!(
-      values.reasonId !== initialValues.reasonId ||
-      values.referredToId !== initialValues.referredToId ||
+      values.reason !== initialValues.reason ||
+      values.referredTo !== initialValues.referredTo ||
       (values.history ?? "") !== (initialValues.history ?? "") ||
       (values.impression ?? "") !== (initialValues.impression ?? "") ||
       (values.recommendation ?? "") !== (initialValues.recommendation ?? "")
     );
-  }, [form, referralSlip]);
+  }, [form, referralSlip, getReasonValue, getReferralTargetValue]);
 
   const handleOpenChange = useCallback((newOpen: boolean) => {
     if (!newOpen && hasUnsavedChanges()) {
@@ -197,23 +237,27 @@ export default function EditReferralSlipModal({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
-                  name="reasonId"
+                  name="reason"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Referral Reason</FormLabel>
                       <FormControl>
                         <SearchableDropdown
-                          placeholder="Select referral reason..."
-                          options={
-                            referralReasons?.map((reason: ReferralReason) => ({
-                              label: reason.name || "",
-                              value: reason.id,
-                            })) || []
-                          }
+                          options={reasonOptions}
                           value={field.value}
+                          placeholder="Search or enter referral reason..."
                           onSelect={(option) => {
                             field.onChange(option.value);
                           }}
+                          renderOption={(option) => (
+                            <div className="flex flex-col">
+                              <span>{option.label}</span>
+                              {option.description && (
+                                <span className="text-sm text-muted-foreground">{option.description}</span>
+                              )}
+                            </div>
+                          )}
+                          emptyMessage="No referral reasons found."
                         />
                       </FormControl>
                       <FormMessage />
@@ -223,29 +267,37 @@ export default function EditReferralSlipModal({
 
                 <FormField
                   control={form.control}
-                  name="referredToId"
+                  name="referredTo"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Referred To</FormLabel>
                       <FormControl>
-                        <SearchableDropdown
-                          placeholder="Select healthcare provider..."
-                          options={
-                            healthcareProviders?.map((provider: HealthcareProvider) => {
-                              const providerName = formatHealthcareProviderName(undefined, provider.User);
-                              const specialty = provider.HPType?.name;
-                              const label = specialty ? `${providerName} - ${specialty}` : providerName;
-
-                              return {
-                                label,
-                                value: provider.id,
-                              };
-                            }) || []
-                          }
+                        <GroupedSearchableDropdown
+                          groups={referralTargetGroups}
                           value={field.value}
-                          onSelect={(option) => {
-                            field.onChange(option.value);
+                          placeholder="Search clinics or healthcare providers..."
+                          onChange={(value) => {
+                            field.onChange(value);
                           }}
+                          onSelect={(option) => {
+                            field.onChange(option.label);
+                          }}
+                          renderOption={(option) => (
+                            <div className="flex items-center justify-between w-full">
+                              <span>{option.label}</span>
+                              {option.type === 'healthcare_provider' && option.specialty && (
+                                <Badge variant="secondary" className="ml-2">
+                                  {option.specialty}
+                                </Badge>
+                              )}
+                              {option.type === 'clinic' && option.description && (
+                                <span className="text-xs text-muted-foreground ml-2 truncate">
+                                  {option.description}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                          emptyMessage="No clinics or healthcare providers found."
                         />
                       </FormControl>
                       <FormMessage />

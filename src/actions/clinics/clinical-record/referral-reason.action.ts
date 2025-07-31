@@ -6,6 +6,31 @@ import prisma from "@/lib/prisma";
 import { getCachedSession } from "@/actions/session.action";
 import { withErrorHandling } from "@/lib/with-error-handling";
 
+export type GetReferralReason = Awaited<ReturnType<typeof getReferralReasonAction>>;
+export const getReferralReasonAction = withErrorHandling(async (id: number) => {
+  const session = await getCachedSession();
+  if (!session) throw new Error("Unauthorized");
+
+  const reason = await prisma.referralReason.findUnique({
+    where: {
+      id,
+      isActive: true,
+    },
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      isActive: true,
+    },
+  });
+
+  if (!reason) {
+    throw new Error("Referral reason not found");
+  }
+
+  return { message: "Referral reason fetched successfully", data: reason };
+});
+
 export type GetReferralReasons = Awaited<ReturnType<typeof getReferralReasonsAction>>;
 export const getReferralReasonsAction = withErrorHandling(async () => {
   const session = await getCachedSession();
@@ -115,9 +140,11 @@ export const deleteReferralReasonAction = withErrorHandling(async (id: number) =
     throw new Error("Referral reason not found");
   }
 
-  // Check if the reason is being used in any referral slips
   const usageCount = await prisma.clinicReferralSlip.count({
-    where: { reasonId: id, isActive: true }
+    where: {
+      reason: existingReason.name,
+      isActive: true
+    }
   });
 
   if (usageCount > 0) {

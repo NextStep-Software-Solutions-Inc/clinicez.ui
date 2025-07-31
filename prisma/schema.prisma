@@ -376,7 +376,6 @@ model HealthcareProvider {
   MedicalCertificates     ClinicMedicalCertificate[]
   ImagingRequests         ClinicImagingRequest[]
   ClinicLaboratoryRequest ClinicLaboratoryRequest[]
-  ClinicReferralSlips     ClinicReferralSlip[]
 
   @@unique([userId, hpTypeId], name: "unique_user_hp_type")
 }
@@ -1786,13 +1785,12 @@ model LaboratoryDiagnostic {
 }
 
 model ReferralReason {
-  id                  Int                  @id @default(autoincrement())
-  name                String               @unique
-  description         String?
-  isActive            Boolean              @default(true)
-  createdAt           DateTime             @default(now())
-  updatedAt           DateTime             @updatedAt
-  ClinicReferralSlips ClinicReferralSlip[]
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@index([name], name: "referral_reason_name_index")
 }
@@ -1869,17 +1867,18 @@ model ClinicReferralSlip {
   updatedAt            DateTime  @updatedAt
   createdBy            Int
   isActive             Boolean   @default(true)
-  reasonId             Int
+  reason               String? // Changed from reasonId to open text field
   updatedBy            Int?
   deletedAt            DateTime?
   deletedBy            Int?
   serialNumber         String
-  referredToId         Int
+  referredTo           String? // Changed from referredToId to open text field
   consultationTicketId Int
   appointmentId        Int
   history              String?
   impression           String?
   recommendation       String?
+  pinCode              String? // New field for future pin-based access
 
   Clinic             Clinic             @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   DocumentTemplate   DocumentTemplate   @relation(fields: [documentTemplateId], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -1887,8 +1886,6 @@ model ClinicReferralSlip {
   CreatedBy          User               @relation("ReferralSlipCreatedBy", fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
   UpdatedBy          User?              @relation("ReferralSlipUpdatedBy", fields: [updatedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
   DeletedBy          User?              @relation("ReferralSlipDeletedBy", fields: [deletedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  Reason             ReferralReason     @relation(fields: [reasonId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  ReferredTo         HealthcareProvider @relation(fields: [referredToId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   ConsultationTicket ConsultationTicket @relation(fields: [consultationTicketId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   Appointment        Appointment        @relation(fields: [appointmentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 

@@ -41,6 +41,8 @@ export const getReferralSlipsAction = withErrorHandling(async (filters: GetRefer
       history: true,
       impression: true,
       recommendation: true,
+      reason: true,
+      referredTo: true,
       Clinic: { select: { id: true, name: true } },
       ClinicPatient: {
         select: {
@@ -69,23 +71,6 @@ export const getReferralSlipsAction = withErrorHandling(async (filters: GetRefer
           },
         },
       },
-      Reason: true,
-      ReferredTo: {
-        select: {
-          id: true,
-          User: {
-            select: {
-              firstName: true,
-              lastName: true,
-            }
-          },
-          HPType: {
-            select: {
-              name: true,
-            }
-          }
-        }
-      },
       DocumentTemplate: true,
     },
   });
@@ -99,7 +84,15 @@ export const getReferralSlipAction = withErrorHandling(async (id: number) => {
 
   const referralSlip = await prisma.clinicReferralSlip.findUnique({
     where: { id },
-    include: {
+    select: {
+      id: true,
+      serialNumber: true,
+      createdAt: true,
+      history: true,
+      impression: true,
+      recommendation: true,
+      reason: true,
+      referredTo: true,
       Clinic: { select: { id: true, name: true } },
       ClinicPatient: {
         select: {
@@ -122,15 +115,6 @@ export const getReferralSlipAction = withErrorHandling(async (id: number) => {
               }
             }
           }
-        }
-      },
-      Reason: true,
-      ReferredTo: {
-        include: {
-          User: true,
-          HPProfile: true,
-          ProfessionalDetails: true,
-          HPType: true,
         }
       },
       CreatedBy: {
@@ -156,12 +140,12 @@ export const getReferralSlipAction = withErrorHandling(async (id: number) => {
 
 type CreateReferralSlipPayload = {
   clinicUid: string;
-  referredToId: number;
+  referredTo: string;
   patientId?: number;
   hpIds: number[];
   consultationTicketId: number;
   appointmentId: number;
-  reasonId: number;
+  reason: string;
   history?: string;
   impression?: string;
   recommendation?: string;
@@ -173,12 +157,12 @@ export const createReferralSlipAction = withErrorHandling(async (input: CreateRe
 
   const {
     clinicUid,
-    referredToId,
+    referredTo,
     patientId,
     hpIds,
     consultationTicketId,
     appointmentId,
-    reasonId,
+    reason,
     history,
     impression,
     recommendation
@@ -223,8 +207,8 @@ export const createReferralSlipAction = withErrorHandling(async (input: CreateRe
         Clinic: { connect: { clinicUid } },
         ClinicPatient: { connect: { id: patientId } },
         DocumentTemplate: { connect: { id: documentTemplate.id } },
-        ReferredTo: { connect: { id: referredToId } },
-        Reason: { connect: { id: reasonId } },
+        referredTo: referredTo,
+        reason: reason,
         CreatedBy: { connect: { id: createdBy } },
         ConsultationTicket: { connect: { id: consultationTicketId } },
         Appointment: { connect: { id: appointmentId } },
@@ -247,11 +231,12 @@ export type UpdateReferralSlipInput = {
   clinicPatientId?: number;
   documentTemplateId?: number;
   hpIds: number[];
-  reasonId?: number;
-  referredToId?: number;
+  reason?: string;
+  referredTo?: string;
   history?: string;
   impression?: string;
   recommendation?: string;
+  pinCode?: string;
 };
 
 export const updateReferralSlipAction = withErrorHandling(async (input: UpdateReferralSlipInput) => {
@@ -264,11 +249,12 @@ export const updateReferralSlipAction = withErrorHandling(async (input: UpdateRe
     clinicPatientId,
     documentTemplateId,
     hpIds,
-    reasonId,
-    referredToId,
+    reason,
+    referredTo,
     history,
     impression,
-    recommendation
+    recommendation,
+    pinCode
   } = input;
 
   const result = await prisma.$transaction(async (prisma) => {
@@ -293,8 +279,9 @@ export const updateReferralSlipAction = withErrorHandling(async (input: UpdateRe
         ...(clinicUid && { Clinic: { connect: { clinicUid } } }),
         ...(clinicPatientId && { ClinicPatient: { connect: { id: clinicPatientId } } }),
         ...(documentTemplateId && { DocumentTemplate: { connect: { id: documentTemplateId } } }),
-        ...(reasonId && { Reason: { connect: { id: reasonId } } }),
-        ...(referredToId && { ReferredTo: { connect: { id: referredToId } } }),
+        ...(reason !== undefined && { reason }),
+        ...(referredTo !== undefined && { referredTo }),
+        ...(pinCode !== undefined && { pinCode }),
         UpdatedBy: { connect: { id: createdBy } },
         ...(history !== undefined && { history }),
         ...(impression !== undefined && { impression }),

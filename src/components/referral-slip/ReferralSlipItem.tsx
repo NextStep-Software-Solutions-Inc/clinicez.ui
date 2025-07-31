@@ -53,6 +53,8 @@ export interface ReferralSlip {
       name?: string;
     };
   };
+  reason?: string;
+  referredTo?: string;
   DocumentTemplate?: { id: number; name?: string };
 }
 
@@ -112,6 +114,11 @@ export default function ReferralSlipItem({ referralSlip, onUpdated, hpIds, clini
             <div className="flex items-center min-w-[120px]">
               <span className="text-xs text-muted-foreground">
                 {(() => {
+                  if (referralSlip.referredTo) {
+                    return referralSlip.referredTo;
+                  }
+
+                  // Fallback for backwards compatibility
                   const user = referralSlip.ReferredTo?.User;
                   const hpType = referralSlip.ReferredTo?.HPType;
                   const userName = formatHealthcareProviderName(undefined, user);

@@ -2,11 +2,18 @@ import { GetReferralReasons } from "@/actions/clinics/clinical-record/referral-r
 import { self } from "@/services/request";
 import useSWR from "swr";
 
+interface ReferralReason {
+  id: number;
+  name: string;
+  description: string | null;
+  isActive: boolean;
+}
+
 export const useReferralReasons = () => {
   const fetcher = async (url: string) => {
     const result = await self.get<GetReferralReasons>(url);
     if (result.status && result.data) {
-      return result.data.map(reason => ({
+      return result.data.map((reason: ReferralReason) => ({
         ...reason,
         description: typeof reason.description === "string" ? reason.description : undefined,
       }));

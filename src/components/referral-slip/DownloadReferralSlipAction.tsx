@@ -49,11 +49,8 @@ const DownloadReferralSlipAction = React.forwardRef<
 
         const address = formatPatientAddress(patient)
 
-        const referredTo = data.ReferredTo
-        const referredToDoctorName = formatHealthcareProviderName(
-          referredTo?.HPProfile ?? undefined,
-          referredTo?.User ?? undefined
-        )
+        const referredToText = data.referredTo || "Unknown Provider"
+        const reasonText = data.reason || "No reason specified"
 
         const template = prepareReferralSlip({
           template: data.DocumentTemplate?.htmlContent ?? "",
@@ -65,12 +62,12 @@ const DownloadReferralSlipAction = React.forwardRef<
             address,
           },
           referral: {
-            referredToSpecialty: referredToDoctorName, // Will show HP profile name or user full name
+            referredToSpecialty: referredToText,
             chiefComplaint: data.Appointment?.complaint || "",
             briefHistory: data.history || "",
             impression: data.impression || "",
             recommendation: data.recommendation || "",
-            reasonForReferral: data.Reason?.name || "",
+            reasonForReferral: reasonText,
             referredBy: referringDoctorName, // Will show HP profile name or user full name
             createdAt: data.createdAt || new Date(),
           },

@@ -31,27 +31,27 @@ export const createOrganizationRoleAction = withErrorHandling(async (payload: Cr
       requirements: [],
     }
   })
-  return {  message: "Organization role created successfully", data: newOrgRole }
-  
+  return { message: "Organization role created successfully", data: newOrgRole }
+
 }, async error => {
-  if(hasCodeProperty(error) && error.code === "P2002") {
+  if (hasCodeProperty(error) && error.code === "P2002") {
     return "Role with the same name or id already exists"
   }
   return "An error occurred while creating the organization role"
 })
 
 export type GetOrganizationRolesFilters = {
-    orgUid?: string;
-    userId?: string;
-  }
-  
+  orgUid?: string;
+  userId?: string;
+}
+
 export type GetOrganizationRoles = Awaited<ReturnType<typeof getOrganizationRolesAction>>
 export const getOrganizationRolesAction = withErrorHandling(cache(async (filters: GetOrganizationRolesFilters) => {
 
   await sessionCheck();
 
-  const {orgUid, userId} = filters || {};
-  
+  const { orgUid, userId } = filters || {};
+
   const roles = await prisma.organizationRole.findMany({
     orderBy: {
       name: "asc"
@@ -76,11 +76,22 @@ export const getOrganizationRolesAction = withErrorHandling(cache(async (filters
       name: true,
       description: true,
       requirements: true,
+      UserDefaultOrganizationRoles: {
+        where: userId ? {
+          User: {
+            userId
+          }
+        } : undefined,
+        select: {
+          id: true,
+          roleId: true,
+        }
+      }
     }
   })
-  
-  
-  return {message: "Organization roles fetched successfully", status: true, data: roles};
+
+
+  return { message: "Organization roles fetched successfully", status: true, data: roles };
 }))
 
 
@@ -95,8 +106,8 @@ export const setOrganizationRoleRequirementsAction = withErrorHandling(async (or
     },
     data: { requirements }
   })
-  return { message: "Role requirements updated successfully", data: null } 
- 
+  return { message: "Role requirements updated successfully", data: null }
+
 })
 
 export const deleteOrganizationRoleAction = withErrorHandling(async (orgRoleId: number) => {

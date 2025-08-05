@@ -115,6 +115,12 @@ export const getMedicalCertificateAction = withErrorHandling(async (id: number) 
         include: {
           HPProfile: true,
           ProfessionalDetails: true,
+          User: {
+            select: {
+              firstName: true,
+              lastName: true,
+            }
+          }
         }
       },
     },

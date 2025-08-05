@@ -39,25 +39,34 @@ export type HPSFilters = {
   hpTypeId?: number,
   userId?: string
   isPublished?: boolean
+  clinicUid?: string
 }
 
 export type GetHPsType = Awaited<ReturnType<typeof getHPsAction>>
-export const getHPsAction = cache(async (filters?:HPSFilters) => {
-  
-  const {hpTypeId, userId, isPublished} = filters || {};
-  const hps = prisma.healthcareProvider.findMany({
+export const getHPsAction = cache(async (filters?: HPSFilters) => {
+
+  const { hpTypeId, userId, isPublished, clinicUid } = filters || {};
+  const hps = await prisma.healthcareProvider.findMany({
     orderBy: {
-      HPProfile: {name: "asc"}
+      HPProfile: { name: "asc" }
     },
     where: {
       isActive: true,
-      ...(hpTypeId ? { hpTypeId }: {}),
-      ...(userId ? { User: { userId } }: {}),
-      ...(isPublished ? { isPublished }: {})
+      ...(hpTypeId ? { hpTypeId } : {}),
+      ...(userId ? { User: { userId } } : {}),
+      ...(isPublished ? { isPublished } : {}),
+      ...(clinicUid ? {
+        ClinicMembers: {
+          some: {
+            clinicUid: clinicUid,
+            isActive: true
+          }
+        }
+      } : {})
     },
     include: {
       HPType: {
-        select: {id: true, name: true}
+        select: { id: true, name: true }
       },
       User: {
         select: {
@@ -91,13 +100,13 @@ export type HPFilters = {
   isPublished?: boolean
 }
 export type GetHP = Awaited<ReturnType<typeof getHPAction>>
-export const getHPAction = async ({ userId, hpTypeId, isPublished, id}:HPFilters) => {
+export const getHPAction = async ({ userId, hpTypeId, isPublished, id }: HPFilters) => {
 
-  const hp = prisma.healthcareProvider.findFirst({
+  const hp = await prisma.healthcareProvider.findFirst({
     where: {
       isActive: true,
-      ...(hpTypeId ? { hpTypeId }: {}),
-      ...(isPublished ? { isPublished }: {}),
+      ...(hpTypeId ? { hpTypeId } : {}),
+      ...(isPublished ? { isPublished } : {}),
       OR: [
         { User: { userId } },
         { id }
@@ -134,7 +143,7 @@ export const createHpAction = async (hp: Prisma.HealthcareProviderCreateArgs["da
 }
 
 export const getProfessionalDetailsAction = async (hpId: number) => {
-  const hp = prisma.professionalDetails.findFirst({
+  const hp = await prisma.professionalDetails.findFirst({
     where: {
       healthcareProverId: hpId
     }
@@ -163,11 +172,15 @@ export const setIsPublishAction = async (hpId: number, isPublished: boolean) => 
 
 export type GetHpsByIds = Awaited<ReturnType<typeof getHpsByIdsAction>>
 export const getHpsByIdsAction = async (ids: number[]) => {
-  const hps = prisma.healthcareProvider.findMany({
+  const hps = await prisma.healthcareProvider.findMany({
     where: {
       id: {
         in: ids
-      }
+      },
+      isActive: true
+    },
+    orderBy: {
+      HPProfile: { name: "asc" }
     },
     select: {
       id: true,
@@ -178,8 +191,12 @@ export const getHpsByIdsAction = async (ids: number[]) => {
         }
       },
       User: {
-        "select": {
+        select: {
+          userId: true,
           email: true,
+          firstName: true,
+          lastName: true,
+          suffix: true,
         }
       },
       HPProfile: {

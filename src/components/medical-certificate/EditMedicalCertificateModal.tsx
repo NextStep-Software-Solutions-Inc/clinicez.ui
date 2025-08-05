@@ -376,7 +376,7 @@ export default function EditMedicalCertificateModal({
                   name="remarks"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Recommendations/Remarks (Optional)</FormLabel>
+                      <FormLabel>Recommendations</FormLabel>
                       <FormControl>
                         <textarea
                           placeholder="Enter Recommendations/Remarks"
@@ -394,7 +394,7 @@ export default function EditMedicalCertificateModal({
                   name="impression"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Impression (Optional)</FormLabel>
+                      <FormLabel>Impression</FormLabel>
                       <FormControl>
                         <textarea
                           placeholder="Enter Impression"

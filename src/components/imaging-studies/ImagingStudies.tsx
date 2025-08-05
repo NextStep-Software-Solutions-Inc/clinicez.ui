@@ -29,7 +29,7 @@ export interface ImagingStudiesProps {
 }
 
 export default function ImagingStudies({ consultationTicketId, clinicUid, hpIds, patientId, userInfo }: ImagingStudiesProps) {
-  const { data: studies, mutate } = useImagingStudies({
+  const { data: studies, mutate, error, isLoading } = useImagingStudies({
     clinicUid,
     consultationTicketId,
     hpId: hpIds[0],
@@ -63,7 +63,13 @@ export default function ImagingStudies({ consultationTicketId, clinicUid, hpIds,
       </CardHeader>
       <CardContent className=" h-[25rem] overflow-y-auto no-scrollbar scrollBox">
         <div className="grid gap-1">
-          <Each
+          {isLoading && (
+            <p className="text-center text-muted-foreground">Loading imaging studies...</p>
+          )}
+          {error && (
+            <p className="text-center text-destructive">Error: {error.message}</p>
+          )}
+          {!isLoading && !error && (<Each
             of={studies?.data as ImagingStudy[] ?? []}
             fallback={
               <p className="text-center text-muted-foreground">
@@ -78,6 +84,7 @@ export default function ImagingStudies({ consultationTicketId, clinicUid, hpIds,
                 hpIds={hpIds} />
             )}
           />
+          )}
         </div>
       </CardContent>
       <CardFooter />

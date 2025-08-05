@@ -106,6 +106,9 @@ export function searchParamsToObject(params: URLSearchParams) {
   return obj;
 }
 
+// Generate a unique serial number for the referral slip.
+// The serial number is used for unique identification and 
+// follows the format: EZ<5 random alphanumeric characters>H<1 random digit>.
 export function generateSerialNumber(): string {
   const prefix = 'EZ';
   const suffixLetter = 'H';

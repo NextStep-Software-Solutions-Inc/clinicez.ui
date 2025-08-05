@@ -235,7 +235,7 @@ export default function EditLaboratoryRequestModal({
                   name="impression"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Impression (Optional)</FormLabel>
+                      <FormLabel>Impression</FormLabel>
                       <FormControl>
                         <textarea
                           placeholder="Enter impression or notes..."

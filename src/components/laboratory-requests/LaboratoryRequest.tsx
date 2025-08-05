@@ -29,7 +29,7 @@ export interface LaboratoryRequestProps {
 }
 
 export default function LaboratoryRequest({ consultationTicketId, clinicUid, hpIds, patientId, userInfo }: LaboratoryRequestProps) {
-  const { data: requests, mutate } = useLaboratoryRequests({
+  const { data: requests, mutate, error, isLoading } = useLaboratoryRequests({
     clinicUid,
     consultationTicketId,
     hpId: hpIds[0],
@@ -62,17 +62,25 @@ export default function LaboratoryRequest({ consultationTicketId, clinicUid, hpI
       </CardHeader>
       <CardContent className=" h-[25rem] overflow-y-auto no-scrollbar scrollBox">
         <div className="grid gap-1">
-          <Each
-            of={requests?.data ?? []}
-            fallback={
-              <p className="text-center text-muted-foreground">
-                No recent laboratory request to show.
-              </p>
-            }
-            render={(request) => (
-              <LaboratoryRequestItem request={request} onUpdated={mutate} hpIds={hpIds} />
-            )}
-          />
+          {isLoading && (
+            <p className="text-center text-muted-foreground">Loading laboratory requests...</p>
+          )}
+          {error && (
+            <p className="text-center text-destructive">Error: {error.message}</p>
+          )}
+          {!isLoading && !error && (
+            <Each
+              of={requests?.data ?? []}
+              fallback={
+                <p className="text-center text-muted-foreground">
+                  No recent laboratory request to show.
+                </p>
+              }
+              render={(request) => (
+                <LaboratoryRequestItem request={request} onUpdated={mutate} hpIds={hpIds} />
+              )}
+            />
+          )}
         </div>
       </CardContent>
       <CardFooter />

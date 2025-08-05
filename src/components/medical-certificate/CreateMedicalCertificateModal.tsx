@@ -2,6 +2,7 @@
 
 import ActionButton from "@/components/ActionButton"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { UnsavedChangesAlert } from "@/components/UnsavedChangesAlert"
@@ -21,10 +22,10 @@ import {
   getMedicalCertificateClassificationsAction,
   createMedicalCertificateAction,
 } from "@/actions/clinics/clinical-record/medical-certificate.action";
-import { calculateAge } from "@/lib/utils"
+import { calculateAge, cn } from "@/lib/utils"
 import { PatientProfile } from "@/components/consultation/ConsultationDetails"
 import { promiseWrapper } from "@/lib/with-error-handling"
-import { FileIcon } from "lucide-react"
+import { FileIcon, User, ChevronDown, ChevronUp } from "lucide-react"
 
 type MedicalCertificateReason = {
   id: number;
@@ -94,6 +95,13 @@ const createMedicalCertificateSchema = z.object({
     .min(0, {
       message: "Age must be a positive number",
     }),
+  dob: z.date()
+    .refine((val) => {
+      const today = new Date();
+      return val <= today;
+    }, "Date of birth cannot be in the future")
+    .optional(),
+  gender: z.enum(["MALE", "FEMALE"]).optional(),
   address: z
     .string()
     .trim()
@@ -135,6 +143,7 @@ export default function CreateMedicalCertificateModal({
   const [open, setOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [showAlert, setShowAlert] = React.useState(false);
+  const [showPatientInfo, setShowPatientInfo] = React.useState(false);
 
   const { reasons, findings, classifications, loading } = useMedicalCertificateOptions();
   const autofillDefaults = React.useMemo(() => {
@@ -150,6 +159,8 @@ export default function CreateMedicalCertificateModal({
       age:
         userInfo?.dob
           ? calculateAge(userInfo.dob) : 0,
+      dob: userInfo?.dob ? new Date(userInfo.dob) : undefined,
+      gender: (userInfo?.gender === "MALE" || userInfo?.gender === "FEMALE") ? userInfo.gender as "MALE" | "FEMALE" : undefined,
       address: userInfo?.address
         ? [
           userInfo.address?.homeAddress,
@@ -270,60 +281,165 @@ export default function CreateMedicalCertificateModal({
               </DialogHeader>
 
               <div className="max-h-[60vh] overflow-y-auto flex flex-col gap-4 py-2">
-                <div className="flex gap-2">
-                  <FormField
-                    control={form.control}
-                    name="patientName"
-                    render={({ field }) => (
-                      <FormItem className="flex-1">
-                        <FormLabel>Name</FormLabel>
-                        <FormControl>
-                          <Input id="patientName" placeholder="Juan Dela Cruz" {...field} disabled />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="age"
-                    render={({ field }) => (
-                      <FormItem className="w-32">
-                        <FormLabel>Age</FormLabel>
-                        <FormControl>
-                          <Input
-                            id="age"
-                            placeholder="32"
-                            disabled
-                            {...field}
-                            onChange={(e) => field.onChange(Number.parseInt(e.target.value) || 0)}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
 
-                <FormField
-                  control={form.control}
-                  name="address"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Address</FormLabel>
-                      <FormControl>
-                        <Input id="address" placeholder="123 Main Street, Quezon City, Metro Manila" {...field} disabled />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+                {/* Patient Information Card */}
+                <Card className="border-2 border-dashed border-gray-200 hover:border-primary/50 transition-colors">
+                  <CardHeader
+                    className="cursor-pointer pb-3 hover:bg-gray-50/50 transition-colors rounded-t-lg"
+                    onClick={() => setShowPatientInfo(!showPatientInfo)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-primary/10 rounded-full">
+                          <User className="h-4 w-4 text-primary" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-sm font-semibold text-gray-700">
+                            Patient Information
+                          </CardTitle>
+                          <CardDescription className="text-xs mt-1 flex items-center gap-4">
+                            <span className="font-medium text-gray-600">
+                              {userInfo?.firstName} {userInfo?.lastName}
+                            </span>
+                            <span className="text-gray-400">•</span>
+                            <span className="text-gray-500">
+                              Age: {userInfo?.dob ? calculateAge(userInfo.dob) : 'N/A'}
+                            </span>
+                          </CardDescription>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-400 hidden sm:block">
+                          {showPatientInfo ? 'Collapse' : 'Expand'}
+                        </span>
+                        <div className={cn(
+                          "p-1 rounded-full transition-all duration-200",
+                          showPatientInfo ? "bg-primary/10 text-primary" : "bg-gray-100 text-gray-400"
+                        )}>
+                          {showPatientInfo ?
+                            <ChevronUp className="h-4 w-4" /> :
+                            <ChevronDown className="h-4 w-4" />
+                          }
+                        </div>
+                      </div>
+                    </div>
+                  </CardHeader>
+
+                  {showPatientInfo && (
+                    <CardContent className="pt-0 space-y-4 border-t border-gray-100">
+                      <div className="flex gap-3 pt-4">
+                        <FormField
+                          control={form.control}
+                          name="patientName"
+                          render={({ field }) => (
+                            <FormItem className="flex-1">
+                              <FormLabel className="text-xs font-medium text-gray-600">Full Name</FormLabel>
+                              <FormControl>
+                                <Input
+                                  id="patientName"
+                                  placeholder="Juan Dela Cruz"
+                                  {...field}
+                                  disabled
+                                  className="bg-gray-50 text-gray-700 border-gray-200"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="age"
+                          render={({ field }) => (
+                            <FormItem className="w-32">
+                              <FormLabel className="text-xs font-medium text-gray-600">Age</FormLabel>
+                              <FormControl>
+                                <Input
+                                  id="age"
+                                  placeholder="32"
+                                  disabled
+                                  {...field}
+                                  onChange={(e) => field.onChange(Number.parseInt(e.target.value) || 0)}
+                                  className="bg-gray-50 text-gray-700 border-gray-200"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <FormField
+                        control={form.control}
+                        name="address"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs font-medium text-gray-600">Address</FormLabel>
+                            <FormControl>
+                              <Input
+                                id="address"
+                                placeholder="123 Main Street, Quezon City, Metro Manila"
+                                {...field}
+                                disabled
+                                className="bg-gray-50 text-gray-700 border-gray-200"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <div className="flex gap-3">
+                        <FormField
+                          control={form.control}
+                          name="dob"
+                          render={({ field }) => (
+                            <FormItem className="flex-1">
+                              <FormLabel className="text-xs font-medium text-gray-600">Date of Birth</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="date"
+                                  id="birthdate"
+                                  value={field.value ? new Date(field.value).toISOString().split('T')[0] : ''}
+                                  onChange={e => field.onChange(new Date(e.target.value))}
+                                  max={new Date().toISOString().split('T')[0]}
+                                  disabled
+                                  className="bg-gray-50 text-gray-700 border-gray-200"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="gender"
+                          render={({ field }) => (
+                            <FormItem className="flex-1">
+                              <FormLabel className="text-xs font-medium text-gray-600">Gender</FormLabel>
+                              <FormControl>
+                                <div className="relative">
+                                  <Input
+                                    value={field.value ? (field.value === 'MALE' ? 'Male' : 'Female') : 'Not specified'}
+                                    disabled
+                                    className="bg-gray-50 text-gray-700 border-gray-200"
+                                  />
+                                </div>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </CardContent>
                   )}
-                />
+                </Card>
                 <FormField
                   control={form.control}
                   name="selectedReason"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Reason</FormLabel>
+                      <FormLabel>Reason <span className="text-destructive">*</span></FormLabel>
                       <FormControl>
                         <div className="flex flex-col gap-2">
                           <Each
@@ -364,7 +480,7 @@ export default function CreateMedicalCertificateModal({
                   name="findings"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Findings</FormLabel>
+                      <FormLabel>Findings <span className="text-destructive">*</span></FormLabel>
                       <FormControl>
                         <RadioGroup
                           onValueChange={field.onChange}
@@ -413,7 +529,7 @@ export default function CreateMedicalCertificateModal({
                   name="medicalClassification"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Medical Classification</FormLabel>
+                      <FormLabel>Medical Classification <span className="text-destructive">*</span></FormLabel>
                       <FormControl>
                         <RadioGroup onValueChange={field.onChange} value={field.value} className="flex flex-col gap-3">
                           <Each
@@ -453,7 +569,7 @@ export default function CreateMedicalCertificateModal({
                   name="remarks"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Recommendations/Remarks (Optional)</FormLabel>
+                      <FormLabel>Recommendations (Optional)</FormLabel>
                       <FormControl>
                         <textarea
                           id="remarks"
@@ -472,7 +588,7 @@ export default function CreateMedicalCertificateModal({
                   name="impression"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Impression/Diagnosis (Optional)</FormLabel>
+                      <FormLabel>Impression (Optional)</FormLabel>
                       <FormControl>
                         <textarea
                           id="impression"

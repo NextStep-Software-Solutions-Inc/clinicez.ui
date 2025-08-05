@@ -105,6 +105,25 @@ export const getClinicsAction = withErrorHandling(cache(async (filters?: GetClin
     orderBy: {
       name: "asc"
     },
+    include: {
+      Tenant: {
+        select: {
+          id: true,
+          name: true,
+        }
+      },
+      ClinicOrganizations: {
+        include: {
+          Organization: {
+            select: {
+              id: true,
+              name: true,
+              orgUid: true,
+            }
+          }
+        }
+      }
+    },
     where: {
       ...userId ? {
         ClinicMembers: {

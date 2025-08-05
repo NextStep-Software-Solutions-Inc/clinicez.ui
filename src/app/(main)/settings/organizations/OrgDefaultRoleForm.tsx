@@ -19,7 +19,6 @@ import { setDefaultOrgRoleAction } from "@actions/users/user-default-organizatio
 import ConditionalRender from "@components/utils/ConditionalRender";
 import { useOrganizationRoles } from "@/hooks/useOrganizationRole";
 import { promiseWrapper } from "@/lib/with-error-handling";
-import { GetOrgMembers } from "@/actions/organizations/org-member.action";
 
 interface OrgDefaultRoleFormProps {
   organization: {
@@ -29,11 +28,15 @@ interface OrgDefaultRoleFormProps {
   userId: string;
   defaultRoleId?: number;
 }
+
 const orgDefaultRoleFormSchema = z.object({
   roleId: z.coerce.number({
     required_error: "Please select a default role"
+  }).refine(value => value > 0, {
+    message: "Please select a default role"
   })
 });
+
 type OrgDefaultRoleFormSchema = z.infer<typeof orgDefaultRoleFormSchema>;
 
 export const OrgDefaultRoleForm = ({ defaultRoleId, organization: { name, orgUid }, userId }: OrgDefaultRoleFormProps) => {
@@ -42,15 +45,19 @@ export const OrgDefaultRoleForm = ({ defaultRoleId, organization: { name, orgUid
 
   const form = useForm<OrgDefaultRoleFormSchema>({
     resolver: zodResolver(orgDefaultRoleFormSchema),
-    values: {
+    defaultValues: {
       roleId: defaultRoleId ?? 0
     }
   });
 
   const action = async () => {
     form.handleSubmit(async (data) => {
+      const defaultOrgRoleRecord = orgRoles?.data?.find(role =>
+        role.UserDefaultOrganizationRoles.length > 0
+      )?.UserDefaultOrganizationRoles[0];
+
       toast.promise(promiseWrapper(setDefaultOrgRoleAction)({
-        id: defaultRoleId,
+        id: defaultOrgRoleRecord?.id,
         userId: userId,
         orgUid: orgUid,
         roleId: data.roleId
@@ -73,7 +80,7 @@ export const OrgDefaultRoleForm = ({ defaultRoleId, organization: { name, orgUid
         render={({ field }) => (
           <FormItem>
             <FormLabel><span className="font-bold">{name}</span> Default Role</FormLabel>
-            <Select onValueChange={field.onChange} value={field.value?.toString()}>
+            <Select onValueChange={field.onChange} value={field.value > 0 ? field.value.toString() : ""}>
               <FormControl>
                 <SelectTrigger>
                   <SelectValue placeholder="Select a role" />

@@ -1,6 +1,6 @@
 "use client";
 
-import {useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@components/ui/form";
 import { Checkbox } from "@components/ui/checkbox";
@@ -33,7 +33,7 @@ export const confirmationFormSchema = z.object({
 
 export default function ConsentForm({ nextStep, prevStep, isFirstStep, isComplete, setComplete, startOver }: ConsentFormProps) {
   const [consent, setConcentForm] = useAtom(bookAppointmentAtom);
-  
+
   const form = useForm<z.infer<typeof confirmationFormSchema>>({
     resolver: zodResolver(confirmationFormSchema),
     defaultValues: {
@@ -45,7 +45,7 @@ export default function ConsentForm({ nextStep, prevStep, isFirstStep, isComplet
 
   const action = () => {
     form.handleSubmit(async (data: z.infer<typeof confirmationFormSchema>) => {
-      setConcentForm((prev) => ({...prev, ...data}))
+      setConcentForm((prev) => ({ ...prev, ...data }))
       nextStep?.();
     })()
   }
@@ -54,7 +54,7 @@ export default function ConsentForm({ nextStep, prevStep, isFirstStep, isComplet
   return (
     <Form {...form}>
       <div className="prose max-w-full shadow-lg w-full p-8 bg-white rounded-md">
-        <h2 className="">Concent Form</h2>
+        <h2 className="">Consent Form</h2>
         <p className="mt-2">Your application is ready for submission. Please carefully review all the details you have provided.</p>
         <form action={action} className="mt-4 flex flex-col gap-2 ">
           <FormField
@@ -70,12 +70,12 @@ export default function ConsentForm({ nextStep, prevStep, isFirstStep, isComplet
                 </FormControl>
                 <div className="space-y-1 leading-none">
                   <FormLabel>
-                  Certify that all information is accurate
+                    Certify that all information is accurate
                   </FormLabel>
                   <FormDescription>
-                  I hereby certify that all information provided in this application is true and accurate to the best of my knowledge.
+                    I hereby certify that all information provided in this application is true and accurate to the best of my knowledge.
                   </FormDescription>
-                  <FormMessage/>
+                  <FormMessage />
                 </div>
               </FormItem>
             )}
@@ -93,12 +93,12 @@ export default function ConsentForm({ nextStep, prevStep, isFirstStep, isComplet
                 </FormControl>
                 <div className="space-y-1 leading-none">
                   <FormLabel>
-                  Terms and Conditions
+                    Terms and Conditions
                   </FormLabel>
                   <FormDescription>
-                 I agree to the <Link href="https://www.healthcare.gov.au/sites/default/files/2021-04/Terms%20and%20Conditions%20for%20Healthcare%20Providers%20and%20Healthcare%20Organisations.pdf" target="_blank">Terms and Conditions</Link> for Healthcare Providers and Healthcare Organizations.
+                    I agree to the <Link href="https://www.healthcare.gov.au/sites/default/files/2021-04/Terms%20and%20Conditions%20for%20Healthcare%20Providers%20and%20Healthcare%20Organisations.pdf" target="_blank">Terms and Conditions</Link> for Healthcare Providers and Healthcare Organizations.
                   </FormDescription>
-                  <FormMessage/>
+                  <FormMessage />
                 </div>
               </FormItem>
             )}
@@ -117,24 +117,24 @@ export default function ConsentForm({ nextStep, prevStep, isFirstStep, isComplet
                 </FormControl>
                 <div className="space-y-1 leading-none">
                   <FormLabel>
-                  Privacy Policy
+                    Privacy Policy
                   </FormLabel>
                   <FormDescription>
-                  I agree to the <Link href="https://www.healthcare.gov.au/sites/default/files/2021-04/Privacy%20Policy%20for%20Healthcare%20Providers%20and%20Healthcare%20Organisations.pdf" target="_blank">Privacy Policy</Link> for Healthcare Providers and Healthcare Organisations.
+                    I agree to the <Link href="https://www.healthcare.gov.au/sites/default/files/2021-04/Privacy%20Policy%20for%20Healthcare%20Providers%20and%20Healthcare%20Organisations.pdf" target="_blank">Privacy Policy</Link> for Healthcare Providers and Healthcare Organisations.
                   </FormDescription>
-                  <FormMessage/>
+                  <FormMessage />
                 </div>
               </FormItem>
             )}
           />
           <div className="mt-4">
-            <BackSubmitAndNext 
+            <BackSubmitAndNext
               labels={{
                 previous: "Back",
                 submit: "Confirm & Continue",
               }}
               disabled={{
-                submit:!form.formState.isValid || isComplete,
+                submit: !form.formState.isValid || isComplete,
                 previous: isFirstStep || isComplete,
                 next: true
               }}

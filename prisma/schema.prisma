@@ -117,6 +117,10 @@ model User {
   ReferralSlipsCreated       ClinicReferralSlip[]       @relation("ReferralSlipCreatedBy")
   ReferralSlipsUpdated       ClinicReferralSlip[]       @relation("ReferralSlipUpdatedBy")
   ReferralSlipsDeleted       ClinicReferralSlip[]       @relation("ReferralSlipDeletedBy")
+  PrescriptionsCreated       Prescription[]             @relation("PrescriptionCreatedBy")
+  PrescriptionsUpdated       Prescription[]             @relation("PrescriptionUpdatedBy")
+  MedicinesCreated           Medicine[]                 @relation("MedicineCreatedBy")
+  MedicinesUpdated           Medicine[]                 @relation("MedicineUpdatedBy")
 }
 
 model ClinicPatient {
@@ -134,6 +138,7 @@ model ClinicPatient {
   ImagingRequests          ClinicImagingRequest[]
   ClinicLaboratoryRequest  ClinicLaboratoryRequest[]
   ClinicReferralSlips      ClinicReferralSlip[]
+  Prescriptions            Prescription[]
 
   @@unique([clinicId, patientId], name: "unique_clinic_patient")
 }
@@ -1493,6 +1498,7 @@ model ConsultationTicket {
   ImagingRequests             ClinicImagingRequest[]
   LaboratoryRequests          ClinicLaboratoryRequest[]
   ClinicReferralSlips         ClinicReferralSlip[]
+  Prescriptions               Prescription[]
 }
 
 model ConsultationTicketHP {
@@ -1592,24 +1598,83 @@ model Action {
   Interventions Intervention[]
 }
 
+// Prescription remodeled
 model Prescription {
-  id                 Int                @id @default(autoincrement())
-  clinicId           Int
-  medicationId       Int
-  templateId         Int
-  hpId               Int
-  name               String?
-  isArchived         Boolean            @default(false)
-  createdAt          DateTime           @default(now())
-  updatedAt          DateTime           @updatedAt
-  dateArchived       DateTime?
-  DocumentTemplate   DocumentTemplate   @relation(fields: [templateId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  Medication         Medication         @relation(fields: [medicationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  Clinic             Clinic             @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  HealthcareProvider HealthcareProvider @relation(fields: [hpId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id                   Int       @id @default(autoincrement())
+  serialNumber         String?   @unique
+  name                 String?
+  remarks              String?
+  consultationTicketId Int
+  isArchived           Boolean   @default(false)
+  dateArchived         DateTime?
+  templateId           Int
+  isActive             Boolean   @default(true)
+  patientId            Int
+  hpId                 Int
+  clinicId             Int
+  createdById          Int
+  createdAt            DateTime  @default(now())
+  updatedBy            Int?
+  updatedAt            DateTime  @updatedAt
 
-  @@index([clinicId, medicationId, templateId], name: "prescription_index")
+  ClinicPatient      ClinicPatient?      @relation(fields: [patientId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  ConsultationTicket ConsultationTicket? @relation(fields: [consultationTicketId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  DocumentTemplate   DocumentTemplate    @relation(fields: [templateId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  HealthcareProvider HealthcareProvider? @relation(fields: [hpId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Clinic             Clinic?             @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  CreatedBy          User?               @relation("PrescriptionCreatedBy", fields: [createdById], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  UpdatedBy          User?               @relation("PrescriptionUpdatedBy", fields: [updatedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Medicines          Medicine[]
+
+  @@index([clinicId, patientId, hpId, consultationTicketId], name: "prescription_index")
+  @@index([templateId], name: "prescription_template_index")
 }
+
+model Medicine {
+  id             Int       @id @default(autoincrement())
+  name           String
+  brandName      String?
+  genericName    String?
+  isGeneric      Boolean   @default(false)
+  description    String?
+  dosage         String?
+  frequency      String?
+  unit           String?
+  notes          String?
+  prescriptionId Int?
+  duration       Int       @default(1)
+  isActive       Boolean   @default(true)
+  createdById    Int
+  createdAt      DateTime  @default(now())
+  updatedBy      Int?
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  CreatedBy    User?         @relation("MedicineCreatedBy", fields: [createdById], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  UpdatedBy    User?         @relation("MedicineUpdatedBy", fields: [updatedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Prescription Prescription? @relation(fields: [prescriptionId], references: [id])
+
+  @@index([prescriptionId], name: "medicine_prescription_index")
+}
+
+// model Prescription {
+//   id                 Int                @id @default(autoincrement())
+//   clinicId           Int
+//   medicationId       Int
+//   templateId         Int
+//   hpId               Int
+//   name               String?
+//   isArchived         Boolean            @default(false)
+//   createdAt          DateTime           @default(now())
+//   updatedAt          DateTime           @updatedAt
+//   dateArchived       DateTime?
+//   DocumentTemplate   DocumentTemplate   @relation(fields: [templateId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+//   Medication         Medication         @relation(fields: [medicationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+//   Clinic             Clinic             @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+//   HealthcareProvider HealthcareProvider @relation(fields: [hpId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+//   @@index([clinicId, medicationId, templateId], name: "prescription_index")
+// }
 
 model Drug {
   id              Int              @id @default(autoincrement())
@@ -1631,7 +1696,6 @@ model Medication {
   updatedAt            DateTime           @updatedAt
   completedAt          DateTime?
   MedicationDrugs      MedicationDrug[]
-  Prescriptions        Prescription[]
   ConsultationTicket   ConsultationTicket @relation(fields: [consultationTicketId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   Clinic               Clinic             @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   HealthCareProvider   HealthcareProvider @relation(fields: [hpId], references: [id], onDelete: NoAction, onUpdate: NoAction)

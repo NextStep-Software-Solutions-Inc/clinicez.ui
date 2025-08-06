@@ -80,6 +80,8 @@ export default function CreateReferralSlipModal({
   appointment
 }: CreateReferralSlipModalProps) {
 
+  console.log("Appointment ID Received: ", appointment.id);
+
   const [isOpen, setIsOpen] = React.useState(false);
   const [showAlert, setShowAlert] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);

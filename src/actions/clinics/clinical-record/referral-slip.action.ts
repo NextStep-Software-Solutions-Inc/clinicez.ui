@@ -1,4 +1,5 @@
 "use server";
+"server-only";
 
 import "server-only";
 import prisma from "@/lib/prisma";
@@ -148,7 +149,7 @@ type CreateReferralSlipPayload = {
   patientId?: number;
   hpIds: number[];
   consultationTicketId: number;
-  appointmentId: number;
+  appointmentId?: number;
   reason: string;
   history?: string;
   impression?: string;
@@ -188,6 +189,20 @@ export const createReferralSlipAction = withErrorHandling(async (input: CreateRe
       select: USER_WITH_HEALTHCARE_PROVIDERS_SELECT
     });
 
+    console.log("Appointment ID received: ", appointmentId);
+
+    // Validate appointment exists if appointmentId is provided
+    if (appointmentId) {
+      const appointmentExists = await prisma.appointment.findUnique({
+        where: { id: appointmentId },
+        select: { id: true }
+      });
+      if (!appointmentExists) {
+        console.log(`Appointment with ID ${appointmentId} not found. Skipping appointment connection.`);
+        // Don't throw error, just continue without appointment connection
+      }
+    }
+
     const { authorizedHpId, createdBy } = validateHealthcareProviderAuth(
       appUser,
       hpIds,
@@ -205,22 +220,34 @@ export const createReferralSlipAction = withErrorHandling(async (input: CreateRe
     });
     if (!documentTemplate) throw new Error("Referral slip template not found");
 
+    // Check if appointment exists before connecting
+    const shouldConnectAppointment = appointmentId && await prisma.appointment.findUnique({
+      where: { id: appointmentId },
+      select: { id: true }
+    });
+
+    const referralSlipData: any = {
+      serialNumber: serialNumber,
+      Clinic: { connect: { clinicUid } },
+      ClinicPatient: { connect: { id: patientId } },
+      DocumentTemplate: { connect: { id: documentTemplate.id } },
+      referredTo: referredTo,
+      reason: reason,
+      CreatedBy: { connect: { id: createdBy } },
+      ConsultationTicket: { connect: { id: consultationTicketId } },
+      isActive: true,
+      history: history || "",
+      impression: impression || "",
+      recommendation: recommendation || "",
+    };
+
+    // Only connect to appointment if it exists
+    if (shouldConnectAppointment) {
+      referralSlipData.Appointment = { connect: { id: appointmentId } };
+    }
+
     const referralSlip = await prisma.clinicReferralSlip.create({
-      data: {
-        serialNumber: serialNumber,
-        Clinic: { connect: { clinicUid } },
-        ClinicPatient: { connect: { id: patientId } },
-        DocumentTemplate: { connect: { id: documentTemplate.id } },
-        referredTo: referredTo,
-        reason: reason,
-        CreatedBy: { connect: { id: createdBy } },
-        ConsultationTicket: { connect: { id: consultationTicketId } },
-        Appointment: { connect: { id: appointmentId } },
-        isActive: true,
-        history: history || "",
-        impression: impression || "",
-        recommendation: recommendation || "",
-      },
+      data: referralSlipData,
     });
 
     return referralSlip;

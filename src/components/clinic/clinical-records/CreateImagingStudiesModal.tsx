@@ -37,11 +37,9 @@ const createImagingStudiesSchema = z.object({
   }).min(0, {
     message: "Age must be a positive number",
   }),
-  address: z.string({
-    required_error: "Please provide the patient's address",
-  }).trim().min(3, {
-    message: "Address must be at least 3 characters long",
-  }),
+  address: z.string()
+    .optional()
+    .transform((e) => e === "" ? undefined : e),
   birthdate: z.date({
     required_error: "Please provide the patient's birthdate",
   }).refine(date => date <= new Date(), {

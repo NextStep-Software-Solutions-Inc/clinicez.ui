@@ -55,11 +55,9 @@ const formSchema = z.object({
     }, "Date of birth cannot be in the future")
     .optional(),
   gender: z.enum(["MALE", "FEMALE"]).optional(),
-  address: z.string({
-    required_error: "Please provide the patient's address",
-  }).trim().min(3, {
-    message: "Address must be at least 3 characters long",
-  }),
+  address: z.string()
+    .optional()
+    .transform((e) => e === "" ? undefined : e),
   impression: z.string().optional(),
   diagnosticIds: z.array(z.number()).min(1, "Please select at least one diagnostic test"),
 });

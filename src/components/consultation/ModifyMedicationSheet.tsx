@@ -4,7 +4,7 @@ import React, { useMemo } from "react";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@components/ui/sheet";
 import { Separator } from "@components/ui/separator";
 import { useParams, useSearchParams } from "next/navigation";
-import { Download, FileText, Pill, Trash } from "lucide-react";
+import { Pill, Trash } from "lucide-react";
 import { useMedication, useMedicationDrugs, } from "@hooks/useMedication";
 import Each from "@components/utils/Each";
 import { Badge } from "@components/ui/badge";
@@ -12,13 +12,10 @@ import ActionButton from "@components/ActionButton";
 import { toast } from "sonner";
 import { removeMedicationDrugAction } from "@actions/medications/medication-drug.action";
 import AddMedicationDrugModal from "@components/prescription/modals/AddMedicationDrugModal";
-import { createPrescriptionAction, getPrescriptionAction } from "@actions/medications/prescription.action";
 import { usePermissions } from "@hooks/usePermission";
 import { useUser } from "@auth0/nextjs-auth0";
 import { PERMISSIONS } from "@lib/permissions";
 import { promiseWrapper } from "@/lib/with-error-handling";
-import { handlePrintHtmlToPDF } from "@/lib/print-pdf";
-import DownloadPrescriptionAction from "../prescription/DownloadPrescriptionAction";
 
 interface ModifyMedicationSheetProps {
   readonly?: boolean;
@@ -82,27 +79,6 @@ export default function ModifyMedicationSheet({ readonly }: ModifyMedicationShee
     })
   }, [medicationDrugs?.data])
 
-
-  const handleCreatePrescription = () => {
-    if (!medication?.data) {
-      toast.error("Medication not found")
-      return
-    }
-    toast.promise(promiseWrapper(createPrescriptionAction)({
-      clinicUid,
-      hpIds: [medication.data.hpId],
-      medicationId: medication.data.id,
-      name: medication.data.name,
-    }), {
-      loading: "Creating prescription...",
-      success: res => {
-        mutateMedication()
-        return res.message
-      },
-      error: error => error
-    })
-  }
-
   return (
     <Sheet open={open} onOpenChange={handleClose}>
       <SheetContent className="space-y-4 min-w-[calc(100dvw-50%)] select-none" >
@@ -150,35 +126,8 @@ export default function ModifyMedicationSheet({ readonly }: ModifyMedicationShee
             {!readonly && myPermissions?.some(p => p.name === PERMISSIONS.CLINIC["ADD:CLINIC:MEDICATION_DRUG"].name) && medication?.data?.id && !medication.data.completedAt && (
               <AddMedicationDrugModal medicationId={medication?.data?.id} onCreated={mutate} />
             )}
-            {
-              !readonly && myPermissions?.some(p => p.name === PERMISSIONS.CLINIC["CREATE:CLINIC:PRESCRIPTION"].name) && medication?.data?._count.Prescriptions === 0 && (
-                <form action={handleCreatePrescription} className="w-full">
-                  <ActionButton
-                    variant="outline"
-                    className="w-full"
-                  >
-                    <FileText className="h-4 w-4 mr-2" />
-                    Create Prescription
-                  </ActionButton>
-                </form>)
-            }
           </div>
           <Separator />
-          <div className="space-y-2">
-            {
-              medication?.data?.Prescriptions?.map((prescription) => (
-                <DownloadPrescriptionAction
-                  key={prescription.id}
-                  prescription={prescription}
-                >
-                  <ActionButton variant="outline" className="w-full">
-                    <Download className="h-4 w-4 mr-2" />
-                    Download Prescription of {prescription.HealthcareProvider?.HPProfile?.title} {prescription.HealthcareProvider?.HPProfile?.name} {prescription.HealthcareProvider?.HPProfile?.suffix}&apos;s
-                  </ActionButton>
-                </DownloadPrescriptionAction>
-              ))
-            }
-          </div>
         </div>
       </SheetContent>
     </Sheet>

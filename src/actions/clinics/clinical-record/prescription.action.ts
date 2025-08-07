@@ -7,7 +7,6 @@ import { withErrorHandling } from "@/lib/with-error-handling";
 import { USER_WITH_HEALTHCARE_PROVIDERS_SELECT, validateHealthcareProviderAuth } from "@/lib/healthcare-provider-auth";
 import { generateSerialNumber } from "@/lib/utils";
 import { Prisma } from "@prisma/client";
-import { connect } from "http2";
 
 export type GetPrescriptionFilters = {
   clinicUid: string;

@@ -83,7 +83,8 @@ export const preparePrescription = (payload: PreparePrescriptionPayload): string
     const sig = medicine.notes ? `<br/>Sig: ${medicine.notes}` : '';
 
     return `${medicineLine}${sig}`;
-  }).join('<br/><br/>'); const replacements = {
+  }).join('<br/><br/>');
+  const replacements = {
     "@{name}": patientName,
     "@{age}": age,
     "@{gender}": genderInitial,

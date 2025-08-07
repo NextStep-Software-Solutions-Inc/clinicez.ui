@@ -50,9 +50,10 @@ const DownloadPrescriptionAction = React.forwardRef<
 
         const licenseNo = prescribingHP?.ProfessionalDetails?.licenseNumber || ""
         const ptrNo = prescribingHP?.ProfessionalDetails?.ptrNumber || ""
-        const doctorAddress = Array.isArray(prescribingHP?.HPProfile?.fields)
-          ? prescribingHP?.HPProfile?.fields.join(", ")
-          : prescribingHP?.HPProfile?.fields || ""
+        const fields = prescribingHP?.HPProfile?.fields;
+        const doctorAddress = Array.isArray(fields)
+          ? fields.join(", ")
+          : (typeof fields === "string" ? fields : "");
 
         const template = preparePrescription({
           template: data.DocumentTemplate?.htmlContent ?? "",

@@ -1,5 +1,4 @@
 "use server";
-"server-only";
 
 import "server-only";
 import prisma from "@/lib/prisma";
@@ -188,14 +187,6 @@ export const createReferralSlipAction = withErrorHandling(async (input: CreateRe
       },
       select: USER_WITH_HEALTHCARE_PROVIDERS_SELECT
     });
-
-    // Validate appointment exists if appointmentId is provided
-    if (appointmentId) {
-      const appointmentExists = await prisma.appointment.findUnique({
-        where: { id: appointmentId },
-        select: { id: true }
-      });
-    }
 
     const { authorizedHpId, createdBy } = validateHealthcareProviderAuth(
       appUser,

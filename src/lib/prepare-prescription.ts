@@ -76,7 +76,9 @@ export const preparePrescription = (payload: PreparePrescriptionPayload): string
     }
 
     if (medicine.duration) {
-      parts.push(`for ${medicine.duration} day(s)`);
+      const durationNum = Number(medicine.duration);
+      const dayLabel = durationNum === 1 ? "day" : "days";
+      parts.push(`for ${medicine.duration} ${isNaN(durationNum) ? "day(s)" : dayLabel}`);
     }
 
     const medicineLine = parts.join(' ');

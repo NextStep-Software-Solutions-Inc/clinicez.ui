@@ -300,16 +300,15 @@ export default function CreatePrescriptionModal({
         {
           loading: "Creating prescription...",
           success: (result) => {
+            setIsSubmitting(false)
             setOpen(false)
             resetFormWithDefaults()
             onCreated?.()
             return result.message || "Prescription created successfully!"
           },
           error: (error) => {
-            return error as string
-          },
-          finally: () => {
             setIsSubmitting(false)
+            return error as string
           },
         }
       )

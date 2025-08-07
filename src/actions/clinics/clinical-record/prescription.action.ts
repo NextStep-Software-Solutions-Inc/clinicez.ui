@@ -334,12 +334,20 @@ export const deletePrescriptionAction = withErrorHandling(async ({ prescriptionI
   const session = await getCachedSession();
   if (!session) throw new Error("Unauthorized");
 
-  // For prescriptions, we'll use soft delete by setting isActive to false
+  const appUser = await prisma.user.findUnique({
+    where: {
+      userId: session.user.sub,
+      isActive: true,
+      deletedAt: null,
+    },
+    select: { id: true }
+  });
+  if (!appUser) throw new Error("User not found");
   const prescription = await prisma.prescription.update({
     where: { id: prescriptionId },
     data: {
       isActive: false,
-      updatedBy: parseInt(session.user.sub),
+      updatedBy: appUser.id,
     },
   });
 

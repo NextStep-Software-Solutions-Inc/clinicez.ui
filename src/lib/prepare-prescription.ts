@@ -60,7 +60,7 @@ export const preparePrescription = (payload: PreparePrescriptionPayload): string
   const requestDate = dayjs(createdAt).format("MMMM DD, YYYY");
   const createdDateTime = dayjs(createdAt).format("MMMM DD, YYYY h:mm A");
   // First letter of gender
-  const genderInitial = gender.charAt(0).toUpperCase();
+  const genderInitial = (typeof gender === "string" && gender.length > 0) ? gender.charAt(0).toUpperCase() : "N/A";
 
   const medicineList = medicines.map(medicine => {
     const parts = [medicine.name];
@@ -90,7 +90,7 @@ export const preparePrescription = (payload: PreparePrescriptionPayload): string
     "@{gender}": genderInitial,
     "@{address}": address,
     "@{requestDate}": requestDate,
-    "@{medicine}": medicineList || "No medicines prescribed.",
+    "@{medicine}": medicines.length === 0 ? "No medicines prescribed." : medicineList,
     "@{sig}": remarks || "No special instructions.",
     "@{doctorName}": doctorName,
     "@{licenseNo}": licenseNo || "N/A",

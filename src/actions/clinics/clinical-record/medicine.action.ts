@@ -90,6 +90,7 @@ export const getMedicinesAction = withErrorHandling(async (filters: GetMedicineF
   return { message: "Medicines fetched successfully", data: medicines };
 });
 
+export type GetMedicine = Awaited<ReturnType<typeof getMedicineAction>>;
 export const getMedicineAction = withErrorHandling(async (id: number) => {
   const session = await getCachedSession();
   if (!session) throw new Error("Unauthorized");

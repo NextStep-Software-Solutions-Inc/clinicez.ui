@@ -124,6 +124,7 @@ export const getPrescriptionsAction = withErrorHandling(async (filters: GetPresc
   return { message: "Prescriptions fetched successfully", data: prescriptions };
 });
 
+export type GetPrescription = Awaited<ReturnType<typeof getPrescriptionAction>>;
 export const getPrescriptionAction = withErrorHandling(async (id: number) => {
   const session = await getCachedSession();
   if (!session) throw new Error("Unauthorized");

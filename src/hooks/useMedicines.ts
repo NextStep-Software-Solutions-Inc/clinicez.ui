@@ -1,6 +1,6 @@
 import useSWR from "swr";
 import { self } from "@/services/request";
-import type { GetMedicines, GetMedicineFilters } from "@/actions/clinics/clinical-record/medicine.action";
+import type { GetMedicines, GetMedicineFilters, GetMedicine } from "@/actions/clinics/clinical-record/medicine.action";
 
 export function useMedicines(filters: GetMedicineFilters = {}) {
   const searchParams = new URLSearchParams();
@@ -37,11 +37,11 @@ export function useMedicines(filters: GetMedicineFilters = {}) {
 }
 
 export function useMedicine(medicineId: number | null) {
-  const fetcher = async (url: string): Promise<any> => {
-    return self.get(url);
+  const fetcher = async (url: string): Promise<GetMedicine> => {
+    return self.get<GetMedicine>(url);
   };
 
-  const { data, error, isLoading, mutate } = useSWR(
+  const { data, error, isLoading, mutate } = useSWR<GetMedicine>(
     medicineId ? `/api/medicines/${medicineId}` : null,
     fetcher,
     {

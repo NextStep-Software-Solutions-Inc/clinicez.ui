@@ -148,7 +148,7 @@ type CreateReferralSlipPayload = {
   patientId?: number;
   hpIds: number[];
   consultationTicketId: number;
-  appointmentId: number;
+  appointmentId: number; // Made required to match schema
   reason: string;
   history?: string;
   impression?: string;
@@ -205,22 +205,37 @@ export const createReferralSlipAction = withErrorHandling(async (input: CreateRe
     });
     if (!documentTemplate) throw new Error("Referral slip template not found");
 
+    const shouldConnectAppointment = appointmentId && await prisma.appointment.findUnique({
+      where: { id: appointmentId },
+      select: { id: true }
+    });
+
+    if (!shouldConnectAppointment && appointmentId) {
+      throw new Error("Appointment not found");
+    }
+
+    if (!appointmentId) {
+      throw new Error("Appointment ID is required");
+    }
+
+    const referralSlipData: Prisma.ClinicReferralSlipCreateInput = {
+      serialNumber: serialNumber,
+      Clinic: { connect: { clinicUid } },
+      ClinicPatient: { connect: { id: patientId } },
+      DocumentTemplate: { connect: { id: documentTemplate.id } },
+      referredTo: referredTo,
+      reason: reason,
+      CreatedBy: { connect: { id: createdBy } },
+      ConsultationTicket: { connect: { id: consultationTicketId } },
+      Appointment: { connect: { id: appointmentId } },
+      isActive: true,
+      history: history || "",
+      impression: impression || "",
+      recommendation: recommendation || "",
+    };
+
     const referralSlip = await prisma.clinicReferralSlip.create({
-      data: {
-        serialNumber: serialNumber,
-        Clinic: { connect: { clinicUid } },
-        ClinicPatient: { connect: { id: patientId } },
-        DocumentTemplate: { connect: { id: documentTemplate.id } },
-        referredTo: referredTo,
-        reason: reason,
-        CreatedBy: { connect: { id: createdBy } },
-        ConsultationTicket: { connect: { id: consultationTicketId } },
-        Appointment: { connect: { id: appointmentId } },
-        isActive: true,
-        history: history || "",
-        impression: impression || "",
-        recommendation: recommendation || "",
-      },
+      data: referralSlipData,
     });
 
     return referralSlip;

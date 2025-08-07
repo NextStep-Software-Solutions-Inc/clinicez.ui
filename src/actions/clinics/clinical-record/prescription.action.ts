@@ -1,0 +1,355 @@
+"use server";
+
+import "server-only";
+import prisma from "@/lib/prisma";
+import { getCachedSession } from "@/actions/session.action";
+import { withErrorHandling } from "@/lib/with-error-handling";
+import { USER_WITH_HEALTHCARE_PROVIDERS_SELECT, validateHealthcareProviderAuth } from "@/lib/healthcare-provider-auth";
+import { generateSerialNumber } from "@/lib/utils";
+import { Prisma } from "@prisma/client";
+
+export type GetPrescriptionFilters = {
+  clinicUid: string;
+  patientId?: number;
+  consultationTicketId?: number;
+  hpIds?: number[];
+  search?: string;
+  distinct?: Prisma.PrescriptionScalarFieldEnum[];
+};
+
+export type GetPrescriptions = Awaited<ReturnType<typeof getPrescriptionsAction>>;
+export const getPrescriptionsAction = withErrorHandling(async (filters: GetPrescriptionFilters) => {
+  const session = await getCachedSession();
+  if (!session) throw new Error("Unauthorized");
+
+  const { clinicUid, patientId, consultationTicketId, hpIds, search, distinct = [] } = filters ?? {};
+
+  const prescriptions = await prisma.prescription.findMany({
+    ...(!!distinct?.length ? { distinct } : {}),
+    orderBy: { createdAt: "desc" },
+    where: {
+      isActive: true,
+      isArchived: false,
+      Clinic: { clinicUid },
+      ...(patientId ? { patientId } : {}),
+      ...(consultationTicketId ? { consultationTicketId } : {}),
+      ...(hpIds?.length ? { hpId: { in: hpIds } } : {}),
+      ...(search ? {
+        OR: [
+          { name: { contains: search, mode: "insensitive" } },
+          { serialNumber: { contains: search, mode: "insensitive" } },
+          { remarks: { contains: search, mode: "insensitive" } },
+        ]
+      } : {}),
+    },
+    select: {
+      id: true,
+      serialNumber: true,
+      name: true,
+      remarks: true,
+      isArchived: true,
+      dateArchived: true,
+      createdAt: true,
+      updatedAt: true,
+      Clinic: { select: { id: true, name: true } },
+      ClinicPatient: {
+        select: {
+          id: true,
+          Patient: {
+            select: {
+              id: true,
+              userId: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+              dob: true,
+              UserAddresses: {
+                where: { isActive: true, isPrimary: true },
+                orderBy: { createdAt: "desc" },
+                take: 1,
+                select: {
+                  address: true,
+                  city: true,
+                  state: true,
+                  zipCode: true,
+                  country: true,
+                }
+              },
+            },
+          },
+        },
+      },
+      DocumentTemplate: true,
+      HealthcareProvider: {
+        select: {
+          id: true,
+          User: {
+            select: {
+              firstName: true,
+              lastName: true,
+            }
+          },
+          HPProfile: {
+            select: {
+              title: true,
+              name: true,
+            }
+          }
+        }
+      },
+      ConsultationTicket: {
+        select: {
+          id: true,
+          subject: true,
+        }
+      },
+      Medicines: {
+        where: { isActive: true },
+        select: {
+          id: true,
+          name: true,
+          brandName: true,
+          genericName: true,
+          isGeneric: true,
+          dosage: true,
+          frequency: true,
+          unit: true,
+          duration: true,
+          notes: true,
+        }
+      },
+    },
+  });
+
+  return { message: "Prescriptions fetched successfully", data: prescriptions };
+});
+
+export type GetPrescription = Awaited<ReturnType<typeof getPrescriptionAction>>;
+export const getPrescriptionAction = withErrorHandling(async (id: number) => {
+  const session = await getCachedSession();
+  if (!session) throw new Error("Unauthorized");
+
+  const prescription = await prisma.prescription.findUnique({
+    where: { id },
+    include: {
+      Clinic: { select: { id: true, name: true } },
+      ClinicPatient: {
+        select: {
+          id: true,
+          Patient: {
+            select: {
+              id: true,
+              userId: true,
+              firstName: true,
+              lastName: true,
+              middleName: true,
+              suffix: true,
+              dob: true,
+              gender: true,
+              email: true,
+              UserAddresses: {
+                where: { isActive: true },
+                orderBy: { createdAt: "desc" },
+                take: 1
+              }
+            }
+          }
+        }
+      },
+      DocumentTemplate: true,
+      HealthcareProvider: {
+        include: {
+          HPProfile: true,
+          ProfessionalDetails: true,
+          User: {
+            select: {
+              firstName: true,
+              lastName: true,
+            }
+          }
+        }
+      },
+      ConsultationTicket: {
+        select: {
+          id: true,
+          subject: true,
+        }
+      },
+      CreatedBy: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+        }
+      },
+      UpdatedBy: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+        }
+      },
+      Medicines: {
+        where: { isActive: true },
+        include: {
+          CreatedBy: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+            }
+          },
+          UpdatedBy: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+            }
+          }
+        }
+      },
+    },
+  });
+
+  if (!prescription) throw new Error("Prescription not found");
+  return { message: "Prescription fetched successfully", data: prescription };
+});
+
+export type CreatePrescriptionInput = {
+  name?: string;
+  remarks?: string;
+  consultationTicketId: number;
+  isArchived?: boolean;
+  patientId: number;
+  clinicUid: string;
+  hpIds: number[];
+};
+
+export const createPrescriptionAction = withErrorHandling(async (input: CreatePrescriptionInput) => {
+  const session = await getCachedSession();
+  if (!session) throw new Error("Unauthorized");
+
+  const { name, remarks, consultationTicketId, isArchived = false, patientId, clinicUid, hpIds } = input;
+
+  const result = await prisma.$transaction(async (prisma) => {
+    const appUser = await prisma.user.findUnique({
+      where: {
+        userId: session.user.sub,
+        isActive: true,
+        deletedAt: null,
+      },
+      select: USER_WITH_HEALTHCARE_PROVIDERS_SELECT
+    });
+
+    const { authorizedHpId, createdBy } = validateHealthcareProviderAuth(
+      appUser,
+      hpIds,
+      "create prescriptions"
+    );
+
+    const documentTemplate = await prisma.documentTemplate.findFirst({
+      where: {
+        isActive: true,
+        Clinic: { clinicUid },
+        DocumentTemplateType: {
+          name: "prescription"
+        }
+      }
+    });
+    if (!documentTemplate) throw new Error("Prescription template not found");
+
+    const serialNumber = generateSerialNumber();
+
+    const prescription = await prisma.prescription.create({
+      data: {
+        serialNumber,
+        name: name || "",
+        remarks: remarks || "",
+        consultationTicketId,
+        isArchived,
+        templateId: documentTemplate.id,
+        patientId,
+        hpId: authorizedHpId,
+        clinicId: (await prisma.clinic.findUniqueOrThrow({
+          where: { clinicUid },
+          select: { id: true }
+        })).id,
+        createdById: createdBy,
+        isActive: true,
+      },
+    });
+
+    return prescription;
+  });
+
+  return { message: "Prescription created successfully", data: result };
+});
+
+export type UpdatePrescriptionInput = {
+  id: number;
+  name?: string;
+  remarks?: string;
+  consultationTicketId?: number;
+  isArchived?: boolean;
+  templateId?: number;
+  patientId?: number;
+  hpIds: number[];
+  isActive?: boolean;
+};
+
+export const updatePrescriptionAction = withErrorHandling(async (input: UpdatePrescriptionInput) => {
+  const session = await getCachedSession();
+  if (!session) throw new Error("Unauthorized");
+
+  const { id, hpIds, ...updateData } = input;
+
+  const result = await prisma.$transaction(async (prisma) => {
+    const appUser = await prisma.user.findUnique({
+      where: {
+        userId: session.user.sub,
+        isActive: true,
+        deletedAt: null,
+      },
+      select: USER_WITH_HEALTHCARE_PROVIDERS_SELECT
+    });
+
+    const { createdBy } = validateHealthcareProviderAuth(
+      appUser,
+      hpIds,
+      "update prescriptions"
+    );
+
+    const prescription = await prisma.prescription.update({
+      where: { id },
+      data: { ...updateData, updatedBy: createdBy },
+    });
+
+    return prescription;
+  });
+
+  return { message: "Prescription updated successfully", data: result };
+});
+
+export const deletePrescriptionAction = withErrorHandling(async ({ prescriptionId }: { prescriptionId: number }) => {
+  const session = await getCachedSession();
+  if (!session) throw new Error("Unauthorized");
+
+  const appUser = await prisma.user.findUnique({
+    where: {
+      userId: session.user.sub,
+      isActive: true,
+      deletedAt: null,
+    },
+    select: { id: true }
+  });
+  if (!appUser) throw new Error("User not found");
+  const prescription = await prisma.prescription.update({
+    where: { id: prescriptionId },
+    data: {
+      isActive: false,
+      updatedBy: appUser.id,
+    },
+  });
+
+  return { message: "Prescription deleted successfully", data: prescription };
+});

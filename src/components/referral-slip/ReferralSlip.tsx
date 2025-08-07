@@ -16,6 +16,7 @@ import ReferralSlipItem from "./ReferralSlipItem";
 import type { ReferralSlip } from "./ReferralSlipItem";
 import { useReferralSlips } from "@/hooks/useReferralSlips";
 import { PatientProfile } from "../consultation/ConsultationDetails";
+import { GetAppointment } from "@/actions/appointments/appointments.action";
 
 const CreateReferralSlipModal = dynamic(
   () => import("@/components/clinic/clinical-records/referral-slip/CreateReferralSlipModal")
@@ -28,6 +29,7 @@ export interface ReferralSlipProps {
   isArchived?: boolean;
   patientId?: number;
   userInfo?: PatientProfile | null;
+  appointment?: GetAppointment["data"];
 }
 
 export default function ReferralSlip({
@@ -35,7 +37,8 @@ export default function ReferralSlip({
   clinicUid,
   hpIds,
   patientId,
-  userInfo
+  userInfo,
+  appointment
 }: ReferralSlipProps) {
   const { data: referralSlips, mutate, error, isLoading } = useReferralSlips({
     clinicUid,
@@ -65,8 +68,8 @@ export default function ReferralSlip({
                 patientId={patientId}
                 hpIds={hpIds}
                 appointment={{
-                  id: consultationTicketId,
-                  complaint: ""
+                  id: appointment?.id ?? 0,
+                  complaint: appointment?.complaint ?? ""
                 }}
               />
             </Suspend>

@@ -23,11 +23,11 @@ export const getPrescriptionsAction = withErrorHandling(async (filters?: GetPres
   const prescriptions = await prisma.prescription.findMany({
     orderBy: { createdAt: "desc" },
     where: {
-      isArchived: isArchived ?? false,
-      dateArchived: isArchived ? { not: null } : null,
-      Medication: { patientId: userId },
-      Clinic: { clinicUid },
-      ...(consultationTicketId ? { Medication: { consultationTicketId } } : {}),
+      ...(clinicUid ? { Clinic: { clinicUid } } : {}),
+      ...(hpIds ? { hpId: { in: hpIds } } : {}),
+      ...(userId ? { patientId: userId } : {}),
+      ...(consultationTicketId ? { consultationTicketId } : {}),
+      ...(isArchived !== undefined ? { isArchived } : {}),
     },
     select: {
       id: true,
@@ -48,19 +48,22 @@ export const getPrescriptionsAction = withErrorHandling(async (filters?: GetPres
         }
       },
       DocumentTemplate: { select: { id: true, name: true } },
-      Medication: {
+      ClinicPatient: {
         select: {
-          completedAt: true,
-          _count: { select: { MedicationDrugs: true } },
           Patient: {
             select: {
-              userId: true,
               firstName: true,
               middleName: true,
               lastName: true,
               suffix: true
             }
           }
+        }
+      },
+      Medicines: {
+        select: {
+          id: true,
+          name: true
         }
       }
     }
@@ -70,16 +73,17 @@ export const getPrescriptionsAction = withErrorHandling(async (filters?: GetPres
 
 type CreatePrescriptionPayload = {
   templateId?: number,
-  medicationId: number,
   name?: string,
   hpIds: number[],
   clinicUid: string,
+  patientId: number,
+  consultationTicketId: number,
 }
 export const createPrescriptionAction = withErrorHandling(async (payload: CreatePrescriptionPayload) => {
 
   const session = await getCachedSession()
   if (!session) throw new Error("Unauthorized")
-  const { clinicUid, templateId, name, hpIds, medicationId } = payload
+  const { clinicUid, templateId, name, hpIds, patientId, consultationTicketId } = payload
 
   const result = await prisma.$transaction(async (prisma) => {
     const appUser = await prisma.user.findUnique({
@@ -104,26 +108,12 @@ export const createPrescriptionAction = withErrorHandling(async (payload: Create
     const prescription = await prisma.prescription.create({
       data: {
         name,
-        HealthcareProvider: {
-          connect: {
-            id: authorizedHpId
-          }
-        },
-        Medication: {
-          connect: {
-            id: medicationId
-          }
-        },
-        DocumentTemplate: {
-          connect: {
-            id: template
-          }
-        },
-        Clinic: {
-          connect: {
-            clinicUid
-          }
-        },
+        patientId,
+        consultationTicketId,
+        hpId: authorizedHpId,
+        templateId: template,
+        clinicId: (await prisma.clinic.findUnique({ where: { clinicUid }, select: { id: true } }))!.id,
+        createdById: appUser!.id
       }
     });
 
@@ -194,35 +184,28 @@ export const getPrescriptionAction = withErrorHandling(async (id: number) => {
           htmlContent: true
         }
       },
-      Medication: {
+      HealthcareProvider: {
         select: {
-          HealthCareProvider: {
+          HPProfile: {
             select: {
-              ProfessionalDetails: {
-                select: {
-                  licenseNumber: true,
-                  ptrNumber: true,
-                }
-              },
-              HPProfile: {
-                select: {
-                  title: true,
-                  name: true,
-                  suffix: true,
-                  specialties: true,
-                }
-              }
+              title: true,
+              name: true,
+              suffix: true,
+              specialties: true
             }
           },
-          MedicationDrugs: {
-            include: {
-              Drug: true
+          ProfessionalDetails: {
+            select: {
+              licenseNumber: true,
+              ptrNumber: true
             }
-          },
-          completedAt: true,
+          }
+        }
+      },
+      ClinicPatient: {
+        select: {
           Patient: {
             select: {
-              userId: true,
               firstName: true,
               middleName: true,
               lastName: true,
@@ -230,8 +213,6 @@ export const getPrescriptionAction = withErrorHandling(async (id: number) => {
               dob: true,
               gender: true,
               UserAddresses: {
-                distinct: ['userId'],
-                take: 1,
                 where: {
                   isActive: true,
                   isPrimary: true
@@ -239,18 +220,25 @@ export const getPrescriptionAction = withErrorHandling(async (id: number) => {
                 select: {
                   address: true,
                   city: true,
+                  state: true,
                   country: true,
-                  zipCode: true,
-                  state: true
+                  zipCode: true
                 }
               }
             }
-          },
-          _count: {
-            select: {
-              MedicationDrugs: true
-            }
           }
+        }
+      },
+      Medicines: {
+        select: {
+          id: true,
+          name: true,
+          brandName: true,
+          genericName: true,
+          dosage: true,
+          frequency: true,
+          duration: true,
+          notes: true
         }
       }
     }

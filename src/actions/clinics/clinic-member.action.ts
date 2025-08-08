@@ -2,10 +2,28 @@
 
 import "server-only";
 import prismaClient from "@/lib/prisma";
+import prisma from "@lib/prisma"
 import { getCachedSession } from "../session.action";
 import { withErrorHandling } from "@/lib/with-error-handling";
 import { hasCodeProperty } from "@/lib/utils";
 import { sessionCheck } from "@/lib/auth";
+
+export const isClinicHealthcareProviderAction = async (userId: string, clinicUid: string) => {
+  const member = await prisma.clinicMember.findFirst({
+    where: {
+      User: {
+        userId
+      },
+      Clinic: {
+        clinicUid
+      },
+      isActive: true,
+      deletedAt: null,
+    }
+  });
+
+  return !!member;
+}
 
 export type GetClinicMembersFilters = {
   clinicUid: string;

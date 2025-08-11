@@ -62,6 +62,7 @@ CREATE TABLE "User" (
     "bloodType" "BloodType",
     "civilStatus" "CivilStatus",
     "dob" DATE,
+    "placeOfBirth" TEXT,
     "firstName" TEXT,
     "gender" "Gender",
     "lastName" TEXT,
@@ -540,6 +541,10 @@ CREATE TABLE "UserEmergencyContact" (
     "userId" INTEGER NOT NULL,
     "isPrimary" BOOLEAN NOT NULL DEFAULT true,
     "name" TEXT NOT NULL,
+    "firstName" TEXT NOT NULL,
+    "middleName" TEXT,
+    "lastName" TEXT,
+    "suffix" TEXT,
     "relationship" TEXT NOT NULL,
     "phone" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -557,6 +562,12 @@ CREATE TABLE "UserAddress" (
     "userId" INTEGER NOT NULL,
     "isPrimary" BOOLEAN NOT NULL DEFAULT true,
     "address" TEXT NOT NULL,
+    "apartmentUnit" TEXT,
+    "bldgName" TEXT,
+    "addressLine" TEXT,
+    "street" TEXT,
+    "subdivision" TEXT,
+    "barangay" TEXT,
     "city" TEXT NOT NULL,
     "state" TEXT NOT NULL,
     "zipCode" TEXT NOT NULL,
@@ -1402,17 +1413,47 @@ CREATE TABLE "Action" (
 -- CreateTable
 CREATE TABLE "Prescription" (
     "id" SERIAL NOT NULL,
-    "clinicId" INTEGER NOT NULL,
-    "medicationId" INTEGER NOT NULL,
-    "templateId" INTEGER NOT NULL,
-    "hpId" INTEGER NOT NULL,
+    "serialNumber" TEXT,
     "name" TEXT,
+    "remarks" TEXT,
+    "consultationTicketId" INTEGER NOT NULL,
     "isArchived" BOOLEAN NOT NULL DEFAULT false,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
     "dateArchived" TIMESTAMP(3),
+    "templateId" INTEGER NOT NULL,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "patientId" INTEGER NOT NULL,
+    "hpId" INTEGER NOT NULL,
+    "clinicId" INTEGER NOT NULL,
+    "createdById" INTEGER NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedBy" INTEGER,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "Prescription_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Medicine" (
+    "id" SERIAL NOT NULL,
+    "name" TEXT NOT NULL,
+    "brandName" TEXT,
+    "genericName" TEXT,
+    "isGeneric" BOOLEAN NOT NULL DEFAULT false,
+    "description" TEXT,
+    "dosage" TEXT,
+    "frequency" TEXT,
+    "unit" TEXT,
+    "notes" TEXT,
+    "prescriptionId" INTEGER,
+    "duration" INTEGER NOT NULL DEFAULT 1,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "createdById" INTEGER NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedBy" INTEGER,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "deletedAt" TIMESTAMP(3),
+
+    CONSTRAINT "Medicine_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -1485,6 +1526,174 @@ CREATE TABLE "ClinicPrescriptionSetting" (
     "prescriptionTemplateId" INTEGER NOT NULL,
 
     CONSTRAINT "ClinicPrescriptionSetting_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "ClinicMedicalCertificate" (
+    "id" SERIAL NOT NULL,
+    "clinicId" INTEGER NOT NULL,
+    "documentTemplateId" INTEGER NOT NULL,
+    "clinicPatientId" INTEGER NOT NULL,
+    "hpId" INTEGER NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "createdBy" INTEGER NOT NULL,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "remarks" TEXT,
+    "impression" TEXT,
+    "updatedBy" INTEGER,
+    "deletedAt" TIMESTAMP(3),
+    "deletedBy" INTEGER,
+    "reasonId" INTEGER NOT NULL,
+    "findingId" INTEGER NOT NULL,
+    "classificationId" INTEGER NOT NULL,
+    "serialNumber" TEXT NOT NULL,
+    "consultationTicketId" INTEGER NOT NULL,
+
+    CONSTRAINT "ClinicMedicalCertificate_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "MedicalCertificateReason" (
+    "id" SERIAL NOT NULL,
+    "name" TEXT NOT NULL,
+    "description" TEXT,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "documentTemplateId" INTEGER NOT NULL,
+
+    CONSTRAINT "MedicalCertificateReason_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "MedicalCertificateFinding" (
+    "id" SERIAL NOT NULL,
+    "documentTemplateId" INTEGER NOT NULL,
+    "name" TEXT NOT NULL,
+    "description" TEXT,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+
+    CONSTRAINT "MedicalCertificateFinding_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "MedicalCertificateClassification" (
+    "id" SERIAL NOT NULL,
+    "documentTemplateId" INTEGER NOT NULL,
+    "name" TEXT NOT NULL,
+    "description" TEXT,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+
+    CONSTRAINT "MedicalCertificateClassification_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "ImagingDiagnostic" (
+    "id" SERIAL NOT NULL,
+    "name" TEXT NOT NULL,
+    "description" TEXT,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "category" TEXT NOT NULL,
+
+    CONSTRAINT "ImagingDiagnostic_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "LaboratoryDiagnostic" (
+    "id" SERIAL NOT NULL,
+    "name" TEXT NOT NULL,
+    "description" TEXT,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "category" TEXT NOT NULL,
+
+    CONSTRAINT "LaboratoryDiagnostic_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "ClinicImagingRequest" (
+    "id" SERIAL NOT NULL,
+    "clinicId" INTEGER NOT NULL,
+    "documentTemplateId" INTEGER NOT NULL,
+    "clinicPatientId" INTEGER NOT NULL,
+    "hpId" INTEGER NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "createdBy" INTEGER NOT NULL,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "history" TEXT,
+    "impression" TEXT,
+    "reason" TEXT,
+    "updatedBy" INTEGER,
+    "deletedAt" TIMESTAMP(3),
+    "deletedBy" INTEGER,
+    "serialNumber" TEXT NOT NULL,
+    "consultationTicketId" INTEGER NOT NULL,
+
+    CONSTRAINT "ClinicImagingRequest_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "ClinicLaboratoryRequest" (
+    "id" SERIAL NOT NULL,
+    "clinicId" INTEGER NOT NULL,
+    "documentTemplateId" INTEGER NOT NULL,
+    "clinicPatientId" INTEGER NOT NULL,
+    "hpId" INTEGER NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "createdBy" INTEGER NOT NULL,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "impression" TEXT,
+    "updatedBy" INTEGER,
+    "deletedAt" TIMESTAMP(3),
+    "deletedBy" INTEGER,
+    "serialNumber" TEXT NOT NULL,
+    "consultationTicketId" INTEGER NOT NULL,
+
+    CONSTRAINT "ClinicLaboratoryRequest_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "ClinicReferralSlip" (
+    "id" SERIAL NOT NULL,
+    "clinicId" INTEGER NOT NULL,
+    "documentTemplateId" INTEGER NOT NULL,
+    "clinicPatientId" INTEGER NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "createdBy" INTEGER NOT NULL,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "reason" TEXT,
+    "updatedBy" INTEGER,
+    "deletedAt" TIMESTAMP(3),
+    "deletedBy" INTEGER,
+    "serialNumber" TEXT NOT NULL,
+    "referredTo" TEXT,
+    "consultationTicketId" INTEGER NOT NULL,
+    "appointmentId" INTEGER NOT NULL,
+    "history" TEXT,
+    "impression" TEXT,
+    "recommendation" TEXT,
+    "pinCode" TEXT,
+
+    CONSTRAINT "ClinicReferralSlip_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "ClinicLaboratoryRequestDiagnostic" (
+    "id" SERIAL NOT NULL,
+    "clinicLaboratoryRequestId" INTEGER NOT NULL,
+    "laboratoryDiagnosticId" INTEGER NOT NULL,
+
+    CONSTRAINT "ClinicLaboratoryRequestDiagnostic_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "ClinicImagingRequestDiagnostic" (
+    "id" SERIAL NOT NULL,
+    "clinicImagingRequestId" INTEGER NOT NULL,
+    "imagingDiagnosticId" INTEGER NOT NULL,
+
+    CONSTRAINT "ClinicImagingRequestDiagnostic_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -1728,13 +1937,55 @@ CREATE UNIQUE INDEX "PreAssessmentNote_appointmentId_createdBy_key" ON "PreAsses
 CREATE UNIQUE INDEX "PreAssessmentNoteAttribute_preAssessmentNoteId_key" ON "PreAssessmentNoteAttribute"("preAssessmentNoteId");
 
 -- CreateIndex
-CREATE INDEX "prescription_index" ON "Prescription"("clinicId", "medicationId", "templateId");
+CREATE UNIQUE INDEX "Prescription_serialNumber_key" ON "Prescription"("serialNumber");
+
+-- CreateIndex
+CREATE INDEX "prescription_index" ON "Prescription"("clinicId", "patientId", "hpId", "consultationTicketId");
+
+-- CreateIndex
+CREATE INDEX "prescription_template_index" ON "Prescription"("templateId");
+
+-- CreateIndex
+CREATE INDEX "medicine_prescription_index" ON "Medicine"("prescriptionId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Drug_brandName_genericName_key" ON "Drug"("brandName", "genericName");
 
 -- CreateIndex
 CREATE INDEX "medication_index" ON "Medication"("patientId", "hpId", "consultationTicketId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "MedicalCertificateReason_name_key" ON "MedicalCertificateReason"("name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "MedicalCertificateReason_name_documentTemplateId_key" ON "MedicalCertificateReason"("name", "documentTemplateId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "MedicalCertificateFinding_documentTemplateId_name_key" ON "MedicalCertificateFinding"("documentTemplateId", "name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "MedicalCertificateClassification_documentTemplateId_name_key" ON "MedicalCertificateClassification"("documentTemplateId", "name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "ImagingDiagnostic_name_category_key" ON "ImagingDiagnostic"("name", "category");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "LaboratoryDiagnostic_name_category_key" ON "LaboratoryDiagnostic"("name", "category");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "ClinicImagingRequest_serialNumber_key" ON "ClinicImagingRequest"("serialNumber");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "ClinicLaboratoryRequest_serialNumber_key" ON "ClinicLaboratoryRequest"("serialNumber");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "ClinicReferralSlip_serialNumber_key" ON "ClinicReferralSlip"("serialNumber");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "ClinicLaboratoryRequestDiagnostic_clinicLaboratoryRequestId_key" ON "ClinicLaboratoryRequestDiagnostic"("clinicLaboratoryRequestId", "laboratoryDiagnosticId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "ClinicImagingRequestDiagnostic_clinicImagingRequestId_imagi_key" ON "ClinicImagingRequestDiagnostic"("clinicImagingRequestId", "imagingDiagnosticId");
 
 -- AddForeignKey
 ALTER TABLE "Tenant" ADD CONSTRAINT "Tenant_userPlanId_fkey" FOREIGN KEY ("userPlanId") REFERENCES "UserPlan"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
@@ -2013,7 +2264,7 @@ ALTER TABLE "UserStudentRecord" ADD CONSTRAINT "UserStudentRecord_programId_fkey
 ALTER TABLE "UserStudentRecord" ADD CONSTRAINT "UserStudentRecord_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE NO ACTION;
 
 -- AddForeignKey
-ALTER TABLE "UserStudentRecord" ADD CONSTRAINT "UserStudentRecord_userOrganizationRoleId_fkey" FOREIGN KEY ("userOrganizationRoleId") REFERENCES "OrganizationRole"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "UserStudentRecord" ADD CONSTRAINT "UserStudentRecord_userOrganizationRoleId_fkey" FOREIGN KEY ("userOrganizationRoleId") REFERENCES "OrganizationRole"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
 
 -- AddForeignKey
 ALTER TABLE "UserStudentRecord" ADD CONSTRAINT "UserStudentRecord_yearLevel_fkey" FOREIGN KEY ("yearLevel") REFERENCES "OrganizationYearLevel"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
@@ -2235,16 +2486,34 @@ ALTER TABLE "Intervention" ADD CONSTRAINT "Intervention_clinicId_fkey" FOREIGN K
 ALTER TABLE "Intervention" ADD CONSTRAINT "Intervention_hpId_fkey" FOREIGN KEY ("hpId") REFERENCES "HealthcareProvider"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
 
 -- AddForeignKey
+ALTER TABLE "Prescription" ADD CONSTRAINT "Prescription_patientId_fkey" FOREIGN KEY ("patientId") REFERENCES "ClinicPatient"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "Prescription" ADD CONSTRAINT "Prescription_consultationTicketId_fkey" FOREIGN KEY ("consultationTicketId") REFERENCES "ConsultationTicket"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
 ALTER TABLE "Prescription" ADD CONSTRAINT "Prescription_templateId_fkey" FOREIGN KEY ("templateId") REFERENCES "DocumentTemplate"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
 
 -- AddForeignKey
-ALTER TABLE "Prescription" ADD CONSTRAINT "Prescription_medicationId_fkey" FOREIGN KEY ("medicationId") REFERENCES "Medication"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+ALTER TABLE "Prescription" ADD CONSTRAINT "Prescription_hpId_fkey" FOREIGN KEY ("hpId") REFERENCES "HealthcareProvider"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
 
 -- AddForeignKey
 ALTER TABLE "Prescription" ADD CONSTRAINT "Prescription_clinicId_fkey" FOREIGN KEY ("clinicId") REFERENCES "Clinic"("id") ON DELETE CASCADE ON UPDATE NO ACTION;
 
 -- AddForeignKey
-ALTER TABLE "Prescription" ADD CONSTRAINT "Prescription_hpId_fkey" FOREIGN KEY ("hpId") REFERENCES "HealthcareProvider"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+ALTER TABLE "Prescription" ADD CONSTRAINT "Prescription_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "User"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "Prescription" ADD CONSTRAINT "Prescription_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "User"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "Medicine" ADD CONSTRAINT "Medicine_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "User"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "Medicine" ADD CONSTRAINT "Medicine_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "User"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "Medicine" ADD CONSTRAINT "Medicine_prescriptionId_fkey" FOREIGN KEY ("prescriptionId") REFERENCES "Prescription"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Medication" ADD CONSTRAINT "Medication_consultationTicketId_fkey" FOREIGN KEY ("consultationTicketId") REFERENCES "ConsultationTicket"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
@@ -2275,3 +2544,130 @@ ALTER TABLE "ClinicPrescriptionSetting" ADD CONSTRAINT "ClinicPrescriptionSettin
 
 -- AddForeignKey
 ALTER TABLE "ClinicPrescriptionSetting" ADD CONSTRAINT "ClinicPrescriptionSetting_clinicId_fkey" FOREIGN KEY ("clinicId") REFERENCES "Clinic"("id") ON DELETE CASCADE ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "ClinicMedicalCertificate" ADD CONSTRAINT "ClinicMedicalCertificate_clinicId_fkey" FOREIGN KEY ("clinicId") REFERENCES "Clinic"("id") ON DELETE CASCADE ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "ClinicMedicalCertificate" ADD CONSTRAINT "ClinicMedicalCertificate_reasonId_fkey" FOREIGN KEY ("reasonId") REFERENCES "MedicalCertificateReason"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "ClinicMedicalCertificate" ADD CONSTRAINT "ClinicMedicalCertificate_documentTemplateId_fkey" FOREIGN KEY ("documentTemplateId") REFERENCES "DocumentTemplate"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "ClinicMedicalCertificate" ADD CONSTRAINT "ClinicMedicalCertificate_clinicPatientId_fkey" FOREIGN KEY ("clinicPatientId") REFERENCES "ClinicPatient"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "ClinicMedicalCertificate" ADD CONSTRAINT "ClinicMedicalCertificate_hpId_fkey" FOREIGN KEY ("hpId") REFERENCES "HealthcareProvider"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "ClinicMedicalCertificate" ADD CONSTRAINT "ClinicMedicalCertificate_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "User"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "ClinicMedicalCertificate" ADD CONSTRAINT "ClinicMedicalCertificate_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "User"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "ClinicMedicalCertificate" ADD CONSTRAINT "ClinicMedicalCertificate_deletedBy_fkey" FOREIGN KEY ("deletedBy") REFERENCES "User"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "ClinicMedicalCertificate" ADD CONSTRAINT "ClinicMedicalCertificate_findingId_fkey" FOREIGN KEY ("findingId") REFERENCES "MedicalCertificateFinding"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "ClinicMedicalCertificate" ADD CONSTRAINT "ClinicMedicalCertificate_classificationId_fkey" FOREIGN KEY ("classificationId") REFERENCES "MedicalCertificateClassification"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "ClinicMedicalCertificate" ADD CONSTRAINT "ClinicMedicalCertificate_consultationTicketId_fkey" FOREIGN KEY ("consultationTicketId") REFERENCES "ConsultationTicket"("id") ON DELETE CASCADE ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "MedicalCertificateReason" ADD CONSTRAINT "MedicalCertificateReason_documentTemplateId_fkey" FOREIGN KEY ("documentTemplateId") REFERENCES "DocumentTemplate"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "MedicalCertificateFinding" ADD CONSTRAINT "MedicalCertificateFinding_documentTemplateId_fkey" FOREIGN KEY ("documentTemplateId") REFERENCES "DocumentTemplate"("id") ON DELETE CASCADE ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "MedicalCertificateClassification" ADD CONSTRAINT "MedicalCertificateClassification_documentTemplateId_fkey" FOREIGN KEY ("documentTemplateId") REFERENCES "DocumentTemplate"("id") ON DELETE CASCADE ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "ClinicImagingRequest" ADD CONSTRAINT "ClinicImagingRequest_clinicId_fkey" FOREIGN KEY ("clinicId") REFERENCES "Clinic"("id") ON DELETE CASCADE ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "ClinicImagingRequest" ADD CONSTRAINT "ClinicImagingRequest_documentTemplateId_fkey" FOREIGN KEY ("documentTemplateId") REFERENCES "DocumentTemplate"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "ClinicImagingRequest" ADD CONSTRAINT "ClinicImagingRequest_clinicPatientId_fkey" FOREIGN KEY ("clinicPatientId") REFERENCES "ClinicPatient"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "ClinicImagingRequest" ADD CONSTRAINT "ClinicImagingRequest_hpId_fkey" FOREIGN KEY ("hpId") REFERENCES "HealthcareProvider"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "ClinicImagingRequest" ADD CONSTRAINT "ClinicImagingRequest_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "User"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "ClinicImagingRequest" ADD CONSTRAINT "ClinicImagingRequest_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "User"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "ClinicImagingRequest" ADD CONSTRAINT "ClinicImagingRequest_deletedBy_fkey" FOREIGN KEY ("deletedBy") REFERENCES "User"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "ClinicImagingRequest" ADD CONSTRAINT "ClinicImagingRequest_consultationTicketId_fkey" FOREIGN KEY ("consultationTicketId") REFERENCES "ConsultationTicket"("id") ON DELETE CASCADE ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "ClinicLaboratoryRequest" ADD CONSTRAINT "ClinicLaboratoryRequest_clinicId_fkey" FOREIGN KEY ("clinicId") REFERENCES "Clinic"("id") ON DELETE CASCADE ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "ClinicLaboratoryRequest" ADD CONSTRAINT "ClinicLaboratoryRequest_documentTemplateId_fkey" FOREIGN KEY ("documentTemplateId") REFERENCES "DocumentTemplate"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "ClinicLaboratoryRequest" ADD CONSTRAINT "ClinicLaboratoryRequest_clinicPatientId_fkey" FOREIGN KEY ("clinicPatientId") REFERENCES "ClinicPatient"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "ClinicLaboratoryRequest" ADD CONSTRAINT "ClinicLaboratoryRequest_hpId_fkey" FOREIGN KEY ("hpId") REFERENCES "HealthcareProvider"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "ClinicLaboratoryRequest" ADD CONSTRAINT "ClinicLaboratoryRequest_consultationTicketId_fkey" FOREIGN KEY ("consultationTicketId") REFERENCES "ConsultationTicket"("id") ON DELETE CASCADE ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "ClinicLaboratoryRequest" ADD CONSTRAINT "ClinicLaboratoryRequest_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "User"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "ClinicLaboratoryRequest" ADD CONSTRAINT "ClinicLaboratoryRequest_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "User"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "ClinicLaboratoryRequest" ADD CONSTRAINT "ClinicLaboratoryRequest_deletedBy_fkey" FOREIGN KEY ("deletedBy") REFERENCES "User"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "ClinicReferralSlip" ADD CONSTRAINT "ClinicReferralSlip_clinicId_fkey" FOREIGN KEY ("clinicId") REFERENCES "Clinic"("id") ON DELETE CASCADE ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "ClinicReferralSlip" ADD CONSTRAINT "ClinicReferralSlip_documentTemplateId_fkey" FOREIGN KEY ("documentTemplateId") REFERENCES "DocumentTemplate"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "ClinicReferralSlip" ADD CONSTRAINT "ClinicReferralSlip_clinicPatientId_fkey" FOREIGN KEY ("clinicPatientId") REFERENCES "ClinicPatient"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "ClinicReferralSlip" ADD CONSTRAINT "ClinicReferralSlip_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "User"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "ClinicReferralSlip" ADD CONSTRAINT "ClinicReferralSlip_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "User"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "ClinicReferralSlip" ADD CONSTRAINT "ClinicReferralSlip_deletedBy_fkey" FOREIGN KEY ("deletedBy") REFERENCES "User"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "ClinicReferralSlip" ADD CONSTRAINT "ClinicReferralSlip_consultationTicketId_fkey" FOREIGN KEY ("consultationTicketId") REFERENCES "ConsultationTicket"("id") ON DELETE CASCADE ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "ClinicReferralSlip" ADD CONSTRAINT "ClinicReferralSlip_appointmentId_fkey" FOREIGN KEY ("appointmentId") REFERENCES "Appointment"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "ClinicLaboratoryRequestDiagnostic" ADD CONSTRAINT "ClinicLaboratoryRequestDiagnostic_clinicLaboratoryRequestI_fkey" FOREIGN KEY ("clinicLaboratoryRequestId") REFERENCES "ClinicLaboratoryRequest"("id") ON DELETE CASCADE ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "ClinicLaboratoryRequestDiagnostic" ADD CONSTRAINT "ClinicLaboratoryRequestDiagnostic_laboratoryDiagnosticId_fkey" FOREIGN KEY ("laboratoryDiagnosticId") REFERENCES "LaboratoryDiagnostic"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "ClinicImagingRequestDiagnostic" ADD CONSTRAINT "ClinicImagingRequestDiagnostic_clinicImagingRequestId_fkey" FOREIGN KEY ("clinicImagingRequestId") REFERENCES "ClinicImagingRequest"("id") ON DELETE CASCADE ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "ClinicImagingRequestDiagnostic" ADD CONSTRAINT "ClinicImagingRequestDiagnostic_imagingDiagnosticId_fkey" FOREIGN KEY ("imagingDiagnosticId") REFERENCES "ImagingDiagnostic"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+

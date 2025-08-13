@@ -8,7 +8,7 @@ import { downloadPPCFAction } from "@/actions/phr/download-ppcf.action"
 import { downloadPKRFAction } from "@/actions/phr/download-pkrf.action"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip"
 import { Button } from "../ui/button"
-import { Download, ChevronDown } from "lucide-react"
+import { Download, ChevronDown, DownloadIcon } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 interface DownloadPMRFActionProps { userId: string; children?: React.ReactNode }
@@ -89,8 +89,14 @@ const DownloadPMRFAction: React.FC<DownloadPMRFActionProps> = ({ userId, childre
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={handlePPCFDownload}>Download PPCF</DropdownMenuItem>
-                <DropdownMenuItem onClick={handlePKRFDownload}>Download PKRF</DropdownMenuItem>
+                <DropdownMenuItem onClick={handlePPCFDownload}>
+                  <DownloadIcon className="mr-2 h-4 w-4" />
+                  Download PPCF
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handlePKRFDownload}>
+                  <DownloadIcon className="mr-2 h-4 w-4" />
+                  Download PKRF
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

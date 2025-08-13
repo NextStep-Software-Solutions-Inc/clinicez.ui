@@ -4,9 +4,29 @@ import { withErrorHandling } from "@/lib/with-error-handling"
 import { generatePdf, getSpouseAndMother, resolvePreferredKonsultaProvider, extractDigits, mapSequentialFields, spacedDigits } from "./utils/philhealth-pdf"
 import { getUserAction } from "@/actions/users/user.action"
 import prisma from "@/lib/prisma"
+import { logger } from "@/lib/logger"
 
 const upper = (v?: string | null) => v ? v.toUpperCase() : "N/A"
 const orNA = (v?: string | null) => v ?? "N/A"
+
+type PrimaryAddress = {
+  apartmentUnit?: string | null;
+  bldgName?: string | null;
+  street?: string | null;
+  subdivision?: string | null;
+  barangay?: string | null;
+  city?: string | null;
+  state?: string | null;
+  zipCode?: string | null;
+  addressLine?: string | null;
+}
+function hasUserAddresses(u: unknown): u is { UserAddresses?: PrimaryAddress[] } {
+  return !!u && typeof u === "object" && "UserAddresses" in (u as Record<string, unknown>)
+}
+type PhilHealthRecordLite = { id: number; memberTypeId: number; pin?: string | null; philSysId?: string | null; tin?: string | null }
+function hasPhilHealthRecord(u: unknown): u is { PhilHealthRecord: PhilHealthRecordLite[] } {
+  return !!u && typeof u === "object" && "PhilHealthRecord" in (u as Record<string, unknown>)
+}
 
 export const downloadPMRFAction = withErrorHandling(async (userId: string) => {
   if (!userId) throw new Error("User ID required")
@@ -15,13 +35,21 @@ export const downloadPMRFAction = withErrorHandling(async (userId: string) => {
   if (!user) throw new Error("User not found")
 
   const { spouse, mother } = await getSpouseAndMother(userId)
-  const primaryAddress = user.UserAddresses?.[0]
+  const primaryAddress: PrimaryAddress | undefined = hasUserAddresses(user) ? user.UserAddresses?.[0] : undefined
   const provider = await resolvePreferredKonsultaProvider(userId)
 
   // Prepare split fields for PhilSys ID, TIN, and DOB per updated PDF field list
-  const record = user.PhilHealthRecord[0];
-  const philSysDigits = extractDigits(record?.philSysId, 12)
-  const tinDigits = extractDigits(record?.tin, 9)
+  let phr: PhilHealthRecordLite | undefined = hasPhilHealthRecord(user) ? user.PhilHealthRecord?.[0] : undefined
+  if (!phr) {
+    const fetched = await prisma.philHealthRecord.findFirst({
+      where: { userId: user.id, isActive: true, deletedAt: null },
+      orderBy: { id: 'asc' },
+      select: { id: true, memberTypeId: true, pin: true, philSysId: true, tin: true },
+    })
+    phr = fetched ?? undefined
+  }
+  const philSysDigits = extractDigits(phr?.philSysId, 12)
+  const tinDigits = extractDigits(phr?.tin, 9)
   const dobDate = user.dob ? new Date(user.dob) : undefined;
   const monthStr = dobDate ? String(dobDate.getMonth() + 1).padStart(2, "0") : "";
   const dayStr = dobDate ? String(dobDate.getDate()).padStart(2, "0") : "";
@@ -93,10 +121,9 @@ export const downloadPMRFAction = withErrorHandling(async (userId: string) => {
 
   // Dependents mapping (first four)
   try {
-    const record = user.PhilHealthRecord?.[0]
-    if (record) {
+    if (phr) {
       const dependents = await prisma.philHealthDependent.findMany({
-        where: { philHealthRecordId: record.id, deletedAt: null },
+        where: { philHealthRecordId: phr.id, deletedAt: null },
         orderBy: { id: 'asc' },
         take: 4,
       })
@@ -118,16 +145,15 @@ export const downloadPMRFAction = withErrorHandling(async (userId: string) => {
         )
       })
     }
-  } catch (error) {
+  } catch (error: unknown) {
     // log dependents retrieval errors for debugging
-    console.error("Failed to map dependents:", error)
+    logger.error("Failed to map dependents:", error)
   }
 
   // Member type checkbox mapping (supports parent-child hierarchy)
   try {
-    const record = user.PhilHealthRecord?.[0]
-    if (record) {
-      const memberType = await prisma.philHealthMemberType.findUnique({ where: { id: record.memberTypeId }, include: { Parent: true } })
+    if (phr) {
+      const memberType = await prisma.philHealthMemberType.findUnique({ where: { id: phr.memberTypeId }, include: { Parent: true } })
       if (memberType?.name) {
         const memberTypeCheckboxMap: Record<string, string> = {
           'EMPLOYED PRIVATE': 'memberTypeEmployedPrivate',
@@ -165,9 +191,9 @@ export const downloadPMRFAction = withErrorHandling(async (userId: string) => {
         })
       }
     }
-  } catch (error) {
+  } catch (error: unknown) {
     // log member type retrieval errors for debugging
-    console.error("Failed to map member type:", error)
+    logger.error("Failed to map member type:", error)
   }
 
   const pdf = await generatePdf('PhilHealth_Member_Registration_Form.pdf', textMappings, checkboxMappings, `PHR_Form_${user.firstName || 'Member'}_${user.lastName || ''}`)

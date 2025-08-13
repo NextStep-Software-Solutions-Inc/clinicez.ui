@@ -9,9 +9,28 @@ const Prescriptions = dynamic(() => import("@components/Prescriptions"), {
 });
 
 export default function PrescriptionsWrapper(props: Partial<PrescriptionsProps>) {
-  const { consultationTicketId, clinicUid, hpIds, patientId, userInfo } = props;
-  if (!consultationTicketId || !clinicUid || !hpIds || hpIds.length === 0 || patientId === undefined || userInfo === undefined) {
+  const hasRequiredPrescriptionProps = (
+    p: Partial<PrescriptionsProps>
+  ): p is Pick<PrescriptionsProps, "consultationTicketId" | "clinicUid" | "hpIds" | "patientId" | "userInfo"> => {
+    return (
+      typeof p.consultationTicketId === "number" &&
+      typeof p.clinicUid === "string" &&
+      Array.isArray(p.hpIds) && p.hpIds.length > 0 &&
+      typeof p.patientId === "number" &&
+      typeof p.userInfo === "object" && p.userInfo !== null
+    )
+  }
+  if (!hasRequiredPrescriptionProps(props)) {
     return <div className="text-sm text-muted-foreground">Select a consultation to view prescriptions.</div>;
   }
-  return <Prescriptions consultationTicketId={consultationTicketId} clinicUid={clinicUid} hpIds={hpIds} patientId={patientId} userInfo={userInfo} />;
+  const { consultationTicketId, clinicUid, hpIds, patientId, userInfo } = props;
+  return (
+    <Prescriptions
+      consultationTicketId={consultationTicketId}
+      clinicUid={clinicUid}
+      hpIds={hpIds}
+      patientId={patientId}
+      userInfo={userInfo}
+    />
+  );
 }

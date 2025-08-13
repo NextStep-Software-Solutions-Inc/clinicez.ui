@@ -209,13 +209,6 @@ export const getUserAction = withErrorHandling(cache(async (key: string, orgUid?
       ClinicMembers: {
         where: {},
       },
-      PhilHealthRecord: {
-        distinct: ['userId'],
-        take: 1,
-        where: {
-          isActive: true,
-        },
-      },
       OrganizationMembers: {
         where: {
           Organization: {

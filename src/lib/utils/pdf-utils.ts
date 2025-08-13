@@ -3,6 +3,7 @@
 import path from "path"
 import fs from "fs"
 import { PDFDocument } from "pdf-lib"
+import { logger } from "@/lib/logger"
 
 export interface LoadPdfResult {
   pdfDoc: PDFDocument
@@ -36,8 +37,8 @@ export async function fillTextFields(form: ReturnType<PDFDocument["getForm"]>, m
       textField.setText(String(value))
       textField.setFontSize(fontSize)
       filled++
-    } catch (error) {
-      console.error(`Error filling text field "${field}": ${error}`);
+    } catch (error: unknown) {
+      logger.error(`Error filling text field "${field}":`, error)
     }
   }
   return filled
@@ -52,8 +53,8 @@ export async function processCheckboxes(form: ReturnType<PDFDocument["getForm"]>
       const cb = form.getCheckBox(field)
       condition ? cb.check() : cb.uncheck()
       processed++
-    } catch (error) {
-      console.error(`Error processing checkbox "${field}":`, error)
+    } catch (error: unknown) {
+      logger.error(`Error processing checkbox "${field}":`, error)
     }
   }
   return processed

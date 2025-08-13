@@ -11,6 +11,7 @@ import { uploadMediaAction } from "@/actions/blob.action";
 import { updatePhilHealthRecordPhotoAction } from "@/actions/philhealth/philhealth-record.action";
 import { revalidatePath } from "@/actions/cache.action";
 import { toast } from "sonner";
+import logger from "@/lib/logger";
 
 interface PhilHealthPhotoProps {
   userUid: string;
@@ -19,8 +20,8 @@ interface PhilHealthPhotoProps {
   readonly?: boolean;
 }
 
-// Target output size (square)
-const TARGET_SIZE = 400; // px
+// Target output size for the cropped photo (square)
+const PHOTO_TARGET_SIZE_PX = 400;
 const MAX_FILE_MB = 5;
 
 export function PhilHealthPhoto({ userUid, philHealthRecordId, existingUrl, readonly }: PhilHealthPhotoProps) {
@@ -105,8 +106,8 @@ export function PhilHealthPhoto({ userUid, philHealthRecordId, existingUrl, read
       if (!imgEl) return;
       // create temp canvas for output
       const out = document.createElement("canvas");
-      out.width = TARGET_SIZE;
-      out.height = TARGET_SIZE;
+      out.width = PHOTO_TARGET_SIZE_PX;
+      out.height = PHOTO_TARGET_SIZE_PX;
       const ctx = out.getContext("2d");
       if (!ctx) return;
 
@@ -120,8 +121,8 @@ export function PhilHealthPhoto({ userUid, philHealthRecordId, existingUrl, read
       // draw image to square canvas
       // ensure a white background for JPEG to avoid unexpected transparency from PNGs
       ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, TARGET_SIZE, TARGET_SIZE);
-      ctx.drawImage(imgEl, sx, sy, sSize, sSize, 0, 0, TARGET_SIZE, TARGET_SIZE);
+      ctx.fillRect(0, 0, PHOTO_TARGET_SIZE_PX, PHOTO_TARGET_SIZE_PX);
+      ctx.drawImage(imgEl, sx, sy, sSize, sSize, 0, 0, PHOTO_TARGET_SIZE_PX, PHOTO_TARGET_SIZE_PX);
 
       const blob: Blob = await new Promise((res) => out.toBlob(b => res(b as Blob), "image/jpeg", 0.85));
       const croppedFile = new File([blob], file?.name.replace(/\.(png|jpg|jpeg)$/i, "") + "-cropped.jpg", { type: "image/jpeg" });
@@ -137,8 +138,8 @@ export function PhilHealthPhoto({ userUid, philHealthRecordId, existingUrl, read
       toast.dismiss();
       toast.success("Photo saved");
       setOpen(false);
-    } catch (e) {
-      console.error(e);
+    } catch (e: unknown) {
+      logger.error("Failed to process photo", e);
       toast.dismiss();
       toast.error("Failed to process photo");
     }
@@ -187,7 +188,7 @@ export function PhilHealthPhoto({ userUid, philHealthRecordId, existingUrl, read
                     <canvas ref={canvasRef} className="absolute inset-0 cursor-move" onMouseDown={handleMouseDown} />
                   </div>
                 )}
-                <p className="text-xs text-muted-foreground">Drag the square to position. Output is a {TARGET_SIZE}x{TARGET_SIZE} JPEG.</p>
+                <p className="text-xs text-muted-foreground">Drag the square to position. Output is a {PHOTO_TARGET_SIZE_PX}x{PHOTO_TARGET_SIZE_PX} JPEG.</p>
               </div>
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>

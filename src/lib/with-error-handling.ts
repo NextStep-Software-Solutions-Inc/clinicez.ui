@@ -39,8 +39,9 @@ export function withErrorHandling<TData, A extends unknown[]>(
       if (customErrorHandler) {
         const maybe = customErrorHandler(error, { functionName: fn.name, args });
         const m = maybe instanceof Promise ? await maybe : maybe;
-        if (m !== undefined && m !== null) message = m.toString();
-      };
+        const resolvedMessage = maybe instanceof Promise ? await maybe : maybe;
+        if (resolvedMessage !== undefined && resolvedMessage !== null) message = resolvedMessage.toString();
+      }
       return { status: false, message, data: null };
     }
   };

@@ -4,12 +4,17 @@ import { withErrorHandling } from "@/lib/with-error-handling"
 import { generatePdf, buildFullName, buildAddress, resolvePreferredKonsultaProvider } from "./utils/philhealth-pdf"
 import { getUserAction } from "@/actions/users/user.action"
 
+type PrimaryAddress = { subdivision?: string | null; street?: string | null; apartmentUnit?: string | null; barangay?: string | null; city?: string | null; state?: string | null }
+function hasUserAddresses(u: unknown): u is { UserAddresses?: PrimaryAddress[] } {
+  return !!u && typeof u === "object" && "UserAddresses" in (u as Record<string, unknown>)
+}
+
 export const downloadPPCFAction = withErrorHandling(async (userId?: string) => {
   if (!userId) return { message: "User ID required", data: null }
   const userRes = await getUserAction(userId)
   const user = userRes.data
   if (!user) throw new Error("User not found")
-  const primary = user.UserAddresses?.[0]
+  const primary: PrimaryAddress | undefined = hasUserAddresses(user) ? user.UserAddresses?.[0] : undefined
   const provider = await resolvePreferredKonsultaProvider(userId)
   const today = new Date().toISOString().split('T')[0]
   // Address splitting logic: line 1 = first non-empty of subdivision/street/apartmentUnit; line 2 = barangay, city, state joined

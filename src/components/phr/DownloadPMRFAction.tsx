@@ -10,24 +10,10 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/
 import { Button } from "../ui/button"
 import { Download, ChevronDown, DownloadIcon } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { toBlobDownload } from '@/lib/utils/download'
 
 interface DownloadPMRFActionProps { userId: string; children?: React.ReactNode }
 
-const toBlobDownload = (base64: string, filename: string) => {
-  const byteCharacters = atob(base64)
-  const byteNumbers = new Array(byteCharacters.length)
-  for (let i = 0; i < byteCharacters.length; i++) byteNumbers[i] = byteCharacters.charCodeAt(i)
-  const byteArray = new Uint8Array(byteNumbers)
-  const blob = new Blob([byteArray], { type: 'application/pdf' })
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = filename
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-  URL.revokeObjectURL(url)
-}
 
 const DownloadPMRFAction: React.FC<DownloadPMRFActionProps> = ({ userId, children }) => {
   const handlePMRFDownload = async () => {

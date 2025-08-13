@@ -27,7 +27,8 @@ export const downloadPMRFAction = withErrorHandling(async (userId: string) => {
   const dayStr = dobDate ? String(dobDate.getDate()).padStart(2, "0") : "";
   const yearStr = dobDate ? String(dobDate.getFullYear()).padStart(4, "0") : "";
 
-  const spaced = (value: string) => value ? " " + value.split("").join("     ") : undefined; // leading space + 3 spaces between digits
+  const DIGIT_SPACING = "   " // 3 spaces between digits
+  const spaced = (value: string) => value ? " " + value.split("").join(DIGIT_SPACING) : undefined; // leading space + 3 spaces between digits
   const dateOfBirthMonth = spacedDigits(monthStr)
   const dateOfBirthDay = spacedDigits(dayStr)
   const dateOfBirthYear = spacedDigits(yearStr)
@@ -117,8 +118,9 @@ export const downloadPMRFAction = withErrorHandling(async (userId: string) => {
         )
       })
     }
-  } catch {
-    // ignore dependents errors silently
+  } catch (error) {
+    // log dependents retrieval errors for debugging
+    console.error("Failed to map dependents:", error)
   }
 
   // Member type checkbox mapping (supports parent-child hierarchy)
@@ -163,8 +165,9 @@ export const downloadPMRFAction = withErrorHandling(async (userId: string) => {
         })
       }
     }
-  } catch {
-    // ignore member type errors
+  } catch (error) {
+    // log member type retrieval errors for debugging
+    console.error("Failed to map member type:", error)
   }
 
   const pdf = await generatePdf('PhilHealth_Member_Registration_Form.pdf', textMappings, checkboxMappings, `PHR_Form_${user.firstName || 'Member'}_${user.lastName || ''}`)

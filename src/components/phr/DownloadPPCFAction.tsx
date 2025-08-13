@@ -7,24 +7,9 @@ import { downloadPPCFAction } from '@/actions/phr/download-ppcf.action'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip'
 import { Button } from '../ui/button'
 import { Download } from 'lucide-react'
+import { toBlobDownload } from '@/lib/utils/download'
 
 interface DownloadPPCFActionProps { userId?: string; children?: React.ReactNode }
-
-const toBlobDownload = (base64: string, filename: string) => {
-  const binary = atob(base64)
-  const len = binary.length
-  const bytes = new Uint8Array(len)
-  for (let i = 0; i < len; i++) bytes[i] = binary.charCodeAt(i)
-  const blob = new Blob([bytes], { type: 'application/pdf' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = filename
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
-  URL.revokeObjectURL(url)
-}
 
 const DownloadPPCFAction: React.FC<DownloadPPCFActionProps> = ({ userId, children }) => {
   const handleDownload = async () => {

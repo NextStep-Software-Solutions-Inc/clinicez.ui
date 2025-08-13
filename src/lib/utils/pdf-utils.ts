@@ -36,7 +36,9 @@ export async function fillTextFields(form: ReturnType<PDFDocument["getForm"]>, m
       textField.setText(String(value))
       textField.setFontSize(fontSize)
       filled++
-    } catch { }
+    } catch (error) {
+      console.error(`Error filling text field "${field}": ${error}`);
+    }
   }
   return filled
 }
@@ -50,7 +52,9 @@ export async function processCheckboxes(form: ReturnType<PDFDocument["getForm"]>
       const cb = form.getCheckBox(field)
       condition ? cb.check() : cb.uncheck()
       processed++
-    } catch { }
+    } catch (error) {
+      console.error(`Error processing checkbox "${field}":`, error)
+    }
   }
   return processed
 }

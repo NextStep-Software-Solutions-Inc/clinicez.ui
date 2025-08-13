@@ -7,23 +7,9 @@ import { downloadPKRFAction } from '@/actions/phr/download-pkrf.action'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip'
 import { Button } from '../ui/button'
 import { Download } from 'lucide-react'
+import { toBlobDownload } from '@/lib/utils/download'
 
 interface DownloadPKRFActionProps { userId: string; children?: React.ReactNode }
-
-const toBlobDownload = (base64: string, filename: string) => {
-  const bin = atob(base64)
-  const arr = new Uint8Array(bin.length)
-  for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i)
-  const blob = new Blob([arr], { type: 'application/pdf' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = filename
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
-  URL.revokeObjectURL(url)
-}
 
 const DownloadPKRFAction: React.FC<DownloadPKRFActionProps> = ({ userId, children }) => {
   const handleDownload = async () => {

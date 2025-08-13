@@ -117,5 +117,6 @@ export function mapSequentialFields(prefix: string, digits: string[], padTo: num
 
 export function spacedDigits(value: string): string | undefined {
   if (!value) return undefined
-  return " " + value.split("").join("   ")
+  const DIGIT_SPACING = "   " // 3 spaces between digits
+  return " " + value.split("").join(DIGIT_SPACING)
 }

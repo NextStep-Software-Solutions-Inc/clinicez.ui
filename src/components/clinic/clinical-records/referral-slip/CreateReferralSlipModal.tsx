@@ -429,7 +429,7 @@ export default function CreateReferralSlipModal({
                             onSelect={(option) => {
                               field.onChange(option.label);
                             }}
-                            renderOption={(option: any) => (
+                            renderOption={(option) => (
                               <div className="flex items-center justify-between w-full">
                                 <span>{option.label}</span>
                                 {option.type === 'healthcare_provider' && typeof option.specialty === "string" && (

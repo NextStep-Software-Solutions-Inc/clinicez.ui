@@ -170,7 +170,20 @@ export function PhilHealthPhoto({ userUid, philHealthRecordId, existingUrl, read
                 </div>
                 {preview && (
                   <div className="relative border rounded" ref={containerRef} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
-                    <Image ref={imgRef as any} src={preview} alt="Preview" width={600} height={400} className="max-h-[400px] w-auto select-none" draggable={false} onLoad={drawOverlay} />
+                    <Image
+                      src={preview}
+                      alt="Preview"
+                      width={600}
+                      height={400}
+                      className="max-h-[400px] w-auto select-none"
+                      draggable={false}
+                      onLoad={(e) => {
+                        // Derive the underlying img element for sizing
+                        const target = e.currentTarget as HTMLImageElement
+                        imgRef.current = target
+                        drawOverlay()
+                      }}
+                    />
                     <canvas ref={canvasRef} className="absolute inset-0 cursor-move" onMouseDown={handleMouseDown} />
                   </div>
                 )}

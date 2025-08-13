@@ -32,7 +32,7 @@ export default function EmergencyContactForm({ contacts, sessionUserId, readOnly
       relationship: "",
       phone: "",
       isPrimary,
-      address: null as string | null,
+      address: null,
     }
     toast.promise(createEmergencyContactAction(sessionUserId, contact), {
       loading: `Adding ${isPrimary ? "Primary" : "Secondary"} contact...`,

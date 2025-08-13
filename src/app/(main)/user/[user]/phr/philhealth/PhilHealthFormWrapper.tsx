@@ -28,7 +28,9 @@ export default async function PhilHealthFormWrapper({ userUid, readonly }: PhilH
         philSysId: existing.data.philSysId ?? undefined,
         tin: existing.data.tin ?? undefined,
         memberTypeId: existing.data.memberTypeId,
-        photoUrl: (existing.data as any).photoUrl ?? undefined,
+        photoUrl: ('photoUrl' in existing.data
+          ? (existing.data as { photoUrl?: string | null }).photoUrl ?? undefined
+          : undefined),
       };
     }
   } catch {

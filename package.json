@@ -18,6 +18,7 @@
     "vercel-build": "prisma deploy && next build",
     "postinstall": "prisma generate",
     "migrate": "prisma migrate dev"
+  ,"seed:philhealth": "node prisma/seed-philhealth-member-types.js"
   },
   "dependencies": {
     "@auth0/nextjs-auth0": "^4.7.0",

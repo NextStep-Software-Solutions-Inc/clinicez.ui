@@ -56,6 +56,10 @@ export const personalInformationFormSchema = z.object({
   }).refine(date => date <= startOfToday(), {
     message: "Date of birth cannot be in the future.",
   }),
+  placeOfBirth: z.string({
+    message: "Where were you born?"
+  }).optional()
+    .transform((e) => e === "" ? undefined : e),
 })
-  
+
 export type PersonalInformationFormValues = z.infer<typeof personalInformationFormSchema>

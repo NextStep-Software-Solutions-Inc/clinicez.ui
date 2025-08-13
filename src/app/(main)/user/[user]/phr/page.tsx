@@ -32,7 +32,6 @@ export default async function PHRPage({ params, searchParams }: PHRPageProps) {
             Update your basic information to help you identify your account in your organization.
           </p>
         </div>
-        <DownloadPMRFAction userId={userId} />
       </div>
       <Separator />
       <Suspend>

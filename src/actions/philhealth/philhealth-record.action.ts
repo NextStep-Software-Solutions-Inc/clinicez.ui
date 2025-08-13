@@ -127,3 +127,13 @@ export const deletePhilHealthRecordAction = async (philHealthRecordId: number) =
   }
 
 };
+
+// Dedicated photo update action (so UI can upload photo separately without touching other fields)
+export const updatePhilHealthRecordPhotoAction = withErrorHandling(async ({ philHealthRecordId, photoUrl }: { philHealthRecordId: number; photoUrl: string }) => {
+  const session = await getCachedSession();
+  if (!session) throw new Error("Unauthorized");
+  // Use a parameterized raw update to avoid transient client type drift, then fetch the updated record
+  await prisma.$executeRaw`UPDATE "PhilHealthRecord" SET "photoUrl" = ${photoUrl} WHERE "id" = ${philHealthRecordId}`;
+  const record = await prisma.philHealthRecord.findUnique({ where: { id: philHealthRecordId } });
+  return { message: "PhilHealth record photo updated successfully", data: record };
+});

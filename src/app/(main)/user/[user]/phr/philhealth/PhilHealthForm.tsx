@@ -25,6 +25,7 @@ interface PhilHealthFormProps {
     philSysId?: string;
     tin?: string;
     memberTypeId?: number;
+    photoUrl?: string;
   };
   memberTypes?: PhilHealthMemberType[]; // optional preloaded server data
 }

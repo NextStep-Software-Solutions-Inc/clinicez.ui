@@ -32,11 +32,7 @@ export default async function PhilHealthPage(props: AppRouterPageRouteOpts) {
       <Separator />
       <Suspend>
         <div className="space-y-10">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1">
-              <PhilHealthFormWrapper userUid={userId} readonly={!userOwner} />
-            </div>
-          </div>
+          <PhilHealthFormWrapper userUid={userId} readonly={!userOwner} />
           <Separator />
           <DependentsSection userUid={userId} readonly={!userOwner} />
         </div>

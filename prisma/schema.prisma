@@ -135,6 +135,7 @@ model PhilHealthRecord {
   tin          String? @unique
   philSysId    String? @unique
   memberTypeId Int
+  photoUrl     String? // Optional photo specific to PhilHealth record
   isActive     Boolean @default(true)
 
   createdAt DateTime  @default(now())

@@ -125,7 +125,7 @@ model User {
   PhilHealthRecordsCreated   PhilHealthRecord[]         @relation("PhilHealthRecordsCreatedBy")
   PhilHealthRecordsUpdated   PhilHealthRecord[]         @relation("PhilHealthRecordsUpdatedBy")
   PhilHealthRecordsDeleted   PhilHealthRecord[]         @relation("PhilHealthRecordsDeletedBy")
-  PhilHealthRecord           PhilHealthRecord[]
+  PhilHealthRecords          PhilHealthRecord[]
 }
 
 model PhilHealthRecord {

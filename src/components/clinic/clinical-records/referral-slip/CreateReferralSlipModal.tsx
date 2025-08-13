@@ -399,7 +399,7 @@ export default function CreateReferralSlipModal({
                             renderOption={(option) => (
                               <div className="flex flex-col">
                                 <span>{option.label}</span>
-                                {option.description && (
+                                {typeof option.description === "string" && (
                                   <span className="text-sm text-muted-foreground">{option.description}</span>
                                 )}
                               </div>
@@ -429,15 +429,15 @@ export default function CreateReferralSlipModal({
                             onSelect={(option) => {
                               field.onChange(option.label);
                             }}
-                            renderOption={(option) => (
+                            renderOption={(option: any) => (
                               <div className="flex items-center justify-between w-full">
                                 <span>{option.label}</span>
-                                {option.type === 'healthcare_provider' && option.specialty && (
+                                {option.type === 'healthcare_provider' && typeof option.specialty === "string" && (
                                   <Badge variant="secondary" className="ml-2">
                                     {option.specialty}
                                   </Badge>
                                 )}
-                                {option.type === 'clinic' && option.description && (
+                                {option.type === 'clinic' && typeof option.description === "string" && (
                                   <span className="text-xs text-muted-foreground ml-2 truncate">
                                     {option.description}
                                   </span>

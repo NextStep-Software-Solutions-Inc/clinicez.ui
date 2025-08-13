@@ -68,9 +68,18 @@ export async function resolvePreferredKonsultaProvider(userId: string): Promise<
 
 export interface GeneratedPdfResult { pdfData: string; filename: string }
 
-export async function generatePdf(template: string, texts: PdfTextMapping[], checkboxes?: PdfCheckboxMapping[], filenameBase?: string): Promise<GeneratedPdfResult> {
+export interface GeneratePdfOptions { textFontSize?: number }
+
+export async function generatePdf(
+  template: string,
+  texts: PdfTextMapping[],
+  checkboxes?: PdfCheckboxMapping[],
+  filenameBase?: string,
+  options?: GeneratePdfOptions
+): Promise<GeneratedPdfResult> {
   const { pdfDoc, form } = await loadPhilHealthPdf(template)
-  await fillTextFields(form, texts)
+  const fontSize = options?.textFontSize
+  await fillTextFields(form, texts, fontSize)
   if (checkboxes?.length) await processCheckboxes(form, checkboxes)
   form.updateFieldAppearances()
   const bytes = await pdfDoc.save()
@@ -95,4 +104,18 @@ export async function getSpouseAndMother(userId: string) {
   const spouse = contacts.find(c => c.isPrimary && c.relationship.toLowerCase() === "spouse")
   const mother = contacts.find(c => c.isPrimary && c.relationship.toLowerCase() === "mother")
   return { spouse: parseFullName(spouse?.name), mother: parseFullName(mother?.name) }
+}
+
+// ---- Shared helpers for splitting identifiers (PhilSys ID / TIN / Date components) ----
+export function extractDigits(value: string | null | undefined, max: number): string[] {
+  return (value || "").replace(/\D/g, "").slice(0, max).split("")
+}
+
+export function mapSequentialFields(prefix: string, digits: string[], padTo: number): { field: string; value: string | undefined }[] {
+  return Array.from({ length: padTo }, (_, i) => ({ field: `${prefix}_${i + 1}`, value: digits[i] || undefined }))
+}
+
+export function spacedDigits(value: string): string | undefined {
+  if (!value) return undefined
+  return " " + value.split("").join("   ")
 }

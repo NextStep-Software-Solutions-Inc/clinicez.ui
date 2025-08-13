@@ -12,10 +12,19 @@ export const downloadPPCFAction = withErrorHandling(async (userId?: string) => {
   const primary = user.UserAddresses?.[0]
   const provider = await resolvePreferredKonsultaProvider(userId)
   const today = new Date().toISOString().split('T')[0]
+  // Address splitting logic: line 1 = first non-empty of subdivision/street/apartmentUnit; line 2 = barangay, city, state joined
+  let addressLine1 = ''
+  let addressLine2 = ''
+  if (primary) {
+    addressLine1 = [primary.subdivision, primary.street, primary.apartmentUnit].find(v => v && v.trim()) || ''
+    const trail = [primary.barangay, primary.city, primary.state].filter(v => v && v.trim())
+    addressLine2 = trail.join(', ')
+  }
   const texts = [
-    { field: 'memberFullName', value: buildFullName({ firstName: user.firstName || undefined, middleName: user.middleName || undefined, lastName: user.lastName || undefined, nameExtension: user.suffix || undefined }) },
-    { field: 'memberAddress', value: buildAddress(primary) },
-    { field: 'preferredKonsultaProvider', value: provider },
+    { field: 'memberFullName', value: buildFullName({ firstName: user.firstName || undefined, middleName: user.middleName || undefined, lastName: user.lastName || undefined, nameExtension: user.suffix || undefined }).toUpperCase() },
+    { field: 'memberAddress_1', value: addressLine1 ? addressLine1.toUpperCase() : undefined },
+    { field: 'memberAddress_2', value: addressLine2 ? addressLine2.toUpperCase() : undefined },
+    { field: 'preferredKonsultaProvider', value: provider?.toUpperCase() },
     { field: 'Date_1', value: today },
     { field: 'Date_2', value: today },
   ]

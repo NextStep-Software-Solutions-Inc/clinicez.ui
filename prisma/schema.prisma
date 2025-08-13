@@ -50,6 +50,7 @@ model User {
   bloodType                        BloodType?
   civilStatus                      CivilStatus?
   dob                              DateTime?                        @db.Date
+  placeOfBirth                     String?
   firstName                        String?
   gender                           Gender?
   lastName                         String?
@@ -621,10 +622,16 @@ model ClinicFileType {
 }
 
 model UserEmergencyContact {
-  id           Int       @id @default(autoincrement())
-  userId       Int
-  isPrimary    Boolean   @default(true)
-  name         String
+  id        Int     @id @default(autoincrement())
+  userId    Int
+  isPrimary Boolean @default(true)
+  name      String // remains for backward compatibility
+
+  firstName  String
+  middleName String?
+  lastName   String?
+  suffix     String?
+
   relationship String
   phone        String
   createdAt    DateTime  @default(now())
@@ -636,10 +643,18 @@ model UserEmergencyContact {
 }
 
 model UserAddress {
-  id        Int       @id @default(autoincrement())
+  id        Int     @id @default(autoincrement())
   userId    Int
-  isPrimary Boolean   @default(true)
-  address   String
+  isPrimary Boolean @default(true)
+  address   String // remains for backward compatibility
+
+  apartmentUnit String?
+  bldgName      String?
+  addressLine   String?
+  street        String?
+  subdivision   String?
+  barangay      String?
+
   city      String
   state     String
   zipCode   String
@@ -1616,6 +1631,7 @@ model Prescription {
   createdAt            DateTime  @default(now())
   updatedBy            Int?
   updatedAt            DateTime  @updatedAt
+  // deletedAt            DateTime?
 
   ClinicPatient      ClinicPatient?      @relation(fields: [patientId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   ConsultationTicket ConsultationTicket? @relation(fields: [consultationTicketId], references: [id], onDelete: NoAction, onUpdate: NoAction)

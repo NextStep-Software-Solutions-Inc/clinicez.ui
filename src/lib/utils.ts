@@ -16,7 +16,7 @@ export const hasCodeProperty = (error: unknown): error is { code: string } => {
   return typeof error === 'object' && error !== null && 'code' in error;
 }
 
-export const hasContextProperty = (context: unknown): context is { functionName: string, args: any[] } => {
+export const hasContextProperty = (context: unknown): context is { functionName: string, args: unknown[] } => {
   return typeof context === 'object' && context !== null && 'functionName' in context && 'args' in context;
 }
 

@@ -4,11 +4,11 @@ import React from "react"
 import { Input } from "./input"
 import { cn } from "@/lib/utils"
 
-export interface SearchableDropdownOption {
-  value: string | number
-  label: string
-  [key: string]: any
-}
+export type BaseSearchableOption = { value: string | number; label: string };
+export type HealthcareProviderOption = BaseSearchableOption & { type: 'healthcare_provider'; specialty?: string };
+export type ClinicOption = BaseSearchableOption & { type: 'clinic'; description?: string };
+export type GenericOption = BaseSearchableOption & { type?: undefined; description?: string; specialty?: string };
+export type SearchableDropdownOption = HealthcareProviderOption | ClinicOption | GenericOption;
 
 export interface SearchableDropdownGroup {
   title: string

@@ -44,7 +44,7 @@ const nextConfig = {
   env: {
     APP_BASE_URL:
       process.env.VERCEL_ENV === "preview"
-        ? `https://${process.env.VERCEL_BRANCH_URL}`
+        ? `https://${process.env.VERCEL_BRANCH_URL}/secret`
         : "process.env.APP_BASE_URL"
   }
 };

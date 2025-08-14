@@ -75,12 +75,20 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
               <Suspend>
                 <PatientsAnalytics orgUid={clinicUid} />
               </Suspend>
-              <Suspend>
-                <Reports clinicUid={clinicUid} />
-              </Suspend>
               {/* <Suspend>
                 <OrgMembershipAnalytics orgUid={clinicUid}/>
               </Suspend> */}
+            </TabsContent>
+            <TabsContent value="reports" className="space-y-4">
+              <Suspend>
+                <Reports clinicUid={clinicUid} />
+              </Suspend>
+            </TabsContent>
+            <TabsContent value="notifications" className="space-y-4">
+              <div className="space-y-4">
+                <h2 className="text-2xl font-bold">Notifications</h2>
+                <p className="text-muted-foreground">Notifications functionality is under development.</p>
+              </div>
             </TabsContent>
           </Tabs>
         </div>

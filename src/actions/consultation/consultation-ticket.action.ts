@@ -317,7 +317,27 @@ export const getConsultationTicketsAction = withErrorHandling(async (filters: Ge
         }
       },
       appointmentId: true,
-      ConsultationTicketHPs: true,
+      ConsultationTicketHPs: {
+        select: {
+          HealthCareProvider: {
+            select: {
+              id: true,
+              User: {
+                select: {
+                  firstName: true,
+                  lastName: true,
+                }
+              },
+              HPProfile: {
+                select: {
+                  name: true,
+                  title: true,
+                }
+              }
+            }
+          }
+        }
+      },
       createdAt: true,
       updatedAt: true,
       isArchived: true,
@@ -348,6 +368,16 @@ export const getConsultationTicketsAction = withErrorHandling(async (filters: Ge
                   email: true,
                   gender: true,
                   dob: true,
+                  StudentRecords: {
+                    select: {
+                      Program: {
+                        select: {
+                          id: true,
+                          name: true,
+                        }
+                      }
+                    }
+                  },
                   OrganizationMembers: {
                     select: {
                       OrganizationRole: {
@@ -362,6 +392,7 @@ export const getConsultationTicketsAction = withErrorHandling(async (filters: Ge
               }
             }
           },
+          complaint: true,
           AppointmentAttribute: {
             select: {
               id: true,

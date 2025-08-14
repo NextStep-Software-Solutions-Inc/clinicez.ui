@@ -50,6 +50,7 @@ model User {
   bloodType                        BloodType?
   civilStatus                      CivilStatus?
   dob                              DateTime?                        @db.Date
+  placeOfBirth                     String?
   firstName                        String?
   gender                           Gender?
   lastName                         String?
@@ -121,6 +122,72 @@ model User {
   PrescriptionsUpdated       Prescription[]             @relation("PrescriptionUpdatedBy")
   MedicinesCreated           Medicine[]                 @relation("MedicineCreatedBy")
   MedicinesUpdated           Medicine[]                 @relation("MedicineUpdatedBy")
+  PhilHealthRecordsCreated   PhilHealthRecord[]         @relation("PhilHealthRecordsCreatedBy")
+  PhilHealthRecordsUpdated   PhilHealthRecord[]         @relation("PhilHealthRecordsUpdatedBy")
+  PhilHealthRecordsDeleted   PhilHealthRecord[]         @relation("PhilHealthRecordsDeletedBy")
+  PhilHealthRecords          PhilHealthRecord[]
+}
+
+model PhilHealthRecord {
+  id           Int     @id @default(autoincrement())
+  userId       Int
+  pin          String  @unique
+  tin          String? @unique
+  philSysId    String? @unique
+  memberTypeId Int
+  photoUrl     String? // Optional photo specific to PhilHealth record
+  isActive     Boolean @default(true)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // audit
+  createdBy Int?
+  updatedBy Int?
+  deletedBy Int?
+
+  User                 User                  @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  createdByUser        User?                 @relation("PhilHealthRecordsCreatedBy", fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  updatedByUser        User?                 @relation("PhilHealthRecordsUpdatedBy", fields: [updatedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  deletedByUser        User?                 @relation("PhilHealthRecordsDeletedBy", fields: [deletedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  PhilHealthMemberType PhilHealthMemberType  @relation(fields: [memberTypeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  PhilHealthDependents PhilHealthDependent[]
+}
+
+model PhilHealthMemberType {
+  id       Int                      @id @default(autoincrement())
+  name     String                   @unique
+  category PhilHealthMemberCategory @default(DIRECT) // DIRECT, INDIRECT
+  parentId Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  isActive Boolean @default(true)
+
+  // Category with or without subcategories
+  Parent            PhilHealthMemberType?  @relation("PhilHealthMemberTypeParent", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Children          PhilHealthMemberType[] @relation("PhilHealthMemberTypeParent")
+  PhilHealthRecords PhilHealthRecord[]
+}
+
+model PhilHealthDependent {
+  id                 Int       @id @default(autoincrement())
+  philHealthRecordId Int
+  firstName          String
+  middleName         String?
+  lastName           String?
+  suffix             String?
+  relationship       String?
+  dob                DateTime?
+  gender             Gender?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  PhilHealthRecord PhilHealthRecord @relation(fields: [philHealthRecordId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model ClinicPatient {
@@ -621,10 +688,16 @@ model ClinicFileType {
 }
 
 model UserEmergencyContact {
-  id           Int       @id @default(autoincrement())
-  userId       Int
-  isPrimary    Boolean   @default(true)
-  name         String
+  id        Int     @id @default(autoincrement())
+  userId    Int
+  isPrimary Boolean @default(true)
+  name      String // remains for backward compatibility
+
+  firstName  String
+  middleName String?
+  lastName   String?
+  suffix     String?
+
   relationship String
   phone        String
   createdAt    DateTime  @default(now())
@@ -636,10 +709,18 @@ model UserEmergencyContact {
 }
 
 model UserAddress {
-  id        Int       @id @default(autoincrement())
+  id        Int     @id @default(autoincrement())
   userId    Int
-  isPrimary Boolean   @default(true)
-  address   String
+  isPrimary Boolean @default(true)
+  address   String // remains for backward compatibility
+
+  apartmentUnit String?
+  bldgName      String?
+  addressLine   String?
+  street        String?
+  subdivision   String?
+  barangay      String?
+
   city      String
   state     String
   zipCode   String
@@ -1056,6 +1137,11 @@ enum ReceiptCodeStatus {
   UNUSED
   USED
   EXPIRED
+}
+
+enum PhilHealthMemberCategory {
+  DIRECT
+  INDIRECT
 }
 
 model HealthcareProviderType {
@@ -1616,6 +1702,7 @@ model Prescription {
   createdAt            DateTime  @default(now())
   updatedBy            Int?
   updatedAt            DateTime  @updatedAt
+  // deletedAt            DateTime?
 
   ClinicPatient      ClinicPatient?      @relation(fields: [patientId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   ConsultationTicket ConsultationTicket? @relation(fields: [consultationTicketId], references: [id], onDelete: NoAction, onUpdate: NoAction)

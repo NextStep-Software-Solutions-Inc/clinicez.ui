@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils"
 export interface SearchableDropdownOption {
   value: string | number
   label: string
-  [key: string]: any
+  [key: string]: unknown
 }
 
 export interface SearchableDropdownProps {

@@ -12,11 +12,20 @@ export const capitalize = (str: string): string => {
   return str.replace(/\b\w/g, char => char.toUpperCase());
 };
 
+// Normalize optional values
+export const normalizeOptional = <T>(value: T | undefined | null): T | undefined => {
+  if (value === undefined || value === null) return undefined;
+
+  if (typeof value === "string" && value.trim() === "") return undefined;
+
+  return value;
+};
+
 export const hasCodeProperty = (error: unknown): error is { code: string } => {
   return typeof error === 'object' && error !== null && 'code' in error;
 }
 
-export const hasContextProperty = (context: unknown): context is { functionName: string, args: any[] } => {
+export const hasContextProperty = (context: unknown): context is { functionName: string, args: unknown[] } => {
   return typeof context === 'object' && context !== null && 'functionName' in context && 'args' in context;
 }
 
@@ -56,7 +65,7 @@ export const getGridCols = (length: number) => {
  * @example
  * const obj = { name: 'John', age: '25', isStudent: 'true', tags: '["a","b"]', scores: '[1,2,3]' };
  * const parsed = parseObject(obj);
- * console.log(parsed); // { name: 'John', age: 25, isStudent: true, tags: ['a','b'], scores: [1,2,3] }
+ * Example parsed result: { name: 'John', age: 25, isStudent: true, tags: ['a','b'], scores: [1,2,3] }
  */
 export const parseObject = (obj: Record<string, string | string[]>) => {
   const parsed: Record<string, string | number | boolean | Array<string | number>> = {};

@@ -27,13 +27,13 @@ interface EditConsultationTicketModalProps extends DialogProps {
   children: React.ReactNode
 }
 
-const EditConsultationTicketModal = React.forwardRef<any, EditConsultationTicketModalProps>((props, ref) => {
+const EditConsultationTicketModal = React.forwardRef<HTMLDivElement, EditConsultationTicketModalProps>((props, ref) => {
   const { record, children, ...res } = props
   const closeBtnRef = useRef<HTMLInputElement>(null)
 
   const revalidate = async () => {
     // revalidatePath(`${record.orgUid}/consultations`,  "page")
-    mutate((key) =>  typeof key === 'string' && key.startsWith(`/api/clinics/${record.clinicUid}/consultations`), undefined, {
+    mutate((key) => typeof key === 'string' && key.startsWith(`/api/clinics/${record.clinicUid}/consultations`), undefined, {
       revalidate: true
     })
   }
@@ -50,7 +50,7 @@ const EditConsultationTicketModal = React.forwardRef<any, EditConsultationTicket
         return res.message
       },
       error: error => error
-    }) 
+    })
   }
 
   return (
@@ -58,12 +58,12 @@ const EditConsultationTicketModal = React.forwardRef<any, EditConsultationTicket
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <CustomModalContent 
+      <CustomModalContent
         className="sm:max-w-[525px]"
-        label="Update Consultation Ticket" 
+        label="Update Consultation Ticket"
         description="Fill in the fields below to update the consultation ticket."
       >
-        <form 
+        <form
           action={action}
           id="consultation-ticket-form"
           className="grid gap-4 py-4"
@@ -81,10 +81,10 @@ const EditConsultationTicketModal = React.forwardRef<any, EditConsultationTicket
           </div>
           <DialogFooter>
             <DialogClose asChild>
-              <input ref={closeBtnRef} type="hidden"  value="ok"/>
+              <input ref={closeBtnRef} type="hidden" value="ok" />
             </DialogClose>
             <ActionButton form="consultation-ticket-form" type="submit">
-            Save Changes
+              Save Changes
             </ActionButton>
           </DialogFooter>
         </form>

@@ -27,11 +27,15 @@ export async function getEmergencyContactAction(emergencyContactId: number) {
 
 
 export async function createEmergencyContactAction(userId: string, data: {
-    name: string;
-    relationship: string;
-    phone: string;
-    isPrimary: boolean;
-    address: string | null;
+  firstName: string;
+  middleName?: string;
+  lastName?: string;
+  suffix?: string;
+  name: string;
+  relationship: string;
+  phone: string;
+  isPrimary: boolean;
+  address: string | null;
 }) {
   return await prisma.userEmergencyContact.create({
     data: {
@@ -47,11 +51,11 @@ export async function createEmergencyContactAction(userId: string, data: {
 
 
 export async function updateEmergencyContactAction(emergencyContactId: number, data: {
-    name: string;
-    relationship: string;
-    phone: string;
-    isPrimary: boolean;
-    address: string | null;
+  name: string;
+  relationship: string;
+  phone: string;
+  isPrimary: boolean;
+  address: string | null;
 }) {
   return await prisma.userEmergencyContact.update({
     where: {
@@ -74,19 +78,27 @@ export const deleteEmergencyContactAction = async (emergencyContactId: number) =
 }
 
 export const upsertEmergencyContactAction = async (userId: string, data: {
-    id: number;
-    name: string;
-    relationship: string;
-    phone: string;
-    isPrimary: boolean;
-    address: string | null;
+  id: number;
+  firstName: string;
+  middleName?: string;
+  lastName?: string;
+  suffix?: string;
+  name: string;
+  relationship: string;
+  phone: string;
+  isPrimary: boolean;
+  address: string | null;
 }) => {
-  
+
   const res = await prisma.userEmergencyContact.upsert({
     where: {
       id: data.id,
     },
     create: {
+      firstName: data.firstName,
+      middleName: data.middleName,
+      lastName: data.lastName,
+      suffix: data.suffix,
       phone: data.phone,
       name: data.name,
       isPrimary: data.isPrimary,

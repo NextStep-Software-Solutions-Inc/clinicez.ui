@@ -5,7 +5,7 @@ export const auth0 = new Auth0Client({
   clientId: process.env.AUTH0_CLIENT_ID!,
   clientSecret: process.env.AUTH0_CLIENT_SECRET!,
   secret: process.env.AUTH0_SECRET!,
-  appBaseUrl: process.env.APP_BASE_URL!,
+  appBaseUrl: process.env.APP_BASE_URL ?? "secret",
   authorizationParameters: {
     audience: process.env.AUTH0_AUDIENCE,
     scope: process.env.AUTH0_SCOPE || 'openid profile email offline_access',

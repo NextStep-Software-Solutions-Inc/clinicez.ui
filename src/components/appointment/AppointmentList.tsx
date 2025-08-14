@@ -16,19 +16,19 @@ interface AppointmentListProps {
   appointments: GetAppointments["data"]
 }
 
-export const AppointmentList = forwardRef<any, AppointmentListProps>(({appointments},ref) => {
+export const AppointmentList = forwardRef<HTMLDivElement, AppointmentListProps>(({ appointments }, ref) => {
   const searchParams = useSearchParams()
   const appointmentId = searchParams.get("_appointment")
   const appointmentStatus = searchParams.get("_aptStatus")?.toLocaleLowerCase()
-  
+
   const setAppointment = (thisAptId: string) => {
-    if(appointmentId === thisAptId) return
+    if (appointmentId === thisAptId) return
     const searchParams = new URLSearchParams(window.location.search)
     searchParams.set("_appointment", thisAptId)
     window.history.pushState({}, "", `?${searchParams.toString()}`)
   }
-  
- 
+
+
   return (
     <ScrollArea ref={ref} className="flex-auto h-[100dvh]">
       <div className="flex flex-col gap-2 p-4 pt-0">
@@ -38,13 +38,13 @@ export const AppointmentList = forwardRef<any, AppointmentListProps>(({appointme
           render={(item) => {
             const getTransitionDate = () => {
               // base on appointment status get the date
-              if(appointmentStatus === "all") return dayjs(item.createdAt)
-              if(appointmentStatus === "pending") return dayjs(item.createdAt)
-              if(appointmentStatus === "completed") return dayjs(item.AppointmentAttribute?.completedAt)
-              if(appointmentStatus === "rejected") return dayjs(item.AppointmentAttribute?.rejectedAt)
-              if(appointmentStatus === "received") return dayjs(item.AppointmentAttribute?.receivedAt)
-              if(appointmentStatus === "rescheduled") return dayjs(item.AppointmentAttribute?.rescheduledAt)
-              if(appointmentStatus === "routed") return dayjs(item.updatedAt)
+              if (appointmentStatus === "all") return dayjs(item.createdAt)
+              if (appointmentStatus === "pending") return dayjs(item.createdAt)
+              if (appointmentStatus === "completed") return dayjs(item.AppointmentAttribute?.completedAt)
+              if (appointmentStatus === "rejected") return dayjs(item.AppointmentAttribute?.rejectedAt)
+              if (appointmentStatus === "received") return dayjs(item.AppointmentAttribute?.receivedAt)
+              if (appointmentStatus === "rescheduled") return dayjs(item.AppointmentAttribute?.rescheduledAt)
+              if (appointmentStatus === "routed") return dayjs(item.updatedAt)
               return dayjs(item.createdAt)
             }
             return (
@@ -92,7 +92,7 @@ export const AppointmentList = forwardRef<any, AppointmentListProps>(({appointme
                         <Separator orientation="vertical" className="h-4" />
                         {getTransitionDate().fromNow()}
                       </div>
-                      
+
                     </div>
                   </div>
                 </div>
@@ -112,7 +112,7 @@ export const AppointmentList = forwardRef<any, AppointmentListProps>(({appointme
                 </div>
                 <div className="flex items-center justify-end gap-2 w-full">
                   <span className="text-xs flex gap-1 items-center">
-                    <ArrowRight className="inline-block w-3 h-3"/>
+                    <ArrowRight className="inline-block w-3 h-3" />
                     {/* {item.AppointmentAttribute?.preferredAppointee} */}
                     {item.AppointmentAttribute?.date && item.AppointmentAttribute.timeStart && <span>{dayjs(combineDateTime(item.AppointmentAttribute.date, item.AppointmentAttribute.timeStart)).fromNow()}</span>}
                   </span>
@@ -127,7 +127,8 @@ export const AppointmentList = forwardRef<any, AppointmentListProps>(({appointme
                   </span>
                 </div>
               </button>
-            )}
+            )
+          }
           }
         />
       </div>

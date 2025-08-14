@@ -56,6 +56,8 @@ export function DataTable<TData extends NonNullable<GetConsultationTickets["data
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(initialColumnFilters ?? [])
   const [sorting, setSorting] = React.useState<SortingState>([])
 
+  // Removed debug log
+
   const table = useReactTable({
     data,
     columns,

@@ -1,7 +1,6 @@
 "use server";
 
 import "server-only";
-import prismaClient from "@/lib/prisma";
 import prisma from "@lib/prisma"
 import { getCachedSession } from "../session.action";
 import { withErrorHandling } from "@/lib/with-error-handling";
@@ -38,7 +37,7 @@ export const getClinicMembersAction = withErrorHandling(async (filters: GetClini
   if (!session) throw new Error("User not authenticated")
 
   const { clinicUid, roleName, status, userId } = filters;
-  const members = await prismaClient.clinicMember.findMany({
+  const members = await prisma.clinicMember.findMany({
     orderBy: {
       createdAt: "asc"
     },
@@ -86,7 +85,7 @@ export const suspendClinicMemberAction = withErrorHandling(async (clinicMemberId
   if (!session) throw new Error("User not authenticated")
 
   try {
-    await prismaClient.clinicMember.update({
+    await prisma.clinicMember.update({
       where: {
         id: clinicMemberId
       },
@@ -110,7 +109,7 @@ export const removeClinicMemberAction = withErrorHandling(async (clinicMemberId:
   if (!session) throw new Error("User not authenticated")
 
   try {
-    await prismaClient.clinicMember.delete({
+    await prisma.clinicMember.delete({
       where: {
         id: clinicMemberId,
         Role: {
@@ -135,7 +134,7 @@ export const updateClinicMemberRoleAction = withErrorHandling(async (clinicMembe
   if (!session) throw new Error("User not authenticated")
 
   try {
-    await prismaClient.clinicMember.update({
+    await prisma.clinicMember.update({
       where: {
         id: clinicMemberId,
         Role: {
@@ -172,7 +171,7 @@ export const addClinicMemberAction = withErrorHandling(async (payload: AddClinic
 
   try {
     // Start transaction
-    const result = await prismaClient.$transaction(async (prisma) => {
+    const result = await prisma.$transaction(async (prisma) => {
       const initialPermissions = await prisma.clinicRoleInitialPermission.findMany({
         where: {
           Clinic: {

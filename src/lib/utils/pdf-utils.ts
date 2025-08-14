@@ -1,7 +1,5 @@
 "use server"
 
-import path from "path"
-import fs from "fs"
 import { PDFDocument } from "pdf-lib"
 import { logger } from "@/lib/logger"
 

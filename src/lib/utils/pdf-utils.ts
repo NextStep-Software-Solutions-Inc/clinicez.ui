@@ -12,14 +12,24 @@ export interface LoadPdfResult {
   filePath: string
 }
 
+// simple in-memory cache for template bytes within a single runtime
+const templateCache = new Map<string, Uint8Array>()
+
 export async function loadPhilHealthPdf(fileName: string): Promise<LoadPdfResult> {
-  const filePath = path.resolve(process.cwd(), "pdfs", "phr", fileName)
-  if (!fs.existsSync(filePath)) throw new Error(`${fileName} template not found at ${filePath}`)
-  const raw = fs.readFileSync(filePath)
-  const bytes = new Uint8Array(raw)
+  // Prefer public assets path (Vercel-friendly); fallback to legacy root path for local dev
+  const publicPath = path.resolve(process.cwd(), "public", "pdfs", "phr", fileName)
+  const legacyPath = path.resolve(process.cwd(), "pdfs", "phr", fileName)
+  const chosenPath = fs.existsSync(publicPath) ? publicPath : (fs.existsSync(legacyPath) ? legacyPath : null)
+  if (!chosenPath) throw new Error(`PDF template not found: ${fileName}. Looked in public/pdfs/phr and pdfs/phr.`)
+  let bytes = templateCache.get(chosenPath)
+  if (!bytes) {
+    const raw = fs.readFileSync(chosenPath)
+    bytes = new Uint8Array(raw)
+    templateCache.set(chosenPath, bytes)
+  }
   const pdfDoc = await PDFDocument.load(bytes)
   const form = pdfDoc.getForm()
-  return { pdfDoc, form, bytes, filePath }
+  return { pdfDoc, form, bytes, filePath: chosenPath }
 }
 
 export async function pdfBytesToBase64(bytes: Uint8Array): Promise<string> {

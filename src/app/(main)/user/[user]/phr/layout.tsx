@@ -76,10 +76,6 @@ export default async function PHRLayout(props: PHRLayoutProps) {
       href: `/user/${user}/phr/philhealth`,
     },
     {
-      title: "Immunization & Vaccination",
-      href: `/user/${user}/phr/immunization`,
-    },
-    {
       title: "Vaccination & Immunization",
       href: `/user/${user}/phr/vaccination-immunization`,
     },

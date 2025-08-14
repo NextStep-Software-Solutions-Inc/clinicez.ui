@@ -13,7 +13,6 @@ export interface LoadPdfResult {
 }
 
 // simple in-memory cache for template bytes within a single runtime
-const templateCache = new Map<string, Uint8Array>()
 
 export async function loadPhilHealthPdf(fileName: string): Promise<LoadPdfResult> {
   // Build the public URL for the PDF (works on Vercel and locally)
@@ -25,15 +24,16 @@ export async function loadPhilHealthPdf(fileName: string): Promise<LoadPdfResult
   const pdfUrl = `${baseUrl}/pdfs/phr/${fileName}`;
   console.log(`Fetching PDF template from URL: ${pdfUrl}`);
 
-  // Check cache first
-  let bytes = templateCache.get(pdfUrl);
-  if (!bytes) {
-    const response = await fetch(pdfUrl);
-    if (!response.ok) {
-      throw new Error(`PDF template not found at ${pdfUrl}`);
-    }
-    bytes = new Uint8Array(await response.arrayBuffer());
-    templateCache.set(pdfUrl, bytes);
+  const response = await fetch(pdfUrl, {
+    cache: "force-cache"
+  });
+
+  if (!response.ok) {
+    throw new Error(`PDF template not found at ${pdfUrl}`);
+  }
+  const bytes = new Uint8Array(await response.arrayBuffer());
+  if (bytes.length === 0) {
+    throw new Error(`PDF template at ${pdfUrl} is empty`);
   }
 
   const pdfDoc = await PDFDocument.load(bytes);

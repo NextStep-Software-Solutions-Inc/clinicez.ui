@@ -16,24 +16,29 @@ export interface LoadPdfResult {
 const templateCache = new Map<string, Uint8Array>()
 
 export async function loadPhilHealthPdf(fileName: string): Promise<LoadPdfResult> {
-  // Prefer public assets path (Vercel-friendly); fallback to legacy root path for local dev
-  console.log(`Current working directory: ${process.cwd()}`)
-  const publicPath = path.resolve(`./public/pdfs/phr/${fileName}`)
-  console.log(`Looking for PDF template at public path: ${publicPath}`)
-  const legacyPath = path.resolve(process.cwd(), "pdfs", "phr", fileName)
-  console.log(`Looking for PDF template at legacy path: ${legacyPath}`)
-  const chosenPath = fs.existsSync(publicPath) ? publicPath : (fs.existsSync(legacyPath) ? legacyPath : null)
-  console.log(`Chosen PDF template path: ${chosenPath}`)
-  if (!chosenPath) throw new Error(`PDF template not found: ${fileName}. Looked in public/pdfs/phr and pdfs/phr.`)
-  let bytes = templateCache.get(chosenPath)
+  // Build the public URL for the PDF (works on Vercel and locally)
+  const baseUrl =
+    process.env.APP_BASE_URL ||
+      process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : process.env.APP_BASE_URL;
+  const pdfUrl = `${baseUrl}/pdfs/phr/${fileName}`;
+  console.log(`Fetching PDF template from URL: ${pdfUrl}`);
+
+  // Check cache first
+  let bytes = templateCache.get(pdfUrl);
   if (!bytes) {
-    const raw = fs.readFileSync(chosenPath)
-    bytes = new Uint8Array(raw)
-    templateCache.set(chosenPath, bytes)
+    const response = await fetch(pdfUrl);
+    if (!response.ok) {
+      throw new Error(`PDF template not found at ${pdfUrl}`);
+    }
+    bytes = new Uint8Array(await response.arrayBuffer());
+    templateCache.set(pdfUrl, bytes);
   }
-  const pdfDoc = await PDFDocument.load(bytes)
-  const form = pdfDoc.getForm()
-  return { pdfDoc, form, bytes, filePath: chosenPath }
+
+  const pdfDoc = await PDFDocument.load(bytes);
+  const form = pdfDoc.getForm();
+  return { pdfDoc, form, bytes, filePath: pdfUrl };
 }
 
 export async function pdfBytesToBase64(bytes: Uint8Array): Promise<string> {

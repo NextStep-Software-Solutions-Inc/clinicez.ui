@@ -17,7 +17,7 @@ const templateCache = new Map<string, Uint8Array>()
 
 export async function loadPhilHealthPdf(fileName: string): Promise<LoadPdfResult> {
   // Prefer public assets path (Vercel-friendly); fallback to legacy root path for local dev
-  const publicPath = path.resolve(process.cwd(), "public", "pdfs", "phr", fileName)
+  const publicPath = path.resolve(`public/pdfs/phr/${fileName}`)
   const legacyPath = path.resolve(process.cwd(), "pdfs", "phr", fileName)
   const chosenPath = fs.existsSync(publicPath) ? publicPath : (fs.existsSync(legacyPath) ? legacyPath : null)
   if (!chosenPath) throw new Error(`PDF template not found: ${fileName}. Looked in public/pdfs/phr and pdfs/phr.`)

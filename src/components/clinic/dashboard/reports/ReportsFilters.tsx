@@ -19,6 +19,7 @@ import { exportCSV, CSVExportData } from "@/lib/file-manipulation"
 import { useConsultations } from "@/hooks/useConsultation"
 import { toast } from "sonner"
 import { calculateAge } from "@/lib/utils"
+import { GetConsultationTickets } from "@/actions/consultation/consultation-ticket.action"
 
 const reportsFilterSchema = z.object({
   startDate: z.date({
@@ -36,6 +37,81 @@ type ReportsFilterValues = z.infer<typeof reportsFilterSchema>
 
 interface ReportsFiltersProps {
   clinicUid: string
+}
+
+async function generateAndExportConsultationReport(
+  data: NonNullable<GetConsultationTickets["data"]>,
+  filterValues: ReportsFilterValues
+): Promise<number> {
+  const filteredData = (data ?? []).filter(ticket => {
+    const ticketDate = new Date(ticket.createdAt)
+    const patient = ticket.Appointment?.Requesters[0]?.User
+
+    const isInDateRange = filterValues.startDate && filterValues.endDate
+      ? ticketDate >= filterValues.startDate && ticketDate <= filterValues.endDate
+      : true
+
+    const matchesGender = filterValues.gender === "ALL" ||
+      !filterValues.gender ||
+      patient?.gender === filterValues.gender
+
+    const matchesStatus = filterValues.status === "ALL" ||
+      !filterValues.status ||
+      ticket.ConsultationTicketAttribute?.status === filterValues.status ||
+      ticket.Appointment?.AppointmentAttribute?.status === filterValues.status
+
+    const matchesSystem = filterValues.system === "ALL" ||
+      !filterValues.system ||
+      ticket.System.name === filterValues.system
+
+    return isInDateRange && matchesGender && matchesStatus && matchesSystem
+  })
+
+  const csvData: CSVExportData[] = filteredData.map(ticket => {
+    const patient = ticket.Appointment?.Requesters[0]?.User
+    const patientNameParts = [
+      patient?.firstName,
+      patient?.middleName,
+      patient?.lastName,
+      patient?.suffix
+    ].filter(Boolean)
+    const patientName = patientNameParts.length ? patientNameParts.join(" ") : "Unknown"
+
+    const age = patient?.dob ? calculateAge(patient.dob) : null
+    const program = patient?.StudentRecords?.[0]?.Program?.name || "-"
+
+    const hp = ticket.ConsultationTicketHPs?.[0]?.HealthCareProvider
+    const doctorNameParts = [hp?.User?.firstName, hp?.User?.lastName].filter(Boolean)
+    const taggedDoctor = hp?.HPProfile?.name || (doctorNameParts.length ? doctorNameParts.join(" ") : "-")
+
+    return {
+      "ID": `Ticket #${ticket.id}`,
+      "Date": format(new Date(ticket.createdAt), "yyyy-MM-dd"),
+      "Patient": patientName,
+      "Age": age !== null ? age.toString() : "-",
+      "Sex": patient?.gender || "-",
+      "Service Category": ticket.Appointment?.AppointmentAttribute?.Service?.ServiceCategory?.name || "-",
+      "Service": ticket.Appointment?.AppointmentAttribute?.Service?.name || "-",
+      "Status": ticket.Appointment?.AppointmentAttribute?.status || "-",
+      "Program": program,
+      "Appointment Mode": ticket.Appointment?.AppointmentAttribute?.AppointmentMode?.name || "-",
+      "Appointment Type": ticket.Appointment?.AppointmentAttribute?.AppointmentType?.name || "-",
+      "Purpose/Chief Complaint": ticket.Appointment?.complaint || ticket.subject || "-",
+      "Tagged Doctor": taggedDoctor,
+      "System": ticket.System.name,
+    }
+  })
+
+  const columns = [
+    "ID", "Date", "Patient", "Age", "Sex", "Service Category",
+    "Service", "Status", "Program", "Appointment Mode", "Appointment Type",
+    "Purpose/Chief Complaint", "Tagged Doctor", "System"
+  ]
+
+  const filename = `consultation_reports_${format(new Date(), "yyyy-MM-dd")}`
+
+  exportCSV(columns, csvData, { filename })
+  return filteredData.length
 }
 
 const GENDER_OPTIONS = [
@@ -84,79 +160,10 @@ export function ReportsFilters({ clinicUid }: ReportsFiltersProps) {
 
     setIsLoading(true)
 
-    const downloadPromise = (async () => {
-      const filterValues = form.getValues()
-
-      const filteredData = consultations.data!.filter(ticket => {
-        const ticketDate = new Date(ticket.createdAt)
-        const patient = ticket.Appointment?.Requesters[0]?.User
-
-        const isInDateRange = filterValues.startDate && filterValues.endDate
-          ? ticketDate >= filterValues.startDate && ticketDate <= filterValues.endDate
-          : true
-
-        const matchesGender = filterValues.gender === "ALL" ||
-          !filterValues.gender ||
-          patient?.gender === filterValues.gender
-
-        const matchesStatus = filterValues.status === "ALL" ||
-          !filterValues.status ||
-          ticket.ConsultationTicketAttribute?.status === filterValues.status ||
-          ticket.Appointment?.AppointmentAttribute?.status === filterValues.status
-
-        const matchesSystem = filterValues.system === "ALL" ||
-          !filterValues.system ||
-          ticket.System.name === filterValues.system
-
-        return isInDateRange && matchesGender && matchesStatus && matchesSystem
-      })
-
-      const csvData: CSVExportData[] = filteredData.map(ticket => {
-        const patient = ticket.Appointment?.Requesters[0]?.User
-        const patientNameParts = [
-          patient?.firstName,
-          patient?.middleName,
-          patient?.lastName,
-          patient?.suffix
-        ].filter(Boolean)
-        const patientName = patientNameParts.length ? patientNameParts.join(" ") : "Unknown"
-
-        const age = patient?.dob ? calculateAge(patient.dob) : null
-        const program = patient?.StudentRecords?.[0]?.Program?.name || "-"
-
-        const hp = ticket.ConsultationTicketHPs?.[0]?.HealthCareProvider
-        const doctorNameParts = [hp?.User?.firstName, hp?.User?.lastName].filter(Boolean)
-        const taggedDoctor = hp?.HPProfile?.name || (doctorNameParts.length ? doctorNameParts.join(" ") : "-")
-
-        return {
-          "ID": `Ticket #${ticket.id}`,
-          "Date": format(new Date(ticket.createdAt), "yyyy-MM-dd"),
-          "Patient": patientName,
-          "Age": age !== null ? age.toString() : "-",
-          "Sex": patient?.gender || "-",
-          "Service Category": ticket.Appointment?.AppointmentAttribute?.Service?.ServiceCategory?.name || "-",
-          "Service": ticket.Appointment?.AppointmentAttribute?.Service?.name || "-",
-          "Status": ticket.Appointment?.AppointmentAttribute?.status || "-",
-          "Program": program,
-          "Appointment Mode": ticket.Appointment?.AppointmentAttribute?.AppointmentMode?.name || "-",
-          "Appointment Type": ticket.Appointment?.AppointmentAttribute?.AppointmentType?.name || "-",
-          "Purpose/Chief Complaint": ticket.Appointment?.complaint || ticket.subject || "-",
-          "Tagged Doctor": taggedDoctor,
-          "System": ticket.System.name,
-        }
-      })
-
-      const columns = [
-        "ID", "Date", "Patient", "Age", "Sex", "Service Category",
-        "Service", "Status", "Program", "Appointment Mode", "Appointment Type",
-        "Purpose/Chief Complaint", "Tagged Doctor", "System"
-      ]
-
-      const filename = `consultation_reports_${format(new Date(), "yyyy-MM-dd")}`
-
-      exportCSV(columns, csvData, { filename })
-      return filteredData.length
-    })()
+    const downloadPromise = generateAndExportConsultationReport(
+      (consultations.data ?? []) as NonNullable<GetConsultationTickets["data"]>,
+      form.getValues()
+    )
 
     try {
       toast.promise(downloadPromise, {

@@ -10,17 +10,12 @@ export interface LoadPdfResult {
   filePath: string
 }
 
-// simple in-memory cache for template bytes within a single runtime
-
 export async function loadPhilHealthPdf(fileName: string): Promise<LoadPdfResult> {
-  // Build the public URL for the PDF (works on Vercel and locally)
-  const baseUrl =
-    process.env.APP_BASE_URL ||
-      process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : process.env.APP_BASE_URL;
+
+  const baseUrl = process.env.APP_BASE_URL || process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : process.env.APP_BASE_URL;
   const pdfUrl = `${baseUrl}/pdfs/phr/${fileName}`;
-  console.log(`Fetching PDF template from URL: ${pdfUrl}`);
 
   const response = await fetch(pdfUrl, {
     cache: "force-cache"

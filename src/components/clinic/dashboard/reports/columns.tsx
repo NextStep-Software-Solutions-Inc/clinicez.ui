@@ -10,6 +10,14 @@ import { calculateAge } from "@/lib/utils"
 
 type ConsultationTicketData = NonNullable<GetConsultationTickets["data"]>[number]
 
+// Reusable mapping from appointment status to badge variant
+export const APPOINTMENT_STATUS_BADGE_VARIANT: Record<string, BadgeProps["variant"]> = {
+  PENDING: "destructive",
+  ACCEPTED: "default",
+  COMPLETED: "secondary",
+  REJECTED: "outline",
+} as const
+
 export const columns: ColumnDef<ConsultationTicketData>[] = [
   {
     accessorKey: "id",
@@ -153,15 +161,8 @@ export const columns: ColumnDef<ConsultationTicketData>[] = [
       const status = row.original.Appointment?.AppointmentAttribute?.status
       if (!status) return <span className="text-muted-foreground">-</span>
 
-      const badgeVariant: Record<string, BadgeProps["variant"]> = {
-        PENDING: "destructive",
-        ACCEPTED: "default",
-        COMPLETED: "secondary",
-        REJECTED: "outline",
-      } as const
-
       return (
-        <Badge variant={badgeVariant[status as keyof typeof badgeVariant] || "outline"}>
+        <Badge variant={APPOINTMENT_STATUS_BADGE_VARIANT[status as keyof typeof APPOINTMENT_STATUS_BADGE_VARIANT] || "outline"}>
           {status}
         </Badge>
       )

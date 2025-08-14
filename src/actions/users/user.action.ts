@@ -133,6 +133,8 @@ export const getUserAndAddressAction = withErrorHandling(cache(async (key: strin
       suffix: true,
       dob: true,
       gender: true,
+      createdAt: true,
+      mobile: true, // added for PKRF generation
       UserAddresses: {
         distinct: ['userId'],
         take: 1,
@@ -183,6 +185,26 @@ export const getUserAction = withErrorHandling(cache(async (key: string, orgUid?
         select: {
           id: true,
         }
+      },
+      UserAddresses: {
+        distinct: ['userId'],
+        take: 1,
+        where: {
+          isActive: true,
+          isPrimary: true,
+        },
+        select: {
+          apartmentUnit: true,
+          bldgName: true,
+          street: true,
+          subdivision: true,
+          barangay: true,
+          city: true,
+          state: true,
+          zipCode: true,
+          country: true,
+          addressLine: true,
+        },
       },
       ClinicMembers: {
         where: {},

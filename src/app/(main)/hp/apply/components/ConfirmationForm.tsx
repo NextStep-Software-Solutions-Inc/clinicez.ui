@@ -1,6 +1,6 @@
 "use client";
 
-import {useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@components/ui/form";
 import { Checkbox } from "@components/ui/checkbox";
@@ -39,22 +39,22 @@ type formType = z.infer<typeof confirmationFormSchema>
 
 export default function ConfirmationForm({ nextStep, prevStep, isFirstStep, isComplete, setComplete, startOver }: ConfirmationFormProps) {
   const [hpApplication, setHpApplication] = useAtom(hpApplyAtom);
-  
+
   const form = useForm<formType>({
     resolver: zodResolver(confirmationFormSchema)
   })
 
   const action = () => {
     form.handleSubmit(async () => {
-      
+
       const { planId, hpTypeId, receiptCode: code } = hpApplication;
 
-      if(!planId || !hpTypeId || !code) {
+      if (!planId || !hpTypeId || !code) {
         toast.error("An error occurred. One or more required fields are missing.");
         return;
       }
-      
-      toast.promise(promiseWrapper(hpApplicationTransactionAction)({ code, hpTypeId,  planId }), {
+
+      toast.promise(promiseWrapper(hpApplicationTransactionAction)({ code, hpTypeId, planId }), {
         loading: "Submitting application...",
         success: (res) => {
           setComplete?.(true);
@@ -66,11 +66,10 @@ export default function ConfirmationForm({ nextStep, prevStep, isFirstStep, isCo
   }
 
   const reset = async () => {
-    const i = Object.entries(hpApplication).reduce((acc, [key, value]) => {
-      acc[key] = undefined;
-      return acc;
-    }, {} as any);
-    setHpApplication(i)
+    const i = Object.keys(hpApplication).reduce<Partial<typeof hpApplication>>((acc, key) => {
+      return { ...acc, [key]: undefined };
+    }, {});
+    setHpApplication(i);
     startOver?.();
   }
 
@@ -93,12 +92,12 @@ export default function ConfirmationForm({ nextStep, prevStep, isFirstStep, isCo
                 </FormControl>
                 <div className="space-y-1 leading-none">
                   <FormLabel>
-                  Certify that all information is accurate
+                    Certify that all information is accurate
                   </FormLabel>
                   <FormDescription>
-                  I hereby certify that all information provided in this application is true and accurate to the best of my knowledge.
+                    I hereby certify that all information provided in this application is true and accurate to the best of my knowledge.
                   </FormDescription>
-                  <FormMessage/>
+                  <FormMessage />
                 </div>
               </FormItem>
             )}
@@ -116,12 +115,12 @@ export default function ConfirmationForm({ nextStep, prevStep, isFirstStep, isCo
                 </FormControl>
                 <div className="space-y-1 leading-none">
                   <FormLabel>
-                  Terms and Conditions
+                    Terms and Conditions
                   </FormLabel>
                   <FormDescription>
-                 I agree to the <Link href="https://www.healthcare.gov.au/sites/default/files/2021-04/Terms%20and%20Conditions%20for%20Healthcare%20Providers%20and%20Healthcare%20Organisations.pdf" target="_blank">Terms and Conditions</Link> for Healthcare Providers and Healthcare Organizations.
+                    I agree to the <Link href="https://www.healthcare.gov.au/sites/default/files/2021-04/Terms%20and%20Conditions%20for%20Healthcare%20Providers%20and%20Healthcare%20Organisations.pdf" target="_blank">Terms and Conditions</Link> for Healthcare Providers and Healthcare Organizations.
                   </FormDescription>
-                  <FormMessage/>
+                  <FormMessage />
                 </div>
               </FormItem>
             )}
@@ -140,24 +139,24 @@ export default function ConfirmationForm({ nextStep, prevStep, isFirstStep, isCo
                 </FormControl>
                 <div className="space-y-1 leading-none">
                   <FormLabel>
-                  Privacy Policy
+                    Privacy Policy
                   </FormLabel>
                   <FormDescription>
-                  I agree to the <Link href="https://www.healthcare.gov.au/sites/default/files/2021-04/Privacy%20Policy%20for%20Healthcare%20Providers%20and%20Healthcare%20Organisations.pdf" target="_blank">Privacy Policy</Link> for Healthcare Providers and Healthcare Organizations.
+                    I agree to the <Link href="https://www.healthcare.gov.au/sites/default/files/2021-04/Privacy%20Policy%20for%20Healthcare%20Providers%20and%20Healthcare%20Organisations.pdf" target="_blank">Privacy Policy</Link> for Healthcare Providers and Healthcare Organizations.
                   </FormDescription>
-                  <FormMessage/>
+                  <FormMessage />
                 </div>
               </FormItem>
             )}
           />
           <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
-            <BackSubmitAndNext 
+            <BackSubmitAndNext
               labels={{
                 previous: "Back",
                 submit: "Submit",
               }}
               disabled={{
-                submit:!form.formState.isValid || isComplete,
+                submit: !form.formState.isValid || isComplete,
                 previous: isFirstStep || isComplete,
                 next: true
               }}

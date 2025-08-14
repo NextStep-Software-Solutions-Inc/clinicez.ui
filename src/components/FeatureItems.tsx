@@ -223,7 +223,9 @@ export default function FeatureItems({ version = "v1", page = "hero" }) {
     const featureSet = topFeaturesV2.find((feature) => page in feature)
 
     if (featureSet && page in featureSet) {
-      const pageFeatures = featureSet[page as keyof typeof featureSet] as any[]
+      type Section = typeof topFeaturesV2[number]['hero'][number];
+      const raw = featureSet[page as keyof typeof featureSet] as unknown;
+      const pageFeatures: Section[] = Array.isArray(raw) ? raw as Section[] : [];
 
       return (
         <div className="w-full">
@@ -275,10 +277,10 @@ export default function FeatureItems({ version = "v1", page = "hero" }) {
       <Each
         of={topFeature}
         render={(feature, i) => (
-          <motion.div 
-            initial={{ opacity: 0, x: 300 * (i % 2 === 0 ? -1: 1) }}
+          <motion.div
+            initial={{ opacity: 0, x: 300 * (i % 2 === 0 ? -1 : 1) }}
             whileInView={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.5, type: "spring", bounce: 0.5,damping: 10, stiffness: 100 }}
+            transition={{ duration: 0.5, delay: 0.5, type: "spring", bounce: 0.5, damping: 10, stiffness: 100 }}
             className={cn("from-primary to-teal-50 p-24",
               i % 2 === 0 ? "bg-gradient-to-bl" : "bg-gradient-to-br"
             )}>
@@ -410,15 +412,15 @@ export const HeroImage = () => {
     <motion.div
       animate={{ opacity: 1, x: 0 }}
       initial={{ opacity: 0, x: "100%" }}
-      transition={{ duration: 2, type:"spring", bounce:0.5 }}
-    
+      transition={{ duration: 2, type: "spring", bounce: 0.5 }}
+
       className="absolute bottom-0 right-0 ~w-[30rem]/[35rem]">
       <motion.div className="bg-clip-content bg-teal-500 rounded-t-full absolute bottom-0 right-0 w-full h-1/2"></motion.div>
-      <Image 
+      <Image
         width={700}
         height={700}
-        className="w-full max-h-[50rem] hidden lg:block relative" 
-        src={heroImage} alt="clinic-ez-mini-logo" 
+        className="w-full max-h-[50rem] hidden lg:block relative"
+        src={heroImage} alt="clinic-ez-mini-logo"
       />
     </motion.div>
   )

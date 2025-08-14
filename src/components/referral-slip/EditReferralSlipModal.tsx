@@ -248,7 +248,7 @@ export default function EditReferralSlipModal({
                           renderOption={(option) => (
                             <div className="flex flex-col">
                               <span>{option.label}</span>
-                              {option.description && (
+                              {typeof option.description === "string" && (
                                 <span className="text-sm text-muted-foreground">{option.description}</span>
                               )}
                             </div>
@@ -281,14 +281,14 @@ export default function EditReferralSlipModal({
                           renderOption={(option) => (
                             <div className="flex items-center justify-between w-full">
                               <span>{option.label}</span>
-                              {option.type === 'healthcare_provider' && option.specialty && (
+                              {option.type === 'healthcare_provider' && (option as { specialty?: string }).specialty && (
                                 <Badge variant="secondary" className="ml-2">
-                                  {option.specialty}
+                                  {(option as { specialty?: string }).specialty}
                                 </Badge>
                               )}
-                              {option.type === 'clinic' && option.description && (
+                              {option.type === 'clinic' && (option as { description?: string }).description && (
                                 <span className="text-xs text-muted-foreground ml-2 truncate">
-                                  {option.description}
+                                  {(option as { description?: string }).description}
                                 </span>
                               )}
                             </div>

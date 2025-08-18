@@ -112,6 +112,14 @@ export const getClinicPatientsAction = withErrorHandling(async (filters: GetClin
           bloodType: true,
           nickname: true,
           picture: true,
+          StudentRecords: {
+            where: {
+              isActive: true
+            },
+            select: {
+              studentId: true
+            }
+          }
         }
       }
     }

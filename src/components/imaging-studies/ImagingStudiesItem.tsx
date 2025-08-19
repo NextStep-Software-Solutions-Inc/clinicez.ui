@@ -25,6 +25,13 @@ export interface ImagingStudy {
   history?: string;
   reason?: string;
   impression?: string;
+  ImagingRequestDiagnostics?: Array<{
+    ImagingDiagnostic: {
+      id: number;
+      name: string;
+      description?: string;
+    };
+  }>;
 }
 
 

@@ -8,15 +8,14 @@ import React, { useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { calculateAge, capitalize, cn } from "@/lib/utils";
 import ActionButton from "@/components/ActionButton";
 import { createImagingStudyAction } from "@/actions/clinics/clinical-record/imaging-studies.action";
-import MultiSelect from "@/components/MultiSelect";
-import { useImagingDiagnostics } from "@/hooks/useImagingDiagnostics";
+import SmartMultiSelect from "@/components/SmartMultiSelect";
 import { PatientProfile } from "@/components/consultation/ConsultationDetails";
 import { Plus, User, ChevronDown, ChevronUp } from "lucide-react";
 import { promiseWrapper } from "@/lib/with-error-handling";
@@ -71,11 +70,12 @@ export default function CreateImagingStudiesModal({ clinicUid, onCreateImagingSt
   const [showAlert, setShowAlert] = React.useState(false);
   const [showPatientInfo, setShowPatientInfo] = React.useState(false);
 
-  const { result, loading } = useImagingDiagnostics();
-  const diagnostics = result.map((diag) => ({
-    ...diag,
-    description: typeof diag.description === "string" ? diag.description : undefined,
-  }));
+  // Remove the old hook that loads all 73k+ items
+  // const { result, loading } = useImagingDiagnostics();
+  // const diagnostics = result.map((diag) => ({
+  //   ...diag,
+  //   description: typeof diag.description === "string" ? diag.description : undefined,
+  // }));
 
   const autofillDefaults = React.useMemo(() => {
     return {
@@ -371,14 +371,18 @@ export default function CreateImagingStudiesModal({ clinicUid, onCreateImagingSt
                     <FormItem>
                       <FormLabel>Diagnostics <span className="text-destructive">*</span></FormLabel>
                       <FormControl>
-                        <MultiSelect
-                          options={diagnostics}
+                        <SmartMultiSelect
                           value={field.value || []}
                           onChange={field.onChange}
-                          placeholder={loading ? "Loading diagnostics..." : "Select diagnostics"}
-                          disabled={loading}
+                          placeholder="Select diagnostics"
+                          disabled={isSubmitting}
+                          searchPlaceholder="Type to search diagnostics..."
+                          minSearchLength={2}
                         />
                       </FormControl>
+                      <FormDescription>
+                        Select the relevant diagnostics for this imaging request.
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -388,15 +392,18 @@ export default function CreateImagingStudiesModal({ clinicUid, onCreateImagingSt
                   name="history"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>History (Optional)</FormLabel>
+                      <FormLabel>History</FormLabel>
                       <FormControl>
                         <textarea
                           id="history"
                           placeholder="Medical history..."
-                          className="w-full min-h-[80px] border rounded-md p-2 text-sm focus:outline-primary"
+                          className="w-full min-h-[80px] border rounded-md p-2 text-sm focus:outline-primary resize-none"
                           {...field}
                         />
                       </FormControl>
+                      <FormDescription>
+                        Provide a brief history of the patient&apos;s condition. (Optional)
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -406,15 +413,18 @@ export default function CreateImagingStudiesModal({ clinicUid, onCreateImagingSt
                   name="impression"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Impression (Optional)</FormLabel>
+                      <FormLabel>Impression</FormLabel>
                       <FormControl>
                         <textarea
                           id="impression"
                           placeholder="Impression..."
-                          className="w-full min-h-[80px] border rounded-md p-2 text-sm focus:outline-primary"
+                          className="w-full min-h-[80px] border rounded-md p-2 text-sm focus:outline-primary resize-none"
                           {...field}
                         />
                       </FormControl>
+                      <FormDescription>
+                        Provide a brief clinical impression based on the patient&apos;s condition. (Optional)
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -424,15 +434,18 @@ export default function CreateImagingStudiesModal({ clinicUid, onCreateImagingSt
                   name="reason"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Reason (Optional)</FormLabel>
+                      <FormLabel>Reason</FormLabel>
                       <FormControl>
                         <textarea
                           id="reason"
                           placeholder="Reason for imaging study..."
-                          className="w-full min-h-[80px] border rounded-md p-2 text-sm focus:outline-primary"
+                          className="w-full min-h-[80px] border rounded-md p-2 text-sm focus:outline-primary resize-none"
                           {...field}
                         />
                       </FormControl>
+                      <FormDescription>
+                        Provide a brief reason for the imaging request. (Optional)
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

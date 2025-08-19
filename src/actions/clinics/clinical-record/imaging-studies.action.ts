@@ -122,10 +122,11 @@ export const getImagingStudyAction = withErrorHandling(async (id: number) => {
             select: {
               id: true,
               name: true,
-            }
-          }
-        }
-      }
+              description: true,
+            },
+          },
+        },
+      },
     },
   });
 
@@ -230,13 +231,14 @@ export type UpdateImagingStudyInput = {
   history?: string;
   reason?: string;
   impression?: string;
+  diagnosticIds?: number[];
   isActive?: boolean;
 };
 
 export const updateImagingStudyAction = withErrorHandling(async (input: UpdateImagingStudyInput) => {
   const session = await getCachedSession();
   if (!session) throw new Error("Unauthorized");
-  const { id, hpIds, ...updateData } = input;
+  const { id, hpIds, diagnosticIds, ...updateData } = input;
 
   const result = await prisma.$transaction(async (prisma) => {
     const appUser = await prisma.user.findUnique({
@@ -254,6 +256,7 @@ export const updateImagingStudyAction = withErrorHandling(async (input: UpdateIm
       "update imaging studies"
     );
 
+    // Update the main imaging study
     const study = await prisma.clinicImagingRequest.update({
       where: { id },
       data: { ...updateData, updatedBy: createdBy },
@@ -266,6 +269,24 @@ export const updateImagingStudyAction = withErrorHandling(async (input: UpdateIm
         isActive: true,
       }
     });
+
+    // Update diagnostics if provided
+    if (diagnosticIds !== undefined) {
+      // Delete existing diagnostics
+      await prisma.clinicImagingRequestDiagnostic.deleteMany({
+        where: { clinicImagingRequestId: id }
+      });
+
+      // Create new diagnostics
+      if (diagnosticIds.length > 0) {
+        await prisma.clinicImagingRequestDiagnostic.createMany({
+          data: diagnosticIds.map(diagnosticId => ({
+            clinicImagingRequestId: id,
+            imagingDiagnosticId: diagnosticId,
+          }))
+        });
+      }
+    }
 
     return study;
   });

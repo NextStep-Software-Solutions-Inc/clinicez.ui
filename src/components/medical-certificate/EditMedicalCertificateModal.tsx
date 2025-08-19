@@ -13,6 +13,7 @@ import { UnsavedChangesAlert } from "@/components/UnsavedChangesAlert";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -381,9 +382,12 @@ export default function EditMedicalCertificateModal({
                         <textarea
                           placeholder="Enter Recommendations/Remarks"
                           {...field}
-                          className="w-full min-h-[80px] border rounded-md p-2 text-sm focus:outline-primary"
+                          className="w-full min-h-[80px] border rounded-md p-2 text-sm focus:outline-primary resize-none"
                         />
                       </FormControl>
+                      <FormDescription>
+                        Provide any recommendations or remarks. (Optional)
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -399,9 +403,12 @@ export default function EditMedicalCertificateModal({
                         <textarea
                           placeholder="Enter Impression"
                           {...field}
-                          className="w-full min-h-[80px] border rounded-md p-2 text-sm focus:outline-primary"
+                          className="w-full min-h-[80px] border rounded-md p-2 text-sm focus:outline-primary resize-none"
                         />
                       </FormControl>
+                      <FormDescription>
+                        Provide a brief impression of the patient&apos;s condition. (Optional)
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

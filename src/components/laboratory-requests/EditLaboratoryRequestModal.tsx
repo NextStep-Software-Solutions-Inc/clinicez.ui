@@ -13,6 +13,7 @@ import { UnsavedChangesAlert } from "@/components/UnsavedChangesAlert";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -240,9 +241,12 @@ export default function EditLaboratoryRequestModal({
                         <textarea
                           placeholder="Enter impression or notes..."
                           {...field}
-                          className="w-full min-h-[80px] border rounded-md p-2 text-sm focus:outline-primary"
+                          className="w-full min-h-[80px] border rounded-md p-2 text-sm focus:outline-primary resize-none"
                         />
                       </FormControl>
+                      <FormDescription>
+                        Brief summary of the patient&apos;s condition and any relevant findings. (Optional)
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

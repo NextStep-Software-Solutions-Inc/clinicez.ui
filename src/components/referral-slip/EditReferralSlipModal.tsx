@@ -14,6 +14,7 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -256,6 +257,9 @@ export default function EditReferralSlipModal({
                           emptyMessage="No referral reasons found."
                         />
                       </FormControl>
+                      <FormDescription>
+                        Provide the reason for the referral.
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -296,6 +300,9 @@ export default function EditReferralSlipModal({
                           emptyMessage="No clinics or healthcare providers found."
                         />
                       </FormControl>
+                      <FormDescription>
+                        Provide the name of the clinic or healthcare provider you are referring to.
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -307,14 +314,18 @@ export default function EditReferralSlipModal({
                 name="history"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>History</FormLabel>
+                    <FormLabel>Brief History & Pertinent PE</FormLabel>
                     <FormControl>
-                      <Textarea
-                        placeholder="Enter patient history..."
-                        className="min-h-[80px]"
+                      <textarea
+                        id="history"
+                        placeholder="Enter history"
                         {...field}
+                        className="w-full min-h-[80px] border rounded-md p-2 text-sm focus:outline-primary resize-none"
                       />
                     </FormControl>
+                    <FormDescription>
+                      Provide a brief history and pertinent physical examination findings. (Optional)
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -327,12 +338,16 @@ export default function EditReferralSlipModal({
                   <FormItem>
                     <FormLabel>Impression</FormLabel>
                     <FormControl>
-                      <Textarea
-                        placeholder="Enter clinical impression..."
-                        className="min-h-[80px]"
+                      <textarea
+                        id="impression"
+                        placeholder="Enter impression"
                         {...field}
+                        className="w-full min-h-[80px] border rounded-md p-2 text-sm focus:outline-primary resize-none"
                       />
                     </FormControl>
+                    <FormDescription>
+                      Provide a brief clinical impression based on the patient&apos;s condition. (Optional)
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -345,12 +360,16 @@ export default function EditReferralSlipModal({
                   <FormItem>
                     <FormLabel>Recommendation</FormLabel>
                     <FormControl>
-                      <Textarea
-                        placeholder="Enter recommendations..."
-                        className="min-h-[80px]"
+                      <textarea
+                        id="recommendation"
+                        placeholder="Enter recommendation"
                         {...field}
+                        className="w-full min-h-[80px] border rounded-md p-2 text-sm focus:outline-primary resize-none"
                       />
                     </FormControl>
+                    <FormDescription>
+                      Provide your recommendations for the patient&apos;s care. (Optional)
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}

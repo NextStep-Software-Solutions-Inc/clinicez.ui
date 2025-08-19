@@ -331,7 +331,7 @@ export default function EditPrescriptionModal({
                   control={form.control}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Name (Optional)</FormLabel>
+                      <FormLabel>Name</FormLabel>
                       <FormControl>
                         <Input
                           {...field}
@@ -339,7 +339,7 @@ export default function EditPrescriptionModal({
                           className="focus-visible:ring-0 focus-visible:ring-offset-0"
                         />
                       </FormControl>
-                      <FormDescription>Name of the prescription or treatment.</FormDescription>
+                      <FormDescription>Name of the prescription or treatment. (Optional)</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -350,7 +350,7 @@ export default function EditPrescriptionModal({
                   control={form.control}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Remarks (Optional)</FormLabel>
+                      <FormLabel>Remarks</FormLabel>
                       <FormControl>
                         <Textarea
                           {...field}
@@ -358,7 +358,7 @@ export default function EditPrescriptionModal({
                           className="resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
                         />
                       </FormControl>
-                      <FormDescription>Additional notes or instructions for the prescription.</FormDescription>
+                      <FormDescription>Additional notes or instructions for the prescription. (Optional)</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

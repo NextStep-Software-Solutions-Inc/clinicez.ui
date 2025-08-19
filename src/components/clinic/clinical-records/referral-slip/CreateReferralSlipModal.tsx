@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { SearchableDropdown, SearchableDropdownOption } from "@/components/ui/searchable-dropdown";
 import { GroupedSearchableDropdown } from "@/components/ui/grouped-searchable-dropdown";
 import { UnsavedChangesAlert } from "@/components/UnsavedChangesAlert";
@@ -407,6 +407,9 @@ export default function CreateReferralSlipModal({
                             emptyMessage="No referral reasons found."
                           />
                         </FormControl>
+                        <FormDescription>
+                          Provide a reason for the referral slip.
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -447,6 +450,9 @@ export default function CreateReferralSlipModal({
                             emptyMessage="No clinics or healthcare providers found."
                           />
                         </FormControl>
+                        <FormDescription>
+                          Specify the clinic or healthcare provider to refer to.
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -460,10 +466,18 @@ export default function CreateReferralSlipModal({
                     name="history"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Brief History & Pertinent PE (Optional)</FormLabel>
+                        <FormLabel>Brief History & Pertinent PE</FormLabel>
                         <FormControl>
-                          <Textarea placeholder="Enter history" {...field} className="resize-none" />
+                          <textarea
+                            id="history"
+                            placeholder="Enter history"
+                            {...field}
+                            className="w-full min-h-[80px] border rounded-md p-2 text-sm focus:outline-primary resize-none"
+                          />
                         </FormControl>
+                        <FormDescription>
+                          Provide a brief history and pertinent physical examination findings. (Optional)
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -474,10 +488,18 @@ export default function CreateReferralSlipModal({
                     name="impression"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Impression (Optional)</FormLabel>
+                        <FormLabel>Impression</FormLabel>
                         <FormControl>
-                          <Textarea placeholder="Enter impression" {...field} className="resize-none" />
+                          <textarea
+                            id="impression"
+                            placeholder="Enter impression"
+                            {...field}
+                            className="w-full min-h-[80px] border rounded-md p-2 text-sm focus:outline-primary resize-none"
+                          />
                         </FormControl>
+                        <FormDescription>
+                          Provide your clinical impression of the patient&apos;s condition. (Optional)
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -488,10 +510,18 @@ export default function CreateReferralSlipModal({
                     name="recommendation"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Recommendation (Optional)</FormLabel>
+                        <FormLabel>Recommendation</FormLabel>
                         <FormControl>
-                          <Textarea placeholder="Enter recommendation" {...field} className="resize-none" />
+                          <textarea
+                            id="recommendation"
+                            placeholder="Enter recommendation"
+                            {...field}
+                            className="w-full min-h-[80px] border rounded-md p-2 text-sm focus:outline-primary resize-none"
+                          />
                         </FormControl>
+                        <FormDescription>
+                          Provide your recommendation for the patient&apos;s care. (Optional)
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}

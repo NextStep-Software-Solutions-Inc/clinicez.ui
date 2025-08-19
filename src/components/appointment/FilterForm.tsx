@@ -73,6 +73,18 @@ interface FilterFormProps {
   onContinue?: () => void
 }
 
+interface StudentRecord {
+  studentId: string | null;
+}
+interface PatientWithStudentRecords {
+  userId: string;
+  firstName?: string;
+  middleName?: string;
+  lastName?: string;
+  suffix?: string;
+  StudentRecords?: StudentRecord[];
+}
+
 export default function FilterForm({ onContinue }: FilterFormProps) {
   const { clinicUid } = useParams<{ clinicUid: string }>()
   const { user } = useUser()
@@ -181,58 +193,56 @@ export default function FilterForm({ onContinue }: FilterFormProps) {
                   <FormField
                     control={form.control}
                     name="requester"
-                    render={({ field }) => (
-                      <FormItem className="flex-grow">
-                        <FormLabel>Select Patient</FormLabel>
-                        {(() => {
-                          const options: SearchableDropdownOption[] = (clinicPatients?.data ?? [])
-                            .map((cp) => {
-                              const { Patient } = cp
-                              const name = `${Patient.firstName ?? ""} ${Patient.middleName ?? ""} ${Patient.lastName ?? ""} ${Patient.suffix ?? ""}`.replace(/\s+/g, " ").trim()
-                              const studentIds = (Patient as any).StudentRecords?.map((sr: { studentId: string | null }) => sr?.studentId).filter(Boolean) as string[] | undefined
-                              return {
-                                value: Patient.userId,
-                                label: name || Patient.userId,
-                                studentIds,
-                              }
-                            })
-
-                          const filterByNameOrStudentId = (option: SearchableDropdownOption, term: string) => {
-                            const t = term.trim().toLowerCase()
-                            if (!t) return true
-                            const labelMatch = option.label.toLowerCase().includes(t)
-                            const ids = (option as any).studentIds as string[] | undefined
-                            const idMatch = ids?.some((id) => id.toLowerCase().includes(t)) ?? false
-                            return labelMatch || idMatch
+                    render={({ field }) => {
+                      const options: SearchableDropdownOption[] = (clinicPatients?.data ?? [])
+                        .map((cp) => {
+                          const { Patient } = cp as { Patient: PatientWithStudentRecords };
+                          const name = `${Patient.firstName ?? ""} ${Patient.middleName ?? ""} ${Patient.lastName ?? ""} ${Patient.suffix ?? ""}`.replace(/\s+/g, " ").trim()
+                          const studentIds = Patient.StudentRecords?.map((sr) => sr?.studentId).filter(Boolean) as string[] | undefined
+                          return {
+                            value: Patient.userId,
+                            label: name || Patient.userId,
+                            studentIds,
                           }
+                        })
 
-                          return (
-                            <SearchableDropdown
-                              options={options}
-                              value={field.value}
-                              placeholder="Search by name or student ID"
-                              filterFunction={filterByNameOrStudentId}
-                              onSelect={(opt) => field.onChange(opt.value?.toString())}
-                              renderOption={(opt) => {
-                                const ids = (opt as any).studentIds as string[] | undefined
-                                return (
-                                  <div className="flex flex-col">
-                                    <span className="font-medium">{opt.label}</span>
-                                    {ids && ids.length > 0 && (
-                                      <span className="text-xs text-muted-foreground">Student ID: {ids.join(", ")}</span>
-                                    )}
-                                  </div>
-                                )
-                              }}
-                            />
-                          )
-                        })()}
-                        <FormDescription>
-                          Select a patient to book an appointment for.
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+                      const filterByNameOrStudentId = (option: SearchableDropdownOption, term: string) => {
+                        const t = term.trim().toLowerCase()
+                        if (!t) return true
+                        const labelMatch = option.label.toLowerCase().includes(t)
+                        const ids = Array.isArray(option.studentIds) ? option.studentIds : []
+                        const idMatch = ids.some((id: string) => id.toLowerCase().includes(t))
+                        return labelMatch || idMatch
+                      }
+
+                      return (
+                        <FormItem className="flex-grow">
+                          <FormLabel>Select Patient</FormLabel>
+                          <SearchableDropdown
+                            options={options}
+                            value={field.value}
+                            placeholder="Search by name or student ID"
+                            filterFunction={filterByNameOrStudentId}
+                            onSelect={(opt) => field.onChange(opt.value?.toString())}
+                            renderOption={(opt) => {
+                              const ids = (opt as any).studentIds as string[] | undefined
+                              return (
+                                <div className="flex flex-col">
+                                  <span className="font-medium">{opt.label}</span>
+                                  {ids && ids.length > 0 && (
+                                    <span className="text-xs text-muted-foreground">Student ID: {ids.join(", ")}</span>
+                                  )}
+                                </div>
+                              )
+                            }}
+                          />
+                          <FormDescription>
+                            Select a patient to book an appointment for.
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )
+                    }}
                   />
                 )
               }

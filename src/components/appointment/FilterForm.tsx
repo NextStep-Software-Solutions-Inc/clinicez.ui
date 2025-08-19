@@ -225,7 +225,7 @@ export default function FilterForm({ onContinue }: FilterFormProps) {
                             filterFunction={filterByNameOrStudentId}
                             onSelect={(opt) => field.onChange(opt.value?.toString())}
                             renderOption={(opt) => {
-                              const ids = (opt as any).studentIds as string[] | undefined
+                              const ids = opt.studentIds
                               return (
                                 <div className="flex flex-col">
                                   <span className="font-medium">{opt.label}</span>

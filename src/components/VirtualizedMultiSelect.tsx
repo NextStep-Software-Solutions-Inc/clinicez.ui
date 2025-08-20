@@ -50,7 +50,7 @@ function OptionItem<T extends { id: number; name: string; description?: string }
         <Checkbox
           checked={selectedIds.has(option.id)}
           className="mr-2"
-          onChange={handleSelect}
+          onCheckedChange={handleSelect}
         />
         <div className="flex-1">
           <div className="font-medium text-sm">{option.name}</div>

@@ -162,7 +162,7 @@ export default function FilterForm({ onContinue }: FilterFormProps) {
   const canWriteBookAFriendPermission = writeOrgAppointmentBookAFriendPermissions.every(permission => myPermissionArray?.includes(permission))
 
   if (loadingPermissions) return <p>Loading permissions...</p>
-  if (!canWritePermission) return <p>Sorry, You do not have permission to book an appointment.</p>
+  if (!canWritePermission) return <div role="alert" aria-live="assertive">Sorry, You do not have permission to book an appointment.</div>
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className=" space-y-6">

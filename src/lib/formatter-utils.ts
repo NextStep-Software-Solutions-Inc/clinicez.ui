@@ -1,5 +1,3 @@
-"use client";
-
 export const isValidStudentId = (studentId: unknown): studentId is string => {
   return typeof studentId === 'string' && studentId.trim().length > 0;
 }

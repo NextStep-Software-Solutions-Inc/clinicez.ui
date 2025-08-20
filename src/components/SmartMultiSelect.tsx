@@ -237,7 +237,7 @@ export default function SmartMultiSelect({
                     <Checkbox
                       checked={selectedIdsSet.has(diagnostic.id)}
                       className="mr-2"
-                      onChange={() => handleSelect(diagnostic)}
+                      onCheckedChange={() => handleSelect(diagnostic)}
                     />
                     <div className="flex-1">
                       <div className="font-medium text-sm">{diagnostic.name}</div>

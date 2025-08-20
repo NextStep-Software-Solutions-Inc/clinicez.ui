@@ -15,10 +15,20 @@ export const GET = withJwtAuth(async (req: NextRequest) => {
       offset
     });
 
+    if (!diagnosticsResult.data) {
+      return NextResponse.json({
+        status: false,
+        data: { data: [], total: 0, message: "No data available" }
+      }, { status: 404 });
+    }
+
     return NextResponse.json({
       status: true,
-      data: diagnosticsResult.data,
-      message: diagnosticsResult.message
+      data: {
+        data: diagnosticsResult.data.diagnostics,
+        total: diagnosticsResult.data.total,
+        message: diagnosticsResult.message
+      }
     }, { status: 200 });
   } catch (error) {
     return NextResponse.json(

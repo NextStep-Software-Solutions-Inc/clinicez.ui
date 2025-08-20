@@ -53,13 +53,20 @@ export const useOptimizedImagingDiagnostics = ({
 }: UseImagingDiagnosticsParams = {}): UseImagingDiagnosticsResult => {
   const [allDiagnostics, setAllDiagnostics] = useState<ImagingDiagnostic[]>([]);
   const [totalCount, setTotalCount] = useState(0);
+  const [currentOffset, setCurrentOffset] = useState(offset);
 
   // Debounce search term to avoid excessive API calls
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
+  // Reset offset when search term changes
+  React.useEffect(() => {
+    setCurrentOffset(0);
+    setAllDiagnostics([]);
+  }, [debouncedSearchTerm]);
+
   // Create cache key
   const cacheKey = enabled
-    ? `/api/diagnostics/imaging?search=${encodeURIComponent(debouncedSearchTerm)}&limit=${limit}&offset=${offset}`
+    ? `/api/diagnostics/imaging?search=${encodeURIComponent(debouncedSearchTerm)}&limit=${limit}&offset=${currentOffset}`
     : null;
 
   const fetcher = useCallback(async (url: string) => {
@@ -94,7 +101,7 @@ export const useOptimizedImagingDiagnostics = ({
   // Update state when data changes
   React.useEffect(() => {
     if (data) {
-      if (offset === 0) {
+      if (currentOffset === 0) {
         // New search or initial load
         setAllDiagnostics(data.diagnostics);
       } else {
@@ -103,7 +110,7 @@ export const useOptimizedImagingDiagnostics = ({
       }
       setTotalCount(data.total);
     }
-  }, [data, offset]);
+  }, [data, currentOffset]);
 
   // Search function for instant filtering
   const searchDiagnostics = useCallback(async (term: string): Promise<ImagingDiagnostic[]> => {
@@ -135,9 +142,10 @@ export const useOptimizedImagingDiagnostics = ({
   }, []);
 
   const loadMore = useCallback(() => {
-    // This would trigger a new SWR request with updated offset
-    // Implementation depends on how you want to handle pagination
-  }, []);
+    if (allDiagnostics.length < totalCount) {
+      setCurrentOffset(prev => prev + limit);
+    }
+  }, [allDiagnostics.length, totalCount, limit]);
 
   const refresh = useCallback(() => {
     mutate();

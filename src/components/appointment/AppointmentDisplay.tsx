@@ -35,6 +35,7 @@ import CompleteAppointment from "./CompleteAppointment";
 import { PERMISSIONS } from "@lib/permissions";
 import { usePermissions } from "@/hooks/usePermission";
 import { useHPs } from "@/hooks/useHP";
+import { getFullName } from "@/lib/formatter-utils";
 
 
 export default function AppointmentDisplay() {
@@ -218,11 +219,12 @@ export default function AppointmentDisplay() {
                       {preAssessmentNote.homeInstructions && <LabelValue className="flex items-center gap-2" label={preAssessmentNote.homeInstructions} value="Home Instruction:" />}
                       <LabelValue className="flex items-center gap-2" label={preAssessmentNote.remarks} value="Remarks:" />
                       {(() => {
-                        const firstName = preAssessmentNote.CreatedBy?.firstName ?? "";
-                        const middleName = preAssessmentNote.CreatedBy?.middleName ?? "";
-                        const lastName = preAssessmentNote.CreatedBy?.lastName ?? "";
-                        const suffix = preAssessmentNote.CreatedBy?.suffix ?? "";
-                        const fullName = `${firstName} ${middleName} ${lastName} ${suffix}`.replace(/\s+/g, " ").trim();
+                        const fullName = getFullName({
+                          firstName: preAssessmentNote.CreatedBy?.firstName ?? "",
+                          middleName: preAssessmentNote.CreatedBy?.middleName ?? "",
+                          lastName: preAssessmentNote.CreatedBy?.lastName ?? "",
+                          suffix: preAssessmentNote.CreatedBy?.suffix ?? ""
+                        });
                         return (
                           <LabelValue
                             className="flex items-center gap-2"

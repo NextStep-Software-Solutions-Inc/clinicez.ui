@@ -40,6 +40,8 @@ import { PERMISSIONS } from "@lib/permissions"
 import { useUser } from "@auth0/nextjs-auth0"
 import { useClinicPatients } from "@/hooks/useClinicPatient"
 import { SearchableDropdown, type SearchableDropdownOption } from "@components/ui/searchable-dropdown"
+import { getFullName } from "@/lib/formatter-utils"
+import { isValidStudentId } from "@/lib/formatter-utils"
 
 const FilterFormSchema = z.object({
   appointmentTypeId: z.coerce.number({
@@ -74,11 +76,12 @@ interface FilterFormProps {
 }
 
 interface StudentRecord {
-  studentId: string | null;
+  studentId: string;
 }
+
 interface PatientWithStudentRecords {
   userId: string;
-  firstName?: string;
+  firstName: string;
   middleName?: string;
   lastName?: string;
   suffix?: string;
@@ -197,8 +200,11 @@ export default function FilterForm({ onContinue }: FilterFormProps) {
                       const options: SearchableDropdownOption[] = (clinicPatients?.data ?? [])
                         .map((cp) => {
                           const { Patient } = cp as { Patient: PatientWithStudentRecords };
-                          const name = `${Patient.firstName ?? ""} ${Patient.middleName ?? ""} ${Patient.lastName ?? ""} ${Patient.suffix ?? ""}`.replace(/\s+/g, " ").trim()
-                          const studentIds = Patient.StudentRecords?.map((sr) => sr?.studentId).filter(Boolean) as string[] | undefined
+                          const name = getFullName({ firstName: Patient.firstName, middleName: Patient.middleName, lastName: Patient.lastName, suffix: Patient.suffix });
+
+                          // Ensure only valid student IDs are included
+                          const studentIds = Patient.StudentRecords?.map((sr) => sr.studentId).filter(isValidStudentId) ?? [];
+
                           return {
                             value: Patient.userId,
                             label: name || Patient.userId,
@@ -207,11 +213,13 @@ export default function FilterForm({ onContinue }: FilterFormProps) {
                         })
 
                       const filterByNameOrStudentId = (option: SearchableDropdownOption, term: string) => {
-                        const t = term.trim().toLowerCase()
-                        if (!t) return true
-                        const labelMatch = option.label.toLowerCase().includes(t)
-                        const ids = Array.isArray(option.studentIds) ? option.studentIds : []
-                        const idMatch = ids.some((id: string) => id.toLowerCase().includes(t))
+                        const searchTerm = term.trim().toLowerCase()
+                        if (!searchTerm) return true
+
+                        const labelMatch = option.label.toLowerCase().includes(searchTerm)
+                        const studentIds = option.studentIds ?? []
+                        const idMatch = studentIds.some((id) => id.toLowerCase().includes(searchTerm))
+
                         return labelMatch || idMatch
                       }
 
@@ -223,14 +231,14 @@ export default function FilterForm({ onContinue }: FilterFormProps) {
                             value={field.value}
                             placeholder="Search by name or student ID"
                             filterFunction={filterByNameOrStudentId}
-                            onSelect={(opt) => field.onChange(opt.value?.toString())}
+                            onSelect={(opt) => field.onChange(opt.value)}
                             renderOption={(opt) => {
-                              const ids = opt.studentIds
+                              const studentIds = opt.studentIds ?? []
                               return (
                                 <div className="flex flex-col">
                                   <span className="font-medium">{opt.label}</span>
-                                  {ids && ids.length > 0 && (
-                                    <span className="text-xs text-muted-foreground">Student ID: {ids.join(", ")}</span>
+                                  {studentIds.length > 0 && (
+                                    <span className="text-xs text-muted-foreground">Student ID: {studentIds.join(", ")}</span>
                                   )}
                                 </div>
                               )

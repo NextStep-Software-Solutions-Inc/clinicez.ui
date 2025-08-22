@@ -5,24 +5,21 @@ import { Badge } from "./ui/badge";
 import { ChevronDown, X, Loader2 } from "lucide-react";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandList } from "./ui/command";
 import { Checkbox } from "./ui/checkbox";
-import { searchImagingDiagnosticsAction, getImagingDiagnosticsByIdsAction } from "@/actions/clinics/clinical-record/optimized-diagnostics.action";
 
-interface ImagingDiagnostic {
-  id: number;
-  name: string;
-  description?: string | null;
-  category?: string | null;
-  isActive: boolean;
-}
-
-interface SmartMultiSelectProps {
-  value: number[];
-  onChange: (value: number[]) => void;
+// Generic SmartMultiSelectProps
+interface SmartMultiSelectProps<T, IDType = number> {
+  value: IDType[];
+  onChange: (value: IDType[]) => void;
   placeholder?: string;
   disabled?: boolean;
   maxDisplayItems?: number;
   searchPlaceholder?: string;
   minSearchLength?: number;
+  // New props for genericity:
+  search: (query: string) => Promise<T[]>;
+  fetchByIds: (ids: IDType[]) => Promise<T[]>;
+  getId: (item: T) => IDType;
+  renderItem: (item: T) => React.ReactNode;
 }
 
 // Debounce hook
@@ -42,85 +39,148 @@ function useDebounce<T>(value: T, delay: number): T {
   return debouncedValue;
 }
 
-export default function SmartMultiSelect({
+export default function SmartMultiSelect<T, IDType = number>({
   value,
   onChange,
-  placeholder = "Select diagnostics...",
+  placeholder = "Select items...",
   disabled = false,
   maxDisplayItems = 3,
-  searchPlaceholder = "Search diagnostics...",
-  minSearchLength = 2
-}: SmartMultiSelectProps) {
+  searchPlaceholder = "Search items...",
+  minSearchLength = 2,
+  search,
+  fetchByIds,
+  getId,
+  renderItem
+}: SmartMultiSelectProps<T, IDType>) {
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [searchResults, setSearchResults] = useState<ImagingDiagnostic[]>([]);
-  const [selectedDiagnostics, setSelectedDiagnostics] = useState<ImagingDiagnostic[]>([]);
+  const [searchResults, setSearchResults] = useState<T[]>([]);
+  const [selectedItems, setSelectedItems] = useState<T[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isLoadingSelected, setIsLoadingSelected] = useState(false);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const isMountedRef = useRef(true);
+  const lastValueRef = useRef<IDType[]>([]);
+  const searchFunctionRef = useRef(search);
+  const fetchByIdsFunctionRef = useRef(fetchByIds);
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
-  // Load selected diagnostics data when value changes
+  // Update function refs when they change
   useEffect(() => {
-    const loadSelectedDiagnostics = async () => {
+    searchFunctionRef.current = search;
+  }, [search]);
+
+  useEffect(() => {
+    fetchByIdsFunctionRef.current = fetchByIds;
+  }, [fetchByIds]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  // Load selected items data when value changes
+  useEffect(() => {
+    const loadSelectedItems = async () => {
+      // Check if value has actually changed
+      const hasValueChanged = value.length !== lastValueRef.current.length ||
+        value.some((id, index) => id !== lastValueRef.current[index]);
+
+      if (!hasValueChanged) {
+        return;
+      }
+
+      lastValueRef.current = [...value];
+
       if (value.length === 0) {
-        setSelectedDiagnostics([]);
+        setSelectedItems([]);
+        return;
+      }
+
+      // Check if we already have the selected items to avoid unnecessary refetches
+      const currentIds = selectedItems.map(item => getId(item));
+      const valueSet = new Set(value);
+      const currentSet = new Set(currentIds);
+
+      const hasAllItems = value.length === currentIds.length &&
+        value.every(id => currentSet.has(id));
+
+      if (hasAllItems) {
         return;
       }
 
       try {
+        if (!isMountedRef.current) return;
         setIsLoadingSelected(true);
-        const result = await getImagingDiagnosticsByIdsAction(value);
-        if (result.data) {
-          setSelectedDiagnostics(result.data);
+        const result = await fetchByIdsFunctionRef.current(value);
+        if (isMountedRef.current) {
+          setSelectedItems(result);
         }
       } catch (error) {
-        console.error("Error loading selected diagnostics:", error);
+        console.error("Error loading selected items:", error);
       } finally {
-        setIsLoadingSelected(false);
+        if (isMountedRef.current) {
+          setIsLoadingSelected(false);
+        }
       }
     };
 
-    loadSelectedDiagnostics();
-  }, [value]);
+    loadSelectedItems();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]); // fetchByIds is memoized in parent component
 
-  // Search for diagnostics when search term changes
+  // Search for items when search term changes
   useEffect(() => {
-    const searchDiagnostics = async () => {
+    const searchItems = async () => {
       if (debouncedSearchTerm.length < minSearchLength) {
         setSearchResults([]);
         return;
       }
 
+      // Store current search term to prevent race conditions
+      const currentSearchTerm = debouncedSearchTerm;
+
       try {
+        if (!isMountedRef.current) return;
         setIsSearching(true);
-        const result = await searchImagingDiagnosticsAction(debouncedSearchTerm, 50);
-        if (result.data) {
-          setSearchResults(result.data);
+        const result = await searchFunctionRef.current(debouncedSearchTerm);
+
+        // Only update if this is still the current search term and component is mounted
+        if (currentSearchTerm === debouncedSearchTerm && isMountedRef.current) {
+          setSearchResults(result);
         }
       } catch (error) {
-        console.error("Error searching diagnostics:", error);
-        setSearchResults([]);
+        console.error("Error searching items:", error);
+        if (currentSearchTerm === debouncedSearchTerm && isMountedRef.current) {
+          setSearchResults([]);
+        }
       } finally {
-        setIsSearching(false);
+        if (currentSearchTerm === debouncedSearchTerm && isMountedRef.current) {
+          setIsSearching(false);
+        }
       }
     };
 
-    searchDiagnostics();
-  }, [debouncedSearchTerm, minSearchLength]);
+    searchItems();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearchTerm, minSearchLength]); // search is memoized in parent component
 
   // Handle option selection/deselection
-  const handleSelect = useCallback((diagnostic: ImagingDiagnostic) => {
-    const newValue = value.includes(diagnostic.id)
-      ? value.filter(id => id !== diagnostic.id)
-      : [...value, diagnostic.id];
+  const handleSelect = useCallback((item: T) => {
+    const itemId = getId(item);
+    const newValue = value.includes(itemId)
+      ? value.filter((id: IDType) => id !== itemId)
+      : [...value, itemId];
     onChange(newValue);
-  }, [value, onChange]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value, onChange]); // getId is memoized in parent component
 
   // Handle removing a selected option
-  const handleRemove = useCallback((diagnosticId: number) => {
-    onChange(value.filter(id => id !== diagnosticId));
+  const handleRemove = useCallback((itemId: IDType) => {
+    onChange(value.filter((id: IDType) => id !== itemId));
   }, [value, onChange]);
 
   // Handle popover open/close
@@ -163,32 +223,32 @@ export default function SmartMultiSelect({
                 <Loader2 className="h-4 w-4 animate-spin" />
                 <span className="text-muted-foreground">Loading...</span>
               </div>
-            ) : selectedDiagnostics.length === 0 ? (
+            ) : selectedItems.length === 0 ? (
               <span className="text-muted-foreground">{placeholder}</span>
             ) : (
               <>
-                {selectedDiagnostics.slice(0, maxDisplayItems).map((diagnostic) => (
+                {selectedItems.slice(0, maxDisplayItems).map((item) => (
                   <Badge
-                    key={diagnostic.id}
+                    key={String(getId(item))}
                     variant="secondary"
                     className="text-xs"
                   >
-                    {diagnostic.name}
+                    {renderItem(item)}
                     <span
                       className="ml-1 hover:bg-muted rounded-full cursor-pointer"
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        handleRemove(diagnostic.id);
+                        handleRemove(getId(item));
                       }}
                     >
                       <X className="h-3 w-3" />
                     </span>
                   </Badge>
                 ))}
-                {selectedDiagnostics.length > maxDisplayItems && (
+                {selectedItems.length > maxDisplayItems && (
                   <Badge variant="secondary" className="text-xs">
-                    +{selectedDiagnostics.length - maxDisplayItems} more
+                    +{selectedItems.length - maxDisplayItems} more
                   </Badge>
                 )}
               </>
@@ -225,27 +285,22 @@ export default function SmartMultiSelect({
                 </div>
               </CommandEmpty>
             ) : displayOptions.length === 0 ? (
-              <CommandEmpty>No diagnostics found</CommandEmpty>
+              <CommandEmpty>No items found</CommandEmpty>
             ) : (
               <CommandGroup className="max-h-[300px] overflow-y-auto">
-                {displayOptions.map((diagnostic) => (
+                {displayOptions.map((item) => (
                   <div
-                    key={diagnostic.id}
+                    key={String(getId(item))}
                     className="flex items-center px-2 py-2 cursor-pointer hover:bg-accent hover:text-accent-foreground"
-                    onClick={() => handleSelect(diagnostic)}
+                    onClick={() => handleSelect(item)}
                   >
                     <Checkbox
-                      checked={selectedIdsSet.has(diagnostic.id)}
+                      checked={selectedIdsSet.has(getId(item))}
                       className="mr-2"
-                      onCheckedChange={() => handleSelect(diagnostic)}
+                      onCheckedChange={() => handleSelect(item)}
                     />
                     <div className="flex-1">
-                      <div className="font-medium text-sm">{diagnostic.name}</div>
-                      {diagnostic.description && (
-                        <div className="text-xs text-muted-foreground line-clamp-2">
-                          {diagnostic.description}
-                        </div>
-                      )}
+                      {renderItem(item)}
                     </div>
                   </div>
                 ))}

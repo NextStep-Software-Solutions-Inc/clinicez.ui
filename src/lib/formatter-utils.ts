@@ -8,12 +8,8 @@ export const getFullName = ({ firstName, middleName, lastName, suffix }: {
   lastName?: string;
   suffix?: string;
 }) => {
-  let fullName = `${firstName} ${lastName}`;
-
-  if (middleName) {
-    const nameParts = [firstName, middleName, lastName].filter(Boolean);
-    fullName = nameParts.join(' ');
-  }
+  const nameParts = [firstName, middleName, lastName].filter(Boolean);
+  let fullName = nameParts.join(' ');
 
   if (suffix) {
     fullName += `, ${suffix}`;

@@ -15,7 +15,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { calculateAge, capitalize, cn } from "@/lib/utils";
 import ActionButton from "@/components/ActionButton";
 import { createImagingStudyAction } from "@/actions/clinics/clinical-record/imaging-studies.action";
-import SmartMultiSelect from "@/components/SmartMultiSelect";
+import ImagingDiagnosticsMultiSelect from "@/components/ImagingDiagnosticsMultiSelect";
 import { PatientProfile } from "@/components/consultation/ConsultationDetails";
 import { Plus, User, ChevronDown, ChevronUp } from "lucide-react";
 import { promiseWrapper } from "@/lib/with-error-handling";
@@ -371,7 +371,7 @@ export default function CreateImagingStudiesModal({ clinicUid, onCreateImagingSt
                     <FormItem>
                       <FormLabel>Diagnostics <span className="text-destructive">*</span></FormLabel>
                       <FormControl>
-                        <SmartMultiSelect
+                        <ImagingDiagnosticsMultiSelect
                           value={field.value || []}
                           onChange={field.onChange}
                           placeholder="Select diagnostics"

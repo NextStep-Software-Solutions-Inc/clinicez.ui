@@ -114,6 +114,21 @@ export default function FilterForm({ onContinue }: FilterFormProps) {
     }, [] as { hpTypeName: string, hps: NonNullable<typeof hps> }[])
   }, [hps])
 
+  // Memoize patient options to avoid recalculation on every render
+  const patientOptions = useMemo(() => {
+    return (clinicPatients?.data ?? []).map((cp) => {
+      const { Patient } = cp as { Patient: PatientWithStudentRecords };
+      const name = getFullName({ firstName: Patient.firstName, middleName: Patient.middleName, lastName: Patient.lastName, suffix: Patient.suffix });
+      // Ensure only valid student IDs are included
+      const studentIds = Patient.StudentRecords?.map((sr) => sr.studentId).filter(isValidStudentId) ?? [];
+      return {
+        value: Patient.userId,
+        label: name || Patient.userId,
+        studentIds,
+      }
+    });
+  }, [clinicPatients?.data]);
+
   const form = useForm<z.infer<typeof FilterFormSchema>>({
     resolver: zodResolver(FilterFormSchema),
     mode: "onChange",
@@ -197,20 +212,6 @@ export default function FilterForm({ onContinue }: FilterFormProps) {
                     control={form.control}
                     name="requester"
                     render={({ field }) => {
-                      const options: SearchableDropdownOption[] = (clinicPatients?.data ?? [])
-                        .map((cp) => {
-                          const { Patient } = cp as { Patient: PatientWithStudentRecords };
-                          const name = getFullName({ firstName: Patient.firstName, middleName: Patient.middleName, lastName: Patient.lastName, suffix: Patient.suffix });
-
-                          // Ensure only valid student IDs are included
-                          const studentIds = Patient.StudentRecords?.map((sr) => sr.studentId).filter(isValidStudentId) ?? [];
-
-                          return {
-                            value: Patient.userId,
-                            label: name || Patient.userId,
-                            studentIds,
-                          }
-                        })
 
                       const filterByNameOrStudentId = (option: SearchableDropdownOption, term: string) => {
                         const searchTerm = term.trim().toLowerCase()
@@ -227,7 +228,7 @@ export default function FilterForm({ onContinue }: FilterFormProps) {
                         <FormItem className="flex-grow">
                           <FormLabel>Select Patient</FormLabel>
                           <SearchableDropdown
-                            options={options}
+                            options={patientOptions}
                             value={field.value}
                             placeholder="Search by name or student ID"
                             filterFunction={filterByNameOrStudentId}

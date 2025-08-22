@@ -28,7 +28,7 @@ import { promiseWrapper } from "@/lib/with-error-handling";
 import { updateImagingStudyAction } from "@/actions/clinics/clinical-record/imaging-studies.action";
 import { ImagingStudy } from "./ImagingStudiesItem";
 import { PatientProfile } from "../consultation/ConsultationDetails";
-import SmartMultiSelect from "@/components/SmartMultiSelect";
+import ImagingDiagnosticsMultiSelect from "@/components/ImagingDiagnosticsMultiSelect";
 
 const formSchema = z.object({
   history: z.string().optional(),
@@ -174,7 +174,7 @@ export default function EditImagingStudyModal({
                   <FormItem>
                     <FormLabel>Diagnostics <span className="text-destructive">*</span></FormLabel>
                     <FormControl>
-                      <SmartMultiSelect
+                      <ImagingDiagnosticsMultiSelect
                         value={field.value || []}
                         onChange={field.onChange}
                         placeholder="Select diagnostics"

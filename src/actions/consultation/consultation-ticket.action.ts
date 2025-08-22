@@ -363,6 +363,13 @@ export const getConsultationTicketsAction = withErrorHandling(async (filters: Ge
           status: true,
         }
       },
+      ConsultationNotes: {
+        select: {
+          id: true,
+          section: true,
+          content: true,
+        }
+      },
       Appointment: {
         select: {
           Requesters: {
@@ -381,6 +388,12 @@ export const getConsultationTicketsAction = withErrorHandling(async (filters: Ge
                   StudentRecords: {
                     select: {
                       Program: {
+                        select: {
+                          id: true,
+                          name: true,
+                        }
+                      },
+                      OrganizationYearLevel: {
                         select: {
                           id: true,
                           name: true,

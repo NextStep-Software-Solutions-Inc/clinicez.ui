@@ -326,6 +326,16 @@ export const getConsultationTicketsAction = withErrorHandling(async (filters: Ge
                 select: {
                   firstName: true,
                   lastName: true,
+                  OrganizationMembers: {
+                    select: {
+                      OrganizationRole: {
+                        select: {
+                          id: true,
+                          name: true,
+                        }
+                      }
+                    }
+                  }
                 }
               },
               HPProfile: {
@@ -385,6 +395,12 @@ export const getConsultationTicketsAction = withErrorHandling(async (filters: Ge
                           id: true,
                           name: true,
                         }
+                      },
+                      Organization: {
+                        select: {
+                          id: true,
+                          name: true,
+                        }
                       }
                     }
                   }
@@ -393,6 +409,33 @@ export const getConsultationTicketsAction = withErrorHandling(async (filters: Ge
             }
           },
           complaint: true,
+          PreAssessmentNotes: {
+            orderBy: {
+              createdAt: 'desc'
+            },
+            select: {
+              id: true,
+              assessment: true,
+              homeInstructions: true,
+              remarks: true,
+              createdAt: true,
+              CreatedBy: {
+                select: {
+                  firstName: true,
+                  lastName: true,
+                  OrganizationMembers: {
+                    select: {
+                      OrganizationRole: {
+                        select: {
+                          name: true,
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
           AppointmentAttribute: {
             select: {
               id: true,

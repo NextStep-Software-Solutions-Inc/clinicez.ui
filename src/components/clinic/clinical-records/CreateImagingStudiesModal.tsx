@@ -116,6 +116,12 @@ export default function CreateImagingStudiesModal({ clinicUid, onCreateImagingSt
     form.reset(autofillDefaults);
   }, [form, autofillDefaults]);
 
+  // Create a stable ref to the reset function to avoid triggering effects
+  const resetFormRef = React.useRef(resetFormWithDefaults);
+  React.useEffect(() => {
+    resetFormRef.current = resetFormWithDefaults;
+  }, [resetFormWithDefaults]);
+
   // Check if there are unsaved changes
   const hasUnsavedChanges = useCallback(() => {
     const formValues = form.getValues();
@@ -133,22 +139,22 @@ export default function CreateImagingStudiesModal({ clinicUid, onCreateImagingSt
     } else {
       setOpen(newOpen);
       if (!newOpen) {
-        resetFormWithDefaults();
+        resetFormRef.current();
       }
     }
-  }, [hasUnsavedChanges, resetFormWithDefaults]);
+  }, [hasUnsavedChanges]);
 
   const handleConfirmClose = useCallback(() => {
     setShowAlert(false);
     setOpen(false);
-    resetFormWithDefaults();
-  }, [resetFormWithDefaults]);
+    resetFormRef.current();
+  }, []);
 
   React.useEffect(() => {
     if (open) {
-      resetFormWithDefaults();
+      resetFormRef.current();
     }
-  }, [open, resetFormWithDefaults]);
+  }, [open]);
 
   const action = useCallback(async (values: z.infer<typeof createImagingStudiesSchema>) => {
     if (!patientId || !hpIds || hpIds.length === 0) {
@@ -168,7 +174,7 @@ export default function CreateImagingStudiesModal({ clinicUid, onCreateImagingSt
       loading: "Creating imaging study request...",
       success: (result) => {
         setOpen(false);
-        resetFormWithDefaults();
+        resetFormRef.current();
         onCreateImagingStudy?.();
         return result.message || "Imaging study request created successfully!";
       },
@@ -179,7 +185,7 @@ export default function CreateImagingStudiesModal({ clinicUid, onCreateImagingSt
         setIsSubmitting(false);
       },
     });
-  }, [patientId, hpIds, clinicUid, consultationTicketId, resetFormWithDefaults, onCreateImagingStudy]);
+  }, [patientId, hpIds, clinicUid, consultationTicketId, onCreateImagingStudy]);
 
   return (
     <>

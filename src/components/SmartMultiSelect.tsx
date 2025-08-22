@@ -62,18 +62,7 @@ export default function SmartMultiSelect<T, IDType = number>({
   const searchInputRef = useRef<HTMLInputElement>(null);
   const isMountedRef = useRef(true);
   const lastValueRef = useRef<IDType[]>([]);
-  const searchFunctionRef = useRef(search);
-  const fetchByIdsFunctionRef = useRef(fetchByIds);
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
-
-  // Update function refs when they change
-  useEffect(() => {
-    searchFunctionRef.current = search;
-  }, [search]);
-
-  useEffect(() => {
-    fetchByIdsFunctionRef.current = fetchByIds;
-  }, [fetchByIds]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -102,35 +91,28 @@ export default function SmartMultiSelect<T, IDType = number>({
 
       // Check if we already have the selected items to avoid unnecessary refetches
       const currentIds = selectedItems.map(item => getId(item));
-      const valueSet = new Set(value);
-      const currentSet = new Set(currentIds);
-
       const hasAllItems = value.length === currentIds.length &&
-        value.every(id => currentSet.has(id));
+        value.every(id => currentIds.includes(id));
 
       if (hasAllItems) {
         return;
       }
 
       try {
-        if (!isMountedRef.current) return;
         setIsLoadingSelected(true);
-        const result = await fetchByIdsFunctionRef.current(value);
-        if (isMountedRef.current) {
-          setSelectedItems(result);
-        }
+        const result = await fetchByIds(value);
+        setSelectedItems(result);
       } catch (error) {
         console.error("Error loading selected items:", error);
+        setSelectedItems([]); // Clear on error to prevent stale state
       } finally {
-        if (isMountedRef.current) {
-          setIsLoadingSelected(false);
-        }
+        setIsLoadingSelected(false);
       }
     };
 
     loadSelectedItems();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [value]); // fetchByIds is memoized in parent component
+  }, [value]); // fetchByIds and getId are stable from parent component
 
   // Search for items when search term changes
   useEffect(() => {
@@ -140,33 +122,21 @@ export default function SmartMultiSelect<T, IDType = number>({
         return;
       }
 
-      // Store current search term to prevent race conditions
-      const currentSearchTerm = debouncedSearchTerm;
-
       try {
-        if (!isMountedRef.current) return;
         setIsSearching(true);
-        const result = await searchFunctionRef.current(debouncedSearchTerm);
-
-        // Only update if this is still the current search term and component is mounted
-        if (currentSearchTerm === debouncedSearchTerm && isMountedRef.current) {
-          setSearchResults(result);
-        }
+        const result = await search(debouncedSearchTerm);
+        setSearchResults(result);
       } catch (error) {
         console.error("Error searching items:", error);
-        if (currentSearchTerm === debouncedSearchTerm && isMountedRef.current) {
-          setSearchResults([]);
-        }
+        setSearchResults([]);
       } finally {
-        if (currentSearchTerm === debouncedSearchTerm && isMountedRef.current) {
-          setIsSearching(false);
-        }
+        setIsSearching(false);
       }
     };
 
     searchItems();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearchTerm, minSearchLength]); // search is memoized in parent component
+  }, [debouncedSearchTerm, minSearchLength]); // search is stable from parent component
 
   // Handle option selection/deselection
   const handleSelect = useCallback((item: T) => {
@@ -175,8 +145,7 @@ export default function SmartMultiSelect<T, IDType = number>({
       ? value.filter((id: IDType) => id !== itemId)
       : [...value, itemId];
     onChange(newValue);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [value, onChange]); // getId is memoized in parent component
+  }, [value, onChange, getId]);
 
   // Handle removing a selected option
   const handleRemove = useCallback((itemId: IDType) => {
@@ -201,11 +170,11 @@ export default function SmartMultiSelect<T, IDType = number>({
 
   // Display options (search results or prompt to search)
   const displayOptions = useMemo(() => {
-    if (searchTerm.length < minSearchLength) {
+    if (debouncedSearchTerm.length < minSearchLength) {
       return [];
     }
     return searchResults;
-  }, [searchResults, searchTerm.length, minSearchLength]);
+  }, [searchResults, debouncedSearchTerm.length, minSearchLength]);
 
   return (
     <Popover open={open} onOpenChange={handleOpenChange} modal={true}>
@@ -273,9 +242,16 @@ export default function SmartMultiSelect<T, IDType = number>({
             onValueChange={setSearchTerm}
           />
           <CommandList>
-            {searchTerm.length < minSearchLength ? (
+            {debouncedSearchTerm.length < minSearchLength ? (
               <CommandEmpty>
                 Type at least {minSearchLength} characters to search
+              </CommandEmpty>
+            ) : searchTerm !== debouncedSearchTerm && searchTerm.length >= minSearchLength ? (
+              <CommandEmpty>
+                <div className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Searching...
+                </div>
               </CommandEmpty>
             ) : isSearching ? (
               <CommandEmpty>

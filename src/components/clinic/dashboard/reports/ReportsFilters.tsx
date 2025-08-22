@@ -101,6 +101,10 @@ async function generateAndExportConsultationReport(
       )
     )
 
+    const icd10ConsultationNote = ticket?.ConsultationNotes?.find(
+      (note) => note.section === "icd10"
+    );
+
     const nurseImpression = latestNursePreAssessmentNote?.assessment || "-"
 
     return {
@@ -110,6 +114,7 @@ async function generateAndExportConsultationReport(
       "Age": age !== null ? age.toString() : "-",
       "Sex": patient?.gender || "-",
       "Role": patient?.OrganizationMembers?.[0]?.OrganizationRole?.name || "-",
+      "Year Level": patient?.StudentRecords?.[0]?.OrganizationYearLevel?.name || "-",
       "Campus": patient?.OrganizationMembers?.[0]?.Organization?.name || "-",
       "Service Category": ticket.Appointment?.AppointmentAttribute?.Service?.ServiceCategory?.name || "-",
       "Service": ticket.Appointment?.AppointmentAttribute?.Service?.name || "-",
@@ -121,14 +126,15 @@ async function generateAndExportConsultationReport(
       "Tagged Doctor": taggedDoctor,
       "Nurse Incharge": nurseIncharge,
       "Nurse Impression": nurseImpression,
+      "Doctor's DX": icd10ConsultationNote?.content || "-",
       "System": ticket.System.name,
     }
   })
 
   const columns = [
-    "ID", "Date", "Patient", "Age", "Sex", "Role", "Campus", "Service Category",
+    "ID", "Date", "Patient", "Age", "Sex", "Role", "Year Level", "Campus", "Service Category",
     "Service", "Status", "Program", "Appointment Mode", "Appointment Type",
-    "Purpose/Chief Complaint", "Tagged Doctor", "Nurse Incharge", "Nurse Impression", "System"
+    "Purpose/Chief Complaint", "Tagged Doctor", "Nurse Incharge", "Nurse Impression", "Doctor's DX", "System"
   ]
 
   const filename = `consultation_reports_${format(new Date(), "yyyy-MM-dd")}`

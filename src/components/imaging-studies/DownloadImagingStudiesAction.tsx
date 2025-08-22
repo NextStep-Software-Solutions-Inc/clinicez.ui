@@ -42,7 +42,16 @@ const DownloadImagingStudiesAction = React.forwardRef<
 
         const address = formatPatientAddress(patient)
 
-        const diagnostics = data.ImagingRequestDiagnostics?.map(item => item.ImagingDiagnostic?.description).filter(Boolean).join(", ") || ""
+        const diagnostics = data.ImagingRequestDiagnostics
+          ?.map(item => {
+            const diag = item.ImagingDiagnostic || {};
+            if (diag.name && diag.description && diag.name !== diag.description) {
+              return `${diag.name} (${diag.description})`;
+            }
+            return diag.name || diag.description;
+          })
+          .filter(Boolean)
+          .join(", ") || "";
 
         const template = prepareImagingStudy({
           template: data.DocumentTemplate?.htmlContent ?? "",

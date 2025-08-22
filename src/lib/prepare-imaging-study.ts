@@ -1,4 +1,5 @@
 import dayjs from "@lib/day-utils";
+import { capitalize } from "./utils";
 
 type PrepareImagingStudyPayload = {
   template: string;
@@ -36,14 +37,14 @@ export const prepareImagingStudy = (payload: PrepareImagingStudyPayload): string
   const replacements = {
     "@{name}": name,
     "@{age}": age,
-    "@{gender}": gender,
+    "@{gender}": capitalize(gender),
     "@{address}": address,
     "@{birthdate}": birthdate,
     "@{requestDate}": requestDate,
     "@{diagnostics}": diagnostics,
     "@{history}": history || "No history provided.",
     "@{impression}": impression || "No impression provided.",
-    "@{requestFor}": requestFor || "No request for imaging provided.",
+    "@{requestFor}": requestFor || "No request reason provided.",
     "@{doctorName}": doctorName,
     "@{licenseNo}": licenseNo,
     "@{ptrNo}": ptrNo,

@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils"
 export interface SearchableDropdownOption {
   value: string | number
   label: string
+  studentIds?: string[]
   [key: string]: unknown
 }
 

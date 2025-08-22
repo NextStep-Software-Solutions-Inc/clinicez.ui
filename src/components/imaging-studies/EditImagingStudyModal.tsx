@@ -13,6 +13,7 @@ import { UnsavedChangesAlert } from "@/components/UnsavedChangesAlert";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -27,11 +28,15 @@ import { promiseWrapper } from "@/lib/with-error-handling";
 import { updateImagingStudyAction } from "@/actions/clinics/clinical-record/imaging-studies.action";
 import { ImagingStudy } from "./ImagingStudiesItem";
 import { PatientProfile } from "../consultation/ConsultationDetails";
+import ImagingDiagnosticsMultiSelect from "@/components/ImagingDiagnosticsMultiSelect";
 
 const formSchema = z.object({
   history: z.string().optional(),
   reason: z.string().optional(),
   impression: z.string().optional(),
+  diagnostics: z.array(z.number()).min(1, {
+    message: "Please select at least one diagnostic",
+  }),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -63,6 +68,7 @@ export default function EditImagingStudyModal({
       history: "",
       reason: "",
       impression: "",
+      diagnostics: [],
     },
     mode: "onChange",
   });
@@ -72,19 +78,26 @@ export default function EditImagingStudyModal({
       history: "",
       reason: "",
       impression: "",
+      diagnostics: [],
     });
   }, [form]);
 
   useEffect(() => {
     if (open && study) {
+      const diagnosticIds = study.ImagingRequestDiagnostics?.map(
+        (diag) => diag.ImagingDiagnostic.id
+      ) || [];
+
       const values = {
         history: study.history || "",
         reason: study.reason || "",
         impression: study.impression || "",
+        diagnostics: diagnosticIds,
       };
       form.setValue("history", values.history);
       form.setValue("reason", values.reason);
       form.setValue("impression", values.impression);
+      form.setValue("diagnostics", values.diagnostics);
       setOriginalValues(values);
     } else if (!open) {
       resetForm();
@@ -98,7 +111,8 @@ export default function EditImagingStudyModal({
     return (
       currentValues.history !== originalValues.history ||
       currentValues.reason !== originalValues.reason ||
-      currentValues.impression !== originalValues.impression
+      currentValues.impression !== originalValues.impression ||
+      JSON.stringify(currentValues.diagnostics.sort()) !== JSON.stringify(originalValues.diagnostics.sort())
     );
   }, [form, originalValues]);
 
@@ -122,6 +136,7 @@ export default function EditImagingStudyModal({
       history: data.history,
       reason: data.reason,
       impression: data.impression,
+      diagnosticIds: data.diagnostics,
       hpIds: hpIds,
     }), {
       loading: "Updating imaging study...",
@@ -152,6 +167,29 @@ export default function EditImagingStudyModal({
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} id="edit-imaging-study-form">
+              <FormField
+                control={form.control}
+                name="diagnostics"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Diagnostics <span className="text-destructive">*</span></FormLabel>
+                    <FormControl>
+                      <ImagingDiagnosticsMultiSelect
+                        value={field.value || []}
+                        onChange={field.onChange}
+                        placeholder="Select diagnostics"
+                        disabled={isLoading}
+                        searchPlaceholder="Type to search diagnostics..."
+                        minSearchLength={2}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Select the relevant diagnostics for this imaging study.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <div className="max-h-[60vh] overflow-y-auto flex flex-col gap-4 py-2">
                 <FormField
                   control={form.control}
@@ -163,9 +201,12 @@ export default function EditImagingStudyModal({
                         <textarea
                           placeholder="Enter patient history..."
                           {...field}
-                          className="w-full min-h-[80px] border rounded-md p-2 text-sm focus:outline-primary"
+                          className="w-full min-h-[80px] border rounded-md p-2 text-sm focus:outline-primary resize-none"
                         />
                       </FormControl>
+                      <FormDescription>
+                        Provide a brief history of the patient&apos;s condition. (Optional)
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -181,9 +222,12 @@ export default function EditImagingStudyModal({
                         <textarea
                           placeholder="Enter reason for imaging..."
                           {...field}
-                          className="w-full min-h-[80px] border rounded-md p-2 text-sm focus:outline-primary"
+                          className="w-full min-h-[80px] border rounded-md p-2 text-sm focus:outline-primary resize-none"
                         />
                       </FormControl>
+                      <FormDescription>
+                        Provide a brief reason for the imaging request. (Optional)
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -199,9 +243,12 @@ export default function EditImagingStudyModal({
                         <textarea
                           placeholder="Enter clinical impression..."
                           {...field}
-                          className="w-full min-h-[80px] border rounded-md p-2 text-sm focus:outline-primary"
+                          className="w-full min-h-[80px] border rounded-md p-2 text-sm focus:outline-primary resize-none"
                         />
                       </FormControl>
+                      <FormDescription>
+                        Provide a brief clinical impression based on the patient&apos;s condition. (Optional)
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

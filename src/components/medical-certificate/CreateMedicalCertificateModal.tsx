@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Checkbox } from "@/components/ui/checkbox"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { UnsavedChangesAlert } from "@/components/UnsavedChangesAlert"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import Each from "@/components/utils/Each"
@@ -569,15 +569,18 @@ export default function CreateMedicalCertificateModal({
                   name="remarks"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Recommendations (Optional)</FormLabel>
+                      <FormLabel>Recommendations</FormLabel>
                       <FormControl>
                         <textarea
                           id="remarks"
                           placeholder="Enter Recommendations/Remarks"
                           {...field}
-                          className="w-full min-h-[80px] border rounded-md p-2 text-sm focus:outline-primary"
+                          className="w-full min-h-[80px] border rounded-md p-2 text-sm focus:outline-primary resize-none"
                         />
                       </FormControl>
+                      <FormDescription>
+                        Provide any recommendations or remarks. (Optional)
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -588,15 +591,18 @@ export default function CreateMedicalCertificateModal({
                   name="impression"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Impression (Optional)</FormLabel>
+                      <FormLabel>Impression</FormLabel>
                       <FormControl>
                         <textarea
                           id="impression"
                           placeholder="Enter Impression"
                           {...field}
-                          className="w-full min-h-[80px] border rounded-md p-2 text-sm focus:outline-primary"
+                          className="w-full min-h-[80px] border rounded-md p-2 text-sm focus:outline-primary resize-none"
                         />
                       </FormControl>
+                      <FormDescription>
+                        Provide a brief impression of the patient&apos;s condition. (Optional)
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

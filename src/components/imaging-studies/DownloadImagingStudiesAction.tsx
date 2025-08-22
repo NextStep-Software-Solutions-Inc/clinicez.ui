@@ -37,12 +37,21 @@ const DownloadImagingStudiesAction = React.forwardRef<
         const patientName =
           `${patient.firstName ?? ""} ${patient.middleName ?? ""} ${patient.lastName ?? ""} ${patient.suffix ?? ""}`.trim()
         const age = patient.dob ? calculateAge(patient.dob) : ""
-        const gender = patient.gender ?? ""
+        const gender = patient?.gender ?? ""
         const birthdate = patient.dob ? dayjs(patient.dob).format("MM/DD/YYYY") : ""
 
         const address = formatPatientAddress(patient)
 
-        const diagnostics = data.ImagingRequestDiagnostics?.map(item => item.ImagingDiagnostic?.name).filter(Boolean).join(", ") || ""
+        const diagnostics = data.ImagingRequestDiagnostics
+          ?.map(item => {
+            const diag = item.ImagingDiagnostic || {};
+            if (diag.name && diag.description && diag.name !== diag.description) {
+              return `${diag.name} (${diag.description})`;
+            }
+            return diag.name || diag.description;
+          })
+          .filter(Boolean)
+          .join(", ") || "";
 
         const template = prepareImagingStudy({
           template: data.DocumentTemplate?.htmlContent ?? "",

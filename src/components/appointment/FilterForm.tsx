@@ -39,6 +39,9 @@ import { usePermissions } from "@hooks/usePermission"
 import { PERMISSIONS } from "@lib/permissions"
 import { useUser } from "@auth0/nextjs-auth0"
 import { useClinicPatients } from "@/hooks/useClinicPatient"
+import { SearchableDropdown, type SearchableDropdownOption } from "@components/ui/searchable-dropdown"
+import { getFullName } from "@/lib/formatter-utils"
+import { isValidStudentId } from "@/lib/formatter-utils"
 
 const FilterFormSchema = z.object({
   appointmentTypeId: z.coerce.number({
@@ -59,7 +62,7 @@ const FilterFormSchema = z.object({
     description: 'Select a patient',
   }).optional()
 }).superRefine((data, ctx) => {
-  if(data.bookAFriend && !data.requester) {
+  if (data.bookAFriend && !data.requester) {
     ctx.addIssue({
       message: 'Requester is required when booking for a friend',
       code: 'custom',
@@ -72,31 +75,59 @@ interface FilterFormProps {
   onContinue?: () => void
 }
 
-export default function FilterForm({onContinue}: FilterFormProps) {
-  const {clinicUid} = useParams<{clinicUid: string}>()
-  const {user} = useUser()
-  const [bookAppointmentForm, setBookAppointmentForm] = useAtom(bookAppointmentAtom)
-  const {data: appointmentTypes} = useOrgAppointmentTypes(clinicUid)
-  const {data: appointmentModes } = useOrgAppointmentModes(clinicUid);
-  const {data: serviceCategories} = useClinicServiceCategories(clinicUid)
-  const {data: clinicPatients } = useClinicPatients({clinicUid})
+interface StudentRecord {
+  studentId: string;
+}
 
-  const {data: myOrgPermissions, isLoading: loadingPermissions} = usePermissions({
+interface PatientWithStudentRecords {
+  userId: string;
+  firstName: string;
+  middleName?: string;
+  lastName?: string;
+  suffix?: string;
+  StudentRecords?: StudentRecord[];
+}
+
+export default function FilterForm({ onContinue }: FilterFormProps) {
+  const { clinicUid } = useParams<{ clinicUid: string }>()
+  const { user } = useUser()
+  const [bookAppointmentForm, setBookAppointmentForm] = useAtom(bookAppointmentAtom)
+  const { data: appointmentTypes } = useOrgAppointmentTypes(clinicUid)
+  const { data: appointmentModes } = useOrgAppointmentModes(clinicUid);
+  const { data: serviceCategories } = useClinicServiceCategories(clinicUid)
+  const { data: clinicPatients } = useClinicPatients({ clinicUid })
+
+  const { data: myOrgPermissions, isLoading: loadingPermissions } = usePermissions({
     userId: user?.sub ?? undefined,
     type: "CLINIC"
   })
 
-  const {data: hps} = useHPs()
+  const { data: hps } = useHPs()
 
   const groupedHps = useMemo(() => {
     // array of array of hps
     return (hps ?? [])?.reduce((acc, hp) => {
       const existing = acc.find(a => a.hpTypeName === hp.HPType.name)
-      if(existing) existing.hps.push(hp)
-      else acc.push({hpTypeName: hp.HPType.name, hps: [hp]})
+      if (existing) existing.hps.push(hp)
+      else acc.push({ hpTypeName: hp.HPType.name, hps: [hp] })
       return acc
-    }, [] as {hpTypeName: string, hps: NonNullable<typeof hps>}[] )
+    }, [] as { hpTypeName: string, hps: NonNullable<typeof hps> }[])
   }, [hps])
+
+  // Memoize patient options to avoid recalculation on every render
+  const patientOptions = useMemo(() => {
+    return (clinicPatients?.data ?? []).map((cp) => {
+      const { Patient } = cp as { Patient: PatientWithStudentRecords };
+      const name = getFullName({ firstName: Patient.firstName, middleName: Patient.middleName, lastName: Patient.lastName, suffix: Patient.suffix });
+      // Ensure only valid student IDs are included
+      const studentIds = Patient.StudentRecords?.map((sr) => sr.studentId).filter(isValidStudentId) ?? [];
+      return {
+        value: Patient.userId,
+        label: name || Patient.userId,
+        studentIds,
+      }
+    });
+  }, [clinicPatients?.data]);
 
   const form = useForm<z.infer<typeof FilterFormSchema>>({
     resolver: zodResolver(FilterFormSchema),
@@ -112,39 +143,41 @@ export default function FilterForm({onContinue}: FilterFormProps) {
   })
 
   function onSubmit(data: z.infer<typeof FilterFormSchema>) {
-    
+
     const service = serviceCategories?.flatMap(sc => sc.Services).find(service => service.id === data.serviceId)
     const appointmentType = appointmentTypes?.find(appointmentType => appointmentType.id === data.appointmentTypeId)
     const serviceAttribute = service?.ServiceAttribute
-    const appointmentTypeAttribute = appointmentType?.AppointmentTypeAttribute 
-    
-    if(!appointmentTypeAttribute) return toast.message("Appointment type attribute not found")
-    if(!serviceAttribute) return toast.message("Service attribute not found")
-    const hpUserId = (hps ?? []).find(hp => hp.id === data.hpId)?.User.userId 
-    setBookAppointmentForm((prev) => ({...prev, ...{
-      selectedTimeSlot: undefined,
-      availabilities: undefined,
-      modeId: data.modeId,
-      hpId: data.hpId,
-      hpUserId,
-      serviceId: data.serviceId,
-      appointmentTypeId: data.appointmentTypeId,
-      bookAFriend: data.bookAFriend,
-      requester: data.requester,
-    }}))
+    const appointmentTypeAttribute = appointmentType?.AppointmentTypeAttribute
+
+    if (!appointmentTypeAttribute) return toast.message("Appointment type attribute not found")
+    if (!serviceAttribute) return toast.message("Service attribute not found")
+    const hpUserId = (hps ?? []).find(hp => hp.id === data.hpId)?.User.userId
+    setBookAppointmentForm((prev) => ({
+      ...prev, ...{
+        selectedTimeSlot: undefined,
+        availabilities: undefined,
+        modeId: data.modeId,
+        hpId: data.hpId,
+        hpUserId,
+        serviceId: data.serviceId,
+        appointmentTypeId: data.appointmentTypeId,
+        bookAFriend: data.bookAFriend,
+        requester: data.requester,
+      }
+    }))
     form.reset(data)
     onContinue?.()
   }
   const bookAFriend = form.watch('bookAFriend')
   const myPermissionArray = myOrgPermissions?.map(permission => permission.name)
-  
+
   const writeOrgAppointmentPermissions = [PERMISSIONS.CLINIC["WRITE:CLINIC:APPOINTMENT"].name]
   const writeOrgAppointmentBookAFriendPermissions = [PERMISSIONS.CLINIC["WRITE:CLINIC:APPOINTMENT:BOOK_A_FRIEND"].name]
   const canWritePermission = writeOrgAppointmentPermissions.every(permission => myPermissionArray?.includes(permission))
   const canWriteBookAFriendPermission = writeOrgAppointmentBookAFriendPermissions.every(permission => myPermissionArray?.includes(permission))
-  
-  if(loadingPermissions) return <p>Loading permissions...</p>
-  if(!canWritePermission) return <p>Sorry, You do not have permission to book an appointment. 😔</p>
+
+  if (loadingPermissions) return <p>Loading permissions...</p>
+  if (!canWritePermission) return <div role="alert" aria-live="assertive">Sorry, You do not have permission to book an appointment.</div>
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className=" space-y-6">
@@ -164,11 +197,10 @@ export default function FilterForm({onContinue}: FilterFormProps) {
                     </FormControl>
                     <div className="space-y-1 leading-none">
                       <FormLabel>
-                        Book appointment for a friend.
+                        Book Appointment for Someone Else
                       </FormLabel>
                       <FormDescription>
                         Check this box if you are booking an appointment for someone else other than yourself.
-                        You can can only book for a friend if you are the same member of the organization.
                       </FormDescription>
                     </div>
                   </FormItem>
@@ -179,41 +211,56 @@ export default function FilterForm({onContinue}: FilterFormProps) {
                   <FormField
                     control={form.control}
                     name="requester"
-                    render={({ field }) => (
-                      <FormItem className="flex-grow">
-                        <FormLabel>Select Patient</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value?.toString()}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Search a patient" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <Each
-                              of={clinicPatients?.data ?? []}
-                              render={(clinicPatient) => {
-                                return (
-                                  <SelectItem value={clinicPatient.Patient.userId}>{clinicPatient.Patient.firstName} {clinicPatient.Patient.middleName} {clinicPatient.Patient.lastName} {clinicPatient.Patient.suffix}</SelectItem>
-                                )
-                              }}
-                            />
-                          </SelectContent>
-                        </Select>
-                        <FormDescription>
+                    render={({ field }) => {
+
+                      const filterByNameOrStudentId = (option: SearchableDropdownOption, term: string) => {
+                        const searchTerm = term.trim().toLowerCase()
+                        if (!searchTerm) return true
+
+                        const labelMatch = option.label.toLowerCase().includes(searchTerm)
+                        const studentIds = option.studentIds ?? []
+                        const idMatch = studentIds.some((id) => id.toLowerCase().includes(searchTerm))
+
+                        return labelMatch || idMatch
+                      }
+
+                      return (
+                        <FormItem className="flex-grow">
+                          <FormLabel>Select Patient</FormLabel>
+                          <SearchableDropdown
+                            options={patientOptions}
+                            value={field.value}
+                            placeholder="Search by name or student ID"
+                            filterFunction={filterByNameOrStudentId}
+                            onSelect={(opt) => field.onChange(opt.value)}
+                            renderOption={(opt) => {
+                              const studentIds = opt.studentIds ?? []
+                              return (
+                                <div className="flex flex-col">
+                                  <span className="font-medium">{opt.label}</span>
+                                  {studentIds.length > 0 && (
+                                    <span className="text-xs text-muted-foreground">Student ID: {studentIds.join(", ")}</span>
+                                  )}
+                                </div>
+                              )
+                            }}
+                          />
+                          <FormDescription>
                             Select a patient to book an appointment for.
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )
+                    }}
                   />
                 )
               }
-              <Separator/>
+              <Separator />
             </>
 
           )
         }
-        
+
         <h5 className="text-lg font-semibold">What service do you want to avail?</h5>
         <div className="flex flex-row gap-5 items-center justify-center md:justify-start flex-wrap">
           <FormField
@@ -222,13 +269,13 @@ export default function FilterForm({onContinue}: FilterFormProps) {
             render={({ field }) => (
               <FormItem className="flex-grow">
                 <FormLabel>Mode</FormLabel>
-                <Select 
-                  onValueChange={field.onChange} 
+                <Select
+                  onValueChange={field.onChange}
                   value={field.value?.toString()}
                 >
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select an appointment mode" className="capitalize"/>
+                      <SelectValue placeholder="Select an appointment mode" className="capitalize" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
@@ -253,13 +300,13 @@ export default function FilterForm({onContinue}: FilterFormProps) {
             render={({ field }) => (
               <FormItem className="flex-grow">
                 <FormLabel>Appointment Type</FormLabel>
-                <Select 
-                  onValueChange={field.onChange} 
+                <Select
+                  onValueChange={field.onChange}
                   value={field.value?.toString()}
                 >
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select an appointment" className="capitalize"/>
+                      <SelectValue placeholder="Select an appointment" className="capitalize" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
@@ -272,7 +319,7 @@ export default function FilterForm({onContinue}: FilterFormProps) {
                   </SelectContent>
                 </Select>
                 <FormDescription>
-                    Select an appointment type to show available slots
+                  Select an appointment type to show available slots
                 </FormDescription>
                 <FormMessage />
               </FormItem>
@@ -339,10 +386,11 @@ export default function FilterForm({onContinue}: FilterFormProps) {
                                 const name = `${hp.HPProfile?.title || hp.User.firstName} ${hp.HPProfile?.name || hp.User.lastName} ${hp.HPProfile?.suffix || hp.User.suffix || ""}`
                                 return (
                                   <SelectItem value={hp.id.toString()}>{name}</SelectItem>
-                                )}}
+                                )
+                              }}
                             />
                           </SelectGroup>
-                          
+
                         )
                       }}
                     />

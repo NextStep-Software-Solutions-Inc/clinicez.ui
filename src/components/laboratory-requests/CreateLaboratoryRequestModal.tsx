@@ -22,6 +22,7 @@ import { z } from "zod";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -441,15 +442,18 @@ export default function CreateLaboratoryRequestModal({
                   name="impression"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Impression (Optional)</FormLabel>
+                      <FormLabel>Impression</FormLabel>
                       <FormControl>
-                        <Textarea
-                          placeholder="Enter impression or reason for laboratory tests..."
-                          className="resize-none"
-                          rows={4}
+                        <textarea
+                          id="impression"
+                          placeholder="Enter impression or reason for laboratory test"
                           {...field}
+                          className="w-full min-h-[80px] border rounded-md p-2 text-sm focus:outline-primary resize-none"
                         />
                       </FormControl>
+                      <FormDescription>
+                        Brief summary of the patient&apos;s condition and any relevant findings. (Optional)
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

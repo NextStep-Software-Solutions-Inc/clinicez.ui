@@ -84,12 +84,33 @@ async function generateAndExportConsultationReport(
     const doctorNameParts = [hp?.User?.firstName, hp?.User?.lastName].filter(Boolean)
     const taggedDoctor = hp?.HPProfile?.name || (doctorNameParts.length ? doctorNameParts.join(" ") : "-")
 
+    // Find nurse in charge from healthcare providers
+    const nurseHP = ticket.ConsultationTicketHPs?.find(
+      (hp) => hp.HealthCareProvider?.User?.OrganizationMembers?.some(
+        (member) => member.OrganizationRole?.name === "Nurse"
+      )
+    )?.HealthCareProvider
+
+    const nurseNameParts = [nurseHP?.User?.firstName, nurseHP?.User?.lastName].filter(Boolean)
+    const nurseIncharge = nurseHP?.HPProfile?.name || (nurseNameParts.length ? nurseNameParts.join(" ") : "-")
+
+    // Get the latest Pre-Assessment Note created by a Nurse
+    const latestNursePreAssessmentNote = ticket.Appointment?.PreAssessmentNotes?.find(
+      (note) => note.CreatedBy?.OrganizationMembers?.some(
+        (member) => member.OrganizationRole?.name === "Nurse"
+      )
+    )
+
+    const nurseImpression = latestNursePreAssessmentNote?.assessment || "-"
+
     return {
       "ID": `Ticket #${ticket.id}`,
       "Date": format(new Date(ticket.createdAt), "yyyy-MM-dd"),
       "Patient": patientName,
       "Age": age !== null ? age.toString() : "-",
       "Sex": patient?.gender || "-",
+      "Role": patient?.OrganizationMembers?.[0]?.OrganizationRole?.name || "-",
+      "Campus": patient?.OrganizationMembers?.[0]?.Organization?.name || "-",
       "Service Category": ticket.Appointment?.AppointmentAttribute?.Service?.ServiceCategory?.name || "-",
       "Service": ticket.Appointment?.AppointmentAttribute?.Service?.name || "-",
       "Status": ticket.Appointment?.AppointmentAttribute?.status || "-",
@@ -98,14 +119,16 @@ async function generateAndExportConsultationReport(
       "Appointment Type": ticket.Appointment?.AppointmentAttribute?.AppointmentType?.name || "-",
       "Purpose/Chief Complaint": ticket.Appointment?.complaint || ticket.subject || "-",
       "Tagged Doctor": taggedDoctor,
+      "Nurse Incharge": nurseIncharge,
+      "Nurse Impression": nurseImpression,
       "System": ticket.System.name,
     }
   })
 
   const columns = [
-    "ID", "Date", "Patient", "Age", "Sex", "Service Category",
+    "ID", "Date", "Patient", "Age", "Sex", "Role", "Campus", "Service Category",
     "Service", "Status", "Program", "Appointment Mode", "Appointment Type",
-    "Purpose/Chief Complaint", "Tagged Doctor", "System"
+    "Purpose/Chief Complaint", "Tagged Doctor", "Nurse Incharge", "Nurse Impression", "System"
   ]
 
   const filename = `consultation_reports_${format(new Date(), "yyyy-MM-dd")}`

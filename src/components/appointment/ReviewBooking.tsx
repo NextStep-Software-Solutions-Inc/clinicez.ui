@@ -130,8 +130,22 @@ export default function ReviewBooking({ nextStep, prevStep, isLastStep, isFirstS
     startOver?.();
   }
 
-  const preferredHp = `${hp?.HPProfile?.title} ${hp?.HPProfile?.name} ${hp?.HPProfile?.suffix}`
-  const requesterName = `${dbUser?.data?.firstName || "-"} ${dbUser?.data?.middleName || ""} ${dbUser?.data?.lastName || "-"} ${dbUser?.data?.suffix || ""}`
+  const preferredHp = React.useMemo(() => {
+    if (!hp) return "No Healthcare Provider Selected";
+    const title = hp?.HPProfile?.title ?? "";
+    const name = hp?.HPProfile?.name ?? "";
+    const suffix = hp?.HPProfile?.suffix ?? "";
+    const profName = `${title} ${name} ${suffix}`.replace(/\s+/g, " ").trim();
+    if (profName) return profName;
+
+    const firstName = hp?.User?.firstName ?? "";
+    const middleName = hp?.User?.middleName ?? "";
+    const lastName = hp?.User?.lastName ?? "";
+    const userSuffix = hp?.User?.suffix ?? "";
+    const userName = `${firstName} ${middleName} ${lastName} ${userSuffix}`.replace(/\s+/g, " ").trim();
+    return userName || "No Healthcare Provider Selected";
+  }, [hp]);
+  const requesterName = `${dbUser?.data?.firstName || "-"} ${dbUser?.data?.middleName || ""} ${dbUser?.data?.lastName || "-"} ${dbUser?.data?.suffix || ""}`.replace(/\s+/g, " ").trim();
   return (
     <div className="shadow-lg p-8 space-y-5 bg-white rounded-md">
       <h2 className="text-2xl  font-bold ">Review details</h2>

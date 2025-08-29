@@ -78,6 +78,10 @@ export async function generatePdf(
   options?: GeneratePdfOptions
 ): Promise<GeneratedPdfResult> {
   const { pdfDoc, form } = await loadPhilHealthPdf(template)
+  // List all fields available in the fillable PDF
+  const fields = form.getFields()
+  fields.forEach(field => console.log(field.getName()))
+
   const fontSize = options?.textFontSize
   await fillTextFields(form, texts, fontSize)
   if (checkboxes?.length) await processCheckboxes(form, checkboxes)

@@ -4,15 +4,7 @@ import { withErrorHandling } from "@/lib/with-error-handling"
 import { generatePdf, formatIsoDate } from "./utils/philhealth-pdf"
 import { getUserAction } from "@/actions/users/user.action"
 import prisma from "@/lib/prisma"
-
-type PrimaryAddress = { city?: string | null; state?: string | null; barangay?: string | null }
-function hasUserAddresses(u: unknown): u is { UserAddresses?: PrimaryAddress[] } {
-  return !!u && typeof u === "object" && "UserAddresses" in (u as Record<string, unknown>)
-}
-type PhilHealthRecordLite = { pin?: string | null; philSysId?: string | null; tin?: string | null }
-function hasPhilHealthRecord(u: unknown): u is { PhilHealthRecord: PhilHealthRecordLite[] } {
-  return !!u && typeof u === "object" && "PhilHealthRecord" in (u as Record<string, unknown>)
-}
+import { PrimaryAddress, PhilHealthRecordBasic, hasUserAddresses, hasPhilHealthRecordBasic } from "@/lib/utils/philhealth"
 
 export const downloadPKRFAction = withErrorHandling(async (userId?: string) => {
   if (!userId) throw new Error("User ID required")
@@ -20,7 +12,7 @@ export const downloadPKRFAction = withErrorHandling(async (userId?: string) => {
   if (!userRes.status || !userRes.data) throw new Error("User not found")
   const user = userRes.data
   const primary: PrimaryAddress | undefined = hasUserAddresses(user) ? user.UserAddresses?.[0] : undefined
-  let phr = hasPhilHealthRecord(user) ? user.PhilHealthRecord?.[0] : undefined
+  let phr: PhilHealthRecordBasic | undefined = hasPhilHealthRecordBasic(user) ? user.PhilHealthRecord?.[0] : undefined
   if (!phr && user.id) {
     const fetched = await prisma.philHealthRecord.findFirst({
       where: { userId: user.id, isActive: true, deletedAt: null },

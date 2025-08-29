@@ -2,6 +2,8 @@
 
 import { PDFDocument } from "pdf-lib"
 import { logger } from "@/lib/logger"
+import { readFile } from "fs/promises"
+import { join } from "path"
 
 export interface LoadPdfResult {
   pdfDoc: PDFDocument
@@ -11,27 +13,48 @@ export interface LoadPdfResult {
 }
 
 export async function loadPhilHealthPdf(fileName: string): Promise<LoadPdfResult> {
+  try {
+    // First try to read from filesystem (for server-side operations)
+    const filePath = join(process.cwd(), 'pdfs', 'phr', fileName);
+    const fileBuffer = await readFile(filePath);
+    const bytes = new Uint8Array(fileBuffer);
 
-  const baseUrl = process.env.APP_BASE_URL || process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : process.env.APP_BASE_URL;
-  const pdfUrl = `${baseUrl}/pdfs/phr/${fileName}`;
+    if (bytes.length === 0) {
+      throw new Error(`PDF template at ${filePath} is empty`);
+    }
 
-  const response = await fetch(pdfUrl, {
-    cache: "force-cache"
-  });
+    const pdfDoc = await PDFDocument.load(bytes);
+    const form = pdfDoc.getForm();
+    return { pdfDoc, form, bytes, filePath };
+  } catch (fsError) {
+    // Fallback to HTTP fetch for client-side or deployed environments
+    console.log(`Filesystem read failed for ${fileName}, falling back to HTTP fetch:`, fsError);
 
-  if (!response.ok) {
-    throw new Error(`PDF template not found at ${pdfUrl}`);
+    const baseUrl = process.env.APP_BASE_URL ||
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+    const pdfUrl = `${baseUrl}/pdfs/phr/${fileName}`;
+
+    try {
+      const response = await fetch(pdfUrl, {
+        cache: "force-cache"
+      });
+
+      if (!response.ok) {
+        throw new Error(`PDF template not found at ${pdfUrl} (status: ${response.status})`);
+      }
+      const bytes = new Uint8Array(await response.arrayBuffer());
+
+      if (bytes.length === 0) {
+        throw new Error(`PDF template at ${pdfUrl} is empty`);
+      }
+
+      const pdfDoc = await PDFDocument.load(bytes);
+      const form = pdfDoc.getForm();
+      return { pdfDoc, form, bytes, filePath: pdfUrl };
+    } catch (fetchError) {
+      throw new Error(`Failed to load PDF ${fileName}: Filesystem error: ${fsError}. Fetch error: ${fetchError}`);
+    }
   }
-  const bytes = new Uint8Array(await response.arrayBuffer());
-  if (bytes.length === 0) {
-    throw new Error(`PDF template at ${pdfUrl} is empty`);
-  }
-
-  const pdfDoc = await PDFDocument.load(bytes);
-  const form = pdfDoc.getForm();
-  return { pdfDoc, form, bytes, filePath: pdfUrl };
 }
 
 export async function pdfBytesToBase64(bytes: Uint8Array): Promise<string> {

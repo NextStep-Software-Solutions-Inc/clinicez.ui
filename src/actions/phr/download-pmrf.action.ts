@@ -5,28 +5,10 @@ import { generatePdf, getSpouseAndMother, resolvePreferredKonsultaProvider, extr
 import { getUserAction } from "@/actions/users/user.action"
 import prisma from "@/lib/prisma"
 import { logger } from "@/lib/logger"
+import { PrimaryAddress, PhilHealthRecordLite, hasUserAddresses, hasPhilHealthRecord } from "@/lib/utils/philhealth"
 
 const upper = (v?: string | null) => v ? v.toUpperCase() : "N/A"
 const orNA = (v?: string | null) => v ?? "N/A"
-
-type PrimaryAddress = {
-  apartmentUnit?: string | null;
-  bldgName?: string | null;
-  street?: string | null;
-  subdivision?: string | null;
-  barangay?: string | null;
-  city?: string | null;
-  state?: string | null;
-  zipCode?: string | null;
-  addressLine?: string | null;
-}
-function hasUserAddresses(u: unknown): u is { UserAddresses?: PrimaryAddress[] } {
-  return !!u && typeof u === "object" && "UserAddresses" in (u as Record<string, unknown>)
-}
-type PhilHealthRecordLite = { id: number; memberTypeId: number; pin?: string | null; philSysId?: string | null; tin?: string | null }
-function hasPhilHealthRecord(u: unknown): u is { PhilHealthRecord: PhilHealthRecordLite[] } {
-  return !!u && typeof u === "object" && "PhilHealthRecord" in (u as Record<string, unknown>)
-}
 
 export const downloadPMRFAction = withErrorHandling(async (userId: string) => {
   if (!userId) throw new Error("User ID required")

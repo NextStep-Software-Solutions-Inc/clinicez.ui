@@ -3,11 +3,7 @@
 import { withErrorHandling } from "@/lib/with-error-handling"
 import { generatePdf, buildFullName, buildAddress, resolvePreferredKonsultaProvider } from "./utils/philhealth-pdf"
 import { getUserAction } from "@/actions/users/user.action"
-
-type PrimaryAddress = { subdivision?: string | null; street?: string | null; apartmentUnit?: string | null; barangay?: string | null; city?: string | null; state?: string | null }
-function hasUserAddresses(u: unknown): u is { UserAddresses?: PrimaryAddress[] } {
-  return !!u && typeof u === "object" && "UserAddresses" in (u as Record<string, unknown>)
-}
+import { PrimaryAddress, hasUserAddresses } from "@/lib/utils/philhealth"
 
 export const downloadPPCFAction = withErrorHandling(async (userId?: string) => {
   if (!userId) return { message: "User ID required", data: null }

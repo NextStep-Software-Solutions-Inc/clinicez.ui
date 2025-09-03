@@ -12,6 +12,7 @@ import { Download, ChevronDown, DownloadIcon } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { toBlobDownload } from '@/lib/utils/download'
 import { downloadEKASAction } from "@/actions/phr/download-ekas.action"
+import { downloadHAFAction } from "@/actions/phr/download-haf.action"
 
 interface DownloadPMRFActionProps { userId: string; children?: React.ReactNode }
 
@@ -69,6 +70,19 @@ const DownloadPMRFAction: React.FC<DownloadPMRFActionProps> = ({ userId, childre
     })
   }
 
+  const handleHAFDownload = async () => {
+    toast.promise(promiseWrapper(downloadHAFAction)(userId), {
+      loading: "Preparing HAF form...",
+      success: async (res) => {
+        const data = res.data
+        if (!data) return res.message
+        toBlobDownload(data.pdfData, data.filename)
+        return res.message
+      },
+      error: "Failed to generate HAF"
+    })
+  }
+
   const primaryButton = (
     <Button variant="outline" size="sm" className="gap-2" onClick={handlePMRFDownload}>
       <Download className="h-4 w-4" />
@@ -100,6 +114,10 @@ const DownloadPMRFAction: React.FC<DownloadPMRFActionProps> = ({ userId, childre
                 <DropdownMenuItem onClick={handleEKASDownload}>
                   <DownloadIcon className="mr-2 h-4 w-4" />
                   Download EKAS
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleHAFDownload}>
+                  <DownloadIcon className="mr-2 h-4 w-4" />
+                  Download HAF
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

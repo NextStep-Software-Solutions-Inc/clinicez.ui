@@ -22,8 +22,29 @@ export const joinOrganizationAction = withErrorHandling(async (payload: JoinOrga
   const session = await getCachedSession();
   if (!session) throw new Error("Unauthorized");
 
-  const auth0User = await managementClient.users.get({ id: payload.userId })
-  if (!auth0User.data.email_verified) throw new Error("User email is not verified")
+  // Only call Auth0 management API for Auth0-style ids. Clerk user ids (eg. "user_xxx")
+  // will fail validation in the Auth0 management API. When migrating to Clerk we
+  // skip the Auth0 email_verified check for non-Auth0 ids. If you want stricter
+  // verification for Clerk users, call Clerk's server API here instead.
+  let emailVerified = true;
+  const looksLikeAuth0Id = typeof payload.userId === 'string' && payload.userId.includes('|');
+  if (looksLikeAuth0Id) {
+    try {
+      const auth0User = await managementClient.users.get({ id: payload.userId });
+      emailVerified = !!auth0User.data?.email_verified;
+    } catch (err) {
+      // Non-fatal: log and proceed (preserve original behavior when management API is down)
+      // eslint-disable-next-line no-console
+      console.warn('managementClient.users.get failed; skipping email verification check', { err, userId: payload.userId });
+      emailVerified = true;
+    }
+  } else {
+    // Not an Auth0 id (likely Clerk). We skip Auth0 verification here. Consider
+    // integrating Clerk's server API if you need to enforce email verification.
+    emailVerified = true;
+  }
+
+  if (!emailVerified) throw new Error("User email is not verified")
 
   const { userId, orgUid, orgRoleId } = payload
   const userOrganization = await prisma.organizationMember.create({

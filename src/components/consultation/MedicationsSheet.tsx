@@ -16,7 +16,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@compo
 import { toast } from "sonner";
 import { setMedicationCompletedAction } from "@actions/medications/medication.action";
 import { useHPs } from "@hooks/useHP";
-import { useUser } from "@auth0/nextjs-auth0";
+import { useUser } from "@clerk/nextjs";
 import { useAtomValue } from "jotai";
 import { sessionClinicAtom } from "@state/session-clinic";
 
@@ -34,7 +34,7 @@ export default function MedicationsSheet({ consultation, readonly = true }: Medi
   const searchParams = useSearchParams()
   const open = useMemo(() => searchParams.get("show-medications") === "true", [searchParams])
   const { data: medications, mutate } = useMedications({ consultationTicketId: consultation.id, clinicUid })
-  const { data: myHps } = useHPs({ userId: user?.sub ?? "" })
+  const { data: myHps } = useHPs({ userId: user?.id ?? "" })
 
   const handleClose = (state: boolean) => {
     const searchParams = new URLSearchParams(window.location.search)

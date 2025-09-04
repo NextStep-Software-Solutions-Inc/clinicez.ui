@@ -2,7 +2,7 @@
 
 import { promiseWrapper } from "@/lib/with-error-handling";
 import { createMedicationAction } from "@actions/medications/medication.action";
-import { useUser } from "@auth0/nextjs-auth0";
+import { useUser } from "@clerk/nextjs";
 import ActionButton from "@components/ActionButton";
 import CustomModalContent from "@components/CustomModalContent";
 import { Button } from "@components/ui/button";
@@ -70,7 +70,7 @@ export default function CreateMedicationModal({onCreated, consultation}: CreateM
   const closeBtnRef = useRef<HTMLInputElement>(null);
   
   const { data: myHps } = useHPs({
-    userId: user?.sub ?? ""
+    userId: user?.id ?? ""
   });
 
   const form = useForm<CreatePrescriptionForm>({

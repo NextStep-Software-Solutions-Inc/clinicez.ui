@@ -2,7 +2,7 @@
 
 import { promiseWrapper } from "@/lib/with-error-handling";
 import { createFolderAction } from "@actions/folder.action";
-import { useUser } from "@auth0/nextjs-auth0";
+import { useUser } from "@clerk/nextjs";
 import ActionButton from "@components/ActionButton"
 import CustomModalContent from "@components/CustomModalContent";
 import { Button } from "@components/ui/button"
@@ -26,8 +26,8 @@ interface CreateFolderModalProps {
   onCreated?: () => void;
 }
 export default function CreateFolderModal({disabled = false, clinicUid, onCreated}: CreateFolderModalProps) {
-  const user = useUser()
-  const userId = user?.user?.sub
+  const { user } = useUser()
+  const userId = user?.id
 
   const closeBtnRef = useRef<HTMLInputElement>(null)
   const action = async (formData: FormData) => {

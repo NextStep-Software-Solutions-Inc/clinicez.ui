@@ -1,7 +1,7 @@
 "use client";
 
 import { updateFolderAction } from "@actions/folder.action";
-import { useUser } from "@auth0/nextjs-auth0";
+import { useUser } from "@clerk/nextjs";
 import ActionButton from "@components/ActionButton"
 import CustomModalContent from "@components/CustomModalContent";
 import { Button } from "@components/ui/button"
@@ -25,8 +25,8 @@ interface UpdateFolderModalProps {
 
 
 export default function UpdateFolderModal({folderId, folderName}:UpdateFolderModalProps) {
-  const user = useUser()
-  const userId = user?.user?.sub
+  const { user } = useUser()
+  const userId = user?.id
 
   const closeBtnRef = useRef<HTMLInputElement>(null)
   const action = async (formData: FormData) => {

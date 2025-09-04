@@ -26,7 +26,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import { uploadMediaAction } from "@actions/blob.action";
-import { useUser } from "@auth0/nextjs-auth0";
+import { useUser } from "@clerk/nextjs";
 import { useFileTypes } from "@hooks/useFileType";
 import { heic2Jpeg, renameFile } from "@/lib/file-manipulation";
 import { compressImageAsync } from "@/lib/image-compression";
@@ -42,14 +42,14 @@ interface UploadFileFormProps {
 
 export default function UploadFileForm({folder}: UploadFileFormProps) {
   
-  const user = useUser()
+  const { user } = useUser()
 
   // minimum of 6 months
   const minDate = format(subMonths(startOfToday(), 6), "yyyy-MM-dd");
   const maxDate = format(startOfToday(), "yyyy-MM-dd");
   
   const { data: fileTypes } = useFileTypes()
-  const userId = user?.user?.sub
+  const userId = user?.id
   const closeBtnRef = useRef<HTMLInputElement>(null)
 
   const uploadFileFormSchema = z.object({

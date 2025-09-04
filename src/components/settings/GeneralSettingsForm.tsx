@@ -17,8 +17,8 @@ import {
 } from "@components/ui/form"
 import { Input } from "@components/ui/input"
 
-import {toast} from "sonner"
-import { useUser } from "@auth0/nextjs-auth0"
+import { toast } from "sonner"
+import { useUser } from "@clerk/nextjs"
 import { Check } from "lucide-react"
 import dayjs from "@lib/day-utils";
 import { resendEmailVerificationAction } from "@/actions/users/user-management.action"
@@ -36,36 +36,36 @@ const accountFormSchema = z.object({
 type GeneraSettingsFormValues = z.infer<typeof accountFormSchema>
 
 export default function GeneralSettingsForm() {
-  
+
   const { user } = useUser()
 
   const [isVerifying, setIsVerifying] = useState(false);
 
   const handleResendEmailVerification = () => {
-    if (!user?.sub) {
+    if (!user?.id) {
       return alert("Warning user is unknown!");
     }
-    
+
     setIsVerifying(true);
     try {
-      toast.promise(resendEmailVerificationAction(user.sub), {
+      toast.promise(resendEmailVerificationAction(user.id), {
         loading: "Sending email verification",
         success: "Email verification sent.",
         error: "Failed to send verification."
       });
     } finally {
-      setIsVerifying(true);
+      setIsVerifying(false);
     }
   }
 
   const form = useForm<GeneraSettingsFormValues>({
     resolver: zodResolver(accountFormSchema),
     values: {
-      id: user?.sub || "",
-      email: user?.email || "",
-      name: user?.name || "",
-      isEmailVerified: user?.email_verified || false,
-      lastUpdated: dayjs(user?.updated_at).toDate(),
+      id: user?.id || "",
+      email: user?.emailAddresses?.[0]?.emailAddress || "",
+      name: user?.fullName || "",
+      isEmailVerified: user?.emailAddresses?.[0]?.verification?.status === "verified" || false,
+      lastUpdated: dayjs(user?.updatedAt).toDate(),
     }
   })
 
@@ -84,7 +84,7 @@ export default function GeneralSettingsForm() {
             <FormItem>
               <FormLabel>User ID</FormLabel>
               <FormControl>
-                <Input placeholder="Your name" {...field}  readOnly/>
+                <Input placeholder="Your name" {...field} readOnly />
               </FormControl>
               <FormDescription>
                 This is your unique ID.
@@ -110,7 +110,7 @@ export default function GeneralSettingsForm() {
             </FormItem>
           )}
         />
-       
+
         <FormField
           disabled
           control={form.control}
@@ -121,7 +121,7 @@ export default function GeneralSettingsForm() {
               <FormControl>
                 <div className="flex w-full max-w-sm items-center space-x-2">
                   <Input placeholder="Your email" {...field} />
-                  <Button type="button" onClick={handleResendEmailVerification} disabled={form.watch("isEmailVerified") || isVerifying}>{form.watch("isEmailVerified") ? "Verified": "Verify"}</Button>
+                  <Button type="button" onClick={handleResendEmailVerification} disabled={form.watch("isEmailVerified") || isVerifying}>{form.watch("isEmailVerified") ? "Verified" : "Verify"}</Button>
                 </div>
               </FormControl>
               <FormDescription>
@@ -134,7 +134,7 @@ export default function GeneralSettingsForm() {
 
         {/* Display last updated */}
         <div className="flex items-center space-x-2">
-          <Check className="h-5 w-5 text-green-500"/>
+          <Check className="h-5 w-5 text-green-500" />
           <span>Last updated on {dayjs(form.getValues("lastUpdated")).format("DD/MM/YYYY")}</span>
         </div>
       </form>

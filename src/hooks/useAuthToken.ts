@@ -1,5 +1,6 @@
 import { refreshTokensAction } from "@actions/auth.action";
-import { useUser } from "@auth0/nextjs-auth0";
+// import { useUser } from "@clerk/nextjs"; // Commented out for Clerk migration
+import { useUser } from "@clerk/nextjs";
 import useSWR from "swr";
 
 const fetcher = async (): Promise<{ type: string; token: string } | null> => {
@@ -13,9 +14,9 @@ const fetcher = async (): Promise<{ type: string; token: string } | null> => {
 };
 
 export const useAuthToken = () => {
-  const { user, isLoading } = useUser();
+  const { user, isLoaded } = useUser();
 
-  const shouldFetch = !!user && !isLoading;
+  const shouldFetch = !!user && isLoaded;
 
   return useSWR(
     shouldFetch ? 'auth-token' : null,

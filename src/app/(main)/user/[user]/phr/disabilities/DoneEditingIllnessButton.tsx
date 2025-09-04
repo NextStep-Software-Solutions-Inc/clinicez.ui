@@ -1,7 +1,7 @@
 "use client";
 
 import { upsertUserIllnessAction } from "@actions/users/user-illness.action";
-import { useUser } from "@auth0/nextjs-auth0";
+import { useUser } from "@clerk/nextjs";
 import ActionButton from "@components/ActionButton";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
@@ -15,8 +15,8 @@ interface DoneEditingIllnessButtonProps {
   }
 export default function DoneEditingIllnessButton({index, form, onUpdate}:DoneEditingIllnessButtonProps) {
   
-  const user = useUser();
-  const userId = user?.user?.sub;
+  const { user } = useUser();
+  const userId = user?.id;
   
   const handleDoneEditing = async () => {
     form.handleSubmit((data) => {

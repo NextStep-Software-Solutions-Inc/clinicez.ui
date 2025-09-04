@@ -12,10 +12,10 @@ export const metadata: Metadata = {
   description: "Update your emergency contact information to help you in case of emergency."
 }
 
-export default async function ContactInformationPage(props:AppRouterPageRouteOpts) {
+export default async function ContactInformationPage(props: AppRouterPageRouteOpts) {
   const params = await props.params;
   const session = await getCachedSession()
-  if(!session) return redirect("/auth/login")
+  if (!session) return redirect("/sign-in")
   const userId = decodeURI(params?.user as string)
   const owner = await isUserOwner(userId);
 
@@ -29,7 +29,7 @@ export default async function ContactInformationPage(props:AppRouterPageRouteOpt
       </div>
       <Separator />
       <Suspend>
-        <EmergencyContacts sessionUserId={session.user.sub} readOnly={!owner} userId={userId}/>
+        <EmergencyContacts sessionUserId={session.user.sub} readOnly={!owner} userId={userId} />
       </Suspend>
     </div>
   )

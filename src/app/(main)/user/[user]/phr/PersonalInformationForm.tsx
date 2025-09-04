@@ -19,7 +19,7 @@ import { updateUserAction } from "@actions/users/user.action"
 import { BloodType, CivilStatus, Gender, User } from "@prisma/client"
 import Each from "@components/utils/Each"
 import { RadioGroup, RadioGroupItem } from "@components/ui/radio-group"
-import { useUser } from "@auth0/nextjs-auth0"
+import { useUser } from "@clerk/nextjs"
 import ConditionalRender from "@components/utils/ConditionalRender"
 import { personalInformationFormSchema, PersonalInformationFormValues } from "@schemas/personal-information.schema"
 import { promiseWrapper } from "@/lib/with-error-handling"
@@ -31,7 +31,7 @@ interface PersonalInformationFormProps {
 
 export function PersonalInformationForm({ readOnly, ...props }: PersonalInformationFormProps) {
 
-  const user = useUser();
+  const { user } = useUser();
 
   // constant to disables users from accessing future dates
   const today = new Date().toISOString().split('T')[0];
@@ -58,7 +58,7 @@ export function PersonalInformationForm({ readOnly, ...props }: PersonalInformat
   })
 
   const handleSaveChanges = async () => {
-    const userId = user?.user?.sub
+    const userId = user?.id
     if (!userId) return toast.error("User not found.")
 
     form.handleSubmit(data => {

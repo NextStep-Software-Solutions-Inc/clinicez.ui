@@ -7,7 +7,7 @@ import { HPProfileType } from "../hp-form.schema";
 import ActionButton from "@components/ActionButton";
 import { uploadMediaAction } from "@actions/blob.action";
 import { Label } from "@components/ui/label";
-import { useUser } from "@auth0/nextjs-auth0";
+import { useUser } from "@clerk/nextjs";
 import { upsertHPAction } from "@actions/hp.actions";
 
 interface HPPhotoProps {
@@ -17,8 +17,8 @@ interface HPPhotoProps {
 }
 
 export default function HPPhoto({profile, hpId, hpTypeName}: HPPhotoProps) {
-  const user = useUser()
-  const userId = user?.user?.sub
+  const { user } = useUser()
+  const userId = user?.id
     
   const action = async (formData: FormData) => {
     

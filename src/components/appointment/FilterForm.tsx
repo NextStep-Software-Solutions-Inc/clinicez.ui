@@ -37,7 +37,7 @@ import { Checkbox } from "@components/ui/checkbox"
 import { Separator } from "@components/ui/separator"
 import { usePermissions } from "@hooks/usePermission"
 import { PERMISSIONS } from "@lib/permissions"
-import { useUser } from "@auth0/nextjs-auth0"
+import { useUser } from "@clerk/nextjs"
 import { useClinicPatients } from "@/hooks/useClinicPatient"
 import { SearchableDropdown, type SearchableDropdownOption } from "@components/ui/searchable-dropdown"
 import { getFullName } from "@/lib/formatter-utils"
@@ -98,7 +98,7 @@ export default function FilterForm({ onContinue }: FilterFormProps) {
   const { data: clinicPatients } = useClinicPatients({ clinicUid })
 
   const { data: myOrgPermissions, isLoading: loadingPermissions } = usePermissions({
-    userId: user?.sub ?? undefined,
+    userId: user?.id ?? undefined,
     type: "CLINIC"
   })
 

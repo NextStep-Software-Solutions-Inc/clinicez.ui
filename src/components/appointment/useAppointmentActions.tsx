@@ -7,7 +7,7 @@ import RescheduleAppointment from "@components/appointment/RescheduleAppointment
 import DeclineAppointmentAssignment from "@components/appointment/DeclineAppointmentAssignment"
 import CreateConsultationTicketModal from './CreateConsultationTicketModal';
 import { useHPs } from '@hooks/useHP';
-import { useUser } from '@auth0/nextjs-auth0';
+import { useUser } from '@clerk/nextjs';
 import AddVitalSignsModal from '../../app/(main)/user/[user]/phr/vitals/AddVitalSignsModal';
 import { Button } from '@components/ui/button';
 import { Activity } from 'lucide-react';
@@ -33,7 +33,7 @@ export const useAppointmentTools = ({ appointment, revalidate }: UseAppointmentT
 
   const { user } = useUser()
   const { data: authHps } = useHPs({
-    userId: user?.sub ?? undefined
+    userId: user?.id ?? undefined
   })
   const routingCode = appointment?.AppointmentRouting.find(r => authHps?.some(hp => hp.id === r.RoutedTo.id && r.status === "PENDING"))?.routingCode
   if (!appointment) return { tools: [] }

@@ -3,7 +3,7 @@
 import { promiseWrapper } from "@/lib/with-error-handling";
 import { GetAppointment } from "@actions/appointments/appointments.action";
 import { createConsultationTicketAction } from "@actions/consultation/consultation-ticket.action";
-import { useUser } from "@auth0/nextjs-auth0";
+import { useUser } from "@clerk/nextjs";
 import ActionButton from "@components/ActionButton"
 import CustomModalContent from "@components/CustomModalContent";
 import { Button } from "@components/ui/button"
@@ -52,7 +52,7 @@ export default function CreateConsultationTicketModal({disabled = false, subject
   const { user } = useUser()
   const {data: systems} = useSystems(clinicUid)
   const { data: myHps } = useHPs({
-    userId: user?.sub ?? ""
+    userId: user?.id ?? ""
   })
 
   const appointmentId = Number(searchParams.get("_appointment"))

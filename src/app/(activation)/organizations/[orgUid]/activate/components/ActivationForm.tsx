@@ -2,7 +2,7 @@
 
 import { createActivationCodeAction, verifyActivationCodeAction } from "@actions/activation.action";
 import { sendActivationCodeAction, getPatientAction, startMigrationTransactionAction } from "@actions/hims-migration.action";
-import { useUser } from "@auth0/nextjs-auth0";
+import { useUser } from "@clerk/nextjs";
 import ActionButton from "@components/ActionButton";
 import { Checkbox } from "@components/ui/checkbox";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@components/ui/form";
@@ -30,11 +30,11 @@ export default function ActivationForm() {
   const [ready, setReady] = useState(false);
   const [json, setJson] = useState<Record<string, any>>({});
   const [inputValues, setInputValues] = useState<Record<string, any>>({});
-  const user = useUser()
+  const { user } = useUser()
   const params = useParams();
   const orgUid = String(params?.orgUid);
-  const email = user?.user?.email;
-  const userId = user?.user?.sub;
+  const email = user?.emailAddresses?.[0]?.emailAddress;
+  const userId = user?.id;
 
   const form = useForm<z.infer<typeof activationFormSchema>>({
     resolver: zodResolver(activationFormSchema),
@@ -78,7 +78,7 @@ export default function ActivationForm() {
           })
           return "Activation code verified"
         },
-        error: "Invalid activation code"  
+        error: "Invalid activation code"
       })
 
     })()
@@ -94,8 +94,8 @@ export default function ActivationForm() {
     toast.promise(createActivationCodeAction(email), {
       loading: "Creating activation code...",
       success: (code) => {
-        if(!code) return toast.error("Failed to generate activation code")
-        toast.promise(sendActivationCodeAction(email, code),  {
+        if (!code) return toast.error("Failed to generate activation code")
+        toast.promise(sendActivationCodeAction(email, code), {
           success: "Activation code sent to your email",
           loading: "Sending activation code...",
           error: "Failed to send activation code"
@@ -117,7 +117,7 @@ export default function ActivationForm() {
     const civilStatus = json?.civil_status?.toUpperCase() in CivilStatus ? json?.civil_status?.toUpperCase() : null
 
     toast.promise(startMigrationTransactionAction({
-      userId, 
+      userId,
       orgUid,
       data: {
         email: json.email,
@@ -129,11 +129,11 @@ export default function ActivationForm() {
         nationality: json.nationality,
         telephone: json.tel_no,
         mobile: json.mobile,
-  
+
         bloodType,
         civilStatus,
         gender,
-  
+
         picture: `https://hims.ustp.edu.ph/apis/storage/${json.picture}`,
       }
     }), {
@@ -157,7 +157,7 @@ export default function ActivationForm() {
                       <Input placeholder="xxxxx" {...field} />
                     </FormControl>
                     <FormDescription>
-                    This is the code that was sent to your email.
+                      This is the code that was sent to your email.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -167,14 +167,14 @@ export default function ActivationForm() {
                 <ActionButton disabled={!form.formState.isValid}>
                   Activate
                 </ActionButton>
-                <Separator orientation="vertical"/> 
+                <Separator orientation="vertical" />
                 <ActionButton formAction={getActivationCode} variant="link" className="text-sm">
                   Get Activation Code
                 </ActionButton>
               </div>
             </form>
           </Form>
-        
+
         </div>
       </ConditionalRender>
 
@@ -186,7 +186,7 @@ export default function ActivationForm() {
                 of={Object.entries(inputValues)}
                 render={([key]) => (
                   <div className="space-y-2 flex items-center gap-2">
-                    <Checkbox 
+                    <Checkbox
                       className="self-center"
                       checked={json.hasOwnProperty(key)}
                       onCheckedChange={(e) => handleCheckboxChange(key, !!e)}
@@ -201,7 +201,7 @@ export default function ActivationForm() {
                   </div>
                 )}
               />
-            
+
             </div>
             <ConditionalRender condition={Object.keys(json).length > 0}>
               <div className="prose flex-1 overflow-auto h-[50rem]">
@@ -215,5 +215,5 @@ export default function ActivationForm() {
     </>
   )
 
-  ;
+    ;
 }

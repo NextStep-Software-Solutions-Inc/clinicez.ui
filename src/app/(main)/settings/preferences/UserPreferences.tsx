@@ -14,14 +14,15 @@ import {
   FormMessage,
 } from "@components/ui/form"
 
-import {toast} from "sonner"
+import { toast } from "sonner"
 import ActionButton from "@components/ActionButton"
 import { Checkbox } from "@components/ui/checkbox"
 import { GetMyUserPreference, upsertMyUserPreference } from "@actions/users/preference.action"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@components/ui/select"
 import Each from "@components/utils/Each"
 import { useHPs } from "@hooks/useHP"
-import { useUser } from "@auth0/nextjs-auth0"
+// import { useUser } from "@clerk/nextjs" // Commented out for Clerk migration
+import { useUser } from "@clerk/nextjs"
 import { promiseWrapper } from "@/lib/with-error-handling"
 
 
@@ -34,7 +35,7 @@ const UserPreferenceFormSchema = z.object({
     message: "Please select a default health care provider."
   }).optional()
 }).superRefine((data, ctx) => {
-  if(data.autoAssignAppointmentToSelf && !data.defaultHpId) {
+  if (data.autoAssignAppointmentToSelf && !data.defaultHpId) {
     ctx.addIssue({
       message: "Please select a default health care provider.",
       code: "custom",
@@ -47,10 +48,10 @@ const UserPreferenceFormSchema = z.object({
 interface UserPreferenceFormProps {
   userPreference: GetMyUserPreference["data"]
 }
-export default function UserPreferences({userPreference}: UserPreferenceFormProps){
-  const {user} = useUser()
-  const {data: myHps} = useHPs({
-    userId: user?.sub ?? undefined
+export default function UserPreferences({ userPreference }: UserPreferenceFormProps) {
+  const { user } = useUser()
+  const { data: myHps } = useHPs({
+    userId: user?.id ?? undefined
   })
   const form = useForm({
     resolver: zodResolver(UserPreferenceFormSchema),
@@ -63,9 +64,9 @@ export default function UserPreferences({userPreference}: UserPreferenceFormProp
   })
 
 
-  
-  async function action(){
-    form.handleSubmit(async (data)  => {
+
+  async function action() {
+    form.handleSubmit(async (data) => {
       toast.promise(promiseWrapper(upsertMyUserPreference)(data), {
         loading: "Updating user preferences...",
         success: (res) => {
@@ -75,7 +76,7 @@ export default function UserPreferences({userPreference}: UserPreferenceFormProp
         error: (error) => error
       })
     })()
-  } 
+  }
 
   return (
     <Form {...form}>
@@ -93,10 +94,10 @@ export default function UserPreferences({userPreference}: UserPreferenceFormProp
               </FormControl>
               <div className="space-y-1 leading-none">
                 <FormLabel>
-                Auto-accept assigned appointments
+                  Auto-accept assigned appointments
                 </FormLabel>
                 <FormDescription>
-                Automatically accept appointments assigned to you.
+                  Automatically accept appointments assigned to you.
                 </FormDescription>
               </div>
             </FormItem>
@@ -115,10 +116,10 @@ export default function UserPreferences({userPreference}: UserPreferenceFormProp
               </FormControl>
               <div className="space-y-1 leading-none">
                 <FormLabel>
-                Auto-assign appointments to self
+                  Auto-assign appointments to self
                 </FormLabel>
                 <FormDescription>
-                Automatically assign appointments to yourself when receiving them.
+                  Automatically assign appointments to yourself when receiving them.
                 </FormDescription>
               </div>
             </FormItem>
@@ -145,7 +146,7 @@ export default function UserPreferences({userPreference}: UserPreferenceFormProp
                             of={myHps ?? []}
                             render={(hp) => (
                               <SelectItem key={hp.id} value={hp.id.toString()}>{hp.HPProfile?.title} {hp.HPProfile?.name} {hp.HPProfile?.suffix} (<span className="italic font-medium">{hp.HPType.name.toLocaleLowerCase()}</span>)</SelectItem>
-                            ) }
+                            )}
                           />
                         </SelectContent>
                       </Select>
@@ -153,7 +154,7 @@ export default function UserPreferences({userPreference}: UserPreferenceFormProp
                     <FormDescription>
                       Assign appointments to this HP profile when auto-assigning to self.
                     </FormDescription>
-                    <FormMessage/>
+                    <FormMessage />
                   </FormItem>
                 )
               }}

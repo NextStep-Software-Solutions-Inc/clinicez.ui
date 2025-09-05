@@ -18,6 +18,10 @@
     "vercel-build": "prisma migrate deploy && next build",
     "postinstall": "prisma generate",
     "migrate": "prisma migrate dev",
+    "migrate:status": "prisma migrate status",
+    "migrate:deploy": "prisma migrate deploy",
+    "migrate:resolve:rollback": "prisma migrate resolve --rolled-back",
+    "migrate:resolve:applied": "prisma migrate resolve --applied",
     "seed:philhealth": "node prisma/seed-philhealth-member-types.js"
   },
   "dependencies": {

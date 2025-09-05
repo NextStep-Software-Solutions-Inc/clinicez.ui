@@ -213,7 +213,5 @@ export default function ActivationForm() {
         </form>
       </ConditionalRender>
     </>
-  )
-
-    ;
+  );
 }

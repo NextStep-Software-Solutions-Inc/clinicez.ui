@@ -18,9 +18,11 @@ import {
 import { Input } from "@components/ui/input"
 
 import {toast} from "sonner"
-import { useUser } from "@auth0/nextjs-auth0/client"
+import { useUser } from "@auth0/nextjs-auth0"
 import { Check } from "lucide-react"
 import dayjs from "@lib/day-utils";
+import { resendEmailVerificationAction } from "@/actions/users/user-management.action"
+import { useState } from "react"
 
 
 const accountFormSchema = z.object({
@@ -36,6 +38,25 @@ type GeneraSettingsFormValues = z.infer<typeof accountFormSchema>
 export default function GeneralSettingsForm() {
   
   const { user } = useUser()
+
+  const [isVerifying, setIsVerifying] = useState(false);
+
+  const handleResendEmailVerification = () => {
+    if (!user?.sub) {
+      return alert("Warning user is unknown!");
+    }
+    
+    setIsVerifying(true);
+    try {
+      toast.promise(resendEmailVerificationAction(user.sub), {
+        loading: "Sending email verification",
+        success: "Email verification sent.",
+        error: "Failed to send verification."
+      });
+    } finally {
+      setIsVerifying(true);
+    }
+  }
 
   const form = useForm<GeneraSettingsFormValues>({
     resolver: zodResolver(accountFormSchema),
@@ -100,7 +121,7 @@ export default function GeneralSettingsForm() {
               <FormControl>
                 <div className="flex w-full max-w-sm items-center space-x-2">
                   <Input placeholder="Your email" {...field} />
-                  <Button type="button" disabled={form.watch("isEmailVerified")}>{form.watch("isEmailVerified") ? "Verified": "Verify"}</Button>
+                  <Button type="button" onClick={handleResendEmailVerification} disabled={form.watch("isEmailVerified") || isVerifying}>{form.watch("isEmailVerified") ? "Verified": "Verify"}</Button>
                 </div>
               </FormControl>
               <FormDescription>

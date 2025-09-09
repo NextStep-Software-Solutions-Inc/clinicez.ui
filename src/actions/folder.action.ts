@@ -1,9 +1,10 @@
 "use server";
 
+import { hasCodeProperty, hasContextProperty } from "@/lib/utils";
 import { withErrorHandling } from "@/lib/with-error-handling";
 import prisma from "@lib/prisma";
 
-export const createFolderAction = withErrorHandling(async ({name, userId, clinicUid}: {name: string, userId: string, clinicUid?:string}) => {
+export const createFolderAction = withErrorHandling(async ({ name, userId, clinicUid }: { name: string, userId: string, clinicUid?: string }) => {
   const folder = await prisma.folder.create({
     data: {
       name,
@@ -15,36 +16,42 @@ export const createFolderAction = withErrorHandling(async ({name, userId, clinic
       FolderSetting: {
         create: {
           isPublic: true,
-          ...clinicUid ? {
+          ...(clinicUid ? {
             Clinic: {
               connect: {
                 clinicUid
               }
             }
-          } : {}
+          } : {})
         }
       }
     }
   });
   return { message: "Folder created successfully", data: folder }
-}, (error) => {
+}, async (error, context) => {
+  if (hasCodeProperty(error) && error.code === "P2002") {
+    if (hasContextProperty(context)) {
+      return `Folder with name "${(context.args[0] as { name?: string })?.name}" already exists.`;
+    }
+    return "Folder with this name already exists.";
+  }
   return "Failed to create folder";
 })
 
-export const getFoldersAction = async (userId: string, clinicUid?:string) => {
+export const getFoldersAction = async (userId: string, clinicUid?: string) => {
   const folders = await prisma.folder.findMany({
     where: {
       isActive: true,
       User: {
         userId
       },
-      ...clinicUid ? {
+      ...(clinicUid ? {
         FolderSetting: {
           Clinic: {
             clinicUid
           }
         }
-      } : {}
+      } : {})
     },
     select: {
       id: true,
@@ -95,7 +102,7 @@ export const updateFolderAction = async (folderId: number, name: string) => {
     where: { isActive: true, id: folderId },
     data: { name }
   });
-    
+
   return folder;
 }
 
@@ -104,6 +111,6 @@ export const deleteFolderAction = async (folderId: number) => {
     where: { id: folderId },
     data: { isActive: false }
   });
-  
+
   return folder;
 }

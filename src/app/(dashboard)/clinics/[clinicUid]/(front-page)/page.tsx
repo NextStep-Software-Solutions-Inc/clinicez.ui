@@ -17,13 +17,14 @@ export const metadata: Metadata = {
   description: "Clinic",
 }
 
-export default async function ClinicPage({params}: {params: {clinicUid: string}}) {
-  const {clinicUid} = params;
+export default async function ClinicPage(props: { params: Promise<{ clinicUid: string }> }) {
+  const params = await props.params;
+  const { clinicUid } = params;
   const session = await getCachedSession();
   const clinic = await getClinicAction(clinicUid);
 
-  if(!clinic.data?.ClinicSetting?.isPublic) {
-  
+  if (!clinic.data?.ClinicSetting?.isPublic) {
+
     const [myClinicMembership, clinicPatients, myOrganizationMembership] = await Promise.all([
       getClinicMembersAction({
         userId: session?.user.sub,
@@ -37,32 +38,32 @@ export default async function ClinicPage({params}: {params: {clinicUid: string}}
       await getOrgMembersAction({
         clinicUid,
         userId: session?.user.sub,
-        status: "ACTIVE"
+        status: ["ACTIVE"]
       })
     ])
-     
-    if(!myOrganizationMembership.data?.data.length && !clinicPatients.data?.length && !myClinicMembership.data?.length) {
+
+    if (!myOrganizationMembership.data?.data.length && !clinicPatients.data?.length && !myClinicMembership.data?.length) {
       return notFound();
     }
   }
 
-  if(!session) redirect(`/api/auth/login?returnTo=${encodeURIComponent(`/clinics/${clinicUid}`)}`);
-  
+  if (!session) redirect(`/auth/login?returnTo=${encodeURIComponent(`/clinics/${clinicUid}`)}`);
+
   return (
     <div className="container mx-auto my-10">
       <div className="flex gap-5 items-center flex-wrap">
         <div className="">
-          <Image src={clinic.data?.logo ?? ""} width={500} height={500} alt="clinic-logo" className="object-scale-down w-[300px] border-dashed border rounded-sm "/>
+          <Image src={clinic.data?.logo ?? ""} width={500} height={500} alt="clinic-logo" className="object-scale-down w-[300px] border-dashed border rounded-sm " />
         </div>
         <div className="space-y-5">
           <h1 className="text-3xl font-medium">{clinic.data?.name}</h1>
           <p>
             {clinic.data?.description}
           </p>
-          <BookAppointmentBtn 
+          <BookAppointmentBtn
             clinicUid={clinicUid}
             userId={session.user.sub}
-            className="shiny-cta"/>
+            className="shiny-cta" />
           <div>
             <Link href={`/clinics/${clinicUid}/dashboard`}>
               <Button variant="link">Go to Dashboard</Button>
@@ -71,7 +72,7 @@ export default async function ClinicPage({params}: {params: {clinicUid: string}}
         </div>
       </div>
       <div>
-       
+
       </div>
     </div>
   );

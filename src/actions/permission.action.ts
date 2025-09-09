@@ -10,8 +10,8 @@ export async function getPermissionsAction({userId, type}: {userId?: string, typ
   const permissions = await prisma.permission.findMany({
     where: {
       isActive: true,
-      ...type ? { type } : {},
-      ...userId ? {
+      ...(type ? { type } : {}),
+      ...(userId ? {
         OR: [
           { 
             OrgMemberPermissions: {
@@ -56,7 +56,7 @@ export async function getPermissionsAction({userId, type}: {userId?: string, typ
             }
           }
         ]
-      } : {},
+      } : {}),
     }, 
     select: {
       id: true,

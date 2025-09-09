@@ -1,4 +1,3 @@
-import { withPageAuthRequired } from '@auth0/nextjs-auth0';
 import Suspend from '@components/Suspend';
 import { Separator } from '@components/ui/separator';
 import React from 'react';
@@ -10,7 +9,7 @@ export const metadata: Metadata = {
   description: "General information about your account.",
 }
 
-const SettingsPage = async () => {
+export default async function SettingsPage() {
   return (
     <div className="space-y-6">
       <div>
@@ -26,5 +25,3 @@ const SettingsPage = async () => {
     </div>
   )
 }
-
-export default withPageAuthRequired(SettingsPage);

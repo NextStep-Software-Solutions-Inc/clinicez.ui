@@ -3,6 +3,26 @@
 import prisma from "@lib/prisma";
 import { Prisma } from "@prisma/client";
 
+
+export async function resolveOrgUidFromClinicUid(clinicUid: string): Promise<string | null> {
+  const org = await prisma.clinicOrganization.findFirst({
+    where: {
+      Clinic: {
+        clinicUid
+      }
+    },
+    select: {
+      Organization: {
+        select: {
+          orgUid: true
+        }
+      }
+    }
+  });
+
+  return org?.Organization?.orgUid ?? null;
+}
+
 export const getHealthAnalyticsData = async (orgUid: string) => {
   const [userHealthCondition, userDisability] = await Promise.all([
     prisma.healthCondition.findMany({
@@ -204,25 +224,37 @@ export const getPatientAnalyticsData = async (orgUid: string) => {
 }
 
 export type GetDailyOrgMembershipRequest = Awaited<ReturnType<typeof getDailyOrgMembershipRequestAction>>;
-export const getDailyOrgMembershipRequestAction = async (orgUid: string, startDate:string, endDate: string) => {
+export const getDailyOrgMembershipRequestAction = async (orgUid: string, startDate: string, endDate: string) => {
   const query = Prisma.sql`
     SELECT
-      DATE_TRUNC('day', uo."createdAt") as date,
-      COUNT(*) as total_requests
-    FROM
-      "UserOrganization" uo
-    INNER JOIN 
-      "Organization" o ON uo."organizationId" = o."id"
-    WHERE
-      o."orgId" = ${Prisma.raw(`'${orgUid}'`)} -- Correctly parameterized
-        AND uo."createdAt" >= ${Prisma.raw(`'${startDate}'`)} -- Start date filter
-        AND uo."createdAt" <= ${Prisma.raw(`'${endDate}'`)} -- End date filter
-      -- AND uo."status" NOT IN ('PENDING') -- Uncomment if needed
-    GROUP BY
-      DATE_TRUNC('day', uo."createdAt")
-    ORDER BY
-      date ASC;
+      date,
+      COUNT(CASE WHEN gender = 'MALE' THEN 1 END) AS total_male_request,
+      COUNT(CASE WHEN gender = 'FEMALE' THEN 1 END) AS total_female_request
+    FROM (
+      SELECT DISTINCT
+        u."id" as user_id,
+        u."gender",
+        DATE_TRUNC('day', om."createdAt") AS date
+      FROM
+        "OrganizationMember" om
+      INNER JOIN "Organization" o ON om."organizationId" = o."id"
+      INNER JOIN "User" u ON om."userId" = u."id"
+      WHERE
+        o."orgUid" = ${orgUid}
+        AND om."createdAt" >= ${new Date(startDate)}
+        AND om."createdAt" <= ${new Date(endDate)}
+    ) AS unique_members
+    GROUP BY date
+    ORDER BY date ASC;
   `;
-  const dailyMembershipRequest = await prisma.$queryRaw(query, orgUid);
-  return dailyMembershipRequest as { date: Date, total_requests: BigInt }[];
+
+  const rawResult = await prisma.$queryRaw<
+    { date: Date; total_male_request: bigint; total_female_request: bigint }[]
+  >(query)
+
+  return rawResult.map(row => ({
+    date: row.date.toISOString().split('T')[0], // 'YYYY-MM-DD'
+    total_male_request: Number(row.total_male_request),
+    total_female_request: Number(row.total_female_request),
+  }));
 }

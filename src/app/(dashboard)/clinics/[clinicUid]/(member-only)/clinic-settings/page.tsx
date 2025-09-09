@@ -1,9 +1,8 @@
 import Suspend from "@components/Suspend";
 import { Separator } from "@components/ui/separator";
 import { Metadata } from "next";
-import { AppRouterPageRouteOpts } from "@auth0/nextjs-auth0";
 import ClinicSettings from "@/components/clinic/ClinicSettings";
-import ClinicMemberActions from "@/components/dashboard/clinic-settings/ClinicMemberActions";
+import { AppRouterPageRouteOpts } from "@/types";
 
 export const metadata: Metadata = {
   title: "Clinic Settings",

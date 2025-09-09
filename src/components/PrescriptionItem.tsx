@@ -1,3 +1,4 @@
+import React from "react";
 import {
   Tooltip,
   TooltipContent,
@@ -5,7 +6,7 @@ import {
   TooltipTrigger
 } from "@components/ui/tooltip";
 import { cn } from "@lib/utils";
-import { Archive, DownloadIcon, File, Pill, User } from "lucide-react";
+import { Archive, File, Pill, User } from "lucide-react";
 import Link from "next/link";
 import dayjs from "@lib/day-utils";
 import { Badge } from "@components/ui/badge";
@@ -15,13 +16,12 @@ import ActionButton from "./ActionButton";
 import { promiseWrapper } from "@/lib/with-error-handling";
 import { GetPrescriptions, archivePrescriptionAction } from "@/actions/medications/prescription.action";
 
-import DownloadPrescriptionAction from "./prescription/DownloadPrescriptionAction";
-
 export interface PrescriptionItemProps {
   onUpdated?: () => void;
   prescription: NonNullable<GetPrescriptions["data"]>[number];
+  hpIds: number[];
 }
-export default function PrescriptionItem({prescription, onUpdated}: PrescriptionItemProps) {
+export default function PrescriptionItem({ prescription, onUpdated, hpIds }: PrescriptionItemProps) {
   const Icon = Pill;
   return (
     <div
@@ -39,16 +39,11 @@ export default function PrescriptionItem({prescription, onUpdated}: Prescription
           >
             <div className="text-sm font-medium leading-none space-x-2">
               <span className="">
-                {prescription.name || `Prescription #${prescription.id}`} - {prescription.Medication.Patient.firstName}
+                {prescription.name || `Prescription #${prescription.id}`} - {prescription.ClinicPatient?.Patient?.firstName}
               </span>
               <Badge variant="destructive">
-                Medication Drugs: {prescription.Medication._count.MedicationDrugs}
+                Medicines: {prescription.Medicines?.length || 0}
               </Badge>
-              {!!prescription.Medication.completedAt && (
-                <Badge variant="default">
-                  Completed
-                </Badge>
-              )}
             </div>
           </Link>
           <p className="text-sm text-muted-foreground">
@@ -57,21 +52,12 @@ export default function PrescriptionItem({prescription, onUpdated}: Prescription
           </p>
         </div>
         <div className="flex flex-1 flex-col text-sm">
-          <p className="flex gap-1"><User size={16}/>{prescription.HealthcareProvider.HPProfile?.title} {prescription.HealthcareProvider.HPProfile?.name} {prescription.HealthcareProvider.HPProfile?.suffix}</p>
-          <p className="flex gap-1"><File size={16}/>{prescription.DocumentTemplate.name}</p>
+          <p className="flex gap-1"><User size={16} />{prescription.HealthcareProvider?.HPProfile?.title} {prescription.HealthcareProvider?.HPProfile?.name} {prescription.HealthcareProvider?.HPProfile?.suffix}</p>
+          <p className="flex gap-1"><File size={16} />{prescription.DocumentTemplate.name}</p>
         </div>
         <div className="flex items-center gap-1">
-          <DownloadPrescriptionAction prescription={prescription} onUpdated={onUpdated}>
-            <ActionButton
-              variant="ghost"
-              size="icon"
-              className="invisible group-hover/item:visible text-primary hover:text-primary/90"
-            >
-              <DownloadIcon className="h-4 w-4  hover:scale-125 transition-all" />
-            </ActionButton>
-          </DownloadPrescriptionAction>
-          <ModifyPrescriptionAction prescription={prescription} onUpdated={onUpdated}/>
-          <ArchivePrescriptionAction prescription={prescription} onUpdated={onUpdated}/>
+          <ModifyPrescriptionAction prescription={prescription} onUpdated={onUpdated} hpIds={hpIds} />
+          <ArchivePrescriptionAction prescription={prescription} onUpdated={onUpdated} />
         </div>
       </div>
     </div>
@@ -81,13 +67,14 @@ export default function PrescriptionItem({prescription, onUpdated}: Prescription
 interface ModifyPrescriptionActionProps {
   onUpdated?: () => void;
   prescription: PrescriptionItemProps["prescription"];
+  hpIds: number[];
 }
-const ModifyPrescriptionAction = ({prescription, onUpdated}: ModifyPrescriptionActionProps) => {
+const ModifyPrescriptionAction = ({ prescription, onUpdated, hpIds }: ModifyPrescriptionActionProps) => {
   return (
     <UpdatePrescriptionModal onUpdated={onUpdated} prescription={{
       id: prescription.id,
       name: prescription.name ?? "",
-    }}/>
+    }} hpIds={hpIds} />
   )
 }
 interface ArchivePrescriptionActionProps {
@@ -95,8 +82,11 @@ interface ArchivePrescriptionActionProps {
   prescription: PrescriptionItemProps["prescription"];
 }
 
-const ArchivePrescriptionAction = ({prescription, onUpdated}: ArchivePrescriptionActionProps) => {
-  
+const ArchivePrescriptionAction = React.forwardRef<
+  HTMLFormElement,
+  ArchivePrescriptionActionProps
+>(({ prescription, onUpdated }, ref) => {
+
   const handleArchivePrescription = async () => {
     toast.promise(promiseWrapper(archivePrescriptionAction)(prescription.id), {
       loading: "Archiving prescription...",
@@ -107,12 +97,12 @@ const ArchivePrescriptionAction = ({prescription, onUpdated}: ArchivePrescriptio
       error: error => error
     })
   }
-  
+
   return (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <form action={handleArchivePrescription}>
+          <form ref={ref} action={handleArchivePrescription}>
             <ActionButton
               variant="ghost"
               size="icon"
@@ -126,4 +116,6 @@ const ArchivePrescriptionAction = ({prescription, onUpdated}: ArchivePrescriptio
       </Tooltip>
     </TooltipProvider>
   )
-}
+})
+
+ArchivePrescriptionAction.displayName = "ArchivePrescriptionAction"

@@ -17,18 +17,18 @@ type CreateConsultationTicketPayload = {
   hpIds: number[]
 }
 
-export const createConsultationTicketAction = withErrorHandling(async ({systemId, appointmentId, clinicUid, subject, hpIds}: CreateConsultationTicketPayload) => {
-  
-  const session = await getCachedSession()
-  if(!session) throw new Error("Unauthorized")
+export const createConsultationTicketAction = withErrorHandling(async ({ systemId, appointmentId, clinicUid, subject, hpIds }: CreateConsultationTicketPayload) => {
 
-  const myPermissions = await getPermissionsAction({ userId:session.user.sub, type: "CLINIC" })
+  const session = await getCachedSession()
+  if (!session) throw new Error("Unauthorized")
+
+  const myPermissions = await getPermissionsAction({ userId: session.user.sub, type: "CLINIC" })
   const userPermissionArray = myPermissions.map(p => p.name);
   const createConsultationTicketPermissions = [PERMISSIONS.CLINIC["CREATE:CLINIC:CONSULTATION_TICKET"].name]
   const canCreateConsultationTicket = createConsultationTicketPermissions.some(p => userPermissionArray.includes(p))
 
-  if(!canCreateConsultationTicket) throw new Error("You do not have permission to create consultation tickets")
-      
+  if (!canCreateConsultationTicket) throw new Error("You do not have permission to create consultation tickets")
+
   const consultationTicket = await prismaClient.$transaction(async (prisma) => {
     const consultationConfig = await prismaClient.consultationConfig.findFirstOrThrow({
       where: {
@@ -41,21 +41,21 @@ export const createConsultationTicketAction = withErrorHandling(async ({systemId
     return await prismaClient.consultationTicket.create({
       data: {
         System: {
-          connect: {id: systemId}
+          connect: { id: systemId }
         },
         Appointment: {
-          connect: {id: appointmentId}
+          connect: { id: appointmentId }
         },
         Clinic: {
           connect: { clinicUid }
         },
         ConsultationTicketHPs: {
           createMany: {
-            data: hpIds.map(hpId => ({hpId}))
+            data: hpIds.map(hpId => ({ hpId }))
           }
         },
         subject,
-        ConsultationTicketAttribute:{
+        ConsultationTicketAttribute: {
           create: {
             status: "PROCESSING",
             NoteTemplate: {
@@ -73,12 +73,12 @@ export const createConsultationTicketAction = withErrorHandling(async ({systemId
 
 export type GetConsultationTicket = Awaited<ReturnType<typeof getConsultationTicketAction>>;
 export const getConsultationTicketAction = withErrorHandling(cache(async (consultationId: number, clinicUid: string) => {
-  
+
   const session = await getCachedSession()
-  if(!session) throw new Error("Unauthorized")
+  if (!session) throw new Error("Unauthorized")
 
   const [permissions] = await Promise.all([
-    getPermissionsAction({ userId:session.user.sub, type: "CLINIC" }),
+    getPermissionsAction({ userId: session.user.sub, type: "CLINIC" }),
   ])
 
   const userPermissionArray = permissions.map(p => p.name);
@@ -91,51 +91,45 @@ export const getConsultationTicketAction = withErrorHandling(cache(async (consul
   const canReadOwnOrgConsultations = readOwnOrgConsultationPermissions.every(p => userPermissionArray.includes(p))
   const canReadCreatedOrgConsultations = readCreatedOrgConsultationPermissions.every(p => userPermissionArray.includes(p))
   const canReadCoCreatedOrgConsultations = readCoCreatedOrgConsultationPermissions.every(p => userPermissionArray.includes(p))
-  
+
   const consultationTicket = await prismaClient.consultationTicket.findUnique({
-    where: { 
+    where: {
       id: consultationId,
       OR: [
         {
-          ...canReadAllOrgConsultations ? {Clinic: {clinicUid}} : {},
+          ...(canReadAllOrgConsultations ? { Clinic: { clinicUid } } : {}),
         },
-        { 
-          ...canReadCreatedOrgConsultations 
-            ? { 
-              ConsultationTicketHPs: { 
-                some: { 
-                  HealthCareProvider: {
+        {
+          ...(canReadCreatedOrgConsultations ? {
+            ConsultationTicketHPs: {
+              some: {
+                HealthCareProvider: {
+                  User: {
+                    userId: session.user.sub
+                  }
+                }
+              }
+            }
+          } : {})
+        },
+        {
+          ...(canReadOwnOrgConsultations ? { Appointment: { Requesters: { some: { User: { userId: session.user.sub } } } } } : {})
+        },
+        {
+          ...(canReadCoCreatedOrgConsultations ? {
+            Appointment: {
+              AppointmentRouting: {
+                some: {
+                  status: "ACCEPTED",
+                  RoutedTo: {
                     User: {
                       userId: session.user.sub
                     }
                   }
                 }
-              } 
-            } 
-            : {}
-        },
-        {
-          ...canReadOwnOrgConsultations
-            ? { Appointment: { Requesters: {  some: { User: {userId: session.user.sub} } } } }
-            : {}
-        },
-        {
-          ...canReadCoCreatedOrgConsultations
-            ? {
-              Appointment: {
-                AppointmentRouting: {
-                  some: {
-                    status: "ACCEPTED",
-                    RoutedTo: {
-                      User: {
-                        userId: session.user.sub
-                      }
-                    }
-                  }
-                }
               }
             }
-            : {}
+          } : {})
         }
       ]
     },
@@ -233,14 +227,14 @@ export type GetConsultationTicketsFilters = {
 
 export type GetConsultationTickets = Awaited<ReturnType<typeof getConsultationTicketsAction>>;
 export const getConsultationTicketsAction = withErrorHandling(async (filters: GetConsultationTicketsFilters) => {
-  
+
   const session = await getCachedSession()
-  if(!session) throw new Error("Unauthorized")
+  if (!session) throw new Error("Unauthorized")
 
   const { showArchived, userId, clinicUid } = filters
-    
+
   const [permissions] = await Promise.all([
-    getPermissionsAction({ userId:session.user.sub, type:"CLINIC" }),
+    getPermissionsAction({ userId: session.user.sub, type: "CLINIC" }),
   ])
 
   const userPermissionArray = permissions.map(p => p.name);
@@ -248,12 +242,12 @@ export const getConsultationTicketsAction = withErrorHandling(async (filters: Ge
   const readOwnOrgConsultationPermissions = [PERMISSIONS.CLINIC["READ:CLINIC:CONSULTATION_TICKET:OWN"].name]
   const readCreatedOrgConsultationPermissions = [PERMISSIONS.CLINIC["READ:CLINIC:CONSULTATION_TICKET:CREATED"].name]
   const readCoCreatedOrgConsultationPermissions = [PERMISSIONS.CLINIC["READ:CLINIC:CONSULTATION_TICKET:CO_CREATED"].name]
-    
+
   const canReadAllOrgConsultations = readAllOrgConsultationsPermissions.every(p => userPermissionArray.includes(p))
   const canReadOwnOrgConsultations = readOwnOrgConsultationPermissions.every(p => userPermissionArray.includes(p))
   const canReadCreatedOrgConsultations = readCreatedOrgConsultationPermissions.every(p => userPermissionArray.includes(p))
   const canReadCoCreatedOrgConsultations = readCoCreatedOrgConsultationPermissions.every(p => userPermissionArray.includes(p))
-    
+
   const consultationTickets = await prismaClient.consultationTicket.findMany({
     orderBy: {
       createdAt: 'desc'
@@ -263,8 +257,8 @@ export const getConsultationTicketsAction = withErrorHandling(async (filters: Ge
       Clinic: {
         clinicUid
       },
-      ...showArchived ? {}: { isArchived: false},
-      ...userId !== "null" ? {
+      ...(showArchived ? {} : { isArchived: false }),
+      ...(userId !== "null" ? {
         Appointment: {
           Requesters: {
             some: {
@@ -274,48 +268,42 @@ export const getConsultationTicketsAction = withErrorHandling(async (filters: Ge
             }
           }
         }
-      } : {},
+      } : {}),
       OR: [
         {
-          ...canReadAllOrgConsultations ? {Clinic: {clinicUid}} : {},
+          ...(canReadAllOrgConsultations ? { Clinic: { clinicUid } } : {}),
         },
-        { 
-          ...canReadCreatedOrgConsultations 
-            ? { 
-              ConsultationTicketHPs: {
+        {
+          ...(canReadCreatedOrgConsultations ? {
+            ConsultationTicketHPs: {
+              some: {
+                HealthCareProvider: {
+                  User: {
+                    userId: session.user.sub
+                  }
+                }
+              }
+            }
+          } : {})
+        },
+        {
+          ...(canReadOwnOrgConsultations ? { Appointment: { Requesters: { some: { User: { userId: session.user.sub } } } } } : {}),
+        },
+        {
+          ...(canReadCoCreatedOrgConsultations ? {
+            Appointment: {
+              AppointmentRouting: {
                 some: {
-                  HealthCareProvider: {
+                  status: "ACCEPTED",
+                  RoutedTo: {
                     User: {
                       userId: session.user.sub
                     }
                   }
                 }
               }
-            } 
-            : {}
-        },
-        { 
-          ...canReadOwnOrgConsultations 
-            ? { Appointment: { Requesters: { some: { User: { userId: session.user.sub} } } } }
-            : {},
-        },
-        {
-          ...canReadCoCreatedOrgConsultations 
-            ? {
-              Appointment: {
-                AppointmentRouting: {
-                  some: {
-                    status: "ACCEPTED",
-                    RoutedTo: {
-                      User: {
-                        userId: session.user.sub
-                      }
-                    }
-                  }
-                }
-              }
             }
-            : {}
+          } : {})
         }
       ]
     },
@@ -329,7 +317,37 @@ export const getConsultationTicketsAction = withErrorHandling(async (filters: Ge
         }
       },
       appointmentId: true,
-      ConsultationTicketHPs: true,
+      ConsultationTicketHPs: {
+        select: {
+          HealthCareProvider: {
+            select: {
+              id: true,
+              User: {
+                select: {
+                  firstName: true,
+                  lastName: true,
+                  OrganizationMembers: {
+                    select: {
+                      OrganizationRole: {
+                        select: {
+                          id: true,
+                          name: true,
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              HPProfile: {
+                select: {
+                  name: true,
+                  title: true,
+                }
+              }
+            }
+          }
+        }
+      },
       createdAt: true,
       updatedAt: true,
       isArchived: true,
@@ -345,6 +363,13 @@ export const getConsultationTicketsAction = withErrorHandling(async (filters: Ge
           status: true,
         }
       },
+      ConsultationNotes: {
+        select: {
+          id: true,
+          section: true,
+          content: true,
+        }
+      },
       Appointment: {
         select: {
           Requesters: {
@@ -358,35 +383,105 @@ export const getConsultationTicketsAction = withErrorHandling(async (filters: Ge
                   lastName: true,
                   suffix: true,
                   email: true,
+                  gender: true,
+                  dob: true,
+                  StudentRecords: {
+                    select: {
+                      Program: {
+                        select: {
+                          id: true,
+                          name: true,
+                        }
+                      },
+                      OrganizationYearLevel: {
+                        select: {
+                          id: true,
+                          name: true,
+                        }
+                      }
+                    }
+                  },
+                  OrganizationMembers: {
+                    select: {
+                      OrganizationRole: {
+                        select: {
+                          id: true,
+                          name: true,
+                        }
+                      },
+                      Organization: {
+                        select: {
+                          id: true,
+                          name: true,
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          complaint: true,
+          PreAssessmentNotes: {
+            orderBy: {
+              createdAt: 'desc'
+            },
+            select: {
+              id: true,
+              assessment: true,
+              homeInstructions: true,
+              remarks: true,
+              createdAt: true,
+              CreatedBy: {
+                select: {
+                  firstName: true,
+                  lastName: true,
+                  OrganizationMembers: {
+                    select: {
+                      OrganizationRole: {
+                        select: {
+                          name: true,
+                        }
+                      }
+                    }
+                  }
                 }
               }
             }
           },
           AppointmentAttribute: {
             select: {
+              id: true,
+              status: true,
               AppointmentMode: {
                 select: {
                   id: true,
-                  name: true
-                }
+                  name: true,
+                },
               },
               AppointmentType: {
                 select: {
                   id: true,
-                  name: true
+                  name: true,
                 }
               },
               Service: {
                 select: {
                   id: true,
-                  name: true
-                }
+                  name: true,
+                  ServiceCategory: {
+                    select: {
+                      id: true,
+                      name: true,
+                    },
+                  },
+                },
               },
-            }
-          }
-        }
-      }
-    }
+            },
+          },
+        },
+      },
+    },
   })
   return { message: "Consultation records fetched successfully", data: consultationTickets }
 })
@@ -395,27 +490,27 @@ type UpdateConsultationTicketPayload = {
   consultationId: number;
   subject: string;
 }
-export const updateConsultationTicketAction = withErrorHandling(async ({consultationId, subject}: UpdateConsultationTicketPayload) => {
-  
+export const updateConsultationTicketAction = withErrorHandling(async ({ consultationId, subject }: UpdateConsultationTicketPayload) => {
+
   const session = await getCachedSession()
-  if(!session) throw new Error("Unauthorized")
+  if (!session) throw new Error("Unauthorized")
 
   const [myPermissions] = await Promise.all([
-    getPermissionsAction({ userId:session.user.sub, type: "CLINIC" }),
+    getPermissionsAction({ userId: session.user.sub, type: "CLINIC" }),
   ])
 
   const userPermissionArray = myPermissions.map(p => p.name);
-  
+
   const updateConsultationTicketPermissions = [
     PERMISSIONS.CLINIC["UPDATE:CLINIC:CONSULTATION_TICKET:CREATED"].name,
     PERMISSIONS.CLINIC["UPDATE:CLINIC:CONSULTATION_TICKET:CO_CREATED"].name]
   const canUpdateConsultationTicket = updateConsultationTicketPermissions.some(p => userPermissionArray.includes(p))
 
-  if(!canUpdateConsultationTicket) throw new Error("You do not have permission to update consultation tickets")
+  if (!canUpdateConsultationTicket) throw new Error("You do not have permission to update consultation tickets")
 
   await prismaClient.consultationTicket.update({
-    where: { 
-      id: consultationId, 
+    where: {
+      id: consultationId,
       ConsultationTicketHPs: {
         some: {
           HealthCareProvider: {
@@ -429,18 +524,18 @@ export const updateConsultationTicketAction = withErrorHandling(async ({consulta
     data: { subject }
   })
   return { message: "Consultation Ticket updated successfully", data: undefined }
-  
-}, error => {
-  if(hasCodeProperty(error) && error.code === 'P2025') return "Consultation record not found or you do not have permission to update it";
+
+}, async error => {
+  if (hasCodeProperty(error) && error.code === 'P2025') return "Consultation record not found or you do not have permission to update it";
 })
 
 export const deleteConsultationTicketAction = withErrorHandling(async (consultationId: number) => {
-  
+
   const session = await getCachedSession()
-  if(!session) throw new Error("Unauthorized")
+  if (!session) throw new Error("Unauthorized")
 
   const [myPermissions] = await Promise.all([
-    getPermissionsAction({ userId:session.user.sub, type: "CLINIC" }),
+    getPermissionsAction({ userId: session.user.sub, type: "CLINIC" }),
   ])
 
   const myPermissionArray = myPermissions.map(p => p.name);
@@ -450,11 +545,11 @@ export const deleteConsultationTicketAction = withErrorHandling(async (consultat
   ]
   const canDeleteConsultationTicket = deleteConsultationTicketPermissions.some(p => myPermissionArray.includes(p))
 
-  if(!canDeleteConsultationTicket) throw new Error("You do not have permission to delete consultation tickets")
+  if (!canDeleteConsultationTicket) throw new Error("You do not have permission to delete consultation tickets")
 
   await prismaClient.consultationTicket.update({
-    where: { 
-      id: consultationId, 
+    where: {
+      id: consultationId,
       ConsultationTicketHPs: {
         some: {
           HealthCareProvider: {
@@ -470,18 +565,18 @@ export const deleteConsultationTicketAction = withErrorHandling(async (consultat
     }
   })
   return { message: "Consultation Ticket deleted successfully", data: undefined }
-}, error => {
-  if(hasCodeProperty(error) && error.code === 'P2025') return "Consultation record not found"
+}, async error => {
+  if (hasCodeProperty(error) && error.code === 'P2025') return "Consultation record not found"
   return "Failed to delete consultation record"
 })
 
 export const toggleArchiveConsultationTicketAction = withErrorHandling(async (consultationId: number, isArchived: boolean) => {
-  
+
   const session = await getCachedSession()
-  if(!session) throw new Error("Unauthorized")
+  if (!session) throw new Error("Unauthorized")
 
   const [myPermissions] = await Promise.all([
-    getPermissionsAction({ userId:session.user.sub, type: "CLINIC" }),
+    getPermissionsAction({ userId: session.user.sub, type: "CLINIC" }),
   ])
 
   const userPermissionArray = myPermissions.map(p => p.name);
@@ -491,11 +586,11 @@ export const toggleArchiveConsultationTicketAction = withErrorHandling(async (co
   ]
   const canUpdateConsultationTicket = updateConsultationTicketPermissions.some(p => userPermissionArray.includes(p))
 
-  if(!canUpdateConsultationTicket) throw new Error("You do not have permission to update consultation tickets")
+  if (!canUpdateConsultationTicket) throw new Error("You do not have permission to update consultation tickets")
 
   await prismaClient.consultationTicket.update({
-    where: { 
-      id: consultationId, 
+    where: {
+      id: consultationId,
       ConsultationTicketHPs: {
         some: {
           HealthCareProvider: {
@@ -504,8 +599,8 @@ export const toggleArchiveConsultationTicketAction = withErrorHandling(async (co
             }
           }
         }
-      }, 
-      isActive: true, 
+      },
+      isActive: true,
       isArchived: !isArchived
     },
     data: {
@@ -513,29 +608,29 @@ export const toggleArchiveConsultationTicketAction = withErrorHandling(async (co
     }
   })
   return { message: "Consultation Ticket archive status toggled successfully", data: undefined }
-  
-}, error => {
-  if(hasCodeProperty(error) && error.code === 'P2025')  return "Consultation record not found"
+
+}, async error => {
+  if (hasCodeProperty(error) && error.code === 'P2025') return "Consultation record not found"
   return "Failed to toggle archive status"
 })
 
 export const resolveConsultationTicket = withErrorHandling(async (consultationId: number) => {
-  
+
   const session = await getCachedSession()
-  if(!session) throw new Error("Session not found")
-      
+  if (!session) throw new Error("Session not found")
+
   const resolveConsultationTicketPermissions = [
     PERMISSIONS.CLINIC["RESOLVE:CLINIC:CONSULTATION_TICKET:CREATED"].name,
     PERMISSIONS.CLINIC["RESOLVE:CLINIC:CONSULTATION_TICKET:CO_CREATED"].name
   ]
-  const myPermissions = await getPermissionsAction({ userId:session.user.sub, type: "CLINIC" })
+  const myPermissions = await getPermissionsAction({ userId: session.user.sub, type: "CLINIC" })
   const userPermissionArray = myPermissions.map(p => p.name);
   const canResolveConsultationTicket = resolveConsultationTicketPermissions.some(p => userPermissionArray.includes(p))
 
-  if(!canResolveConsultationTicket) throw new Error("You do not have permission to resolve consultation tickets")
-      
+  if (!canResolveConsultationTicket) throw new Error("You do not have permission to resolve consultation tickets")
+
   await prismaClient.consultationTicketAttribute.update({
-    where: { 
+    where: {
       consultationTicketId: consultationId,
       status: {
         not: "RESOLVED"
@@ -543,9 +638,9 @@ export const resolveConsultationTicket = withErrorHandling(async (consultationId
     },
     data: { status: "RESOLVED" }
   })
-  return {message: "Consultation Ticket resolved successfully", data: undefined }
+  return { message: "Consultation Ticket resolved successfully", data: undefined }
 
-}, error => {
-  if(hasCodeProperty(error) && error.code === 'P2025') return "Consultation record not found";
+}, async error => {
+  if (hasCodeProperty(error) && error.code === 'P2025') return "Consultation record not found";
   return "Failed to resolve consultation record"
 })

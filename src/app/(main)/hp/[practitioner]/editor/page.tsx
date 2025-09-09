@@ -1,5 +1,3 @@
-import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth0";
-
 import HPProfileForm from "./components/HPProfileForm";
 import HPProfessionalInfo from "./components/HPProfessionalInfo";
 import { HPProfileType } from "./hp-form.schema";
@@ -13,14 +11,16 @@ import { revalidatePath } from "next/cache";
 import ActionButton from "@components/ActionButton";
 import { notFound, redirect } from "next/navigation";
 import { getCachedSession } from "@actions/session.action";
+import { AppRouterPageRouteOpts } from "@/types";
 
-async function EditorPage({params, searchParams}: AppRouterPageRouteOpts) {
+export default async function EditorPage(props: AppRouterPageRouteOpts) {
+  const params = await props.params;
   const hpId = parseInt(params?.practitioner as string);
 
   const session = await getCachedSession();
   const userId = session?.user.sub
-  if(!userId) return redirect("/api/auth/login");
-  
+  if(!userId) return redirect("/auth/login");
+
   const myHps = await getHPsAction({ userId });
   const isMyHp = myHps.some((hp) => hp.id === hpId);
   if(!isMyHp) return notFound();
@@ -28,7 +28,7 @@ async function EditorPage({params, searchParams}: AppRouterPageRouteOpts) {
   const hp = await getHPAction({
     id: hpId,
   });
-  
+
   const mappedProfile: HPProfileType = {
     id: hp?.HPProfile?.id ?? 0,
     title: hp?.HPProfile?.title ?? "",
@@ -65,7 +65,7 @@ async function EditorPage({params, searchParams}: AppRouterPageRouteOpts) {
           <form action={handleTogglePublish}>
             <ActionButton variant={isPublished? "destructive": "default"}>{isPublished ? "Unpublish": "Publish"}</ActionButton>
           </form>
-          <Link href={`/hp/${hpId}`}>
+          <Link href={`/hp/${hpId}`} >
             <Button className="fixed top-44 -right-[7rem] mr-2 hover:-right-[20px] transition-all"><ExternalLink size={20} className="mr-2"/>View profile</Button>
           </Link>
         </div>
@@ -87,11 +87,3 @@ async function EditorPage({params, searchParams}: AppRouterPageRouteOpts) {
     </div>
   );
 }
-
-
-export default withPageAuthRequired(EditorPage, {
-  returnTo({params, searchParams}) {
-    const searchStr = Object.entries(searchParams ?? {}).map(([key, value]) => `${key}=${value}`).join("&");
-    return `/hp/profile/${params?.practitioner}?${searchStr}`;
-  },
-});

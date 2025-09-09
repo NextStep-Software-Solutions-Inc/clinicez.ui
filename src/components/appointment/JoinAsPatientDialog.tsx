@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useClinicPatients } from "@/hooks/useClinicPatient";
 import { promiseWrapper } from "@/lib/with-error-handling";
-import { useUser } from "@auth0/nextjs-auth0/client";
+import { useUser } from "@auth0/nextjs-auth0";
 import { useParams, useSearchParams } from "next/navigation";
 import { useMemo } from "react";
 import { toast } from "sonner";
@@ -37,10 +37,10 @@ const confirmationFormSchema = z.object({
 })
 
 export function JoinAsPatientDialog() {
-  
+
   const { user } = useUser();
   const searchParams = useSearchParams();
-  const { clinicUid } = useParams<{clinicUid: string}>();
+  const { clinicUid } = useParams<{ clinicUid: string }>();
   const open = useMemo(() => searchParams.has("join-as-patient"), [searchParams]);
 
   const { mutate } = useClinicPatients({
@@ -52,7 +52,7 @@ export function JoinAsPatientDialog() {
   })
 
   const handleClose = (state: boolean) => {
-    if(!state) {
+    if (!state) {
       const searchParams = new URLSearchParams(window.location.search);
       searchParams.delete("join-as-patient");
       window.history.pushState({}, "", `${window.location.pathname}?${searchParams.toString()}`);
@@ -60,7 +60,7 @@ export function JoinAsPatientDialog() {
   }
 
   const action = () => {
-    if(!user?.sub) {
+    if (!user?.sub) {
       toast.error("User id not found")
       return;
     }
@@ -79,13 +79,13 @@ export function JoinAsPatientDialog() {
         mutate()
         return res.message
       },
-      error:error => error
+      error: error => error
     })
   }
 
   return (
     <AlertDialog open={open} onOpenChange={handleClose}>
-      
+
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>You are about to book appointment.</AlertDialogTitle>
@@ -113,7 +113,7 @@ export function JoinAsPatientDialog() {
                     <FormDescription>
                       I hereby certify that all my information provided in this application is true and accurate to the best of my knowledge.
                     </FormDescription>
-                    <FormMessage/>
+                    <FormMessage />
                   </div>
                 </FormItem>
               )}
@@ -131,12 +131,12 @@ export function JoinAsPatientDialog() {
                   </FormControl>
                   <div className="space-y-1 leading-none">
                     <FormLabel>
-                            Terms and Conditions
+                      Terms and Conditions
                     </FormLabel>
                     <FormDescription>
-                            I agree to the <Link href="https://www.healthcare.gov.au/sites/default/files/2021-04/Terms%20and%20Conditions%20for%20Healthcare%20Providers%20and%20Healthcare%20Organisations.pdf" target="_blank">Terms and Conditions</Link> of the Healthcare Organization.
+                      I agree to the <Link href="https://www.healthcare.gov.au/sites/default/files/2021-04/Terms%20and%20Conditions%20for%20Healthcare%20Providers%20and%20Healthcare%20Organisations.pdf" target="_blank">Terms and Conditions</Link> of the Healthcare Organization.
                     </FormDescription>
-                    <FormMessage/>
+                    <FormMessage />
                   </div>
                 </FormItem>
               )}
@@ -155,12 +155,12 @@ export function JoinAsPatientDialog() {
                   </FormControl>
                   <div className="space-y-1 leading-none">
                     <FormLabel>
-                          Privacy Policy
+                      Privacy Policy
                     </FormLabel>
                     <FormDescription>
-                            I agree to the <Link href="https://www.healthcare.gov.au/sites/default/files/2021-04/Privacy%20Policy%20for%20Healthcare%20Providers%20and%20Healthcare%20Organisations.pdf" target="_blank">Privacy Policy</Link> of the Healthcare Organization.
+                      I agree to the <Link href="https://www.healthcare.gov.au/sites/default/files/2021-04/Privacy%20Policy%20for%20Healthcare%20Providers%20and%20Healthcare%20Organisations.pdf" target="_blank">Privacy Policy</Link> of the Healthcare Organization.
                     </FormDescription>
-                    <FormMessage/>
+                    <FormMessage />
                   </div>
                 </FormItem>
               )}
@@ -168,10 +168,10 @@ export function JoinAsPatientDialog() {
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <ActionButton disabled={!form.formState.isValid} type="submit">Continue</ActionButton>
-            </AlertDialogFooter> 
+            </AlertDialogFooter>
           </form>
         </Form>
-        
+
       </AlertDialogContent>
     </AlertDialog>
   )

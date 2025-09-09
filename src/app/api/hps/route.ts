@@ -13,10 +13,10 @@ export const GET = withJwtAuth(async (req:NextRequest) => {
   const isPublished = searchParams.get('isPublished');
 
   const filters = {
-    ...hpTypeId ? { hpTypeId } : {},
-    ...userId ? { userId } : {},
-    ...id ? { id } : {},
-    ...isPublished ? { isPublished: isPublished === 'true' } : {},
+    ...(hpTypeId ? { hpTypeId } : {}),
+    ...(userId ? { userId } : {}),
+    ...(id ? { id } : {}),
+    ...(isPublished ? { isPublished: isPublished === 'true' } : {}),
   }
 
   const hps = await getHPsAction(filters)

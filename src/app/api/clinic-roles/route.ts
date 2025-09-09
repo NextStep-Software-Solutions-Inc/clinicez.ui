@@ -5,8 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 
 export const GET = withJwtAuth(async (req: NextRequest, { params }: {
-  params: {
-  }
+  params: Promise<{}>
 }) => {
   const searchParams = req.nextUrl.searchParams
 

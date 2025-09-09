@@ -17,10 +17,10 @@ type SetDefaultOrgRolePayload = {
 export const setDefaultOrgRoleAction = withErrorHandling(async ({ id = 0, userId, orgUid, roleId }: SetDefaultOrgRolePayload) => {
 
   await sessionCheck()
-    
+
   const defaultRole = await prisma.userDefaultOrganizationRole.upsert({
     where: { id, User: { userId }, isActive: true, },
-    update: { roleId  },
+    update: { roleId },
     create: {
       Organization: {
         connect: {
@@ -39,11 +39,11 @@ export const setDefaultOrgRoleAction = withErrorHandling(async ({ id = 0, userId
       }
     }
   })
-  
-  return {message: "Default organization role successfully set", data: defaultRole}
- 
-}, (error) => {
-  if(hasCodeProperty(error) && error.code === "P2002") {
+
+  return { message: "Default organization role successfully set", data: defaultRole }
+
+}, async (error) => {
+  if (hasCodeProperty(error) && error.code === "P2002") {
     return "Default organization role not found"
   }
   return "Error while setting default organization role";

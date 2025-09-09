@@ -84,7 +84,7 @@ export const receiveAppointmentAction = withErrorHandling(async (formData: FormD
     }
   })
   return { message: 'Appointment received', data: undefined };
-}, error => {
+}, async error => {
   if(error instanceof Error) return error.message;
   return "An error occurred while receiving appointment."
 })
@@ -120,7 +120,7 @@ export const completeAppointmentAction = withErrorHandling(async (formData: Form
     }
   })
   return { message: 'Appointment completed', data: undefined };
-}, error => {
+}, async error => {
   if(error instanceof Error) return error.message;
   return "An error occurred while completing appointment."
 })
@@ -160,7 +160,7 @@ export const rejectAppointmentAction = withErrorHandling(async (formData: FormDa
   })
   return { message: 'Appointment rejected', data: undefined };
 
-}, error => {
+}, async error => {
   if(error instanceof Error) return error.message;
   return "An error occurred while rejecting appointment."
 })

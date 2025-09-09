@@ -5,17 +5,30 @@ import AnimatedLogo from "./AnimatedLogo";
 import RootDrawer from "./RootDrawer";
 import { Button } from "./ui/button";
 import UserAvatarWrapper from "./UserAvatarWrapper";
+import HeaderEffects from "./HeaderEffects";
+import ClassicButton from "./ClassicButton";
 
+interface VersionProps {
+  className?: string;
+  version?: string;
+}
 
-interface IRootHeaderProps extends DetailedHTMLProps<HTMLAttributes<HTMLElement>, HTMLElement>{}
-export default function RootHeader({...props}: IRootHeaderProps) {
-  
+interface IRootHeaderProps extends DetailedHTMLProps<HTMLAttributes<HTMLElement>, HTMLElement>, VersionProps {}
+export default function RootHeader({ className = "", version = "v1", ...rest }: IRootHeaderProps) {
+
   return (
-    <header {...props} className={`bg-[#FCF8F1] bg-opacity-30 backdrop-blur ${props.className}`}>
+    <header
+      id="root-header"
+      {...rest}
+      className={`transition-colors duration-200 ${
+        version !== "v2" ? "bg-[#FCF8F1]/30 backdrop-blur" : "bg-transparent"
+      } ${className}`}
+    >
+      <HeaderEffects version={version} />
       <div className="container mx-auto">
         <div className="flex items-center justify-between h-16 lg:h-20">
           <div className="hidden lg:flex flex-shrink-0">
-            <a href="/" title="" className="flex h-40">
+            <a href={`/${version ? version : ''}`} title="" className="flex h-40">
               <AnimatedLogo/>
             </a>
           </div>
@@ -34,9 +47,10 @@ export default function RootHeader({...props}: IRootHeaderProps) {
           </RootDrawer>
           
           <div className="hidden md:flex lg:items-center lg:justify-center lg:space-x-10">
-            <Navigation/>
+            <Navigation version={version} />
           </div>
           <div className=" lg:inline-flex items-center justify-center gap-2">
+            <ClassicButton />
             <Suspense fallback={<div>Loading</div>}>
               <UserAvatarWrapper/>
             </Suspense>

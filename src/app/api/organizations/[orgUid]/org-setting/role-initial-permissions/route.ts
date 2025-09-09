@@ -6,12 +6,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { getOrgRoleInitialPermissionsAction } from "@/actions/org-role-initial-permission.action";
 
 export const GET = withJwtAuth(async (req: NextRequest, { params }: {
-    params: {
+    params: Promise<{
       orgUid: string;
-    }
+    }>
   }) => {
 
-  const orgUid = String(params?.orgUid);
+  const { orgUid } = await params;
   const searchParams = req.nextUrl.searchParams
   const orgRoleId = Number(searchParams.get("orgRoleId"))
   const orgRoleInitialPermissions = await getOrgRoleInitialPermissionsAction({

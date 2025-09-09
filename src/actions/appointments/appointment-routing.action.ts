@@ -72,7 +72,7 @@ export const assignAppointmentAction = withErrorHandling(async (data: AssignAppo
     isolationLevel: Prisma.TransactionIsolationLevel.Serializable
   })
   return { message: `Appointment assigned`, data: null};
-}, error => {
+}, async error => {
   if(hasCodeProperty(error) && error.code === 'P2025') return 'Appointment not found or you are not authorized to assign it';
   return 'Failed to assign appointment';
 })
@@ -102,7 +102,7 @@ export const acceptAppointmentAction = withErrorHandling(async (formData: FormDa
   })
 
   return { message: 'Appointment accepted', data: undefined };
-}, error => {
+}, async error => {
   if(hasCodeProperty(error) && error.code === 'P2025') return 'Appointment assignment not found or you are not authorized to accept it';
   return 'Failed to accept appointment';
 })
@@ -136,7 +136,7 @@ export const declineAppointmentAction = withErrorHandling(async (formData: FormD
     },
   })
   return { message: `Appointment assignment declined with reason: ${reason}`, data: undefined };
-}, error => {
+}, async error => {
   if(hasCodeProperty(error) && error.code === 'P2025') return 'Appointment assignment not found or you are not authorized to decline it';
   return 'Failed to decline appointment';
 })
@@ -175,7 +175,7 @@ export const cancelAppointmentRoutingAction = withErrorHandling(async (appointme
     },
   })
   return { message: 'Appointment cancelled', data: undefined};
-}, error => {
+}, async error => {
   if(hasCodeProperty(error) && error.code === 'P2025') return 'Appointment assignment not found or you are not authorized to cancel it';
   return 'Failed to cancel appointment assignment';
 })

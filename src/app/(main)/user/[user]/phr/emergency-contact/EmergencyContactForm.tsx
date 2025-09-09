@@ -19,21 +19,31 @@ interface EmergencyContactFormProps {
   readOnly?: boolean;
 }
 
-export default function EmergencyContactForm({contacts, sessionUserId, readOnly = true}: EmergencyContactFormProps) {
+export default function EmergencyContactForm({ contacts, sessionUserId, readOnly = true }: EmergencyContactFormProps) {
 
   const addContactAction = async (formData: FormData) => {
     const isPrimary = formData.get("isPrimary") === "true"
-    const contact = { isPrimary, name: "", relationship: "", phone: "", address: ""}
+    const contact = {
+      firstName: "",
+      middleName: "",
+      lastName: "",
+      suffix: "",
+      name: "",
+      relationship: "",
+      phone: "",
+      isPrimary,
+      address: null,
+    }
     toast.promise(createEmergencyContactAction(sessionUserId, contact), {
-      loading: `Adding ${isPrimary ? "Primary": "Secondary"} contact...`,
+      loading: `Adding ${isPrimary ? "Primary" : "Secondary"} contact...`,
       success: () => {
         revalidatePath("/user/[user]/phr/emergency-contact", "page")
-        return `${isPrimary ? "Primary": "Secondary"} contact added successfully.`
+        return `${isPrimary ? "Primary" : "Secondary"} contact added successfully.`
       },
       error: "An error occurred while adding contact.",
     })
   }
- 
+
 
   return (
     <div className="space-y-6">

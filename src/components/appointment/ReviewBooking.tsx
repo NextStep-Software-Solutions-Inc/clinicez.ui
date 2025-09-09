@@ -4,7 +4,7 @@ import { createAppointmentAction } from "@actions/appointments/appointments.acti
 import BackSubmitAndNext from "@components/SubmitAndNext";
 import React, { FormEvent } from "react";
 import { toast } from "sonner";
-import { useUser } from "@auth0/nextjs-auth0/client";
+import { useUser } from "@auth0/nextjs-auth0";
 import useSound from "use-sound";
 import { useAtom } from "jotai";
 import { bookAppointmentAtom } from "@state/book-appointment";
@@ -25,32 +25,32 @@ import { useHP } from "@hooks/useHP";
 import { Button } from "@components/ui/button";
 
 interface ReviewBookingProps {
-    nextStep?: () => void;
-    prevStep?: () => void;
-    isFirstStep?: boolean;
-    isLastStep?: boolean;
-    setComplete?: (value: boolean) => void;
-    startOver?: () => void;
+  nextStep?: () => void;
+  prevStep?: () => void;
+  isFirstStep?: boolean;
+  isLastStep?: boolean;
+  setComplete?: (value: boolean) => void;
+  startOver?: () => void;
 }
 
 export default function ReviewBooking({ nextStep, prevStep, isLastStep, isFirstStep, setComplete, startOver }: ReviewBookingProps) {
   const [bookAppointmentForm, setBookAppointmentForm] = useAtom(bookAppointmentAtom);
-  const params = useParams<{clinicUid: string}>();
+  const params = useParams<{ clinicUid: string }>();
   const user = useUser()
-  const { data: services } = useClinicServices({clinicUid: params.clinicUid});
+  const { data: services } = useClinicServices({ clinicUid: params.clinicUid });
   const { data: appointmentTypes } = useOrgAppointmentTypes(params.clinicUid);
   const { data: appointmentModes } = useOrgAppointmentModes(params.clinicUid);
-  const {data: hp } = useHP(bookAppointmentForm.hpId ?? 0)
-  const {data: dbUser } = useDbUser({ userId: bookAppointmentForm.requester }); 
+  const { data: hp } = useHP(bookAppointmentForm.hpId ?? 0)
+  const { data: dbUser } = useDbUser({ userId: bookAppointmentForm.requester });
 
   const [playSuccess] = useSound("/audio/success-1.mp3");
 
-  const handleBookAppointment = async (e:FormEvent<HTMLFormElement>) => {
+  const handleBookAppointment = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    
-    if(!params.clinicUid) {
+
+    if (!params.clinicUid) {
       toast.error("Clinic UID is required")
-      return ;
+      return;
     }
     if (!bookAppointmentForm.appointmentTypeId) {
       toast.error("Appointment type is required")
@@ -64,21 +64,21 @@ export default function ReviewBooking({ nextStep, prevStep, isLastStep, isFirstS
       toast.error("Service is required")
       return;
     }
-    if (!bookAppointmentForm.hpId) {
-      toast.error("Healthcare Provider is required")
-      return;
-    }
-    if(bookAppointmentForm.bookAFriend) {
+    // if (!bookAppointmentForm.hpId) {
+    //   toast.error("Healthcare Provider is required")
+    //   return;
+    // }
+    if (bookAppointmentForm.bookAFriend) {
 
     }
-    const requester = bookAppointmentForm.bookAFriend ? bookAppointmentForm.requester: user.user?.sub;
-    if(!requester) {
+    const requester = bookAppointmentForm.bookAFriend ? bookAppointmentForm.requester : user.user?.sub;
+    if (!requester) {
       toast.error("Requester ID is required")
       return;
     }
 
-    let attachmentUrls:{url: string}[] = []
-    
+    let attachmentUrls: { url: string }[] = []
+
     for (const attachment of bookAppointmentForm.attachments ?? []) {
       toast.loading(`Uploading ${attachment.name}...`)
       if (attachment.size > 10 * 1024 * 1024) {
@@ -111,17 +111,17 @@ export default function ReviewBooking({ nextStep, prevStep, isLastStep, isFirstS
     }), {
       loading: "Creating appointment...",
       success: (res) => {
-        if(res.status){
+        if (res.status) {
           setComplete?.(true);
           playSuccess();
-          mutate((key) =>  typeof key === 'string' && key.startsWith(`/api/clinics/${params.clinicUid}/appointments`), undefined, {
-            revalidate:true
+          mutate((key) => typeof key === 'string' && key.startsWith(`/api/clinics/${params.clinicUid}/appointments`), undefined, {
+            revalidate: true
           })
         }
         return res.message;
       },
       error: "Failed to create appointment",
-      position:"top-center"
+      position: "top-center"
     })
   }
 
@@ -130,8 +130,22 @@ export default function ReviewBooking({ nextStep, prevStep, isLastStep, isFirstS
     startOver?.();
   }
 
-  const preferredHp = `${hp?.HPProfile?.title} ${hp?.HPProfile?.name} ${hp?.HPProfile?.suffix}`
-  const requesterName = `${dbUser?.data?.firstName || "-"} ${dbUser?.data?.middleName || ""} ${dbUser?.data?.lastName || "-"} ${dbUser?.data?.suffix || ""}`
+  const preferredHp = React.useMemo(() => {
+    if (!hp) return "No Healthcare Provider Selected";
+    const title = hp?.HPProfile?.title ?? "";
+    const name = hp?.HPProfile?.name ?? "";
+    const suffix = hp?.HPProfile?.suffix ?? "";
+    const profName = `${title} ${name} ${suffix}`.replace(/\s+/g, " ").trim();
+    if (profName) return profName;
+
+    const firstName = hp?.User?.firstName ?? "";
+    const middleName = hp?.User?.middleName ?? "";
+    const lastName = hp?.User?.lastName ?? "";
+    const userSuffix = hp?.User?.suffix ?? "";
+    const userName = `${firstName} ${middleName} ${lastName} ${userSuffix}`.replace(/\s+/g, " ").trim();
+    return userName || "No Healthcare Provider Selected";
+  }, [hp]);
+  const requesterName = `${dbUser?.data?.firstName || "-"} ${dbUser?.data?.middleName || ""} ${dbUser?.data?.lastName || "-"} ${dbUser?.data?.suffix || ""}`.replace(/\s+/g, " ").trim();
   return (
     <div className="shadow-lg p-8 space-y-5 bg-white rounded-md">
       <h2 className="text-2xl  font-bold ">Review details</h2>
@@ -151,19 +165,19 @@ export default function ReviewBooking({ nextStep, prevStep, isLastStep, isFirstS
           <LabelValue className="flex items-center gap-2" value="Appointment Type:" label={appointmentTypes?.find(a => a.id === bookAppointmentForm.appointmentTypeId)?.name ?? ""} />
           <LabelValue className="flex items-center gap-2" value="Service:" label={services?.find(s => s.id === bookAppointmentForm.serviceId)?.name ?? ""} />
           <LabelValue className="flex items-center gap-2" value="Preferred Healthcare Provider:" label={preferredHp} />
-          
-          {!!bookAppointmentForm.preferredDate && <LabelValue className="flex items-center gap-2" value="Preferred Date:" label={dayjs(bookAppointmentForm.preferredDate).format("ll")} /> }
+
+          {!!bookAppointmentForm.preferredDate && <LabelValue className="flex items-center gap-2" value="Preferred Date:" label={dayjs(bookAppointmentForm.preferredDate).format("ll")} />}
           {bookAppointmentForm.selectedTimeSlot?.start && bookAppointmentForm.selectedTimeSlot?.end && <LabelValue className="flex items-center gap-2" value="Time Slot:" label={`${dayjs(bookAppointmentForm.selectedTimeSlot.start).format("LT")} - ${dayjs(bookAppointmentForm.selectedTimeSlot.end).format("LT")}`} />}
-          <Separator/>
+          <Separator />
           <Each
             of={bookAppointmentForm.attachments ?? []}
             fallback={<p>No attachments</p>}
             render={(attachment, index) => (
-              <LabelValue key={index} className="flex items-center gap-2"  value={`Attachment #${index+1}:`} label={attachment.name} />
+              <LabelValue key={index} className="flex items-center gap-2" value={`Attachment #${index + 1}:`} label={attachment.name} />
             )}
           />
         </div>
-       
+
         <div className="flex flex-wrap items-center justify-between gap-2">
           <BackSubmitAndNext
             labels={{
@@ -175,12 +189,12 @@ export default function ReviewBooking({ nextStep, prevStep, isLastStep, isFirstS
               next: true
             }}
             actions={{
-              next: isLastStep? reset : nextStep,
+              next: isLastStep ? reset : nextStep,
               previous: prevStep,
             }}
           />
-          <Button variant="outline" type="button" onClick={isLastStep? reset : nextStep}>
-          Start Over
+          <Button variant="outline" type="button" onClick={isLastStep ? reset : nextStep}>
+            Start Over
           </Button>
         </div>
       </form>

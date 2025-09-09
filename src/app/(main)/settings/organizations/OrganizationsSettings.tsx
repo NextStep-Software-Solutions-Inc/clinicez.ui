@@ -14,11 +14,11 @@ import {
   FormMessage,
 } from "@components/ui/form"
 
-import {toast} from "sonner"
+import { toast } from "sonner"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@components/ui/select"
 import Each from "@components/utils/Each"
 import { setMyDefaultOrganizationAction } from "@actions/organizations/organization.action"
-import { useUser } from "@auth0/nextjs-auth0/client"
+import { useUser } from "@auth0/nextjs-auth0"
 import ActionButton from "@components/ActionButton"
 import { OrgDefaultRoleForm } from "./OrgDefaultRoleForm"
 import ConditionalRender from "@components/utils/ConditionalRender"
@@ -36,10 +36,10 @@ export default function OrganizationsSettings() {
   const user = useUser();
   const userId = user?.user?.sub ?? undefined;
 
-  const {data: myOrgs} = useOrgMembers({userId, distinct: true}, !!userId) 
-  const {data: defaultOrg} = useUserDefaultOrg(userId ?? "", !!userId) 
-  const {data: myDefaultOrgsRole} = useUserDefaultOrgsRole(userId ?? "", !!userId)
-  
+  const { data: myOrgs } = useOrgMembers({ userId, distinct: true }, !!userId)
+  const { data: defaultOrg } = useUserDefaultOrg(userId ?? "", !!userId)
+  const { data: myDefaultOrgsRole } = useUserDefaultOrgsRole(userId ?? "", !!userId)
+
   const form = useForm<DefaultOrgFormSchema>({
     resolver: zodResolver(organizationFormSchema),
     values: {
@@ -47,8 +47,8 @@ export default function OrganizationsSettings() {
     }
   })
 
-  async function action(){
-    form.handleSubmit(async (data)  => {
+  async function action() {
+    form.handleSubmit(async (data) => {
       toast.promise(promiseWrapper(setMyDefaultOrganizationAction)(defaultOrg?.data?.id ?? 0, data.defaultOrgUid, userId), {
         loading: "Updating default organization...",
         success: (res) => {
@@ -58,8 +58,8 @@ export default function OrganizationsSettings() {
         error: error => error
       })
     })()
-  } 
-  
+  }
+
   return (
     <Form {...form}>
       <form action={action} className="space-y-8">
@@ -79,18 +79,19 @@ export default function OrganizationsSettings() {
                   <SelectContent>
                     <Each
                       of={myOrgs?.data?.data ?? []}
-                      render={({ Organization: {id, orgUid, name} }) => (
+                      render={({ Organization: { id, orgUid, name } }) => (
                         <SelectItem value={orgUid}>{name}</SelectItem>
                       )}
                     />
                   </SelectContent>
                 </Select>
                 <FormDescription>
-                This will the default organization that will be used when you open your dashboard.
+                  This will the default organization that will be used when you open your dashboard.
                 </FormDescription>
                 <FormMessage />
               </FormItem>
-            )}}
+            )
+          }}
         />
         <ConditionalRender condition={form.formState.isDirty}>
           <ActionButton disabled={form.formState.isLoading} type="submit">Update</ActionButton>
@@ -99,14 +100,14 @@ export default function OrganizationsSettings() {
       <Each
         of={myOrgs?.data?.data ?? []}
         render={(membership) => (
-          <OrgDefaultRoleForm 
+          <OrgDefaultRoleForm
             key={membership.id}
-            defaultRoleId={myDefaultOrgsRole?.data?.find(role => role.organizationId === membership.Organization.id)?.id}
+            defaultRoleId={myDefaultOrgsRole?.data?.find(role => role.organizationId === membership.Organization.id)?.roleId}
             userId={membership.User.userId}
             organization={{
               orgUid: membership.Organization.orgUid,
               name: membership.Organization.name
-            }} 
+            }}
           />
         )}
       />

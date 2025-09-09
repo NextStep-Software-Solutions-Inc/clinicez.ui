@@ -13,37 +13,37 @@ import dayjs from "@lib/day-utils";
 import ClinicMemberTabSection from "./ClinicMemberTabSection";
 import { useClinicMembers } from "@/hooks/useClinicMember";
 
-interface ClinicMemberDetailsProps {
+export interface ClinicMemberDetailsProps {
   userId: string;
   clinicUid: string;
 }
-export default function ClinicMemberDetails({userId, clinicUid}:ClinicMemberDetailsProps) {
-  const {data: user, isLoading} = useDBUser({ userId });
-  
-  const {data: clinicRoles} = useClinicMembers({clinicUid, userId });
-  const {data: appointments} = useClinicAppointments({clinicUid, userId });
-  
-  if(isLoading) return <div>Loading user...</div>
-  if(!user?.data) notFound()
+export default function ClinicMemberDetails({ userId, clinicUid }: ClinicMemberDetailsProps) {
+  const { data: user, isLoading } = useDBUser({ userId });
+
+  const { data: clinicRoles } = useClinicMembers({ clinicUid, userId });
+  const { data: appointments } = useClinicAppointments({ clinicUid, userId });
+
+  if (isLoading) return <div>Loading user...</div>
+  if (!user?.data) notFound()
 
   return (
     <>
       <Card className="bg-slate-100">
         <CardContent className="mt-5">
           <div className="flex flex-wrap gap-5">
-            <Picture readOnly user={user?.data}/>
+            <Picture readOnly user={user?.data} />
             <div className="space-y-2">
               <div className="flex gap-5 flex-wrap items-center basis-[400px]">
                 <LabelValue label="Name" value={`${user.data.firstName} ${user.data.middleName ?? ""} ${user.data.lastName} ${user.data.suffix ?? ""}`} />
-                <Separator orientation="vertical" className="h-6"/>
+                <Separator orientation="vertical" className="h-6" />
                 <LabelValue label="Age" value={`${user.data.dob ? differenceInCalendarYears(new Date(), user.data.dob) : "0"} yr old`} />
-                <Separator orientation="vertical" className="h-6"/>
+                <Separator orientation="vertical" className="h-6" />
                 <LabelValue label="Gender" value={user?.data.gender} />
               </div>
               <Separator />
               <div className="flex gap-5 flex-wrap items-center basis-[400px]">
                 <LabelValue label="Roles" value={clinicRoles?.data?.length ?? 0} />
-                <Separator orientation="vertical" className="h-6"/>
+                <Separator orientation="vertical" className="h-6" />
                 <LabelValue label="Total Appointments" value={appointments?.data?.length ?? 0} />
               </div>
               <Separator />
@@ -52,7 +52,7 @@ export default function ClinicMemberDetails({userId, clinicUid}:ClinicMemberDeta
           </div>
         </CardContent>
       </Card>
-      <ClinicMemberTabSection clinicUid={clinicUid} userId={userId}/>
+      <ClinicMemberTabSection clinicUid={clinicUid} userId={userId} />
     </>
   );
 }

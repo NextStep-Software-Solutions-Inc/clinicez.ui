@@ -35,7 +35,6 @@ export function MainNav({ className, navItems }: DashboardNavProps) {
           </Link>
         )}
       />
-      
     </nav>
-  )
+  );
 }

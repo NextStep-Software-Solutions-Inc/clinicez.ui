@@ -29,7 +29,7 @@ export default function Breadcrumb() {
                 </BreadcrumbItem>
                 {index !== pathSegment.length-1 && <BreadcrumbSeparator />}
               </>
-            )
+            );
           }}
         />
       </BreadcrumbList>

@@ -1,18 +1,19 @@
 import { Separator } from "@components/ui/separator";
 import { Metadata } from "next";
 import ActivationForm from "./components/ActivationForm";
-import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth0";
 import { AlertTriangle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@components/ui/alert";
+import { AppRouterPageRouteOpts } from "@/types";
 
 export const metadata: Metadata = {
   title: "User Activation",
   description: "Organization provides a way to activate users aside from the default manual application to become a member.",
 }
 
-async function ActivatePage({params}: AppRouterPageRouteOpts) {
+export default async function ActivatePage(props: AppRouterPageRouteOpts) {
+  const params = await props.params;
   const orgUid = String(params?.orgUid);
-  
+
   return (
 
     <div className="container mx-auto my-10 space-y-6">
@@ -39,10 +40,3 @@ async function ActivatePage({params}: AppRouterPageRouteOpts) {
 
   );
 }
-
-export default  withPageAuthRequired(ActivatePage, {
-  returnTo: ({params, searchParams}) => {
-    const searchParamsStr = new URLSearchParams(searchParams as Record<string, string>).toString();
-    return `/${String(params?.orgUid)}/activate?${searchParamsStr}`;
-  }
-});

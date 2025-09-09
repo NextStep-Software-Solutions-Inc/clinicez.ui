@@ -1,5 +1,4 @@
-
-
+import { hasContextProperty } from '@/lib/utils'
 
 type AsyncFunction<T, A extends any[]> = (...args: A) => Promise<{ status: boolean, message: string, data: T }>;
 type Result<T> = { status: boolean, message: string, data: T | null };
@@ -21,15 +20,15 @@ export const promiseWrapper = <T, A extends any[]>(originalFn: AsyncFunction<T, 
 };
 
 
-type CustomErrorHandler = (error: unknown) => Promise<string | undefined> | string | undefined;
-type FunctionWithMessageAndData<T> = (...args: any[]) => Promise<{ message: string; data: T }>;
+type CustomErrorHandler = (error: unknown, context: unknown) => Promise<string | undefined> | string | undefined;
+type FunctionWithMessageAndData<T, A extends unknown[] = unknown[]> = (...args: A) => Promise<{ message: string; data: T }>;
 type FinalResult<T extends FunctionWithMessageAndData<any>> = (...args: Parameters<T>) => Promise<Result<Awaited<ReturnType<T>>['data']>>;
 
-export function withErrorHandling<T extends FunctionWithMessageAndData<any>>(
-  fn: T,
+export function withErrorHandling<TData, A extends unknown[]>(
+  fn: FunctionWithMessageAndData<TData, A>,
   customErrorHandler?: CustomErrorHandler
-): FinalResult<T> {
-  return async (...args: Parameters<T>): Promise<Result<Awaited<ReturnType<T>>['data']>> => {
+): (...args: A) => Promise<Result<TData>> {
+  return async (...args: A): Promise<Result<TData>> => {
     let message = "Operation completed successfully";
     try {
       const result = await fn(...args);
@@ -38,9 +37,11 @@ export function withErrorHandling<T extends FunctionWithMessageAndData<any>>(
       console.error(`Error in function: ${fn.name}: ${error}`);
       if (error instanceof Error) message = error.message;
       if (customErrorHandler) {
-        const m = customErrorHandler(error);
-        message = ((m as any) instanceof Promise ? await (m as unknown as Promise<string | undefined>) : m)?.toString() || message;
-      };
+        const maybe = customErrorHandler(error, { functionName: fn.name, args });
+        const m = maybe instanceof Promise ? await maybe : maybe;
+        const resolvedMessage = maybe instanceof Promise ? await maybe : maybe;
+        if (resolvedMessage !== undefined && resolvedMessage !== null) message = resolvedMessage.toString();
+      }
       return { status: false, message, data: null };
     }
   };

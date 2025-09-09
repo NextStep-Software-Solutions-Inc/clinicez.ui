@@ -8,7 +8,7 @@ import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import Suspend from "@components/Suspend";
 import { getHPAction } from "@actions/hp.actions";
-import { useUser } from "@auth0/nextjs-auth0/client";
+import { useUser } from "@auth0/nextjs-auth0";
 
 const steps = ["Healthcare Provider Type", "Plan", "Payment", "Confirmation"];
 interface ApplicationFormProps {
@@ -50,8 +50,8 @@ export const GotoHpProfile = () => {
 
   if (!hp) return null;
   return (
-    <Link href={`/hp/${hp.id}`}>
+    <Link href={`/hp/${hp.id}`} >
       <Button className="mt-5">Go to Profile <ArrowRight/></Button>
     </Link>
-  )
+  );
 }

@@ -1,13 +1,13 @@
-import ClinicMemberDetails from "@/components/membership/ClinicMemberDetails";
 import Suspend from "@components/Suspend";
 import { Separator } from "@components/ui/separator";
+import ClinicMemberDetailsWrapper from "@components/ClinicMemberDetailsWrapper";
 import React from "react";
 
 interface ClinicMemberDetailsPageProps {
-  params: {
+  params: Promise<{
       userId: string;
       clinicUid: string;
-  };
+  }>;
 }
 
 export const metadata = {
@@ -15,7 +15,8 @@ export const metadata = {
   description: "Manage your clinic profile and membership details.",
 }
 
-export default function ClinicMemberDetailsPage({params}: ClinicMemberDetailsPageProps) {
+export default async function ClinicMemberDetailsPage(props: ClinicMemberDetailsPageProps) {
+  const params = await props.params;
   return (
     <>
       <div className="space-y-6">
@@ -27,7 +28,7 @@ export default function ClinicMemberDetailsPage({params}: ClinicMemberDetailsPag
         </div>
         <Separator />
         <Suspend>
-          <ClinicMemberDetails userId={decodeURIComponent(params.userId)} clinicUid={String(params?.clinicUid)}/>
+          <ClinicMemberDetailsWrapper userId={decodeURIComponent(params.userId)} clinicUid={String(params?.clinicUid)}/>
         </Suspend>
       </div>
     </>

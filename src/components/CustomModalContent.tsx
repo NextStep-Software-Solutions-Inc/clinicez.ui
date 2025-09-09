@@ -6,18 +6,19 @@ interface CustomModalContentProps extends DialogContentProps {
   children: React.ReactNode;
   label: React.ReactNode;
   description?: React.ReactNode;
+  headerClassName?: string;
 }
 
-export default function CustomModalContent({ children, label, description,  ...res }: CustomModalContentProps) {
+export default function CustomModalContent({ children, label, description, headerClassName = "", ...res }: CustomModalContentProps) {
   return (
     <DialogContent {...res}>
-      <DialogHeader>
+      <DialogHeader className={headerClassName}>
         <DialogTitle>{label}</DialogTitle>
         <DialogDescription>
           {description}
         </DialogDescription>
       </DialogHeader>
-      <div className="overflow-scroll max-h-[90vh] no-scrollbar px-1">
+      <div className={`overflow-scroll max-h-[90vh] no-scrollbar px-1 ${headerClassName ? 'pt-2' : ''}`}>
         {children}
       </div>
     </DialogContent>

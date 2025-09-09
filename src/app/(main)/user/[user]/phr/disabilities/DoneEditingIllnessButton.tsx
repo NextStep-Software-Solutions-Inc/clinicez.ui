@@ -1,7 +1,7 @@
 "use client";
 
 import { upsertUserIllnessAction } from "@actions/users/user-illness.action";
-import { useUser } from "@auth0/nextjs-auth0/client";
+import { useUser } from "@auth0/nextjs-auth0";
 import ActionButton from "@components/ActionButton";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
@@ -28,7 +28,7 @@ export default function DoneEditingIllnessButton({index, form, onUpdate}:DoneEdi
         illness: data.HealthCondition.name.trim(),
         severity: data.severity as Severity,
         notes: data.notes,
-        ...data.dateDiagnosed && {dateDiagnosed: data.dateDiagnosed}
+        ...(data.dateDiagnosed && {dateDiagnosed: data.dateDiagnosed})
       }), {
         loading: "Saving...",
         success: (res) =>{

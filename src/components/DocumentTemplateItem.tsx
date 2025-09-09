@@ -1,3 +1,4 @@
+import React from "react";
 import {
   Tooltip,
   TooltipContent,
@@ -29,7 +30,7 @@ export interface DocumentTemplateItemProps {
     };
   };
 }
-export default function DocumentTemplateItem({documentTemplate, onUpdated}: DocumentTemplateItemProps) {
+export default function DocumentTemplateItem({ documentTemplate, onUpdated }: DocumentTemplateItemProps) {
   const Icon = File;
   return (
     <div
@@ -57,9 +58,9 @@ export default function DocumentTemplateItem({documentTemplate, onUpdated}: Docu
           </p>
         </div>
         <div className="flex items-center ml-auto gap-1">
-          <DownloadPrescriptionAction documentTemplate={documentTemplate}/>
-          <ModifyPrescriptionAction documentTemplate={documentTemplate} onUpdated={onUpdated} label="Prescription"/>
-          <DeletePrescriptionAction documentTemplate={documentTemplate} onUpdated={onUpdated}/>
+          <DownloadPrescriptionAction documentTemplate={documentTemplate} />
+          <ModifyPrescriptionAction documentTemplate={documentTemplate} onUpdated={onUpdated} label="Prescription" />
+          <DeletePrescriptionAction documentTemplate={documentTemplate} onUpdated={onUpdated} />
         </div>
       </div>
     </div>
@@ -71,13 +72,13 @@ interface DocumentTemplateItemActionProps {
   onUpdated?: () => void;
   label?: string;
 }
-const ModifyPrescriptionAction = ({documentTemplate, onUpdated, label}: DocumentTemplateItemActionProps) => {
+const ModifyPrescriptionAction = ({ documentTemplate, onUpdated, label }: DocumentTemplateItemActionProps) => {
   return (
-    <UpdateDocumentTemplateModal onUpdated={onUpdated} documentTemplate={documentTemplate} label={label}/>
+    <UpdateDocumentTemplateModal onUpdated={onUpdated} documentTemplate={documentTemplate} label={label} />
   )
 }
 
-const DownloadPrescriptionAction = ({documentTemplate}: {documentTemplate: DocumentTemplateItemProps["documentTemplate"]}) => {
+const DownloadPrescriptionAction = ({ documentTemplate }: { documentTemplate: DocumentTemplateItemProps["documentTemplate"] }) => {
   return (
     <TooltipProvider>
       <Tooltip>
@@ -98,15 +99,19 @@ const DownloadPrescriptionAction = ({documentTemplate}: {documentTemplate: Docum
         <TooltipContent side="top">Download</TooltipContent>
       </Tooltip>
     </TooltipProvider>
-  )
+  );
 }
 interface DeletePrescriptionActionProps {
   documentTemplate: DocumentTemplateItemProps["documentTemplate"];
   onUpdated?: () => void;
 }
-const DeletePrescriptionAction = ({documentTemplate, onUpdated}: DeletePrescriptionActionProps) => {
-  
-  const  handleDelete = async () => {
+
+const DeletePrescriptionAction = React.forwardRef<
+  HTMLFormElement,
+  DeletePrescriptionActionProps
+>(({ documentTemplate, onUpdated }, ref) => {
+
+  const handleDelete = async () => {
     toast.promise(promiseWrapper(deleteDocumentTemplateAction)(documentTemplate.id), {
       loading: "Deleting document template...",
       success: (res) => {
@@ -116,12 +121,12 @@ const DeletePrescriptionAction = ({documentTemplate, onUpdated}: DeletePrescript
       error: error => error
     })
   }
-  
+
   return (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <form action={handleDelete}>
+          <form ref={ref} action={handleDelete}>
             <ActionButton
               variant="ghost"
               size="icon"
@@ -135,4 +140,6 @@ const DeletePrescriptionAction = ({documentTemplate, onUpdated}: DeletePrescript
       </Tooltip>
     </TooltipProvider>
   )
-}
+})
+
+DeletePrescriptionAction.displayName = "DeletePrescriptionAction"

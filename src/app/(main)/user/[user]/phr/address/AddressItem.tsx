@@ -25,6 +25,24 @@ export const addressFormSchema = z.object({
   }).max(255, {
     message: "Name must not be longer than 255 characters.",
   }),
+  apartmentUnit: z.string()
+    .optional()
+    .transform((e) => e === "" ? undefined : e),
+  bldgName: z.string()
+    .optional()
+    .transform((e) => e === "" ? undefined : e),
+  premises: z.string()
+    .optional()
+    .transform((e) => e === "" ? undefined : e),
+  streetName: z.string()
+    .optional()
+    .transform((e) => e === "" ? undefined : e),
+  barangay: z.string()
+    .optional()
+    .transform((e) => e === "" ? undefined : e),
+  subdivision: z.string()
+    .optional()
+    .transform((e) => e === "" ? undefined : e),
   city: z.string().min(2, {
     message: "City must be at least 2 characters.",
   }).max(255, {
@@ -54,23 +72,36 @@ export interface AddressItemProps {
     id: number;
     isPrimary: boolean;
     address: string;
+    apartmentUnit?: string | null;
+    bldgName?: string | null;
+    premises?: string | null;
+    streetName?: string | null;
+    barangay?: string | null;
+    subdivision?: string | null;
     city: string;
     state: string;
     zipCode: string;
     country: string;
   };
   readOnly?: boolean;
-
 }
 
 export const AddressItem = ({ address, readOnly }: AddressItemProps) => {
 
   const form = useForm<AddressFormSchema>({
     resolver: zodResolver(addressFormSchema),
-    defaultValues: address
+    defaultValues: {
+      ...address,
+      apartmentUnit: address.apartmentUnit ?? "",
+      bldgName: address.bldgName ?? "",
+      premises: address.premises ?? "",
+      streetName: address.streetName ?? "",
+      barangay: address.barangay ?? "",
+      subdivision: address.subdivision ?? "",
+    }
   });
 
-  
+
   const saveChangesAction = async () => {
     form.handleSubmit(async (data) => {
       toast.promise(updateAddressAction(data), {
@@ -136,17 +167,123 @@ export const AddressItem = ({ address, readOnly }: AddressItemProps) => {
             name={`address`}
             render={({ field }) => (
               <FormItem className="w-full">
-                <FormLabel>Address Line</FormLabel>
+                <FormLabel>Address Line (Legacy)</FormLabel>
                 <FormControl>
                   <Input placeholder="Your location" {...field} />
                 </FormControl>
                 <FormDescription>
-                  House number, street name, Village or Town, etc. 
+                  Use the detailed fields below or this field for backward compatibility.
                 </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
           />
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            <FormField
+              disabled={readOnly}
+              control={form.control}
+              name="apartmentUnit"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Apartment/Unit</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Unit 123" {...field} value={field.value ?? ""} />
+                  </FormControl>
+                  <FormDescription>
+                    Apartment, unit, or room number
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              disabled={readOnly}
+              control={form.control}
+              name="bldgName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Building Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="ABC Building" {...field} value={field.value ?? ""} />
+                  </FormControl>
+                  <FormDescription>
+                    Name of the building or complex
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              disabled={readOnly}
+              control={form.control}
+              name="premises"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Premises</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Commercial/Residential" {...field} value={field.value ?? ""} />
+                  </FormControl>
+                  <FormDescription>
+                    Type of premises or landmark
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              disabled={readOnly}
+              control={form.control}
+              name="streetName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Street Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Main Street" {...field} value={field.value ?? ""} />
+                  </FormControl>
+                  <FormDescription>
+                    Name of the street or road
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              disabled={readOnly}
+              control={form.control}
+              name="barangay"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Barangay</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Barangay name" {...field} value={field.value ?? ""} />
+                  </FormControl>
+                  <FormDescription>
+                    Barangay or district name
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              disabled={readOnly}
+              control={form.control}
+              name="subdivision"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Subdivision</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Subdivision name" {...field} value={field.value ?? ""} />
+                  </FormControl>
+                  <FormDescription>
+                    Subdivision or village name
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
           <FormField
             disabled={readOnly}
             control={form.control}
@@ -198,10 +335,10 @@ export const AddressItem = ({ address, readOnly }: AddressItemProps) => {
               </FormItem>
             )}
           />
-        </div> 
+        </div>
         <ConditionalRender condition={!readOnly}>
           <div className="flex flex-wrap gap-2 justify-end">
-            {form.formState.isDirty &&  <ActionButton formAction={saveChangesAction} variant="default" className="flex-grow sm:flex-grow-0">Save Changes</ActionButton>}
+            {form.formState.isDirty && <ActionButton formAction={saveChangesAction} variant="default" className="flex-grow sm:flex-grow-0">Save Changes</ActionButton>}
             <ActionButton formAction={deleteAction} variant="destructive" className="flex-grow sm:flex-grow-0">Remove</ActionButton>
           </div>
         </ConditionalRender>

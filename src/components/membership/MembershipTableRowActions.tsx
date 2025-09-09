@@ -33,8 +33,9 @@ export default function MembershipTableRowActions<TData>({
   const { dropdownOpen, setDropdownOpen, hasOpenDialog, dropdownTriggerRef } = useDropdownMenu()!;
 
   const revalidateMembershipTable = async () => {
-    revalidatePath(`/[organization]/membership`, "page")
-    mutate((key) =>  typeof key === 'string' && key.startsWith(`/api/user-organizations`), undefined, {
+    
+    revalidatePath(`organizations/[orgUid]/membership/page.tsx`, "page")
+    mutate((key) =>  typeof key === 'string' && key.startsWith(`/api/org-members`), undefined, {
       revalidate:true
     })
   }
@@ -88,7 +89,9 @@ export default function MembershipTableRowActions<TData>({
         />
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link href={`/organizations/${applicationRequest.Organization.orgUid}/membership/${applicationRequest.User.userId}`}>
+          <Link
+            href={`/organizations/${applicationRequest.Organization.orgUid}/membership/${applicationRequest.User.userId}`}
+          >
             <User className="mr-1 w-4 h-4"/>
             View Details
           </Link>
@@ -103,5 +106,5 @@ export default function MembershipTableRowActions<TData>({
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
-  )
+  );
 }

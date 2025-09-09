@@ -2,8 +2,8 @@
 
 import dayjs, { combineDateTime } from "@lib/day-utils"
 
-import {differenceInCalendarYears } from "date-fns"
-import { MoreVertical, Pencil} from "lucide-react"
+import { differenceInCalendarYears } from "date-fns"
+import { MoreVertical, Pencil } from "lucide-react"
 
 import { Avatar, AvatarFallback } from "@components/ui/avatar"
 import { Button } from "@components/ui/button"
@@ -22,7 +22,7 @@ import PageLoading from "@components/PageLoading";
 import { revalidatePath } from "@actions/cache.action";
 import { mutate } from "swr";
 import { useAppointmentTools } from "./useAppointmentActions";
-import { useUser } from "@auth0/nextjs-auth0/client";
+import { useUser } from "@auth0/nextjs-auth0";
 import Attachments from "./Attachments";
 import { getBadgeVariantFromLabel } from "@lib/utils";
 
@@ -35,37 +35,38 @@ import CompleteAppointment from "./CompleteAppointment";
 import { PERMISSIONS } from "@lib/permissions";
 import { usePermissions } from "@/hooks/usePermission";
 import { useHPs } from "@/hooks/useHP";
+import { getFullName } from "@/lib/formatter-utils";
 
 
 export default function AppointmentDisplay() {
 
   const { user } = useUser()
-  const { clinicUid } = useParams<{clinicUid: string}>()
+  const { clinicUid } = useParams<{ clinicUid: string }>()
   const searchParams = useSearchParams()
   const appointmentId = parseInt(searchParams.get("_appointment") ?? "")
 
-  const {data: freshAppointment, isLoading: loadingAppointment} = useClinicAppointment({
+  const { data: freshAppointment, isLoading: loadingAppointment } = useClinicAppointment({
     clinicUid: clinicUid,
     appointmentId: appointmentId
   })
-  const {data: myClinicPermissions} = usePermissions({
+  const { data: myClinicPermissions } = usePermissions({
     userId: user?.sub ?? "",
     type: "CLINIC"
   })
-  const {data: myHps} = useHPs({
+  const { data: myHps } = useHPs({
     userId: user?.sub ?? "",
   })
 
   const requesters = freshAppointment?.data?.Requesters
   const preferredHp = freshAppointment?.data?.AppointmentAttribute?.PreferredAppointee
-  
+
   const revalidate = async () => {
-    revalidatePath(`/clinic/${clinicUid}/appointments`,  "page")
-    mutate((key) =>  typeof key === 'string' && key.startsWith(`/api/clinics/${clinicUid}/appointments`), undefined, {
-      revalidate:true
+    revalidatePath(`/clinic/${clinicUid}/appointments`, "page")
+    mutate((key) => typeof key === 'string' && key.startsWith(`/api/clinics/${clinicUid}/appointments`), undefined, {
+      revalidate: true
     })
   }
-  const {tools: appointmentTools} = useAppointmentTools({
+  const { tools: appointmentTools } = useAppointmentTools({
     appointment: freshAppointment?.data,
     revalidate
   })
@@ -77,34 +78,46 @@ export default function AppointmentDisplay() {
   if (loadingAppointment) {
     return <PageLoading label="Loading Appointment" />
   };
-  
-  if(!(freshAppointment && freshAppointment.data)) {
+
+  if (!(freshAppointment && freshAppointment.data)) {
     return <div className="p-8 text-center text-muted-foreground">Appointment not found</div>
   }
 
   const myClinicPermissionArray = myClinicPermissions?.map(p => p.name) ?? []
-  
-  const preferredHPName = `${preferredHp?.HPProfile?.title || preferredHp?.User.firstName} ${preferredHp?.HPProfile?.name || preferredHp?.User.lastName} ${preferredHp?.HPProfile?.suffix || preferredHp?.User.suffix || ""}`
+
+  const preferredHPName = (() => {
+    const title = preferredHp?.HPProfile?.title ?? "";
+    const name = preferredHp?.HPProfile?.name ?? "";
+    const suffix = preferredHp?.HPProfile?.suffix ?? "";
+    const prof = `${title} ${name} ${suffix}`.replace(/\s+/g, " ").trim();
+    if (prof) return prof;
+    const firstName = preferredHp?.User?.firstName ?? "";
+    const middleName = preferredHp?.User?.middleName ?? "";
+    const lastName = preferredHp?.User?.lastName ?? "";
+    const userSuffix = preferredHp?.User?.suffix ?? "";
+    const user = `${firstName} ${middleName} ${lastName} ${userSuffix}`.replace(/\s+/g, " ").trim();
+    return user || "No Healthcare Provider Selected";
+  })()
   const meetingUrl = freshAppointment.data.AppointmentAttribute?.meetingUrl
-  
+
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center p-2">
         <div className="flex items-center gap-2">
           <Badge variant="default" className="capitalize">{freshAppointment.data.AppointmentAttribute?.status}</Badge>
-          
+
           <Separator orientation="vertical" className="mx-1 h-6" />
-          
+
           <Each
             key={freshAppointment.data.id}
-            of={appointmentTools.filter((tool) => {     
+            of={appointmentTools.filter((tool) => {
               const enable = tool.permissions.every(p => myClinicPermissionArray.includes(p))
-                && tool.appointmentStatuses.includes(freshAppointment.data!.AppointmentAttribute?.status.toLocaleLowerCase() ?? "") 
+                && tool.appointmentStatuses.includes(freshAppointment.data!.AppointmentAttribute?.status.toLocaleLowerCase() ?? "")
                 && (
-                  tool.routedAptStatuses.length === 0 
+                  tool.routedAptStatuses.length === 0
                   || (
-                    freshAppointment.data?.AppointmentAttribute?.status !== "ROUTED" 
-                    || freshAppointment.data?.AppointmentRouting.some(apt =>tool.routedAptStatuses.includes(apt.status.toLocaleLowerCase()) && (myHps?? []).some(hp => hp.id === apt.RoutedTo.id))
+                    freshAppointment.data?.AppointmentAttribute?.status !== "ROUTED"
+                    || freshAppointment.data?.AppointmentRouting.some(apt => tool.routedAptStatuses.includes(apt.status.toLocaleLowerCase()) && (myHps ?? []).some(hp => hp.id === apt.RoutedTo.id))
                   )
                 )
               return enable
@@ -117,11 +130,11 @@ export default function AppointmentDisplay() {
         <div className="ml-auto flex items-center gap-2">
           {
             freshAppointment.data.AppointmentAttribute?.status === "ROUTED" && freshAppointment.data.AppointmentRouting.every(routing => routing.status !== "PENDING") && [PERMISSIONS.CLINIC["COMPLETE:CLINIC:APPOINTMENT"].name].every(p => myClinicPermissionArray.includes(p)) &&
-            <CompleteAppointment appointmentId={freshAppointment.data.id} onCompleted={revalidate} disabled={!freshAppointment.data.id}/>
+            <CompleteAppointment appointmentId={freshAppointment.data.id} onCompleted={revalidate} disabled={!freshAppointment.data.id} />
           }
         </div>
         <Separator orientation="vertical" className="mx-2 h-6" />
-        <MoreTools freshAppointment={freshAppointment.data}/>
+        <MoreTools freshAppointment={freshAppointment.data} />
       </div>
       <Separator />
       <div className="flex flex-1 flex-col">
@@ -134,7 +147,7 @@ export default function AppointmentDisplay() {
                   <Fragment key={aptUser.User.userId}>
                     <Avatar>
                       {
-                        aptUser.User.picture 
+                        aptUser.User.picture
                           ? <Image src={aptUser.User.picture} width={50} height={50} className="object-cover" alt={aptUser.User.nickname ?? ""} />
                           : <AvatarFallback>{aptUser.User.firstName?.charAt(0)} {aptUser.User.lastName?.charAt(0)}</AvatarFallback>
                       }
@@ -150,11 +163,11 @@ export default function AppointmentDisplay() {
                 )
               }}
             />
-            
+
           </div>
           {freshAppointment.data.createdAt && (
             <div className="ml-auto text-xs text-muted-foreground">
-              { dayjs(freshAppointment.data.createdAt).format("ll")}
+              {dayjs(freshAppointment.data.createdAt).format("ll")}
             </div>
           )}
         </div>
@@ -162,25 +175,25 @@ export default function AppointmentDisplay() {
         <ScrollArea className="flex-auto whitespace-pre-wrap p-4 text-sm h-0">
           {freshAppointment.data.complaint}
           <Separator className="my-2" />
-          <Attachments attachments={(freshAppointment.data.AppointmentAttachments ?? []).map(a => a.url)}/>
+          <Attachments attachments={(freshAppointment.data.AppointmentAttachments ?? []).map(a => a.url)} />
         </ScrollArea>
         <Separator />
         {
-          ( freshAppointment.data.AppointmentRouting.some(apt => apt.status === "ACCEPTED")) && 
+          (freshAppointment.data.AppointmentRouting.some(apt => apt.status === "ACCEPTED")) &&
           <div className="px-5 py-2 text-xs group/action max-h-40 scrollBox no-scrollbar">
             <div className="flex items-center">
-              <span className="font-semibold text-base">Latest Pre-Assessment Notes</span> 
+              <span className="font-semibold text-base">Latest Pre-Assessment Notes</span>
               <Pencil className="h-4 w-4 ml-auto invisible group-hover/action:visible" />
             </div>
-            <Each 
+            <Each
               of={(freshAppointment.data.PreAssessmentNotes ?? []).slice(-1)}
               fallback={(
-                <PreAssessmentNoteSheet 
+                <PreAssessmentNoteSheet
                   disabled={!freshAppointment || [PERMISSIONS.CLINIC["WRITE:CLINIC:PRE_ASSESSMENT_NOTE"].name].every(p => !myClinicPermissionArray.includes(p))}
                   key={freshAppointment.data.id}
                   preAssessmentNotes={{
                     assessment: "",
-                    homeInstructions:  "",
+                    homeInstructions: "",
                     remarks: "",
                     appointmentId: freshAppointment.data!.id,
                     clinicUid
@@ -191,7 +204,7 @@ export default function AppointmentDisplay() {
               )}
               render={(preAssessmentNote) => {
                 return (
-                  <PreAssessmentNoteSheet 
+                  <PreAssessmentNoteSheet
                     key={preAssessmentNote.id}
                     disabled={!freshAppointment || [PERMISSIONS.CLINIC["WRITE:CLINIC:PRE_ASSESSMENT_NOTE"].name].every(p => !myClinicPermissionArray.includes(p))}
                     preAssessmentNotes={{
@@ -205,11 +218,25 @@ export default function AppointmentDisplay() {
                       <LabelValue className="flex items-center gap-2" label={preAssessmentNote.assessment} value="Pre-Assessment:" />
                       {preAssessmentNote.homeInstructions && <LabelValue className="flex items-center gap-2" label={preAssessmentNote.homeInstructions} value="Home Instruction:" />}
                       <LabelValue className="flex items-center gap-2" label={preAssessmentNote.remarks} value="Remarks:" />
-                      <LabelValue className="flex items-center gap-2" label={`${preAssessmentNote.CreatedBy.firstName} ${preAssessmentNote.CreatedBy.middleName} ${preAssessmentNote.CreatedBy.lastName} ${preAssessmentNote.CreatedBy.suffix}`} value="Noted by:" />
+                      {(() => {
+                        const fullName = getFullName({
+                          firstName: preAssessmentNote.CreatedBy?.firstName ?? "",
+                          middleName: preAssessmentNote.CreatedBy?.middleName ?? "",
+                          lastName: preAssessmentNote.CreatedBy?.lastName ?? "",
+                          suffix: preAssessmentNote.CreatedBy?.suffix ?? ""
+                        });
+                        return (
+                          <LabelValue
+                            className="flex items-center gap-2"
+                            label={fullName || "N/A"}
+                            value="Noted by:"
+                          />
+                        );
+                      })()}
                     </div>
                   </PreAssessmentNoteSheet>
                 )
-              }}/>
+              }} />
           </div>
         }
         <Separator />
@@ -217,7 +244,7 @@ export default function AppointmentDisplay() {
         </AppointmentMetadata>
         <Separator />
         <div className="px-5 py-2 text-xs max-h-40 scrollBox no-scrollbar">
-          <span className="font-semibold text-base">{freshAppointment.data.AppointmentAttribute?.status !== "ROUTED" ? "Preferred": "Assigned"} Schedule</span> <br />
+          <span className="font-semibold text-base">{freshAppointment.data.AppointmentAttribute?.status !== "ROUTED" ? "Preferred" : "Assigned"} Schedule</span> <br />
           {freshAppointment.data.AppointmentAttribute?.date && <LabelValue className="flex items-center gap-2" label={dayjs(freshAppointment.data.AppointmentAttribute.date).format("ll - dddd")} value="Date:" />}
           {(freshAppointment.data.AppointmentAttribute?.date && freshAppointment.data.AppointmentAttribute?.timeStart && freshAppointment.data.AppointmentAttribute?.timeEnd) && <LabelValue className="flex items-center gap-2" label={`${dayjs(combineDateTime(freshAppointment.data.AppointmentAttribute.date, freshAppointment.data.AppointmentAttribute.timeStart)).format("hh:mm A")} - ${dayjs(combineDateTime(freshAppointment.data.AppointmentAttribute.date, freshAppointment.data.AppointmentAttribute.timeEnd)).format("hh:mm A")}`} value="Time:" />}
           {freshAppointment.data.AppointmentAttribute?.PreferredAppointee && <LabelValue className="flex items-center gap-2" label={preferredHPName} value={`Preferred HP:`} />}
@@ -247,7 +274,7 @@ interface MoreToolsProps {
   freshAppointment: GetAppointment["data"];
 }
 
-export const MoreTools = ({freshAppointment}: MoreToolsProps) => {
+export const MoreTools = ({ freshAppointment }: MoreToolsProps) => {
   const consultationTicketTriggerRef = useRef<HTMLInputElement>(null)
   const appointmentRoutingHistoryTriggerRef = useRef<HTMLInputElement>(null)
   return (
@@ -286,11 +313,11 @@ export const MoreTools = ({freshAppointment}: MoreToolsProps) => {
 interface AppointmentMetadataProps {
   appointment: NonNullable<GetAppointment["data"]>;
 }
-export const AppointmentMetadata = ({appointment}: AppointmentMetadataProps) => {
+export const AppointmentMetadata = ({ appointment }: AppointmentMetadataProps) => {
   const receiverName = `${appointment.AppointmentAttribute?.ReceivedBy?.firstName} ${appointment.AppointmentAttribute?.ReceivedBy?.middleName} ${appointment.AppointmentAttribute?.ReceivedBy?.lastName} ${appointment.AppointmentAttribute?.ReceivedBy?.suffix ?? ""}`
   const rejectorName = `${appointment.AppointmentAttribute?.RejectedBy?.firstName} ${appointment.AppointmentAttribute?.RejectedBy?.middleName} ${appointment.AppointmentAttribute?.RejectedBy?.lastName} ${appointment.AppointmentAttribute?.RejectedBy?.suffix ?? ""}`
   const completerName = `${appointment.AppointmentAttribute?.RejectedBy?.firstName} ${appointment.AppointmentAttribute?.RejectedBy?.middleName} ${appointment.AppointmentAttribute?.RejectedBy?.lastName} ${appointment.AppointmentAttribute?.RejectedBy?.suffix ?? ""}`
-  
+
   return (
     <div className="px-5 py-2 text-xs max-h-40 scrollBox no-scrollbar">
       <span className="font-semibold text-base">Meta</span> <br />

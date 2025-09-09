@@ -8,13 +8,13 @@ export const metadata: Metadata = {
   description: "Compare and select from our competitive pricing",
 };
 interface PricingPageProps {
-  searchParams: {
+  searchParams: Promise<{
     freq: "MONTHLY" | "YEARLY";
-  }
+  }>
 }
 
 export default async function PricingPage(props: PricingPageProps) {
-  const { freq = "YEARLY" } = props.searchParams ;
+  const { freq = "YEARLY" } = (await props.searchParams) ;
 
   return (
     <div className="container mx-auto my-10">

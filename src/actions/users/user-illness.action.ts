@@ -40,13 +40,13 @@ export const getUserIllnessesAction = cache(async (userId?: string) => {
     orderBy: {
       dateDiagnosed: "desc"
     },
-    ...userId && {
+    ...(userId && {
       where:{
         User: {
           userId
         }
       }
-    },
+    }),
     select: {
       id: true,
       severity: true,
@@ -78,7 +78,7 @@ export const getUserIllnessesAction = cache(async (userId?: string) => {
         }
       }
     }
-  })
+  });
 })
 
 export const updateUserIllnessAction = async (payload: {
@@ -173,14 +173,14 @@ export async function setUserIllnessStatusAction(id: number, status: HealthCondi
     where: { id },
     data: { 
       status,
-      ...status === "RESOLVED" && userId ? {
+      ...(status === "RESOLVED" && userId ? {
         dateResolved: new Date(),
         ResolvedBy: {
           connect: {
             userId
           }
         }
-      } : {}
+      } : {})
     }
   })
   return {

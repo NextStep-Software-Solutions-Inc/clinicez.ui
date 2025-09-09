@@ -1,7 +1,7 @@
 "use client";
 
 import { upsertUserDisabilityAction } from "@actions/users/user-disability.action";
-import { useUser } from "@auth0/nextjs-auth0/client";
+import { useUser } from "@auth0/nextjs-auth0";
 import ActionButton from "@components/ActionButton";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
@@ -26,8 +26,8 @@ export default function DoneEditingDisabilityButton({index, form, onUpdate}:Done
         disability: data.Disability.name.trim(),
         severity: data.severity,
         notes: data.notes,
-        ...data.dateDiagnosed ? {dateDiagnosed: data.dateDiagnosed} : {},
-        ...data.isManaged ? {isManaged: data.isManaged} : {},
+        ...(data.dateDiagnosed ? {dateDiagnosed: data.dateDiagnosed} : {}),
+        ...(data.isManaged ? {isManaged: data.isManaged} : {}),
       }), {
         loading: "Saving...",
         success: (res) =>{

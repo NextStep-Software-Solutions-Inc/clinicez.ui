@@ -1,7 +1,7 @@
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
-import { format } from "date-fns"
+import { format, isValid } from "date-fns"
 import { useForm } from "react-hook-form"
 import {
   Form,
@@ -19,7 +19,7 @@ import { updateUserAction } from "@actions/users/user.action"
 import { BloodType, CivilStatus, Gender, User } from "@prisma/client"
 import Each from "@components/utils/Each"
 import { RadioGroup, RadioGroupItem } from "@components/ui/radio-group"
-import { useUser } from "@auth0/nextjs-auth0/client"
+import { useUser } from "@auth0/nextjs-auth0"
 import ConditionalRender from "@components/utils/ConditionalRender"
 import { personalInformationFormSchema, PersonalInformationFormValues } from "@schemas/personal-information.schema"
 import { promiseWrapper } from "@/lib/with-error-handling"
@@ -29,9 +29,12 @@ interface PersonalInformationFormProps {
   readOnly?: boolean
 }
 
-export function PersonalInformationForm({readOnly, ...props}: PersonalInformationFormProps) {
+export function PersonalInformationForm({ readOnly, ...props }: PersonalInformationFormProps) {
 
   const user = useUser();
+
+  // constant to disables users from accessing future dates
+  const today = new Date().toISOString().split('T')[0];
 
   const form = useForm<PersonalInformationFormValues>({
     resolver: zodResolver(personalInformationFormSchema),
@@ -43,19 +46,20 @@ export function PersonalInformationForm({readOnly, ...props}: PersonalInformatio
       nickname: props.user.nickname ?? "",
       nationality: props.user.nationality ?? "",
       telephone: props.user.telephone,
-      ...props.user.religion? {religion: props.user.religion} : {},
-      ...props.user.bloodType? {bloodType: props.user.bloodType} : {},
-      ...props.user.civilStatus? {civilStatus: props.user.civilStatus} : {},
-      ...props.user.gender? {gender: props.user.gender} : {},
-      ...props.user.dob? {dob: props.user.dob} : {},
-      ...props.user.mobile? {mobile: props.user.mobile} : {},
+      ...(props.user.religion ? { religion: props.user.religion } : {}),
+      ...(props.user.bloodType ? { bloodType: props.user.bloodType } : {}),
+      ...(props.user.civilStatus ? { civilStatus: props.user.civilStatus } : {}),
+      ...(props.user.gender ? { gender: props.user.gender } : {}),
+      ...(props.user.dob ? { dob: props.user.dob } : {}),
+      ...(props.user.mobile ? { mobile: props.user.mobile } : {}),
+      ...(props.user.placeOfBirth ? { placeOfBirth: props.user.placeOfBirth } : {}),
     },
     mode: "all"
   })
 
   const handleSaveChanges = async () => {
     const userId = user?.user?.sub
-    if(!userId) return toast.error("User not found.")
+    if (!userId) return toast.error("User not found.")
 
     form.handleSubmit(data => {
       toast.promise(promiseWrapper(updateUserAction)(userId, data), {
@@ -135,7 +139,7 @@ export function PersonalInformationForm({readOnly, ...props}: PersonalInformatio
                   <Input {...field} value={field.value ?? ""} />
                 </FormControl>
                 <FormDescription>
-                Jr., Sr., III, etc.
+                  Jr., Sr., III, etc.
                 </FormDescription>
                 <FormMessage />
               </FormItem>
@@ -165,7 +169,7 @@ export function PersonalInformationForm({readOnly, ...props}: PersonalInformatio
           control={form.control}
           name="dob"
           render={({ field }) => (
-            <FormItem 
+            <FormItem
               className="flex flex-col">
               <FormLabel>Date of birth</FormLabel>
               <FormControl>
@@ -173,9 +177,10 @@ export function PersonalInformationForm({readOnly, ...props}: PersonalInformatio
                   disabled={readOnly}
                   name={field.name}
                   onChange={e => field.onChange(new Date(e.target.value))}
-                  defaultValue={field.value ? format(field.value, "yyyy-MM-dd") : ""}
+                  defaultValue={field.value instanceof Date && isValid(field.value) ? format(field.value, "yyyy-MM-dd") : ""}
                   type="date"
-                  placeholder="Select date" 
+                  placeholder="Select date"
+                  max={today}
                 />
               </FormControl>
               <FormDescription>
@@ -185,6 +190,25 @@ export function PersonalInformationForm({readOnly, ...props}: PersonalInformatio
             </FormItem>
           )}
         />
+
+        <FormField
+          disabled={readOnly}
+          control={form.control}
+          name="placeOfBirth"
+          render={({ field }) => (
+            <FormItem className="w-full">
+              <FormLabel>Place of Birth</FormLabel>
+              <FormControl>
+                <Input placeholder="City, State/Province, Country" {...field} value={field.value ?? ""} />
+              </FormControl>
+              <FormDescription>
+                The city, state or province, and country where you were born.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         <FormField
           disabled={readOnly}
           control={form.control}
@@ -200,7 +224,7 @@ export function PersonalInformationForm({readOnly, ...props}: PersonalInformatio
                   className="flex flex-row gap-5 flex-wrap"
                 >
                   <Each
-                    of={Object.values(Gender).map(g => ({name: g.toLowerCase(), value:g}))}
+                    of={Object.values(Gender).map(g => ({ name: g.toLowerCase(), value: g }))}
                     render={(gender) => (
                       <FormItem className="flex items-center space-x-3 space-y-0">
                         <FormControl>
@@ -237,7 +261,7 @@ export function PersonalInformationForm({readOnly, ...props}: PersonalInformatio
                   className="flex flex-row gap-5 flex-wrap"
                 >
                   <Each
-                    of={Object.values(CivilStatus).map(c => ({name: c.toLowerCase(), value:c}))}
+                    of={Object.values(CivilStatus).map(c => ({ name: c.toLowerCase(), value: c }))}
                     render={(cs) => (
                       <FormItem className="flex items-center space-x-3 space-y-0">
                         <FormControl>
@@ -274,7 +298,7 @@ export function PersonalInformationForm({readOnly, ...props}: PersonalInformatio
                   className="flex flex-row gap-5 flex-wrap"
                 >
                   <Each
-                    of={Object.values(BloodType).map(b => ({name: b.split("_").join(" ").toLowerCase(), value:b}))}
+                    of={Object.values(BloodType).map(b => ({ name: b.split("_").join(" ").toLowerCase(), value: b }))}
                     render={(b) => (
                       <FormItem className="flex items-center space-x-3 space-y-0">
                         <FormControl>
@@ -295,8 +319,8 @@ export function PersonalInformationForm({readOnly, ...props}: PersonalInformatio
             </FormItem>
           )}
         />
-        
-        
+
+
         <FormField
           disabled={readOnly}
           control={form.control}
@@ -322,7 +346,7 @@ export function PersonalInformationForm({readOnly, ...props}: PersonalInformatio
             <FormItem className="w-full">
               <FormLabel>Alternative Number</FormLabel>
               <FormControl>
-                <Input placeholder="Contact no." {...field} value={field.value ?? ""}/>
+                <Input placeholder="Contact no." {...field} value={field.value ?? ""} />
               </FormControl>
               <FormDescription>
                 {`We can contact you through this number if we can't reach you on your mobile number.`}
@@ -365,7 +389,7 @@ export function PersonalInformationForm({readOnly, ...props}: PersonalInformatio
             </FormItem>
           )}
         />
-      
+
         <ConditionalRender condition={!readOnly}>
           <ActionButton disabled={form.formState.isLoading} className="flex-shrink sm:flex-shrink-0">Save Changes</ActionButton>
         </ConditionalRender>

@@ -13,17 +13,36 @@ import Each from "@components/utils/Each";
 import Suspend from "@components/Suspend";
 import dynamic from "next/dynamic";
 import { Pill } from "lucide-react";
-import PrescriptionItem from "@components/PrescriptionItem";
-import { usePrescriptions } from "@hooks/usePrescription";
+import PrescriptionItem from "@/components/clinic/clinical-records/prescription/PrescriptionItem";
+import { usePrescriptions } from "@/hooks/usePrescriptions";
+import { PatientProfile } from "./consultation/ConsultationDetails";
+
 const CreatePrescriptionModal = dynamic(
-  () => import("@components/prescription/modals/CreatePrescriptionModal")
+  () => import("@components/clinic/clinical-records/prescription/modals/CreatePrescriptionModal"),
 );
 
-export interface PrescriptionsProps {}
+export interface PrescriptionsProps {
+  consultationTicketId: number;
+  clinicUid: string;
+  hpIds: number[];
+  isArchived?: boolean;
+  patientId: number;
+  userId?: number;
+  userInfo: PatientProfile | null;
+}
 
-export default function Prescriptions({}: PrescriptionsProps) {
-  const { data: prescriptions, mutate } = usePrescriptions({
-    isArchived: false
+export default function Prescriptions({
+  consultationTicketId,
+  clinicUid,
+  hpIds,
+  patientId,
+  userInfo
+}: PrescriptionsProps) {
+  const { prescriptions, mutate, isLoading, isError } = usePrescriptions({
+    clinicUid,
+    consultationTicketId,
+    hpIds,
+    patientId,
   });
 
   return (
@@ -40,6 +59,11 @@ export default function Prescriptions({}: PrescriptionsProps) {
           <div className="ml-auto flex flex-grow sm:flex-grow-0 items-center gap-2">
             <Suspend>
               <CreatePrescriptionModal
+                clinicUid={clinicUid}
+                patientId={patientId}
+                consultationTicketId={consultationTicketId}
+                userInfo={userInfo}
+                hpIds={hpIds}
                 onCreated={mutate}
               />
             </Suspend>
@@ -48,20 +72,33 @@ export default function Prescriptions({}: PrescriptionsProps) {
       </CardHeader>
       <CardContent className=" h-[25rem] overflow-y-auto no-scrollbar scrollBox">
         <div className="grid gap-1">
-          <Each
-            of={prescriptions?.data ?? []}
-            fallback={
-              <p className="text-center text-muted-foreground">
-              No recent prescription to show.
-              </p>
-            }
-            render={(prescription) => (
-              <PrescriptionItem prescription={prescription} onUpdated={mutate} />
-            )}
-          />
+          {isLoading && (
+            <p className="text-center text-muted-foreground">Loading prescriptions...</p>
+          )}
+          {isError && (
+            <p className="text-center text-destructive">Error: {isError.message}</p>
+          )}
+          {!isLoading && !isError && (
+            <Each
+              of={prescriptions ?? []}
+              fallback={
+                <p className="text-center text-muted-foreground">
+                  No recent prescription to show.
+                </p>
+              }
+              render={(prescription) => (
+                <PrescriptionItem
+                  key={prescription.id}
+                  prescription={prescription}
+                  onUpdated={mutate}
+                  hpIds={hpIds}
+                />
+              )}
+            />
+          )}
         </div>
       </CardContent>
-      <CardFooter/>
+      <CardFooter />
     </Card>
   );
 }

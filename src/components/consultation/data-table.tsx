@@ -41,6 +41,7 @@ interface DataTableProps<TData, TValue> {
   data: TData[],
   options?: ConsultationTableOptions
   onOptionsChange?: (options: ConsultationTableOptions) => void
+  initialColumnFilters?: ColumnFiltersState;
 }
 
 export function DataTable<TData extends NonNullable<GetConsultationTickets["data"]>[number], TValue>({
@@ -48,11 +49,14 @@ export function DataTable<TData extends NonNullable<GetConsultationTickets["data
   data,
   options,
   onOptionsChange,
+  initialColumnFilters
 }: DataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = React.useState({})
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(initialColumnFilters ?? [])
   const [sorting, setSorting] = React.useState<SortingState>([])
+
+  // Removed debug log
 
   const table = useReactTable({
     data,
@@ -82,8 +86,8 @@ export function DataTable<TData extends NonNullable<GetConsultationTickets["data
 
   return (
     <div className="space-y-4">
-      <DataTableToolbar 
-        table={table} 
+      <DataTableToolbar
+        table={table}
         options={{
           showArchived: options?.showArchived === true
         }}
@@ -134,7 +138,7 @@ export function DataTable<TData extends NonNullable<GetConsultationTickets["data
                         </TableCell>
                       )}
                     />
-  
+
                   </TableRow>
                 )
               }}
@@ -144,7 +148,7 @@ export function DataTable<TData extends NonNullable<GetConsultationTickets["data
                     colSpan={columns.length}
                     className="h-24 text-center"
                   >
-                  No results.
+                    No results.
                   </TableCell>
                 </TableRow>
               )}

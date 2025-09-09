@@ -20,15 +20,17 @@ import {
 
 import Each from "@components/utils/Each";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { format } from "date-fns";
-import { useMemo, useRef, useState } from "react"
+import { format, isValid, isWithinInterval, startOfToday, subMonths } from "date-fns";
+import { useRef } from "react"
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import { uploadMediaAction } from "@actions/blob.action";
-import { useUser } from "@auth0/nextjs-auth0/client";
-import { useOrganizations } from "@/hooks/useOrganization";
+import { useUser } from "@auth0/nextjs-auth0";
 import { useFileTypes } from "@hooks/useFileType";
+import { heic2Jpeg, renameFile } from "@/lib/file-manipulation";
+import { compressImageAsync } from "@/lib/image-compression";
+import { useFileInput } from "@/hooks/useFileInput";
 
 interface UploadFileFormProps {
     folder: {
@@ -41,38 +43,72 @@ interface UploadFileFormProps {
 export default function UploadFileForm({folder}: UploadFileFormProps) {
   
   const user = useUser()
+
+  // minimum of 6 months
+  const minDate = format(subMonths(startOfToday(), 6), "yyyy-MM-dd");
+  const maxDate = format(startOfToday(), "yyyy-MM-dd");
+  
   const { data: fileTypes } = useFileTypes()
   const userId = user?.user?.sub
   const closeBtnRef = useRef<HTMLInputElement>(null)
 
   const uploadFileFormSchema = z.object({
-    media: z.string({
-      required_error: "Please select an action"
-    }),
+    media: z
+      .instanceof(File, {
+        message: "Please select a valid file",
+      }),
     dateTaken: z.date({
       message: "Please select a date"
-    }),
+    }).refine(date =>
+      isWithinInterval(date, {
+        start: subMonths(startOfToday(), 6),
+        end: new Date(),
+      }),
+    { message: "Date must be within the last 6 months." }),
     fileTypeId: z.coerce.number({
       message: "Please select a file type",
       required_error: "File type is required"
     }),
-  })
+  });
+
 
   const form = useForm<z.infer<typeof uploadFileFormSchema>>({
     resolver: zodResolver(uploadFileFormSchema),
+  })
+
+  const handleFileChange = useFileInput({
+    onValidFile: (file) => {
+      form.setValue("media", file);
+      form.clearErrors("media");
+    },
+    onError: (message) => {
+      form.setError("media", {
+        type: "manual",
+        message,
+      });
+    }
   })
     
   const action = async (formData: FormData) => {
     form.handleSubmit(async (data) => {
       if(!userId) throw new Error("User ID is required to upload a file")
       formData.append("directory", `${userId}`)
+      let file = formData.get("media") as File
+      
+      if (file.type === 'image/heic' || file.type === 'image/heif') {
+        file = await heic2Jpeg(file);
+      } else {
+        file = renameFile(file);
+      }
+
+      const compressedFile: File = await compressImageAsync(file);
+      formData.set('media', compressedFile);
       toast.promise(uploadMediaAction(formData), {
         loading: "Uploading...",
         success: ({url}) => {
-          const file = formData.get("media") as File
           toast.promise(createFileAction({
             fileTypeId: data.fileTypeId,
-            ...data.dateTaken ? {dateTaken: data.dateTaken} : {},
+            ...(data.dateTaken ? {dateTaken: data.dateTaken} : {}),
             folderId: folder.id,
             name: file.name as string,
             size: file.size as number,
@@ -105,7 +141,11 @@ export default function UploadFileForm({folder}: UploadFileFormProps) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>File</FormLabel>
-              <Input id="file" type="file" accept="image/jpeg,image/gif,image/png,application/pdf,image/x-eps" {...field} value={undefined} />
+              <Input id="file"
+                type="file" 
+                accept="image/jpeg,image/gif,image/png,application/pdf,image/x-eps, image/heic, image/heif" {...field} 
+                value={undefined}
+                onChange={handleFileChange} />
               <FormDescription>
                 Select the file to upload.
               </FormDescription>
@@ -152,9 +192,12 @@ export default function UploadFileForm({folder}: UploadFileFormProps) {
                   <Input
                     name={field.name}
                     onChange={e => field.onChange(new Date(e.target.value))}
-                    defaultValue={field.value ? format(field.value, "yyyy-MM-dd") : ""}
+                    value={field.value instanceof Date && isValid(field.value)
+                      ? format(field.value, "yyyy-MM-dd"): ""}
                     type="date"
                     placeholder="Select date" 
+                    max={maxDate}
+                    min={minDate}
                   />
                 </FormControl>
                 <FormDescription>

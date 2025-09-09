@@ -3,14 +3,14 @@
 import React from "react";
 
 interface HPApplicationDataType {
-    selectedRole?: string;
-    selectedPlan?: string;
-    profileData: any;
-    paymentData: any;
-    applicationStatus: string;
+  selectedRole?: string;
+  selectedPlan?: string;
+  profileData: Record<string, unknown>;
+  paymentData: Record<string, unknown>;
+  applicationStatus: string;
 }
 
-const HPApplicationDataContext = React.createContext<{applicationData: HPApplicationDataType, dispatch: React.Dispatch<Partial<HPApplicationDataType>>}>({
+const HPApplicationDataContext = React.createContext<{ applicationData: HPApplicationDataType, dispatch: React.Dispatch<Partial<HPApplicationDataType>> }>({
   applicationData: {
     selectedRole: "",
     selectedPlan: "",
@@ -18,14 +18,14 @@ const HPApplicationDataContext = React.createContext<{applicationData: HPApplica
     paymentData: {},
     applicationStatus: "",
   },
-  dispatch: () => {},
+  dispatch: () => { },
 });
 
 interface HPApplicationDataProviderProps {
-    children: React.ReactNode;
+  children: React.ReactNode;
 }
 
-export default function HPApplicationDataProvider({children}: HPApplicationDataProviderProps) {
+export default function HPApplicationDataProvider({ children }: HPApplicationDataProviderProps) {
   const [applicationData, dispatch] = React.useReducer(
     (state: HPApplicationDataType, newState: Partial<HPApplicationDataType>) => ({
       ...state,
@@ -40,7 +40,7 @@ export default function HPApplicationDataProvider({children}: HPApplicationDataP
     }
   );
 
-  return <HPApplicationDataContext.Provider value={{applicationData, dispatch}}>{children}</HPApplicationDataContext.Provider>;
+  return <HPApplicationDataContext.Provider value={{ applicationData, dispatch }}>{children}</HPApplicationDataContext.Provider>;
 }
 
-export {HPApplicationDataContext, HPApplicationDataProvider};
+export { HPApplicationDataContext, HPApplicationDataProvider };

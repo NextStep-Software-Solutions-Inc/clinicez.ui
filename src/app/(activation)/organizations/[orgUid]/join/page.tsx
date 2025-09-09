@@ -1,4 +1,3 @@
-import { AppRouterPageRouteOpts, withPageAuthRequired } from "@auth0/nextjs-auth0";
 import Suspend from "@components/Suspend";
 import { Alert, AlertDescription, AlertTitle } from "@components/ui/alert"
 import { Separator } from "@components/ui/separator"
@@ -6,8 +5,10 @@ import { AlertTriangle } from "lucide-react"
 import { getCachedSession } from "@actions/session.action";
 import OrganizationSteps from "./OrganizationSteps";
 import { getOrganizationAction } from "@actions/organizations/organization.action";
+import { AppRouterPageRouteOpts } from "@/types";
 
-async function JoinOrgPage({params}: AppRouterPageRouteOpts) {
+export default async function JoinOrgPage(props: AppRouterPageRouteOpts) {
+  const params = await props.params;
   const orgUid = String(params?.orgUid);
   const [session, org] = await Promise.all([
     getCachedSession(),
@@ -38,16 +39,9 @@ async function JoinOrgPage({params}: AppRouterPageRouteOpts) {
       </Alert>
 
       <Suspend>
-        <OrganizationSteps orgUid={orgUid} userId={userId}/>
+        {userId && <OrganizationSteps orgUid={orgUid} userId={userId}/>}
       </Suspend>
     
     </div>
   );
 }
-
-export default withPageAuthRequired(JoinOrgPage, {
-  returnTo: ({params, searchParams}) => {
-    const searchStr = Object.entries(searchParams ?? {}).map(([key, value]) => `${key}=${value}`).join("&");
-    return `/organizations/${params?.orgUid}/join?${searchStr}`;
-  }
-});

@@ -23,6 +23,18 @@ export const emergencyContactFormSchema = z.object({
   }).max(30, {
     message: "Name must not be longer than 30 characters.",
   }),
+  firstName: z.string()
+    .optional()
+    .transform((e) => e === "" ? undefined : e),
+  middleName: z.string()
+    .optional().nullable()
+    .transform((e) => e === "" ? undefined : e),
+  lastName: z.string()
+    .optional()
+    .transform((e) => e === "" ? undefined : e),
+  suffix: z.string()
+    .optional()
+    .transform((e) => e === "" ? undefined : e),
   relationship: z.string().min(2, {
     message: "Relationship must be at least 2 characters.",
   }).max(30, {
@@ -43,25 +55,45 @@ export const ContactItem = ({ contact, readOnly }: {
   contact: {
     id: number;
     name: string;
+    firstName?: string | null;
+    middleName?: string | null;
+    lastName?: string | null;
+    suffix?: string | null;
     relationship: string;
     phone: string;
     isPrimary: boolean;
     address: string | null;
   };
 }) => {
-  
+
   type EmergencyContactForm = z.infer<typeof emergencyContactFormSchema>;
 
   const form = useForm<EmergencyContactForm>({
     resolver: zodResolver(emergencyContactFormSchema),
-    defaultValues: contact
+    defaultValues: {
+      ...contact,
+      firstName: contact.firstName ?? "",
+      middleName: contact.middleName ?? "",
+      lastName: contact.lastName ?? "",
+      suffix: contact.suffix ?? "",
+    }
   });
 
-  
+
   const saveChangesAction = async () => {
     form.handleSubmit(async (data) => {
-        
-      toast.promise(updateEmergencyContactAction(contact.id, data), {
+      // Combine name fields for backward compatibility
+      const fullName = [data.firstName, data.middleName, data.lastName, data.suffix]
+        .filter(Boolean)
+        .join(' ')
+        .trim();
+
+      const updateData = {
+        ...data,
+        name: fullName || data.name, // fallback to original name if no separate fields
+      };
+
+      toast.promise(updateEmergencyContactAction(contact.id, updateData), {
         loading: "Saving changes...",
         success: () => {
           form.reset(data);
@@ -103,7 +135,7 @@ export const ContactItem = ({ contact, readOnly }: {
                   className="flex flex-wrap gap-2"
                 >
                   <Each
-                    of={["spouse", "parent", "sibling", "relative", "others"]}
+                    of={["spouse", "father", "mother", "guardian", "sibling", "relative", "others"]}
                     render={(value) => (
                       <FormItem className="flex items-center space-x-3 space-y-0">
                         <FormControl>
@@ -117,18 +149,76 @@ export const ContactItem = ({ contact, readOnly }: {
               <FormMessage />
             </FormItem>
           )} />
+        <div className="flex flex-col md:flex-row gap-2">
+          <FormField
+            disabled={readOnly}
+            control={form.control}
+            name="firstName"
+            render={({ field }) => (
+              <FormItem className="w-full">
+                <FormLabel>First Name</FormLabel>
+                <FormControl>
+                  <Input placeholder="First name" {...field} value={field.value ?? ""} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            disabled={readOnly}
+            control={form.control}
+            name="middleName"
+            render={({ field }) => (
+              <FormItem className="w-full">
+                <FormLabel>Middle Name</FormLabel>
+                <FormControl>
+                  <Input placeholder="Middle name" {...field} value={field.value ?? ""} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            disabled={readOnly}
+            control={form.control}
+            name="lastName"
+            render={({ field }) => (
+              <FormItem className="w-full">
+                <FormLabel>Last Name</FormLabel>
+                <FormControl>
+                  <Input placeholder="Last name" {...field} value={field.value ?? ""} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            disabled={readOnly}
+            control={form.control}
+            name="suffix"
+            render={({ field }) => (
+              <FormItem className="w-1/4">
+                <FormLabel>Suffix</FormLabel>
+                <FormControl>
+                  <Input placeholder="Jr., Sr." {...field} value={field.value ?? ""} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
         <FormField
           disabled={readOnly}
           control={form.control}
           name={`name`}
           render={({ field }) => (
             <FormItem className="w-full">
-              <FormLabel>Full Name</FormLabel>
+              <FormLabel>Full Name (Legacy)</FormLabel>
               <FormControl>
-                <Input placeholder="Name here" {...field} />
+                <Input placeholder="Leave empty if using name fields above" {...field} />
               </FormControl>
               <FormDescription>
-              The name of the person you want to be contacted in case of emergency.
+                Use the separate name fields above or this field for backward compatibility.
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -141,10 +231,10 @@ export const ContactItem = ({ contact, readOnly }: {
             <FormItem className="w-full">
               <FormLabel>Contact Number</FormLabel>
               <FormControl>
-                <Input placeholder="09000" {...field} type="number" inputMode="tel" />
+                <Input placeholder="09000" {...field} type="text" inputMode="tel" />
               </FormControl>
               <FormDescription>
-              The phone number of the person you want to be contacted in case of emergency.
+                The phone number of the person you want to be contacted in case of emergency.
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -157,21 +247,21 @@ export const ContactItem = ({ contact, readOnly }: {
             <FormItem className="w-full">
               <FormLabel>Address</FormLabel>
               <FormControl>
-                <Input placeholder="Enter their address" type="text"  {...field} value={field.value ?? ""}/>
+                <Input placeholder="Enter their address" type="text"  {...field} value={field.value ?? ""} />
               </FormControl>
               <FormDescription>
-              The address of the person you want to be contacted in case of emergency.
+                The address of the person you want to be contacted in case of emergency.
               </FormDescription>
               <FormMessage />
             </FormItem>
           )} />
         <ConditionalRender condition={!readOnly}>
           <div className="flex flex-wrap gap-2 justify-end">
-            {form.formState.isDirty &&  <ActionButton formAction={saveChangesAction} variant="default" className="flex-grow sm:flex-grow-0">Save Changes</ActionButton>}
+            {form.formState.isDirty && <ActionButton formAction={saveChangesAction} variant="default" className="flex-grow sm:flex-grow-0">Save Changes</ActionButton>}
             <ActionButton formAction={deleteAction} variant="destructive" className="flex-grow sm:flex-grow-0">Remove</ActionButton>
           </div>
         </ConditionalRender>
-      </form>
-    </Form>
+      </form >
+    </Form >
   );
 };

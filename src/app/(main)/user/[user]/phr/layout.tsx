@@ -13,26 +13,36 @@ export const metadata: Metadata = {
 }
 interface PHRLayoutProps {
   children: React.ReactNode
-  params: {
+  params: Promise<{
     user: string
-  }
+  }>
 }
 
-export default async function PHRLayout({ children, params: {user} }: PHRLayoutProps) {
+export default async function PHRLayout(props: PHRLayoutProps) {
+  const params = await props.params;
+
+  const {
+    user
+  } = params;
+
+  const {
+    children
+  } = props;
+
   const phrOwnerId = decodeURI(user)
   const [session, userOwner] = await Promise.all([
     getCachedSession(),
     isUserOwner(phrOwnerId)
   ]);
-  
-  if(!session) return redirect("/api/auth/login");
-  
+
+  if (!session) return redirect("/auth/login");
+
   try {
     // Check if the user is the owner of the PHR
     if (!userOwner) {
       const sameOrg = await isSameOrg(phrOwnerId);
       // Check if the user is same org as the PHR owner
-      
+
       if (!sameOrg) throw new Error("You must be same organization as the PHR owner to view this page.");
       else {
         const [orgAdmin, hp] = await Promise.all([
@@ -60,6 +70,10 @@ export default async function PHRLayout({ children, params: {user} }: PHRLayoutP
     {
       title: "Address",
       href: `/user/${user}/phr/address`,
+    },
+    {
+      title: "PhilHealth eKonsulta",
+      href: `/user/${user}/phr/philhealth`,
     },
     {
       title: "Vaccination & Immunization",
@@ -90,18 +104,18 @@ export default async function PHRLayout({ children, params: {user} }: PHRLayoutP
       href: `/user/${user}/phr/files`,
     }
   ]
-  
+
   return (
     <div className="container space-y-6 p-5 md:p-10 pb-16">
       <div className="space-y-0.5">
         <h2 className="text-2xl font-bold tracking-tight">
-          Personal Health Record 
+          Personal Health Record
           <ConditionalRender condition={!userOwner}>
             <span className="text-primary text-base italic mx-2">(View Only)</span>
           </ConditionalRender>
         </h2>
         <p className="text-muted-foreground">
-            Manage your personal health record and track your health.
+          Manage your personal health record and track your health.
         </p>
       </div>
       <Separator className="my-6" />

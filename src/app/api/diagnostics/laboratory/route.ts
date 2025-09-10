@@ -1,8 +1,8 @@
 import { getLaboratoryDiagnosticsAction } from "@/actions/clinics/clinical-record/diagnostics.action";
-import { withJwtAuth } from "@/middlewares/withJwtAuth";
+import { withClerkAuth } from "@/middlewares/withClerkAuth";
 import { NextRequest, NextResponse } from "next/server";
 
-export const GET = withJwtAuth(async (req: NextRequest) => {
+export const GET = withClerkAuth(async (req: NextRequest) => {
   try {
     const diagnosticsResult = await getLaboratoryDiagnosticsAction();
     return NextResponse.json(diagnosticsResult, { status: 200 });

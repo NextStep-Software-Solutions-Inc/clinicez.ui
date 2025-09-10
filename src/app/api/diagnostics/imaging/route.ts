@@ -1,8 +1,8 @@
 import { getPaginatedImagingDiagnosticsAction } from "@/actions/clinics/clinical-record/optimized-diagnostics.action";
-import { withJwtAuth } from "@/middlewares/withJwtAuth";
+import { withClerkAuth } from "@/middlewares/withClerkAuth";
 import { NextRequest, NextResponse } from "next/server";
 
-export const GET = withJwtAuth(async (req: NextRequest) => {
+export const GET = withClerkAuth(async (req: NextRequest) => {
   try {
     const url = new URL(req.url);
     const search = url.searchParams.get("search") || "";

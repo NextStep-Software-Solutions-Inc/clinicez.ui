@@ -1,9 +1,9 @@
 import { getConsultationNotesAction } from "@actions/consultation/consultation-notes.action";
 import { getInterventionsAction } from "@actions/consultation/intervention.action";
-import { withJwtAuth } from "@middlewares/withJwtAuth";
+import { withClerkAuth } from "@middlewares/withClerkAuth";
 import { NextRequest, NextResponse } from "next/server";
 
-export const GET = withJwtAuth(async (req: NextRequest, { params }: {
+export const GET = withClerkAuth(async (req: NextRequest, { params }: {
   params: Promise<{
     clinicUid: string
     consultationId: string;

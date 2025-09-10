@@ -1,8 +1,8 @@
 import { getReferralReasonsAction } from "@/actions/clinics/clinical-record/referral-reason.action";
-import { withJwtAuth } from "@/middlewares/withJwtAuth";
+import { withClerkAuth } from "@/middlewares/withClerkAuth";
 import { NextRequest, NextResponse } from "next/server";
 
-export const GET = withJwtAuth(async (req: NextRequest) => {
+export const GET = withClerkAuth(async (req: NextRequest) => {
   try {
     const reasonsResult = await getReferralReasonsAction();
     return NextResponse.json(reasonsResult, { status: 200 });

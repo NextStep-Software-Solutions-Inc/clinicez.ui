@@ -17,13 +17,13 @@ import { getHealthConditionsAction } from "@actions/health-condition.action";
 import { Illness } from "./IllnessList";
 
 interface EditIllnessFormProps {
-    index: number;
-    illness: Illness
-    remove: (index: number) => void;
-    onUpdate: (index: number, value: Illness) => void;
-  }
-  
-export default function EditIllnessForm({ illness, index, remove, onUpdate}:EditIllnessFormProps ) {
+  index: number;
+  illness: Illness
+  remove: (index: number) => void;
+  onUpdate: (index: number, value: Illness) => void;
+}
+
+export default function EditIllnessForm({ illness, index, remove, onUpdate }: EditIllnessFormProps) {
 
   const [conditions, setConditions] = useState<string[]>([])
 
@@ -34,7 +34,7 @@ export default function EditIllnessForm({ illness, index, remove, onUpdate}:Edit
   useEffect(() => {
     (async () => {
       const conditions = await getHealthConditionsAction()
-      await setConditions(() => conditions.map(({name}) => name))
+      await setConditions(() => conditions.map(({ name }) => name))
     })()
   }, [])
 
@@ -43,8 +43,8 @@ export default function EditIllnessForm({ illness, index, remove, onUpdate}:Edit
       <Card className="ring-2 basis-full">
         <CardHeader>
           <span className="ml-auto flex space-x-2 group-hover/actions:visible transition-all">
-            <DoneEditingIllnessButton form={form} index={index} onUpdate={onUpdate}/>
-            <DeleteIllnessButton illnessId={illness.id} remove={remove} index={index}/>
+            <DoneEditingIllnessButton form={form} index={index} onUpdate={onUpdate} />
+            <DeleteIllnessButton illnessId={illness.id} remove={remove} index={index} />
           </span>
           <CardTitle className="flex items-center group/actions gap-2">
             <FormField
@@ -56,19 +56,19 @@ export default function EditIllnessForm({ illness, index, remove, onUpdate}:Edit
               render={({ field }) => (
                 <FormItem className="flex-1">
                   <FormLabel>Illness</FormLabel>
-                  <ComboBox 
+                  <ComboBox
                     options={conditions}
                     value={field.value} onChange={field.onChange}
                   />
                   <FormDescription>
-                      Enter the name of illness
+                    Enter the name of illness
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
           </CardTitle>
-          <Separator/>
+          <Separator />
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
@@ -81,7 +81,7 @@ export default function EditIllnessForm({ illness, index, remove, onUpdate}:Edit
                   <FormControl>
                     <RadioGroup
                       onValueChange={field.onChange}
-                      defaultValue={field.value}
+                      value={field.value}
                       className="flex gap-2 flex-wrap"
                     >
                       <Each
@@ -118,7 +118,7 @@ export default function EditIllnessForm({ illness, index, remove, onUpdate}:Edit
                       onChange={e => field.onChange(new Date(e.target.value))}
                       value={field.value ? format(field.value, "yyyy-MM-dd") : ""}
                       type="date"
-                      placeholder="Select date" 
+                      placeholder="Select date"
                     />
                   </FormControl>
                   <FormDescription>
@@ -135,7 +135,7 @@ export default function EditIllnessForm({ illness, index, remove, onUpdate}:Edit
                 <FormItem className="w-full">
                   <FormLabel>Notes (optional)</FormLabel>
                   <FormControl>
-                    <Input placeholder="Add notes here..." {...field} value={field.value ?? ""}  />
+                    <Input placeholder="Add notes here..." {...field} value={field.value ?? ""} />
                   </FormControl>
                   <FormDescription>
                     Additional notes about the condition.
@@ -150,4 +150,3 @@ export default function EditIllnessForm({ illness, index, remove, onUpdate}:Edit
     </Form>
   )
 }
-  

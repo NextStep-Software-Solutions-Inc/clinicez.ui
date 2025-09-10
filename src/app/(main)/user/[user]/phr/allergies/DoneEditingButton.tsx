@@ -19,20 +19,36 @@ export default function DoneEditingButton({ index, update, form }: DoneEditingBu
   const userId = user?.id;
 
   const action = async () => {
-    form.handleSubmit((data) => {
+    form.handleSubmit(async (data) => {
       if (!userId) throw new Error("User ID is required to update allergy.")
-      toast.promise(upsertUserAllergyAction({ ...data, userId }), {
-        loading: "Saving...",
-        success: (res) => {
-          update(index, {
-            ...data,
-            id: res.id
-          })
-          form.reset(res);
-          return "Allergy updated successfully."
-        },
-        error: `Failed to update allergy, Check if duplicate entry`
-      })
+      try {
+        const result = await upsertUserAllergyAction({ ...data, userId });
+
+        toast.promise(Promise.resolve(result), {
+          loading: "Saving...",
+          success: (res) => {
+            update(index, {
+              ...data,
+              id: res.id
+            })
+            return "Allergy updated successfully."
+          },
+          error: `Failed to update allergy, Check if duplicate entry`
+        });
+
+        // Reset form after the promise resolves to avoid setState during render
+        if (result) {
+          const resetData = {
+            id: result.id,
+            allergen: result.Allergen.name,
+            reaction: result.reaction,
+            notes: result.notes
+          };
+          form.reset(resetData);
+        }
+      } catch (error) {
+        toast.error("Failed to update allergy, Check if duplicate entry");
+      }
     })();
   }
 

@@ -23,8 +23,8 @@ interface ClinicMemberPermissionsProps {
   clinicUid: string;
 }
 
-export const ClinicMemberPermissions = ({clinicUid, userId}: ClinicMemberPermissionsProps) => {
-  const {data: myPermissions} = usePermissions({
+export const ClinicMemberPermissions = ({ clinicUid, userId }: ClinicMemberPermissionsProps) => {
+  const { data: myPermissions } = usePermissions({
     userId,
     type: "CLINIC"
   })
@@ -32,43 +32,53 @@ export const ClinicMemberPermissions = ({clinicUid, userId}: ClinicMemberPermiss
   const updateClinicPermissions = [PERMISSIONS.CLINIC["UPDATE:CLINIC:PERMISSIONS"].name]
   const canUpdateClinicPermissions = updateClinicPermissions.every((item) => myPermissionArray.includes(item))
 
-  const {data: permissions, mutate: mutateClinicMemberPermissions, isLoading: loadingClinicMemberPermissions } = usePermissions({
+  const { data: permissions, mutate: mutateClinicMemberPermissions, isLoading: loadingClinicMemberPermissions } = usePermissions({
     userId,
     type: "CLINIC",
   })
-  
-  const {data: clinicAvailablePermissions, mutate: mutateAvailablePermissions, isLoading: loadingAvailablePermissions} = usePermissions({
+
+  const { data: clinicAvailablePermissions, mutate: mutateAvailablePermissions, isLoading: loadingAvailablePermissions } = usePermissions({
     type: "CLINIC",
   })
-  
+
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     values: {
       permissionIds: (permissions ?? []).map((item) => item.id),
     },
   })
-  
+
   const action = async () => {
     form.handleSubmit(async (data) => {
-      toast.promise(setClinicMemberPermissionsAction({
-        userId,
-        clinicUid,
-        permissionIds: data.permissionIds,
-      }), {
-        loading: "Saving changes...",
-        success: res => {
-          if(res.status) {
-            mutateClinicMemberPermissions()
-            form.reset(data)
-          }
-          return res.message
-        },
-        error: "Error while saving changes",
-      })
+      try {
+        const result = await setClinicMemberPermissionsAction({
+          userId,
+          clinicUid,
+          permissionIds: data.permissionIds,
+        });
+
+        toast.promise(Promise.resolve(result), {
+          loading: "Saving changes...",
+          success: res => {
+            if (res.status) {
+              mutateClinicMemberPermissions()
+            }
+            return res.message
+          },
+          error: "Error while saving changes",
+        });
+
+        // Reset form after the promise resolves to avoid setState during render
+        if (result?.status) {
+          form.reset(data)
+        }
+      } catch (error) {
+        toast.error("Error while saving changes");
+      }
     })();
   }
 
-  if(loadingClinicMemberPermissions || loadingAvailablePermissions) return <div>Loading...</div>
+  if (loadingClinicMemberPermissions || loadingAvailablePermissions) return <div>Loading...</div>
   return (
     <Card>
       <CardHeader>
@@ -90,7 +100,7 @@ export const ClinicMemberPermissions = ({clinicUid, userId}: ClinicMemberPermiss
                   <div className="mb-4 ">
                     <FormLabel className="text-base font-medium">Available Permissions</FormLabel>
                     <FormDescription>
-                          Select permissions to assign to this member.
+                      Select permissions to assign to this member.
                     </FormDescription>
                   </div>
                   <Each

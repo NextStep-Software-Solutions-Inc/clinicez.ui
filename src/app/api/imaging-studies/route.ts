@@ -1,10 +1,10 @@
 
 import { getImagingStudiesAction, GetImagingStudiesFilters } from "@/actions/clinics/clinical-record/imaging-studies.action";
 import { parseObject } from "@/lib/utils";
-import { withJwtAuth } from "@/middlewares/withJwtAuth";
+import { withClerkAuth } from "@/middlewares/withClerkAuth";
 import { NextRequest, NextResponse } from "next/server";
 
-export const GET = withJwtAuth(async (req: NextRequest) => {
+export const GET = withClerkAuth(async (req: NextRequest) => {
   const searchParams = req.nextUrl.searchParams;
 
   const filters = parseObject(Object.fromEntries(searchParams.entries())) as GetImagingStudiesFilters;

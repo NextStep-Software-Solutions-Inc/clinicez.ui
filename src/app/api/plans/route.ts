@@ -1,11 +1,11 @@
 "use server";
 import 'server-only'
-import { withJwtAuth } from '@middlewares/withJwtAuth';
+import { withClerkAuth } from '@middlewares/withClerkAuth';
 
 import { NextRequest, NextResponse } from "next/server";
 import { getPlansAction } from '@actions/plan.action';
 
-export const GET = withJwtAuth(async (req: NextRequest) => {
+export const GET = withClerkAuth(async (req: NextRequest) => {
   const searchParams = req.nextUrl.searchParams
 
   const payload = Object.fromEntries(searchParams.entries());

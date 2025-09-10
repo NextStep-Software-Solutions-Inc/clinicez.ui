@@ -1,6 +1,6 @@
 "use server";
 
-import { getAccessToken } from "@/lib/auth0";
+import { getAccessToken } from "@/lib/clerk-auth";
 
 export const refreshTokensAction = async () => {
   try {

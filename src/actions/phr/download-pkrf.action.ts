@@ -15,9 +15,11 @@ function hasPhilHealthRecord(u: unknown): u is { PhilHealthRecord: PhilHealthRec
 }
 
 export const downloadPKRFAction = withErrorHandling(async (userId?: string) => {
-  if (!userId) throw new Error("User ID required")
+  if (!userId) throw new Error("User ID is required to generate PKRF")
+
   const userRes = await getUserAction(userId)
-  if (!userRes.status || !userRes.data) throw new Error("User not found")
+  if (!userRes.status || !userRes.data) throw new Error("User profile not found. Please ensure you have a valid account.")
+
   const user = userRes.data
   const primary: PrimaryAddress | undefined = hasUserAddresses(user) ? user.UserAddresses?.[0] : undefined
   let phr = hasPhilHealthRecord(user) ? user.PhilHealthRecord?.[0] : undefined
@@ -40,7 +42,7 @@ export const downloadPKRFAction = withErrorHandling(async (userId?: string) => {
     { field: 'addressBarangay', value: primary?.barangay?.toUpperCase() || 'N/A' },
 
     { field: 'memberPhilSysID', value: phr?.philSysId || 'N/A' },
-    { field: 'memberTin', value: phr?.tin || 'N/A' },
+    // { field: 'memberTin', value: phr?.tin || 'N/A' },
 
     { field: 'memberDateOfBirth', value: formatIsoDate(user.dob) || 'N/A' },
     { field: 'mobileNumber', value: user.mobile || 'N/A' },

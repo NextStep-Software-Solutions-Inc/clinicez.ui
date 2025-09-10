@@ -2,6 +2,8 @@
 
 import { PDFDocument } from "pdf-lib"
 import { logger } from "@/lib/logger"
+import fs from "fs/promises"
+import path from "path"
 
 export interface LoadPdfResult {
   pdfDoc: PDFDocument
@@ -11,27 +13,45 @@ export interface LoadPdfResult {
 }
 
 export async function loadPhilHealthPdf(fileName: string): Promise<LoadPdfResult> {
+  try {
+    // Use filesystem access instead of HTTP requests for better reliability
+    const publicDir = path.join(process.cwd(), 'public', 'pdfs', 'phr')
+    const filePath = path.join(publicDir, fileName)
 
-  const baseUrl = process.env.APP_BASE_URL || process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : process.env.APP_BASE_URL;
-  const pdfUrl = `${baseUrl}/pdfs/phr/${fileName}`;
+    // Validate file exists and is within the expected directory for security
+    const normalizedPath = path.normalize(filePath)
+    const normalizedPublicDir = path.normalize(publicDir)
 
-  const response = await fetch(pdfUrl, {
-    cache: "force-cache"
-  });
+    if (!normalizedPath.startsWith(normalizedPublicDir)) {
+      throw new Error(`Access denied: File path is outside allowed directory`)
+    }
 
-  if (!response.ok) {
-    throw new Error(`PDF template not found at ${pdfUrl}`);
+    // Check if file exists
+    try {
+      await fs.access(filePath, fs.constants.F_OK)
+    } catch {
+      throw new Error(`PDF template not found: ${fileName}`)
+    }
+
+    // Read the PDF file
+    const fileBuffer = await fs.readFile(filePath)
+    const bytes = new Uint8Array(fileBuffer)
+
+    if (bytes.length === 0) {
+      throw new Error(`PDF template is empty: ${fileName}`)
+    }
+
+    // Load PDF document
+    const pdfDoc = await PDFDocument.load(bytes)
+    const form = pdfDoc.getForm()
+
+    logger.info(`Successfully loaded PDF template: ${fileName}`)
+
+    return { pdfDoc, form, bytes, filePath }
+  } catch (error) {
+    logger.error(`Error loading PhilHealth PDF template "${fileName}":`, error)
+    throw error
   }
-  const bytes = new Uint8Array(await response.arrayBuffer());
-  if (bytes.length === 0) {
-    throw new Error(`PDF template at ${pdfUrl} is empty`);
-  }
-
-  const pdfDoc = await PDFDocument.load(bytes);
-  const form = pdfDoc.getForm();
-  return { pdfDoc, form, bytes, filePath: pdfUrl };
 }
 
 export async function pdfBytesToBase64(bytes: Uint8Array): Promise<string> {

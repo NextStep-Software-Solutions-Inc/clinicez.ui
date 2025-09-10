@@ -1,6 +1,5 @@
 "use client"
 
-import React from 'react'
 import { promiseWrapper } from '@/lib/with-error-handling'
 import { toast } from 'sonner'
 import { downloadPPCFAction } from '@/actions/phr/download-ppcf.action'
@@ -14,14 +13,14 @@ interface DownloadPPCFActionProps { userId?: string; children?: React.ReactNode 
 const DownloadPPCFAction: React.FC<DownloadPPCFActionProps> = ({ userId, children }) => {
   const handleDownload = async () => {
     toast.promise(promiseWrapper(downloadPPCFAction)(userId), {
-      loading: 'Generating PPCF PDF...',
+      loading: "Generating PhilHealth Photo Consent Form...",
       success: async (res) => {
         const data = res.data
-        if (!data?.pdfData) return res.message || 'No data generated'
+        if (!data?.pdfData) throw new Error("No PDF data received from server")
         toBlobDownload(data.pdfData, data.filename || 'PPCF_Form.pdf')
-        return 'PPCF downloaded'
+        return 'PPCF downloaded successfully'
       },
-      error: 'Failed to generate PPCF form',
+      error: 'Unable to generate PPCF. Please check your profile information and try again.',
     })
   }
 

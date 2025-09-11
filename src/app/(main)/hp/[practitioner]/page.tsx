@@ -25,9 +25,9 @@ export async function generateMetadata(props: Props, parent: ResolvingMetadata):
     id: hpId
   })
 
-  if(!profile || (profile.User.userId !== session?.user.sub && !profile.isPublished)) return notFound();
+  if (!profile || (profile.User.userId !== session?.user.sub && !profile.isPublished)) return notFound();
 
-  const site = new URL(process.env.AUTH0_BASE_URL ?? "").hostname;
+  const site = new URL(process.env.APP_BASE_URL ?? "").hostname;
   const title = `${profile.HPProfile?.title} ${profile.HPProfile?.name} ${profile.HPProfile?.suffix} | ${profile.HPProfile?.fields.join(", ")}`;
   const description = profile.HPProfile?.philosophy ?? "";
   const image = profile.HPProfile?.picture || profile.User.gender === "FEMALE" ? FEMALE_DOCTOR_AVATAR : MALE_DOCTOR_AVATAR;
@@ -53,14 +53,14 @@ export default async function PractitionerPage(props: AppRouterPageRouteOpts) {
     id: hpId
   })
   const isMyHp = profile?.User.userId === session?.user.sub
-  if(!profile || (!isMyHp && !profile.isPublished)) return notFound();
+  if (!profile || (!isMyHp && !profile.isPublished)) return notFound();
 
   return (
     <div className="content container mx-auto my-10 relative">
       <ConditionalRender condition={isMyHp}>
         <Link href={`/hp/${hpId}/editor`} >
           <Button className="z-10 fixed -right-[6.5rem] mr-2 hover:-right-[20px] transition-all">
-            <Pencil size={20} className="mr-2"/>Edit profile
+            <Pencil size={20} className="mr-2" />Edit profile
           </Button>
         </Link>
       </ConditionalRender>

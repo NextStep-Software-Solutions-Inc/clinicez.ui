@@ -18,7 +18,8 @@ import { toast } from "sonner"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@components/ui/select"
 import Each from "@components/utils/Each"
 import { setMyDefaultOrganizationAction } from "@actions/organizations/organization.action"
-import { useUser } from "@auth0/nextjs-auth0"
+// import { useUser } from "@clerk/nextjs" // Commented out for Clerk migration
+import { useUser } from "@clerk/nextjs"
 import ActionButton from "@components/ActionButton"
 import { OrgDefaultRoleForm } from "./OrgDefaultRoleForm"
 import ConditionalRender from "@components/utils/ConditionalRender"
@@ -33,8 +34,8 @@ const organizationFormSchema = z.object({
 type DefaultOrgFormSchema = z.infer<typeof organizationFormSchema>
 
 export default function OrganizationsSettings() {
-  const user = useUser();
-  const userId = user?.user?.sub ?? undefined;
+  const { user } = useUser();
+  const userId = user?.id ?? undefined;
 
   const { data: myOrgs } = useOrgMembers({ userId, distinct: true }, !!userId)
   const { data: defaultOrg } = useUserDefaultOrg(userId ?? "", !!userId)

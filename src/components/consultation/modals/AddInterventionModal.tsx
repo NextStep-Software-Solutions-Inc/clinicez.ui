@@ -2,7 +2,7 @@
 
 import { GetConsultationTicket } from "@actions/consultation/consultation-ticket.action";
 import { createInterventionAction } from "@actions/consultation/intervention.action";
-import { useUser } from "@auth0/nextjs-auth0";
+import { useUser } from "@clerk/nextjs";
 import ActionButton from "@components/ActionButton"
 import CustomModalContent from "@components/CustomModalContent";
 import { Button } from "@components/ui/button"
@@ -56,7 +56,7 @@ export default function AddInterventionModal({consultation}: AddInterventionModa
   const { user } = useUser()
   const { data: actions } = useActions()
   const { data: myHps } = useHPs({
-    userId: user?.sub ?? ""
+    userId: user?.id ?? ""
   })
   const { mutate } = useInterventions({
     clinicUid: consultation.Clinic.clinicUid,

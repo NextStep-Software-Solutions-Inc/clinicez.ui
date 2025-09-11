@@ -1,7 +1,7 @@
 "use client";
 
 import { upsertUserDisabilityAction } from "@actions/users/user-disability.action";
-import { useUser } from "@auth0/nextjs-auth0";
+import { useUser } from "@clerk/nextjs";
 import ActionButton from "@components/ActionButton";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
@@ -14,8 +14,8 @@ interface DoneEditingDisabilityButtonProps {
   }
 export default function DoneEditingDisabilityButton({index, form, onUpdate}:DoneEditingDisabilityButtonProps) {
   
-  const user = useUser();
-  const userId = user?.user?.sub;
+  const { user } = useUser();
+  const userId = user?.id;
   
   const handleDoneEditing = async () => {
     form.handleSubmit((data) => {

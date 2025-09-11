@@ -2,10 +2,10 @@
 import 'server-only'
 
 import { NextRequest, NextResponse } from "next/server";
-import { withJwtAuth } from '@middlewares/withJwtAuth';
+import { withClerkAuth } from '@middlewares/withClerkAuth';
 import { getNoteTemplateAction } from '@actions/note-template.action';
 
-export const GET = withJwtAuth(async (req: NextRequest, { params }: {
+export const GET = withClerkAuth(async (req: NextRequest, { params }: {
   params: Promise<{ noteTemplateName: string }>
 }) => {
   const { noteTemplateName } = await params;

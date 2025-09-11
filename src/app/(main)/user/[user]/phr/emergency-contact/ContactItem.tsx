@@ -131,7 +131,7 @@ export const ContactItem = ({ contact, readOnly }: {
                 <RadioGroup
                   disabled={readOnly}
                   onValueChange={field.onChange}
-                  defaultValue={field.value}
+                  value={field.value}
                   className="flex flex-wrap gap-2"
                 >
                   <Each

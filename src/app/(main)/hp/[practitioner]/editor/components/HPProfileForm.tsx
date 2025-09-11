@@ -29,7 +29,7 @@ import { upsertHPAction } from "@actions/hp.actions"
 import { Separator } from "@components/ui/separator"
 
 type HPProfileProps = {
-  profile:HPProfileType
+  profile: HPProfileType
 }
 
 export default function HPProfileForm({ profile }: HPProfileProps) {
@@ -42,7 +42,7 @@ export default function HPProfileForm({ profile }: HPProfileProps) {
     mode: "all",
     defaultValues: profile
   })
-    
+
   const action = async () => {
     await (form.handleSubmit(async (values: HPProfileType) => {
       const mappedData = {
@@ -55,7 +55,7 @@ export default function HPProfileForm({ profile }: HPProfileProps) {
         areaOfInterest: values.areaOfInterest,
         experience: values.experience,
         hobbies: values.hobbies,
-      
+
         languages: values.languages.map((lang) => lang.name),
         specialties: values.specialties.map((lang) => lang.name),
         educations: values.educations.map((lang) => lang.name),
@@ -64,7 +64,7 @@ export default function HPProfileForm({ profile }: HPProfileProps) {
         affiliations: values.affiliations.map((lang) => lang.name),
         healthcareProviderId: practitioner,
       }
-      
+
       toast.promise(upsertHPAction({
         where: { id: profileId },
         create: mappedData,
@@ -72,7 +72,7 @@ export default function HPProfileForm({ profile }: HPProfileProps) {
       }), {
         loading: "Saving profile...",
         success: (res) => {
-          if(res) {
+          if (res) {
             setProfileId(res.id)
             form.reset(values)
           }
@@ -94,7 +94,7 @@ export default function HPProfileForm({ profile }: HPProfileProps) {
             render={({ field }) => (
               <FormItem className="basis-1/4 flex-grow">
                 <FormLabel>Title</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value} >
+                <Select onValueChange={field.onChange} value={field.value} >
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select a title to display" />
@@ -145,14 +145,14 @@ export default function HPProfileForm({ profile }: HPProfileProps) {
                   <Input placeholder="Jr." {...field} />
                 </FormControl>
                 <FormDescription>
-                Jr., Sr., III, etc. 
+                  Jr., Sr., III, etc.
                 </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
           />
         </div>
-        
+
         <FormField
           control={form.control}
           name="workEmail"
@@ -192,7 +192,7 @@ export default function HPProfileForm({ profile }: HPProfileProps) {
             <FormItem className="w-full">
               <FormLabel>Philosophy of Care</FormLabel>
               <FormControl>
-                <Textarea placeholder="" {...field}/>
+                <Textarea placeholder="" {...field} />
               </FormControl>
               <FormDescription>
                 Describes your philosophy of care.
@@ -208,7 +208,7 @@ export default function HPProfileForm({ profile }: HPProfileProps) {
             <FormItem className="w-full">
               <FormLabel>Area of Interest</FormLabel>
               <FormControl>
-                <Textarea placeholder="" {...field}/>
+                <Textarea placeholder="" {...field} />
               </FormControl>
               <FormDescription>
                 In which area you are more interested?
@@ -224,7 +224,7 @@ export default function HPProfileForm({ profile }: HPProfileProps) {
             <FormItem className="w-full">
               <FormLabel>Hobbies</FormLabel>
               <FormControl>
-                <Textarea placeholder="" {...field}/>
+                <Textarea placeholder="" {...field} />
               </FormControl>
               <FormDescription>
                 What are your hobbies?
@@ -249,18 +249,18 @@ export default function HPProfileForm({ profile }: HPProfileProps) {
             </FormItem>
           )}
         />
-        <Languages form={form}/>
-        <Separator/>
-        <Fields form={form}/>
-        <Separator/>
-        <Specialties form={form}/>
-        <Separator/>
-        <Education form={form}/>
-        <Separator/>
-        <Certifications form={form}/>
-        <Separator/>
-        <Affiliations form={form}/>
-        <Separator/>
+        <Languages form={form} />
+        <Separator />
+        <Fields form={form} />
+        <Separator />
+        <Specialties form={form} />
+        <Separator />
+        <Education form={form} />
+        <Separator />
+        <Certifications form={form} />
+        <Separator />
+        <Affiliations form={form} />
+        <Separator />
         <div className="mt-4">
           <ActionButton className="w-full" disabled={form.formState.isLoading}>Save Changes</ActionButton>
         </div>

@@ -2,17 +2,17 @@
 import 'server-only'
 
 import { NextRequest, NextResponse } from "next/server";
-import { withJwtAuth } from '@middlewares/withJwtAuth';
+import { withClerkAuth } from '@middlewares/withClerkAuth';
 import { getDailyOrgMembershipRequestAction } from '@actions/dashboard/analytics.action';
 
 
-export const GET = withJwtAuth(async (req: NextRequest) => {
+export const GET = withClerkAuth(async (req: NextRequest) => {
   const searchParams = req.nextUrl.searchParams
   const orgId = searchParams.get('orgId');
   const startDate = searchParams.get('startDate');
   const endDate = searchParams.get('endDate');
 
-  if(!orgId || !startDate || !endDate) {
+  if (!orgId || !startDate || !endDate) {
     return NextResponse.json({
       success: false,
       response: 'orgId, startDate, and endDate are required'

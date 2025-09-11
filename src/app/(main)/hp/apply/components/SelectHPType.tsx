@@ -25,11 +25,10 @@ interface ISelectHPTypeProps {
   prevStep?: () => void;
   isFirstStep?: boolean;
   isLastStep?: boolean;
-} 
+}
 
-export default function SelectHPType({nextStep, prevStep, isFirstStep, isLastStep, currentHPTypeIds}: ISelectHPTypeProps) {
-  const {data: hpTypes} = useHPTypes()
-
+export default function SelectHPType({ nextStep, prevStep, isFirstStep, isLastStep, currentHPTypeIds }: ISelectHPTypeProps) {
+  const { data: hpTypes } = useHPTypes()
   const roleFormSchema = z.object({
     hpTypeId: z.number({
       coerce: true,
@@ -38,8 +37,8 @@ export default function SelectHPType({nextStep, prevStep, isFirstStep, isLastSte
       message: `You have already possessed ${hpTypes?.data.find(type => type.id === value)?.name} role. Please select a different role.`,
     })),
   })
-  
-  const [applicationData,setApplicationData] = useAtom(hpApplyAtom);
+
+  const [applicationData, setApplicationData] = useAtom(hpApplyAtom);
   const form = useForm<z.infer<typeof roleFormSchema>>({
     resolver: zodResolver(roleFormSchema),
     mode: "all",
@@ -50,7 +49,7 @@ export default function SelectHPType({nextStep, prevStep, isFirstStep, isLastSte
 
   const action = async () => {
     form.handleSubmit(async (data: z.infer<typeof roleFormSchema>) => {
-      setApplicationData(prev => ({...prev, ...data}));
+      setApplicationData(prev => ({ ...prev, ...data }));
       nextStep?.();
     })()
   }
@@ -76,7 +75,7 @@ export default function SelectHPType({nextStep, prevStep, isFirstStep, isLastSte
                     render={(type) => (
                       <FormItem className="flex items-center space-x-3 space-y-0">
                         <FormControl>
-                          <RadioGroupItem value={type.id.toString()} onClick={() => form.trigger()}/>
+                          <RadioGroupItem value={type.id.toString()} onClick={() => form.trigger()} />
                         </FormControl>
                         <FormLabel className="font-normal capitalize">
                           {type.name}
@@ -86,19 +85,19 @@ export default function SelectHPType({nextStep, prevStep, isFirstStep, isLastSte
                   />
                 </RadioGroup>
               </FormControl>
-              <FormMessage/>
+              <FormMessage />
             </FormItem>
           )}
         />
         <div className="mt-4">
-          <BackSubmitAndNext 
+          <BackSubmitAndNext
             labels={{
               previous: "Back",
               submit: "Save & Continue",
               next: "Next",
             }}
             disabled={{
-              submit:!form.formState.isValid,
+              submit: !form.formState.isValid,
               previous: isFirstStep,
               next: !isLastStep,
             }}

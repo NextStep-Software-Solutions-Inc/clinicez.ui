@@ -10,10 +10,12 @@ function hasUserAddresses(u: unknown): u is { UserAddresses?: PrimaryAddress[] }
 }
 
 export const downloadPPCFAction = withErrorHandling(async (userId?: string) => {
-  if (!userId) return { message: "User ID required", data: null }
+  if (!userId) throw new Error("User ID is required to generate PPCF")
+
   const userRes = await getUserAction(userId)
   const user = userRes.data
-  if (!user) throw new Error("User not found")
+  if (!user) throw new Error("User profile not found. Please ensure you have a valid account.")
+
   const primary: PrimaryAddress | undefined = hasUserAddresses(user) ? user.UserAddresses?.[0] : undefined
   const provider = await resolvePreferredKonsultaProvider(userId)
   const today = new Date().toISOString().split('T')[0]

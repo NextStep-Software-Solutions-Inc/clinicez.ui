@@ -2,7 +2,7 @@
 
 import { parseObject } from "@/lib/utils";
 import { createOrganizationAction, getOrganizationsAction } from "@actions/organizations/organization.action";
-import { withJwtAuth } from "@middlewares/withJwtAuth";
+import { withClerkAuth } from "@middlewares/withClerkAuth";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -23,7 +23,7 @@ const createOrganizationSchema = z.object({
   }),
 })
 
-export const POST = withJwtAuth(async (req: NextRequest) => {
+export const POST = withClerkAuth(async (req: NextRequest) => {
 
   const body = await req.json();
   const newOrganization = createOrganizationSchema.parse(body);
@@ -32,7 +32,7 @@ export const POST = withJwtAuth(async (req: NextRequest) => {
   return NextResponse.json(organization, {status: 201});
 });
 
-export const GET = withJwtAuth(async (req: NextRequest) => {
+export const GET = withClerkAuth(async (req: NextRequest) => {
 
   const searchParams = new URLSearchParams(req.nextUrl.searchParams);
   const filters = parseObject(Object.fromEntries(searchParams.entries()));

@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useClinicPatients } from "@/hooks/useClinicPatient";
 import { promiseWrapper } from "@/lib/with-error-handling";
-import { useUser } from "@auth0/nextjs-auth0";
+import { useUser } from "@clerk/nextjs";
 import { useParams, useSearchParams } from "next/navigation";
 import { useMemo } from "react";
 import { toast } from "sonner";
@@ -44,7 +44,7 @@ export function JoinAsPatientDialog() {
   const open = useMemo(() => searchParams.has("join-as-patient"), [searchParams]);
 
   const { mutate } = useClinicPatients({
-    clinicUid, userId: user?.sub ?? undefined
+    clinicUid, userId: user?.id ?? undefined
   })
 
   const form = useForm<z.infer<typeof confirmationFormSchema>>({
@@ -60,7 +60,7 @@ export function JoinAsPatientDialog() {
   }
 
   const action = () => {
-    if (!user?.sub) {
+    if (!user?.id) {
       toast.error("User id not found")
       return;
     }
@@ -68,7 +68,7 @@ export function JoinAsPatientDialog() {
 
     toast.promise(promiseWrapper(addClinicPatientAction)({
       clinicUid,
-      userId: user?.sub
+      userId: user?.id
     }), {
       loading: "Loading...",
       success: res => {

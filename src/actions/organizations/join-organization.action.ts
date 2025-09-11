@@ -6,7 +6,6 @@ import { sendMail } from '@actions/email.action';
 import path from 'path';
 import { capitalize, hasCodeProperty } from "@lib/utils";
 import { getCachedSession } from "../session.action";
-import { managementClient } from "@/services/auth0/management-client";
 import { withErrorHandling } from "@/lib/with-error-handling";
 
 export type JoinOrganizationPayload = {
@@ -16,14 +15,10 @@ export type JoinOrganizationPayload = {
 }
 
 export const joinOrganizationAction = withErrorHandling(async (payload: JoinOrganizationPayload) => {
-
   let message = "Successfully sent membership request";
 
   const session = await getCachedSession();
   if (!session) throw new Error("Unauthorized");
-
-  const auth0User = await managementClient.users.get({ id: payload.userId })
-  if (!auth0User.data.email_verified) throw new Error("User email is not verified")
 
   const { userId, orgUid, orgRoleId } = payload
   const userOrganization = await prisma.organizationMember.create({

@@ -1,12 +1,12 @@
 "use server";
 import 'server-only'
-import { withJwtAuth } from '@middlewares/withJwtAuth';
+import { withClerkAuth } from '@middlewares/withClerkAuth';
 
 import { NextRequest, NextResponse } from "next/server";
 import { getUserIllnessesAction } from '@actions/users/user-illness.action';
 
 
-export const GET = withJwtAuth(async (req: NextRequest) => {
+export const GET = withClerkAuth(async (req: NextRequest) => {
   const searchParams = req.nextUrl.searchParams
   const userId = searchParams.get('userId');
 

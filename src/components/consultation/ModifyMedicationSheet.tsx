@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { removeMedicationDrugAction } from "@actions/medications/medication-drug.action";
 import AddMedicationDrugModal from "@components/prescription/modals/AddMedicationDrugModal";
 import { usePermissions } from "@hooks/usePermission";
-import { useUser } from "@auth0/nextjs-auth0";
+import { useUser } from "@clerk/nextjs";
 import { PERMISSIONS } from "@lib/permissions";
 import { promiseWrapper } from "@/lib/with-error-handling";
 
@@ -32,7 +32,7 @@ export default function ModifyMedicationSheet({ readonly }: ModifyMedicationShee
   const { data: medication, mutate: mutateMedication } = useMedication(medicationId, clinicUid)
 
   const { data: medicationDrugs, mutate } = useMedicationDrugs(medicationId)
-  const { data: myPermissions } = usePermissions({ userId: user?.sub ?? "", type: "CLINIC" })
+  const { data: myPermissions } = usePermissions({ userId: user?.id ?? "", type: "CLINIC" })
 
   const handleClose = (state: boolean) => {
     const searchParams = new URLSearchParams(window.location.search)

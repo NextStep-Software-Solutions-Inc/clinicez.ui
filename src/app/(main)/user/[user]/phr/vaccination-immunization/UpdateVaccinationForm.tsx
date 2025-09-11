@@ -12,7 +12,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { createUserVaccinationAction, updateUserVaccinationAction } from "@actions/users/user-vaccination.action";
-import { useUser } from "@auth0/nextjs-auth0";
+import { useUser } from "@clerk/nextjs";
 import { revalidatePath } from "@actions/cache.action";
 import { VaccineType } from "./modal/AddUserVaccinationModal";
 import { UserVaccinationType } from "./Vaccinations";
@@ -43,8 +43,8 @@ interface UpdateVaccinationFormProps {
 export const UpdateVaccinationForm = ({ vaccines, vaccination }: UpdateVaccinationFormProps) => {
 
   const closeBtnRef = useRef<HTMLInputElement>(null);
-  const user = useUser();
-  const userId = user?.user?.sub;
+  const { user } = useUser();
+  const userId = user?.id;
   const form = useForm<UpdateVaccinationForm>({
     resolver: zodResolver(updateVaccinationFormSchema),
     defaultValues: {

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { withJwtAuth } from "@/middlewares/withJwtAuth";
+import { withClerkAuth } from "@/middlewares/withClerkAuth";
 import { getPrescriptionAction } from "@/actions/clinics/clinical-record/prescription.action";
 
-export const GET = withJwtAuth(async (req: NextRequest, context: { params: Promise<{ id: string }> }) => {
+export const GET = withClerkAuth(async (req: NextRequest, context: { params: Promise<{ id: string }> }) => {
   const { id } = await context.params;
   const prescriptionId = parseInt(id);
 

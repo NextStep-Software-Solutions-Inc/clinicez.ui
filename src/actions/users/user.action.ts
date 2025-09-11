@@ -2,7 +2,7 @@
 import 'server-only'
 import prisma from "@lib/prisma";
 import { Prisma, $Enums } from "@prisma/client";
-import { managementClient } from "@services/auth0/management-client";
+// import { managementClient } from "@services/auth0/management-client"; // Commented out for Clerk migration
 import { cache } from 'react';
 import dayjs from 'dayjs';
 import path from 'path';
@@ -11,7 +11,7 @@ import { sendMail } from '@actions/email.action';
 import { faker } from '@faker-js/faker';
 import { hasCodeProperty } from '@lib/utils';
 import { withErrorHandling } from '@/lib/with-error-handling';
-import { updateAuth0UserAction } from './user-management.action';
+// import { updateAuth0UserAction } from './user-management.action'; // Commented out for Clerk migration
 import { getPermissionsAction } from '../permission.action';
 import { sessionCheck } from '@/lib/auth';
 
@@ -266,9 +266,13 @@ export const createUserAction = withErrorHandling(async (payload: CreateUserPayl
     // generate strong password 
     const randomPassword = generateRandomPassword();
 
+    // For Clerk migration: Users should be created through Clerk's sign-up flow
+    // This action is now only for admin-created users and should be handled differently
+    throw new Error("User creation through admin interface is disabled during Clerk migration. Users should sign up directly through Clerk.");
+
+    /* COMMENTED OUT FOR CLERK MIGRATION
     // create user in auth0
     const { data, status } = await createUserInAuth0({ ...payload, password: randomPassword });
-
     if (status !== 201) throw new Error("Failed to create user in auth0");
 
     // create user in database
@@ -305,6 +309,7 @@ export const createUserAction = withErrorHandling(async (payload: CreateUserPayl
     });
 
     return newUser;
+    */
   })
 
   return {
@@ -326,22 +331,26 @@ export const updateUserAction = withErrorHandling(async (userId: string, data: P
 
   const { firstName, lastName, middleName, suffix, picture, nickname } = updatedUser
 
-  await updateAuth0UserAction(updatedUser.userId, {
-    name: `${firstName ?? ""} ${middleName ?? ""} ${lastName ?? ""} ${suffix ?? ""}`.trim(),
-    given_name: firstName ?? undefined,
-    family_name: lastName ?? undefined,
-    nickname: nickname ?? `${firstName} ${lastName}`,
-    picture: picture ?? undefined
-  })
+  // await updateAuth0UserAction(updatedUser.userId, {
+  //   name: `${firstName ?? ""} ${middleName ?? ""} ${lastName ?? ""} ${suffix ?? ""}`.trim(),
+  //   given_name: firstName ?? undefined,
+  //   family_name: lastName ?? undefined,
+  //   nickname: nickname ?? `${firstName} ${lastName}`,
+  //   picture: picture ?? undefined
+  // }) // Commented out for Clerk migration
 
   return { message: "User updated successfully", data: updatedUser };
 })
 
 export const resetPasswordAction = async (userId: string, password: string) => {
-  const res = await managementClient.users.update({ id: userId }, {
-    password
-  })
-  return [200, 201, 200].includes(res.status);
+  // const res = await managementClient.users.update({ id: userId }, {
+  //   password
+  // }) // Commented out for Clerk migration - password reset should be handled by Clerk
+  // return [200, 201, 200].includes(res.status);
+
+  // For Clerk migration: Password reset is handled by Clerk's password reset flow
+  console.warn('resetPasswordAction called but Auth0 management client is disabled during Clerk migration');
+  return false;
 }
 
 type SendCreateUserNotification = {
@@ -373,28 +382,56 @@ const sendCreateUserNotification = async ({ email, password, senderName }: SendC
 export const findOrCreateUserAction = withErrorHandling(cache(async () => {
 
   const session = await sessionCheck();
-  let message = "User found and created";
+  let message = "User found";
 
   const user = await prisma.$transaction(async (prisma) => {
 
-    // step 1: find user in db
+    // step 1: find user in db by userId (Clerk ID)
     let dbUser = await prisma.user.findUnique({
       where: {
         userId: session.user.sub
       }
     })
 
-    // step 2: create user in db if not found
+    // step 2: if not found by userId, try to find by email (for Auth0 to Clerk migration)
+    if (dbUser === null && session.user.email) {
+      dbUser = await prisma.user.findUnique({
+        where: {
+          email: session.user.email
+        }
+      });
+
+      // step 3: if found by email but different userId, update the userId (migration case)
+      if (dbUser && dbUser.userId !== session.user.sub) {
+        dbUser = await prisma.user.update({
+          where: { id: dbUser.id },
+          data: {
+            userId: session.user.sub,
+            // Also update name fields if they've changed
+            firstName: session.user.given_name || dbUser.firstName,
+            lastName: session.user.family_name || dbUser.lastName,
+          }
+        });
+        message = "User migrated from Auth0 to Clerk";
+      }
+    }
+
+    // step 4: create user in db if not found at all
     if (dbUser === null) {
+      if (!session.user.email) {
+        throw new Error("Cannot create user without email address");
+      }
+
       dbUser = await createUserToDb(prisma, {
         userId: session.user.sub,
-        email: session.user.email || "",
+        email: session.user.email,
         mobile: "",
         firstName: session.user.given_name || "",
         lastName: session.user.family_name || ""
       })
 
       await assignUserPermission(prisma, dbUser.id);
+      message = "New user created";
     }
 
     return dbUser;
@@ -412,15 +449,29 @@ export const findOrCreateUserAction = withErrorHandling(cache(async () => {
     if (error.code === "P2002") {
 
       const session = await sessionCheck();
-      await managementClient.users.delete({ id: session.user.sub });
-      return "User not found and failed to create user";
+      const userSub = session?.user?.sub;
+
+      // Auth0 to Clerk migration: Skip Auth0 user deletion
+      // Only call Auth0 management API for user ids that look like Auth0's format
+      // Auth0 ids commonly contain a provider prefix separated by '|' (eg. 'auth0|12345').
+      // Clerk ids look like 'user_xxx' and will fail validation in the management API.
+      const looksLikeAuth0Id = typeof userSub === 'string' && userSub.includes('|');
+
+      if (looksLikeAuth0Id) {
+        // eslint-disable-next-line no-console
+        console.warn('Auth0 user deletion skipped during Clerk migration', { userSub });
+      } else {
+        // eslint-disable-next-line no-console
+        console.warn('Skipping Auth0 operations: user id does not look like Auth0 id', { userSub });
+      }
+
+      return "User already exists - this may be due to Auth0 to Clerk migration";
 
     }
-    if (error.code === "P2025 ")
+    if (error.code === "P2025")
       return "User already exists in the system and associated with another account";
   };
 });
-
 
 const assignUserPermission = async (prisma: PrismaTransactionalClient, userId: number) => {
 
@@ -545,17 +596,19 @@ const createUserInAuth0 = async (payload: CreateUserInAuth0Payload) => {
 
   const { email, firstName, lastName, password } = payload
 
-  const { data, status } = await managementClient.users.create({
-    email,
-    password,
-    given_name: firstName,
-    family_name: lastName,
-    name: `${firstName} ${lastName}`,
-    nickname: `${firstName} ${lastName}`,
-    connection: "Username-Password-Authentication",
-  })
+  // const { data, status } = await managementClient.users.create({
+  //   email,
+  //   password,
+  //   given_name: firstName,
+  //   family_name: lastName,
+  //   name: `${firstName} ${lastName}`,
+  //   nickname: `${firstName} ${lastName}`,
+  //   connection: "Username-Password-Authentication",
+  // }) // Commented out for Clerk migration
 
-  return { data, status }
+  // For Clerk migration: User creation should be handled by Clerk's sign-up flow
+  console.warn('createUserInAuth0 called but Auth0 management client is disabled during Clerk migration');
+  return { data: null, status: 500 };
 }
 
 const generateRandomPassword = () => {

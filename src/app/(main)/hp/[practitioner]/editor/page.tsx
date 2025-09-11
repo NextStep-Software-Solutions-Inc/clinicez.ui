@@ -19,11 +19,11 @@ export default async function EditorPage(props: AppRouterPageRouteOpts) {
 
   const session = await getCachedSession();
   const userId = session?.user.sub
-  if(!userId) return redirect("/auth/login");
+  if (!userId) return redirect("/sign-in");
 
   const myHps = await getHPsAction({ userId });
   const isMyHp = myHps.some((hp) => hp.id === hpId);
-  if(!isMyHp) return notFound();
+  if (!isMyHp) return notFound();
 
   const hp = await getHPAction({
     id: hpId,
@@ -40,12 +40,12 @@ export default async function EditorPage(props: AppRouterPageRouteOpts) {
     areaOfInterest: hp?.HPProfile?.areaOfInterest ?? "",
     hobbies: hp?.HPProfile?.hobbies ?? "",
     experience: hp?.HPProfile?.experience ?? "",
-    languages: hp?.HPProfile?.languages.map((lang) => ({name: lang})) ?? [],
-    specialties: hp?.HPProfile?.specialties.map((specialty) => ({name: specialty})) ?? [],
-    educations: hp?.HPProfile?.educations.map((education) => ({name: education})) ?? [],
-    certifications: hp?.HPProfile?.certifications.map((certification) => ({name: certification})) ?? [],
-    fields: hp?.HPProfile?.fields.map((field) => ({name: field})) ?? [],
-    affiliations: hp?.HPProfile?.affiliations.map((affiliation) => ({name: affiliation})) ?? [],
+    languages: hp?.HPProfile?.languages.map((lang) => ({ name: lang })) ?? [],
+    specialties: hp?.HPProfile?.specialties.map((specialty) => ({ name: specialty })) ?? [],
+    educations: hp?.HPProfile?.educations.map((education) => ({ name: education })) ?? [],
+    certifications: hp?.HPProfile?.certifications.map((certification) => ({ name: certification })) ?? [],
+    fields: hp?.HPProfile?.fields.map((field) => ({ name: field })) ?? [],
+    affiliations: hp?.HPProfile?.affiliations.map((affiliation) => ({ name: affiliation })) ?? [],
   }
 
   const professionalDetails = await getProfessionalDetailsAction(hpId);
@@ -54,7 +54,7 @@ export default async function EditorPage(props: AppRouterPageRouteOpts) {
   const handleTogglePublish = async () => {
     "use server"
     await setIsPublishAction(hpId, !isPublished);
-    revalidatePath(`/hp/profile/${hpId}`,  "page");
+    revalidatePath(`/hp/profile/${hpId}`, "page");
   }
 
   return (
@@ -63,25 +63,25 @@ export default async function EditorPage(props: AppRouterPageRouteOpts) {
         <div className="flex">
           <h1 className="capitalize flex-1">{hp?.HPType.name.toLowerCase()} Profile Editor</h1>
           <form action={handleTogglePublish}>
-            <ActionButton variant={isPublished? "destructive": "default"}>{isPublished ? "Unpublish": "Publish"}</ActionButton>
+            <ActionButton variant={isPublished ? "destructive" : "default"}>{isPublished ? "Unpublish" : "Publish"}</ActionButton>
           </form>
           <Link href={`/hp/${hpId}`} >
-            <Button className="fixed top-44 -right-[7rem] mr-2 hover:-right-[20px] transition-all"><ExternalLink size={20} className="mr-2"/>View profile</Button>
+            <Button className="fixed top-44 -right-[7rem] mr-2 hover:-right-[20px] transition-all"><ExternalLink size={20} className="mr-2" />View profile</Button>
           </Link>
         </div>
         <p>
-            Thank you for your interest in joining our network of healthcare providers! Fill-up the form below to complete your profile.
+          Thank you for your interest in joining our network of healthcare providers! Fill-up the form below to complete your profile.
         </p>
       </div>
       <div className="space-y-10">
         <Suspend>
-          <HPPhoto profile={mappedProfile} hpTypeName={hp?.HPType.name ?? ""} hpId={hpId}/>
+          <HPPhoto profile={mappedProfile} hpTypeName={hp?.HPType.name ?? ""} hpId={hpId} />
         </Suspend>
         <Suspend>
-          <HPProfileForm profile={mappedProfile}/>
+          <HPProfileForm profile={mappedProfile} />
         </Suspend>
         <Suspend>
-          <HPProfessionalInfo professionalDetails={professionalDetails}/>
+          <HPProfessionalInfo professionalDetails={professionalDetails} />
         </Suspend>
       </div>
     </div>

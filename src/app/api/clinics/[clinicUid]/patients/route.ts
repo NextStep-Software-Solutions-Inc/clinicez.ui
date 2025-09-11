@@ -1,10 +1,10 @@
 import { getClinicPatientsAction } from "@/actions/clinics/clinic-patient.action";
 import { parseObject } from "@/lib/utils";
-import { withJwtAuth } from "@middlewares/withJwtAuth";
+import { withClerkAuth } from "@middlewares/withClerkAuth";
 import { NextRequest, NextResponse } from "next/server";
 
 
-export const GET = withJwtAuth(async (req: NextRequest, { params }: {
+export const GET = withClerkAuth(async (req: NextRequest, { params }: {
   params: Promise<{
     clinicUid: string;
   }>

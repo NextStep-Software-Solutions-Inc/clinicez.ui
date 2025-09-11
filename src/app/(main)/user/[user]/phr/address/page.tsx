@@ -16,7 +16,7 @@ export default async function AddressPage(props: AppRouterPageRouteOpts) {
 
   const session = await getCachedSession()
   const userId = decodeURI(params?.user as string)
-  if(!session) return redirect("/auth/login")
+  if (!session) return redirect("/sign-in")
   const owner = await isUserOwner(userId);
 
   return (
@@ -29,7 +29,7 @@ export default async function AddressPage(props: AppRouterPageRouteOpts) {
       </div>
       <Separator />
       <Suspend>
-        <Addresses readOnly={!owner} sessionUserId={session.user.sub} userId={userId}  />
+        <Addresses readOnly={!owner} sessionUserId={session.user.sub} userId={userId} />
       </Suspend>
     </div>
   )

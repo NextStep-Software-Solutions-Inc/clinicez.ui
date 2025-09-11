@@ -1,10 +1,10 @@
 import { getHPsAction, getHpsByIdsAction } from "@actions/hp.actions";
 import { convertStringToNumber } from "@lib/utils";
-import { withJwtAuth } from "@middlewares/withJwtAuth";
+import { withClerkAuth } from "@middlewares/withClerkAuth";
 import { NextRequest, NextResponse } from "next/server";
 
 
-export const GET = withJwtAuth(async (req:NextRequest) => {
+export const GET = withClerkAuth(async (req: NextRequest) => {
   const searchParams = req.nextUrl.searchParams
 
   const hpTypeId = convertStringToNumber(searchParams.get('hpTypeId'));
@@ -21,13 +21,13 @@ export const GET = withJwtAuth(async (req:NextRequest) => {
 
   const hps = await getHPsAction(filters)
 
-  return NextResponse.json(hps, {status: 200})
+  return NextResponse.json(hps, { status: 200 })
 })
 
-export const POST = withJwtAuth(async (req:NextRequest) => {
+export const POST = withClerkAuth(async (req: NextRequest) => {
   const payload = await req.json()
   const ids = payload.ids as number[]
   const hps = await getHpsByIdsAction(ids)
-  return NextResponse.json(hps, {status: 200})
+  return NextResponse.json(hps, { status: 200 })
 })
 

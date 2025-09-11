@@ -12,7 +12,7 @@ import { Illness } from "./IllnessList";
 import { Badge } from "@components/ui/badge";
 import { toast } from "sonner";
 import { setUserIllnessStatusAction } from "@actions/users/user-illness.action";
-import { useUser } from "@auth0/nextjs-auth0";
+import { useUser } from "@clerk/nextjs";
 import { Check } from "lucide-react";
 
 
@@ -26,8 +26,8 @@ interface IllnessItemProps {
   
 export default function IllnessItem({illness, index, remove, update, readOnly = true}: IllnessItemProps){
   
-  const user = useUser()
-  const userId = user.user?.sub
+  const { user } = useUser()
+  const userId = user?.id
   const [isEditing, setIsEditing] = React.useState(false);
   const handleOnUpdate = (index: number, value: Illness) => {
     update(index, value);

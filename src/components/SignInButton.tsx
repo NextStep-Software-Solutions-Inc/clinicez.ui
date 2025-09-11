@@ -5,13 +5,13 @@ import { usePathname, useSearchParams } from "next/navigation";
 
 export const SignInButton = () => {
 
-  // get current path with query params
+  // get current path with query params for redirect after sign in
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const currentPath = `${pathname}${searchParams ? `?${searchParams.toString()}` : ""}`;
 
   return (
-    <Link href={`/auth/login?returnTo=${currentPath}`} >
+    <Link href={`/sign-in?redirect_url=${encodeURIComponent(currentPath)}`} >
       <Button className="mx-auto ~text-xs/sm ~h-8/10">Sign In</Button>
     </Link>
   );

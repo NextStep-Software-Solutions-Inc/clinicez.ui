@@ -22,7 +22,7 @@ import PageLoading from "@components/PageLoading";
 import { revalidatePath } from "@actions/cache.action";
 import { mutate } from "swr";
 import { useAppointmentTools } from "./useAppointmentActions";
-import { useUser } from "@auth0/nextjs-auth0";
+import { useUser } from "@clerk/nextjs";
 import Attachments from "./Attachments";
 import { getBadgeVariantFromLabel } from "@lib/utils";
 
@@ -50,11 +50,11 @@ export default function AppointmentDisplay() {
     appointmentId: appointmentId
   })
   const { data: myClinicPermissions } = usePermissions({
-    userId: user?.sub ?? "",
+    userId: user?.id ?? "",
     type: "CLINIC"
   })
   const { data: myHps } = useHPs({
-    userId: user?.sub ?? "",
+    userId: user?.id ?? "",
   })
 
   const requesters = freshAppointment?.data?.Requesters

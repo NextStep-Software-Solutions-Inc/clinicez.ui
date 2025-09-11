@@ -18,40 +18,40 @@ interface DownloadPMRFActionProps { userId: string; children?: React.ReactNode }
 const DownloadPMRFAction: React.FC<DownloadPMRFActionProps> = ({ userId, children }) => {
   const handlePMRFDownload = async () => {
     toast.promise(promiseWrapper(downloadPMRFAction)(userId), {
-      loading: "Preparing PHR form for download...",
+      loading: "Generating PhilHealth Member Registration Form...",
       success: async (res) => {
         const data = res.data
-        if (!data) throw new Error("No PDF data returned")
+        if (!data) throw new Error("No PDF data received from server")
         toBlobDownload(data.pdfData, data.filename)
-        return res.message
+        return "PMRF downloaded successfully"
       },
-      error: "Failed to download PHR form",
+      error: "Unable to generate PMRF. Please check your profile information and try again.",
     })
   }
 
   const handlePPCFDownload = async () => {
     toast.promise(promiseWrapper(downloadPPCFAction)(userId), {
-      loading: "Generating PPCF form...",
+      loading: "Generating PhilHealth Photo Consent Form...",
       success: async (res) => {
         const data = res.data
-        if (!data?.pdfData) return res.message || "No PPCF data"
+        if (!data?.pdfData) throw new Error("No PDF data received from server")
         toBlobDownload(data.pdfData, data.filename || 'PPCF_Form.pdf')
-        return 'PPCF downloaded'
+        return 'PPCF downloaded successfully'
       },
-      error: "Failed to generate PPCF"
+      error: "Unable to generate PPCF. Please check your profile information and try again."
     })
   }
 
   const handlePKRFDownload = async () => {
     toast.promise(promiseWrapper(downloadPKRFAction)(userId), {
-      loading: "Preparing PKRF form...",
+      loading: "Generating PhilHealth Konsulta Registration Form...",
       success: async (res) => {
         const data = res.data
-        if (!data) return res.message
+        if (!data) throw new Error("No PDF data received from server")
         toBlobDownload(data.pdfData, data.filename)
-        return res.message
+        return "PKRF downloaded successfully"
       },
-      error: "Failed to generate PKRF"
+      error: "Unable to generate PKRF. Please check your profile information and try again."
     })
   }
 

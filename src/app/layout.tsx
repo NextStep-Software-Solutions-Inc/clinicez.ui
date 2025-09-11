@@ -31,6 +31,7 @@ interface Props {
 }
 
 export default async function RootLayout({ children }: Props) {
+  const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
   const session = await getCachedSession();
   if (session) {
@@ -39,8 +40,9 @@ export default async function RootLayout({ children }: Props) {
   }
 
   return (
-    <ClerkProvider>
+    <ClerkProvider publishableKey={publishableKey} >
       <html lang="en">
+        <HotJar />
         <body className={`${plusJakartaSans.className}`}>
           <BypassAutoplay />
           <JotaiProvider>

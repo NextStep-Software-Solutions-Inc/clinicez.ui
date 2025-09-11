@@ -87,11 +87,19 @@ type CreateTenantPayload = {
 
 export const createTenantAction = withErrorHandling(async (data: CreateTenantPayload) => {
   const session = await sessionCheck();
-  const userId = String(session.user.sub);
 
   const { tenantUid, name, description, planId, receiptCode } = data;
 
   const newUserPlan = await prisma.$transaction(async (prisma) => {
+    // Find the current user first
+    const currentUser = await prisma.user.findUniqueOrThrow({
+      where: {
+        userId: session.user.sub,
+        isActive: true,
+      },
+      select: { id: true },
+    });
+
     const { success, message } = await claimReceiptCodeAction(prisma, receiptCode);
     if (!success) throw new Error(message);
     const plan = await prisma.plan.findUniqueOrThrow({
@@ -103,7 +111,7 @@ export const createTenantAction = withErrorHandling(async (data: CreateTenantPay
     return await prisma.userPlan.create({
       data: {
         User: {
-          connect: { userId }
+          connect: { id: currentUser.id }
         },
         Plan: {
           connect: {
@@ -119,7 +127,7 @@ export const createTenantAction = withErrorHandling(async (data: CreateTenantPay
             name,
             description,
             Owner: {
-              connect: { userId }
+              connect: { id: currentUser.id }
             }
           }
         }

@@ -4,19 +4,25 @@ import prisma from "@lib/prisma";
 import { cache } from "react";
 
 type UserVaccinationPayloadType = {
-    userId: string,
-    vaccineId: number,
-    routeId: number,
-    doseId: number,
-    dateGiven: Date,
-    administeredBy: string
-  }
+  userId: string,
+  vaccineId: number,
+  routeId: number,
+  doseId: number,
+  dateGiven: Date,
+  administeredBy: string
+}
 
-export const createUserVaccinationAction = async ({userId, vaccineId, routeId, doseId, dateGiven, administeredBy}:UserVaccinationPayloadType) => {
+export const createUserVaccinationAction = async ({ userId, vaccineId, routeId, doseId, dateGiven, administeredBy }: UserVaccinationPayloadType) => {
+  // Find the user by userId string first
+  const currentUser = await prisma.user.findUniqueOrThrow({
+    where: { userId, isActive: true },
+    select: { id: true },
+  });
+
   return await prisma.userVaccination.create({
     data: {
       User: {
-        connect: { userId }
+        connect: { id: currentUser.id }
       },
       Vaccine: {
         connect: { id: vaccineId }
@@ -39,8 +45,8 @@ export const getUserVaccinationsAction = cache(async (userId: string) => {
     orderBy: {
       dateGiven: 'desc'
     },
-    where: { 
-      isActive: true, 
+    where: {
+      isActive: true,
       User: {
         userId
       },
@@ -68,11 +74,11 @@ export const getUserVaccinationsAction = cache(async (userId: string) => {
       },
       dateGiven: true,
       administeredBy: true
-    } 
+    }
   });
 })
 
-export const updateUserVaccinationAction = async (id: number, {vaccineId, routeId, doseId, dateGiven, administeredBy}:UserVaccinationPayloadType) => {
+export const updateUserVaccinationAction = async (id: number, { vaccineId, routeId, doseId, dateGiven, administeredBy }: UserVaccinationPayloadType) => {
   return await prisma.userVaccination.update({
     where: { id, isActive: true },
     data: {

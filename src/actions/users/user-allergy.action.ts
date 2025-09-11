@@ -4,10 +4,10 @@ import prisma from "@lib/prisma";
 import { cache } from "react";
 
 export const createUserAllergyAction = async (payload: {
-    userId: string,
-    allergen: string,
-    reaction: string,
-    notes?: string | null
+  userId: string,
+  allergen: string,
+  reaction: string,
+  notes?: string | null
 }) => {
   const { userId, allergen, reaction, notes } = payload;
   return await prisma.userAllergy.create({
@@ -35,7 +35,7 @@ export const createUserAllergyAction = async (payload: {
 export type GetUserAllergies = Awaited<ReturnType<typeof getUserAllergiesAction>>
 export const getUserAllergiesAction = cache(async (userId: string) => {
   return await prisma.userAllergy.findMany({
-    where: { 
+    where: {
       User: {
         userId
       }
@@ -55,14 +55,14 @@ export const getUserAllergiesAction = cache(async (userId: string) => {
 
 
 export const updateUserAllergyAction = async (payload: {
-    id: number
-    allergenId?: number,
-    reaction?: string,
-    notes?: string | null
+  id: number
+  allergenId?: number,
+  reaction?: string,
+  notes?: string | null
 }) => {
   const { allergenId, reaction, notes, id } = payload;
   return await prisma.userAllergy.update({
-    where: {id},
+    where: { id },
     data: {
       allergenId,
       reaction,
@@ -74,7 +74,7 @@ export const updateUserAllergyAction = async (payload: {
 
 export const deleteUserAllergyAction = async (id: number) => {
   return await prisma.userAllergy.delete({
-    where: {id}
+    where: { id }
   });
 }
 
@@ -84,8 +84,15 @@ export const upsertUserAllergyAction = async (payload: {
   reaction: string,
   notes?: string | null,
   userId: string
-} ) => {
-  const {id, userId, notes, reaction, allergen } = payload;
+}) => {
+  const { id, userId, notes, reaction, allergen } = payload;
+
+  // Find the user by userId string first
+  const currentUser = await prisma.user.findUniqueOrThrow({
+    where: { userId, isActive: true },
+    select: { id: true },
+  });
+
   return await prisma.userAllergy.upsert({
     where: { id },
     create: {
@@ -98,7 +105,7 @@ export const upsertUserAllergyAction = async (payload: {
         }
       },
       User: {
-        connect: { userId }
+        connect: { id: currentUser.id }
       }
     },
     update: {
@@ -113,7 +120,7 @@ export const upsertUserAllergyAction = async (payload: {
         }
       },
       User: {
-        connect: { userId }
+        connect: { id: currentUser.id }
       }
     },
     select: {

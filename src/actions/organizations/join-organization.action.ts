@@ -21,13 +21,20 @@ export const joinOrganizationAction = withErrorHandling(async (payload: JoinOrga
   if (!session) throw new Error("Unauthorized");
 
   const { userId, orgUid, orgRoleId } = payload
+
+  // Find the user by userId string first
+  const currentUser = await prisma.user.findUniqueOrThrow({
+    where: { userId, isActive: true },
+    select: { id: true },
+  });
+
   const userOrganization = await prisma.organizationMember.create({
     data: {
       OrganizationRole: {
         connect: { id: orgRoleId }
       },
       User: {
-        connect: { userId }
+        connect: { id: currentUser.id }
       },
       Organization: {
         connect: { orgUid }

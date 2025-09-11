@@ -21,7 +21,7 @@ export const createOrganizationAction = async (data: CreateOrganizationPayload) 
 
   const { orgUid, tenantUid, name, description, logo, customUrl, email } = data;
   const newOrganization = await prisma.organization.create({
-    data: { 
+    data: {
       Tenant: {
         connect: {
           tenantUid
@@ -33,12 +33,12 @@ export const createOrganizationAction = async (data: CreateOrganizationPayload) 
       logo,
       customUrl,
       email,
-      
+
     }
   });
   return newOrganization;
 };
-  
+
 
 export type GetOrganizationsFilters = {
   userId?: string;
@@ -134,7 +134,7 @@ export const getOrganizationsAction = cache(async (filters?: GetOrganizationsFil
       isActive: true
     }
   });
-    
+
   return organizations;
 });
 
@@ -145,8 +145,8 @@ export const getOrganizationAction = cache(async (key: string | number) => {
     where: {
       isActive: true,
       OR: [
-        {...(!isNaN(Number(key)) ? {id: Number(key)} : {})}, 
-        {orgUid: String(key)}
+        { ...(!isNaN(Number(key)) ? { id: Number(key) } : {}) },
+        { orgUid: String(key) }
       ]
     },
     include: {
@@ -216,15 +216,21 @@ export const getMyDefaultOrganizationAction = cache(withErrorHandling(async () =
 }))
 
 export const setMyDefaultOrganizationAction = withErrorHandling(async (id: number, orgUid: string, userId?: string) => {
- 
+
   const session = await getCachedSession();
   if (!session) throw new Error("User not authenticated.");
- 
+
+  // Find the user by userId string first
+  const currentUser = await prisma.user.findUniqueOrThrow({
+    where: { userId: userId || session.user.sub, isActive: true },
+    select: { id: true },
+  });
+
   const org = await prisma.userDefaultOrganization.upsert({
     where: { id },
     create: {
       User: {
-        connect: { userId }
+        connect: { id: currentUser.id }
       },
       Organization: {
         connect: { orgUid }
@@ -232,7 +238,7 @@ export const setMyDefaultOrganizationAction = withErrorHandling(async (id: numbe
     },
     update: {
       User: {
-        connect: { userId }
+        connect: { id: currentUser.id }
       },
       Organization: {
         connect: { orgUid }
@@ -261,7 +267,7 @@ export const updateOrganizationAction = async (orgUid: string, data: UpdateOrgan
     const session = await getCachedSession();
     if (!session) throw new Error("User not authenticated.");
 
-    const {name, logo, description, customUrl, email, isPublic, sendEmailNotification, emailToOrgOnly} = data;
+    const { name, logo, description, customUrl, email, isPublic, sendEmailNotification, emailToOrgOnly } = data;
     const organization = await prisma.organization.update({
       where: { orgUid, isActive: true },
       data: {
@@ -272,7 +278,7 @@ export const updateOrganizationAction = async (orgUid: string, data: UpdateOrgan
         email,
         OrganizationSetting: {
           upsert: {
-            where:{
+            where: {
               Organization: {
                 orgUid
               }
@@ -298,7 +304,7 @@ export const updateOrganizationAction = async (orgUid: string, data: UpdateOrgan
   } catch (error) {
     console.error("Error updating organization", error);
     message = "Error updating organization";
-    if(error instanceof Error) message = error.message;
-    return { status: false, message, data: null}
+    if (error instanceof Error) message = error.message;
+    return { status: false, message, data: null }
   }
 }

@@ -9,29 +9,36 @@ const calculateBMI = (weight: number, height: number) => {
 }
 
 type BaseVitalSign = {
-    dateTaken: Date;
-    temp?: number;
-    pulseRate?: number;
-    respRate?: number;
-    spo2?: number;
-    weight?: number;
-    height?: number;
-    bmi?: number;
-    bpSystolic?: number;
-    bpDiastolic?: number;
-    notes?: string;
+  dateTaken: Date;
+  temp?: number;
+  pulseRate?: number;
+  respRate?: number;
+  spo2?: number;
+  weight?: number;
+  height?: number;
+  bmi?: number;
+  bpSystolic?: number;
+  bpDiastolic?: number;
+  notes?: string;
 }
 export const createUserVitalSignAction = async (payload: BaseVitalSign & { userId: string }) => {
-  const {userId, ...res} = payload;
+  const { userId, ...res } = payload;
+
+  // Find the user by userId string first
+  const currentUser = await prisma.user.findUniqueOrThrow({
+    where: { userId, isActive: true },
+    select: { id: true },
+  });
+
   return await prisma.vitalSign.create({
     data: {
       User: {
         connect: {
-          userId
+          id: currentUser.id
         }
       },
       ...res,
-      ...(res.height && res.weight ? {bmi: calculateBMI(res.weight, res.height)} : {}),
+      ...(res.height && res.weight ? { bmi: calculateBMI(res.weight, res.height) } : {}),
     },
   });
 }
@@ -47,7 +54,7 @@ export const getUserVitalSignsAction = cache(async (unique: string) => {
       isActive: true,
       User: {
         OR: [
-          { userId: unique }, 
+          { userId: unique },
           { email: unique }]
       }
     }
@@ -71,7 +78,7 @@ export const updateUserVitalSignAction = async (vitalsId: number, payload: BaseV
     },
     data: {
       ...payload,
-      ...(payload.height && payload.weight ? {bmi: calculateBMI(payload.weight, payload.height)} : {}),
+      ...(payload.height && payload.weight ? { bmi: calculateBMI(payload.weight, payload.height) } : {}),
     }
   });
 }

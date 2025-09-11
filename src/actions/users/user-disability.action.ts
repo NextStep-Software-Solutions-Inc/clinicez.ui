@@ -6,14 +6,21 @@ import { Severity } from "@prisma/client";
 import { cache } from "react";
 
 export const addUserDisabilityAction = async (payload: {
-    userId: string;
-    disability: string;
-    severity: Severity,
-    notes?: string | null,
-    isManaged?: boolean,
-    dateDiagnosed: Date
+  userId: string;
+  disability: string;
+  severity: Severity,
+  notes?: string | null,
+  isManaged?: boolean,
+  dateDiagnosed: Date
 }) => {
   const { userId, disability, severity, notes, dateDiagnosed, isManaged } = payload;
+
+  // Find the user by userId string first
+  const currentUser = await prisma.user.findUniqueOrThrow({
+    where: { userId, isActive: true },
+    select: { id: true },
+  });
+
   return await prisma.userDisability.create({
     data: {
       severity,
@@ -22,7 +29,7 @@ export const addUserDisabilityAction = async (payload: {
       ...(isManaged ? { isManage: true } : {}),
       User: {
         connect: {
-          userId
+          id: currentUser.id
         },
       },
       Disability: {
@@ -42,7 +49,7 @@ export const getUserDisabilitiesAction = cache(async (userId: string) => {
     orderBy: {
       dateDiagnosed: "desc"
     },
-    where:{
+    where: {
       User: {
         userId
       }
@@ -52,7 +59,7 @@ export const getUserDisabilitiesAction = cache(async (userId: string) => {
       severity: true,
       notes: true,
       dateDiagnosed: true,
-      
+
       isManaged: true,
       Disability: {
         select: {
@@ -64,10 +71,10 @@ export const getUserDisabilitiesAction = cache(async (userId: string) => {
 })
 
 export const updateUserDisabilityAction = async (payload: {
-    id: number
-    severity: Severity,
-    notes?: string | null,
-    dateDiagnosed: Date
+  id: number
+  severity: Severity,
+  notes?: string | null,
+  dateDiagnosed: Date
 }) => {
   const { id, severity, notes, dateDiagnosed } = payload;
   return await prisma.userDisability.update({
@@ -87,16 +94,22 @@ export const deleteUserDisabilityAction = async (id: number) => {
 }
 
 export const upsertUserDisabilityAction = async (payload: {
-    id: number,
-    userId: string,
-    disability: string,
-    severity: Severity,
-    notes?: string | null,
-    isManaged?: boolean,
-    dateDiagnosed?: Date
+  id: number,
+  userId: string,
+  disability: string,
+  severity: Severity,
+  notes?: string | null,
+  isManaged?: boolean,
+  dateDiagnosed?: Date
 }) => {
   const { id, userId, disability, severity, notes, dateDiagnosed, isManaged } = payload;
-  
+
+  // Find the user by userId string first
+  const currentUser = await prisma.user.findUniqueOrThrow({
+    where: { userId, isActive: true },
+    select: { id: true },
+  });
+
   return await prisma.userDisability.upsert({
     where: { id },
     create: {
@@ -112,7 +125,7 @@ export const upsertUserDisabilityAction = async (payload: {
       },
       User: {
         connect: {
-          userId
+          id: currentUser.id
         }
       }
     },

@@ -5,12 +5,18 @@ import { withErrorHandling } from "@/lib/with-error-handling";
 import prisma from "@lib/prisma";
 
 export const createFolderAction = withErrorHandling(async ({ name, userId, clinicUid }: { name: string, userId: string, clinicUid?: string }) => {
+  // Find the user by userId string first
+  const currentUser = await prisma.user.findUniqueOrThrow({
+    where: { userId, isActive: true },
+    select: { id: true },
+  });
+
   const folder = await prisma.folder.create({
     data: {
       name,
       User: {
         connect: {
-          userId
+          id: currentUser.id
         }
       },
       FolderSetting: {

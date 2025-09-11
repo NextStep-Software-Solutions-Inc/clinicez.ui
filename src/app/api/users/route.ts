@@ -5,7 +5,7 @@ import { withUnkey } from '@unkey/nextjs';
 import { createUserAction, getUsersAction } from "@actions/users/user.action";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { withJwtAuth } from '@middlewares/withJwtAuth';
+import { withClerkAuth } from '@middlewares/withClerkAuth';
 import { parseObject } from '@/lib/utils';
 
 const newUserSchema = z.object({

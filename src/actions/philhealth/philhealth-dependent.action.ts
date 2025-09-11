@@ -53,7 +53,7 @@ export const createPhilHealthDependentAction = withErrorHandling(async ({ userUi
   const session = await getCachedSession();
   if (!session) throw new Error("Unauthorized");
   const recordId = await findRecordIdByUserUid(userUid);
-  if (!recordId) throw new Error("PhilHealth record not found");
+  if (!recordId) return { message: "Philhealth record not found", data: undefined };
   const created = await prisma.philHealthDependent.create({
     data: {
       philHealthRecordId: recordId,
@@ -87,7 +87,7 @@ export const updatePhilHealthDependentAction = withErrorHandling(async ({ userUi
   const session = await getCachedSession();
   if (!session) throw new Error("Unauthorized");
   const recordId = await findRecordIdByUserUid(userUid);
-  if (!recordId) throw new Error("PhilHealth record not found");
+  if (!recordId) return { message: "Philhealth record not found", data: undefined };
   const existing = await prisma.philHealthDependent.findUnique({ where: { id: dependentId } });
   if (!existing || existing.philHealthRecordId !== recordId) throw new Error("Dependent not found");
   const updated = await prisma.philHealthDependent.update({
@@ -114,7 +114,7 @@ export const deletePhilHealthDependentAction = withErrorHandling(async ({ userUi
   const session = await getCachedSession();
   if (!session) throw new Error("Unauthorized");
   const recordId = await findRecordIdByUserUid(userUid);
-  if (!recordId) throw new Error("PhilHealth record not found");
+  if (!recordId) return { message: "Philhealth record not found", data: undefined };
   const existing = await prisma.philHealthDependent.findUnique({ where: { id: dependentId } });
   if (!existing || existing.philHealthRecordId !== recordId) throw new Error("Dependent not found");
   const deleted = await prisma.philHealthDependent.update({

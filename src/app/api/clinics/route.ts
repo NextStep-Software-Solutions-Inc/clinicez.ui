@@ -2,10 +2,10 @@
 
 import { getClinicsAction } from "@/actions/clinics/clinic.action";
 import { parseObject } from "@/lib/utils";
-import { withJwtAuth } from "@middlewares/withJwtAuth";
+import { withClerkAuth } from "@middlewares/withClerkAuth";
 import { NextRequest, NextResponse } from "next/server";
 
-export const GET = withJwtAuth(async (req: NextRequest) => {
+export const GET = withClerkAuth(async (req: NextRequest) => {
 
   const searchParams = new URLSearchParams(req.nextUrl.search);
   const filters = parseObject(Object.fromEntries(searchParams.entries()));

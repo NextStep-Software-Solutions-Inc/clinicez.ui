@@ -2,6 +2,7 @@ import prisma from "@lib/prisma"
 import { loadPhilHealthPdf, fillTextFields, processCheckboxes, pdfBytesToBase64 } from "@/lib/utils/pdf-utils"
 import { getUserAction, getUserAndAddressAction } from "@/actions/users/user.action"
 import { getEmergencyContactsAction } from "@actions/emergency-contact.action"
+import { logger } from "@/lib/logger"
 
 export type PdfTextMapping = { field: string; value: string | undefined | null }
 export type PdfCheckboxMapping = { field: string; condition: boolean }
@@ -77,14 +78,19 @@ export async function generatePdf(
   filenameBase?: string,
   options?: GeneratePdfOptions
 ): Promise<GeneratedPdfResult> {
-  const { pdfDoc, form } = await loadPhilHealthPdf(template)
-  const fontSize = options?.textFontSize
-  await fillTextFields(form, texts, fontSize)
-  if (checkboxes?.length) await processCheckboxes(form, checkboxes)
-  form.updateFieldAppearances()
-  const bytes = await pdfDoc.save()
-  const base64 = await pdfBytesToBase64(bytes)
-  return { pdfData: base64, filename: `${filenameBase ?? "PhilHealth_Form"}_${formatIsoDate(new Date())}.pdf` }
+  try {
+    const { pdfDoc, form } = await loadPhilHealthPdf(template)
+    const fontSize = options?.textFontSize
+    await fillTextFields(form, texts, fontSize)
+    if (checkboxes?.length) await processCheckboxes(form, checkboxes)
+    form.updateFieldAppearances()
+    const bytes = await pdfDoc.save()
+    const base64 = await pdfBytesToBase64(bytes)
+    return { pdfData: base64, filename: `${filenameBase ?? "PhilHealth_Form"}_${formatIsoDate(new Date())}.pdf` }
+  } catch (error) {
+    logger.error(`Failed to generate PDF from template "${template}":`, error)
+    throw new Error(`Unable to generate ${template.replace('.pdf', '')} form. Please try again or contact support if the issue persists.`)
+  }
 }
 
 export async function getUserMinimal(userId: string) {

@@ -6,7 +6,6 @@ import { withErrorHandling } from "@/lib/with-error-handling";
 import { getCachedSession } from "../session.action";
 import { sessionCheck } from "@/lib/auth";
 import { hasCodeProperty } from "@/lib/utils";
-import { managementClient } from "@/services/auth0/management-client";
 import { Prisma } from "@prisma/client";
 
 export type GetClinicPatient = Awaited<ReturnType<typeof getClinicPatientAction>>;
@@ -130,11 +129,7 @@ export const getClinicPatientsAction = withErrorHandling(async (filters: GetClin
 
 
 export const addClinicPatientAction = withErrorHandling(async ({ clinicUid, userId }: { clinicUid: string, userId: string }) => {
-
   await sessionCheck()
-
-  const auth0User = await managementClient.users.get({ id: userId })
-  if (!auth0User.data.email_verified) throw new Error("User email is not verified")
 
   try {
     await prismaClient.$transaction(async (prisma) => {

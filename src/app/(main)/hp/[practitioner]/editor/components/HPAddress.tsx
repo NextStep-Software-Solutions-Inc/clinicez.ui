@@ -13,7 +13,7 @@ import { useForm } from "react-hook-form"
 import { Select, SelectContent, SelectItem, SelectLabel, SelectTrigger, SelectValue, SelectGroup } from "@components/ui/select"
 
 type HPAddressProps = {
-    form: ReturnType<typeof useForm>
+  form: ReturnType<typeof useForm>
 }
 
 export default function HPAddress({ form }: HPAddressProps) {
@@ -26,7 +26,7 @@ export default function HPAddress({ form }: HPAddressProps) {
           render={({ field }) => (
             <FormItem className="w-full">
               <FormLabel>Country</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select a country to display" />
@@ -50,7 +50,7 @@ export default function HPAddress({ form }: HPAddressProps) {
             </FormItem>
           )}
         />
-      
+
         <FormField
           control={form.control}
           name="state"
@@ -61,7 +61,7 @@ export default function HPAddress({ form }: HPAddressProps) {
                 <Input placeholder="Your state..." {...field} />
               </FormControl>
               <FormDescription>
-              State or Province
+                State or Province
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -94,7 +94,7 @@ export default function HPAddress({ form }: HPAddressProps) {
               <Input placeholder="Gloria Str. Macapagal Road" {...field} />
             </FormControl>
             <FormDescription>
-                This is your public display address.
+              This is your public display address.
             </FormDescription>
             <FormMessage />
           </FormItem>
@@ -110,7 +110,7 @@ export default function HPAddress({ form }: HPAddressProps) {
               <Input placeholder="Don Mcqueen Villa" {...field} />
             </FormControl>
             <FormDescription>
-                This is your public display secondary address.
+              This is your public display secondary address.
             </FormDescription>
             <FormMessage />
           </FormItem>
@@ -126,7 +126,7 @@ export default function HPAddress({ form }: HPAddressProps) {
               <Input placeholder="Your Area code" {...field} />
             </FormControl>
             <FormDescription>
-                This is your public display area code.
+              This is your public display area code.
             </FormDescription>
             <FormMessage />
           </FormItem>

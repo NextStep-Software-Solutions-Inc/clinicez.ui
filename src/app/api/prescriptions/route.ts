@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { withJwtAuth } from "@/middlewares/withJwtAuth";
+import { withClerkAuth } from "@/middlewares/withClerkAuth";
 import { parseObject } from "@/lib/utils";
 import {
   getPrescriptionsAction,
   GetPrescriptionFilters
 } from "@/actions/clinics/clinical-record/prescription.action";
 
-export const GET = withJwtAuth(async (req: NextRequest) => {
+export const GET = withClerkAuth(async (req: NextRequest) => {
   const searchParams = req.nextUrl.searchParams;
 
   const filters = parseObject(Object.fromEntries(searchParams.entries())) as GetPrescriptionFilters;

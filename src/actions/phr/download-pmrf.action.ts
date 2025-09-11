@@ -29,10 +29,11 @@ function hasPhilHealthRecord(u: unknown): u is { PhilHealthRecord: PhilHealthRec
 }
 
 export const downloadPMRFAction = withErrorHandling(async (userId: string) => {
-  if (!userId) throw new Error("User ID required")
+  if (!userId) throw new Error("User ID is required to generate PMRF")
+
   const userRes = await getUserAction(userId)
   const user = userRes.data
-  if (!user) throw new Error("User not found")
+  if (!user) throw new Error("User profile not found. Please ensure you have a valid account.")
 
   const { spouse, mother } = await getSpouseAndMother(userId)
   const primaryAddress: PrimaryAddress | undefined = hasUserAddresses(user) ? user.UserAddresses?.[0] : undefined

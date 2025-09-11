@@ -11,17 +11,17 @@ import { toast } from "sonner"
 import { cn } from "@lib/utils"
 
 interface GenericSectionProps {
-    hpId: number;
-    name: string
-    label: string
-    consultationId: number
-    value?: string
-    showOnPatient: boolean
-    onUpdated?: () => void
-    readonly?: boolean
-  }
-export default function GenericSection({hpId, name, label, consultationId, value = "", showOnPatient, onUpdated, readonly = true}: GenericSectionProps) {
-  
+  hpId: number;
+  name: string
+  label: string
+  consultationId: number
+  value?: string
+  showOnPatient: boolean
+  onUpdated?: () => void
+  readonly?: boolean
+}
+export default function GenericSection({ hpId, name, label, consultationId, value = "", showOnPatient, onUpdated, readonly = true }: GenericSectionProps) {
+
 
   const formRef = useRef<HTMLFormElement>(null)
   const autoSubmit = useDebounceFunc(() => formRef.current?.requestSubmit(), 1000)
@@ -47,32 +47,42 @@ export default function GenericSection({hpId, name, label, consultationId, value
     return () => subscription.unsubscribe();
   }, [autoSubmit, watch]);
 
-  
+
   const handleSave = async (formData: FormData) => {
     form.handleSubmit(async (data) => {
       formData.append("consultationTicketId", consultationId.toString())
-      
+
       const [[section, content]] = Object.entries(data)
-      toast.promise(upsertConsultationNotesAction({
-        consultationTicketId: consultationId,
-        section,
-        content,
-        hpId
-      }), {
-        loading: "Saving consultation notes...",
-        success: (res)  => {
-          if(res.status) {
-            form.reset(data)
-            onUpdated?.()
-          }
-          return res.message;
-        },
-        error: "Failed to save consultation notes",
-        position: "top-center",
-      })
+      try {
+        const result = await upsertConsultationNotesAction({
+          consultationTicketId: consultationId,
+          section,
+          content,
+          hpId
+        });
+
+        toast.promise(Promise.resolve(result), {
+          loading: "Saving consultation notes...",
+          success: (res) => {
+            if (res.status) {
+              onUpdated?.()
+            }
+            return res.message;
+          },
+          error: "Failed to save consultation notes",
+          position: "top-center",
+        });
+
+        // Reset form after the promise resolves to avoid setState during render
+        if (result?.status) {
+          form.reset(data)
+        }
+      } catch (error) {
+        toast.error("Failed to save consultation notes");
+      }
     })()
   };
-  
+
   return (
     <Form {...form}>
       <form ref={formRef} action={handleSave}>
@@ -97,7 +107,7 @@ export default function GenericSection({hpId, name, label, consultationId, value
                     onChange={field.onChange}
                   />
                 </FormControl>
-                <FormMessage/>
+                <FormMessage />
               </AccordionContent>
             </FormItem>
           )}

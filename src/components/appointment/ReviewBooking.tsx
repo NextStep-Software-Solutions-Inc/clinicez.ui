@@ -4,7 +4,7 @@ import { createAppointmentAction } from "@actions/appointments/appointments.acti
 import BackSubmitAndNext from "@components/SubmitAndNext";
 import React, { FormEvent } from "react";
 import { toast } from "sonner";
-import { useUser } from "@auth0/nextjs-auth0";
+import { useUser } from "@clerk/nextjs";
 import useSound from "use-sound";
 import { useAtom } from "jotai";
 import { bookAppointmentAtom } from "@state/book-appointment";
@@ -36,7 +36,7 @@ interface ReviewBookingProps {
 export default function ReviewBooking({ nextStep, prevStep, isLastStep, isFirstStep, setComplete, startOver }: ReviewBookingProps) {
   const [bookAppointmentForm, setBookAppointmentForm] = useAtom(bookAppointmentAtom);
   const params = useParams<{ clinicUid: string }>();
-  const user = useUser()
+  const { user } = useUser()
   const { data: services } = useClinicServices({ clinicUid: params.clinicUid });
   const { data: appointmentTypes } = useOrgAppointmentTypes(params.clinicUid);
   const { data: appointmentModes } = useOrgAppointmentModes(params.clinicUid);
@@ -71,7 +71,7 @@ export default function ReviewBooking({ nextStep, prevStep, isLastStep, isFirstS
     if (bookAppointmentForm.bookAFriend) {
 
     }
-    const requester = bookAppointmentForm.bookAFriend ? bookAppointmentForm.requester : user.user?.sub;
+    const requester = bookAppointmentForm.bookAFriend ? bookAppointmentForm.requester : user?.id;
     if (!requester) {
       toast.error("Requester ID is required")
       return;

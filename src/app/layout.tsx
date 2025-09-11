@@ -1,3 +1,6 @@
+import {
+  ClerkProvider
+} from "@clerk/nextjs";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { Toaster as SonnerToaster } from "sonner";
@@ -28,30 +31,53 @@ interface Props {
 }
 
 export default async function RootLayout({ children }: Props) {
+  const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
   const session = await getCachedSession();
   if (session) {
     const dbUser = await findOrCreateUserAction();
-    if (!dbUser.data) redirect(`/auth/logout?returnTo=/user-sync-error`);
+    if (!dbUser.data) redirect(`/sign-in?error=user-sync-error`);
   }
 
   return (
-    <html lang="en">
-      <HotJar />
-      <body className={`${plusJakartaSans.className}`}>
-        <BypassAutoplay />
-        <JotaiProvider>
-          <SyncTokenClient />
-          {/* {!!session && <SyncSessionClinic/>} */}
-          <SWRProvider>
-            {children}
-            <SpeedInsights />
-            <Analytics />
-            <SonnerToaster richColors />
-            <Toaster />
-          </SWRProvider>
-        </JotaiProvider>
-      </body>
-    </html>
+    <ClerkProvider publishableKey={publishableKey} >
+      <html lang="en">
+        <HotJar />
+        <body className={`${plusJakartaSans.className}`}>
+          <BypassAutoplay />
+          <JotaiProvider>
+            <SyncTokenClient />
+            {/* {!!session && <SyncSessionClinic/>} */}
+            <SWRProvider>
+              {children}
+              <SpeedInsights />
+              <Analytics />
+              <SonnerToaster richColors />
+              <Toaster />
+            </SWRProvider>
+          </JotaiProvider>
+        </body>
+      </html>
+    </ClerkProvider>
   );
+
+  // return (
+  //   <html lang="en">
+  //     <HotJar />
+  //     <body className={`${plusJakartaSans.className}`}>
+  //       <BypassAutoplay />
+  //       <JotaiProvider>
+  //         <SyncTokenClient />
+  //         {/* {!!session && <SyncSessionClinic/>} */}
+  //         <SWRProvider>
+  //           {children}
+  //           <SpeedInsights />
+  //           <Analytics />
+  //           <SonnerToaster richColors />
+  //           <Toaster />
+  //         </SWRProvider>
+  //       </JotaiProvider>
+  //     </body>
+  //   </html>
+  // );
 }

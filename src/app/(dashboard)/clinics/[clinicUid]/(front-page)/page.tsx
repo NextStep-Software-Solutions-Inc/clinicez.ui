@@ -47,9 +47,7 @@ export default async function ClinicPage(props: { params: Promise<{ clinicUid: s
     }
   }
 
-  if (!session) redirect(`/auth/login?returnTo=${encodeURIComponent(`/clinics/${clinicUid}`)}`);
-
-  return (
+  if (!session) redirect(`/sign-in?redirect_url=${encodeURIComponent(`/clinics/${clinicUid}`)}`); return (
     <div className="container mx-auto my-10">
       <div className="flex gap-5 items-center flex-wrap">
         <div className="">

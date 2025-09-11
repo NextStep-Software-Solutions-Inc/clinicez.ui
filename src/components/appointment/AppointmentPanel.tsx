@@ -32,7 +32,7 @@ import { AppointmentStatusNav, AppointmentStatusNavProps } from "./AppointmentSt
 import { useParams, useSearchParams } from "next/navigation"
 import Switcher from "@components/dashboard/Switcher"
 import { useClinicRoles } from "@/hooks/useClinicRole"
-import { useUser } from "@auth0/nextjs-auth0"
+import { useUser } from "@clerk/nextjs"
 import { useAtom } from "jotai"
 import { userDefaultOrganizationRoleAtom } from "@state/user-role"
 import AppointmentListWrapper from "../AppointmentListWrapper"
@@ -78,11 +78,11 @@ const createStatusLinks = (
 };
 
 interface AppointmentPanelProps {
-  tabs: { 
-    name: string, 
+  tabs: {
+    name: string,
     description: string | null
     roles: { id: number, name: string }[]
-   }[]
+  }[]
   appointmentStatusCounts?: Record<string, number>
   routedAppointmentStatusCounts?: Record<string, number>
   defaultLayout: number[] | undefined
@@ -102,11 +102,11 @@ export default function AppointmentPanel({
 }: AppointmentPanelProps) {
 
   const appointmentStatusAsTabs = tabs.reduce((acc, tab) => {
-    if(!Object.keys(icons).includes(tab.name)) return acc
+    if (!Object.keys(icons).includes(tab.name)) return acc
     acc[tab.name] = [...new Set(tab.roles.map(role => role.id))]
     return acc
   }, {} as Record<string, number[]>)
-  
+
   const inRouteAppointmentStatuses = ["pending", "accepted", "declined"].reduce((acc, tab) => {
     acc[tab] = [...new Set(tabs.flatMap(tab => tab.roles.map(role => role.id)))]
     return acc
@@ -116,15 +116,15 @@ export default function AppointmentPanel({
   const [isCollapsed, setIsCollapsed] = React.useState(defaultCollapsed)
   const searchParams = useSearchParams();
   const [userDefaultOrgRole, setUserDefaultClinicRole] = useAtom(userDefaultOrganizationRoleAtom)
-  const {clinicUid} = useParams<{clinicUid: string}>();
-  const user = useUser();
-  const userId = user?.user?.sub ?? undefined;
+  const { clinicUid } = useParams<{ clinicUid: string }>();
+  const { user } = useUser();
+  const userId = user?.id ?? undefined;
   const aptStatus = searchParams.get("_aptStatus");
-  const sort = searchParams.get("_sort")  ?? "request";
+  const sort = searchParams.get("_sort") ?? "request";
   const routedAptStatus = searchParams.get("_routedAptStatus");
   const activeRoleId = userDefaultOrgRole[clinicUid]?.roleId ?? 0;
-  const {data: clinicRoles} = useClinicRoles({userId})
-  
+  const { data: clinicRoles } = useClinicRoles({ userId })
+
   const roles = React.useMemo(() => (clinicRoles ?? [])?.map((role) => {
     return {
       label: role.name,
@@ -138,14 +138,14 @@ export default function AppointmentPanel({
     appointmentStatusAsTabs,
     appointmentStatusCounts,
     aptStatus,
-    (status) => [{ key: "_aptStatus", value: status }, { key: "_routedAptStatus", value: null }, {key: "_appointment", value: null}]
+    (status) => [{ key: "_aptStatus", value: status }, { key: "_routedAptStatus", value: null }, { key: "_appointment", value: null }]
   ), [appointmentStatusCounts, aptStatus, appointmentStatusAsTabs]);
-  
+
   const routerAppointmentStatusLinks = React.useMemo(() => createStatusLinks(
     inRouteAppointmentStatuses,
     routedAppointmentStatusCounts,
     routedAptStatus,
-    (status) => [{ key: "_routedAptStatus", value: status }, { key: "_aptStatus", value: "routed" }, {key: "_appointment", value: null}]
+    (status) => [{ key: "_routedAptStatus", value: status }, { key: "_aptStatus", value: "routed" }, { key: "_appointment", value: null }]
   ), [routedAppointmentStatusCounts, routedAptStatus, inRouteAppointmentStatuses]);
 
   const changeRole = React.useCallback((roleId: string) => {
@@ -154,20 +154,21 @@ export default function AppointmentPanel({
       [clinicUid]: {
         roleId: role?.id,
         roleName: role?.name
-      }})
+      }
+    })
   }, [clinicRoles, clinicUid, setUserDefaultClinicRole])
-  
+
   React.useEffect(() => {
     const defaultRole = clinicRoles?.flatMap(orgRole => orgRole.UserDefaultClinicRoles).find((r) => r.User.userId === userId)
-    
-    if(!defaultRole && clinicRoles?.length) {
+
+    if (!defaultRole && clinicRoles?.length) {
       setUserDefaultClinicRole({
         [clinicUid]: {
           roleId: clinicRoles[0].id,
           roleName: clinicRoles[0].name
         }
       })
-    } else if(defaultRole) {
+    } else if (defaultRole) {
       setUserDefaultClinicRole({
         [defaultRole.Clinic.clinicUid]: {
           roleId: defaultRole?.ClinicRole.id,
@@ -182,7 +183,7 @@ export default function AppointmentPanel({
     searchParams.set("_sort", value)
     history.pushState({}, "", `?${searchParams.toString()}`)
   }
-  
+
   return (
     <TooltipProvider delayDuration={0}>
       <ResizablePanelGroup
@@ -252,19 +253,19 @@ export default function AppointmentPanel({
                     value="request"
                     className="text-zinc-600 dark:text-zinc-200"
                   >
-                  Request
+                    Request
                   </TabsTrigger>
                   <TabsTrigger
                     value="schedule"
                     className="text-zinc-600 dark:text-zinc-200"
                   >
-                  Schedule
+                    Schedule
                   </TabsTrigger>
                 </TabsList>
               </div>
             </div>
             <Separator />
-            <AppointmentListWrapper clinicUid={clinicUid}/>
+            <AppointmentListWrapper clinicUid={clinicUid} />
           </Tabs>
         </ResizablePanel>
         <ResizableHandle withHandle />

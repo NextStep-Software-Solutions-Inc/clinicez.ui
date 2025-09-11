@@ -16,11 +16,11 @@ interface OrganizationSwitcherProps {
 
 export default async function ActivationLayout({ children, params }: OrganizationSwitcherProps) {
   const session = await getCachedSession();
-  if (!session) redirect("/auth/login", RedirectType.push)
-  
+  if (!session) redirect("/sign-in", RedirectType.push)
+
   // If you need to use params, await them first:
   // const { orgUid } = await params;
-  
+
   return (
     <>
       {children}

@@ -43,7 +43,7 @@ export default async function AppointmentsPage(props: AppointmentsPageProps) {
   const defaultLayout = layout ? JSON.parse(layout.value) : undefined
   const defaultCollapsed = collapsed ? JSON.parse(collapsed.value) : undefined
 
-  if (!session) redirect(`/auth/login?returnTo=${encodeURIComponent(`/clinics/${clinicUid}/appointments`)}`)
+  if (!session) redirect(`/sign-in?redirect_url=${encodeURIComponent(`/clinics/${clinicUid}/appointments`)}`)
 
   return (
     <div className="space-y-6">

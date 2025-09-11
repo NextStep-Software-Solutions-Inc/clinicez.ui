@@ -14,14 +14,14 @@ interface DownloadPKRFActionProps { userId: string; children?: React.ReactNode }
 const DownloadPKRFAction: React.FC<DownloadPKRFActionProps> = ({ userId, children }) => {
   const handleDownload = async () => {
     toast.promise(promiseWrapper(downloadPKRFAction)(userId), {
-      loading: 'Generating PKRF PDF...',
+      loading: "Generating PhilHealth Konsulta Registration Form...",
       success: async (res) => {
         const data = res.data
-        if (!data?.pdfData) return res.message || 'No PKRF data'
-        toBlobDownload(data.pdfData, data.filename || 'PKRF_Form.pdf')
-        return 'PKRF downloaded'
+        if (!data) throw new Error("No PDF data received from server")
+        toBlobDownload(data.pdfData, data.filename)
+        return "PKRF downloaded successfully"
       },
-      error: 'Failed to generate PKRF form'
+      error: 'Unable to generate PKRF. Please check your profile information and try again.'
     })
   }
 

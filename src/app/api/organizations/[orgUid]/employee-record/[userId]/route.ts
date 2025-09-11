@@ -1,12 +1,12 @@
 "use server";
 import "server-only"
 
-import { withJwtAuth } from "@middlewares/withJwtAuth";
+import { withClerkAuth } from "@middlewares/withClerkAuth";
 import { NextRequest, NextResponse } from "next/server";
 import { getOrgUserEmploymentRecordAction } from "@/actions/employee-record.action";
 
 
-export const GET = withJwtAuth(async (req: NextRequest, { params }: {
+export const GET = withClerkAuth(async (req: NextRequest, { params }: {
     params: Promise<{
       orgUid: string;
       userId: string;

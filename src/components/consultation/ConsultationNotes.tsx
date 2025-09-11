@@ -18,7 +18,7 @@ import Each from "@components/utils/Each";
 import GenericSection from "@components/GenericSection";
 import { useNoteTemplate } from "@hooks/useNoteTemplate";
 import { useHPs } from "@hooks/useHP";
-import { useUser } from "@auth0/nextjs-auth0";
+import { useUser } from "@clerk/nextjs";
 interface ConsultationNotesProps {
   consultation: NonNullable<GetConsultationTicket["data"]>;
 }
@@ -26,7 +26,7 @@ interface ConsultationNotesProps {
 export default function ConsultationNotes({ consultation }: ConsultationNotesProps) {
   const {user} = useUser()
   const authUserHPS = useHPs({
-    userId: user?.sub ?? ""
+    userId: user?.id ?? ""
   })
   const consultationTicketHps = consultation.ConsultationTicketHPs.map(c => c.hpId)
   const isConsultationAuthor = (authUserHPS.data ?? []).some(hp => consultationTicketHps.includes(hp.id))

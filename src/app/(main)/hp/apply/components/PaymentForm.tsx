@@ -21,17 +21,17 @@ interface PaymentFormProps {
 }
 
 
-export default function PaymentForm({ nextStep, prevStep, isFirstStep, isLastStep}: PaymentFormProps) {
+export default function PaymentForm({ nextStep, prevStep, isFirstStep, isLastStep }: PaymentFormProps) {
   const [paymentVerified, setPaymentVerified] = useState(false);
-  const {data: hpPlans} = usePlans("HEALTHCARE_PROVIDER", "MONTHLY")
+  const { data: hpPlans } = usePlans("HEALTHCARE_PROVIDER", "MONTHLY")
 
-  const [hpApplication,setHpApplication] = useAtom(hpApplyAtom);
+  const [hpApplication, setHpApplication] = useAtom(hpApplyAtom);
 
   const selectedPlan = useMemo(() => hpPlans?.data?.find(plan => plan.id === hpApplication?.planId), [hpPlans, hpApplication]);
   const cost = selectedPlan?.price ?? 0;
 
   const applicationFormSchema = z.object({
-    receiptCode : z.string().refine(value => value.length > 4 || cost  === 0, {
+    receiptCode: z.string().refine(value => value.length > 4 || cost === 0, {
       message: "Receipt number is required"
     }),
   })
@@ -48,13 +48,13 @@ export default function PaymentForm({ nextStep, prevStep, isFirstStep, isLastSte
 
   const action = async () => {
     form.handleSubmit(async (data: formType) => {
-      setHpApplication(prev => ({...prev, ...data}))
+      setHpApplication(prev => ({ ...prev, ...data }))
       nextStep?.();
     })();
   }
 
   const handleVerify = async (code: string) => {
-    
+
     toast.promise(verifyReceiptCodeAction(code), {
       loading: "Verifying code...",
       success: () => {
@@ -67,8 +67,8 @@ export default function PaymentForm({ nextStep, prevStep, isFirstStep, isLastSte
 
   return (
     <Form {...form}>
-      <form 
-        action={action} 
+      <form
+        action={action}
         className="prose max-w-full space-y-6 shadow-lg w-full p-8 bg-white rounded-md"
       >
         <h4>Payment</h4>
@@ -81,7 +81,7 @@ export default function PaymentForm({ nextStep, prevStep, isFirstStep, isLastSte
               <FormItem className="flex-1">
                 <FormLabel>Receipt Code</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter Code" onChange={field.onChange} defaultValue={field.value}/>
+                  <Input placeholder="Enter Code" {...field} />
                 </FormControl>
                 <FormDescription>
                   This is the receipt code of your payment or a coupon from an agent
@@ -93,14 +93,14 @@ export default function PaymentForm({ nextStep, prevStep, isFirstStep, isLastSte
           <Button onClick={() => handleVerify(form.watch("receiptCode"))} disabled={!form.formState.isValid || paymentVerified} type="button">Verify</Button>
         </div>
         <div className="mt-4">
-          <BackSubmitAndNext 
+          <BackSubmitAndNext
             labels={{
               previous: "Back",
               submit: "Continue",
               next: "Next",
             }}
             disabled={{
-              submit:!paymentVerified,
+              submit: !paymentVerified,
               previous: isFirstStep,
               next: true,
             }}

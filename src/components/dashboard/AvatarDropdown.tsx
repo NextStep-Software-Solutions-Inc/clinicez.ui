@@ -1,16 +1,18 @@
 "use client";
 
-import { useUser } from "@auth0/nextjs-auth0";
+// import { useUser } from "@clerk/nextjs"; // Commented out for migration to Clerk
+import { useUser } from "@clerk/nextjs";
 import { Button } from "@components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@components/ui/dropdown-menu";
 import { Loader2Icon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import LogoutLink from "@components/LogoutLink";
 import React from "react";
 
 export default function AvatarDropdown() {
-  const { isLoading, user } = useUser();
-  if (isLoading) return <Loader2Icon className="w-5 h-5 animate-spin" />
+  const { isLoaded, user } = useUser();
+  if (!isLoaded) return <Loader2Icon className="w-5 h-5 animate-spin" />
   if (!user) return <SignInButton />
   return (
     <DropdownMenu>
@@ -21,7 +23,7 @@ export default function AvatarDropdown() {
           className="overflow-hidden rounded-full"
         >
           <Image
-            src={user?.picture ?? ""}
+            src={user?.imageUrl ?? "/assets/organization_placeholder.jpg"}
             width={10}
             height={10}
             alt="Avatar"
@@ -43,9 +45,8 @@ export default function AvatarDropdown() {
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem>
-          <Link href="/auth/logout" onClick={() => localStorage.clear()}>
-            Logout
-          </Link>
+          {/* Use the LogoutLink component that handles Clerk sign out */}
+          <LogoutLink />
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -55,6 +56,6 @@ export default function AvatarDropdown() {
 
 const SignInButton = () => {
   return (
-    <a href="/auth/login" title="" className="px-5 py-2.5 text-base transition-all duration-200 hover:bg-teal-400 hover:text-white focus:text-white focus:bg-teal-400 font-semibold text-white bg-teal-600 rounded-lg" role="button"> Sign In</a>
+    <a href="/sign-in" title="" className="px-5 py-2.5 text-base transition-all duration-200 hover:bg-teal-400 hover:text-white focus:text-white focus:bg-teal-400 font-semibold text-white bg-teal-600 rounded-lg" role="button"> Sign In</a>
   )
 }

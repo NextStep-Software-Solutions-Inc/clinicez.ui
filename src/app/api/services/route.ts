@@ -1,10 +1,10 @@
 import { getClinicServicesAction } from "@/actions/clinics/clinic-service.action";
-import { withJwtAuth } from "@middlewares/withJwtAuth";
+import { withClerkAuth } from "@middlewares/withClerkAuth";
 import { AppointmentStatus } from "@public/json/appointment-list";
 import { NextRequest, NextResponse } from "next/server";
 
 
-export const GET = withJwtAuth(async (req: NextRequest) => {
+export const GET = withClerkAuth(async (req: NextRequest) => {
   const searchParams = req.nextUrl.searchParams
   const categoryId = searchParams.get('categoryId');
   const orgUid = searchParams.get('orgUid');
@@ -15,5 +15,5 @@ export const GET = withJwtAuth(async (req: NextRequest) => {
   }
 
   const services = await getClinicServicesAction(filter);
-  return NextResponse.json(services, {status: 200});
+  return NextResponse.json(services, { status: 200 });
 });

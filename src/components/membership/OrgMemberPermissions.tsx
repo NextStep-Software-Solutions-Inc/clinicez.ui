@@ -1,7 +1,7 @@
 "use client";
 
 import { setOrgMemberPermissionsAction } from "@actions/organizations/organization-member-permission.action";
-import { useUser } from "@auth0/nextjs-auth0";
+import { useUser } from "@clerk/nextjs";
 import ActionButton from "@components/ActionButton";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@components/ui/card";
 import { Checkbox } from "@components/ui/checkbox";
@@ -24,31 +24,31 @@ interface OrgMemberPermissionsProps {
   orgUid: string;
 }
 
-export default function OrgMemberPermissions({orgUid, userId}: OrgMemberPermissionsProps) {
-  const {user} = useUser()
-  const {data: myPermissions} = usePermissions({
-    userId: user?.sub ?? undefined,
+export default function OrgMemberPermissions({ orgUid, userId }: OrgMemberPermissionsProps) {
+  const { user } = useUser()
+  const { data: myPermissions } = usePermissions({
+    userId: user?.id ?? undefined,
     type: "ORGANIZATION",
   })
   const myPermissionArray = myPermissions?.map((item) => item.name) ?? []
   const updateOrgPermissions = [PERMISSIONS.ORGANIZATION["UPDATE:ORG:PERMISSIONS"].name]
   const canUpdateOrgPermissions = updateOrgPermissions.every((item) => myPermissionArray.includes(item))
 
-  const {data: permissions, mutate: mutateMemberPermissions, isLoading: loadingMemberPermissions } = usePermissions({
+  const { data: permissions, mutate: mutateMemberPermissions, isLoading: loadingMemberPermissions } = usePermissions({
     userId,
     type: "ORGANIZATION",
   })
-  const {data: orgAvailablePermissions, mutate: mutateAvailablePermissions, isLoading: loadingAvailablePermissions} = usePermissions({
+  const { data: orgAvailablePermissions, mutate: mutateAvailablePermissions, isLoading: loadingAvailablePermissions } = usePermissions({
     type: "ORGANIZATION",
   })
-  
+
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     values: {
       permissionIds: (permissions ?? []).map((item) => item.id),
     },
   })
-  
+
   const action = async () => {
     form.handleSubmit(async (data) => {
       toast.promise(setOrgMemberPermissionsAction({
@@ -58,7 +58,7 @@ export default function OrgMemberPermissions({orgUid, userId}: OrgMemberPermissi
       }), {
         loading: "Saving changes...",
         success: res => {
-          if(res.status) {
+          if (res.status) {
             mutateMemberPermissions()
             form.reset(data)
           }
@@ -69,7 +69,7 @@ export default function OrgMemberPermissions({orgUid, userId}: OrgMemberPermissi
     })();
   }
 
-  if(loadingMemberPermissions || loadingAvailablePermissions) return <div>Loading...</div>
+  if (loadingMemberPermissions || loadingAvailablePermissions) return <div>Loading...</div>
   return (
     <Card>
       <CardHeader>
@@ -91,7 +91,7 @@ export default function OrgMemberPermissions({orgUid, userId}: OrgMemberPermissi
                   <div className="mb-4 ">
                     <FormLabel className="text-base font-medium">Available Permissions</FormLabel>
                     <FormDescription>
-                          Select permissions to assign to this member.
+                      Select permissions to assign to this member.
                     </FormDescription>
                   </div>
                   <Each

@@ -23,8 +23,8 @@ interface EditDisabilityFormProps {
   remove: (index: number) => void;
   onUpdate: (index: number, value: Disability) => void;
 }
-  
-export default function EditDisabilityForm({ disability, index, remove, onUpdate}:EditDisabilityFormProps ) {
+
+export default function EditDisabilityForm({ disability, index, remove, onUpdate }: EditDisabilityFormProps) {
   const [disabilities, setDisabilities] = useState<string[]>([])
 
   const form = useForm<Disability>({
@@ -34,17 +34,17 @@ export default function EditDisabilityForm({ disability, index, remove, onUpdate
   useEffect(() => {
     (async () => {
       const disabilities = await getDisabilityAction()
-      await setDisabilities(() => disabilities.map(({name}) => name))
+      await setDisabilities(() => disabilities.map(({ name }) => name))
     })()
   }, [])
-  
+
   return (
     <Form {...form}>
       <Card className="ring-2 basis-full">
         <CardHeader>
           <span className="ml-auto flex space-x-2 group-hover/actions:visible transition-all">
-            <DoneEditingDisabilityButton form={form} index={index} onUpdate={onUpdate}/>
-            <DeleteDisabilityButton disabilityId={disability.id} remove={remove} index={index}/>
+            <DoneEditingDisabilityButton form={form} index={index} onUpdate={onUpdate} />
+            <DeleteDisabilityButton disabilityId={disability.id} remove={remove} index={index} />
           </span>
           <CardTitle className="flex items-center group/actions gap-2">
             <FormField
@@ -56,7 +56,7 @@ export default function EditDisabilityForm({ disability, index, remove, onUpdate
               render={({ field }) => (
                 <FormItem className="flex-1">
                   <FormLabel>Disability</FormLabel>
-                  <ComboBox 
+                  <ComboBox
                     options={disabilities}
                     value={field.value} onChange={field.onChange}
                   />
@@ -68,7 +68,7 @@ export default function EditDisabilityForm({ disability, index, remove, onUpdate
               )}
             />
           </CardTitle>
-          <Separator/>
+          <Separator />
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
@@ -81,7 +81,7 @@ export default function EditDisabilityForm({ disability, index, remove, onUpdate
                   <FormControl>
                     <RadioGroup
                       onValueChange={field.onChange}
-                      defaultValue={field.value}
+                      value={field.value}
                       className="flex gap-2 flex-wrap"
                     >
                       <Each
@@ -118,7 +118,7 @@ export default function EditDisabilityForm({ disability, index, remove, onUpdate
                       onChange={e => field.onChange(new Date(e.target.value))}
                       value={field.value ? format(field.value, "yyyy-MM-dd") : ""}
                       type="date"
-                      placeholder="Select date" 
+                      placeholder="Select date"
                     />
                   </FormControl>
                   <FormDescription>
@@ -135,7 +135,7 @@ export default function EditDisabilityForm({ disability, index, remove, onUpdate
                 <FormItem className="w-full">
                   <FormLabel>Notes (optional)</FormLabel>
                   <FormControl>
-                    <Input placeholder="Add notes here..." {...field} value={field.value ?? ""}  />
+                    <Input placeholder="Add notes here..." {...field} value={field.value ?? ""} />
                   </FormControl>
                   <FormDescription>
                     Additional notes about the condition.
@@ -150,4 +150,3 @@ export default function EditDisabilityForm({ disability, index, remove, onUpdate
     </Form>
   )
 }
-  

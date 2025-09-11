@@ -3,9 +3,9 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { Form } from "@components/ui/form"
-import {toast} from "sonner"
+import { toast } from "sonner"
 import ActionButton from "@components/ActionButton"
-import { useUser } from "@auth0/nextjs-auth0"
+import { useUser } from "@clerk/nextjs"
 import Each from "@components/utils/Each"
 import { deleteUserScheduleAction, GetUserSchedules, upsertUserScheduleAction } from "@actions/schedule/user-schedule.action"
 import { useUserSchedules } from "@hooks/useUserSchedule"
@@ -46,12 +46,12 @@ const daysOfWeek = [
 ]
 
 export default function ScheduleSettingsForm() {
-  const user = useUser()
-  const userId = user?.user?.sub
+  const { user } = useUser()
+  const userId = user?.id
   const { data: userSchedules, mutate } = useUserSchedules(userId ?? "")
-  const baseSchedule = (userSchedules?.data ?? []).find(schedule => schedule.type === "base") 
+  const baseSchedule = (userSchedules?.data ?? []).find(schedule => schedule.type === "base")
   const exceptionSchedules = (userSchedules?.data ?? []).filter(schedule => schedule.type === "exception")
-  
+
   const form = useForm<ScheduleFormType>({
     resolver: zodResolver(scheduleFormSchema),
     values: {
@@ -62,8 +62,8 @@ export default function ScheduleSettingsForm() {
       isRecurring: baseSchedule?.isRecurring || false,
       startTime: baseSchedule?.startTime ? dayjs(utcDateTimeToLocalDateTime(combineDateTime(baseSchedule?.startDate ?? new Date(), baseSchedule?.startTime))).format("HH:mm") : "",
       endTime: baseSchedule?.endTime ? dayjs(utcDateTimeToLocalDateTime(combineDateTime(baseSchedule?.endDate ?? new Date(), baseSchedule?.endTime))).format("HH:mm") : "",
-      daysOfWeek: baseSchedule?.daysOfWeek.length ? baseSchedule?.daysOfWeek :  [0,1,2,3,4,5,6],
-      weekOfMonth: baseSchedule?.weekOfMonth.length ? baseSchedule?.weekOfMonth : [1,2,3,4,5], 
+      daysOfWeek: baseSchedule?.daysOfWeek.length ? baseSchedule?.daysOfWeek : [0, 1, 2, 3, 4, 5, 6],
+      weekOfMonth: baseSchedule?.weekOfMonth.length ? baseSchedule?.weekOfMonth : [1, 2, 3, 4, 5],
       pattern: baseSchedule?.pattern || "daily",
     }
   })
@@ -71,10 +71,10 @@ export default function ScheduleSettingsForm() {
   const action = async () => {
     form.handleSubmit(async (values) => {
       if (!userId) return toast.error("User not found");
-      if(!values.dateRange.from || !values.dateRange.to) return toast.error("Date range is required")
+      if (!values.dateRange.from || !values.dateRange.to) return toast.error("Date range is required")
       // const startTime = dayjs(`${dayjs(values.dateRange.from).format("YYYY-MM-DD")}T${values.startTime}`).toISOString()
       // const endTime = dayjs(`${dayjs(values.dateRange.to).format("YYYY-MM-DD")}T${values.endTime}`).toISOString()
-      
+
       toast.promise(promiseWrapper(upsertUserScheduleAction)({
         id: baseSchedule?.id || 0,
         userId,
@@ -115,12 +115,12 @@ export default function ScheduleSettingsForm() {
       </div>
       <Form {...form}>
         <form action={action} className="space-y-5 mb-5">
-          <ScheduleForm form={form}/>
+          <ScheduleForm form={form} />
           <ActionButton className="flex  ml-auto" disabled={form.formState.isLoading} type="submit">Set Base Schedule</ActionButton>
         </form>
       </Form>
 
-      <Separator/>
+      <Separator />
       <div className="prose max-w-full">
         <div className="flex items-center justify-between">
           <h2>Exception Schedule</h2>
@@ -142,7 +142,7 @@ export default function ScheduleSettingsForm() {
                       {dayjs(combineDateTime(schedule.startDate, schedule.startTime)).format("llll")} - {dayjs(combineDateTime(schedule.endDate, schedule.endTime)).format("llll")}
                     </div>
                     <div className="text-xs space-x-2">
-                      <span>{schedule.isRecurring ? "Recurring" : "One Time"}</span> 
+                      <span>{schedule.isRecurring ? "Recurring" : "One Time"}</span>
                       {schedule.isRecurring && (
                         <>
                           <Badge>{schedule.pattern}</Badge>
@@ -155,9 +155,9 @@ export default function ScheduleSettingsForm() {
                     e.stopPropagation()
                     handleDelete(schedule.id)
                   }}>
-                    <Separator orientation="vertical" className="h-6"/>
+                    <Separator orientation="vertical" className="h-6" />
                     <Button variant="ghost" size="icon">
-                      <Trash className="w-4 h-4 text-red-500 hover:scale-125 transition-all"/>
+                      <Trash className="w-4 h-4 text-red-500 hover:scale-125 transition-all" />
                     </Button>
                   </div>
                 </div>
@@ -174,9 +174,9 @@ interface ExceptionScheduleItemProps {
   schedule?: NonNullable<GetUserSchedules["data"]>[number],
   children?: React.ReactNode
 }
-export const ExceptionScheduleSheet = ({schedule, children}: ExceptionScheduleItemProps) => {
-  const user = useUser()
-  const userId = user?.user?.sub
+export const ExceptionScheduleSheet = ({ schedule, children }: ExceptionScheduleItemProps) => {
+  const { user } = useUser()
+  const userId = user?.id
   const { mutate } = useUserSchedules(userId ?? "")
   const closeBtnRef = useRef<HTMLButtonElement>(null)
   const form = useForm<ScheduleFormType>({
@@ -188,9 +188,9 @@ export const ExceptionScheduleSheet = ({schedule, children}: ExceptionScheduleIt
       },
       isRecurring: schedule?.isRecurring || false,
       startTime: schedule?.startTime ?? "",
-      endTime: schedule?.endTime  ?? "",
-      daysOfWeek: schedule?.daysOfWeek.length ? schedule?.daysOfWeek :  [0,1,2,3,4,5,6],
-      weekOfMonth: schedule?.weekOfMonth.length ? schedule?.weekOfMonth : [1,2,3,4,5], 
+      endTime: schedule?.endTime ?? "",
+      daysOfWeek: schedule?.daysOfWeek.length ? schedule?.daysOfWeek : [0, 1, 2, 3, 4, 5, 6],
+      weekOfMonth: schedule?.weekOfMonth.length ? schedule?.weekOfMonth : [1, 2, 3, 4, 5],
       pattern: schedule?.pattern || "daily",
     }
   })
@@ -198,10 +198,10 @@ export const ExceptionScheduleSheet = ({schedule, children}: ExceptionScheduleIt
   const action = async () => {
     form.handleSubmit(async (values) => {
       if (!userId) return toast.error("User not found");
-      if(!values.dateRange.from || !values.dateRange.to) return toast.error("Date range is required")
+      if (!values.dateRange.from || !values.dateRange.to) return toast.error("Date range is required")
       // const startTime = dayjs(`${dayjs(values.dateRange.from).format("YYYY-MM-DD")}T${values.startTime}`).toISOString()
       // const endTime = dayjs(`${dayjs(values.dateRange.to).format("YYYY-MM-DD")}T${values.endTime}`).toISOString()
-      
+
       toast.promise(promiseWrapper(upsertUserScheduleAction)({
         id: schedule?.id || 0,
         userId,
@@ -225,7 +225,7 @@ export const ExceptionScheduleSheet = ({schedule, children}: ExceptionScheduleIt
       })
     })()
   }
-  return(
+  return (
     <Sheet>
       <SheetTrigger asChild>
         {children}
@@ -236,10 +236,10 @@ export const ExceptionScheduleSheet = ({schedule, children}: ExceptionScheduleIt
             <SheetHeader>
               <SheetTitle>Exception Schedule</SheetTitle>
               <SheetDescription>
-              Exception Schedule are meant to override the base schedule for a specific date range. Exception schedules can be one-time or recurring.
+                Exception Schedule are meant to override the base schedule for a specific date range. Exception schedules can be one-time or recurring.
               </SheetDescription>
             </SheetHeader>
-            <ScheduleForm form={form}/>
+            <ScheduleForm form={form} />
             <SheetFooter className="gap-2">
               <SheetClose asChild>
                 <Button ref={closeBtnRef} variant="outline" type="button">Close</Button>

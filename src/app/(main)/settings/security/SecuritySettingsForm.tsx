@@ -18,7 +18,7 @@ import { Input } from "@components/ui/input"
 import { toast } from "sonner"
 import ActionButton from "@components/ActionButton"
 import { resetPasswordAction } from "@actions/users/user.action"
-import { useUser } from "@auth0/nextjs-auth0"
+import { useUser } from "@clerk/nextjs"
 import { useRouter } from "next/navigation"
 
 const accountFormSchema = z.object({
@@ -32,7 +32,7 @@ const accountFormSchema = z.object({
 type GeneraSettingsFormValues = z.infer<typeof accountFormSchema>
 
 export default function SecuritySettingsForm() {
-  const user = useUser()
+  const { user } = useUser()
   const router = useRouter()
 
   const form = useForm<GeneraSettingsFormValues>({
@@ -42,14 +42,14 @@ export default function SecuritySettingsForm() {
 
   const action = async () => {
     form.handleSubmit(async (values) => {
-      const userId = user?.user?.sub
+      const userId = user?.id
       if (!userId) return toast.error("User not found");
 
       toast.promise(resetPasswordAction(userId, values.password), {
         loading: "Updating password...",
         success: () => {
           form.reset(values);
-          router.replace("/auth/logout");
+          router.replace("/sign-in");
           return "Password updated successfully. Please login again for security reasons."
         },
         error: (error) => `Failed to update password. Error: ${error}`

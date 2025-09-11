@@ -1,35 +1,41 @@
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 import maintenanceCheck from '@middlewares/maintenanceCheck';
-import { MiddlewareConfig, NextRequest, NextResponse } from "next/server";
-import { auth0 } from '@/lib/auth0';
+import { NextRequest } from 'next/server';
 
-const publicRoutes = [
-  "/",
-]
+const isProtectedRoute = createRouteMatcher([
+  '/clinics(.*)',
+  '/organizations(.*)',
+  '/settings(.*)',
+  '/user(.*)',
+  '/console(.*)',
+  '/hp(.*)',
+]);
 
-export async function middleware(request: NextRequest) {
+const isPublicRoute = createRouteMatcher([
+  '/',
+  '/pricing',
+  '/contact-us',
+  '/sign-in(.*)',
+  '/sign-up(.*)',
+  '/v2(.*)',
+  '/maintenance',
+  '/unauthorized',
+]);
+
+export default clerkMiddleware(async (auth, request: NextRequest) => {
   const maintenanceResponse = await maintenanceCheck(request);
-
   if (maintenanceResponse) {
     return maintenanceResponse;
   }
 
-  const authResponse = await auth0.middleware(request);
-
-  const path = request.nextUrl.pathname;
-
-  if (path.startsWith("/auth")) {
-    return authResponse;
+  if (isProtectedRoute(request) && !isPublicRoute(request)) {
+    await auth.protect();
   }
+});
 
-  if (publicRoutes.includes(path)) {
-    return authResponse;
-  }
-
-  return authResponse;
-}
-
-export const config: MiddlewareConfig = {
+export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)",
+    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+    '/(api|trpc)(.*)',
   ],
-}
+};

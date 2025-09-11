@@ -3,14 +3,14 @@ import 'server-only'
 
 import { NextRequest, NextResponse } from "next/server";
 import { getUserAllergiesAction } from '@actions/users/user-allergy.action';
-import { withJwtAuth } from '@middlewares/withJwtAuth';
+import { withClerkAuth } from '@middlewares/withClerkAuth';
 
 
-export const GET = withJwtAuth(async (req: NextRequest) => {
+export const GET = withClerkAuth(async (req: NextRequest) => {
   const searchParams = req.nextUrl.searchParams
   const userId = searchParams.get('userId');
 
-  if(!userId) {
+  if (!userId) {
     return NextResponse.json({
       success: false,
       response: 'userId is required'

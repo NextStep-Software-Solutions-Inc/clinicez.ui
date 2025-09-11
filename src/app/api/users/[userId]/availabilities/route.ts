@@ -1,10 +1,10 @@
 import { parseObject } from "@/lib/utils";
 import { getUserTimeSlotsAction } from "@actions/schedule/time-slot.actions";
-import { withJwtAuth } from "@middlewares/withJwtAuth";
+import { withClerkAuth } from "@middlewares/withClerkAuth";
 import { NextRequest, NextResponse } from "next/server";
 
 export const maxDuration = 40;
-export const GET = withJwtAuth(async (req: NextRequest, { params }: {
+export const GET = withClerkAuth(async (req: NextRequest, { params }: {
   params: Promise<{
     userId: string;
   }>
@@ -22,5 +22,5 @@ export const GET = withJwtAuth(async (req: NextRequest, { params }: {
     hpId,
     appointmentTypeId
   });
-  return NextResponse.json(availabilities, {status: 200});
+  return NextResponse.json(availabilities, { status: 200 });
 });

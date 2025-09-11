@@ -35,7 +35,7 @@ export default async function PHRLayout(props: PHRLayoutProps) {
     isUserOwner(phrOwnerId)
   ]);
 
-  if (!session) return redirect("/auth/login");
+  if (!session) return redirect("/sign-in");
 
   try {
     // Check if the user is the owner of the PHR

@@ -1,10 +1,10 @@
 import { getAppointmentsAction } from "@actions/appointments/appointments.action";
-import { withJwtAuth } from "@middlewares/withJwtAuth";
+import { withClerkAuth } from "@middlewares/withClerkAuth";
 import { AppointmentStatus, RoutedAptStatus } from "@public/json/appointment-list";
 import { NextRequest, NextResponse } from "next/server";
 
 
-export const GET = withJwtAuth(async (req: NextRequest, { params }: {
+export const GET = withClerkAuth(async (req: NextRequest, { params }: {
   params: Promise<{
     clinicUid: string;
   }>

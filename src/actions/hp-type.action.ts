@@ -17,8 +17,6 @@ export const getHPTypesAction = async () => {
       }
     });
 
-    console.log("Fetched HP Types:", hpTypes);
-
     return {
       status: true,
       message: "HP Types fetched successfully.",

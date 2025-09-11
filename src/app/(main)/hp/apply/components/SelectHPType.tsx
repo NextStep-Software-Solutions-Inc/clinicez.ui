@@ -29,7 +29,6 @@ interface ISelectHPTypeProps {
 
 export default function SelectHPType({ nextStep, prevStep, isFirstStep, isLastStep, currentHPTypeIds }: ISelectHPTypeProps) {
   const { data: hpTypes } = useHPTypes()
-  console.log("Current HP Type Ids:", currentHPTypeIds);
   const roleFormSchema = z.object({
     hpTypeId: z.number({
       coerce: true,

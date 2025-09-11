@@ -2,15 +2,15 @@
 import "server-only";
 
 import { google } from "googleapis";
-import { managementClient } from "@services/auth0/management-client";
-import { getCachedSession } from "@actions/session.action";
-import prisma from "@lib/prisma";
-import { getPermissionsAction } from "@actions/permission.action";
-import { PERMISSIONS } from "@lib/permissions";
+import { clerkClient, currentUser } from "@clerk/nextjs/server";
+import prisma from "@/lib/prisma";
 import { combineDateTime } from "@/lib/day-utils";
+import { getCachedSession } from "../session.action";
 import { withErrorHandling } from "@/lib/with-error-handling";
+import { getPermissionsAction } from "../permission.action";
+import { PERMISSIONS } from "@/lib/permissions";
 
-type Credentials  = {
+type Credentials = {
   refresh_token?: string | null;
   expiry_date?: number | null;
   access_token?: string | null;
@@ -30,7 +30,7 @@ export async function getGoogleAuthUrl(redirectUrl: string) {
     const url = oauth2Client.generateAuthUrl({
       access_type: "offline",
       scope: scopes,
-      redirect_uri: redirectUrl,  
+      redirect_uri: redirectUrl,
     });
 
     return {
@@ -48,58 +48,47 @@ export async function getGoogleAuthUrl(redirectUrl: string) {
   }
 }
 
-export async function getGoogleAuthTokens(code: string, redirect_uri:string) {
-  try {
-    const session = await getCachedSession();
-    if(!session) throw new Error("Session not found");
-    const { tokens } = await oauth2Client.getToken({
-      code,
-      redirect_uri,
-    });
-    oauth2Client.setCredentials(tokens);
-    await managementClient.users.update({id: session.user.sub}, {
-      user_metadata: {
-        idp: {
-          provider: "google-oauth2",
-          credentials: tokens
-        }
-      }
-    })
+export async function getGoogleAuthToken() {
+  const client = await clerkClient();
+  const current = await currentUser();
 
-    return tokens;
-  } catch (error) {
-    console.error(`Error fetching access token: ${error}`);
-    return null;
-  }
+  if (!current) throw new Error("Unauthorized");
+
+  const googleToken = await client.users.getUserOauthAccessToken(current.id, "google")
+
+
+  return googleToken.data.find(token => token.provider === "google")?.token || null;
 }
 
-export const getGoogleAccessToken = async () => {
-  const session = await getCachedSession();
-  if (!session?.user?.sub) {
-    throw new Error("No valid session found");
-  }
-  try {
-    const auth0User = await managementClient.users.get({id: session.user.sub, fields: "user_metadata"});
 
-    const user_metadata = auth0User.data.user_metadata as {idp: {provider: string, credentials: Credentials}};
-    // find google credentials
-    if("idp" in user_metadata) {
-      const idp = user_metadata.idp;
-      if(idp.provider === "google-oauth2") {
-        const credentials = idp.credentials;
-        oauth2Client.setCredentials(credentials);
-      }
-    } else {
-      throw new Error("Credentials not found");
-    }
-    
-    const { token } = await oauth2Client.getAccessToken();
-    return token;
-  } catch (error) {
-    console.error(`Error fetching access token: ${error}`);
-    return null;
-  }
-};
+// Will no longer be needed since Clerk has built-in Google OAuth
+// export const getGoogleAccessToken = async () => {
+//   const session = await getCachedSession();
+//   if (!session?.user?.sub) {
+//     throw new Error("No valid session found");
+//   }
+//   try {
+//     const auth0User = await managementClient.users.get({id: session.user.sub, fields: "user_metadata"});
+
+//     const user_metadata = auth0User.data.user_metadata as {idp: {provider: string, credentials: Credentials}};
+//     // find google credentials
+//     if("idp" in user_metadata) {
+//       const idp = user_metadata.idp;
+//       if(idp.provider === "google-oauth2") {
+//         const credentials = idp.credentials;
+//         oauth2Client.setCredentials(credentials);
+//       }
+//     } else {
+//       throw new Error("Credentials not found");
+//     }
+
+//     const { token } = await oauth2Client.getAccessToken();
+//     return token;
+//   } catch (error) {
+//     console.error(`Error fetching access token: ${error}`);
+//     return null;
+//   }
+// };
 
 type InsertCalendarPayload = {
   emails: string[];
@@ -118,32 +107,21 @@ type InsertCalendarPayload = {
   meet: boolean;
 
 }
-export const insertToCalendar = withErrorHandling(async (appointmentId:number) => {
-  
-  const session = await getCachedSession();
-  if(!session) throw new Error("Session not found");
+export const insertToCalendar = withErrorHandling(async (appointmentId: number) => {
 
-  const myPermissions = await getPermissionsAction({userId: session.user.sub, type: "CLINIC"});
+  const session = await getCachedSession();
+  if (!session) throw new Error("Session not found");
+
+  const myPermissions = await getPermissionsAction({ userId: session.user.sub, type: "CLINIC" });
   const myPermissionArray = myPermissions.map(p => p.name);
   const confirmBookingPermissions = [PERMISSIONS.CLINIC["CONFIRM:CLINIC:APPOINTMENT"].name];
   const canConfirmBooking = confirmBookingPermissions.every(p => myPermissionArray.includes(p));
 
-  if(!canConfirmBooking) throw new Error("You don't have permission to confirm booking");
+  if (!canConfirmBooking) throw new Error("You don't have permission to confirm booking");
+  const googleToken = await getGoogleAuthToken();
+  if (!googleToken) throw new Error("Google token not found");
+  oauth2Client.setCredentials({ access_token: googleToken });
 
-  const auth0User = await managementClient.users.get({id: session?.user.sub, fields: "user_metadata"});
-  const user_metadata = auth0User.data.user_metadata as {idp: {provider: string, credentials: Credentials}};
-  
-  // find google credentials
-  if("idp" in user_metadata) {
-    const idp = user_metadata.idp;
-    if(idp.provider === "google-oauth2") {
-      const credentials = idp.credentials;
-      oauth2Client.setCredentials(credentials);
-    }
-  } else {
-    throw new Error("Google credentials not found");
-  }
-    
   // construct event
 
   const appointment = await prisma.appointment.findUniqueOrThrow({
@@ -202,7 +180,7 @@ export const insertToCalendar = withErrorHandling(async (appointmentId:number) =
   const event = {
     summary: appointment.subject,
     location: appointment.AppointmentAttribute?.AppointmentMode.name,
-    description:  appointment.complaint,
+    description: appointment.complaint,
     start: {
       dateTime: combineDateTime(appointment.AppointmentAttribute!.date!, appointment.AppointmentAttribute!.timeStart!),
       timeZone: "Asia/Manila"
@@ -211,7 +189,7 @@ export const insertToCalendar = withErrorHandling(async (appointmentId:number) =
       dateTime: combineDateTime(appointment.AppointmentAttribute!.date!, appointment.AppointmentAttribute!.timeEnd!),
       timeZone: "Asia/Manila"
     },
-    attendees: [...appointment.AppointmentRouting.map(h => ({email: h.RoutedTo.User.email})), ...appointment.Requesters.map(p => ({email: p.User.email}))],
+    attendees: [...appointment.AppointmentRouting.map(h => ({ email: h.RoutedTo.User.email })), ...appointment.Requesters.map(p => ({ email: p.User.email }))],
     conferenceData: {
       createRequest: {
         requestId: `meet-${appointmentId}`
@@ -219,22 +197,22 @@ export const insertToCalendar = withErrorHandling(async (appointmentId:number) =
     }
   }
 
-  const {data:calendarEvent, status} = await calendar.events.insert({
+  const { data: calendarEvent, status } = await calendar.events.insert({
     calendarId: "primary",
     conferenceDataVersion: 1,
     sendUpdates: "all",
     sendNotifications: true,
-    requestBody:  {...event}
+    requestBody: { ...event }
   });
 
-  if(![200, 201, 202].includes(status)) throw new Error("Error inserting to calendar");
+  if (![200, 201, 202].includes(status)) throw new Error("Error inserting to calendar");
 
   await prisma.appointmentAttribute.update({
-    where: {id: appointment.AppointmentAttribute!.id },
-    data: { 
+    where: { id: appointment.AppointmentAttribute!.id },
+    data: {
       eventId: calendarEvent.id,
       meetingUrl: calendarEvent.hangoutLink
     }
   })
-  return { message: "Event inserted to calendar", data: undefined}
+  return { message: "Event inserted to calendar", data: undefined }
 })

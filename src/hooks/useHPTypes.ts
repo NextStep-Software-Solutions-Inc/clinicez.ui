@@ -27,9 +27,6 @@ export const useHPTypes = (config: UseHPTypesConfig = {}) => {
       onError: (error) => {
         console.error("Failed to fetch HP Types:", error);
       },
-      onSuccess: (data) => {
-        console.log("Successfully fetched HP Types:", data);
-      }
     }
   );
 };

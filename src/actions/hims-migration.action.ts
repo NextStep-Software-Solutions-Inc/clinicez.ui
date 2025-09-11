@@ -10,7 +10,7 @@ import { Prisma } from "@prisma/client";
 import prisma from "@lib/prisma";
 
 export const getPatientAction = async (email: string) => {
-  const conn = await mySQLConnection();   
+  const conn = await mySQLConnection();
   try {
     const [rows, fields] = await conn.execute<RowDataPacket[]>(`
         SELECT 
@@ -71,9 +71,9 @@ export const getPatientAction = async (email: string) => {
         GROUP BY 
             p.id;
         `, [email]);
-    
+
     const user = Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
-    if(user) {
+    if (user) {
       delete user.id
       delete user.school_id
     }
@@ -99,10 +99,10 @@ export const sendActivationCodeAction = async (email: string, code: string) => {
   });
 }
 
-export const startMigrationTransactionAction = async ({userId, data, orgUid}: {
-    userId: string,
-    data: Prisma.UserUpdateArgs["data"]
-    orgUid: string
+export const startMigrationTransactionAction = async ({ userId, data, orgUid }: {
+  userId: string,
+  data: Prisma.UserUpdateArgs["data"]
+  orgUid: string
 }) => {
 
   await prisma.$transaction(async (prisma) => {
@@ -115,9 +115,15 @@ export const startMigrationTransactionAction = async ({userId, data, orgUid}: {
       }
     })
 
-    if(userMigration) {
+    if (userMigration) {
       throw new Error("User already migrated")
     }
+
+    // Find the user by userId string first
+    const currentUser = await prisma.user.findUniqueOrThrow({
+      where: { userId, isActive: true },
+      select: { id: true },
+    });
 
     await prisma.user.update({
       where: { userId },
@@ -126,10 +132,10 @@ export const startMigrationTransactionAction = async ({userId, data, orgUid}: {
     await prisma.userMigration.create({
       data: {
         Organization: {
-          connect: {orgUid: orgUid}
+          connect: { orgUid: orgUid }
         },
         User: {
-          connect : { userId }
+          connect: { id: currentUser.id }
         }
       }
     })

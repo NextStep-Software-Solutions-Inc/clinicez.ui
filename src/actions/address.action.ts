@@ -43,11 +43,17 @@ export const getAddressesAction = async (userId: string) => {
 }
 
 export const createAddressAction = async (userId: string, data: Omit<AddressItemProps["address"], "id">) => {
+  // Find the user by userId string first
+  const currentUser = await prisma.user.findUniqueOrThrow({
+    where: { userId, isActive: true },
+    select: { id: true },
+  });
+
   const allowedData = mapAddressInput(data);
   return await prisma.userAddress.create({
     data: {
       ...allowedData,
-      User: { connect: { userId } },
+      User: { connect: { id: currentUser.id } },
     }
   });
 }

@@ -23,6 +23,13 @@ export const upsertUserScheduleAction = withErrorHandling(async (args: UpsertUse
   if (!session) throw new Error("User not authenticated");
 
   const { id, type, startDate, endDate, startTime, endTime, isRecurring, pattern, daysOfWeek, weekOfMonth, userId } = args;
+
+  // Find the user by userId string first
+  const currentUser = await prisma.user.findUniqueOrThrow({
+    where: { userId, isActive: true },
+    select: { id: true },
+  });
+
   const userSchedule = await prisma.userSchedule.upsert({
     where: {
       User: { userId },
@@ -50,7 +57,7 @@ export const upsertUserScheduleAction = withErrorHandling(async (args: UpsertUse
       daysOfWeek,
       weekOfMonth,
       User: {
-        connect: { userId }
+        connect: { id: currentUser.id }
       }
     }
   });
@@ -68,7 +75,7 @@ export const getUserSchedulesAction = withErrorHandling(async (unique: string) =
       OR: [
         {
           User: { email: unique }
-        }, 
+        },
         {
           User: { userId: unique }
         }
@@ -79,7 +86,7 @@ export const getUserSchedulesAction = withErrorHandling(async (unique: string) =
 })
 
 export type GetUserAppointmentsSchedule = Awaited<ReturnType<typeof getHPAppointmentsSchedule>>;
-export const getHPAppointmentsSchedule = withErrorHandling( async (hpId: number) => {
+export const getHPAppointmentsSchedule = withErrorHandling(async (hpId: number) => {
 
   const session = await getCachedSession();
   if (!session) throw new Error("User not authenticated");
@@ -113,7 +120,7 @@ export const getHPAppointmentsSchedule = withErrorHandling( async (hpId: number)
           }
         }
       ]
-      
+
     },
     select: {
       id: true,
@@ -153,5 +160,5 @@ export const deleteUserScheduleAction = withErrorHandling(async (id: number) => 
       isActive: true
     }
   });
-  return {  message: "User schedule has been deleted", data: null }
+  return { message: "User schedule has been deleted", data: null }
 })

@@ -16,11 +16,20 @@ export const createUserPlanAction = async (
   try {
     if (!session) throw new Error("Unauthorized");
     const userPlan = await prisma.$transaction(async (prisma) => {
+      // Find the current user first
+      const currentUser = await prisma.user.findUniqueOrThrow({
+        where: {
+          userId: session.user.sub,
+          isActive: true,
+        },
+        select: { id: true },
+      });
+
       const userPlan = await prisma.userPlan.create({
         data: {
           User: {
             connect: {
-              userId: session?.user.sub,
+              id: currentUser.id,
             },
           },
           Plan: {
@@ -82,6 +91,16 @@ export const hpApplicationTransactionAction = withErrorHandling(
 
     await prisma.$transaction(
       async (prisma) => {
+        // Find the current user first
+        message = "User not found.";
+        const currentUser = await prisma.user.findUniqueOrThrow({
+          where: {
+            userId: session.user.sub,
+            isActive: true,
+          },
+          select: { id: true },
+        });
+
         // Count claimed receipt codes
         message = "Receipt code is invalid or has been claimed.";
         const claimedCount = await prisma.receiptCodeClaim.count({
@@ -119,7 +138,7 @@ export const hpApplicationTransactionAction = withErrorHandling(
               connect: { code: receiptCode.code },
             },
             User: {
-              connect: { userId: session?.user.sub },
+              connect: { id: currentUser.id },
             },
           },
         });
@@ -141,7 +160,7 @@ export const hpApplicationTransactionAction = withErrorHandling(
               connect: { id: planId },
             },
             User: {
-              connect: { userId: session?.user.sub },
+              connect: { id: currentUser.id },
             },
             startDate: dayjs().toDate(),
             endDate: dayjs().add(1, "year").toDate(),
@@ -156,7 +175,7 @@ export const hpApplicationTransactionAction = withErrorHandling(
               connect: { id: hpTypeId },
             },
             User: {
-              connect: { userId: session?.user.sub },
+              connect: { id: currentUser.id },
             },
             HPProfile: {
               create: {

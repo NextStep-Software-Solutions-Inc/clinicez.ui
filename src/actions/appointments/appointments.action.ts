@@ -307,12 +307,23 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
   ])
 
   const filteredAppointments = appointments.filter((apt) => {
-    // Ensure the appointment has requesters and the first requester has user data
-    if (!apt?.Requesters?.length || !apt.Requesters[0]?.User) {
-      return false;
+    // Skip whitelist filtering if there are no whitelist filters
+    const whitelistFilters = myWhitelistFilter.data?.WhitelistFilters ?? [];
+    if (whitelistFilters.length === 0) {
+      return true; // No filters means all appointments are allowed
     }
-    
-    return (myWhitelistFilter.data?.WhitelistFilters ?? []).every((filter) => {
+
+    // Skip this appointment only if it has requesters but no user data (corrupted data)
+    if (apt?.Requesters?.length && !apt.Requesters[0]?.User) {
+      return false; // Has requesters but missing user data - filter out
+    }
+
+    // If appointment has no requesters at all, keep it (might be valid system appointment)
+    if (!apt?.Requesters?.length) {
+      return true;
+    }
+
+    return whitelistFilters.every((filter) => {
       return isFilterMatch(filter.Filter.key, filter.value, apt.Requesters[0].User);
     });
   });
@@ -679,12 +690,23 @@ export const getAppointmentCountsAction = withErrorHandling(cache(async (clinicU
   ])
 
   const filteredAppointments = appointments.filter((apt) => {
-    // Ensure the appointment has requesters and the first requester has user data
-    if (!apt?.Requesters?.length || !apt.Requesters[0]?.User) {
-      return false;
+    // Skip whitelist filtering if there are no whitelist filters
+    const whitelistFilters = myWhitelistFilter.data?.WhitelistFilters ?? [];
+    if (whitelistFilters.length === 0) {
+      return true; // No filters means all appointments are allowed
     }
-    
-    return (myWhitelistFilter.data?.WhitelistFilters ?? []).every((filter) => {
+
+    // Skip this appointment only if it has requesters but no user data (corrupted data)
+    if (apt?.Requesters?.length && !apt.Requesters[0]?.User) {
+      return false; // Has requesters but missing user data - filter out
+    }
+
+    // If appointment has no requesters at all, keep it (might be valid system appointment)
+    if (!apt?.Requesters?.length) {
+      return true;
+    }
+
+    return whitelistFilters.every((filter) => {
       return isFilterMatch(filter.Filter.key, filter.value, apt.Requesters[0].User);
     });
   });
@@ -782,12 +804,23 @@ export const getRoutedAppointmentCountsAction = withErrorHandling(cache(async (c
   ])
 
   const filteredAppointments = routedAppointments.filter((routed) => {
-    // Ensure the appointment has requesters and the first requester has user data
-    if (!routed.Appointment?.Requesters?.length || !routed.Appointment.Requesters[0]?.User) {
-      return false;
+    // Skip whitelist filtering if there are no whitelist filters
+    const whitelistFilters = myWhitelistFilter.data?.WhitelistFilters ?? [];
+    if (whitelistFilters.length === 0) {
+      return true; // No filters means all appointments are allowed
     }
-    
-    return (myWhitelistFilter.data?.WhitelistFilters ?? []).every((filter) => {
+
+    // Skip this appointment only if it has requesters but no user data (corrupted data)
+    if (routed.Appointment?.Requesters?.length && !routed.Appointment.Requesters[0]?.User) {
+      return false; // Has requesters but missing user data - filter out
+    }
+
+    // If appointment has no requesters at all, keep it (might be valid system appointment)
+    if (!routed.Appointment?.Requesters?.length) {
+      return true;
+    }
+
+    return whitelistFilters.every((filter) => {
       return isFilterMatch(filter.Filter.key, filter.value, routed.Appointment.Requesters[0].User);
     });
   });

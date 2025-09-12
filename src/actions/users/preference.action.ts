@@ -5,14 +5,19 @@ import prisma from "@lib/prisma";
 import { getCachedSession } from "@actions/session.action";
 import { getPermissionsAction } from "@actions/permission.action";
 import { PERMISSIONS } from "@lib/permissions";
+import { withErrorHandling } from "@/lib/with-error-handling";
+import { withRetry } from "@/lib/database-health";
+import { Prisma } from "@prisma/client";
 
 
 export type GetMyUserPreference = Awaited<ReturnType<typeof getMyUserPreferenceAction>>;
-export const getMyUserPreferenceAction = async () => {
+export const getMyUserPreferenceAction = withErrorHandling(async () => {
   const session = await getCachedSession();
-  try {
-    if(!session) throw new Error("User not authenticated.");
-    const userPreference = await prisma.userPreference.findFirstOrThrow({
+  if (!session) throw new Error("User not authenticated.");
+
+  // Use retry mechanism to handle potential database issues
+  const userPreference = await withRetry(async () => {
+    return await prisma.userPreference.findFirstOrThrow({
       where: {
         User: {
           userId: session.user.sub
@@ -32,93 +37,82 @@ export const getMyUserPreferenceAction = async () => {
         }
       }
     });
-    return {
-      status: true,
-      message: "User preference fetched successfully.",
-      data: userPreference
-    }
-  } catch (error) {
-    console.error(`Error fetching user preference: ${error}`);
-    let message = "An error occurred while fetching user preference.";
-    if (error instanceof Error) {
-      message = error.message;
-    }
-    return {
-      status: false,
-      message,
-      data: null
-    }
-  };
-};
+  }, 3, 200);
+
+  return { message: "User preference fetched successfully.", data: userPreference };
+}, async (error) => {
+  console.error(`Error fetching user preference: ${error}`);
+  let message = "An error occurred while fetching user preference.";
+  if (error instanceof Error) {
+    message = error.message;
+  }
+  return message;
+});
 
 type UpsertUserPreferencePayload = {
-    userPreferenceId: number;
-    autoAcceptAppointmentAssignment: boolean;
-    autoAssignAppointmentToSelf: boolean;
-    defaultHpId?: number;
+  userPreferenceId: number;
+  autoAcceptAppointmentAssignment: boolean;
+  autoAssignAppointmentToSelf: boolean;
+  defaultHpId?: number;
 }
-export const upsertMyUserPreference = async (payload: UpsertUserPreferencePayload) => {
-    
+
+export const upsertMyUserPreference = withErrorHandling(async (payload: UpsertUserPreferencePayload) => {
   const session = await getCachedSession();
+  if (!session) throw new Error("User not authenticated.");
 
-  try {
-    if(!session) throw new Error("User not authenticated.");
+  const myPermission = await getPermissionsAction({ userId: session.user.sub, type: "USER" });
+  const myPermissionArray = myPermission.map(permission => permission.name);
+  const upsertUserPreferencePermissions = [PERMISSIONS.USER["UPSERT:USER-PREFERENCE:OWN"].name];
 
-    const myPermission = await getPermissionsAction({userId: session.user.sub, type: "USER"});
-    const myPermissionArray = myPermission.map(permission => permission.name);
-    const upsertUserPreferencePermissions = [PERMISSIONS.USER["UPSERT:USER-PREFERENCE:OWN"].name];
-    
-    const canUpsertUserPreference = upsertUserPreferencePermissions.some(permission => myPermissionArray.includes(permission));
+  const canUpsertUserPreference = upsertUserPreferencePermissions.some(permission => myPermissionArray.includes(permission));
+  if (!canUpsertUserPreference) throw new Error("You do not have permission to update user preference.");
 
-    if(!canUpsertUserPreference) throw new Error("You do not have permission to update user preference.");
+  const { defaultHpId, autoAssignAppointmentToSelf, autoAcceptAppointmentAssignment } = payload;
 
-    const { defaultHpId, autoAssignAppointmentToSelf, autoAcceptAppointmentAssignment } = payload;
-    const userPreference = await prisma.userPreference.upsert({
-      where: {
-        id: payload.userPreferenceId,
-        User: {
-          userId: session.user.sub
-        }
-      },
-      create: {
-        User: {
-          connect: {
+  // Use retry mechanism to handle database conflicts
+  const userPreference = await withRetry(async () => {
+    return await prisma.$transaction(async (tx) => {
+      return await tx.userPreference.upsert({
+        where: {
+          id: payload.userPreferenceId,
+          User: {
             userId: session.user.sub
           }
         },
-        ...(autoAssignAppointmentToSelf ? {
-          HealthCareProvider: {
+        create: {
+          User: {
             connect: {
-              id: defaultHpId
+              userId: session.user.sub
             }
-          }
-        } : {}),
-        autoAcceptAppointmentAssignment: autoAcceptAppointmentAssignment,
-        autoAssignAppointmentToSelf: autoAssignAppointmentToSelf,
-      },
-      update: {
-        ...(autoAssignAppointmentToSelf ? {defaultHpId } : {defaultHpId: null}),
-        autoAcceptAppointmentAssignment: autoAcceptAppointmentAssignment,
-        autoAssignAppointmentToSelf: autoAssignAppointmentToSelf
-      }
-    })
-    
-    return {
-      status: true,
-      message: "User preference updated successfully.",
-      data: userPreference
-    }
-  } catch (error) {
-    console.error(`Error upsert-ing user preference: ${error}`);
-    let message = "An error occurred while updating user preference.";
-    if (error instanceof Error) {
-      message = error.message;
-    }
-    return {
-      status: false,
-      message,
-      data: null
-    }
-    
+          },
+          ...(autoAssignAppointmentToSelf && defaultHpId ? {
+            HealthCareProvider: {
+              connect: {
+                id: defaultHpId
+              }
+            }
+          } : {}),
+          autoAcceptAppointmentAssignment,
+          autoAssignAppointmentToSelf,
+        },
+        update: {
+          ...(autoAssignAppointmentToSelf && defaultHpId ? { defaultHpId } : { defaultHpId: null }),
+          autoAcceptAppointmentAssignment,
+          autoAssignAppointmentToSelf
+        }
+      });
+    }, {
+      isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
+      maxWait: 5000,
+      timeout: 10000
+    });
+  }, 3, 200);
+
+  return { message: "User preference updated successfully.", data: userPreference };
+}, async (error) => {
+  console.error(`Error upserting user preference: ${error}`);
+  if (error instanceof Error) {
+    return error.message;
   }
-};
+  return "An error occurred while updating user preference.";
+});

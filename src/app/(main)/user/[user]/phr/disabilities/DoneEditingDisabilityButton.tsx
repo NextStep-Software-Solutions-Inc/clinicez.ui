@@ -8,41 +8,42 @@ import { useForm } from "react-hook-form";
 import { Disability } from "./DisabilityList";
 
 interface DoneEditingDisabilityButtonProps {
-    onUpdate: (index: number, disability: Disability) => void;
-    form: ReturnType<typeof useForm<Disability>>;
-    index: number;
-  }
-export default function DoneEditingDisabilityButton({index, form, onUpdate}:DoneEditingDisabilityButtonProps) {
-  
+  onUpdate: (index: number, disability: Disability) => void;
+  form: ReturnType<typeof useForm<Disability>>;
+  index: number;
+}
+export default function DoneEditingDisabilityButton({ index, form, onUpdate }: DoneEditingDisabilityButtonProps) {
+
   const { user } = useUser();
   const userId = user?.id;
-  
+
   const handleDoneEditing = async () => {
     form.handleSubmit((data) => {
-      if(!userId) return toast.error("User not found");
+      if (!userId) return toast.error("User not found");
       toast.promise(upsertUserDisabilityAction({
         id: data.id,
         userId,
         disability: data.Disability.name.trim(),
         severity: data.severity,
         notes: data.notes,
-        ...(data.dateDiagnosed ? {dateDiagnosed: data.dateDiagnosed} : {}),
-        ...(data.isManaged ? {isManaged: data.isManaged} : {}),
+        ...(data.dateDiagnosed ? { dateDiagnosed: data.dateDiagnosed } : {}),
+        ...(data.isManaged ? { isManaged: data.isManaged } : {}),
       }), {
         loading: "Saving...",
-        success: (res) =>{
-          onUpdate(index, {...data, id: res.id});
+        success: (res) => {
+          if (res.data) {
+            onUpdate(index, { ...data, id: res.data.id });
+          }
           return "Disability updated successfully";
         },
         error: "Failed to update disability, Check if duplicate entry"
       })
     })()
   }
-  
+
   return (
     <form action={handleDoneEditing}>
       <ActionButton size="sm" variant="ghost">Done Editing</ActionButton>
     </form>
   )
 }
-  

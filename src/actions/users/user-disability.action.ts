@@ -2,8 +2,11 @@
 
 import "server-only";
 import prisma from "@lib/prisma";
-import { Severity } from "@prisma/client";
+import { Severity, Prisma } from "@prisma/client";
 import { cache } from "react";
+import { withErrorHandling } from "@/lib/with-error-handling";
+import { withRetry } from "@/lib/database-health";
+import { findUserSafely } from "@/lib/user-sync";
 
 export const addUserDisabilityAction = async (payload: {
   userId: string;
@@ -93,7 +96,7 @@ export const deleteUserDisabilityAction = async (id: number) => {
   })
 }
 
-export const upsertUserDisabilityAction = async (payload: {
+export const upsertUserDisabilityAction = withErrorHandling(async (payload: {
   id: number,
   userId: string,
   disability: string,
@@ -104,56 +107,76 @@ export const upsertUserDisabilityAction = async (payload: {
 }) => {
   const { id, userId, disability, severity, notes, dateDiagnosed, isManaged } = payload;
 
-  // Find the user by userId string first
-  const currentUser = await prisma.user.findUniqueOrThrow({
-    where: { userId, isActive: true },
-    select: { id: true },
-  });
+  // Validate input
+  if (!userId) {
+    throw new Error("User ID is required");
+  }
 
-  return await prisma.userDisability.upsert({
-    where: { id },
-    create: {
-      notes,
-      severity,
-      dateDiagnosed,
-      ...(isManaged ? { isManaged: true } : {}),
-      Disability: {
-        connectOrCreate: {
-          where: { name: disability },
-          create: { name: disability }
-        }
-      },
-      User: {
-        connect: {
-          id: currentUser.id
-        }
+  // Use retry mechanism to handle database conflicts
+  const result = await withRetry(async () => {
+    return await prisma.$transaction(async (tx) => {
+      // Find the user safely, handling migration scenarios
+      const currentUser = await findUserSafely(userId);
+
+      if (!currentUser) {
+        throw new Error(`User with ID ${userId} not found or inactive`);
       }
-    },
-    update: {
-      severity: "MILD",
-      notes: "",
-      dateDiagnosed,
-      ...(isManaged ? { isManaged: true } : {}),
-      Disability: {
-        connectOrCreate: {
-          where: { name: disability },
-          create: { name: disability }
-        }
-      }
-    },
-    select: {
-      id: true,
-      severity: true,
-      notes: true,
-      dateDiagnosed: true,
-      Disability: {
+
+      return await tx.userDisability.upsert({
+        where: { id },
+        create: {
+          notes,
+          severity,
+          dateDiagnosed,
+          ...(isManaged ? { isManaged: true } : {}),
+          Disability: {
+            connectOrCreate: {
+              where: { name: disability },
+              create: { name: disability }
+            }
+          },
+          User: {
+            connect: {
+              id: currentUser.id
+            }
+          }
+        },
+        update: {
+          severity,
+          notes,
+          dateDiagnosed,
+          ...(isManaged ? { isManaged: true } : {}),
+          Disability: {
+            connectOrCreate: {
+              where: { name: disability },
+              create: { name: disability }
+            }
+          }
+        },
         select: {
-          name: true
+          id: true,
+          severity: true,
+          notes: true,
+          dateDiagnosed: true,
+          Disability: {
+            select: {
+              name: true
+            }
+          }
         }
-      }
-    }
-  });
-}
+      });
+    }, {
+      isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
+      maxWait: 5000,
+      timeout: 10000
+    });
+  }, 3, 200);
+
+  return { message: "User disability updated successfully", data: result };
+}, async (error) => {
+  console.error("upsertUserDisabilityAction error:", error);
+  throw error;
+});
 
 export const setIsManagedAction = async (id: number, isManaged: boolean) => {
   return await prisma.userDisability.update({

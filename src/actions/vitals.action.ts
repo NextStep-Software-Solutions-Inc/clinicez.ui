@@ -2,6 +2,10 @@
 
 import prisma from "@lib/prisma";
 import { cache } from 'react';
+import { withErrorHandling } from "@/lib/with-error-handling";
+import { withRetry } from "@/lib/database-health";
+import { findUserSafely } from "@/lib/user-sync";
+import { Prisma } from "@prisma/client";
 
 const calculateBMI = (weight: number, height: number) => {
   return weight / Math.pow(height / 100, 2);
@@ -21,27 +25,43 @@ type BaseVitalSign = {
   bpDiastolic?: number;
   notes?: string;
 }
-export const createUserVitalSignAction = async (payload: BaseVitalSign & { userId: string }) => {
+export const createUserVitalSignAction = withErrorHandling(async (payload: BaseVitalSign & { userId: string }) => {
   const { userId, ...res } = payload;
 
-  // Find the user by userId string first
-  const currentUser = await prisma.user.findUniqueOrThrow({
-    where: { userId, isActive: true },
-    select: { id: true },
-  });
+  // Validate input
+  if (!userId) {
+    throw new Error("User ID is required");
+  }
 
-  return await prisma.vitalSign.create({
-    data: {
-      User: {
-        connect: {
-          id: currentUser.id
-        }
-      },
-      ...res,
-      ...(res.height && res.weight ? { bmi: calculateBMI(res.weight, res.height) } : {}),
-    },
-  });
-}
+  // Use retry mechanism to handle database conflicts
+  const result = await withRetry(async () => {
+    return await prisma.$transaction(async (tx) => {
+      // Find the user safely, handling migration scenarios
+      const currentUser = await findUserSafely(userId);
+
+      if (!currentUser) {
+        throw new Error(`User with ID ${userId} not found or inactive`);
+      }
+
+      return await tx.vitalSign.create({
+        data: {
+          userId: currentUser.id,
+          ...res,
+          ...(res.height && res.weight ? { bmi: calculateBMI(res.weight, res.height) } : {}),
+        },
+      });
+    }, {
+      isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
+      maxWait: 5000,
+      timeout: 10000
+    });
+  }, 3, 200);
+
+  return { message: "Vital signs created successfully", data: result };
+}, async (error) => {
+  console.error("createUserVitalSignAction error:", error);
+  throw error;
+});
 
 
 export type GetUserVitalSigns = Awaited<ReturnType<typeof getUserVitalSignsAction>>;

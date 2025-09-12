@@ -141,7 +141,7 @@ export default function AppointmentDisplay() {
         <div className="flex items-start p-4">
           <div className="flex items-start gap-4 text-sm">
             <Each
-              of={requesters ?? []}
+              of={requesters?.filter(requester => requester.User) ?? []} // Filter out requesters with null User
               render={(aptUser) => {
                 return (
                   <Fragment key={aptUser.User.userId}>

@@ -96,6 +96,7 @@ export const createAppointmentAction = withErrorHandling(async (payload: CreateA
         }
       }
     })
+
     const newAppointment = await prisma.appointment.create({
       data: {
         subject,
@@ -118,7 +119,7 @@ export const createAppointmentAction = withErrorHandling(async (payload: CreateA
         },
         Requesters: {
           createMany: {
-            data: patientIds.map((userId) => ({ userId: userId.id })),
+            data: patientIds.map((user) => ({ userId: user.id })),
             skipDuplicates: true
           }
         },
@@ -157,14 +158,20 @@ export const createAppointmentAction = withErrorHandling(async (payload: CreateA
     return newAppointment;
   })
 
-  const mappedUsers = newAppointment.Requesters.map((requester) => ({
-    fullName: `${requester.User.firstName} ${requester.User.middleName ?? ""} ${requester.User.lastName ?? ""} ${requester.User.suffix ?? ""}`.trim(),
-    email: requester.User.email,
-    organization: newAppointment.Clinic.name,
-    orgMail: newAppointment.Clinic.email ?? ""
-  }))
+  const mappedUsers = newAppointment.Requesters
+    .filter(requester => requester.User) // Filter out requesters with missing User data
+    .map((requester) => ({
+      fullName: `${requester.User.firstName} ${requester.User.middleName ?? ""} ${requester.User.lastName ?? ""} ${requester.User.suffix ?? ""}`.trim(),
+      email: requester.User.email,
+      organization: newAppointment.Clinic.name,
+      orgMail: newAppointment.Clinic.email ?? ""
+    }))
 
-  await sendAppointmentRequestSent({ users: mappedUsers })
+  if (mappedUsers.length > 0) {
+    await sendAppointmentRequestSent({ users: mappedUsers });
+  } else {
+    console.warn("Skipping email notification - no valid users found");
+  }
 
   return { message: "Appointment created", data: newAppointment };
 });

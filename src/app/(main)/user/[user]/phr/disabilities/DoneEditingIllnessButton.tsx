@@ -9,36 +9,38 @@ import { Illness } from "./IllnessList";
 import { Severity } from "@/types";
 
 interface DoneEditingIllnessButtonProps {
-    onUpdate: (index: number, illness: Illness) => void;
-    form: ReturnType<typeof useForm<Illness>>;
-    index: number;
-  }
-export default function DoneEditingIllnessButton({index, form, onUpdate}:DoneEditingIllnessButtonProps) {
-  
+  onUpdate: (index: number, illness: Illness) => void;
+  form: ReturnType<typeof useForm<Illness>>;
+  index: number;
+}
+export default function DoneEditingIllnessButton({ index, form, onUpdate }: DoneEditingIllnessButtonProps) {
+
   const { user } = useUser();
   const userId = user?.id;
-  
+
   const handleDoneEditing = async () => {
     form.handleSubmit((data) => {
 
-      if(!userId) return toast.error("User not found");
+      if (!userId) return toast.error("User not found");
       toast.promise(upsertUserIllnessAction({
         id: data.id,
         userId,
         illness: data.HealthCondition.name.trim(),
         severity: data.severity as Severity,
         notes: data.notes,
-        ...(data.dateDiagnosed && {dateDiagnosed: data.dateDiagnosed})
+        ...(data.dateDiagnosed && { dateDiagnosed: data.dateDiagnosed })
       }), {
         loading: "Saving...",
-        success: (res) =>{
-          onUpdate(index, {...data, id: res.id});
+        success: (res) => {
+          if (res.data) {
+            onUpdate(index, { ...data, id: res.data.id });
+          }
           return "Illness updated successfully";
         },
         error: "Failed to update illness, Check if duplicate entry"
       })
     })()
-    
+
   }
   return (
     <form action={handleDoneEditing}>
@@ -46,4 +48,3 @@ export default function DoneEditingIllnessButton({index, form, onUpdate}:DoneEdi
     </form>
   )
 }
-  

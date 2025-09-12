@@ -307,6 +307,11 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
   ])
 
   const filteredAppointments = appointments.filter((apt) => {
+    // Ensure the appointment has requesters and the first requester has user data
+    if (!apt?.Requesters?.length || !apt.Requesters[0]?.User) {
+      return false;
+    }
+    
     return (myWhitelistFilter.data?.WhitelistFilters ?? []).every((filter) => {
       return isFilterMatch(filter.Filter.key, filter.value, apt.Requesters[0].User);
     });
@@ -674,9 +679,14 @@ export const getAppointmentCountsAction = withErrorHandling(cache(async (clinicU
   ])
 
   const filteredAppointments = appointments.filter((apt) => {
+    // Ensure the appointment has requesters and the first requester has user data
+    if (!apt?.Requesters?.length || !apt.Requesters[0]?.User) {
+      return false;
+    }
+    
     return (myWhitelistFilter.data?.WhitelistFilters ?? []).every((filter) => {
       return isFilterMatch(filter.Filter.key, filter.value, apt.Requesters[0].User);
-    })
+    });
   });
 
   // group by status
@@ -771,8 +781,12 @@ export const getRoutedAppointmentCountsAction = withErrorHandling(cache(async (c
     getUserWhitelistFilters(session.user.sub, clinicUid)
   ])
 
-
   const filteredAppointments = routedAppointments.filter((routed) => {
+    // Ensure the appointment has requesters and the first requester has user data
+    if (!routed.Appointment?.Requesters?.length || !routed.Appointment.Requesters[0]?.User) {
+      return false;
+    }
+    
     return (myWhitelistFilter.data?.WhitelistFilters ?? []).every((filter) => {
       return isFilterMatch(filter.Filter.key, filter.value, routed.Appointment.Requesters[0].User);
     });

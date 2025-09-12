@@ -5,15 +5,19 @@ import prisma from "@lib/prisma";
 import { isHP } from "@lib/org-utils";
 import { cache } from "react";
 import { HealthConditionStatus, Severity } from "@/types";
+import { withErrorHandling } from "@/lib/with-error-handling";
+import { withRetry } from "@/lib/database-health";
+import { findUserSafely } from "@/lib/user-sync";
+import { Prisma } from "@prisma/client";
 
 export const addUserIllnessAction = async (payload: {
-    userId: string;
-    illness: string;
-    severity: Severity,
-    notes?: string,
-    dateDiagnosed?: Date,
+  userId: string;
+  illness: string;
+  severity: Severity,
+  notes?: string,
+  dateDiagnosed?: Date,
 }) => {
-  const { userId, illness, severity, notes, dateDiagnosed} = payload;
+  const { userId, illness, severity, notes, dateDiagnosed } = payload;
   return await prisma.userHealthCondition.create({
     data: {
       severity,
@@ -41,7 +45,7 @@ export const getUserIllnessesAction = cache(async (userId?: string) => {
       dateDiagnosed: "desc"
     },
     ...(userId && {
-      where:{
+      where: {
         User: {
           userId
         }
@@ -82,10 +86,10 @@ export const getUserIllnessesAction = cache(async (userId?: string) => {
 })
 
 export const updateUserIllnessAction = async (payload: {
-    id: number
-    severity: Severity,
-    notes?: string,
-    dateDiagnosed: Date,
+  id: number
+  severity: Severity,
+  notes?: string,
+  dateDiagnosed: Date,
 }) => {
   const { id, severity, notes, dateDiagnosed } = payload;
   return await prisma.userHealthCondition.update({
@@ -104,74 +108,101 @@ export const deleteUserIllnessAction = async (id: number) => {
   })
 }
 
-export const upsertUserIllnessAction = async (payload: {
-    id: number,
-    userId: string,
-    illness: string,
-    severity: Severity,
-    notes?: string | null,
-    dateDiagnosed?: Date,
+export const upsertUserIllnessAction = withErrorHandling(async (payload: {
+  id: number,
+  userId: string,
+  illness: string,
+  severity: Severity,
+  notes?: string | null,
+  dateDiagnosed?: Date,
 }) => {
   const { id, userId, illness, severity, notes, dateDiagnosed } = payload;
-  return await prisma.userHealthCondition.upsert({
-    where: { id },
-    create: {
-      notes,
-      severity,
-      dateDiagnosed,
-      HealthCondition: { 
-        connectOrCreate: {
-          where: { name: illness },
-          create: { name: illness }
-        }
-      },
-      User: {
-        connect: {
-          userId
-        }
+
+  // Validate input
+  if (!userId) {
+    throw new Error("User ID is required");
+  }
+
+  // Use retry mechanism to handle database conflicts
+  const result = await withRetry(async () => {
+    return await prisma.$transaction(async (tx) => {
+      // Find the user safely, handling migration scenarios
+      const currentUser = await findUserSafely(userId);
+
+      if (!currentUser) {
+        throw new Error(`User with ID ${userId} not found or inactive`);
       }
-    },
-    update: {
-      severity,
-      notes: "",
-      dateDiagnosed,
-      HealthCondition: {
-        connectOrCreate: {
-          where: { name: illness },
-          create: { name: illness }
-        }
-      }
-    },
-    select: {
-      id: true,
-      severity: true,
-      notes: true,
-      dateDiagnosed: true,
-      dateResolved: true,
-      status: true,
-      HealthCondition: {
+
+      return await tx.userHealthCondition.upsert({
+        where: { id },
+        create: {
+          notes,
+          severity,
+          dateDiagnosed,
+          HealthCondition: {
+            connectOrCreate: {
+              where: { name: illness },
+              create: { name: illness }
+            }
+          },
+          User: {
+            connect: {
+              id: currentUser.id
+            }
+          }
+        },
+        update: {
+          severity,
+          notes,
+          dateDiagnosed,
+          HealthCondition: {
+            connectOrCreate: {
+              where: { name: illness },
+              create: { name: illness }
+            }
+          }
+        },
         select: {
-          name: true
+          id: true,
+          severity: true,
+          notes: true,
+          dateDiagnosed: true,
+          dateResolved: true,
+          status: true,
+          HealthCondition: {
+            select: {
+              name: true
+            }
+          }
         }
-      }
-    }
-  })
-}
+      });
+    }, {
+      isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
+      maxWait: 5000,
+      timeout: 10000
+    });
+  }, 3, 200);
+
+  return { message: "User health condition updated successfully", data: result };
+}, async (error) => {
+  console.error("upsertUserIllnessAction error:", error);
+  throw error;
+});
 
 
-type ResponseType = {status: boolean, message: string}
+type ResponseType = { status: boolean, message: string }
 export function setUserIllnessStatusAction(id: number, status: "RESOLVED", userId: string): Promise<ResponseType>;
 export function setUserIllnessStatusAction(id: number, status: Exclude<HealthConditionStatus, "RESOLVED">): Promise<ResponseType>;
 
 export async function setUserIllnessStatusAction(id: number, status: HealthConditionStatus, userId?: string): Promise<ResponseType> {
   const hp = await isHP()
-  if(!hp) return {
+  if (!hp) return {
     status: false,
     message: "You are not authorized to perform this action. Only Health Professionals can perform this action."
   }
   await prisma.userHealthCondition.update({
     where: { id },
-    data: { 
+    data: {
       status,
       ...(status === "RESOLVED" && userId ? {
         dateResolved: new Date(),

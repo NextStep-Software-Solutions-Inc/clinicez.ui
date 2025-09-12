@@ -2,8 +2,6 @@
 
 import { PDFDocument } from "pdf-lib"
 import { logger } from "@/lib/logger"
-import fs from "fs/promises"
-import path from "path"
 
 export interface LoadPdfResult {
   pdfDoc: PDFDocument
@@ -14,28 +12,28 @@ export interface LoadPdfResult {
 
 export async function loadPhilHealthPdf(fileName: string): Promise<LoadPdfResult> {
   try {
-    // Use filesystem access instead of HTTP requests for better reliability
-    const publicDir = path.join(process.cwd(), 'public', 'pdfs', 'phr')
-    const filePath = path.join(publicDir, fileName)
+    // Use HTTP requests to access files from public directory (works in all environments)
+    const pdfUrl = `/pdfs/phr/${fileName}`
 
-    // Validate file exists and is within the expected directory for security
-    const normalizedPath = path.normalize(filePath)
-    const normalizedPublicDir = path.normalize(publicDir)
+    // Fetch the PDF from the public directory
+    const baseUrl = process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : process.env.NODE_ENV === 'development'
+        ? 'http://localhost:3000'
+        : 'https://clinicez.com' // fallback to production URL
 
-    if (!normalizedPath.startsWith(normalizedPublicDir)) {
-      throw new Error(`Access denied: File path is outside allowed directory`)
+    const fullUrl = `${baseUrl}${pdfUrl}`
+
+    logger.info(`Fetching PhilHealth PDF template from: ${fullUrl}`)
+
+    const response = await fetch(fullUrl)
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch PDF template: ${response.status} ${response.statusText}`)
     }
 
-    // Check if file exists
-    try {
-      await fs.access(filePath, fs.constants.F_OK)
-    } catch {
-      throw new Error(`PDF template not found: ${fileName}`)
-    }
-
-    // Read the PDF file
-    const fileBuffer = await fs.readFile(filePath)
-    const bytes = new Uint8Array(fileBuffer)
+    const arrayBuffer = await response.arrayBuffer()
+    const bytes = new Uint8Array(arrayBuffer)
 
     if (bytes.length === 0) {
       throw new Error(`PDF template is empty: ${fileName}`)
@@ -47,7 +45,7 @@ export async function loadPhilHealthPdf(fileName: string): Promise<LoadPdfResult
 
     logger.info(`Successfully loaded PDF template: ${fileName}`)
 
-    return { pdfDoc, form, bytes, filePath }
+    return { pdfDoc, form, bytes, filePath: pdfUrl }
   } catch (error) {
     logger.error(`Error loading PhilHealth PDF template "${fileName}":`, error)
     throw error

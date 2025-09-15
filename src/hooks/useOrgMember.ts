@@ -5,7 +5,6 @@ import { self } from "@services/request"
 import useSWR from "swr"
 
 export const useOrgMembers = (filter: GetOrgMembersFilters, enable = true) => {
-
   const fetcher = (args: string) => self.get<GetOrgMembers>(args)
   const searchParams = new URLSearchParams()
   Object.entries(filter).forEach(([key, value]) => {

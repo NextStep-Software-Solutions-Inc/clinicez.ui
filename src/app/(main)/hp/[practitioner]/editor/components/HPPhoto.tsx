@@ -13,18 +13,18 @@ import { upsertHPAction } from "@actions/hp.actions";
 interface HPPhotoProps {
   profile: HPProfileType
   hpId: number
-  hpTypeName:  string
+  hpTypeName: string
 }
 
-export default function HPPhoto({profile, hpId, hpTypeName}: HPPhotoProps) {
+export default function HPPhoto({ profile, hpId }: HPPhotoProps) {
   const { user } = useUser()
   const userId = user?.id
-    
+
   const action = async (formData: FormData) => {
-    
+
     const picture = formData.get("picture") as File
     const cover = formData.get("cover") as File
-    
+
     const [pictureUrl, coverUrl] = await Promise.all([
       (async () => {
         if (!picture.size) return profile.picture
@@ -58,30 +58,30 @@ export default function HPPhoto({profile, hpId, hpTypeName}: HPPhotoProps) {
       update: mappedData
     }), {
       loading: "Updating photos...",
-      success: (latestProfile) => {
+      success: () => {
         return "Photos updated successfully."
       },
       error: "Failed to update photos."
     })
-    
   }
 
+
   return (
-   
+
     <form action={action} className="prose max-w-full space-y-8 shadow-2xl w-full p-8 bg-white rounded-md">
       <div className="flex flex-col md:flex-row gap-2">
-        
+
         <div className="basis-1/4 flex-grow">
           <Label htmlFor="picture">Profile Picture</Label>
-          <Input name="picture" id="picture" type="file"/>
+          <Input name="picture" id="picture" type="file" />
           <p>
             The profile picture is displayed on your profile page.
           </p>
         </div>
-        
+
         <div className="basis-1/4 flex-grow">
-          <Label  htmlFor="cover">Cover Photo</Label>
-          <Input name="cover" id="cover" type="file"/>
+          <Label htmlFor="cover">Cover Photo</Label>
+          <Input name="cover" id="cover" type="file" />
           <p>
             The cover photo is displayed on your profile page.
           </p>

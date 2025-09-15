@@ -27,6 +27,8 @@ import React from "react"
 import ActionButton from "@components/ActionButton"
 import { upsertHPAction } from "@actions/hp.actions"
 import { Separator } from "@components/ui/separator"
+import ESignatureUpload from "@components/hp/ESignatureUpload"
+import { uploadSignatureAction } from "@actions/hp/signature-upload.action"
 
 type HPProfileProps = {
   profile: HPProfileType
@@ -35,6 +37,7 @@ type HPProfileProps = {
 export default function HPProfileForm({ profile }: HPProfileProps) {
   const params = useParams() as { practitioner: string }
   const [profileId, setProfileId] = React.useState<number | undefined>(profile.id)
+  const [signatureFile, setSignatureFile] = React.useState<File | null>(null)
   const practitioner = parseInt(params.practitioner)
 
   const form = useForm<HPProfileType>({
@@ -45,6 +48,23 @@ export default function HPProfileForm({ profile }: HPProfileProps) {
 
   const action = async () => {
     await (form.handleSubmit(async (values: HPProfileType) => {
+      let eSignatureUrl = profile.eSignatureUrl;
+
+      if (signatureFile) {
+        try {
+          const formData = new FormData();
+          formData.append("media", signatureFile);
+          formData.append("directory", `hp/${practitioner}/signature`);
+
+          const { url } = await uploadSignatureAction(formData);
+          eSignatureUrl = url;
+        } catch (error) {
+          console.error("Signature upload error:", error);
+          toast.error("Failed to upload signature. Please try again.");
+          return;
+        }
+      }
+
       const mappedData = {
         title: values.title,
         name: values.name,
@@ -55,6 +75,7 @@ export default function HPProfileForm({ profile }: HPProfileProps) {
         areaOfInterest: values.areaOfInterest,
         experience: values.experience,
         hobbies: values.hobbies,
+        eSignatureUrl: eSignatureUrl,
 
         languages: values.languages.map((lang) => lang.name),
         specialties: values.specialties.map((lang) => lang.name),
@@ -70,13 +91,17 @@ export default function HPProfileForm({ profile }: HPProfileProps) {
         create: mappedData,
         update: mappedData
       }), {
-        loading: "Saving profile...",
+        loading: signatureFile ? "Uploading signature and saving profile..." : "Saving profile...",
         success: (res) => {
           if (res) {
             setProfileId(res.id)
             form.reset(values)
+            setSignatureFile(null)
+
+            const fileInput = document.getElementById('signature-file') as HTMLInputElement;
+            if (fileInput) fileInput.value = '';
           }
-          return "Profile updated successfully."
+          return signatureFile ? "Profile and signature saved successfully!" : "Profile updated successfully."
         },
         error: "Failed to update profile."
       })
@@ -260,6 +285,17 @@ export default function HPProfileForm({ profile }: HPProfileProps) {
         <Certifications form={form} />
         <Separator />
         <Affiliations form={form} />
+        <Separator />
+        <div className="w-full">
+          <h3 className="text-lg font-semibold mb-4">E-Signature Upload</h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            Upload your digital signature for use on medical certificates and official documents.
+          </p>
+          <ESignatureUpload
+            currentSignatureUrl={profile.eSignatureUrl}
+            onFileChange={setSignatureFile}
+          />
+        </div>
         <Separator />
         <div className="mt-4">
           <ActionButton className="w-full" disabled={form.formState.isLoading}>Save Changes</ActionButton>

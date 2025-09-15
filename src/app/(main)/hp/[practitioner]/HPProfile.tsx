@@ -1,4 +1,4 @@
-import {  CoverProfilePhoto, PersonalDetails } from "./PractitionerLayout";
+import { CoverProfilePhoto, PersonalDetails } from "./PractitionerLayout";
 import { Badge } from "@components/ui/badge";
 import { Label } from "@components/ui/label";
 import Each from "@components/utils/Each";
@@ -12,26 +12,26 @@ interface HPProfileProps {
   hpId: number;
 }
 
-export default async function HPProfile({hpId}: HPProfileProps) {
+export default async function HPProfile({ hpId }: HPProfileProps) {
   const profile = await getHPAction({
     id: hpId
   });
   if (!profile) notFound();
-  
+
   const cover = profile.HPProfile?.cover || BANNER_PLACEHOLDER;
-  const picture = profile.HPProfile?.picture || (profile.User.gender === "FEMALE" ? FEMALE_DOCTOR_AVATAR: MALE_DOCTOR_AVATAR);
+  const picture = profile.HPProfile?.picture || (profile.User.gender === "FEMALE" ? FEMALE_DOCTOR_AVATAR : MALE_DOCTOR_AVATAR);
   const philosophy = profile.HPProfile?.philosophy;
   const areaOfInterest = profile.HPProfile?.areaOfInterest;
   const experience = profile.HPProfile?.experience ?? "";
   const educations = profile.HPProfile?.educations ?? [];
   const languages = profile.HPProfile?.languages ?? [];
   const specialties = profile.HPProfile?.specialties ?? [];
-  const affiliations = profile.HPProfile?.affiliations  ?? [];
+  const affiliations = profile.HPProfile?.affiliations ?? [];
   const hobbies = profile.HPProfile?.hobbies ?? [];
   const fields = profile.HPProfile?.fields ?? [];
   const alias = profile.HPProfile?.name?.split(" ").map(name => name[0]).join("") ?? "";
 
-  const links =  {
+  const links = {
     website: profile.User.SocialLink?.website ?? "",
     linkedin: profile.User.SocialLink?.linkedin ?? "",
     facebook: profile.User.SocialLink?.facebook ?? "",
@@ -55,8 +55,8 @@ export default async function HPProfile({hpId}: HPProfileProps) {
     <div className="">
       {/* Photos */}
       <Suspend>
-        <CoverProfilePhoto 
-          coverPhoto={cover} 
+        <CoverProfilePhoto
+          coverPhoto={cover}
           profilePhoto={picture}
           alias={alias}
         />
@@ -64,23 +64,23 @@ export default async function HPProfile({hpId}: HPProfileProps) {
       {/* Practitioner Details */}
       <div className="grid grid-cols-1 lg:grid-cols-2  mt-24 gap-10">
         <div className="">
-          <PersonalDetails {...personalDetails}/>
-          <div  className="space-y-5">
+          <PersonalDetails {...personalDetails} />
+          <div className="space-y-5">
             <div className="flex gap-1 flex-wrap mt-2">
               <Each
                 of={fields}
                 render={field => <Badge >{field}</Badge>}
               />
             </div>
-            
 
-            { philosophy && (
+
+            {philosophy && (
               <div >
                 <Label>Philosophy of Care</Label>
                 <p className="indent-5 mt-2">{philosophy}</p>
               </div>
             )}
-            { areaOfInterest && (
+            {areaOfInterest && (
               <div >
                 <Label>Area of Interest</Label>
                 <p className="">{areaOfInterest}</p>
@@ -96,7 +96,7 @@ export default async function HPProfile({hpId}: HPProfileProps) {
                 </div>
               )
             }
-            
+
             <div>
               <Label className="">Languages</Label>
               <ul className="list-disc ml-5">
@@ -110,33 +110,33 @@ export default async function HPProfile({hpId}: HPProfileProps) {
               <Label className="text-xl font-semibold">Contact Information</Label>
               <div className="space-y-1 mt-5">
                 <div className="flex items-center gap-2">
-                  <MailIcon/>
+                  <MailIcon />
                   <a href={`mailto:${contactDetails.email}`}>{contactDetails.email}</a>
                 </div>
                 <div className="flex items-center gap-2">
-                  <PhoneCallIcon/>
+                  <PhoneCallIcon />
                   <a href={`tel:${contactDetails.phone}`}>{contactDetails.phone}</a>
                 </div>
                 <div className="flex items-center gap-2">
-                  <EarthIcon/>
+                  <EarthIcon />
                   <a href={links?.website} target="_blank">{links.website}</a>
                 </div>
                 <div className="flex items-center gap-2">
-                  <LinkedinIcon/>
+                  <LinkedinIcon />
                   <a href={links?.linkedin} target="_blank">{links.linkedin}</a>
                 </div>
                 <div className="flex items-center gap-2">
-                  <FacebookIcon/>
+                  <FacebookIcon />
                   <a href={links?.facebook} target="_blank">{links.facebook}</a>
                 </div>
                 <div className="flex items-center gap-2">
-                  <TwitterIcon/>
+                  <TwitterIcon />
                   <a href={links?.twitter} target="_blank">{links.twitter}</a>
                 </div>
               </div>
             </div>
           </div>
-          
+
         </div>
         <div className="">
           <div className="flex flex-col gap-5">
@@ -163,7 +163,7 @@ export default async function HPProfile({hpId}: HPProfileProps) {
               <Label className="">Years of Experience</Label>
               <p>{experience}</p>
             </div>
-            
+
             <Label className="text-xl font-semibold">Professional Details</Label>
             <div>
               <Label className="">Specialties</Label>

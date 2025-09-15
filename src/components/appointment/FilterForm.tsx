@@ -38,10 +38,10 @@ import { Separator } from "@components/ui/separator"
 import { usePermissions } from "@hooks/usePermission"
 import { PERMISSIONS } from "@lib/permissions"
 import { useUser } from "@clerk/nextjs"
-import { useClinicPatients } from "@/hooks/useClinicPatient"
 import { SearchableDropdown, type SearchableDropdownOption } from "@components/ui/searchable-dropdown"
 import { getFullName } from "@/lib/formatter-utils"
 import { isValidStudentId } from "@/lib/formatter-utils"
+import { useOrgMembers } from "@/hooks/useOrgMember"
 
 const FilterFormSchema = z.object({
   appointmentTypeId: z.coerce.number({
@@ -59,7 +59,7 @@ const FilterFormSchema = z.object({
   }).optional(),
   bookAFriend: z.boolean().default(false),
   requester: z.string({
-    description: 'Select a patient',
+    description: 'Select an organization member',
   }).optional()
 }).superRefine((data, ctx) => {
   if (data.bookAFriend && !data.requester) {
@@ -75,19 +75,6 @@ interface FilterFormProps {
   onContinue?: () => void
 }
 
-interface StudentRecord {
-  studentId: string;
-}
-
-interface PatientWithStudentRecords {
-  userId: string;
-  firstName: string;
-  middleName?: string;
-  lastName?: string;
-  suffix?: string;
-  StudentRecords?: StudentRecord[];
-}
-
 export default function FilterForm({ onContinue }: FilterFormProps) {
   const { clinicUid } = useParams<{ clinicUid: string }>()
   const { user } = useUser()
@@ -95,7 +82,7 @@ export default function FilterForm({ onContinue }: FilterFormProps) {
   const { data: appointmentTypes } = useOrgAppointmentTypes(clinicUid)
   const { data: appointmentModes } = useOrgAppointmentModes(clinicUid);
   const { data: serviceCategories } = useClinicServiceCategories(clinicUid)
-  const { data: clinicPatients } = useClinicPatients({ clinicUid })
+  const { data: orgMembers } = useOrgMembers({ clinicUid: clinicUid });
 
   const { data: myOrgPermissions, isLoading: loadingPermissions } = usePermissions({
     userId: user?.id ?? undefined,
@@ -114,22 +101,34 @@ export default function FilterForm({ onContinue }: FilterFormProps) {
     }, [] as { hpTypeName: string, hps: NonNullable<typeof hps> }[])
   }, [hps])
 
-  // Memoize patient options to avoid recalculation on every render
+  // Memoize organization member options to avoid recalculation on every render
   const patientOptions = useMemo(() => {
-    return (clinicPatients?.data ?? []).map((cp) => {
-      const { Patient } = cp as { Patient: PatientWithStudentRecords };
-      const name = getFullName({ firstName: Patient.firstName, middleName: Patient.middleName, lastName: Patient.lastName, suffix: Patient.suffix });
-      // Ensure only valid student IDs are included
-      const studentIds = Patient.StudentRecords?.map((sr) => sr.studentId).filter(isValidStudentId) ?? [];
-      return {
-        value: Patient.userId,
-        label: name || Patient.userId,
-        studentIds,
-      }
-    });
-  }, [clinicPatients?.data]);
+    if (!orgMembers?.data?.data) return [];
 
-  const form = useForm<z.infer<typeof FilterFormSchema>>({
+    return orgMembers.data.data.map((member) => {
+      const user = member.User;
+
+      // Build full name using helper function (handling nullable values from API)
+      const firstName = user.firstName || "";
+      const lastName = user.lastName || "";
+      const suffix = user.suffix || undefined;
+
+      const name = firstName || lastName ? getFullName({
+        firstName,
+        lastName: lastName || undefined,
+        suffix
+      }) : "No Name";
+
+      // Extract valid student IDs
+      const studentIds = user.StudentRecords?.map((sr) => sr.studentId).filter(isValidStudentId) ?? [];
+
+      return {
+        value: user.userId,
+        label: name,
+        studentIds,
+      };
+    });
+  }, [orgMembers?.data?.data]); const form = useForm<z.infer<typeof FilterFormSchema>>({
     resolver: zodResolver(FilterFormSchema),
     mode: "onChange",
     defaultValues: {
@@ -226,7 +225,7 @@ export default function FilterForm({ onContinue }: FilterFormProps) {
 
                       return (
                         <FormItem className="flex-grow">
-                          <FormLabel>Select Patient</FormLabel>
+                          <FormLabel>Select Member</FormLabel>
                           <SearchableDropdown
                             options={patientOptions}
                             value={field.value}

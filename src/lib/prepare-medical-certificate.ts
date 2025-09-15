@@ -12,7 +12,7 @@ type PrepareMedicalCertificatePayload = {
     name: string;
     licenseNo: string;
     ptrNo: string;
-    address: string;
+    eSignatureBase64?: string;
   };
   certificate: {
     classification: string;
@@ -28,7 +28,7 @@ type PrepareMedicalCertificatePayload = {
 export const prepareMedicalCertificate = (payload: PrepareMedicalCertificatePayload): string => {
   const { template, patient, doctor, certificate } = payload;
   const { name: patientName, age, gender, address } = patient;
-  const { name: doctorName, licenseNo, ptrNo, address: doctorAddress } = doctor;
+  const { name: doctorName, licenseNo, ptrNo, eSignatureBase64 } = doctor;
   const {
     classification,
     classificationDescription,
@@ -52,7 +52,7 @@ export const prepareMedicalCertificate = (payload: PrepareMedicalCertificatePayl
     "@{doctorName}": doctorName,
     "@{licenseNo}": licenseNo,
     "@{ptrNo}": ptrNo,
-    "@{doctorAddress}": doctorAddress,
+    "@{eSignatureUrl}": eSignatureBase64 || "",
     "@{selectedClassification}": classification,
     "@{selectedClassificationDescription}": classificationDescription,
     "@{selectedReason}": reason,

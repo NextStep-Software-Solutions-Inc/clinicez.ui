@@ -37,7 +37,22 @@ export const useAppointmentTools = ({ appointment, revalidate }: UseAppointmentT
   })
   const routingCode = appointment?.AppointmentRouting.find(r => authHps?.some(hp => hp.id === r.RoutedTo.id && r.status === "PENDING"))?.routingCode
   if (!appointment) return { tools: [] }
-  const patientId = appointment.Requesters[0].User.userId
+
+  // Check if appointment has any requesters at all
+  if (!appointment.Requesters || appointment.Requesters.length === 0) {
+    console.warn("Appointment has no requesters", appointment.id);
+    return { tools: [] };
+  }
+
+  // Safely get the patient ID, handling null User relationships
+  const validRequester = appointment.Requesters.find(r => r.User?.userId);
+  const patientId = validRequester?.User?.userId;
+
+  if (!patientId) {
+    console.warn("No valid patient found in appointment requesters", appointment.id);
+    return { tools: [] };
+  }
+
   const tools: AppointmentStatusTools = [
     {
       action: "accept",

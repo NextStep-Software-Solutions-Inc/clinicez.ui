@@ -7,8 +7,11 @@ import { getOrgMembersAction, GetOrgMembersFilters } from "@/actions/organizatio
 import { parseObject, searchParamsToObject } from "@/lib/utils";
 
 export const GET = withClerkAuth(async (req: NextRequest) => {
-
   const filters = parseObject(searchParamsToObject(req.nextUrl.searchParams)) as GetOrgMembersFilters;
+
+  if (filters.searchKey !== undefined) {
+    filters.searchKey = String(filters.searchKey);
+  }
 
   const orgMembers = await getOrgMembersAction(filters)
 

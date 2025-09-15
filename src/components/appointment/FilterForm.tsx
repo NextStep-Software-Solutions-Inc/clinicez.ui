@@ -1,5 +1,6 @@
 "use client"
 
+import React, { useMemo, useState, useEffect } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
@@ -22,6 +23,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@components/ui/select"
+import { Button } from "@components/ui/button"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@components/ui/popover"
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@components/ui/command"
 import Each from "@components/utils/Each"
 import { useOrgAppointmentTypes } from "@hooks/useOrgAppointmentType"
 import { useParams } from "next/navigation"
@@ -32,16 +47,32 @@ import ActionButton from "@components/ActionButton"
 import { toast } from "sonner"
 import { useOrgAppointmentModes } from "@hooks/useOrgAppointmentMode"
 import { useClinicServiceCategories } from "@/hooks/useClinicServiceCategory"
-import { useMemo } from "react"
 import { Checkbox } from "@components/ui/checkbox"
 import { Separator } from "@components/ui/separator"
 import { usePermissions } from "@hooks/usePermission"
 import { PERMISSIONS } from "@lib/permissions"
 import { useUser } from "@clerk/nextjs"
-import { useClinicPatients } from "@/hooks/useClinicPatient"
-import { SearchableDropdown, type SearchableDropdownOption } from "@components/ui/searchable-dropdown"
+import { ChevronDown } from "lucide-react"
 import { getFullName } from "@/lib/formatter-utils"
 import { isValidStudentId } from "@/lib/formatter-utils"
+import { useOrgMembers } from "@/hooks/useOrgMember"
+
+// Debounce hook for search optimization
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value)
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value)
+    }, delay)
+
+    return () => {
+      clearTimeout(handler)
+    }
+  }, [value, delay])
+
+  return debouncedValue
+}
 
 const FilterFormSchema = z.object({
   appointmentTypeId: z.coerce.number({
@@ -59,7 +90,7 @@ const FilterFormSchema = z.object({
   }).optional(),
   bookAFriend: z.boolean().default(false),
   requester: z.string({
-    description: 'Select a patient',
+    description: 'Select an organization member',
   }).optional()
 }).superRefine((data, ctx) => {
   if (data.bookAFriend && !data.requester) {
@@ -75,19 +106,6 @@ interface FilterFormProps {
   onContinue?: () => void
 }
 
-interface StudentRecord {
-  studentId: string;
-}
-
-interface PatientWithStudentRecords {
-  userId: string;
-  firstName: string;
-  middleName?: string;
-  lastName?: string;
-  suffix?: string;
-  StudentRecords?: StudentRecord[];
-}
-
 export default function FilterForm({ onContinue }: FilterFormProps) {
   const { clinicUid } = useParams<{ clinicUid: string }>()
   const { user } = useUser()
@@ -95,7 +113,25 @@ export default function FilterForm({ onContinue }: FilterFormProps) {
   const { data: appointmentTypes } = useOrgAppointmentTypes(clinicUid)
   const { data: appointmentModes } = useOrgAppointmentModes(clinicUid);
   const { data: serviceCategories } = useClinicServiceCategories(clinicUid)
-  const { data: clinicPatients } = useClinicPatients({ clinicUid })
+
+  // Use search-based approach instead of loading all members
+  const [memberSearch, setMemberSearch] = useState("")
+  const [open, setOpen] = useState(false)
+  const [selectedMember, setSelectedMember] = useState<{
+    key: number;
+    value: string;
+    label: string;
+    studentIds?: string[];
+  } | null>(null)
+  const debouncedSearch = useDebounce(memberSearch, 300)
+
+  const shouldFetchMembers = debouncedSearch.length >= 2
+  const { data: orgMembersData, isLoading: orgMembersLoading } = useOrgMembers({
+    clinicUid: clinicUid,
+    searchKey: shouldFetchMembers ? debouncedSearch : undefined,
+    pageSize: 20,
+    pageNumber: 1
+  }, shouldFetchMembers)
 
   const { data: myOrgPermissions, isLoading: loadingPermissions } = usePermissions({
     userId: user?.id ?? undefined,
@@ -114,22 +150,39 @@ export default function FilterForm({ onContinue }: FilterFormProps) {
     }, [] as { hpTypeName: string, hps: NonNullable<typeof hps> }[])
   }, [hps])
 
-  // Memoize patient options to avoid recalculation on every render
   const patientOptions = useMemo(() => {
-    return (clinicPatients?.data ?? []).map((cp) => {
-      const { Patient } = cp as { Patient: PatientWithStudentRecords };
-      const name = getFullName({ firstName: Patient.firstName, middleName: Patient.middleName, lastName: Patient.lastName, suffix: Patient.suffix });
-      // Ensure only valid student IDs are included
-      const studentIds = Patient.StudentRecords?.map((sr) => sr.studentId).filter(isValidStudentId) ?? [];
-      return {
-        value: Patient.userId,
-        label: name || Patient.userId,
-        studentIds,
-      }
-    });
-  }, [clinicPatients?.data]);
+    if (!orgMembersData?.data?.data || !shouldFetchMembers) return [];
 
-  const form = useForm<z.infer<typeof FilterFormSchema>>({
+    const options = orgMembersData.data.data.map((member) => {
+      const user = member.User;
+      const firstName = user.firstName || "";
+      const lastName = user.lastName || "";
+      const suffix = user.suffix || undefined;
+
+      const name = firstName || lastName ? getFullName({
+        firstName,
+        lastName: lastName || undefined,
+        suffix
+      }) : "No Name";
+
+      const studentIds = user.StudentRecords?.map((sr) => sr.studentId).filter(isValidStudentId) ?? [];
+
+      return {
+        key: member.id,
+        value: user.userId,
+        label: name,
+        studentIds,
+      };
+    });
+
+    return options.reduce((acc, option) => {
+      const existing = acc.find(opt => opt.value === option.value);
+      if (!existing) {
+        acc.push(option);
+      }
+      return acc;
+    }, [] as typeof options);
+  }, [orgMembersData?.data?.data, shouldFetchMembers]); const form = useForm<z.infer<typeof FilterFormSchema>>({
     resolver: zodResolver(FilterFormSchema),
     mode: "onChange",
     defaultValues: {
@@ -212,41 +265,89 @@ export default function FilterForm({ onContinue }: FilterFormProps) {
                     control={form.control}
                     name="requester"
                     render={({ field }) => {
-
-                      const filterByNameOrStudentId = (option: SearchableDropdownOption, term: string) => {
-                        const searchTerm = term.trim().toLowerCase()
-                        if (!searchTerm) return true
-
-                        const labelMatch = option.label.toLowerCase().includes(searchTerm)
-                        const studentIds = option.studentIds ?? []
-                        const idMatch = studentIds.some((id) => id.toLowerCase().includes(searchTerm))
-
-                        return labelMatch || idMatch
-                      }
-
                       return (
                         <FormItem className="flex-grow">
-                          <FormLabel>Select Patient</FormLabel>
-                          <SearchableDropdown
-                            options={patientOptions}
-                            value={field.value}
-                            placeholder="Search by name or student ID"
-                            filterFunction={filterByNameOrStudentId}
-                            onSelect={(opt) => field.onChange(opt.value)}
-                            renderOption={(opt) => {
-                              const studentIds = opt.studentIds ?? []
-                              return (
-                                <div className="flex flex-col">
-                                  <span className="font-medium">{opt.label}</span>
-                                  {studentIds.length > 0 && (
-                                    <span className="text-xs text-muted-foreground">Student ID: {studentIds.join(", ")}</span>
-                                  )}
-                                </div>
-                              )
-                            }}
-                          />
+                          <FormLabel>Select Member</FormLabel>
+                          <div className="relative">
+                            <Popover open={open} onOpenChange={setOpen}>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  role="combobox"
+                                  className="w-full justify-between min-h-[40px] h-auto"
+                                >
+                                  <div className="flex flex-1 text-left">
+                                    {selectedMember ? (
+                                      <div className="flex flex-col">
+                                        <span className="font-medium">{selectedMember.label}</span>
+                                        {selectedMember.studentIds && selectedMember.studentIds.length > 0 && (
+                                          <span className="text-xs text-muted-foreground">Student ID: {selectedMember.studentIds.join(", ")}</span>
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <span className="text-muted-foreground">Select a member...</span>
+                                    )}
+                                  </div>
+                                  <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-full p-0" align="start">
+                                <Command shouldFilter={false}>
+                                  <CommandInput
+                                    placeholder="Type at least 2 characters to search by name or student ID..."
+                                    value={memberSearch}
+                                    onValueChange={(value) => {
+                                      setMemberSearch(value)
+                                      if (selectedMember && value !== selectedMember.label && value.length >= 2) {
+                                        field.onChange("")
+                                        setSelectedMember(null)
+                                      }
+                                    }}
+                                  />
+                                  <CommandList>
+                                    {debouncedSearch.length < 2 ? (
+                                      <CommandEmpty>
+                                        Type at least 2 characters to search
+                                      </CommandEmpty>
+                                    ) : orgMembersLoading ? (
+                                      <CommandEmpty>
+                                        <div className="flex items-center gap-2">
+                                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600" />
+                                          Searching...
+                                        </div>
+                                      </CommandEmpty>
+                                    ) : patientOptions.length === 0 ? (
+                                      <CommandEmpty>No members found for &ldquo;{debouncedSearch}&rdquo;</CommandEmpty>
+                                    ) : (
+                                      <CommandGroup>
+                                        {patientOptions.map((option) => (
+                                          <CommandItem
+                                            key={option.key}
+                                            value={option.value}
+                                            onSelect={() => {
+                                              field.onChange(option.value)
+                                              setSelectedMember(option)
+                                              setMemberSearch(option.label)
+                                              setOpen(false)
+                                            }}
+                                          >
+                                            <div className="flex flex-col w-full">
+                                              <span className="font-medium">{option.label}</span>
+                                              {option.studentIds && option.studentIds.length > 0 && (
+                                                <span className="text-xs text-muted-foreground">Student ID: {option.studentIds.join(", ")}</span>
+                                              )}
+                                            </div>
+                                          </CommandItem>
+                                        ))}
+                                      </CommandGroup>
+                                    )}
+                                  </CommandList>
+                                </Command>
+                              </PopoverContent>
+                            </Popover>
+                          </div>
                           <FormDescription>
-                            Select a patient to book an appointment for.
+                            Search and select a member to book an appointment for. Start typing their name or student ID.
                           </FormDescription>
                           <FormMessage />
                         </FormItem>

@@ -8,6 +8,7 @@ import { formatPatientAddress } from "@/lib/utils/format-patient-address"
 import { formatHealthcareProviderName } from "@/lib/utils/format-healthcare-provider-name"
 import { calculateAge } from "@/lib/utils"
 import { prepareMedicalCertificate } from "@/lib/prepare-medical-certificate"
+import { safeImageUrlToBase64 } from "@/lib/image-to-base64"
 
 interface DownloadMedicalCertificateActionProps {
   onUpdated?: () => void
@@ -22,7 +23,7 @@ const DownloadMedicalCertificateAction = React.forwardRef<
   const handleDownload = async () => {
     toast.promise(promiseWrapper(getMedicalCertificateAction)(certificate.id), {
       loading: "Downloading medical certificate...",
-      success: (res) => {
+      success: async (res) => {
         const data = res.data
         if (!data) throw new Error("No data returned")
 
@@ -31,9 +32,12 @@ const DownloadMedicalCertificateAction = React.forwardRef<
           user: data.HealthCareProvider?.User || undefined
         })
         const professionalDetails = data.HealthCareProvider?.ProfessionalDetails
+        const hpProfile = data.HealthCareProvider?.HPProfile
         const licenseNo = professionalDetails?.licenseNumber ?? ""
         const ptrNo = professionalDetails?.ptrNumber ?? ""
-        const doctorAddress = ""
+        const eSignatureUrl = hpProfile?.eSignatureUrl ?? ""
+
+        const eSignatureBase64 = eSignatureUrl ? await safeImageUrlToBase64(eSignatureUrl) : ""
 
         const patient = data.ClinicPatient?.Patient ?? {}
         const patientName =
@@ -55,7 +59,7 @@ const DownloadMedicalCertificateAction = React.forwardRef<
             name: doctorName,
             licenseNo,
             ptrNo,
-            address: doctorAddress,
+            eSignatureBase64,
           },
           certificate: {
             classification: data.Classification?.name || "",

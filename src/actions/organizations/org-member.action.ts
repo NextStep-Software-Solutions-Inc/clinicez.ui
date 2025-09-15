@@ -48,6 +48,8 @@ export const getOrgMembersAction = withErrorHandling(
 
     const { userId, orgUid, distinct, clinicUid } = filter || {};
 
+    const searchKey = filter?.searchKey ? String(filter.searchKey) : undefined;
+
     const castToNumber = (value: string | number) => Number(value);
 
     const pageSize = filter?.pageSize ? castToNumber(filter.pageSize) : undefined;
@@ -90,24 +92,35 @@ export const getOrgMembersAction = withErrorHandling(
             User: {
               isActive: true,
               ...(userId ? { userId } : {}),
-              ...(filter?.searchKey ? {
+              ...(searchKey ? {
                 OR: [
                   {
                     firstName: {
-                      contains: filter?.searchKey,
+                      contains: searchKey,
                       mode: "insensitive"
                     }
                   },
                   {
                     lastName: {
-                      contains: filter?.searchKey,
+                      contains: searchKey,
                       mode: "insensitive"
                     }
                   },
                   {
                     userId: {
-                      contains: filter?.searchKey,
+                      contains: searchKey,
                       mode: "insensitive"
+                    }
+                  },
+                  {
+                    StudentRecords: {
+                      some: {
+                        studentId: {
+                          contains: searchKey,
+                          mode: "insensitive"
+                        },
+                        isActive: true
+                      }
                     }
                   }
                 ]
@@ -230,29 +243,52 @@ export const getOrgMembersAction = withErrorHandling(
             ...(roles.length > 0 ? { OrganizationRole: { name: { in: roles } } } : {}),
             Organization: {
               isActive: true,
-              ...(orgUid ? { orgUid } : {})
+              ...(orgUid ? { orgUid } : {}),
+              ...(clinicUid
+                ? {
+                  ClinicOrganizations: {
+                    some: {
+                      Clinic: {
+                        isActive: true,
+                        clinicUid
+                      }
+                    }
+                  }
+                }
+                : {})
             },
             User: {
               isActive: true,
               ...(userId ? { userId } : {}),
-              ...(filter?.searchKey ? {
+              ...(searchKey ? {
                 OR: [
                   {
                     firstName: {
-                      contains: filter?.searchKey,
+                      contains: searchKey,
                       mode: "insensitive"
                     }
                   },
                   {
                     lastName: {
-                      contains: filter?.searchKey,
+                      contains: searchKey,
                       mode: "insensitive"
                     }
                   },
                   {
                     userId: {
-                      contains: filter?.searchKey,
+                      contains: searchKey,
                       mode: "insensitive"
+                    }
+                  },
+                  {
+                    StudentRecords: {
+                      some: {
+                        studentId: {
+                          contains: searchKey,
+                          mode: "insensitive"
+                        },
+                        isActive: true
+                      }
                     }
                   }
                 ]
@@ -269,6 +305,7 @@ export const getOrgMembersAction = withErrorHandling(
         isolationLevel: Prisma.TransactionIsolationLevel.Serializable
       }
     );
+
     return {
       message: "User organizations fetched successfully",
       status: true,

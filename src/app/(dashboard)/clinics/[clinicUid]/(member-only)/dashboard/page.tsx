@@ -32,7 +32,8 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
   const clinic = await getClinicAction(clinicUid)
   const userId = session?.user.sub
 
-  const mappedNavItems = filterNavList().map((item) => ({
+  const navItems = await filterNavList(clinicUid);
+  const mappedNavItems = navItems.map((item) => ({
     ...item,
     href: `/clinics/${clinicUid}${item.href}`
   }));

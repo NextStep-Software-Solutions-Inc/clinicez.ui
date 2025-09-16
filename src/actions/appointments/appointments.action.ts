@@ -40,6 +40,15 @@ export const createAppointmentAction = withErrorHandling(async (payload: CreateA
   const { clinicUid, subject, complaint, requesters, modeId, typeId, serviceId, attachments, hpId, schedule } = payload;
   const { date, timeStart, timeEnd } = schedule ?? {};
 
+  // Input validation
+  if (!clinicUid || !subject || !requesters || requesters.length === 0) {
+    throw new Error("Missing required appointment data");
+  }
+
+  if (requesters.some(r => !r || typeof r !== 'string')) {
+    throw new Error("Invalid requester data provided");
+  }
+
   const createAppointmentPermissions = [PERMISSIONS.CLINIC["WRITE:CLINIC:APPOINTMENT"].name];
   const bookAFriendPermissions = [PERMISSIONS.CLINIC["WRITE:CLINIC:APPOINTMENT:BOOK_A_FRIEND"].name];
   const myPermissions = await getPermissionsAction({ userId: session.user.sub });
@@ -89,13 +98,133 @@ export const createAppointmentAction = withErrorHandling(async (payload: CreateA
 
     if (numberOfAppointments >= maxNumberOfAppointment.maxAppointmentsPerDay) throw new Error("The appointments quota of the organization for today has been reached");
 
-    const patientIds = await prisma.user.findMany({
+    // Batch fetch users, clinic, and role data for better performance
+    const [patientUsers, clinic, patientRole] = await Promise.all([
+      prisma.user.findMany({
+        where: {
+          userId: { in: requesters },
+          isActive: true
+        },
+        select: { id: true, userId: true }
+      }),
+      prisma.clinic.findUnique({
+        where: { clinicUid },
+        select: { id: true }
+      }),
+      prisma.clinicRole.findFirst({
+        where: {
+          name: { equals: "Patient", mode: "insensitive" }
+        },
+        select: { id: true }
+      })
+    ]);
+
+    // Validate required data
+    if (!clinic) throw new Error("Clinic not found");
+    if (patientUsers.length === 0) throw new Error("No valid users found for appointment requesters");
+    if (patientUsers.length !== requesters.length) {
+      throw new Error("Some requester accounts are invalid or inactive");
+    }
+
+    // Get role permissions for the specific clinic (if patient role exists)
+    const rolePermissions = patientRole ? await prisma.clinicRoleInitialPermission.findMany({
       where: {
-        userId: {
-          in: requesters
+        Clinic: { clinicUid },
+        clinicRoleId: patientRole.id
+      },
+      select: { permissionId: true }
+    }) : [];
+
+    // Check which users are already ClinicPatients to avoid unnecessary operations
+    const existingClinicPatients = await prisma.clinicPatient.findMany({
+      where: {
+        clinicId: clinic.id,
+        Patient: {
+          userId: { in: patientUsers.map(user => user.userId) }
+        }
+      },
+      select: { Patient: { select: { userId: true } } }
+    });
+
+    const existingPatientUserIds = new Set(
+      existingClinicPatients.map(cp => cp.Patient.userId)
+    );
+
+    // Filter users who need ClinicPatient records created
+    const usersNeedingClinicPatient = patientUsers.filter(
+      user => !existingPatientUserIds.has(user.userId)
+    );
+
+    // Batch create ClinicPatient records for new patients only
+    if (usersNeedingClinicPatient.length > 0) {
+      console.log(`Creating ClinicPatient records for ${usersNeedingClinicPatient.length} new patients in clinic ${clinicUid}`);
+
+      try {
+        const clinicPatientData = usersNeedingClinicPatient.map(user => ({
+          clinicId: clinic.id,
+          patientId: user.id
+        }));
+
+        // Use createMany for better performance with batch inserts
+        await prisma.clinicPatient.createMany({
+          data: clinicPatientData,
+          skipDuplicates: true // Additional safety net
+        });
+
+        // If we have role permissions, assign them to newly created ClinicPatients
+        if (rolePermissions.length > 0) {
+          // Get the newly created ClinicPatient IDs
+          const newClinicPatients = await prisma.clinicPatient.findMany({
+            where: {
+              clinicId: clinic.id,
+              Patient: {
+                userId: { in: usersNeedingClinicPatient.map(user => user.userId) }
+              }
+            },
+            select: { id: true }
+          });
+
+          // Batch create permissions for all new ClinicPatients
+          const permissionData = newClinicPatients.flatMap(clinicPatient =>
+            rolePermissions.map(permission => ({
+              clinicPatientId: clinicPatient.id,
+              permissionId: permission.permissionId
+            }))
+          );
+
+          if (permissionData.length > 0) {
+            await prisma.clinicPatientPermission.createMany({
+              data: permissionData,
+              skipDuplicates: true
+            });
+            console.log(`Assigned ${permissionData.length} permissions to new ClinicPatient records`);
+          }
+        }
+
+        console.log(`Successfully created ${usersNeedingClinicPatient.length} ClinicPatient records`);
+      } catch (error) {
+        // Enhanced error handling with specific error messages
+        console.error("Error creating ClinicPatient records:", error);
+
+        if (hasCodeProperty(error)) {
+          switch (error.code) {
+          case "P2002": // Unique constraint violation
+            console.warn("Some ClinicPatient records already exist, continuing...");
+            break;
+          case "P2003": // Foreign key constraint violation
+            throw new Error("Invalid clinic or patient data provided");
+          case "P2025": // Record not found
+            throw new Error("Required clinic or user data not found");
+          default:
+            throw new Error(`Database error while creating patient records: ${error.code}`);
+          }
+        } else {
+          throw new Error("Failed to create clinic patient records");
         }
       }
-    })
+    } else {
+      console.log(`All ${patientUsers.length} users are already ClinicPatients in clinic ${clinicUid}`);
+    }
 
     const newAppointment = await prisma.appointment.create({
       data: {
@@ -119,7 +248,7 @@ export const createAppointmentAction = withErrorHandling(async (payload: CreateA
         },
         Requesters: {
           createMany: {
-            data: patientIds.map((user) => ({ userId: user.id })),
+            data: patientUsers.map((user) => ({ userId: user.id })),
             skipDuplicates: true
           }
         },
@@ -156,7 +285,11 @@ export const createAppointmentAction = withErrorHandling(async (payload: CreateA
       }
     })
     return newAppointment;
-  })
+  }, {
+    timeout: 10000, // 10 second timeout
+    maxWait: 15000, // Maximum wait time
+    isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted
+  });
 
   const mappedUsers = newAppointment.Requesters
     .filter(requester => requester.User) // Filter out requesters with missing User data

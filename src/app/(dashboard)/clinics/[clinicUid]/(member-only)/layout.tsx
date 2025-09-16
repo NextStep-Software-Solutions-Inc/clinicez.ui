@@ -49,6 +49,9 @@ export default async function ProcessLayout(props: ProcessLayoutProps) {
 
   const session = await getCachedSession();
 
+  // Get filtered navigation items based on user permissions and role
+  const navItems = await filterNavList(clinicUid);
+
   if (!session?.user?.sub) {
     return redirect("/unauthorized");
   }
@@ -92,7 +95,7 @@ export default async function ProcessLayout(props: ProcessLayoutProps) {
               />
               <span className="sr-only">Clinic EZ</span>
             </Link>
-            <SideNav navItems={filterNavList()} params={["clinics", "clinicUid"]} />
+            <SideNav navItems={navItems} params={["clinics", "clinicUid"]} />
           </nav>
 
           <nav className="mt-auto flex flex-col items-center gap-4 px-2 sm:py-5">
@@ -156,7 +159,7 @@ export default async function ProcessLayout(props: ProcessLayoutProps) {
                 className="sm:max-w-xs"
               >
                 <nav className="grid gap-6 text-lg font-medium">
-                  <DrawerNav navItems={filterNavList()} />
+                  <DrawerNav navItems={navItems} />
                   <Link
                     href="/dashboard/settings"
                     className="mt-auto flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"

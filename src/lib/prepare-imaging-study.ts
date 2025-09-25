@@ -15,6 +15,7 @@ type PrepareImagingStudyPayload = {
     licenseNo: string;
     ptrNo: string;
     address: string;
+    eSignatureBase64?: string;
   };
   study: {
     diagnostics: string;
@@ -28,7 +29,7 @@ type PrepareImagingStudyPayload = {
 export const prepareImagingStudy = (payload: PrepareImagingStudyPayload): string => {
   const { template, patient, doctor, study } = payload;
   const { name, age, gender, address, birthdate } = patient;
-  const { name: doctorName, licenseNo, ptrNo, address: doctorAddress } = doctor;
+  const { name: doctorName, licenseNo, ptrNo, address: doctorAddress, eSignatureBase64 } = doctor;
   const { diagnostics, history, impression, requestFor, createdAt } = study;
 
   const requestDate = dayjs(createdAt).format("MM/DD/YYYY");
@@ -50,6 +51,7 @@ export const prepareImagingStudy = (payload: PrepareImagingStudyPayload): string
     "@{ptrNo}": ptrNo,
     "@{doctorAddress}": doctorAddress,
     "@{createdDateTime}": createdDateTime,
+    "@{eSignatureUrl}": eSignatureBase64 || "",
   };
 
   let outputTemplate = template;

@@ -17,7 +17,7 @@ export const getMyUserPreferenceAction = withErrorHandling(async () => {
 
   // Use retry mechanism to handle potential database issues
   const userPreference = await withRetry(async () => {
-    return await prisma.userPreference.findFirstOrThrow({
+    return await prisma.userPreference.findFirst({
       where: {
         User: {
           userId: session.user.sub
@@ -39,6 +39,10 @@ export const getMyUserPreferenceAction = withErrorHandling(async () => {
     });
   }, 3, 200);
 
+  if (!userPreference) {
+    return { message: "No user preference found.", data: null };
+  }
+
   return { message: "User preference fetched successfully.", data: userPreference };
 }, async (error) => {
   console.error(`Error fetching user preference: ${error}`);
@@ -59,13 +63,6 @@ type UpsertUserPreferencePayload = {
 export const upsertMyUserPreference = withErrorHandling(async (payload: UpsertUserPreferencePayload) => {
   const session = await getCachedSession();
   if (!session) throw new Error("User not authenticated.");
-
-  const myPermission = await getPermissionsAction({ userId: session.user.sub, type: "USER" });
-  const myPermissionArray = myPermission.map(permission => permission.name);
-  const upsertUserPreferencePermissions = [PERMISSIONS.USER["UPSERT:USER-PREFERENCE:OWN"].name];
-
-  const canUpsertUserPreference = upsertUserPreferencePermissions.some(permission => myPermissionArray.includes(permission));
-  if (!canUpsertUserPreference) throw new Error("You do not have permission to update user preference.");
 
   const { defaultHpId, autoAssignAppointmentToSelf, autoAcceptAppointmentAssignment } = payload;
 

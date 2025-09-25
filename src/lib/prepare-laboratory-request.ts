@@ -14,6 +14,7 @@ type PrepareLaboratoryRequestPayload = {
     licenseNo: string;
     ptrNo: string;
     address: string;
+    eSignatureBase64?: string;
   };
   request: {
     impression: string;
@@ -25,7 +26,7 @@ type PrepareLaboratoryRequestPayload = {
 export const prepareLaboratoryRequest = (payload: PrepareLaboratoryRequestPayload): string => {
   const { template, patient, doctor, request } = payload;
   const { name, age, gender, address, birthdate } = patient;
-  const { name: doctorName, licenseNo, ptrNo, address: doctorAddress } = doctor;
+  const { name: doctorName, licenseNo, ptrNo, address: doctorAddress, eSignatureBase64 } = doctor;
   const { impression, diagnosticsByCategory, createdAt } = request;
 
   const requestDate = dayjs(createdAt).format("MM/DD/YYYY");
@@ -50,6 +51,7 @@ export const prepareLaboratoryRequest = (payload: PrepareLaboratoryRequestPayloa
     "@{ptrNo}": ptrNo,
     "@{doctorAddress}": doctorAddress,
     "@{createdDateTime}": createdDateTime,
+    "@{eSignatureUrl}": eSignatureBase64 || "",
 
     "@{hematologyTests}": formatCategoryTests("HEMATOLOGY"),
     "@{clinicalMicroscopyTests}": formatCategoryTests("CLINICAL MICROSCOPY") || formatCategoryTests("MICROSCOPY"),

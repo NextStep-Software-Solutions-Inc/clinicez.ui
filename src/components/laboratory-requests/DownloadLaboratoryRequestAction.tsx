@@ -8,6 +8,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/
 import { formatPatientAddress } from "@/lib/utils/format-patient-address"
 import { calculateAge } from "@/lib/utils"
 import { prepareLaboratoryRequest } from "@/lib/prepare-laboratory-request"
+import { safeImageUrlToBase64 } from "@/lib/image-to-base64"
 
 interface DownloadLaboratoryRequestActionProps {
   onUpdated?: () => void
@@ -22,7 +23,7 @@ const DownloadLaboratoryRequestAction = React.forwardRef<
   const handleDownload = async () => {
     toast.promise(promiseWrapper(getLaboratoryRequestAction)(request.id), {
       loading: "Downloading laboratory request...",
-      success: (res) => {
+      success: async (res) => {
         const data = res.data
         if (!data) throw new Error("No data returned")
 
@@ -31,7 +32,10 @@ const DownloadLaboratoryRequestAction = React.forwardRef<
         const doctorName = `${hpProfile?.title ?? ""} ${hpProfile?.name ?? ""} ${hpProfile?.suffix ?? ""}`.trim()
         const licenseNo = professionalDetails?.licenseNumber ?? ""
         const ptrNo = professionalDetails?.ptrNumber ?? ""
+        const eSignatureUrl = hpProfile?.eSignatureUrl ?? ""
         const doctorAddress = ""
+
+        const eSignatureBase64 = eSignatureUrl ? await safeImageUrlToBase64(eSignatureUrl) : ""
 
         const patient = data.ClinicPatient?.Patient ?? {}
         const patientName =
@@ -68,6 +72,7 @@ const DownloadLaboratoryRequestAction = React.forwardRef<
             licenseNo,
             ptrNo,
             address: doctorAddress,
+            eSignatureBase64,
           },
           request: {
             impression: data.impression || "",

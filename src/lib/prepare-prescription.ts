@@ -48,6 +48,7 @@ type PreparePrescriptionPayload = {
     licenseNo: string;
     ptrNo: string;
     address: string;
+    eSignatureBase64?: string;
   };
 };
 
@@ -55,7 +56,7 @@ export const preparePrescription = (payload: PreparePrescriptionPayload): string
   const { template, patient, prescription, doctor } = payload;
   const { name: patientName, age, gender, address } = patient;
   const { medicines, remarks, createdAt } = prescription;
-  const { name: doctorName, licenseNo, ptrNo, address: doctorAddress } = doctor;
+  const { name: doctorName, licenseNo, ptrNo, address: doctorAddress, eSignatureBase64 } = doctor;
 
   const requestDate = dayjs(createdAt).format("MMMM DD, YYYY");
   const createdDateTime = dayjs(createdAt).format("MMMM DD, YYYY h:mm A");
@@ -94,6 +95,7 @@ export const preparePrescription = (payload: PreparePrescriptionPayload): string
     "@{requestDate}": requestDate,
     "@{medicine}": medicines.length === 0 ? "No medicines prescribed." : medicineList,
     "@{sig}": remarks || "No special instructions.",
+    "@{eSignatureUrl}": eSignatureBase64 || "",
     "@{doctorName}": doctorName,
     "@{licenseNo}": licenseNo || "N/A",
     "@{ptrNo}": ptrNo || "N/A",

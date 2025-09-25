@@ -8,6 +8,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/
 import { formatPatientAddress } from "@/lib/utils/format-patient-address"
 import { calculateAge } from "@/lib/utils"
 import { prepareImagingStudy } from "@/lib/prepare-imaging-study"
+import { safeImageUrlToBase64 } from "@/lib/image-to-base64"
 
 interface DownloadImagingStudiesActionProps {
   onUpdated?: () => void
@@ -22,7 +23,7 @@ const DownloadImagingStudiesAction = React.forwardRef<
   const handleDownload = async () => {
     toast.promise(promiseWrapper(getImagingStudyAction)(study.id), {
       loading: "Downloading imaging study request...",
-      success: (res) => {
+      success: async (res) => {
         const data = res.data
         if (!data) throw new Error("No data returned")
 
@@ -31,7 +32,10 @@ const DownloadImagingStudiesAction = React.forwardRef<
         const doctorName = `${hpProfile?.title ?? ""} ${hpProfile?.name ?? ""} ${hpProfile?.suffix ?? ""}`.trim()
         const licenseNo = professionalDetails?.licenseNumber ?? ""
         const ptrNo = professionalDetails?.ptrNumber ?? ""
+        const eSignatureUrl = hpProfile?.eSignatureUrl ?? ""
         const doctorAddress = ""
+
+        const eSignatureBase64 = eSignatureUrl ? await safeImageUrlToBase64(eSignatureUrl) : ""
 
         const patient = data.ClinicPatient?.Patient ?? {}
         const patientName =
@@ -67,6 +71,7 @@ const DownloadImagingStudiesAction = React.forwardRef<
             licenseNo,
             ptrNo,
             address: doctorAddress,
+            eSignatureBase64,
           },
           study: {
             diagnostics,

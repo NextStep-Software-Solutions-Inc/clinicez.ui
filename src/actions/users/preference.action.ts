@@ -17,7 +17,7 @@ export const getMyUserPreferenceAction = withErrorHandling(async () => {
 
   // Use retry mechanism to handle potential database issues
   const userPreference = await withRetry(async () => {
-    return await prisma.userPreference.findFirstOrThrow({
+    return await prisma.userPreference.findFirst({
       where: {
         User: {
           userId: session.user.sub
@@ -38,6 +38,10 @@ export const getMyUserPreferenceAction = withErrorHandling(async () => {
       }
     });
   }, 3, 200);
+
+  if (!userPreference) {
+    return { message: "No user preference found.", data: null };
+  }
 
   return { message: "User preference fetched successfully.", data: userPreference };
 }, async (error) => {

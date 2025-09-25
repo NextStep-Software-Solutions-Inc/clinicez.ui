@@ -8,7 +8,7 @@ import { formatPatientAddress } from "@/lib/utils/format-patient-address"
 import { formatHealthcareProviderName } from "@/lib/utils/format-healthcare-provider-name"
 import { calculateAge } from "@/lib/utils"
 import { preparePrescription } from "@/lib/prepare-prescription"
-import dayjs from "@lib/day-utils"
+import { safeImageUrlToBase64 } from "@/lib/image-to-base64"
 
 interface DownloadPrescriptionActionProps {
   onUpdated?: () => void
@@ -23,7 +23,7 @@ const DownloadPrescriptionAction = React.forwardRef<
   const handleDownload = async () => {
     toast.promise(promiseWrapper(getPrescriptionAction)(prescription.id), {
       loading: "Downloading prescription...",
-      success: (res) => {
+      success: async (res) => {
         const data = res.data
         if (!data) throw new Error("No data returned")
 
@@ -31,6 +31,13 @@ const DownloadPrescriptionAction = React.forwardRef<
         const prescribingDoctorName = formatHealthcareProviderName(
           { hpProfile: prescribingHP?.HPProfile || undefined, user: prescribingHP?.User || undefined }
         )
+        const professionalDetails = prescribingHP?.ProfessionalDetails
+        const hpProfile = prescribingHP?.HPProfile
+        const licenseNo = professionalDetails?.licenseNumber || ""
+        const ptrNo = professionalDetails?.ptrNumber || ""
+        const eSignatureUrl = hpProfile?.eSignatureUrl ?? ""
+
+        const eSignatureBase64 = eSignatureUrl ? await safeImageUrlToBase64(eSignatureUrl) : ""
 
         const patient = data.ClinicPatient?.Patient
         const patientName = patient ?
@@ -48,9 +55,7 @@ const DownloadPrescriptionAction = React.forwardRef<
           notes: medicine.notes,
         }))
 
-        const licenseNo = prescribingHP?.ProfessionalDetails?.licenseNumber || ""
-        const ptrNo = prescribingHP?.ProfessionalDetails?.ptrNumber || ""
-        const fields = prescribingHP?.HPProfile?.fields;
+        const fields = hpProfile?.fields;
         const doctorAddress = Array.isArray(fields)
           ? fields.join(", ")
           : (typeof fields === "string" ? fields : "");
@@ -73,6 +78,7 @@ const DownloadPrescriptionAction = React.forwardRef<
             licenseNo,
             ptrNo,
             address: doctorAddress,
+            eSignatureBase64,
           },
         })
 

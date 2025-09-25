@@ -64,13 +64,6 @@ export const upsertMyUserPreference = withErrorHandling(async (payload: UpsertUs
   const session = await getCachedSession();
   if (!session) throw new Error("User not authenticated.");
 
-  const myPermission = await getPermissionsAction({ userId: session.user.sub, type: "USER" });
-  const myPermissionArray = myPermission.map(permission => permission.name);
-  const upsertUserPreferencePermissions = [PERMISSIONS.USER["UPSERT:USER-PREFERENCE:OWN"].name];
-
-  const canUpsertUserPreference = upsertUserPreferencePermissions.some(permission => myPermissionArray.includes(permission));
-  if (!canUpsertUserPreference) throw new Error("You do not have permission to update user preference.");
-
   const { defaultHpId, autoAssignAppointmentToSelf, autoAcceptAppointmentAssignment } = payload;
 
   // Use retry mechanism to handle database conflicts

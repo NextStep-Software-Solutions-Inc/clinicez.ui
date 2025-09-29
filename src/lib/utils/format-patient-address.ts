@@ -9,7 +9,7 @@ export function formatPatientAddress(patient?: {
   }>;
 }): string {
   if (!patient?.UserAddresses || !Array.isArray(patient.UserAddresses) || patient.UserAddresses.length === 0) {
-    return "Address not provided";
+    return "";
   }
 
   const patientAddress = patient.UserAddresses[0];
@@ -22,7 +22,7 @@ export function formatPatientAddress(patient?: {
   ].filter(part => part?.trim());
 
   if (parts.length === 0) {
-    return "Address not provided";
+    return "";
   }
 
   return parts.join(", ");

@@ -1,6 +1,5 @@
 "use server";
 
-import "server-only";
 import prisma from "@/lib/prisma";
 import { getCachedSession } from "@/actions/session.action";
 import { withErrorHandling } from "@/lib/with-error-handling";
@@ -164,6 +163,7 @@ export type CreateMedicineInput = {
   genericName?: string;
   isGeneric: boolean;
   dosage?: string;
+  qty?: number;
   frequency?: string;
   unit?: string;
   duration?: number;
@@ -218,6 +218,7 @@ export type UpdateMedicineInput = {
   genericName?: string;
   isGeneric?: boolean;
   dosage?: string;
+  qty?: number;
   frequency?: string;
   unit?: string;
   duration?: number;

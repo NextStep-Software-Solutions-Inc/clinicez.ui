@@ -10,6 +10,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { UnsavedChangesAlert } from "@/components/UnsavedChangesAlert";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import {
   Form,
   FormControl,
@@ -23,11 +26,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import Each from "@/components/utils/Each";
 import ActionButton from "@/components/ActionButton";
+import Each from "@/components/utils/Each";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -45,9 +45,14 @@ const medicineSchema = z.object({
   genericName: z.string().optional(),
   isGeneric: z.boolean().default(false),
   dosage: z.string().optional(),
+  qty: z
+    .coerce
+    .number()
+    .min(1, "Quantity must be at least 1")
+    .default(1),
   frequency: z.string().optional(),
   unit: z.string().optional(),
-  duration: z.number().min(1, "Duration must be at least 1 day").default(1),
+  duration: z.coerce.number().min(1, "Duration must be at least 1 day").default(1),
   notes: z.string().optional(),
 });
 
@@ -121,6 +126,7 @@ export default function EditPrescriptionModal({
       genericName: "",
       isGeneric: false,
       dosage: "",
+      qty: 1,
       frequency: "",
       unit: "",
       duration: 1,
@@ -154,6 +160,7 @@ export default function EditPrescriptionModal({
           genericName: medicine.genericName || "",
           isGeneric: medicine.isGeneric,
           dosage: medicine.dosage || "",
+          qty: medicine.qty ?? 1,
           frequency: medicine.frequency || "",
           unit: medicine.unit || "",
           duration: medicine.duration,
@@ -209,7 +216,7 @@ export default function EditPrescriptionModal({
     const medicine = medicines[index];
     setEditingMedicineIndex(index);
     setShowMedicineForm(true);
-    medicineForm.reset(medicine);
+    medicineForm.reset({ ...medicine, qty: medicine.qty ?? 1 });
   };
 
   const handleSaveMedicine = (data: MedicineForm) => {
@@ -279,6 +286,7 @@ export default function EditPrescriptionModal({
             genericName: medicine.genericName,
             isGeneric: medicine.isGeneric,
             dosage: medicine.dosage,
+            qty: medicine.qty,
             frequency: medicine.frequency,
             unit: medicine.unit,
             duration: medicine.duration,
@@ -292,6 +300,7 @@ export default function EditPrescriptionModal({
             genericName: medicine.genericName,
             isGeneric: medicine.isGeneric,
             dosage: medicine.dosage,
+            qty: medicine.qty,
             frequency: medicine.frequency,
             unit: medicine.unit,
             duration: medicine.duration,
@@ -477,6 +486,27 @@ export default function EditPrescriptionModal({
 
                           <FormField
                             control={medicineForm.control}
+                            name="qty"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Quantity</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    type="text"
+                                    inputMode="numeric"
+                                    pattern="[0-9]*"
+                                    value={field.value?.toString() ?? ""}
+                                    onChange={(e) => field.onChange(e.target.value)}
+                                    placeholder="e.g., 30"
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={medicineForm.control}
                             name="frequency"
                             render={({ field }) => (
                               <FormItem>
@@ -526,9 +556,11 @@ export default function EditPrescriptionModal({
                                 <FormControl>
                                   <Input
                                     {...field}
-                                    type="number"
-                                    min="1"
-                                    onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                                    type="text"
+                                    inputMode="numeric"
+                                    pattern="[0-9]*"
+                                    value={field.value?.toString() ?? ""}
+                                    onChange={(e) => field.onChange(e.target.value)}
                                     placeholder="7"
                                   />
                                 </FormControl>

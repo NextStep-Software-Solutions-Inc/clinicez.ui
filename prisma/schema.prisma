@@ -1640,6 +1640,7 @@ model Medicine {
   isGeneric      Boolean       @default(false)
   description    String?
   dosage         String?
+  qty            Int? // Optional for safer data migration
   frequency      String?
   unit           String?
   notes          String?

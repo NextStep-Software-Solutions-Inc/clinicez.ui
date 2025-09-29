@@ -1,4 +1,4 @@
-import dayjs from "@lib/day-utils";
+import dayjs, { formatDate } from "@lib/day-utils";
 
 const PLACEHOLDER_KEYS = [
   "@{name}",
@@ -12,7 +12,8 @@ const PLACEHOLDER_KEYS = [
   "@{licenseNo}",
   "@{ptrNo}",
   "@{doctorAddress}",
-  "@{createdDateTime}"
+  "@{createdDateTime}",
+  "@{eSignatureUrl}"
 ] as const;
 
 const escapeRegex = (str: string) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -27,6 +28,7 @@ type Medicine = {
   unit: string | null;
   frequency: string | null;
   duration: string | null;
+  qty: number | null;
   notes: string | null;
 };
 
@@ -55,37 +57,46 @@ type PreparePrescriptionPayload = {
 export const preparePrescription = (payload: PreparePrescriptionPayload): string => {
   const { template, patient, prescription, doctor } = payload;
   const { name: patientName, age, gender, address } = patient;
-  const { medicines, remarks, createdAt } = prescription;
+  const { medicines, createdAt } = prescription;
   const { name: doctorName, licenseNo, ptrNo, address: doctorAddress, eSignatureBase64 } = doctor;
 
-  const requestDate = dayjs(createdAt).format("MMMM DD, YYYY");
+  const signaturePlaceholderUsedAsUrl = [
+    /src\s*=\s*"@\{eSignatureUrl\}"/i,
+    /src\s*=\s*'@\{eSignatureUrl\}'/i,
+    /url\(\s*"@\{eSignatureUrl\}"\s*\)/i,
+    /url\(\s*'@\{eSignatureUrl\}'\s*\)/i,
+  ].some((pattern) => pattern.test(template));
+
+  const signatureMarkup = eSignatureBase64
+    ? signaturePlaceholderUsedAsUrl
+      ? eSignatureBase64
+      : `<img src="${eSignatureBase64}" alt="Doctor e-signature" style="max-height: 96px;" />`
+    : "";
+
+  const requestDate = formatDate(createdAt, "MM/DD/YYYY");
   const createdDateTime = dayjs(createdAt).format("MMMM DD, YYYY h:mm A");
   // First letter of gender
   const genderInitial = (typeof gender === "string" && gender.length > 0) ? gender.charAt(0).toUpperCase() : "N/A";
 
-  const medicineList = medicines.map(medicine => {
+  const medicineList = medicines.map((medicine, i) => {
     const parts = [medicine.name];
 
-    if (medicine.dosage && medicine.unit) {
-      parts.push(` ${medicine.dosage} ${medicine.unit}`);
-    } else if (medicine.dosage) {
-      parts.push(` ${medicine.dosage}`);
-    }
+    if (medicine.dosage) {
+      if (medicine.unit) {
+        parts.push(`${medicine.dosage} ${medicine.unit}`);
+      } else {
+        parts.push(`${medicine.dosage}`);
+      }
 
-    if (medicine.frequency) {
-      parts.push(medicine.frequency);
-    }
-
-    if (medicine.duration) {
-      const durationNum = Number(medicine.duration);
-      const dayLabel = durationNum === 1 ? "day" : "days";
-      parts.push(`for ${medicine.duration} ${isNaN(durationNum) ? "day(s)" : dayLabel}`);
+      if (medicine.qty) {
+        parts.push(`#${medicine.qty}`);
+      }
     }
 
     const medicineLine = parts.join(' ');
     const sig = medicine.notes ? `<br/>Sig: ${medicine.notes}` : '';
 
-    return `${medicineLine}${sig}`;
+    return `${i + 1}.) ${medicineLine}${sig}`;
   }).join('<br/><br/>');
   const replacements = {
     "@{name}": patientName,
@@ -93,9 +104,8 @@ export const preparePrescription = (payload: PreparePrescriptionPayload): string
     "@{gender}": genderInitial,
     "@{address}": address,
     "@{requestDate}": requestDate,
-    "@{medicine}": medicines.length === 0 ? "No medicines prescribed." : medicineList,
-    "@{sig}": remarks || "No special instructions.",
-    "@{eSignatureUrl}": eSignatureBase64 || "",
+    "@{medicine}": medicines.length === 0 ? "" : medicineList, // return empty for formal purposes
+    "@{eSignatureUrl}": signatureMarkup,
     "@{doctorName}": doctorName,
     "@{licenseNo}": licenseNo || "N/A",
     "@{ptrNo}": ptrNo || "N/A",

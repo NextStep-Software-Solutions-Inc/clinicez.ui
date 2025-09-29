@@ -49,7 +49,7 @@ const medicineSchema = z.object({
   dosage: z.string().optional(),
   frequency: z.string().optional(),
   unit: z.string().optional(),
-  duration: z.number().min(1, "Duration must be at least 1 day").default(1),
+  duration: z.coerce.number().min(1, "Duration must be at least 1 day").default(1),
   notes: z.string().optional(),
 })
 
@@ -699,9 +699,11 @@ export default function CreatePrescriptionModal({
                                 <FormControl>
                                   <Input
                                     {...field}
-                                    type="number"
-                                    min="1"
-                                    onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                                    type="text"
+                                    inputMode="numeric"
+                                    pattern="[0-9]*"
+                                    value={field.value?.toString() ?? ""}
+                                    onChange={(e) => field.onChange(e.target.value)}
                                     placeholder="7"
                                   />
                                 </FormControl>

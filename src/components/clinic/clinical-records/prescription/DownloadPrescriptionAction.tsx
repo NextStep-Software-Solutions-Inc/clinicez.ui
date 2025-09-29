@@ -49,6 +49,7 @@ const DownloadPrescriptionAction = React.forwardRef<
         const medicines = (data.Medicines || []).map(medicine => ({
           name: medicine.name || "",
           dosage: medicine.dosage,
+          qty: medicine.qty,
           unit: medicine.unit,
           frequency: medicine.frequency,
           duration: medicine.duration ? String(medicine.duration) : null,

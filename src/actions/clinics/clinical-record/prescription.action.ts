@@ -1,6 +1,5 @@
 "use server";
 
-import "server-only";
 import prisma from "@/lib/prisma";
 import { getCachedSession } from "@/actions/session.action";
 import { withErrorHandling } from "@/lib/with-error-handling";
@@ -112,6 +111,7 @@ export const getPrescriptionsAction = withErrorHandling(async (filters: GetPresc
           genericName: true,
           isGeneric: true,
           dosage: true,
+          qty: true,
           frequency: true,
           unit: true,
           duration: true,

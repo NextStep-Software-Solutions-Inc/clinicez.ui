@@ -1,6 +1,5 @@
 "use server";
 
-import 'server-only'
 import prismaClient from '@lib/prisma';
 import { getCachedSession } from '@actions/session.action';
 import { cache } from 'react';
@@ -183,6 +182,10 @@ export const getConsultationTicketAction = withErrorHandling(cache(async (consul
           },
           AppointmentAttribute: {
             select: {
+              date: true,
+              timeStart: true,
+              timeEnd: true,
+              receivedAt: true,
               AppointmentMode: {
                 select: {
                   id: true,
@@ -199,6 +202,33 @@ export const getConsultationTicketAction = withErrorHandling(cache(async (consul
                 select: {
                   id: true,
                   name: true
+                }
+              },
+              ReceivedBy: {
+                select: {
+                  id: true,
+                  userId: true,
+                  firstName: true,
+                  middleName: true,
+                  lastName: true,
+                  suffix: true,
+                  email: true,
+                  OrganizationMembers: {
+                    select: {
+                      OrganizationRole: {
+                        select: {
+                          id: true,
+                          name: true,
+                        }
+                      },
+                      Organization: {
+                        select: {
+                          id: true,
+                          name: true,
+                        }
+                      }
+                    }
+                  }
                 }
               },
             }
@@ -325,7 +355,9 @@ export const getConsultationTicketsAction = withErrorHandling(async (filters: Ge
               User: {
                 select: {
                   firstName: true,
+                  middleName: true,
                   lastName: true,
+                  suffix: true,
                   OrganizationMembers: {
                     select: {
                       OrganizationRole: {
@@ -342,6 +374,8 @@ export const getConsultationTicketsAction = withErrorHandling(async (filters: Ge
                 select: {
                   name: true,
                   title: true,
+                  suffix: true,
+                  fields: true,
                 }
               }
             }
@@ -435,7 +469,9 @@ export const getConsultationTicketsAction = withErrorHandling(async (filters: Ge
               CreatedBy: {
                 select: {
                   firstName: true,
+                  middleName: true,
                   lastName: true,
+                  suffix: true,
                   OrganizationMembers: {
                     select: {
                       OrganizationRole: {
@@ -453,6 +489,10 @@ export const getConsultationTicketsAction = withErrorHandling(async (filters: Ge
             select: {
               id: true,
               status: true,
+              date: true,
+              timeStart: true,
+              timeEnd: true,
+              receivedAt: true,
               AppointmentMode: {
                 select: {
                   id: true,
@@ -476,6 +516,33 @@ export const getConsultationTicketsAction = withErrorHandling(async (filters: Ge
                     },
                   },
                 },
+              },
+              ReceivedBy: {
+                select: {
+                  id: true,
+                  userId: true,
+                  firstName: true,
+                  middleName: true,
+                  lastName: true,
+                  suffix: true,
+                  email: true,
+                  OrganizationMembers: {
+                    select: {
+                      OrganizationRole: {
+                        select: {
+                          id: true,
+                          name: true,
+                        }
+                      },
+                      Organization: {
+                        select: {
+                          id: true,
+                          name: true,
+                        }
+                      }
+                    }
+                  }
+                }
               },
             },
           },

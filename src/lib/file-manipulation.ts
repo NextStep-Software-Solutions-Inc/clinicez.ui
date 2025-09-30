@@ -1,4 +1,5 @@
 import heic2any from "heic2any";
+import * as XLSX from "xlsx";
 
 function uniqueFileName(originalName: string) {
   const baseName = originalName.substring(0, originalName.lastIndexOf('.'));
@@ -59,7 +60,10 @@ export const validateFileType = (file: File): boolean => {
 }
 
 // Typesafe CSV export function
-export type CSVExportData = Record<string, string | number | boolean | null | undefined>
+export type TabularExportRow = Record<string, string | number | boolean | null | undefined>
+
+export type CSVExportData = TabularExportRow
+export type XLSXExportData = TabularExportRow
 
 interface CSVExportOptions {
   filename?: string
@@ -125,5 +129,74 @@ export const exportCSV = (
   } catch (error) {
     console.error('Failed to export CSV:', error)
     throw new Error('CSV export failed')
+  }
+}
+
+interface XLSXExportOptions {
+  filename?: string
+  includeHeaders?: boolean
+  sheetName?: string
+}
+
+export const exportXLSX = (
+  columns: string[],
+  data: XLSXExportData[],
+  options: XLSXExportOptions = {}
+): void => {
+  const {
+    filename = `export_${new Date().toISOString().split('T')[0]}_${Date.now()}`,
+    includeHeaders = true,
+    sheetName = "Report"
+  } = options
+
+  try {
+    const sanitizeValue = (value: string | number | boolean | null | undefined): string | number => {
+      if (value === null || value === undefined) return ""
+      if (typeof value === "number") return Number.isFinite(value) ? value : ""
+      if (typeof value === "boolean") return value ? "Yes" : "No"
+      return value
+    }
+
+    const rows: Array<Array<string | number>> = []
+
+    if (includeHeaders) {
+      rows.push(columns)
+    }
+
+    data.forEach(row => {
+      const values = columns.map(column => {
+        const value = sanitizeValue(row[column])
+        return typeof value === "number" ? value : String(value)
+      })
+      rows.push(values)
+    })
+
+    const worksheet = XLSX.utils.aoa_to_sheet(rows)
+
+    const dataRows = includeHeaders ? rows.slice(1) : rows
+    const columnWidths = columns.map((column, columnIndex) => {
+      const maxContentLength = Math.max(
+        column.length,
+        ...dataRows.map(row => {
+          const cellValue = row[columnIndex]
+          if (cellValue === undefined || cellValue === null) return 0
+          return cellValue.toString().length
+        }),
+      )
+
+      return { wch: Math.min(Math.max(maxContentLength + 2, 10), 80) }
+    })
+
+    worksheet["!cols"] = columnWidths
+
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, sheetName)
+
+    const resolvedFilename = filename.endsWith('.xlsx') ? filename : `${filename}.xlsx`
+    XLSX.writeFile(workbook, resolvedFilename, { bookType: "xlsx" })
+
+  } catch (error) {
+    console.error('Failed to export XLSX:', error)
+    throw new Error('XLSX export failed')
   }
 }

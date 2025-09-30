@@ -10,10 +10,11 @@ import { DashboardStats } from "@components/dashboard/DashboardStats"
 import { getCachedSession } from "@actions/session.action"
 import Suspend from "@components/Suspend"
 import { OrgMembershipAnalytics } from "@/components/organization/OrgMembershipAnalytics"
+import { OrganizationReports } from "@/components/organization/dashboard/reports/OrganizationReports"
 import { filterNavList } from "../nav"
 
 export const maxDuration = 30; // page timeout in seconds
-export const revalidate  = 60; // revalidation interval in seconds
+export const revalidate = 60; // revalidation interval in seconds
 export const metadata: Metadata = {
   title: "Organization Dashboard",
   description: "Overview of your organization's activities and analytics."
@@ -27,7 +28,7 @@ interface DashboardPageProps {
 export default async function DashboardPage({ params }: DashboardPageProps) {
   const resolvedParams = await params;
   const orgUid = String(resolvedParams?.orgUid);
-  
+
   const session = await getCachedSession()
   const userId = session?.user.sub
 
@@ -66,7 +67,7 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
             </TabsList>
             <TabsContent value="overview" className="space-y-4">
               <Suspend>
-                {userId && <DashboardStats userId={userId} orgUid={orgUid}/>}
+                {userId && <DashboardStats userId={userId} orgUid={orgUid} />}
               </Suspend>
               {/* <ConditionalRender condition={await isOrgMember() && await isHP()}>
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
@@ -103,8 +104,11 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
                 <PatientsAnalytics orgUid={orgUid}/>
               </Suspend> */}
               <Suspend>
-                <OrgMembershipAnalytics orgUid={orgUid}/>
+                <OrgMembershipAnalytics orgUid={orgUid} />
               </Suspend>
+            </TabsContent>
+            <TabsContent value="reports" className="space-y-4">
+              <OrganizationReports orgUid={orgUid} />
             </TabsContent>
           </Tabs>
         </div>

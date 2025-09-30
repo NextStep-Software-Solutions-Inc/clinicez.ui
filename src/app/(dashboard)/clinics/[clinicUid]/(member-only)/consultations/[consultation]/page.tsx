@@ -8,7 +8,6 @@ import { notFound } from "next/navigation";
 import { DropdownMenuProvider } from "@components/DropdownMenuProvider";
 import ConsultationTicketTableRowActions from "../../../../../../../components/consultation/ConsultationTicketTableRowActions";
 import ResolveConsultationTicket from "@components/consultation/ResolveConsultationTicket";
-import MedicationsSheet from "@components/consultation/MedicationsSheet";
 import ModifyMedicationSheet from "@components/consultation/ModifyMedicationSheet";
 import { AppRouterPageRouteOpts } from "@/types";
 
@@ -24,7 +23,7 @@ export default async function ConsultationPage(props: AppRouterPageRouteOpts) {
 
   const consultation = await getConsultationTicketAction(consultationId, clinicUid)
   const patient = consultation.data?.Appointment?.Requesters[0].User
-  if(!consultation.data) notFound()
+  if (!consultation.data) notFound()
 
   const statusBadge = {
     PENDING: "destructive",
@@ -53,27 +52,21 @@ export default async function ConsultationPage(props: AppRouterPageRouteOpts) {
           </div>
         </div>
         <div className="ml-auto flex gap-1">
-          
-          <MedicationsSheet 
-            readonly={isResolved}
-            consultation={{
-              id: consultationId,
-              patientId: patient?.id ?? 0
-            }}/>
+
           <ModifyMedicationSheet readonly={isResolved} />
           {
             consultation.data.ConsultationTicketAttribute?.status !== "RESOLVED" &&
-            <ResolveConsultationTicket ticketId={consultationId}/>
+            <ResolveConsultationTicket ticketId={consultationId} />
           }
           <DropdownMenuProvider>
-            <ConsultationTicketTableRowActions consultation={consultation.data}/>
+            <ConsultationTicketTableRowActions consultation={consultation.data} />
           </DropdownMenuProvider>
         </div>
       </div>
       <Separator />
 
       <Suspend>
-        <ConsultationDetails consultation={consultation.data! }/>
+        <ConsultationDetails consultation={consultation.data!} />
       </Suspend>
 
       <div className="w-full text-center sticky bottom-5">

@@ -1,5 +1,4 @@
 "use server";
-import 'server-only'
 import prisma from "@lib/prisma";
 import { Prisma, $Enums } from "@prisma/client";
 // import { managementClient } from "@services/auth0/management-client"; // Commented out for Clerk migration

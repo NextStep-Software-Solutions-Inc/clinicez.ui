@@ -1,6 +1,5 @@
 "use server";
 
-import "server-only";
 import prisma from "@lib/prisma";
 
 export type GetOrganizationYearLevels = Awaited<ReturnType<typeof getOrganizationYearLevelsAction>>

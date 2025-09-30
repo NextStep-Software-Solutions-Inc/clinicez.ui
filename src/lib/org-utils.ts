@@ -23,6 +23,20 @@ export const isOrgMember = cache(async (orgUid?: string) => {
   return !!myOrgs.data?.data?.length && myOrgs.data?.data.some(org => ["ACTIVE"].includes(org.status) && (!orgUid || org.Organization.orgUid === orgUid))
 })
 
+export const isOrgOwner = cache(async (orgUid?: string) => {
+  if (!orgUid) throw new Error("orgUid is required");
+  const session = await getCachedSession();
+  if (!session) throw new Error("No session found");
+
+  const memberships = await getOrgMembersAction({ userId: session.user.sub, orgUid });
+  const data = memberships.data?.data ?? [];
+  return data.some(
+    (membership) =>
+      ["ACTIVE"].includes(membership.status) &&
+      membership.OrganizationRole.name.toUpperCase() === "OWNER"
+  );
+})
+
 export const isUserOwner = cache(async (userId: string) => {
   const session = await getCachedSession();
   if (!session) throw new Error("No session found");

@@ -1,5 +1,4 @@
 "use server";
-import 'server-only'
 import { withClerkAuth } from '@middlewares/withClerkAuth';
 
 import { NextRequest, NextResponse } from "next/server";
@@ -8,16 +7,16 @@ import { getOrganizationYearLevelsAction } from '@actions/organizations/org-year
 
 export const GET = withClerkAuth(async (req: NextRequest) => {
   const searchParams = req.nextUrl.searchParams
-  const orgId = searchParams.get('orgId');
+  const orgUid = searchParams.get('orgUid');
 
-  if (!orgId) {
+  if (!orgUid) {
     return NextResponse.json({
       success: false,
-      response: 'orgId is required'
+      response: 'orgUid is required'
     }, { status: 400 });
   }
 
-  const orgYearLevel = await getOrganizationYearLevelsAction(orgId);
+  const orgYearLevel = await getOrganizationYearLevelsAction(orgUid);
 
   return NextResponse.json(orgYearLevel, {
     status: 200

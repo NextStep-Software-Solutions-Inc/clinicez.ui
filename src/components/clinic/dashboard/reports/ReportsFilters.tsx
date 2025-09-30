@@ -14,11 +14,10 @@ import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { cn } from "@/lib/utils"
-import { exportCSV, CSVExportData } from "@/lib/file-manipulation"
+import { cn, calculateAge } from "@/lib/utils"
+import { exportXLSX, XLSXExportData } from "@/lib/file-manipulation"
 import { useConsultations } from "@/hooks/useConsultation"
 import { toast } from "sonner"
-import { calculateAge } from "@/lib/utils"
 import { GetConsultationTickets } from "@/actions/consultation/consultation-ticket.action"
 
 const reportsFilterSchema = z.object({
@@ -67,79 +66,238 @@ async function generateAndExportConsultationReport(
     return isInDateRange && matchesGender && matchesStatus && matchesSystem
   })
 
-  const csvData: CSVExportData[] = filteredData.map(ticket => {
+  type ConsultationTicketRecord = NonNullable<GetConsultationTickets["data"]>[number]
+  type TicketProviderRecord = NonNullable<
+    NonNullable<ConsultationTicketRecord["ConsultationTicketHPs"]>[number]
+  >
+  type HealthcareProviderRecord = NonNullable<TicketProviderRecord["HealthCareProvider"]>
+  type ProviderUserRecord = NonNullable<HealthcareProviderRecord["User"]>
+  type OrganizationMembersArray = ProviderUserRecord["OrganizationMembers"]
+  type OrganizationMemberRecord = OrganizationMembersArray extends (infer Member)[]
+    ? NonNullable<Member>
+    : never
+  type HealthcareProviderProfileRecord = NonNullable<HealthcareProviderRecord["HPProfile"]>
+  type OrganizationMemberLike = {
+    OrganizationRole?: Maybe<{
+      name?: Maybe<string>
+    }>
+  }
+  type BasicUserRecord = {
+    firstName?: Maybe<string>
+    middleName?: Maybe<string>
+    lastName?: Maybe<string>
+    suffix?: Maybe<string>
+    OrganizationMembers?: Maybe<OrganizationMemberLike[]>
+  }
+  type UserRecord = ProviderUserRecord
+
+  type Maybe<T> = T | null | undefined
+
+  const isNonNullable = <T,>(value: T): value is NonNullable<T> => value !== null && value !== undefined
+
+  const formatUserName = (user?: Maybe<BasicUserRecord>) => {
+    if (!user) return "-"
+    const parts = [user.firstName, user.middleName, user.lastName, user.suffix]
+      .map(part => part?.trim())
+      .filter((value): value is string => Boolean(value && value.length))
+    return parts.length ? parts.join(" ") : "-"
+  }
+
+  const formatHealthcareProviderName = (hp?: Maybe<HealthcareProviderRecord>) => {
+    if (!hp) return "-"
+    const profileParts = [hp.HPProfile?.title, hp.HPProfile?.name, hp.HPProfile?.suffix]
+      .map(part => part?.trim())
+      .filter((value): value is string => Boolean(value && value.length))
+
+    if (profileParts.length) {
+      return profileParts.join(" ")
+    }
+
+    return formatUserName(hp.User)
+  }
+
+  const matchesKeyword = (value: Maybe<string>, keywords: readonly string[]) => {
+    if (!value) return false
+    const normalized = value.toLowerCase().trim()
+    if (!normalized.length) return false
+    return keywords.some(keyword => normalized.includes(keyword))
+  }
+
+  const hasRoleMatch = (members: Maybe<OrganizationMemberLike[]>, keywords: readonly string[]) => {
+    if (!members) return false
+    return members.some(member => matchesKeyword(member.OrganizationRole?.name ?? null, keywords))
+  }
+
+  const DOCTOR_ROLE_KEYWORDS = ["doctor", "physician", "medical doctor", "attending physician", "consultant", "dentist"] as const
+  const DOCTOR_TITLE_KEYWORDS = ["dr", "dr.", "doctor", "physician", "md", "dmd", "dentist", "consultant"] as const
+  const DOCTOR_FIELD_KEYWORDS = ["doctor", "physician", "dentist", "medical", "md", "dmd", "consultant", "surgeon", "ob-gyn", "pediatrician"] as const
+  const DOCTOR_SUFFIX_KEYWORDS = ["md", "m.d", "dmd", "d.o", "do"] as const
+
+  const NURSE_ROLE_KEYWORDS = ["nurse", "head nurse", "staff nurse", "registered nurse", "charge nurse"] as const
+  const NURSE_TITLE_KEYWORDS = ["nurse", "rn", "registered nurse"] as const
+  const NURSE_FIELD_KEYWORDS = ["nurse", "rn", "registered nurse"] as const
+
+  const matchesDoctorName = (value: Maybe<string>) => {
+    if (!value) return false
+    const normalized = value.toLowerCase().trim()
+    if (!normalized.length) return false
+    return normalized.startsWith("dr ") ||
+      normalized.startsWith("dr.") ||
+      normalized.endsWith(" md") ||
+      normalized.endsWith(" m.d") ||
+      normalized.endsWith(", md") ||
+      normalized.endsWith(", m.d") ||
+      normalized.includes(" md ") ||
+      normalized.includes(" m.d ") ||
+      normalized.includes(" dmd")
+  }
+
+  const isDoctorProvider = (provider: Maybe<HealthcareProviderRecord>): provider is HealthcareProviderRecord => {
+    if (!provider) return false
+    if (hasRoleMatch(provider.User?.OrganizationMembers ?? null, DOCTOR_ROLE_KEYWORDS)) return true
+    if (matchesKeyword(provider.User?.suffix ?? null, DOCTOR_SUFFIX_KEYWORDS)) return true
+    if (matchesKeyword(provider.HPProfile?.title ?? null, DOCTOR_TITLE_KEYWORDS)) return true
+    if (matchesDoctorName(provider.HPProfile?.name ?? null)) return true
+    if (provider.HPProfile?.fields?.some(field => matchesKeyword(field ?? null, DOCTOR_FIELD_KEYWORDS))) return true
+    return false
+  }
+
+  const isNurseProvider = (provider: Maybe<HealthcareProviderRecord>): provider is HealthcareProviderRecord => {
+    if (!provider) return false
+    if (hasRoleMatch(provider.User?.OrganizationMembers ?? null, NURSE_ROLE_KEYWORDS)) return true
+    if (matchesKeyword(provider.HPProfile?.title ?? null, NURSE_TITLE_KEYWORDS)) return true
+    if (provider.HPProfile?.fields?.some(field => matchesKeyword(field ?? null, NURSE_FIELD_KEYWORDS))) return true
+    return false
+  }
+
+  const resolvedStatusKeywords = new Set(["RESOLVED", "DONE"])
+  const routedStatusKeywords = new Set(["PROCESSING", "ROUTED"])
+
+  const xlsxData: XLSXExportData[] = filteredData.map(ticket => {
     const patient = ticket.Appointment?.Requesters[0]?.User
-    const patientNameParts = [
-      patient?.firstName,
-      patient?.middleName,
-      patient?.lastName,
-      patient?.suffix
-    ].filter(Boolean)
-    const patientName = patientNameParts.length ? patientNameParts.join(" ") : "Unknown"
+    const appointmentAttribute = ticket.Appointment?.AppointmentAttribute
+    const appointmentDateSource = appointmentAttribute?.date || ticket.createdAt
+    const appointmentDate = appointmentDateSource ? new Date(appointmentDateSource) : new Date()
 
-    const age = patient?.dob ? calculateAge(patient.dob) : null
-    const program = patient?.StudentRecords?.[0]?.Program?.name || "-"
+    const ticketStatusRaw = ticket.ConsultationTicketAttribute?.status ?? appointmentAttribute?.status ?? "-"
+    const status = (() => {
+      const normalized = ticketStatusRaw?.toUpperCase?.() ?? "-"
+      if (resolvedStatusKeywords.has(normalized)) return "Done"
+      if (routedStatusKeywords.has(normalized)) return "Routed"
+      if (!ticketStatusRaw) return "-"
+      const trimmedStatus = ticketStatusRaw.trim()
+      if (!trimmedStatus.length) return "-"
+      return `${trimmedStatus.charAt(0).toUpperCase()}${trimmedStatus.slice(1).toLowerCase()}`
+    })()
 
-    const hp = ticket.ConsultationTicketHPs?.[0]?.HealthCareProvider
-    const doctorNameParts = [hp?.User?.firstName, hp?.User?.lastName].filter(Boolean)
-    const taggedDoctor = hp?.HPProfile?.name || (doctorNameParts.length ? doctorNameParts.join(" ") : "-")
+    const isResolved = (() => {
+      const normalized = ticketStatusRaw?.toUpperCase?.() ?? ""
+      return resolvedStatusKeywords.has(normalized)
+    })()
 
-    // Find nurse in charge from healthcare providers
-    const nurseHP = ticket.ConsultationTicketHPs?.find(
-      (hp) => hp.HealthCareProvider?.User?.OrganizationMembers?.some(
-        (member) => member.OrganizationRole?.name === "Nurse"
-      )
-    )?.HealthCareProvider
+    const programName = patient?.StudentRecords?.[0]?.Program?.name
+    const yearLevel = patient?.StudentRecords?.[0]?.OrganizationYearLevel?.name
+    const deptYearLevel = [programName, yearLevel].filter(Boolean).join(" / ") || "-"
 
-    const nurseNameParts = [nurseHP?.User?.firstName, nurseHP?.User?.lastName].filter(Boolean)
-    const nurseIncharge = nurseHP?.HPProfile?.name || (nurseNameParts.length ? nurseNameParts.join(" ") : "-")
+    const providers: HealthcareProviderRecord[] = (ticket.ConsultationTicketHPs ?? [])
+      .map(hp => hp.HealthCareProvider)
+      .filter(isNonNullable)
 
-    // Get the latest Pre-Assessment Note created by a Nurse
+    const nurseProvider = providers.find(isNurseProvider)
+    const doctorProviders = providers.filter(isDoctorProvider)
+    const fallbackDoctorCandidates = providers.filter(provider => provider && provider !== nurseProvider)
+    const fallbackDoctorBySuffix = fallbackDoctorCandidates.find(provider => matchesKeyword(provider.User?.suffix ?? null, DOCTOR_SUFFIX_KEYWORDS))
+    const fallbackDoctorByName = fallbackDoctorCandidates.find(provider =>
+      matchesDoctorName(provider.HPProfile?.name ?? null) || matchesDoctorName(provider.HPProfile?.title ?? null)
+    )
+    const primaryDoctor = doctorProviders[0]
+      ?? fallbackDoctorBySuffix
+      ?? fallbackDoctorByName
+      ?? (fallbackDoctorCandidates.length === 1 ? fallbackDoctorCandidates[0] : undefined)
+    const primaryDoctorName = primaryDoctor ? formatHealthcareProviderName(primaryDoctor) : "-"
+
     const latestNursePreAssessmentNote = ticket.Appointment?.PreAssessmentNotes?.find(
-      (note) => note.CreatedBy?.OrganizationMembers?.some(
-        (member) => member.OrganizationRole?.name === "Nurse"
-      )
+      (note) => hasRoleMatch(note.CreatedBy?.OrganizationMembers ?? null, NURSE_ROLE_KEYWORDS)
     )
 
-    const icd10ConsultationNote = ticket?.ConsultationNotes?.find(
-      (note) => note.section === "icd10"
-    );
+    const nurseFromPreAssessment = formatUserName(latestNursePreAssessmentNote?.CreatedBy)
+
+    const receivedByUser = appointmentAttribute?.ReceivedBy
+    const receivedByIsNurse = hasRoleMatch(receivedByUser?.OrganizationMembers ?? null, NURSE_ROLE_KEYWORDS)
+
+    const nurseIncharge =
+      nurseFromPreAssessment !== "-"
+        ? nurseFromPreAssessment
+        : receivedByIsNurse
+          ? formatUserName(receivedByUser)
+          : formatHealthcareProviderName(nurseProvider)
 
     const nurseImpression = latestNursePreAssessmentNote?.assessment || "-"
 
+    const diagnosisNote = ticket.ConsultationNotes?.find(note => {
+      const section = note.section?.toLowerCase()
+      return section === "icd10" || section === "diagnosis" || section === "doctor_dx"
+    })
+
+    const doctorDiagnosis = diagnosisNote?.content?.trim() || "-"
+
+    const taggedDoctor = primaryDoctorName
+
+    const ageValue = patient?.dob ? calculateAge(patient.dob) : undefined
+
     return {
-      "ID": `Ticket #${ticket.id}`,
-      "Date": format(new Date(ticket.createdAt), "yyyy-MM-dd"),
-      "Patient": patientName,
-      "Age": age !== null ? age.toString() : "-",
-      "Sex": patient?.gender || "-",
-      "Role": patient?.OrganizationMembers?.[0]?.OrganizationRole?.name || "-",
-      "Year Level": patient?.StudentRecords?.[0]?.OrganizationYearLevel?.name || "-",
+      "Consultation Ticket #": ticket.id,
+      "Date": format(appointmentDate, "yyyy-MM-dd"),
+      "Patient Name": formatUserName(patient),
+      "Age": ageValue ?? "-",
+      "Gender": patient?.gender || "-",
+      "Client": patient?.OrganizationMembers?.[0]?.OrganizationRole?.name || "-",
+      "Service Category": appointmentAttribute?.Service?.ServiceCategory?.name || "-",
       "Campus": patient?.OrganizationMembers?.[0]?.Organization?.name || "-",
-      "Service Category": ticket.Appointment?.AppointmentAttribute?.Service?.ServiceCategory?.name || "-",
-      "Service": ticket.Appointment?.AppointmentAttribute?.Service?.name || "-",
-      "Status": ticket.Appointment?.AppointmentAttribute?.status || "-",
-      "Program": program,
-      "Appointment Mode": ticket.Appointment?.AppointmentAttribute?.AppointmentMode?.name || "-",
-      "Appointment Type": ticket.Appointment?.AppointmentAttribute?.AppointmentType?.name || "-",
+      "Dept/Year Level": deptYearLevel,
+      "Status": status,
+      "Appointment Type": appointmentAttribute?.AppointmentType?.name || "-",
+      "Consultation Type": appointmentAttribute?.AppointmentMode?.name || "-",
       "Purpose/Chief Complaint": ticket.Appointment?.complaint || ticket.subject || "-",
+      "Service Offered": appointmentAttribute?.Service?.name || "-",
+      "Resolved By": isResolved ? primaryDoctorName : "-",
+      "Doctor DX": doctorDiagnosis,
+      "Nurse In-charge": nurseIncharge,
       "Tagged Doctor": taggedDoctor,
-      "Nurse Incharge": nurseIncharge,
-      "Nurse Impression": nurseImpression,
-      "Doctor's DX": icd10ConsultationNote?.content || "-",
-      "System": ticket.System.name,
+      "Nursing Impression": nurseImpression,
+      "System": ticket.System.name || "-",
     }
   })
 
   const columns = [
-    "ID", "Date", "Patient", "Age", "Sex", "Role", "Year Level", "Campus", "Service Category",
-    "Service", "Status", "Program", "Appointment Mode", "Appointment Type",
-    "Purpose/Chief Complaint", "Tagged Doctor", "Nurse Incharge", "Nurse Impression", "Doctor's DX", "System"
+    "Consultation Ticket #",
+    "Date",
+    "Patient Name",
+    "Age",
+    "Gender",
+    "Client",
+    "Service Category",
+    "Campus",
+    "Dept/Year Level",
+    "Status",
+    "Appointment Type",
+    "Consultation Type",
+    "Purpose/Chief Complaint",
+    "Service Offered",
+    "Resolved By",
+    "Doctor DX",
+    "Nurse In-charge",
+    "Tagged Doctor",
+    "Nursing Impression",
+    "System",
   ]
 
   const filename = `consultation_reports_${format(new Date(), "yyyy-MM-dd")}`
 
-  exportCSV(columns, csvData, { filename })
+  exportXLSX(columns, xlsxData, {
+    filename,
+    sheetName: "Consultations",
+  })
   return filteredData.length
 }
 

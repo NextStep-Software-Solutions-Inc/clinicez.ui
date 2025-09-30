@@ -47,6 +47,7 @@ const medicineSchema = z.object({
   genericName: z.string().optional(),
   isGeneric: z.boolean().default(false),
   dosage: z.string().optional(),
+  qty: z.coerce.number().min(1, "Quantity must be at least 1").default(1),
   frequency: z.string().optional(),
   unit: z.string().optional(),
   duration: z.coerce.number().min(1, "Duration must be at least 1 day").default(1),
@@ -162,6 +163,7 @@ export default function CreatePrescriptionModal({
       genericName: "",
       isGeneric: false,
       dosage: "",
+      qty: 1,
       frequency: "",
       unit: "",
       duration: 1,
@@ -650,6 +652,28 @@ export default function CreatePrescriptionModal({
 
                           <FormField
                             control={medicineForm.control}
+                            name="qty"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Quantity</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    {...field}
+                                    type="text"
+                                    inputMode="numeric"
+                                    pattern="[0-9]*"
+                                    value={field.value?.toString() ?? ""}
+                                    onChange={(e) => field.onChange(e.target.value)}
+                                    placeholder="e.g., 30"
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={medicineForm.control}
                             name="frequency"
                             render={({ field }) => (
                               <FormItem>
@@ -778,6 +802,10 @@ export default function CreatePrescriptionModal({
                               <div>
                                 <span className="text-sm font-medium text-gray-600">Dosage:</span>
                                 <p className="text-sm">{medicine.dosage || "Not specified"}</p>
+                              </div>
+                              <div>
+                                <span className="text-sm font-medium text-gray-600">Quantity:</span>
+                                <p className="text-sm">{medicine.qty ?? "Not specified"}</p>
                               </div>
                               <div>
                                 <span className="text-sm font-medium text-gray-600">Frequency:</span>

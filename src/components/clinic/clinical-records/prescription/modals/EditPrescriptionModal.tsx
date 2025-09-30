@@ -258,27 +258,23 @@ export default function EditPrescriptionModal({
     toast.success("Medicine removed!");
   };
 
-  const onSubmit = useCallback(async (data: FormData) => {
+  const onSubmit = useCallback((data: FormData) => {
     setIsLoading(true);
 
-    try {
-      // Update prescription basic info
-      await promiseWrapper(updatePrescriptionAction)({
+    const updatePrescription = async () => {
+      const prescriptionResult = await promiseWrapper(updatePrescriptionAction)({
         id: prescription.id,
         name: data.name,
         remarks: data.remarks,
         hpIds,
       });
 
-      // Handle deleted medicines
       for (const medicineId of deletedMedicineIds) {
         await promiseWrapper(deleteMedicineAction)({ medicineId });
       }
 
-      // Handle medicines (create new or update existing)
       for (const medicine of data.medicines) {
         if (medicine.id) {
-          // Update existing medicine
           await promiseWrapper(updateMedicineAction)({
             id: medicine.id,
             name: medicine.name,
@@ -293,7 +289,6 @@ export default function EditPrescriptionModal({
             notes: medicine.notes,
           });
         } else {
-          // Create new medicine
           await promiseWrapper(createMedicineAction)({
             name: medicine.name,
             brandName: medicine.brandName,
@@ -310,14 +305,25 @@ export default function EditPrescriptionModal({
         }
       }
 
-      toast.success("Prescription updated successfully!");
-      onUpdated?.();
-      onOpenChange(false);
-    } catch (error) {
-      toast.error("Failed to update prescription");
-    } finally {
-      setIsLoading(false);
-    }
+      return prescriptionResult.message || "Prescription updated successfully!";
+    };
+
+    toast.promise(updatePrescription(), {
+      loading: "Updating prescription...",
+      success: (message) => {
+        onUpdated?.();
+        onOpenChange(false);
+        return message;
+      },
+      error: (error) => {
+        if (typeof error === "string") return error;
+        if (error instanceof Error && error.message) return error.message;
+        return "Failed to update prescription";
+      },
+      finally: () => {
+        setIsLoading(false);
+      },
+    });
   }, [prescription.id, hpIds, deletedMedicineIds, onUpdated, onOpenChange]);
 
   return (

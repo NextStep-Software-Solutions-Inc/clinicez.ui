@@ -239,7 +239,7 @@ async function generateAndExportConsultationReport(
 
     const diagnosisNote = ticket.ConsultationNotes?.find(note => {
       const section = note.section?.toLowerCase()
-      return section === "icd10" || section === "diagnosis" || section === "doctor_dx"
+      return section === "assessment"
     })
 
     const doctorDiagnosis = diagnosisNote?.content?.trim() || "-"

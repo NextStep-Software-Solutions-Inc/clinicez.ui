@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { CalendarIcon, Download, Filter } from "lucide-react"
-import { format } from "date-fns"
+import { endOfDay, format, startOfDay } from "date-fns"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
@@ -42,13 +42,16 @@ async function generateAndExportConsultationReport(
   data: NonNullable<GetConsultationTickets["data"]>,
   filterValues: ReportsFilterValues
 ): Promise<number> {
+  const startDateBoundary = filterValues.startDate ? startOfDay(filterValues.startDate) : undefined
+  const endDateBoundary = filterValues.endDate ? endOfDay(filterValues.endDate) : undefined
+
   const filteredData = (data ?? []).filter(ticket => {
     const ticketDate = new Date(ticket.createdAt)
     const patient = ticket.Appointment?.Requesters[0]?.User
 
-    const isInDateRange = filterValues.startDate && filterValues.endDate
-      ? ticketDate >= filterValues.startDate && ticketDate <= filterValues.endDate
-      : true
+    const matchesStartDate = startDateBoundary ? ticketDate >= startDateBoundary : true
+    const matchesEndDate = endDateBoundary ? ticketDate <= endDateBoundary : true
+    const isInDateRange = matchesStartDate && matchesEndDate
 
     const matchesGender = filterValues.gender === "ALL" ||
       !filterValues.gender ||

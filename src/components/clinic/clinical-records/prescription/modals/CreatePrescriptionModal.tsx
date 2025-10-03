@@ -46,18 +46,12 @@ const medicineSchema = z.object({
   brandName: z.string().optional(),
   genericName: z.string().optional(),
   isGeneric: z.boolean().default(false),
-  dosage: z.string({
-    required_error: "Dosage is required",
-  }),
+  dosage: z.string().optional(),
   qty: z.coerce.number().min(1, "Quantity must be at least 1").default(1),
   frequency: z.string().optional(),
-  unit: z.string({
-    required_error: "Unit is required",
-  }),
+  unit: z.string().optional(),
   duration: z.coerce.number().min(1, "Duration must be at least 1 day").default(1),
-  notes: z.string({
-    required_error: "Sig/Notes is required",
-  }),
+  notes: z.string().optional(),
 })
 
 const createPrescriptionSchema = z.object({
@@ -647,9 +641,7 @@ export default function CreatePrescriptionModal({
                             name="dosage"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>
-                                  Dosage <span className="text-red-500 font-bold">*</span>
-                                </FormLabel>
+                                <FormLabel>Dosage</FormLabel>
                                 <FormControl>
                                   <Input {...field} placeholder="e.g., 500" />
                                 </FormControl>
@@ -663,9 +655,7 @@ export default function CreatePrescriptionModal({
                             name="qty"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>
-                                  Quantity <span className="text-red-500 font-bold">*</span>
-                                </FormLabel>
+                                <FormLabel>Quantity</FormLabel>
                                 <FormControl>
                                   <Input
                                     {...field}
@@ -701,9 +691,7 @@ export default function CreatePrescriptionModal({
                             name="unit"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>
-                                  Unit <span className="text-red-500 font-bold">*</span>
-                                </FormLabel>
+                                <FormLabel>Unit</FormLabel>
                                 <Select onValueChange={field.onChange} value={field.value}>
                                   <FormControl>
                                     <SelectTrigger>
@@ -754,9 +742,7 @@ export default function CreatePrescriptionModal({
                           name="notes"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>
-                                Sig <span className="text-red-500 font-bold">*</span>
-                              </FormLabel>
+                              <FormLabel>Sig</FormLabel>
                               <FormControl>
                                 <Textarea
                                   {...field}

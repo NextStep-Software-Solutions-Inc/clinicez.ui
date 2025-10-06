@@ -44,16 +44,22 @@ const medicineSchema = z.object({
   brandName: z.string().optional(),
   genericName: z.string().optional(),
   isGeneric: z.boolean().default(false),
-  dosage: z.string().optional(),
+  dosage: z.string({
+    required_error: "Dosage is required",
+  }).min(1, "Dosage cannot be empty"),
   qty: z
     .coerce
     .number()
     .min(1, "Quantity must be at least 1")
     .default(1),
   frequency: z.string().optional(),
-  unit: z.string().optional(),
+  unit: z.string({
+    required_error: "Unit is required",
+  }).min(1, "Unit cannot be empty"),
   duration: z.coerce.number().min(1, "Duration must be at least 1 day").default(1),
-  notes: z.string().optional(),
+  notes: z.string({
+    required_error: "Sig/Notes is required",
+  }).min(1, "Sig/Notes cannot be empty"),
 });
 
 const formSchema = z.object({
@@ -416,7 +422,9 @@ export default function EditPrescriptionModal({
                             name="name"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Medicine Name *</FormLabel>
+                                <FormLabel>
+                                  Medicine Name <span className="text-red-500 font-bold">*</span>
+                                </FormLabel>
                                 <FormControl>
                                   <Input {...field} placeholder="Enter medicine name" />
                                 </FormControl>
@@ -481,7 +489,9 @@ export default function EditPrescriptionModal({
                             name="dosage"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Dosage</FormLabel>
+                                <FormLabel>
+                                  Dosage <span className="text-red-500 font-bold">*</span>
+                                </FormLabel>
                                 <FormControl>
                                   <Input {...field} placeholder="e.g., 500" />
                                 </FormControl>
@@ -495,7 +505,9 @@ export default function EditPrescriptionModal({
                             name="qty"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Quantity</FormLabel>
+                                <FormLabel>
+                                  Quantity <span className="text-red-500 font-bold">*</span>
+                                </FormLabel>
                                 <FormControl>
                                   <Input
                                     type="text"
@@ -530,7 +542,9 @@ export default function EditPrescriptionModal({
                             name="unit"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Unit</FormLabel>
+                                <FormLabel>
+                                  Unit <span className="text-red-500 font-bold">*</span>
+                                </FormLabel>
                                 <Select onValueChange={field.onChange} value={field.value}>
                                   <FormControl>
                                     <SelectTrigger>
@@ -581,7 +595,9 @@ export default function EditPrescriptionModal({
                           name="notes"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Sig</FormLabel>
+                              <FormLabel>
+                                Sig <span className="text-red-500 font-bold">*</span>
+                              </FormLabel>
                               <FormControl>
                                 <Textarea
                                   {...field}

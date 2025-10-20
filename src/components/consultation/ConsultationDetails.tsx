@@ -329,7 +329,7 @@ export const PatientHpDetails = ({ creators = [], user }: PatientHpDetailsProps)
               </div>
             </div>
           </div>
-          <div>
+          {/* <div>
             <Tooltip>
               <TooltipTrigger asChild>
                 <EMRTriggerButton patientId={user.userId} />
@@ -338,7 +338,7 @@ export const PatientHpDetails = ({ creators = [], user }: PatientHpDetailsProps)
                 EMR Preview
               </TooltipContent>
             </Tooltip>
-          </div>
+          </div> */}
         </CardContent>
       </Card>
       <Card className="grow">

@@ -20,6 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { UnsavedChangesAlert } from "@/components/UnsavedChangesAlert"
+import { UnitCombobox } from "../UnitCombobox"
 import { calculateAge, cn } from "@/lib/utils"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Plus, Pill, User, ChevronDown, ChevronUp, X } from "lucide-react"
@@ -97,21 +98,6 @@ const createPrescriptionSchema = z.object({
 
 type CreatePrescriptionForm = z.infer<typeof createPrescriptionSchema>
 type MedicineForm = z.infer<typeof medicineSchema>
-
-const unitOptions = [
-  { value: "tablets", label: "Tablets" },
-  { value: "capsules", label: "Capsules" },
-  { value: "ml", label: "Milliliters (ml)" },
-  { value: "mg", label: "Milligrams (mg)" },
-  { value: "g", label: "Grams (g)" },
-  { value: "drops", label: "Drops" },
-  { value: "sachets", label: "Sachets" },
-  { value: "vials", label: "Vials" },
-  { value: "patches", label: "Patches" },
-  { value: "syringes", label: "Syringes" },
-  { value: "bottles", label: "Bottles" },
-  { value: "tubes", label: "Tubes" },
-]
 
 export default function CreatePrescriptionModal({
   clinicUid,
@@ -702,27 +688,16 @@ export default function CreatePrescriptionModal({
                             control={medicineForm.control}
                             name="unit"
                             render={({ field }) => (
-                              <FormItem>
+                              <FormItem className="flex flex-col">
                                 <FormLabel>
                                   Unit <span className="text-red-500 font-bold">*</span>
                                 </FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value}>
-                                  <FormControl>
-                                    <SelectTrigger>
-                                      <SelectValue placeholder="Select unit" />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    <Each
-                                      of={unitOptions}
-                                      render={(option) => (
-                                        <SelectItem key={option.value} value={option.value}>
-                                          {option.label}
-                                        </SelectItem>
-                                      )}
-                                    />
-                                  </SelectContent>
-                                </Select>
+                                <FormControl>
+                                  <UnitCombobox
+                                    value={field.value}
+                                    onChange={field.onChange}
+                                  />
+                                </FormControl>
                                 <FormMessage />
                               </FormItem>
                             )}

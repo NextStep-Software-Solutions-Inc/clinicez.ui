@@ -1,12 +1,11 @@
 "use server";
 
-import "server-only";
 import prisma from "@lib/prisma";
 import { getCachedSession } from "@actions/session.action";
 
 export type GetClinicConsultationConfig = Awaited<ReturnType<typeof getClinicConsultationConfigAction>>
 export const getClinicConsultationConfigAction = async (clinicUid: string) => {
-  
+
   const clinicConsultationConfig = await prisma.consultationConfig.findFirst({
     where: {
       Clinic: {
@@ -60,10 +59,10 @@ export const upsertClinicConsultationConfigAction = async (clinicConsultationCon
         }
       }
     });
-    return { status: true, message, data: clinicConsultationConfig}
+    return { status: true, message, data: clinicConsultationConfig }
   } catch (error) {
     console.error(`Error updating appointment settings: ${error}`);
-    if(error instanceof Error) message = error.message;
-    return { status: false, message: "Failed to update appointment settings", data: null}
+    if (error instanceof Error) message = error.message;
+    return { status: false, message: "Failed to update appointment settings", data: null }
   }
 }

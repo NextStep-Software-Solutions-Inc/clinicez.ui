@@ -20,10 +20,8 @@ import Each from "@components/utils/Each";
 export const addressFormSchema = z.object({
   id: z.number(),
   isPrimary: z.boolean(),
-  address: z.string().min(2, {
-    message: "Name must be at least 2 characters.",
-  }).max(255, {
-    message: "Name must not be longer than 255 characters.",
+  fullAddress: z.string({
+    required_error: "Full address is required.",
   }),
   apartmentUnit: z.string()
     .optional()
@@ -31,10 +29,10 @@ export const addressFormSchema = z.object({
   bldgName: z.string()
     .optional()
     .transform((e) => e === "" ? undefined : e),
-  premises: z.string()
+  addressLine: z.string()
     .optional()
     .transform((e) => e === "" ? undefined : e),
-  streetName: z.string()
+  street: z.string()
     .optional()
     .transform((e) => e === "" ? undefined : e),
   barangay: z.string()
@@ -43,25 +41,29 @@ export const addressFormSchema = z.object({
   subdivision: z.string()
     .optional()
     .transform((e) => e === "" ? undefined : e),
-  city: z.string().min(2, {
+  city: z.string({
+    required_error: "City is required.",
+  }).min(2, {
     message: "City must be at least 2 characters.",
   }).max(255, {
     message: "City must not be longer than 255 characters.",
   }),
-  state: z.string().min(2, {
+  state: z.string({
+    required_error: "State is required.",
+  }).min(2, {
     message: "State must be at least 2 characters.",
   }).max(255, {
     message: "State must not be longer than 255 characters.",
   }),
-  zipCode: z.string().min(2, {
-    message: "Zip must be at least 2 characters.",
-  }).max(30, {
-    message: "Zip must not be longer than 30 characters.",
+  zipCode: z.string({
+    required_error: "Zip Code is required.",
+  }).min(4, {
+    message: "Zip Code must be at least 4 characters.",
+  }).max(10, {
+    message: "Zip Code must not be longer than 10 characters.",
   }),
-  country: z.string().min(2, {
-    message: "Country must be at least 2 characters.",
-  }).max(30, {
-    message: "Country must not be longer than 30 characters.",
+  country: z.string({
+    required_error: "Country is required.",
   }),
 });
 
@@ -71,11 +73,11 @@ export interface AddressItemProps {
   address: {
     id: number;
     isPrimary: boolean;
-    address: string;
+    fullAddress: string;
     apartmentUnit?: string | null;
     bldgName?: string | null;
-    premises?: string | null;
-    streetName?: string | null;
+    addressLine?: string | null;
+    street?: string | null;
     barangay?: string | null;
     subdivision?: string | null;
     city: string;
@@ -91,24 +93,36 @@ export const AddressItem = ({ address, readOnly }: AddressItemProps) => {
   const form = useForm<AddressFormSchema>({
     resolver: zodResolver(addressFormSchema),
     defaultValues: {
-      ...address,
+      id: address.id,
+      isPrimary: address.isPrimary,
+      fullAddress: address.fullAddress ?? "",
       apartmentUnit: address.apartmentUnit ?? "",
       bldgName: address.bldgName ?? "",
-      premises: address.premises ?? "",
-      streetName: address.streetName ?? "",
+      addressLine: address.addressLine ?? "",
+      street: address.street ?? "",
       barangay: address.barangay ?? "",
       subdivision: address.subdivision ?? "",
+      city: address.city,
+      state: address.state,
+      zipCode: address.zipCode,
+      country: address.country,
     }
   });
 
 
   const saveChangesAction = async () => {
     form.handleSubmit(async (data) => {
-      toast.promise(updateAddressAction(data), {
+      const updateData = {
+        ...data,
+        fullAddress: [data.addressLine, data.street, data.subdivision, data.barangay, data.city, data.state, data.zipCode, data.country]
+          .filter(Boolean)
+          .join(", ")
+      }
+      toast.promise(updateAddressAction(updateData), {
         loading: "Saving changes...",
-        success: () => {
-          form.reset(data);
-          revalidatePath("/user/[user]/phr/address", "page")
+        success: async () => {
+          await revalidatePath("/user/[user]/phr/address", "page");
+          form.reset(updateData);
           return "Changes saved successfully."
         },
         error: "An error occurred while saving changes.",
@@ -138,7 +152,7 @@ export const AddressItem = ({ address, readOnly }: AddressItemProps) => {
             name={`country`}
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Country</FormLabel>
+                <FormLabel>Country <span className="text-destructive">*</span></FormLabel>
                 <Select disabled={readOnly} onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
                     <SelectTrigger disabled={readOnly}>
@@ -154,14 +168,12 @@ export const AddressItem = ({ address, readOnly }: AddressItemProps) => {
                     />
                   </SelectContent>
                 </Select>
-                <FormDescription>
-                  Country that you belong to.
-                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
           />
-          <FormField
+
+          {/* <FormField
             disabled={readOnly}
             control={form.control}
             name={`address`}
@@ -169,7 +181,7 @@ export const AddressItem = ({ address, readOnly }: AddressItemProps) => {
               <FormItem className="w-full">
                 <FormLabel>Address Line (Legacy)</FormLabel>
                 <FormControl>
-                  <Input placeholder="Your location" {...field} />
+                  <Input {...field} />
                 </FormControl>
                 <FormDescription>
                   Use the detailed fields below or this field for backward compatibility.
@@ -177,7 +189,7 @@ export const AddressItem = ({ address, readOnly }: AddressItemProps) => {
                 <FormMessage />
               </FormItem>
             )}
-          />
+          /> */}
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             <FormField
@@ -188,11 +200,8 @@ export const AddressItem = ({ address, readOnly }: AddressItemProps) => {
                 <FormItem>
                   <FormLabel>Apartment/Unit</FormLabel>
                   <FormControl>
-                    <Input placeholder="Unit 123" {...field} value={field.value ?? ""} />
+                    <Input placeholder="e.g., Apartment XYZ" {...field} value={field.value ?? ""} />
                   </FormControl>
-                  <FormDescription>
-                    Apartment, unit, or room number
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -205,11 +214,8 @@ export const AddressItem = ({ address, readOnly }: AddressItemProps) => {
                 <FormItem>
                   <FormLabel>Building Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="ABC Building" {...field} value={field.value ?? ""} />
+                    <Input placeholder="e.g., Building XYZ" {...field} value={field.value ?? ""} />
                   </FormControl>
-                  <FormDescription>
-                    Name of the building or complex
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -217,16 +223,13 @@ export const AddressItem = ({ address, readOnly }: AddressItemProps) => {
             <FormField
               disabled={readOnly}
               control={form.control}
-              name="premises"
+              name="addressLine"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Premises</FormLabel>
                   <FormControl>
-                    <Input placeholder="Commercial/Residential" {...field} value={field.value ?? ""} />
+                    <Input placeholder="Landmark or Description" {...field} value={field.value ?? ""} />
                   </FormControl>
-                  <FormDescription>
-                    Type of premises or landmark
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -234,16 +237,13 @@ export const AddressItem = ({ address, readOnly }: AddressItemProps) => {
             <FormField
               disabled={readOnly}
               control={form.control}
-              name="streetName"
+              name="street"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Street Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="Main Street" {...field} value={field.value ?? ""} />
+                    <Input placeholder="e.g., Main St." {...field} value={field.value ?? ""} />
                   </FormControl>
-                  <FormDescription>
-                    Name of the street or road
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -256,11 +256,8 @@ export const AddressItem = ({ address, readOnly }: AddressItemProps) => {
                 <FormItem>
                   <FormLabel>Barangay</FormLabel>
                   <FormControl>
-                    <Input placeholder="Barangay name" {...field} value={field.value ?? ""} />
+                    <Input placeholder="e.g., Barangay XYZ" {...field} value={field.value ?? ""} />
                   </FormControl>
-                  <FormDescription>
-                    Barangay or district name
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -273,11 +270,8 @@ export const AddressItem = ({ address, readOnly }: AddressItemProps) => {
                 <FormItem>
                   <FormLabel>Subdivision</FormLabel>
                   <FormControl>
-                    <Input placeholder="Subdivision name" {...field} value={field.value ?? ""} />
+                    <Input placeholder="e.g., Subdivision XYZ" {...field} value={field.value ?? ""} />
                   </FormControl>
-                  <FormDescription>
-                    Subdivision or village name
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -290,13 +284,10 @@ export const AddressItem = ({ address, readOnly }: AddressItemProps) => {
             name={`state`}
             render={({ field }) => (
               <FormItem className="w-full">
-                <FormLabel>State or Province</FormLabel>
+                <FormLabel>State/Province <span className="text-destructive">*</span></FormLabel>
                 <FormControl>
-                  <Input placeholder="Your State or Province" {...field} />
+                  <Input placeholder="e.g., Province XYZ" {...field} />
                 </FormControl>
-                <FormDescription>
-                  State or Province that you belong to.
-                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -307,13 +298,10 @@ export const AddressItem = ({ address, readOnly }: AddressItemProps) => {
             name={`city`}
             render={({ field }) => (
               <FormItem className="w-full">
-                <FormLabel>City</FormLabel>
+                <FormLabel>City <span className="text-destructive">*</span></FormLabel>
                 <FormControl>
-                  <Input placeholder="City here.." {...field} />
+                  <Input placeholder="e.g., Rockfort City" {...field} />
                 </FormControl>
-                <FormDescription>
-                  City or Municipality that you belong to.
-                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -324,13 +312,10 @@ export const AddressItem = ({ address, readOnly }: AddressItemProps) => {
             name={`zipCode`}
             render={({ field }) => (
               <FormItem className="w-full">
-                <FormLabel>Zip Code</FormLabel>
+                <FormLabel>Zip Code <span className="text-destructive">*</span></FormLabel>
                 <FormControl>
-                  <Input placeholder="9000" {...field} type="number" inputMode="tel" />
+                  <Input placeholder="e.g., 1234" {...field} type="number" inputMode="tel" />
                 </FormControl>
-                <FormDescription>
-                  Postal code of your area.
-                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}

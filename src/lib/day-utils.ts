@@ -43,3 +43,19 @@ export const combineDateTime = (date: Date, time: string): string => {
   const dateStr = dayjs(date).endOf("date").toISOString();
   return `${dateStr.split("T")[0]}T${time}`;
 }
+
+/**
+ * This utility function sets the minimum date to 6 months prior to the current date,
+ * preventing users from choosing/selecting a date older than 6 months in date picker components.
+ */
+export const getMinDateSixMonthsAgo = (): string => {
+  return dayjs().subtract(6, "months").format("YYYY-MM-DD");
+}
+
+/**
+ * This utility function sets the maximum date to the current date, preventing
+ * users from choosing/selecting a future date in date picker components.
+ */
+export const getMaxDate = (): string => {
+  return dayjs().format("YYYY-MM-DD");
+}

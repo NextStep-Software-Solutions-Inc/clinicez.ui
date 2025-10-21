@@ -28,6 +28,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import ActionButton from "@/components/ActionButton";
 import Each from "@/components/utils/Each";
+import { UnitCombobox } from "../UnitCombobox";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -76,21 +77,6 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 type MedicineForm = z.infer<typeof medicineSchema>;
-
-const unitOptions = [
-  { value: "tablets", label: "Tablets" },
-  { value: "capsules", label: "Capsules" },
-  { value: "ml", label: "Milliliters (ml)" },
-  { value: "mg", label: "Milligrams (mg)" },
-  { value: "g", label: "Grams (g)" },
-  { value: "drops", label: "Drops" },
-  { value: "sachets", label: "Sachets" },
-  { value: "vials", label: "Vials" },
-  { value: "patches", label: "Patches" },
-  { value: "syringes", label: "Syringes" },
-  { value: "bottles", label: "Bottles" },
-  { value: "tubes", label: "Tubes" },
-];
 
 interface EditPrescriptionModalProps {
   prescription: NonNullable<GetPrescriptions["data"]>[number];
@@ -541,27 +527,16 @@ export default function EditPrescriptionModal({
                             control={medicineForm.control}
                             name="unit"
                             render={({ field }) => (
-                              <FormItem>
+                              <FormItem className="flex flex-col">
                                 <FormLabel>
                                   Unit <span className="text-red-500 font-bold">*</span>
                                 </FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value}>
-                                  <FormControl>
-                                    <SelectTrigger>
-                                      <SelectValue placeholder="Select unit" />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    <Each
-                                      of={unitOptions}
-                                      render={(option) => (
-                                        <SelectItem key={option.value} value={option.value}>
-                                          {option.label}
-                                        </SelectItem>
-                                      )}
-                                    />
-                                  </SelectContent>
-                                </Select>
+                                <FormControl>
+                                  <UnitCombobox
+                                    value={field.value}
+                                    onChange={field.onChange}
+                                  />
+                                </FormControl>
                                 <FormMessage />
                               </FormItem>
                             )}

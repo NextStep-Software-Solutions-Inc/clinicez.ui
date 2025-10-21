@@ -13,7 +13,7 @@ import ConditionalRender from "@components/utils/ConditionalRender";
 
 const initialAddressValues = (key: "primary" | "secondary") => ({
   isPrimary: key === "primary",
-  address: "",
+  fullAddress: "",
   city: "",
   state: "",
   zipCode: "",
@@ -36,12 +36,12 @@ export default function AddressForm(props: AddressFormProps) {
 
   const action = async (formData: FormData) => {
     const isPrimary = formData.get("isPrimary") === "true";
-    const address = initialAddressValues(isPrimary ? "primary": "secondary");
+    const address = initialAddressValues(isPrimary ? "primary" : "secondary");
     toast.promise(createAddressAction(sessionUserId, address), {
-      loading: `Adding ${isPrimary ? "Primary": "Secondary"} address...`,
+      loading: `Adding ${isPrimary ? "Primary" : "Secondary"} address...`,
       success: () => {
         revalidatePath("/user/[user]/phr/address", "page");
-        return `${isPrimary ? "Primary": "Secondary"} address added successfully.`
+        return `${isPrimary ? "Primary" : "Secondary"} address added successfully.`
       },
       error: "An error occurred while adding address.",
     })

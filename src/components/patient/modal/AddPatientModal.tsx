@@ -21,6 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { createUserAction } from "@actions/users/user.action";
 import { useClinicRoles } from "@/hooks/useClinicRole";
 import { promiseWrapper } from "@/lib/with-error-handling";
+import { getMaxDate } from "@/lib/day-utils";
 
 const addUserSchema = z.object({
   firstName: z.string({
@@ -44,7 +45,7 @@ const addUserSchema = z.object({
   gender: z.nativeEnum($Enums.Gender, {
     required_error: "Gender is required"
   }).refine(value => {
-    return value 
+    return value
   }, {
     message: "Invalid Gender"
   }),
@@ -55,7 +56,7 @@ const addUserSchema = z.object({
   clinicRoleId: z.number({
     coerce: true,
   }).int().positive()
-  
+
 });
 
 interface AddPatientModalProps {
@@ -63,17 +64,17 @@ interface AddPatientModalProps {
   onAddPatient?: () => void;
   roleName?: string;
 }
-export default function AddPatientModal({clinicUid, onAddPatient, roleName}:AddPatientModalProps) {
+export default function AddPatientModal({ clinicUid, onAddPatient, roleName }: AddPatientModalProps) {
 
   const closeBtnRef = React.useRef<HTMLInputElement>(null);
-  const {data: clinicRoles} = useClinicRoles({roleName});
+  const { data: clinicRoles } = useClinicRoles({ roleName });
   const form = useForm<z.infer<typeof addUserSchema>>({
     resolver: zodResolver(addUserSchema),
   });
 
   const action = async () => {
     form.handleSubmit(async (values) => {
-      toast.promise(promiseWrapper(createUserAction)({...values, clinicUid}), {
+      toast.promise(promiseWrapper(createUserAction)({ ...values, clinicUid }), {
         loading: "Adding patient...",
         success: res => {
           onAddPatient?.();
@@ -82,7 +83,7 @@ export default function AddPatientModal({clinicUid, onAddPatient, roleName}:AddP
         },
         error: err => err
       })
-      
+
     })();
   }
   return (
@@ -98,13 +99,13 @@ export default function AddPatientModal({clinicUid, onAddPatient, roleName}:AddP
         </TooltipTrigger>
         <TooltipContent>Add Patient</TooltipContent>
       </Tooltip>
-      <CustomModalContent 
+      <CustomModalContent
         className="sm:max-w-[625px]"
-        label="Add Patient" 
+        label="Add Patient"
         description="Add a new patient to the clinic."
       >
         <Form {...form}>
-          <form 
+          <form
             action={action}
             id="add-patient-form"
             className="space-y-4"
@@ -125,7 +126,7 @@ export default function AddPatientModal({clinicUid, onAddPatient, roleName}:AddP
                       {...field}
                     />
                     <FormDescription>
-                    Enter the first name of the patient.
+                      Enter the first name of the patient.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -146,7 +147,7 @@ export default function AddPatientModal({clinicUid, onAddPatient, roleName}:AddP
                       {...field}
                     />
                     <FormDescription>
-                    Enter the last name of the patient.
+                      Enter the last name of the patient.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -171,7 +172,7 @@ export default function AddPatientModal({clinicUid, onAddPatient, roleName}:AddP
                       {...field}
                     />
                     <FormDescription>
-                    Enter the email of the patient.
+                      Enter the email of the patient.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -193,7 +194,7 @@ export default function AddPatientModal({clinicUid, onAddPatient, roleName}:AddP
                       {...field}
                     />
                     <FormDescription>
-                    Enter the mobile number of the patient.
+                      Enter the mobile number of the patient.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -215,7 +216,7 @@ export default function AddPatientModal({clinicUid, onAddPatient, roleName}:AddP
                       className="flex flex-row gap-5 flex-wrap"
                     >
                       <Each
-                        of={Object.values(Gender).map(g => ({name: g.toLowerCase(), value:g}))}
+                        of={Object.values(Gender).map(g => ({ name: g.toLowerCase(), value: g }))}
                         render={(gender) => (
                           <FormItem className="flex items-center space-x-3 space-y-0">
                             <FormControl>
@@ -277,6 +278,7 @@ export default function AddPatientModal({clinicUid, onAddPatient, roleName}:AddP
                   <Input
                     id="dob"
                     type="date"
+                    max={getMaxDate()}
                     placeholder="Enter date of birth"
                     name={field.name}
                     onChange={e => field.onChange(new Date(e.target.value))}
@@ -289,10 +291,10 @@ export default function AddPatientModal({clinicUid, onAddPatient, roleName}:AddP
                 </FormItem>
               )}
             />
-           
+
             <DialogFooter>
               <DialogClose asChild>
-                <input ref={closeBtnRef} type="hidden"  value="ok"/>
+                <input ref={closeBtnRef} type="hidden" value="ok" />
               </DialogClose>
               <ActionButton form="add-patient-form" type="submit">
                 Add

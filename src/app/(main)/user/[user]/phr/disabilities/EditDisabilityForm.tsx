@@ -16,6 +16,7 @@ import { format } from "date-fns";
 import { useEffect, useState } from "react";
 import { Disability } from "./DisabilityList";
 import { getDisabilityAction } from "@actions/disability.action";
+import { getMaxDate } from "@/lib/day-utils";
 
 interface EditDisabilityFormProps {
   index: number;
@@ -119,6 +120,7 @@ export default function EditDisabilityForm({ disability, index, remove, onUpdate
                       value={field.value ? format(field.value, "yyyy-MM-dd") : ""}
                       type="date"
                       placeholder="Select date"
+                      max={getMaxDate()}
                     />
                   </FormControl>
                   <FormDescription>

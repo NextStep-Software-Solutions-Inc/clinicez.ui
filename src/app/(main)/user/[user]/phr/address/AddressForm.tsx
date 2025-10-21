@@ -13,7 +13,7 @@ import ConditionalRender from "@components/utils/ConditionalRender";
 
 const initialAddressValues = (key: "primary" | "secondary") => ({
   isPrimary: key === "primary",
-  address: "",
+  fullAddress: "",
   city: "",
   state: "",
   zipCode: "",

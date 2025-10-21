@@ -34,10 +34,15 @@ const mapAddressInput = (data: Omit<AddressItemProps["address"], "id">): Address
 });
 
 export const getAddressesAction = async (userId: string) => {
-  return await prisma.userAddress.findMany({
+  const addresses = await prisma.userAddress.findMany({
     orderBy: { createdAt: "desc" },
     where: { isActive: true, User: { userId } },
   });
+
+  return addresses.map(({ address, ...rest }) => ({
+    ...rest,
+    fullAddress: address,
+  }));
 }
 
 export const createAddressAction = async (userId: string, data: Omit<AddressItemProps["address"], "id">) => {

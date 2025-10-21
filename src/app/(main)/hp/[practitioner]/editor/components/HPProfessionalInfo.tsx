@@ -10,7 +10,7 @@ import {
   FormMessage,
 } from "@components/ui/form"
 import { Input } from "@components/ui/input"
-import {  useForm } from "react-hook-form"
+import { useForm } from "react-hook-form"
 import { format } from "date-fns"
 import { ProfessionalDetailsFormType, professionalDetailsSchema } from "../hp-form.schema"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -19,6 +19,7 @@ import { upsertProfessionalDetailsAction } from "@actions/hp.actions"
 import { toast } from "sonner"
 import React from "react"
 import { useParams } from "next/navigation"
+import { getMaxDate } from "@/lib/day-utils"
 
 type HPProfessionalInfoProps = {
   professionalDetails: ProfessionalDetailsFormType | null
@@ -34,6 +35,9 @@ export default function HPProfessionalInfo({ professionalDetails }: HPProfession
     mode: "all",
   })
 
+  // Watch the licenseIssued field to set min date for licenseExpires
+  const licenseIssuedDate = form.watch("licenseIssued")
+
   const action = async () => {
     form.handleSubmit(async (data) => {
 
@@ -42,7 +46,7 @@ export default function HPProfessionalInfo({ professionalDetails }: HPProfession
         healthcareProverId: practitioner
       }
       const latestProfDetails = await upsertProfessionalDetailsAction({
-        where: {id: professionalDetailsId},
+        where: { id: professionalDetailsId },
         create: payload,
         update: payload,
       })
@@ -57,7 +61,7 @@ export default function HPProfessionalInfo({ professionalDetails }: HPProfession
       <form action={action} className="prose max-w-full space-y-8 shadow-2xl w-full p-8 bg-white rounded-md">
         <h4>Professional Information <span className="text-xs italic">(Private)</span></h4>
         <p className="text-sm italic">
-          Please ensure that you are providing accurate information for validation. 
+          Please ensure that you are providing accurate information for validation.
           Your information will be verified before your profile is published.
         </p>
         <FormField
@@ -76,7 +80,7 @@ export default function HPProfessionalInfo({ professionalDetails }: HPProfession
             </FormItem>
           )}
         />
-      
+
         <div className="flex flex-wrap gap-2">
           <FormField
             control={form.control}
@@ -90,7 +94,8 @@ export default function HPProfessionalInfo({ professionalDetails }: HPProfession
                     onChange={e => field.onChange(new Date(e.target.value))}
                     defaultValue={field.value ? format(field.value, "yyyy-MM-dd") : ""}
                     type="date"
-                    placeholder="Select date" 
+                    placeholder="Select date"
+                    max={getMaxDate()}
                   />
                 </FormControl>
                 <FormDescription>
@@ -112,7 +117,8 @@ export default function HPProfessionalInfo({ professionalDetails }: HPProfession
                     onChange={e => field.onChange(new Date(e.target.value))}
                     defaultValue={field.value ? format(field.value, "yyyy-MM-dd") : ""}
                     type="date"
-                    placeholder="Select date" 
+                    placeholder="Select date"
+                    min={licenseIssuedDate ? format(new Date(licenseIssuedDate), "yyyy-MM-dd") : undefined}
                   />
                 </FormControl>
                 <FormDescription>

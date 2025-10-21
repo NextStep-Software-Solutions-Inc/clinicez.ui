@@ -23,6 +23,7 @@ import { useUser } from "@clerk/nextjs"
 import ConditionalRender from "@components/utils/ConditionalRender"
 import { personalInformationFormSchema, PersonalInformationFormValues } from "@schemas/personal-information.schema"
 import { promiseWrapper } from "@/lib/with-error-handling"
+import { getMaxDate } from "@/lib/day-utils"
 
 interface PersonalInformationFormProps {
   user: User,
@@ -33,8 +34,8 @@ export function PersonalInformationForm({ readOnly, ...props }: PersonalInformat
 
   const { user } = useUser();
 
-  // constant to disables users from accessing future dates
-  const today = new Date().toISOString().split('T')[0];
+  // // constant to disables users from accessing future dates
+  // const today = new Date().toISOString().split('T')[0];
 
   const form = useForm<PersonalInformationFormValues>({
     resolver: zodResolver(personalInformationFormSchema),
@@ -180,7 +181,7 @@ export function PersonalInformationForm({ readOnly, ...props }: PersonalInformat
                   defaultValue={field.value instanceof Date && isValid(field.value) ? format(field.value, "yyyy-MM-dd") : ""}
                   type="date"
                   placeholder="Select date"
-                  max={today}
+                  max={getMaxDate()}
                 />
               </FormControl>
               <FormDescription>

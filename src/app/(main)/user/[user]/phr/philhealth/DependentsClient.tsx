@@ -11,6 +11,7 @@ import { createPhilHealthDependentAction, updatePhilHealthDependentAction, delet
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { promiseWrapper } from "@/lib/with-error-handling";
+import { getMaxDate } from "@/lib/day-utils";
 
 const RELATIONSHIP_OPTIONS = ["Spouse", "Child", "Foster Child", "Parent", "Parent-In-Law"] as const;
 const SUFFIX_OPTIONS = ["Jr.", "Sr.", "II", "III", "IV"] as const;
@@ -182,7 +183,12 @@ export default function DependentsClient({ userUid, readonly, initialDependents 
             <FormField control={newForm.control} name="dob" render={({ field }) => (
               <FormItem className="md:col-span-4">
                 <FormLabel>Birthdate</FormLabel>
-                <FormControl><Input type="date" {...field} /></FormControl>
+                <FormControl>
+                  <Input
+                    type="date" {...field}
+                    max={getMaxDate()}
+                  />
+                </FormControl>
                 <FormDescription className="sr-only">Date of birth</FormDescription>
                 <FormMessage />
               </FormItem>

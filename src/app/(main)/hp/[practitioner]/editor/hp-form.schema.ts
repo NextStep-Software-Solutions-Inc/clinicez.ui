@@ -76,6 +76,14 @@ export const professionalDetailsSchema = z.object({
   taxNumber: z.string().min(2, {
     message: "Tax number must be at least 2 characters.",
   }),
+}).refine((data) => {
+  if (data.licenseIssued && data.licenseExpires) {
+    return data.licenseExpires > data.licenseIssued;
+  }
+  return true;
+}, {
+  message: "License expiry date must be after the license issued date.",
+  path: ["licenseExpires"],
 })
 
 export type ProfessionalDetailsFormType = z.infer<typeof professionalDetailsSchema>;

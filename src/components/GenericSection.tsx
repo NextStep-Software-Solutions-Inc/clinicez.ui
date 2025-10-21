@@ -24,7 +24,8 @@ export default function GenericSection({ hpId, name, label, consultationId, valu
 
 
   const formRef = useRef<HTMLFormElement>(null)
-  const autoSubmit = useDebounceFunc(() => formRef.current?.requestSubmit(), 1000)
+  // TODO: Increase the debounce time to >1000ms to compensate to users with <30 WPM typing speed
+  const autoSubmit = useDebounceFunc(() => formRef.current?.requestSubmit(), 3000)
 
   type Schema = z.infer<typeof schema>
   const schema = z.object({

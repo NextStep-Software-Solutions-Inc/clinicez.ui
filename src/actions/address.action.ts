@@ -3,7 +3,6 @@
 import prisma from "@lib/prisma";
 import { AddressItemProps } from "@/app/(main)/user/[user]/phr/address/AddressItem";
 
-// Strongly typed structure for fields we persist (excluding relational + metadata fields)
 type AddressUpsertData = {
   isPrimary: boolean;
   address: string;
@@ -19,14 +18,13 @@ type AddressUpsertData = {
   country: string;
 };
 
-// Map frontend form fields (premises, streetName) to prisma columns (addressLine, street)
 const mapAddressInput = (data: Omit<AddressItemProps["address"], "id">): AddressUpsertData => ({
   isPrimary: data.isPrimary,
-  address: data.address,
+  address: data.fullAddress,
   apartmentUnit: data.apartmentUnit || null,
   bldgName: data.bldgName || null,
-  addressLine: data.premises || null,
-  street: data.streetName || null,
+  addressLine: data.addressLine || null,
+  street: data.street || null,
   subdivision: data.subdivision || null,
   barangay: data.barangay || null,
   city: data.city,
@@ -36,14 +34,18 @@ const mapAddressInput = (data: Omit<AddressItemProps["address"], "id">): Address
 });
 
 export const getAddressesAction = async (userId: string) => {
-  return await prisma.userAddress.findMany({
+  const addresses = await prisma.userAddress.findMany({
     orderBy: { createdAt: "desc" },
     where: { isActive: true, User: { userId } },
   });
+
+  return addresses.map(({ address, ...rest }) => ({
+    ...rest,
+    fullAddress: address,
+  }));
 }
 
 export const createAddressAction = async (userId: string, data: Omit<AddressItemProps["address"], "id">) => {
-  // Find the user by userId string first
   const currentUser = await prisma.user.findUniqueOrThrow({
     where: { userId, isActive: true },
     select: { id: true },

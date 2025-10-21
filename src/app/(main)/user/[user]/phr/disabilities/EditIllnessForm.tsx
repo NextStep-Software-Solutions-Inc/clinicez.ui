@@ -15,6 +15,7 @@ import { format } from "date-fns";
 import { useEffect, useState } from "react";
 import { getHealthConditionsAction } from "@actions/health-condition.action";
 import { Illness } from "./IllnessList";
+import { getMaxDate } from "@/lib/day-utils";
 
 interface EditIllnessFormProps {
   index: number;
@@ -119,6 +120,7 @@ export default function EditIllnessForm({ illness, index, remove, onUpdate }: Ed
                       value={field.value ? format(field.value, "yyyy-MM-dd") : ""}
                       type="date"
                       placeholder="Select date"
+                      max={getMaxDate()}
                     />
                   </FormControl>
                   <FormDescription>

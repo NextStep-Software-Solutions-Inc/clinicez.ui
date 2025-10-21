@@ -18,11 +18,11 @@ import { z } from "zod";
 
 export const emergencyContactFormSchema = z.object({
   isPrimary: z.boolean(),
-  name: z.string().min(2, {
-    message: "Name must be at least 2 characters.",
-  }).max(30, {
-    message: "Name must not be longer than 30 characters.",
-  }),
+  // name: z.string().min(2, {
+  //   message: "Name must be at least 2 characters.",
+  // }).max(30, {
+  //   message: "Name must not be longer than 30 characters.",
+  // }),
   firstName: z.string()
     .optional()
     .transform((e) => e === "" ? undefined : e),
@@ -90,7 +90,7 @@ export const ContactItem = ({ contact, readOnly }: {
 
       const updateData = {
         ...data,
-        name: fullName || data.name, // fallback to original name if no separate fields
+        name: fullName // fallback to original name if no separate fields
       };
 
       toast.promise(updateEmergencyContactAction(contact.id, updateData), {
@@ -164,6 +164,7 @@ export const ContactItem = ({ contact, readOnly }: {
               </FormItem>
             )}
           />
+
           <FormField
             disabled={readOnly}
             control={form.control}
@@ -178,6 +179,7 @@ export const ContactItem = ({ contact, readOnly }: {
               </FormItem>
             )}
           />
+
           <FormField
             disabled={readOnly}
             control={form.control}
@@ -192,6 +194,7 @@ export const ContactItem = ({ contact, readOnly }: {
               </FormItem>
             )}
           />
+
           <FormField
             disabled={readOnly}
             control={form.control}
@@ -207,7 +210,8 @@ export const ContactItem = ({ contact, readOnly }: {
             )}
           />
         </div>
-        <FormField
+
+        {/* <FormField
           disabled={readOnly}
           control={form.control}
           name={`name`}
@@ -222,7 +226,8 @@ export const ContactItem = ({ contact, readOnly }: {
               </FormDescription>
               <FormMessage />
             </FormItem>
-          )} />
+          )} /> */}
+
         <FormField
           disabled={readOnly}
           control={form.control}

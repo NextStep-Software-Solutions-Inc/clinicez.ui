@@ -1,18 +1,55 @@
 import HeaderTitle from "@/components/HeaderTitle"
-import { getHPTypeCounts } from "@/actions/hp.actions"
-import SearchPaginatedList from "@/components/v2/SearchPaginatedList"
-import HPTypeCard from "@/components/v2/hp/HPTypeCard"
+import { getHPTypeCounts, getAllHPByTypeAction } from "@/actions/hp.actions"
 import HPTypeListShell from "@/components/v2/hp/HPTypeListShell"
 import Suspend from "@/components/Suspend"
 import HeroBackground from "@/components/HeroBackground"
+import HPListByType from "@/components/v2/hp/HPListByType"
+import HPListByTypeFallback from "@/components/v2/hp/HPListByTypeFallback"
 
 const header = {
-  title: [{ text: "Meet our Healthcare Providers", className: "text-primary" }],
+  title: [{ text: "Meet our Healthcare Providers", className: "text-primary-v2" }],
   description:
     "Our Healthcare Providers are equipped with the latest technology to provide you with the best care possible.",
 }
 
-export default async function HealthcareProvidersPage() {
+type HealthcareProvidersSearchParams = Record<string, string | string[] | undefined>;
+
+function extractParamValue(params: HealthcareProvidersSearchParams, key: string) {
+  const rawValue = params[key];
+
+  if (Array.isArray(rawValue)) {
+    return rawValue[0];
+  }
+
+  return rawValue;
+}
+
+export default async function HealthcareProvidersPage({
+  searchParams,
+}: {
+  searchParams?: Promise<HealthcareProvidersSearchParams>;
+}) {
+  const resolvedSearchParams = (await searchParams) ?? {};
+  const type = extractParamValue(resolvedSearchParams, "type");
+  const pageParam = extractParamValue(resolvedSearchParams, "page");
+  const searchParam = extractParamValue(resolvedSearchParams, "search") ?? "";
+
+  const normalizedType = type?.trim();
+
+  if (normalizedType) {
+    const parsedPage = pageParam ? Number.parseInt(pageParam, 10) : NaN;
+    const page = Number.isFinite(parsedPage) && parsedPage > 0 ? parsedPage : 1;
+    const normalizedSearch = searchParam.trim();
+    return (
+      <div className="container mx-auto py-8 space-y-8">
+        <HeroBackground imagePath="/assets/hero-v2-1.png" opacity={0.2} />
+        <HeaderTitle header={header.title} description={header.description} className="text-center" />
+        <Suspend loadingFallback={<HPListByTypeFallback hpTypeName={normalizedType} initialSearch={normalizedSearch} />}>
+          <HPListByTypeSection hpTypeName={normalizedType} page={page} search={normalizedSearch} />
+        </Suspend>
+      </div>
+    );
+  }
 
   const hpFields = await getHPTypeCounts();
 
@@ -24,7 +61,45 @@ export default async function HealthcareProvidersPage() {
         <Suspend>
           <HPTypeListShell data={hpFields} />
         </Suspend>
+        {/* <div className="grid gap-8 md:grid-cols-1 xl:grid-cols-3">
+          <HPCard />
+          <HPCard />
+        </div> */}
       </div>
     </div>
   )
+}
+
+async function HPListByTypeSection({
+  hpTypeName,
+  page,
+  search,
+}: {
+  hpTypeName: string;
+  page: number;
+  search: string;
+}) {
+  const hps = await getAllHPByTypeAction(hpTypeName, page, undefined, search);
+  const resolvedTypeName = hps.hpType?.name ?? hpTypeName;
+  const canonicalTypeName = resolvedTypeName.trim();
+  const hasResultsOrType = Boolean(hps.hpType);
+  const displayTypeName = canonicalTypeName || hpTypeName;
+
+  if (!hasResultsOrType && hps.items.length === 0) {
+    return (
+      <div className="space-y-8">
+        <p className="text-center text-sm text-muted-foreground sm:text-base">
+          We could not find a healthcare provider type named {displayTypeName}.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <HPListByType
+      data={hps}
+      hpTypeName={displayTypeName}
+      initialSearch={search}
+    />
+  );
 }

@@ -28,11 +28,171 @@ export const getHPTypeCounts = async () => {
     name: type.name,
     description: type.description,
     count: type.HealthcareProviders.length,
-  })).sort((a, b) => b.count - a.count);
+  })).filter(type => type.count > 0).sort((a, b) => b.count - a.count);
 };
 
 export type GetHPTypeCountsType = Awaited<ReturnType<typeof getHPTypeCounts>>;
 
+const DEFAULT_HP_PAGE_SIZE = 9;
+
+export type GetAllHPByType = Awaited<ReturnType<typeof getAllHPByTypeAction>>;
+export const getAllHPByTypeAction = cache(async (
+  hpTypeName: string,
+  page = 1,
+  pageSize?: number,
+  search = "",
+) => {
+  const safePage = Number.isFinite(page) && page > 0 ? Math.floor(page) : 1;
+  const computedPageSize = Number.isFinite(pageSize) && pageSize && pageSize > 0 ? Math.min(Math.floor(pageSize), 50) : DEFAULT_HP_PAGE_SIZE;
+  const normalizedSearch = search.trim();
+  const normalizedTypeName = hpTypeName.trim();
+
+  const buildEmptyResult = () => ({
+    items: [],
+    pagination: {
+      page: safePage,
+      pageSize: computedPageSize,
+      totalCount: 0,
+      totalPages: 1,
+    },
+    search: normalizedSearch,
+    hpType: null as null,
+  });
+
+  if (!normalizedTypeName) {
+    return buildEmptyResult();
+  }
+
+  const hpType = await prisma.healthcareProviderType.findFirst({
+    where: {
+      name: {
+        equals: normalizedTypeName,
+        mode: "insensitive",
+      },
+    },
+    select: {
+      id: true,
+      name: true,
+      description: true,
+    },
+  });
+
+  if (!hpType) {
+    return buildEmptyResult();
+  }
+
+  const whereClause: Prisma.HealthcareProviderWhereInput = {
+    isActive: true,
+    isPublished: true,
+    hpTypeId: hpType.id,
+  };
+
+  if (normalizedSearch) {
+    whereClause.OR = [
+      {
+        HPProfile: {
+          is: {
+            name: {
+              contains: normalizedSearch,
+              mode: "insensitive",
+            },
+          },
+        },
+      },
+      {
+        HPProfile: {
+          is: {
+            title: {
+              contains: normalizedSearch,
+              mode: "insensitive",
+            },
+          },
+        },
+      },
+      {
+        HPProfile: {
+          is: {
+            suffix: {
+              contains: normalizedSearch,
+              mode: "insensitive",
+            },
+          },
+        },
+      },
+      {
+        User: {
+          is: {
+            OrganizationMembers: {
+              some: {
+                Organization: {
+                  name: {
+                    contains: normalizedSearch,
+                    mode: "insensitive",
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    ];
+  }
+
+  const [items, totalCount] = await prisma.$transaction([
+    prisma.healthcareProvider.findMany({
+      where: whereClause,
+      skip: (safePage - 1) * computedPageSize,
+      take: computedPageSize,
+      select: {
+        id: true,
+        HPProfile: {
+          select: {
+            name: true,
+            picture: true,
+            title: true,
+            suffix: true,
+            experience: true,
+          },
+        },
+        HPType: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        User: {
+          select: {
+            OrganizationMembers: {
+              select: {
+                Organization: {
+                  select: {
+                    name: true,
+                  },
+                },
+              },
+              take: 1,
+            },
+          },
+        },
+      },
+    }),
+    prisma.healthcareProvider.count({ where: whereClause }),
+  ]);
+
+  const totalPages = Math.max(1, Math.ceil(totalCount / computedPageSize));
+
+  return {
+    items,
+    pagination: {
+      page: safePage,
+      pageSize: computedPageSize,
+      totalCount,
+      totalPages,
+    },
+    search: normalizedSearch,
+    hpType,
+  };
+});
 
 
 export type HPSFilters = {

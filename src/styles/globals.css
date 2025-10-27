@@ -37,6 +37,15 @@
     --chart-10: 127 70% 60%;
     --chart-11: 97 50% 60%;
     --chart-12: 200 40% 30%;
+
+    /* v2.0 colors */
+    --primary-v2: oklch(59.58% 0.21932 264.716);
+    --primary-foreground-v2: oklch(100% 0.00011 271.152);
+    --secondary-v2: oklch(91.006% 0.04319 268.223);
+    --secondary-foreground-v2: oklch(59.58% 0.21932 264.716);
+
+    /* v2.0 text colors */
+    --label-v2: oklch(49.706% 0.00125 14.712);
   }
 
   .dark {

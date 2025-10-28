@@ -3,56 +3,73 @@ import Icon from "@/components/Icon";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import Image from "next/image";
-import Link from "next/link";
+import { HPAvatar } from "./HPAvatar";
+import { extractExperienceYears } from "@/lib/hp-utils";
+import { HPProfileDialog } from "./HPProfileDialog";
 
 /**
  * Right now, only healthcare providers can book an appointment in behalf of patients.
  * Thus, the "Book Appointment" button is disabled for now.
  */
 
-function extractExperienceYears(experience: string | undefined): string {
-  if (!experience) return "0";
-  const match = experience.match(/(\d+)/);
-  return match ? match[1] : "0";
-}
-
 type HPProfile = {
   // TODO: Healthcare Provider ID connected to the "View Profile"
+  id?: number;
   imageUrl?: string;
   title?: string; // Mr. Dr., etc.
-  name: string;
+  name?: string;
   suffix?: string;
   type?: string; // General Physician, Dentist, etc.
   experience?: string; // Years of experience as string, e.g., "5 years"
   isAvailableToday?: boolean;
+  specialties?: string[];
+  educations?: string[];
+  languages?: string[];
+  philosophy?: string;
+  workEmail?: string;
+  workPhone?: string;
 }
 
 interface HPCardProps {
   hp?: HPProfile;
   organization?: string;
-  profileHref?: string;
   // bookingHref?: string;
 }
 
 export function HPCard({
-  hp = { name: "Healthcare Provider" },
+  hp,
   organization,
-  profileHref,
   // bookingHref,
 }: HPCardProps) {
-  const { imageUrl, title, name, suffix, type, experience, isAvailableToday } = hp;
-  const displayName = [title, name, suffix].filter(Boolean).join(" ") || name || "Healthcare Provider";
-  const imageSrc = imageUrl ?? "/placeholder.svg";
-  const hasProfileLink = Boolean(profileHref);
-  const experienceYears = extractExperienceYears(experience);
+  const profileId = hp?.id;
+  const imageSrc = hp?.imageUrl ?? "/placeholder.svg";
+  const displayName = [hp?.title, hp?.name, hp?.suffix].filter(Boolean).join(" ") || hp?.name || "Healthcare Provider";
+  const type = hp?.type;
+  const experienceYears = extractExperienceYears(hp?.experience);
+  const isAvailableToday = hp?.isAvailableToday ?? false;
   // const hasBookingLink = Boolean(bookingHref);
+  const canViewProfile = typeof profileId === "number";
+  const profileForDialog = canViewProfile ? {
+    id: profileId,
+    imageUrl: hp?.imageUrl,
+    title: hp?.title,
+    name: hp?.name,
+    suffix: hp?.suffix,
+    type,
+    experience: hp?.experience,
+    specialties: hp?.specialties,
+    educations: hp?.educations,
+    languages: hp?.languages,
+    philosophy: hp?.philosophy,
+    workEmail: hp?.workEmail,
+    workPhone: hp?.workPhone,
+  } : undefined;
 
   return (
     <Card className="flex h-full w-full flex-col overflow-hidden transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lg">
       <CardContent className="flex-1 p-4 sm:p-6">
         <div className="flex w-full flex-col items-center gap-6 sm:flex-row">
-          <div className="flex aspect-square h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted sm:h-24 sm:w-24">
+          {/* <div className="flex aspect-square h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted sm:h-24 sm:w-24">
             <Image
               src={imageSrc}
               alt={displayName || "Image of a healthcare provider"}
@@ -60,7 +77,8 @@ export function HPCard({
               height={64}
               className="h-full w-full object-cover"
             />
-          </div>
+          </div> */}
+          <HPAvatar imageUrl={imageSrc} description={displayName} />
 
           <div className="flex min-w-0 w-full flex-col items-center sm:items-start">
             <h2 className="w-full truncate text-center text-base font-semibold text-foreground sm:text-left sm:text-lg md:text-xl">{displayName}</h2>
@@ -87,13 +105,20 @@ export function HPCard({
       </CardContent>
 
       <CardFooter className="flex w-full flex-col items-stretch gap-3 px-4 pb-6 pt-0 sm:flex-row sm:items-center sm:px-6">
-        <Button
-          className="w-full justify-center bg-primary-v2 text-sm text-primary-foreground-v2 sm:text-base"
-          asChild={hasProfileLink}
-          disabled={!hasProfileLink}
-        >
-          {hasProfileLink ? <Link href={profileHref!}>View Profile</Link> : "View Profile"}
-        </Button>
+        {canViewProfile && profileForDialog ? (
+          <HPProfileDialog
+            profile={profileForDialog}
+            organization={organization}
+          />
+        ) : (
+          <Button
+            className="w-full justify-center bg-muted text-sm text-muted-foreground sm:text-base cursor-not-allowed"
+            variant="outline"
+            disabled
+          >
+            Profile Unavailable
+          </Button>
+        )}
         <ComingSoonTooltip>
           <Button
             variant={"outline"}

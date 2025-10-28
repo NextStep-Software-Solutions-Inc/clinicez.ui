@@ -44,12 +44,19 @@ export default function HPListByType({ data, hpTypeName, initialSearch = "" }: H
         <HPCard
           key={hp.id}
           hp={{
+            id: hp.HPProfile?.id,
             imageUrl: hp.HPProfile?.picture || undefined,
             title: hp.HPProfile?.title || undefined,
             name: hp.HPProfile?.name || "Healthcare Provider",
             suffix: hp.HPProfile?.suffix || undefined,
             type: hp.HPType?.name || undefined,
             experience: hp.HPProfile?.experience || undefined,
+            specialties: hp.HPProfile?.specialties || undefined,
+            educations: hp.HPProfile?.educations || undefined,
+            languages: hp.HPProfile?.languages || undefined,
+            philosophy: hp.HPProfile?.philosophy || undefined,
+            workEmail: hp.HPProfile?.workEmail || undefined,
+            workPhone: hp.HPProfile?.workPhone || undefined,
           }}
           organization={hp.User?.OrganizationMembers?.[0]?.Organization?.name || undefined}
         />

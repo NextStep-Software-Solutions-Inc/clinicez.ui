@@ -147,11 +147,18 @@ export const getAllHPByTypeAction = cache(async (
         id: true,
         HPProfile: {
           select: {
+            id: true,
             name: true,
             picture: true,
             title: true,
             suffix: true,
             experience: true,
+            specialties: true,
+            educations: true,
+            languages: true,
+            philosophy: true,
+            workEmail: true,
+            workPhone: true,
           },
         },
         HPType: {

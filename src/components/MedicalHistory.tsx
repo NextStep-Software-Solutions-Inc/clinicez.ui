@@ -77,7 +77,7 @@ export const MedicalHistorySummary = ({ consultationTicketId, clinicUid, isPatie
         render={(note) => {
           const shouldBlur = isPatientView && !note.showOnPatient
           const displayContent = shouldBlur
-            ? "This content is blurred intentionally but you're a little bit techie."
+            ? "This information is only visible to healthcare providers."
             : (note.content ?? "")
           return (
             <div key={note.section} className="p-2 bg-gray-100 rounded-lg">

@@ -1,5 +1,5 @@
 import { getHPAction } from "@/actions/hp.actions";
-import notFound from "@/app/(main)/not-found";
+import { notFound } from "next/navigation";
 
 interface HPProps {
   params: Promise<{

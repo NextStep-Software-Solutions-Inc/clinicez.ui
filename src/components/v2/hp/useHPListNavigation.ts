@@ -45,7 +45,7 @@ export function useHPListNavigation({
         router.push(nextPath);
       });
     },
-    [pathname, router, searchParams, startTransition],
+    [pathname, router, searchParams],
   );
 
   const handleSearchChange = useCallback(

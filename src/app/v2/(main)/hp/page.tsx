@@ -67,7 +67,7 @@ export default async function HealthcareProvidersPage({
         </div> */}
       </div>
     </div>
-  )
+  );
 }
 
 async function HPListByTypeSection({

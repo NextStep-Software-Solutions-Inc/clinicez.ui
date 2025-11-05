@@ -22,7 +22,6 @@ type HPProfile = {
   type?: string; // General Physician, Dentist, etc.
   experience?: string; // Years of experience as string, e.g., "5 years"
   isAvailableToday?: boolean;
-  specialties?: string[];
   educations?: string[];
   languages?: string[];
   philosophy?: string;
@@ -57,7 +56,6 @@ export function HPCard({
     suffix: hp?.suffix,
     type,
     experience: hp?.experience,
-    specialties: hp?.specialties,
     educations: hp?.educations,
     languages: hp?.languages,
     philosophy: hp?.philosophy,

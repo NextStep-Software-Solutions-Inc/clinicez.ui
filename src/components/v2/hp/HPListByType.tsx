@@ -51,7 +51,6 @@ export default function HPListByType({ data, hpTypeName, initialSearch = "" }: H
             suffix: hp.HPProfile?.suffix || undefined,
             type: hp.HPType?.name || undefined,
             experience: hp.HPProfile?.experience || undefined,
-            specialties: hp.HPProfile?.specialties || undefined,
             educations: hp.HPProfile?.educations || undefined,
             languages: hp.HPProfile?.languages || undefined,
             philosophy: hp.HPProfile?.philosophy || undefined,

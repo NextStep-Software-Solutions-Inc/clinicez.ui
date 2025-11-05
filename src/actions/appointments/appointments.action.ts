@@ -396,11 +396,41 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
       updatedAt: true,
       Requesters: {
         select: {
+          userId: true,
           User: {
             select: {
               userId: true,
-              StudentRecords: true,
-              UserEmployments: true,
+              firstName: true,
+              middleName: true,
+              lastName: true,
+              suffix: true,
+              StudentRecords: {
+                select: {
+                  organizationId: true,
+                  programId: true,
+                  departmentId: true,
+                  collegeId: true,
+                  College: {
+                    select: {
+                      id: true,
+                      name: true
+                    }
+                  }
+                }
+              },
+              UserEmployments: {
+                select: {
+                  departmentId: true,
+                  collegeId: true,
+                  officeId: true,
+                  College: {
+                    select: {
+                      id: true,
+                      name: true
+                    }
+                  }
+                }
+              }
             }
           }
         }

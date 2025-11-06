@@ -178,67 +178,64 @@ export default function AppointmentDisplay() {
           <Attachments attachments={(freshAppointment.data.AppointmentAttachments ?? []).map(a => a.url)} />
         </ScrollArea>
         <Separator />
-        {
-          (freshAppointment.data.AppointmentRouting.some(apt => apt.status === "ACCEPTED")) &&
-          <div className="px-5 py-2 text-xs group/action max-h-40 scrollBox no-scrollbar">
-            <div className="flex items-center">
-              <span className="font-semibold text-base">Latest Pre-Assessment Notes</span>
-              <Pencil className="h-4 w-4 ml-auto invisible group-hover/action:visible" />
-            </div>
-            <Each
-              of={(freshAppointment.data.PreAssessmentNotes ?? []).slice(-1)}
-              fallback={(
+        <div className="px-5 py-2 text-xs group/action max-h-40 scrollBox no-scrollbar">
+          <div className="flex items-center">
+            <span className="font-semibold text-base">Latest Pre-Assessment Notes</span>
+            <Pencil className="h-4 w-4 ml-auto invisible group-hover/action:visible" />
+          </div>
+          <Each
+            of={(freshAppointment.data.PreAssessmentNotes ?? []).slice(-1)}
+            fallback={(
+              <PreAssessmentNoteSheet
+                disabled={!freshAppointment || [PERMISSIONS.CLINIC["WRITE:CLINIC:PRE_ASSESSMENT_NOTE"].name].every(p => !myClinicPermissionArray.includes(p))}
+                key={freshAppointment.data.id}
+                preAssessmentNotes={{
+                  assessment: "",
+                  homeInstructions: "",
+                  remarks: "",
+                  appointmentId: freshAppointment.data!.id,
+                  clinicUid
+                }}
+              >
+                <span className="text-muted-foreground cursor-pointer hover:underline">No Pre-Consultation Notes, click here to create</span>
+              </PreAssessmentNoteSheet>
+            )}
+            render={(preAssessmentNote) => {
+              return (
                 <PreAssessmentNoteSheet
+                  key={preAssessmentNote.id}
                   disabled={!freshAppointment || [PERMISSIONS.CLINIC["WRITE:CLINIC:PRE_ASSESSMENT_NOTE"].name].every(p => !myClinicPermissionArray.includes(p))}
-                  key={freshAppointment.data.id}
                   preAssessmentNotes={{
-                    assessment: "",
-                    homeInstructions: "",
-                    remarks: "",
+                    ...preAssessmentNote,
+                    homeInstructions: preAssessmentNote.homeInstructions ?? "",
                     appointmentId: freshAppointment.data!.id,
                     clinicUid
                   }}
                 >
-                  <span className="text-muted-foreground cursor-pointer hover:underline">No Pre-Consultation Notes, click here to create</span>
+                  <div className="cursor-pointer">
+                    <LabelValue className="flex items-center gap-2" label={preAssessmentNote.assessment} value="Pre-Assessment:" />
+                    {preAssessmentNote.homeInstructions && <LabelValue className="flex items-center gap-2" label={preAssessmentNote.homeInstructions} value="Home Instruction:" />}
+                    <LabelValue className="flex items-center gap-2" label={preAssessmentNote.remarks} value="Remarks:" />
+                    {(() => {
+                      const fullName = getFullName({
+                        firstName: preAssessmentNote.CreatedBy?.firstName ?? "",
+                        middleName: preAssessmentNote.CreatedBy?.middleName ?? "",
+                        lastName: preAssessmentNote.CreatedBy?.lastName ?? "",
+                        suffix: preAssessmentNote.CreatedBy?.suffix ?? ""
+                      });
+                      return (
+                        <LabelValue
+                          className="flex items-center gap-2"
+                          label={fullName || "N/A"}
+                          value="Noted by:"
+                        />
+                      );
+                    })()}
+                  </div>
                 </PreAssessmentNoteSheet>
-              )}
-              render={(preAssessmentNote) => {
-                return (
-                  <PreAssessmentNoteSheet
-                    key={preAssessmentNote.id}
-                    disabled={!freshAppointment || [PERMISSIONS.CLINIC["WRITE:CLINIC:PRE_ASSESSMENT_NOTE"].name].every(p => !myClinicPermissionArray.includes(p))}
-                    preAssessmentNotes={{
-                      ...preAssessmentNote,
-                      homeInstructions: preAssessmentNote.homeInstructions ?? "",
-                      appointmentId: freshAppointment.data!.id,
-                      clinicUid
-                    }}
-                  >
-                    <div className="cursor-pointer">
-                      <LabelValue className="flex items-center gap-2" label={preAssessmentNote.assessment} value="Pre-Assessment:" />
-                      {preAssessmentNote.homeInstructions && <LabelValue className="flex items-center gap-2" label={preAssessmentNote.homeInstructions} value="Home Instruction:" />}
-                      <LabelValue className="flex items-center gap-2" label={preAssessmentNote.remarks} value="Remarks:" />
-                      {(() => {
-                        const fullName = getFullName({
-                          firstName: preAssessmentNote.CreatedBy?.firstName ?? "",
-                          middleName: preAssessmentNote.CreatedBy?.middleName ?? "",
-                          lastName: preAssessmentNote.CreatedBy?.lastName ?? "",
-                          suffix: preAssessmentNote.CreatedBy?.suffix ?? ""
-                        });
-                        return (
-                          <LabelValue
-                            className="flex items-center gap-2"
-                            label={fullName || "N/A"}
-                            value="Noted by:"
-                          />
-                        );
-                      })()}
-                    </div>
-                  </PreAssessmentNoteSheet>
-                )
-              }} />
-          </div>
-        }
+              )
+            }} />
+        </div>
         <Separator />
         <AppointmentMetadata appointment={freshAppointment.data}>
         </AppointmentMetadata>

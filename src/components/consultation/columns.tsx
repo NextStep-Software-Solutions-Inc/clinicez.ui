@@ -10,6 +10,18 @@ import { DropdownMenuProvider } from "@components/DropdownMenuProvider"
 import { GetConsultationTickets } from "@actions/consultation/consultation-ticket.action"
 import dayjs from "@lib/day-utils"
 
+/**
+ * Consultation Ticket Table Columns
+ * 
+ * The "ticket" column uses a custom filterFn to enable search across:
+ * - Patient name (first, middle, last, suffix)
+ * - Ticket subject
+ * - Ticket ID
+ * 
+ * Search works across ALL pages because getFilteredRowModel() is applied
+ * before getPaginationRowModel() in the data-table component.
+ * This follows TanStack Table best practices for client-side filtering.
+ */
 export const columns: ColumnDef<NonNullable<GetConsultationTickets["data"]>[number]>[] = [
   {
     id: "select",
@@ -37,7 +49,30 @@ export const columns: ColumnDef<NonNullable<GetConsultationTickets["data"]>[numb
   },
   {
     accessorKey: "ticket",
-    accessorFn: (row) => `${row.subject} ${row.id}`,
+    accessorFn: (row) => {
+      const patient = row.Appointment?.Requesters?.[0]?.User;
+      const patientName = patient
+        ? `${patient.firstName ?? ""} ${patient.middleName ?? ""} ${patient.lastName ?? ""} ${patient.suffix ?? ""}`.trim()
+        : "";
+      return `${row.subject ?? ""} ${row.id} ${patientName}`;
+    },
+    filterFn: (row, columnId, filterValue) => {
+      // Custom filter function for case-insensitive search across ticket data
+      const searchValue = String(filterValue).toLowerCase().trim();
+      if (!searchValue) return true;
+
+      const patient = row.original.Appointment?.Requesters?.[0]?.User;
+      const patientName = patient
+        ? `${patient.firstName ?? ""} ${patient.middleName ?? ""} ${patient.lastName ?? ""} ${patient.suffix ?? ""}`.toLowerCase().trim()
+        : "";
+      const subject = (row.original.subject ?? "").toLowerCase();
+      const ticketId = String(row.original.id);
+
+      // Search in patient name, subject, or ticket ID
+      return patientName.includes(searchValue) ||
+        subject.includes(searchValue) ||
+        ticketId.includes(searchValue);
+    },
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Ticket #" />
     ),
@@ -132,13 +167,15 @@ export const columns: ColumnDef<NonNullable<GetConsultationTickets["data"]>[numb
 ]
 
 
-export const Requester = ({ requester }: {requester: {
-  id: number
-  firstName: string | null
-  middleName: string | null
-  lastName: string | null
-  suffix: string | null
-}}) => {
+export const Requester = ({ requester }: {
+  requester: {
+    id: number
+    firstName: string | null
+    middleName: string | null
+    lastName: string | null
+    suffix: string | null
+  }
+}) => {
   const requesterName = `${requester.firstName ?? ""} ${requester.middleName ?? ""} ${requester.lastName ?? ""} ${requester.suffix ?? ""}`
   return (
     <div className="text-wrap">{requesterName}</div>

@@ -58,6 +58,16 @@ export function DataTable<TData extends NonNullable<GetConsultationTickets["data
 
   // Removed debug log
 
+  /**
+   * TanStack Table configuration with proper data flow:
+   * 1. getCoreRowModel: Base data model (all rows)
+   * 2. getFilteredRowModel: Applies column filters BEFORE pagination (searches all data)
+   * 3. getSortedRowModel: Sorts filtered data
+   * 4. getPaginationRowModel: Paginates after filtering and sorting
+   * 
+   * This ensures search works across ALL pages, not just the current page.
+   * Follows the Single Responsibility Principle and Separation of Concerns.
+   */
   const table = useReactTable({
     data,
     columns,
@@ -73,7 +83,7 @@ export function DataTable<TData extends NonNullable<GetConsultationTickets["data
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
     getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
+    getFilteredRowModel: getFilteredRowModel(), // Critical: Filters ALL data before pagination
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFacetedRowModel: getFacetedRowModel(),

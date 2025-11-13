@@ -36,6 +36,7 @@ import { PERMISSIONS } from "@lib/permissions";
 import { usePermissions } from "@/hooks/usePermission";
 import { useHPs } from "@/hooks/useHP";
 import { getFullName } from "@/lib/formatter-utils";
+import { isAssignedNurseToAppointment } from "@/lib/nurse-utils";
 
 
 export default function AppointmentDisplay() {
@@ -84,6 +85,15 @@ export default function AppointmentDisplay() {
   }
 
   const myClinicPermissionArray = myClinicPermissions?.map(p => p.name) ?? []
+
+  // Check if the current user is an assigned nurse to this appointment
+  const isAssignedNurse = isAssignedNurseToAppointment(freshAppointment.data, user?.id);
+
+  // Check if user has write permission for pre-assessment notes
+  const hasWritePermission = [PERMISSIONS.CLINIC["WRITE:CLINIC:PRE_ASSESSMENT_NOTE"].name].every(p => myClinicPermissionArray.includes(p));
+
+  // Only assigned nurses can edit pre-assessment notes
+  const canEditPreAssessmentNotes = hasWritePermission && isAssignedNurse;
 
   const preferredHPName = (() => {
     const title = preferredHp?.HPProfile?.title ?? "";
@@ -178,18 +188,17 @@ export default function AppointmentDisplay() {
           <Attachments attachments={(freshAppointment.data.AppointmentAttachments ?? []).map(a => a.url)} />
         </ScrollArea>
         <Separator />
-        {
-          (freshAppointment.data.AppointmentRouting.some(apt => apt.status === "ACCEPTED")) &&
-          <div className="px-5 py-2 text-xs group/action max-h-40 scrollBox no-scrollbar">
-            <div className="flex items-center">
-              <span className="font-semibold text-base">Latest Pre-Assessment Notes</span>
-              <Pencil className="h-4 w-4 ml-auto invisible group-hover/action:visible" />
-            </div>
-            <Each
-              of={(freshAppointment.data.PreAssessmentNotes ?? []).slice(-1)}
-              fallback={(
+        <div className="px-5 py-2 text-xs group/action max-h-40 scrollBox no-scrollbar">
+          <div className="flex items-center">
+            <span className="font-semibold text-base">Latest Pre-Assessment Notes</span>
+            <Pencil className="h-4 w-4 ml-auto invisible group-hover/action:visible" />
+          </div>
+          <Each
+            of={(freshAppointment.data.PreAssessmentNotes ?? []).slice(-1)}
+            fallback={
+              canEditPreAssessmentNotes ? (
                 <PreAssessmentNoteSheet
-                  disabled={!freshAppointment || [PERMISSIONS.CLINIC["WRITE:CLINIC:PRE_ASSESSMENT_NOTE"].name].every(p => !myClinicPermissionArray.includes(p))}
+                  disabled={false}
                   key={freshAppointment.data.id}
                   preAssessmentNotes={{
                     assessment: "",
@@ -201,44 +210,46 @@ export default function AppointmentDisplay() {
                 >
                   <span className="text-muted-foreground cursor-pointer hover:underline">No Pre-Consultation Notes, click here to create</span>
                 </PreAssessmentNoteSheet>
-              )}
-              render={(preAssessmentNote) => {
-                return (
-                  <PreAssessmentNoteSheet
-                    key={preAssessmentNote.id}
-                    disabled={!freshAppointment || [PERMISSIONS.CLINIC["WRITE:CLINIC:PRE_ASSESSMENT_NOTE"].name].every(p => !myClinicPermissionArray.includes(p))}
-                    preAssessmentNotes={{
-                      ...preAssessmentNote,
-                      homeInstructions: preAssessmentNote.homeInstructions ?? "",
-                      appointmentId: freshAppointment.data!.id,
-                      clinicUid
-                    }}
-                  >
-                    <div className="cursor-pointer">
-                      <LabelValue className="flex items-center gap-2" label={preAssessmentNote.assessment} value="Pre-Assessment:" />
-                      {preAssessmentNote.homeInstructions && <LabelValue className="flex items-center gap-2" label={preAssessmentNote.homeInstructions} value="Home Instruction:" />}
-                      <LabelValue className="flex items-center gap-2" label={preAssessmentNote.remarks} value="Remarks:" />
-                      {(() => {
-                        const fullName = getFullName({
-                          firstName: preAssessmentNote.CreatedBy?.firstName ?? "",
-                          middleName: preAssessmentNote.CreatedBy?.middleName ?? "",
-                          lastName: preAssessmentNote.CreatedBy?.lastName ?? "",
-                          suffix: preAssessmentNote.CreatedBy?.suffix ?? ""
-                        });
-                        return (
-                          <LabelValue
-                            className="flex items-center gap-2"
-                            label={fullName || "N/A"}
-                            value="Noted by:"
-                          />
-                        );
-                      })()}
-                    </div>
-                  </PreAssessmentNoteSheet>
-                )
-              }} />
-          </div>
-        }
+              ) : (
+                <span className="text-muted-foreground">You do not have permission to edit pre-consultation notes.</span>
+              )
+            }
+            render={(preAssessmentNote) => {
+              return (
+                <PreAssessmentNoteSheet
+                  key={preAssessmentNote.id}
+                  disabled={!freshAppointment || !canEditPreAssessmentNotes}
+                  preAssessmentNotes={{
+                    ...preAssessmentNote,
+                    homeInstructions: preAssessmentNote.homeInstructions ?? "",
+                    appointmentId: freshAppointment.data!.id,
+                    clinicUid
+                  }}
+                >
+                  <div className="cursor-pointer">
+                    <LabelValue className="flex items-center gap-2" label={preAssessmentNote.assessment} value="Pre-Assessment:" />
+                    {preAssessmentNote.homeInstructions && <LabelValue className="flex items-center gap-2" label={preAssessmentNote.homeInstructions} value="Home Instruction:" />}
+                    <LabelValue className="flex items-center gap-2" label={preAssessmentNote.remarks} value="Remarks:" />
+                    {(() => {
+                      const fullName = getFullName({
+                        firstName: preAssessmentNote.CreatedBy?.firstName ?? "",
+                        middleName: preAssessmentNote.CreatedBy?.middleName ?? "",
+                        lastName: preAssessmentNote.CreatedBy?.lastName ?? "",
+                        suffix: preAssessmentNote.CreatedBy?.suffix ?? ""
+                      });
+                      return (
+                        <LabelValue
+                          className="flex items-center gap-2"
+                          label={fullName || "N/A"}
+                          value="Noted by:"
+                        />
+                      );
+                    })()}
+                  </div>
+                </PreAssessmentNoteSheet>
+              )
+            }} />
+        </div>
         <Separator />
         <AppointmentMetadata appointment={freshAppointment.data}>
         </AppointmentMetadata>

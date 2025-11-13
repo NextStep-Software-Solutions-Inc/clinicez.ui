@@ -7,6 +7,7 @@ import { getPermissionsAction } from '@actions/permission.action';
 import { PERMISSIONS } from '@lib/permissions';
 import { hasCodeProperty } from '@lib/utils';
 import { withErrorHandling } from '@/lib/with-error-handling';
+import { getHPsAction, GetHPsType } from '@actions/hp.actions';
 
 type CreateConsultationTicketPayload = {
   systemId: number;
@@ -91,6 +92,13 @@ export const getConsultationTicketAction = withErrorHandling(cache(async (consul
   const canReadCreatedOrgConsultations = readCreatedOrgConsultationPermissions.every(p => userPermissionArray.includes(p))
   const canReadCoCreatedOrgConsultations = readCoCreatedOrgConsultationPermissions.every(p => userPermissionArray.includes(p))
 
+  // Check if user has any nurse healthcare provider role
+  const userHps = await getHPsAction({ userId: session.user.sub });
+  const isNurse = (userHps ?? []).some((hp: NonNullable<GetHPsType>[number]) => {
+    const hpTypeName = hp.HPType?.name?.toLowerCase().trim() ?? "";
+    return hpTypeName.includes("nurse");
+  });
+
   const consultationTicket = await prismaClient.consultationTicket.findUnique({
     where: {
       id: consultationId,
@@ -129,7 +137,28 @@ export const getConsultationTicketAction = withErrorHandling(cache(async (consul
               }
             }
           } : {})
-        }
+        },
+        // Allow nurses who are assigned to the appointment to view consultation notes
+        ...(isNurse ? [{
+          Appointment: {
+            AppointmentRouting: {
+              some: {
+                status: "ACCEPTED",
+                RoutedTo: {
+                  User: {
+                    userId: session.user.sub
+                  },
+                  HPType: {
+                    name: {
+                      contains: "nurse",
+                      mode: "insensitive" as const
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }] : [])
       ]
     },
     select: {
@@ -278,6 +307,13 @@ export const getConsultationTicketsAction = withErrorHandling(async (filters: Ge
   const canReadCreatedOrgConsultations = readCreatedOrgConsultationPermissions.every(p => userPermissionArray.includes(p))
   const canReadCoCreatedOrgConsultations = readCoCreatedOrgConsultationPermissions.every(p => userPermissionArray.includes(p))
 
+  // Check if user has any nurse healthcare provider role
+  const userHps = await getHPsAction({ userId: session.user.sub });
+  const isNurse = (userHps ?? []).some((hp: NonNullable<GetHPsType>[number]) => {
+    const hpTypeName = hp.HPType?.name?.toLowerCase().trim() ?? "";
+    return hpTypeName.includes("nurse");
+  });
+
   const consultationTickets = await prismaClient.consultationTicket.findMany({
     orderBy: {
       createdAt: 'desc'
@@ -334,7 +370,28 @@ export const getConsultationTicketsAction = withErrorHandling(async (filters: Ge
               }
             }
           } : {})
-        }
+        },
+        // Allow nurses who are assigned to the appointment to view consultation tickets
+        ...(isNurse ? [{
+          Appointment: {
+            AppointmentRouting: {
+              some: {
+                status: "ACCEPTED",
+                RoutedTo: {
+                  User: {
+                    userId: session.user.sub
+                  },
+                  HPType: {
+                    name: {
+                      contains: "nurse",
+                      mode: "insensitive" as const
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }] : [])
       ]
     },
     select: {

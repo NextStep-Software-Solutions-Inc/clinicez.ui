@@ -6,27 +6,30 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@components/ui/accordion"
+import { useUser } from "@clerk/nextjs"
 import { useConsultation, useConsultations } from "@hooks/useConsultation";
 import Each from "./utils/Each";
 import dayjs from "dayjs";
 import { Badge } from "./ui/badge";
 import { cn } from "@lib/utils";
-  
+
 interface MedicalHistoryProps {
-    patientId: string
-    clinicUid: string
+  patientId: string
+  clinicUid: string
 }
 
-export default function MedicalHistory({clinicUid, patientId}: MedicalHistoryProps) {
+export default function MedicalHistory({ clinicUid, patientId }: MedicalHistoryProps) {
+  const { user: authUser } = useUser()
+  const isPatientView = authUser?.id === patientId
 
-  const {data: consultationTickets} = useConsultations({
+  const { data: consultationTickets } = useConsultations({
     clinicUid,
     userId: patientId,
   })
 
   return (
     <Accordion type="multiple" className="w-full">
-      <Each 
+      <Each
         of={consultationTickets?.data || []}
         fallback={<p className="text-muted-foreground">No consultation records.</p>}
         render={(ticket) => {
@@ -39,9 +42,10 @@ export default function MedicalHistory({clinicUid, patientId}: MedicalHistoryPro
               </AccordionTrigger>
               <AccordionContent>
                 <div className="p-4">
-                  <MedicalHistorySummary 
+                  <MedicalHistorySummary
                     consultationTicketId={ticket.id}
                     clinicUid={clinicUid}
+                    isPatientView={isPatientView}
                   />
                 </div>
               </AccordionContent>
@@ -52,14 +56,15 @@ export default function MedicalHistory({clinicUid, patientId}: MedicalHistoryPro
     </Accordion>
   )
 }
-  
+
 
 interface MedicalHistorySummaryProps {
-    consultationTicketId:  number
-    clinicUid: string
+  consultationTicketId: number
+  clinicUid: string
+  isPatientView?: boolean
 }
-export const MedicalHistorySummary = ({consultationTicketId, clinicUid}: MedicalHistorySummaryProps) => {
-  const {data: consultationTicket} = useConsultation({
+export const MedicalHistorySummary = ({ consultationTicketId, clinicUid, isPatientView = false }: MedicalHistorySummaryProps) => {
+  const { data: consultationTicket } = useConsultation({
     consultationId: consultationTicketId,
     clinicUid
   })
@@ -70,10 +75,14 @@ export const MedicalHistorySummary = ({consultationTicketId, clinicUid}: Medical
         of={consultationTicket?.data?.ConsultationNotes || []}
         fallback={<p className="text-muted-foreground">No notes</p>}
         render={(note) => {
+          const shouldBlur = isPatientView && !note.showOnPatient
+          const displayContent = shouldBlur
+            ? "This information is only visible to healthcare providers."
+            : (note.content ?? "")
           return (
             <div key={note.section} className="p-2 bg-gray-100 rounded-lg">
               <p className="capitalize font-semibold ">{note.section}</p>
-              <p className={cn("text-sm text-gray-500", !note.showOnPatient && "blur-sm")}>{note.showOnPatient? note.content: "This content is blurred intentionally but you're a little bit techie."}</p>
+              <p className={cn("text-sm text-gray-500", shouldBlur && "blur-sm")}>{displayContent}</p>
             </div>
           )
         }}

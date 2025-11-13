@@ -28,8 +28,8 @@ export function DataTableToolbar<TData>({
 }: DataTableToolbarProps<TData>) {
   const isFiltered = table.getState().columnFilters.length > 0
   const [showArchived, setShowArchived] = useState(options?.showArchived === true)
-  const params = useParams<{orgUid: string}>()
-  const {data: systems} = useSystems(String(params?.orgUid))
+  const params = useParams<{ orgUid: string }>()
+  const { data: systems } = useSystems(String(params?.orgUid))
 
   const handleShowArchivedChange = (checked: CheckedState) => {
     setShowArchived(checked === true)
@@ -41,7 +41,7 @@ export function DataTableToolbar<TData>({
     <div className="flex items-center justify-between">
       <div className="flex flex-1 items-center space-x-2">
         <Input
-          placeholder="Filter consultation records..."
+          placeholder="Search by patient name, ticket #, or subject..."
           value={(table.getColumn("ticket")?.getFilterValue() as string) ?? ""}
           onChange={(event) =>
             table.getColumn("ticket")?.setFilterValue(event.target.value)
@@ -103,11 +103,11 @@ interface ShowArchivedCheckboxProps {
   checked?: boolean
   onCheckedChange?: (checked: CheckedState) => void
 }
-export const ShowArchivedCheckbox = ({onCheckedChange, checked}:ShowArchivedCheckboxProps) => {
+export const ShowArchivedCheckbox = ({ onCheckedChange, checked }: ShowArchivedCheckboxProps) => {
 
   return (
     <div className="flex items-center space-x-2 mx-2">
-      <Checkbox 
+      <Checkbox
         checked={checked}
         onCheckedChange={onCheckedChange}
         id="show-archived"

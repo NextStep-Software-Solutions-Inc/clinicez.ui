@@ -14,6 +14,8 @@ interface Props {
 
 export default function HPTypeCard({ id, name, description, count }: Props) {
   const desc = description?.trim() ? description : "No description";
+  const sanitizedName = name?.trim() || `${id}`;
+  const href = `/v2/hp?type=${encodeURIComponent(sanitizedName)}`;
 
   return (
     <Card className="flex flex-col border-none shadow-none bg-transparent">
@@ -40,7 +42,7 @@ export default function HPTypeCard({ id, name, description, count }: Props) {
         </div>
       </CardContent>
       <CardFooter className="pt-0">
-        <Link href={`/hp/${id}`} className="w-full">
+        <Link href={href} className="w-full">
           <Button className="w-full">See All</Button>
         </Link>
       </CardFooter>

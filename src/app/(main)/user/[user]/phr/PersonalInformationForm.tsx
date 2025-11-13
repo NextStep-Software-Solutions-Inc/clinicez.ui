@@ -77,6 +77,19 @@ export function PersonalInformationForm({ readOnly, ...props }: PersonalInformat
   return (
     <Form {...form}>
       <form action={handleSaveChanges} className="space-y-8 flex flex-col">
+        {/* Email Address - Display Only */}
+        <div className="w-full">
+          <FormLabel>Email Address</FormLabel>
+          <Input
+            value={user?.primaryEmailAddress?.emailAddress ?? ""}
+            disabled
+            className="bg-gray-50 text-gray-700 border-gray-200"
+          />
+          <p className="text-sm text-muted-foreground mt-2">
+            Your email address is managed by your account settings.
+          </p>
+        </div>
+
         <div className="flex flex-col md:flex-row gap-2">
           <FormField
             disabled={readOnly}

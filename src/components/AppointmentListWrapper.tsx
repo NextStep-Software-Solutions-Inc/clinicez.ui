@@ -79,7 +79,39 @@ export default function AppointmentListWrapper({ clinicUid }: AppointmentListWra
     return withFallbackAppointments.filter((appointment) => {
       const queryLower = query.toLowerCase().trim();
       const matchesQuery = !queryLower
-        || appointment.Requesters.some(requester => requester.User?.userId?.toLowerCase().includes(queryLower))
+        || appointment.Requesters.some(requester => {
+          const user = requester.User;
+          if (!user) return false;
+
+          // Search by user ID
+          if (user.userId?.toLowerCase().includes(queryLower)) return true;
+
+          // Search by student name (first name, middle name, last name, suffix)
+          const firstName = user.firstName?.toLowerCase() ?? "";
+          const middleName = user.middleName?.toLowerCase() ?? "";
+          const lastName = user.lastName?.toLowerCase() ?? "";
+          const suffix = user.suffix?.toLowerCase() ?? "";
+
+          // Check individual name parts
+          if (firstName.includes(queryLower)) return true;
+          if (middleName.includes(queryLower)) return true;
+          if (lastName.includes(queryLower)) return true;
+          if (suffix.includes(queryLower)) return true;
+
+          // Check full name combination
+          const fullName = [firstName, middleName, lastName, suffix]
+            .filter(Boolean)
+            .join(" ");
+          if (fullName.includes(queryLower)) return true;
+
+          // Search by organization college
+          const requesterColleges = getRequesterColleges(requester);
+          if (requesterColleges.some(college => college.toLowerCase().includes(queryLower))) {
+            return true;
+          }
+
+          return false;
+        })
         || appointment.subject.toLowerCase().includes(queryLower)
         || appointment.complaint?.toLowerCase().includes(queryLower);
 

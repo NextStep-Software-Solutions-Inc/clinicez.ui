@@ -36,6 +36,7 @@ import { PERMISSIONS } from "@lib/permissions";
 import { usePermissions } from "@/hooks/usePermission";
 import { useHPs } from "@/hooks/useHP";
 import { getFullName } from "@/lib/formatter-utils";
+import { isAssignedNurseToAppointment } from "@/lib/nurse-utils";
 
 
 export default function AppointmentDisplay() {
@@ -84,6 +85,15 @@ export default function AppointmentDisplay() {
   }
 
   const myClinicPermissionArray = myClinicPermissions?.map(p => p.name) ?? []
+
+  // Check if the current user is an assigned nurse to this appointment
+  const isAssignedNurse = isAssignedNurseToAppointment(freshAppointment.data, user?.id);
+
+  // Check if user has write permission for pre-assessment notes
+  const hasWritePermission = [PERMISSIONS.CLINIC["WRITE:CLINIC:PRE_ASSESSMENT_NOTE"].name].every(p => myClinicPermissionArray.includes(p));
+
+  // Only assigned nurses can edit pre-assessment notes
+  const canEditPreAssessmentNotes = hasWritePermission && isAssignedNurse;
 
   const preferredHPName = (() => {
     const title = preferredHp?.HPProfile?.title ?? "";
@@ -185,26 +195,30 @@ export default function AppointmentDisplay() {
           </div>
           <Each
             of={(freshAppointment.data.PreAssessmentNotes ?? []).slice(-1)}
-            fallback={(
-              <PreAssessmentNoteSheet
-                disabled={!freshAppointment || [PERMISSIONS.CLINIC["WRITE:CLINIC:PRE_ASSESSMENT_NOTE"].name].every(p => !myClinicPermissionArray.includes(p))}
-                key={freshAppointment.data.id}
-                preAssessmentNotes={{
-                  assessment: "",
-                  homeInstructions: "",
-                  remarks: "",
-                  appointmentId: freshAppointment.data!.id,
-                  clinicUid
-                }}
-              >
-                <span className="text-muted-foreground cursor-pointer hover:underline">No Pre-Consultation Notes, click here to create</span>
-              </PreAssessmentNoteSheet>
-            )}
+            fallback={
+              canEditPreAssessmentNotes ? (
+                <PreAssessmentNoteSheet
+                  disabled={false}
+                  key={freshAppointment.data.id}
+                  preAssessmentNotes={{
+                    assessment: "",
+                    homeInstructions: "",
+                    remarks: "",
+                    appointmentId: freshAppointment.data!.id,
+                    clinicUid
+                  }}
+                >
+                  <span className="text-muted-foreground cursor-pointer hover:underline">No Pre-Consultation Notes, click here to create</span>
+                </PreAssessmentNoteSheet>
+              ) : (
+                <span className="text-muted-foreground">You do not have permission to edit pre-consultation notes.</span>
+              )
+            }
             render={(preAssessmentNote) => {
               return (
                 <PreAssessmentNoteSheet
                   key={preAssessmentNote.id}
-                  disabled={!freshAppointment || [PERMISSIONS.CLINIC["WRITE:CLINIC:PRE_ASSESSMENT_NOTE"].name].every(p => !myClinicPermissionArray.includes(p))}
+                  disabled={!freshAppointment || !canEditPreAssessmentNotes}
                   preAssessmentNotes={{
                     ...preAssessmentNote,
                     homeInstructions: preAssessmentNote.homeInstructions ?? "",

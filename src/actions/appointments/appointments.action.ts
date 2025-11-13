@@ -704,6 +704,12 @@ export const getAppointmentAction = withErrorHandling(cache(async (id: number, c
             select: {
               id: true,
               hpTypeId: true,
+              HPType: {
+                select: {
+                  id: true,
+                  name: true,
+                }
+              },
               HPProfile: {
                 select: {
                   id: true,

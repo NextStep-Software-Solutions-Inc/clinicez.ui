@@ -42,6 +42,9 @@ export const prepareMedicalCertificate = (payload: PrepareMedicalCertificatePayl
   const createdDate = dayjs(createdAt).format("MM/DD/YYYY");
   const createdDateTime = dayjs(createdAt).format("MM/DD/YYYY h:mm A");
 
+  // Hide classification if it's "N/A"
+  const shouldShowClassification = classification && classification.toUpperCase() !== "N/A";
+
   const replacements = {
     "@{createdDate}": createdDate,
     "@{createdDateTime}": createdDateTime,
@@ -53,8 +56,8 @@ export const prepareMedicalCertificate = (payload: PrepareMedicalCertificatePayl
     "@{licenseNo}": licenseNo,
     "@{ptrNo}": ptrNo,
     "@{eSignatureUrl}": eSignatureBase64 || "",
-    "@{selectedClassification}": classification,
-    "@{selectedClassificationDescription}": classificationDescription,
+    "@{selectedClassification}": shouldShowClassification ? classification : "",
+    "@{selectedClassificationDescription}": shouldShowClassification ? classificationDescription : "",
     "@{selectedReason}": reason,
     "@{selectedFinding}": finding,
     "@{recommendations}": recommendations || "No recommendations provided.",

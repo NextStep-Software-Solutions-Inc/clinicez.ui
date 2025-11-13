@@ -24,7 +24,7 @@ export default function HeaderTitle({ header, description, className, ...props }
         <div className="mb-2">{header && renderContent(header, "text-slate-900")}</div>
       </div>
       {description && (
-        <div className="text-gray-500 md:text-lg lg:text-xl mt-4 mx-auto text-base max-w-5xl">
+        <div className="text-label-v2 md:text-lg lg:text-xl mt-4 mx-auto text-base max-w-5xl">
           {renderContent(description, "")}
         </div>
       )}

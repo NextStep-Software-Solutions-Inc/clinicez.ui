@@ -51,7 +51,7 @@ interface PreAssessmentNoteSheetProps {
   }
   disabled?: boolean
 }
-export default function PreAssessmentNoteSheet({children, disabled, preAssessmentNotes:{ assessment, homeInstructions, remarks , appointmentId: appointmentId, clinicUid, CreatedBy} }: PreAssessmentNoteSheetProps) {
+export default function PreAssessmentNoteSheet({ children, disabled, preAssessmentNotes: { assessment, homeInstructions, remarks, appointmentId: appointmentId, clinicUid, CreatedBy } }: PreAssessmentNoteSheetProps) {
   const preConSultKey = `preAssessmentNote-${appointmentId}-${clinicUid}`
   const [preAssessmentNote, setPreAssessmentNote] = useLocalStorage<Partial<PreConsultationNotes>>(preConSultKey, {
     assessment,
@@ -62,7 +62,7 @@ export default function PreAssessmentNoteSheet({children, disabled, preAssessmen
 
   const { user } = useUser()
   const closeBtnRef = useRef<HTMLButtonElement>(null)
-  const {mutate} = useClinicAppointment({
+  const { mutate } = useClinicAppointment({
     appointmentId: appointmentId,
     clinicUid
   })
@@ -105,7 +105,7 @@ export default function PreAssessmentNoteSheet({children, disabled, preAssessmen
   return (
     <Sheet>
       <SheetTrigger asChild>
-        {disabled ? <button disabled className="disabled:bg-gray-100 p-1 rounded w-full">{children}</button>: children}
+        {disabled ? <button disabled className="disabled:bg-gray-100 p-1 rounded w-full">{children}</button> : children}
 
       </SheetTrigger>
       <SheetContent side="bottom">
@@ -117,7 +117,7 @@ export default function PreAssessmentNoteSheet({children, disabled, preAssessmen
                 Notes to be taken before the actual consultation.
               </SheetDescription>
             </SheetHeader>
-            
+
             <FormField
               control={form.control}
               name="assessment"
@@ -127,7 +127,7 @@ export default function PreAssessmentNoteSheet({children, disabled, preAssessmen
                   <FormControl>
                     <Textarea
                       placeholder="Write your assessment here"
-                      className="resize-none"
+                      className="resize-none min-h-[300px]"
                       {...field}
                     />
                   </FormControl>
@@ -173,7 +173,7 @@ export default function PreAssessmentNoteSheet({children, disabled, preAssessmen
                     />
                   </FormControl>
                   <FormDescription>
-                    
+
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -194,10 +194,10 @@ export default function PreAssessmentNoteSheet({children, disabled, preAssessmen
                     </FormControl>
                     <div className="space-y-1 leading-none">
                       <FormLabel>
-                      Create a new pre-consultation note
+                        Create a new pre-consultation note
                       </FormLabel>
                       <FormDescription>
-                      If checked, a new pre-consultation note will be created in place of the existing one.
+                        If checked, a new pre-consultation note will be created in place of the existing one.
                       </FormDescription>
                     </div>
                   </FormItem>
@@ -210,7 +210,7 @@ export default function PreAssessmentNoteSheet({children, disabled, preAssessmen
               </SheetClose>
               <ActionButton type="submit">Save</ActionButton>
             </SheetFooter>
-         
+
           </form>
         </Form>
       </SheetContent>

@@ -1,6 +1,7 @@
 "use client";
 
 import { forwardRef } from "react"
+import { useUser } from "@clerk/nextjs"
 import { cn, getBadgeVariantFromLabel } from "@lib/utils"
 import { Badge } from "@components/ui/badge"
 import { ScrollArea } from "@components/ui/scroll-area"
@@ -17,9 +18,43 @@ interface AppointmentListProps {
 }
 
 export const AppointmentList = forwardRef<HTMLDivElement, AppointmentListProps>(({ appointments }, ref) => {
+  const { user: authUser } = useUser()
   const searchParams = useSearchParams()
   const appointmentId = searchParams.get("_appointment")
   const appointmentStatus = searchParams.get("_aptStatus")?.toLocaleLowerCase()
+
+  const formatFullName = (requesterUser?: {
+    firstName?: string | null;
+    middleName?: string | null;
+    lastName?: string | null;
+    suffix?: string | null;
+    userId?: string | null;
+  }) => {
+    if (!requesterUser) return "Unknown requester"
+    const { firstName, middleName, lastName, suffix, userId } = requesterUser
+    const nameParts = [firstName, middleName, lastName, suffix].filter(Boolean)
+    if (nameParts.length === 0) return userId ?? "Unknown requester"
+    return nameParts.join(" ")
+  }
+
+  const getCollegeName = (requesterUser?: {
+    StudentRecords?: Array<{
+      College?: {
+        name?: string | null;
+      } | null;
+    }>;
+    UserEmployments?: Array<{
+      College?: {
+        name?: string | null;
+      } | null;
+    }>;
+  }) => {
+    if (!requesterUser) return undefined
+    const collegeFromStudentRecord = requesterUser.StudentRecords?.find((record) => record.College?.name)?.College?.name
+    if (collegeFromStudentRecord) return collegeFromStudentRecord
+    const collegeFromEmployment = requesterUser.UserEmployments?.find((employment) => employment.College?.name)?.College?.name
+    return collegeFromEmployment ?? undefined
+  }
 
   const setAppointment = (thisAptId: string) => {
     if (appointmentId === thisAptId) return
@@ -55,45 +90,45 @@ export const AppointmentList = forwardRef<HTMLDivElement, AppointmentListProps>(
                 )}
                 onClick={() => setAppointment(item.id.toString())}
               >
-                <div className="flex items-center gap-2 w-full">
-                  {/* <Avatar>
-                  <AvatarImage src={item.patient.picture ?? ""} alt={item.patient.nickname ?? ""}/>
-                  <AvatarFallback>
-                    {item.patient.firstName?.charAt(0) } {item.patient.lastName?.charAt(0)}
-                  </AvatarFallback>
-                </Avatar> */}
-                  <div className="flex w-full flex-col">
-                    <div className="flex items-center justify-between  flex-wrap">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {/* <Each
-                        of={item.Requesters}
-                        fallback={<span className="text-xs text-muted-foreground">No Requester defined</span>}
-                        render={(requester, index) => {
-                          return (
-                            <div className="font-semibold items-center flex gap-2 ">
-                              {requester.userId === user?.userId ? <span className="text-primary">You ({requester.userId})</span> : requester.userId}
-                              {index < item.Requesters.length - 1 && <Separator orientation="vertical" className="h-4" />}
+                <div className="flex w-full flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold leading-snug line-clamp-2">{item.subject}</span>
+                    <div
+                      className={cn(
+                        "ml-auto text-xs flex items-center gap-2 basis-36 justify-end",
+                        appointmentId === item.id.toString()
+                          ? "text-foreground"
+                          : "text-muted-foreground"
+                      )}
+                    >
+                      <Separator orientation="vertical" className="h-4" />
+                      {getTransitionDate().fromNow()}
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-start gap-2 text-xs">
+                    <Each
+                      of={item.Requesters}
+                      fallback={<span className="text-muted-foreground">No Requester defined</span>}
+                      render={(requester, index) => {
+                        const requesterUser = requester.User
+                        const fullName = formatFullName(requesterUser)
+                        const collegeName = getCollegeName(requesterUser)
+                        const isCurrentUser = requesterUser?.userId === authUser?.id
+                        return (
+                          <div className="flex items-center gap-2">
+                            <div className="leading-tight">
+                              <span className={cn("block text-xs font-semibold", isCurrentUser ? "text-primary" : "text-foreground")}>
+                                {isCurrentUser ? `You (${fullName})` : fullName}
+                              </span>
+                              {collegeName && (
+                                <span className="text-[0.65rem] text-muted-foreground">{collegeName}</span>
+                              )}
                             </div>
-                          )
-                        }}
-                      /> */}
-                      </div>
-                    </div>
-                    <div className="text-sm font-semibold flex">
-                      {item.subject}
-                      <div
-                        className={cn(
-                          "ml-auto text-xs flex items-center gap-2 basis-36 justify-end",
-                          appointmentId === item.id.toString()
-                            ? "text-foreground"
-                            : "text-muted-foreground"
-                        )}
-                      >
-                        <Separator orientation="vertical" className="h-4" />
-                        {getTransitionDate().fromNow()}
-                      </div>
-
-                    </div>
+                            {index < item.Requesters.length - 1 && <Separator orientation="vertical" className="h-4" />}
+                          </div>
+                        )
+                      }}
+                    />
                   </div>
                 </div>
                 <div className="line-clamp-2 text-xs text-muted-foreground">

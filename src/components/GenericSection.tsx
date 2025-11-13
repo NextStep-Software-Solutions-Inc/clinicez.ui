@@ -48,6 +48,10 @@ export default function GenericSection({ hpId, name, label, consultationId, valu
     return () => subscription.unsubscribe();
   }, [autoSubmit, watch]);
 
+  // Patient views render this section without an update handler so we keep their fields masked.
+  const isPatientView = !onUpdated
+  const shouldBlur = readonly && isPatientView && !showOnPatient
+
 
   const handleSave = async (formData: FormData) => {
     form.handleSubmit(async (data) => {
@@ -99,9 +103,10 @@ export default function GenericSection({ hpId, name, label, consultationId, valu
                 <FormControl>
                   <Textarea
                     rows={5}
-                    disabled={readonly}
+                    readOnly={readonly}
+                    disabled={readonly || isPatientView}
                     className={cn("mb-2", {
-                      "blur-sm": readonly && !showOnPatient
+                      "blur-sm": shouldBlur
                     })}
                     placeholder={`Write the ${label.toLocaleLowerCase()} here...`}
                     value={field.value}

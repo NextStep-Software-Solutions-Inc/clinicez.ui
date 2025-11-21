@@ -15,18 +15,18 @@ const chiefComplaintFormSchema = z.object({
   subject: z.string({
     required_error: "You need to enter a subject.",
     invalid_type_error: "Invalid subject",
-  }).trim().min(3, "Subject is too short"), 
+  }).trim().min(3, "Subject is too short"),
   chiefComplaint: z.string({
     required_error: "You need to enter a chief complaint.",
     invalid_type_error: "Invalid chief complaint",
-  }).trim().min(20, "Chief complaint is too short"),
+  }).trim(),
 })
 
 interface ChiefComplaintProps {
-    nextStep?: () => void;
-    prevStep?: () => void;
-    isFirstStep?: boolean;
-    isLastStep?: boolean;
+  nextStep?: () => void;
+  prevStep?: () => void;
+  isFirstStep?: boolean;
+  isLastStep?: boolean;
 }
 
 export default function ChiefComplaint({ nextStep, prevStep, isLastStep, isFirstStep }: ChiefComplaintProps) {
@@ -42,12 +42,12 @@ export default function ChiefComplaint({ nextStep, prevStep, isLastStep, isFirst
   })
 
   const onSubmit = async (data: z.infer<typeof chiefComplaintFormSchema>) => {
-    setBookAppointmentForm((prev) => ({...prev, ...data}))
+    setBookAppointmentForm((prev) => ({ ...prev, ...data }))
     nextStep?.();
   }
-  
+
   return (
-    
+
     <Form {...form}>
       <div className="prose max-w-full shadow-lg w-full p-8 bg-white rounded-md">
         <h2>Chief Complaint Form</h2>
@@ -62,7 +62,7 @@ export default function ChiefComplaint({ nextStep, prevStep, isLastStep, isFirst
                   <Input placeholder="Subject here..." {...field} />
                 </FormControl>
                 <FormDescription>
-                 What is your complaint all about?
+                  What is your complaint all about?
                 </FormDescription>
                 <FormMessage />
               </FormItem>
@@ -78,7 +78,7 @@ export default function ChiefComplaint({ nextStep, prevStep, isLastStep, isFirst
                   <Textarea placeholder="You complaint here..." {...field} />
                 </FormControl>
                 <FormDescription>
-                    Briefly describe your complaint. Mention the symptoms, the pain, the medication, the allergies, etc.
+                  Briefly describe your complaint. Mention the symptoms, the pain, the medication, the allergies, etc.
                 </FormDescription>
                 <FormMessage />
               </FormItem>
@@ -92,12 +92,12 @@ export default function ChiefComplaint({ nextStep, prevStep, isLastStep, isFirst
               disabled={{
                 next: isLastStep || true,
                 previous: isFirstStep,
-                submit:!form.formState.isValid,
+                submit: !form.formState.isValid,
               }}
               actions={{
                 previous: prevStep,
                 next: nextStep,
-              
+
               }}
             />
           </div>

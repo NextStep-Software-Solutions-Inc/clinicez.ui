@@ -81,7 +81,7 @@ export function PersonalInformationForm({ readOnly, ...props }: PersonalInformat
         <div className="w-full">
           <FormLabel>Email Address</FormLabel>
           <Input
-            value={user?.primaryEmailAddress?.emailAddress ?? ""}
+            value={props.user.email ?? ""}
             disabled
             className="bg-gray-50 text-gray-700 border-gray-200"
           />

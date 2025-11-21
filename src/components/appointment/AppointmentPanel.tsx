@@ -65,9 +65,10 @@ const createStatusLinks = (
   return Object.entries(statusesWithRoles).reduce((acc, [status, roles]) => {
     roles.forEach(role => {
       if (!acc[role]) acc[role] = [];
+      const count = statusCounts?.[status.toLocaleUpperCase()] ?? 0;
       acc[role].push({
         label: `${status.charAt(0).toLocaleUpperCase()}${status.slice(1)}`,
-        badge: statusCounts?.[status.toLocaleUpperCase()]?.toString() ?? "0",
+        badge: count > 0 ? count.toString() : "",
         params: params(status),
         icon: icons[status],
         variant: currentStatus === status ? "default" : "ghost",

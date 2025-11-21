@@ -9,12 +9,12 @@ import { useParams } from "next/navigation";
 import dayjs from "@lib/day-utils";
 
 interface NurseAssessmentProps {
-  consultation:  NonNullable<GetConsultationTicket["data"]>;
+  consultation: NonNullable<GetConsultationTicket["data"]>;
 }
-export default function NurseAssessment({ consultation}: NurseAssessmentProps) {
+export default function NurseAssessment({ consultation }: NurseAssessmentProps) {
 
-  const {clinicUid} = useParams<{clinicUid: string}>()
-  const {data: preConsultationNotes} = usePreAssessmentNotes({clinicUid, appointmentId: consultation.appointmentId ?? 0})
+  const { clinicUid } = useParams<{ clinicUid: string }>()
+  const { data: preConsultationNotes } = usePreAssessmentNotes({ clinicUid, appointmentId: consultation.appointmentId ?? 0 })
 
   return (
     <Card>
@@ -43,7 +43,7 @@ export default function NurseAssessment({ consultation}: NurseAssessmentProps) {
 interface PreConsultationNoteProps {
   note: NonNullable<GetPreAssessmentNotes["data"]>[number];
 }
-export const PreConsultationNote = ({note}: PreConsultationNoteProps) => {
+export const PreConsultationNote = ({ note }: PreConsultationNoteProps) => {
   const name = `${note.CreatedBy?.firstName} ${note.CreatedBy?.middleName ?? ""} ${note.CreatedBy?.lastName} ${note.CreatedBy?.suffix ?? ""}`.trim()
   return (
     <Card>
@@ -60,8 +60,8 @@ export const PreConsultationNote = ({note}: PreConsultationNoteProps) => {
                 Pre-Assessment
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              {note.assessment} 
+            <CardContent className="whitespace-pre-wrap">
+              {note.assessment}
             </CardContent>
           </Card>
 
@@ -71,8 +71,8 @@ export const PreConsultationNote = ({note}: PreConsultationNoteProps) => {
                 Instructions
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              {note.homeInstructions} 
+            <CardContent className="whitespace-pre-wrap">
+              {note.homeInstructions}
             </CardContent>
           </Card>
           <Card className="grow lg:basis-1/4">
@@ -81,12 +81,12 @@ export const PreConsultationNote = ({note}: PreConsultationNoteProps) => {
                 Remarks
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              {note.remarks} 
+            <CardContent className="whitespace-pre-wrap">
+              {note.remarks}
             </CardContent>
           </Card>
         </div>
-      </CardContent>        
+      </CardContent>
     </Card>
   )
 }

@@ -45,7 +45,7 @@ export const SurgicalHistorySection = ({
           operationDate: newSurgery.operationDate ? new Date(newSurgery.operationDate) : null,
           notes: newSurgery.notes || null,
         });
-        
+
         if (result.status && result.data) {
           toast.success(result.message);
           setSurgeries([...surgeries, result.data]);
@@ -64,7 +64,7 @@ export const SurgicalHistorySection = ({
     startTransition(async () => {
       try {
         const result = await deleteSurgicalHistoryAction(id);
-        
+
         if (result.status) {
           toast.success(result.message);
           setSurgeries(surgeries.filter(s => s.id !== id));
@@ -82,7 +82,7 @@ export const SurgicalHistorySection = ({
       <CardHeader>
         <CardTitle>Surgical History</CardTitle>
         <CardDescription>
-          List all surgical operations you've had with their dates.
+          List all surgical operations you&apos;ve had with their dates.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

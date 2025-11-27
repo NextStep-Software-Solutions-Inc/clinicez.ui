@@ -54,7 +54,7 @@ export const FamilyAndPersonalHistoryForm = ({
       </TabsList>
 
       <TabsContent value="medical">
-        <MedicalHistorySection 
+        <MedicalHistorySection
           userId={userId}
           readOnly={readOnly}
           initialData={initialData?.MedicalHistories || []}
@@ -62,15 +62,15 @@ export const FamilyAndPersonalHistoryForm = ({
       </TabsContent>
 
       <TabsContent value="family">
-        <FamilyHistorySection 
+        <FamilyHistorySection
           userId={userId}
           readOnly={readOnly}
-          initialData={initialData?.FamilyMedicalHistory}
+          initialData={initialData?.FamilyMedicalHistory ?? null}
         />
       </TabsContent>
 
       <TabsContent value="surgical">
-        <SurgicalHistorySection 
+        <SurgicalHistorySection
           userId={userId}
           readOnly={readOnly}
           initialData={initialData?.SurgicalHistories || []}
@@ -78,18 +78,18 @@ export const FamilyAndPersonalHistoryForm = ({
       </TabsContent>
 
       <TabsContent value="personal">
-        <PersonalHistorySection 
+        <PersonalHistorySection
           userId={userId}
           readOnly={readOnly}
-          initialData={initialData?.PersonalHistory}
+          initialData={initialData?.PersonalHistory ?? null}
         />
       </TabsContent>
 
       <TabsContent value="obgyne">
-        <ObGyneHistorySection 
+        <ObGyneHistorySection
           userId={userId}
           readOnly={readOnly}
-          initialData={initialData?.ObGyneHistory}
+          initialData={initialData?.ObGyneHistory ?? null}
         />
       </TabsContent>
     </Tabs>

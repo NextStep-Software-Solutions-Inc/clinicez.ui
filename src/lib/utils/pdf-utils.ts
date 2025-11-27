@@ -89,3 +89,48 @@ export async function processCheckboxes(form: ReturnType<PDFDocument["getForm"]>
   }
   return processed
 }
+
+export interface RadioMapping {
+  /** Base field name (e.g., "personalHistorySmoking") */
+  field: string
+  /** The option value (e.g., "Yes", "No", "Quit") */
+  option: string | number | boolean
+}
+
+/**
+ * Process radio buttons in a PDF form.
+ * 
+ * NOTE: This PDF has an unusual structure where each radio option is its own separate radio group.
+ * For example, instead of one "personalHistorySmoking" group with options ["Yes", "No", "Quit"],
+ * there are three separate radio groups: "personalHistorySmokingYes", "personalHistorySmokingNo", "personalHistorySmokingQuit"
+ * 
+ * To select an option, we:
+ * 1. Construct the full field name by appending the option to the base field name
+ * 2. Get that radio group
+ * 3. Select it (typically using the first available option, which is often the field name itself)
+ */
+export async function processRadioButtons(form: ReturnType<PDFDocument["getForm"]>, mappings: RadioMapping[]): Promise<number> {
+  let processed = 0
+  for (const { field, option } of mappings) {
+    if (!option) continue
+    try {
+      // The PDF has separate radio groups for each option (e.g., "personalHistorySmokingYes", "personalHistorySmokingNo")
+      const optionStr = String(option)
+      const radioFieldName = `${field}${optionStr}`
+
+      const radioGroup = form.getRadioGroup(radioFieldName)
+      const options = radioGroup.getOptions()
+
+      if (options.length > 0) {
+        // Select the first (and usually only) option in this radio group
+        radioGroup.select(options[0])
+        processed++
+      } else {
+        logger.warn(`Radio group "${radioFieldName}" has no options available`)
+      }
+    } catch (error: unknown) {
+      logger.error(`Error processing radio button "${field}" with option "${option}":`, error)
+    }
+  }
+  return processed
+}

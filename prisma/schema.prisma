@@ -125,6 +125,13 @@ model User {
   StudentRecords                   UserStudentRecord[]
   UserVaccinations                 UserVaccination[]
   VitalSigns                       VitalSign[]
+  MedicalHistories                 MedicalHistory[]
+  FamilyMedicalHistory             FamilyMedicalHistory?
+  SurgicalHistories                SurgicalHistory[]
+  PersonalHistory                  PersonalHistory?
+  ObGyneHistory                    ObGyneHistory?
+  PhysicalExaminations             PhysicalExamination[]
+  PediatricMeasurements            PediatricMeasurement[]
 }
 
 model PhilHealthRecord {
@@ -719,9 +726,10 @@ model UserAddress {
   User          User      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
+// Reference this for the newly added models
 model Vaccine {
   id               Int               @id @default(autoincrement())
-  name             String
+  name             String // BCG, Hepatitis B, etc.
   description      String?
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
@@ -785,11 +793,13 @@ model VaccineDose {
   @@unique([vaccineId, doseId], name: "unique_vaccine_dose")
 }
 
+// Reference this for the newly added models
+// doseId included here as well
 model UserVaccination {
   id                 Int                 @id @default(autoincrement())
   userId             Int
   vaccineId          Int
-  doseId             Int
+  doseId             Int // for example, in the document, OPV 1 is the first dose of OPV vaccine and so on.
   routeId            Int
   dateGiven          DateTime
   notes              String?
@@ -828,6 +838,8 @@ model UserAllergy {
   @@unique([userId, allergenId], name: "unique_user_allergy")
 }
 
+// Reference this for the newly added models
+// Take the healthConditionId
 model HealthCondition {
   id                   Int                   @id @default(autoincrement())
   name                 String                @unique
@@ -836,8 +848,10 @@ model HealthCondition {
   deletedAt            DateTime?
   isActive             Boolean               @default(true)
   UserHealthConditions UserHealthCondition[] @relation("UserHealthCondition")
+  MedicalHistories     MedicalHistory[]      @relation("MedicalHistoryCondition")
 }
 
+// Reference this for personal history oof health conditions
 model UserHealthCondition {
   id                Int             @id @default(autoincrement())
   userId            Int
@@ -885,24 +899,25 @@ model UserDisability {
 }
 
 model VitalSign {
-  id          Int       @id @default(autoincrement())
-  userId      Int
-  dateTaken   DateTime
-  height      Float?
-  weight      Float?
-  bmi         Float?
-  bpSystolic  Int?
-  bpDiastolic Int?
-  pulseRate   Int?
-  temp        Float?
-  spo2        Float?
-  respRate    Int?
-  notes       String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime?
-  isActive    Boolean   @default(true)
-  User        User      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id                   Int                   @id @default(autoincrement())
+  userId               Int
+  dateTaken            DateTime
+  height               Float?
+  weight               Float?
+  bmi                  Float?
+  bpSystolic           Int?
+  bpDiastolic          Int?
+  pulseRate            Int?
+  temp                 Float?
+  spo2                 Float?
+  respRate             Int?
+  notes                String?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  deletedAt            DateTime?
+  isActive             Boolean               @default(true)
+  User                 User                  @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  PhysicalExaminations PhysicalExamination[]
 }
 
 model OrganizationDepartment {
@@ -1936,6 +1951,180 @@ model ClinicImagingRequestDiagnostic {
 
   @@unique([clinicImagingRequestId, imagingDiagnosticId], name: "unique_clinic_imaging_request_diagnostic")
 }
+
+// Medical History models - split into logical sections for Health Assessment Form (HAF)
+// These models support the PHR section and HAF PDF generation
+
+// Past Medical History - tracks chronic conditions and diseases
+// conditionId and userId should only remain, then createdAt for tracking purposes
+// Conditions (checkboxes in HAF)
+// these are conditions. Should only have `conditionId`, then check that condition if that person has astham, for example.
+// it should only contain the condition of the patient
+// `hasAllery` should only be in the allergy model
+// No need for soft delete
+model MedicalHistory {
+  id                 Int             @id @default(autoincrement())
+  userId             Int
+  conditionId        Int
+  details            String? // For condition-specific details like cancer organ, hepatitis type, TB details
+  highestBpSystolic  Int? // Keep for hypertension - stores historical maximum
+  highestBpDiastolic Int? // Keep for hypertension - stores historical maximum
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  User               User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Condition          HealthCondition @relation("MedicalHistoryCondition", fields: [conditionId], references: [id])
+
+  @@unique([userId, conditionId])
+  @@index([userId])
+}
+
+// Family Medical History - same structure as MedicalHistory but for family members
+// Similar or applies the same as MedicalHistory comments
+model FamilyMedicalHistory {
+  id                            Int       @id @default(autoincrement())
+  userId                        Int       @unique
+  hasAllergy                    Boolean   @default(false)
+  allergyDetails                String?
+  hasAsthma                     Boolean   @default(false)
+  hasCancer                     Boolean   @default(false)
+  cancerOrgan                   String?
+  hasCerebrovascularDisease     Boolean   @default(false)
+  hasCoronaryArteryDisease      Boolean   @default(false)
+  hasDiabetesMellitus           Boolean   @default(false)
+  hasEmphysema                  Boolean   @default(false)
+  hasEpilepsy                   Boolean   @default(false)
+  hasHepatitis                  Boolean   @default(false)
+  hepatitisType                 String?
+  hasHyperlipidemia             Boolean   @default(false)
+  hasHypertension               Boolean   @default(false)
+  highestBpSystolic             Int?
+  highestBpDiastolic            Int?
+  hasPepticUlcer                Boolean   @default(false)
+  hasPneumonia                  Boolean   @default(false)
+  hasThyroidDisease             Boolean   @default(false)
+  hasPulmonaryTuberculosis      Boolean   @default(false)
+  pulmonaryTBDetails            String?
+  hasExtrapulmonaryTuberculosis Boolean   @default(false)
+  extrapulmonaryTBDetails       String?
+  hasUrinaryTractInfection      Boolean   @default(false)
+  hasMentalIllness              Boolean   @default(false)
+  hasOtherConditions            Boolean   @default(false)
+  otherConditionsDetails        String?
+  createdAt                     DateTime  @default(now())
+  updatedAt                     DateTime  @updatedAt
+  deletedAt                     DateTime?
+  User                          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Surgical History - table format: operation and date
+model SurgicalHistory {
+  id            Int       @id @default(autoincrement())
+  userId        Int
+  operationName String
+  operationDate DateTime? @db.Date
+  notes         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+  User          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// Personal/Social History
+model PersonalHistory {
+  id                    Int       @id @default(autoincrement())
+  userId                Int       @unique
+  // Smoking
+  smokingStatus         String? // "Yes", "No", "Quit"
+  numberOfPacksPerYear  Int?
+  // Alcohol
+  alcoholStatus         String? // "Yes", "No", "Quit"
+  numberOfBottlesPerDay Int?
+  // Drugs
+  illicitDrugUse        String? // "Yes", "No"
+  // Sexual History
+  sexuallyActive        String? // "Yes", "No"
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  deletedAt             DateTime?
+  User                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// OB-Gyne History (Approved)
+model ObGyneHistory {
+  id                          Int       @id @default(autoincrement())
+  userId                      Int       @unique
+  menarche                    Int? // age
+  lastMenstrualPeriod         DateTime? @db.Date
+  menopauseAge                Int?
+  menopauseStatus             String? // "Yes", "No"
+  ageAtFirstSexualIntercourse Int?
+  birthControlMethod          String?
+  menstrualPeriodDuration     Int? // days
+  menstrualCycleInterval      Int? // days
+  numberOfPadsPerDay          Int?
+  // Pregnancy history
+  gravidity                   Int? // total pregnancies
+  parity                      Int? // live births
+  fullTerm                    Int?
+  premature                   Int?
+  abortion                    Int?
+  livingChildren              Int?
+  typeOfDelivery              String?
+  hasPreEclampsia             Boolean   @default(false)
+  createdAt                   DateTime  @default(now())
+  updatedAt                   DateTime  @updatedAt
+  deletedAt                   DateTime?
+  User                        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Physical Examination - extends VitalSigns with additional measurements (Approved)
+model PhysicalExamination {
+  id                Int        @id @default(autoincrement())
+  userId            Int
+  vitalSignId       Int? // Link to VitalSign (optional)
+  visualAcuityLeft  String?
+  visualAcuityRight String?
+  status            String? // e.g., "Physically Fit", "Underweight", "Overweight", "Obese"
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+  deletedAt         DateTime?
+  User              User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  VitalSign         VitalSign? @relation(fields: [vitalSignId], references: [id])
+
+  @@index([userId])
+  @@index([vitalSignId])
+}
+
+// Pediatric measurements (0-24 months)
+// Separated from general PhysicalExamination as per CEO comment
+model PediatricMeasurement {
+  id                       Int       @id @default(autoincrement())
+  userId                   Int
+  dateTaken                DateTime  @db.Date
+  length                   Decimal?  @db.Decimal(5, 2) // cm
+  headCircumference        Decimal?  @db.Decimal(5, 2) // cm
+  skinfoldThickness        Decimal?  @db.Decimal(5, 2) // mm
+  waistCircumference       Decimal?  @db.Decimal(5, 2) // cm
+  hipCircumference         Decimal?  @db.Decimal(5, 2) // cm
+  limbCircumference        Decimal?  @db.Decimal(5, 2) // cm
+  midUpperArmCircumference Decimal?  @db.Decimal(5, 2) // cm
+  remarks                  String?
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
+  deletedAt                DateTime?
+  User                     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, dateTaken])
+}
+
+// NCD Risk Assessment - Non-Communicable Disease screening
+// This is the final result or assessment. So, this does not need to be stored in the database.
+// In order to build the NCD Risk Assessment, we need to gather data from other models.
+// For example, based on the user's record, does the user need a high fat diet? Yes or No.
+// This is usually done after physical exam.
+// MODEL REMOVED - Should be computed on-demand from source data (VitalSign, MedicalHistory, PersonalHistory, etc.)
 
 enum Severity {
   MILD

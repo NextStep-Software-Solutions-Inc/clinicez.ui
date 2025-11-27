@@ -58,8 +58,13 @@ export const downloadHAFAction = withErrorHandling(async (userId: string) => {
           }
         }
       },
-      FamilyMedicalHistory: {
-        where: { deletedAt: null }
+      FamilyMedicalHistories: {
+        where: { deletedAt: null },
+        include: {
+          Condition: {
+            select: { name: true }
+          }
+        }
       },
       PersonalHistory: {
         where: { deletedAt: null }
@@ -88,10 +93,20 @@ export const downloadHAFAction = withErrorHandling(async (userId: string) => {
     return history?.details || "";
   };
 
-  // Get hypertension BP values from medical history
-  const hypertensionHistory = phr.MedicalHistories.find(mh => mh.Condition.name === "Hypertension");
-  const highestBloodPressureSystolic = hypertensionHistory?.highestBpSystolic || 0;
-  const highestBloodPressureDiastolic = hypertensionHistory?.highestBpDiastolic || 0;
+  // Helper to check if family has condition
+  const hasFamilyCondition = (conditionName: string): boolean => {
+    return phr.FamilyMedicalHistories.some(fmh => fmh.Condition.name === conditionName);
+  };
+
+  // Helper to get family condition details
+  const getFamilyConditionDetails = (conditionName: string): string => {
+    const history = phr.FamilyMedicalHistories.find(fmh => fmh.Condition.name === conditionName);
+    return history?.details || "";
+  };
+
+  // Get BP values from VitalSigns (most recent)
+  const highestBloodPressureSystolic = phr?.VitalSigns?.[0]?.bpSystolic || 0;
+  const highestBloodPressureDiastolic = phr?.VitalSigns?.[0]?.bpDiastolic || 0;
 
 
   const texts: PdfTextMapping[] = [
@@ -131,14 +146,14 @@ export const downloadHAFAction = withErrorHandling(async (userId: string) => {
     { field: "dateSurgery_5", value: phr.SurgicalHistories[3]?.operationDate ? formatDate(phr.SurgicalHistories[3].operationDate) : "" },
 
     // Connected to Family History Section
-    { field: "familyHistorySpecifyAllergy", value: phr.FamilyMedicalHistory?.allergyDetails || "" },
-    { field: "familyHistorySpecifyOrgan", value: phr.FamilyMedicalHistory?.cancerOrgan || "" },
-    { field: "familyHistorySpecifyHepatitis", value: phr.FamilyMedicalHistory?.hepatitisType || "" },
-    { field: "familyHistoryBP_1", value: phr.FamilyMedicalHistory?.highestBpSystolic?.toString() || "" },
-    { field: "familyHistoryBP_2", value: phr.FamilyMedicalHistory?.highestBpDiastolic?.toString() || "" },
-    { field: "familyHistorySpecifyPulmononaryTB", value: phr.FamilyMedicalHistory?.pulmonaryTBDetails || "" },
-    { field: "familyHistorySpecifyExtrapulmonaryTB", value: phr.FamilyMedicalHistory?.extrapulmonaryTBDetails || "" },
-    { field: "familyHistorySpecifyOthers", value: phr.FamilyMedicalHistory?.otherConditionsDetails || "" },
+    { field: "familyHistorySpecifyAllergy", value: getFamilyConditionDetails("Allergy") },
+    { field: "familyHistorySpecifyOrgan", value: getFamilyConditionDetails("Cancer") },
+    { field: "familyHistorySpecifyHepatitis", value: getFamilyConditionDetails("Hepatitis") },
+    { field: "familyHistoryBP_1", value: "" }, // BP fields removed - no longer storing in family history
+    { field: "familyHistoryBP_2", value: "" }, // BP fields removed - no longer storing in family history
+    { field: "familyHistorySpecifyPulmononaryTB", value: getFamilyConditionDetails("Pulmonary Tuberculosis") },
+    { field: "familyHistorySpecifyExtrapulmonaryTB", value: getFamilyConditionDetails("Extrapulmonary Tuberculosis") },
+    { field: "familyHistorySpecifyOthers", value: getFamilyConditionDetails("Others") },
 
     // Laboratory / Imaging Results Section
     { field: "partnerFacilityFBS", value: "" },
@@ -248,26 +263,26 @@ export const downloadHAFAction = withErrorHandling(async (userId: string) => {
     { field: "pastMedicalHistoryNone", condition: phr.MedicalHistories.length === 0 && phr.UserAllergies.length === 0 },
 
     // Family History Section
-    { field: "familyHistoryAllergy", condition: !!phr.FamilyMedicalHistory?.hasAllergy },
-    { field: "familyHistoryAsthma", condition: !!phr.FamilyMedicalHistory?.hasAsthma },
-    { field: "familyHistoryCancer", condition: !!phr.FamilyMedicalHistory?.hasCancer },
-    { field: "familyHistoryCerebrovascularDisease", condition: !!phr.FamilyMedicalHistory?.hasCerebrovascularDisease },
-    { field: "familyHistoryCoronaryArteryDisease", condition: !!phr.FamilyMedicalHistory?.hasCoronaryArteryDisease },
-    { field: "familyHistoryDiabetesMellitus", condition: !!phr.FamilyMedicalHistory?.hasDiabetesMellitus },
-    { field: "familyHistoryEmphysema", condition: !!phr.FamilyMedicalHistory?.hasEmphysema },
-    { field: "familyHistoryEpilepsy", condition: !!phr.FamilyMedicalHistory?.hasEpilepsy },
-    { field: "familyHistoryHepatitis", condition: !!phr.FamilyMedicalHistory?.hasHepatitis },
-    { field: "familyHistoryHyperlipidemia", condition: !!phr.FamilyMedicalHistory?.hasHyperlipidemia },
-    { field: "familyHistoryHypertension", condition: !!phr.FamilyMedicalHistory?.hasHypertension },
-    { field: "familyHistoryPepticUlcer", condition: !!phr.FamilyMedicalHistory?.hasPepticUlcer },
-    { field: "familyHistoryPneumonia", condition: !!phr.FamilyMedicalHistory?.hasPneumonia },
-    { field: "familyHistoryThyroidDisease", condition: !!phr.FamilyMedicalHistory?.hasThyroidDisease },
-    { field: "familyHistoryPulmonaryTubercolosis", condition: !!phr.FamilyMedicalHistory?.hasPulmonaryTuberculosis },
-    { field: "familyHistoryExtrapulmonaryTubercolosis", condition: !!phr.FamilyMedicalHistory?.hasExtrapulmonaryTuberculosis },
-    { field: "familyHistoryUrinaryTractInfection", condition: !!phr.FamilyMedicalHistory?.hasUrinaryTractInfection },
-    { field: "familyHistoryMentalIlness", condition: !!phr.FamilyMedicalHistory?.hasMentalIllness },
-    { field: "familyHistoryOthers", condition: !!phr.FamilyMedicalHistory?.hasOtherConditions },
-    { field: "familyHistoryNone", condition: !phr.FamilyMedicalHistory },
+    { field: "familyHistoryAllergy", condition: hasFamilyCondition("Allergy") },
+    { field: "familyHistoryAsthma", condition: hasFamilyCondition("Asthma") },
+    { field: "familyHistoryCancer", condition: hasFamilyCondition("Cancer") },
+    { field: "familyHistoryCerebrovascularDisease", condition: hasFamilyCondition("Cerebrovascular Disease") },
+    { field: "familyHistoryCoronaryArteryDisease", condition: hasFamilyCondition("Coronary Artery Disease") },
+    { field: "familyHistoryDiabetesMellitus", condition: hasFamilyCondition("Diabetes Mellitus") },
+    { field: "familyHistoryEmphysema", condition: hasFamilyCondition("Emphysema") },
+    { field: "familyHistoryEpilepsy", condition: hasFamilyCondition("Epilepsy") },
+    { field: "familyHistoryHepatitis", condition: hasFamilyCondition("Hepatitis") },
+    { field: "familyHistoryHyperlipidemia", condition: hasFamilyCondition("Hyperlipidemia") },
+    { field: "familyHistoryHypertension", condition: hasFamilyCondition("Hypertension") },
+    { field: "familyHistoryPepticUlcer", condition: hasFamilyCondition("Peptic Ulcer") },
+    { field: "familyHistoryPneumonia", condition: hasFamilyCondition("Pneumonia") },
+    { field: "familyHistoryThyroidDisease", condition: hasFamilyCondition("Thyroid Disease") },
+    { field: "familyHistoryPulmonaryTubercolosis", condition: hasFamilyCondition("Pulmonary Tuberculosis") },
+    { field: "familyHistoryExtrapulmonaryTubercolosis", condition: hasFamilyCondition("Extrapulmonary Tuberculosis") },
+    { field: "familyHistoryUrinaryTractInfection", condition: hasFamilyCondition("Urinary Tract Infection") },
+    { field: "familyHistoryMentalIlness", condition: hasFamilyCondition("Mental Illness") },
+    { field: "familyHistoryOthers", condition: hasFamilyCondition("Others") },
+    { field: "familyHistoryNone", condition: phr.FamilyMedicalHistories.length === 0 },
 
     // Immunization - Children
     { field: "immunizationChildrenBCG", condition: false },

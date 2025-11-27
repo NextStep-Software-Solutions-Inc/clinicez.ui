@@ -21,7 +21,11 @@ type HealthHistoryData = Prisma.UserGetPayload<{
         Condition: true;
       }
     };
-    FamilyMedicalHistory: true;
+    FamilyMedicalHistories: {
+      include: {
+        Condition: true;
+      }
+    };
     SurgicalHistories: true;
     PersonalHistory: true;
     ObGyneHistory: true;
@@ -62,14 +66,12 @@ export const FamilyAndPersonalHistoryForm = ({
       </TabsContent>
 
       <TabsContent value="family">
-        <FamilyHistorySection
+        <FamilyHistorySection 
           userId={userId}
           readOnly={readOnly}
-          initialData={initialData?.FamilyMedicalHistory ?? null}
+          initialData={initialData?.FamilyMedicalHistories || []}
         />
-      </TabsContent>
-
-      <TabsContent value="surgical">
+      </TabsContent>      <TabsContent value="surgical">
         <SurgicalHistorySection
           userId={userId}
           readOnly={readOnly}

@@ -1,49 +1,26 @@
 "use client"
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { upsertFamilyMedicalHistoryAction } from "@/actions/family-and-personal-history.action";
-import type { FamilyMedicalHistory } from "@prisma/client";
+import { updateFamilyMedicalHistoryAction } from "@/actions/family-and-personal-history.action";
+import { getHealthConditionsAction } from "@/actions/health-condition.action";
+import type { FamilyMedicalHistoryWithCondition, HealthCondition } from "@/types/health-history.types";
 
 interface FamilyHistorySectionProps {
   userId: string;
   readOnly?: boolean;
-  initialData: FamilyMedicalHistory | null;
+  initialData: FamilyMedicalHistoryWithCondition[];
 }
 
-interface FormData {
-  hasAllergy: boolean;
-  allergyDetails: string;
-  hasAsthma: boolean;
-  hasCancer: boolean;
-  cancerOrgan: string;
-  hasCerebrovascularDisease: boolean;
-  hasCoronaryArteryDisease: boolean;
-  hasDiabetesMellitus: boolean;
-  hasEmphysema: boolean;
-  hasEpilepsy: boolean;
-  hasHepatitis: boolean;
-  hepatitisType: string;
-  hasHyperlipidemia: boolean;
-  hasHypertension: boolean;
-  highestBpSystolic: string;
-  highestBpDiastolic: string;
-  hasPepticUlcer: boolean;
-  hasPneumonia: boolean;
-  hasThyroidDisease: boolean;
-  hasPulmonaryTuberculosis: boolean;
-  pulmonaryTBDetails: string;
-  hasExtrapulmonaryTuberculosis: boolean;
-  extrapulmonaryTBDetails: string;
-  hasUrinaryTractInfection: boolean;
-  hasMentalIllness: boolean;
-  hasOtherConditions: boolean;
-  otherConditionsDetails: string;
+// Track selected conditions with their details
+interface ConditionData {
+  conditionId: number;
+  details: string;
 }
 
 export const FamilyHistorySection = ({
@@ -52,52 +29,77 @@ export const FamilyHistorySection = ({
   initialData
 }: FamilyHistorySectionProps) => {
   const [isPending, startTransition] = useTransition();
-  const [formData, setFormData] = useState<FormData>({
-    hasAllergy: initialData?.hasAllergy || false,
-    allergyDetails: initialData?.allergyDetails || "",
-    hasAsthma: initialData?.hasAsthma || false,
-    hasCancer: initialData?.hasCancer || false,
-    cancerOrgan: initialData?.cancerOrgan || "",
-    hasCerebrovascularDisease: initialData?.hasCerebrovascularDisease || false,
-    hasCoronaryArteryDisease: initialData?.hasCoronaryArteryDisease || false,
-    hasDiabetesMellitus: initialData?.hasDiabetesMellitus || false,
-    hasEmphysema: initialData?.hasEmphysema || false,
-    hasEpilepsy: initialData?.hasEpilepsy || false,
-    hasHepatitis: initialData?.hasHepatitis || false,
-    hepatitisType: initialData?.hepatitisType || "",
-    hasHyperlipidemia: initialData?.hasHyperlipidemia || false,
-    hasHypertension: initialData?.hasHypertension || false,
-    highestBpSystolic: initialData?.highestBpSystolic?.toString() || "",
-    highestBpDiastolic: initialData?.highestBpDiastolic?.toString() || "",
-    hasPepticUlcer: initialData?.hasPepticUlcer || false,
-    hasPneumonia: initialData?.hasPneumonia || false,
-    hasThyroidDisease: initialData?.hasThyroidDisease || false,
-    hasPulmonaryTuberculosis: initialData?.hasPulmonaryTuberculosis || false,
-    pulmonaryTBDetails: initialData?.pulmonaryTBDetails || "",
-    hasExtrapulmonaryTuberculosis: initialData?.hasExtrapulmonaryTuberculosis || false,
-    extrapulmonaryTBDetails: initialData?.extrapulmonaryTBDetails || "",
-    hasUrinaryTractInfection: initialData?.hasUrinaryTractInfection || false,
-    hasMentalIllness: initialData?.hasMentalIllness || false,
-    hasOtherConditions: initialData?.hasOtherConditions || false,
-    otherConditionsDetails: initialData?.otherConditionsDetails || "",
-  });
+  const [conditions, setConditions] = useState<HealthCondition[]>([]);
+  const [selectedConditionIds, setSelectedConditionIds] = useState<number[]>([]);
+  const [conditionDetails, setConditionDetails] = useState<Record<number, ConditionData>>({});
 
-  const handleCheckboxChange = (field: keyof FormData, checked: boolean) => {
-    setFormData(prev => ({ ...prev, [field]: checked }));
+  // Fetch all available conditions on mount
+  useEffect(() => {
+    const fetchConditions = async () => {
+      try {
+        const result = await getHealthConditionsAction();
+        setConditions(result);
+      } catch (error) {
+        console.error("Error fetching conditions:", error);
+        toast.error("Failed to load health conditions");
+      }
+    };
+    fetchConditions();
+  }, []);
+
+  // Initialize selected conditions from initialData
+  useEffect(() => {
+    if (initialData && initialData.length > 0) {
+      const selectedIds = initialData.map(fmh => fmh.conditionId);
+      setSelectedConditionIds(selectedIds);
+
+      const details: Record<number, ConditionData> = {};
+      initialData.forEach(fmh => {
+        details[fmh.conditionId] = {
+          conditionId: fmh.conditionId,
+          details: fmh.details || "",
+        };
+      });
+      setConditionDetails(details);
+    }
+  }, [initialData]);
+
+  const handleConditionToggle = (conditionId: number) => {
+    setSelectedConditionIds(prev =>
+      prev.includes(conditionId)
+        ? prev.filter(id => id !== conditionId)
+        : [...prev, conditionId]
+    );
+
+    // Initialize empty details for newly selected conditions
+    if (!selectedConditionIds.includes(conditionId)) {
+      setConditionDetails(prev => ({
+        ...prev,
+        [conditionId]: { conditionId, details: "" }
+      }));
+    }
   };
 
-  const handleInputChange = (field: keyof FormData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const handleDetailsChange = (conditionId: number, field: keyof ConditionData, value: string) => {
+    setConditionDetails(prev => ({
+      ...prev,
+      [conditionId]: {
+        ...prev[conditionId],
+        [field]: value
+      }
+    }));
   };
 
   const handleSubmit = async () => {
     startTransition(async () => {
       try {
-        const result = await upsertFamilyMedicalHistoryAction(userId, {
-          ...formData,
-          highestBpSystolic: formData.highestBpSystolic ? parseInt(formData.highestBpSystolic) : null,
-          highestBpDiastolic: formData.highestBpDiastolic ? parseInt(formData.highestBpDiastolic) : null,
-        });
+        // Convert selected conditions to array format for server action
+        const histories = selectedConditionIds.map(conditionId => ({
+          conditionId,
+          details: conditionDetails[conditionId]?.details || null,
+        }));
+
+        const result = await updateFamilyMedicalHistoryAction(userId, histories);
         
         if (result.status) {
           toast.success(result.message);
@@ -110,56 +112,18 @@ export const FamilyHistorySection = ({
     });
   };
 
-  const conditions = [
-    { field: "hasAllergy" as const, label: "Allergy", detailsField: "allergyDetails" as const, detailsLabel: "Specify allergies" },
-    { field: "hasAsthma" as const, label: "Asthma" },
-    { field: "hasCancer" as const, label: "Cancer", detailsField: "cancerOrgan" as const, detailsLabel: "Organ affected" },
-    { field: "hasCerebrovascularDisease" as const, label: "Cerebrovascular Disease (Stroke)" },
-    { field: "hasCoronaryArteryDisease" as const, label: "Coronary Artery Disease" },
-    { field: "hasDiabetesMellitus" as const, label: "Diabetes Mellitus" },
-    { field: "hasEmphysema" as const, label: "Emphysema" },
-    { field: "hasEpilepsy" as const, label: "Epilepsy / Seizure Disorder" },
-    { field: "hasHepatitis" as const, label: "Hepatitis", detailsField: "hepatitisType" as const, detailsLabel: "Type (A, B, C, etc.)" },
-    { field: "hasHyperlipidemia" as const, label: "Hyperlipidemia" },
-    { 
-      field: "hasHypertension" as const, 
-      label: "Hypertension (High Blood Pressure)", 
-      customDetails: (
-        <div className="grid grid-cols-2 gap-4 mt-2">
-          <div className="space-y-2">
-            <Label htmlFor="highestBpSystolic">Highest Systolic</Label>
-            <Input
-              id="highestBpSystolic"
-              type="number"
-              value={formData.highestBpSystolic}
-              onChange={(e) => handleInputChange("highestBpSystolic", e.target.value)}
-              disabled={readOnly || !formData.hasHypertension}
-              placeholder="e.g., 140"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="highestBpDiastolic">Highest Diastolic</Label>
-            <Input
-              id="highestBpDiastolic"
-              type="number"
-              value={formData.highestBpDiastolic}
-              onChange={(e) => handleInputChange("highestBpDiastolic", e.target.value)}
-              disabled={readOnly || !formData.hasHypertension}
-              placeholder="e.g., 90"
-            />
-          </div>
-        </div>
-      )
-    },
-    { field: "hasPepticUlcer" as const, label: "Peptic Ulcer" },
-    { field: "hasPneumonia" as const, label: "Pneumonia" },
-    { field: "hasThyroidDisease" as const, label: "Thyroid Disease" },
-    { field: "hasPulmonaryTuberculosis" as const, label: "Pulmonary Tuberculosis", detailsField: "pulmonaryTBDetails" as const, detailsLabel: "Category/Details" },
-    { field: "hasExtrapulmonaryTuberculosis" as const, label: "Extrapulmonary Tuberculosis", detailsField: "extrapulmonaryTBDetails" as const, detailsLabel: "Category/Details" },
-    { field: "hasUrinaryTractInfection" as const, label: "Urinary Tract Infection" },
-    { field: "hasMentalIllness" as const, label: "Mental Illness" },
-    { field: "hasOtherConditions" as const, label: "Others", detailsField: "otherConditionsDetails" as const, detailsLabel: "Specify other conditions" },
-  ];
+  // Helper function to determine if a condition needs details input
+  const needsDetails = (conditionName: string): boolean => {
+    return [
+      'Cancer',
+      'Hepatitis',
+      'Pulmonary Tuberculosis',
+      'Extrapulmonary Tuberculosis',
+      'Mental Illness',
+      'Others',
+      'Allergy'
+    ].includes(conditionName);
+  };
 
   return (
     <Card>
@@ -170,34 +134,55 @@ export const FamilyHistorySection = ({
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {conditions.map((condition) => (
-          <div key={condition.field} className="space-y-2">
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id={condition.field}
-                checked={formData[condition.field] as boolean}
-                onCheckedChange={(checked) => handleCheckboxChange(condition.field, checked as boolean)}
-                disabled={readOnly}
-              />
-              <Label htmlFor={condition.field} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                {condition.label}
-              </Label>
-            </div>
-            {condition.customDetails && formData[condition.field] && condition.customDetails}
-            {condition.detailsField && formData[condition.field] && (
-              <div className="ml-6 space-y-2">
-                <Label htmlFor={condition.detailsField}>{condition.detailsLabel}</Label>
-                <Input
-                  id={condition.detailsField}
-                  value={formData[condition.detailsField] as string}
-                  onChange={(e) => handleInputChange(condition.detailsField!, e.target.value)}
-                  disabled={readOnly}
-                  placeholder={`Enter ${condition.detailsLabel?.toLowerCase()}`}
-                />
+        {conditions.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Loading conditions...</p>
+        ) : (
+          conditions.map((condition) => {
+            const isSelected = selectedConditionIds.includes(condition.id);
+            const data = conditionDetails[condition.id] || { conditionId: condition.id, details: "" };
+
+            return (
+              <div key={condition.id} className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`family-condition-${condition.id}`}
+                    checked={isSelected}
+                    onCheckedChange={() => handleConditionToggle(condition.id)}
+                    disabled={readOnly}
+                  />
+                  <Label
+                    htmlFor={`family-condition-${condition.id}`}
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    {condition.name}
+                  </Label>
+                </div>
+
+                {/* Show details input for applicable conditions */}
+                {isSelected && needsDetails(condition.name) && (
+                  <div className="ml-6 space-y-2">
+                    <Label htmlFor={`family-details-${condition.id}`}>
+                      {condition.name === 'Cancer' ? 'Organ affected' :
+                        condition.name === 'Hepatitis' ? 'Type (A, B, C, etc.)' :
+                          condition.name === 'Pulmonary Tuberculosis' || condition.name === 'Extrapulmonary Tuberculosis' ? 'Category/Details' :
+                            condition.name === 'Mental Illness' ? 'Specify type' :
+                              condition.name === 'Allergy' ? 'Specify allergies' :
+                                condition.name === 'Others' ? 'Specify condition' :
+                                  'Details'}
+                    </Label>
+                    <Input
+                      id={`family-details-${condition.id}`}
+                      value={data.details}
+                      onChange={(e) => handleDetailsChange(condition.id, "details", e.target.value)}
+                      disabled={readOnly}
+                      placeholder="Enter details..."
+                    />
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        ))}
+            );
+          })
+        )}
       </CardContent>
       {!readOnly && (
         <CardFooter>

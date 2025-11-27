@@ -20,8 +20,6 @@ export interface HealthCondition {
 export interface MedicalHistoryInput {
   conditionId: number;
   details?: string | null; // For condition-specific details (cancer organ, hepatitis type, TB details)
-  highestBpSystolic?: number | null; // For hypertension - historical maximum
-  highestBpDiastolic?: number | null; // For hypertension - historical maximum
 }
 
 export interface MedicalHistoryRecord extends MedicalHistoryInput {
@@ -41,8 +39,6 @@ export interface MedicalHistoryBulkInput {
   conditions: Array<{
     conditionId: number;
     details?: string | null;
-    highestBpSystolic?: number | null;
-    highestBpDiastolic?: number | null;
   }>;
 }
 

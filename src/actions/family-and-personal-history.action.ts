@@ -23,7 +23,11 @@ type HealthHistoryResult = Prisma.UserGetPayload<{
         Condition: true;
       }
     };
-    FamilyMedicalHistory: true;
+    FamilyMedicalHistories: {
+      include: {
+        Condition: true;
+      }
+    };
     SurgicalHistories: true;
     PersonalHistory: true;
     ObGyneHistory: true;
@@ -44,7 +48,13 @@ export const getHealthHistoryAction = withErrorHandling(async (userId: string) =
         },
         orderBy: { createdAt: 'desc' },
       },
-      FamilyMedicalHistory: true,
+      FamilyMedicalHistories: {
+        include: {
+          Condition: true,
+        },
+        where: { deletedAt: null },
+        orderBy: { createdAt: 'desc' },
+      },
       SurgicalHistories: { where: { deletedAt: null }, orderBy: { operationDate: 'desc' } },
       PersonalHistory: true,
       ObGyneHistory: true,
@@ -104,13 +114,9 @@ export const updateMedicalHistoryAction = withErrorHandling(async (
         userId: user.id,
         conditionId: condition.conditionId,
         details: condition.details,
-        highestBpSystolic: condition.highestBpSystolic,
-        highestBpDiastolic: condition.highestBpDiastolic,
       },
       update: {
         details: condition.details,
-        highestBpSystolic: condition.highestBpSystolic,
-        highestBpDiastolic: condition.highestBpDiastolic,
       },
       include: {
         Condition: true,
@@ -138,8 +144,6 @@ export const addMedicalHistoryConditionAction = withErrorHandling(async (
       userId: user.id,
       conditionId: data.conditionId,
       details: data.details,
-      highestBpSystolic: data.highestBpSystolic,
-      highestBpDiastolic: data.highestBpDiastolic,
     },
     include: {
       Condition: true,
@@ -172,9 +176,10 @@ export const removeMedicalHistoryConditionAction = withErrorHandling(async (
   return { status: true, message: "Medical condition removed successfully", data: null };
 });
 
-export const upsertFamilyMedicalHistoryAction = withErrorHandling(async (
+// Update family medical history with new normalized structure
+export const updateFamilyMedicalHistoryAction = withErrorHandling(async (
   userId: string,
-  data: Partial<FamilyMedicalHistoryInput>
+  histories: Array<{ conditionId: number; details: string | null }>
 ) => {
   const user = await prisma.user.findUnique({
     where: { userId, isActive: true },
@@ -183,13 +188,52 @@ export const upsertFamilyMedicalHistoryAction = withErrorHandling(async (
 
   if (!user) throw new Error("User not found");
 
-  const result = await prisma.familyMedicalHistory.upsert({
+  // Get existing family medical histories
+  const existing = await prisma.familyMedicalHistory.findMany({
     where: { userId: user.id },
-    create: { userId: user.id, ...data },
-    update: data
+    select: { conditionId: true },
   });
 
-  return { status: true, message: "Family medical history updated successfully", data: result };
+  const existingIds = existing.map(e => e.conditionId);
+  const selectedIds = histories.map(h => h.conditionId);
+
+  // Delete conditions that are no longer selected
+  const toDelete = existingIds.filter(id => !selectedIds.includes(id));
+  if (toDelete.length > 0) {
+    await prisma.familyMedicalHistory.deleteMany({
+      where: {
+        userId: user.id,
+        conditionId: { in: toDelete },
+      },
+    });
+  }
+
+  // Upsert selected conditions
+  const results = [];
+  for (const history of histories) {
+    const result = await prisma.familyMedicalHistory.upsert({
+      where: {
+        userId_conditionId: {
+          userId: user.id,
+          conditionId: history.conditionId,
+        },
+      },
+      create: {
+        userId: user.id,
+        conditionId: history.conditionId,
+        details: history.details,
+      },
+      update: {
+        details: history.details,
+      },
+      include: {
+        Condition: true,
+      },
+    });
+    results.push(result);
+  }
+
+  return { status: true, message: "Family medical history updated successfully", data: results };
 });
 
 export const createSurgicalHistoryAction = withErrorHandling(async (

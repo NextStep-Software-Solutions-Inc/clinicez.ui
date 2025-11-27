@@ -126,7 +126,7 @@ model User {
   UserVaccinations                 UserVaccination[]
   VitalSigns                       VitalSign[]
   MedicalHistories                 MedicalHistory[]
-  FamilyMedicalHistory             FamilyMedicalHistory?
+  FamilyMedicalHistories           FamilyMedicalHistory[]
   SurgicalHistories                SurgicalHistory[]
   PersonalHistory                  PersonalHistory?
   ObGyneHistory                    ObGyneHistory?
@@ -841,14 +841,15 @@ model UserAllergy {
 // Reference this for the newly added models
 // Take the healthConditionId
 model HealthCondition {
-  id                   Int                   @id @default(autoincrement())
-  name                 String                @unique
-  createdAt            DateTime              @default(now())
-  updatedAt            DateTime              @updatedAt
-  deletedAt            DateTime?
-  isActive             Boolean               @default(true)
-  UserHealthConditions UserHealthCondition[] @relation("UserHealthCondition")
-  MedicalHistories     MedicalHistory[]      @relation("MedicalHistoryCondition")
+  id                     Int                      @id @default(autoincrement())
+  name                   String                   @unique
+  createdAt              DateTime                 @default(now())
+  updatedAt              DateTime                 @updatedAt
+  deletedAt              DateTime?
+  isActive               Boolean                  @default(true)
+  UserHealthConditions   UserHealthCondition[]    @relation("UserHealthCondition")
+  MedicalHistories       MedicalHistory[]         @relation("MedicalHistoryCondition")
+  FamilyMedicalHistories FamilyMedicalHistory[]   @relation("FamilyMedicalHistoryCondition")
 }
 
 // Reference this for personal history oof health conditions
@@ -1963,57 +1964,33 @@ model ClinicImagingRequestDiagnostic {
 // `hasAllery` should only be in the allergy model
 // No need for soft delete
 model MedicalHistory {
-  id                 Int             @id @default(autoincrement())
-  userId             Int
-  conditionId        Int
-  details            String? // For condition-specific details like cancer organ, hepatitis type, TB details
-  highestBpSystolic  Int? // Keep for hypertension - stores historical maximum
-  highestBpDiastolic Int? // Keep for hypertension - stores historical maximum
-  createdAt          DateTime        @default(now())
-  updatedAt          DateTime        @updatedAt
-  User               User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  Condition          HealthCondition @relation("MedicalHistoryCondition", fields: [conditionId], references: [id])
+  id          Int             @id @default(autoincrement())
+  userId      Int
+  conditionId Int
+  details     String? // For condition-specific details like cancer organ, hepatitis type, TB details
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  User        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Condition   HealthCondition @relation("MedicalHistoryCondition", fields: [conditionId], references: [id])
 
   @@unique([userId, conditionId])
   @@index([userId])
 }
 
 // Family Medical History - same structure as MedicalHistory but for family members
-// Similar or applies the same as MedicalHistory comments
 model FamilyMedicalHistory {
-  id                            Int       @id @default(autoincrement())
-  userId                        Int       @unique
-  hasAllergy                    Boolean   @default(false)
-  allergyDetails                String?
-  hasAsthma                     Boolean   @default(false)
-  hasCancer                     Boolean   @default(false)
-  cancerOrgan                   String?
-  hasCerebrovascularDisease     Boolean   @default(false)
-  hasCoronaryArteryDisease      Boolean   @default(false)
-  hasDiabetesMellitus           Boolean   @default(false)
-  hasEmphysema                  Boolean   @default(false)
-  hasEpilepsy                   Boolean   @default(false)
-  hasHepatitis                  Boolean   @default(false)
-  hepatitisType                 String?
-  hasHyperlipidemia             Boolean   @default(false)
-  hasHypertension               Boolean   @default(false)
-  highestBpSystolic             Int?
-  highestBpDiastolic            Int?
-  hasPepticUlcer                Boolean   @default(false)
-  hasPneumonia                  Boolean   @default(false)
-  hasThyroidDisease             Boolean   @default(false)
-  hasPulmonaryTuberculosis      Boolean   @default(false)
-  pulmonaryTBDetails            String?
-  hasExtrapulmonaryTuberculosis Boolean   @default(false)
-  extrapulmonaryTBDetails       String?
-  hasUrinaryTractInfection      Boolean   @default(false)
-  hasMentalIllness              Boolean   @default(false)
-  hasOtherConditions            Boolean   @default(false)
-  otherConditionsDetails        String?
-  createdAt                     DateTime  @default(now())
-  updatedAt                     DateTime  @updatedAt
-  deletedAt                     DateTime?
-  User                          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          Int             @id @default(autoincrement())
+  userId      Int
+  conditionId Int
+  details     String? // For condition-specific details like cancer organ, hepatitis type, TB details
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  deletedAt   DateTime?
+  User        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Condition   HealthCondition @relation("FamilyMedicalHistoryCondition", fields: [conditionId], references: [id])
+
+  @@unique([userId, conditionId])
+  @@index([userId])
 }
 
 // Surgical History - table format: operation and date

@@ -12,40 +12,47 @@ export interface LoadPdfResult {
 
 export async function loadPhilHealthPdf(fileName: string): Promise<LoadPdfResult> {
   try {
-    // Use HTTP requests to access files from public directory (works in all environments)
-    const pdfUrl = `/pdfs/phr/${fileName}`
+    const isDevelopment = process.env.NODE_ENV === 'development';
+    let bytes: Uint8Array;
+    let filePath: string;
 
-    // Fetch the PDF from the public directory
-    const baseUrl = process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : process.env.NODE_ENV === 'development'
-        ? 'http://localhost:3000'
-        : 'https://clinicez.com' // fallback to production URL
+    if (isDevelopment) {
+      // Development: Use server-side file system reading
+      const path = await import('path');
+      const fs = await import('fs/promises');
 
-    const fullUrl = `${baseUrl}${pdfUrl}`
+      filePath = path.join(process.cwd(), 'pdfs', 'phr', fileName);
+      logger.info(`Loading PhilHealth PDF template from file system: ${filePath}`);
 
-    logger.info(`Fetching PhilHealth PDF template from: ${fullUrl}`)
+      const buffer = await fs.readFile(filePath);
+      bytes = Uint8Array.from(buffer);
+    } else {
+      // Production: Use HTTPS fetch
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://clinicez.net';
+      filePath = `${baseUrl}/pdfs/phr/${fileName}`;
 
-    const response = await fetch(fullUrl)
+      logger.info(`Fetching PhilHealth PDF template from: ${filePath}`);
 
-    if (!response.ok) {
-      throw new Error(`Failed to fetch PDF template: ${response.status} ${response.statusText}`)
+      const response = await fetch(filePath);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch PDF template: ${response.status} ${response.statusText}`);
+      }
+
+      const arrayBuffer = await response.arrayBuffer();
+      bytes = new Uint8Array(arrayBuffer);
     }
 
-    const arrayBuffer = await response.arrayBuffer()
-    const bytes = new Uint8Array(arrayBuffer)
-
     if (bytes.length === 0) {
-      throw new Error(`PDF template is empty: ${fileName}`)
+      throw new Error(`PDF template is empty: ${fileName}`);
     }
 
     // Load PDF document
-    const pdfDoc = await PDFDocument.load(bytes)
-    const form = pdfDoc.getForm()
+    const pdfDoc = await PDFDocument.load(bytes);
+    const form = pdfDoc.getForm();
 
     logger.info(`Successfully loaded PDF template: ${fileName}`)
 
-    return { pdfDoc, form, bytes, filePath: pdfUrl }
+    return { pdfDoc, form, bytes, filePath }
   } catch (error) {
     logger.error(`Error loading PhilHealth PDF template "${fileName}":`, error)
     throw error

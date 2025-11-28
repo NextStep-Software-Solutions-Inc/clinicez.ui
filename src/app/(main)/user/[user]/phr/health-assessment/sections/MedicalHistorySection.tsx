@@ -21,8 +21,6 @@ interface MedicalHistorySectionProps {
 interface ConditionData {
   conditionId: number;
   details: string;
-  highestBpSystolic: string;
-  highestBpDiastolic: string;
 }
 
 export const MedicalHistorySection = ({
@@ -60,8 +58,6 @@ export const MedicalHistorySection = ({
         details[mh.conditionId] = {
           conditionId: mh.conditionId,
           details: mh.details || "",
-          highestBpSystolic: mh.highestBpSystolic?.toString() || "",
-          highestBpDiastolic: mh.highestBpDiastolic?.toString() || "",
         };
       });
       setConditionDetails(details);
@@ -82,8 +78,6 @@ export const MedicalHistorySection = ({
         [conditionId]: {
           conditionId,
           details: "",
-          highestBpSystolic: "",
-          highestBpDiastolic: "",
         }
       }));
     }
@@ -104,12 +98,10 @@ export const MedicalHistorySection = ({
     startTransition(async () => {
       try {
         const conditionsToSave = selectedConditionIds.map(conditionId => {
-          const data = conditionDetails[conditionId] || { details: "", highestBpSystolic: "", highestBpDiastolic: "" };
+          const data = conditionDetails[conditionId] || { details: "" };
           return {
             conditionId,
             details: data.details || null,
-            highestBpSystolic: data.highestBpSystolic ? parseInt(data.highestBpSystolic) : null,
-            highestBpDiastolic: data.highestBpDiastolic ? parseInt(data.highestBpDiastolic) : null,
           };
         });
 
@@ -133,11 +125,6 @@ export const MedicalHistorySection = ({
     return ['Cancer', 'Hepatitis', 'Pulmonary Tuberculosis', 'Extrapulmonary Tuberculosis', 'Mental Illness', 'Others'].includes(conditionName);
   };
 
-  // Helper to check if condition is hypertension (needs BP inputs)
-  const isHypertension = (conditionName: string) => {
-    return conditionName === 'Hypertension';
-  };
-
   return (
     <Card>
       <CardHeader>
@@ -152,7 +139,7 @@ export const MedicalHistorySection = ({
         ) : (
           conditions.map((condition) => {
             const isSelected = selectedConditionIds.includes(condition.id);
-            const data = conditionDetails[condition.id] || { details: "", highestBpSystolic: "", highestBpDiastolic: "" };
+            const data = conditionDetails[condition.id] || { details: "" };
 
             return (
               <div key={condition.id} className="space-y-2">
@@ -171,35 +158,7 @@ export const MedicalHistorySection = ({
                   </Label>
                 </div>
 
-                {/* Hypertension - Show BP inputs */}
-                {isSelected && isHypertension(condition.name) && (
-                  <div className="ml-6 grid grid-cols-2 gap-4 mt-2">
-                    <div className="space-y-2">
-                      <Label htmlFor={`systolic-${condition.id}`}>Highest Systolic</Label>
-                      <Input
-                        id={`systolic-${condition.id}`}
-                        type="number"
-                        value={data.highestBpSystolic}
-                        onChange={(e) => handleDetailsChange(condition.id, "highestBpSystolic", e.target.value)}
-                        disabled={readOnly}
-                        placeholder="e.g., 140"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor={`diastolic-${condition.id}`}>Highest Diastolic</Label>
-                      <Input
-                        id={`diastolic-${condition.id}`}
-                        type="number"
-                        value={data.highestBpDiastolic}
-                        onChange={(e) => handleDetailsChange(condition.id, "highestBpDiastolic", e.target.value)}
-                        disabled={readOnly}
-                        placeholder="e.g., 90"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {/* Other conditions - Show details input */}
+                {/* Show details input for conditions that need it */}
                 {isSelected && needsDetails(condition.name) && (
                   <div className="ml-6 space-y-2">
                     <Label htmlFor={`details-${condition.id}`}>

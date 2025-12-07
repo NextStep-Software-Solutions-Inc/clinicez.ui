@@ -9,11 +9,20 @@ import {
   FormMessage,
 } from "@components/ui/form"
 import { Input } from "@components/ui/input"
-import { useForm } from "react-hook-form"
+import { UseFormReturn } from "react-hook-form"
 import { Select, SelectContent, SelectItem, SelectLabel, SelectTrigger, SelectValue, SelectGroup } from "@components/ui/select"
 
+export interface HPAddressFormValues {
+  country?: string
+  state?: string
+  city?: string
+  address1?: string
+  address2?: string
+  zip?: string
+}
+
 type HPAddressProps = {
-  form: ReturnType<typeof useForm>
+  form: UseFormReturn<HPAddressFormValues>
 }
 
 export default function HPAddress({ form }: HPAddressProps) {

@@ -83,10 +83,14 @@ const healthcareProvider = await prisma.healthcareProvider.findUnique({
   }
 });
 
-const autoAccept = healthcareProvider?.User?.UserPreference?.autoAcceptAppointmentAssignment ?? false;
+if (!healthcareProvider) {
+  throw new Error('Healthcare provider not found');
+}
+
+const autoAccept = healthcareProvider.User?.UserPreference?.autoAcceptAppointmentAssignment ?? false;
 ```
 
-**Impact**: Now when a nurse assigns an appointment to a healthcare provider who has auto-accept enabled in their preferences, the assignment will automatically be set to 'ACCEPTED' status.
+**Impact**: Now when a nurse assigns an appointment to a healthcare provider who has auto-accept enabled in their preferences, the assignment will automatically be set to 'ACCEPTED' status. Additionally, validation ensures that if an invalid healthcare provider ID is provided, an appropriate error is thrown.
 
 ### Solution 2: Update Appointment Status When All Assignments Are Declined
 
@@ -115,19 +119,12 @@ await prisma.$transaction(async (prisma) => {
     }
   });
 
-  // Check if all routing assignments are now in a terminal state (DECLINED or CANCELLED)
-  // If so, update the appointment status back to RECEIVED to allow reassignment
-  const allRoutings = updatedRouting.Appointment.AppointmentRouting;
-  const hasActiveAssignment = allRoutings.some(r => 
-    r.status === 'PENDING' || r.status === 'ACCEPTED'
+  // Update appointment status if all assignments are declined/cancelled
+  await updateAppointmentStatusIfNeeded(
+    prisma,
+    updatedRouting.appointmentId,
+    updatedRouting.Appointment.AppointmentRouting
   );
-
-  if (!hasActiveAssignment) {
-    await prisma.appointmentAttribute.update({
-      where: { appointmentId: updatedRouting.appointmentId },
-      data: { status: 'RECEIVED' }
-    });
-  }
 }, {
   timeout: 5000,
   maxWait: 10000,
@@ -203,12 +200,29 @@ Terminal states (not active):
 
 ### DRY (Don't Repeat Yourself)
 
-- The "check for active assignments and update appointment status" logic is repeated in both `declineAppointmentAction` and `cancelAppointmentRoutingAction`
-- This is acceptable as:
-  - Each function handles different user actions with different permissions
-  - The logic is tightly coupled to the transaction context
-  - Extracting it would add unnecessary complexity
-  - The duplication is minimal (8 lines) and clearly documented
+- The "check for active assignments and update appointment status" logic is extracted into a reusable helper function `updateAppointmentStatusIfNeeded`
+- This function is used by both `declineAppointmentAction` and `cancelAppointmentRoutingAction`
+- This ensures consistency and maintainability while adhering to DRY principles
+
+**Helper Function**:
+```typescript
+async function updateAppointmentStatusIfNeeded(
+  prisma: any,
+  appointmentId: number,
+  allRoutings: Array<{ status: string }>
+) {
+  const hasActiveAssignment = allRoutings.some(r => 
+    r.status === 'PENDING' || r.status === 'ACCEPTED'
+  );
+
+  if (!hasActiveAssignment) {
+    await prisma.appointmentAttribute.update({
+      where: { appointmentId },
+      data: { status: 'RECEIVED' }
+    });
+  }
+}
+```
 
 ### Error Handling
 
@@ -256,9 +270,10 @@ All actions use the `withErrorHandling` wrapper (following existing repository p
 ## Files Modified
 
 1. `/src/actions/appointments/appointment-routing.action.ts`
-   - Modified `assignAppointmentAction` (lines 31-43)
-   - Modified `declineAppointmentAction` (lines 129-169)
-   - Modified `cancelAppointmentRoutingAction` (lines 189-237)
+   - Added helper function `updateAppointmentStatusIfNeeded` (lines 12-35)
+   - Modified `assignAppointmentAction` (lines 56-72)
+   - Modified `declineAppointmentAction` (lines 158-191)
+   - Modified `cancelAppointmentRoutingAction` (lines 211-252)
 
 ## Backward Compatibility
 

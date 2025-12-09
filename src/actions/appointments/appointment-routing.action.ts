@@ -9,6 +9,31 @@ import { getPermissionsAction } from '@actions/permission.action';
 import { PERMISSIONS } from '@lib/permissions';
 import { withErrorHandling } from '@/lib/with-error-handling';
 
+/**
+ * Helper function to update appointment status when all assignments are in terminal states
+ * @param prisma - Prisma transaction client
+ * @param appointmentId - The appointment ID to check and update
+ * @param allRoutings - All routing records for the appointment
+ */
+async function updateAppointmentStatusIfNeeded(
+  prisma: any,
+  appointmentId: number,
+  allRoutings: Array<{ status: string }>
+) {
+  // Check if all routing assignments are now in a terminal state (DECLINED or CANCELLED)
+  // If so, update the appointment status back to RECEIVED to allow reassignment
+  const hasActiveAssignment = allRoutings.some(r => 
+    r.status === 'PENDING' || r.status === 'ACCEPTED'
+  );
+
+  if (!hasActiveAssignment) {
+    await prisma.appointmentAttribute.update({
+      where: { appointmentId },
+      data: { status: 'RECEIVED' }
+    });
+  }
+}
+
 type AssignAppointmentPayload = {
   routedTo: number;
   appointmentId: number;
@@ -40,7 +65,11 @@ export const assignAppointmentAction = withErrorHandling(async (data: AssignAppo
     }
   });
 
-  const autoAccept = healthcareProvider?.User?.UserPreference?.autoAcceptAppointmentAssignment ?? false;
+  if (!healthcareProvider) {
+    throw new Error('Healthcare provider not found');
+  }
+
+  const autoAccept = healthcareProvider.User?.UserPreference?.autoAcceptAppointmentAssignment ?? false;
     
   await prisma.$transaction(async (prisma) => {
     await prisma.appointmentRouting.create({
@@ -149,19 +178,12 @@ export const declineAppointmentAction = withErrorHandling(async (formData: FormD
       }
     });
 
-    // Check if all routing assignments are now in a terminal state (DECLINED or CANCELLED)
-    // If so, update the appointment status back to RECEIVED to allow reassignment
-    const allRoutings = updatedRouting.Appointment.AppointmentRouting;
-    const hasActiveAssignment = allRoutings.some(r => 
-      r.status === 'PENDING' || r.status === 'ACCEPTED'
+    // Update appointment status if all assignments are declined/cancelled
+    await updateAppointmentStatusIfNeeded(
+      prisma,
+      updatedRouting.appointmentId,
+      updatedRouting.Appointment.AppointmentRouting
     );
-
-    if (!hasActiveAssignment) {
-      await prisma.appointmentAttribute.update({
-        where: { appointmentId: updatedRouting.appointmentId },
-        data: { status: 'RECEIVED' }
-      });
-    }
   }, {
     timeout: 5000,
     maxWait: 10000,
@@ -217,19 +239,12 @@ export const cancelAppointmentRoutingAction = withErrorHandling(async (appointme
       }
     });
 
-    // Check if all routing assignments are now in a terminal state (DECLINED or CANCELLED)
-    // If so, update the appointment status back to RECEIVED to allow reassignment
-    const allRoutings = updatedRouting.Appointment.AppointmentRouting;
-    const hasActiveAssignment = allRoutings.some(r => 
-      r.status === 'PENDING' || r.status === 'ACCEPTED'
+    // Update appointment status if all assignments are declined/cancelled
+    await updateAppointmentStatusIfNeeded(
+      prisma,
+      updatedRouting.appointmentId,
+      updatedRouting.Appointment.AppointmentRouting
     );
-
-    if (!hasActiveAssignment) {
-      await prisma.appointmentAttribute.update({
-        where: { appointmentId: updatedRouting.appointmentId },
-        data: { status: 'RECEIVED' }
-      });
-    }
   }, {
     timeout: 5000,
     maxWait: 10000,

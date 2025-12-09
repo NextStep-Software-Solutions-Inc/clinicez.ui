@@ -74,10 +74,15 @@ await prisma.appointmentRouting.update({
 // Get the healthcare provider's user preference for auto-accept
 const healthcareProvider = await prisma.healthcareProvider.findUnique({
   where: { id: routedTo },
-  include: {
+  select: {
+    id: true,
     User: {
-      include: {
-        UserPreference: true
+      select: {
+        UserPreference: {
+          select: {
+            autoAcceptAppointmentAssignment: true
+          }
+        }
       }
     }
   }
@@ -90,7 +95,9 @@ if (!healthcareProvider) {
 const autoAccept = healthcareProvider.User?.UserPreference?.autoAcceptAppointmentAssignment ?? false;
 ```
 
-**Impact**: Now when a nurse assigns an appointment to a healthcare provider who has auto-accept enabled in their preferences, the assignment will automatically be set to 'ACCEPTED' status. Additionally, validation ensures that if an invalid healthcare provider ID is provided, an appropriate error is thrown.
+**Impact**: Now when a nurse assigns an appointment to a healthcare provider who has auto-accept enabled in their preferences, the assignment will automatically be set to 'ACCEPTED' status. Additionally:
+- Validation ensures that if an invalid healthcare provider ID is provided, an appropriate error is thrown
+- Query is optimized to select only the required fields, improving performance
 
 ### Solution 2: Update Appointment Status When All Assignments Are Declined
 
@@ -203,11 +210,12 @@ Terminal states (not active):
 - The "check for active assignments and update appointment status" logic is extracted into a reusable helper function `updateAppointmentStatusIfNeeded`
 - This function is used by both `declineAppointmentAction` and `cancelAppointmentRoutingAction`
 - This ensures consistency and maintainability while adhering to DRY principles
+- The helper function is properly typed using `Prisma.TransactionClient` for type safety
 
 **Helper Function**:
 ```typescript
 async function updateAppointmentStatusIfNeeded(
-  prisma: any,
+  prisma: Prisma.TransactionClient,
   appointmentId: number,
   allRoutings: Array<{ status: string }>
 ) {

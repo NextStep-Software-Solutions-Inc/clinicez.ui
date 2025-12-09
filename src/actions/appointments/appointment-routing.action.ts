@@ -16,7 +16,7 @@ import { withErrorHandling } from '@/lib/with-error-handling';
  * @param allRoutings - All routing records for the appointment
  */
 async function updateAppointmentStatusIfNeeded(
-  prisma: any,
+  prisma: Prisma.TransactionClient,
   appointmentId: number,
   allRoutings: Array<{ status: string }>
 ) {
@@ -56,10 +56,15 @@ export const assignAppointmentAction = withErrorHandling(async (data: AssignAppo
   // Get the healthcare provider's user preference for auto-accept
   const healthcareProvider = await prisma.healthcareProvider.findUnique({
     where: { id: routedTo },
-    include: {
+    select: {
+      id: true,
       User: {
-        include: {
-          UserPreference: true
+        select: {
+          UserPreference: {
+            select: {
+              autoAcceptAppointmentAssignment: true
+            }
+          }
         }
       }
     }

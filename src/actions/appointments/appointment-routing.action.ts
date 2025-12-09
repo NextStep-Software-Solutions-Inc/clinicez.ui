@@ -28,15 +28,19 @@ export const assignAppointmentAction = withErrorHandling(async (data: AssignAppo
 
   if(!canAssignAppointment) throw new Error('You do not have permission to assign appointment');
     
-  const userPreference = await prisma.userPreference.findFirst({
-    where: {
+  // Get the healthcare provider's user preference for auto-accept
+  const healthcareProvider = await prisma.healthcareProvider.findUnique({
+    where: { id: routedTo },
+    include: {
       User: {
-        userId: session.user.sub
+        include: {
+          UserPreference: true
+        }
       }
     }
   });
 
-  const autoAccept = userPreference?.autoAcceptAppointmentAssignment ?? false;
+  const autoAccept = healthcareProvider?.User?.UserPreference?.autoAcceptAppointmentAssignment ?? false;
     
   await prisma.$transaction(async (prisma) => {
     await prisma.appointmentRouting.create({
@@ -122,19 +126,48 @@ export const declineAppointmentAction = withErrorHandling(async (formData: FormD
   const reason = formData.get('reason') as string;
   const routingCode = formData.get('routingCode') as string;
 
-  await prisma.appointmentRouting.update({
-    where: { routingCode },
-    data: { 
-      status: 'DECLINED',
-      amendedAt: new Date(),
-      AmendedBy: {
-        connect: {
-          userId: session.user.sub
-        }
+  await prisma.$transaction(async (prisma) => {
+    // Update the routing status to DECLINED
+    const updatedRouting = await prisma.appointmentRouting.update({
+      where: { routingCode },
+      data: { 
+        status: 'DECLINED',
+        amendedAt: new Date(),
+        AmendedBy: {
+          connect: {
+            userId: session.user.sub
+          }
+        },
+        amendment: reason
       },
-      amendment: reason
-    },
-  })
+      include: {
+        Appointment: {
+          include: {
+            AppointmentRouting: true
+          }
+        }
+      }
+    });
+
+    // Check if all routing assignments are now in a terminal state (DECLINED or CANCELLED)
+    // If so, update the appointment status back to RECEIVED to allow reassignment
+    const allRoutings = updatedRouting.Appointment.AppointmentRouting;
+    const hasActiveAssignment = allRoutings.some(r => 
+      r.status === 'PENDING' || r.status === 'ACCEPTED'
+    );
+
+    if (!hasActiveAssignment) {
+      await prisma.appointmentAttribute.update({
+        where: { appointmentId: updatedRouting.appointmentId },
+        data: { status: 'RECEIVED' }
+      });
+    }
+  }, {
+    timeout: 5000,
+    maxWait: 10000,
+    isolationLevel: Prisma.TransactionIsolationLevel.Serializable
+  });
+
   return { message: `Appointment assignment declined with reason: ${reason}`, data: undefined };
 }, async error => {
   if(hasCodeProperty(error) && error.code === 'P2025') return 'Appointment assignment not found or you are not authorized to decline it';
@@ -153,27 +186,56 @@ export const cancelAppointmentRoutingAction = withErrorHandling(async (appointme
 
   if(!canCancelAppointment) throw new Error('You do not have permission to cancel appointment assignment');
 
-  await prisma.appointmentRouting.update({
-    where: { 
-      id: appointmentRoutingId,
-      RoutedBy: {
-        userId: session.user.sub
-      },
-      status: {
-        in: ["PENDING"]
-      }
-    },
-    data: { 
-      status: 'CANCELLED',
-      AmendedBy: {
-        connect: {
+  await prisma.$transaction(async (prisma) => {
+    // Update the routing status to CANCELLED
+    const updatedRouting = await prisma.appointmentRouting.update({
+      where: { 
+        id: appointmentRoutingId,
+        RoutedBy: {
           userId: session.user.sub
+        },
+        status: {
+          in: ["PENDING"]
         }
       },
-      amendedAt: new Date(),
-      amendment: 'Cancelled by the assigner'
-    },
-  })
+      data: { 
+        status: 'CANCELLED',
+        AmendedBy: {
+          connect: {
+            userId: session.user.sub
+          }
+        },
+        amendedAt: new Date(),
+        amendment: 'Cancelled by the assigner'
+      },
+      include: {
+        Appointment: {
+          include: {
+            AppointmentRouting: true
+          }
+        }
+      }
+    });
+
+    // Check if all routing assignments are now in a terminal state (DECLINED or CANCELLED)
+    // If so, update the appointment status back to RECEIVED to allow reassignment
+    const allRoutings = updatedRouting.Appointment.AppointmentRouting;
+    const hasActiveAssignment = allRoutings.some(r => 
+      r.status === 'PENDING' || r.status === 'ACCEPTED'
+    );
+
+    if (!hasActiveAssignment) {
+      await prisma.appointmentAttribute.update({
+        where: { appointmentId: updatedRouting.appointmentId },
+        data: { status: 'RECEIVED' }
+      });
+    }
+  }, {
+    timeout: 5000,
+    maxWait: 10000,
+    isolationLevel: Prisma.TransactionIsolationLevel.Serializable
+  });
+
   return { message: 'Appointment cancelled', data: undefined};
 }, async error => {
   if(hasCodeProperty(error) && error.code === 'P2025') return 'Appointment assignment not found or you are not authorized to cancel it';

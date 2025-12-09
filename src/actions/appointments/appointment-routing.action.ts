@@ -195,7 +195,7 @@ export const declineAppointmentAction = withErrorHandling(async (formData: FormD
     await updateAppointmentStatusIfNeeded(
       prisma,
       updatedRouting.appointmentId,
-      updatedRouting.Appointment!.AppointmentRouting
+      updatedRouting.Appointment!.AppointmentRouting as Array<{ status: 'PENDING' | 'ACCEPTED' | 'DECLINED' | 'CANCELLED' }>
     );
   }, {
     timeout: 5000,
@@ -261,7 +261,7 @@ export const cancelAppointmentRoutingAction = withErrorHandling(async (appointme
     await updateAppointmentStatusIfNeeded(
       prisma,
       updatedRouting.appointmentId,
-      updatedRouting.Appointment!.AppointmentRouting
+      updatedRouting.Appointment!.AppointmentRouting as Array<{ status: 'PENDING' | 'ACCEPTED' | 'DECLINED' | 'CANCELLED' }>
     );
   }, {
     timeout: 5000,

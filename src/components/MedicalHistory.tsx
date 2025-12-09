@@ -15,7 +15,7 @@ import Each from "./utils/Each";
 import dayjs from "dayjs";
 import { Badge } from "./ui/badge";
 import { cn } from "@lib/utils";
-import { User, Pill, FileText, Camera, Stethoscope } from "lucide-react";
+import { User, Pill, FileText, Camera, Stethoscope, Calendar } from "lucide-react";
 import { GetConsultationTickets } from "@actions/consultation/consultation-ticket.action";
 
 interface MedicalHistoryProps {
@@ -52,26 +52,46 @@ export default function MedicalHistory({ clinicUid, patientId }: MedicalHistoryP
   })
 
   return (
-    <Accordion type="multiple" className="w-full">
+    <Accordion type="multiple" className="w-full space-y-3">
       <Each
         of={consultationTickets?.data || []}
         fallback={<p className="text-muted-foreground">No consultation records.</p>}
         render={(ticket) => {
           return (
-            <AccordionItem key={ticket.id} value={ticket.id.toString()}>
-              <AccordionTrigger>
-                <div>
-                  {ticket.subject || `Consultation Ticket #${ticket.id}`} ({dayjs(ticket.createdAt).format("llll")}) <Badge variant="outline" className="text-primary">{ticket.System.name}</Badge>
+            <AccordionItem 
+              key={ticket.id} 
+              value={ticket.id.toString()}
+              className="border rounded-lg shadow-sm bg-white overflow-hidden"
+            >
+              <AccordionTrigger className="px-4 py-3 hover:bg-gray-50 hover:no-underline">
+                <div className="flex flex-col items-start gap-1 text-left w-full">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-semibold text-base">
+                      {ticket.subject || `Consultation #${ticket.id}`}
+                    </span>
+                    <Badge variant="outline" className="text-primary border-primary">
+                      {ticket.System.name}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <Calendar className="h-3 w-3" />
+                    {dayjs(ticket.createdAt).format("dddd, MMMM D, YYYY [at] h:mm A")}
+                  </div>
                 </div>
               </AccordionTrigger>
-              <AccordionContent>
-                <div className="p-4 space-y-4">
+              <AccordionContent className="px-0 pb-0">
+                <div className="border-t bg-gray-50/50">
+                  {/* Catered By Section */}
                   <CateredBySection ticket={ticket} />
+                  
+                  {/* Notes Summary Section */}
                   <MedicalHistorySummary
                     consultationTicketId={ticket.id}
                     clinicUid={clinicUid}
                     isPatientView={isPatientView}
                   />
+                  
+                  {/* Clinical Files Section */}
                   <ClinicalFilesSection
                     consultationTicketId={ticket.id}
                     clinicUid={clinicUid}
@@ -105,12 +125,14 @@ const CateredBySection = ({ ticket }: CateredBySectionProps) => {
   }
 
   return (
-    <div className="space-y-2">
-      <p className="text-lg font-bold flex items-center gap-2">
-        <Stethoscope className="h-5 w-5 text-primary" />
-        Catered By
-      </p>
-      <div className="space-y-2">
+    <div className="p-4 border-b">
+      <div className="flex items-center gap-2 mb-3">
+        <div className="p-1.5 bg-primary/10 rounded-md">
+          <Stethoscope className="h-4 w-4 text-primary" />
+        </div>
+        <h4 className="font-semibold text-sm text-gray-700">Catered By</h4>
+      </div>
+      <div className="space-y-2 pl-2">
         {/* Healthcare Providers (Doctors) */}
         <Each
           of={healthcareProviders}
@@ -125,16 +147,18 @@ const CateredBySection = ({ ticket }: CateredBySectionProps) => {
               : formatFullName(user?.firstName, user?.middleName, user?.lastName, user?.suffix);
 
             return (
-              <div key={provider?.id} className="flex items-center gap-2 p-2 bg-blue-50 rounded-lg">
-                <User className="h-4 w-4 text-blue-600" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium">{displayName || 'Unknown Provider'}</p>
+              <div key={provider?.id} className="flex items-center gap-2 p-2.5 bg-blue-50 rounded-lg border border-blue-100">
+                <div className="p-1 bg-blue-100 rounded-full">
+                  <User className="h-3.5 w-3.5 text-blue-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">{displayName || 'Unknown Provider'}</p>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    {hpProfile?.fields && <Badge variant="secondary" className="text-xs">{hpProfile.fields}</Badge>}
+                    {hpProfile?.fields && <Badge variant="secondary" className="text-xs h-5">{hpProfile.fields}</Badge>}
                     {roleName && <span>{roleName}</span>}
                   </div>
                 </div>
-                <Badge variant="outline" className="text-blue-600">Healthcare Provider</Badge>
+                <Badge variant="outline" className="text-blue-600 border-blue-200 bg-blue-50 shrink-0">Healthcare Provider</Badge>
               </div>
             );
           }}
@@ -151,16 +175,18 @@ const CateredBySection = ({ ticket }: CateredBySectionProps) => {
             const roleName = createdBy?.OrganizationMembers?.[0]?.OrganizationRole?.name;
 
             return (
-              <div key={note.id} className="flex items-center gap-2 p-2 bg-green-50 rounded-lg">
-                <User className="h-4 w-4 text-green-600" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium">{displayName}</p>
+              <div key={note.id} className="flex items-center gap-2 p-2.5 bg-green-50 rounded-lg border border-green-100">
+                <div className="p-1 bg-green-100 rounded-full">
+                  <User className="h-3.5 w-3.5 text-green-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">{displayName}</p>
                   <p className="text-xs text-muted-foreground">
                     Pre-assessment at {dayjs(note.createdAt).format("MMM D, YYYY h:mm A")}
                     {roleName && ` • ${roleName}`}
                   </p>
                 </div>
-                <Badge variant="outline" className="text-green-600">Pre-Assessment</Badge>
+                <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50 shrink-0">Pre-Assessment</Badge>
               </div>
             );
           }}
@@ -168,10 +194,12 @@ const CateredBySection = ({ ticket }: CateredBySectionProps) => {
 
         {/* Received By */}
         {receivedBy && (
-          <div className="flex items-center gap-2 p-2 bg-purple-50 rounded-lg">
-            <User className="h-4 w-4 text-purple-600" />
-            <div className="flex-1">
-              <p className="text-sm font-medium">
+          <div className="flex items-center gap-2 p-2.5 bg-purple-50 rounded-lg border border-purple-100">
+            <div className="p-1 bg-purple-100 rounded-full">
+              <User className="h-3.5 w-3.5 text-purple-600" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-gray-900 truncate">
                 {formatFullName(receivedBy.firstName, receivedBy.middleName, receivedBy.lastName, receivedBy.suffix)}
               </p>
               <p className="text-xs text-muted-foreground">
@@ -179,7 +207,7 @@ const CateredBySection = ({ ticket }: CateredBySectionProps) => {
                 {receivedBy.OrganizationMembers?.[0]?.OrganizationRole?.name && ` • ${receivedBy.OrganizationMembers[0].OrganizationRole.name}`}
               </p>
             </div>
-            <Badge variant="outline" className="text-purple-600">Received By</Badge>
+            <Badge variant="outline" className="text-purple-600 border-purple-200 bg-purple-50 shrink-0">Received By</Badge>
           </div>
         )}
       </div>
@@ -217,12 +245,14 @@ const ClinicalFilesSection = ({ consultationTicketId, clinicUid }: ClinicalFiles
 
   if (isLoading) {
     return (
-      <div className="space-y-2">
-        <p className="text-lg font-bold flex items-center gap-2">
-          <FileText className="h-5 w-5 text-primary" />
-          Clinical Files
-        </p>
-        <p className="text-sm text-muted-foreground">Loading clinical files...</p>
+      <div className="p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <div className="p-1.5 bg-primary/10 rounded-md">
+            <FileText className="h-4 w-4 text-primary" />
+          </div>
+          <h4 className="font-semibold text-sm text-gray-700">Clinical Files</h4>
+        </div>
+        <p className="text-sm text-muted-foreground pl-2">Loading clinical files...</p>
       </div>
     );
   }
@@ -232,33 +262,37 @@ const ClinicalFilesSection = ({ consultationTicketId, clinicUid }: ClinicalFiles
   }
 
   return (
-    <div className="space-y-2">
-      <p className="text-lg font-bold flex items-center gap-2">
-        <FileText className="h-5 w-5 text-primary" />
-        Clinical Files
-      </p>
-      <div className="space-y-3">
+    <div className="p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <div className="p-1.5 bg-primary/10 rounded-md">
+          <FileText className="h-4 w-4 text-primary" />
+        </div>
+        <h4 className="font-semibold text-sm text-gray-700">Clinical Files</h4>
+      </div>
+      <div className="space-y-4 pl-2">
         {/* Prescriptions */}
         {hasPrescriptions && (
-          <div className="space-y-1">
-            <p className="text-sm font-semibold flex items-center gap-2">
-              <Pill className="h-4 w-4 text-orange-500" />
-              Prescriptions ({prescriptions?.length || 0})
-            </p>
-            <div className="ml-6 space-y-1">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <div className="p-1 bg-orange-100 rounded">
+                <Pill className="h-3.5 w-3.5 text-orange-600" />
+              </div>
+              <span className="text-sm font-medium text-gray-700">Prescriptions ({prescriptions?.length || 0})</span>
+            </div>
+            <div className="ml-6 space-y-1.5">
               <Each
                 of={prescriptions || []}
                 render={(prescription) => {
                   const medicineCount = prescription.Medicines?.length || 0;
                   return (
-                    <div key={prescription.id} className="flex items-center justify-between p-2 bg-orange-50 rounded-lg text-sm">
-                      <div className="flex-1">
-                        <p className="font-medium">{prescription.name || `Prescription #${prescription.serialNumber || prescription.id}`}</p>
+                    <div key={prescription.id} className="flex items-center justify-between p-2.5 bg-orange-50 rounded-lg border border-orange-100 text-sm">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-gray-900 truncate">{prescription.name || `Prescription #${prescription.serialNumber || prescription.id}`}</p>
                         <p className="text-xs text-muted-foreground">
                           {pluralize(medicineCount, 'medicine', 'medicines')} • {dayjs(prescription.createdAt).format("MMM D, YYYY")}
                         </p>
                       </div>
-                      <Badge variant="outline" className="text-orange-600">{prescription.serialNumber || `#${prescription.id}`}</Badge>
+                      <Badge variant="outline" className="text-orange-600 border-orange-200 bg-orange-50 shrink-0">{prescription.serialNumber || `#${prescription.id}`}</Badge>
                     </div>
                   );
                 }}
@@ -269,27 +303,29 @@ const ClinicalFilesSection = ({ consultationTicketId, clinicUid }: ClinicalFiles
 
         {/* Laboratory Requests */}
         {hasLabRequests && (
-          <div className="space-y-1">
-            <p className="text-sm font-semibold flex items-center gap-2">
-              <FileText className="h-4 w-4 text-blue-500" />
-              Laboratory Requests ({laboratoryRequests?.data?.length || 0})
-            </p>
-            <div className="ml-6 space-y-1">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <div className="p-1 bg-blue-100 rounded">
+                <FileText className="h-3.5 w-3.5 text-blue-600" />
+              </div>
+              <span className="text-sm font-medium text-gray-700">Laboratory Requests ({laboratoryRequests?.data?.length || 0})</span>
+            </div>
+            <div className="ml-6 space-y-1.5">
               <Each
                 of={laboratoryRequests?.data || []}
                 render={(request) => {
                   const testCount = request._count?.LaboratoryRequestDiagnostics || 0;
                   return (
-                    <div key={request.id} className="flex items-center justify-between p-2 bg-blue-50 rounded-lg text-sm">
-                      <div className="flex-1">
-                        <p className="font-medium">
+                    <div key={request.id} className="flex items-center justify-between p-2.5 bg-blue-50 rounded-lg border border-blue-100 text-sm">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-gray-900">
                           {pluralize(testCount, 'test', 'tests')} requested
                         </p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs text-muted-foreground truncate">
                           {request.impression && `${request.impression} • `}{dayjs(request.createdAt).format("MMM D, YYYY")}
                         </p>
                       </div>
-                      <Badge variant="outline" className="text-blue-600">{request.serialNumber || `#${request.id}`}</Badge>
+                      <Badge variant="outline" className="text-blue-600 border-blue-200 bg-blue-50 shrink-0">{request.serialNumber || `#${request.id}`}</Badge>
                     </div>
                   );
                 }}
@@ -300,25 +336,27 @@ const ClinicalFilesSection = ({ consultationTicketId, clinicUid }: ClinicalFiles
 
         {/* Imaging Studies */}
         {hasImagingStudies && (
-          <div className="space-y-1">
-            <p className="text-sm font-semibold flex items-center gap-2">
-              <Camera className="h-4 w-4 text-green-500" />
-              Imaging Studies ({imagingStudies?.data?.length || 0})
-            </p>
-            <div className="ml-6 space-y-1">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <div className="p-1 bg-green-100 rounded">
+                <Camera className="h-3.5 w-3.5 text-green-600" />
+              </div>
+              <span className="text-sm font-medium text-gray-700">Imaging Studies ({imagingStudies?.data?.length || 0})</span>
+            </div>
+            <div className="ml-6 space-y-1.5">
               <Each
                 of={imagingStudies?.data || []}
                 render={(study) => (
-                  <div key={study.id} className="flex items-center justify-between p-2 bg-green-50 rounded-lg text-sm">
-                    <div className="flex-1">
-                      <p className="font-medium">
+                  <div key={study.id} className="flex items-center justify-between p-2.5 bg-green-50 rounded-lg border border-green-100 text-sm">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-gray-900 truncate">
                         {study.reason || `Imaging Study #${study.serialNumber || study.id}`}
                       </p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-muted-foreground truncate">
                         {study.impression && `${study.impression} • `}{dayjs(study.createdAt).format("MMM D, YYYY")}
                       </p>
                     </div>
-                    <Badge variant="outline" className="text-green-600">{study.serialNumber || `#${study.id}`}</Badge>
+                    <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50 shrink-0">{study.serialNumber || `#${study.id}`}</Badge>
                   </div>
                 )}
               />
@@ -341,24 +379,31 @@ export const MedicalHistorySummary = ({ consultationTicketId, clinicUid, isPatie
     clinicUid
   })
   return (
-    <div className="space-y-2">
-      <p className="text-lg font-bold">Notes Summary</p>
-      <Each
-        of={consultationTicket?.data?.ConsultationNotes || []}
-        fallback={<p className="text-muted-foreground">No notes</p>}
-        render={(note) => {
-          const shouldBlur = isPatientView && !note.showOnPatient
-          const displayContent = shouldBlur
-            ? "This information is only visible to healthcare providers."
-            : (note.content ?? "")
-          return (
-            <div key={note.section} className="p-2 bg-gray-100 rounded-lg">
-              <p className="capitalize font-semibold ">{note.section}</p>
-              <p className={cn("text-sm text-gray-500", shouldBlur && "blur-sm")}>{displayContent}</p>
-            </div>
-          )
-        }}
-      />
+    <div className="p-4 border-b">
+      <div className="flex items-center gap-2 mb-3">
+        <div className="p-1.5 bg-gray-200 rounded-md">
+          <FileText className="h-4 w-4 text-gray-600" />
+        </div>
+        <h4 className="font-semibold text-sm text-gray-700">Notes Summary</h4>
+      </div>
+      <div className="space-y-2 pl-2">
+        <Each
+          of={consultationTicket?.data?.ConsultationNotes || []}
+          fallback={<p className="text-sm text-muted-foreground">No notes available</p>}
+          render={(note) => {
+            const shouldBlur = isPatientView && !note.showOnPatient
+            const displayContent = shouldBlur
+              ? "This information is only visible to healthcare providers."
+              : (note.content ?? "")
+            return (
+              <div key={note.section} className="p-3 bg-gray-50 rounded-lg border border-gray-100">
+                <p className="capitalize font-medium text-sm text-gray-800 mb-1">{note.section}</p>
+                <p className={cn("text-sm text-gray-600", shouldBlur && "blur-sm")}>{displayContent}</p>
+              </div>
+            )
+          }}
+        />
+      </div>
     </div>
   )
 }

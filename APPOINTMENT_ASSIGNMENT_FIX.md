@@ -117,10 +117,13 @@ await prisma.$transaction(async (prisma) => {
       AmendedBy: { connect: { userId: session.user.sub } },
       amendment: reason
     },
-    include: {
+    select: {
+      appointmentId: true,
       Appointment: {
-        include: {
-          AppointmentRouting: true
+        select: {
+          AppointmentRouting: {
+            select: { status: true }
+          }
         }
       }
     }
@@ -144,6 +147,7 @@ await prisma.$transaction(async (prisma) => {
 - If no active assignments exist, the appointment status is automatically updated to 'RECEIVED'
 - This allows nurses to reassign the appointment to another healthcare provider
 - The nurse will see the assignment button available again for the appointment
+- Query is optimized to select only the `status` field from routing records, improving performance
 
 ### Solution 3: Update Appointment Status When Assignments Are Cancelled
 
@@ -151,7 +155,7 @@ await prisma.$transaction(async (prisma) => {
 
 **Change**: Applied the same logic as Solution 2 to the `cancelAppointmentRoutingAction`.
 
-**Impact**: When a nurse cancels an assignment and no other active assignments exist, the appointment status is updated to 'RECEIVED', allowing for reassignment.
+**Impact**: When a nurse cancels an assignment and no other active assignments exist, the appointment status is updated to 'RECEIVED', allowing for reassignment. Query is optimized to select only the `status` field from routing records, improving performance.
 
 ## Technical Details
 
@@ -211,13 +215,14 @@ Terminal states (not active):
 - This function is used by both `declineAppointmentAction` and `cancelAppointmentRoutingAction`
 - This ensures consistency and maintainability while adhering to DRY principles
 - The helper function is properly typed using `Prisma.TransactionClient` for type safety
+- Routing status values are strongly typed as union type for better type checking
 
 **Helper Function**:
 ```typescript
 async function updateAppointmentStatusIfNeeded(
   prisma: Prisma.TransactionClient,
   appointmentId: number,
-  allRoutings: Array<{ status: string }>
+  allRoutings: Array<{ status: 'PENDING' | 'ACCEPTED' | 'DECLINED' | 'CANCELLED' }>
 ) {
   const hasActiveAssignment = allRoutings.some(r => 
     r.status === 'PENDING' || r.status === 'ACCEPTED'

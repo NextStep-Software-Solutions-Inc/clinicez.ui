@@ -18,7 +18,7 @@ import { withErrorHandling } from '@/lib/with-error-handling';
 async function updateAppointmentStatusIfNeeded(
   prisma: Prisma.TransactionClient,
   appointmentId: number,
-  allRoutings: Array<{ status: string }>
+  allRoutings: Array<{ status: 'PENDING' | 'ACCEPTED' | 'DECLINED' | 'CANCELLED' }>
 ) {
   // Check if all routing assignments are now in a terminal state (DECLINED or CANCELLED)
   // If so, update the appointment status back to RECEIVED to allow reassignment
@@ -174,10 +174,15 @@ export const declineAppointmentAction = withErrorHandling(async (formData: FormD
         },
         amendment: reason
       },
-      include: {
+      select: {
+        appointmentId: true,
         Appointment: {
-          include: {
-            AppointmentRouting: true
+          select: {
+            AppointmentRouting: {
+              select: {
+                status: true
+              }
+            }
           }
         }
       }
@@ -235,10 +240,15 @@ export const cancelAppointmentRoutingAction = withErrorHandling(async (appointme
         amendedAt: new Date(),
         amendment: 'Cancelled by the assigner'
       },
-      include: {
+      select: {
+        appointmentId: true,
         Appointment: {
-          include: {
-            AppointmentRouting: true
+          select: {
+            AppointmentRouting: {
+              select: {
+                status: true
+              }
+            }
           }
         }
       }

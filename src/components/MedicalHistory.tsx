@@ -23,6 +23,25 @@ interface MedicalHistoryProps {
   clinicUid: string
 }
 
+/**
+ * Formats a person's full name from individual name parts
+ */
+const formatFullName = (
+  firstName?: string | null,
+  middleName?: string | null,
+  lastName?: string | null,
+  suffix?: string | null
+): string => {
+  return `${firstName || ''} ${middleName || ''} ${lastName || ''} ${suffix || ''}`.trim();
+};
+
+/**
+ * Pluralizes a word based on count
+ */
+const pluralize = (count: number, singular: string, plural: string): string => {
+  return `${count} ${count === 1 ? singular : plural}`;
+};
+
 export default function MedicalHistory({ clinicUid, patientId }: MedicalHistoryProps) {
   const { user: authUser } = useUser()
   const isPatientView = authUser?.id === patientId
@@ -103,7 +122,7 @@ const CateredBySection = ({ ticket }: CateredBySectionProps) => {
             
             const displayName = hpProfile?.name 
               ? `${hpProfile.title || ''} ${hpProfile.name} ${hpProfile.suffix || ''}`.trim()
-              : `${user?.firstName || ''} ${user?.middleName || ''} ${user?.lastName || ''} ${user?.suffix || ''}`.trim();
+              : formatFullName(user?.firstName, user?.middleName, user?.lastName, user?.suffix);
 
             return (
               <div key={provider?.id} className="flex items-center gap-2 p-2 bg-blue-50 rounded-lg">
@@ -127,7 +146,7 @@ const CateredBySection = ({ ticket }: CateredBySectionProps) => {
           render={(note) => {
             const createdBy = note.CreatedBy;
             const displayName = createdBy 
-              ? `${createdBy.firstName || ''} ${createdBy.middleName || ''} ${createdBy.lastName || ''} ${createdBy.suffix || ''}`.trim()
+              ? formatFullName(createdBy.firstName, createdBy.middleName, createdBy.lastName, createdBy.suffix)
               : 'Unknown';
             const roleName = createdBy?.OrganizationMembers?.[0]?.OrganizationRole?.name;
 
@@ -153,7 +172,7 @@ const CateredBySection = ({ ticket }: CateredBySectionProps) => {
             <User className="h-4 w-4 text-purple-600" />
             <div className="flex-1">
               <p className="text-sm font-medium">
-                {`${receivedBy.firstName || ''} ${receivedBy.middleName || ''} ${receivedBy.lastName || ''} ${receivedBy.suffix || ''}`.trim()}
+                {formatFullName(receivedBy.firstName, receivedBy.middleName, receivedBy.lastName, receivedBy.suffix)}
               </p>
               <p className="text-xs text-muted-foreground">
                 {receivedAt && `Received at ${dayjs(receivedAt).format("MMM D, YYYY h:mm A")}`}
@@ -229,17 +248,20 @@ const ClinicalFilesSection = ({ consultationTicketId, clinicUid }: ClinicalFiles
             <div className="ml-6 space-y-1">
               <Each
                 of={prescriptions || []}
-                render={(prescription) => (
-                  <div key={prescription.id} className="flex items-center justify-between p-2 bg-orange-50 rounded-lg text-sm">
-                    <div className="flex-1">
-                      <p className="font-medium">{prescription.name || `Prescription #${prescription.serialNumber || prescription.id}`}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {prescription.Medicines?.length || 0} medicine(s) • {dayjs(prescription.createdAt).format("MMM D, YYYY")}
-                      </p>
+                render={(prescription) => {
+                  const medicineCount = prescription.Medicines?.length || 0;
+                  return (
+                    <div key={prescription.id} className="flex items-center justify-between p-2 bg-orange-50 rounded-lg text-sm">
+                      <div className="flex-1">
+                        <p className="font-medium">{prescription.name || `Prescription #${prescription.serialNumber || prescription.id}`}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {pluralize(medicineCount, 'medicine', 'medicines')} • {dayjs(prescription.createdAt).format("MMM D, YYYY")}
+                        </p>
+                      </div>
+                      <Badge variant="outline" className="text-orange-600">{prescription.serialNumber || `#${prescription.id}`}</Badge>
                     </div>
-                    <Badge variant="outline" className="text-orange-600">{prescription.serialNumber || `#${prescription.id}`}</Badge>
-                  </div>
-                )}
+                  );
+                }}
               />
             </div>
           </div>
@@ -255,19 +277,22 @@ const ClinicalFilesSection = ({ consultationTicketId, clinicUid }: ClinicalFiles
             <div className="ml-6 space-y-1">
               <Each
                 of={laboratoryRequests?.data || []}
-                render={(request) => (
-                  <div key={request.id} className="flex items-center justify-between p-2 bg-blue-50 rounded-lg text-sm">
-                    <div className="flex-1">
-                      <p className="font-medium">
-                        {request._count?.LaboratoryRequestDiagnostics || 0} test(s) requested
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {request.impression && `${request.impression} • `}{dayjs(request.createdAt).format("MMM D, YYYY")}
-                      </p>
+                render={(request) => {
+                  const testCount = request._count?.LaboratoryRequestDiagnostics || 0;
+                  return (
+                    <div key={request.id} className="flex items-center justify-between p-2 bg-blue-50 rounded-lg text-sm">
+                      <div className="flex-1">
+                        <p className="font-medium">
+                          {pluralize(testCount, 'test', 'tests')} requested
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {request.impression && `${request.impression} • `}{dayjs(request.createdAt).format("MMM D, YYYY")}
+                        </p>
+                      </div>
+                      <Badge variant="outline" className="text-blue-600">{request.serialNumber || `#${request.id}`}</Badge>
                     </div>
-                    <Badge variant="outline" className="text-blue-600">{request.serialNumber || `#${request.id}`}</Badge>
-                  </div>
-                )}
+                  );
+                }}
               />
             </div>
           </div>

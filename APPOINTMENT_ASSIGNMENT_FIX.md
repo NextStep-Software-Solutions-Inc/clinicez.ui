@@ -216,6 +216,12 @@ Terminal states (not active):
 - This ensures consistency and maintainability while adhering to DRY principles
 - The helper function is properly typed using `Prisma.TransactionClient` for type safety
 - Routing status values are strongly typed as union type for better type checking
+- Active routing statuses are defined as a constant to avoid magic values and improve maintainability
+
+**Constants**:
+```typescript
+const ACTIVE_ROUTING_STATUSES: Array<'PENDING' | 'ACCEPTED'> = ['PENDING', 'ACCEPTED'];
+```
 
 **Helper Function**:
 ```typescript
@@ -225,7 +231,7 @@ async function updateAppointmentStatusIfNeeded(
   allRoutings: Array<{ status: 'PENDING' | 'ACCEPTED' | 'DECLINED' | 'CANCELLED' }>
 ) {
   const hasActiveAssignment = allRoutings.some(r => 
-    r.status === 'PENDING' || r.status === 'ACCEPTED'
+    ACTIVE_ROUTING_STATUSES.includes(r.status as 'PENDING' | 'ACCEPTED')
   );
 
   if (!hasActiveAssignment) {

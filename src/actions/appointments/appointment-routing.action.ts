@@ -9,11 +9,14 @@ import { getPermissionsAction } from '@actions/permission.action';
 import { PERMISSIONS } from '@lib/permissions';
 import { withErrorHandling } from '@/lib/with-error-handling';
 
+// Active routing statuses that prevent appointment reassignment
+const ACTIVE_ROUTING_STATUSES: Array<'PENDING' | 'ACCEPTED'> = ['PENDING', 'ACCEPTED'];
+
 /**
  * Helper function to update appointment status when all assignments are in terminal states
  * @param prisma - Prisma transaction client
  * @param appointmentId - The appointment ID to check and update
- * @param allRoutings - All routing records for the appointment
+ * @param allRoutings - All routing records for this specific appointment (not other appointments)
  */
 async function updateAppointmentStatusIfNeeded(
   prisma: Prisma.TransactionClient,
@@ -23,7 +26,7 @@ async function updateAppointmentStatusIfNeeded(
   // Check if all routing assignments are now in a terminal state (DECLINED or CANCELLED)
   // If so, update the appointment status back to RECEIVED to allow reassignment
   const hasActiveAssignment = allRoutings.some(r => 
-    r.status === 'PENDING' || r.status === 'ACCEPTED'
+    ACTIVE_ROUTING_STATUSES.includes(r.status as 'PENDING' | 'ACCEPTED')
   );
 
   if (!hasActiveAssignment) {

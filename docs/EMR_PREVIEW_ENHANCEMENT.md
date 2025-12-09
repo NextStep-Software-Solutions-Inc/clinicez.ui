@@ -48,6 +48,13 @@ Displays all clinical documents created during the consultation:
 - `useImagingStudies` hook from `@hooks/useImagingStudies`
 - `GetConsultationTickets` type from `@actions/consultation/consultation-ticket.action`
 
+### Helper Functions
+
+Two reusable helper functions were created to follow DRY principles:
+
+1. **`formatFullName`**: Formats a person's full name from individual name parts (firstName, middleName, lastName, suffix)
+2. **`pluralize`**: Returns properly pluralized text based on count (e.g., "1 medicine" vs "2 medicines")
+
 ### Data Sources
 
 The feature leverages existing data already returned by `getConsultationTicketsAction`:

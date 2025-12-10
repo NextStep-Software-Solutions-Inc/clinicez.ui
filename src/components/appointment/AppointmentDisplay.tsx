@@ -265,6 +265,36 @@ export default function AppointmentDisplay() {
           </div>}
         </div>
         <Separator />
+        <div className="px-5 py-2 text-xs max-h-40 scrollBox no-scrollbar">
+          <span className="font-semibold text-base">Tagged (Info Only)</span> <br />
+          <Each
+            of={(freshAppointment.data.AppointmentTags ?? [])}
+            fallback={<span className="text-muted-foreground text-xs">No tagged healthcare providers</span>}
+            render={(tag) => {
+              const taggedHPName = (() => {
+                const title = tag.HealthcareProvider.HPProfile?.title ?? "";
+                const name = tag.HealthcareProvider.HPProfile?.name ?? "";
+                const suffix = tag.HealthcareProvider.HPProfile?.suffix ?? "";
+                const prof = `${title} ${name} ${suffix}`.replace(/\s+/g, " ").trim();
+                if (prof) return prof;
+                const firstName = tag.HealthcareProvider.User?.firstName ?? "";
+                const middleName = tag.HealthcareProvider.User?.middleName ?? "";
+                const lastName = tag.HealthcareProvider.User?.lastName ?? "";
+                const userSuffix = tag.HealthcareProvider.User?.suffix ?? "";
+                const user = `${firstName} ${middleName} ${lastName} ${userSuffix}`.replace(/\s+/g, " ").trim();
+                return user || "Unknown";
+              })();
+              return (
+                <div key={tag.id} className="flex items-center gap-2 my-1">
+                  <Badge variant="outline" className="text-xs">
+                    {taggedHPName}
+                  </Badge>
+                </div>
+              );
+            }}
+          />
+        </div>
+        <Separator />
         <div className="flex items-center p-4 gap-2 max-h-40 scrollBox no-scrollbar">
           <Badge variant={getBadgeVariantFromLabel(freshAppointment.data.AppointmentAttribute?.AppointmentType.name ?? "")}>
             {freshAppointment.data.AppointmentAttribute?.AppointmentType.name}

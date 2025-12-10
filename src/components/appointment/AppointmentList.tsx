@@ -134,6 +134,38 @@ export const AppointmentList = forwardRef<HTMLDivElement, AppointmentListProps>(
                 <div className="line-clamp-2 text-xs text-muted-foreground">
                   {item.complaint?.substring(0, 300)}
                 </div>
+                {item.AppointmentTags && item.AppointmentTags.length > 0 && (
+                  <div className="flex items-center gap-1 flex-wrap">
+                    <span className="text-[0.65rem] text-muted-foreground">Tagged:</span>
+                    <Each
+                      of={item.AppointmentTags.slice(0, 3)}
+                      render={(tag) => {
+                        const hpName = (() => {
+                          const title = tag.HealthcareProvider.HPProfile?.title ?? "";
+                          const name = tag.HealthcareProvider.HPProfile?.name ?? "";
+                          const suffix = tag.HealthcareProvider.HPProfile?.suffix ?? "";
+                          const prof = `${title} ${name} ${suffix}`.replace(/\s+/g, " ").trim();
+                          if (prof) return prof;
+                          const firstName = tag.HealthcareProvider.User?.firstName ?? "";
+                          const middleName = tag.HealthcareProvider.User?.middleName ?? "";
+                          const lastName = tag.HealthcareProvider.User?.lastName ?? "";
+                          const userSuffix = tag.HealthcareProvider.User?.suffix ?? "";
+                          return `${firstName} ${middleName} ${lastName} ${userSuffix}`.replace(/\s+/g, " ").trim() || "Unknown";
+                        })();
+                        return (
+                          <Badge key={tag.id} variant="secondary" className="text-[0.65rem] px-1 py-0">
+                            {hpName}
+                          </Badge>
+                        );
+                      }}
+                    />
+                    {item.AppointmentTags.length > 3 && (
+                      <span className="text-[0.65rem] text-muted-foreground">
+                        +{item.AppointmentTags.length - 3} more
+                      </span>
+                    )}
+                  </div>
+                )}
                 <div className="flex items-center gap-2 truncate">
                   <Badge variant={getBadgeVariantFromLabel(item.AppointmentAttribute?.AppointmentType.name ?? "")}>
                     {item.AppointmentAttribute?.AppointmentType.name}

@@ -25,6 +25,7 @@ type CreateAppointmentPayload = {
   requesters: string[];
   attachments: string[];
   hpId?: number;
+  taggedHpIds?: number[];
   schedule?: {
     date?: Date;
     timeStart?: string;
@@ -36,7 +37,7 @@ export const createAppointmentAction = withErrorHandling(async (payload: CreateA
   const session = await getCachedSession();
   if (!session) throw new Error("Unauthorized");
 
-  const { clinicUid, subject, complaint, requesters, modeId, typeId, serviceId, attachments, hpId, schedule } = payload;
+  const { clinicUid, subject, complaint, requesters, modeId, typeId, serviceId, attachments, hpId, taggedHpIds, schedule } = payload;
   const { date, timeStart, timeEnd } = schedule ?? {};
 
   // Input validation
@@ -259,6 +260,14 @@ export const createAppointmentAction = withErrorHandling(async (payload: CreateA
             })),
             skipDuplicates: true
           }
+        },
+        AppointmentTags: {
+          createMany: {
+            data: (taggedHpIds ?? []).map((hpId) => ({
+              healthcareProviderId: hpId
+            })),
+            skipDuplicates: true
+          }
         }
       },
       select: {
@@ -463,6 +472,31 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
           Service: {
             select: {
               name: true
+            }
+          }
+        }
+      },
+      AppointmentTags: {
+        select: {
+          id: true,
+          HealthcareProvider: {
+            select: {
+              id: true,
+              HPProfile: {
+                select: {
+                  title: true,
+                  name: true,
+                  suffix: true,
+                }
+              },
+              User: {
+                select: {
+                  firstName: true,
+                  middleName: true,
+                  lastName: true,
+                  suffix: true,
+                }
+              }
             }
           }
         }
@@ -778,6 +812,36 @@ export const getAppointmentAction = withErrorHandling(cache(async (id: number, c
             }
           }
         }
+      },
+      AppointmentTags: {
+        select: {
+          id: true,
+          healthcareProviderId: true,
+          HealthcareProvider: {
+            select: {
+              id: true,
+              HPProfile: {
+                select: {
+                  title: true,
+                  name: true,
+                  suffix: true,
+                  fields: true,
+                }
+              },
+              User: {
+                select: {
+                  userId: true,
+                  firstName: true,
+                  middleName: true,
+                  lastName: true,
+                  suffix: true,
+                }
+              }
+            }
+          },
+          createdAt: true
+        },
+        orderBy: { createdAt: "asc" }
       }
     }
   });

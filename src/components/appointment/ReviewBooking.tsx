@@ -21,8 +21,9 @@ import { Separator } from "@components/ui/separator";
 import { useClinicServices } from "@/hooks/useClinicService";
 import { useOrgAppointmentTypes } from "@hooks/useOrgAppointmentType";
 import { useOrgAppointmentModes } from "@hooks/useOrgAppointmentMode";
-import { useHP } from "@hooks/useHP";
+import { useHP, useHPsByIds } from "@hooks/useHP";
 import { Button } from "@components/ui/button";
+import { Badge } from "@components/ui/badge";
 
 interface ReviewBookingProps {
   nextStep?: () => void;
@@ -42,6 +43,7 @@ export default function ReviewBooking({ nextStep, prevStep, isLastStep, isFirstS
   const { data: appointmentModes } = useOrgAppointmentModes(params.clinicUid);
   const { data: hp } = useHP(bookAppointmentForm.hpId ?? 0)
   const { data: dbUser } = useDbUser({ userId: bookAppointmentForm.requester });
+  const { data: taggedHPs } = useHPsByIds(bookAppointmentForm.taggedHpIds ?? []);
 
   const [playSuccess] = useSound("/audio/success-1.mp3");
 
@@ -103,6 +105,7 @@ export default function ReviewBooking({ nextStep, prevStep, isLastStep, isFirstS
       requesters: [requester],
       attachments: attachmentUrls.map(url => url.url),
       hpId: bookAppointmentForm.hpId,
+      taggedHpIds: bookAppointmentForm.taggedHpIds,
       schedule: {
         timeStart: bookAppointmentForm.selectedTimeSlot?.start.toISOString().split("T")[1],
         timeEnd: bookAppointmentForm.selectedTimeSlot?.end.toISOString().split("T")[1],
@@ -145,6 +148,21 @@ export default function ReviewBooking({ nextStep, prevStep, isLastStep, isFirstS
     const userName = `${firstName} ${middleName} ${lastName} ${userSuffix}`.replace(/\s+/g, " ").trim();
     return userName || "No Healthcare Provider Selected";
   }, [hp]);
+  
+  const getTaggedHPName = (hp: NonNullable<typeof taggedHPs>[number]) => {
+    const title = hp.HPProfile?.title ?? "";
+    const name = hp.HPProfile?.name ?? "";
+    const suffix = hp.HPProfile?.suffix ?? "";
+    const profName = `${title} ${name} ${suffix}`.replace(/\s+/g, " ").trim();
+    if (profName) return profName;
+    const firstName = hp.User?.firstName ?? "";
+    const middleName = hp.User?.middleName ?? "";
+    const lastName = hp.User?.lastName ?? "";
+    const userSuffix = hp.User?.suffix ?? "";
+    const userName = `${firstName} ${middleName} ${lastName} ${userSuffix}`.replace(/\s+/g, " ").trim();
+    return userName || "Unknown";
+  };
+  
   const requesterName = `${dbUser?.data?.firstName || "-"} ${dbUser?.data?.middleName || ""} ${dbUser?.data?.lastName || "-"} ${dbUser?.data?.suffix || ""}`.replace(/\s+/g, " ").trim();
   return (
     <div className="shadow-lg p-8 space-y-5 bg-white rounded-md">
@@ -165,6 +183,21 @@ export default function ReviewBooking({ nextStep, prevStep, isLastStep, isFirstS
           <LabelValue className="flex items-center gap-2" value="Consultation Type:" label={appointmentTypes?.find(a => a.id === bookAppointmentForm.appointmentTypeId)?.name ?? ""} />
           <LabelValue className="flex items-center gap-2" value="Service:" label={services?.find(s => s.id === bookAppointmentForm.serviceId)?.name ?? ""} />
           <LabelValue className="flex items-center gap-2" value="Preferred Healthcare Provider:" label={preferredHp} />
+          {(taggedHPs && taggedHPs.length > 0) && (
+            <div className="flex items-start gap-2">
+              <span className="text-xs font-medium text-muted-foreground min-w-fit">Tagged (Info Only):</span>
+              <div className="flex flex-wrap gap-1">
+                <Each
+                  of={taggedHPs ?? []}
+                  render={(hp) => (
+                    <Badge key={hp.id} variant="outline" className="text-xs">
+                      {getTaggedHPName(hp)}
+                    </Badge>
+                  )}
+                />
+              </div>
+            </div>
+          )}
 
           {!!bookAppointmentForm.preferredDate && <LabelValue className="flex items-center gap-2" value="Preferred Date:" label={dayjs(bookAppointmentForm.preferredDate).format("ll")} />}
           {bookAppointmentForm.selectedTimeSlot?.start && bookAppointmentForm.selectedTimeSlot?.end && <LabelValue className="flex items-center gap-2" value="Time Slot:" label={`${dayjs(bookAppointmentForm.selectedTimeSlot.start).format("LT")} - ${dayjs(bookAppointmentForm.selectedTimeSlot.end).format("LT")}`} />}

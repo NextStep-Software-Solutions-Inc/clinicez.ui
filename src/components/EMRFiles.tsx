@@ -8,6 +8,8 @@ interface EMRFilesProps {
   clinicUid: string;
 }
 
+const BYTES_TO_MB = 1024 * 1024;
+
 export default async function EMRFiles({ patientId, clinicUid }: EMRFilesProps) {
   const folders = await getFoldersAction(patientId, clinicUid);
 
@@ -25,18 +27,16 @@ export default async function EMRFiles({ patientId, clinicUid }: EMRFilesProps) 
             description: `Last update: ${dayjs(folder.updatedAt).format("lll")}`,
             scopeClinicId: folder.FolderSetting?.scopeClinicId ?? 0,
             files: folder.Files.map((file) => {
-              const validUntil = file.FileType.validUntil ?? 0;
+              const validUntil = file.FileType?.validUntil ?? 0;
               const valid =
                 !!file.dateTaken &&
-                dayjs().add(validUntil, "days").isAfter(file.dateTaken);
+                dayjs(file.dateTaken).add(validUntil, "days").isAfter(dayjs());
               return {
                 id: file.id,
                 name: file.name,
                 isPublic: file.FileSetting?.isPublic,
                 description: `${file.FileType?.name} - ${(
-                  file.size /
-                  1024 /
-                  1024
+                  file.size / BYTES_TO_MB
                 ).toFixed(2)} MB ${
                   valid ? "- Valid" : validUntil > 0 ? "- Expired" : ""
                 }`,

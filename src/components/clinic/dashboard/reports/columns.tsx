@@ -187,7 +187,7 @@ export const columns: ColumnDef<ConsultationTicketData>[] = [
     accessorKey: "appointmentMode",
     accessorFn: (row) => row.Appointment?.AppointmentAttribute?.AppointmentMode?.name,
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Appointment Mode" />
+      <DataTableColumnHeader column={column} title="Appointment Type" />
     ),
     cell: ({ row }) => {
       const mode = row.original.Appointment?.AppointmentAttribute?.AppointmentMode?.name
@@ -202,7 +202,7 @@ export const columns: ColumnDef<ConsultationTicketData>[] = [
     accessorKey: "appointmentType",
     accessorFn: (row) => row.Appointment?.AppointmentAttribute?.AppointmentType?.name,
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Appointment Type" />
+      <DataTableColumnHeader column={column} title="Consultation Type" />
     ),
     cell: ({ row }) => {
       const type = row.original.Appointment?.AppointmentAttribute?.AppointmentType?.name

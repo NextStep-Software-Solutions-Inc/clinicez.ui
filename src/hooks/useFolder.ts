@@ -39,7 +39,7 @@ interface UseFoldersParams {
 }
 
 export const useFolders = ({ userId, clinicUid }: UseFoldersParams) => {
-  const fetcher = (args: string) => self.get<GetFoldersResponse>(args);
+  const fetcher = (...args: any) => self.get<GetFoldersResponse>(args);
   const searchParams = new URLSearchParams();
   
   searchParams.append("userId", userId);

@@ -11,13 +11,13 @@ export async function GET(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams;
     const userId = searchParams.get("userId");
-    const clinicUid = searchParams.get("clinicUid") || undefined;
+    const clinicUid = searchParams.get("clinicUid");
 
     if (!userId) {
       return NextResponse.json({ error: "userId is required" }, { status: 400 });
     }
 
-    const folders = await getFoldersAction(userId, clinicUid);
+    const folders = await getFoldersAction(userId, clinicUid || undefined);
     
     return NextResponse.json({ data: folders });
   } catch (error) {

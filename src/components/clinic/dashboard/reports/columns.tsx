@@ -274,14 +274,14 @@ export const columns: ColumnDef<ConsultationTicketData>[] = [
             const nameParts = [hp?.User?.firstName, hp?.User?.lastName].filter(Boolean);
             const hpName = hp?.HPProfile?.name || nameParts.join(" ");
             const role = hp?.HPType?.name;
-            const specialty = hp?.HPProfile?.fields?.specialty;
+            const specialties = hp?.HPProfile?.specialties || [];
             
             return (
               <div key={tag.id} className="text-xs">
                 <div className="font-medium">{hpName}</div>
                 <div className="text-muted-foreground text-[0.65rem]">
                   {role}
-                  {specialty && ` • ${specialty}`}
+                  {specialties.length > 0 && ` • ${specialties.join(", ")}`}
                 </div>
               </div>
             );

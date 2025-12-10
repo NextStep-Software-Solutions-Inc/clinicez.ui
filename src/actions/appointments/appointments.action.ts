@@ -484,7 +484,7 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
                   title: true,
                   name: true,
                   suffix: true,
-                  fields: true,
+                  specialties: true,
                 }
               },
               User: {
@@ -708,7 +708,7 @@ export const getAppointmentAction = withErrorHandling(cache(async (id: number, c
                   title: true,
                   name: true,
                   suffix: true,
-                  fields: true
+                  specialties: true
                 }
               }
             }
@@ -748,7 +748,7 @@ export const getAppointmentAction = withErrorHandling(cache(async (id: number, c
                   title: true,
                   name: true,
                   suffix: true,
-                  fields: true
+                  specialties: true
                 }
               },
               User: {
@@ -829,7 +829,7 @@ export const getAppointmentAction = withErrorHandling(cache(async (id: number, c
                   title: true,
                   name: true,
                   suffix: true,
-                  fields: true,
+                  specialties: true,
                 }
               },
               User: {

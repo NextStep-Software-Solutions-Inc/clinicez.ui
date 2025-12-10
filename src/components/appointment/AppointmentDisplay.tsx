@@ -295,8 +295,9 @@ export default function AppointmentDisplay() {
                 </div>
                 <div className="text-xs text-muted-foreground ml-1">
                   {tag.HealthcareProvider.HPType?.name}
-                  {tag.HealthcareProvider.HPProfile?.fields?.specialty && 
-                    ` • ${tag.HealthcareProvider.HPProfile.fields.specialty}`
+                  {tag.HealthcareProvider.HPProfile?.specialties && 
+                    tag.HealthcareProvider.HPProfile.specialties.length > 0 && 
+                    ` • ${tag.HealthcareProvider.HPProfile.specialties.join(", ")}`
                   }
                 </div>
               </div>

@@ -432,7 +432,7 @@ export const getConsultationTicketsAction = withErrorHandling(async (filters: Ge
                   name: true,
                   title: true,
                   suffix: true,
-                  fields: true,
+                  specialties: true,
                 }
               }
             }
@@ -620,7 +620,7 @@ export const getConsultationTicketsAction = withErrorHandling(async (filters: Ge
                       title: true,
                       name: true,
                       suffix: true,
-                      fields: true,
+                      specialties: true,
                     }
                   },
                   User: {

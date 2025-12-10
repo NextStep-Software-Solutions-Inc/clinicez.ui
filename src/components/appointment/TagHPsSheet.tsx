@@ -73,12 +73,12 @@ export default function TagHPsSheet({
     return clinicHPs.filter((hp) => {
       const name = getHealthcareProviderName(hp).toLowerCase();
       const role = hp.HPType?.name?.toLowerCase() || "";
-      const specialty = hp.HPProfile?.fields?.specialty?.toLowerCase() || "";
+      const specialties = (hp.HPProfile?.specialties || []).map(s => s.toLowerCase()).join(" ");
       
       return (
         name.includes(query) ||
         role.includes(query) ||
-        specialty.includes(query)
+        specialties.includes(query)
       );
     });
   }, [clinicHPs, searchQuery]);
@@ -167,7 +167,9 @@ export default function TagHPsSheet({
                         <span className="font-medium">{getHealthcareProviderName(hp)}</span>
                         <span className="text-xs text-muted-foreground">
                           {hp.HPType?.name}
-                          {hp.HPProfile?.fields?.specialty && ` • ${hp.HPProfile.fields.specialty}`}
+                          {hp.HPProfile?.specialties && hp.HPProfile.specialties.length > 0 && 
+                            ` • ${hp.HPProfile.specialties.join(", ")}`
+                          }
                         </span>
                       </div>
                       <button
@@ -228,7 +230,9 @@ export default function TagHPsSheet({
                           <span className="font-medium">{getHealthcareProviderName(hp)}</span>
                           <span className="text-xs text-muted-foreground">
                             {hp.HPType?.name}
-                            {hp.HPProfile?.fields?.specialty && ` • ${hp.HPProfile.fields.specialty}`}
+                            {hp.HPProfile?.specialties && hp.HPProfile.specialties.length > 0 && 
+                              ` • ${hp.HPProfile.specialties.join(", ")}`
+                            }
                           </span>
                         </div>
                       </Label>

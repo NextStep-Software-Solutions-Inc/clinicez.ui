@@ -250,6 +250,47 @@ export const columns: ColumnDef<ConsultationTicketData>[] = [
     }
   },
   {
+    accessorKey: "taggedHPs",
+    accessorFn: (row) => {
+      const tags = row.Appointment?.AppointmentTags ?? [];
+      return tags.map((tag) => {
+        const hp = tag.HealthcareProvider;
+        const nameParts = [hp?.User?.firstName, hp?.User?.lastName].filter(Boolean);
+        return hp?.HPProfile?.name || nameParts.join(" ");
+      }).join(", ");
+    },
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Tagged HPs (Info Only)" />
+    ),
+    cell: ({ row }) => {
+      const tags = row.original.Appointment?.AppointmentTags ?? [];
+      if (tags.length === 0) {
+        return <span className="text-muted-foreground text-xs">-</span>;
+      }
+      return (
+        <div className="max-w-[250px] space-y-1">
+          {tags.map((tag) => {
+            const hp = tag.HealthcareProvider;
+            const nameParts = [hp?.User?.firstName, hp?.User?.lastName].filter(Boolean);
+            const hpName = hp?.HPProfile?.name || nameParts.join(" ");
+            const role = hp?.HPType?.name;
+            const specialty = hp?.HPProfile?.fields?.specialty;
+            
+            return (
+              <div key={tag.id} className="text-xs">
+                <div className="font-medium">{hpName}</div>
+                <div className="text-muted-foreground text-[0.65rem]">
+                  {role}
+                  {specialty && ` • ${specialty}`}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+  },
+  {
     accessorKey: "system",
     accessorFn: (row) => row.System.name,
     header: ({ column }) => (

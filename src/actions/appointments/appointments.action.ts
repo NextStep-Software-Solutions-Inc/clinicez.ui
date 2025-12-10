@@ -473,11 +473,18 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
           HealthcareProvider: {
             select: {
               id: true,
+              HPType: {
+                select: {
+                  id: true,
+                  name: true,
+                }
+              },
               HPProfile: {
                 select: {
                   title: true,
                   name: true,
                   suffix: true,
+                  fields: true,
                 }
               },
               User: {
@@ -811,6 +818,12 @@ export const getAppointmentAction = withErrorHandling(cache(async (id: number, c
           HealthcareProvider: {
             select: {
               id: true,
+              HPType: {
+                select: {
+                  id: true,
+                  name: true,
+                }
+              },
               HPProfile: {
                 select: {
                   title: true,

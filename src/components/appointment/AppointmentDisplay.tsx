@@ -287,10 +287,18 @@ export default function AppointmentDisplay() {
             of={(freshAppointment.data.AppointmentTags ?? [])}
             fallback={<span className="text-muted-foreground text-xs">No tagged healthcare providers</span>}
             render={(tag) => (
-              <div key={tag.id} className="flex items-center gap-2 my-1">
-                <Badge variant="outline" className="text-xs">
-                  {getHealthcareProviderName(tag.HealthcareProvider)}
-                </Badge>
+              <div key={tag.id} className="flex flex-col gap-1 my-2">
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="text-xs font-medium">
+                    {getHealthcareProviderName(tag.HealthcareProvider)}
+                  </Badge>
+                </div>
+                <div className="text-xs text-muted-foreground ml-1">
+                  {tag.HealthcareProvider.HPType?.name}
+                  {tag.HealthcareProvider.HPProfile?.fields?.specialty && 
+                    ` • ${tag.HealthcareProvider.HPProfile.fields.specialty}`
+                  }
+                </div>
               </div>
             )}
           />

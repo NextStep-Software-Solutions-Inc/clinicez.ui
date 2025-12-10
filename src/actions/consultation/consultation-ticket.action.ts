@@ -603,6 +603,38 @@ export const getConsultationTicketsAction = withErrorHandling(async (filters: Ge
               },
             },
           },
+          AppointmentTags: {
+            select: {
+              id: true,
+              HealthcareProvider: {
+                select: {
+                  id: true,
+                  HPType: {
+                    select: {
+                      id: true,
+                      name: true,
+                    }
+                  },
+                  HPProfile: {
+                    select: {
+                      title: true,
+                      name: true,
+                      suffix: true,
+                      fields: true,
+                    }
+                  },
+                  User: {
+                    select: {
+                      firstName: true,
+                      middleName: true,
+                      lastName: true,
+                      suffix: true,
+                    }
+                  }
+                }
+              }
+            }
+          }
         },
       },
     },

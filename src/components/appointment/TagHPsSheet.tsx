@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useParams } from "next/navigation";
 import { useHPs } from "@hooks/useHP";
 import { Badge } from "@components/ui/badge";
-import { X, Tag } from "lucide-react";
+import { X, Tag, Search } from "lucide-react";
 import { Checkbox } from "@components/ui/checkbox";
 import { Label } from "@components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@components/ui/alert";
@@ -21,6 +21,7 @@ import {
   SheetFooter,
 } from "@components/ui/sheet";
 import { Button } from "@components/ui/button";
+import { Input } from "@components/ui/input";
 import { tagHealthcareProvidersAction } from "@actions/appointments/appointment-tags.action";
 import { toast } from "sonner";
 
@@ -61,6 +62,26 @@ export default function TagHPsSheet({
     currentTags.map((tag) => tag.healthcareProviderId)
   );
   const [isSaving, setIsSaving] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Filter HPs based on search query
+  const filteredHPs = useMemo(() => {
+    if (!clinicHPs) return [];
+    if (!searchQuery.trim()) return clinicHPs;
+
+    const query = searchQuery.toLowerCase();
+    return clinicHPs.filter((hp) => {
+      const name = getHealthcareProviderName(hp).toLowerCase();
+      const role = hp.HPType?.name?.toLowerCase() || "";
+      const specialty = hp.HPProfile?.fields?.specialty?.toLowerCase() || "";
+      
+      return (
+        name.includes(query) ||
+        role.includes(query) ||
+        specialty.includes(query)
+      );
+    });
+  }, [clinicHPs, searchQuery]);
 
   const toggleHP = (hpId: number) => {
     setSelectedHPIds((prev) =>
@@ -140,9 +161,15 @@ export default function TagHPsSheet({
                     <Badge
                       key={hp.id}
                       variant="outline"
-                      className="flex items-center gap-1 py-1"
+                      className="flex items-center gap-1 py-1.5 px-2"
                     >
-                      {getHealthcareProviderName(hp)}
+                      <div className="flex flex-col items-start">
+                        <span className="font-medium">{getHealthcareProviderName(hp)}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {hp.HPType?.name}
+                          {hp.HPProfile?.fields?.specialty && ` • ${hp.HPProfile.fields.specialty}`}
+                        </span>
+                      </div>
                       <button
                         type="button"
                         onClick={() => removeHP(hp.id)}
@@ -161,12 +188,22 @@ export default function TagHPsSheet({
             <h6 className="text-sm font-semibold mb-3">
               Available Healthcare Providers:
             </h6>
+            <div className="relative mb-3">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Search by name, role, or specialty..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
             <div className="space-y-2 border rounded-md p-3 max-h-[400px] overflow-y-auto">
               <Each
-                of={clinicHPs ?? []}
+                of={filteredHPs}
                 fallback={
                   <p className="text-sm text-muted-foreground">
-                    No healthcare providers available.
+                    {searchQuery ? "No matching healthcare providers found." : "No healthcare providers available."}
                   </p>
                 }
                 render={(hp) => {
@@ -175,18 +212,25 @@ export default function TagHPsSheet({
                   return (
                     <div
                       key={hp.id}
-                      className="flex items-center space-x-2 p-2 hover:bg-accent rounded-md"
+                      className="flex items-start space-x-2 p-2 hover:bg-accent rounded-md"
                     >
                       <Checkbox
                         id={`hp-${hp.id}`}
                         checked={isSelected}
                         onCheckedChange={() => toggleHP(hp.id)}
+                        className="mt-1"
                       />
                       <Label
                         htmlFor={`hp-${hp.id}`}
                         className="flex-1 cursor-pointer"
                       >
-                        {getHealthcareProviderName(hp)}
+                        <div className="flex flex-col">
+                          <span className="font-medium">{getHealthcareProviderName(hp)}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {hp.HPType?.name}
+                            {hp.HPProfile?.fields?.specialty && ` • ${hp.HPProfile.fields.specialty}`}
+                          </span>
+                        </div>
                       </Label>
                     </div>
                   );

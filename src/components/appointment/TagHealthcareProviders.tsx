@@ -13,6 +13,7 @@ import { Label } from "@components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@components/ui/alert";
 import { Info } from "lucide-react";
 import Each from "@components/utils/Each";
+import { getHealthcareProviderName } from "@/lib/hp-utils";
 
 interface TagHealthcareProvidersProps {
   nextStep?: () => void;
@@ -108,7 +109,7 @@ export default function TagHealthcareProviders({
                   variant="outline"
                   className="flex items-center gap-1 py-1"
                 >
-                  {getHPName(hp)}
+                  {getHealthcareProviderName(hp)}
                   <button
                     type="button"
                     onClick={() => removeHP(hp.id)}
@@ -131,7 +132,7 @@ export default function TagHealthcareProviders({
             fallback={<p className="text-sm text-muted-foreground">No healthcare providers available.</p>}
             render={(hp) => {
               const isSelected = selectedTaggedHpIds.includes(hp.id);
-              const isPreferred = hp.id === bookAppointmentForm.hpId;
+              const isPrimaryHP = hp.id === bookAppointmentForm.hpId;
               
               return (
                 <div
@@ -142,16 +143,16 @@ export default function TagHealthcareProviders({
                     id={`hp-${hp.id}`}
                     checked={isSelected}
                     onCheckedChange={() => toggleHP(hp.id)}
-                    disabled={isPreferred}
+                    disabled={isPrimaryHP}
                   />
                   <Label
                     htmlFor={`hp-${hp.id}`}
                     className={`flex-1 cursor-pointer ${
-                      isPreferred ? "opacity-50" : ""
+                      isPrimaryHP ? "opacity-50" : ""
                     }`}
                   >
-                    {getHPName(hp)}
-                    {isPreferred && (
+                    {getHealthcareProviderName(hp)}
+                    {isPrimaryHP && (
                       <Badge variant="secondary" className="ml-2 text-xs">
                         Preferred HP
                       </Badge>

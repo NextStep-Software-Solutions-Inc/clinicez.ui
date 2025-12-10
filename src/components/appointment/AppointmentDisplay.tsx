@@ -37,6 +37,7 @@ import { usePermissions } from "@/hooks/usePermission";
 import { useHPs } from "@/hooks/useHP";
 import { getFullName } from "@/lib/formatter-utils";
 import { isAssignedNurseToAppointment } from "@/lib/nurse-utils";
+import { getHealthcareProviderName } from "@/lib/hp-utils";
 
 
 export default function AppointmentDisplay() {
@@ -270,28 +271,13 @@ export default function AppointmentDisplay() {
           <Each
             of={(freshAppointment.data.AppointmentTags ?? [])}
             fallback={<span className="text-muted-foreground text-xs">No tagged healthcare providers</span>}
-            render={(tag) => {
-              const taggedHPName = (() => {
-                const title = tag.HealthcareProvider.HPProfile?.title ?? "";
-                const name = tag.HealthcareProvider.HPProfile?.name ?? "";
-                const suffix = tag.HealthcareProvider.HPProfile?.suffix ?? "";
-                const prof = `${title} ${name} ${suffix}`.replace(/\s+/g, " ").trim();
-                if (prof) return prof;
-                const firstName = tag.HealthcareProvider.User?.firstName ?? "";
-                const middleName = tag.HealthcareProvider.User?.middleName ?? "";
-                const lastName = tag.HealthcareProvider.User?.lastName ?? "";
-                const userSuffix = tag.HealthcareProvider.User?.suffix ?? "";
-                const user = `${firstName} ${middleName} ${lastName} ${userSuffix}`.replace(/\s+/g, " ").trim();
-                return user || "Unknown";
-              })();
-              return (
-                <div key={tag.id} className="flex items-center gap-2 my-1">
-                  <Badge variant="outline" className="text-xs">
-                    {taggedHPName}
-                  </Badge>
-                </div>
-              );
-            }}
+            render={(tag) => (
+              <div key={tag.id} className="flex items-center gap-2 my-1">
+                <Badge variant="outline" className="text-xs">
+                  {getHealthcareProviderName(tag.HealthcareProvider)}
+                </Badge>
+              </div>
+            )}
           />
         </div>
         <Separator />

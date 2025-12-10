@@ -12,6 +12,7 @@ import { Separator } from "@components/ui/separator"
 import { ArrowRight } from "lucide-react";
 import dayjs from "@/lib/day-utils"
 import { combineDateTime } from "@/lib/day-utils";
+import { getHealthcareProviderName } from "@/lib/hp-utils";
 
 interface AppointmentListProps {
   appointments: GetAppointments["data"]
@@ -139,25 +140,11 @@ export const AppointmentList = forwardRef<HTMLDivElement, AppointmentListProps>(
                     <span className="text-[0.65rem] text-muted-foreground">Tagged:</span>
                     <Each
                       of={item.AppointmentTags.slice(0, 3)}
-                      render={(tag) => {
-                        const hpName = (() => {
-                          const title = tag.HealthcareProvider.HPProfile?.title ?? "";
-                          const name = tag.HealthcareProvider.HPProfile?.name ?? "";
-                          const suffix = tag.HealthcareProvider.HPProfile?.suffix ?? "";
-                          const prof = `${title} ${name} ${suffix}`.replace(/\s+/g, " ").trim();
-                          if (prof) return prof;
-                          const firstName = tag.HealthcareProvider.User?.firstName ?? "";
-                          const middleName = tag.HealthcareProvider.User?.middleName ?? "";
-                          const lastName = tag.HealthcareProvider.User?.lastName ?? "";
-                          const userSuffix = tag.HealthcareProvider.User?.suffix ?? "";
-                          return `${firstName} ${middleName} ${lastName} ${userSuffix}`.replace(/\s+/g, " ").trim() || "Unknown";
-                        })();
-                        return (
-                          <Badge key={tag.id} variant="secondary" className="text-[0.65rem] px-1 py-0">
-                            {hpName}
-                          </Badge>
-                        );
-                      }}
+                      render={(tag) => (
+                        <Badge key={tag.id} variant="secondary" className="text-[0.65rem] px-1 py-0">
+                          {getHealthcareProviderName(tag.HealthcareProvider)}
+                        </Badge>
+                      )}
                     />
                     {item.AppointmentTags.length > 3 && (
                       <span className="text-[0.65rem] text-muted-foreground">

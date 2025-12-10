@@ -24,6 +24,7 @@ import { useOrgAppointmentModes } from "@hooks/useOrgAppointmentMode";
 import { useHP, useHPsByIds } from "@hooks/useHP";
 import { Button } from "@components/ui/button";
 import { Badge } from "@components/ui/badge";
+import { getHealthcareProviderName } from "@/lib/hp-utils";
 
 interface ReviewBookingProps {
   nextStep?: () => void;
@@ -149,20 +150,6 @@ export default function ReviewBooking({ nextStep, prevStep, isLastStep, isFirstS
     return userName || "No Healthcare Provider Selected";
   }, [hp]);
   
-  const getTaggedHPName = (hp: NonNullable<typeof taggedHPs>[number]) => {
-    const title = hp.HPProfile?.title ?? "";
-    const name = hp.HPProfile?.name ?? "";
-    const suffix = hp.HPProfile?.suffix ?? "";
-    const profName = `${title} ${name} ${suffix}`.replace(/\s+/g, " ").trim();
-    if (profName) return profName;
-    const firstName = hp.User?.firstName ?? "";
-    const middleName = hp.User?.middleName ?? "";
-    const lastName = hp.User?.lastName ?? "";
-    const userSuffix = hp.User?.suffix ?? "";
-    const userName = `${firstName} ${middleName} ${lastName} ${userSuffix}`.replace(/\s+/g, " ").trim();
-    return userName || "Unknown";
-  };
-  
   const requesterName = `${dbUser?.data?.firstName || "-"} ${dbUser?.data?.middleName || ""} ${dbUser?.data?.lastName || "-"} ${dbUser?.data?.suffix || ""}`.replace(/\s+/g, " ").trim();
   return (
     <div className="shadow-lg p-8 space-y-5 bg-white rounded-md">
@@ -191,7 +178,7 @@ export default function ReviewBooking({ nextStep, prevStep, isLastStep, isFirstS
                   of={taggedHPs ?? []}
                   render={(hp) => (
                     <Badge key={hp.id} variant="outline" className="text-xs">
-                      {getTaggedHPName(hp)}
+                      {getHealthcareProviderName(hp)}
                     </Badge>
                   )}
                 />

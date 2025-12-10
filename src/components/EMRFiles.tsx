@@ -28,9 +28,8 @@ export default async function EMRFiles({ patientId, clinicUid }: EMRFilesProps) 
             scopeClinicId: folder.FolderSetting?.scopeClinicId ?? 0,
             files: folder.Files.map((file) => {
               const validUntil = file.FileType?.validUntil ?? 0;
-              const valid =
-                !!file.dateTaken &&
-                dayjs(file.dateTaken).add(validUntil, "days").isAfter(dayjs());
+              const expirationDate = file.dateTaken ? dayjs(file.dateTaken).add(validUntil, "days") : null;
+              const valid = expirationDate ? dayjs().isBefore(expirationDate) : false;
               return {
                 id: file.id,
                 name: file.name,

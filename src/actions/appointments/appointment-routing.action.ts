@@ -9,6 +9,34 @@ import { getPermissionsAction } from '@actions/permission.action';
 import { PERMISSIONS } from '@lib/permissions';
 import { withErrorHandling } from '@/lib/with-error-handling';
 
+// Active routing statuses that prevent appointment reassignment
+const ACTIVE_ROUTING_STATUSES: Array<'PENDING' | 'ACCEPTED'> = ['PENDING', 'ACCEPTED'];
+
+/**
+ * Helper function to update appointment status when all assignments are in terminal states
+ * @param prisma - Prisma transaction client
+ * @param appointmentId - The appointment ID to check and update
+ * @param allRoutings - All routing records for this specific appointment (not other appointments)
+ */
+async function updateAppointmentStatusIfNeeded(
+  prisma: Prisma.TransactionClient,
+  appointmentId: number,
+  allRoutings: Array<{ status: 'PENDING' | 'ACCEPTED' | 'DECLINED' | 'CANCELLED' }>
+) {
+  // Check if all routing assignments are now in a terminal state (DECLINED or CANCELLED)
+  // If so, update the appointment status back to RECEIVED to allow reassignment
+  const hasActiveAssignment = allRoutings.some(r => 
+    ACTIVE_ROUTING_STATUSES.includes(r.status as 'PENDING' | 'ACCEPTED')
+  );
+
+  if (!hasActiveAssignment) {
+    await prisma.appointmentAttribute.update({
+      where: { appointmentId },
+      data: { status: 'RECEIVED' }
+    });
+  }
+}
+
 type AssignAppointmentPayload = {
   routedTo: number;
   appointmentId: number;
@@ -28,15 +56,28 @@ export const assignAppointmentAction = withErrorHandling(async (data: AssignAppo
 
   if(!canAssignAppointment) throw new Error('You do not have permission to assign appointment');
     
-  const userPreference = await prisma.userPreference.findFirst({
-    where: {
+  // Get the healthcare provider's user preference for auto-accept
+  const healthcareProvider = await prisma.healthcareProvider.findUnique({
+    where: { id: routedTo },
+    select: {
+      id: true,
       User: {
-        userId: session.user.sub
+        select: {
+          UserPreference: {
+            select: {
+              autoAcceptAppointmentAssignment: true
+            }
+          }
+        }
       }
     }
   });
 
-  const autoAccept = userPreference?.autoAcceptAppointmentAssignment ?? false;
+  if (!healthcareProvider) {
+    throw new Error('Healthcare provider not found');
+  }
+
+  const autoAccept = healthcareProvider.User?.UserPreference?.autoAcceptAppointmentAssignment ?? false;
     
   await prisma.$transaction(async (prisma) => {
     await prisma.appointmentRouting.create({
@@ -122,19 +163,46 @@ export const declineAppointmentAction = withErrorHandling(async (formData: FormD
   const reason = formData.get('reason') as string;
   const routingCode = formData.get('routingCode') as string;
 
-  await prisma.appointmentRouting.update({
-    where: { routingCode },
-    data: { 
-      status: 'DECLINED',
-      amendedAt: new Date(),
-      AmendedBy: {
-        connect: {
-          userId: session.user.sub
-        }
+  await prisma.$transaction(async (prisma) => {
+    // Update the routing status to DECLINED
+    const updatedRouting = await prisma.appointmentRouting.update({
+      where: { routingCode },
+      data: { 
+        status: 'DECLINED',
+        amendedAt: new Date(),
+        AmendedBy: {
+          connect: {
+            userId: session.user.sub
+          }
+        },
+        amendment: reason
       },
-      amendment: reason
-    },
-  })
+      select: {
+        appointmentId: true,
+        Appointment: {
+          select: {
+            AppointmentRouting: {
+              select: {
+                status: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    // Update appointment status if all assignments are declined/cancelled
+    await updateAppointmentStatusIfNeeded(
+      prisma,
+      updatedRouting.appointmentId,
+      updatedRouting.Appointment!.AppointmentRouting as Array<{ status: 'PENDING' | 'ACCEPTED' | 'DECLINED' | 'CANCELLED' }>
+    );
+  }, {
+    timeout: 5000,
+    maxWait: 10000,
+    isolationLevel: Prisma.TransactionIsolationLevel.Serializable
+  });
+
   return { message: `Appointment assignment declined with reason: ${reason}`, data: undefined };
 }, async error => {
   if(hasCodeProperty(error) && error.code === 'P2025') return 'Appointment assignment not found or you are not authorized to decline it';
@@ -153,27 +221,54 @@ export const cancelAppointmentRoutingAction = withErrorHandling(async (appointme
 
   if(!canCancelAppointment) throw new Error('You do not have permission to cancel appointment assignment');
 
-  await prisma.appointmentRouting.update({
-    where: { 
-      id: appointmentRoutingId,
-      RoutedBy: {
-        userId: session.user.sub
-      },
-      status: {
-        in: ["PENDING"]
-      }
-    },
-    data: { 
-      status: 'CANCELLED',
-      AmendedBy: {
-        connect: {
+  await prisma.$transaction(async (prisma) => {
+    // Update the routing status to CANCELLED
+    const updatedRouting = await prisma.appointmentRouting.update({
+      where: { 
+        id: appointmentRoutingId,
+        RoutedBy: {
           userId: session.user.sub
+        },
+        status: {
+          in: ["PENDING"]
         }
       },
-      amendedAt: new Date(),
-      amendment: 'Cancelled by the assigner'
-    },
-  })
+      data: { 
+        status: 'CANCELLED',
+        AmendedBy: {
+          connect: {
+            userId: session.user.sub
+          }
+        },
+        amendedAt: new Date(),
+        amendment: 'Cancelled by the assigner'
+      },
+      select: {
+        appointmentId: true,
+        Appointment: {
+          select: {
+            AppointmentRouting: {
+              select: {
+                status: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    // Update appointment status if all assignments are declined/cancelled
+    await updateAppointmentStatusIfNeeded(
+      prisma,
+      updatedRouting.appointmentId,
+      updatedRouting.Appointment!.AppointmentRouting as Array<{ status: 'PENDING' | 'ACCEPTED' | 'DECLINED' | 'CANCELLED' }>
+    );
+  }, {
+    timeout: 5000,
+    maxWait: 10000,
+    isolationLevel: Prisma.TransactionIsolationLevel.Serializable
+  });
+
   return { message: 'Appointment cancelled', data: undefined};
 }, async error => {
   if(hasCodeProperty(error) && error.code === 'P2025') return 'Appointment assignment not found or you are not authorized to cancel it';

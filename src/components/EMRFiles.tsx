@@ -1,15 +1,27 @@
-import { getFoldersAction } from "@actions/folder.action";
+"use client";
+
 import Each from "@components/utils/Each";
 import Folder from "@components/Folder";
 import dayjs from "@lib/day-utils";
+import { useFolders } from "@hooks/useFolder";
 
 interface EMRFilesProps {
   patientId: string;
   clinicUid: string;
 }
 
-export default async function EMRFiles({ patientId, clinicUid }: EMRFilesProps) {
-  const folders = await getFoldersAction(patientId, clinicUid);
+export default function EMRFiles({ patientId, clinicUid }: EMRFilesProps) {
+  const { data: foldersData, isLoading, error } = useFolders({ userId: patientId, clinicUid });
+
+  if (isLoading) {
+    return <p className="text-muted-foreground">Loading files...</p>;
+  }
+
+  if (error) {
+    return <p className="text-muted-foreground">Failed to load files.</p>;
+  }
+
+  const folders = foldersData?.data ?? [];
 
   return (
     <div className="space-y-3">

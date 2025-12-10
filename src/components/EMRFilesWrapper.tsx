@@ -1,4 +1,3 @@
-import Suspend from "./Suspend";
 import EMRFiles from "./EMRFiles";
 
 interface EMRFilesWrapperProps {
@@ -10,9 +9,5 @@ export default function EMRFilesWrapper({
   patientId,
   clinicUid,
 }: EMRFilesWrapperProps) {
-  return (
-    <Suspend>
-      <EMRFiles patientId={patientId} clinicUid={clinicUid} />
-    </Suspend>
-  );
+  return <EMRFiles patientId={patientId} clinicUid={clinicUid} />;
 }

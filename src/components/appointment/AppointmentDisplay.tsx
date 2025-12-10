@@ -39,7 +39,6 @@ import { getFullName } from "@/lib/formatter-utils";
 import { isAssignedNurseToAppointment } from "@/lib/nurse-utils";
 import { getHealthcareProviderName } from "@/lib/hp-utils";
 import TagHPsSheet from "./TagHPsSheet";
-import { Pencil } from "lucide-react";
 
 
 export default function AppointmentDisplay() {

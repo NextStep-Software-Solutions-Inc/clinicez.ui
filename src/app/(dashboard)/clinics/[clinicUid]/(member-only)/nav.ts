@@ -3,14 +3,13 @@ import { getCachedSession } from "@actions/session.action";
 import { getClinicMembersAction } from "@/actions/clinics/clinic-member.action";
 import { getOrgMembersAction } from "@/actions/organizations/org-member.action";
 import { isClinicOwner } from "@lib/clinic-utils";
-import { isHP } from "@lib/org-utils";
 
 export const navList: {
   name: string;
   href: string;
   icon: keyof typeof dynamicIconImports;
   permissions: string[];
-  requiresHPAndMembership?: boolean;
+  requiresStaffAccess?: boolean;
 }[] = [
   {
     name: "Dashboard",
@@ -23,7 +22,7 @@ export const navList: {
     href: `/patients`,
     icon: "users",
     permissions: ["clinic:patients"],
-    requiresHPAndMembership: true
+    requiresStaffAccess: true // Requires staff access (clinic owner, clinic member, or org member)
   },
   {
     name: "Appointments",
@@ -52,9 +51,8 @@ export const filterNavList = async (clinicUid: string) => {
       return [];
     }
 
-    const [isOwner, hp, myClinicMembership, myOrganizationMembership] = await Promise.all([
+    const [isOwner, myClinicMembership, myOrganizationMembership] = await Promise.all([
       isClinicOwner(clinicUid),
-      isHP(),
       getClinicMembersAction({
         userId: session.user.sub,
         clinicUid,
@@ -67,14 +65,16 @@ export const filterNavList = async (clinicUid: string) => {
       })
     ]);
 
-    const hasClinicAccess = isOwner || !!myClinicMembership.data?.length || !!myOrganizationMembership.data?.data?.length;
+    // Staff access: clinic owner, clinic member, or organization member
+    // This excludes patients who are only in the ClinicPatient table
+    const hasStaffAccess = isOwner || !!myClinicMembership.data?.length || !!myOrganizationMembership.data?.data?.length;
 
     return navList.filter(item => {
-      if (item.requiresHPAndMembership) {
-        return hp && hasClinicAccess;
+      if (item.requiresStaffAccess) {
+        return hasStaffAccess;
       }
 
-      return hasClinicAccess;
+      return hasStaffAccess;
     });
   } catch (error) {
     console.error("Error filtering navigation:", error);

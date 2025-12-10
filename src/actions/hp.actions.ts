@@ -255,7 +255,7 @@ export const getHPsAction = cache(async (filters?: HPSFilters) => {
           name: true,
           title: true,
           suffix: true,
-          fields: true,
+          specialties: true,
         }
       }
     }
@@ -376,7 +376,7 @@ export const getHpsByIdsAction = async (ids: number[]) => {
           name: true,
           title: true,
           suffix: true,
-          fields: true,
+          specialties: true,
         }
       }
     }

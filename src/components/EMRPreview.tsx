@@ -19,6 +19,7 @@ import RecentVitalSigns from "../app/(main)/user/[user]/phr/vitals/RecentVitalSi
 import { useUserVitalSigns } from "@hooks/useUserVitalSign";
 import { notFound, useParams } from "next/navigation";
 import MedicalHistory from "./MedicalHistory";
+import EMRFilesWrapper from "./EMRFilesWrapper";
 
 interface EMRPreviewProps {
     patientId: string
@@ -86,6 +87,13 @@ function EMRPreview({patientId}: EMRPreviewProps) {
 
       <Section title={`Medical History`} >
         <MedicalHistory
+          patientId={patientId}
+          clinicUid={params.clinicUid}
+        />
+      </Section>
+
+      <Section title={`Files`} >
+        <EMRFilesWrapper
           patientId={patientId}
           clinicUid={params.clinicUid}
         />

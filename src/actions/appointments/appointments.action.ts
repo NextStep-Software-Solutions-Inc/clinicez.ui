@@ -25,7 +25,6 @@ type CreateAppointmentPayload = {
   requesters: string[];
   attachments: string[];
   hpId?: number;
-  taggedHpIds?: number[];
   schedule?: {
     date?: Date;
     timeStart?: string;
@@ -37,7 +36,7 @@ export const createAppointmentAction = withErrorHandling(async (payload: CreateA
   const session = await getCachedSession();
   if (!session) throw new Error("Unauthorized");
 
-  const { clinicUid, subject, complaint, requesters, modeId, typeId, serviceId, attachments, hpId, taggedHpIds, schedule } = payload;
+  const { clinicUid, subject, complaint, requesters, modeId, typeId, serviceId, attachments, hpId, schedule } = payload;
   const { date, timeStart, timeEnd } = schedule ?? {};
 
   // Input validation
@@ -257,14 +256,6 @@ export const createAppointmentAction = withErrorHandling(async (payload: CreateA
             data: attachments.map((url) => ({
               name: url.split("/").pop() ?? url,
               url
-            })),
-            skipDuplicates: true
-          }
-        },
-        AppointmentTags: {
-          createMany: {
-            data: (taggedHpIds ?? []).map((hpId) => ({
-              healthcareProviderId: hpId
             })),
             skipDuplicates: true
           }

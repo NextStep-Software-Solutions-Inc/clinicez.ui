@@ -38,6 +38,8 @@ import { useHPs } from "@/hooks/useHP";
 import { getFullName } from "@/lib/formatter-utils";
 import { isAssignedNurseToAppointment } from "@/lib/nurse-utils";
 import { getHealthcareProviderName } from "@/lib/hp-utils";
+import TagHPsSheet from "./TagHPsSheet";
+import { Pencil } from "lucide-react";
 
 
 export default function AppointmentDisplay() {
@@ -267,7 +269,21 @@ export default function AppointmentDisplay() {
         </div>
         <Separator />
         <div className="px-5 py-2 text-xs max-h-40 scrollBox no-scrollbar">
-          <span className="font-semibold text-base">Tagged (Info Only)</span> <br />
+          <div className="flex items-center justify-between mb-2">
+            <span className="font-semibold text-base">Tagged (Info Only)</span>
+            {[PERMISSIONS.CLINIC["WRITE:CLINIC:APPOINTMENT"].name].every(p => myClinicPermissionArray.includes(p)) && (
+              <TagHPsSheet
+                appointmentId={freshAppointment.data.id}
+                currentTags={freshAppointment.data.AppointmentTags ?? []}
+                onTagsUpdated={revalidate}
+              >
+                <Button variant="ghost" size="sm" className="h-6">
+                  <Pencil className="h-3 w-3 mr-1" />
+                  Edit Tags
+                </Button>
+              </TagHPsSheet>
+            )}
+          </div>
           <Each
             of={(freshAppointment.data.AppointmentTags ?? [])}
             fallback={<span className="text-muted-foreground text-xs">No tagged healthcare providers</span>}

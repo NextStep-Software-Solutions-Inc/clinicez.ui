@@ -17,7 +17,6 @@ import ConsentForm from "./ConsentForm";
 import ReviewBooking from "./ReviewBooking";
 import { InsertAttachment } from "./InsertAttachment";
 import SelectService from "./SelectService";
-import TagHealthcareProviders from "./TagHealthcareProviders";
 import { useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 
@@ -51,7 +50,6 @@ export default function BookAppointmentSheet() {
             <InsertAttachment/>
             <ConsentForm/>
             <SelectTimeSlot/>
-            <TagHealthcareProviders/>
             <ReviewBooking/>
           </BookAppointmentSteps>
         </div>

@@ -8,8 +8,6 @@ interface EMRFilesProps {
   clinicUid: string;
 }
 
-const BYTES_TO_MB = 1024 * 1024;
-
 export default async function EMRFiles({ patientId, clinicUid }: EMRFilesProps) {
   const folders = await getFoldersAction(patientId, clinicUid);
 
@@ -33,9 +31,7 @@ export default async function EMRFiles({ patientId, clinicUid }: EMRFilesProps) 
                 id: file.id,
                 name: file.name,
                 isPublic: file.FileSetting?.isPublic,
-                description: `${file.FileType?.name} - ${(
-                  file.size / BYTES_TO_MB
-                ).toFixed(2)} MB ${
+                description: `${file.FileType?.name} - ${(file.size / 1024 / 1024).toFixed(2)} MB ${
                   valid ? "- Valid" : validUntil > 0 ? "- Expired" : ""
                 }`,
                 type: file.FileType?.name,

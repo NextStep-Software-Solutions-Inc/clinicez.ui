@@ -369,14 +369,14 @@ export default function FilterForm({ onContinue }: FilterFormProps) {
             name="modeId"
             render={({ field }) => (
               <FormItem className="flex-grow">
-                <FormLabel>Mode</FormLabel>
+                <FormLabel>Appointment Type</FormLabel>
                 <Select
                   onValueChange={field.onChange}
                   value={field.value?.toString()}
                 >
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select an appointment mode" className="capitalize" />
+                      <SelectValue placeholder="Select an appointment type" className="capitalize" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
@@ -389,7 +389,7 @@ export default function FilterForm({ onContinue }: FilterFormProps) {
                   </SelectContent>
                 </Select>
                 <FormDescription>
-                  Select an appointment mode to show available slots
+                  Select an appointment type to show available slots
                 </FormDescription>
                 <FormMessage />
               </FormItem>
@@ -400,14 +400,14 @@ export default function FilterForm({ onContinue }: FilterFormProps) {
             name="appointmentTypeId"
             render={({ field }) => (
               <FormItem className="flex-grow">
-                <FormLabel>Appointment Type</FormLabel>
+                <FormLabel>Consultation Type</FormLabel>
                 <Select
                   onValueChange={field.onChange}
                   value={field.value?.toString()}
                 >
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select an appointment" className="capitalize" />
+                      <SelectValue placeholder="Select a consultation type" className="capitalize" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
@@ -420,7 +420,7 @@ export default function FilterForm({ onContinue }: FilterFormProps) {
                   </SelectContent>
                 </Select>
                 <FormDescription>
-                  Select an appointment type to show available slots
+                  Select a consultation type to show available slots
                 </FormDescription>
                 <FormMessage />
               </FormItem>

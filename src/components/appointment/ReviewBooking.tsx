@@ -161,8 +161,8 @@ export default function ReviewBooking({ nextStep, prevStep, isLastStep, isFirstS
           }
           <LabelValue className="flex items-center gap-2" value="Subject:" label={bookAppointmentForm.subject ?? ""} />
           <LabelValue className="flex items-center gap-2" value="Chief Complaint:" label={bookAppointmentForm.chiefComplaint ?? ""} />
-          <LabelValue className="flex items-center gap-2" value="Appointment Mode:" label={appointmentModes?.find(a => a.id === bookAppointmentForm.modeId)?.name ?? ""} />
-          <LabelValue className="flex items-center gap-2" value="Appointment Type:" label={appointmentTypes?.find(a => a.id === bookAppointmentForm.appointmentTypeId)?.name ?? ""} />
+          <LabelValue className="flex items-center gap-2" value="Appointment Type:" label={appointmentModes?.find(a => a.id === bookAppointmentForm.modeId)?.name ?? ""} />
+          <LabelValue className="flex items-center gap-2" value="Consultation Type:" label={appointmentTypes?.find(a => a.id === bookAppointmentForm.appointmentTypeId)?.name ?? ""} />
           <LabelValue className="flex items-center gap-2" value="Service:" label={services?.find(s => s.id === bookAppointmentForm.serviceId)?.name ?? ""} />
           <LabelValue className="flex items-center gap-2" value="Preferred Healthcare Provider:" label={preferredHp} />
 

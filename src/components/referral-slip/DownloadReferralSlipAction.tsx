@@ -39,7 +39,7 @@ const DownloadReferralSlipAction = React.forwardRef<
           patient.lastName,
           patient.suffix,
         ].filter(Boolean).join(" ");
-        const age = patient.dob ? String(calculateAge(patient.dob)) : ""
+        const age = String(calculateAge(patient.dob) ?? "")
 
         const gender = patient.gender ?? ""
         const sex = gender.charAt(0) ?? ""

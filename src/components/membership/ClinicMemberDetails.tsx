@@ -36,7 +36,7 @@ export default function ClinicMemberDetails({ userId, clinicUid }: ClinicMemberD
               <div className="flex gap-5 flex-wrap items-center basis-[400px]">
                 <LabelValue label="Name" value={`${user.data.firstName} ${user.data.middleName ?? ""} ${user.data.lastName} ${user.data.suffix ?? ""}`} />
                 <Separator orientation="vertical" className="h-6" />
-                <LabelValue label="Age" value={`${user.data.dob ? differenceInCalendarYears(new Date(), user.data.dob) : "0"} yr old`} />
+                <LabelValue label="Age" value={user.data.dob && !isNaN(new Date(user.data.dob).getTime()) ? `${differenceInCalendarYears(new Date(), user.data.dob)} yr old` : ""} />
                 <Separator orientation="vertical" className="h-6" />
                 <LabelValue label="Gender" value={user?.data.gender} />
               </div>

@@ -98,7 +98,7 @@ export default function CreateLaboratoryRequestModal({
       ]
         .filter(Boolean)
         .join(" "),
-      age: userInfo?.dob ? calculateAge(userInfo.dob) : 0,
+      age: calculateAge(userInfo?.dob) ?? 0,
       dob: userInfo?.dob ? new Date(userInfo.dob) : undefined,
       gender: (userInfo?.gender === "MALE" || userInfo?.gender === "FEMALE") ? userInfo.gender as "MALE" | "FEMALE" : undefined,
       address: userInfo?.address
@@ -244,7 +244,7 @@ export default function CreateLaboratoryRequestModal({
                             </span>
                             <span className="text-gray-400">•</span>
                             <span className="text-gray-500">
-                              Age: {userInfo?.dob ? calculateAge(userInfo.dob) : 'N/A'}
+                              Age: {calculateAge(userInfo?.dob) ?? 'N/A'}
                             </span>
                           </CardDescription>
                         </div>

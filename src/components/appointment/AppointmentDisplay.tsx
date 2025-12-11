@@ -167,7 +167,7 @@ export default function AppointmentDisplay() {
                     <div className="grid gap-1">
                       <div className="font-semibold">{aptUser.User.firstName} {aptUser.User.middleName} {aptUser.User.lastName} {aptUser.User.suffix}</div>
                       <div className="line-clamp-1 text-xs">
-                        <span className="font-medium">{aptUser.User.gender} / </span>{aptUser.User.dob ? differenceInCalendarYears(new Date(), aptUser.User.dob) : 0}
+                        <span className="font-medium">{aptUser.User.gender} / </span>{aptUser.User.dob && !isNaN(new Date(aptUser.User.dob).getTime()) ? differenceInCalendarYears(new Date(), aptUser.User.dob) : ""}
                       </div>
                       <div className="line-clamp-1 text-xs">{freshAppointment.data?.subject}</div>
                     </div>

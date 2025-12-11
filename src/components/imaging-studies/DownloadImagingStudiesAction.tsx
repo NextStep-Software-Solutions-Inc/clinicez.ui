@@ -40,7 +40,7 @@ const DownloadImagingStudiesAction = React.forwardRef<
         const patient = data.ClinicPatient?.Patient ?? {}
         const patientName =
           `${patient.firstName ?? ""} ${patient.middleName ?? ""} ${patient.lastName ?? ""} ${patient.suffix ?? ""}`.trim()
-        const age = patient.dob ? calculateAge(patient.dob) : ""
+        const age = calculateAge(patient.dob) ?? ""
         const gender = patient?.gender ?? ""
         const birthdate = patient.dob ? dayjs(patient.dob).format("MM/DD/YYYY") : ""
 

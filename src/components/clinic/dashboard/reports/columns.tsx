@@ -96,9 +96,10 @@ export const columns: ColumnDef<ConsultationTicketData>[] = [
     ),
     cell: ({ row }) => {
       const patient = row.original.Appointment?.Requesters[0]?.User
-      if (!patient?.dob) return <span className="text-muted-foreground">-</span>
+      const age = calculateAge(patient?.dob)
+      
+      if (age === null) return <span className="text-muted-foreground">-</span>
 
-      const age = calculateAge(patient.dob)
       return (
         <div className="text-sm">
           {age}

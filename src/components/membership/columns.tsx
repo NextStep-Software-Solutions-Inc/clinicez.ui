@@ -109,8 +109,16 @@ export const columns: ColumnDef<NonNullable<GetOrgMembers["data"]>["data"][numbe
             >
               {user} <ExternalLink className="w-4 h-4 ml-3 inline-block" />
             </Link>
-            <ConditionalRender condition={!!gender && !!dob}>
-              <div className="text-xs text-muted-foreground">{gender && gender.charAt(0)} / {dob && differenceInCalendarYears(new Date(), dob)}</div>
+            <ConditionalRender condition={!!gender || !!dob}>
+              <div className="text-xs text-muted-foreground">
+                {gender && gender.charAt(0)}
+                {gender && dob && " / "}
+                {dob && (() => {
+                  const age = differenceInCalendarYears(new Date(), dob);
+                  const dobDate = new Date(dob);
+                  return !isNaN(dobDate.getTime()) ? age : "";
+                })()}
+              </div>
             </ConditionalRender>
           </div>
         </div>

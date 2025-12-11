@@ -45,7 +45,7 @@ export const PatientCard = async ({patient}: PatientCardProps) => {
           </Avatar>
           <div className="flex-1 flex flex-col justify-between">
             <div className="">
-              <p className="text-sm text-muted-foreground italic font-medium truncate overflow-hidden capitalize">{gender?.toLowerCase()} / {dob && `${differenceInCalendarYears(new Date(), dob)} years old`}</p>
+              <p className="text-sm text-muted-foreground italic font-medium truncate overflow-hidden capitalize">{gender?.toLowerCase()} / {dob && !isNaN(new Date(dob).getTime()) && `${differenceInCalendarYears(new Date(), dob)} years old`}</p>
               <p className="text-sm text-muted-foreground italic font-medium capitalize">{bloodType?.split("_").join(" ").toLowerCase()}</p>
             </div>
             <div className="flex gap-2 flex-wrap">

@@ -325,7 +325,7 @@ export const PatientHpDetails = ({ creators = [], user }: PatientHpDetailsProps)
             <div className="flex flex-col">
               <span className="text-sm font-semibold">{user.firstName} {user.lastName}</span>
               <div className="text-xs text-muted-foreground">
-                {user.gender?.charAt(0)} / <span>{user.dob && differenceInCalendarYears(new Date(), user.dob)}</span>
+                {user.gender?.charAt(0)} / <span>{user.dob && !isNaN(new Date(user.dob).getTime()) && differenceInCalendarYears(new Date(), user.dob)}</span>
               </div>
             </div>
           </div>

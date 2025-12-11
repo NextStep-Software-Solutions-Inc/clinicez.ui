@@ -106,8 +106,8 @@ export const Route = ({record, appointmentId, clinicUid}: RouteProps ) => {
   const routedToName = `${record.RoutedTo.HPProfile?.title || record.RoutedTo.User.firstName} ${record.RoutedTo.HPProfile?.name || record.RoutedTo.User.lastName} ${record.RoutedTo.HPProfile?.suffix || record.RoutedTo.User.suffix || ""}`
   const returnedByName = record.ReturnedBy 
     ? [record.ReturnedBy.firstName, record.ReturnedBy.middleName, record.ReturnedBy.lastName, record.ReturnedBy.suffix]
-        .filter(Boolean)
-        .join(" ")
+      .filter(Boolean)
+      .join(" ")
     : null;
 
   return (

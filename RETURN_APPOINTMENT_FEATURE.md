@@ -68,16 +68,10 @@ Location: `src/actions/appointments/appointment-routing.action.ts`
 
 ### 4. UI Components
 
-**Component: `ReturnAppointmentAssignment.tsx`**
-- Standalone component (not currently used in main appointment tools)
-- Popover-based UI for returning with reason input
-- Uses Undo2 icon from lucide-react
-- Toast notifications for user feedback
-
 **Updated: `AppointmentRoutingHistorySheet.tsx`**
 
 **Key Changes:**
-1. Added `ReturnAssignment` component for inline return functionality
+1. Added `ReturnAssignment` component as an inline component for return functionality
 2. Updated ContextMenuTrigger to enable menus for both PENDING and ACCEPTED statuses
 3. Conditional rendering:
    - PENDING status → Shows "Cancel Assignment" option
@@ -273,8 +267,7 @@ Toast Success + UI Refresh
 2. `prisma/migrations/20251211144232_add_return_fields_to_appointment_routing/migration.sql` - Database migration
 3. `src/lib/permissions.ts` - Added RETURN:CLINIC:APPOINTMENT_ASSIGNMENT permission
 4. `src/actions/appointments/appointment-routing.action.ts` - Added returnAppointmentAssignmentAction
-5. `src/components/appointment/AppointmentRoutingHistorySheet.tsx` - Added return UI and display
-6. `src/components/appointment/ReturnAppointmentAssignment.tsx` - New standalone component (created for future use)
+5. `src/components/appointment/AppointmentRoutingHistorySheet.tsx` - Added return UI component and display logic
 
 ## Conclusion
 

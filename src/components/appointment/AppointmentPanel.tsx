@@ -157,7 +157,7 @@ export default function AppointmentPanel({
   const taggedAppointmentStatusLinks = React.useMemo(() => {
     const taggedTab = tabs.find(t => t.name === "tagged");
     if (!taggedTab) return {};
-    
+
     return taggedTab.roles.reduce((acc, role) => {
       acc[role.id] = [{
         label: "Tagged",

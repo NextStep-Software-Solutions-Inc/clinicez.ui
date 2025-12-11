@@ -207,15 +207,15 @@ export const createAppointmentAction = withErrorHandling(async (payload: CreateA
 
         if (hasCodeProperty(error)) {
           switch (error.code) {
-          case "P2002": // Unique constraint violation
-            console.warn("Some ClinicPatient records already exist, continuing...");
-            break;
-          case "P2003": // Foreign key constraint violation
-            throw new Error("Invalid clinic or patient data provided");
-          case "P2025": // Record not found
-            throw new Error("Required clinic or user data not found");
-          default:
-            throw new Error(`Database error while creating patient records: ${error.code}`);
+            case "P2002": // Unique constraint violation
+              console.warn("Some ClinicPatient records already exist, continuing...");
+              break;
+            case "P2003": // Foreign key constraint violation
+              throw new Error("Invalid clinic or patient data provided");
+            case "P2025": // Record not found
+              throw new Error("Required clinic or user data not found");
+            default:
+              throw new Error(`Database error while creating patient records: ${error.code}`);
           }
         } else {
           throw new Error("Failed to create clinic patient records");
@@ -357,7 +357,7 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
         clinicUid
       },
       isActive: true,
-      AppointmentAttribute: { 
+      AppointmentAttribute: {
         ...(status !== "ALL" ? { status } : {})
       },
       ...(tagged === "true"
@@ -1323,26 +1323,26 @@ type Patient = {
 const isFilterMatch = <T extends Patient>(filterKey: string, filterValue: string, patient: T) => {
   if (filterKey === filterValue) return true;
   switch (filterKey) {
-  case "department":
-    return (
-      patient?.StudentRecords.some((s) => s.departmentId?.toString() === filterValue) ||
+    case "department":
+      return (
+        patient?.StudentRecords.some((s) => s.departmentId?.toString() === filterValue) ||
         patient?.UserEmployments.some((e) => e.departmentId?.toString() === filterValue)
-    );
-  case "college":
-    return (
-      patient?.StudentRecords.some((s) => s.collegeId?.toString() === filterValue) ||
+      );
+    case "college":
+      return (
+        patient?.StudentRecords.some((s) => s.collegeId?.toString() === filterValue) ||
         patient?.UserEmployments.some((e) => e.collegeId?.toString() === filterValue)
-    );
-  case "office":
-    return (
-      patient?.UserEmployments.some((e) => e.officeId?.toString() === filterValue)
-    );
-  case "program":
-    return (
-      patient?.StudentRecords.some((s) => s.programId?.toString() === filterValue)
-    );
-  default:
-    return false;
+      );
+    case "office":
+      return (
+        patient?.UserEmployments.some((e) => e.officeId?.toString() === filterValue)
+      );
+    case "program":
+      return (
+        patient?.StudentRecords.some((s) => s.programId?.toString() === filterValue)
+      );
+    default:
+      return false;
   }
 };
 

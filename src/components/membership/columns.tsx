@@ -5,7 +5,6 @@ import { Badge } from "@components/ui/badge"
 
 import Link from "next/link"
 import { DropdownMenuProvider } from "@components/DropdownMenuProvider"
-import { differenceInCalendarYears } from "date-fns"
 import { ChevronDown, ChevronRight, ExternalLink } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@components/ui/avatar"
 import ConditionalRender from "@components/utils/ConditionalRender"
@@ -14,6 +13,7 @@ import { DataTableColumnHeader } from "./data-table-column-header"
 import MembershipTableRowActions from "./MembershipTableRowActions"
 import dayjs from "@lib/day-utils"
 import { GetOrgMembers } from "@/actions/organizations/org-member.action"
+import { calculateAge } from "@/lib/utils"
 
 export const statuses = Object.values({ ACTIVE: "ACTIVE", INACTIVE: "INACTIVE", PENDING: "PENDING", SUSPENDED: "SUSPENDED" }).map((status) => ({
   label: status.split("").map((char, index) => (index === 0 ? char : char.toLowerCase())).join(""),
@@ -113,11 +113,7 @@ export const columns: ColumnDef<NonNullable<GetOrgMembers["data"]>["data"][numbe
               <div className="text-xs text-muted-foreground">
                 {gender && gender.charAt(0)}
                 {gender && dob && " / "}
-                {dob && (() => {
-                  const age = differenceInCalendarYears(new Date(), dob);
-                  const dobDate = new Date(dob);
-                  return !isNaN(dobDate.getTime()) ? age : "";
-                })()}
+                {calculateAge(dob) ?? ""}
               </div>
             </ConditionalRender>
           </div>

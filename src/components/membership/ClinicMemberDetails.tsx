@@ -5,13 +5,13 @@ import { Picture } from "../../app/(main)/user/[user]/phr/Picture";
 import { useUser as useDBUser } from "@hooks/useUser";
 import { notFound } from "next/navigation";
 import { LabelValue } from "@components/LabelValue";
-import { differenceInCalendarYears } from "date-fns";
 import { Card, CardContent } from "@components/ui/card";
 import { Separator } from "@components/ui/separator";
 import { useClinicAppointments } from "@hooks/useAppointment";
 import dayjs from "@lib/day-utils";
 import ClinicMemberTabSection from "./ClinicMemberTabSection";
 import { useClinicMembers } from "@/hooks/useClinicMember";
+import { calculateAge } from "@/lib/utils";
 
 export interface ClinicMemberDetailsProps {
   userId: string;
@@ -36,7 +36,7 @@ export default function ClinicMemberDetails({ userId, clinicUid }: ClinicMemberD
               <div className="flex gap-5 flex-wrap items-center basis-[400px]">
                 <LabelValue label="Name" value={`${user.data.firstName} ${user.data.middleName ?? ""} ${user.data.lastName} ${user.data.suffix ?? ""}`} />
                 <Separator orientation="vertical" className="h-6" />
-                <LabelValue label="Age" value={user.data.dob && !isNaN(new Date(user.data.dob).getTime()) ? `${differenceInCalendarYears(new Date(), user.data.dob)} yr old` : ""} />
+                <LabelValue label="Age" value={calculateAge(user.data.dob) ? `${calculateAge(user.data.dob)} yr old` : ""} />
                 <Separator orientation="vertical" className="h-6" />
                 <LabelValue label="Gender" value={user?.data.gender} />
               </div>

@@ -92,6 +92,9 @@ export const columns: ColumnDef<NonNullable<GetOrgMembers["data"]>["data"][numbe
 
       const dob = row.original.User.dob
       const gender = row.original.User.gender
+      const age = calculateAge(dob);
+      const showDetails = !!gender || age !== null;
+      
       return (
         <div className="flex items-center gap-2">
           <ConditionalRender condition={!!row.original.User.picture || !!user.trim()}>
@@ -109,16 +112,13 @@ export const columns: ColumnDef<NonNullable<GetOrgMembers["data"]>["data"][numbe
             >
               {user} <ExternalLink className="w-4 h-4 ml-3 inline-block" />
             </Link>
-            {(() => {
-              const age = calculateAge(dob);
-              return (!!gender || age !== null) && (
-                <div className="text-xs text-muted-foreground">
-                  {gender && gender.charAt(0)}
-                  {gender && age !== null && " / "}
-                  {age ?? ""}
-                </div>
-              );
-            })()}
+            {showDetails && (
+              <div className="text-xs text-muted-foreground">
+                {gender && gender.charAt(0)}
+                {gender && age !== null && " / "}
+                {age ?? ""}
+              </div>
+            )}
           </div>
         </div>
       );

@@ -19,6 +19,7 @@ import Each from "@components/utils/Each";
 import { useClinicAppointment } from "@hooks/useAppointment";
 import { cn } from "@lib/utils";
 import dayjs from "@lib/day-utils";
+import { promiseWrapper } from "@/lib/with-error-handling";
 
 import { ArrowRight, Ban, Info } from "lucide-react";
 import { useParams, useSearchParams } from "next/navigation";
@@ -49,7 +50,7 @@ export default function AppointmentRoutingHistorySheet({ children, onClose, rout
           <Info className="h-4 w-4" />
           <AlertTitle>Tips!</AlertTitle>
           <AlertDescription>
-            You can right click on each routing history to view more options. You can cancel an assignment if it is still pending.
+            You can right click on each routing history to view more options. You can cancel an assignment if it is pending or accepted.
           </AlertDescription>
         </Alert>
         <div className="my-2 flex flex-col gap-2">
@@ -101,7 +102,7 @@ export const Route = ({record, appointmentId, clinicUid}: RouteProps ) => {
 
   return (
     <ContextMenu key={record.id}>
-      <ContextMenuTrigger disabled={!["PENDING"].includes(record.status)} >
+      <ContextMenuTrigger disabled={!["PENDING", "ACCEPTED"].includes(record.status)} >
         <div className={
           cn("text-sm rounded px-3 py-2 bg-slate-100 hover:ring-1", 
             record.status === "CANCELLED" && "bg-destructive/5",
@@ -125,13 +126,13 @@ export const Route = ({record, appointmentId, clinicUid}: RouteProps ) => {
 export const CancelAssignment = ({appointmentRoutingId, onCancel}: {appointmentRoutingId: number, onCancel?: () => void}) => {
   
   const handleCancelAssignment = () => {
-    toast.promise(cancelAppointmentRoutingAction(appointmentRoutingId), {
+    toast.promise(promiseWrapper(cancelAppointmentRoutingAction)(appointmentRoutingId), {
       loading: "Cancelling assignment...",
       success: (res) => {
-        if(res.status) onCancel?.()
+        onCancel?.()
         return res.message
       },
-      error: "Failed to cancel assignment."
+      error: (error) => error
     })
   }
 

@@ -736,7 +736,19 @@ export const getAppointmentAction = withErrorHandling(cache(async (id: number, c
           id: true,
           routingCode: true,
           amendment: true,
+          returnReason: true,
+          returnedAt: true,
           RoutedBy: {
+            select: {
+              userId: true,
+              firstName: true,
+              middleName: true,
+              lastName: true,
+              suffix: true,
+              email: true,
+            }
+          },
+          ReturnedBy: {
             select: {
               userId: true,
               firstName: true,

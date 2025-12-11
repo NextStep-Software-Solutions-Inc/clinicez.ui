@@ -104,6 +104,7 @@ export const Route = ({record, appointmentId, clinicUid}: RouteProps ) => {
 
   const routedByName = `${record.RoutedBy.firstName} ${record.RoutedBy.middleName} ${record.RoutedBy.lastName} ${record.RoutedBy.suffix ?? ""}`
   const routedToName = `${record.RoutedTo.HPProfile?.title || record.RoutedTo.User.firstName} ${record.RoutedTo.HPProfile?.name || record.RoutedTo.User.lastName} ${record.RoutedTo.HPProfile?.suffix || record.RoutedTo.User.suffix || ""}`
+  const returnedByName = record.ReturnedBy ? `${record.ReturnedBy.firstName} ${record.ReturnedBy.middleName} ${record.ReturnedBy.lastName} ${record.ReturnedBy.suffix ?? ""}` : null;
 
   return (
     <ContextMenu key={record.id}>
@@ -116,7 +117,13 @@ export const Route = ({record, appointmentId, clinicUid}: RouteProps ) => {
           <Badge variant={badgeMap[record.status as keyof typeof badgeMap]} />
           <LabelValue className="flex items-center flex-wrap" value={<span className="flex items-center">{routedByName} <ArrowRight className="w-4 h-4 mx-2"/></span>} label={routedToName} />
           {record.amendment && <LabelValue className="flex items-center gap-1 text-xs text-muted-foreground" value="Amendment: " label={record.amendment} />}
-          {record.returnReason && <LabelValue className="flex items-center gap-1 text-xs text-orange-600" value="Return Reason: " label={record.returnReason} />}
+          {record.returnReason && (
+            <>
+              <LabelValue className="flex items-center gap-1 text-xs text-orange-600" value="Return Reason: " label={record.returnReason} />
+              {returnedByName && <LabelValue className="flex items-center gap-1 text-xs text-orange-500" value="Returned By: " label={returnedByName} />}
+              {record.returnedAt && <p className="text-xs text-orange-500">Returned at: {dayjs(record.returnedAt).format("llll")}</p>}
+            </>
+          )}
           <p className="text-xs text-muted-foreground">{dayjs(record.updatedAt).format("llll")}</p>
         </div>
       </ContextMenuTrigger>

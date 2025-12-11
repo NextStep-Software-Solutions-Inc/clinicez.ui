@@ -109,13 +109,16 @@ export const columns: ColumnDef<NonNullable<GetOrgMembers["data"]>["data"][numbe
             >
               {user} <ExternalLink className="w-4 h-4 ml-3 inline-block" />
             </Link>
-            <ConditionalRender condition={!!gender || !!dob}>
-              <div className="text-xs text-muted-foreground">
-                {gender && gender.charAt(0)}
-                {gender && dob && " / "}
-                {calculateAge(dob) ?? ""}
-              </div>
-            </ConditionalRender>
+            {(() => {
+              const age = calculateAge(dob);
+              return (!!gender || age !== null) && (
+                <div className="text-xs text-muted-foreground">
+                  {gender && gender.charAt(0)}
+                  {gender && age !== null && " / "}
+                  {age ?? ""}
+                </div>
+              );
+            })()}
           </div>
         </div>
       );

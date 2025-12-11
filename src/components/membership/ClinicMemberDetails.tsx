@@ -26,6 +26,8 @@ export default function ClinicMemberDetails({ userId, clinicUid }: ClinicMemberD
   if (isLoading) return <div>Loading user...</div>
   if (!user?.data) notFound()
 
+  const age = calculateAge(user.data.dob);
+
   return (
     <>
       <Card className="bg-slate-100">
@@ -36,7 +38,7 @@ export default function ClinicMemberDetails({ userId, clinicUid }: ClinicMemberD
               <div className="flex gap-5 flex-wrap items-center basis-[400px]">
                 <LabelValue label="Name" value={`${user.data.firstName} ${user.data.middleName ?? ""} ${user.data.lastName} ${user.data.suffix ?? ""}`} />
                 <Separator orientation="vertical" className="h-6" />
-                <LabelValue label="Age" value={calculateAge(user.data.dob) ? `${calculateAge(user.data.dob)} yr old` : ""} />
+                <LabelValue label="Age" value={age ? `${age} yr old` : ""} />
                 <Separator orientation="vertical" className="h-6" />
                 <LabelValue label="Gender" value={user?.data.gender} />
               </div>

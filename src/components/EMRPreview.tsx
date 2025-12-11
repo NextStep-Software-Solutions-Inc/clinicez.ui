@@ -37,6 +37,8 @@ function EMRPreview({patientId}: EMRPreviewProps) {
   if(!patient?.data) return <div className="text-muted-foreground">Patient record cannot be found.</div>
 
   const name = `${patient?.data?.lastName || "-"}, ${patient?.data?.firstName || "-"} ${patient?.data?.middleName ?? ""} ${patient?.data?.suffix ?? ""}`
+  const age = calculateAge(patient.data.dob);
+  
   return (
     <div className="space-y-5 my-5 overflow-auto h-[calc(100vh-15%)] no-scrollbar">
       <div className="flex gap-5">
@@ -46,7 +48,7 @@ function EMRPreview({patientId}: EMRPreviewProps) {
           <div className="flex gap-5 items-center">
             <LabelValue label="Gender" value={patient?.data?.gender}/>
             <Separator orientation="vertical" className="h-10"/>
-            <LabelValue label="Age" value={calculateAge(patient.data.dob) && `${calculateAge(patient.data.dob)} years old`}/>
+            <LabelValue label="Age" value={age && `${age} years old`}/>
           </div>
           <LabelValue label="Blood Type" value={patient?.data?.bloodType}/>
           <LabelValue label="Email" value={(

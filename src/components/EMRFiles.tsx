@@ -17,11 +17,12 @@ import {
 
 interface EMRFilesProps {
   patientId: string;
+  clinicUid: string;
 }
 
-export default function EMRFiles({ patientId }: EMRFilesProps) {
-  // Don't pass clinicUid to show ALL patient files, not just clinic-scoped ones
-  const { data: foldersData, isLoading, error } = useFolders({ userId: patientId });
+export default function EMRFiles({ patientId, clinicUid }: EMRFilesProps) {
+  // Pass clinicUid to get clinic-scoped folders
+  const { data: foldersData, isLoading, error } = useFolders({ userId: patientId, clinicUid });
 
   if (isLoading) {
     return <p className="text-muted-foreground">Loading files...</p>;
@@ -34,22 +35,25 @@ export default function EMRFiles({ patientId }: EMRFilesProps) {
   const folders = foldersData?.data ?? [];
   
   // Flatten all files from all folders into a single list
+  // Filter to only show PUBLIC files (isPublic === true)
   const allFiles = folders.flatMap((folder) => 
-    folder.Files.map((file) => {
-      const validUntil = file.FileType.validUntil ?? 0;
-      const valid = !!file.dateTaken && dayjs().add(validUntil, "days").isAfter(file.dateTaken);
-      return {
-        id: file.id,
-        name: file.name,
-        isPublic: file.FileSetting?.isPublic,
-        description: `${file.FileType?.name} - ${(file.size / 1024 / 1024).toFixed(2)} MB ${
-          valid ? "- Valid" : validUntil > 0 ? "- Expired" : ""
-        }`,
-        type: file.FileType?.name,
-        url: file.url,
-        date: file.dateTaken,
-      };
-    })
+    folder.Files
+      .filter((file) => file.FileSetting?.isPublic === true)  // Only show public files
+      .map((file) => {
+        const validUntil = file.FileType.validUntil ?? 0;
+        const valid = !!file.dateTaken && dayjs().add(validUntil, "days").isAfter(file.dateTaken);
+        return {
+          id: file.id,
+          name: file.name,
+          isPublic: file.FileSetting?.isPublic,
+          description: `${file.FileType?.name} - ${(file.size / 1024 / 1024).toFixed(2)} MB ${
+            valid ? "- Valid" : validUntil > 0 ? "- Expired" : ""
+          }`,
+          type: file.FileType?.name,
+          url: file.url,
+          date: file.dateTaken,
+        };
+      })
   );
 
   return (

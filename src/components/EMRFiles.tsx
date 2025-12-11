@@ -17,10 +17,9 @@ import {
 
 interface EMRFilesProps {
   patientId: string;
-  clinicUid: string;
 }
 
-export default function EMRFiles({ patientId, clinicUid }: EMRFilesProps) {
+export default function EMRFiles({ patientId }: EMRFilesProps) {
   // Don't pass clinicUid to show ALL patient files, not just clinic-scoped ones
   const { data: foldersData, isLoading, error } = useFolders({ userId: patientId });
 
@@ -60,12 +59,16 @@ export default function EMRFiles({ patientId, clinicUid }: EMRFilesProps) {
         fallback={<p className="text-muted-foreground">No files uploaded.</p>}
         render={(file) => {
           const Icon = file.type === "document" ? FileText : ImageIcon;
+          const fileRowClasses = cn(
+            "-mx-2 flex items-start space-x-4 rounded-md p-2 transition-all",
+            "hover:bg-accent hover:text-accent-foreground",
+            "odd:bg-accent odd:text-accent-foreground group/item"
+          );
+          
           return (
             <div
               key={file.id}
-              className={cn(
-                "-mx-2 flex items-start space-x-4 rounded-md p-2 transition-all hover:bg-accent hover:text-accent-foreground odd:bg-accent odd:text-accent-foreground group/item "
-              )}
+              className={fileRowClasses}
             >
               <Icon className="mt-px h-5 w-5 text-primary" />
               <div className="flex w-full">
@@ -85,11 +88,12 @@ export default function EMRFiles({ patientId, clinicUid }: EMRFilesProps) {
                         <Link
                           href={file.url}
                           download
-                          className="invisible group-hover/item:visible"
+                          className="opacity-0 group-hover/item:opacity-100 focus:opacity-100"
                         >
                           <Button
                             variant="ghost"
                             size="icon"
+                            aria-label="Download file"
                           >
                             <DownloadIcon className="h-4 w-4  hover:scale-125 transition-all" />
                           </Button>

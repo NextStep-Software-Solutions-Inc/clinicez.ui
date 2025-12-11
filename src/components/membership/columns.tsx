@@ -12,7 +12,7 @@ import ConditionalRender from "@components/utils/ConditionalRender"
 import { Button } from "@components/ui/button"
 import { DataTableColumnHeader } from "./data-table-column-header"
 import MembershipTableRowActions from "./MembershipTableRowActions"
-import dayjs from "@lib/day-utils"
+import dayjs, { formatDate } from "@lib/day-utils"
 import { GetOrgMembers } from "@/actions/organizations/org-member.action"
 
 export const statuses = Object.values({ ACTIVE: "ACTIVE", INACTIVE: "INACTIVE", PENDING: "PENDING", SUSPENDED: "SUSPENDED" }).map((status) => ({
@@ -59,14 +59,16 @@ export const columns: ColumnDef<NonNullable<GetOrgMembers["data"]>["data"][numbe
   {
     accessorKey: "application-date",
     size: 5,
-    accessorFn: (row) => dayjs(row.createdAt).format("llll"),
+    accessorFn: (row) => formatDate(row.createdAt, "llll"),
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Application Date & Time" />
     ),
     cell: ({ row }) => {
-      const dateApplied = dayjs(row.original.createdAt).format("llll")
+      const dateApplied = formatDate(row.original.createdAt, "llll");
+      
+      // Return null if date is invalid/empty
       if (!dateApplied) {
-        return null
+        return null;
       }
 
       return (

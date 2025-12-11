@@ -286,7 +286,7 @@ export default function AppointmentDisplay() {
             render={(tag) => (
               <div key={tag.id} className="flex gap-1 my-2 ">
                 <div className="flex items-center gap-2 ">
-                  <Badge variant="outline" className="text-xs font-medium ring-teal-400 ring-1 text-teal-600">
+                  <Badge variant="outline" className="text-xs font-medium ring-primary ring-1 text-primary">
                     {getHealthcareProviderName(tag.HealthcareProvider)}
                   </Badge>
                 </div>

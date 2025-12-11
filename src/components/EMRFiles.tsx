@@ -95,7 +95,7 @@ export default function EMRFiles({ patientId }: EMRFilesProps) {
                             size="icon"
                             aria-label="Download file"
                           >
-                            <DownloadIcon className="h-4 w-4  hover:scale-125 transition-all" />
+                            <DownloadIcon className="h-4 w-4 hover:scale-125 transition-all" />
                           </Button>
                         </Link>
                       </TooltipTrigger>

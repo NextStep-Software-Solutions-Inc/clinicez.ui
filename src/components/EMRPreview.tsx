@@ -95,7 +95,6 @@ function EMRPreview({patientId}: EMRPreviewProps) {
       <Section title={`Files`} >
         <EMRFilesWrapper
           patientId={patientId}
-          clinicUid={params.clinicUid}
         />
       </Section>
      

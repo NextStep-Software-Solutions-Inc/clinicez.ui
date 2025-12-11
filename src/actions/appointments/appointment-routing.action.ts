@@ -274,3 +274,73 @@ export const cancelAppointmentRoutingAction = withErrorHandling(async (appointme
   if(hasCodeProperty(error) && error.code === 'P2025') return 'Appointment assignment not found or you are not authorized to cancel it';
   return 'Failed to cancel appointment assignment';
 })
+
+export const returnAppointmentAssignmentAction = withErrorHandling(async (formData: FormData) => {
+  
+  const session = await getCachedSession();
+  if(!session) throw new Error('Unauthorized');
+
+  const myPermissions = await getPermissionsAction({userId: session.user.sub, type: 'CLINIC'});
+  const myPermissionArray = myPermissions.map(permission => permission.name);
+  const returnAppointmentPermissions = [PERMISSIONS.CLINIC["RETURN:CLINIC:APPOINTMENT_ASSIGNMENT"].name]
+  const canReturnAppointment = returnAppointmentPermissions.every(permission => myPermissionArray.includes(permission));
+
+  if(!canReturnAppointment) throw new Error('You do not have permission to return appointment assignment');
+
+  const reason = formData.get('reason') as string;
+  const appointmentRoutingId = Number(formData.get('appointmentRoutingId'));
+
+  if (!reason || !reason.trim()) {
+    throw new Error('Reason is required to return an appointment assignment');
+  }
+
+  await prisma.$transaction(async (prisma) => {
+    // Update the routing status to CANCELLED with return information
+    const updatedRouting = await prisma.appointmentRouting.update({
+      where: { 
+        id: appointmentRoutingId,
+        status: {
+          in: ["ACCEPTED"]
+        }
+      },
+      data: { 
+        status: 'CANCELLED',
+        ReturnedBy: {
+          connect: {
+            userId: session.user.sub
+          }
+        },
+        returnedAt: new Date(),
+        returnReason: reason
+      },
+      select: {
+        appointmentId: true,
+        Appointment: {
+          select: {
+            AppointmentRouting: {
+              select: {
+                status: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    // Update appointment status if all assignments are declined/cancelled
+    await updateAppointmentStatusIfNeeded(
+      prisma,
+      updatedRouting.appointmentId,
+      updatedRouting.Appointment!.AppointmentRouting as Array<{ status: 'PENDING' | 'ACCEPTED' | 'DECLINED' | 'CANCELLED' }>
+    );
+  }, {
+    timeout: 5000,
+    maxWait: 10000,
+    isolationLevel: Prisma.TransactionIsolationLevel.Serializable
+  });
+
+  return { message: `Appointment assignment returned with reason: ${reason}`, data: undefined};
+}, async error => {
+  if(hasCodeProperty(error) && error.code === 'P2025') return 'Appointment assignment not found or you are not authorized to return it';
+  return 'Failed to return appointment assignment';
+})

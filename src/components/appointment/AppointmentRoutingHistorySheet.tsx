@@ -1,4 +1,4 @@
-import { cancelAppointmentRoutingAction } from "@actions/appointments/appointment-routing.action";
+import { cancelAppointmentRoutingAction, returnAppointmentAssignmentAction } from "@actions/appointments/appointment-routing.action";
 import { GetAppointment } from "@actions/appointments/appointments.action";
 import { LabelValue } from "@components/LabelValue";
 import { Alert, AlertDescription, AlertTitle } from "@components/ui/alert";
@@ -20,9 +20,15 @@ import { useClinicAppointment } from "@hooks/useAppointment";
 import { cn } from "@lib/utils";
 import dayjs from "@lib/day-utils";
 
-import { ArrowRight, Ban, Info } from "lucide-react";
+import { ArrowRight, Ban, Info, Undo2 } from "lucide-react";
 import { useParams, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
+import { promiseWrapper } from "@/lib/with-error-handling";
+import { Input } from "../ui/input";
+import { Label } from "../ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
+import ActionButton from "../ActionButton";
+import React from "react";
 interface AppointmentRoutingHistorySheetProps {
   children?: React.ReactNode;
   onSelect? : (e: Event) => void;
@@ -101,7 +107,7 @@ export const Route = ({record, appointmentId, clinicUid}: RouteProps ) => {
 
   return (
     <ContextMenu key={record.id}>
-      <ContextMenuTrigger disabled={!["PENDING"].includes(record.status)} >
+      <ContextMenuTrigger disabled={!["PENDING", "ACCEPTED"].includes(record.status)} >
         <div className={
           cn("text-sm rounded px-3 py-2 bg-slate-100 hover:ring-1", 
             record.status === "CANCELLED" && "bg-destructive/5",
@@ -110,13 +116,21 @@ export const Route = ({record, appointmentId, clinicUid}: RouteProps ) => {
           <Badge variant={badgeMap[record.status as keyof typeof badgeMap]} />
           <LabelValue className="flex items-center flex-wrap" value={<span className="flex items-center">{routedByName} <ArrowRight className="w-4 h-4 mx-2"/></span>} label={routedToName} />
           {record.amendment && <LabelValue className="flex items-center gap-1 text-xs text-muted-foreground" value="Amendment: " label={record.amendment} />}
+          {record.returnReason && <LabelValue className="flex items-center gap-1 text-xs text-orange-600" value="Return Reason: " label={record.returnReason} />}
           <p className="text-xs text-muted-foreground">{dayjs(record.updatedAt).format("llll")}</p>
         </div>
       </ContextMenuTrigger>
       <ContextMenuContent>
-        <ContextMenuItem>
-          <CancelAssignment onCancel={() => mutate()} appointmentRoutingId={record.id}/>
-        </ContextMenuItem>
+        {record.status === "PENDING" && (
+          <ContextMenuItem>
+            <CancelAssignment onCancel={() => mutate()} appointmentRoutingId={record.id}/>
+          </ContextMenuItem>
+        )}
+        {record.status === "ACCEPTED" && (
+          <ContextMenuItem>
+            <ReturnAssignment onReturn={() => mutate()} appointmentRoutingId={record.id}/>
+          </ContextMenuItem>
+        )}
       </ContextMenuContent>
     </ContextMenu>
   )
@@ -140,5 +154,58 @@ export const CancelAssignment = ({appointmentRoutingId, onCancel}: {appointmentR
       <Ban className="h-4 w-4" />
       Cancel Assignment
     </div>
+  )
+}
+
+export const ReturnAssignment = ({appointmentRoutingId, onReturn}: {appointmentRoutingId: number, onReturn?: () => void}) => {
+  const [open, setOpen] = React.useState(false);
+
+  const handleReturnAssignment = async (formData: FormData) => {
+    formData.append("appointmentRoutingId", appointmentRoutingId.toString());
+    toast.promise(promiseWrapper(returnAppointmentAssignmentAction)(formData), {
+      loading: "Returning appointment assignment...",
+      success: (res) => {
+        setOpen(false);
+        onReturn?.();
+        return res.message;
+      },
+      error: error => error
+    })
+  }
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <div className="flex items-center gap-2 w-full">
+          <Undo2 className="h-4 w-4" />
+          Return Assignment
+        </div>
+      </PopoverTrigger>
+      <PopoverContent className="w-96">
+        <p className="mb-4 text-sm">
+          Are you sure you want to return this accepted appointment assignment? The appointment will be returned for reassignment.
+        </p>
+        <form 
+          action={handleReturnAssignment}
+          id="return-appointment-form"
+          className="grid gap-4"
+        >
+          <div className="grid gap-2">
+            <Label htmlFor="reason">
+              Reason<span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="reason"
+              name="reason"
+              placeholder="Enter reason here"
+              required
+            />
+          </div>
+          <ActionButton form="return-appointment-form" type="submit" variant="default">
+            Return Assignment
+          </ActionButton>
+        </form>
+      </PopoverContent>
+    </Popover>
   )
 }

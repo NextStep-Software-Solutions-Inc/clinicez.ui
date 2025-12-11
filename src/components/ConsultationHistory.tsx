@@ -18,7 +18,7 @@ import { cn } from "@lib/utils";
 import { User, Pill, FileText, Camera, Stethoscope, Calendar } from "lucide-react";
 import { GetConsultationTickets } from "@actions/consultation/consultation-ticket.action";
 
-interface MedicalHistoryProps {
+interface ConsultationHistoryProps {
   patientId: string
   clinicUid: string
 }
@@ -42,7 +42,7 @@ const pluralize = (count: number, singular: string, plural: string): string => {
   return `${count} ${count === 1 ? singular : plural}`;
 };
 
-export default function MedicalHistory({ clinicUid, patientId }: MedicalHistoryProps) {
+export default function ConsultationHistory({ clinicUid, patientId }: ConsultationHistoryProps) {
   const { user: authUser } = useUser()
   const isPatientView = authUser?.id === patientId
 
@@ -85,7 +85,7 @@ export default function MedicalHistory({ clinicUid, patientId }: MedicalHistoryP
                   <CateredBySection ticket={ticket} />
                   
                   {/* Notes Summary Section */}
-                  <MedicalHistorySummary
+                  <ConsultationHistorySummary
                     consultationTicketId={ticket.id}
                     clinicUid={clinicUid}
                     isPatientView={isPatientView}
@@ -372,12 +372,12 @@ const ClinicalFilesSection = ({ consultationTicketId, clinicUid }: ClinicalFiles
   );
 };
 
-interface MedicalHistorySummaryProps {
+interface ConsultationHistorySummaryProps {
   consultationTicketId: number
   clinicUid: string
   isPatientView?: boolean
 }
-export const MedicalHistorySummary = ({ consultationTicketId, clinicUid, isPatientView = false }: MedicalHistorySummaryProps) => {
+export const ConsultationHistorySummary = ({ consultationTicketId, clinicUid, isPatientView = false }: ConsultationHistorySummaryProps) => {
   const { data: consultationTicket } = useConsultation({
     consultationId: consultationTicketId,
     clinicUid

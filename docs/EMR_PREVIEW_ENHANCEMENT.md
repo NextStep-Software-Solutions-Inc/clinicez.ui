@@ -2,13 +2,13 @@
 
 ## Overview
 
-This document describes the enhancement made to the Electronic Medical Record (EMR) Preview functionality. The enhancement expands the Medical History section to include comprehensive clinical information, improving workflow efficiency for healthcare providers.
+This document describes the enhancement made to the Electronic Medical Record (EMR) Preview functionality. The enhancement expands the Consultation History section to include comprehensive clinical information, improving workflow efficiency for healthcare providers.
 
 ## Feature Description
 
 ### What's New
 
-The EMR Preview now includes the following additional information in the Medical History section:
+The EMR Preview now includes the following additional information in the Consultation History section:
 
 #### 1. Catered By Section
 Shows all healthcare providers who handled the encounter, including:
@@ -76,7 +76,7 @@ To access the enhanced EMR Preview:
 3. Open the Clinics tab and select a clinic
 4. Navigate to the Patient List
 5. Click Preview EMR on any patient
-6. View the Medical History section
+6. View the Consultation History section
 
 The same preview can also be accessed directly from the appointment list.
 

@@ -256,6 +256,7 @@ export const getHPsAction = cache(async (filters?: HPSFilters) => {
           title: true,
           suffix: true,
           specialties: true,
+          fields: true,
         }
       }
     }

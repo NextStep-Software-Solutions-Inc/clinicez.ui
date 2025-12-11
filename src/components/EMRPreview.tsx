@@ -18,7 +18,7 @@ import { useVaccinations } from "@hooks/useVaccination";
 import RecentVitalSigns from "../app/(main)/user/[user]/phr/vitals/RecentVitalSigns";
 import { useUserVitalSigns } from "@hooks/useUserVitalSign";
 import { notFound, useParams } from "next/navigation";
-import ConsultationHistory from "./MedicalHistory";
+import ConsultationHistory from "./ConsultationHistory";
 
 interface EMRPreviewProps {
     patientId: string

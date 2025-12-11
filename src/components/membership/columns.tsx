@@ -12,7 +12,7 @@ import ConditionalRender from "@components/utils/ConditionalRender"
 import { Button } from "@components/ui/button"
 import { DataTableColumnHeader } from "./data-table-column-header"
 import MembershipTableRowActions from "./MembershipTableRowActions"
-import dayjs from "@lib/day-utils"
+import dayjs, { formatDate } from "@lib/day-utils"
 import { GetOrgMembers } from "@/actions/organizations/org-member.action"
 
 export const statuses = Object.values({ ACTIVE: "ACTIVE", INACTIVE: "INACTIVE", PENDING: "PENDING", SUSPENDED: "SUSPENDED" }).map((status) => ({
@@ -59,25 +59,17 @@ export const columns: ColumnDef<NonNullable<GetOrgMembers["data"]>["data"][numbe
   {
     accessorKey: "application-date",
     size: 5,
-    accessorFn: (row) => {
-      const date = row.createdAt;
-      if (!date || !dayjs(date).isValid()) {
-        return "";
-      }
-      return dayjs(date).format("llll");
-    },
+    accessorFn: (row) => formatDate(row.createdAt, "llll"),
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Application Date & Time" />
     ),
     cell: ({ row }) => {
-      const date = row.original.createdAt;
+      const dateApplied = formatDate(row.original.createdAt, "llll");
       
-      // Handle null, undefined, or invalid dates
-      if (!date || !dayjs(date).isValid()) {
+      // Return null if date is invalid/empty
+      if (!dateApplied) {
         return null;
       }
-
-      const dateApplied = dayjs(date).format("llll");
 
       return (
         <div className="flex items-center">

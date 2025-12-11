@@ -106,7 +106,7 @@ export default function AppointmentPanel({
   tabs
 }: AppointmentPanelProps) {
 
-  const appointmentStatusAsTabs = tabs.reduce((acc, tab) => {
+  const appointmentStatusAsTabs = tabs.filter(tab => tab.name.toLowerCase() !== "tagged").reduce((acc, tab) => {
     if (!Object.keys(icons).includes(tab.name)) return acc
     acc[tab.name] = [...new Set(tab.roles.map(role => role.id))]
     return acc
@@ -162,7 +162,7 @@ export default function AppointmentPanel({
       acc[role.id] = [{
         label: "Tagged",
         badge: taggedAppointmentStatusCounts?.ALL ? taggedAppointmentStatusCounts.ALL.toString() : "",
-        params: [{ key: "_tagged", value: "true" }, { key: "_aptStatus", value: "all" }, { key: "_routedAptStatus", value: null }, { key: "_appointment", value: null }],
+        params: [{ key: "_tagged", value: "true" }, { key: "_aptStatus", value: null }, { key: "_routedAptStatus", value: null }, { key: "_appointment", value: null }],
         icon: Tag,
         variant: isTaggedView ? "default" : "ghost",
       }];
@@ -245,7 +245,7 @@ export default function AppointmentPanel({
           </div>
           <AppointmentStatusNav
             isCollapsed={isCollapsed}
-            links={appointmentStatusLinks[activeRoleId as keyof typeof appointmentStatusLinks] ?? []}
+            links={[...appointmentStatusLinks[activeRoleId as keyof typeof appointmentStatusLinks] ?? [], ...taggedAppointmentStatusLinks[activeRoleId as keyof typeof taggedAppointmentStatusLinks] ?? []]}
           />
           <Separator />
           {
@@ -263,20 +263,7 @@ export default function AppointmentPanel({
               </>
             )
           }
-          {
-            tabs.find(t => t.name === "tagged")?.roles.some(r => r.id === activeRoleId) &&
-            (
-              <>
-                <div className="px-5 pt-2 font-semibold">
-                  Tagged
-                </div>
-                <AppointmentStatusNav
-                  isCollapsed={isCollapsed}
-                  links={taggedAppointmentStatusLinks[activeRoleId as keyof typeof taggedAppointmentStatusLinks] ?? []}
-                />
-              </>
-            )
-          }
+
         </ResizablePanel>
         <ResizableHandle withHandle />
         <ResizablePanel className="" defaultSize={defaultLayout[1]} minSize={30}>

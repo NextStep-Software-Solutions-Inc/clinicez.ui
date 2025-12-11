@@ -13,6 +13,7 @@ import {
   Trash2,
   UserIcon,
   Mailbox,
+  Tag,
 } from "lucide-react"
 
 import { cn } from "@lib/utils"
@@ -53,6 +54,7 @@ const icons: Record<string, LucideIcon> = {
   rejected: Trash2,
   routed: Route,
   completed: MailOpen,
+  tagged: Tag,
 };
 
 
@@ -86,6 +88,7 @@ interface AppointmentPanelProps {
   }[]
   appointmentStatusCounts?: Record<string, number>
   routedAppointmentStatusCounts?: Record<string, number>
+  taggedAppointmentStatusCounts?: Record<string, number>
   defaultLayout: number[] | undefined
   defaultCollapsed?: boolean
   navCollapsedSize: number
@@ -95,6 +98,7 @@ interface AppointmentPanelProps {
 export default function AppointmentPanel({
   appointmentStatusCounts,
   routedAppointmentStatusCounts,
+  taggedAppointmentStatusCounts,
   defaultLayout = [265, 440, 655],
   defaultCollapsed = false,
   navCollapsedSize,
@@ -102,7 +106,7 @@ export default function AppointmentPanel({
   tabs
 }: AppointmentPanelProps) {
 
-  const appointmentStatusAsTabs = tabs.reduce((acc, tab) => {
+  const appointmentStatusAsTabs = tabs.filter(tab => tab.name.toLowerCase() !== "tagged").reduce((acc, tab) => {
     if (!Object.keys(icons).includes(tab.name)) return acc
     acc[tab.name] = [...new Set(tab.roles.map(role => role.id))]
     return acc
@@ -123,6 +127,7 @@ export default function AppointmentPanel({
   const aptStatus = searchParams.get("_aptStatus");
   const sort = searchParams.get("_sort") ?? "request";
   const routedAptStatus = searchParams.get("_routedAptStatus");
+  const isTaggedView = searchParams.get("_tagged") === "true";
   const activeRoleId = userDefaultOrgRole[clinicUid]?.roleId ?? 0;
   const { data: clinicRoles } = useClinicRoles({ userId })
 
@@ -139,15 +144,31 @@ export default function AppointmentPanel({
     appointmentStatusAsTabs,
     appointmentStatusCounts,
     aptStatus,
-    (status) => [{ key: "_aptStatus", value: status }, { key: "_routedAptStatus", value: null }, { key: "_appointment", value: null }]
+    (status) => [{ key: "_aptStatus", value: status }, { key: "_routedAptStatus", value: null }, { key: "_tagged", value: null }, { key: "_appointment", value: null }]
   ), [appointmentStatusCounts, aptStatus, appointmentStatusAsTabs]);
 
   const routerAppointmentStatusLinks = React.useMemo(() => createStatusLinks(
     inRouteAppointmentStatuses,
     routedAppointmentStatusCounts,
     routedAptStatus,
-    (status) => [{ key: "_routedAptStatus", value: status }, { key: "_aptStatus", value: "routed" }, { key: "_appointment", value: null }]
+    (status) => [{ key: "_routedAptStatus", value: status }, { key: "_aptStatus", value: "routed" }, { key: "_tagged", value: null }, { key: "_appointment", value: null }]
   ), [routedAppointmentStatusCounts, routedAptStatus, inRouteAppointmentStatuses]);
+
+  const taggedAppointmentStatusLinks = React.useMemo(() => {
+    const taggedTab = tabs.find(t => t.name === "tagged");
+    if (!taggedTab) return {};
+
+    return taggedTab.roles.reduce((acc, role) => {
+      acc[role.id] = [{
+        label: "Tagged",
+        badge: taggedAppointmentStatusCounts?.ALL ? taggedAppointmentStatusCounts.ALL.toString() : "",
+        params: [{ key: "_tagged", value: "true" }, { key: "_aptStatus", value: null }, { key: "_routedAptStatus", value: null }, { key: "_appointment", value: null }],
+        icon: Tag,
+        variant: isTaggedView ? "default" : "ghost",
+      }];
+      return acc;
+    }, {} as Record<number, AppointmentStatusNavProps["links"]>);
+  }, [taggedAppointmentStatusCounts, isTaggedView, tabs]);
 
   const changeRole = React.useCallback((roleId: string) => {
     const role = (clinicRoles ?? []).find((role) => role.id === Number(roleId))
@@ -224,7 +245,7 @@ export default function AppointmentPanel({
           </div>
           <AppointmentStatusNav
             isCollapsed={isCollapsed}
-            links={appointmentStatusLinks[activeRoleId as keyof typeof appointmentStatusLinks] ?? []}
+            links={[...appointmentStatusLinks[activeRoleId as keyof typeof appointmentStatusLinks] ?? [], ...taggedAppointmentStatusLinks[activeRoleId as keyof typeof taggedAppointmentStatusLinks] ?? []]}
           />
           <Separator />
           {
@@ -238,15 +259,17 @@ export default function AppointmentPanel({
                   isCollapsed={isCollapsed}
                   links={routerAppointmentStatusLinks[activeRoleId as keyof typeof routerAppointmentStatusLinks] ?? []}
                 />
+                <Separator />
               </>
             )
           }
+
         </ResizablePanel>
         <ResizableHandle withHandle />
         <ResizablePanel className="" defaultSize={defaultLayout[1]} minSize={30}>
           <Tabs defaultValue={sort} onValueChange={handleSortTabChange} className="flex h-full flex-col">
             <div className="flex items-center px-4 py-2">
-              <h1 className="text-xl font-bold capitalize">{aptStatus}</h1>
+              <h1 className="text-xl font-bold capitalize">{isTaggedView ? "Tagged" : routedAptStatus ? `Routed - ${routedAptStatus}` : aptStatus}</h1>
               <div className="ml-auto text-sm">
                 <span className="mx-2">Sort by</span>
                 <TabsList>

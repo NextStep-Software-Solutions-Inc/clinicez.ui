@@ -9,13 +9,13 @@ interface HPListProps {
 }
 export default async function HPList({ hpTypeId }: HPListProps) {
   const hps = await getHPsAction({ hpTypeId, isPublished: true, });
-  
+
   const mappedHp: ICarouselItemProps["item"][] = hps.map((hp) => {
     return {
       id: hp.id,
       name: `${hp.HPProfile?.title ?? ""} ${hp.HPProfile?.name ?? ""} ${hp.HPProfile?.suffix ?? ""}`,
-      fields: hp.HPProfile?.fields ?? [],
-      photoUrl: hp.HPProfile?.picture ||  (hp.User.gender === "FEMALE" ? FEMALE_DOCTOR_AVATAR: MALE_DOCTOR_AVATAR)
+      fields: hp.HPProfile?.specialties ?? [],
+      photoUrl: hp.HPProfile?.picture || (hp.User.gender === "FEMALE" ? FEMALE_DOCTOR_AVATAR : MALE_DOCTOR_AVATAR)
     }
   })
   return (

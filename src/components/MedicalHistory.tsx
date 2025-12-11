@@ -154,7 +154,11 @@ const CateredBySection = ({ ticket }: CateredBySectionProps) => {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900 truncate">{displayName || 'Unknown Provider'}</p>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    {hpProfile?.fields && <Badge variant="secondary" className="text-xs h-5">{hpProfile.fields}</Badge>}
+                    {hpProfile?.specialties && hpProfile.specialties.length > 0 && (
+                      <Badge variant="secondary" className="text-xs h-5">
+                        {hpProfile.specialties.join(", ")}
+                      </Badge>
+                    )}
                     {roleName && <span>{roleName}</span>}
                   </div>
                 </div>

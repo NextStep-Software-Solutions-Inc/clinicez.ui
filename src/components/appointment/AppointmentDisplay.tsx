@@ -37,6 +37,8 @@ import { usePermissions } from "@/hooks/usePermission";
 import { useHPs } from "@/hooks/useHP";
 import { getFullName } from "@/lib/formatter-utils";
 import { isAssignedNurseToAppointment } from "@/lib/nurse-utils";
+import { getHealthcareProviderName } from "@/lib/hp-utils";
+import TagHPsSheet from "./TagHPsSheet";
 
 
 export default function AppointmentDisplay() {
@@ -251,9 +253,6 @@ export default function AppointmentDisplay() {
             }} />
         </div>
         <Separator />
-        <AppointmentMetadata appointment={freshAppointment.data}>
-        </AppointmentMetadata>
-        <Separator />
         <div className="px-5 py-2 text-xs max-h-40 scrollBox no-scrollbar">
           <span className="font-semibold text-base">{freshAppointment.data.AppointmentAttribute?.status !== "ROUTED" ? "Preferred" : "Assigned"} Schedule</span> <br />
           {freshAppointment.data.AppointmentAttribute?.date && <LabelValue className="flex items-center gap-2" label={dayjs(freshAppointment.data.AppointmentAttribute.date).format("ll - dddd")} value="Date:" />}
@@ -263,6 +262,44 @@ export default function AppointmentDisplay() {
             <LabelValue className="flex items-center gap-2" label={meetingUrl} value={`Meeting link:`} />
             <Badge><Link href={meetingUrl} target="_blank">Join Meeting</Link></Badge>
           </div>}
+        </div>
+        <Separator />
+        <div className="px-5 py-2 text-xs max-h-40 scrollBox no-scrollbar">
+          <div className="flex items-center justify-between mb-2">
+            <span className="font-semibold text-base">Tagged (Info Only)</span>
+            {[PERMISSIONS.CLINIC["WRITE:CLINIC:APPOINTMENT"].name].every(p => myClinicPermissionArray.includes(p)) && (
+              <TagHPsSheet
+                appointmentId={freshAppointment.data.id}
+                currentTags={freshAppointment.data.AppointmentTags ?? []}
+                onTagsUpdated={revalidate}
+              >
+                <Button variant="ghost" size="sm" className="h-6">
+                  <Pencil className="h-3 w-3 mr-1" />
+                  Edit Tags
+                </Button>
+              </TagHPsSheet>
+            )}
+          </div>
+          <Each
+            of={(freshAppointment.data.AppointmentTags ?? [])}
+            fallback={<span className="text-muted-foreground text-xs">No tagged healthcare providers</span>}
+            render={(tag) => (
+              <div key={tag.id} className="flex gap-1 my-2 ">
+                <div className="flex items-center gap-2 ">
+                  <Badge variant="outline" className="text-xs font-medium ring-primary ring-1 text-primary">
+                    {getHealthcareProviderName(tag.HealthcareProvider)}
+                  </Badge>
+                </div>
+                <div className="text-xs text-muted-foreground ml-1">
+                  {tag.HealthcareProvider.HPType?.name}
+                  {tag.HealthcareProvider.HPProfile?.specialties &&
+                    tag.HealthcareProvider.HPProfile.specialties.length > 0 &&
+                    ` • ${tag.HealthcareProvider.HPProfile.specialties.join(", ")}`
+                  }
+                </div>
+              </div>
+            )}
+          />
         </div>
         <Separator />
         <div className="flex items-center p-4 gap-2 max-h-40 scrollBox no-scrollbar">

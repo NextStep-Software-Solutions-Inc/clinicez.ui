@@ -362,7 +362,7 @@ export const PatientHpDetails = ({ creators = [], user }: PatientHpDetailsProps)
                   <div className="flex flex-col">
                     <span className="text-sm font-semibold">{creator?.HPProfile?.title} {creator?.HPProfile?.name} {creator?.HPProfile?.suffix}</span>
                     <div className="text-xs text-muted-foreground">
-                      <Badge variant="secondary">{creator?.HPProfile?.fields}</Badge> / <span>{creator.HPType.name}</span>
+                      <Badge variant="secondary">{creator?.HPProfile?.specialties}</Badge> / <span>{creator.HPType.name}</span>
                     </div>
                   </div>
                 </div>

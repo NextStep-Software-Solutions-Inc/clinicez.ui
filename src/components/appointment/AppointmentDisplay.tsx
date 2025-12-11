@@ -265,7 +265,7 @@ export default function AppointmentDisplay() {
           </div>}
         </div>
         <Separator />
-        <div className="flex items-center p-4 gap-2 max-h-40 scrollBox no-scrollbar">
+        <div className="flex items-center p-4 gap-2 max-h-40 scrollBox no-scrollbar flex-wrap">
           <Badge variant={getBadgeVariantFromLabel(freshAppointment.data.AppointmentAttribute?.AppointmentType.name ?? "")}>
             {freshAppointment.data.AppointmentAttribute?.AppointmentType.name}
           </Badge>
@@ -275,6 +275,11 @@ export default function AppointmentDisplay() {
           <Badge variant="secondary">
             {freshAppointment.data.AppointmentAttribute?.Service?.name}
           </Badge>
+          {freshAppointment.data.AppointmentAttribute?.Service?.ServiceAttribute?.forTaggedOnly && (
+            <Badge variant="default" className="bg-orange-500 hover:bg-orange-600">
+              Reference Only
+            </Badge>
+          )}
         </div>
       </div>
     </div>

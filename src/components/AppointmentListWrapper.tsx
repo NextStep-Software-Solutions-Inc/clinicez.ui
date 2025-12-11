@@ -12,6 +12,7 @@ import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { GetAppointments } from "@actions/appointments/appointments.action";
 import { AppointmentList } from "./appointment/AppointmentList";
+import { useHPs } from "@hooks/useHP";
 
 
 interface AppointmentListWrapperProps {
@@ -20,6 +21,7 @@ interface AppointmentListWrapperProps {
 export default function AppointmentListWrapper({ clinicUid }: AppointmentListWrapperProps) {
   const [query, setQuery] = useState("");
   const [selectedColleges, setSelectedColleges] = useState<string[]>([]);
+  const [selectedHPs, setSelectedHPs] = useState<number[]>([]);
   const searchParams = useSearchParams()
   const appointmentStatus = searchParams.get("_aptStatus")
   const routedAptStatus = searchParams.get("_routedAptStatus")
@@ -31,6 +33,9 @@ export default function AppointmentListWrapper({ clinicUid }: AppointmentListWra
     routedAptStatus: routedAptStatus?.toUpperCase() as RoutedAptStatus,
     sort
   })
+
+  // Fetch healthcare providers for the clinic
+  const { data: hps } = useHPs({ clinicUid })
 
   type AppointmentRequester = NonNullable<GetAppointments["data"]>[number]["Requesters"][number];
 
@@ -72,7 +77,18 @@ export default function AppointmentListWrapper({ clinicUid }: AppointmentListWra
     });
   };
 
+  const toggleHP = (hpId: number, checked: boolean) => {
+    setSelectedHPs((prev) => {
+      if (checked) {
+        if (prev.includes(hpId)) return prev;
+        return [...prev, hpId];
+      }
+      return prev.filter((item) => item !== hpId);
+    });
+  };
+
   const clearColleges = () => setSelectedColleges([]);
+  const clearHPs = () => setSelectedHPs([]);
 
   const filteredAppointments = useMemo(() => {
     const withFallbackAppointments = appointments?.data ?? [];
@@ -121,13 +137,20 @@ export default function AppointmentListWrapper({ clinicUid }: AppointmentListWra
           return requesterColleges.some((college) => selectedColleges.includes(college));
         });
 
-      return matchesQuery && matchesCollege;
+      const matchesHP = selectedHPs.length === 0
+        || appointment.AppointmentRouting?.some((routing) => 
+          selectedHPs.includes(routing.RoutedTo.id)
+        ) || false;
+
+      return matchesQuery && matchesCollege && matchesHP;
     });
-  }, [appointments, getRequesterColleges, query, selectedColleges])
+  }, [appointments, getRequesterColleges, query, selectedColleges, selectedHPs])
 
   const updateQuery = (q: string) => {
     setQuery(q);
   }
+
+  const totalFilters = selectedColleges.length + selectedHPs.length;
 
   return (
     <>
@@ -150,14 +173,52 @@ export default function AppointmentListWrapper({ clinicUid }: AppointmentListWra
               <Button variant="outline" size="sm" className="gap-2">
                 <Filter className="h-4 w-4" />
                 <span>Filter</span>
-                {selectedColleges.length > 0 && (
+                {totalFilters > 0 && (
                   <Badge variant="secondary" className="ml-1">
-                    {selectedColleges.length}
+                    {totalFilters}
                   </Badge>
                 )}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-64" align="end">
+            <PopoverContent className="w-80" align="end">
+              {/* Healthcare Provider Filter */}
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium">Healthcare Providers</span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2 text-xs"
+                    onClick={clearHPs}
+                    disabled={selectedHPs.length === 0}
+                  >
+                    Clear
+                  </Button>
+                </div>
+                <div className="max-h-40 space-y-2 overflow-y-auto pr-1">
+                  {!hps?.data || hps.data.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">No healthcare providers found.</p>
+                  ) : (
+                    hps.data.map((hp) => {
+                      const isChecked = selectedHPs.includes(hp.id);
+                      const hpName = hp.HPProfile?.name 
+                        ? `${hp.HPProfile.title || ""} ${hp.HPProfile.name} ${hp.HPProfile.suffix || ""}`.trim()
+                        : `${hp.User.firstName || ""} ${hp.User.lastName || ""}`.trim();
+                      return (
+                        <label key={hp.id} className="flex items-center gap-2 text-sm">
+                          <Checkbox
+                            checked={isChecked}
+                            onCheckedChange={(checked) => toggleHP(hp.id, checked === true)}
+                          />
+                          <span className="truncate">{hpName}</span>
+                        </label>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+              {/* College Filter */}
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-medium">Organization Colleges</span>
                 <Button

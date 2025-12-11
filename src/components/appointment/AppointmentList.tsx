@@ -134,7 +134,7 @@ export const AppointmentList = forwardRef<HTMLDivElement, AppointmentListProps>(
                 <div className="line-clamp-2 text-xs text-muted-foreground">
                   {item.complaint?.substring(0, 300)}
                 </div>
-                <div className="flex items-center gap-2 truncate">
+                <div className="flex items-center gap-2 truncate flex-wrap">
                   <Badge variant={getBadgeVariantFromLabel(item.AppointmentAttribute?.AppointmentType.name ?? "")}>
                     {item.AppointmentAttribute?.AppointmentType.name}
                   </Badge>
@@ -144,6 +144,37 @@ export const AppointmentList = forwardRef<HTMLDivElement, AppointmentListProps>(
                   <Badge variant="secondary">
                     {item.AppointmentAttribute?.Service?.name}
                   </Badge>
+                  {item.AppointmentAttribute?.Service?.ServiceAttribute?.forTaggedOnly && (
+                    <Badge variant="default" className="bg-orange-500 hover:bg-orange-600">
+                      Reference Only
+                    </Badge>
+                  )}
+                </div>
+                {/* Assigned Doctor Section */}
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  {(() => {
+                    const assignedHPs = item.AppointmentRouting?.filter(r => r.status === "ACCEPTED" || r.status === "PENDING") ?? [];
+                    if (assignedHPs.length === 0) {
+                      return <span className="italic">No assigned doctor</span>;
+                    }
+                    return (
+                      <>
+                        <span className="font-medium">Assigned to:</span>
+                        {assignedHPs.map((routing, idx) => {
+                          const hp = routing.RoutedTo;
+                          const hpName = hp.HPProfile?.name 
+                            ? `${hp.HPProfile.title || ""} ${hp.HPProfile.name} ${hp.HPProfile.suffix || ""}`.trim()
+                            : `${hp.User.firstName || ""} ${hp.User.middleName || ""} ${hp.User.lastName || ""} ${hp.User.suffix || ""}`.trim();
+                          return (
+                            <span key={routing.id}>
+                              {hpName}
+                              {idx < assignedHPs.length - 1 && ", "}
+                            </span>
+                          );
+                        })}
+                      </>
+                    );
+                  })()}
                 </div>
                 <div className="flex items-center justify-end gap-2 w-full">
                   <span className="text-xs flex gap-1 items-center">

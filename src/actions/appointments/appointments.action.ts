@@ -440,6 +440,32 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
           ConsultationTickets: true
         }
       },
+      AppointmentRouting: {
+        select: {
+          id: true,
+          status: true,
+          RoutedTo: {
+            select: {
+              id: true,
+              User: {
+                select: {
+                  firstName: true,
+                  middleName: true,
+                  lastName: true,
+                  suffix: true
+                }
+              },
+              HPProfile: {
+                select: {
+                  title: true,
+                  name: true,
+                  suffix: true
+                }
+              }
+            }
+          }
+        }
+      },
       AppointmentAttribute: {
         select: {
           date: true,
@@ -462,7 +488,12 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
           status: true,
           Service: {
             select: {
-              name: true
+              name: true,
+              ServiceAttribute: {
+                select: {
+                  forTaggedOnly: true
+                }
+              }
             }
           }
         }
@@ -622,7 +653,12 @@ export const getAppointmentAction = withErrorHandling(cache(async (id: number, c
           Service: {
             select: {
               id: true,
-              name: true
+              name: true,
+              ServiceAttribute: {
+                select: {
+                  forTaggedOnly: true
+                }
+              }
             }
           },
           receivedAt: true,

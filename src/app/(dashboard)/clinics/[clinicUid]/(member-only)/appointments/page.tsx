@@ -2,7 +2,7 @@ import React from "react";
 import AppointmentPanel from "@components/appointment/AppointmentPanel";
 import { cookies } from "next/headers";
 import { Separator } from "@components/ui/separator";
-import { getAppointmentCountsAction, getRoutedAppointmentCountsAction } from "@actions/appointments/appointments.action";
+import { getAppointmentCountsAction, getRoutedAppointmentCountsAction, getTaggedAppointmentCountsAction } from "@actions/appointments/appointments.action";
 import AppointmentDisplay from "@components/appointment/AppointmentDisplay";
 import Suspend from "@components/Suspend";
 import { Metadata } from "next";
@@ -34,9 +34,10 @@ export default async function AppointmentsPage(props: AppointmentsPageProps) {
   const layout = (await cookies()).get("react-resizable-panels:layout")
   const collapsed = (await cookies()).get("react-resizable-panels:collapsed")
 
-  const [appointmentCounts, routedAptCounts, tabs] = await Promise.all([
+  const [appointmentCounts, routedAptCounts, taggedAptCounts, tabs] = await Promise.all([
     getAppointmentCountsAction(clinicUid),
     getRoutedAppointmentCountsAction(clinicUid),
+    getTaggedAppointmentCountsAction(clinicUid),
     getClinicAppointmentTabsAction(clinicUid)
   ])
 
@@ -77,6 +78,7 @@ export default async function AppointmentsPage(props: AppointmentsPageProps) {
             }))}
             appointmentStatusCounts={appointmentCounts.data ?? {}}
             routedAppointmentStatusCounts={routedAptCounts.data ?? {}}
+            taggedAppointmentStatusCounts={taggedAptCounts.data ?? {}}
             defaultLayout={defaultLayout}
             defaultCollapsed={defaultCollapsed}
             navCollapsedSize={4}

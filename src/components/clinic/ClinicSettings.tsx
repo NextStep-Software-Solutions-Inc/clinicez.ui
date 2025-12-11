@@ -18,7 +18,7 @@ import SystemList from "../dashboard/org-settings/SystemList";
 import ClinicPrescriptionSetting from "../dashboard/clinic-settings/ClinicPrescriptionSetting";
 import ActionList from "../dashboard/org-settings/ActionList";
 
-const tabs = ["general", "membership", "roles","appointment", "consultation","prescription", "permissions"]
+const tabs = ["general", "membership", "roles", "appointment", "consultation", "prescription", "permissions"]
 export default function ClinicSettings() {
   return (
 
@@ -41,29 +41,31 @@ export default function ClinicSettings() {
           />
         </TabsList>
         <TabsContent value="general">
-          <ClinicGeneralSettings/>
+          <ClinicGeneralSettings />
         </TabsContent>
         <TabsContent value="membership">
-          <ClinicMembershipSettings/>
+          <ClinicMembershipSettings />
         </TabsContent>
         <TabsContent value="appointment">
-          <AppointmentSettings/>
+          <div className="space-y-2">
+            <AppointmentSettings />
+          </div>
         </TabsContent>
         <TabsContent value="consultation">
           <div className="space-y-2">
-            <ConsultationSettings/>
-            <SystemList/>
+            <ConsultationSettings />
+            <SystemList />
             {/* <ActionList/> */}
           </div>
         </TabsContent>
         <TabsContent value="roles">
-          <ClinicRolesSetting/>
+          <ClinicRolesSetting />
         </TabsContent>
         <TabsContent value="prescription">
-          <ClinicPrescriptionSetting/>
+          <ClinicPrescriptionSetting />
         </TabsContent>
         <TabsContent value="permissions">
-          <ClinicPermissionsSetting/>
+          <ClinicPermissionsSetting />
         </TabsContent>
       </Tabs>
     </div>

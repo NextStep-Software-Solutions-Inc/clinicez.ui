@@ -253,9 +253,6 @@ export default function AppointmentDisplay() {
             }} />
         </div>
         <Separator />
-        <AppointmentMetadata appointment={freshAppointment.data}>
-        </AppointmentMetadata>
-        <Separator />
         <div className="px-5 py-2 text-xs max-h-40 scrollBox no-scrollbar">
           <span className="font-semibold text-base">{freshAppointment.data.AppointmentAttribute?.status !== "ROUTED" ? "Preferred" : "Assigned"} Schedule</span> <br />
           {freshAppointment.data.AppointmentAttribute?.date && <LabelValue className="flex items-center gap-2" label={dayjs(freshAppointment.data.AppointmentAttribute.date).format("ll - dddd")} value="Date:" />}
@@ -287,16 +284,16 @@ export default function AppointmentDisplay() {
             of={(freshAppointment.data.AppointmentTags ?? [])}
             fallback={<span className="text-muted-foreground text-xs">No tagged healthcare providers</span>}
             render={(tag) => (
-              <div key={tag.id} className="flex flex-col gap-1 my-2">
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="text-xs font-medium">
+              <div key={tag.id} className="flex gap-1 my-2 ">
+                <div className="flex items-center gap-2 ">
+                  <Badge variant="outline" className="text-xs font-medium ring-teal-400 ring-1 text-teal-600">
                     {getHealthcareProviderName(tag.HealthcareProvider)}
                   </Badge>
                 </div>
                 <div className="text-xs text-muted-foreground ml-1">
                   {tag.HealthcareProvider.HPType?.name}
-                  {tag.HealthcareProvider.HPProfile?.specialties && 
-                    tag.HealthcareProvider.HPProfile.specialties.length > 0 && 
+                  {tag.HealthcareProvider.HPProfile?.specialties &&
+                    tag.HealthcareProvider.HPProfile.specialties.length > 0 &&
                     ` • ${tag.HealthcareProvider.HPProfile.specialties.join(", ")}`
                   }
                 </div>

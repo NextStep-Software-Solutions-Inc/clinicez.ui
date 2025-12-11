@@ -141,7 +141,7 @@ export const AppointmentList = forwardRef<HTMLDivElement, AppointmentListProps>(
                     <Each
                       of={item.AppointmentTags.slice(0, 3)}
                       render={(tag) => (
-                        <Badge key={tag.id} variant="secondary" className="text-[0.65rem] px-1 py-0">
+                        <Badge key={tag.id} variant="secondary" className="text-[0.65rem] px-1 py-0 bg-gray-200">
                           {getHealthcareProviderName(tag.HealthcareProvider)}
                         </Badge>
                       )}

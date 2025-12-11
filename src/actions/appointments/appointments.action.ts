@@ -488,12 +488,7 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
           status: true,
           Service: {
             select: {
-              name: true,
-              ServiceAttribute: {
-                select: {
-                  forTaggedOnly: true
-                }
-              }
+              name: true
             }
           }
         }
@@ -653,12 +648,7 @@ export const getAppointmentAction = withErrorHandling(cache(async (id: number, c
           Service: {
             select: {
               id: true,
-              name: true,
-              ServiceAttribute: {
-                select: {
-                  forTaggedOnly: true
-                }
-              }
+              name: true
             }
           },
           receivedAt: true,

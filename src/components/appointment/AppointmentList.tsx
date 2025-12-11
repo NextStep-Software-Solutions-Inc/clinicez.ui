@@ -144,11 +144,6 @@ export const AppointmentList = forwardRef<HTMLDivElement, AppointmentListProps>(
                   <Badge variant="secondary">
                     {item.AppointmentAttribute?.Service?.name}
                   </Badge>
-                  {item.AppointmentAttribute?.Service?.ServiceAttribute?.forTaggedOnly && (
-                    <Badge variant="default" className="bg-orange-500 hover:bg-orange-600">
-                      Reference Only
-                    </Badge>
-                  )}
                 </div>
                 {/* Assigned Doctor Section */}
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">

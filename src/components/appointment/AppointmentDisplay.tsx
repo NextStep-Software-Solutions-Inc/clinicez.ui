@@ -275,11 +275,6 @@ export default function AppointmentDisplay() {
           <Badge variant="secondary">
             {freshAppointment.data.AppointmentAttribute?.Service?.name}
           </Badge>
-          {freshAppointment.data.AppointmentAttribute?.Service?.ServiceAttribute?.forTaggedOnly && (
-            <Badge variant="default" className="bg-orange-500 hover:bg-orange-600">
-              Reference Only
-            </Badge>
-          )}
         </div>
       </div>
     </div>

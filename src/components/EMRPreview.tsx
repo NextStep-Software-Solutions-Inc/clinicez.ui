@@ -18,7 +18,7 @@ import { useVaccinations } from "@hooks/useVaccination";
 import RecentVitalSigns from "../app/(main)/user/[user]/phr/vitals/RecentVitalSigns";
 import { useUserVitalSigns } from "@hooks/useUserVitalSign";
 import { notFound, useParams } from "next/navigation";
-import MedicalHistory from "./MedicalHistory";
+import ConsultationHistory from "./MedicalHistory";
 
 interface EMRPreviewProps {
     patientId: string
@@ -84,8 +84,8 @@ function EMRPreview({patientId}: EMRPreviewProps) {
       <Section title={`Family History`} >
       </Section>
 
-      <Section title={`Medical History`} >
-        <MedicalHistory
+      <Section title={`Consultation History`} >
+        <ConsultationHistory
           patientId={patientId}
           clinicUid={params.clinicUid}
         />

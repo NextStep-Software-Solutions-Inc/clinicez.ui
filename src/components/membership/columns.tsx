@@ -59,15 +59,25 @@ export const columns: ColumnDef<NonNullable<GetOrgMembers["data"]>["data"][numbe
   {
     accessorKey: "application-date",
     size: 5,
-    accessorFn: (row) => dayjs(row.createdAt).format("llll"),
+    accessorFn: (row) => {
+      const date = row.createdAt;
+      if (!date || !dayjs(date).isValid()) {
+        return "";
+      }
+      return dayjs(date).format("llll");
+    },
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Application Date & Time" />
     ),
     cell: ({ row }) => {
-      const dateApplied = dayjs(row.original.createdAt).format("llll")
-      if (!dateApplied) {
-        return null
+      const date = row.original.createdAt;
+      
+      // Handle null, undefined, or invalid dates
+      if (!date || !dayjs(date).isValid()) {
+        return null;
       }
+
+      const dateApplied = dayjs(date).format("llll");
 
       return (
         <div className="flex items-center">

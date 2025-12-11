@@ -230,7 +230,7 @@ export const cancelAppointmentRoutingAction = withErrorHandling(async (appointme
           userId: session.user.sub
         },
         status: {
-          in: ["PENDING", "ACCEPTED"]
+          in: ["PENDING"]
         }
       },
       data: { 

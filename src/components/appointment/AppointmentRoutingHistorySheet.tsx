@@ -50,7 +50,7 @@ export default function AppointmentRoutingHistorySheet({ children, onClose, rout
           <Info className="h-4 w-4" />
           <AlertTitle>Tips!</AlertTitle>
           <AlertDescription>
-            You can right click on each routing history to view more options. You can cancel an assignment if it is pending or accepted.
+            You can right click on each routing history to view more options. You can cancel an assignment if it is still pending.
           </AlertDescription>
         </Alert>
         <div className="my-2 flex flex-col gap-2">
@@ -102,7 +102,7 @@ export const Route = ({record, appointmentId, clinicUid}: RouteProps ) => {
 
   return (
     <ContextMenu key={record.id}>
-      <ContextMenuTrigger disabled={!["PENDING", "ACCEPTED"].includes(record.status)} >
+      <ContextMenuTrigger disabled={!["PENDING"].includes(record.status)} >
         <div className={
           cn("text-sm rounded px-3 py-2 bg-slate-100 hover:ring-1", 
             record.status === "CANCELLED" && "bg-destructive/5",

@@ -11,11 +11,13 @@ import { useConsultation, useConsultations } from "@hooks/useConsultation";
 import { usePrescriptions } from "@hooks/usePrescriptions";
 import { useLaboratoryRequests } from "@hooks/useLaboratoryRequests";
 import { useImagingStudies } from "@hooks/useImagingStudies";
+import { useMedicalCertificates } from "@hooks/useMedicalCertificate";
+import { useReferralSlips } from "@hooks/useReferralSlips";
 import Each from "./utils/Each";
 import dayjs from "dayjs";
 import { Badge } from "./ui/badge";
 import { cn } from "@lib/utils";
-import { User, Pill, FileText, Camera, Stethoscope, Calendar } from "lucide-react";
+import { User, Pill, FileText, Camera, Stethoscope, Calendar, FileCheck, FileSignature } from "lucide-react";
 import { GetConsultationTickets } from "@actions/consultation/consultation-ticket.action";
 
 interface ConsultationHistoryProps {
@@ -240,12 +242,24 @@ const ClinicalFilesSection = ({ consultationTicketId, clinicUid }: ClinicalFiles
     consultationTicketId,
   });
 
+  const { data: medicalCertificates, isLoading: medCertLoading } = useMedicalCertificates({
+    clinicUid,
+    consultationTicketId,
+  });
+
+  const { data: referralSlips, isLoading: referralLoading } = useReferralSlips({
+    clinicUid,
+    consultationTicketId,
+  });
+
   const hasPrescriptions = (prescriptions?.length ?? 0) > 0;
   const hasLabRequests = (laboratoryRequests?.data?.length ?? 0) > 0;
   const hasImagingStudies = (imagingStudies?.data?.length ?? 0) > 0;
+  const hasMedicalCertificates = (medicalCertificates?.data?.length ?? 0) > 0;
+  const hasReferralSlips = (referralSlips?.data?.length ?? 0) > 0;
 
-  const hasAnyFiles = hasPrescriptions || hasLabRequests || hasImagingStudies;
-  const isLoading = prescriptionsLoading || labLoading || imagingLoading;
+  const hasAnyFiles = hasPrescriptions || hasLabRequests || hasImagingStudies || hasMedicalCertificates || hasReferralSlips;
+  const isLoading = prescriptionsLoading || labLoading || imagingLoading || medCertLoading || referralLoading;
 
   if (isLoading) {
     return (
@@ -361,6 +375,66 @@ const ClinicalFilesSection = ({ consultationTicketId, clinicUid }: ClinicalFiles
                       </p>
                     </div>
                     <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50 shrink-0">{study.serialNumber || `#${study.id}`}</Badge>
+                  </div>
+                )}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Medical Certificates */}
+        {hasMedicalCertificates && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <div className="p-1 bg-purple-100 rounded">
+                <FileCheck className="h-3.5 w-3.5 text-purple-600" />
+              </div>
+              <span className="text-sm font-medium text-gray-700">Medical Certificates ({medicalCertificates?.data?.length || 0})</span>
+            </div>
+            <div className="ml-6 space-y-1.5">
+              <Each
+                of={medicalCertificates?.data || []}
+                render={(certificate) => (
+                  <div key={certificate.id} className="flex items-center justify-between p-2.5 bg-purple-50 rounded-lg border border-purple-100 text-sm">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-gray-900 truncate">
+                        Medical Certificate #{certificate.serialNumber || certificate.id}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {certificate.impression && `${certificate.impression} • `}{dayjs(certificate.createdAt).format("MMM D, YYYY")}
+                      </p>
+                    </div>
+                    <Badge variant="outline" className="text-purple-600 border-purple-200 bg-purple-50 shrink-0">{certificate.serialNumber || `#${certificate.id}`}</Badge>
+                  </div>
+                )}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Referral Slips */}
+        {hasReferralSlips && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <div className="p-1 bg-pink-100 rounded">
+                <FileSignature className="h-3.5 w-3.5 text-pink-600" />
+              </div>
+              <span className="text-sm font-medium text-gray-700">Referral Slips ({referralSlips?.data?.length || 0})</span>
+            </div>
+            <div className="ml-6 space-y-1.5">
+              <Each
+                of={referralSlips?.data || []}
+                render={(slip) => (
+                  <div key={slip.id} className="flex items-center justify-between p-2.5 bg-pink-50 rounded-lg border border-pink-100 text-sm">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-gray-900 truncate">
+                        Referral Slip #{slip.serialNumber || slip.id}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {slip.referredTo && `Referred to: ${slip.referredTo} • `}{dayjs(slip.createdAt).format("MMM D, YYYY")}
+                      </p>
+                    </div>
+                    <Badge variant="outline" className="text-pink-600 border-pink-200 bg-pink-50 shrink-0">{slip.serialNumber || `#${slip.id}`}</Badge>
                   </div>
                 )}
               />

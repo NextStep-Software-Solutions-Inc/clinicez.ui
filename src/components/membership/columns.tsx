@@ -5,7 +5,6 @@ import { Badge } from "@components/ui/badge"
 
 import Link from "next/link"
 import { DropdownMenuProvider } from "@components/DropdownMenuProvider"
-import { differenceInCalendarYears } from "date-fns"
 import { ChevronDown, ChevronRight, ExternalLink } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@components/ui/avatar"
 import ConditionalRender from "@components/utils/ConditionalRender"
@@ -14,6 +13,7 @@ import { DataTableColumnHeader } from "./data-table-column-header"
 import MembershipTableRowActions from "./MembershipTableRowActions"
 import dayjs, { formatDate } from "@lib/day-utils"
 import { GetOrgMembers } from "@/actions/organizations/org-member.action"
+import { calculateAge } from "@/lib/utils"
 
 export const statuses = Object.values({ ACTIVE: "ACTIVE", INACTIVE: "INACTIVE", PENDING: "PENDING", SUSPENDED: "SUSPENDED" }).map((status) => ({
   label: status.split("").map((char, index) => (index === 0 ? char : char.toLowerCase())).join(""),
@@ -94,6 +94,9 @@ export const columns: ColumnDef<NonNullable<GetOrgMembers["data"]>["data"][numbe
 
       const dob = row.original.User.dob
       const gender = row.original.User.gender
+      const age = calculateAge(dob);
+      const showDetails = !!gender || age !== null;
+      
       return (
         <div className="flex items-center gap-2">
           <ConditionalRender condition={!!row.original.User.picture || !!user.trim()}>
@@ -111,9 +114,13 @@ export const columns: ColumnDef<NonNullable<GetOrgMembers["data"]>["data"][numbe
             >
               {user} <ExternalLink className="w-4 h-4 ml-3 inline-block" />
             </Link>
-            <ConditionalRender condition={!!gender && !!dob}>
-              <div className="text-xs text-muted-foreground">{gender && gender.charAt(0)} / {dob && differenceInCalendarYears(new Date(), dob)}</div>
-            </ConditionalRender>
+            {showDetails && (
+              <div className="text-xs text-muted-foreground">
+                {gender && gender.charAt(0)}
+                {gender && age !== null && " / "}
+                {age ?? ""}
+              </div>
+            )}
           </div>
         </div>
       );

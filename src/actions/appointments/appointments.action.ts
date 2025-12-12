@@ -454,6 +454,32 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
           ConsultationTickets: true
         }
       },
+      AppointmentRouting: {
+        select: {
+          id: true,
+          status: true,
+          RoutedTo: {
+            select: {
+              id: true,
+              User: {
+                select: {
+                  firstName: true,
+                  middleName: true,
+                  lastName: true,
+                  suffix: true
+                }
+              },
+              HPProfile: {
+                select: {
+                  title: true,
+                  name: true,
+                  suffix: true
+                }
+              }
+            }
+          }
+        }
+      },
       AppointmentAttribute: {
         select: {
           date: true,

@@ -302,7 +302,45 @@ export default function AppointmentDisplay() {
           />
         </div>
         <Separator />
-        <div className="flex items-center p-4 gap-2 max-h-40 scrollBox no-scrollbar">
+        <div className="px-5 py-2 text-xs max-h-40 scrollBox no-scrollbar flex-wrap">
+          <div className="flex items-center justify-between mb-2">
+            <span className="font-semibold text-base">Tagged (Info Only)</span>
+            {[PERMISSIONS.CLINIC["WRITE:CLINIC:APPOINTMENT"].name].every(p => myClinicPermissionArray.includes(p)) && (
+              <TagHPsSheet
+                appointmentId={freshAppointment.data.id}
+                currentTags={freshAppointment.data.AppointmentTags ?? []}
+                onTagsUpdated={revalidate}
+              >
+                <Button variant="ghost" size="sm" className="h-6">
+                  <Pencil className="h-3 w-3 mr-1" />
+                  Edit Tags
+                </Button>
+              </TagHPsSheet>
+            )}
+          </div>
+          <Each
+            of={(freshAppointment.data.AppointmentTags ?? [])}
+            fallback={<span className="text-muted-foreground text-xs">No tagged healthcare providers</span>}
+            render={(tag) => (
+              <div key={tag.id} className="flex gap-1 my-2 ">
+                <div className="flex items-center gap-2 ">
+                  <Badge variant="outline" className="text-xs font-medium ring-primary ring-1 text-primary">
+                    {getHealthcareProviderName(tag.HealthcareProvider)}
+                  </Badge>
+                </div>
+                <div className="text-xs text-muted-foreground ml-1">
+                  {tag.HealthcareProvider.HPType?.name}
+                  {tag.HealthcareProvider.HPProfile?.specialties &&
+                    tag.HealthcareProvider.HPProfile.specialties.length > 0 &&
+                    ` • ${tag.HealthcareProvider.HPProfile.specialties.join(", ")}`
+                  }
+                </div>
+              </div>
+            )}
+          />
+        </div>
+        <Separator />
+        <div className="flex items-center p-4 gap-2 max-h-40 scrollBox no-scrollbar flex-wrap">
           <Badge variant={getBadgeVariantFromLabel(freshAppointment.data.AppointmentAttribute?.AppointmentType.name ?? "")}>
             {freshAppointment.data.AppointmentAttribute?.AppointmentType.name}
           </Badge>

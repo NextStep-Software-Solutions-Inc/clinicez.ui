@@ -138,7 +138,7 @@ export default function AppointmentListWrapper({ clinicUid }: AppointmentListWra
         });
 
       const matchesHP = selectedHPs.length === 0
-        || appointment.AppointmentRouting?.some((routing) => 
+        || appointment.AppointmentRouting?.some((routing) =>
           selectedHPs.includes(routing.RoutedTo.id)
         ) || false;
 
@@ -197,12 +197,12 @@ export default function AppointmentListWrapper({ clinicUid }: AppointmentListWra
                   </Button>
                 </div>
                 <div className="max-h-40 space-y-2 overflow-y-auto pr-1">
-                  {!hps?.data || hps.data.length === 0 ? (
+                  {!hps || hps.length === 0 ? (
                     <p className="text-xs text-muted-foreground">No healthcare providers found.</p>
                   ) : (
-                    hps.data.map((hp) => {
+                    hps.map((hp) => {
                       const isChecked = selectedHPs.includes(hp.id);
-                      const hpName = hp.HPProfile?.name 
+                      const hpName = hp.HPProfile?.name
                         ? `${hp.HPProfile.title || ""} ${hp.HPProfile.name} ${hp.HPProfile.suffix || ""}`.trim()
                         : `${hp.User.firstName || ""} ${hp.User.lastName || ""}`.trim();
                       return (

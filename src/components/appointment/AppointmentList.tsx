@@ -145,33 +145,34 @@ export const AppointmentList = forwardRef<HTMLDivElement, AppointmentListProps>(
                     {item.AppointmentAttribute?.Service?.name}
                   </Badge>
                 </div>
-                {/* Assigned Doctor Section */}
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  {(() => {
-                    const assignedHPs = item.AppointmentRouting?.filter(r => r.status === "ACCEPTED" || r.status === "PENDING") ?? [];
-                    if (assignedHPs.length === 0) {
-                      return <span className="italic">No assigned doctor</span>;
-                    }
-                    return (
-                      <>
-                        <span className="font-medium">Assigned to:</span>
-                        {assignedHPs.map((routing, idx) => {
-                          const hp = routing.RoutedTo;
-                          const hpName = hp.HPProfile?.name 
-                            ? `${hp.HPProfile.title || ""} ${hp.HPProfile.name} ${hp.HPProfile.suffix || ""}`.trim()
-                            : `${hp.User.firstName || ""} ${hp.User.middleName || ""} ${hp.User.lastName || ""} ${hp.User.suffix || ""}`.trim();
-                          return (
-                            <span key={routing.id}>
-                              {hpName}
-                              {idx < assignedHPs.length - 1 && ", "}
-                            </span>
-                          );
-                        })}
-                      </>
-                    );
-                  })()}
-                </div>
+
                 <div className="flex items-center justify-end gap-2 w-full">
+                  {/* Assigned Doctor Section */}
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground flex-1">
+                    {(() => {
+                      const assignedHPs = item.AppointmentRouting?.filter(r => r.status === "ACCEPTED" || r.status === "PENDING") ?? [];
+                      if (assignedHPs.length === 0) {
+                        return <span className="italic">No assigned doctor</span>;
+                      }
+                      return (
+                        <>
+                          <span className="font-medium">Assigned to:</span>
+                          <span className="text-primary">{assignedHPs.map((routing, idx) => {
+                            const hp = routing.RoutedTo;
+                            const hpName = hp.HPProfile?.name
+                              ? `${hp.HPProfile.title || ""} ${hp.HPProfile.name} ${hp.HPProfile.suffix || ""}`.trim()
+                              : `${hp.User.firstName || ""} ${hp.User.middleName || ""} ${hp.User.lastName || ""} ${hp.User.suffix || ""}`.trim();
+                            return (
+                              <span key={routing.id}>
+                                {hpName}
+                                {idx < assignedHPs.length - 1 && ", "}
+                              </span>
+                            );
+                          })}</span>
+                        </>
+                      );
+                    })()}
+                  </div>
                   <span className="text-xs flex gap-1 items-center">
                     <ArrowRight className="inline-block w-3 h-3" />
                     {/* {item.AppointmentAttribute?.preferredAppointee} */}

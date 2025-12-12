@@ -18,7 +18,7 @@ import RecentVitalSigns from "../app/(main)/user/[user]/phr/vitals/RecentVitalSi
 import { useUserVitalSigns } from "@hooks/useUserVitalSign";
 import { notFound, useParams } from "next/navigation";
 import { calculateAge } from "@/lib/utils";
-import MedicalHistory from "./MedicalHistory";
+import ConsultationHistory from "./ConsultationHistory";
 
 interface EMRPreviewProps {
     patientId: string
@@ -86,8 +86,8 @@ function EMRPreview({patientId}: EMRPreviewProps) {
       <Section title={`Family History`} >
       </Section>
 
-      <Section title={`Medical History`} >
-        <MedicalHistory
+      <Section title={`Consultation History`} >
+        <ConsultationHistory
           patientId={patientId}
           clinicUid={params.clinicUid}
         />

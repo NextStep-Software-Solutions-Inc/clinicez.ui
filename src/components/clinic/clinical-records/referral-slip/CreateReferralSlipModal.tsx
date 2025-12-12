@@ -242,7 +242,7 @@ export default function CreateReferralSlipModal({
                             </span>
                             <span className="text-gray-400">•</span>
                             <span className="text-gray-500">
-                              Age: {userInfo?.dob ? calculateAge(userInfo.dob) : 'N/A'}
+                              Age: {calculateAge(userInfo?.dob) ?? 'N/A'}
                             </span>
                             <span className="text-gray-400">•</span>
                             <span className="text-gray-500">

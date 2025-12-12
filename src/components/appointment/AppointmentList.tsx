@@ -12,6 +12,7 @@ import { Separator } from "@components/ui/separator"
 import { ArrowRight } from "lucide-react";
 import dayjs from "@/lib/day-utils"
 import { combineDateTime } from "@/lib/day-utils";
+import { getHealthcareProviderName } from "@/lib/hp-utils";
 
 interface AppointmentListProps {
   appointments: GetAppointments["data"]
@@ -134,7 +135,25 @@ export const AppointmentList = forwardRef<HTMLDivElement, AppointmentListProps>(
                 <div className="line-clamp-2 text-xs text-muted-foreground">
                   {item.complaint?.substring(0, 300)}
                 </div>
-                <div className="flex items-center gap-2 truncate flex-wrap">
+                {item.AppointmentTags && item.AppointmentTags.length > 0 && (
+                  <div className="flex items-center gap-1 flex-wrap">
+                    <span className="text-[0.65rem] text-muted-foreground">Tagged:</span>
+                    <Each
+                      of={item.AppointmentTags.slice(0, 3)}
+                      render={(tag) => (
+                        <Badge key={tag.id} variant="secondary" className="text-[0.65rem] px-1 py-0 bg-gray-200">
+                          {getHealthcareProviderName(tag.HealthcareProvider)}
+                        </Badge>
+                      )}
+                    />
+                    {item.AppointmentTags.length > 3 && (
+                      <span className="text-[0.65rem] text-muted-foreground">
+                        +{item.AppointmentTags.length - 3} more
+                      </span>
+                    )}
+                  </div>
+                )}
+                <div className="flex items-center gap-2 truncate">
                   <Badge variant={getBadgeVariantFromLabel(item.AppointmentAttribute?.AppointmentType.name ?? "")}>
                     {item.AppointmentAttribute?.AppointmentType.name}
                   </Badge>

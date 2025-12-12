@@ -25,12 +25,14 @@ export default function AppointmentListWrapper({ clinicUid }: AppointmentListWra
   const searchParams = useSearchParams()
   const appointmentStatus = searchParams.get("_aptStatus")
   const routedAptStatus = searchParams.get("_routedAptStatus")
+  const tagged = searchParams.get("_tagged")
   const sort = searchParams.get("_sort") as "request" | "schedule"
 
   const { data: appointments } = useClinicAppointments({
     clinicUid,
     status: appointmentStatus?.toUpperCase() as AppointmentStatus,
     routedAptStatus: routedAptStatus?.toUpperCase() as RoutedAptStatus,
+    tagged: tagged ?? undefined,
     sort
   })
 

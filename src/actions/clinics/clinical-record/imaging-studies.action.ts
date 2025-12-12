@@ -39,6 +39,17 @@ export const getImagingStudiesAction = withErrorHandling(async (filters: GetImag
       history: true,
       reason: true,
       impression: true,
+      ImagingRequestDiagnostics: {
+        include: {
+          ImagingDiagnostic: {
+            select: {
+              id: true,
+              name: true,
+              description: true,
+            },
+          },
+        },
+      },
       ClinicPatient: {
         select: {
           id: true,

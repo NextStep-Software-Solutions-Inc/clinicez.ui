@@ -56,7 +56,7 @@ export default function ImagingStudiesItem({ study, userInfo, onUpdated, hpIds }
     });
   };
 
-  const ageDisplay = userInfo?.dob ? String(calculateAge(userInfo.dob)) : "-";
+  const ageDisplay = String(calculateAge(userInfo?.dob) ?? "-");
 
   return (
     <div

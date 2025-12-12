@@ -47,9 +47,7 @@ const medicineSchema = z.object({
   brandName: z.string().optional(),
   genericName: z.string().optional(),
   isGeneric: z.boolean().default(false),
-  dosage: z.string({
-    required_error: "Dosage is required",
-  }).min(1, "Dosage cannot be empty"),
+  dosage: z.string().optional(),
   qty: z.coerce.number().min(1, "Quantity must be at least 1").default(1),
   frequency: z.string().optional(),
   unit: z.string({
@@ -124,7 +122,7 @@ export default function CreatePrescriptionModal({
       ]
         .filter(Boolean)
         .join(" "),
-      age: userInfo?.dob ? calculateAge(userInfo.dob) : 0,
+      age: calculateAge(userInfo?.dob) ?? 0,
       dob: userInfo?.dob ? new Date(userInfo.dob) : undefined,
       gender: (userInfo?.gender === "MALE" || userInfo?.gender === "FEMALE") ? userInfo.gender as "MALE" | "FEMALE" : undefined,
       address: [
@@ -352,7 +350,7 @@ export default function CreatePrescriptionModal({
                           </span>
                           <span className="text-gray-400">•</span>
                           <span className="text-gray-500">
-                            Age: {userInfo?.dob ? calculateAge(userInfo.dob) : 'N/A'}
+                            Age: {calculateAge(userInfo?.dob) ?? 'N/A'}
                           </span>
                           <span className="text-gray-400">•</span>
                           <span className="text-gray-500">
@@ -636,7 +634,7 @@ export default function CreatePrescriptionModal({
                             render={({ field }) => (
                               <FormItem>
                                 <FormLabel>
-                                  Dosage <span className="text-red-500 font-bold">*</span>
+                                  Dosage
                                 </FormLabel>
                                 <FormControl>
                                   <Input {...field} placeholder="e.g., 500" />

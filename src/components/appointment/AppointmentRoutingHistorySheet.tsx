@@ -19,6 +19,7 @@ import Each from "@components/utils/Each";
 import { useClinicAppointment } from "@hooks/useAppointment";
 import { cn } from "@lib/utils";
 import dayjs from "@lib/day-utils";
+import { promiseWrapper } from "@/lib/with-error-handling";
 
 import { ArrowRight, Ban, Info } from "lucide-react";
 import { useParams, useSearchParams } from "next/navigation";
@@ -125,13 +126,13 @@ export const Route = ({record, appointmentId, clinicUid}: RouteProps ) => {
 export const CancelAssignment = ({appointmentRoutingId, onCancel}: {appointmentRoutingId: number, onCancel?: () => void}) => {
   
   const handleCancelAssignment = () => {
-    toast.promise(cancelAppointmentRoutingAction(appointmentRoutingId), {
+    toast.promise(promiseWrapper(cancelAppointmentRoutingAction)(appointmentRoutingId), {
       loading: "Cancelling assignment...",
       success: (res) => {
-        if(res.status) onCancel?.()
+        onCancel?.()
         return res.message
       },
-      error: "Failed to cancel assignment."
+      error: (error) => error
     })
   }
 

@@ -1,7 +1,6 @@
 import Suspend from "@components/Suspend";
 import { Separator } from "@components/ui/separator";
 import { Metadata } from "next";
-import { isHP } from "@lib/org-utils";
 import { isClinicOwner } from "@lib/clinic-utils";
 import { getClinicMembersAction } from "@/actions/clinics/clinic-member.action";
 import { getOrgMembersAction } from "@/actions/organizations/org-member.action";
@@ -33,8 +32,9 @@ export default async function PatientsPage(props: AppRouterPageRouteOpts) {
     redirect("/unauthorized");
   }
 
-  const [hp, isOwner, myClinicMembership, myOrganizationMembership] = await Promise.all([
-    isHP(),
+  // Check clinic membership - allow clinic owner, clinic members, or organization members
+  // Patients are excluded since they are not clinic members or organization members
+  const [isOwner, myClinicMembership, myOrganizationMembership] = await Promise.all([
     isClinicOwner(clinicUid),
     getClinicMembersAction({
       userId: session.user.sub,
@@ -48,9 +48,11 @@ export default async function PatientsPage(props: AppRouterPageRouteOpts) {
     })
   ]);
 
-  const hasClinicAccess = isOwner || !!myClinicMembership.data?.length || !!myOrganizationMembership.data?.data?.length;
+  // User must be clinic owner, clinic member, or organization member to access patient list
+  // This excludes patients who are only registered in ClinicPatient table
+  const hasStaffAccess = isOwner || !!myClinicMembership.data?.length || !!myOrganizationMembership.data?.data?.length;
 
-  if (!hp || !hasClinicAccess) {
+  if (!hasStaffAccess) {
     redirect("/unauthorized");
   }
 

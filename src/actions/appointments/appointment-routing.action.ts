@@ -275,6 +275,27 @@ export const cancelAppointmentRoutingAction = withErrorHandling(async (appointme
   return 'Failed to cancel appointment assignment';
 })
 
+/**
+ * Returns an accepted appointment assignment back to the assigner.
+ * 
+ * Required Permission: return:clinic:appointment_assignment
+ * 
+ * This action allows nurses/staff to return an appointment that was previously accepted
+ * (either manually or auto-accepted) back to the pool for reassignment. This is useful
+ * when a healthcare provider needs to handle an emergency or decides not to proceed.
+ * 
+ * @param formData - Contains:
+ *   - appointmentRoutingId: ID of the AppointmentRouting record to return
+ *   - reason: Required reason for returning the assignment
+ * 
+ * @returns Success message with the reason, or error message
+ * 
+ * @throws Error if:
+ *   - User lacks permission
+ *   - Reason is missing or empty
+ *   - AppointmentRouting ID is invalid
+ *   - AppointmentRouting not found or not in ACCEPTED status
+ */
 export const returnAppointmentAssignmentAction = withErrorHandling(async (formData: FormData) => {
   
   const session = await getCachedSession();
@@ -289,12 +310,6 @@ export const returnAppointmentAssignmentAction = withErrorHandling(async (formDa
 
   const reason = formData.get('reason') as string;
   const appointmentRoutingId = Number(formData.get('appointmentRoutingId'));
-
-  console.log('returnAppointmentAssignmentAction received:', {
-    reason,
-    appointmentRoutingId,
-    userId: session.user.sub
-  });
 
   if (!reason || !reason.trim()) {
     throw new Error('Reason is required to return an appointment assignment');
@@ -337,8 +352,6 @@ export const returnAppointmentAssignmentAction = withErrorHandling(async (formDa
       }
     });
 
-    console.log('AppointmentRouting updated successfully:', updatedRouting);
-
     // Update appointment status if all assignments are declined/cancelled
     await updateAppointmentStatusIfNeeded(
       prisma,
@@ -353,7 +366,6 @@ export const returnAppointmentAssignmentAction = withErrorHandling(async (formDa
 
   return { message: `Appointment assignment returned with reason: ${reason}`, data: undefined};
 }, async error => {
-  console.error('returnAppointmentAssignmentAction error:', error);
   if(hasCodeProperty(error) && error.code === 'P2025') return 'Appointment assignment not found or you are not authorized to return it';
   return 'Failed to return appointment assignment';
 })

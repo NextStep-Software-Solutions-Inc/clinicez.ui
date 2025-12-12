@@ -248,22 +248,15 @@ export const ReturnAssignmentDialog = ({
     formData.append("appointmentRoutingId", appointmentRoutingId.toString());
     formData.append("reason", reason);
     
-    console.log("Submitting return assignment:", {
-      appointmentRoutingId,
-      reason
-    });
-    
     toast.promise(promiseWrapper(returnAppointmentAssignmentAction)(formData), {
       loading: "Returning appointment assignment...",
       success: (res) => {
-        console.log("Return assignment success:", res);
         setReason("");
         onOpenChange(false);
         onReturn?.();
         return res.message;
       },
       error: (error) => {
-        console.error("Return assignment error:", error);
         return typeof error === 'string' ? error : 'Failed to return appointment assignment';
       }
     })

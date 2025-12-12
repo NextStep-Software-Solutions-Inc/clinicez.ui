@@ -365,7 +365,16 @@ export const returnAppointmentAssignmentAction = withErrorHandling(async (formDa
   });
 
   return { message: `Appointment assignment returned with reason: ${reason}`, data: undefined};
-}, async error => {
-  if(hasCodeProperty(error) && error.code === 'P2025') return 'Appointment assignment not found or you are not authorized to return it';
+}, async (error) => {
+  // Preserve the original error message for permission and validation errors
+  if (error instanceof Error) {
+    // Return the specific error message for known error types
+    return error.message;
+  }
+  // Handle Prisma errors
+  if(hasCodeProperty(error) && error.code === 'P2025') {
+    return 'Appointment assignment not found or you are not authorized to return it';
+  }
+  // Generic fallback for unknown errors
   return 'Failed to return appointment assignment';
 })

@@ -246,7 +246,7 @@ async function generateAndExportConsultationReport(
 
     const taggedDoctor = primaryDoctorName
 
-    const ageValue = patient?.dob ? calculateAge(patient.dob) : undefined
+    const ageValue = calculateAge(patient?.dob)
 
     return {
       "Consultation Ticket #": ticket.id,

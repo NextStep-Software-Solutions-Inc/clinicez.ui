@@ -2,7 +2,6 @@
 
 import dayjs, { combineDateTime } from "@lib/day-utils"
 
-import { differenceInCalendarYears } from "date-fns"
 import { MoreVertical, Pencil } from "lucide-react"
 
 import { Avatar, AvatarFallback } from "@components/ui/avatar"
@@ -18,6 +17,7 @@ import ConsultationTicketSheet from "@components/appointment/ConsultationTicketS
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@components/ui/dropdown-menu"
 import { useParams, useSearchParams } from "next/navigation"
 import { useClinicAppointment } from "@hooks/useAppointment";
+import { calculateAge } from "@/lib/utils";
 import PageLoading from "@components/PageLoading";
 import { revalidatePath } from "@actions/cache.action";
 import { mutate } from "swr";
@@ -167,7 +167,7 @@ export default function AppointmentDisplay() {
                     <div className="grid gap-1">
                       <div className="font-semibold">{aptUser.User.firstName} {aptUser.User.middleName} {aptUser.User.lastName} {aptUser.User.suffix}</div>
                       <div className="line-clamp-1 text-xs">
-                        <span className="font-medium">{aptUser.User.gender} / </span>{aptUser.User.dob ? differenceInCalendarYears(new Date(), aptUser.User.dob) : 0}
+                        <span className="font-medium">{aptUser.User.gender} / </span>{calculateAge(aptUser.User.dob) ?? ""}
                       </div>
                       <div className="line-clamp-1 text-xs">{freshAppointment.data?.subject}</div>
                     </div>

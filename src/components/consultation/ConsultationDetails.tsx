@@ -3,7 +3,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@components/ui/tabs";
 import Suspend from "@components/Suspend";
 import { GetAppointment, getAppointmentAction } from "@actions/appointments/appointments.action";
-import { differenceInCalendarYears } from "date-fns";
 import { GetConsultationTicket } from "@actions/consultation/consultation-ticket.action";
 import { ExternalLink } from "lucide-react";
 import Link from "next/link";
@@ -18,6 +17,7 @@ import { Fragment } from "react";
 // import EMRPreviewSheetWrapper from "@components/EMRPreviewSheetWrapper";
 import EMRTriggerButton from "@components/EMRTriggerButton";
 import PrescriptionsWrapper from "@components/PrescriptionsWrapper";
+import { calculateAge } from "@/lib/utils";
 import MedicalCertificateWrapper from "@components/MedicalCertificateWrapper";
 import ImagingStudiesWrapper from "@components/ImagingStudiesWrapper";
 import LaboratoryRequestWrapper from "@components/LaboratoryRequestWrapper";
@@ -325,7 +325,7 @@ export const PatientHpDetails = ({ creators = [], user }: PatientHpDetailsProps)
             <div className="flex flex-col">
               <span className="text-sm font-semibold">{user.firstName} {user.lastName}</span>
               <div className="text-xs text-muted-foreground">
-                {user.gender?.charAt(0)} / <span>{user.dob && differenceInCalendarYears(new Date(), user.dob)}</span>
+                {user.gender?.charAt(0)} / <span>{calculateAge(user.dob) ?? ""}</span>
               </div>
             </div>
           </div>

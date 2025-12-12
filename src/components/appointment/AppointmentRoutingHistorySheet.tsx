@@ -16,12 +16,13 @@ import {
   SheetTrigger,
 } from "@components/ui/sheet"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@components/ui/dialog"
+  AlertDialog,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogPortal,
+} from "@components/ui/alert-dialog"
+import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog"
 import Each from "@components/utils/Each";
 import { useClinicAppointment } from "@hooks/useAppointment";
 import { cn } from "@lib/utils";
@@ -35,6 +36,40 @@ import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import ActionButton from "../ActionButton";
 import React from "react";
+
+// Custom AlertDialogContent with lighter overlay for use inside Sheet
+const LightAlertDialogOverlay = React.forwardRef<
+  React.ElementRef<typeof AlertDialogPrimitive.Overlay>,
+  React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Overlay>
+>(({ className, ...props }, ref) => (
+  <AlertDialogPrimitive.Overlay
+    className={cn(
+      "fixed inset-0 z-50 bg-black/20 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+      className
+    )}
+    {...props}
+    ref={ref}
+  />
+))
+LightAlertDialogOverlay.displayName = "LightAlertDialogOverlay"
+
+const LightAlertDialogContent = React.forwardRef<
+  React.ElementRef<typeof AlertDialogPrimitive.Content>,
+  React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Content>
+>(({ className, ...props }, ref) => (
+  <AlertDialogPortal>
+    <LightAlertDialogOverlay />
+    <AlertDialogPrimitive.Content
+      ref={ref}
+      className={cn(
+        "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg",
+        className
+      )}
+      {...props}
+    />
+  </AlertDialogPortal>
+))
+LightAlertDialogContent.displayName = "LightAlertDialogContent"
 interface AppointmentRoutingHistorySheetProps {
   children?: React.ReactNode;
   onSelect? : (e: Event) => void;
@@ -199,11 +234,24 @@ export const ReturnAssignmentDialog = ({
   appointmentRoutingId: number;
   onReturn?: () => void;
 }) => {
-  const handleReturnAssignment = async (formData: FormData) => {
+  const [reason, setReason] = React.useState("");
+
+  const handleReturnAssignment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!reason.trim()) {
+      toast.error("Please provide a reason for returning the assignment");
+      return;
+    }
+
+    const formData = new FormData();
     formData.append("appointmentRoutingId", appointmentRoutingId.toString());
+    formData.append("reason", reason);
+    
     toast.promise(promiseWrapper(returnAppointmentAssignmentAction)(formData), {
       loading: "Returning appointment assignment...",
       success: (res) => {
+        setReason("");
         onOpenChange(false);
         onReturn?.();
         return res.message;
@@ -212,18 +260,24 @@ export const ReturnAssignmentDialog = ({
     })
   }
 
+  // Reset reason when dialog closes
+  React.useEffect(() => {
+    if (!open) {
+      setReason("");
+    }
+  }, [open]);
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Return Assignment</DialogTitle>
-          <DialogDescription>
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <LightAlertDialogContent className="sm:max-w-[425px]">
+        <AlertDialogHeader>
+          <AlertDialogTitle>Return Assignment</AlertDialogTitle>
+          <AlertDialogDescription>
             Are you sure you want to return this accepted appointment assignment? The appointment will be returned for reassignment.
-          </DialogDescription>
-        </DialogHeader>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
         <form 
-          action={handleReturnAssignment}
-          id={`return-appointment-form-${appointmentRoutingId}`}
+          onSubmit={handleReturnAssignment}
           className="grid gap-4 py-4"
         >
           <div className="grid gap-2">
@@ -233,15 +287,29 @@ export const ReturnAssignmentDialog = ({
             <Input
               id={`reason-${appointmentRoutingId}`}
               name="reason"
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
               placeholder="Enter reason here"
               required
             />
           </div>
-          <ActionButton form={`return-appointment-form-${appointmentRoutingId}`} type="submit" variant="default">
-            Return Assignment
-          </ActionButton>
+          <div className="flex justify-end gap-2">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => {
+                setReason("");
+                onOpenChange(false);
+              }}
+            >
+              Cancel
+            </Button>
+            <ActionButton type="submit" variant="default">
+              Return Assignment
+            </ActionButton>
+          </div>
         </form>
-      </DialogContent>
-    </Dialog>
+      </LightAlertDialogContent>
+    </AlertDialog>
   )
 }

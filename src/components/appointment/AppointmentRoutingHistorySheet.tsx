@@ -138,7 +138,7 @@ export const Route = ({record, appointmentId, clinicUid}: RouteProps ) => {
           </ContextMenuItem>
         )}
         {record.status === "ACCEPTED" && (
-          <ContextMenuItem>
+          <ContextMenuItem onSelect={(e) => e.preventDefault()}>
             <ReturnAssignment onReturn={() => mutate()} appointmentRoutingId={record.id}/>
           </ContextMenuItem>
         )}
@@ -184,15 +184,21 @@ export const ReturnAssignment = ({appointmentRoutingId, onReturn}: {appointmentR
     })
   }
 
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setOpen(true);
+  }
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <div className="flex items-center gap-2 w-full">
+        <div className="flex items-center gap-2 w-full" onClick={handleClick}>
           <Undo2 className="h-4 w-4" />
           Return Assignment
         </div>
       </PopoverTrigger>
-      <PopoverContent className="w-96">
+      <PopoverContent className="w-96" onOpenAutoFocus={(e) => e.preventDefault()}>
         <p className="mb-4 text-sm">
           Are you sure you want to return this accepted appointment assignment? The appointment will be returned for reassignment.
         </p>

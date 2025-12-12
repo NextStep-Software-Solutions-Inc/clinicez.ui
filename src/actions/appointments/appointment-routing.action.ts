@@ -290,8 +290,18 @@ export const returnAppointmentAssignmentAction = withErrorHandling(async (formDa
   const reason = formData.get('reason') as string;
   const appointmentRoutingId = Number(formData.get('appointmentRoutingId'));
 
+  console.log('returnAppointmentAssignmentAction received:', {
+    reason,
+    appointmentRoutingId,
+    userId: session.user.sub
+  });
+
   if (!reason || !reason.trim()) {
     throw new Error('Reason is required to return an appointment assignment');
+  }
+
+  if (isNaN(appointmentRoutingId) || appointmentRoutingId <= 0) {
+    throw new Error('Invalid appointment routing ID');
   }
 
   await prisma.$transaction(async (prisma) => {
@@ -327,6 +337,8 @@ export const returnAppointmentAssignmentAction = withErrorHandling(async (formDa
       }
     });
 
+    console.log('AppointmentRouting updated successfully:', updatedRouting);
+
     // Update appointment status if all assignments are declined/cancelled
     await updateAppointmentStatusIfNeeded(
       prisma,
@@ -341,6 +353,7 @@ export const returnAppointmentAssignmentAction = withErrorHandling(async (formDa
 
   return { message: `Appointment assignment returned with reason: ${reason}`, data: undefined};
 }, async error => {
+  console.error('returnAppointmentAssignmentAction error:', error);
   if(hasCodeProperty(error) && error.code === 'P2025') return 'Appointment assignment not found or you are not authorized to return it';
   return 'Failed to return appointment assignment';
 })

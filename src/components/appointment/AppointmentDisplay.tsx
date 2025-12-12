@@ -302,7 +302,7 @@ export default function AppointmentDisplay() {
           />
         </div>
         <Separator />
-        <div className="px-5 py-2 text-xs max-h-40 scrollBox no-scrollbar">
+        <div className="px-5 py-2 text-xs max-h-40 scrollBox no-scrollbar flex-wrap">
           <div className="flex items-center justify-between mb-2">
             <span className="font-semibold text-base">Tagged (Info Only)</span>
             {[PERMISSIONS.CLINIC["WRITE:CLINIC:APPOINTMENT"].name].every(p => myClinicPermissionArray.includes(p)) && (

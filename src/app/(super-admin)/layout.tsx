@@ -10,6 +10,10 @@ const sidebarNavItems = [
     href: "/super-admin/permissions",
   },
   {
+    title: "Clinic Roles",
+    href: "/super-admin/roles",
+  },
+  {
     title: "Appointment Tabs",
     href: "/super-admin/appointment-tabs",
   },

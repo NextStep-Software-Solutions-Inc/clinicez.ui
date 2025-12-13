@@ -7,13 +7,14 @@ import OrganizationRolesTable from "@components/super-admin/OrganizationRolesTab
 import Link from "next/link";
 
 interface OrganizationDetailPageProps {
-  params: {
+  params: Promise<{
     orgId: string;
-  };
+  }>;
 }
 
 export default async function OrganizationDetailPage({ params }: OrganizationDetailPageProps) {
-  const orgId = parseInt(params.orgId);
+  const { orgId: orgIdString } = await params;
+  const orgId = parseInt(orgIdString);
   
   if (isNaN(orgId)) {
     notFound();

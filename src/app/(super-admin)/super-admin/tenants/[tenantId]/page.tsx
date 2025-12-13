@@ -4,13 +4,14 @@ import { notFound } from "next/navigation";
 import TenantDetailTabs from "@components/super-admin/TenantDetailTabs";
 
 interface TenantDetailPageProps {
-  params: {
+  params: Promise<{
     tenantId: string;
-  };
+  }>;
 }
 
 export default async function TenantDetailPage({ params }: TenantDetailPageProps) {
-  const tenantId = parseInt(params.tenantId);
+  const { tenantId: tenantIdString } = await params;
+  const tenantId = parseInt(tenantIdString);
   
   if (isNaN(tenantId)) {
     notFound();

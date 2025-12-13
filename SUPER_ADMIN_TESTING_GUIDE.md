@@ -3,23 +3,51 @@
 ## Overview
 This PR implements access control and management features for the super-admin console, including system admin management and restructuring of roles management.
 
-## Database Migration Required
-Before testing, the database migration must be applied:
-```bash
-npx prisma migrate deploy
-```
-
-This adds the `isSuperAdmin` and `isSystemAdmin` fields to the User table.
+## No Database Migration Required
+The implementation uses the existing UserPermission model with a special "SUPER_ADMIN" permission. No schema changes are needed.
 
 ## Manual Setup Required
 
 ### 1. Set Initial Super Admin
-Before you can access the super-admin console, you need to manually set at least one user as a super admin in the database:
+Before you can access the super-admin console, you need to grant a user the SUPER_ADMIN permission.
 
+**Step 1: Ensure SUPER_ADMIN permission exists**
 ```sql
-UPDATE "User" 
-SET "isSuperAdmin" = true 
-WHERE email = 'your-super-admin-email@example.com';
+-- Check if it exists
+SELECT * FROM "Permission" WHERE "name" = 'SUPER_ADMIN';
+
+-- If it doesn't exist, create it
+INSERT INTO "Permission" ("name", "description", "type", "isActive", "createdAt", "updatedAt")
+VALUES ('SUPER_ADMIN', 'Super administrator with full system access', 'USER', true, NOW(), NOW());
+```
+
+**Step 2: Grant SUPER_ADMIN permission to a user**
+```sql
+-- Get the permission ID
+SELECT id FROM "Permission" WHERE "name" = 'SUPER_ADMIN';
+
+-- Get your user's internal ID (not userId - the UUID)
+SELECT id FROM "User" WHERE email = 'your-email@example.com';
+
+-- Grant the permission (replace {userId} and {permissionId} with actual values)
+INSERT INTO "UserPermission" ("userId", "permissionId")
+VALUES ({userId}, {permissionId});
+```
+
+**Option 2: Use a single query**
+```sql
+-- This creates the permission if it doesn't exist and grants it to a user in one transaction
+WITH super_admin_perm AS (
+  INSERT INTO "Permission" ("name", "description", "type", "isActive", "createdAt", "updatedAt")
+  VALUES ('SUPER_ADMIN', 'Super administrator with full system access', 'USER', true, NOW(), NOW())
+  ON CONFLICT ("name") DO UPDATE SET "name" = EXCLUDED."name"
+  RETURNING id
+)
+INSERT INTO "UserPermission" ("userId", "permissionId")
+SELECT u.id, p.id
+FROM "User" u, super_admin_perm p
+WHERE u.email = 'your-email@example.com'
+ON CONFLICT DO NOTHING;
 ```
 
 ## Features to Test
@@ -46,19 +74,22 @@ WHERE email = 'your-super-admin-email@example.com';
 - Search for a user by name, email, or ID
 - Select a user from the search results
 - Click "Grant System Admin"
-- Expected: User should be added to the system admins list
+- Expected: User is granted the SUPER_ADMIN permission
+- Expected: User appears in the system admins list
 - Expected: Success toast message appears
 
 **Test Case 2.3: Revoke System Admin Privileges**
-- Find a system admin (who is NOT a super admin) in the list
+- Find a system admin in the list
 - Click the "Revoke" button
 - Confirm the action
-- Expected: User should be removed from the system admins list
+- Expected: SUPER_ADMIN permission is removed from the user
+- Expected: User is removed from the system admins list
 - Expected: Success toast message appears
 
-**Test Case 2.4: Cannot Revoke Super Admin**
-- Find a user marked as "Super Admin" in the list
-- Expected: No "Revoke" button should be visible for super admins
+**Test Case 2.4: System Admin Status**
+- System admins are users who have the SUPER_ADMIN permission
+- Granting system admin creates a single UserPermission record with the SUPER_ADMIN permission
+- Revoking system admin removes only the SUPER_ADMIN permission (other permissions remain intact)
 
 ### 3. Tenant Management & Organization View
 **Test Case 3.1: View Tenants**
@@ -192,13 +223,23 @@ WHERE email = 'your-super-admin-email@example.com';
 ## Known Limitations
 1. Native browser `confirm()` dialogs are used for delete confirmations. These should be replaced with custom dialogs in a future update for better UX.
 2. The build requires environment variables (`DATABASE_URL` and `DATABASE_URL_UNPOOLED`) to be set up for Prisma to work.
+3. The SUPER_ADMIN permission is automatically created when granting admin privileges if it doesn't exist.
 
 ## Troubleshooting
 
 ### Cannot Access Super Admin Console
-- Verify you have set `isSuperAdmin = true` for your user in the database
+- Verify the user has the SUPER_ADMIN permission
 - Check browser console for any errors
 - Verify you are logged in with the correct account
+- Query to check: 
+  ```sql
+  SELECT u.email, p.name 
+  FROM "User" u
+  JOIN "UserPermission" up ON u.id = up."userId"
+  JOIN "Permission" p ON up."permissionId" = p.id
+  WHERE u.email = 'your-email@example.com' AND p.name = 'SUPER_ADMIN';
+  ```
+- Should return a row with SUPER_ADMIN permission for super admin access
 
 ### Organizations Not Loading
 - Check that the tenant has organizations
@@ -208,4 +249,18 @@ WHERE email = 'your-super-admin-email@example.com';
 ### Roles Not Appearing
 - Verify the organization has roles created
 - Check that you're viewing the correct organization
-- Verify database migration was applied correctly
+- No migration is needed as we use the existing Permission model
+
+## Implementation Notes
+
+### Super Admin Definition
+A user is considered a super admin if they have the SUPER_ADMIN permission. This is determined by:
+1. Checking if a UserPermission record exists linking the user to the SUPER_ADMIN permission
+2. The SUPER_ADMIN permission must be active
+
+### System Admin Management
+- "Granting system admin" means creating a UserPermission record with the SUPER_ADMIN permission
+- "Revoking system admin" means deleting the UserPermission record for SUPER_ADMIN permission only
+- The SUPER_ADMIN permission is automatically created if it doesn't exist when granting privileges
+- This approach is simple, performant, and easy to manage
+

@@ -4,6 +4,9 @@ import "server-only";
 import prisma from "@lib/prisma";
 import { isSuperAdminAction } from "./admin-check.action";
 
+// The permission name that grants super admin access
+const SUPER_ADMIN_PERMISSION = "SUPER_ADMIN";
+
 export type GetAllSystemAdmins = Awaited<ReturnType<typeof getAllSystemAdminsAction>>;
 export async function getAllSystemAdminsAction({
   search,
@@ -20,17 +23,39 @@ export async function getAllSystemAdminsAction({
     throw new Error("Unauthorized: Only super admins can view system admins");
   }
 
+  // Get the SUPER_ADMIN permission ID
+  const superAdminPermission = await prisma.permission.findUnique({
+    where: { name: SUPER_ADMIN_PERMISSION, isActive: true },
+    select: { id: true },
+  });
+
+  if (!superAdminPermission) {
+    // If permission doesn't exist, return empty list
+    return {
+      data: [],
+      total: 0,
+      pageSize,
+      pageNumber,
+      totalPages: 0,
+    };
+  }
+
+  // Find users who have the SUPER_ADMIN permission
   const where = {
-    isSystemAdmin: true,
+    UserPermissions: {
+      some: {
+        permissionId: superAdminPermission.id,
+      },
+    },
     ...(search
       ? {
-          OR: [
-            { firstName: { contains: search, mode: "insensitive" as const } },
-            { lastName: { contains: search, mode: "insensitive" as const } },
-            { email: { contains: search, mode: "insensitive" as const } },
-            { userId: { contains: search, mode: "insensitive" as const } },
-          ],
-        }
+        OR: [
+          { firstName: { contains: search, mode: "insensitive" as const } },
+          { lastName: { contains: search, mode: "insensitive" as const } },
+          { email: { contains: search, mode: "insensitive" as const } },
+          { userId: { contains: search, mode: "insensitive" as const } },
+        ],
+      }
       : {}),
   };
 
@@ -45,8 +70,6 @@ export async function getAllSystemAdminsAction({
         middleName: true,
         email: true,
         isActive: true,
-        isSuperAdmin: true,
-        isSystemAdmin: true,
         createdAt: true,
       },
       orderBy: { createdAt: "desc" },
@@ -56,8 +79,15 @@ export async function getAllSystemAdminsAction({
     prisma.user.count({ where }),
   ]);
 
+  // Transform data to match expected format
+  const data = users.map(user => ({
+    ...user,
+    isSuperAdmin: true,
+    isSystemAdmin: true,
+  }));
+
   return {
-    data: users,
+    data,
     total,
     pageSize,
     pageNumber,
@@ -76,9 +106,54 @@ export async function grantSystemAdminAction({
     throw new Error("Unauthorized: Only super admins can grant system admin privileges");
   }
 
-  const user = await prisma.user.update({
+  // Get or create the SUPER_ADMIN permission
+  let superAdminPermission = await prisma.permission.findUnique({
+    where: { name: SUPER_ADMIN_PERMISSION },
+    select: { id: true },
+  });
+
+  if (!superAdminPermission) {
+    // Create the SUPER_ADMIN permission if it doesn't exist
+    superAdminPermission = await prisma.permission.create({
+      data: {
+        name: SUPER_ADMIN_PERMISSION,
+        description: "Super administrator with full system access",
+        type: "USER",
+        isActive: true,
+      },
+      select: { id: true },
+    });
+  }
+
+  // Check if user already has the permission
+  const existingPermission = await prisma.userPermission.findFirst({
+    where: {
+      userId,
+      permissionId: superAdminPermission.id,
+    },
+  });
+
+  if (!existingPermission) {
+    // Grant the SUPER_ADMIN permission to the user
+    await prisma.userPermission.create({
+      data: {
+        userId,
+        permissionId: superAdminPermission.id,
+      },
+    });
+  }
+
+  // Get updated user
+  const user = await prisma.user.findUnique({
     where: { id: userId },
-    data: { isSystemAdmin: true },
+    select: {
+      id: true,
+      userId: true,
+      firstName: true,
+      lastName: true,
+      email: true,
+      isActive: true,
+    },
   });
 
   return { data: user };
@@ -95,19 +170,33 @@ export async function revokeSystemAdminAction({
     throw new Error("Unauthorized: Only super admins can revoke system admin privileges");
   }
 
-  // Prevent revoking super admin's system admin status
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { isSuperAdmin: true },
+  // Get the SUPER_ADMIN permission
+  const superAdminPermission = await prisma.permission.findUnique({
+    where: { name: SUPER_ADMIN_PERMISSION },
+    select: { id: true },
   });
 
-  if (user?.isSuperAdmin) {
-    throw new Error("Cannot revoke system admin status from a super admin");
+  if (superAdminPermission) {
+    // Remove the SUPER_ADMIN permission from the user
+    await prisma.userPermission.deleteMany({
+      where: {
+        userId,
+        permissionId: superAdminPermission.id,
+      },
+    });
   }
 
-  const updatedUser = await prisma.user.update({
+  // Get updated user
+  const updatedUser = await prisma.user.findUnique({
     where: { id: userId },
-    data: { isSystemAdmin: false },
+    select: {
+      id: true,
+      userId: true,
+      firstName: true,
+      lastName: true,
+      email: true,
+      isActive: true,
+    },
   });
 
   return { data: updatedUser };

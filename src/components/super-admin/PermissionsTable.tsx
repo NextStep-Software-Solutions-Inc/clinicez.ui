@@ -12,6 +12,7 @@ import { Label } from "@components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@components/ui/select";
 import { toast } from "sonner";
 import { Switch } from "@components/ui/switch";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@components/ui/alert-dialog";
 
 interface PermissionsTableProps {
   initialData: GetAllPermissions;
@@ -22,6 +23,19 @@ export default function PermissionsTable({ initialData }: PermissionsTableProps)
   const [search, setSearch] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [typeChangeDialog, setTypeChangeDialog] = useState<{
+    open: boolean;
+    permissionId: number;
+    permissionName: string;
+    currentType: string;
+    newType: string;
+  } | null>(null);
+  const [statusChangeDialog, setStatusChangeDialog] = useState<{
+    open: boolean;
+    permissionId: number;
+    permissionName: string;
+    currentStatus: boolean;
+  } | null>(null);
 
   const [createForm, setCreateForm] = useState({
     name: "",
@@ -36,6 +50,7 @@ export default function PermissionsTable({ initialData }: PermissionsTableProps)
         search: searchTerm || undefined,
         pageNumber: page,
         pageSize: data.pageSize,
+        includeInactive: true, // Include inactive permissions
       });
       setData(result);
     } catch (error) {
@@ -49,13 +64,54 @@ export default function PermissionsTable({ initialData }: PermissionsTableProps)
     loadData(1, search);
   };
 
-  const handleToggleActive = async (id: number, currentStatus: boolean) => {
+  const handleToggleActive = (id: number, name: string, currentStatus: boolean) => {
+    setStatusChangeDialog({
+      open: true,
+      permissionId: id,
+      permissionName: name,
+      currentStatus,
+    });
+  };
+
+  const confirmToggleActive = async () => {
+    if (!statusChangeDialog) return;
+
     try {
-      await updatePermissionAction({ id, isActive: !currentStatus });
-      toast.success("Permission updated successfully");
+      await updatePermissionAction({ 
+        id: statusChangeDialog.permissionId, 
+        isActive: !statusChangeDialog.currentStatus 
+      });
+      toast.success("Permission status updated successfully");
       loadData(data.pageNumber);
+      setStatusChangeDialog(null);
     } catch (error) {
-      toast.error("Failed to update permission");
+      toast.error("Failed to update permission status");
+    }
+  };
+
+  const handleTypeChange = (permissionId: number, permissionName: string, currentType: string, newType: string) => {
+    setTypeChangeDialog({
+      open: true,
+      permissionId,
+      permissionName,
+      currentType,
+      newType,
+    });
+  };
+
+  const confirmTypeChange = async () => {
+    if (!typeChangeDialog) return;
+
+    try {
+      await updatePermissionAction({ 
+        id: typeChangeDialog.permissionId, 
+        type: typeChangeDialog.newType as "USER" | "CLINIC" | "ORGANIZATION"
+      });
+      toast.success("Permission type updated successfully");
+      loadData(data.pageNumber);
+      setTypeChangeDialog(null);
+    } catch (error) {
+      toast.error("Failed to update permission type");
     }
   };
 
@@ -170,7 +226,19 @@ export default function PermissionsTable({ initialData }: PermissionsTableProps)
                   <TableCell className="font-mono text-sm">{permission.name}</TableCell>
                   <TableCell className="text-sm">{permission.description || "-"}</TableCell>
                   <TableCell>
-                    <Badge variant="outline">{permission.type}</Badge>
+                    <Select
+                      value={permission.type}
+                      onValueChange={(value) => handleTypeChange(permission.id, permission.name, permission.type, value)}
+                    >
+                      <SelectTrigger className="w-[140px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="USER">User</SelectItem>
+                        <SelectItem value="CLINIC">Clinic</SelectItem>
+                        <SelectItem value="ORGANIZATION">Organization</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </TableCell>
                   <TableCell>
                     <Badge variant={permission.isActive ? "default" : "secondary"}>
@@ -180,7 +248,7 @@ export default function PermissionsTable({ initialData }: PermissionsTableProps)
                   <TableCell className="text-right">
                     <Switch
                       checked={permission.isActive}
-                      onCheckedChange={() => handleToggleActive(permission.id, permission.isActive)}
+                      onCheckedChange={() => handleToggleActive(permission.id, permission.name, permission.isActive)}
                     />
                   </TableCell>
                 </TableRow>
@@ -216,6 +284,44 @@ export default function PermissionsTable({ initialData }: PermissionsTableProps)
           </div>
         </div>
       )}
+
+      {/* Type Change Confirmation Dialog */}
+      <AlertDialog open={typeChangeDialog?.open || false} onOpenChange={(open) => !open && setTypeChangeDialog(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Type Change</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to change the type of permission <strong>&quot;{typeChangeDialog?.permissionName}&quot;</strong> from <strong>{typeChangeDialog?.currentType}</strong> to <strong>{typeChangeDialog?.newType}</strong>?
+              <br /><br />
+              This action may affect how this permission is used throughout the system.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setTypeChangeDialog(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmTypeChange}>Confirm</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Status Change Confirmation Dialog */}
+      <AlertDialog open={statusChangeDialog?.open || false} onOpenChange={(open) => !open && setStatusChangeDialog(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Status Change</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to {statusChangeDialog?.currentStatus ? "deactivate" : "activate"} the permission <strong>&quot;{statusChangeDialog?.permissionName}&quot;</strong>?
+              <br /><br />
+              {statusChangeDialog?.currentStatus 
+                ? "Deactivating this permission may prevent users from accessing certain features."
+                : "Activating this permission will allow users to access associated features."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setStatusChangeDialog(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmToggleActive}>Confirm</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

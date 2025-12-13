@@ -6,6 +6,7 @@ export default async function PermissionsPage() {
   const initialData = await getAllPermissionsAction({
     pageSize: 10,
     pageNumber: 1,
+    includeInactive: true,
   });
 
   return (

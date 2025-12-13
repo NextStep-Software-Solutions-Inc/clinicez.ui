@@ -21,11 +21,11 @@ export async function getAllAppointmentTabsAction({
     ...(!includeInactive ? { isActive: true } : {}),
     ...(search
       ? {
-          OR: [
-            { name: { contains: search, mode: "insensitive" as const } },
-            { description: { contains: search, mode: "insensitive" as const } },
-          ],
-        }
+        OR: [
+          { name: { contains: search, mode: "insensitive" as const } },
+          { description: { contains: search, mode: "insensitive" as const } },
+        ],
+      }
       : {}),
   };
 

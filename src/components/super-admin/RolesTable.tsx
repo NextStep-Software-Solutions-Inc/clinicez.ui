@@ -157,8 +157,8 @@ export default function RolesTable({ initialData, type }: RolesTableProps) {
                         {type === "CLINIC" && "_count" in role
                           ? role._count.ClinicMembers
                           : "_count" in role
-                          ? role._count.OrganizationMembers
-                          : 0}
+                            ? role._count.OrganizationMembers
+                            : 0}
                       </Badge>
                     )}
                   </TableCell>
@@ -168,8 +168,8 @@ export default function RolesTable({ initialData, type }: RolesTableProps) {
                         {type === "CLINIC" && "_count" in role
                           ? role._count.ClinicRoleInitialPermissions
                           : "_count" in role
-                          ? role._count.OrgRoleInitialPermissions
-                          : 0}
+                            ? role._count.OrgRoleInitialPermissions
+                            : 0}
                       </Badge>
                     )}
                   </TableCell>

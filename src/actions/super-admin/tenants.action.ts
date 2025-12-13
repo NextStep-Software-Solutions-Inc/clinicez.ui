@@ -19,11 +19,11 @@ export async function getAllTenantsAction({
     ...(!includeInactive ? { isActive: true } : {}),
     ...(search
       ? {
-          OR: [
-            { name: { contains: search, mode: "insensitive" as const } },
-            { tenantUid: { contains: search, mode: "insensitive" as const } },
-          ],
-        }
+        OR: [
+          { name: { contains: search, mode: "insensitive" as const } },
+          { tenantUid: { contains: search, mode: "insensitive" as const } },
+        ],
+      }
       : {}),
   };
 
@@ -88,11 +88,11 @@ export async function getTenantOrganizationsAction({
     tenantId,
     ...(search
       ? {
-          OR: [
-            { name: { contains: search, mode: "insensitive" as const } },
-            { orgUid: { contains: search, mode: "insensitive" as const } },
-          ],
-        }
+        OR: [
+          { name: { contains: search, mode: "insensitive" as const } },
+          { orgUid: { contains: search, mode: "insensitive" as const } },
+        ],
+      }
       : {}),
   };
 
@@ -143,11 +143,11 @@ export async function getTenantClinicsAction({
     tenantId,
     ...(search
       ? {
-          OR: [
-            { name: { contains: search, mode: "insensitive" as const } },
-            { clinicUid: { contains: search, mode: "insensitive" as const } },
-          ],
-        }
+        OR: [
+          { name: { contains: search, mode: "insensitive" as const } },
+          { clinicUid: { contains: search, mode: "insensitive" as const } },
+        ],
+      }
       : {}),
   };
 

@@ -15,13 +15,13 @@ export async function getAllUsersAction({
 }) {
   const where = search
     ? {
-        OR: [
-          { userId: { contains: search, mode: "insensitive" as const } },
-          { email: { contains: search, mode: "insensitive" as const } },
-          { firstName: { contains: search, mode: "insensitive" as const } },
-          { lastName: { contains: search, mode: "insensitive" as const } },
-        ],
-      }
+      OR: [
+        { userId: { contains: search, mode: "insensitive" as const } },
+        { email: { contains: search, mode: "insensitive" as const } },
+        { firstName: { contains: search, mode: "insensitive" as const } },
+        { lastName: { contains: search, mode: "insensitive" as const } },
+      ],
+    }
     : {};
 
   const [users, total] = await Promise.all([

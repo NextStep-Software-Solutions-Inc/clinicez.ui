@@ -40,9 +40,9 @@ export async function getAllUsersAction({
         updatedAt: true,
         _count: {
           select: {
-            ClinicMembersUser: true,
-            OrganizationMembersUser: true,
-            OwnedTenants: true,
+            ClinicMembers: true,
+            OrganizationMembers: true,
+            Tenants: true,
           },
         },
       },
@@ -77,7 +77,7 @@ export async function getUserDetailsAction(userId: string) {
       birthdate: true,
       createdAt: true,
       updatedAt: true,
-      ClinicMembersUser: {
+      ClinicMembers: {
         select: {
           id: true,
           status: true,
@@ -96,7 +96,7 @@ export async function getUserDetailsAction(userId: string) {
           },
         },
       },
-      OrganizationMembersUser: {
+      OrganizationMembers: {
         select: {
           id: true,
           status: true,
@@ -115,7 +115,7 @@ export async function getUserDetailsAction(userId: string) {
           },
         },
       },
-      OwnedTenants: {
+      Tenants: {
         select: {
           id: true,
           name: true,

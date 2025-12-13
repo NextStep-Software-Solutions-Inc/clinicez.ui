@@ -86,13 +86,13 @@ export default function UsersTable({ initialData }: UsersTableProps) {
                   </TableCell>
                   <TableCell className="text-sm">{user.email}</TableCell>
                   <TableCell>
-                    <Badge variant="outline">{user._count.ClinicMembersUser}</Badge>
+                    <Badge variant="outline">{user._count.ClinicMembers}</Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline">{user._count.OrganizationMembersUser}</Badge>
+                    <Badge variant="outline">{user._count.OrganizationMembers}</Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline">{user._count.OwnedTenants}</Badge>
+                    <Badge variant="outline">{user._count.Tenants}</Badge>
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {formatDistance(new Date(user.createdAt), new Date(), { addSuffix: true })}

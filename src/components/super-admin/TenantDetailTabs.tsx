@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@components/ui/card";
 import { getTenantOrganizationsAction, getTenantClinicsAction } from "@actions/super-admin/tenants.action";
 import { Badge } from "@components/ui/badge";
-import { Building2, Hospital, Users } from "lucide-react";
+import { Building2, Hospital, Users, ExternalLink } from "lucide-react";
+import { Button } from "@components/ui/button";
 
 interface TenantDetailTabsProps {
   tenant: {
@@ -31,6 +33,7 @@ interface TenantDetailTabsProps {
 }
 
 export default function TenantDetailTabs({ tenant }: TenantDetailTabsProps) {
+  const router = useRouter();
   const [organizations, setOrganizations] = useState<any[]>([]);
   const [clinics, setClinics] = useState<any[]>([]);
   const [loadingOrgs, setLoadingOrgs] = useState(false);
@@ -168,14 +171,23 @@ export default function TenantDetailTabs({ tenant }: TenantDetailTabsProps) {
                   <Card key={org.id}>
                     <CardHeader>
                       <div className="flex items-center justify-between">
-                        <div>
+                        <div className="flex-1">
                           <CardTitle className="text-lg">{org.name}</CardTitle>
                           <CardDescription>{org.orgUid}</CardDescription>
                         </div>
-                        <Badge variant="outline">
-                          <Users className="h-3 w-3 mr-1" />
-                          {org._count.OrganizationMembers} members
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline">
+                            <Users className="h-3 w-3 mr-1" />
+                            {org._count.OrganizationMembers} members
+                          </Badge>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => router.push(`/super-admin/organizations/${org.id}`)}
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     </CardHeader>
                     <CardContent>

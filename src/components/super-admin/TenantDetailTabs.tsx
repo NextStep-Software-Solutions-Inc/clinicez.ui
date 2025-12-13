@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@components/ui/card";
-import { getTenantOrganizationsAction, getTenantClinicsAction } from "@actions/super-admin/tenants.action";
+import { getTenantOrganizationsAction, getTenantClinicsAction, GetTenantOrganizations, GetTenantClinics } from "@actions/super-admin/tenants.action";
 import { Badge } from "@components/ui/badge";
 import { Building2, Hospital, Users, ExternalLink } from "lucide-react";
 import { Button } from "@components/ui/button";
@@ -32,10 +32,13 @@ interface TenantDetailTabsProps {
   };
 }
 
+type OrganizationData = GetTenantOrganizations["data"][number];
+type ClinicData = GetTenantClinics["data"][number];
+
 export default function TenantDetailTabs({ tenant }: TenantDetailTabsProps) {
   const router = useRouter();
-  const [organizations, setOrganizations] = useState<any[]>([]);
-  const [clinics, setClinics] = useState<any[]>([]);
+  const [organizations, setOrganizations] = useState<OrganizationData[]>([]);
+  const [clinics, setClinics] = useState<ClinicData[]>([]);
   const [loadingOrgs, setLoadingOrgs] = useState(false);
   const [loadingClinics, setLoadingClinics] = useState(false);
 

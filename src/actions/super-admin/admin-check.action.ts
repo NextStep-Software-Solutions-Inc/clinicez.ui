@@ -2,7 +2,7 @@
 
 import "server-only";
 import prisma from "@lib/prisma";
-import { getCachedSession } from "./session.action";
+import { getCachedSession } from "@actions/session.action";
 
 /**
  * Check if the current user is a super admin

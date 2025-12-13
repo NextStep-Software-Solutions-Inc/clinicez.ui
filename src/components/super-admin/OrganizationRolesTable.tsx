@@ -30,12 +30,14 @@ interface OrganizationRolesTableProps {
   orgId: number;
 }
 
+type RoleData = GetOrganizationRoles["data"][number];
+
 export default function OrganizationRolesTable({ initialData, orgId }: OrganizationRolesTableProps) {
   const [data, setData] = useState(initialData);
   const [search, setSearch] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showDialog, setShowDialog] = useState(false);
-  const [editingRole, setEditingRole] = useState<any>(null);
+  const [editingRole, setEditingRole] = useState<RoleData | null>(null);
   const [roleName, setRoleName] = useState("");
   const [roleDescription, setRoleDescription] = useState("");
 
@@ -60,7 +62,7 @@ export default function OrganizationRolesTable({ initialData, orgId }: Organizat
     loadData(1, search);
   };
 
-  const handleOpenDialog = (role?: any) => {
+  const handleOpenDialog = (role?: RoleData) => {
     if (role) {
       setEditingRole(role);
       setRoleName(role.name);

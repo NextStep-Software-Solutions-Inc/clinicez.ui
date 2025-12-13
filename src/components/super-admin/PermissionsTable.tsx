@@ -230,7 +230,7 @@ export default function PermissionsTable({ initialData }: PermissionsTableProps)
                       value={permission.type}
                       onValueChange={(value) => handleTypeChange(permission.id, permission.name, permission.type, value)}
                     >
-                      <SelectTrigger className="w-[140px]">
+                      <SelectTrigger className="w-36">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -291,7 +291,7 @@ export default function PermissionsTable({ initialData }: PermissionsTableProps)
           <AlertDialogHeader>
             <AlertDialogTitle>Confirm Type Change</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to change the type of permission <strong>&quot;{typeChangeDialog?.permissionName}&quot;</strong> from <strong>{typeChangeDialog?.currentType}</strong> to <strong>{typeChangeDialog?.newType}</strong>?
+              Are you sure you want to change the type of permission <strong>{`"${typeChangeDialog?.permissionName}"`}</strong> from <strong>{typeChangeDialog?.currentType}</strong> to <strong>{typeChangeDialog?.newType}</strong>?
               <br /><br />
               This action may affect how this permission is used throughout the system.
             </AlertDialogDescription>
@@ -309,7 +309,7 @@ export default function PermissionsTable({ initialData }: PermissionsTableProps)
           <AlertDialogHeader>
             <AlertDialogTitle>Confirm Status Change</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to {statusChangeDialog?.currentStatus ? "deactivate" : "activate"} the permission <strong>&quot;{statusChangeDialog?.permissionName}&quot;</strong>?
+              Are you sure you want to {statusChangeDialog?.currentStatus ? "deactivate" : "activate"} the permission <strong>{`"${statusChangeDialog?.permissionName}"`}</strong>?
               <br /><br />
               {statusChangeDialog?.currentStatus 
                 ? "Deactivating this permission may prevent users from accessing certain features."

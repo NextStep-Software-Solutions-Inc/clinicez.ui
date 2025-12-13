@@ -47,6 +47,8 @@ model User {
   deletedAt                        DateTime?
   isActive                         Boolean                          @default(true)
   updatedAt                        DateTime                         @default(now()) @updatedAt
+  isSuperAdmin                     Boolean                          @default(false)
+  isSystemAdmin                    Boolean                          @default(false)
   bloodType                        BloodType?
   civilStatus                      CivilStatus?
   dob                              DateTime?                        @db.Date

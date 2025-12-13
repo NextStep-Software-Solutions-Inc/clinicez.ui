@@ -1,4 +1,5 @@
 import { getCachedSession } from "@actions/session.action";
+import { isSuperAdminAction } from "@actions/super-admin/admin-check.action";
 import { redirect } from "next/navigation";
 import { Card } from "@components/ui/card";
 import SidebarNav from "@components/SidebarNav";
@@ -9,16 +10,16 @@ const sidebarNavItems = [
     href: "/super-admin/permissions",
   },
   {
-    title: "Roles",
-    href: "/super-admin/roles",
-  },
-  {
     title: "Appointment Tabs",
     href: "/super-admin/appointment-tabs",
   },
   {
     title: "Tenants",
     href: "/super-admin/tenants",
+  },
+  {
+    title: "System Admins",
+    href: "/super-admin/system-admins",
   },
   {
     title: "Users",
@@ -37,9 +38,11 @@ export default async function SuperAdminLayout({
     redirect("/sign-in");
   }
 
-  // TODO: Implement super admin role check before production deployment
-  // This should verify the user has super admin privileges
-  // For development, any authenticated user can access these pages
+  // Check if user has super admin privileges
+  const isSuperAdmin = await isSuperAdminAction();
+  if (!isSuperAdmin) {
+    redirect("/unauthorized");
+  }
 
   return (
     <div className="min-h-screen bg-background">

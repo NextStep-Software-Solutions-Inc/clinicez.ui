@@ -35,7 +35,7 @@ export async function getAllUsersAction({
         lastName: true,
         middleName: true,
         gender: true,
-        birthdate: true,
+        dob: true,
         createdAt: true,
         updatedAt: true,
         _count: {
@@ -74,7 +74,7 @@ export async function getUserDetailsAction(userId: string) {
       lastName: true,
       middleName: true,
       gender: true,
-      birthdate: true,
+      dob: true,
       createdAt: true,
       updatedAt: true,
       ClinicMembers: {

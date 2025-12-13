@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { GetAllTenants, getAllTenantsAction, getTenantOrganizationsAction, getTenantClinicsAction } from "@actions/super-admin/tenants.action";
+import { GetAllTenants, getAllTenantsAction, getTenantOrganizationsAction, getTenantClinicsAction, GetTenantOrganizations, GetTenantClinics } from "@actions/super-admin/tenants.action";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@components/ui/table";
 import { Button } from "@components/ui/button";
 import { Input } from "@components/ui/input";
@@ -18,8 +18,8 @@ export default function TenantsTable({ initialData }: TenantsTableProps) {
   const [search, setSearch] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [expandedTenants, setExpandedTenants] = useState<Set<number>>(new Set());
-  const [tenantOrganizations, setTenantOrganizations] = useState<Record<number, any>>({});
-  const [tenantClinics, setTenantClinics] = useState<Record<number, any>>({});
+  const [tenantOrganizations, setTenantOrganizations] = useState<Record<number, GetTenantOrganizations>>({});
+  const [tenantClinics, setTenantClinics] = useState<Record<number, GetTenantClinics>>({});
 
   const loadData = async (page = 1, searchTerm = search) => {
     setIsLoading(true);
@@ -149,7 +149,7 @@ export default function TenantsTable({ initialData }: TenantsTableProps) {
                             <h4 className="font-semibold mb-2">Organizations ({tenantOrganizations[tenant.id]?.total || 0})</h4>
                             {tenantOrganizations[tenant.id]?.data?.length > 0 ? (
                               <div className="grid gap-2">
-                                {tenantOrganizations[tenant.id].data.map((org: any) => (
+                                {tenantOrganizations[tenant.id].data.map((org) => (
                                   <div key={org.id} className="flex items-center justify-between p-2 border rounded">
                                     <div>
                                       <div className="font-medium text-sm">{org.name}</div>
@@ -167,7 +167,7 @@ export default function TenantsTable({ initialData }: TenantsTableProps) {
                             <h4 className="font-semibold mb-2">Clinics ({tenantClinics[tenant.id]?.total || 0})</h4>
                             {tenantClinics[tenant.id]?.data?.length > 0 ? (
                               <div className="grid gap-2">
-                                {tenantClinics[tenant.id].data.map((clinic: any) => (
+                                {tenantClinics[tenant.id].data.map((clinic) => (
                                   <div key={clinic.id} className="flex items-center justify-between p-2 border rounded">
                                     <div>
                                       <div className="font-medium text-sm">{clinic.name}</div>

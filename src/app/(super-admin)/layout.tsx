@@ -37,8 +37,9 @@ export default async function SuperAdminLayout({
     redirect("/sign-in");
   }
 
-  // TODO: Add super admin role check here
-  // For now, we'll allow any authenticated user for development
+  // TODO: Implement super admin role check before production deployment
+  // This should verify the user has super admin privileges
+  // For development, any authenticated user can access these pages
 
   return (
     <div className="min-h-screen bg-background">

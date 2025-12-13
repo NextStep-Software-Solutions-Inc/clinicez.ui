@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@components/ui/button";
 import { Input } from "@components/ui/input";
 import { Badge } from "@components/ui/badge";
-import { Plus, Search, Pencil, Check, X } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@components/ui/dialog";
 import { Label } from "@components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@components/ui/select";
@@ -21,7 +21,6 @@ export default function PermissionsTable({ initialData }: PermissionsTableProps)
   const [data, setData] = useState(initialData);
   const [search, setSearch] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [editingId, setEditingId] = useState<number | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
   const [createForm, setCreateForm] = useState({

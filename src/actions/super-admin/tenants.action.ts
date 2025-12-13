@@ -205,3 +205,39 @@ export async function updateTenantAction({
 
   return { data: tenant };
 }
+
+export async function getTenantByIdAction({
+  tenantId,
+}: {
+  tenantId: number;
+}) {
+  const tenant = await prisma.tenant.findUnique({
+    where: { id: tenantId },
+    select: {
+      id: true,
+      tenantUid: true,
+      name: true,
+      description: true,
+      isActive: true,
+      createdAt: true,
+      updatedAt: true,
+      Owner: {
+        select: {
+          id: true,
+          userId: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+        },
+      },
+      _count: {
+        select: {
+          Organizations: true,
+          Clinics: true,
+        },
+      },
+    },
+  });
+
+  return tenant;
+}

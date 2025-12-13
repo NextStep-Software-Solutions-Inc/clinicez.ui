@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { GetAllTenants, getAllTenantsAction, getTenantOrganizationsAction, getTenantClinicsAction, GetTenantOrganizations, GetTenantClinics } from "@actions/super-admin/tenants.action";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@components/ui/table";
 import { Button } from "@components/ui/button";
 import { Input } from "@components/ui/input";
 import { Badge } from "@components/ui/badge";
-import { Search, ChevronDown, ChevronRight } from "lucide-react";
+import { Search, ChevronDown, ChevronRight, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 
 interface TenantsTableProps {
@@ -14,6 +15,7 @@ interface TenantsTableProps {
 }
 
 export default function TenantsTable({ initialData }: TenantsTableProps) {
+  const router = useRouter();
   const [data, setData] = useState(initialData);
   const [search, setSearch] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -90,12 +92,13 @@ export default function TenantsTable({ initialData }: TenantsTableProps) {
               <TableHead>Organizations</TableHead>
               <TableHead>Clinics</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead className="w-12"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {data.data.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground">
+                <TableCell colSpan={7} className="text-center text-muted-foreground">
                   No tenants found
                 </TableCell>
               </TableRow>
@@ -140,10 +143,23 @@ export default function TenantsTable({ initialData }: TenantsTableProps) {
                         {tenant.isActive ? "Active" : "Inactive"}
                       </Badge>
                     </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          router.push(`/super-admin/tenants/${tenant.id}`);
+                        }}
+                        className="h-8 w-8 p-0"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
                   </TableRow>
                   {expandedTenants.has(tenant.id) && (
                     <TableRow>
-                      <TableCell colSpan={6} className="bg-muted/20">
+                      <TableCell colSpan={7} className="bg-muted/20">
                         <div className="p-4 space-y-4">
                           <div>
                             <h4 className="font-semibold mb-2">Organizations ({tenantOrganizations[tenant.id]?.total || 0})</h4>

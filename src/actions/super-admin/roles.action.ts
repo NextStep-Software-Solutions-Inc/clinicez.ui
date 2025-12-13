@@ -74,7 +74,6 @@ export async function getAllRolesAction({
         name: true,
         description: true,
         isActive: true,
-        createdAt: true,
         Organization: {
           select: {
             id: true,

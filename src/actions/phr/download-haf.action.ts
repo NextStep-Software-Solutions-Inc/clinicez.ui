@@ -5,6 +5,8 @@ import { getUserAction } from "../users/user.action";
 import { generatePdf, PdfCheckboxMapping, PdfRadioMapping, PdfTextMapping } from "./utils/philhealth-pdf";
 import { calculateAge, capitalize, centimeterToInch, kilogramsToPounds } from "@/lib/utils";
 import { formatDate } from "@/lib/day-utils";
+import { summarizeImmunizations } from "@/lib/utils/immunization-mapping";
+import { generateCaseNumber } from "@/services/sequence-generator.service";
 import prisma from "@lib/prisma";
 
 export const downloadHAFAction = withErrorHandling(async (userId: string) => {
@@ -76,11 +78,46 @@ export const downloadHAFAction = withErrorHandling(async (userId: string) => {
       },
       ObGyneHistory: {
         where: { deletedAt: null }
+      },
+      UserVaccinations: {
+        where: { isActive: true, deletedAt: null },
+        include: {
+          Vaccine: true,
+          Dose: true
+        }
+      },
+      PhysicalExaminations: {
+        where: { deletedAt: null },
+        orderBy: { createdAt: "desc" },
+        take: 1,
+        select: {
+          id: true,
+          visualAcuityLeft: true,
+          visualAcuityRight: true,
+          status: true,
+          caseNumber: true
+        }
       }
     }
   });
 
   if (!phr) throw new Error("User not found");
+
+  // Get or generate case number for this health assessment
+  let caseNumber = phr.PhysicalExaminations?.[0]?.caseNumber;
+
+  if (!caseNumber) {
+    // Generate new case number (user-level, no clinic)
+    caseNumber = await generateCaseNumber("HEALTH_ASSESSMENT");
+
+    // Store it if we have a physical examination record
+    if (phr.PhysicalExaminations?.[0]?.id) {
+      await prisma.physicalExamination.update({
+        where: { id: phr.PhysicalExaminations[0].id },
+        data: { caseNumber }
+      });
+    }
+  }
 
   // Helper to check if condition exists in medical histories
   const hasCondition = (conditionName: string): boolean => {
@@ -104,6 +141,13 @@ export const downloadHAFAction = withErrorHandling(async (userId: string) => {
     return history?.details || "";
   };
 
+  // Summarize immunization records from UserVaccinations
+  const immunizationSummary = summarizeImmunizations(
+    phr.UserVaccinations,
+    phr.dob || new Date(), // Fallback to current date if dob is null
+    phr.ObGyneHistory?.hasPreEclampsia || false // Using pre-eclampsia as pregnancy indicator
+  );
+
   // Get BP values from VitalSigns (most recent)
   const highestBloodPressureSystolic = phr?.VitalSigns?.[0]?.bpSystolic || 0;
   const highestBloodPressureDiastolic = phr?.VitalSigns?.[0]?.bpDiastolic || 0;
@@ -111,8 +155,8 @@ export const downloadHAFAction = withErrorHandling(async (userId: string) => {
 
   const texts: PdfTextMapping[] = [
     // Header Section
-    { field: "dateScreeningAndAssessment", value: "" },
-    { field: "caseNumber", value: "" },
+    { field: "dateScreeningAndAssessment", value: formatDate(new Date()) },
+    { field: "caseNumber", value: caseNumber || "" },
 
     // Client Profile Section
     { field: "memberPin", value: phr?.PhilHealthRecords?.[0]?.pin || "" },
@@ -162,7 +206,7 @@ export const downloadHAFAction = withErrorHandling(async (userId: string) => {
     { field: "dateLabTakenRBS", value: "" },
 
     // Immunization (Optional) Section
-    { field: "immunizationOthersSpecify", value: "" },
+    { field: "immunizationOthersSpecify", value: immunizationSummary.others.join(", ") },
 
     // Personal Smoking History Section
     { field: "numberOfPacksCigPerYear", value: phr.PersonalHistory?.numberOfPacksPerYear?.toString() || "" },
@@ -203,8 +247,8 @@ export const downloadHAFAction = withErrorHandling(async (userId: string) => {
     { field: "patientExaminationWeightKg", value: phr?.VitalSigns?.[0]?.weight?.toString() || "" },
     { field: "patientExaminationWeightLb", value: phr?.VitalSigns?.[0]?.weight ? kilogramsToPounds(phr.VitalSigns[0].weight).toString() : "" },
     { field: "patientExaminationBMI", value: phr?.VitalSigns?.[0]?.bmi ? phr.VitalSigns[0].bmi.toFixed(2) : "" }, // scale down to 2 decimal places
-    { field: "patientExaminationVisual_1", value: "" },
-    { field: "patientExaminationVisual_2", value: "" },
+    { field: "patientExaminationVisual_1", value: phr?.PhysicalExaminations?.[0]?.visualAcuityLeft || "" },
+    { field: "patientExaminationVisual_2", value: phr?.PhysicalExaminations?.[0]?.visualAcuityRight || "" },
     { field: "patientExaminationTemperature", value: phr?.VitalSigns?.[0]?.temp?.toString() || "" },
 
     // Physical Examination - HEENT System
@@ -285,34 +329,34 @@ export const downloadHAFAction = withErrorHandling(async (userId: string) => {
     { field: "familyHistoryNone", condition: phr.FamilyMedicalHistories.length === 0 },
 
     // Immunization - Children
-    { field: "immunizationChildrenBCG", condition: false },
-    { field: "immunizationChildrenHepatitisB1", condition: false },
-    { field: "immunizationChildrenHepatitisB2", condition: false },
-    { field: "immunizationChildrenHepatitisB3", condition: false },
-    { field: "immunizationChildrenDPT1", condition: false },
-    { field: "immunizationChildrenDPT2", condition: false },
-    { field: "immunizationChildrenDPT3", condition: false },
-    { field: "immunizationChildrenOPV1", condition: false },
-    { field: "immunizationChildrenOPV2", condition: false },
-    { field: "immunizationChildrenOPV3", condition: false },
-    { field: "immunizationChildrenMeasles", condition: false },
-    { field: "immunizationChildrenHepatitisA", condition: false },
-    { field: "immunizationChildrenVaricella", condition: false },
-    { field: "immunizationChildrenNone", condition: false },
+    { field: "immunizationChildrenBCG", condition: immunizationSummary.children.bcg },
+    { field: "immunizationChildrenHepatitisB1", condition: immunizationSummary.children.hepatitisB1 },
+    { field: "immunizationChildrenHepatitisB2", condition: immunizationSummary.children.hepatitisB2 },
+    { field: "immunizationChildrenHepatitisB3", condition: immunizationSummary.children.hepatitisB3 },
+    { field: "immunizationChildrenDPT1", condition: immunizationSummary.children.dpt1 },
+    { field: "immunizationChildrenDPT2", condition: immunizationSummary.children.dpt2 },
+    { field: "immunizationChildrenDPT3", condition: immunizationSummary.children.dpt3 },
+    { field: "immunizationChildrenOPV1", condition: immunizationSummary.children.opv1 },
+    { field: "immunizationChildrenOPV2", condition: immunizationSummary.children.opv2 },
+    { field: "immunizationChildrenOPV3", condition: immunizationSummary.children.opv3 },
+    { field: "immunizationChildrenMeasles", condition: immunizationSummary.children.measles },
+    { field: "immunizationChildrenHepatitisA", condition: immunizationSummary.children.hepatitisA },
+    { field: "immunizationChildrenVaricella", condition: immunizationSummary.children.varicella },
+    { field: "immunizationChildrenNone", condition: immunizationSummary.children.none },
 
     // Immunization - Adult
-    { field: "immunizationAdultHPV", condition: false },
-    { field: "immunizationAdultMMR", condition: false },
-    { field: "immunizationAdultNone", condition: false },
+    { field: "immunizationAdultHPV", condition: immunizationSummary.adult.hpv },
+    { field: "immunizationAdultMMR", condition: immunizationSummary.adult.mmr },
+    { field: "immunizationAdultNone", condition: immunizationSummary.adult.none },
 
     // Immunization - Pregnant
-    { field: "immunizationPregnantTetanusToxoid", condition: false },
-    { field: "immunizationPregnantNone", condition: false },
+    { field: "immunizationPregnantTetanusToxoid", condition: immunizationSummary.pregnant.tetanusToxoid },
+    { field: "immunizationPregnantNone", condition: immunizationSummary.pregnant.none },
 
     // Immunization - Elderly
-    { field: "immunizationElderlyFluVaccine", condition: false },
-    { field: "immunizationElderlyPneumococcalVaccine", condition: false },
-    { field: "immunizationElderlyNone", condition: false },
+    { field: "immunizationElderlyFluVaccine", condition: immunizationSummary.elderly.fluVaccine },
+    { field: "immunizationElderlyPneumococcalVaccine", condition: immunizationSummary.elderly.pneumococcalVaccine },
+    { field: "immunizationElderlyNone", condition: immunizationSummary.elderly.none },
 
     // OB-Gyne Section
     { field: "obHistoryPregnancyPreEclampsia", condition: !!phr.ObGyneHistory?.hasPreEclampsia },

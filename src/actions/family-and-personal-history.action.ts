@@ -18,6 +18,7 @@ import type { Prisma } from "@prisma/client";
 type HealthHistoryResult = Prisma.UserGetPayload<{
   select: {
     id: true;
+    dob: true;
     MedicalHistories: {
       include: {
         Condition: true;
@@ -33,6 +34,12 @@ type HealthHistoryResult = Prisma.UserGetPayload<{
     ObGyneHistory: true;
     PhysicalExaminations: true;
     PediatricMeasurements: true;
+    UserVaccinations: {
+      include: {
+        Vaccine: true;
+        Dose: true;
+      }
+    };
   }
 }>;
 
@@ -42,6 +49,7 @@ export const getHealthHistoryAction = withErrorHandling(async (userId: string) =
     where: { userId, isActive: true, deletedAt: null },
     select: {
       id: true,
+      dob: true,
       MedicalHistories: {
         include: {
           Condition: true, // Join with HealthCondition to get condition names
@@ -60,6 +68,14 @@ export const getHealthHistoryAction = withErrorHandling(async (userId: string) =
       ObGyneHistory: true,
       PhysicalExaminations: { where: { deletedAt: null }, orderBy: { createdAt: 'desc' }, take: 1 },
       PediatricMeasurements: { where: { deletedAt: null }, orderBy: { dateTaken: 'desc' }, take: 5 },
+      UserVaccinations: {
+        where: { isActive: true, deletedAt: null },
+        include: {
+          Vaccine: true,
+          Dose: true,
+        },
+        orderBy: { dateGiven: 'desc' },
+      },
     }
   });
 

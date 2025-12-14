@@ -3,7 +3,6 @@
 import { memo } from "react";
 import { Picture } from "../app/(main)/user/[user]/phr/Picture";
 import { Separator } from "./ui/separator";
-import { differenceInCalendarYears } from "date-fns";
 import AllergiesForm from "../app/(main)/user/[user]/phr/allergies/AllergiesForm";
 import { VaccinationForm } from "../app/(main)/user/[user]/phr/vaccination-immunization/VaccinationForm";
 import DisabilitiesForm from "../app/(main)/user/[user]/phr/disabilities/DisabilitiesForm";
@@ -18,7 +17,8 @@ import { useVaccinations } from "@hooks/useVaccination";
 import RecentVitalSigns from "../app/(main)/user/[user]/phr/vitals/RecentVitalSigns";
 import { useUserVitalSigns } from "@hooks/useUserVitalSign";
 import { notFound, useParams } from "next/navigation";
-import MedicalHistory from "./MedicalHistory";
+import { calculateAge } from "@/lib/utils";
+import ConsultationHistory from "./ConsultationHistory";
 
 interface EMRPreviewProps {
     patientId: string
@@ -37,6 +37,8 @@ function EMRPreview({patientId}: EMRPreviewProps) {
   if(!patient?.data) return <div className="text-muted-foreground">Patient record cannot be found.</div>
 
   const name = `${patient?.data?.lastName || "-"}, ${patient?.data?.firstName || "-"} ${patient?.data?.middleName ?? ""} ${patient?.data?.suffix ?? ""}`
+  const age = calculateAge(patient.data.dob);
+  
   return (
     <div className="space-y-5 my-5 overflow-auto h-[calc(100vh-15%)] no-scrollbar">
       <div className="flex gap-5">
@@ -46,7 +48,7 @@ function EMRPreview({patientId}: EMRPreviewProps) {
           <div className="flex gap-5 items-center">
             <LabelValue label="Gender" value={patient?.data?.gender}/>
             <Separator orientation="vertical" className="h-10"/>
-            <LabelValue label="Age" value={patient.data.dob && `${differenceInCalendarYears(new Date(), patient.data.dob)} years old`}/>
+            <LabelValue label="Age" value={age && `${age} years old`}/>
           </div>
           <LabelValue label="Blood Type" value={patient?.data?.bloodType}/>
           <LabelValue label="Email" value={(
@@ -84,8 +86,8 @@ function EMRPreview({patientId}: EMRPreviewProps) {
       <Section title={`Family History`} >
       </Section>
 
-      <Section title={`Medical History`} >
-        <MedicalHistory
+      <Section title={`Consultation History`} >
+        <ConsultationHistory
           patientId={patientId}
           clinicUid={params.clinicUid}
         />

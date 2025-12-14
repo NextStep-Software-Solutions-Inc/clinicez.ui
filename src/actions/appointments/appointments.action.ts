@@ -313,6 +313,7 @@ export type GetAppointmentFilter = {
   userId?: string;
   status?: AppointmentStatus;
   routedAptStatus?: RoutedAptStatus;
+  tagged?: string;
   appointmentId?: number;
   sort?: "request" | "schedule";
 };
@@ -327,7 +328,7 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
     getHPsAction({ userId: session.user.sub })
   ])
 
-  const { clinicUid, userId, status, routedAptStatus, sort } = filter || {};
+  const { clinicUid, userId, status, routedAptStatus, tagged, sort } = filter || {};
 
   const userPermissionArray = permissions.map(p => p.name);
 
@@ -356,7 +357,20 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
         clinicUid
       },
       isActive: true,
-      AppointmentAttribute: { ...(status !== "ALL" ? { status } : {}) },
+      AppointmentAttribute: {
+        ...(status !== "ALL" ? { status } : {})
+      },
+      ...(tagged === "true"
+        ? {
+          AppointmentTags: {
+            some: {
+              healthcareProviderId: {
+                in: myHpIds
+              }
+            }
+          }
+        }
+        : {}),
       ...(routedAptStatus
         ? {
           AppointmentRouting: {
@@ -440,6 +454,32 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
           ConsultationTickets: true
         }
       },
+      AppointmentRouting: {
+        select: {
+          id: true,
+          status: true,
+          RoutedTo: {
+            select: {
+              id: true,
+              User: {
+                select: {
+                  firstName: true,
+                  middleName: true,
+                  lastName: true,
+                  suffix: true
+                }
+              },
+              HPProfile: {
+                select: {
+                  title: true,
+                  name: true,
+                  suffix: true
+                }
+              }
+            }
+          }
+        }
+      },
       AppointmentAttribute: {
         select: {
           date: true,
@@ -463,6 +503,38 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
           Service: {
             select: {
               name: true
+            }
+          }
+        }
+      },
+      AppointmentTags: {
+        select: {
+          id: true,
+          HealthcareProvider: {
+            select: {
+              id: true,
+              HPType: {
+                select: {
+                  id: true,
+                  name: true,
+                }
+              },
+              HPProfile: {
+                select: {
+                  title: true,
+                  name: true,
+                  suffix: true,
+                  specialties: true,
+                }
+              },
+              User: {
+                select: {
+                  firstName: true,
+                  middleName: true,
+                  lastName: true,
+                  suffix: true,
+                }
+              }
             }
           }
         }
@@ -676,7 +748,7 @@ export const getAppointmentAction = withErrorHandling(cache(async (id: number, c
                   title: true,
                   name: true,
                   suffix: true,
-                  fields: true
+                  specialties: true
                 }
               }
             }
@@ -690,7 +762,19 @@ export const getAppointmentAction = withErrorHandling(cache(async (id: number, c
           id: true,
           routingCode: true,
           amendment: true,
+          returnReason: true,
+          returnedAt: true,
           RoutedBy: {
+            select: {
+              userId: true,
+              firstName: true,
+              middleName: true,
+              lastName: true,
+              suffix: true,
+              email: true,
+            }
+          },
+          ReturnedBy: {
             select: {
               userId: true,
               firstName: true,
@@ -716,7 +800,7 @@ export const getAppointmentAction = withErrorHandling(cache(async (id: number, c
                   title: true,
                   name: true,
                   suffix: true,
-                  fields: true
+                  specialties: true
                 }
               },
               User: {
@@ -778,6 +862,42 @@ export const getAppointmentAction = withErrorHandling(cache(async (id: number, c
             }
           }
         }
+      },
+      AppointmentTags: {
+        select: {
+          id: true,
+          healthcareProviderId: true,
+          HealthcareProvider: {
+            select: {
+              id: true,
+              HPType: {
+                select: {
+                  id: true,
+                  name: true,
+                }
+              },
+              HPProfile: {
+                select: {
+                  title: true,
+                  name: true,
+                  suffix: true,
+                  specialties: true,
+                }
+              },
+              User: {
+                select: {
+                  userId: true,
+                  firstName: true,
+                  middleName: true,
+                  lastName: true,
+                  suffix: true,
+                }
+              }
+            }
+          },
+          createdAt: true
+        },
+        orderBy: { createdAt: "asc" }
       }
     }
   });
@@ -1008,6 +1128,123 @@ export const getRoutedAppointmentCountsAction = withErrorHandling(cache(async (c
   }, { ALL: 0 } as Record<string, number>);
 
   return { message: "Appointment counts fetched", data: countsMap };
+}));
+
+export const getTaggedAppointmentCountsAction = withErrorHandling(cache(async (clinicUid: string) => {
+  const session = await getCachedSession();
+  if (!session) throw new Error("Unauthorized");
+
+  const [permissions, myHps] = await Promise.all([
+    getPermissionsAction({ userId: session.user.sub }),
+    getHPsAction({ userId: session.user.sub })
+  ])
+
+  const userPermissionArray = permissions.map(p => p.name);
+
+  const readAllOrgAppointmentPermission = [PERMISSIONS.CLINIC["READ:CLINIC:APPOINTMENT:ALL"].name];
+  const readAOwnOrgAppointmentPermission = [PERMISSIONS.CLINIC["READ:CLINIC:APPOINTMENT:OWN"].name];
+  const readAssignedOrgAppointmentPermission = [PERMISSIONS.CLINIC["READ:CLINIC:APPOINTMENT:ASSIGNED"].name];
+
+  const canReadAllOrgAppointment = readAllOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
+  const canReadAOwnOrgAppointment = readAOwnOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
+  const canReadAssignedOrgAppointment = readAssignedOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
+
+  const myHpIds = myHps.map((hp) => hp.id);
+
+  // Get appointments where the user is tagged as a healthcare provider
+  const taggedAppointments = await prisma.appointment.findMany({
+    where: {
+      isActive: true,
+      Clinic: {
+        clinicUid
+      },
+      AppointmentTags: {
+        some: {
+          healthcareProviderId: {
+            in: myHpIds
+          }
+        }
+      },
+      OR: [
+        { ...(canReadAllOrgAppointment ? { Clinic: { clinicUid } } : {}) },
+        { ...(canReadAOwnOrgAppointment ? { Requesters: { every: { User: { userId: session.user.sub } } } } : {}) },
+        {
+          ...(canReadAssignedOrgAppointment ? {
+            AppointmentRouting: {
+              some: {
+                OR: [
+                  {
+                    routedTo: {
+                      in: myHpIds
+                    }
+                  },
+                  { RoutedBy: { userId: session.user.sub } }
+                ]
+              }
+            }
+          } : {})
+        },
+      ]
+    },
+    select: {
+      AppointmentAttribute: {
+        select: {
+          status: true
+        }
+      },
+      Requesters: {
+        select: {
+          User: {
+            select: {
+              userId: true,
+              firstName: true,
+              middleName: true,
+              lastName: true,
+              suffix: true,
+              StudentRecords: true,
+              UserEmployments: true
+            }
+          }
+        }
+      },
+    }
+  });
+
+  const [myWhitelistFilter] = await Promise.all([
+    getUserWhitelistFilters(session.user.sub, clinicUid)
+  ])
+
+  const filteredAppointments = taggedAppointments.filter((apt) => {
+    // Skip whitelist filtering if there are no whitelist filters
+    const whitelistFilters = myWhitelistFilter.data?.WhitelistFilters ?? [];
+    if (whitelistFilters.length === 0) {
+      return true; // No filters means all appointments are allowed
+    }
+
+    // Skip this appointment only if it has requesters but no user data (corrupted data)
+    if (apt?.Requesters?.length && !apt.Requesters[0]?.User) {
+      return false; // Has requesters but missing user data - filter out
+    }
+
+    // If appointment has no requesters at all, keep it (might be valid system appointment)
+    if (!apt?.Requesters?.length) {
+      return true;
+    }
+
+    return whitelistFilters.every((filter) => {
+      return isFilterMatch(filter.Filter.key, filter.value, apt.Requesters[0].User);
+    });
+  });
+
+  // group by status
+  const countsMap = filteredAppointments.reduce((acc, apt) => {
+    const status = apt?.AppointmentAttribute?.status;
+    if (status) acc[status] = (acc[status] ?? 0) + 1;
+    acc["ALL"] += 1;
+    return acc;
+  }, { ALL: 0 } as Record<string, number>);
+
+  return { message: "Tagged appointment counts fetched", data: countsMap };
 }));
 
 type RescheduleAppointmentPayload = {

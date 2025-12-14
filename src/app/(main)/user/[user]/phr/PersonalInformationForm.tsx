@@ -58,25 +58,26 @@ export function PersonalInformationForm({ readOnly, ...props }: PersonalInformat
     mode: "all"
   })
 
-  const handleSaveChanges = async () => {
+  const onSubmit = (data: PersonalInformationFormValues) => {
     const userId = user?.id
-    if (!userId) return toast.error("User not found.")
+    if (!userId) {
+      toast.error("User not found.")
+      return
+    }
 
-    form.handleSubmit(data => {
-      toast.promise(promiseWrapper(updateUserAction)(userId, data), {
-        loading: "Saving changes...",
-        success: (res) => {
-          form.reset(data)
-          return res.message
-        },
-        error: error => error,
-      })
-    })()
+    toast.promise(promiseWrapper(updateUserAction)(userId, data), {
+      loading: "Saving changes...",
+      success: (res) => {
+        form.reset(data)
+        return res.message
+      },
+      error: error => error,
+    })
   }
 
   return (
     <Form {...form}>
-      <form action={handleSaveChanges} className="space-y-8 flex flex-col">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 flex flex-col">
         {/* Email Address - Display Only */}
         <div className="w-full">
           <FormLabel>Email Address</FormLabel>

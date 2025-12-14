@@ -104,7 +104,7 @@ export default function MedicalCertificateItem({ certificate, onUpdated, hpIds }
               : "No Address"}
           </span>
           <div className="flex items-center justify-center w-12 text-center text-xs text-muted-foreground font-medium">
-            <span className="flex items-center justify-center w-full h-full">{patient?.dob ? calculateAge(patient.dob) : "-"}</span>
+            <span className="flex items-center justify-center w-full h-full">{calculateAge(patient?.dob) ?? "-"}</span>
           </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center min-w-[90px]">

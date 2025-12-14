@@ -96,13 +96,12 @@ export const columns: ColumnDef<ConsultationTicketData>[] = [
     ),
     cell: ({ row }) => {
       const patient = row.original.Appointment?.Requesters[0]?.User
-      if (!patient?.dob) return <span className="text-muted-foreground">-</span>
-
-      const age = calculateAge(patient.dob)
-      return (
-        <div className="text-sm">
-          {age}
-        </div>
+      const age = calculateAge(patient?.dob)
+      
+      return age === null ? (
+        <span className="text-muted-foreground">-</span>
+      ) : (
+        <div className="text-sm">{age}</div>
       )
     }
   },
@@ -187,7 +186,7 @@ export const columns: ColumnDef<ConsultationTicketData>[] = [
     accessorKey: "appointmentMode",
     accessorFn: (row) => row.Appointment?.AppointmentAttribute?.AppointmentMode?.name,
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Appointment Mode" />
+      <DataTableColumnHeader column={column} title="Appointment Type" />
     ),
     cell: ({ row }) => {
       const mode = row.original.Appointment?.AppointmentAttribute?.AppointmentMode?.name
@@ -202,7 +201,7 @@ export const columns: ColumnDef<ConsultationTicketData>[] = [
     accessorKey: "appointmentType",
     accessorFn: (row) => row.Appointment?.AppointmentAttribute?.AppointmentType?.name,
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Appointment Type" />
+      <DataTableColumnHeader column={column} title="Consultation Type" />
     ),
     cell: ({ row }) => {
       const type = row.original.Appointment?.AppointmentAttribute?.AppointmentType?.name
@@ -247,6 +246,47 @@ export const columns: ColumnDef<ConsultationTicketData>[] = [
           {doctorName || "-"}
         </div>
       )
+    }
+  },
+  {
+    accessorKey: "taggedHPs",
+    accessorFn: (row) => {
+      const tags = row.Appointment?.AppointmentTags ?? [];
+      return tags.map((tag) => {
+        const hp = tag.HealthcareProvider;
+        const nameParts = [hp?.User?.firstName, hp?.User?.lastName].filter(Boolean);
+        return hp?.HPProfile?.name || nameParts.join(" ");
+      }).join(", ");
+    },
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Tagged HPs (Info Only)" />
+    ),
+    cell: ({ row }) => {
+      const tags = row.original.Appointment?.AppointmentTags ?? [];
+      if (tags.length === 0) {
+        return <span className="text-muted-foreground text-xs">-</span>;
+      }
+      return (
+        <div className="max-w-[250px] space-y-1">
+          {tags.map((tag) => {
+            const hp = tag.HealthcareProvider;
+            const nameParts = [hp?.User?.firstName, hp?.User?.lastName].filter(Boolean);
+            const hpName = hp?.HPProfile?.name || nameParts.join(" ");
+            const role = hp?.HPType?.name;
+            const specialties = hp?.HPProfile?.specialties || [];
+            
+            return (
+              <div key={tag.id} className="text-xs">
+                <div className="font-medium">{hpName}</div>
+                <div className="text-muted-foreground text-[0.65rem]">
+                  {role}
+                  {specialties.length > 0 && ` • ${specialties.join(", ")}`}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      );
     }
   },
   {

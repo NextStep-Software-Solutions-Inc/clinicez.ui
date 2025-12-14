@@ -82,7 +82,7 @@ export default function PrescriptionItem({ prescription, onUpdated, hpIds }: Pre
           </span>
           <div className="flex items-center justify-center w-12 text-center text-xs text-muted-foreground font-medium">
             <span className="flex items-center justify-center w-full h-full">
-              {patient?.dob ? calculateAge(patient.dob) : "-"}
+              {calculateAge(patient?.dob) ?? "-"}
             </span>
           </div>
           <div className="flex items-center gap-4">

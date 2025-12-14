@@ -12,6 +12,7 @@ import { Separator } from "@components/ui/separator"
 import { ArrowRight } from "lucide-react";
 import dayjs from "@/lib/day-utils"
 import { combineDateTime } from "@/lib/day-utils";
+import { getHealthcareProviderName } from "@/lib/hp-utils";
 
 interface AppointmentListProps {
   appointments: GetAppointments["data"]
@@ -134,6 +135,24 @@ export const AppointmentList = forwardRef<HTMLDivElement, AppointmentListProps>(
                 <div className="line-clamp-2 text-xs text-muted-foreground">
                   {item.complaint?.substring(0, 300)}
                 </div>
+                {item.AppointmentTags && item.AppointmentTags.length > 0 && (
+                  <div className="flex items-center gap-1 flex-wrap">
+                    <span className="text-[0.65rem] text-muted-foreground">Tagged:</span>
+                    <Each
+                      of={item.AppointmentTags.slice(0, 3)}
+                      render={(tag) => (
+                        <Badge key={tag.id} variant="secondary" className="text-[0.65rem] px-1 py-0 bg-gray-200">
+                          {getHealthcareProviderName(tag.HealthcareProvider)}
+                        </Badge>
+                      )}
+                    />
+                    {item.AppointmentTags.length > 3 && (
+                      <span className="text-[0.65rem] text-muted-foreground">
+                        +{item.AppointmentTags.length - 3} more
+                      </span>
+                    )}
+                  </div>
+                )}
                 <div className="flex items-center gap-2 truncate">
                   <Badge variant={getBadgeVariantFromLabel(item.AppointmentAttribute?.AppointmentType.name ?? "")}>
                     {item.AppointmentAttribute?.AppointmentType.name}
@@ -145,7 +164,34 @@ export const AppointmentList = forwardRef<HTMLDivElement, AppointmentListProps>(
                     {item.AppointmentAttribute?.Service?.name}
                   </Badge>
                 </div>
+
                 <div className="flex items-center justify-end gap-2 w-full">
+                  {/* Assigned Doctor Section */}
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground flex-1">
+                    {(() => {
+                      const assignedHPs = item.AppointmentRouting?.filter(r => r.status === "ACCEPTED" || r.status === "PENDING") ?? [];
+                      if (assignedHPs.length === 0) {
+                        return <span className="italic">No assigned doctor</span>;
+                      }
+                      return (
+                        <>
+                          <span className="font-medium">Assigned to:</span>
+                          <span className="text-primary">{assignedHPs.map((routing, idx) => {
+                            const hp = routing.RoutedTo;
+                            const hpName = hp.HPProfile?.name
+                              ? `${hp.HPProfile.title || ""} ${hp.HPProfile.name} ${hp.HPProfile.suffix || ""}`.trim()
+                              : `${hp.User.firstName || ""} ${hp.User.middleName || ""} ${hp.User.lastName || ""} ${hp.User.suffix || ""}`.trim();
+                            return (
+                              <span key={routing.id}>
+                                {hpName}
+                                {idx < assignedHPs.length - 1 && ", "}
+                              </span>
+                            );
+                          })}</span>
+                        </>
+                      );
+                    })()}
+                  </div>
                   <span className="text-xs flex gap-1 items-center">
                     <ArrowRight className="inline-block w-3 h-3" />
                     {/* {item.AppointmentAttribute?.preferredAppointee} */}

@@ -5,6 +5,7 @@
 /.pnp
 .pnp.js
 .yarn/install-state.gz
+package-lock.json
 
 # testing
 /coverage
@@ -39,3 +40,5 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 // local scripts outputs
+# clerk configuration (can include secrets)
+/.clerk/

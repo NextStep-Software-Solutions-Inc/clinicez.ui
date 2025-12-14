@@ -137,10 +137,21 @@ export function generateSerialNumber(): string {
   return `${prefix}${middle}${suffixLetter}${suffixDigit}`;
 }
 
-export function calculateAge(birthDate: Date | string): number {
+export function calculateAge(birthDate: Date | string | null | undefined): number | null {
+  // Return null if birthDate is null or undefined
+  if (birthDate === null || birthDate === undefined) {
+    return null;
+  }
+
   const date = typeof birthDate === 'string' ? new Date(birthDate) : birthDate;
-  const today = dayjs();
   const birthDay = dayjs(date);
+  
+  // Return null if the date is invalid
+  if (!birthDay.isValid()) {
+    return null;
+  }
+
+  const today = dayjs();
   return today.diff(birthDay, 'year');
 }
 

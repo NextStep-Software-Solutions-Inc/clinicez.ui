@@ -5,12 +5,12 @@ import { Picture } from "../../app/(main)/user/[user]/phr/Picture";
 import { useUser } from "@hooks/useUser";
 import { notFound } from "next/navigation";
 import { LabelValue } from "@components/LabelValue";
-import { differenceInCalendarYears } from "date-fns";
 import { Card, CardContent } from "@components/ui/card";
 import { Separator } from "@components/ui/separator";
 import dayjs from "@lib/day-utils";
 import OrgMemberTabSection from "./OrgMemberTabSection";
 import { useOrgMembers } from "@/hooks/useOrgMember";
+import { calculateAge } from "@/lib/utils";
 
 interface OrgMemberDetailsProps {
   userId: string;
@@ -23,6 +23,8 @@ export default function OrgMemberDetails({userId, orgUid}:OrgMemberDetailsProps)
   if(isLoading) return <div>Loading user...</div>
   if(!user?.data) notFound()
 
+  const age = calculateAge(user.data.dob);
+
   return (
     <>
       <Card className="bg-slate-100">
@@ -33,7 +35,7 @@ export default function OrgMemberDetails({userId, orgUid}:OrgMemberDetailsProps)
               <div className="flex gap-5 flex-wrap items-center basis-[400px]">
                 <LabelValue label="Name" value={`${user.data.firstName} ${user.data.middleName ?? ""} ${user.data.lastName} ${user.data.suffix ?? ""}`} />
                 <Separator orientation="vertical" className="h-6"/>
-                <LabelValue label="Age" value={`${user.data.dob ? differenceInCalendarYears(new Date(), user.data.dob) : "0"} yr old`} />
+                <LabelValue label="Age" value={age ? `${age} yr old` : ""} />
                 <Separator orientation="vertical" className="h-6"/>
                 <LabelValue label="Gender" value={user?.data.gender} />
               </div>

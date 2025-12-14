@@ -61,8 +61,6 @@ model User {
   religion                                               String?
   suffix                                                 String?
   telephone                                              String?
-  isSuperAdmin                                           Boolean                          @default(false)
-  isSystemAdmin                                          Boolean                          @default(false)
   ActivationCodes                                        ActivationCode[]
   CompletedByAppointments                                AppointmentAttribute[]           @relation("CompletedBy")
   ReceivedByAppointments                                 AppointmentAttribute[]           @relation("ReceivedBy")
@@ -70,7 +68,7 @@ model User {
   RescheduledByAppointments                              AppointmentAttribute[]           @relation("RescheduledBy")
   AppointmentRequesters                                  AppointmentRequester[]
   AmendedAppointments                                    AppointmentRouting[]             @relation("AmendedBy")
-  AppointmentRouting_AppointmentRouting_returnedByToUser AppointmentRouting[]             @relation("AppointmentRouting_returnedByToUser")
+  ReturnedAppointments                                   AppointmentRouting[]             @relation("ReturnedBy")
   RoutedAppointments                                     AppointmentRouting[]             @relation("RoutedBy")
   BookedByBookings                                       Booking[]                        @relation("BookedBy")
   BookedForBookings                                      Booking[]                        @relation("BookedFor")
@@ -1455,7 +1453,7 @@ model AppointmentRouting {
   returnedBy                               Int?
   AmendedBy                                User?              @relation("AmendedBy", fields: [amendedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
   Appointment                              Appointment        @relation(fields: [appointmentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  User_AppointmentRouting_returnedByToUser User?              @relation("AppointmentRouting_returnedByToUser", fields: [returnedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  ReturnedByUser                           User?              @relation("ReturnedBy", fields: [returnedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
   RoutedBy                                 User               @relation("RoutedBy", fields: [routedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
   RoutedTo                                 HealthcareProvider @relation("RoutedTo", fields: [routedTo], references: [id], onDelete: NoAction, onUpdate: NoAction)
 

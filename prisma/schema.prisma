@@ -39,99 +39,102 @@ model TenantSetting {
 }
 
 model User {
-  id                               Int                              @id @default(autoincrement())
-  userId                           String                           @unique
-  email                            String                           @unique
-  picture                          String?
-  createdAt                        DateTime                         @default(now())
-  deletedAt                        DateTime?
-  isActive                         Boolean                          @default(true)
-  updatedAt                        DateTime                         @default(now()) @updatedAt
-  bloodType                        BloodType?
-  civilStatus                      CivilStatus?
-  dob                              DateTime?                        @db.Date
-  placeOfBirth                     String?
-  firstName                        String?
-  gender                           Gender?
-  lastName                         String?
-  middleName                       String?
-  mobile                           String?
-  nationality                      String?
-  nickname                         String?
-  religion                         String?
-  suffix                           String?
-  telephone                        String?
-  ActivationCodes                  ActivationCode[]
-  CompletedByAppointments          AppointmentAttribute[]           @relation("CompletedBy")
-  ReceivedByAppointments           AppointmentAttribute[]           @relation("ReceivedBy")
-  RejectedByAppointments           AppointmentAttribute[]           @relation("RejectedBy")
-  RescheduledByAppointments        AppointmentAttribute[]           @relation("RescheduledBy")
-  AppointmentRequesters            AppointmentRequester[]
-  AmendedAppointments              AppointmentRouting[]             @relation("AmendedBy")
-  RoutedAppointments               AppointmentRouting[]             @relation("RoutedBy")
-  BookedByBookings                 Booking[]                        @relation("BookedBy")
-  BookedForBookings                Booking[]                        @relation("BookedFor")
-  ImagingRequestsCreated           ClinicImagingRequest[]           @relation("ImagingRequestCreatedBy")
-  ImagingRequestsDeleted           ClinicImagingRequest[]           @relation("ImagingRequestDeletedBy")
-  ImagingRequestsUpdated           ClinicImagingRequest[]           @relation("ImagingRequestUpdatedBy")
-  LaboratoryRequestsCreated        ClinicLaboratoryRequest[]        @relation("LaboratoryRequestCreatedBy")
-  LaboratoryRequestsDeleted        ClinicLaboratoryRequest[]        @relation("LaboratoryRequestDeletedBy")
-  LaboratoryRequestsUpdated        ClinicLaboratoryRequest[]        @relation("LaboratoryRequestUpdatedBy")
-  MedicalCertificatesCreated       ClinicMedicalCertificate[]       @relation("MedicalCertificateCreatedBy")
-  MedicalCertificatesDeleted       ClinicMedicalCertificate[]       @relation("MedicalCertificateDeletedBy")
-  MedicalCertificatesUpdated       ClinicMedicalCertificate[]       @relation("MedicalCertificateUpdatedBy")
-  ClinicMembers                    ClinicMember[]
-  ClinicPatients                   ClinicPatient[]
-  ReferralSlipsCreated             ClinicReferralSlip[]             @relation("ReferralSlipCreatedBy")
-  ReferralSlipsDeleted             ClinicReferralSlip[]             @relation("ReferralSlipDeletedBy")
-  ReferralSlipsUpdated             ClinicReferralSlip[]             @relation("ReferralSlipUpdatedBy")
-  Folders                          Folder[]
-  HealthcareProviders              HealthcareProvider[]
-  Medications                      Medication[]
-  MedicinesCreated                 Medicine[]                       @relation("MedicineCreatedBy")
-  MedicinesUpdated                 Medicine[]                       @relation("MedicineUpdatedBy")
-  AcceptedOrganizationApplications OrganizationMember[]             @relation("AcceptedBy")
-  OrganizationMembers              OrganizationMember[]             @relation("User")
-  PhilHealthRecordsCreated         PhilHealthRecord[]               @relation("PhilHealthRecordsCreatedBy")
-  PhilHealthRecordsDeleted         PhilHealthRecord[]               @relation("PhilHealthRecordsDeletedBy")
-  PhilHealthRecordsUpdated         PhilHealthRecord[]               @relation("PhilHealthRecordsUpdatedBy")
-  PhilHealthRecords                PhilHealthRecord[]
-  PreAssessmentNotes               PreAssessmentNote[]
-  PrescriptionsCreated             Prescription[]                   @relation("PrescriptionCreatedBy")
-  PrescriptionsUpdated             Prescription[]                   @relation("PrescriptionUpdatedBy")
-  ReceiptCodeClaims                ReceiptCodeClaim[]
-  ReservedTimeSlots                ReservedTimeSlot[]
-  SocialLink                       SocialLink?
-  Tenants                          Tenant[]
-  UserAddresses                    UserAddress[]
-  UserAllergies                    UserAllergy[]
-  UserClinicAppointmentWhitelists  UserClinicAppointmentWhitelist[]
-  UserDefaultClinicRoles           UserDefaultClinicRole[]
-  UserDefaultOrganization          UserDefaultOrganization?
-  UserDefaultOrganizationRoles     UserDefaultOrganizationRole[]
-  UserDefaultTenant                UserDefaultTenant?
-  DiagnosedUserDisabilities        UserDisability[]                 @relation("DiagnosedUserDisability")
-  UserDisabilities                 UserDisability[]                 @relation("UserDisability")
-  UserEmergencyContacts            UserEmergencyContact[]
-  UserEmployments                  UserEmploymentRecord[]
-  DiagnosedUserHealthConditions    UserHealthCondition[]            @relation("DiagnosedUserHealthCondition")
-  ResolvedUserHealthConditions     UserHealthCondition[]            @relation("ResolvedUserHealthCondition")
-  UserHealthConditions             UserHealthCondition[]            @relation("HealthCondition")
-  UserMigration                    UserMigration?
-  UserPermissions                  UserPermission[]
-  Plans                            UserPlan[]
-  UserPreference                   UserPreference?
-  UserSchedules                    UserSchedule[]
-  StudentRecords                   UserStudentRecord[]
-  UserVaccinations                 UserVaccination[]
-  VitalSigns                       VitalSign[]
-  MedicalHistories                 MedicalHistory[]
-  FamilyMedicalHistories           FamilyMedicalHistory[]
-  SurgicalHistories                SurgicalHistory[]
-  PersonalHistory                  PersonalHistory?
-  ObGyneHistory                    ObGyneHistory?
-  PhysicalExaminations             PhysicalExamination[]
-  PediatricMeasurements            PediatricMeasurement[]
+  id                                                     Int                              @id @default(autoincrement())
+  userId                                                 String                           @unique
+  email                                                  String                           @unique
+  picture                                                String?
+  createdAt                                              DateTime                         @default(now())
+  deletedAt                                              DateTime?
+  isActive                                               Boolean                          @default(true)
+  updatedAt                                              DateTime                         @default(now()) @updatedAt
+  bloodType                                              BloodType?
+  civilStatus                                            CivilStatus?
+  dob                                                    DateTime?                        @db.Date
+  placeOfBirth                                           String?
+  firstName                                              String?
+  gender                                                 Gender?
+  lastName                                               String?
+  middleName                                             String?
+  mobile                                                 String?
+  nationality                                            String?
+  nickname                                               String?
+  religion                                               String?
+  suffix                                                 String?
+  telephone                                              String?
+  isSuperAdmin                                           Boolean                          @default(false)
+  isSystemAdmin                                          Boolean                          @default(false)
+  ActivationCodes                                        ActivationCode[]
+  CompletedByAppointments                                AppointmentAttribute[]           @relation("CompletedBy")
+  ReceivedByAppointments                                 AppointmentAttribute[]           @relation("ReceivedBy")
+  RejectedByAppointments                                 AppointmentAttribute[]           @relation("RejectedBy")
+  RescheduledByAppointments                              AppointmentAttribute[]           @relation("RescheduledBy")
+  AppointmentRequesters                                  AppointmentRequester[]
+  AmendedAppointments                                    AppointmentRouting[]             @relation("AmendedBy")
+  AppointmentRouting_AppointmentRouting_returnedByToUser AppointmentRouting[]             @relation("AppointmentRouting_returnedByToUser")
+  RoutedAppointments                                     AppointmentRouting[]             @relation("RoutedBy")
+  BookedByBookings                                       Booking[]                        @relation("BookedBy")
+  BookedForBookings                                      Booking[]                        @relation("BookedFor")
+  ImagingRequestsCreated                                 ClinicImagingRequest[]           @relation("ImagingRequestCreatedBy")
+  ImagingRequestsDeleted                                 ClinicImagingRequest[]           @relation("ImagingRequestDeletedBy")
+  ImagingRequestsUpdated                                 ClinicImagingRequest[]           @relation("ImagingRequestUpdatedBy")
+  LaboratoryRequestsCreated                              ClinicLaboratoryRequest[]        @relation("LaboratoryRequestCreatedBy")
+  LaboratoryRequestsDeleted                              ClinicLaboratoryRequest[]        @relation("LaboratoryRequestDeletedBy")
+  LaboratoryRequestsUpdated                              ClinicLaboratoryRequest[]        @relation("LaboratoryRequestUpdatedBy")
+  MedicalCertificatesCreated                             ClinicMedicalCertificate[]       @relation("MedicalCertificateCreatedBy")
+  MedicalCertificatesDeleted                             ClinicMedicalCertificate[]       @relation("MedicalCertificateDeletedBy")
+  MedicalCertificatesUpdated                             ClinicMedicalCertificate[]       @relation("MedicalCertificateUpdatedBy")
+  ClinicMembers                                          ClinicMember[]
+  ClinicPatients                                         ClinicPatient[]
+  ReferralSlipsCreated                                   ClinicReferralSlip[]             @relation("ReferralSlipCreatedBy")
+  ReferralSlipsDeleted                                   ClinicReferralSlip[]             @relation("ReferralSlipDeletedBy")
+  ReferralSlipsUpdated                                   ClinicReferralSlip[]             @relation("ReferralSlipUpdatedBy")
+  FamilyMedicalHistories                                 FamilyMedicalHistory[]
+  Folders                                                Folder[]
+  HealthcareProviders                                    HealthcareProvider[]
+  MedicalHistories                                       MedicalHistory[]
+  Medications                                            Medication[]
+  MedicinesCreated                                       Medicine[]                       @relation("MedicineCreatedBy")
+  MedicinesUpdated                                       Medicine[]                       @relation("MedicineUpdatedBy")
+  ObGyneHistory                                          ObGyneHistory?
+  AcceptedOrganizationApplications                       OrganizationMember[]             @relation("AcceptedBy")
+  OrganizationMembers                                    OrganizationMember[]             @relation("User")
+  PediatricMeasurements                                  PediatricMeasurement[]
+  PersonalHistory                                        PersonalHistory?
+  PhilHealthRecordsCreated                               PhilHealthRecord[]               @relation("PhilHealthRecordsCreatedBy")
+  PhilHealthRecordsDeleted                               PhilHealthRecord[]               @relation("PhilHealthRecordsDeletedBy")
+  PhilHealthRecordsUpdated                               PhilHealthRecord[]               @relation("PhilHealthRecordsUpdatedBy")
+  PhilHealthRecords                                      PhilHealthRecord[]
+  PhysicalExaminations                                   PhysicalExamination[]
+  PreAssessmentNotes                                     PreAssessmentNote[]
+  PrescriptionsCreated                                   Prescription[]                   @relation("PrescriptionCreatedBy")
+  PrescriptionsUpdated                                   Prescription[]                   @relation("PrescriptionUpdatedBy")
+  ReceiptCodeClaims                                      ReceiptCodeClaim[]
+  ReservedTimeSlots                                      ReservedTimeSlot[]
+  SocialLink                                             SocialLink?
+  SurgicalHistories                                      SurgicalHistory[]
+  Tenants                                                Tenant[]
+  UserAddresses                                          UserAddress[]
+  UserAllergies                                          UserAllergy[]
+  UserClinicAppointmentWhitelists                        UserClinicAppointmentWhitelist[]
+  UserDefaultClinicRoles                                 UserDefaultClinicRole[]
+  UserDefaultOrganization                                UserDefaultOrganization?
+  UserDefaultOrganizationRoles                           UserDefaultOrganizationRole[]
+  UserDefaultTenant                                      UserDefaultTenant?
+  DiagnosedUserDisabilities                              UserDisability[]                 @relation("DiagnosedUserDisability")
+  UserDisabilities                                       UserDisability[]                 @relation("UserDisability")
+  UserEmergencyContacts                                  UserEmergencyContact[]
+  UserEmployments                                        UserEmploymentRecord[]
+  DiagnosedUserHealthConditions                          UserHealthCondition[]            @relation("DiagnosedUserHealthCondition")
+  ResolvedUserHealthConditions                           UserHealthCondition[]            @relation("ResolvedUserHealthCondition")
+  UserHealthConditions                                   UserHealthCondition[]            @relation("HealthCondition")
+  UserMigration                                          UserMigration?
+  UserPermissions                                        UserPermission[]
+  Plans                                                  UserPlan[]
+  UserPreference                                         UserPreference?
+  UserSchedules                                          UserSchedule[]
+  StudentRecords                                         UserStudentRecord[]
+  UserVaccinations                                       UserVaccination[]
+  VitalSigns                                             VitalSign[]
 }
 
 model PhilHealthRecord {
@@ -171,19 +174,21 @@ model PhilHealthMemberType {
 }
 
 model PhilHealthDependent {
-  id                 Int              @id @default(autoincrement())
-  philHealthRecordId Int
-  firstName          String
-  middleName         String?
-  lastName           String?
-  suffix             String?
-  relationship       String?
-  dob                DateTime?
-  gender             Gender?
-  createdAt          DateTime         @default(now())
-  updatedAt          DateTime         @updatedAt
-  deletedAt          DateTime?
-  PhilHealthRecord   PhilHealthRecord @relation(fields: [philHealthRecordId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id                    Int              @id @default(autoincrement())
+  philHealthRecordId    Int
+  firstName             String
+  middleName            String?
+  lastName              String?
+  suffix                String?
+  citizenship           String?
+  isPermanentlyDisabled Boolean          @default(false)
+  relationship          String?
+  dob                   DateTime?
+  gender                Gender?
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+  deletedAt             DateTime?
+  PhilHealthRecord      PhilHealthRecord @relation(fields: [philHealthRecordId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model ClinicPatient {
@@ -428,6 +433,7 @@ model HealthcareProvider {
   isPublished             Boolean                    @default(false)
   AppointmentAttributes   AppointmentAttribute[]
   AppointmentRoutings     AppointmentRouting[]       @relation("RoutedTo")
+  AppointmentTag          AppointmentTag[]
   ImagingRequests         ClinicImagingRequest[]
   ClinicLaboratoryRequest ClinicLaboratoryRequest[]
   MedicalCertificates     ClinicMedicalCertificate[]
@@ -456,8 +462,6 @@ model HPProfile {
   suffix               String?
   picture              String?
   cover                String?
-  // This will be a URL to the e-signature image (blob storage from azure)
-  eSignatureUrl        String?
   createdAt            DateTime           @default(now())
   updatedAt            DateTime           @updatedAt
   deletedAt            DateTime?
@@ -474,6 +478,7 @@ model HPProfile {
   workEmail            String?
   workPhone            String?
   educations           String[]           @default([])
+  eSignatureUrl        String?
   HealthcareProvider   HealthcareProvider @relation(fields: [healthcareProviderId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
@@ -726,10 +731,9 @@ model UserAddress {
   User          User      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
-// Reference this for the newly added models
 model Vaccine {
   id               Int               @id @default(autoincrement())
-  name             String // BCG, Hepatitis B, etc.
+  name             String
   description      String?
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
@@ -793,13 +797,11 @@ model VaccineDose {
   @@unique([vaccineId, doseId], name: "unique_vaccine_dose")
 }
 
-// Reference this for the newly added models
-// doseId included here as well
 model UserVaccination {
   id                 Int                 @id @default(autoincrement())
   userId             Int
   vaccineId          Int
-  doseId             Int // for example, in the document, OPV 1 is the first dose of OPV vaccine and so on.
+  doseId             Int
   routeId            Int
   dateGiven          DateTime
   notes              String?
@@ -838,21 +840,18 @@ model UserAllergy {
   @@unique([userId, allergenId], name: "unique_user_allergy")
 }
 
-// Reference this for the newly added models
-// Take the healthConditionId
 model HealthCondition {
-  id                     Int                      @id @default(autoincrement())
-  name                   String                   @unique
-  createdAt              DateTime                 @default(now())
-  updatedAt              DateTime                 @updatedAt
+  id                     Int                    @id @default(autoincrement())
+  name                   String                 @unique
+  createdAt              DateTime               @default(now())
+  updatedAt              DateTime               @updatedAt
   deletedAt              DateTime?
-  isActive               Boolean                  @default(true)
-  UserHealthConditions   UserHealthCondition[]    @relation("UserHealthCondition")
-  MedicalHistories       MedicalHistory[]         @relation("MedicalHistoryCondition")
-  FamilyMedicalHistories FamilyMedicalHistory[]   @relation("FamilyMedicalHistoryCondition")
+  isActive               Boolean                @default(true)
+  FamilyMedicalHistories FamilyMedicalHistory[] @relation("FamilyMedicalHistoryCondition")
+  MedicalHistories       MedicalHistory[]       @relation("MedicalHistoryCondition")
+  UserHealthConditions   UserHealthCondition[]  @relation("UserHealthCondition")
 }
 
-// Reference this for personal history oof health conditions
 model UserHealthCondition {
   id                Int             @id @default(autoincrement())
   userId            Int
@@ -917,8 +916,8 @@ model VitalSign {
   updatedAt            DateTime              @updatedAt
   deletedAt            DateTime?
   isActive             Boolean               @default(true)
-  User                 User                  @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   PhysicalExaminations PhysicalExamination[]
+  User                 User                  @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model OrganizationDepartment {
@@ -1185,6 +1184,7 @@ model Clinic {
   Systems                         System[]
   UserClinicAppointmentWhitelists UserClinicAppointmentWhitelist[]
   UserDefaultClinicRoles          UserDefaultClinicRole[]
+  SequenceGenerators              SequenceGenerator[]
 
   @@index([tenantId, clinicUid], map: "clinic_index")
 }
@@ -1337,6 +1337,7 @@ model Appointment {
   AppointmentAttribute   AppointmentAttribute?
   Requesters             AppointmentRequester[]
   AppointmentRouting     AppointmentRouting[]
+  AppointmentTag         AppointmentTag[]
   ClinicReferralSlips    ClinicReferralSlip[]
   ConsultationTickets    ConsultationTicket[]
   PreAssessmentNotes     PreAssessmentNote[]
@@ -1438,21 +1439,25 @@ model AppointmentMode {
 }
 
 model AppointmentRouting {
-  id            Int                @id @default(autoincrement())
-  routingCode   String             @unique @default(cuid())
-  appointmentId Int
-  routedBy      Int
-  routedTo      Int
-  status        String             @default("PENDING")
-  amendment     String?
-  amendedAt     DateTime?
-  amendedBy     Int?
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
-  AmendedBy     User?              @relation("AmendedBy", fields: [amendedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  Appointment   Appointment        @relation(fields: [appointmentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  RoutedBy      User               @relation("RoutedBy", fields: [routedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  RoutedTo      HealthcareProvider @relation("RoutedTo", fields: [routedTo], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id                                       Int                @id @default(autoincrement())
+  routingCode                              String             @unique @default(cuid())
+  appointmentId                            Int
+  routedBy                                 Int
+  routedTo                                 Int
+  status                                   String             @default("PENDING")
+  amendment                                String?
+  amendedAt                                DateTime?
+  amendedBy                                Int?
+  createdAt                                DateTime           @default(now())
+  updatedAt                                DateTime           @updatedAt
+  returnReason                             String?
+  returnedAt                               DateTime?
+  returnedBy                               Int?
+  AmendedBy                                User?              @relation("AmendedBy", fields: [amendedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Appointment                              Appointment        @relation(fields: [appointmentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  User_AppointmentRouting_returnedByToUser User?              @relation("AppointmentRouting_returnedByToUser", fields: [returnedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  RoutedBy                                 User               @relation("RoutedBy", fields: [routedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  RoutedTo                                 HealthcareProvider @relation("RoutedTo", fields: [routedTo], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@unique([appointmentId, routedTo], name: "unique_appointment_routing")
 }
@@ -1493,6 +1498,7 @@ model ServiceAttribute {
   durationPadding Int      @default(0)
   specializations String[] @default([])
   resources       String[] @default([])
+  forTaggedOnly   Boolean  @default(false)
   Service         Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
@@ -1502,6 +1508,7 @@ model ConsultationTicket {
   appointmentId               Int?
   clinicId                    Int
   subject                     String?                      @default("")
+  caseNumber                  String?
   createdAt                   DateTime                     @default(now())
   updatedAt                   DateTime                     @updatedAt
   isActive                    Boolean                      @default(true)
@@ -1519,6 +1526,8 @@ model ConsultationTicket {
   Interventions               Intervention[]
   Medications                 Medication[]
   Prescriptions               Prescription[]
+
+  @@index([caseNumber])
 }
 
 model ConsultationTicketHP {
@@ -1656,7 +1665,6 @@ model Medicine {
   isGeneric      Boolean       @default(false)
   description    String?
   dosage         String?
-  qty            Int? // Optional for safer data migration
   frequency      String?
   unit           String?
   notes          String?
@@ -1668,6 +1676,7 @@ model Medicine {
   updatedBy      Int?
   updatedAt      DateTime      @updatedAt
   deletedAt      DateTime?
+  qty            Int?
   CreatedBy      User          @relation("MedicineCreatedBy", fields: [createdById], references: [id], onDelete: NoAction, onUpdate: NoAction)
   Prescription   Prescription? @relation(fields: [prescriptionId], references: [id])
   UpdatedBy      User?         @relation("MedicineUpdatedBy", fields: [updatedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -1953,47 +1962,35 @@ model ClinicImagingRequestDiagnostic {
   @@unique([clinicImagingRequestId, imagingDiagnosticId], name: "unique_clinic_imaging_request_diagnostic")
 }
 
-// Medical History models - split into logical sections for Health Assessment Form (HAF)
-// These models support the PHR section and HAF PDF generation
-
-// Past Medical History - tracks chronic conditions and diseases
-// conditionId and userId should only remain, then createdAt for tracking purposes
-// Conditions (checkboxes in HAF)
-// these are conditions. Should only have `conditionId`, then check that condition if that person has astham, for example.
-// it should only contain the condition of the patient
-// `hasAllery` should only be in the allergy model
-// No need for soft delete
 model MedicalHistory {
   id          Int             @id @default(autoincrement())
   userId      Int
   conditionId Int
-  details     String? // For condition-specific details like cancer organ, hepatitis type, TB details
+  details     String?
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
-  User        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   Condition   HealthCondition @relation("MedicalHistoryCondition", fields: [conditionId], references: [id])
+  User        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, conditionId])
   @@index([userId])
 }
 
-// Family Medical History - same structure as MedicalHistory but for family members
 model FamilyMedicalHistory {
   id          Int             @id @default(autoincrement())
   userId      Int
-  conditionId Int
-  details     String? // For condition-specific details like cancer organ, hepatitis type, TB details
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
   deletedAt   DateTime?
-  User        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conditionId Int
+  details     String?
   Condition   HealthCondition @relation("FamilyMedicalHistoryCondition", fields: [conditionId], references: [id])
+  User        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, conditionId])
   @@index([userId])
 }
 
-// Surgical History - table format: operation and date
 model SurgicalHistory {
   id            Int       @id @default(autoincrement())
   userId        Int
@@ -2008,42 +2005,35 @@ model SurgicalHistory {
   @@index([userId])
 }
 
-// Personal/Social History
 model PersonalHistory {
   id                    Int       @id @default(autoincrement())
   userId                Int       @unique
-  // Smoking
-  smokingStatus         String? // "Yes", "No", "Quit"
+  smokingStatus         String?
   numberOfPacksPerYear  Int?
-  // Alcohol
-  alcoholStatus         String? // "Yes", "No", "Quit"
+  alcoholStatus         String?
   numberOfBottlesPerDay Int?
-  // Drugs
-  illicitDrugUse        String? // "Yes", "No"
-  // Sexual History
-  sexuallyActive        String? // "Yes", "No"
+  illicitDrugUse        String?
+  sexuallyActive        String?
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
   deletedAt             DateTime?
   User                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-// OB-Gyne History (Approved)
 model ObGyneHistory {
   id                          Int       @id @default(autoincrement())
   userId                      Int       @unique
-  menarche                    Int? // age
+  menarche                    Int?
   lastMenstrualPeriod         DateTime? @db.Date
   menopauseAge                Int?
-  menopauseStatus             String? // "Yes", "No"
+  menopauseStatus             String?
   ageAtFirstSexualIntercourse Int?
   birthControlMethod          String?
-  menstrualPeriodDuration     Int? // days
-  menstrualCycleInterval      Int? // days
+  menstrualPeriodDuration     Int?
+  menstrualCycleInterval      Int?
   numberOfPadsPerDay          Int?
-  // Pregnancy history
-  gravidity                   Int? // total pregnancies
-  parity                      Int? // live births
+  gravidity                   Int?
+  parity                      Int?
   fullTerm                    Int?
   premature                   Int?
   abortion                    Int?
@@ -2056,14 +2046,14 @@ model ObGyneHistory {
   User                        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-// Physical Examination - extends VitalSigns with additional measurements (Approved)
 model PhysicalExamination {
   id                Int        @id @default(autoincrement())
   userId            Int
-  vitalSignId       Int? // Link to VitalSign (optional)
+  vitalSignId       Int?
   visualAcuityLeft  String?
   visualAcuityRight String?
-  status            String? // e.g., "Physically Fit", "Underweight", "Overweight", "Obese"
+  status            String?
+  caseNumber        String?
   createdAt         DateTime   @default(now())
   updatedAt         DateTime   @updatedAt
   deletedAt         DateTime?
@@ -2072,21 +2062,20 @@ model PhysicalExamination {
 
   @@index([userId])
   @@index([vitalSignId])
+  @@index([caseNumber])
 }
 
-// Pediatric measurements (0-24 months)
-// Separated from general PhysicalExamination as per CEO comment
 model PediatricMeasurement {
   id                       Int       @id @default(autoincrement())
   userId                   Int
   dateTaken                DateTime  @db.Date
-  length                   Decimal?  @db.Decimal(5, 2) // cm
-  headCircumference        Decimal?  @db.Decimal(5, 2) // cm
-  skinfoldThickness        Decimal?  @db.Decimal(5, 2) // mm
-  waistCircumference       Decimal?  @db.Decimal(5, 2) // cm
-  hipCircumference         Decimal?  @db.Decimal(5, 2) // cm
-  limbCircumference        Decimal?  @db.Decimal(5, 2) // cm
-  midUpperArmCircumference Decimal?  @db.Decimal(5, 2) // cm
+  length                   Decimal?  @db.Decimal(5, 2)
+  headCircumference        Decimal?  @db.Decimal(5, 2)
+  skinfoldThickness        Decimal?  @db.Decimal(5, 2)
+  waistCircumference       Decimal?  @db.Decimal(5, 2)
+  hipCircumference         Decimal?  @db.Decimal(5, 2)
+  limbCircumference        Decimal?  @db.Decimal(5, 2)
+  midUpperArmCircumference Decimal?  @db.Decimal(5, 2)
   remarks                  String?
   createdAt                DateTime  @default(now())
   updatedAt                DateTime  @updatedAt
@@ -2096,12 +2085,17 @@ model PediatricMeasurement {
   @@index([userId, dateTaken])
 }
 
-// NCD Risk Assessment - Non-Communicable Disease screening
-// This is the final result or assessment. So, this does not need to be stored in the database.
-// In order to build the NCD Risk Assessment, we need to gather data from other models.
-// For example, based on the user's record, does the user need a high fat diet? Yes or No.
-// This is usually done after physical exam.
-// MODEL REMOVED - Should be computed on-demand from source data (VitalSign, MedicalHistory, PersonalHistory, etc.)
+model AppointmentTag {
+  id                   Int                @id @default(autoincrement())
+  appointmentId        Int
+  healthcareProviderId Int
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime
+  Appointment          Appointment        @relation(fields: [appointmentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  HealthcareProvider   HealthcareProvider @relation(fields: [healthcareProviderId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([appointmentId, healthcareProviderId])
+}
 
 enum Severity {
   MILD
@@ -2168,4 +2162,19 @@ enum ReceiptCodeStatus {
 enum PhilHealthMemberCategory {
   DIRECT
   INDIRECT
+}
+
+// Sequence Generator for auto-incrementing case numbers
+model SequenceGenerator {
+  id           Int      @id @default(autoincrement())
+  entityType   String // "HEALTH_ASSESSMENT" | "CONSULTATION"
+  clinicId     Int? // null for personal health records (HAF)
+  year         Int // 2025, 2026, etc.
+  currentValue Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  Clinic       Clinic?  @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+
+  @@unique([entityType, clinicId, year], name: "unique_sequence")
+  @@index([clinicId, year])
 }

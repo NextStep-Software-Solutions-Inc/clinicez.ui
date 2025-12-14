@@ -1,21 +1,23 @@
 
 "use client"
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MedicalHistorySection } from "./sections/MedicalHistorySection";
 import { FamilyHistorySection } from "./sections/FamilyHistorySection";
 import { SurgicalHistorySection } from "./sections/SurgicalHistorySection";
 import { PersonalHistorySection } from "./sections/PersonalHistorySection";
-import { ImmunizationSection } from "./sections/ImmunizationSection";
 import { ObGyneHistorySection } from "./sections/ObGyneHistorySection";
-import { NCDRiskSection } from "./sections/NCDRiskSection";
+import { ImmunizationSection } from "./sections/ImmunizationSection";
+// import { NCDRiskSection } from "./sections/NCDRiskSection";
+import { summarizeImmunizations } from "@/lib/utils/immunization-mapping";
 import type { Prisma } from "@prisma/client";
 
 // Type for the health history data returned from getHealthHistoryAction
 type HealthHistoryData = Prisma.UserGetPayload<{
   select: {
     id: true;
+    dob: true;
     MedicalHistories: {
       include: {
         Condition: true;
@@ -31,6 +33,12 @@ type HealthHistoryData = Prisma.UserGetPayload<{
     ObGyneHistory: true;
     PhysicalExaminations: true;
     PediatricMeasurements: true;
+    UserVaccinations: {
+      include: {
+        Vaccine: true;
+        Dose: true;
+      }
+    };
   }
 }>;
 
@@ -47,14 +55,39 @@ export const FamilyAndPersonalHistoryForm = ({
 }: FamilyAndPersonalHistoryFormProps) => {
   const [activeTab, setActiveTab] = useState("medical");
 
+  // Compute immunization summary from vaccination records
+  const immunizationSummary = useMemo(() => {
+    if (!initialData?.UserVaccinations || !initialData?.dob) {
+      return {
+        children: {
+          bcg: false, hepatitisB1: false, hepatitisB2: false, hepatitisB3: false,
+          dpt1: false, dpt2: false, dpt3: false,
+          opv1: false, opv2: false, opv3: false,
+          measles: false, hepatitisA: false, varicella: false, none: true
+        },
+        adult: { hpv: false, mmr: false, none: true },
+        pregnant: { tetanusToxoid: false, none: true },
+        elderly: { fluVaccine: false, pneumococcalVaccine: false, none: true },
+        others: []
+      };
+    }
+
+    return summarizeImmunizations(
+      initialData.UserVaccinations,
+      initialData.dob,
+      initialData.ObGyneHistory?.hasPreEclampsia || false
+    );
+  }, [initialData]);
+
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-      <TabsList className="grid w-full grid-cols-5">
+      <TabsList className="grid w-full grid-cols-6">
         <TabsTrigger value="medical">Medical History</TabsTrigger>
         <TabsTrigger value="family">Family History</TabsTrigger>
         <TabsTrigger value="surgical">Surgical History</TabsTrigger>
         <TabsTrigger value="personal">Personal History</TabsTrigger>
         <TabsTrigger value="obgyne">OB-Gyne</TabsTrigger>
+        <TabsTrigger value="immunization">Immunization</TabsTrigger>
       </TabsList>
 
       <TabsContent value="medical">
@@ -66,12 +99,14 @@ export const FamilyAndPersonalHistoryForm = ({
       </TabsContent>
 
       <TabsContent value="family">
-        <FamilyHistorySection 
+        <FamilyHistorySection
           userId={userId}
           readOnly={readOnly}
           initialData={initialData?.FamilyMedicalHistories || []}
         />
-      </TabsContent>      <TabsContent value="surgical">
+      </TabsContent>
+
+      <TabsContent value="surgical">
         <SurgicalHistorySection
           userId={userId}
           readOnly={readOnly}
@@ -92,6 +127,14 @@ export const FamilyAndPersonalHistoryForm = ({
           userId={userId}
           readOnly={readOnly}
           initialData={initialData?.ObGyneHistory ?? null}
+        />
+      </TabsContent>
+
+      <TabsContent value="immunization">
+        <ImmunizationSection
+          userId={userId}
+          readOnly={readOnly}
+          initialData={immunizationSummary}
         />
       </TabsContent>
     </Tabs>

@@ -100,7 +100,7 @@ export const FamilyHistorySection = ({
         }));
 
         const result = await updateFamilyMedicalHistoryAction(userId, histories);
-        
+
         if (result.status) {
           toast.success(result.message);
         } else {

@@ -2,7 +2,17 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-export const NCDRiskSection = ({ userId, readOnly, initialData }: any) => {
+interface NCDRiskSectionProps {
+  userId: string;
+  readOnly?: boolean;
+  initialData: null; // Placeholder - will be typed when NCD risk model is implemented
+}
+
+export const NCDRiskSection = ({
+  userId,
+  readOnly = false,
+  initialData
+}: NCDRiskSectionProps) => {
   return (
     <Card>
       <CardHeader>

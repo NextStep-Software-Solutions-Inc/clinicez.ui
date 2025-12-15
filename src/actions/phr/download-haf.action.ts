@@ -164,7 +164,7 @@ export const downloadHAFAction = withErrorHandling(async (userId: string) => {
     { field: "memberMiddleName", value: phr?.middleName ?? "" },
     { field: "memberLastName", value: phr?.lastName ?? "" },
     { field: "memberExtensionName", value: phr?.suffix ?? "" },
-    { field: "memberAge", value: phr?.dob ? calculateAge(phr.dob).toString() : "" },
+    { field: "memberAge", value: phr?.dob ? (calculateAge(phr?.dob)?.toString() || "") : "" },
     { field: "memberDateOfBirth", value: formatDate(phr?.dob) },
     { field: "memberSex", value: capitalize(phr?.gender ?? "") },
     { field: "memberType", value: phr?.PhilHealthRecords?.[0]?.PhilHealthMemberType?.name || "" },

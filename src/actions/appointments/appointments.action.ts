@@ -362,7 +362,7 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
       },
       ...(tagged === "true"
         ? {
-          AppointmentTags: {
+          AppointmentTag: {
             some: {
               healthcareProviderId: {
                 in: myHpIds
@@ -507,7 +507,7 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
           }
         }
       },
-      AppointmentTags: {
+      AppointmentTag: {
         select: {
           id: true,
           HealthcareProvider: {
@@ -774,7 +774,7 @@ export const getAppointmentAction = withErrorHandling(cache(async (id: number, c
               email: true,
             }
           },
-          ReturnedBy: {
+          ReturnedByUser: {
             select: {
               userId: true,
               firstName: true,
@@ -863,7 +863,7 @@ export const getAppointmentAction = withErrorHandling(cache(async (id: number, c
           }
         }
       },
-      AppointmentTags: {
+      AppointmentTag: {
         select: {
           id: true,
           healthcareProviderId: true,
@@ -1156,7 +1156,7 @@ export const getTaggedAppointmentCountsAction = withErrorHandling(cache(async (c
       Clinic: {
         clinicUid
       },
-      AppointmentTags: {
+      AppointmentTag: {
         some: {
           healthcareProviderId: {
             in: myHpIds

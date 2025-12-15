@@ -129,7 +129,7 @@ export const downloadPMRFAction = withErrorHandling(async (userId: string) => {
     { field: 'civilStatusLegallyAnnulled', condition: user.civilStatus === 'DIVORCED' },
     { field: 'civilStatusWidower', condition: user.civilStatus === 'WIDOWED' },
     { field: 'citizenshipFilipino', condition: user.nationality === 'Filipino' },
-    { field: 'citizenshipForeignNational', condition: user.nationality && user.nationality !== 'Filipino' },
+    { field: 'citizenshipForeignNational', condition: Boolean(user.nationality && user.nationality !== 'Filipino') },
     { field: 'addressMailing', condition: true },
     { field: 'purposeRegistration', condition: true },
   ]

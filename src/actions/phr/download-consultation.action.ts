@@ -176,7 +176,7 @@ export const downloadConsultationAction = withErrorHandling(async (userId?: stri
     { field: "memberFirstName", value: phr?.firstName || "" },
     { field: "memberMiddleName", value: phr?.middleName || "" },
     { field: "memberExtensionName", value: phr?.suffix || "" },
-    { field: "memberAge", value: phr?.dob ? calculateAge(phr.dob).toString() : "" },
+    { field: "memberAge", value: phr?.dob ? (calculateAge(phr?.dob)?.toString() || "") : "" },
     { field: "memberDateOfBirth", value: formatDate(phr?.dob) },
     { field: "memberSex", value: phr?.gender ? capitalize(phr.gender) : "" },
     { field: "memberType", value: phr?.PhilHealthRecords?.[0]?.PhilHealthMemberType?.name || "" },

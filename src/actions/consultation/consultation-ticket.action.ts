@@ -603,7 +603,7 @@ export const getConsultationTicketsAction = withErrorHandling(async (filters: Ge
               },
             },
           },
-          AppointmentTags: {
+          AppointmentTag: {
             select: {
               id: true,
               HealthcareProvider: {

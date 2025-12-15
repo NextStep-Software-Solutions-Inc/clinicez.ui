@@ -39,100 +39,100 @@ model TenantSetting {
 }
 
 model User {
-  id                                                     Int                              @id @default(autoincrement())
-  userId                                                 String                           @unique
-  email                                                  String                           @unique
-  picture                                                String?
-  createdAt                                              DateTime                         @default(now())
-  deletedAt                                              DateTime?
-  isActive                                               Boolean                          @default(true)
-  updatedAt                                              DateTime                         @default(now()) @updatedAt
-  bloodType                                              BloodType?
-  civilStatus                                            CivilStatus?
-  dob                                                    DateTime?                        @db.Date
-  placeOfBirth                                           String?
-  firstName                                              String?
-  gender                                                 Gender?
-  lastName                                               String?
-  middleName                                             String?
-  mobile                                                 String?
-  nationality                                            String?
-  nickname                                               String?
-  religion                                               String?
-  suffix                                                 String?
-  telephone                                              String?
-  ActivationCodes                                        ActivationCode[]
-  CompletedByAppointments                                AppointmentAttribute[]           @relation("CompletedBy")
-  ReceivedByAppointments                                 AppointmentAttribute[]           @relation("ReceivedBy")
-  RejectedByAppointments                                 AppointmentAttribute[]           @relation("RejectedBy")
-  RescheduledByAppointments                              AppointmentAttribute[]           @relation("RescheduledBy")
-  AppointmentRequesters                                  AppointmentRequester[]
-  AmendedAppointments                                    AppointmentRouting[]             @relation("AmendedBy")
-  ReturnedAppointments                                   AppointmentRouting[]             @relation("ReturnedBy")
-  RoutedAppointments                                     AppointmentRouting[]             @relation("RoutedBy")
-  BookedByBookings                                       Booking[]                        @relation("BookedBy")
-  BookedForBookings                                      Booking[]                        @relation("BookedFor")
-  ImagingRequestsCreated                                 ClinicImagingRequest[]           @relation("ImagingRequestCreatedBy")
-  ImagingRequestsDeleted                                 ClinicImagingRequest[]           @relation("ImagingRequestDeletedBy")
-  ImagingRequestsUpdated                                 ClinicImagingRequest[]           @relation("ImagingRequestUpdatedBy")
-  LaboratoryRequestsCreated                              ClinicLaboratoryRequest[]        @relation("LaboratoryRequestCreatedBy")
-  LaboratoryRequestsDeleted                              ClinicLaboratoryRequest[]        @relation("LaboratoryRequestDeletedBy")
-  LaboratoryRequestsUpdated                              ClinicLaboratoryRequest[]        @relation("LaboratoryRequestUpdatedBy")
-  MedicalCertificatesCreated                             ClinicMedicalCertificate[]       @relation("MedicalCertificateCreatedBy")
-  MedicalCertificatesDeleted                             ClinicMedicalCertificate[]       @relation("MedicalCertificateDeletedBy")
-  MedicalCertificatesUpdated                             ClinicMedicalCertificate[]       @relation("MedicalCertificateUpdatedBy")
-  ClinicMembers                                          ClinicMember[]
-  ClinicPatients                                         ClinicPatient[]
-  ReferralSlipsCreated                                   ClinicReferralSlip[]             @relation("ReferralSlipCreatedBy")
-  ReferralSlipsDeleted                                   ClinicReferralSlip[]             @relation("ReferralSlipDeletedBy")
-  ReferralSlipsUpdated                                   ClinicReferralSlip[]             @relation("ReferralSlipUpdatedBy")
-  FamilyMedicalHistories                                 FamilyMedicalHistory[]
-  Folders                                                Folder[]
-  HealthcareProviders                                    HealthcareProvider[]
-  MedicalHistories                                       MedicalHistory[]
-  Medications                                            Medication[]
-  MedicinesCreated                                       Medicine[]                       @relation("MedicineCreatedBy")
-  MedicinesUpdated                                       Medicine[]                       @relation("MedicineUpdatedBy")
-  ObGyneHistory                                          ObGyneHistory?
-  AcceptedOrganizationApplications                       OrganizationMember[]             @relation("AcceptedBy")
-  OrganizationMembers                                    OrganizationMember[]             @relation("User")
-  PediatricMeasurements                                  PediatricMeasurement[]
-  PersonalHistory                                        PersonalHistory?
-  PhilHealthRecordsCreated                               PhilHealthRecord[]               @relation("PhilHealthRecordsCreatedBy")
-  PhilHealthRecordsDeleted                               PhilHealthRecord[]               @relation("PhilHealthRecordsDeletedBy")
-  PhilHealthRecordsUpdated                               PhilHealthRecord[]               @relation("PhilHealthRecordsUpdatedBy")
-  PhilHealthRecords                                      PhilHealthRecord[]
-  PhysicalExaminations                                   PhysicalExamination[]
-  PreAssessmentNotes                                     PreAssessmentNote[]
-  PrescriptionsCreated                                   Prescription[]                   @relation("PrescriptionCreatedBy")
-  PrescriptionsUpdated                                   Prescription[]                   @relation("PrescriptionUpdatedBy")
-  ReceiptCodeClaims                                      ReceiptCodeClaim[]
-  ReservedTimeSlots                                      ReservedTimeSlot[]
-  SocialLink                                             SocialLink?
-  SurgicalHistories                                      SurgicalHistory[]
-  Tenants                                                Tenant[]
-  UserAddresses                                          UserAddress[]
-  UserAllergies                                          UserAllergy[]
-  UserClinicAppointmentWhitelists                        UserClinicAppointmentWhitelist[]
-  UserDefaultClinicRoles                                 UserDefaultClinicRole[]
-  UserDefaultOrganization                                UserDefaultOrganization?
-  UserDefaultOrganizationRoles                           UserDefaultOrganizationRole[]
-  UserDefaultTenant                                      UserDefaultTenant?
-  DiagnosedUserDisabilities                              UserDisability[]                 @relation("DiagnosedUserDisability")
-  UserDisabilities                                       UserDisability[]                 @relation("UserDisability")
-  UserEmergencyContacts                                  UserEmergencyContact[]
-  UserEmployments                                        UserEmploymentRecord[]
-  DiagnosedUserHealthConditions                          UserHealthCondition[]            @relation("DiagnosedUserHealthCondition")
-  ResolvedUserHealthConditions                           UserHealthCondition[]            @relation("ResolvedUserHealthCondition")
-  UserHealthConditions                                   UserHealthCondition[]            @relation("HealthCondition")
-  UserMigration                                          UserMigration?
-  UserPermissions                                        UserPermission[]
-  Plans                                                  UserPlan[]
-  UserPreference                                         UserPreference?
-  UserSchedules                                          UserSchedule[]
-  StudentRecords                                         UserStudentRecord[]
-  UserVaccinations                                       UserVaccination[]
-  VitalSigns                                             VitalSign[]
+  id                               Int                              @id @default(autoincrement())
+  userId                           String                           @unique
+  email                            String                           @unique
+  picture                          String?
+  createdAt                        DateTime                         @default(now())
+  deletedAt                        DateTime?
+  isActive                         Boolean                          @default(true)
+  updatedAt                        DateTime                         @default(now()) @updatedAt
+  bloodType                        BloodType?
+  civilStatus                      CivilStatus?
+  dob                              DateTime?                        @db.Date
+  placeOfBirth                     String?
+  firstName                        String?
+  gender                           Gender?
+  lastName                         String?
+  middleName                       String?
+  mobile                           String?
+  nationality                      String?
+  nickname                         String?
+  religion                         String?
+  suffix                           String?
+  telephone                        String?
+  ActivationCodes                  ActivationCode[]
+  CompletedByAppointments          AppointmentAttribute[]           @relation("CompletedBy")
+  ReceivedByAppointments           AppointmentAttribute[]           @relation("ReceivedBy")
+  RejectedByAppointments           AppointmentAttribute[]           @relation("RejectedBy")
+  RescheduledByAppointments        AppointmentAttribute[]           @relation("RescheduledBy")
+  AppointmentRequesters            AppointmentRequester[]
+  AmendedAppointments              AppointmentRouting[]             @relation("AmendedBy")
+  ReturnedAppointments             AppointmentRouting[]             @relation("ReturnedBy")
+  RoutedAppointments               AppointmentRouting[]             @relation("RoutedBy")
+  BookedByBookings                 Booking[]                        @relation("BookedBy")
+  BookedForBookings                Booking[]                        @relation("BookedFor")
+  ImagingRequestsCreated           ClinicImagingRequest[]           @relation("ImagingRequestCreatedBy")
+  ImagingRequestsDeleted           ClinicImagingRequest[]           @relation("ImagingRequestDeletedBy")
+  ImagingRequestsUpdated           ClinicImagingRequest[]           @relation("ImagingRequestUpdatedBy")
+  LaboratoryRequestsCreated        ClinicLaboratoryRequest[]        @relation("LaboratoryRequestCreatedBy")
+  LaboratoryRequestsDeleted        ClinicLaboratoryRequest[]        @relation("LaboratoryRequestDeletedBy")
+  LaboratoryRequestsUpdated        ClinicLaboratoryRequest[]        @relation("LaboratoryRequestUpdatedBy")
+  MedicalCertificatesCreated       ClinicMedicalCertificate[]       @relation("MedicalCertificateCreatedBy")
+  MedicalCertificatesDeleted       ClinicMedicalCertificate[]       @relation("MedicalCertificateDeletedBy")
+  MedicalCertificatesUpdated       ClinicMedicalCertificate[]       @relation("MedicalCertificateUpdatedBy")
+  ClinicMembers                    ClinicMember[]
+  ClinicPatients                   ClinicPatient[]
+  ReferralSlipsCreated             ClinicReferralSlip[]             @relation("ReferralSlipCreatedBy")
+  ReferralSlipsDeleted             ClinicReferralSlip[]             @relation("ReferralSlipDeletedBy")
+  ReferralSlipsUpdated             ClinicReferralSlip[]             @relation("ReferralSlipUpdatedBy")
+  FamilyMedicalHistories           FamilyMedicalHistory[]
+  Folders                          Folder[]
+  HealthcareProviders              HealthcareProvider[]
+  MedicalHistories                 MedicalHistory[]
+  Medications                      Medication[]
+  MedicinesCreated                 Medicine[]                       @relation("MedicineCreatedBy")
+  MedicinesUpdated                 Medicine[]                       @relation("MedicineUpdatedBy")
+  ObGyneHistory                    ObGyneHistory?
+  AcceptedOrganizationApplications OrganizationMember[]             @relation("AcceptedBy")
+  OrganizationMembers              OrganizationMember[]             @relation("User")
+  PediatricMeasurements            PediatricMeasurement[]
+  PersonalHistory                  PersonalHistory?
+  PhilHealthRecordsCreated         PhilHealthRecord[]               @relation("PhilHealthRecordsCreatedBy")
+  PhilHealthRecordsDeleted         PhilHealthRecord[]               @relation("PhilHealthRecordsDeletedBy")
+  PhilHealthRecordsUpdated         PhilHealthRecord[]               @relation("PhilHealthRecordsUpdatedBy")
+  PhilHealthRecords                PhilHealthRecord[]
+  PhysicalExaminations             PhysicalExamination[]
+  PreAssessmentNotes               PreAssessmentNote[]
+  PrescriptionsCreated             Prescription[]                   @relation("PrescriptionCreatedBy")
+  PrescriptionsUpdated             Prescription[]                   @relation("PrescriptionUpdatedBy")
+  ReceiptCodeClaims                ReceiptCodeClaim[]
+  ReservedTimeSlots                ReservedTimeSlot[]
+  SocialLink                       SocialLink?
+  SurgicalHistories                SurgicalHistory[]
+  Tenants                          Tenant[]
+  UserAddresses                    UserAddress[]
+  UserAllergies                    UserAllergy[]
+  UserClinicAppointmentWhitelists  UserClinicAppointmentWhitelist[]
+  UserDefaultClinicRoles           UserDefaultClinicRole[]
+  UserDefaultOrganization          UserDefaultOrganization?
+  UserDefaultOrganizationRoles     UserDefaultOrganizationRole[]
+  UserDefaultTenant                UserDefaultTenant?
+  DiagnosedUserDisabilities        UserDisability[]                 @relation("DiagnosedUserDisability")
+  UserDisabilities                 UserDisability[]                 @relation("UserDisability")
+  UserEmergencyContacts            UserEmergencyContact[]
+  UserEmployments                  UserEmploymentRecord[]
+  DiagnosedUserHealthConditions    UserHealthCondition[]            @relation("DiagnosedUserHealthCondition")
+  ResolvedUserHealthConditions     UserHealthCondition[]            @relation("ResolvedUserHealthCondition")
+  UserHealthConditions             UserHealthCondition[]            @relation("HealthCondition")
+  UserMigration                    UserMigration?
+  UserPermissions                  UserPermission[]
+  Plans                            UserPlan[]
+  UserPreference                   UserPreference?
+  UserSchedules                    UserSchedule[]
+  StudentRecords                   UserStudentRecord[]
+  UserVaccinations                 UserVaccination[]
+  VitalSigns                       VitalSign[]
 }
 
 model PhilHealthRecord {
@@ -1437,25 +1437,25 @@ model AppointmentMode {
 }
 
 model AppointmentRouting {
-  id                                       Int                @id @default(autoincrement())
-  routingCode                              String             @unique @default(cuid())
-  appointmentId                            Int
-  routedBy                                 Int
-  routedTo                                 Int
-  status                                   String             @default("PENDING")
-  amendment                                String?
-  amendedAt                                DateTime?
-  amendedBy                                Int?
-  createdAt                                DateTime           @default(now())
-  updatedAt                                DateTime           @updatedAt
-  returnReason                             String?
-  returnedAt                               DateTime?
-  returnedBy                               Int?
-  AmendedBy                                User?              @relation("AmendedBy", fields: [amendedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  Appointment                              Appointment        @relation(fields: [appointmentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  ReturnedByUser                           User?              @relation("ReturnedBy", fields: [returnedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  RoutedBy                                 User               @relation("RoutedBy", fields: [routedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  RoutedTo                                 HealthcareProvider @relation("RoutedTo", fields: [routedTo], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id             Int                @id @default(autoincrement())
+  routingCode    String             @unique @default(cuid())
+  appointmentId  Int
+  routedBy       Int
+  routedTo       Int
+  status         String             @default("PENDING")
+  amendment      String?
+  amendedAt      DateTime?
+  amendedBy      Int?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  returnReason   String?
+  returnedAt     DateTime?
+  returnedBy     Int?
+  AmendedBy      User?              @relation("AmendedBy", fields: [amendedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Appointment    Appointment        @relation(fields: [appointmentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  ReturnedByUser User?              @relation("ReturnedBy", fields: [returnedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  RoutedBy       User               @relation("RoutedBy", fields: [routedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  RoutedTo       HealthcareProvider @relation("RoutedTo", fields: [routedTo], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@unique([appointmentId, routedTo], name: "unique_appointment_routing")
 }

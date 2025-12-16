@@ -48,10 +48,5 @@ export function setLandingPageVersion(version: Version) {
 }
 
 export function getLandingPageVersion(): Version {
-  if (typeof window === "undefined") return "v1"
-  const savedVersion = localStorage.getItem(LANDING_VERSION_KEY)
-  if (savedVersion === "v1" || savedVersion === "v2") {
-    return savedVersion
-  }
-  return "v1"
+  return getInitialVersion()
 }

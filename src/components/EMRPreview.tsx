@@ -20,7 +20,7 @@ import { useParams } from "next/navigation";
 import { calculateAge } from "@/lib/utils";
 import ConsultationHistory from "./ConsultationHistory";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import { User, Stethoscope, FileText, Mail, Phone, Heart, ShieldAlert, Syringe, Users } from "lucide-react";
+import { User, Stethoscope, FileText, Mail, Phone, Heart, ShieldAlert, Syringe, Users, Calendar, UserCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface EMRPreviewProps {
@@ -52,12 +52,12 @@ function EMRPreview({patientId}: EMRPreviewProps) {
             <h2 className="text-2xl font-bold mb-2">{name}</h2>
             <div className="grid grid-cols-2 gap-3">
               <div className="flex items-center gap-2 text-sm">
-                <User className="h-4 w-4 text-muted-foreground" />
+                <UserCircle className="h-4 w-4 text-muted-foreground" />
                 <span className="text-muted-foreground">Gender:</span>
                 <span className="font-medium">{patient?.data?.gender || "-"}</span>
               </div>
               <div className="flex items-center gap-2 text-sm">
-                <User className="h-4 w-4 text-muted-foreground" />
+                <Calendar className="h-4 w-4 text-muted-foreground" />
                 <span className="text-muted-foreground">Age:</span>
                 <span className="font-medium">{age ? `${age} years old` : "-"}</span>
               </div>

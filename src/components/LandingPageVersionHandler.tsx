@@ -3,7 +3,6 @@
 import { useLandingPageVersion } from "./VersionSwitcher"
 import FeatureItems, { HeroImage, HeroTitle } from "@components/FeatureItems"
 import HeroBackground from "@components/HeroBackground"
-import ClassicButton from "./ClassicButton"
 
 interface LandingPageContentProps {
   authenticated: boolean
@@ -14,12 +13,7 @@ export default function LandingPageContent({ authenticated }: LandingPageContent
 
   if (version === "v2") {
     return (
-      <main className="relative">
-        {/* Back to Classic button - positioned in top right */}
-        <div className="fixed top-24 right-4 z-50 lg:top-28 lg:right-8">
-          <ClassicButton />
-        </div>
-        
+      <main>
         {/* Hero Section */}
         <section className="relative h-[calc(100vh-8rem)] flex items-center justify-center">
           <HeroBackground opacity={0.2} />

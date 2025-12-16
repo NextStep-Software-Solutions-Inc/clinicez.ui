@@ -21,13 +21,11 @@ export default function ClassicButton() {
   if (!shouldShow) return null;
 
   return (
-    <Button
+    <button
       onClick={handleClick}
-      variant="outline"
-      size="sm"
-      className="bg-white/90 hover:bg-white text-sm shadow-md"
+      className="text-primary-foreground hover:underline cursor-pointer transition-all"
     >
       Back to Classic Version
-    </Button>
+    </button>
   )
 }

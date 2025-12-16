@@ -11,6 +11,7 @@ export default function HomePageV2() {
     // Set v2 preference before redirecting to preserve user intent
     setLandingPageVersion("v2")
     router.replace("/")
+    // Note: router is intentionally omitted from deps as it's stable in Next.js
   }, [])
 
   return null

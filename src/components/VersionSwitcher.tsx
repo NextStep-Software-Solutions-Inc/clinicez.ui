@@ -18,6 +18,7 @@ function getVersionFromStorage(): Version {
 }
 
 // Global state to sync across components (lazy initialized)
+// Safe for browser usage - JavaScript is single-threaded in the browser
 let globalVersion: Version | null = null
 const listeners: Set<(version: Version) => void> = new Set()
 

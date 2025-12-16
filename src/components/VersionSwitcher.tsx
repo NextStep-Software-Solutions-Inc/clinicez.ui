@@ -46,7 +46,3 @@ export function setLandingPageVersion(version: Version) {
     notifyListeners(version)
   }
 }
-
-export function getLandingPageVersion(): Version {
-  return getInitialVersion()
-}

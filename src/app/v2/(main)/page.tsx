@@ -11,7 +11,8 @@ export default function HomePageV2() {
     // Set v2 preference before redirecting to preserve user intent
     setLandingPageVersion("v2")
     router.replace("/")
-  }, [router])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return null
 }

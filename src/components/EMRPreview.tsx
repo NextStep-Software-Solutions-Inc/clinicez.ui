@@ -16,9 +16,12 @@ import { useIllnesses } from "@hooks/useIllness";
 import { useVaccinations } from "@hooks/useVaccination";
 import RecentVitalSigns from "../app/(main)/user/[user]/phr/vitals/RecentVitalSigns";
 import { useUserVitalSigns } from "@hooks/useUserVitalSign";
-import { notFound, useParams } from "next/navigation";
+import { useParams } from "next/navigation";
 import { calculateAge } from "@/lib/utils";
 import ConsultationHistory from "./ConsultationHistory";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import { User, Stethoscope, FileText, Mail, Phone, Heart, ShieldAlert, Syringe, Users } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface EMRPreviewProps {
     patientId: string
@@ -40,82 +43,141 @@ function EMRPreview({patientId}: EMRPreviewProps) {
   const age = calculateAge(patient.data.dob);
   
   return (
-    <div className="space-y-5 my-5 overflow-auto h-[calc(100vh-15%)] no-scrollbar">
-      <div className="flex gap-5">
-        <Picture readOnly user={patient.data}/>
-        <div className="">
-          <LabelValue label="Name" value={name}/>
-          <div className="flex gap-5 items-center">
-            <LabelValue label="Gender" value={patient?.data?.gender}/>
-            <Separator orientation="vertical" className="h-10"/>
-            <LabelValue label="Age" value={age && `${age} years old`}/>
+    <div className="my-5 h-[calc(100vh-15%)] flex flex-col">
+      {/* Patient Header - Always Visible */}
+      <div className="mb-5 pb-5 border-b">
+        <div className="flex gap-5 mb-4">
+          <Picture readOnly user={patient.data}/>
+          <div className="flex-1">
+            <h2 className="text-2xl font-bold mb-2">{name}</h2>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex items-center gap-2 text-sm">
+                <User className="h-4 w-4 text-muted-foreground" />
+                <span className="text-muted-foreground">Gender:</span>
+                <span className="font-medium">{patient?.data?.gender || "-"}</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <User className="h-4 w-4 text-muted-foreground" />
+                <span className="text-muted-foreground">Age:</span>
+                <span className="font-medium">{age ? `${age} years old` : "-"}</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <Heart className="h-4 w-4 text-muted-foreground" />
+                <span className="text-muted-foreground">Blood Type:</span>
+                <span className="font-medium">{patient?.data?.bloodType || "-"}</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <Phone className="h-4 w-4 text-muted-foreground" />
+                <a href={`tel:${patient?.data?.mobile}`} className="font-medium text-primary hover:underline">
+                  {patient?.data?.mobile || "-"}
+                </a>
+              </div>
+              <div className="flex items-center gap-2 text-sm col-span-2">
+                <Mail className="h-4 w-4 text-muted-foreground" />
+                <a href={`mailto:${patient?.data?.email}`} className="font-medium text-primary hover:underline">
+                  {patient?.data?.email || "-"}
+                </a>
+              </div>
+            </div>
           </div>
-          <LabelValue label="Blood Type" value={patient?.data?.bloodType}/>
-          <LabelValue label="Email" value={(
-            <a className="text-primary" href={`mailto:${patient?.data?.email}`}>{patient?.data?.email}</a>
-          )}/>
         </div>
       </div>
-      <Separator/>
-      <Section title={`Basic Information`} >
-        <div className="">
-          <LabelValue className="flex items-center gap-2 flex-row-reverse justify-end" label="Nickname:" value={patient?.data?.nickname}/>
-          <LabelValue className="flex items-center gap-2 flex-row-reverse justify-end" label="Mobile:" value={(
-            <a href={`tel:${patient?.data?.mobile}`}>{patient?.data?.mobile}</a>
-          )}/>
-          <LabelValue className="flex items-center gap-2 flex-row-reverse justify-end" label="Civil Status:" value={patient?.data?.civilStatus}/>
-          <LabelValue className="flex items-center gap-2 flex-row-reverse justify-end" label="Religion:" value={patient?.data?.religion}/>
-          <LabelValue className="flex items-center gap-2 flex-row-reverse justify-end" label="Nationality:" value={patient?.data?.nationality}/>
-        </div>
-      </Section>
-      
-      <Section title={`Allergies`} >
-        <AllergiesForm readOnly allergies={allergies ?? []} />
-      </Section>
 
-      <Section title={`Vaccination & Immunization`} >
-        <VaccinationForm readOnly vaccinations={vaccinations ?? []} />
-      </Section>
+      {/* Tabbed Content */}
+      <Tabs defaultValue="profile" className="flex-1 flex flex-col overflow-hidden">
+        <TabsList className="w-full justify-start bg-primary/5 p-1 h-auto">
+          <TabsTrigger value="profile" className="flex-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            Patient Profile
+          </TabsTrigger>
+          <TabsTrigger value="consultations" className="flex-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            Consultations and Vitals
+          </TabsTrigger>
+          <TabsTrigger value="files" className="flex-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            Files and Medical History
+          </TabsTrigger>
+        </TabsList>
 
-      <Section title={`Personal & Social History`} >
-        <DisabilitiesForm readOnly disabilities={disabilities ?? []} />
-        <IllnessesForm readOnly illnesses={illnesses ?? []} />
-      </Section>
+        <TabsContent value="profile" className="flex-1 overflow-auto mt-0 pt-5 no-scrollbar">
+          <div className="space-y-5">
+            <Section title="Basic Information" icon={<User className="h-5 w-5" />}>
+              <div className="grid grid-cols-2 gap-3">
+                <InfoItem label="Nickname" value={patient?.data?.nickname} />
+                <InfoItem label="Civil Status" value={patient?.data?.civilStatus} />
+                <InfoItem label="Religion" value={patient?.data?.religion} />
+                <InfoItem label="Nationality" value={patient?.data?.nationality} />
+              </div>
+            </Section>
+            
+            <Section title="Allergies" icon={<ShieldAlert className="h-5 w-5" />}>
+              <AllergiesForm readOnly allergies={allergies ?? []} />
+            </Section>
 
+            <Section title="Disabilities" icon={<Users className="h-5 w-5" />}>
+              <DisabilitiesForm readOnly disabilities={disabilities ?? []} />
+            </Section>
 
-      <Section title={`Family History`} >
-      </Section>
+            <Section title="Personal & Social History" icon={<FileText className="h-5 w-5" />}>
+              <IllnessesForm readOnly illnesses={illnesses ?? []} />
+            </Section>
 
-      <Section title={`Consultation History`} >
-        <ConsultationHistory
-          patientId={patientId}
-          clinicUid={params.clinicUid}
-        />
-      </Section>
-     
-      <Section title={`Obstetric History`} >
-      </Section>
+            <Section title="Vaccination & Immunization" icon={<Syringe className="h-5 w-5" />}>
+              <VaccinationForm readOnly vaccinations={vaccinations ?? []} />
+            </Section>
+          </div>
+        </TabsContent>
 
-      <Section title={`Vital Signs & Anthropometric Measurements`} >
-        <RecentVitalSigns readOnly vitalSigns={vitalSigns ?? []} userId={patient?.data?.userId ?? ""}/>
-      </Section>
+        <TabsContent value="consultations" className="flex-1 overflow-auto mt-0 pt-5 no-scrollbar">
+          <div className="space-y-5">
+            <Section title="Consultation History" icon={<Stethoscope className="h-5 w-5" />}>
+              <ConsultationHistory
+                patientId={patientId}
+                clinicUid={params.clinicUid}
+              />
+            </Section>
 
-      <Section title={`Organs / Systems`} >
-      </Section>
+            <Section title="Vital Signs" icon={<Heart className="h-5 w-5" />}>
+              <RecentVitalSigns readOnly vitalSigns={vitalSigns ?? []} userId={patient?.data?.userId ?? ""}/>
+            </Section>
+          </div>
+        </TabsContent>
 
-      <Section title={`Visual Acuity / Snellen's`} >
-      </Section>
+        <TabsContent value="files" className="flex-1 overflow-auto mt-0 pt-5 no-scrollbar">
+          <div className="space-y-5">
+            <Section title="General Health Assessment" icon={<FileText className="h-5 w-5" />}>
+              <p className="text-muted-foreground">No health assessment records found.</p>
+            </Section>
+
+            <Section title="Files" icon={<FileText className="h-5 w-5" />}>
+              <p className="text-muted-foreground">No files uploaded yet.</p>
+            </Section>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
   
 export default memo(EMRPreview)
 
-export const Section = ({title, children}: {title: string, children?: React.ReactNode}) => {
+const InfoItem = ({label, value}: {label: string, value?: string | null}) => {
+  return (
+    <div className="flex flex-col">
+      <span className="text-xs text-muted-foreground">{label}</span>
+      <span className="text-sm font-medium">{value || "-"}</span>
+    </div>
+  )
+}
+
+export const Section = ({title, icon, children}: {title: string, icon?: React.ReactNode, children?: React.ReactNode}) => {
   return (
     <section className="space-y-3">
-      <h3 className="text-xl bg-primary text-primary-foreground rounded px-2 py-1 font-semibold">{title}</h3>
-      {children ?? <p className="text-muted-foreground">No records found.</p>}
+      <div className="flex items-center gap-2 px-3 py-2 bg-primary/10 rounded-lg border border-primary/20">
+        {icon && <div className="text-primary">{icon}</div>}
+        <h3 className="text-lg font-semibold text-primary">{title}</h3>
+      </div>
+      <div className="px-1">
+        {children ?? <p className="text-muted-foreground">No records found.</p>}
+      </div>
     </section>
   )
 }

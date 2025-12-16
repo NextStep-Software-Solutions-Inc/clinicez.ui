@@ -35,7 +35,7 @@ import CompleteAppointment from "./CompleteAppointment";
 import { PERMISSIONS } from "@lib/permissions";
 import { usePermissions } from "@/hooks/usePermission";
 import { useHPs } from "@/hooks/useHP";
-import { getFullName } from "@/lib/formatter-utils";
+import { getFullName, getDepartmentName, getProgramYear } from "@/lib/formatter-utils";
 import { isAssignedNurseToAppointment } from "@/lib/nurse-utils";
 import { getHealthcareProviderName } from "@/lib/hp-utils";
 import TagHPsSheet from "./TagHPsSheet";
@@ -62,50 +62,6 @@ export default function AppointmentDisplay() {
 
   const requesters = freshAppointment?.data?.Requesters
   const preferredHp = freshAppointment?.data?.AppointmentAttribute?.PreferredAppointee
-
-  // Helper function to get department name
-  const getDepartmentName = (userRecord?: {
-    StudentRecords?: Array<{
-      Department?: { name?: string | null } | null;
-    }>;
-    UserEmployments?: Array<{
-      Department?: { name?: string | null } | null;
-    }>;
-  }) => {
-    if (!userRecord) return undefined;
-    const deptFromStudent = userRecord.StudentRecords?.find((record) => record.Department?.name)?.Department?.name;
-    if (deptFromStudent) return deptFromStudent;
-    const deptFromEmployment = userRecord.UserEmployments?.find((employment) => employment.Department?.name)?.Department?.name;
-    return deptFromEmployment ?? undefined;
-  }
-
-  // Helper function to get program and year level
-  const getProgramYear = (userRecord?: {
-    StudentRecords?: Array<{
-      Program?: { name?: string | null; major?: string | null } | null;
-      OrganizationYearLevel?: { name?: string | null } | null;
-    }>;
-  }) => {
-    if (!userRecord) return undefined;
-    const studentRecord = userRecord.StudentRecords?.[0];
-    if (!studentRecord) return undefined;
-    
-    const programName = studentRecord.Program?.name;
-    const major = studentRecord.Program?.major;
-    const yearLevel = studentRecord.OrganizationYearLevel?.name;
-    
-    if (programName || yearLevel) {
-      const parts = [];
-      if (programName) {
-        parts.push(major ? `${programName} (${major})` : programName);
-      }
-      if (yearLevel) {
-        parts.push(yearLevel);
-      }
-      return parts.join(' - ');
-    }
-    return undefined;
-  }
 
   const revalidate = async () => {
     revalidatePath(`/clinic/${clinicUid}/appointments`, "page")

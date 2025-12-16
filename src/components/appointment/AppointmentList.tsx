@@ -13,6 +13,7 @@ import { ArrowRight } from "lucide-react";
 import dayjs from "@/lib/day-utils"
 import { combineDateTime } from "@/lib/day-utils";
 import { getHealthcareProviderName } from "@/lib/hp-utils";
+import { getDepartmentName } from "@/lib/formatter-utils";
 
 interface AppointmentListProps {
   appointments: GetAppointments["data"]
@@ -55,25 +56,6 @@ export const AppointmentList = forwardRef<HTMLDivElement, AppointmentListProps>(
     if (collegeFromStudentRecord) return collegeFromStudentRecord
     const collegeFromEmployment = requesterUser.UserEmployments?.find((employment) => employment.College?.name)?.College?.name
     return collegeFromEmployment ?? undefined
-  }
-
-  const getDepartmentName = (requesterUser?: {
-    StudentRecords?: Array<{
-      Department?: {
-        name?: string | null;
-      } | null;
-    }>;
-    UserEmployments?: Array<{
-      Department?: {
-        name?: string | null;
-      } | null;
-    }>;
-  }) => {
-    if (!requesterUser) return undefined
-    const departmentFromStudentRecord = requesterUser.StudentRecords?.find((record) => record.Department?.name)?.Department?.name
-    if (departmentFromStudentRecord) return departmentFromStudentRecord
-    const departmentFromEmployment = requesterUser.UserEmployments?.find((employment) => employment.Department?.name)?.Department?.name
-    return departmentFromEmployment ?? undefined
   }
 
   const setAppointment = (thisAptId: string) => {

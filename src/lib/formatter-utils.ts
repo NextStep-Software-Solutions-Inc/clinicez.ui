@@ -44,6 +44,7 @@ export const getProgramYear = (userRecord?: {
   }>;
 }) => {
   if (!userRecord) return undefined;
+  // Using first student record - assumes the most relevant/active record is listed first
   const studentRecord = userRecord.StudentRecords?.[0];
   if (!studentRecord) return undefined;
   

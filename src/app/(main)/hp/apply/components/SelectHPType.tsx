@@ -6,7 +6,6 @@ import { z } from "zod"
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -20,23 +19,21 @@ import { hpApplyAtom } from "@state/hp-apply";
 import { useHPTypes } from "@hooks/useHPTypes";
 
 interface ISelectHPTypeProps {
-  currentHPTypeIds?: number[];
   nextStep?: () => void;
   prevStep?: () => void;
   isFirstStep?: boolean;
   isLastStep?: boolean;
 }
 
-export default function SelectHPType({ nextStep, prevStep, isFirstStep, isLastStep, currentHPTypeIds }: ISelectHPTypeProps) {
+const roleFormSchema = z.object({
+  hpTypeId: z.number({
+    coerce: true,
+    message: "Please select a healthcare provider type",
+  }),
+})
+
+export default function SelectHPType({ nextStep, prevStep, isFirstStep, isLastStep }: ISelectHPTypeProps) {
   const { data: hpTypes } = useHPTypes()
-  const roleFormSchema = z.object({
-    hpTypeId: z.number({
-      coerce: true,
-      message: "Invalid role",
-    }).refine(value => !currentHPTypeIds?.includes(value), (value) => ({
-      message: `You have already possessed ${hpTypes?.data.find(type => type.id === value)?.name} role. Please select a different role.`,
-    })),
-  })
 
   const [applicationData, setApplicationData] = useAtom(hpApplyAtom);
   const form = useForm<z.infer<typeof roleFormSchema>>({

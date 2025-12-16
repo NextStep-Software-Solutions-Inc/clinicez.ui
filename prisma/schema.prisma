@@ -440,7 +440,7 @@ model HealthcareProvider {
   UserPreferences         UserPreference[]
   UserVaccinations        UserVaccination[]
 
-  @@unique([userId, hpTypeId], name: "unique_user_hp_type")
+  @@unique([userId], name: "unique_user_hp")
 }
 
 model HPProfile {

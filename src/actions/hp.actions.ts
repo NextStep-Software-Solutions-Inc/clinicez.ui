@@ -304,6 +304,26 @@ export const getHPAction = async ({ userId, hpTypeId, isPublished, id }: HPFilte
 }
 
 export const createHpAction = async (hp: Prisma.HealthcareProviderCreateArgs["data"]) => {
+  // Check if user already has an HP profile before creating
+  // userId might come from User.connect or direct userId field
+  let userId: number | undefined;
+  
+  if (typeof hp.User === 'object' && hp.User && 'connect' in hp.User) {
+    userId = hp.User.connect?.id;
+  }
+  
+  if (userId) {
+    const existingHP = await prisma.healthcareProvider.findFirst({
+      where: {
+        userId,
+        isActive: true,
+      },
+    });
+    
+    if (existingHP) {
+      throw new Error("User already has a Healthcare Provider profile. Only one HP profile is allowed per user.");
+    }
+  }
 
   const newHp = await prisma.healthcareProvider.create({
     data: {

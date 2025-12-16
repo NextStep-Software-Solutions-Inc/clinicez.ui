@@ -303,14 +303,29 @@ export const getHPAction = async ({ userId, hpTypeId, isPublished, id }: HPFilte
   return hp;
 }
 
+/**
+ * Extracts the user ID from a Prisma HealthcareProvider create input.
+ * Handles both direct connection and nested connection patterns.
+ */
+function extractUserIdFromInput(hp: Prisma.HealthcareProviderCreateArgs["data"]): number | undefined {
+  if (!hp.User || typeof hp.User !== 'object') {
+    return undefined;
+  }
+  
+  // Handle User.connect pattern (e.g., { User: { connect: { id: 123 } } })
+  if ('connect' in hp.User && hp.User.connect && typeof hp.User.connect === 'object') {
+    const connect = hp.User.connect;
+    if ('id' in connect && typeof connect.id === 'number') {
+      return connect.id;
+    }
+  }
+  
+  return undefined;
+}
+
 export const createHpAction = async (hp: Prisma.HealthcareProviderCreateArgs["data"]) => {
   // Check if user already has an HP profile before creating
-  // userId might come from User.connect or direct userId field
-  let userId: number | undefined;
-  
-  if (typeof hp.User === 'object' && hp.User && 'connect' in hp.User) {
-    userId = hp.User.connect?.id;
-  }
+  const userId = extractUserIdFromInput(hp);
   
   if (userId) {
     const existingHP = await prisma.healthcareProvider.findFirst({

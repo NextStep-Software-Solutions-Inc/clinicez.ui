@@ -17,12 +17,11 @@ import {
 
 interface EMRFilesProps {
   patientId: string;
-  clinicUid: string;
 }
 
-export default function EMRFiles({ patientId, clinicUid }: EMRFilesProps) {
-  // Pass clinicUid to get clinic-scoped folders
-  const { data: foldersData, isLoading, error } = useFolders({ userId: patientId, clinicUid });
+export default function EMRFiles({ patientId }: EMRFilesProps) {
+  // Don't pass clinicUid - fetch all patient folders regardless of clinic scope
+  const { data: foldersData, isLoading, error } = useFolders({ userId: patientId });
 
   if (isLoading) {
     return <p className="text-muted-foreground">Loading files...</p>;

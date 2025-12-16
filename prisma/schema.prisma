@@ -440,7 +440,10 @@ model HealthcareProvider {
   UserPreferences         UserPreference[]
   UserVaccinations        UserVaccination[]
 
-  @@unique([userId], name: "unique_user_hp")
+  // Uniqueness is enforced by a partial unique index in the database
+  // that only applies to active records (isActive = true)
+  // See migration: 20251216111750_single_hp_profile_per_user
+  @@index([userId], name: "idx_healthcare_provider_user")
 }
 
 model HPProfile {

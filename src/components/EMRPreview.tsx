@@ -85,14 +85,23 @@ function EMRPreview({patientId}: EMRPreviewProps) {
 
       {/* Tabbed Content */}
       <Tabs defaultValue="profile" className="flex-1 flex flex-col overflow-hidden">
-        <TabsList className="w-full justify-start bg-primary/5 p-1 h-auto">
-          <TabsTrigger value="profile" className="flex-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+        <TabsList className="w-full justify-start bg-transparent p-0 h-auto gap-2">
+          <TabsTrigger 
+            value="profile" 
+            className="flex-1 rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-gray-100 data-[state=inactive]:text-gray-600 py-2.5"
+          >
             Patient Profile
           </TabsTrigger>
-          <TabsTrigger value="consultations" className="flex-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+          <TabsTrigger 
+            value="consultations" 
+            className="flex-1 rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-gray-100 data-[state=inactive]:text-gray-600 py-2.5"
+          >
             Consultations and Vitals
           </TabsTrigger>
-          <TabsTrigger value="files" className="flex-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+          <TabsTrigger 
+            value="files" 
+            className="flex-1 rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-gray-100 data-[state=inactive]:text-gray-600 py-2.5"
+          >
             Files and Medical History
           </TabsTrigger>
         </TabsList>
@@ -185,12 +194,12 @@ const HealthHistoryItem = ({title}: {title: string}) => {
 
 export const Section = ({title, icon, children}: {title: string, icon?: React.ReactNode, children?: React.ReactNode}) => {
   return (
-    <section className="space-y-3">
-      <div className="flex items-center gap-2 px-3 py-2 bg-primary/10 rounded-lg border border-primary/20">
-        {icon && <div className="text-primary">{icon}</div>}
-        <h3 className="text-lg font-semibold text-primary">{title}</h3>
+    <section className="border rounded-lg p-4 bg-white shadow-sm">
+      <div className="flex items-center gap-2 mb-3">
+        {icon && <div className="text-gray-600">{icon}</div>}
+        <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
       </div>
-      <div className="px-1">
+      <div>
         {children ?? <p className="text-muted-foreground">No records found.</p>}
       </div>
     </section>

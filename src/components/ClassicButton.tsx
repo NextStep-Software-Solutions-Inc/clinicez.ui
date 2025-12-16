@@ -23,10 +23,11 @@ export default function ClassicButton() {
   return (
     <Button
       onClick={handleClick}
-      variant="ghost"
-      className="bg-transparent text-sm text-accent-foreground"
+      variant="outline"
+      size="sm"
+      className="bg-white/90 hover:bg-white text-sm shadow-md"
     >
-      Switch to V1
+      Back to Classic Version
     </Button>
   )
 }

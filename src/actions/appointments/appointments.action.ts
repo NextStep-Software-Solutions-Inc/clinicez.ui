@@ -1424,13 +1424,13 @@ export const checkRepeatPatientAction = withErrorHandling(cache(async (
   patientUserId: string,
   hpId: number | undefined,
   clinicUid: string
-): Promise<{ isRepeatPatient: boolean }> => {
+) => {
   const session = await getCachedSession();
   if (!session) throw new Error("Unauthorized");
 
   // If no healthcare provider is selected, we can't determine repeat patient status
   if (!hpId) {
-    return { isRepeatPatient: false };
+    return { message: "No healthcare provider selected", data: { isRepeatPatient: false } };
   }
 
   // Find completed consultations where:
@@ -1463,7 +1463,12 @@ export const checkRepeatPatientAction = withErrorHandling(cache(async (
     }
   });
 
-  return { isRepeatPatient: previousConsultations > 0 };
+  const isRepeatPatient = previousConsultations > 0;
+  return { 
+    message: isRepeatPatient ? "Repeat patient detected" : "New patient", 
+    data: { isRepeatPatient } 
+  };
 }));
+
 
 

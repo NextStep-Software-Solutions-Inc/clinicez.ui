@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { self } from '@lib/axios';
+import { self } from '@services/request';
 
 type UseRepeatPatientParams = {
   clinicUid: string;
@@ -36,7 +36,7 @@ export function useRepeatPatient({ clinicUid, patientUserId, hpId }: UseRepeatPa
         const response = await self.get<RepeatPatientResult>(
           `/api/clinics/${clinicUid}/appointments/check-repeat-patient?patientUserId=${patientUserId}&hpId=${hpId}`
         );
-        setIsRepeatPatient(response.data.isRepeatPatient);
+        setIsRepeatPatient(response.isRepeatPatient);
       } catch (error) {
         console.error('Error checking repeat patient status:', error);
         setIsRepeatPatient(false);

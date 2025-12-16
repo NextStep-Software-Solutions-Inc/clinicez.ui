@@ -25,5 +25,5 @@ export const GET = withClerkAuth(async (req: NextRequest, { params }: {
     clinicUid
   );
 
-  return NextResponse.json(result, { status: 200 });
+  return NextResponse.json(result.data, { status: 200 });
 });

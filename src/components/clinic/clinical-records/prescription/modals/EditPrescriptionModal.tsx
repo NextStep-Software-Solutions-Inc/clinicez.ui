@@ -45,9 +45,7 @@ const medicineSchema = z.object({
   brandName: z.string().optional(),
   genericName: z.string().optional(),
   isGeneric: z.boolean().default(false),
-  dosage: z.string({
-    required_error: "Dosage is required",
-  }).min(1, "Dosage cannot be empty"),
+  dosage: z.string().optional(),
   qty: z
     .coerce
     .number()
@@ -476,7 +474,7 @@ export default function EditPrescriptionModal({
                             render={({ field }) => (
                               <FormItem>
                                 <FormLabel>
-                                  Dosage <span className="text-red-500 font-bold">*</span>
+                                  Dosage
                                 </FormLabel>
                                 <FormControl>
                                   <Input {...field} placeholder="e.g., 500" />

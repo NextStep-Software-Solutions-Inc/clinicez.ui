@@ -2,11 +2,11 @@ import { Avatar, AvatarFallback } from "@components/ui/avatar";
 import { Badge } from "@components/ui/badge";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@components/ui/card";
 import ConditionalRender from "@components/utils/ConditionalRender";
-import { differenceInCalendarYears } from "date-fns";
 import Image from "next/image";
 import { GetClinicPatients } from "@/actions/clinics/clinic-patient.action";
 import dayjs from "@lib/day-utils";
 import { ViewEMRButton } from "./ViewEMRButton";
+import { calculateAge } from "@/lib/utils";
 
 interface PatientCardProps {
     patient: NonNullable<GetClinicPatients["data"]>[number] & {
@@ -24,6 +24,7 @@ export const PatientCard = async ({patient}: PatientCardProps) => {
 
   const nameInitials = `${firstName?.charAt(0) ?? ""}${lastName?.charAt(0) ?? ""}`
   const name = `${lastName || "-"}, ${firstName || "-"} ${middleName ?? ""} ${suffix ?? ""}`
+  const age = calculateAge(dob);
 
   return (
     <Card className="shadow-2xl select-none flex-grow lg:flex-grow-0 basis-[35rem]">
@@ -45,7 +46,7 @@ export const PatientCard = async ({patient}: PatientCardProps) => {
           </Avatar>
           <div className="flex-1 flex flex-col justify-between">
             <div className="">
-              <p className="text-sm text-muted-foreground italic font-medium truncate overflow-hidden capitalize">{gender?.toLowerCase()} / {dob && `${differenceInCalendarYears(new Date(), dob)} years old`}</p>
+              <p className="text-sm text-muted-foreground italic font-medium truncate overflow-hidden capitalize">{gender?.toLowerCase()} / {age && `${age} years old`}</p>
               <p className="text-sm text-muted-foreground italic font-medium capitalize">{bloodType?.split("_").join(" ").toLowerCase()}</p>
             </div>
             <div className="flex gap-2 flex-wrap">

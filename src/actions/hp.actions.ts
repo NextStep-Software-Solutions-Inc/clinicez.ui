@@ -223,10 +223,14 @@ export const getHPsAction = cache(async (filters?: HPSFilters) => {
       ...(userId ? { User: { userId } } : {}),
       ...(isPublished ? { isPublished } : {}),
       ...(clinicUid ? {
-        ClinicMembers: {
-          some: {
-            clinicUid: clinicUid,
-            isActive: true
+        User: {
+          ClinicMembers: {
+            some: {
+              Clinic: {
+                clinicUid: clinicUid,
+              },
+              isActive: true
+            }
           }
         }
       } : {})
@@ -251,6 +255,7 @@ export const getHPsAction = cache(async (filters?: HPSFilters) => {
           name: true,
           title: true,
           suffix: true,
+          specialties: true,
           fields: true,
         }
       }
@@ -372,7 +377,7 @@ export const getHpsByIdsAction = async (ids: number[]) => {
           name: true,
           title: true,
           suffix: true,
-          fields: true,
+          specialties: true,
         }
       }
     }

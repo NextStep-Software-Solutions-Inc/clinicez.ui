@@ -42,7 +42,7 @@ const DownloadPrescriptionAction = React.forwardRef<
         const patient = data.ClinicPatient?.Patient
         const patientName = patient ?
           `${patient.firstName ?? ""} ${patient.middleName ?? ""} ${patient.lastName ?? ""} ${patient.suffix ?? ""}`.trim() : "Unknown Patient"
-        const age = patient?.dob ? String(calculateAge(patient.dob)) : ""
+        const age = String(calculateAge(patient?.dob) ?? "")
         const gender = patient?.gender ?? ""
         const address = formatPatientAddress(patient)
 

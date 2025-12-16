@@ -161,7 +161,7 @@ async function generateAndExportConsultationReport(
     if (matchesKeyword(provider.User?.suffix ?? null, DOCTOR_SUFFIX_KEYWORDS)) return true
     if (matchesKeyword(provider.HPProfile?.title ?? null, DOCTOR_TITLE_KEYWORDS)) return true
     if (matchesDoctorName(provider.HPProfile?.name ?? null)) return true
-    if (provider.HPProfile?.fields?.some(field => matchesKeyword(field ?? null, DOCTOR_FIELD_KEYWORDS))) return true
+    if (provider.HPProfile?.specialties?.some(specialty => matchesKeyword(specialty ?? null, DOCTOR_FIELD_KEYWORDS))) return true
     return false
   }
 
@@ -169,7 +169,7 @@ async function generateAndExportConsultationReport(
     if (!provider) return false
     if (hasRoleMatch(provider.User?.OrganizationMembers ?? null, NURSE_ROLE_KEYWORDS)) return true
     if (matchesKeyword(provider.HPProfile?.title ?? null, NURSE_TITLE_KEYWORDS)) return true
-    if (provider.HPProfile?.fields?.some(field => matchesKeyword(field ?? null, NURSE_FIELD_KEYWORDS))) return true
+    if (provider.HPProfile?.specialties?.some(specialty => matchesKeyword(specialty ?? null, NURSE_FIELD_KEYWORDS))) return true
     return false
   }
 
@@ -246,7 +246,7 @@ async function generateAndExportConsultationReport(
 
     const taggedDoctor = primaryDoctorName
 
-    const ageValue = patient?.dob ? calculateAge(patient.dob) : undefined
+    const ageValue = calculateAge(patient?.dob)
 
     return {
       "Consultation Ticket #": ticket.id,
@@ -259,8 +259,8 @@ async function generateAndExportConsultationReport(
       "Campus": patient?.OrganizationMembers?.[0]?.Organization?.name || "-",
       "Dept/Year Level": deptYearLevel,
       "Status": status,
-      "Appointment Type": appointmentAttribute?.AppointmentType?.name || "-",
-      "Consultation Type": appointmentAttribute?.AppointmentMode?.name || "-",
+      "Appointment Type": appointmentAttribute?.AppointmentMode?.name || "-",
+      "Consultation Type": appointmentAttribute?.AppointmentType?.name || "-",
       "Purpose/Chief Complaint": ticket.Appointment?.complaint || ticket.subject || "-",
       "Service Offered": appointmentAttribute?.Service?.name || "-",
       "Resolved By": isResolved ? primaryDoctorName : "-",

@@ -26,6 +26,10 @@ export const PERMISSIONS = {
       name: "cancel:clinic:appointment_assignment",
       description: "User can cancel appointment assignment within the clinic.",
     },
+    "RETURN:CLINIC:APPOINTMENT_ASSIGNMENT": {
+      name: "return:clinic:appointment_assignment",
+      description: "User can return accepted appointment assignment within the clinic.",
+    },
     "ACCEPT:CLINIC:APPOINTMENT_ASSIGNMENT": {
       name: "accept:clinic:appointment_assignment",
       description: "User can accept appointment assignment within the clinic.",

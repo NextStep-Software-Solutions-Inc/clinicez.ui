@@ -19,9 +19,21 @@ export const GET = withClerkAuth(async (req: NextRequest, { params }: {
     );
   }
 
+  // Validate hpId if provided
+  let parsedHpId: number | undefined;
+  if (hpId) {
+    parsedHpId = parseInt(hpId, 10);
+    if (isNaN(parsedHpId)) {
+      return NextResponse.json(
+        { error: 'hpId must be a valid number' },
+        { status: 400 }
+      );
+    }
+  }
+
   const result = await checkRepeatPatientAction(
     patientUserId,
-    hpId ? parseInt(hpId, 10) : undefined,
+    parsedHpId,
     clinicUid
   );
 

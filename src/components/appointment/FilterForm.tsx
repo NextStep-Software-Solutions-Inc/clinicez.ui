@@ -214,9 +214,9 @@ export default function FilterForm({ onContinue }: FilterFormProps) {
   // Auto-set consultation type to "Follow-up" when repeat patient is detected
   useEffect(() => {
     if (isRepeatPatient && appointmentTypes && !isCheckingRepeat) {
-      // Find the "Follow-up" appointment type (case-insensitive)
+      // Find the "Follow-up" appointment type with exact match (case-insensitive)
       const followUpType = appointmentTypes.find(
-        type => type.name.toLowerCase().includes('follow-up') || type.name.toLowerCase().includes('follow up')
+        type => type.name.toLowerCase() === 'follow-up' || type.name.toLowerCase() === 'follow up'
       )
 
       if (followUpType) {

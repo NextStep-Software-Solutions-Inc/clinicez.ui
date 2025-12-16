@@ -6,8 +6,19 @@ const LANDING_VERSION_KEY = "landing-page-version"
 
 type Version = "v1" | "v2"
 
+// Initialize global version from localStorage once
+function getInitialVersion(): Version {
+  if (typeof window !== "undefined") {
+    const savedVersion = localStorage.getItem(LANDING_VERSION_KEY)
+    if (savedVersion === "v1" || savedVersion === "v2") {
+      return savedVersion
+    }
+  }
+  return "v1"
+}
+
 // Global state to sync across components
-let globalVersion: Version = "v1"
+let globalVersion: Version = getInitialVersion()
 const listeners: Set<(version: Version) => void> = new Set()
 
 function notifyListeners(version: Version) {
@@ -16,16 +27,7 @@ function notifyListeners(version: Version) {
 }
 
 export function useLandingPageVersion() {
-  const [version, setVersion] = useState<Version>(() => {
-    if (typeof window !== "undefined") {
-      const savedVersion = localStorage.getItem(LANDING_VERSION_KEY)
-      if (savedVersion === "v1" || savedVersion === "v2") {
-        globalVersion = savedVersion
-        return savedVersion
-      }
-    }
-    return globalVersion
-  })
+  const [version, setVersion] = useState<Version>(globalVersion)
 
   useEffect(() => {
     const listener = (newVersion: Version) => setVersion(newVersion)

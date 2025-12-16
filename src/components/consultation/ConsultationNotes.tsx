@@ -22,15 +22,17 @@ import { useUser } from "@clerk/nextjs";
 import { createOrderedConsultationNotes } from "@/utils/soap-ordering";
 interface ConsultationNotesProps {
   consultation: NonNullable<GetConsultationTicket["data"]>;
+  patientUserId?: string;
 }
 
-export default function ConsultationNotes({ consultation }: ConsultationNotesProps) {
+export default function ConsultationNotes({ consultation, patientUserId }: ConsultationNotesProps) {
   const { user } = useUser()
   const authUserHPS = useHPs({
     userId: user?.id ?? ""
   })
   const consultationTicketHps = consultation.ConsultationTicketHPs.map(c => c.hpId)
   const isConsultationAuthor = (authUserHPS.data ?? []).some(hp => consultationTicketHps.includes(hp.id))
+  const isPatientView = patientUserId ? user?.id === patientUserId : false
 
   const params = useParams<{ clinicUid: string }>()
   const clinicUid = params.clinicUid;
@@ -72,6 +74,7 @@ export default function ConsultationNotes({ consultation }: ConsultationNotesPro
                     consultationId={consultation.id}
                     name={note.name} label={note.label}
                     showOnPatient={note.showOnPatient}
+                    isPatientView={isPatientView}
                   />
                 </AccordionItem>
               )

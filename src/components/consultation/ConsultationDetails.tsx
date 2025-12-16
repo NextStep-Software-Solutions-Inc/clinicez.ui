@@ -154,7 +154,7 @@ export const BackgroundInfo = ({ appointment, consultation, user }: BackgroundIn
           </TabsList>
           <TabsContent value="notes">
             <Suspend>
-              <ConsultationNotes consultation={consultation} />
+              <ConsultationNotes consultation={consultation} patientUserId={user.userId} />
             </Suspend>
           </TabsContent>
           <TabsContent value="pre-assessment-notes">

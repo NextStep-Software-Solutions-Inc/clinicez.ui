@@ -1413,4 +1413,57 @@ const sendAppointmentRequestSent = async ({ users }: {
   }
 }
 
+/**
+ * Check if a patient has had previous consultations with a specific healthcare provider
+ * @param patientUserId - The userId of the patient
+ * @param hpId - The healthcare provider ID (optional)
+ * @param clinicUid - The clinic unique identifier
+ * @returns Object containing isRepeatPatient boolean
+ */
+export const checkRepeatPatientAction = withErrorHandling(cache(async (
+  patientUserId: string,
+  hpId: number | undefined,
+  clinicUid: string
+): Promise<{ isRepeatPatient: boolean }> => {
+  const session = await getCachedSession();
+  if (!session) throw new Error("Unauthorized");
+
+  // If no healthcare provider is selected, we can't determine repeat patient status
+  if (!hpId) {
+    return { isRepeatPatient: false };
+  }
+
+  // Find completed consultations where:
+  // 1. Patient is the requester of the appointment
+  // 2. The healthcare provider was involved in the consultation
+  // 3. The consultation is completed (status = "COMPLETED")
+  const previousConsultations = await prisma.consultationTicket.count({
+    where: {
+      Clinic: {
+        clinicUid
+      },
+      Appointment: {
+        Requesters: {
+          some: {
+            User: {
+              userId: patientUserId
+            }
+          }
+        }
+      },
+      ConsultationTicketHPs: {
+        some: {
+          hpId: hpId
+        }
+      },
+      ConsultationTicketAttribute: {
+        status: "COMPLETED"
+      },
+      isActive: true
+    }
+  });
+
+  return { isRepeatPatient: previousConsultations > 0 };
+}));
+
 

@@ -56,6 +56,7 @@ import { ChevronDown } from "lucide-react"
 import { getFullName } from "@/lib/formatter-utils"
 import { isValidStudentId } from "@/lib/formatter-utils"
 import { useOrgMembers } from "@/hooks/useOrgMember"
+import { useRepeatPatient } from "@/hooks/useRepeatPatient"
 
 // Debounce hook for search optimization
 function useDebounce<T>(value: T, delay: number): T {
@@ -194,6 +195,42 @@ export default function FilterForm({ onContinue }: FilterFormProps) {
       requester: bookAppointmentForm.requester ?? undefined
     },
   })
+
+  // Watch for changes in requester and hpId to check repeat patient status
+  const watchedRequester = form.watch('requester')
+  const watchedHpId = form.watch('hpId')
+  const watchedBookAFriend = form.watch('bookAFriend')
+
+  // Determine the patient userId: use requester if booking for a friend, otherwise use current user
+  const patientUserId = watchedBookAFriend ? watchedRequester : user?.id
+
+  // Check if this is a repeat patient
+  const { isRepeatPatient, isLoading: isCheckingRepeat } = useRepeatPatient({
+    clinicUid,
+    patientUserId,
+    hpId: watchedHpId
+  })
+
+  // Auto-set consultation type to "Follow-up" when repeat patient is detected
+  useEffect(() => {
+    if (isRepeatPatient && appointmentTypes && !isCheckingRepeat) {
+      // Find the "Follow-up" appointment type (case-insensitive)
+      const followUpType = appointmentTypes.find(
+        type => type.name.toLowerCase().includes('follow-up') || type.name.toLowerCase().includes('follow up')
+      )
+
+      if (followUpType) {
+        const currentAppointmentTypeId = form.getValues('appointmentTypeId')
+        // Only auto-set if the field is empty or not already set to follow-up
+        if (!currentAppointmentTypeId || currentAppointmentTypeId !== followUpType.id) {
+          form.setValue('appointmentTypeId', followUpType.id, {
+            shouldValidate: true,
+            shouldDirty: true
+          })
+        }
+      }
+    }
+  }, [isRepeatPatient, appointmentTypes, isCheckingRepeat, form])
 
   function onSubmit(data: z.infer<typeof FilterFormSchema>) {
 

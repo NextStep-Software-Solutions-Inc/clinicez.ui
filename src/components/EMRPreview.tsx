@@ -144,7 +144,13 @@ function EMRPreview({patientId}: EMRPreviewProps) {
         <TabsContent value="files" className="flex-1 overflow-auto mt-0 pt-5 no-scrollbar">
           <div className="space-y-5">
             <Section title="General Health Assessment" icon={<FileText className="h-5 w-5" />}>
-              <p className="text-muted-foreground">No health assessment records found.</p>
+              <div className="space-y-4">
+                <HealthHistoryItem title="Medical History" />
+                <HealthHistoryItem title="Family History" />
+                <HealthHistoryItem title="Surgical History" />
+                <HealthHistoryItem title="Personal History" />
+                <HealthHistoryItem title="Obstetric History" />
+              </div>
             </Section>
 
             <Section title="Files" icon={<FileText className="h-5 w-5" />}>
@@ -164,6 +170,15 @@ const InfoItem = ({label, value}: {label: string, value?: string | null}) => {
     <div className="flex flex-col">
       <span className="text-xs text-muted-foreground">{label}</span>
       <span className="text-sm font-medium">{value || "-"}</span>
+    </div>
+  )
+}
+
+const HealthHistoryItem = ({title}: {title: string}) => {
+  return (
+    <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+      <p className="font-medium text-sm text-gray-800 mb-1">{title}</p>
+      <p className="text-sm text-muted-foreground">No records available</p>
     </div>
   )
 }

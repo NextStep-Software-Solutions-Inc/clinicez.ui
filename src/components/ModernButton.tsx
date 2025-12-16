@@ -9,10 +9,8 @@ export default function ModernButton() {
   const pathname = usePathname()
 
   const handleClick = () => {
-    // Save preference to localStorage
+    // Save preference to localStorage and notify all listeners
     setLandingPageVersion("v2")
-    // Reload to apply the change
-    window.location.reload()
   }
 
   // Only show on landing page when v1 is active, and not on v2 routes

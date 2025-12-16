@@ -9,10 +9,8 @@ export default function ClassicButton() {
   const pathname = usePathname()
 
   const handleClick = () => {
-    // Save preference to localStorage
+    // Save preference to localStorage and notify all listeners
     setLandingPageVersion("v1")
-    // Reload to apply the change
-    window.location.reload()
   }
 
   // Only show on landing page when v2 is active, or on v2 routes

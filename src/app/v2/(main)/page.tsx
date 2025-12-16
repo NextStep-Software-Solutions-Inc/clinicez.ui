@@ -1,36 +1,7 @@
 import { getCachedSession } from "@/actions/session.action";
-import FeatureItems, { HeroTitle } from "@/components/FeatureItems";
-import HeroBackground from "@/components/HeroBackground";
-import LandingPageVersionHandler from "@/components/LandingPageVersionHandler";
-import { Metadata } from "next";
-
-export const metadata: Metadata = {
-  title: "Home | Clinic EZ V2",
-  description: "Redesigned Healthcare Management System"
-};
+import { redirect } from "next/navigation";
 
 export default async function HomePageV2() {
-  const session = await getCachedSession();
-  const authenticated = !!session;
-
-  return (
-    <main>
-      <LandingPageVersionHandler />
-      {/* Hero Section */}
-      <section className="relative h-[calc(100vh-8rem)] flex items-center justify-center">
-        <HeroBackground opacity={0.2} />
-        <div className="relative z-10 container mx-auto">
-          <div className="mx-auto sm:px-6 lg:px-8">
-            <div className="grid items-center justify-center text-center">
-              <HeroTitle version="v2" authenticated={authenticated} />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="relative z-20 overflow-hidden">
-        <FeatureItems version="v2" />
-      </section>
-    </main>
-  );
+  // Redirect to root page, which will handle version selection
+  redirect("/");
 }

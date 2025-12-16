@@ -216,6 +216,7 @@ export default function AppointmentDisplay() {
           </div>
           <Separator className="my-2" />
           <Attachments attachments={(freshAppointment.data.AppointmentAttachments ?? []).map(a => a.url)} />
+        </div>
         
         <Separator className="my-4" />
         <div className="px-4 pb-4 text-xs">

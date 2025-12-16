@@ -1,6 +1,7 @@
 import { getCachedSession } from "@/actions/session.action";
 import FeatureItems, { HeroTitle } from "@/components/FeatureItems";
 import HeroBackground from "@/components/HeroBackground";
+import LandingPageVersionHandler from "@/components/LandingPageVersionHandler";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -14,6 +15,7 @@ export default async function HomePageV2() {
 
   return (
     <main>
+      <LandingPageVersionHandler />
       {/* Hero Section */}
       <section className="relative h-[calc(100vh-8rem)] flex items-center justify-center">
         <HeroBackground opacity={0.2} />

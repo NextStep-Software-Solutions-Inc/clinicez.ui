@@ -63,6 +63,50 @@ export default function AppointmentDisplay() {
   const requesters = freshAppointment?.data?.Requesters
   const preferredHp = freshAppointment?.data?.AppointmentAttribute?.PreferredAppointee
 
+  // Helper function to get department name
+  const getDepartmentName = (userRecord?: {
+    StudentRecords?: Array<{
+      Department?: { name?: string | null } | null;
+    }>;
+    UserEmployments?: Array<{
+      Department?: { name?: string | null } | null;
+    }>;
+  }) => {
+    if (!userRecord) return undefined;
+    const deptFromStudent = userRecord.StudentRecords?.find((record) => record.Department?.name)?.Department?.name;
+    if (deptFromStudent) return deptFromStudent;
+    const deptFromEmployment = userRecord.UserEmployments?.find((employment) => employment.Department?.name)?.Department?.name;
+    return deptFromEmployment ?? undefined;
+  }
+
+  // Helper function to get program and year level
+  const getProgramYear = (userRecord?: {
+    StudentRecords?: Array<{
+      Program?: { name?: string | null; major?: string | null } | null;
+      OrganizationYearLevel?: { name?: string | null } | null;
+    }>;
+  }) => {
+    if (!userRecord) return undefined;
+    const studentRecord = userRecord.StudentRecords?.[0];
+    if (!studentRecord) return undefined;
+    
+    const programName = studentRecord.Program?.name;
+    const major = studentRecord.Program?.major;
+    const yearLevel = studentRecord.OrganizationYearLevel?.name;
+    
+    if (programName || yearLevel) {
+      const parts = [];
+      if (programName) {
+        parts.push(major ? `${programName} (${major})` : programName);
+      }
+      if (yearLevel) {
+        parts.push(yearLevel);
+      }
+      return parts.join(' - ');
+    }
+    return undefined;
+  }
+
   const revalidate = async () => {
     revalidatePath(`/clinic/${clinicUid}/appointments`, "page")
     mutate((key) => typeof key === 'string' && key.startsWith(`/api/clinics/${clinicUid}/appointments`), undefined, {
@@ -155,6 +199,11 @@ export default function AppointmentDisplay() {
             <Each
               of={requesters?.filter(requester => requester.User) ?? []} // Filter out requesters with null User
               render={(aptUser) => {
+                const departmentName = getDepartmentName(aptUser.User);
+                const programYear = getProgramYear(aptUser.User);
+                const mobile = aptUser.User.mobile;
+                const email = aptUser.User.email;
+                
                 return (
                   <Fragment key={aptUser.User.userId}>
                     <Avatar>
@@ -169,7 +218,18 @@ export default function AppointmentDisplay() {
                       <div className="line-clamp-1 text-xs">
                         <span className="font-medium">{aptUser.User.gender} / </span>{calculateAge(aptUser.User.dob) ?? ""}
                       </div>
-                      <div className="line-clamp-1 text-xs">{freshAppointment.data?.subject}</div>
+                      {departmentName && (
+                        <div className="line-clamp-1 text-xs text-muted-foreground">{departmentName}</div>
+                      )}
+                      {programYear && (
+                        <div className="line-clamp-1 text-xs text-muted-foreground">{programYear}</div>
+                      )}
+                      {mobile && (
+                        <div className="line-clamp-1 text-xs text-muted-foreground">{mobile}</div>
+                      )}
+                      {email && (
+                        <div className="line-clamp-1 text-xs text-muted-foreground">{email}</div>
+                      )}
                     </div>
                   </Fragment>
                 )
@@ -185,7 +245,16 @@ export default function AppointmentDisplay() {
         </div>
         <Separator />
         <ScrollArea className="flex-auto whitespace-pre-wrap p-4 text-sm h-0">
-          {freshAppointment.data.complaint}
+          {/* Subject moved here from header */}
+          <div className="mb-2">
+            <span className="font-semibold text-sm">Subject: </span>
+            <span className="text-sm">{freshAppointment.data?.subject}</span>
+          </div>
+          <Separator className="my-2" />
+          <div className="mb-2">
+            <span className="font-semibold text-sm">Chief Complaint: </span>
+            <div className="mt-1">{freshAppointment.data.complaint}</div>
+          </div>
           <Separator className="my-2" />
           <Attachments attachments={(freshAppointment.data.AppointmentAttachments ?? []).map(a => a.url)} />
         </ScrollArea>

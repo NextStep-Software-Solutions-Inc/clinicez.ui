@@ -1414,29 +1414,19 @@ const sendAppointmentRequestSent = async ({ users }: {
 }
 
 /**
- * Check if a patient has had previous consultations with a specific healthcare provider
+ * Check if a patient has had previous consultations or appointment history in the clinic
  * @param patientUserId - The userId of the patient
- * @param hpId - The healthcare provider ID (optional)
  * @param clinicUid - The clinic unique identifier
  * @returns Object containing isRepeatPatient boolean
  */
 export const checkRepeatPatientAction = withErrorHandling(cache(async (
   patientUserId: string,
-  hpId: number | undefined,
   clinicUid: string
 ) => {
   const session = await getCachedSession();
   if (!session) throw new Error("Unauthorized");
 
-  // If no healthcare provider is selected, we can't determine repeat patient status
-  if (!hpId) {
-    return { message: "No healthcare provider selected", data: { isRepeatPatient: false } };
-  }
-
-  // Find completed consultations where:
-  // 1. Patient is the requester of the appointment
-  // 2. The healthcare provider was involved in the consultation
-  // 3. The consultation is completed (status = "COMPLETED")
+  // Check for any previous consultations (completed or not) in the clinic
   const previousConsultations = await prisma.consultationTicket.count({
     where: {
       Clinic: {
@@ -1451,19 +1441,31 @@ export const checkRepeatPatientAction = withErrorHandling(cache(async (
           }
         }
       },
-      ConsultationTicketHPs: {
-        some: {
-          hpId: hpId
-        }
-      },
-      ConsultationTicketAttribute: {
-        status: "COMPLETED"
-      },
       isActive: true
     }
   });
 
-  const isRepeatPatient = previousConsultations > 0;
+  // If no consultations found, check for any previous appointments/bookings in the clinic
+  let previousAppointments = 0;
+  if (previousConsultations === 0) {
+    previousAppointments = await prisma.appointment.count({
+      where: {
+        Clinic: {
+          clinicUid
+        },
+        Requesters: {
+          some: {
+            User: {
+              userId: patientUserId
+            }
+          }
+        },
+        isActive: true
+      }
+    });
+  }
+
+  const isRepeatPatient = previousConsultations > 0 || previousAppointments > 0;
   return { 
     message: isRepeatPatient ? "Repeat patient detected" : "New patient", 
     data: { isRepeatPatient } 

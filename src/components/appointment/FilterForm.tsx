@@ -196,19 +196,17 @@ export default function FilterForm({ onContinue }: FilterFormProps) {
     },
   })
 
-  // Watch for changes in requester and hpId to check repeat patient status
+  // Watch for changes in requester to check repeat patient status
   const watchedRequester = form.watch('requester')
-  const watchedHpId = form.watch('hpId')
   const watchedBookAFriend = form.watch('bookAFriend')
 
   // Determine the patient userId: use requester if booking for a friend, otherwise use current user
   const patientUserId = watchedBookAFriend ? watchedRequester : user?.id
 
-  // Check if this is a repeat patient
+  // Check if this is a repeat patient (based on any previous consultation or booking history in the clinic)
   const { isRepeatPatient, isLoading: isCheckingRepeat } = useRepeatPatient({
     clinicUid,
-    patientUserId,
-    hpId: watchedHpId
+    patientUserId
   })
 
   // Auto-set consultation type to "Follow-up" when repeat patient is detected

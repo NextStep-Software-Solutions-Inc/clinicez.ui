@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { X, Sparkles, ArrowRight } from "lucide-react"
 import Link from "next/link"
+import { useLandingPageVersion } from "@/components/VersionSwitcher"
 
 const NOTIFICATION_VERSION = "v2-announcement-2024"
 const STORAGE_KEY = "clinic-ez-notifications"
@@ -17,6 +18,7 @@ interface NotificationState {
 export function NotificationBanner() {
   const [showNotification, setShowNotification] = useState(false)
   const [isLoaded, setIsLoaded] = useState(false)
+  const currentVersion = useLandingPageVersion()
 
   useEffect(() => {
     const checkNotificationStatus = () => {
@@ -55,7 +57,8 @@ export function NotificationBanner() {
     }
   }
 
-  if (!isLoaded || !showNotification) {
+  // Don't show banner if already on v2 or if not loaded or dismissed
+  if (!isLoaded || !showNotification || currentVersion === "v2") {
     return null
   }
 

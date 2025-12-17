@@ -418,13 +418,35 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
               middleName: true,
               lastName: true,
               suffix: true,
+              mobile: true,
+              email: true,
               StudentRecords: {
                 select: {
                   organizationId: true,
                   programId: true,
                   departmentId: true,
                   collegeId: true,
+                  yearLevel: true,
                   College: {
+                    select: {
+                      id: true,
+                      name: true
+                    }
+                  },
+                  Department: {
+                    select: {
+                      id: true,
+                      name: true
+                    }
+                  },
+                  Program: {
+                    select: {
+                      id: true,
+                      name: true,
+                      major: true
+                    }
+                  },
+                  OrganizationYearLevel: {
                     select: {
                       id: true,
                       name: true
@@ -438,6 +460,12 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
                   collegeId: true,
                   officeId: true,
                   College: {
+                    select: {
+                      id: true,
+                      name: true
+                    }
+                  },
+                  Department: {
                     select: {
                       id: true,
                       name: true
@@ -637,6 +665,7 @@ export const getAppointmentAction = withErrorHandling(cache(async (id: number, c
               lastName: true,
               suffix: true,
               email: true,
+              mobile: true,
               gender: true,
               picture: true,
               nickname: true,
@@ -660,6 +689,59 @@ export const getAppointmentAction = withErrorHandling(cache(async (id: number, c
                   country: true,
                 },
                 take: 1,
+              },
+              StudentRecords: {
+                select: {
+                  organizationId: true,
+                  programId: true,
+                  departmentId: true,
+                  collegeId: true,
+                  yearLevel: true,
+                  College: {
+                    select: {
+                      id: true,
+                      name: true
+                    }
+                  },
+                  Department: {
+                    select: {
+                      id: true,
+                      name: true
+                    }
+                  },
+                  Program: {
+                    select: {
+                      id: true,
+                      name: true,
+                      major: true
+                    }
+                  },
+                  OrganizationYearLevel: {
+                    select: {
+                      id: true,
+                      name: true
+                    }
+                  }
+                }
+              },
+              UserEmployments: {
+                select: {
+                  departmentId: true,
+                  collegeId: true,
+                  officeId: true,
+                  College: {
+                    select: {
+                      id: true,
+                      name: true
+                    }
+                  },
+                  Department: {
+                    select: {
+                      id: true,
+                      name: true
+                    }
+                  }
+                }
               }
             }
           }

@@ -101,7 +101,7 @@ export function BulkEKASDownload({ clinicUid }: BulkEKASDownloadProps) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <FileSpreadsheet className="h-5 w-5" />
-          Electronic Konsulta Availment Slip
+          SAP Generation Request Form
         </CardTitle>
         <CardDescription>
           Download EKAS forms for multiple patients.

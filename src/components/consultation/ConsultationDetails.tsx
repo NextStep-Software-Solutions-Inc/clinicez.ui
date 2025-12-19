@@ -22,6 +22,7 @@ import MedicalCertificateWrapper from "@components/MedicalCertificateWrapper";
 import ImagingStudiesWrapper from "@components/ImagingStudiesWrapper";
 import LaboratoryRequestWrapper from "@components/LaboratoryRequestWrapper";
 import ReferralSlipWrapper from "../clinic/clinical-records/referral-slip/ReferralSlipWrapper";
+import EKASWrapper from "../clinic/clinical-records/ekas/EKASWrapper";
 
 const VitalSigns = dynamic(() => import('./VitalSigns'), { loading: () => <div>Loading...</div> });
 const Conversation = dynamic(() => import('./Conversation'), { loading: () => <div>Loading...</div> });
@@ -244,6 +245,13 @@ export const ClinicalRecords = ({
       cardTitle: "Referral Slip Management",
       description: "Create and manage referral slips for your patients.",
       Component: ReferralSlipWrapper,
+    },
+    {
+      value: "ekas",
+      tabTitle: "EKAS",
+      cardTitle: "Electronic Konsulta Availment Slip",
+      description: "Download the Electronic Konsulta Availment Slip for this consultation.",
+      Component: EKASWrapper,
     }
   ];
 

@@ -10,7 +10,7 @@ import ConsultationTicketTableRowActions from "../../../../../../../components/c
 import ResolveConsultationTicket from "@components/consultation/ResolveConsultationTicket";
 import ModifyMedicationSheet from "@components/consultation/ModifyMedicationSheet";
 import DownloadConsultationForm from "@components/consultation/DownloadConsultationForm";
-import { DownloadEKASButton } from "@components/patient/DownloadEKASButton";
+import { DownloadSAPButton } from "@components/patient/DownloadSAPButton";
 import { AppRouterPageRouteOpts } from "@/types";
 
 export const metadata: Metadata = {
@@ -59,10 +59,8 @@ export default async function ConsultationPage(props: AppRouterPageRouteOpts) {
             consultationTicketId={consultationId}
             caseNumber={consultation.data.caseNumber}
           />
-          <DownloadEKASButton
+          <DownloadSAPButton
             userId={patient?.userId || ""}
-            consultationTicketId={consultationId}
-            clinicId={consultation.data.clinicId}
             patientName={`${patient?.lastName}, ${patient?.firstName}`}
           />
           <ModifyMedicationSheet readonly={isResolved} />

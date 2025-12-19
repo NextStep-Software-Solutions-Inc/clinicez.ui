@@ -4,8 +4,6 @@ import Suspend from "@components/Suspend"
 import { isUserOwner } from "@lib/org-utils"
 import { PictureWrapper } from "./PictureWrapper"
 import { PHR } from "./PHR"
-import { AppRouterPageRouteOpts } from "@/types"
-import DownloadPMRFAction from "@/components/phr/DownloadPMRFAction"
 
 export const metadata: Metadata = {
   title: "Basic Information | PHR",

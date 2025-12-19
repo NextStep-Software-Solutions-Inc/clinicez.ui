@@ -12,7 +12,6 @@ import { Download, ChevronDown, DownloadIcon } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { toBlobDownload } from '@/lib/utils/download'
 import { downloadHAFAction } from "@/actions/phr/download-haf.action"
-import { downloadConsultationAction } from "@/actions/phr/download-consultation.action"
 
 interface DownloadPMRFActionProps { userId: string; children?: React.ReactNode }
 
@@ -68,19 +67,6 @@ const DownloadPMRFAction: React.FC<DownloadPMRFActionProps> = ({ userId, childre
       },
       error: "Unable to generate HAF. Please check your profile information and try again.",
     })
-  };
-
-  const handleConsultationDownload = async () => {
-    toast.promise(promiseWrapper(downloadConsultationAction)(userId), {
-      loading: "Generating PhilHealth Consultation Form...",
-      success: async (res) => {
-        const data = res.data
-        if (!data) throw new Error("No PDF data received from server")
-        toBlobDownload(data.pdfData, data.filename)
-        return "Consultation Form downloaded successfully"
-      },
-      error: "Unable to generate Consultation Form. Please check your profile information and try again.",
-    })
   }
 
   const primaryButton = (
@@ -114,10 +100,6 @@ const DownloadPMRFAction: React.FC<DownloadPMRFActionProps> = ({ userId, childre
                 <DropdownMenuItem onClick={handleHAFDownload}>
                   <DownloadIcon className="mr-2 h-4 w-4" />
                   Download Health Assessment Form
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleConsultationDownload}>
-                  <DownloadIcon className="mr-2 h-4 w-4" />
-                  Download Consultation Form
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

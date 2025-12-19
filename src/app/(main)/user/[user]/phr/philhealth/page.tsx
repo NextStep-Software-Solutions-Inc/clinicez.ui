@@ -2,7 +2,6 @@ import Suspend from "@/components/Suspend";
 import { Separator } from "@/components/ui/separator";
 import PhilHealthFormWrapper from "./PhilHealthFormWrapper";
 import DependentsSection from "./DependentsSection";
-import DownloadPMRFAction from "@/components/phr/DownloadPMRFAction";
 import { isUserOwner } from "@/lib/org-utils";
 import { AppRouterPageRouteOpts } from "@/types";
 import { Metadata } from "next";
@@ -20,14 +19,11 @@ export default async function PhilHealthPage(props: AppRouterPageRouteOpts) {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-2 flex justify-between">
-        <div className="space-y-1 flex-1">
-          <h3 className="text-lg font-medium">PhilHealth eKonsulta</h3>
-          <p className="text-sm text-muted-foreground">
-            Manage your PhilHealth eKonsulta information
-          </p>
-        </div>
-        <DownloadPMRFAction userId={userId} />
+      <div className="space-y-2">
+        <h3 className="text-lg font-medium">PhilHealth eKonsulta</h3>
+        <p className="text-sm text-muted-foreground">
+          Manage your PhilHealth eKonsulta information
+        </p>
       </div>
       <Separator />
       <Suspend>

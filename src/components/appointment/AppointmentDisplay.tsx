@@ -299,7 +299,7 @@ export default function AppointmentDisplay() {
             {[PERMISSIONS.CLINIC["WRITE:CLINIC:APPOINTMENT"].name].every(p => myClinicPermissionArray.includes(p)) && (
               <TagHPsSheet
                 appointmentId={freshAppointment.data.id}
-                currentTags={freshAppointment.data.AppointmentTags ?? []}
+                currentTags={freshAppointment.data.AppointmentTag ?? []}
                 onTagsUpdated={revalidate}
               >
                 <Button variant="ghost" size="sm" className="h-6">
@@ -310,7 +310,7 @@ export default function AppointmentDisplay() {
             )}
           </div>
           <Each
-            of={(freshAppointment.data.AppointmentTags ?? [])}
+            of={(freshAppointment.data.AppointmentTag ?? [])}
             fallback={<span className="text-muted-foreground text-xs">No tagged healthcare providers</span>}
             render={(tag) => (
               <div key={tag.id} className="flex gap-1 my-2 ">

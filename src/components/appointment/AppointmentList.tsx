@@ -138,20 +138,20 @@ export const AppointmentList = forwardRef<HTMLDivElement, AppointmentListProps>(
                 <div className="line-clamp-2 text-xs text-muted-foreground">
                   {item.complaint?.substring(0, 300)}
                 </div>
-                {item.AppointmentTags && item.AppointmentTags.length > 0 && (
+                {item.AppointmentTag && item.AppointmentTag.length > 0 && (
                   <div className="flex items-center gap-1 flex-wrap">
                     <span className="text-[0.65rem] text-muted-foreground">Tagged:</span>
                     <Each
-                      of={item.AppointmentTags.slice(0, 3)}
+                      of={item.AppointmentTag.slice(0, 3)}
                       render={(tag) => (
                         <Badge key={tag.id} variant="secondary" className="text-[0.65rem] px-1 py-0 bg-gray-200">
                           {getHealthcareProviderName(tag.HealthcareProvider)}
                         </Badge>
                       )}
                     />
-                    {item.AppointmentTags.length > 3 && (
+                    {item.AppointmentTag.length > 3 && (
                       <span className="text-[0.65rem] text-muted-foreground">
-                        +{item.AppointmentTags.length - 3} more
+                        +{item.AppointmentTag.length - 3} more
                       </span>
                     )}
                   </div>

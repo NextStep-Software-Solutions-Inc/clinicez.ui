@@ -1,11 +1,12 @@
 import prisma from "@lib/prisma"
-import { loadPhilHealthPdf, fillTextFields, processCheckboxes, pdfBytesToBase64 } from "@/lib/utils/pdf-utils"
+import { loadPhilHealthPdf, fillTextFields, processCheckboxes, processRadioButtons, pdfBytesToBase64 } from "@/lib/utils/pdf-utils"
 import { getUserAction, getUserAndAddressAction } from "@/actions/users/user.action"
 import { getEmergencyContactsAction } from "@actions/emergency-contact.action"
 import { logger } from "@/lib/logger"
 
 export type PdfTextMapping = { field: string; value: string | undefined | null }
 export type PdfCheckboxMapping = { field: string; condition: boolean }
+export type PdfRadioMapping = { field: string; option: string | number | boolean }
 
 export interface NameParts { firstName: string; middleName: string; lastName: string; nameExtension: string }
 
@@ -76,13 +77,15 @@ export async function generatePdf(
   texts: PdfTextMapping[],
   checkboxes?: PdfCheckboxMapping[],
   filenameBase?: string,
-  options?: GeneratePdfOptions
+  options?: GeneratePdfOptions,
+  radios?: PdfRadioMapping[]
 ): Promise<GeneratedPdfResult> {
   try {
     const { pdfDoc, form } = await loadPhilHealthPdf(template)
     const fontSize = options?.textFontSize
     await fillTextFields(form, texts, fontSize)
     if (checkboxes?.length) await processCheckboxes(form, checkboxes)
+    if (radios?.length) await processRadioButtons(form, radios)
     form.updateFieldAppearances()
     const bytes = await pdfDoc.save()
     const base64 = await pdfBytesToBase64(bytes)

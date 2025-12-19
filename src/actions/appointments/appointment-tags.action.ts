@@ -81,6 +81,7 @@ export const tagHealthcareProvidersAction = withErrorHandling(
           data: healthcareProviderIds.map((hpId) => ({
             appointmentId,
             healthcareProviderId: hpId,
+            updatedAt: new Date(),
           })),
           skipDuplicates: true,
         });

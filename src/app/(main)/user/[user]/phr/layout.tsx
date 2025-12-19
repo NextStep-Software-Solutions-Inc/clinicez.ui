@@ -72,7 +72,7 @@ export default async function PHRLayout(props: PHRLayoutProps) {
       href: `/user/${user}/phr/address`,
     },
     {
-      title: "PhilHealth eKonsulta",
+      title: "PhilHealth Records",
       href: `/user/${user}/phr/philhealth`,
     },
     {

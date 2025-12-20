@@ -101,6 +101,19 @@ export const hpApplicationTransactionAction = withErrorHandling(
           select: { id: true },
         });
 
+        // Check if user already has a Healthcare Provider profile
+        message = "You already have a Healthcare Provider profile. Only one HP profile is allowed per user.";
+        const existingHP = await prisma.healthcareProvider.findFirst({
+          where: {
+            userId: currentUser.id,
+            isActive: true,
+          },
+        });
+        
+        if (existingHP) {
+          throw new Error(message);
+        }
+
         // Count claimed receipt codes
         message = "Receipt code is invalid or has been claimed.";
         const claimedCount = await prisma.receiptCodeClaim.count({

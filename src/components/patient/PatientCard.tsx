@@ -9,13 +9,13 @@ import { ViewEMRButton } from "./ViewEMRButton";
 import { calculateAge } from "@/lib/utils";
 
 interface PatientCardProps {
-    patient: NonNullable<GetClinicPatients["data"]>[number] & {
-      immunocompromised?: boolean
-    }
+  patient: NonNullable<GetClinicPatients["data"]>[number] & {
+    immunocompromised?: boolean
+  }
 }
-export const PatientCard = async ({patient}: PatientCardProps) => {
-  
-  const { 
+export const PatientCard = async ({ patient }: PatientCardProps) => {
+
+  const {
     Patient: {
       dob, gender, firstName, middleName, lastName, suffix, updatedAt, bloodType, nickname, userId, picture = "https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png"
     },
@@ -38,11 +38,11 @@ export const PatientCard = async ({patient}: PatientCardProps) => {
         <div className="flex gap-3">
           <Avatar className="rounded w-40 h-40">
             {
-              picture ? 
+              picture ?
                 (<Image width={200} height={200} className="object-cover w-full" src={picture} alt={nickname ?? ""} />)
                 : <AvatarFallback>{nameInitials}</AvatarFallback>
             }
-            
+
           </Avatar>
           <div className="flex-1 flex flex-col justify-between">
             <div className="">
@@ -55,7 +55,7 @@ export const PatientCard = async ({patient}: PatientCardProps) => {
               </ConditionalRender>
             </div>
             <div>
-              <ViewEMRButton userId={userId}/>
+              <ViewEMRButton userId={userId} />
             </div>
           </div>
         </div>

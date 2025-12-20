@@ -31,6 +31,8 @@ export default async function DependentsSection({ userUid, readonly }: Dependent
       relationship,
       dob: d.dob ? d.dob.toISOString().slice(0, 10) : undefined,
       gender: d.gender as Gender | undefined,
+      citizenship: d.citizenship ?? "",
+      isPermanentlyDisabled: d.isPermanentlyDisabled ?? false,
       editing: false
     };
   });

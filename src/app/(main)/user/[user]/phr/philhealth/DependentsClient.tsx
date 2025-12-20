@@ -22,6 +22,8 @@ const dependentSchema = z.object({
   lastName: z.string().optional(),
   suffix: z.enum(SUFFIX_OPTIONS).optional().or(z.literal("")).transform(v => v === "" ? undefined : v),
   relationship: z.enum(RELATIONSHIP_OPTIONS).optional().or(z.literal("")).transform(v => v === "" ? undefined : v),
+  citizenship: z.string().optional(),
+  isPermanentlyDisabled: z.boolean().optional().default(false),
   dob: z.string().optional(),
   gender: z.enum(["MALE", "FEMALE"]).optional().or(z.literal("")).transform(v => v === "" ? undefined : v),
 });
@@ -44,6 +46,8 @@ function mapServerDependentToUI(data: unknown): DependentUIModel | null {
   if (d.dob instanceof Date) dob = d.dob.toISOString().slice(0, 10);
   else if (typeof d.dob === "string" && /\d{4}-\d{2}-\d{2}/.test(d.dob)) dob = d.dob;
   const gender = getOptStr("gender") as DependentFormValues["gender"] | undefined;
+  const citizenship = getOptStr("citizenship");
+  const isPermanentlyDisabled = typeof d.isPermanentlyDisabled === "boolean" ? d.isPermanentlyDisabled : false;
   return {
     id,
     firstName,
@@ -51,6 +55,8 @@ function mapServerDependentToUI(data: unknown): DependentUIModel | null {
     lastName: getOptStr("lastName"),
     suffix: suffix as DependentFormValues["suffix"],
     relationship: relationship as DependentFormValues["relationship"],
+    citizenship,
+    isPermanentlyDisabled,
     dob,
     gender,
     editing: false
@@ -193,6 +199,32 @@ export default function DependentsClient({ userUid, readonly, initialDependents 
                 <FormMessage />
               </FormItem>
             )} />
+            {/* Row 3: citizenship + permanently disabled */}
+            <FormField control={newForm.control} name="citizenship" render={({ field }) => (
+              <FormItem className="md:col-span-4">
+                <FormLabel>Citizenship</FormLabel>
+                <FormControl><Input placeholder="Filipino" {...field} /></FormControl>
+                <FormDescription className="sr-only">Country of citizenship</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )} />
+            <FormField control={newForm.control} name="isPermanentlyDisabled" render={({ field }) => (
+              <FormItem className="md:col-span-4 flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4">
+                <FormControl>
+                  <input
+                    type="checkbox"
+                    checked={field.value}
+                    onChange={field.onChange}
+                    className="h-4 w-4"
+                  />
+                </FormControl>
+                <div className="space-y-1 leading-none">
+                  <FormLabel>Permanently Disabled</FormLabel>
+                  <FormDescription>Check if this dependent is permanently disabled</FormDescription>
+                </div>
+                <FormMessage />
+              </FormItem>
+            )} />
             <div className="col-span-full flex gap-2 pt-2">
               <Button type="submit" size="sm" disabled={newForm.formState.isSubmitting}>Save</Button>
               <Button type="button" variant="outline" size="sm" disabled={newForm.formState.isSubmitting} onClick={handleCancelAdd}>Cancel</Button>
@@ -232,7 +264,20 @@ interface DependentRowProps {
 }
 
 function DependentRow({ dep, readonly, onToggleEdit, onUpdate, onDelete, deletingId, updatingId }: DependentRowProps) {
-  const form = useForm<DependentFormValues>({ resolver: zodResolver(dependentSchema), defaultValues: dep });
+  const form = useForm<DependentFormValues>({
+    resolver: zodResolver(dependentSchema),
+    defaultValues: {
+      firstName: dep.firstName,
+      middleName: dep.middleName,
+      lastName: dep.lastName,
+      suffix: dep.suffix,
+      relationship: dep.relationship,
+      citizenship: dep.citizenship,
+      isPermanentlyDisabled: dep.isPermanentlyDisabled,
+      dob: dep.dob,
+      gender: dep.gender,
+    }
+  });
   const submit = form.handleSubmit(values => onUpdate(dep.id, values));
   const editing = dep.editing && !readonly;
   const isUpdating = (editing && form.formState.isSubmitting) || updatingId === dep.id;
@@ -294,6 +339,32 @@ function DependentRow({ dep, readonly, onToggleEdit, onUpdate, onDelete, deletin
           <FormItem className="md:col-span-4">
             <FormLabel>Birthdate</FormLabel>
             <FormControl><Input type="date" disabled={!editing} {...field} /></FormControl>
+            <FormMessage />
+          </FormItem>
+        )} />
+        {/* Row 3: citizenship + permanently disabled */}
+        <FormField control={form.control} name="citizenship" render={({ field }) => (
+          <FormItem className="md:col-span-4">
+            <FormLabel>Citizenship</FormLabel>
+            <FormControl><Input placeholder="Filipino" disabled={!editing} {...field} /></FormControl>
+            <FormMessage />
+          </FormItem>
+        )} />
+        <FormField control={form.control} name="isPermanentlyDisabled" render={({ field }) => (
+          <FormItem className="md:col-span-4 flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4">
+            <FormControl>
+              <input
+                type="checkbox"
+                checked={field.value}
+                onChange={field.onChange}
+                disabled={!editing}
+                className="h-4 w-4"
+              />
+            </FormControl>
+            <div className="space-y-1 leading-none">
+              <FormLabel>Permanently Disabled</FormLabel>
+              <FormDescription>Check if this dependent is permanently disabled</FormDescription>
+            </div>
             <FormMessage />
           </FormItem>
         )} />

@@ -171,6 +171,7 @@ export const getConsultationTicketAction = withErrorHandling(cache(async (consul
       subject: true,
       appointmentId: true,
       clinicId: true,
+      caseNumber: true,
       ConsultationTicketHPs: true,
       createdAt: true,
       updatedAt: true,
@@ -603,7 +604,7 @@ export const getConsultationTicketsAction = withErrorHandling(async (filters: Ge
               },
             },
           },
-          AppointmentTags: {
+          AppointmentTag: {
             select: {
               id: true,
               HealthcareProvider: {

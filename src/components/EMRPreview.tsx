@@ -17,6 +17,7 @@ import { useVaccinations } from "@hooks/useVaccination";
 import RecentVitalSigns from "../app/(main)/user/[user]/phr/vitals/RecentVitalSigns";
 import { useUserVitalSigns } from "@hooks/useUserVitalSign";
 import { notFound, useParams } from "next/navigation";
+import EMRFilesWrapper from "./EMRFilesWrapper";
 import { calculateAge } from "@/lib/utils";
 import ConsultationHistory from "./ConsultationHistory";
 
@@ -90,6 +91,12 @@ function EMRPreview({patientId}: EMRPreviewProps) {
         <ConsultationHistory
           patientId={patientId}
           clinicUid={params.clinicUid}
+        />
+      </Section>
+
+      <Section title={`Files`} >
+        <EMRFilesWrapper
+          patientId={patientId}
         />
       </Section>
      

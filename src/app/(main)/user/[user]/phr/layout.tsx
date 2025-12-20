@@ -72,12 +72,16 @@ export default async function PHRLayout(props: PHRLayoutProps) {
       href: `/user/${user}/phr/address`,
     },
     {
-      title: "PhilHealth eKonsulta",
+      title: "PhilHealth Records",
       href: `/user/${user}/phr/philhealth`,
     },
     {
       title: "Vaccination & Immunization",
       href: `/user/${user}/phr/vaccination-immunization`,
+    },
+    {
+      title: "Health Assessment",
+      href: `/user/${user}/phr/health-assessment`,
     },
     {
       title: "Disabilities & Illnesses",
@@ -90,6 +94,10 @@ export default async function PHRLayout(props: PHRLayoutProps) {
     {
       title: "Vital Signs & Anthropometric Measurements",
       href: `/user/${user}/phr/vitals`,
+    },
+    {
+      title: "Physical Examination",
+      href: `/user/${user}/phr/physical-examination`,
     },
     {
       title: "Medications",

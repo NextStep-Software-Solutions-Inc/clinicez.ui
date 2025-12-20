@@ -86,23 +86,30 @@ model User {
   ReferralSlipsCreated             ClinicReferralSlip[]             @relation("ReferralSlipCreatedBy")
   ReferralSlipsDeleted             ClinicReferralSlip[]             @relation("ReferralSlipDeletedBy")
   ReferralSlipsUpdated             ClinicReferralSlip[]             @relation("ReferralSlipUpdatedBy")
+  FamilyMedicalHistories           FamilyMedicalHistory[]
   Folders                          Folder[]
   HealthcareProviders              HealthcareProvider[]
+  MedicalHistories                 MedicalHistory[]
   Medications                      Medication[]
   MedicinesCreated                 Medicine[]                       @relation("MedicineCreatedBy")
   MedicinesUpdated                 Medicine[]                       @relation("MedicineUpdatedBy")
+  ObGyneHistory                    ObGyneHistory?
   AcceptedOrganizationApplications OrganizationMember[]             @relation("AcceptedBy")
   OrganizationMembers              OrganizationMember[]             @relation("User")
+  PediatricMeasurements            PediatricMeasurement[]
+  PersonalHistory                  PersonalHistory?
   PhilHealthRecordsCreated         PhilHealthRecord[]               @relation("PhilHealthRecordsCreatedBy")
   PhilHealthRecordsDeleted         PhilHealthRecord[]               @relation("PhilHealthRecordsDeletedBy")
   PhilHealthRecordsUpdated         PhilHealthRecord[]               @relation("PhilHealthRecordsUpdatedBy")
   PhilHealthRecords                PhilHealthRecord[]
+  PhysicalExaminations             PhysicalExamination[]
   PreAssessmentNotes               PreAssessmentNote[]
   PrescriptionsCreated             Prescription[]                   @relation("PrescriptionCreatedBy")
   PrescriptionsUpdated             Prescription[]                   @relation("PrescriptionUpdatedBy")
   ReceiptCodeClaims                ReceiptCodeClaim[]
   ReservedTimeSlots                ReservedTimeSlot[]
   SocialLink                       SocialLink?
+  SurgicalHistories                SurgicalHistory[]
   Tenants                          Tenant[]
   UserAddresses                    UserAddress[]
   UserAllergies                    UserAllergy[]
@@ -165,19 +172,21 @@ model PhilHealthMemberType {
 }
 
 model PhilHealthDependent {
-  id                 Int              @id @default(autoincrement())
-  philHealthRecordId Int
-  firstName          String
-  middleName         String?
-  lastName           String?
-  suffix             String?
-  relationship       String?
-  dob                DateTime?
-  gender             Gender?
-  createdAt          DateTime         @default(now())
-  updatedAt          DateTime         @updatedAt
-  deletedAt          DateTime?
-  PhilHealthRecord   PhilHealthRecord @relation(fields: [philHealthRecordId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id                    Int              @id @default(autoincrement())
+  philHealthRecordId    Int
+  firstName             String
+  middleName            String?
+  lastName              String?
+  suffix                String?
+  citizenship           String?
+  isPermanentlyDisabled Boolean          @default(false)
+  relationship          String?
+  dob                   DateTime?
+  gender                Gender?
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+  deletedAt             DateTime?
+  PhilHealthRecord      PhilHealthRecord @relation(fields: [philHealthRecordId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model ClinicPatient {
@@ -422,7 +431,7 @@ model HealthcareProvider {
   isPublished             Boolean                    @default(false)
   AppointmentAttributes   AppointmentAttribute[]
   AppointmentRoutings     AppointmentRouting[]       @relation("RoutedTo")
-  AppointmentTags         AppointmentTag[]
+  AppointmentTag          AppointmentTag[]
   ImagingRequests         ClinicImagingRequest[]
   ClinicLaboratoryRequest ClinicLaboratoryRequest[]
   MedicalCertificates     ClinicMedicalCertificate[]
@@ -451,8 +460,6 @@ model HPProfile {
   suffix               String?
   picture              String?
   cover                String?
-  // This will be a URL to the e-signature image (blob storage from azure)
-  eSignatureUrl        String?
   createdAt            DateTime           @default(now())
   updatedAt            DateTime           @updatedAt
   deletedAt            DateTime?
@@ -469,6 +476,7 @@ model HPProfile {
   workEmail            String?
   workPhone            String?
   educations           String[]           @default([])
+  eSignatureUrl        String?
   HealthcareProvider   HealthcareProvider @relation(fields: [healthcareProviderId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
@@ -831,13 +839,15 @@ model UserAllergy {
 }
 
 model HealthCondition {
-  id                   Int                   @id @default(autoincrement())
-  name                 String                @unique
-  createdAt            DateTime              @default(now())
-  updatedAt            DateTime              @updatedAt
-  deletedAt            DateTime?
-  isActive             Boolean               @default(true)
-  UserHealthConditions UserHealthCondition[] @relation("UserHealthCondition")
+  id                     Int                    @id @default(autoincrement())
+  name                   String                 @unique
+  createdAt              DateTime               @default(now())
+  updatedAt              DateTime               @updatedAt
+  deletedAt              DateTime?
+  isActive               Boolean                @default(true)
+  FamilyMedicalHistories FamilyMedicalHistory[] @relation("FamilyMedicalHistoryCondition")
+  MedicalHistories       MedicalHistory[]       @relation("MedicalHistoryCondition")
+  UserHealthConditions   UserHealthCondition[]  @relation("UserHealthCondition")
 }
 
 model UserHealthCondition {
@@ -887,24 +897,25 @@ model UserDisability {
 }
 
 model VitalSign {
-  id          Int       @id @default(autoincrement())
-  userId      Int
-  dateTaken   DateTime
-  height      Float?
-  weight      Float?
-  bmi         Float?
-  bpSystolic  Int?
-  bpDiastolic Int?
-  pulseRate   Int?
-  temp        Float?
-  spo2        Float?
-  respRate    Int?
-  notes       String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime?
-  isActive    Boolean   @default(true)
-  User        User      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id                   Int                   @id @default(autoincrement())
+  userId               Int
+  dateTaken            DateTime
+  height               Float?
+  weight               Float?
+  bmi                  Float?
+  bpSystolic           Int?
+  bpDiastolic          Int?
+  pulseRate            Int?
+  temp                 Float?
+  spo2                 Float?
+  respRate             Int?
+  notes                String?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  deletedAt            DateTime?
+  isActive             Boolean               @default(true)
+  PhysicalExaminations PhysicalExamination[]
+  User                 User                  @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model OrganizationDepartment {
@@ -1171,6 +1182,7 @@ model Clinic {
   Systems                         System[]
   UserClinicAppointmentWhitelists UserClinicAppointmentWhitelist[]
   UserDefaultClinicRoles          UserDefaultClinicRole[]
+  SequenceGenerators              SequenceGenerator[]
 
   @@index([tenantId, clinicUid], map: "clinic_index")
 }
@@ -1323,7 +1335,7 @@ model Appointment {
   AppointmentAttribute   AppointmentAttribute?
   Requesters             AppointmentRequester[]
   AppointmentRouting     AppointmentRouting[]
-  AppointmentTags        AppointmentTag[]
+  AppointmentTag         AppointmentTag[]
   ClinicReferralSlips    ClinicReferralSlip[]
   ConsultationTickets    ConsultationTicket[]
   PreAssessmentNotes     PreAssessmentNote[]
@@ -1425,39 +1437,27 @@ model AppointmentMode {
 }
 
 model AppointmentRouting {
-  id            Int                @id @default(autoincrement())
-  routingCode   String             @unique @default(cuid())
-  appointmentId Int
-  routedBy      Int
-  routedTo      Int
-  status        String             @default("PENDING")
-  amendment     String?
-  amendedAt     DateTime?
-  amendedBy     Int?
-  returnReason  String?
-  returnedAt    DateTime?
-  returnedBy    Int?
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
-  AmendedBy     User?              @relation("AmendedBy", fields: [amendedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  ReturnedBy    User?              @relation("ReturnedBy", fields: [returnedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  Appointment   Appointment        @relation(fields: [appointmentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  RoutedBy      User               @relation("RoutedBy", fields: [routedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  RoutedTo      HealthcareProvider @relation("RoutedTo", fields: [routedTo], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id             Int                @id @default(autoincrement())
+  routingCode    String             @unique @default(cuid())
+  appointmentId  Int
+  routedBy       Int
+  routedTo       Int
+  status         String             @default("PENDING")
+  amendment      String?
+  amendedAt      DateTime?
+  amendedBy      Int?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  returnReason   String?
+  returnedAt     DateTime?
+  returnedBy     Int?
+  AmendedBy      User?              @relation("AmendedBy", fields: [amendedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Appointment    Appointment        @relation(fields: [appointmentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  ReturnedByUser User?              @relation("ReturnedBy", fields: [returnedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  RoutedBy       User               @relation("RoutedBy", fields: [routedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  RoutedTo       HealthcareProvider @relation("RoutedTo", fields: [routedTo], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@unique([appointmentId, routedTo], name: "unique_appointment_routing")
-}
-
-model AppointmentTag {
-  id                   Int                @id @default(autoincrement())
-  appointmentId        Int
-  healthcareProviderId Int
-  createdAt            DateTime           @default(now())
-  updatedAt            DateTime           @updatedAt
-  Appointment          Appointment        @relation(fields: [appointmentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  HealthcareProvider   HealthcareProvider @relation(fields: [healthcareProviderId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-
-  @@unique([appointmentId, healthcareProviderId], name: "unique_appointment_tag")
 }
 
 model ServiceCategory {
@@ -1496,6 +1496,7 @@ model ServiceAttribute {
   durationPadding Int      @default(0)
   specializations String[] @default([])
   resources       String[] @default([])
+  forTaggedOnly   Boolean  @default(false)
   Service         Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
@@ -1505,6 +1506,7 @@ model ConsultationTicket {
   appointmentId               Int?
   clinicId                    Int
   subject                     String?                      @default("")
+  caseNumber                  String?
   createdAt                   DateTime                     @default(now())
   updatedAt                   DateTime                     @updatedAt
   isActive                    Boolean                      @default(true)
@@ -1522,6 +1524,8 @@ model ConsultationTicket {
   Interventions               Intervention[]
   Medications                 Medication[]
   Prescriptions               Prescription[]
+
+  @@index([caseNumber])
 }
 
 model ConsultationTicketHP {
@@ -1659,7 +1663,6 @@ model Medicine {
   isGeneric      Boolean       @default(false)
   description    String?
   dosage         String?
-  qty            Int? // Optional for safer data migration
   frequency      String?
   unit           String?
   notes          String?
@@ -1671,6 +1674,7 @@ model Medicine {
   updatedBy      Int?
   updatedAt      DateTime      @updatedAt
   deletedAt      DateTime?
+  qty            Int?
   CreatedBy      User          @relation("MedicineCreatedBy", fields: [createdById], references: [id], onDelete: NoAction, onUpdate: NoAction)
   Prescription   Prescription? @relation(fields: [prescriptionId], references: [id])
   UpdatedBy      User?         @relation("MedicineUpdatedBy", fields: [updatedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -1956,6 +1960,141 @@ model ClinicImagingRequestDiagnostic {
   @@unique([clinicImagingRequestId, imagingDiagnosticId], name: "unique_clinic_imaging_request_diagnostic")
 }
 
+model MedicalHistory {
+  id          Int             @id @default(autoincrement())
+  userId      Int
+  conditionId Int
+  details     String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  Condition   HealthCondition @relation("MedicalHistoryCondition", fields: [conditionId], references: [id])
+  User        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, conditionId])
+  @@index([userId])
+}
+
+model FamilyMedicalHistory {
+  id          Int             @id @default(autoincrement())
+  userId      Int
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  deletedAt   DateTime?
+  conditionId Int
+  details     String?
+  Condition   HealthCondition @relation("FamilyMedicalHistoryCondition", fields: [conditionId], references: [id])
+  User        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, conditionId])
+  @@index([userId])
+}
+
+model SurgicalHistory {
+  id            Int       @id @default(autoincrement())
+  userId        Int
+  operationName String
+  operationDate DateTime? @db.Date
+  notes         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+  User          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model PersonalHistory {
+  id                    Int       @id @default(autoincrement())
+  userId                Int       @unique
+  smokingStatus         String?
+  numberOfPacksPerYear  Int?
+  alcoholStatus         String?
+  numberOfBottlesPerDay Int?
+  illicitDrugUse        String?
+  sexuallyActive        String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  deletedAt             DateTime?
+  User                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ObGyneHistory {
+  id                          Int       @id @default(autoincrement())
+  userId                      Int       @unique
+  menarche                    Int?
+  lastMenstrualPeriod         DateTime? @db.Date
+  menopauseAge                Int?
+  menopauseStatus             String?
+  ageAtFirstSexualIntercourse Int?
+  birthControlMethod          String?
+  menstrualPeriodDuration     Int?
+  menstrualCycleInterval      Int?
+  numberOfPadsPerDay          Int?
+  gravidity                   Int?
+  parity                      Int?
+  fullTerm                    Int?
+  premature                   Int?
+  abortion                    Int?
+  livingChildren              Int?
+  typeOfDelivery              String?
+  hasPreEclampsia             Boolean   @default(false)
+  createdAt                   DateTime  @default(now())
+  updatedAt                   DateTime  @updatedAt
+  deletedAt                   DateTime?
+  User                        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PhysicalExamination {
+  id                Int        @id @default(autoincrement())
+  userId            Int
+  vitalSignId       Int?
+  visualAcuityLeft  String?
+  visualAcuityRight String?
+  status            String?
+  caseNumber        String?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+  deletedAt         DateTime?
+  User              User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  VitalSign         VitalSign? @relation(fields: [vitalSignId], references: [id])
+
+  @@index([userId])
+  @@index([vitalSignId])
+  @@index([caseNumber])
+}
+
+model PediatricMeasurement {
+  id                       Int       @id @default(autoincrement())
+  userId                   Int
+  dateTaken                DateTime  @db.Date
+  length                   Decimal?  @db.Decimal(5, 2)
+  headCircumference        Decimal?  @db.Decimal(5, 2)
+  skinfoldThickness        Decimal?  @db.Decimal(5, 2)
+  waistCircumference       Decimal?  @db.Decimal(5, 2)
+  hipCircumference         Decimal?  @db.Decimal(5, 2)
+  limbCircumference        Decimal?  @db.Decimal(5, 2)
+  midUpperArmCircumference Decimal?  @db.Decimal(5, 2)
+  remarks                  String?
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
+  deletedAt                DateTime?
+  User                     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, dateTaken])
+}
+
+model AppointmentTag {
+  id                   Int                @id @default(autoincrement())
+  appointmentId        Int
+  healthcareProviderId Int
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime
+  Appointment          Appointment        @relation(fields: [appointmentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  HealthcareProvider   HealthcareProvider @relation(fields: [healthcareProviderId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([appointmentId, healthcareProviderId])
+}
+
 enum Severity {
   MILD
   MODERATE
@@ -2021,4 +2160,19 @@ enum ReceiptCodeStatus {
 enum PhilHealthMemberCategory {
   DIRECT
   INDIRECT
+}
+
+// Sequence Generator for auto-incrementing case numbers
+model SequenceGenerator {
+  id           Int      @id @default(autoincrement())
+  entityType   String // "HEALTH_ASSESSMENT" | "CONSULTATION"
+  clinicId     Int? // null for personal health records (HAF)
+  year         Int // 2025, 2026, etc.
+  currentValue Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  Clinic       Clinic?  @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+
+  @@unique([entityType, clinicId, year], name: "unique_sequence")
+  @@index([clinicId, year])
 }

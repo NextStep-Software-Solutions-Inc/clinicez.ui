@@ -362,7 +362,7 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
       },
       ...(tagged === "true"
         ? {
-          AppointmentTags: {
+          AppointmentTag: {
             some: {
               healthcareProviderId: {
                 in: myHpIds
@@ -418,13 +418,35 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
               middleName: true,
               lastName: true,
               suffix: true,
+              mobile: true,
+              email: true,
               StudentRecords: {
                 select: {
                   organizationId: true,
                   programId: true,
                   departmentId: true,
                   collegeId: true,
+                  yearLevel: true,
                   College: {
+                    select: {
+                      id: true,
+                      name: true
+                    }
+                  },
+                  Department: {
+                    select: {
+                      id: true,
+                      name: true
+                    }
+                  },
+                  Program: {
+                    select: {
+                      id: true,
+                      name: true,
+                      major: true
+                    }
+                  },
+                  OrganizationYearLevel: {
                     select: {
                       id: true,
                       name: true
@@ -438,6 +460,12 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
                   collegeId: true,
                   officeId: true,
                   College: {
+                    select: {
+                      id: true,
+                      name: true
+                    }
+                  },
+                  Department: {
                     select: {
                       id: true,
                       name: true
@@ -507,7 +535,7 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
           }
         }
       },
-      AppointmentTags: {
+      AppointmentTag: {
         select: {
           id: true,
           HealthcareProvider: {
@@ -637,6 +665,7 @@ export const getAppointmentAction = withErrorHandling(cache(async (id: number, c
               lastName: true,
               suffix: true,
               email: true,
+              mobile: true,
               gender: true,
               picture: true,
               nickname: true,
@@ -660,6 +689,59 @@ export const getAppointmentAction = withErrorHandling(cache(async (id: number, c
                   country: true,
                 },
                 take: 1,
+              },
+              StudentRecords: {
+                select: {
+                  organizationId: true,
+                  programId: true,
+                  departmentId: true,
+                  collegeId: true,
+                  yearLevel: true,
+                  College: {
+                    select: {
+                      id: true,
+                      name: true
+                    }
+                  },
+                  Department: {
+                    select: {
+                      id: true,
+                      name: true
+                    }
+                  },
+                  Program: {
+                    select: {
+                      id: true,
+                      name: true,
+                      major: true
+                    }
+                  },
+                  OrganizationYearLevel: {
+                    select: {
+                      id: true,
+                      name: true
+                    }
+                  }
+                }
+              },
+              UserEmployments: {
+                select: {
+                  departmentId: true,
+                  collegeId: true,
+                  officeId: true,
+                  College: {
+                    select: {
+                      id: true,
+                      name: true
+                    }
+                  },
+                  Department: {
+                    select: {
+                      id: true,
+                      name: true
+                    }
+                  }
+                }
               }
             }
           }
@@ -774,7 +856,7 @@ export const getAppointmentAction = withErrorHandling(cache(async (id: number, c
               email: true,
             }
           },
-          ReturnedBy: {
+          ReturnedByUser: {
             select: {
               userId: true,
               firstName: true,
@@ -863,7 +945,7 @@ export const getAppointmentAction = withErrorHandling(cache(async (id: number, c
           }
         }
       },
-      AppointmentTags: {
+      AppointmentTag: {
         select: {
           id: true,
           healthcareProviderId: true,
@@ -911,8 +993,9 @@ export const getAppointmentCountsAction = withErrorHandling(cache(async (clinicU
   const session = await getCachedSession();
   if (!session) throw new Error("Unauthorized");
 
-  const [permissions] = await Promise.all([
+  const [permissions, myHps] = await Promise.all([
     getPermissionsAction({ userId: session.user.sub }),
+    getHPsAction({ userId: session.user.sub })
   ])
 
   const userPermissionArray = permissions.map(p => p.name);
@@ -925,8 +1008,12 @@ export const getAppointmentCountsAction = withErrorHandling(cache(async (clinicU
   const canReadAOwnOrgAppointment = readAOwnOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
   const canReadAssignedOrgAppointment = readAssignedOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
 
+  const myHpIds = myHps.map((hp) => hp.id);
   const appointments = await prisma.appointment.findMany({
     where: {
+      Clinic: {
+        clinicUid
+      },
       isActive: true,
       OR: [
         { ...(canReadAllOrgAppointment ? { Clinic: { clinicUid } } : {}) },
@@ -934,20 +1021,14 @@ export const getAppointmentCountsAction = withErrorHandling(cache(async (clinicU
         {
           ...(canReadAssignedOrgAppointment ? {
             AppointmentRouting: {
-              every: {
+              some: {
                 OR: [
                   {
-                    RoutedTo: {
-                      User: {
-                        userId: session.user.sub
-                      }
+                    routedTo: {
+                      in: myHpIds
                     }
                   },
-                  {
-                    RoutedBy: {
-                      userId: session.user.sub
-                    }
-                  }
+                  { RoutedBy: { userId: session.user.sub } }
                 ]
               }
             }
@@ -1021,8 +1102,9 @@ export const getRoutedAppointmentCountsAction = withErrorHandling(cache(async (c
   const session = await getCachedSession();
   if (!session) throw new Error("Unauthorized");
 
-  const [permissions] = await Promise.all([
+  const [permissions, myHps] = await Promise.all([
     getPermissionsAction({ userId: session.user.sub }),
+    getHPsAction({ userId: session.user.sub })
   ])
   const userPermissionArray = permissions.map(p => p.name);
 
@@ -1034,10 +1116,14 @@ export const getRoutedAppointmentCountsAction = withErrorHandling(cache(async (c
   const canReadAOwnOrgAppointment = readAOwnOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
   const canReadAssignedOrgAppointment = readAssignedOrgAppointmentPermission.every(p => userPermissionArray.includes(p))
 
+  const myHpIds = myHps.map((hp) => hp.id);
   const routedAppointments = await prisma.appointmentRouting.findMany({
     distinct: ["appointmentId", "status"],
     where: {
       Appointment: {
+        Clinic: {
+          clinicUid
+        },
         isActive: true,
         AppointmentAttribute: {
           status: {
@@ -1053,17 +1139,11 @@ export const getRoutedAppointmentCountsAction = withErrorHandling(cache(async (c
                 some: {
                   OR: [
                     {
-                      RoutedTo: {
-                        User: {
-                          userId: session.user.sub
-                        }
+                      routedTo: {
+                        in: myHpIds
                       }
                     },
-                    {
-                      RoutedBy: {
-                        userId: session.user.sub
-                      }
-                    }
+                    { RoutedBy: { userId: session.user.sub } }
                   ]
                 }
               }
@@ -1158,7 +1238,7 @@ export const getTaggedAppointmentCountsAction = withErrorHandling(cache(async (c
       Clinic: {
         clinicUid
       },
-      AppointmentTags: {
+      AppointmentTag: {
         some: {
           healthcareProviderId: {
             in: myHpIds

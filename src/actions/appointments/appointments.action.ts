@@ -1493,4 +1493,64 @@ const sendAppointmentRequestSent = async ({ users }: {
   }
 }
 
+/**
+ * Check if a patient has had previous consultations or appointment history in the clinic
+ * @param patientUserId - The userId of the patient
+ * @param clinicUid - The clinic unique identifier
+ * @returns Object containing isRepeatPatient boolean
+ */
+export const checkRepeatPatientAction = withErrorHandling(cache(async (
+  patientUserId: string,
+  clinicUid: string
+) => {
+  const session = await getCachedSession();
+  if (!session) throw new Error("Unauthorized");
+
+  // Check for any previous consultations (completed or not) in the clinic
+  const previousConsultations = await prisma.consultationTicket.count({
+    where: {
+      Clinic: {
+        clinicUid
+      },
+      Appointment: {
+        Requesters: {
+          some: {
+            User: {
+              userId: patientUserId
+            }
+          }
+        }
+      },
+      isActive: true
+    }
+  });
+
+  // If no consultations found, check for any previous appointments/bookings in the clinic
+  let previousAppointments = 0;
+  if (previousConsultations === 0) {
+    previousAppointments = await prisma.appointment.count({
+      where: {
+        Clinic: {
+          clinicUid
+        },
+        Requesters: {
+          some: {
+            User: {
+              userId: patientUserId
+            }
+          }
+        },
+        isActive: true
+      }
+    });
+  }
+
+  const isRepeatPatient = previousConsultations > 0 || previousAppointments > 0;
+  return { 
+    message: isRepeatPatient ? "Repeat patient detected" : "New patient", 
+    data: { isRepeatPatient } 
+  };
+}));
+
+
 

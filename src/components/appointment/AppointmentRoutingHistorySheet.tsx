@@ -72,16 +72,16 @@ const LightAlertDialogContent = React.forwardRef<
 LightAlertDialogContent.displayName = "LightAlertDialogContent"
 interface AppointmentRoutingHistorySheetProps {
   children?: React.ReactNode;
-  onSelect? : (e: Event) => void;
+  onSelect?: (e: Event) => void;
   onClose?: () => void;
   routing: NonNullable<GetAppointment["data"]>["AppointmentRouting"]
 }
 
 export default function AppointmentRoutingHistorySheet({ children, onClose, routing }: AppointmentRoutingHistorySheetProps) {
-  const {clinicUid} = useParams<{clinicUid: string}>()
+  const { clinicUid } = useParams<{ clinicUid: string }>()
   const searchParams = useSearchParams()
   const appointmentId = Number(searchParams.get("_appointment"))
-  
+
   return (
     <Sheet>
       <SheetTrigger asChild>{children}</SheetTrigger>
@@ -104,7 +104,7 @@ export default function AppointmentRoutingHistorySheet({ children, onClose, rout
             of={routing}
             fallback={<p className="text-center text-sm text-muted-foreground">No routing history found.</p>}
             render={(record) => (
-              <Route 
+              <Route
                 key={record.id}
                 record={record}
                 appointmentId={appointmentId}
@@ -124,11 +124,11 @@ export default function AppointmentRoutingHistorySheet({ children, onClose, rout
 }
 
 interface RouteProps {
-  record:  NonNullable<GetAppointment["data"]>["AppointmentRouting"][number]
+  record: NonNullable<GetAppointment["data"]>["AppointmentRouting"][number]
   clinicUid: string
   appointmentId: number
 }
-export const Route = ({record, appointmentId, clinicUid}: RouteProps ) => {
+export const Route = ({ record, appointmentId, clinicUid }: RouteProps) => {
   const [showReturnDialog, setShowReturnDialog] = React.useState(false);
 
   const badgeMap: Record<string, BadgeProps["variant"]> = {
@@ -146,8 +146,8 @@ export const Route = ({record, appointmentId, clinicUid}: RouteProps ) => {
 
   const routedByName = `${record.RoutedBy.firstName} ${record.RoutedBy.middleName} ${record.RoutedBy.lastName} ${record.RoutedBy.suffix ?? ""}`
   const routedToName = `${record.RoutedTo.HPProfile?.title || record.RoutedTo.User.firstName} ${record.RoutedTo.HPProfile?.name || record.RoutedTo.User.lastName} ${record.RoutedTo.HPProfile?.suffix || record.RoutedTo.User.suffix || ""}`
-  const returnedByName = record.ReturnedBy 
-    ? [record.ReturnedBy.firstName, record.ReturnedBy.middleName, record.ReturnedBy.lastName, record.ReturnedBy.suffix]
+  const returnedByName = record.ReturnedByUser
+    ? [record.ReturnedByUser.firstName, record.ReturnedByUser.middleName, record.ReturnedByUser.lastName, record.ReturnedByUser.suffix]
       .filter(Boolean)
       .join(" ")
     : null;
@@ -157,12 +157,12 @@ export const Route = ({record, appointmentId, clinicUid}: RouteProps ) => {
       <ContextMenu key={record.id}>
         <ContextMenuTrigger disabled={!["PENDING", "ACCEPTED"].includes(record.status)} >
           <div className={
-            cn("text-sm rounded px-3 py-2 bg-slate-100 hover:ring-1", 
+            cn("text-sm rounded px-3 py-2 bg-slate-100 hover:ring-1",
               record.status === "CANCELLED" && "bg-destructive/5",
             )}
           >
             <Badge variant={badgeMap[record.status as keyof typeof badgeMap]} />
-            <LabelValue className="flex items-center flex-wrap" value={<span className="flex items-center">{routedByName} <ArrowRight className="w-4 h-4 mx-2"/></span>} label={routedToName} />
+            <LabelValue className="flex items-center flex-wrap" value={<span className="flex items-center">{routedByName} <ArrowRight className="w-4 h-4 mx-2" /></span>} label={routedToName} />
             {record.amendment && <LabelValue className="flex items-center gap-1 text-xs text-muted-foreground" value="Amendment: " label={record.amendment} />}
             {record.returnReason && (
               <>
@@ -177,7 +177,7 @@ export const Route = ({record, appointmentId, clinicUid}: RouteProps ) => {
         <ContextMenuContent>
           {record.status === "PENDING" && (
             <ContextMenuItem>
-              <CancelAssignment onCancel={() => mutate()} appointmentRoutingId={record.id}/>
+              <CancelAssignment onCancel={() => mutate()} appointmentRoutingId={record.id} />
             </ContextMenuItem>
           )}
           {record.status === "ACCEPTED" && (
@@ -190,10 +190,10 @@ export const Route = ({record, appointmentId, clinicUid}: RouteProps ) => {
           )}
         </ContextMenuContent>
       </ContextMenu>
-      
+
       {/* Return dialog rendered outside of ContextMenu */}
-      <ReturnAssignmentDialog 
-        open={showReturnDialog} 
+      <ReturnAssignmentDialog
+        open={showReturnDialog}
         onOpenChange={setShowReturnDialog}
         appointmentRoutingId={record.id}
         onReturn={() => mutate()}
@@ -202,8 +202,8 @@ export const Route = ({record, appointmentId, clinicUid}: RouteProps ) => {
   )
 }
 
-export const CancelAssignment = ({appointmentRoutingId, onCancel}: {appointmentRoutingId: number, onCancel?: () => void}) => {
-  
+export const CancelAssignment = ({ appointmentRoutingId, onCancel }: { appointmentRoutingId: number, onCancel?: () => void }) => {
+
   const handleCancelAssignment = () => {
     toast.promise(promiseWrapper(cancelAppointmentRoutingAction)(appointmentRoutingId), {
       loading: "Cancelling assignment...",
@@ -224,9 +224,9 @@ export const CancelAssignment = ({appointmentRoutingId, onCancel}: {appointmentR
 }
 
 export const ReturnAssignmentDialog = ({
-  open, 
-  onOpenChange, 
-  appointmentRoutingId, 
+  open,
+  onOpenChange,
+  appointmentRoutingId,
   onReturn
 }: {
   open: boolean;
@@ -238,7 +238,7 @@ export const ReturnAssignmentDialog = ({
 
   const handleReturnAssignment = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!reason.trim()) {
       toast.error("Please provide a reason for returning the assignment");
       return;
@@ -247,7 +247,7 @@ export const ReturnAssignmentDialog = ({
     const formData = new FormData();
     formData.append("appointmentRoutingId", appointmentRoutingId.toString());
     formData.append("reason", reason);
-    
+
     toast.promise(promiseWrapper(returnAppointmentAssignmentAction)(formData), {
       loading: "Returning appointment assignment...",
       success: (res) => {
@@ -278,7 +278,7 @@ export const ReturnAssignmentDialog = ({
             Are you sure you want to return this accepted appointment assignment? The appointment will be returned for reassignment.
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <form 
+        <form
           onSubmit={handleReturnAssignment}
           className="grid gap-4 py-4"
         >
@@ -296,9 +296,9 @@ export const ReturnAssignmentDialog = ({
             />
           </div>
           <div className="flex justify-end gap-2">
-            <Button 
-              type="button" 
-              variant="outline" 
+            <Button
+              type="button"
+              variant="outline"
               onClick={() => {
                 setReason("");
                 onOpenChange(false);

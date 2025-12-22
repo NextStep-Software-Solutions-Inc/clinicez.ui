@@ -12,6 +12,8 @@ export interface PhilHealthDependentDTO {
   lastName?: string | null;
   suffix?: string | null;
   relationship?: string | null;
+  citizenship?: string | null;
+  isPermanentlyDisabled?: boolean;
   dob?: Date | null;
   gender?: Gender | null;
 }
@@ -44,6 +46,8 @@ export interface CreatePhilHealthDependentPayload {
     lastName?: string | null;
     suffix?: string | null;
     relationship?: string | null;
+    citizenship?: string | null;
+    isPermanentlyDisabled?: boolean;
     dob?: string | null; // ISO date
     gender?: Gender | null;
   };
@@ -61,6 +65,8 @@ export const createPhilHealthDependentAction = withErrorHandling(async ({ userUi
       middleName: dependent.middleName || null,
       lastName: dependent.lastName || null,
       suffix: dependent.suffix || null,
+      citizenship: dependent.citizenship || null,
+      isPermanentlyDisabled: dependent.isPermanentlyDisabled || false,
       relationship: dependent.relationship || null,
       dob: dependent.dob ? new Date(dependent.dob) : null,
       gender: dependent.gender ?? null,
@@ -78,6 +84,8 @@ export interface UpdatePhilHealthDependentPayload {
     lastName?: string | null;
     suffix?: string | null;
     relationship?: string | null;
+    citizenship?: string | null;
+    isPermanentlyDisabled?: boolean;
     dob?: string | null; // ISO date
     gender?: Gender | null;
   };
@@ -97,6 +105,8 @@ export const updatePhilHealthDependentAction = withErrorHandling(async ({ userUi
       middleName: dependent.middleName || null,
       lastName: dependent.lastName || null,
       suffix: dependent.suffix || null,
+      citizenship: dependent.citizenship || null,
+      isPermanentlyDisabled: dependent.isPermanentlyDisabled || false,
       relationship: dependent.relationship || null,
       dob: dependent.dob ? new Date(dependent.dob) : null,
       gender: dependent.gender ?? null,

@@ -17,6 +17,7 @@ import { useVaccinations } from "@hooks/useVaccination";
 import RecentVitalSigns from "../app/(main)/user/[user]/phr/vitals/RecentVitalSigns";
 import { useUserVitalSigns } from "@hooks/useUserVitalSign";
 import { useParams } from "next/navigation";
+import EMRFilesWrapper from "./EMRFilesWrapper";
 import { calculateAge } from "@/lib/utils";
 import ConsultationHistory from "./ConsultationHistory";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
@@ -24,30 +25,30 @@ import { User, Stethoscope, FileText, Mail, Phone, Heart, ShieldAlert, Syringe, 
 import { cn } from "@/lib/utils";
 
 interface EMRPreviewProps {
-    patientId: string
-  }
-function EMRPreview({patientId}: EMRPreviewProps) {
+  patientId: string
+}
+function EMRPreview({ patientId }: EMRPreviewProps) {
 
-  const params = useParams<{clinicUid: string}>();
-  const { data: patient, isLoading } = useUser({userId: patientId})
+  const params = useParams<{ clinicUid: string }>();
+  const { data: patient, isLoading } = useUser({ userId: patientId })
   const { data: allergies, } = useAllergies(patientId)
   const { data: disabilities } = useDisabilities(patientId)
   const { data: illnesses } = useIllnesses(patientId)
   const { data: vaccinations } = useVaccinations(patientId)
   const { data: vitalSigns } = useUserVitalSigns(patientId)
-  
-  if(isLoading) return <PageLoading label="Loading Records ..."/>
-  if(!patient?.data) return <div className="text-muted-foreground">Patient record cannot be found.</div>
+
+  if (isLoading) return <PageLoading label="Loading Records ..." />
+  if (!patient?.data) return <div className="text-muted-foreground">Patient record cannot be found.</div>
 
   const name = `${patient?.data?.lastName || "-"}, ${patient?.data?.firstName || "-"} ${patient?.data?.middleName ?? ""} ${patient?.data?.suffix ?? ""}`
   const age = calculateAge(patient.data.dob);
-  
+
   return (
     <div className="my-5 h-[calc(100vh-15%)] flex flex-col">
       {/* Patient Header - Always Visible */}
       <div className="mb-5 pb-5 border-b">
         <div className="flex gap-5 mb-4">
-          <Picture readOnly user={patient.data}/>
+          <Picture readOnly user={patient.data} />
           <div className="flex-1">
             <h2 className="text-2xl font-bold mb-2">{name}</h2>
             <div className="grid grid-cols-2 gap-3">
@@ -86,20 +87,20 @@ function EMRPreview({patientId}: EMRPreviewProps) {
       {/* Tabbed Content */}
       <Tabs defaultValue="profile" className="flex-1 flex flex-col overflow-hidden">
         <TabsList className="w-full justify-start bg-transparent p-0 h-auto gap-2">
-          <TabsTrigger 
-            value="profile" 
+          <TabsTrigger
+            value="profile"
             className="flex-1 rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-gray-100 data-[state=inactive]:text-gray-600 py-2.5"
           >
             Patient Profile
           </TabsTrigger>
-          <TabsTrigger 
-            value="consultations" 
+          <TabsTrigger
+            value="consultations"
             className="flex-1 rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-gray-100 data-[state=inactive]:text-gray-600 py-2.5"
           >
             Consultations and Vitals
           </TabsTrigger>
-          <TabsTrigger 
-            value="files" 
+          <TabsTrigger
+            value="files"
             className="flex-1 rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-gray-100 data-[state=inactive]:text-gray-600 py-2.5"
           >
             Files and Medical History
@@ -116,7 +117,7 @@ function EMRPreview({patientId}: EMRPreviewProps) {
                 <InfoItem label="Nationality" value={patient?.data?.nationality} />
               </div>
             </Section>
-            
+
             <Section title="Allergies" icon={<ShieldAlert className="h-5 w-5" />}>
               <AllergiesForm readOnly allergies={allergies ?? []} />
             </Section>
@@ -144,8 +145,14 @@ function EMRPreview({patientId}: EMRPreviewProps) {
               />
             </Section>
 
+            <Section title={`Files`} >
+              <EMRFilesWrapper
+                patientId={patientId}
+              />
+            </Section>
+
             <Section title="Vital Signs" icon={<Heart className="h-5 w-5" />}>
-              <RecentVitalSigns readOnly vitalSigns={vitalSigns ?? []} userId={patient?.data?.userId ?? ""}/>
+              <RecentVitalSigns readOnly vitalSigns={vitalSigns ?? []} userId={patient?.data?.userId ?? ""} />
             </Section>
           </div>
         </TabsContent>
@@ -171,10 +178,10 @@ function EMRPreview({patientId}: EMRPreviewProps) {
     </div>
   );
 }
-  
+
 export default memo(EMRPreview)
 
-const InfoItem = ({label, value}: {label: string, value?: string | null}) => {
+const InfoItem = ({ label, value }: { label: string, value?: string | null }) => {
   return (
     <div className="flex flex-col">
       <span className="text-xs text-muted-foreground">{label}</span>
@@ -183,7 +190,7 @@ const InfoItem = ({label, value}: {label: string, value?: string | null}) => {
   )
 }
 
-const HealthHistoryItem = ({title}: {title: string}) => {
+const HealthHistoryItem = ({ title }: { title: string }) => {
   return (
     <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
       <p className="font-medium text-sm text-gray-800 mb-1">{title}</p>
@@ -192,7 +199,7 @@ const HealthHistoryItem = ({title}: {title: string}) => {
   )
 }
 
-export const Section = ({title, icon, children}: {title: string, icon?: React.ReactNode, children?: React.ReactNode}) => {
+export const Section = ({ title, icon, children }: { title: string, icon?: React.ReactNode, children?: React.ReactNode }) => {
   return (
     <section className="border rounded-lg p-4 bg-white shadow-sm">
       <div className="flex items-center gap-2 mb-3">

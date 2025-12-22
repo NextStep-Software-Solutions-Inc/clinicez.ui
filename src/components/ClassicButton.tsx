@@ -1,28 +1,31 @@
 "use client"
 
-import { usePathname, useRouter } from "next/navigation"
 import { Button } from "./ui/button"
+import { setLandingPageVersion, useLandingPageVersion } from "./VersionSwitcher"
+import { usePathname } from "next/navigation"
 
 export default function ClassicButton() {
+  const version = useLandingPageVersion()
   const pathname = usePathname()
-  const router = useRouter()
 
   const handleClick = () => {
-    if (pathname.startsWith("/v2")) {
-      const path = pathname.replace(/^\/v2/, "")
-      router.push(path || "/")
-    }
+    // Save preference to localStorage and notify all listeners
+    setLandingPageVersion("v1")
   }
 
-  if (!pathname.startsWith("/v2")) return null;
+  // Only show on landing page when v2 is active, or on v2 routes
+  const isV2Route = pathname.startsWith("/v2")
+  const isLandingPage = pathname === "/"
+  const shouldShow = isV2Route || (isLandingPage && version === "v2")
+
+  if (!shouldShow) return null;
 
   return (
-    <Button
+    <button
       onClick={handleClick}
-      variant="ghost"
-      className="bg-transparent text-sm text-accent-foreground"
+      className="text-primary-foreground hover:underline cursor-pointer transition-all"
     >
-      Switch to V1
-    </Button>
+      Back to Classic Version
+    </button>
   )
 }

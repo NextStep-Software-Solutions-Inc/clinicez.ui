@@ -9,6 +9,7 @@ import { DropdownMenuProvider } from "@components/DropdownMenuProvider";
 import ConsultationTicketTableRowActions from "../../../../../../../components/consultation/ConsultationTicketTableRowActions";
 import ResolveConsultationTicket from "@components/consultation/ResolveConsultationTicket";
 import ModifyMedicationSheet from "@components/consultation/ModifyMedicationSheet";
+import DownloadConsultationForms from "@components/consultation/DownloadConsultationForms";
 import { AppRouterPageRouteOpts } from "@/types";
 
 export const metadata: Metadata = {
@@ -52,7 +53,12 @@ export default async function ConsultationPage(props: AppRouterPageRouteOpts) {
           </div>
         </div>
         <div className="ml-auto flex gap-1">
-
+          <DownloadConsultationForms
+            userId={patient?.userId || ""}
+            consultationTicketId={consultationId}
+            caseNumber={consultation.data.caseNumber}
+            patientName={`${patient?.lastName}, ${patient?.firstName}`}
+          />
           <ModifyMedicationSheet readonly={isResolved} />
           {
             consultation.data.ConsultationTicketAttribute?.status !== "RESOLVED" &&

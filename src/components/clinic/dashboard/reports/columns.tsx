@@ -97,7 +97,7 @@ export const columns: ColumnDef<ConsultationTicketData>[] = [
     cell: ({ row }) => {
       const patient = row.original.Appointment?.Requesters[0]?.User
       const age = calculateAge(patient?.dob)
-      
+
       return age === null ? (
         <span className="text-muted-foreground">-</span>
       ) : (
@@ -251,7 +251,7 @@ export const columns: ColumnDef<ConsultationTicketData>[] = [
   {
     accessorKey: "taggedHPs",
     accessorFn: (row) => {
-      const tags = row.Appointment?.AppointmentTags ?? [];
+      const tags = row.Appointment?.AppointmentTag ?? [];
       return tags.map((tag) => {
         const hp = tag.HealthcareProvider;
         const nameParts = [hp?.User?.firstName, hp?.User?.lastName].filter(Boolean);
@@ -262,7 +262,7 @@ export const columns: ColumnDef<ConsultationTicketData>[] = [
       <DataTableColumnHeader column={column} title="Tagged HPs (Info Only)" />
     ),
     cell: ({ row }) => {
-      const tags = row.original.Appointment?.AppointmentTags ?? [];
+      const tags = row.original.Appointment?.AppointmentTag ?? [];
       if (tags.length === 0) {
         return <span className="text-muted-foreground text-xs">-</span>;
       }
@@ -274,7 +274,7 @@ export const columns: ColumnDef<ConsultationTicketData>[] = [
             const hpName = hp?.HPProfile?.name || nameParts.join(" ");
             const role = hp?.HPType?.name;
             const specialties = hp?.HPProfile?.specialties || [];
-            
+
             return (
               <div key={tag.id} className="text-xs">
                 <div className="font-medium">{hpName}</div>

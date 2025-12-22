@@ -1,6 +1,5 @@
 "use server";
 
-import 'server-only'
 import { getCachedSession } from '@actions/session.action';
 import prisma from '@lib/prisma';
 import { Prisma } from "@prisma/client"
@@ -25,7 +24,7 @@ async function updateAppointmentStatusIfNeeded(
 ) {
   // Check if all routing assignments are now in a terminal state (DECLINED or CANCELLED)
   // If so, update the appointment status back to RECEIVED to allow reassignment
-  const hasActiveAssignment = allRoutings.some(r => 
+  const hasActiveAssignment = allRoutings.some(r =>
     ACTIVE_ROUTING_STATUSES.includes(r.status as 'PENDING' | 'ACCEPTED')
   );
 
@@ -42,20 +41,20 @@ type AssignAppointmentPayload = {
   appointmentId: number;
 }
 export const assignAppointmentAction = withErrorHandling(async (data: AssignAppointmentPayload) => {
-  
+
   const session = await getCachedSession();
-  if(!session) throw new Error('Unauthorized');
+  if (!session) throw new Error('Unauthorized');
 
   const { routedTo, appointmentId } = data;
-  if(!routedTo || !appointmentId) throw new Error('Invalid data provided');
+  if (!routedTo || !appointmentId) throw new Error('Invalid data provided');
 
-  const myPermissions = await getPermissionsAction({userId: session.user.sub, type: 'CLINIC'});
+  const myPermissions = await getPermissionsAction({ userId: session.user.sub, type: 'CLINIC' });
   const myPermissionArray = myPermissions.map(permission => permission.name);
   const assignAppointmentPermissions = [PERMISSIONS.CLINIC["ASSIGN:CLINIC:APPOINTMENT"].name]
   const canAssignAppointment = assignAppointmentPermissions.every(permission => myPermissionArray.includes(permission));
 
-  if(!canAssignAppointment) throw new Error('You do not have permission to assign appointment');
-    
+  if (!canAssignAppointment) throw new Error('You do not have permission to assign appointment');
+
   // Get the healthcare provider's user preference for auto-accept
   const healthcareProvider = await prisma.healthcareProvider.findUnique({
     where: { id: routedTo },
@@ -78,7 +77,7 @@ export const assignAppointmentAction = withErrorHandling(async (data: AssignAppo
   }
 
   const autoAccept = healthcareProvider.User?.UserPreference?.autoAcceptAppointmentAssignment ?? false;
-    
+
   await prisma.$transaction(async (prisma) => {
     await prisma.appointmentRouting.create({
       data: {
@@ -100,7 +99,7 @@ export const assignAppointmentAction = withErrorHandling(async (data: AssignAppo
         status: autoAccept ? 'ACCEPTED' : 'PENDING',
       }
     })
-    
+
     await prisma.appointmentAttribute.update({
       where: { appointmentId },
       data: { status: 'ROUTED' }
@@ -112,53 +111,53 @@ export const assignAppointmentAction = withErrorHandling(async (data: AssignAppo
     maxWait: 10000,
     isolationLevel: Prisma.TransactionIsolationLevel.Serializable
   })
-  return { message: `Appointment assigned`, data: null};
+  return { message: `Appointment assigned`, data: null };
 }, async error => {
-  if(hasCodeProperty(error) && error.code === 'P2025') return 'Appointment not found or you are not authorized to assign it';
+  if (hasCodeProperty(error) && error.code === 'P2025') return 'Appointment not found or you are not authorized to assign it';
   return 'Failed to assign appointment';
 })
 
 export const acceptAppointmentAction = withErrorHandling(async (formData: FormData) => {
-  
-  const session = await getCachedSession();
-  if(!session) throw new Error('Unauthorized');
 
-  const myPermissions = await getPermissionsAction({userId: session.user.sub, type: 'CLINIC'});
+  const session = await getCachedSession();
+  if (!session) throw new Error('Unauthorized');
+
+  const myPermissions = await getPermissionsAction({ userId: session.user.sub, type: 'CLINIC' });
   const myPermissionArray = myPermissions.map(permission => permission.name);
   const acceptAppointmentPermissions = [PERMISSIONS.CLINIC["ACCEPT:CLINIC:APPOINTMENT_ASSIGNMENT"].name]
   const canAcceptAppointment = acceptAppointmentPermissions.every(permission => myPermissionArray.includes(permission));
 
-  if(!canAcceptAppointment) throw new Error('You do not have permission to accept appointment');
+  if (!canAcceptAppointment) throw new Error('You do not have permission to accept appointment');
 
   const routingCode = formData.get('routingCode') as string;
-    
+
   await prisma.appointmentRouting.update({
-    where: { 
+    where: {
       routingCode,
       status: {
         not: 'ACCEPTED'
       }
     },
-    data: { status: 'ACCEPTED'}      
+    data: { status: 'ACCEPTED' }
   })
 
   return { message: 'Appointment accepted', data: undefined };
 }, async error => {
-  if(hasCodeProperty(error) && error.code === 'P2025') return 'Appointment assignment not found or you are not authorized to accept it';
+  if (hasCodeProperty(error) && error.code === 'P2025') return 'Appointment assignment not found or you are not authorized to accept it';
   return 'Failed to accept appointment';
 })
 
 export const declineAppointmentAction = withErrorHandling(async (formData: FormData) => {
-  
-  const session = await getCachedSession();
-  if(!session) throw new Error('Unauthorized');
 
-  const myPermissions = await getPermissionsAction({userId: session.user.sub, type: 'CLINIC'});
+  const session = await getCachedSession();
+  if (!session) throw new Error('Unauthorized');
+
+  const myPermissions = await getPermissionsAction({ userId: session.user.sub, type: 'CLINIC' });
   const myPermissionArray = myPermissions.map(permission => permission.name);
   const declineAppointmentPermissions = [PERMISSIONS.CLINIC["DECLINE:CLINIC:APPOINTMENT_ASSIGNMENT"].name]
   const canDeclineAppointment = declineAppointmentPermissions.every(permission => myPermissionArray.includes(permission));
 
-  if(!canDeclineAppointment) throw new Error('You do not have permission to decline appointment');
+  if (!canDeclineAppointment) throw new Error('You do not have permission to decline appointment');
 
   const reason = formData.get('reason') as string;
   const routingCode = formData.get('routingCode') as string;
@@ -167,7 +166,7 @@ export const declineAppointmentAction = withErrorHandling(async (formData: FormD
     // Update the routing status to DECLINED
     const updatedRouting = await prisma.appointmentRouting.update({
       where: { routingCode },
-      data: { 
+      data: {
         status: 'DECLINED',
         amendedAt: new Date(),
         AmendedBy: {
@@ -205,26 +204,26 @@ export const declineAppointmentAction = withErrorHandling(async (formData: FormD
 
   return { message: `Appointment assignment declined with reason: ${reason}`, data: undefined };
 }, async error => {
-  if(hasCodeProperty(error) && error.code === 'P2025') return 'Appointment assignment not found or you are not authorized to decline it';
+  if (hasCodeProperty(error) && error.code === 'P2025') return 'Appointment assignment not found or you are not authorized to decline it';
   return 'Failed to decline appointment';
 })
 
 export const cancelAppointmentRoutingAction = withErrorHandling(async (appointmentRoutingId: number) => {
-  
-  const session = await getCachedSession();
-  if(!session) throw new Error('Unauthorized');
 
-  const myPermissions = await getPermissionsAction({userId: session.user.sub, type: 'CLINIC'});
+  const session = await getCachedSession();
+  if (!session) throw new Error('Unauthorized');
+
+  const myPermissions = await getPermissionsAction({ userId: session.user.sub, type: 'CLINIC' });
   const myPermissionArray = myPermissions.map(permission => permission.name);
   const cancelAppointmentRouting = [PERMISSIONS.CLINIC["CANCEL:CLINIC:APPOINTMENT_ASSIGNMENT"].name]
   const canCancelAppointment = cancelAppointmentRouting.every(permission => myPermissionArray.includes(permission));
 
-  if(!canCancelAppointment) throw new Error('You do not have permission to cancel appointment assignment');
+  if (!canCancelAppointment) throw new Error('You do not have permission to cancel appointment assignment');
 
   await prisma.$transaction(async (prisma) => {
     // Update the routing status to CANCELLED
     const updatedRouting = await prisma.appointmentRouting.update({
-      where: { 
+      where: {
         id: appointmentRoutingId,
         RoutedBy: {
           userId: session.user.sub
@@ -233,7 +232,7 @@ export const cancelAppointmentRoutingAction = withErrorHandling(async (appointme
           in: ["PENDING"]
         }
       },
-      data: { 
+      data: {
         status: 'CANCELLED',
         AmendedBy: {
           connect: {
@@ -269,9 +268,9 @@ export const cancelAppointmentRoutingAction = withErrorHandling(async (appointme
     isolationLevel: Prisma.TransactionIsolationLevel.Serializable
   });
 
-  return { message: 'Appointment cancelled', data: undefined};
+  return { message: 'Appointment cancelled', data: undefined };
 }, async error => {
-  if(hasCodeProperty(error) && error.code === 'P2025') return 'Appointment assignment not found or you are not authorized to cancel it';
+  if (hasCodeProperty(error) && error.code === 'P2025') return 'Appointment assignment not found or you are not authorized to cancel it';
   return 'Failed to cancel appointment assignment';
 })
 
@@ -297,16 +296,16 @@ export const cancelAppointmentRoutingAction = withErrorHandling(async (appointme
  *   - AppointmentRouting not found or not in ACCEPTED status
  */
 export const returnAppointmentAssignmentAction = withErrorHandling(async (formData: FormData) => {
-  
-  const session = await getCachedSession();
-  if(!session) throw new Error('Unauthorized');
 
-  const myPermissions = await getPermissionsAction({userId: session.user.sub, type: 'CLINIC'});
+  const session = await getCachedSession();
+  if (!session) throw new Error('Unauthorized');
+
+  const myPermissions = await getPermissionsAction({ userId: session.user.sub, type: 'CLINIC' });
   const myPermissionArray = myPermissions.map(permission => permission.name);
   const returnAppointmentPermissions = [PERMISSIONS.CLINIC["RETURN:CLINIC:APPOINTMENT_ASSIGNMENT"].name]
   const canReturnAppointment = returnAppointmentPermissions.every(permission => myPermissionArray.includes(permission));
 
-  if(!canReturnAppointment) throw new Error('You do not have permission to return appointment assignment');
+  if (!canReturnAppointment) throw new Error('You do not have permission to return appointment assignment');
 
   const reason = formData.get('reason') as string;
   const appointmentRoutingId = Number(formData.get('appointmentRoutingId'));
@@ -322,19 +321,15 @@ export const returnAppointmentAssignmentAction = withErrorHandling(async (formDa
   await prisma.$transaction(async (prisma) => {
     // Update the routing status to CANCELLED with return information
     const updatedRouting = await prisma.appointmentRouting.update({
-      where: { 
+      where: {
         id: appointmentRoutingId,
         status: {
           in: ["ACCEPTED"]
         }
       },
-      data: { 
+      data: {
         status: 'CANCELLED',
-        ReturnedBy: {
-          connect: {
-            userId: session.user.sub
-          }
-        },
+        returnedBy: session.user.id,
         returnedAt: new Date(),
         returnReason: reason
       },
@@ -364,7 +359,7 @@ export const returnAppointmentAssignmentAction = withErrorHandling(async (formDa
     isolationLevel: Prisma.TransactionIsolationLevel.Serializable
   });
 
-  return { message: `Appointment assignment returned with reason: ${reason}`, data: undefined};
+  return { message: `Appointment assignment returned with reason: ${reason}`, data: undefined };
 }, async (error) => {
   // Preserve the original error message for permission and validation errors
   if (error instanceof Error) {
@@ -372,7 +367,7 @@ export const returnAppointmentAssignmentAction = withErrorHandling(async (formDa
     return error.message;
   }
   // Handle Prisma errors
-  if(hasCodeProperty(error) && error.code === 'P2025') {
+  if (hasCodeProperty(error) && error.code === 'P2025') {
     return 'Appointment assignment not found or you are not authorized to return it';
   }
   // Generic fallback for unknown errors

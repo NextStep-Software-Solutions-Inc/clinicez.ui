@@ -6,7 +6,6 @@ import {
 } from "@components/ui/tooltip";
 import { cn } from "@lib/utils";
 import { DownloadIcon, FileText, ImageIcon, Settings } from "lucide-react";
-import Link from "next/link";
 import { format } from "date-fns";
 import ConditionalRender from "./utils/ConditionalRender";
 import FileSettingSheet from "./FileSettingSheet";
@@ -37,19 +36,19 @@ export default async function File({ file, readOnly = true }: FileProps) {
       <Icon className="mt-px h-5 w-5 text-primary" />
       <div className="flex w-full">
         <div className="space-y-1">
-          <Link href={file.url} target="_blank" rel="noreferrer" >
+          <a href={file.url} target="_blank" rel="noreferrer noopener" >
             <p className="text-sm font-medium leading-none">
               <span className="italic hover:underline">{file.name}</span> -{" "}
               <span>{file.date && format(file.date, "PP")}</span>
             </p>
-          </Link>
+          </a>
           <p className="text-sm text-muted-foreground">{file.description}</p>
         </div>
         <div className="flex items-center ml-auto gap-2">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Link
+                <a
                   href={file.url}
                   download
                   className="invisible group-hover/item:visible"
@@ -60,7 +59,7 @@ export default async function File({ file, readOnly = true }: FileProps) {
                   >
                     <DownloadIcon className="h-4 w-4  hover:scale-125 transition-all" />
                   </Button>
-                </Link>
+                </a>
               </TooltipTrigger>
               <TooltipContent side="top">Download</TooltipContent>
             </Tooltip>

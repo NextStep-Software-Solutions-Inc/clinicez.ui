@@ -19,8 +19,9 @@ interface GenericSectionProps {
   showOnPatient: boolean
   onUpdated?: () => void
   readonly?: boolean
+  isPatientView?: boolean
 }
-export default function GenericSection({ hpId, name, label, consultationId, value = "", showOnPatient, onUpdated, readonly = true }: GenericSectionProps) {
+export default function GenericSection({ hpId, name, label, consultationId, value = "", showOnPatient, onUpdated, readonly = true, isPatientView = false }: GenericSectionProps) {
 
 
   const formRef = useRef<HTMLFormElement>(null)
@@ -48,8 +49,7 @@ export default function GenericSection({ hpId, name, label, consultationId, valu
     return () => subscription.unsubscribe();
   }, [autoSubmit, watch]);
 
-  // Patient views render this section without an update handler so we keep their fields masked.
-  const isPatientView = !onUpdated
+  // Patient views should have their fields masked when showOnPatient is false
   const shouldBlur = readonly && isPatientView && !showOnPatient
 
 

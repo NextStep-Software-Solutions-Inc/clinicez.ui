@@ -13,6 +13,7 @@ import { ArrowRight } from "lucide-react";
 import dayjs from "@/lib/day-utils"
 import { combineDateTime } from "@/lib/day-utils";
 import { getHealthcareProviderName } from "@/lib/hp-utils";
+import { getDepartmentName } from "@/lib/formatter-utils";
 
 interface AppointmentListProps {
   appointments: GetAppointments["data"]
@@ -92,6 +93,33 @@ export const AppointmentList = forwardRef<HTMLDivElement, AppointmentListProps>(
                 onClick={() => setAppointment(item.id.toString())}
               >
                 <div className="flex w-full flex-col gap-1">
+                  {/* Name and Department first */}
+                  <div className="flex flex-wrap items-start gap-2 text-xs">
+                    <Each
+                      of={item.Requesters}
+                      fallback={<span className="text-muted-foreground">No Requester defined</span>}
+                      render={(requester, index) => {
+                        const requesterUser = requester.User
+                        const fullName = formatFullName(requesterUser)
+                        const departmentName = getDepartmentName(requesterUser)
+                        const isCurrentUser = requesterUser?.userId === authUser?.id
+                        return (
+                          <div className="flex items-center gap-2">
+                            <div className="leading-tight">
+                              <span className={cn("block text-xs font-semibold", isCurrentUser ? "text-primary" : "text-foreground")}>
+                                {isCurrentUser ? `You (${fullName})` : fullName}
+                              </span>
+                              {departmentName && (
+                                <span className="text-[0.65rem] text-muted-foreground">{departmentName}</span>
+                              )}
+                            </div>
+                            {index < item.Requesters.length - 1 && <Separator orientation="vertical" className="h-4" />}
+                          </div>
+                        )
+                      }}
+                    />
+                  </div>
+                  {/* Subject now below Name/Department */}
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold leading-snug line-clamp-2">{item.subject}</span>
                     <div
@@ -106,49 +134,24 @@ export const AppointmentList = forwardRef<HTMLDivElement, AppointmentListProps>(
                       {getTransitionDate().fromNow()}
                     </div>
                   </div>
-                  <div className="flex flex-wrap items-start gap-2 text-xs">
-                    <Each
-                      of={item.Requesters}
-                      fallback={<span className="text-muted-foreground">No Requester defined</span>}
-                      render={(requester, index) => {
-                        const requesterUser = requester.User
-                        const fullName = formatFullName(requesterUser)
-                        const collegeName = getCollegeName(requesterUser)
-                        const isCurrentUser = requesterUser?.userId === authUser?.id
-                        return (
-                          <div className="flex items-center gap-2">
-                            <div className="leading-tight">
-                              <span className={cn("block text-xs font-semibold", isCurrentUser ? "text-primary" : "text-foreground")}>
-                                {isCurrentUser ? `You (${fullName})` : fullName}
-                              </span>
-                              {collegeName && (
-                                <span className="text-[0.65rem] text-muted-foreground">{collegeName}</span>
-                              )}
-                            </div>
-                            {index < item.Requesters.length - 1 && <Separator orientation="vertical" className="h-4" />}
-                          </div>
-                        )
-                      }}
-                    />
-                  </div>
                 </div>
                 <div className="line-clamp-2 text-xs text-muted-foreground">
                   {item.complaint?.substring(0, 300)}
                 </div>
-                {item.AppointmentTags && item.AppointmentTags.length > 0 && (
+                {item.AppointmentTag && item.AppointmentTag.length > 0 && (
                   <div className="flex items-center gap-1 flex-wrap">
                     <span className="text-[0.65rem] text-muted-foreground">Tagged:</span>
                     <Each
-                      of={item.AppointmentTags.slice(0, 3)}
+                      of={item.AppointmentTag.slice(0, 3)}
                       render={(tag) => (
                         <Badge key={tag.id} variant="secondary" className="text-[0.65rem] px-1 py-0 bg-gray-200">
                           {getHealthcareProviderName(tag.HealthcareProvider)}
                         </Badge>
                       )}
                     />
-                    {item.AppointmentTags.length > 3 && (
+                    {item.AppointmentTag.length > 3 && (
                       <span className="text-[0.65rem] text-muted-foreground">
-                        +{item.AppointmentTags.length - 3} more
+                        +{item.AppointmentTag.length - 3} more
                       </span>
                     )}
                   </div>

@@ -154,3 +154,21 @@ export function calculateAge(birthDate: Date | string | null | undefined): numbe
   const today = dayjs();
   return today.diff(birthDay, 'year');
 }
+
+export function centimeterToInch(cm: number | string): number {
+  const cmValue = typeof cm === 'string' ? parseFloat(cm) : cm;
+  if (isNaN(cmValue)) {
+    throw new Error('Invalid centimeter value');
+  }
+  const inches = cmValue / 2.54;
+  return parseFloat(inches.toFixed(2));
+}
+
+export function kilogramsToPounds(kg: number | string): number {
+  const kgValue = typeof kg === 'string' ? parseFloat(kg) : kg;
+  if (isNaN(kgValue)) {
+    throw new Error('Invalid kilogram value');
+  }
+  const pounds = kgValue * 2.20462;
+  return parseFloat(pounds.toFixed(2));
+}

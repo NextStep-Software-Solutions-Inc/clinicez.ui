@@ -35,7 +35,7 @@ import CompleteAppointment from "./CompleteAppointment";
 import { PERMISSIONS } from "@lib/permissions";
 import { usePermissions } from "@/hooks/usePermission";
 import { useHPs } from "@/hooks/useHP";
-import { getFullName } from "@/lib/formatter-utils";
+import { getFullName, getDepartmentName, getProgramYear } from "@/lib/formatter-utils";
 import { isAssignedNurseToAppointment } from "@/lib/nurse-utils";
 import { getHealthcareProviderName } from "@/lib/hp-utils";
 import TagHPsSheet from "./TagHPsSheet";
@@ -114,7 +114,8 @@ export default function AppointmentDisplay() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center p-2">
+      {/* Sticky Toolbar */}
+      <div className="flex items-center p-2 sticky top-0 bg-background z-10">
         <div className="flex items-center gap-2">
           <Badge variant="default" className="capitalize">{freshAppointment.data.AppointmentAttribute?.status}</Badge>
 
@@ -149,51 +150,79 @@ export default function AppointmentDisplay() {
         <MoreTools freshAppointment={freshAppointment.data} />
       </div>
       <Separator />
-      <div className="flex flex-1 flex-col">
-        <div className="flex items-start p-4">
-          <div className="flex items-start gap-4 text-sm">
-            <Each
-              of={requesters?.filter(requester => requester.User) ?? []} // Filter out requesters with null User
-              render={(aptUser) => {
-                return (
-                  <Fragment key={aptUser.User.userId}>
-                    <Avatar>
-                      {
-                        aptUser.User.picture
-                          ? <Image src={aptUser.User.picture} width={50} height={50} className="object-cover" alt={aptUser.User.nickname ?? ""} />
-                          : <AvatarFallback>{aptUser.User.firstName?.charAt(0)} {aptUser.User.lastName?.charAt(0)}</AvatarFallback>
-                      }
-                    </Avatar>
-                    <div className="grid gap-1">
-                      <div className="font-semibold">{aptUser.User.firstName} {aptUser.User.middleName} {aptUser.User.lastName} {aptUser.User.suffix}</div>
-                      <div className="line-clamp-1 text-xs">
-                        <span className="font-medium">{aptUser.User.gender} / </span>{calculateAge(aptUser.User.dob) ?? ""}
-                      </div>
-                      <div className="line-clamp-1 text-xs">{freshAppointment.data?.subject}</div>
+      {/* Sticky Patient Header */}
+      <div className="flex items-start p-4 sticky top-[52px] bg-background z-10">
+        <div className="flex items-start gap-4 text-sm">
+          <Each
+            of={requesters?.filter(requester => requester.User) ?? []} // Filter out requesters with null User
+            render={(aptUser) => {
+              const departmentName = getDepartmentName(aptUser.User);
+              const programYear = getProgramYear(aptUser.User);
+              const mobile = aptUser.User.mobile;
+              const email = aptUser.User.email;
+              
+              return (
+                <Fragment key={aptUser.User.userId}>
+                  <Avatar>
+                    {
+                      aptUser.User.picture
+                        ? <Image src={aptUser.User.picture} width={50} height={50} className="object-cover" alt={aptUser.User.nickname ?? ""} />
+                        : <AvatarFallback>{aptUser.User.firstName?.charAt(0)} {aptUser.User.lastName?.charAt(0)}</AvatarFallback>
+                    }
+                  </Avatar>
+                  <div className="grid gap-1">
+                    <div className="font-semibold">{aptUser.User.firstName} {aptUser.User.middleName} {aptUser.User.lastName} {aptUser.User.suffix}</div>
+                    <div className="line-clamp-1 text-xs">
+                      <span className="font-medium">{aptUser.User.gender} / </span>{calculateAge(aptUser.User.dob) ?? ""}
                     </div>
-                  </Fragment>
-                )
-              }}
-            />
+                    {departmentName && (
+                      <div className="line-clamp-1 text-xs text-muted-foreground">{departmentName}</div>
+                    )}
+                    {programYear && (
+                      <div className="line-clamp-1 text-xs text-muted-foreground">{programYear}</div>
+                    )}
+                    {mobile && (
+                      <div className="line-clamp-1 text-xs text-muted-foreground">{mobile}</div>
+                    )}
+                    {email && (
+                      <div className="line-clamp-1 text-xs text-muted-foreground">{email}</div>
+                    )}
+                  </div>
+                </Fragment>
+              )
+            }}
+          />
 
-          </div>
-          {freshAppointment.data.createdAt && (
-            <div className="ml-auto text-xs text-muted-foreground">
-              {dayjs(freshAppointment.data.createdAt).format("ll")}
-            </div>
-          )}
         </div>
-        <Separator />
-        <ScrollArea className="flex-auto whitespace-pre-wrap p-4 text-sm h-0">
-          {freshAppointment.data.complaint}
+        {freshAppointment.data.createdAt && (
+          <div className="ml-auto text-xs text-muted-foreground">
+            {dayjs(freshAppointment.data.createdAt).format("ll")}
+          </div>
+        )}
+      </div>
+      <Separator />
+      {/* Scrollable Content Area */}
+      <ScrollArea className="flex-1">
+        <div className="p-4 text-sm">
+          {/* Subject moved here from header */}
+          <div className="mb-2">
+            <span className="font-semibold text-sm">Subject: </span>
+            <span className="text-sm">{freshAppointment.data?.subject}</span>
+          </div>
+          <Separator className="my-2" />
+          <div className="mb-2">
+            <span className="font-semibold text-sm">Chief Complaint: </span>
+            <div className="mt-1 whitespace-pre-wrap">{freshAppointment.data.complaint}</div>
+          </div>
           <Separator className="my-2" />
           <Attachments attachments={(freshAppointment.data.AppointmentAttachments ?? []).map(a => a.url)} />
-        </ScrollArea>
-        <Separator />
-        <div className="px-5 py-2 text-xs group/action max-h-40 scrollBox no-scrollbar">
-          <div className="flex items-center">
+        </div>
+        
+        <Separator className="my-4" />
+        <div className="px-4 pb-4 text-xs">
+          <div className="flex items-center mb-2">
             <span className="font-semibold text-base">Latest Pre-Assessment Notes</span>
-            <Pencil className="h-4 w-4 ml-auto invisible group-hover/action:visible" />
+            <Pencil className="h-4 w-4 ml-auto" />
           </div>
           <Each
             of={(freshAppointment.data.PreAssessmentNotes ?? []).slice(-1)}
@@ -252,8 +281,8 @@ export default function AppointmentDisplay() {
               )
             }} />
         </div>
-        <Separator />
-        <div className="px-5 py-2 text-xs max-h-40 scrollBox no-scrollbar">
+        <Separator className="my-4" />
+        <div className="px-4 pb-4 text-xs">
           <span className="font-semibold text-base">{freshAppointment.data.AppointmentAttribute?.status !== "ROUTED" ? "Preferred" : "Assigned"} Schedule</span> <br />
           {freshAppointment.data.AppointmentAttribute?.date && <LabelValue className="flex items-center gap-2" label={dayjs(freshAppointment.data.AppointmentAttribute.date).format("ll - dddd")} value="Date:" />}
           {(freshAppointment.data.AppointmentAttribute?.date && freshAppointment.data.AppointmentAttribute?.timeStart && freshAppointment.data.AppointmentAttribute?.timeEnd) && <LabelValue className="flex items-center gap-2" label={`${dayjs(combineDateTime(freshAppointment.data.AppointmentAttribute.date, freshAppointment.data.AppointmentAttribute.timeStart)).format("hh:mm A")} - ${dayjs(combineDateTime(freshAppointment.data.AppointmentAttribute.date, freshAppointment.data.AppointmentAttribute.timeEnd)).format("hh:mm A")}`} value="Time:" />}
@@ -263,14 +292,14 @@ export default function AppointmentDisplay() {
             <Badge><Link href={meetingUrl} target="_blank">Join Meeting</Link></Badge>
           </div>}
         </div>
-        <Separator />
-        <div className="px-5 py-2 text-xs max-h-40 scrollBox no-scrollbar">
+        <Separator className="my-4" />
+        <div className="px-4 pb-4 text-xs">
           <div className="flex items-center justify-between mb-2">
             <span className="font-semibold text-base">Tagged (Info Only)</span>
             {[PERMISSIONS.CLINIC["WRITE:CLINIC:APPOINTMENT"].name].every(p => myClinicPermissionArray.includes(p)) && (
               <TagHPsSheet
                 appointmentId={freshAppointment.data.id}
-                currentTags={freshAppointment.data.AppointmentTags ?? []}
+                currentTags={freshAppointment.data.AppointmentTag ?? []}
                 onTagsUpdated={revalidate}
               >
                 <Button variant="ghost" size="sm" className="h-6">
@@ -281,7 +310,7 @@ export default function AppointmentDisplay() {
             )}
           </div>
           <Each
-            of={(freshAppointment.data.AppointmentTags ?? [])}
+            of={(freshAppointment.data.AppointmentTag ?? [])}
             fallback={<span className="text-muted-foreground text-xs">No tagged healthcare providers</span>}
             render={(tag) => (
               <div key={tag.id} className="flex gap-1 my-2 ">
@@ -301,8 +330,8 @@ export default function AppointmentDisplay() {
             )}
           />
         </div>
-        <Separator />
-        <div className="flex items-center p-4 gap-2 max-h-40 scrollBox no-scrollbar flex-wrap">
+        <Separator className="my-4" />
+        <div className="flex items-center px-4 pb-4 gap-2 flex-wrap">
           <Badge variant={getBadgeVariantFromLabel(freshAppointment.data.AppointmentAttribute?.AppointmentType.name ?? "")}>
             {freshAppointment.data.AppointmentAttribute?.AppointmentType.name}
           </Badge>
@@ -313,7 +342,7 @@ export default function AppointmentDisplay() {
             {freshAppointment.data.AppointmentAttribute?.Service?.name}
           </Badge>
         </div>
-      </div>
+      </ScrollArea>
     </div>
   )
 }

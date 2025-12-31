@@ -101,9 +101,22 @@ export const downloadPMRFAction = withErrorHandling(async (userId: string) => {
     { field: 'preferredKonSulTaProvider', value: provider ? upper(provider) : 'N/A' },
   ]
 
+  // Check if member has any disabilities
+  let memberHasDisability = false;
+  try {
+    const userDisabilities = await prisma.userDisability.findMany({
+      where: { userId: user.id },
+      take: 1,
+    });
+    memberHasDisability = userDisabilities.length > 0;
+  } catch (error: unknown) {
+    logger.error("Failed to check user disabilities:", error);
+  }
+
   const checkboxMappings = [
     { field: 'memberNoMiddleName', condition: !user.middleName?.trim() },
     { field: 'memberMononym', condition: !user.middleName?.trim() && !user.lastName?.trim() },
+    { field: 'contributorPwd', condition: memberHasDisability },
     { field: 'motherNoMiddleName', condition: !mother.middleName?.trim() },
     { field: 'motherMononym', condition: !mother.middleName?.trim() && !mother.lastName?.trim() },
     { field: 'spouseNoMiddleName', condition: !spouse.middleName?.trim() },
@@ -116,6 +129,7 @@ export const downloadPMRFAction = withErrorHandling(async (userId: string) => {
     { field: 'civilStatusLegallyAnnulled', condition: user.civilStatus === 'DIVORCED' },
     { field: 'civilStatusWidower', condition: user.civilStatus === 'WIDOWED' },
     { field: 'citizenshipFilipino', condition: user.nationality === 'Filipino' },
+    { field: 'citizenshipForeignNational', condition: Boolean(user.nationality && user.nationality !== 'Filipino') },
     { field: 'addressMailing', condition: true },
     { field: 'purposeRegistration', condition: true },
   ]
@@ -136,13 +150,15 @@ export const downloadPMRFAction = withErrorHandling(async (userId: string) => {
           { field: `dependents${pref}FirstName`, value: upper(d.firstName) },
           { field: `dependents${pref}MiddleName`, value: upper(d.middleName) },
           { field: `dependents${pref}NameExtension`, value: upper(d.suffix) },
+          { field: `dependents${pref}Citizenship`, value: upper(d.citizenship) },
           { field: `dependents${pref}Relationship`, value: upper(d.relationship) },
           { field: `dependents${pref}DateOfBirth_af_date`, value: d.dob ? new Date(d.dob).toLocaleDateString('en-PH') : undefined },
         )
-        // checkbox style flags for missing middle name / mononym
+        // checkbox style flags for missing middle name / mononym / PWD
         checkboxMappings.push(
           { field: `dependents${pref}NoMiddleName`, condition: !d.middleName?.trim() },
           { field: `dependents${pref}Mononym`, condition: !d.middleName?.trim() && !d.lastName?.trim() },
+          { field: `dependents${pref}Pwd`, condition: d.isPermanentlyDisabled === true },
         )
       })
     }

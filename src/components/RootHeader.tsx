@@ -6,7 +6,6 @@ import RootDrawer from "./RootDrawer";
 import { Button } from "./ui/button";
 import UserAvatarWrapper from "./UserAvatarWrapper";
 import HeaderEffects from "./HeaderEffects";
-import ClassicButton from "./ClassicButton";
 import { SignedOut, SignInButton, SignUpButton } from "@clerk/nextjs";
 import Suspend from "./Suspend";
 
@@ -51,7 +50,6 @@ export default function RootHeader({ className = "", version = "v1", ...rest }: 
             <Navigation version={version} />
           </div>
           <div className=" lg:inline-flex items-center justify-center gap-2">
-            <ClassicButton />
             <Suspend>
               <SignedOut>
                 <SignInButton />

@@ -34,7 +34,7 @@ export const downloadPKRFAction = withErrorHandling(async (userId?: string) => {
   const map = [
     { field: 'dateRegistered', value: formatIsoDate(new Date()) },
     { field: 'memberLastName', value: user.lastName?.toUpperCase() || 'N/A' },
-    { field: 'memberFirstName', value: user.firstName?.toUpperCase() || 'N/A' },
+    { field: 'membeFirstName', value: user.firstName?.toUpperCase() || 'N/A' }, // Note: PDF has typo in field name
     { field: 'memberMiddleName', value: user.middleName?.toUpperCase() || 'N/A' },
 
     { field: 'addressMunicipalityCity', value: primary?.city?.toUpperCase() || 'N/A' },

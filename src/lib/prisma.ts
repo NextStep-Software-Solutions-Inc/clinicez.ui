@@ -4,11 +4,18 @@ let prismaClient: ReturnType<typeof createPrismaClient>;
 
 if (process.env.NODE_ENV !== 'production') {
   if (!global.prismaClient) {
-    global.prismaClient = createPrismaClient(process.env.DATABASE_URL_UNPOOLED || "postgresql://dummy:dummy@localhost:5432/dummy");
+    // Set environment variables before creating client
+    if (!process.env.DATABASE_URL) {
+      process.env.DATABASE_URL = process.env.DATABASE_URL_UNPOOLED || "postgresql://dummy:dummy@localhost:5432/dummy";
+    }
+    global.prismaClient = createPrismaClient();
   }
   prismaClient = global.prismaClient;
 } else {
-  prismaClient = createPrismaClient(process.env.DATABASE_URL || "postgresql://dummy:dummy@localhost:5432/dummy");
+  if (!process.env.DATABASE_URL) {
+    process.env.DATABASE_URL = "postgresql://dummy:dummy@localhost:5432/dummy";
+  }
+  prismaClient = createPrismaClient();
 }
 
 export default prismaClient;

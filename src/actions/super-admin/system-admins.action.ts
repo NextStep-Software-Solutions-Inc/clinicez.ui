@@ -176,15 +176,29 @@ export async function revokeSystemAdminAction({
     select: { id: true },
   });
 
-  if (superAdminPermission) {
-    // Remove the SUPER_ADMIN permission from the user
-    await prisma.userPermission.deleteMany({
-      where: {
-        userId,
-        permissionId: superAdminPermission.id,
-      },
-    });
+  if (!superAdminPermission) {
+    throw new Error("SUPER_ADMIN permission not found");
   }
+
+  // Count total system admins
+  const totalSystemAdmins = await prisma.userPermission.count({
+    where: {
+      permissionId: superAdminPermission.id,
+    },
+  });
+
+  // Ensure at least one system admin remains
+  if (totalSystemAdmins <= 1) {
+    throw new Error("Cannot remove the last system admin. At least one system admin must remain.");
+  }
+
+  // Remove the SUPER_ADMIN permission from the user
+  await prisma.userPermission.deleteMany({
+    where: {
+      userId,
+      permissionId: superAdminPermission.id,
+    },
+  });
 
   // Get updated user
   const updatedUser = await prisma.user.findUnique({

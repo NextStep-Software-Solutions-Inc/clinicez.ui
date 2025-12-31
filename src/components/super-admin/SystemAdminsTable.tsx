@@ -19,6 +19,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@components/ui/dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@components/ui/tooltip";
 
 interface SystemAdminsTableProps {
   initialData: GetAllSystemAdmins;
@@ -55,6 +61,12 @@ export default function SystemAdminsTable({ initialData }: SystemAdminsTableProp
   };
 
   const handleRevokeAdmin = async (userId: number, userName: string) => {
+    // Check if this is the last system admin
+    if (data.total <= 1) {
+      toast.error("Cannot remove the last system admin. At least one system admin must remain.");
+      return;
+    }
+
     if (!confirm(`Are you sure you want to revoke system admin privileges from ${userName}?`)) {
       return;
     }
@@ -175,14 +187,28 @@ export default function SystemAdminsTable({ initialData }: SystemAdminsTableProp
                   </TableCell>
                   <TableCell className="text-right">
                     {!user.isSuperAdmin && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleRevokeAdmin(user.id, `${user.firstName} ${user.lastName}`)}
-                      >
-                        <UserMinus className="h-4 w-4 mr-2" />
-                        Revoke
-                      </Button>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleRevokeAdmin(user.id, `${user.firstName} ${user.lastName}`)}
+                                disabled={data.total <= 1}
+                              >
+                                <UserMinus className="h-4 w-4 mr-2" />
+                                Revoke
+                              </Button>
+                            </span>
+                          </TooltipTrigger>
+                          {data.total <= 1 && (
+                            <TooltipContent>
+                              <p>Cannot remove the last system admin</p>
+                            </TooltipContent>
+                          )}
+                        </Tooltip>
+                      </TooltipProvider>
                     )}
                   </TableCell>
                 </TableRow>

@@ -132,9 +132,9 @@ export default async function ClinicDetailPage({ params }: ClinicDetailPageProps
         <TabsContent value="roles" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Clinic Roles</CardTitle>
+              <CardTitle>Clinic Roles (System-wide)</CardTitle>
               <CardDescription>
-                Global clinic roles used across all clinics in the system.
+                Global clinic roles used across all clinics in the system. Member counts shown are system-wide totals.
               </CardDescription>
             </CardHeader>
             <CardContent>

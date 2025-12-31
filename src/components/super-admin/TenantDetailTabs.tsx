@@ -211,7 +211,7 @@ export default function TenantDetailTabs({ tenant }: TenantDetailTabsProps) {
           <CardHeader>
             <CardTitle>Clinics</CardTitle>
             <CardDescription>
-              View clinic setup and configuration details.
+              View clinic setup and manage appointment tab configurations.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -229,11 +229,11 @@ export default function TenantDetailTabs({ tenant }: TenantDetailTabsProps) {
                   <Card key={clinic.id}>
                     <CardHeader>
                       <div className="flex items-center justify-between">
-                        <div>
+                        <div className="flex-1">
                           <CardTitle className="text-lg">{clinic.name}</CardTitle>
                           <CardDescription>{clinic.clinicUid}</CardDescription>
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex items-center gap-2">
                           <Badge variant="outline">
                             <Users className="h-3 w-3 mr-1" />
                             {clinic._count.ClinicMembers} members
@@ -241,6 +241,13 @@ export default function TenantDetailTabs({ tenant }: TenantDetailTabsProps) {
                           <Badge variant="outline">
                             {clinic._count.ClinicPatients} patients
                           </Badge>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => router.push(`/super-admin/clinics/${clinic.id}`)}
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                          </Button>
                         </div>
                       </div>
                     </CardHeader>

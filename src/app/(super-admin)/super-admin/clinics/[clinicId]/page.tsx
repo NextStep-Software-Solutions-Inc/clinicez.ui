@@ -1,0 +1,165 @@
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@components/ui/card";
+import { getClinicByIdAction, getClinicRolesAction, getClinicAppointmentTabsAction } from "@actions/super-admin/clinics.action";
+import { notFound } from "next/navigation";
+import { Badge } from "@components/ui/badge";
+import { Hospital, Users, Calendar } from "lucide-react";
+import Link from "next/link";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@components/ui/tabs";
+import ClinicRolesTable from "@components/super-admin/ClinicRolesTable";
+import ClinicAppointmentTabsManager from "@components/super-admin/ClinicAppointmentTabsManager";
+
+interface ClinicDetailPageProps {
+  params: Promise<{
+    clinicId: string;
+  }>;
+}
+
+export default async function ClinicDetailPage({ params }: ClinicDetailPageProps) {
+  const { clinicId: clinicIdString } = await params;
+  const clinicId = parseInt(clinicIdString);
+  
+  if (isNaN(clinicId)) {
+    notFound();
+  }
+
+  const [clinic, initialRoles, appointmentTabsData] = await Promise.all([
+    getClinicByIdAction({ clinicId }),
+    getClinicRolesAction({ pageSize: 10, pageNumber: 1 }),
+    getClinicAppointmentTabsAction({ clinicId }),
+  ]);
+  
+  if (!clinic) {
+    notFound();
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+          <Link href="/super-admin/tenants" className="hover:underline">
+            Tenants
+          </Link>
+          <span>/</span>
+          <Link href={`/super-admin/tenants/${clinic.Tenant.id}`} className="hover:underline">
+            {clinic.Tenant.name}
+          </Link>
+          <span>/</span>
+          <span>Clinic</span>
+        </div>
+        <h1 className="text-3xl font-bold">{clinic.name}</h1>
+        <p className="text-muted-foreground">{clinic.description || "No description"}</p>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Members
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{clinic._count.ClinicMembers}</div>
+            <p className="text-sm text-muted-foreground mt-1">
+              Total clinic members
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Patients
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{clinic._count.ClinicPatients}</div>
+            <p className="text-sm text-muted-foreground mt-1">
+              Total clinic patients
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              Appointment Tabs
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{clinic._count.ClinicAppointmentTabs}</div>
+            <p className="text-sm text-muted-foreground mt-1">
+              Configured tabs
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Clinic Information</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="text-sm text-muted-foreground">Clinic UID:</div>
+            <div className="text-sm font-medium">{clinic.clinicUid}</div>
+            
+            {clinic.email && (
+              <>
+                <div className="text-sm text-muted-foreground">Email:</div>
+                <div className="text-sm font-medium">{clinic.email}</div>
+              </>
+            )}
+            
+            <div className="text-sm text-muted-foreground">Status:</div>
+            <div>
+              <Badge variant={clinic.isActive ? "default" : "secondary"}>
+                {clinic.isActive ? "Active" : "Inactive"}
+              </Badge>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Tabs defaultValue="roles" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="roles">Clinic Roles</TabsTrigger>
+          <TabsTrigger value="appointment-tabs">Appointment Tabs</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="roles" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Clinic Roles</CardTitle>
+              <CardDescription>
+                Global clinic roles used across all clinics in the system.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ClinicRolesTable initialData={initialRoles} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="appointment-tabs" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Appointment Tabs Configuration</CardTitle>
+              <CardDescription>
+                Configure which appointment tabs are available for this clinic.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ClinicAppointmentTabsManager
+                clinicId={clinicId}
+                initialData={appointmentTabsData}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}

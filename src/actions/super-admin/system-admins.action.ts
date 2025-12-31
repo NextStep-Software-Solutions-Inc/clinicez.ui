@@ -10,7 +10,9 @@ const SUPER_ADMIN_PERMISSION = "SUPER_ADMIN";
 // Error messages
 const ERROR_MESSAGES = {
   LAST_ADMIN: "Cannot remove the last system admin. At least one system admin must remain.",
-  UNAUTHORIZED: "Unauthorized: Only super admins can revoke system admin privileges",
+  UNAUTHORIZED_VIEW: "Unauthorized: Only super admins can view system admins",
+  UNAUTHORIZED_GRANT: "Unauthorized: Only super admins can grant system admin privileges",
+  UNAUTHORIZED_REVOKE: "Unauthorized: Only super admins can revoke system admin privileges",
   PERMISSION_NOT_FOUND: "SUPER_ADMIN permission not found",
 };
 
@@ -27,7 +29,7 @@ export async function getAllSystemAdminsAction({
   // Check if current user is super admin
   const isSuperAdmin = await isSuperAdminAction();
   if (!isSuperAdmin) {
-    throw new Error(ERROR_MESSAGES.UNAUTHORIZED);
+    throw new Error(ERROR_MESSAGES.UNAUTHORIZED_VIEW);
   }
 
   // Get the SUPER_ADMIN permission ID
@@ -110,7 +112,7 @@ export async function grantSystemAdminAction({
   // Check if current user is super admin
   const isSuperAdmin = await isSuperAdminAction();
   if (!isSuperAdmin) {
-    throw new Error(ERROR_MESSAGES.UNAUTHORIZED);
+    throw new Error(ERROR_MESSAGES.UNAUTHORIZED_GRANT);
   }
 
   // Get or create the SUPER_ADMIN permission
@@ -174,7 +176,7 @@ export async function revokeSystemAdminAction({
   // Check if current user is super admin
   const isSuperAdmin = await isSuperAdminAction();
   if (!isSuperAdmin) {
-    throw new Error(ERROR_MESSAGES.UNAUTHORIZED);
+    throw new Error(ERROR_MESSAGES.UNAUTHORIZED_REVOKE);
   }
 
   // Get the SUPER_ADMIN permission

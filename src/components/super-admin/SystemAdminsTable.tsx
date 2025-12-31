@@ -28,6 +28,7 @@ import {
 
 // Error message constant to match server-side
 const ERROR_LAST_ADMIN = "Cannot remove the last system admin. At least one system admin must remain.";
+const TOOLTIP_LAST_ADMIN = "Cannot remove the last system admin";
 
 interface SystemAdminsTableProps {
   initialData: GetAllSystemAdmins;
@@ -207,7 +208,7 @@ export default function SystemAdminsTable({ initialData }: SystemAdminsTableProp
                               </div>
                             </TooltipTrigger>
                             <TooltipContent>
-                              <p>Cannot remove the last system admin</p>
+                              <p>{TOOLTIP_LAST_ADMIN}</p>
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>

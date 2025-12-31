@@ -7,6 +7,15 @@ import { isSuperAdminAction } from "./admin-check.action";
 // The permission name that grants super admin access
 const SUPER_ADMIN_PERMISSION = "SUPER_ADMIN";
 
+// Error messages
+const ERROR_MESSAGES = {
+  LAST_ADMIN: "Cannot remove the last system admin. At least one system admin must remain.",
+  UNAUTHORIZED_VIEW: "Unauthorized: Only super admins can view system admins",
+  UNAUTHORIZED_GRANT: "Unauthorized: Only super admins can grant system admin privileges",
+  UNAUTHORIZED_REVOKE: "Unauthorized: Only super admins can revoke system admin privileges",
+  PERMISSION_NOT_FOUND: "SUPER_ADMIN permission not found",
+};
+
 export type GetAllSystemAdmins = Awaited<ReturnType<typeof getAllSystemAdminsAction>>;
 export async function getAllSystemAdminsAction({
   search,
@@ -20,7 +29,7 @@ export async function getAllSystemAdminsAction({
   // Check if current user is super admin
   const isSuperAdmin = await isSuperAdminAction();
   if (!isSuperAdmin) {
-    throw new Error("Unauthorized: Only super admins can view system admins");
+    throw new Error(ERROR_MESSAGES.UNAUTHORIZED_VIEW);
   }
 
   // Get the SUPER_ADMIN permission ID
@@ -103,7 +112,7 @@ export async function grantSystemAdminAction({
   // Check if current user is super admin
   const isSuperAdmin = await isSuperAdminAction();
   if (!isSuperAdmin) {
-    throw new Error("Unauthorized: Only super admins can grant system admin privileges");
+    throw new Error(ERROR_MESSAGES.UNAUTHORIZED_GRANT);
   }
 
   // Get or create the SUPER_ADMIN permission
@@ -167,7 +176,7 @@ export async function revokeSystemAdminAction({
   // Check if current user is super admin
   const isSuperAdmin = await isSuperAdminAction();
   if (!isSuperAdmin) {
-    throw new Error("Unauthorized: Only super admins can revoke system admin privileges");
+    throw new Error(ERROR_MESSAGES.UNAUTHORIZED_REVOKE);
   }
 
   // Get the SUPER_ADMIN permission
@@ -176,15 +185,29 @@ export async function revokeSystemAdminAction({
     select: { id: true },
   });
 
-  if (superAdminPermission) {
-    // Remove the SUPER_ADMIN permission from the user
-    await prisma.userPermission.deleteMany({
-      where: {
-        userId,
-        permissionId: superAdminPermission.id,
-      },
-    });
+  if (!superAdminPermission) {
+    throw new Error(ERROR_MESSAGES.PERMISSION_NOT_FOUND);
   }
+
+  // Count total system admins
+  const totalSystemAdmins = await prisma.userPermission.count({
+    where: {
+      permissionId: superAdminPermission.id,
+    },
+  });
+
+  // Ensure at least one system admin remains
+  if (totalSystemAdmins <= 1) {
+    throw new Error(ERROR_MESSAGES.LAST_ADMIN);
+  }
+
+  // Remove the SUPER_ADMIN permission from the user
+  await prisma.userPermission.deleteMany({
+    where: {
+      userId,
+      permissionId: superAdminPermission.id,
+    },
+  });
 
   // Get updated user
   const updatedUser = await prisma.user.findUnique({

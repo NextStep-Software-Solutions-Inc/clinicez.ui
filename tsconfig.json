@@ -1,6 +1,10 @@
 {
   "compilerOptions": {
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "target": "es2015",
     "allowJs": true,
     "skipLibCheck": true,
@@ -11,7 +15,7 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "preserve",
+    "jsx": "react-jsx",
     "incremental": true,
     "plugins": [
       {
@@ -19,18 +23,42 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"],
-      "@components/*": ["./src/components/*"],
-      "@hooks/*": ["./src/hooks/*"],
-      "@public/*": ["./public/*"],
-      "@lib/*": ["./src/lib/*"],
-      "@styles/*": ["./src/styles/*"],
-      "@actions/*": ["./src/actions/*"],
-      "@contexts/*": ["./src/contexts/*"],
-      "@services/*": ["./src/services/*"],
-      "@middlewares/*": ["./src/middlewares/*"],
-      "@schemas/*": ["./src/schemas/*"],
-      "@state/*": ["./src/state/*"]
+      "@/*": [
+        "./src/*"
+      ],
+      "@components/*": [
+        "./src/components/*"
+      ],
+      "@hooks/*": [
+        "./src/hooks/*"
+      ],
+      "@public/*": [
+        "./public/*"
+      ],
+      "@lib/*": [
+        "./src/lib/*"
+      ],
+      "@styles/*": [
+        "./src/styles/*"
+      ],
+      "@actions/*": [
+        "./src/actions/*"
+      ],
+      "@contexts/*": [
+        "./src/contexts/*"
+      ],
+      "@services/*": [
+        "./src/services/*"
+      ],
+      "@middlewares/*": [
+        "./src/middlewares/*"
+      ],
+      "@schemas/*": [
+        "./src/schemas/*"
+      ],
+      "@state/*": [
+        "./src/state/*"
+      ]
     }
   },
   "include": [
@@ -38,7 +66,10 @@
     "global.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    ".next/types/**/*.ts"
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules"
+  ]
 }

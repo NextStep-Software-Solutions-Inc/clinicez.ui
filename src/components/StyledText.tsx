@@ -8,7 +8,7 @@ interface TextSegment {
 
 interface StyledTextProps {
   segments: TextSegment[]
-  as?: keyof JSX.IntrinsicElements
+  as?: keyof React.JSX.IntrinsicElements
   className?: string
 }
 

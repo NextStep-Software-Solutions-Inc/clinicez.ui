@@ -26,6 +26,9 @@ import {
   TooltipTrigger,
 } from "@components/ui/tooltip";
 
+// Error message constant to match server-side
+const ERROR_LAST_ADMIN = "Cannot remove the last system admin. At least one system admin must remain.";
+
 interface SystemAdminsTableProps {
   initialData: GetAllSystemAdmins;
 }
@@ -63,7 +66,7 @@ export default function SystemAdminsTable({ initialData }: SystemAdminsTableProp
   const handleRevokeAdmin = async (userId: number, userName: string) => {
     // Check if this is the last system admin
     if (data.total <= 1) {
-      toast.error("Cannot remove the last system admin. At least one system admin must remain.");
+      toast.error(ERROR_LAST_ADMIN);
       return;
     }
 
@@ -187,28 +190,37 @@ export default function SystemAdminsTable({ initialData }: SystemAdminsTableProp
                   </TableCell>
                   <TableCell className="text-right">
                     {!user.isSuperAdmin && (
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <span>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleRevokeAdmin(user.id, `${user.firstName} ${user.lastName}`)}
-                                disabled={data.total <= 1}
-                              >
-                                <UserMinus className="h-4 w-4 mr-2" />
-                                Revoke
-                              </Button>
-                            </span>
-                          </TooltipTrigger>
-                          {data.total <= 1 && (
+                      data.total <= 1 ? (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="inline-block">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  disabled={true}
+                                  className="pointer-events-none"
+                                >
+                                  <UserMinus className="h-4 w-4 mr-2" />
+                                  Revoke
+                                </Button>
+                              </div>
+                            </TooltipTrigger>
                             <TooltipContent>
                               <p>Cannot remove the last system admin</p>
                             </TooltipContent>
-                          )}
-                        </Tooltip>
-                      </TooltipProvider>
+                          </Tooltip>
+                        </TooltipProvider>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRevokeAdmin(user.id, `${user.firstName} ${user.lastName}`)}
+                        >
+                          <UserMinus className="h-4 w-4 mr-2" />
+                          Revoke
+                        </Button>
+                      )
                     )}
                   </TableCell>
                 </TableRow>

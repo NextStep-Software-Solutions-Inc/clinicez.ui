@@ -1,3 +1,5 @@
+"use server";
+
 import { getCachedSession } from "../session.action"
 import prisma from "@lib/prisma";
 

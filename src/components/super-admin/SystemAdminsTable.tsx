@@ -25,6 +25,16 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@components/ui/tooltip";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@components/ui/alert-dialog";
 
 // Error message constant to match server-side
 const ERROR_LAST_ADMIN = "Cannot remove the last system admin. At least one system admin must remain.";
@@ -43,6 +53,8 @@ export default function SystemAdminsTable({ initialData }: SystemAdminsTableProp
   const [availableUsers, setAvailableUsers] = useState<any[]>([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  const [showRevokeDialog, setShowRevokeDialog] = useState(false);
+  const [userToRevoke, setUserToRevoke] = useState<{ id: number; name: string } | null>(null);
 
   const loadData = async (page = 1, searchTerm = search) => {
     setIsLoading(true);
@@ -71,16 +83,23 @@ export default function SystemAdminsTable({ initialData }: SystemAdminsTableProp
       return;
     }
 
-    if (!confirm(`Are you sure you want to revoke system admin privileges from ${userName}?`)) {
-      return;
-    }
+    // Open the confirmation dialog
+    setUserToRevoke({ id: userId, name: userName });
+    setShowRevokeDialog(true);
+  };
+
+  const confirmRevokeAdmin = async () => {
+    if (!userToRevoke) return;
 
     try {
-      await revokeSystemAdminAction({ userId });
+      await revokeSystemAdminAction({ userId: userToRevoke.id });
       toast.success("System admin privileges revoked successfully");
       loadData(data.pageNumber);
     } catch (error: any) {
       toast.error(error.message || "Failed to revoke system admin privileges");
+    } finally {
+      setShowRevokeDialog(false);
+      setUserToRevoke(null);
     }
   };
 
@@ -305,6 +324,21 @@ export default function SystemAdminsTable({ initialData }: SystemAdminsTableProp
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={showRevokeDialog} onOpenChange={setShowRevokeDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Revoke System Admin Privileges</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to revoke system admin privileges from <strong>{userToRevoke?.name}</strong>? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setUserToRevoke(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmRevokeAdmin}>Revoke</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

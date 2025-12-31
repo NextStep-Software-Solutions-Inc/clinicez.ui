@@ -190,38 +190,36 @@ export default function SystemAdminsTable({ initialData }: SystemAdminsTableProp
                     {formatDistance(new Date(user.createdAt), new Date(), { addSuffix: true })}
                   </TableCell>
                   <TableCell className="text-right">
-                    {!user.isSuperAdmin && (
-                      data.total <= 1 ? (
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div className="inline-block">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  disabled={true}
-                                  className="pointer-events-none"
-                                >
-                                  <UserMinus className="h-4 w-4 mr-2" />
-                                  Revoke
-                                </Button>
-                              </div>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>{TOOLTIP_LAST_ADMIN}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      ) : (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleRevokeAdmin(user.id, `${user.firstName} ${user.lastName}`)}
-                        >
-                          <UserMinus className="h-4 w-4 mr-2" />
-                          Revoke
-                        </Button>
-                      )
+                    {data.total <= 1 ? (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="inline-block">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                disabled={true}
+                                className="pointer-events-none"
+                              >
+                                <UserMinus className="h-4 w-4 mr-2" />
+                                Revoke
+                              </Button>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{TOOLTIP_LAST_ADMIN}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRevokeAdmin(user.id, `${user.firstName} ${user.lastName}`)}
+                      >
+                        <UserMinus className="h-4 w-4 mr-2" />
+                        Revoke
+                      </Button>
                     )}
                   </TableCell>
                 </TableRow>

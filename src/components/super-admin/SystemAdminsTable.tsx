@@ -325,7 +325,13 @@ export default function SystemAdminsTable({ initialData }: SystemAdminsTableProp
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={showRevokeDialog} onOpenChange={setShowRevokeDialog}>
+      <AlertDialog 
+        open={showRevokeDialog} 
+        onOpenChange={(open) => {
+          setShowRevokeDialog(open);
+          if (!open) setUserToRevoke(null);
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Revoke System Admin Privileges</AlertDialogTitle>
@@ -334,7 +340,7 @@ export default function SystemAdminsTable({ initialData }: SystemAdminsTableProp
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setUserToRevoke(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={confirmRevokeAdmin}>Revoke</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -635,6 +635,7 @@ export async function generateCaseNumber(
   clinicId?: number
 ): Promise<string> {
   const MAX_SEQUENCE_VALUE = 9999; // For 4-digit format
+  const year = new Date().getFullYear();
   
   const sequence = await prisma.$transaction(async (tx) => {
     let seq = await tx.sequenceGenerator.findFirst({

@@ -15,7 +15,7 @@
     "lint": "next lint",
     "test": "jest",
     "test:watch": "jest --watch",
-    "vercel-build": "prisma generate && node prisma-migrate-deploy.js && next build",
+    "vercel-build": "prisma generate && prisma migrate deploy && next build",
     "postinstall": "prisma generate",
     "migrate": "prisma migrate dev",
     "migrate:status": "prisma migrate status",

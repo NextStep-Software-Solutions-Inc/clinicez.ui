@@ -46,33 +46,41 @@ Components:
 
 Total: 4 + 1 + 8 + 1 + 5 = **19 characters** (consistent for all case numbers)
 
-#### Transaction Numbers (20-24 characters)
+#### Transaction Numbers (19-24 characters, variable)
 ```
 EKAS-YYYYMMDD-XXXXXX          (20 chars - without clinic)
-EKAS-C###-YYYYMMDD-XXXXXX     (24 chars - with clinic, assuming 3-digit clinic ID)
-PHK-YYYYMMDD-XXXXXX           (19 chars - without clinic)
-PHK-C###-YYYYMMDD-XXXXXX      (23 chars - with clinic, assuming 3-digit clinic ID)
+EKAS-C###-YYYYMMDD-XXXXXX     (24 chars - with 3-digit clinic ID)
+PHK-YYYYMMDD-XXXXXX           (19 chars - without clinic)  
+PHK-C###-YYYYMMDD-XXXXXX      (23 chars - with 3-digit clinic ID)
 ```
 
-Example: `EKAS-20260112-000001`, `EKAS-C123-20260112-000456`
+Example: `EKAS-20260112-000001`, `EKAS-C123-20260112-000456`, `PHK-20260112-000001`
 
-Components (without clinic):
-- **Prefix** (4 chars): `EKAS` or `PHK`
+**Components (without clinic):**
+- **Prefix**: `EKAS` (4 chars) or `PHK` (3 chars)
 - **Separator** (1 char): `-`
 - **Date** (8 chars): `YYYYMMDD` format
 - **Separator** (1 char): `-`
 - **Sequence** (6 chars): Daily counter (000001-999999)
 
-Total: 4 + 1 + 8 + 1 + 6 = **20 characters** (or 19 for PHK)
+Total: 
+- EKAS: 4 + 1 + 8 + 1 + 6 = **20 characters**
+- PHK: 3 + 1 + 8 + 1 + 6 = **19 characters**
 
-Components (with clinic):
-- Add clinic identifier: `C###` (variable length based on clinic ID)
-- Add separator: `-`
-
-Total: Up to **24 characters** for typical clinic IDs
-- **Clinic ID** (optional): `C###`
+**Components (with clinic):**
+- **Prefix**: `EKAS` (4 chars) or `PHK` (3 chars)
+- **Separator** (1 char): `-`
+- **Clinic identifier**: `C###` (variable, typically 4-5 chars for 1-3 digit clinic IDs)
+- **Separator** (1 char): `-`
 - **Date** (8 chars): `YYYYMMDD` format
+- **Separator** (1 char): `-`
 - **Sequence** (6 chars): Daily counter (000001-999999)
+
+Total:
+- EKAS with 3-digit clinic: 4 + 1 + 4 + 1 + 8 + 1 + 6 = **25 characters** (e.g., `EKAS-C123-20260112-000456`)
+- PHK with 3-digit clinic: 3 + 1 + 4 + 1 + 8 + 1 + 6 = **24 characters** (e.g., `PHK-C123-20260112-000456`)
+- EKAS with 2-digit clinic: 4 + 1 + 3 + 1 + 8 + 1 + 6 = **24 characters**
+- EKAS with 1-digit clinic: 4 + 1 + 2 + 1 + 8 + 1 + 6 = **23 characters**
 
 ### Why This Format?
 

@@ -46,12 +46,12 @@ Components:
 
 Total: 4 + 1 + 8 + 1 + 5 = **19 characters** (consistent for all case numbers)
 
-#### Transaction Numbers (19-24 characters, variable)
+#### Transaction Numbers (19-25 characters, variable)
 ```
 EKAS-YYYYMMDD-XXXXXX          (20 chars - without clinic)
-EKAS-C###-YYYYMMDD-XXXXXX     (24 chars - with 3-digit clinic ID)
+EKAS-C###-YYYYMMDD-XXXXXX     (25 chars - with 3-digit clinic ID)
 PHK-YYYYMMDD-XXXXXX           (19 chars - without clinic)  
-PHK-C###-YYYYMMDD-XXXXXX      (23 chars - with 3-digit clinic ID)
+PHK-C###-YYYYMMDD-XXXXXX      (24 chars - with 3-digit clinic ID)
 ```
 
 Example: `EKAS-20260112-000001`, `EKAS-C123-20260112-000456`, `PHK-20260112-000001`
@@ -155,6 +155,9 @@ ALTER TABLE "SequenceGenerator" ADD COLUMN "date" TEXT;
 
 -- Step 2: Backfill existing data using updatedAt or createdAt timestamps
 -- This preserves chronological accuracy better than using year + '0101'
+-- Note: This uses PostgreSQL syntax. Adjust for other databases:
+--   MySQL: DATE_FORMAT(COALESCE(updatedAt, createdAt), '%Y%m%d')
+--   SQLite: strftime('%Y%m%d', COALESCE(updatedAt, createdAt))
 UPDATE "SequenceGenerator" 
 SET "date" = TO_CHAR(COALESCE("updatedAt", "createdAt"), 'YYYYMMDD')
 WHERE "date" IS NULL;
@@ -500,6 +503,8 @@ if (EMERGENCY_DISABLE_TIMESTAMP) {
 - 99.9% uptime
 - Database transaction time < 50ms (P95)
 
+**Note**: These targets are realistic for simple database increment operations under normal load. Validation through load testing (Phase 5) will confirm achievability before production rollout. If targets cannot be met, they will be adjusted based on empirical data.
+
 ### Functional Requirements
 - ✅ All case numbers are unique
 - ✅ All transaction numbers are unique
@@ -625,8 +630,11 @@ A: Yes, the `createdAt` option allows generating numbers for specific dates if n
 **Q: How do we handle timezone issues?**
 A: All timestamps use UTC to ensure consistency across regions.
 
-**Q: What if we exceed 99,999 per day?**
-A: Very unlikely, but we can increase to 6 digits if needed (999,999 per day).
+**Q: What if we exceed 99,999 case numbers per day?**
+A: Very unlikely, but we can increase case numbers from 5 to 6 digits if needed (999,999 per day). Transaction numbers already use 6 digits.
+
+**Q: What if we exceed 999,999 transaction numbers per day?**
+A: Extremely unlikely. If needed, we can increase to 7 digits or use sub-second timestamps for even higher capacity.
 
 **Q: How do we search by old format?**
 A: Old numbers remain valid. Database indexes support both formats.

@@ -6,7 +6,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@component
 import { Separator } from "@components/ui/separator";
 import Each from "@components/utils/Each";
 import { useFieldArray, useForm } from "react-hook-form";
-import DisabilityItem  from "./DisabilityItem";
+import DisabilityItem from "./DisabilityItem";
 import { Badge } from "@components/ui/badge";
 import { Plus } from "lucide-react";
 import { Severity } from "@prisma/client";
@@ -18,14 +18,14 @@ export interface DisabilitiesFormProps {
   disabilities: Disability[]
 }
 
-export default function DisabilitiesForm({disabilities, readOnly = true}:DisabilitiesFormProps) {
-  const form = useForm<{disabilities: Disability[]}>({
+export default function DisabilitiesForm({ disabilities, readOnly = true }: DisabilitiesFormProps) {
+  const form = useForm<{ disabilities: Disability[] }>({
     defaultValues: {
       disabilities: disabilities
     }
   })
 
-  const {fields, append, remove, update} = useFieldArray({
+  const { fields, append, remove, update } = useFieldArray({
     control: form.control,
     name: "disabilities",
     keyName: "fieldId"
@@ -39,19 +39,19 @@ export default function DisabilitiesForm({disabilities, readOnly = true}:Disabil
     severity: Severity.MILD,
     dateDiagnosed: null,
     notes: null,
-    isManaged: false 
+    isManaged: false
   }
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex flex-wrap gap-2 items-center">
-            Disabilities <Badge variant="destructive" className="ml-2">{fields.length}</Badge>
+          Disabilities <Badge variant="destructive" className="ml-2">{fields.length}</Badge>
           <ConditionalRender condition={!readOnly}>
             <Button className="ml-auto flex-grow sm:flex-grow-0" onClick={() => append(disabilityInitialValues)}>Add Disability</Button>
           </ConditionalRender>
         </CardTitle>
-        <Separator/>
+        <Separator />
       </CardHeader>
       <CardContent className="space-y-2">
         <Accordion type="multiple" className="w-full space-y-5">
@@ -65,10 +65,10 @@ export default function DisabilitiesForm({disabilities, readOnly = true}:Disabil
               <Each
                 of={fields}
                 fallback={<div className="text-muted-foreground text-center w-full">No declared disabilities.</div>}
-                render={(disability, index) => <DisabilityItem readOnly={readOnly} disability={disability} index={index} remove={remove} update={update}/>}
+                render={(disability, index) => <DisabilityItem readOnly={readOnly} disability={disability} index={index} remove={remove} update={update} />}
               />
               <ConditionalRender condition={!readOnly}>
-                <Button variant="ghost" className="w-full" onClick={() => append(disabilityInitialValues)}><Plus className="mr-2 h-4 w-4"/>Add Disability</Button>
+                <Button variant="ghost" className="w-full" onClick={() => append(disabilityInitialValues)}><Plus className="mr-2 h-4 w-4" />Add Disability</Button>
               </ConditionalRender>
             </AccordionContent>
           </AccordionItem>

@@ -4,6 +4,8 @@ import ClinicListShell from "@/components/v2/clinic/ClinicListShell";
 import Suspend from "@/components/Suspend";
 import HeroBackground from "@/components/HeroBackground";
 
+export const dynamic = "force-dynamic";
+
 export default async function ClinicsPage() {
   const clinics = await getClinicsV2Action();
 

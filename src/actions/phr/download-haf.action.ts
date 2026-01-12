@@ -6,7 +6,7 @@ import { generatePdf, PdfCheckboxMapping, PdfRadioMapping, PdfTextMapping } from
 import { calculateAge, capitalize, centimeterToInch, kilogramsToPounds } from "@/lib/utils";
 import { formatDate } from "@/lib/day-utils";
 import { summarizeImmunizations } from "@/lib/utils/immunization-mapping";
-import { generateCaseNumber } from "@/services/sequence-generator.service";
+import { generateTimestampCaseNumber } from "@/services/sequence-generator.service";
 import prisma from "@lib/prisma";
 
 export const downloadHAFAction = withErrorHandling(async (userId: string) => {
@@ -15,6 +15,7 @@ export const downloadHAFAction = withErrorHandling(async (userId: string) => {
   const phr = await prisma.user.findFirst({
     where: { userId, isActive: true, deletedAt: null },
     select: {
+      id: true,  // Need user ID for updating case number
       firstName: true,
       middleName: true,
       lastName: true,
@@ -22,6 +23,7 @@ export const downloadHAFAction = withErrorHandling(async (userId: string) => {
       dob: true,
       gender: true,
       bloodType: true,  // Blood Type shows like this: "A Negative", "O Positive", etc.
+      caseNumber: true,  // For lazy generation: check if already exists
       PhilHealthRecords: {
         where: { isActive: true, deletedAt: null },
         orderBy: { createdAt: "desc" },
@@ -94,8 +96,7 @@ export const downloadHAFAction = withErrorHandling(async (userId: string) => {
           id: true,
           visualAcuityLeft: true,
           visualAcuityRight: true,
-          status: true,
-          caseNumber: true
+          status: true
         }
       }
     }
@@ -103,19 +104,26 @@ export const downloadHAFAction = withErrorHandling(async (userId: string) => {
 
   if (!phr) throw new Error("User not found");
 
-  // Get or generate case number for this health assessment
-  let caseNumber = phr.PhysicalExaminations?.[0]?.caseNumber;
+  // Get case number for this PHR (lazy generation: generate once, store, reuse)
+  // Each User (PHR) has its own unique health assessment case number
+  let caseNumber: string | null = phr.caseNumber;
 
+  // If not yet assigned, generate once and store it on the User record
   if (!caseNumber) {
-    // Generate new case number (user-level, no clinic)
-    caseNumber = await generateCaseNumber("HEALTH_ASSESSMENT");
+    caseNumber = await generateTimestampCaseNumber("HEALTH_ASSESSMENT");
 
-    // Store it if we have a physical examination record
-    if (phr.PhysicalExaminations?.[0]?.id) {
-      await prisma.physicalExamination.update({
-        where: { id: phr.PhysicalExaminations[0].id },
-        data: { caseNumber }
+    // Store it in the User (PHR) record for future use
+    try {
+      await prisma.user.update({
+        where: { id: phr.id },
+        data: {
+          caseNumber: caseNumber,
+          caseNumberGeneratedAt: new Date()
+        }
       });
+    } catch (error) {
+      // If update fails, still use the generated number
+      console.warn("Failed to store health assessment case number on User, but continuing:", error);
     }
   }
 

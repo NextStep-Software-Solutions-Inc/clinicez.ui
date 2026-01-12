@@ -20,13 +20,13 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@components/ui/chart"
-import { BloodType } from "@prisma/client"
+import { BloodType } from "@prisma/client";
 
-const bt = [...Object.values(BloodType), null] 
+const bt = [...Object.values(BloodType), null]
 const chartConfig: ChartConfig = bt.reduce((config: ChartConfig, type: (typeof bt)[number], index: number) => {
   config[type ?? "UNKNOWN"] = {
     label: type ?? "UNKNOWN",
-    color: `hsl(var(--chart-${index+1 % bt.length}))`, // Cycle through colors if there are more types than colors
+    color: `hsl(var(--chart-${index + 1 % bt.length}))`, // Cycle through colors if there are more types than colors
   };
   return config;
 }, {});

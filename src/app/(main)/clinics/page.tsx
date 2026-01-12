@@ -7,8 +7,10 @@ export const metadata: Metadata = {
   description: "Find a clinic near you. View their services, providers, and more.",
 }
 
+export const dynamic = "force-dynamic";
+
 export default async function Clinics() {
-  
+
   return (
     <div className="container mx-auto my-10">
       <div className="prose max-w-full text-center">
@@ -19,7 +21,7 @@ export default async function Clinics() {
       </div>
       <div className='relative flex flex-col items-center justify-center'>
         <Suspend>
-          <ClinicList/>
+          <ClinicList />
         </Suspend>
       </div>
     </div>

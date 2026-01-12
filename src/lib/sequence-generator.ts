@@ -1,5 +1,3 @@
-"use server"
-
 import prisma from "@/lib/prisma"
 
 /**
@@ -47,7 +45,7 @@ async function withRetry<T>(
 
       // Check if it's a retryable error
       const errorMessage = error instanceof Error ? error.message : String(error);
-      const isRetryable = 
+      const isRetryable =
         errorMessage.includes('Transaction') ||
         errorMessage.includes('deadlock') ||
         errorMessage.includes('lock timeout') ||
@@ -142,7 +140,7 @@ export async function generateTimestampTransactionNumber(
 
   // Format the number based on entity type
   const paddedSequence = sequenceNumber.toString().padStart(6, '0');
-  
+
   if (entityType === 'EKAS_TRANSACTION') {
     if (clinicId) {
       return `EKAS-C${clinicId}-${dateKey}-${paddedSequence}`;

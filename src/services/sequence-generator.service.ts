@@ -75,7 +75,7 @@ async function withRetry<T>(
 
       // Check if it's a retryable error (transaction conflicts, deadlocks)
       const errorMessage = error instanceof Error ? error.message : String(error);
-      const isRetryable = 
+      const isRetryable =
         errorMessage.includes('Transaction') ||
         errorMessage.includes('deadlock') ||
         errorMessage.includes('lock timeout') ||
@@ -242,15 +242,9 @@ export function parseTimestampFromCaseNumber(caseNumber: string): Date | null {
   const day = parseInt(dateStr.substring(6, 8), 10);
 
   const date = new Date(year, month, day);
-  
+
   // Validate the date is valid
   if (isNaN(date.getTime())) return null;
-  
+
   return date;
 }
-
-/**
- * Backwards compatible alias for generateTimestampCaseNumber
- * @deprecated Use generateTimestampCaseNumber instead
- */
-export const generateCaseNumber = generateTimestampCaseNumber;

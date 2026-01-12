@@ -32,47 +32,91 @@ export const downloadEKASAction = withErrorHandling(async (
   const user = userRes.data
   if (!user) throw new Error("User profile not found. Please ensure you have a valid account.")
 
-  // Get case number from consultation ticket if provided
+  // Get case number from consultation ticket if provided (lazy generation with storage)
   let finalCaseNumber: string | null = null
   let consultationTicket = null
 
   if (consultationTicketId) {
     consultationTicket = await prisma.consultationTicket.findUnique({
       where: { id: consultationTicketId },
-      select: { caseNumber: true, clinicId: true }
+      select: {
+        clinicId: true,
+        caseNumber: true,
+        ekasTransactionNumber: true,
+        ekasAuthorizationCode: true
+      }
     })
+
+    // Use stored case number if available
     finalCaseNumber = consultationTicket?.caseNumber || null
+
     // Use clinic from consultation if not provided
     if (!clinicId && consultationTicket?.clinicId) {
       clinicId = consultationTicket.clinicId
     }
   }
 
-  // If no case number from consultation, get the most recent one for this user
+  // If no case number yet, generate one
   if (!finalCaseNumber) {
-    const recentConsultation = await prisma.consultationTicket.findFirst({
-      where: {
-        caseNumber: { not: null },
-        Appointment: {
-          Requesters: {
-            some: {
-              userId: user.id
-            }
+    const { generateTimestampCaseNumber } = await import("@/services/sequence-generator.service");
+    finalCaseNumber = await generateTimestampCaseNumber("HEALTH_ASSESSMENT", clinicId || undefined);
+
+    // Store it in the consultation ticket if linked
+    if (consultationTicketId && consultationTicket) {
+      try {
+        await prisma.consultationTicket.update({
+          where: { id: consultationTicketId },
+          data: {
+            caseNumber: finalCaseNumber,
+            caseNumberGeneratedAt: new Date()
           }
-        }
-      },
-      orderBy: { createdAt: 'desc' },
-      select: { caseNumber: true }
-    })
-    finalCaseNumber = recentConsultation?.caseNumber || null
+        });
+      } catch (error) {
+        // If update fails, still use the generated number
+        console.warn("Failed to store case number, but continuing:", error);
+      }
+    }
   }
 
-  // Generate transaction number and authorization code using sequence generator
-  const transactionSeq = await getNextSequenceNumber('EKAS_TRANSACTION', clinicId || null)
-  const authSeq = await getNextSequenceNumber('EKAS_AUTH_CODE', clinicId || null)
+  // Get transaction number and authorization code (lazy generation: generate once, store, reuse)
+  let finalTransactionNumber: string | null = null
+  let finalAuthCode: string | null = null
 
-  const finalTransactionNumber = formatTransactionNumber(clinicId || null, transactionSeq)
-  const finalAuthCode = formatAuthorizationCode(clinicId || null, authSeq)
+  if (consultationTicketId && consultationTicket) {
+    // Check if already generated and stored
+    finalTransactionNumber = consultationTicket.ekasTransactionNumber || null
+    finalAuthCode = consultationTicket.ekasAuthorizationCode || null
+
+    // If not, generate once and store
+    if (!finalTransactionNumber || !finalAuthCode) {
+      const transactionSeq = await getNextSequenceNumber('EKAS_TRANSACTION', clinicId || null)
+      const authSeq = await getNextSequenceNumber('EKAS_AUTH_CODE', clinicId || null)
+
+      finalTransactionNumber = formatTransactionNumber(clinicId || null, transactionSeq)
+      finalAuthCode = formatAuthorizationCode(clinicId || null, authSeq)
+
+      // Store in database for future use
+      try {
+        await prisma.consultationTicket.update({
+          where: { id: consultationTicketId },
+          data: {
+            ekasTransactionNumber: finalTransactionNumber,
+            ekasAuthorizationCode: finalAuthCode,
+            ekasTransactionGeneratedAt: new Date()
+          }
+        })
+      } catch (error) {
+        console.warn("Failed to store EKAS transaction number, but continuing:", error)
+      }
+    }
+  } else {
+    // No consultation ticket - generate fresh (can't store)
+    const transactionSeq = await getNextSequenceNumber('EKAS_TRANSACTION', clinicId || null)
+    const authSeq = await getNextSequenceNumber('EKAS_AUTH_CODE', clinicId || null)
+
+    finalTransactionNumber = formatTransactionNumber(clinicId || null, transactionSeq)
+    finalAuthCode = formatAuthorizationCode(clinicId || null, authSeq)
+  }
 
   // Get PhilHealth record
   let phr: PhilHealthRecordLite | undefined = hasPhilHealthRecord(user) ? user.PhilHealthRecord?.[0] : undefined

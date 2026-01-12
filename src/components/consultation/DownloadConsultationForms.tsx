@@ -13,14 +13,12 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 interface DownloadConsultationFormsProps {
   userId: string
   consultationTicketId: number
-  caseNumber?: string | null
   patientName?: string
 }
 
 const DownloadConsultationForms: React.FC<DownloadConsultationFormsProps> = ({
   userId,
   consultationTicketId,
-  caseNumber,
   patientName
 }) => {
   const handleConsultationDownload = async () => {
@@ -55,7 +53,6 @@ const DownloadConsultationForms: React.FC<DownloadConsultationFormsProps> = ({
         <Button variant="outline" size="sm" className="gap-2">
           <Download className="h-4 w-4" />
           Download Forms
-          {caseNumber && <span className="text-xs text-muted-foreground ml-1">({caseNumber})</span>}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">

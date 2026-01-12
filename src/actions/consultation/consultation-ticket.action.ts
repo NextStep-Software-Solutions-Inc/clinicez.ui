@@ -171,7 +171,6 @@ export const getConsultationTicketAction = withErrorHandling(cache(async (consul
       subject: true,
       appointmentId: true,
       clinicId: true,
-      caseNumber: true,
       ConsultationTicketHPs: true,
       createdAt: true,
       updatedAt: true,

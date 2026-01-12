@@ -22,7 +22,9 @@
     "migrate:deploy": "prisma migrate deploy",
     "migrate:resolve:rollback": "prisma migrate resolve --rolled-back",
     "migrate:resolve:applied": "prisma migrate resolve --applied",
-    "seed:philhealth": "node prisma/seed-philhealth-member-types.js"
+    "seed:philhealth": "node prisma/seed-philhealth-member-types.js",
+    "db:test": "tsx scripts/test-database.ts",
+    "db:studio": "prisma studio"
   },
   "dependencies": {
     "@azure/storage-blob": "^12.29.1",
@@ -71,6 +73,7 @@
     "cmdk": "^1.1.1",
     "date-fns": "^3.6.0",
     "dayjs": "^1.11.19",
+    "dotenv": "^17.2.3",
     "draft-js": "^0.11.7",
     "embla-carousel-react": "^8.6.0",
     "framer-motion": "^11.18.2",

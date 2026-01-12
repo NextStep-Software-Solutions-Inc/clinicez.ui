@@ -1,7 +1,7 @@
 "use server";
 
 import prisma from "@lib/prisma";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma";
 
 
 export async function resolveOrgUidFromClinicUid(clinicUid: string): Promise<string | null> {
@@ -32,7 +32,7 @@ export const getHealthAnalyticsData = async (orgUid: string) => {
         UserHealthConditions: {
           _count: "desc"
         }
-      }, 
+      },
       where: {
         isActive: true,
         UserHealthConditions: {
@@ -64,7 +64,7 @@ export const getHealthAnalyticsData = async (orgUid: string) => {
             }
           },
           select: {
-            User:{
+            User: {
               select: {
                 gender: true
               }
@@ -100,7 +100,7 @@ export const getHealthAnalyticsData = async (orgUid: string) => {
       },
       where: {
         isActive: true,
-        UserDisabilities:{
+        UserDisabilities: {
           some: {
             User: {
               OrganizationMembers: {
@@ -116,7 +116,7 @@ export const getHealthAnalyticsData = async (orgUid: string) => {
       },
       select: {
         name: true,
-        UserDisabilities: { 
+        UserDisabilities: {
           where: {
             User: {
               OrganizationMembers: {
@@ -125,7 +125,7 @@ export const getHealthAnalyticsData = async (orgUid: string) => {
                     orgUid
                   }
                 }
-              } 
+              }
             }
           },
           select: {
@@ -154,7 +154,7 @@ export const getHealthAnalyticsData = async (orgUid: string) => {
           }
         }
       },
-    }),,
+    }), ,
   ])
 
   return {
@@ -215,7 +215,7 @@ export const getPatientAnalyticsData = async (orgUid: string) => {
       }
     })
   ])
-  
+
   return {
     genderStats,
     bloodTypeStats,

@@ -1,7 +1,7 @@
 "use server";
 
 import prisma from "@lib/prisma";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma";
 import dayjs from "@lib/day-utils";
 import crypt from "crypto";
 
@@ -51,15 +51,15 @@ export const verifyActivationCodeAction = async (email: string, code: string) =>
       }
     });
 
-    await prisma.activationCode.update({ 
+    await prisma.activationCode.update({
       where: { code },
       data: { isUsed: true }
     });
     return true;
   },
-  {
-    timeout: 5000,
-    maxWait: 10000,
-    isolationLevel: Prisma.TransactionIsolationLevel.Serializable
-  })
+    {
+      timeout: 5000,
+      maxWait: 10000,
+      isolationLevel: Prisma.TransactionIsolationLevel.Serializable
+    })
 }

@@ -1,4 +1,4 @@
-import { Organization } from "@prisma/client";
+import { Organization } from "@prisma";
 import Image from "next/image";
 import organizationPlaceholder from "@public/assets/organization_placeholder.jpg";
 import Link from "next/link";
@@ -9,14 +9,14 @@ interface OrganizationCardProps {
 }
 
 export async function OrganizationCard({ organization }: OrganizationCardProps) {
-  const {orgUid, name, description, logo, customUrl} = organization;
+  const { orgUid, name, description, logo, customUrl } = organization;
 
   return (
     <div className="relative group/join hover:scale-105 hover:z-50 transition-all">
-      <Link href={customUrl ? customUrl: `/organizations/${orgUid}`} >
+      <Link href={customUrl ? customUrl : `/organizations/${orgUid}`} >
         <div className="overflow-hidden relative h-[15rem] aspect-video rounded-lg shadow-2xl ">
           <Image src={logo ?? organizationPlaceholder} alt={name} fill className="object-scale-down rounded-lg" />
-          
+
         </div>
       </Link>
       <Link

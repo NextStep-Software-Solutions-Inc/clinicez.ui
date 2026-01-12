@@ -12,7 +12,7 @@ import type {
   PediatricMeasurementInput,
   ActionResponse
 } from "@/types/health-history.types";
-import type { Prisma } from "@prisma/client";
+import type { Prisma } from "@prisma";
 
 // Define the return type for getHealthHistoryAction based on Prisma select
 type HealthHistoryResult = Prisma.UserGetPayload<{

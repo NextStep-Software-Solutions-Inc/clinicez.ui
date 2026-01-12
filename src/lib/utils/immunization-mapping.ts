@@ -1,4 +1,4 @@
-import type { UserVaccination, Vaccine, Dose } from "@prisma/client";
+import type { UserVaccination, Vaccine, Dose } from "@prisma";
 
 export type VaccinationWithRelations = UserVaccination & {
   Vaccine: Vaccine;

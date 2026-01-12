@@ -6,7 +6,7 @@ import { RowDataPacket } from "mysql2";
 import { sendMail } from "./email.action";
 import fs from "fs/promises";
 import path from "path";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma";
 import prisma from "@lib/prisma";
 
 export const getPatientAction = async (email: string) => {
@@ -140,10 +140,10 @@ export const startMigrationTransactionAction = async ({ userId, data, orgUid }: 
       }
     })
   },
-  {
-    timeout: 5000,
-    maxWait: 10000,
-    isolationLevel: Prisma.TransactionIsolationLevel.Serializable
-  })
+    {
+      timeout: 5000,
+      maxWait: 10000,
+      isolationLevel: Prisma.TransactionIsolationLevel.Serializable
+    })
 
 }

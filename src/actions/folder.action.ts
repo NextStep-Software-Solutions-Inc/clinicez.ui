@@ -2,7 +2,7 @@
 
 import { hasCodeProperty, hasContextProperty } from "@/lib/utils";
 import { withErrorHandling } from "@/lib/with-error-handling";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma";
 import { findUserSafely } from "@/lib/user-sync";
 import { withRetry } from "@/lib/database-health";
 import prisma from "@lib/prisma";
@@ -99,31 +99,31 @@ export const createFolderAction = withErrorHandling(async ({ name, userId, clini
   if (hasCodeProperty(error)) {
     // Handle Prisma specific errors
     switch (error.code) {
-    case "P2002":
-      // Unique constraint violation
-      if (hasContextProperty(context)) {
-        const folderName = (context.args[0] as { name?: string })?.name;
-        return folderName
-          ? `Folder with name "${folderName}" already exists.`
-          : "A folder with this name already exists.";
-      }
-      return "A folder with this name already exists.";
+      case "P2002":
+        // Unique constraint violation
+        if (hasContextProperty(context)) {
+          const folderName = (context.args[0] as { name?: string })?.name;
+          return folderName
+            ? `Folder with name "${folderName}" already exists.`
+            : "A folder with this name already exists.";
+        }
+        return "A folder with this name already exists.";
 
-    case "P2003":
-      return "Invalid user reference. Please try logging out and back in.";
+      case "P2003":
+        return "Invalid user reference. Please try logging out and back in.";
 
-    case "P2025":
-      return "User not found. Please try logging out and back in.";
+      case "P2025":
+        return "User not found. Please try logging out and back in.";
 
-    case "P1001":
-      return "Database connection error. Please try again.";
+      case "P1001":
+        return "Database connection error. Please try again.";
 
-    case "P2034":
-      return "Transaction failed due to concurrent operations. Please try again.";
+      case "P2034":
+        return "Transaction failed due to concurrent operations. Please try again.";
 
-    default:
-      console.error(`Unhandled Prisma error code: ${error.code}`);
-      return "Failed to create folder. Please try again.";
+      default:
+        console.error(`Unhandled Prisma error code: ${error.code}`);
+        return "Failed to create folder. Please try again.";
     }
   }
 

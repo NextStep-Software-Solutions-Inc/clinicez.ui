@@ -58,6 +58,9 @@
       ],
       "@state/*": [
         "./src/state/*"
+      ],
+      "@prisma": [
+        "./app/generated/prisma/client"
       ]
     }
   },

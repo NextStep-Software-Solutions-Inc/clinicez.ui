@@ -6,9 +6,9 @@
 -- 2. Renames LaboratoryDiagnostic -> LaboratoryProcedure
 -- 3. Adds HeartStationProcedure master table
 -- 4. Creates clinic-level procedure tables
--- 5. Creates junction tables for requests
--- 6. Adds ProcedureUsageHistory table
--- 7. Adds ClinicHeartStationRequest table
+-- 5. Creates ClinicHeartStationRequest table
+-- 6. Creates junction tables for requests
+-- 7. Adds ProcedureUsageHistory table
 -- 8. Migrates existing data
 
 -- Step 1: Rename master diagnostic tables to procedure tables
@@ -112,7 +112,57 @@ ALTER TABLE "ClinicHeartStationProcedure" ADD CONSTRAINT "ClinicHeartStationProc
 ALTER TABLE "ClinicHeartStationProcedure" ADD CONSTRAINT "ClinicHeartStationProcedure_masterProcedureId_fkey" 
   FOREIGN KEY ("masterProcedureId") REFERENCES "HeartStationProcedure"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
 
--- Step 8: Migrate existing data - Create clinic procedures from existing diagnostic data
+-- Step 8: Create ClinicHeartStationRequest table BEFORE junction tables
+CREATE TABLE "ClinicHeartStationRequest" (
+    "id" SERIAL NOT NULL,
+    "clinicId" INTEGER NOT NULL,
+    "documentTemplateId" INTEGER NOT NULL,
+    "clinicPatientId" INTEGER NOT NULL,
+    "hpId" INTEGER NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdBy" INTEGER NOT NULL,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "history" TEXT,
+    "impression" TEXT,
+    "reason" TEXT,
+    "updatedBy" INTEGER,
+    "deletedAt" TIMESTAMP(3),
+    "deletedBy" INTEGER,
+    "serialNumber" TEXT NOT NULL,
+    "consultationTicketId" INTEGER NOT NULL,
+
+    CONSTRAINT "ClinicHeartStationRequest_pkey" PRIMARY KEY ("id")
+);
+
+-- Step 9: Create indexes and constraints for ClinicHeartStationRequest
+CREATE UNIQUE INDEX "ClinicHeartStationRequest_serialNumber_key" ON "ClinicHeartStationRequest"("serialNumber");
+
+ALTER TABLE "ClinicHeartStationRequest" ADD CONSTRAINT "ClinicHeartStationRequest_clinicId_fkey" 
+  FOREIGN KEY ("clinicId") REFERENCES "Clinic"("id") ON DELETE CASCADE ON UPDATE NO ACTION;
+
+ALTER TABLE "ClinicHeartStationRequest" ADD CONSTRAINT "ClinicHeartStationRequest_clinicPatientId_fkey" 
+  FOREIGN KEY ("clinicPatientId") REFERENCES "ClinicPatient"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+ALTER TABLE "ClinicHeartStationRequest" ADD CONSTRAINT "ClinicHeartStationRequest_consultationTicketId_fkey" 
+  FOREIGN KEY ("consultationTicketId") REFERENCES "ConsultationTicket"("id") ON DELETE CASCADE ON UPDATE NO ACTION;
+
+ALTER TABLE "ClinicHeartStationRequest" ADD CONSTRAINT "ClinicHeartStationRequest_createdBy_fkey" 
+  FOREIGN KEY ("createdBy") REFERENCES "User"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+ALTER TABLE "ClinicHeartStationRequest" ADD CONSTRAINT "ClinicHeartStationRequest_deletedBy_fkey" 
+  FOREIGN KEY ("deletedBy") REFERENCES "User"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+ALTER TABLE "ClinicHeartStationRequest" ADD CONSTRAINT "ClinicHeartStationRequest_documentTemplateId_fkey" 
+  FOREIGN KEY ("documentTemplateId") REFERENCES "DocumentTemplate"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+ALTER TABLE "ClinicHeartStationRequest" ADD CONSTRAINT "ClinicHeartStationRequest_hpId_fkey" 
+  FOREIGN KEY ("hpId") REFERENCES "HealthcareProvider"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+ALTER TABLE "ClinicHeartStationRequest" ADD CONSTRAINT "ClinicHeartStationRequest_updatedBy_fkey" 
+  FOREIGN KEY ("updatedBy") REFERENCES "User"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- Step 10: Migrate existing data - Create clinic procedures from existing diagnostic data
 -- For Imaging: Create clinic procedures for each clinic that has used imaging diagnostics
 INSERT INTO "ClinicImagingProcedure" ("clinicId", "masterProcedureId", "name", "description", "isActive", "createdAt", "updatedAt")
 SELECT DISTINCT 
@@ -143,7 +193,7 @@ JOIN "ClinicLaboratoryRequest" clr ON lrd."clinicLaboratoryRequestId" = clr."id"
 JOIN "LaboratoryProcedure" lp ON lrd."laboratoryDiagnosticId" = lp."id"
 ON CONFLICT ("clinicId", "name") DO NOTHING;
 
--- Step 9: Create new junction tables
+-- Step 11: Create new junction tables
 CREATE TABLE "ClinicImagingRequestProcedure" (
     "id" SERIAL NOT NULL,
     "clinicImagingRequestId" INTEGER NOT NULL,
@@ -168,12 +218,12 @@ CREATE TABLE "ClinicHeartStationRequestProcedure" (
     CONSTRAINT "ClinicHeartStationRequestProcedure_pkey" PRIMARY KEY ("id")
 );
 
--- Step 10: Create unique constraints on junction tables
+-- Step 12: Create unique constraints on junction tables
 CREATE UNIQUE INDEX "unique_clinic_imaging_request_procedure" ON "ClinicImagingRequestProcedure"("clinicImagingRequestId", "clinicImagingProcedureId");
 CREATE UNIQUE INDEX "unique_clinic_laboratory_request_procedure" ON "ClinicLaboratoryRequestProcedure"("clinicLaboratoryRequestId", "clinicLaboratoryProcedureId");
 CREATE UNIQUE INDEX "unique_clinic_heart_station_request_procedure" ON "ClinicHeartStationRequestProcedure"("clinicHeartStationRequestId", "clinicHeartStationProcedureId");
 
--- Step 11: Add foreign key constraints for junction tables
+-- Step 13: Add foreign key constraints for junction tables
 ALTER TABLE "ClinicImagingRequestProcedure" ADD CONSTRAINT "ClinicImagingRequestProcedure_clinicImagingRequestId_fkey" 
   FOREIGN KEY ("clinicImagingRequestId") REFERENCES "ClinicImagingRequest"("id") ON DELETE CASCADE ON UPDATE NO ACTION;
 
@@ -192,7 +242,7 @@ ALTER TABLE "ClinicHeartStationRequestProcedure" ADD CONSTRAINT "ClinicHeartStat
 ALTER TABLE "ClinicHeartStationRequestProcedure" ADD CONSTRAINT "ClinicHeartStationRequestProcedure_clinicHeartStationProcedureId_fkey" 
   FOREIGN KEY ("clinicHeartStationProcedureId") REFERENCES "ClinicHeartStationProcedure"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
 
--- Step 12: Migrate existing junction table data
+-- Step 14: Migrate existing junction table data
 INSERT INTO "ClinicImagingRequestProcedure" ("clinicImagingRequestId", "clinicImagingProcedureId")
 SELECT 
   ird."clinicImagingRequestId",
@@ -213,11 +263,11 @@ JOIN "LaboratoryProcedure" lp ON lrd."laboratoryDiagnosticId" = lp."id"
 JOIN "ClinicLaboratoryProcedure" clp ON clp."clinicId" = clr."clinicId" AND clp."masterProcedureId" = lp."id"
 ON CONFLICT DO NOTHING;
 
--- Step 13: Drop old junction tables
+-- Step 15: Drop old junction tables
 DROP TABLE "ClinicImagingRequestDiagnostic";
 DROP TABLE "ClinicLaboratoryRequestDiagnostic";
 
--- Step 14: Create ProcedureUsageHistory table
+-- Step 16: Create ProcedureUsageHistory table
 CREATE TABLE "ProcedureUsageHistory" (
     "id" SERIAL NOT NULL,
     "userId" INTEGER NOT NULL,
@@ -230,65 +280,15 @@ CREATE TABLE "ProcedureUsageHistory" (
     CONSTRAINT "ProcedureUsageHistory_pkey" PRIMARY KEY ("id")
 );
 
--- Step 15: Create indexes for ProcedureUsageHistory
+-- Step 17: Create indexes for ProcedureUsageHistory
 CREATE INDEX "ProcedureUsageHistory_userId_clinicId_procedureType_idx" ON "ProcedureUsageHistory"("userId", "clinicId", "procedureType");
 CREATE INDEX "ProcedureUsageHistory_usedAt_idx" ON "ProcedureUsageHistory"("usedAt");
 
--- Step 16: Add foreign key constraints for ProcedureUsageHistory
+-- Step 18: Add foreign key constraints for ProcedureUsageHistory
 ALTER TABLE "ProcedureUsageHistory" ADD CONSTRAINT "ProcedureUsageHistory_userId_fkey" 
   FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE NO ACTION;
 
 ALTER TABLE "ProcedureUsageHistory" ADD CONSTRAINT "ProcedureUsageHistory_clinicId_fkey" 
   FOREIGN KEY ("clinicId") REFERENCES "Clinic"("id") ON DELETE CASCADE ON UPDATE NO ACTION;
-
--- Step 17: Create ClinicHeartStationRequest table
-CREATE TABLE "ClinicHeartStationRequest" (
-    "id" SERIAL NOT NULL,
-    "clinicId" INTEGER NOT NULL,
-    "documentTemplateId" INTEGER NOT NULL,
-    "clinicPatientId" INTEGER NOT NULL,
-    "hpId" INTEGER NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "createdBy" INTEGER NOT NULL,
-    "isActive" BOOLEAN NOT NULL DEFAULT true,
-    "history" TEXT,
-    "impression" TEXT,
-    "reason" TEXT,
-    "updatedBy" INTEGER,
-    "deletedAt" TIMESTAMP(3),
-    "deletedBy" INTEGER,
-    "serialNumber" TEXT NOT NULL,
-    "consultationTicketId" INTEGER NOT NULL,
-
-    CONSTRAINT "ClinicHeartStationRequest_pkey" PRIMARY KEY ("id")
-);
-
--- Step 18: Create indexes and constraints for ClinicHeartStationRequest
-CREATE UNIQUE INDEX "ClinicHeartStationRequest_serialNumber_key" ON "ClinicHeartStationRequest"("serialNumber");
-
-ALTER TABLE "ClinicHeartStationRequest" ADD CONSTRAINT "ClinicHeartStationRequest_clinicId_fkey" 
-  FOREIGN KEY ("clinicId") REFERENCES "Clinic"("id") ON DELETE CASCADE ON UPDATE NO ACTION;
-
-ALTER TABLE "ClinicHeartStationRequest" ADD CONSTRAINT "ClinicHeartStationRequest_clinicPatientId_fkey" 
-  FOREIGN KEY ("clinicPatientId") REFERENCES "ClinicPatient"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
-
-ALTER TABLE "ClinicHeartStationRequest" ADD CONSTRAINT "ClinicHeartStationRequest_consultationTicketId_fkey" 
-  FOREIGN KEY ("consultationTicketId") REFERENCES "ConsultationTicket"("id") ON DELETE CASCADE ON UPDATE NO ACTION;
-
-ALTER TABLE "ClinicHeartStationRequest" ADD CONSTRAINT "ClinicHeartStationRequest_createdBy_fkey" 
-  FOREIGN KEY ("createdBy") REFERENCES "User"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
-
-ALTER TABLE "ClinicHeartStationRequest" ADD CONSTRAINT "ClinicHeartStationRequest_deletedBy_fkey" 
-  FOREIGN KEY ("deletedBy") REFERENCES "User"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
-
-ALTER TABLE "ClinicHeartStationRequest" ADD CONSTRAINT "ClinicHeartStationRequest_documentTemplateId_fkey" 
-  FOREIGN KEY ("documentTemplateId") REFERENCES "DocumentTemplate"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
-
-ALTER TABLE "ClinicHeartStationRequest" ADD CONSTRAINT "ClinicHeartStationRequest_hpId_fkey" 
-  FOREIGN KEY ("hpId") REFERENCES "HealthcareProvider"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
-
-ALTER TABLE "ClinicHeartStationRequest" ADD CONSTRAINT "ClinicHeartStationRequest_updatedBy_fkey" 
-  FOREIGN KEY ("updatedBy") REFERENCES "User"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
 
 -- Migration complete

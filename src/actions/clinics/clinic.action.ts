@@ -44,8 +44,7 @@ export type GetClinicsFilters = {
 export type GetClinicsV2 = Awaited<ReturnType<typeof getClinicsV2Action>>;
 export const getClinicsV2Action = withErrorHandling(
   cache(async (filters?: GetClinicsFilters) => {
-    await sessionCheck();
-
+    // No auth required for v2 public clinic list
     const { clinicUid, orgUid, isPublic } = filters || {};
 
     const clinics = await prisma.clinic.findMany({

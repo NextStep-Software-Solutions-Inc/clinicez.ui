@@ -4,6 +4,8 @@ import UserPreferences from "./UserPreferences";
 import { Metadata } from "next";
 import { getMyUserPreferenceAction } from "@actions/users/preference.action";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "User Preferences | Account Settings",
   description: "User preferences and account settings.",

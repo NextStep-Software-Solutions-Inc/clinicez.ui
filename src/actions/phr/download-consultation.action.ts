@@ -2,7 +2,7 @@
 
 import { withErrorHandling } from "@/lib/with-error-handling";
 import { generatePdf, PdfCheckboxMapping, PdfRadioMapping, PdfTextMapping } from "./utils/philhealth-pdf";
-import { generateCaseNumber } from "@/services/sequence-generator.service";
+import { generateTimestampCaseNumber } from "@/services/sequence-generator.service";
 import prisma from "@/lib/prisma";
 import { calculateAge, capitalize, centimeterToInch, kilogramsToPounds } from "@/lib/utils";
 import { formatDate } from "@/lib/day-utils";
@@ -143,18 +143,34 @@ export const downloadConsultationAction = withErrorHandling(async (userId?: stri
     }
   }
 
-  // Get or generate case number for this consultation
-  let caseNumber = consultation?.caseNumber;
+  // Get case number (lazy generation: generate once, store, reuse)
+  let caseNumber: string | null = null;
 
-  if (consultation && !caseNumber) {
-    // Generate new case number (clinic-specific)
-    caseNumber = await generateCaseNumber("CONSULTATION", consultation.clinicId);
+  if (consultation) {
+    // Check if number already exists in database
+    caseNumber = consultation.caseNumber;
 
-    // Store it
-    await prisma.consultationTicket.update({
-      where: { id: consultation.id },
-      data: { caseNumber }
-    });
+    // If not, generate once and store
+    if (!caseNumber) {
+      caseNumber = await generateTimestampCaseNumber(
+        "CONSULTATION",
+        consultation.clinicId
+      );
+
+      // Store it in the database for future use
+      try {
+        await prisma.consultationTicket.update({
+          where: { id: consultation.id },
+          data: {
+            caseNumber,
+            caseNumberGeneratedAt: new Date()
+          }
+        });
+      } catch (error) {
+        // If update fails (e.g., duplicate), still use the generated number
+        console.warn("Failed to store case number, but continuing:", error);
+      }
+    }
   }
 
   // Extract ICD-10 codes from imaging diagnostics

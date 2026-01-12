@@ -11,13 +11,11 @@ import { downloadConsultationAction } from "@/actions/phr/download-consultation.
 interface DownloadConsultationFormProps {
   userId: string;
   consultationTicketId: number;
-  caseNumber?: string | null;
 }
 
 const DownloadConsultationForm: React.FC<DownloadConsultationFormProps> = ({
   userId,
-  consultationTicketId,
-  caseNumber
+  consultationTicketId
 }) => {
   const handleConsultationDownload = async () => {
     toast.promise(promiseWrapper(downloadConsultationAction)(userId, consultationTicketId), {
@@ -41,7 +39,6 @@ const DownloadConsultationForm: React.FC<DownloadConsultationFormProps> = ({
     >
       <Download className="h-4 w-4" />
       Download Consultation Form
-      {caseNumber && <span className="text-xs text-muted-foreground ml-1">({caseNumber})</span>}
     </Button>
   )
 }

@@ -58,6 +58,8 @@ model User {
   religion                         String?
   suffix                           String?
   telephone                        String?
+  caseNumber                       String?                          @unique
+  caseNumberGeneratedAt            DateTime?
   ActivationCodes                  ActivationCode[]
   CompletedByAppointments          AppointmentAttribute[]           @relation("CompletedBy")
   ReceivedByAppointments           AppointmentAttribute[]           @relation("ReceivedBy")
@@ -85,7 +87,7 @@ model User {
   ReferralSlipsUpdated             ClinicReferralSlip[]             @relation("ReferralSlipUpdatedBy")
   FamilyMedicalHistories           FamilyMedicalHistory[]
   Folders                          Folder[]
-  HealthcareProviders              HealthcareProvider?
+  HealthcareProvider              HealthcareProvider?
   MedicalHistories                 MedicalHistory[]
   Medications                      Medication[]
   MedicinesCreated                 Medicine[]                       @relation("MedicineCreatedBy")
@@ -130,6 +132,8 @@ model User {
   StudentRecords                   UserStudentRecord[]
   UserVaccinations                 UserVaccination[]
   VitalSigns                       VitalSign[]
+
+  @@index([caseNumber])
 }
 
 model PhilHealthRecord {
@@ -1321,6 +1325,8 @@ model Appointment {
   clinicId               Int
   subject                String
   complaint              String?
+  caseNumber             String?                 @unique
+  caseNumberGeneratedAt  DateTime?
   isActive               Boolean                 @default(true)
   createdAt              DateTime                @default(now())
   updatedAt              DateTime                @updatedAt
@@ -1336,6 +1342,7 @@ model Appointment {
   PreAssessmentNotes     PreAssessmentNote[]
 
   @@index([clinicId], map: "clinic_appointment_index")
+  @@index([caseNumber])
 }
 
 model AppointmentAttachment {
@@ -1500,11 +1507,15 @@ model ConsultationTicket {
   appointmentId               Int?
   clinicId                    Int
   subject                     String?                      @default("")
+  caseNumber                  String?                      @unique
+  caseNumberGeneratedAt       DateTime?
+  ekasTransactionNumber       String?                      @unique
+  ekasTransactionGeneratedAt  DateTime?
+  ekasAuthorizationCode       String?
   createdAt                   DateTime                     @default(now())
   updatedAt                   DateTime                     @updatedAt
   isActive                    Boolean                      @default(true)
   isArchived                  Boolean                      @default(false)
-  caseNumber                  String?
   ImagingRequests             ClinicImagingRequest[]
   LaboratoryRequests          ClinicLaboratoryRequest[]
   MedicalCertificates         ClinicMedicalCertificate[]
@@ -1520,6 +1531,7 @@ model ConsultationTicket {
   Prescriptions               Prescription[]
 
   @@index([caseNumber])
+  @@index([ekasTransactionNumber])
 }
 
 model ConsultationTicketHP {
@@ -1622,6 +1634,8 @@ model Action {
 model Prescription {
   id                   Int                @id @default(autoincrement())
   serialNumber         String?            @unique
+  transactionNumber    String?            @unique
+  transactionGeneratedAt DateTime?
   name                 String?
   remarks              String?
   consultationTicketId Int
@@ -1647,6 +1661,7 @@ model Prescription {
 
   @@index([clinicId, patientId, hpId, consultationTicketId], map: "prescription_index")
   @@index([templateId], map: "prescription_template_index")
+  @@index([transactionNumber])
 }
 
 model Medicine {
@@ -1775,6 +1790,8 @@ model ClinicMedicalCertificate {
   findingId            Int
   classificationId     Int
   serialNumber         String
+  transactionNumber    String?                          @unique
+  transactionGeneratedAt DateTime?
   consultationTicketId Int
   Classification       MedicalCertificateClassification @relation(fields: [classificationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   Clinic               Clinic                           @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
@@ -1787,6 +1804,8 @@ model ClinicMedicalCertificate {
   HealthCareProvider   HealthcareProvider               @relation(fields: [hpId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   Reason               MedicalCertificateReason         @relation(fields: [reasonId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   UpdatedBy            User?                            @relation("MedicalCertificateUpdatedBy", fields: [updatedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([transactionNumber])
 }
 
 model MedicalCertificateReason {
@@ -1864,6 +1883,8 @@ model ClinicImagingRequest {
   deletedAt                 DateTime?
   deletedBy                 Int?
   serialNumber              String                           @unique
+  transactionNumber         String?                          @unique
+  transactionGeneratedAt    DateTime?
   consultationTicketId      Int
   Clinic                    Clinic                           @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   ClinicPatient             ClinicPatient                    @relation(fields: [clinicPatientId], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -1874,6 +1895,8 @@ model ClinicImagingRequest {
   HealthCareProvider        HealthcareProvider               @relation(fields: [hpId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   UpdatedBy                 User?                            @relation("ImagingRequestUpdatedBy", fields: [updatedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
   ImagingRequestDiagnostics ClinicImagingRequestDiagnostic[]
+
+  @@index([transactionNumber])
 }
 
 model ClinicLaboratoryRequest {
@@ -1891,6 +1914,8 @@ model ClinicLaboratoryRequest {
   deletedAt                    DateTime?
   deletedBy                    Int?
   serialNumber                 String                              @unique
+  transactionNumber            String?                             @unique
+  transactionGeneratedAt       DateTime?
   consultationTicketId         Int
   Clinic                       Clinic                              @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   ClinicPatient                ClinicPatient                       @relation(fields: [clinicPatientId], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -1901,6 +1926,8 @@ model ClinicLaboratoryRequest {
   HealthCareProvider           HealthcareProvider                  @relation(fields: [hpId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   UpdatedBy                    User?                               @relation("LaboratoryRequestUpdatedBy", fields: [updatedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
   LaboratoryRequestDiagnostics ClinicLaboratoryRequestDiagnostic[]
+
+  @@index([transactionNumber])
 }
 
 model ClinicReferralSlip {
@@ -1917,6 +1944,8 @@ model ClinicReferralSlip {
   deletedAt            DateTime?
   deletedBy            Int?
   serialNumber         String             @unique
+  transactionNumber    String?            @unique
+  transactionGeneratedAt DateTime?
   referredTo           String?
   consultationTicketId Int
   appointmentId        Int
@@ -1931,6 +1960,8 @@ model ClinicReferralSlip {
   CreatedBy            User               @relation("ReferralSlipCreatedBy", fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
   DeletedBy            User?              @relation("ReferralSlipDeletedBy", fields: [deletedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
   DocumentTemplate     DocumentTemplate   @relation(fields: [documentTemplateId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([transactionNumber])
   UpdatedBy            User?              @relation("ReferralSlipUpdatedBy", fields: [updatedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
@@ -2039,22 +2070,20 @@ model ObGyneHistory {
 }
 
 model PhysicalExamination {
-  id                Int        @id @default(autoincrement())
-  userId            Int
-  vitalSignId       Int?
-  visualAcuityLeft  String?
-  visualAcuityRight String?
-  status            String?
-  createdAt         DateTime   @default(now())
-  updatedAt         DateTime   @updatedAt
-  deletedAt         DateTime?
-  caseNumber        String?
-  User              User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  VitalSign         VitalSign? @relation(fields: [vitalSignId], references: [id])
+  id                        Int        @id @default(autoincrement())
+  userId                    Int
+  vitalSignId               Int?
+  visualAcuityLeft          String?
+  visualAcuityRight         String?
+  status                    String?
+  createdAt                 DateTime   @default(now())
+  updatedAt                 DateTime   @updatedAt
+  deletedAt                 DateTime?
+  User                      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  VitalSign                 VitalSign? @relation(fields: [vitalSignId], references: [id])
 
   @@index([userId])
   @@index([vitalSignId])
-  @@index([caseNumber])
 }
 
 model PediatricMeasurement {
@@ -2087,20 +2116,6 @@ model AppointmentTag {
   HealthcareProvider   HealthcareProvider @relation(fields: [healthcareProviderId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@unique([appointmentId, healthcareProviderId])
-}
-
-model SequenceGenerator {
-  id           Int      @id @default(autoincrement())
-  entityType   String
-  clinicId     Int?
-  year         Int
-  currentValue Int      @default(0)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  Clinic       Clinic?  @relation(fields: [clinicId], references: [id], onDelete: Cascade)
-
-  @@unique([entityType, clinicId, year], name: "unique_sequence")
-  @@index([clinicId, year])
 }
 
 enum Severity {
@@ -2168,4 +2183,20 @@ enum ReceiptCodeStatus {
 enum PhilHealthMemberCategory {
   DIRECT
   INDIRECT
+}
+
+// Sequence Generator for auto-incrementing case numbers
+model SequenceGenerator {
+  id           Int      @id @default(autoincrement())
+  entityType   String // "HEALTH_ASSESSMENT" | "CONSULTATION" | "EKAS_TRANSACTION" | "EKAS_AUTH_CODE"
+  clinicId     Int? // null for personal health records (HAF)
+  date         String // Format: "YYYYMMDD" for timestamp-based sequences (generated in app code)
+  currentValue Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  Clinic       Clinic?  @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+
+  @@unique([entityType, clinicId, date], name: "unique_sequence")
+  @@index([clinicId, date])
+  @@index([date])
 }

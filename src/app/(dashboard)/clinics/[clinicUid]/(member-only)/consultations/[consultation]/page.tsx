@@ -56,7 +56,6 @@ export default async function ConsultationPage(props: AppRouterPageRouteOpts) {
           <DownloadConsultationForms
             userId={patient?.userId || ""}
             consultationTicketId={consultationId}
-            caseNumber={consultation.data.caseNumber}
             patientName={`${patient?.lastName}, ${patient?.firstName}`}
           />
           <ModifyMedicationSheet readonly={isResolved} />

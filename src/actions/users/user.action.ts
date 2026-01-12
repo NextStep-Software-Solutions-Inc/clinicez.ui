@@ -177,7 +177,7 @@ export const getUserAction = withErrorHandling(cache(async (key: string, orgUid?
       } : {},
     },
     include: {
-      HealthcareProviders: {
+      HealthcareProvider: {
         where: {
           isActive: true,
         },

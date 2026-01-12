@@ -29,6 +29,13 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
 
+## Documentation
+
+- **[Sequence Number Generation](./docs/SEQUENCE_NUMBER_GENERATION.md)** - Comprehensive guide on how case numbers and transaction numbers are generated and maintained
+- **[Sequence Number Generation Summary](./docs/SEQUENCE_NUMBER_GENERATION_SUMMARY.md)** - Executive summary and quick reference
+- [EMR Preview Enhancement](./docs/EMR_PREVIEW_ENHANCEMENT.md)
+- [Return Appointment Assignment](./docs/RETURN_APPOINTMENT_ASSIGNMENT.md)
+
 ## Deploy on Vercel
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.

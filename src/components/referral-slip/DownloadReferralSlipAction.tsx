@@ -27,7 +27,7 @@ const DownloadReferralSlipAction = React.forwardRef<
         const data = res.data
         if (!data) throw new Error("No data returned")
 
-        const referringHP = data.CreatedBy?.HealthcareProviders?.[0]
+        const referringHP = data.CreatedBy?.HealthcareProvider
         const referringDoctorName = formatHealthcareProviderName(
           { hpProfile: referringHP?.HPProfile || undefined, user: data.CreatedBy || undefined }
         )

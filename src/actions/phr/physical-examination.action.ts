@@ -8,7 +8,6 @@ export interface PhysicalExaminationData {
   visualAcuityLeft?: string | null;
   visualAcuityRight?: string | null;
   status?: string | null;
-  caseNumber?: string | null;
 }
 
 /**
@@ -41,7 +40,6 @@ export const getPhysicalExaminationAction = withErrorHandling(
         visualAcuityLeft: true,
         visualAcuityRight: true,
         status: true,
-        caseNumber: true,
         createdAt: true,
         updatedAt: true,
       },

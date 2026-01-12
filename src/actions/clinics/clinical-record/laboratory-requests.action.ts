@@ -38,7 +38,7 @@ export const getLaboratoryRequestsAction = withErrorHandling(async (filters: Get
       impression: true,
       _count: {
         select: {
-          LaboratoryRequestDiagnostics: true,
+          LaboratoryRequestProcedures: true,
         }
       },
       createdAt: true,
@@ -68,9 +68,9 @@ export const getLaboratoryRequestsAction = withErrorHandling(async (filters: Get
           }
         }
       },
-      LaboratoryRequestDiagnostics: {
+      LaboratoryRequestProcedures: {
         include: {
-          LaboratoryDiagnostic: {
+          LaboratoryProcedure: {
             select: {
               id: true,
               name: true,
@@ -130,9 +130,9 @@ export const getLaboratoryRequestAction = withErrorHandling(async (id: number) =
           ProfessionalDetails: true,
         }
       },
-      LaboratoryRequestDiagnostics: {
+      LaboratoryRequestProcedures: {
         include: {
-          LaboratoryDiagnostic: {
+          LaboratoryProcedure: {
             select: {
               id: true,
               name: true,
@@ -209,9 +209,9 @@ export const createLaboratoryRequestAction = withErrorHandling(async (input: Cre
         ConsultationTicket: { connect: { id: consultationTicketId } },
         DocumentTemplate: { connect: { id: laboratoryTemplate.id } },
         CreatedBy: { connect: { id: createdBy } },
-        LaboratoryRequestDiagnostics: {
+        LaboratoryRequestProcedures: {
           create: diagnosticIds.map(diagnosticId => ({
-            laboratoryDiagnosticId: diagnosticId,
+            clinicLaboratoryProcedureId: diagnosticId,
           })),
         },
         isActive: true,
@@ -274,15 +274,15 @@ export const updateLaboratoryRequestAction = withErrorHandling(async (input: Upd
     });
 
     if (diagnosticIds !== undefined) {
-      await prisma.clinicLaboratoryRequestDiagnostic.deleteMany({
+      await prisma.clinicLaboratoryRequestProcedure.deleteMany({
         where: { clinicLaboratoryRequestId: id }
       });
 
       if (diagnosticIds.length > 0) {
-        await prisma.clinicLaboratoryRequestDiagnostic.createMany({
+        await prisma.clinicLaboratoryRequestProcedure.createMany({
           data: diagnosticIds.map(diagnosticId => ({
             clinicLaboratoryRequestId: id,
-            laboratoryDiagnosticId: diagnosticId,
+            clinicLaboratoryProcedureId: diagnosticId,
           }))
         });
       }

@@ -2,7 +2,6 @@
 import "server-only";
 
 import prisma from "@lib/prisma";
-import { Prisma } from '@prisma/client';
 import { cache } from "react";
 import { getCachedSession } from "@actions/session.action";
 import { hasCodeProperty } from "@lib/utils";
@@ -14,16 +13,16 @@ export const getOrgSettingAction = cache(async (orgUid: string) => {
   try {
 
     const session = await getCachedSession();
-    if(!session) throw new Error("User not authenticated.");
+    if (!session) throw new Error("User not authenticated.");
 
     const orgSetting = await prisma.organizationSetting.findFirst({
       where: { Organization: { orgUid } },
     });
-    return { status: true,  message, data: orgSetting }
+    return { status: true, message, data: orgSetting }
   } catch (error) {
     console.error(error);
     message = "Error while fetching org settings";
-    if(hasCodeProperty(error) && error.code === 'P2025') message = "Organization not found";
+    if (hasCodeProperty(error) && error.code === 'P2025') message = "Organization not found";
     return { status: false, message: message, data: null }
   }
 });
@@ -38,10 +37,10 @@ export const updateOrgSettingsAction = async (orgSettingId: number, { sendEmailN
   try {
 
     const session = await getCachedSession();
-    if(!session) throw new Error("User not authenticated.");
+    if (!session) throw new Error("User not authenticated.");
 
     const orgSetting = await prisma.organizationSetting.update({
-      where: { 
+      where: {
         id: orgSettingId
       },
       data: {
@@ -53,7 +52,7 @@ export const updateOrgSettingsAction = async (orgSettingId: number, { sendEmailN
   } catch (error) {
     console.error(`Error updating org settings: ${error}`);
     message = "Error while updating org settings";
-    if(error instanceof Error) message = error.message;
-    return { status: false,  message, data: null }
+    if (error instanceof Error) message = error.message;
+    return { status: false, message, data: null }
   }
 };

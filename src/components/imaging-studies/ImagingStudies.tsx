@@ -52,6 +52,7 @@ export default function ImagingStudies({ consultationTicketId, clinicUid, clinic
             <Suspend>
               <CreateImagingStudiesModal
                 clinicUid={clinicUid ?? ""}
+                clinicId={clinicId}
                 onCreateImagingStudy={mutate}
                 userInfo={userInfo ?? null}
                 patientId={patientId}

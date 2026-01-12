@@ -50,7 +50,6 @@ interface EditImagingStudyModalProps {
   hpIds: number[];
   clinicId: number;
 }
-}
 
 export default function EditImagingStudyModal({
   study,

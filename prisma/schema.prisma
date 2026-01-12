@@ -87,7 +87,7 @@ model User {
   ReferralSlipsUpdated             ClinicReferralSlip[]             @relation("ReferralSlipUpdatedBy")
   FamilyMedicalHistories           FamilyMedicalHistory[]
   Folders                          Folder[]
-  HealthcareProviders              HealthcareProvider[]
+  HealthcareProviders              HealthcareProvider?
   MedicalHistories                 MedicalHistory[]
   Medications                      Medication[]
   MedicinesCreated                 Medicine[]                       @relation("MedicineCreatedBy")
@@ -179,14 +179,14 @@ model PhilHealthDependent {
   middleName            String?
   lastName              String?
   suffix                String?
-  citizenship           String?
-  isPermanentlyDisabled Boolean          @default(false)
   relationship          String?
   dob                   DateTime?
   gender                Gender?
   createdAt             DateTime         @default(now())
   updatedAt             DateTime         @updatedAt
   deletedAt             DateTime?
+  citizenship           String?
+  isPermanentlyDisabled Boolean          @default(false)
   PhilHealthRecord      PhilHealthRecord @relation(fields: [philHealthRecordId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
@@ -421,7 +421,7 @@ model UserPlan {
 
 model HealthcareProvider {
   id                      Int                        @id @default(autoincrement())
-  userId                  Int
+  userId                  Int                        @unique
   userPlanId              Int?
   hpTypeId                Int
   description             String?
@@ -449,8 +449,6 @@ model HealthcareProvider {
   ReservedTimeSlots       ReservedTimeSlot[]
   UserPreferences         UserPreference[]
   UserVaccinations        UserVaccination[]
-
-  @@unique([userId], name: "unique_user_hp")
 }
 
 model HPProfile {
@@ -1179,11 +1177,11 @@ model Clinic {
   Medications                     Medication[]
   PreAssessmentNotes              PreAssessmentNote[]
   Prescriptions                   Prescription[]
+  SequenceGenerators              SequenceGenerator[]
   ServiceCategories               ServiceCategory[]
   Systems                         System[]
   UserClinicAppointmentWhitelists UserClinicAppointmentWhitelist[]
   UserDefaultClinicRoles          UserDefaultClinicRole[]
-  SequenceGenerators              SequenceGenerator[]
 
   @@index([tenantId, clinicUid], map: "clinic_index")
 }
@@ -1500,7 +1498,6 @@ model ServiceAttribute {
   durationPadding Int      @default(0)
   specializations String[] @default([])
   resources       String[] @default([])
-  forTaggedOnly   Boolean  @default(false)
   Service         Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 

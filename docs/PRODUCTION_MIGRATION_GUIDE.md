@@ -1,5 +1,24 @@
 # Production Migration Guide: Case and Transaction Numbers
 
+## ⚠️ CRITICAL: Migration Best Practices
+
+**NEVER modify an applied migration file directly.** Once a migration has been applied to any database (development, staging, or production):
+
+1. ✅ **DO**: Create a new migration file for any schema changes
+2. ❌ **DON'T**: Edit existing migration files that have been applied
+3. ❌ **DON'T**: Delete migration files from the `prisma/migrations/` directory
+
+**Why?** Prisma stores a checksum of each migration in the `_prisma_migrations` table. Modifying an applied migration will cause:
+
+- "Migration modified after applied" errors
+- Checksum mismatches
+- Deployment failures
+- Database state inconsistencies
+
+**If you need to change something:** Run `npx prisma migrate dev --name descriptive_name` to create a NEW migration file with your changes.
+
+---
+
 ## Overview
 
 This migration adds persistent case and transaction numbers to the database to ensure consistent numbering across downloads and prevent regeneration.

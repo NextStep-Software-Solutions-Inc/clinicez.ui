@@ -87,7 +87,7 @@ model User {
   ReferralSlipsUpdated             ClinicReferralSlip[]             @relation("ReferralSlipUpdatedBy")
   FamilyMedicalHistories           FamilyMedicalHistory[]
   Folders                          Folder[]
-  HealthcareProviders              HealthcareProvider?
+  HealthcareProvider              HealthcareProvider?
   MedicalHistories                 MedicalHistory[]
   Medications                      Medication[]
   MedicinesCreated                 Medicine[]                       @relation("MedicineCreatedBy")
@@ -2076,8 +2076,6 @@ model PhysicalExamination {
   visualAcuityLeft          String?
   visualAcuityRight         String?
   status                    String?
-  caseNumber                String?    @unique
-  caseNumberGeneratedAt     DateTime?
   createdAt                 DateTime   @default(now())
   updatedAt                 DateTime   @updatedAt
   deletedAt                 DateTime?
@@ -2086,7 +2084,6 @@ model PhysicalExamination {
 
   @@index([userId])
   @@index([vitalSignId])
-  @@index([caseNumber])
 }
 
 model PediatricMeasurement {
@@ -2193,7 +2190,7 @@ model SequenceGenerator {
   id           Int      @id @default(autoincrement())
   entityType   String // "HEALTH_ASSESSMENT" | "CONSULTATION" | "EKAS_TRANSACTION" | "EKAS_AUTH_CODE"
   clinicId     Int? // null for personal health records (HAF)
-  date         String // Format: "YYYYMMDD" for timestamp-based sequences
+  date         String // Format: "YYYYMMDD" for timestamp-based sequences (generated in app code)
   currentValue Int      @default(0)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt

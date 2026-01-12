@@ -5,7 +5,7 @@ export interface HealthcareProviderAuthResult {
 
 export interface UserWithHealthcareProviders {
   id: number;
-  HealthcareProviders: {
+  HealthcareProvider: {
     id: number;
     ProfessionalDetails: {
       licenseNumber: string | null;
@@ -17,7 +17,7 @@ export interface UserWithHealthcareProviders {
       suffix: string | null;
       specialties: string[];
     } | null;
-  }[];
+  } | null;
 }
 
 /**
@@ -37,31 +37,24 @@ export function validateHealthcareProviderAuth(
     throw new Error("Session user id is missing or invalid");
   }
 
-  // Check if user has healthcare provider records
-  if (!appUser.HealthcareProviders || appUser.HealthcareProviders.length === 0) {
+  // Check if user has healthcare provider record
+  if (!appUser.HealthcareProvider) {
     throw new Error("User is not registered as a healthcare provider");
   }
 
-  // Get the healthcare provider IDs of the logged-in user
-  const userHpIds = appUser.HealthcareProviders.map(hp => hp.id);
-
-  // Check if hpIds is provided and if any of user's HP IDs are in the allowed hpIds
+  // Check if hpIds is provided and if user's HP ID is in the allowed hpIds
   if (!hpIds || hpIds.length === 0) {
     throw new Error("Healthcare provider IDs are required");
   }
 
-  const authorizedHpIds = userHpIds.filter(hpId => hpIds.includes(hpId));
-  if (authorizedHpIds.length === 0) {
+  const userHpId = appUser.HealthcareProvider.id;
+  if (!hpIds.includes(userHpId)) {
     throw new Error(`You are not authorized to ${operationName} for the specified healthcare providers`);
   }
 
-  // Use the first authorized healthcare provider ID
-  const authorizedHpId = authorizedHpIds[0];
-  const createdBy = appUser.id;
-
   return {
-    authorizedHpId,
-    createdBy
+    authorizedHpId: userHpId,
+    createdBy: appUser.id
   };
 }
 
@@ -71,7 +64,7 @@ export function validateHealthcareProviderAuth(
  */
 export const USER_WITH_HEALTHCARE_PROVIDERS_SELECT = {
   id: true,
-  HealthcareProviders: {
+  HealthcareProvider: {
     select: {
       id: true,
       ProfessionalDetails: {

@@ -91,7 +91,7 @@ export const getOrganizationMembersReportAction = withErrorHandling(
         OrganizationRole: { select: { name: true } },
         User: {
           select: {
-            HealthcareProviders: {
+            HealthcareProvider: {
               select: { id: true },
               where: { isActive: true },
             },
@@ -103,8 +103,7 @@ export const getOrganizationMembersReportAction = withErrorHandling(
     const roleName = membership?.OrganizationRole?.name?.toUpperCase() ?? "";
     const isOwner = roleName === "OWNER";
     const isAdmin = roleName === "ADMIN";
-    const isHealthcareProviderMember =
-      (membership?.User?.HealthcareProviders?.length ?? 0) > 0;
+    const isHealthcareProviderMember = !!membership?.User?.HealthcareProvider;
 
     if (!isOwner && !isAdmin && !isHealthcareProviderMember) {
       throw new Error("Forbidden");

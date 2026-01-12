@@ -29,7 +29,7 @@ This plan outlines the migration from year-based sequential numbers to timestamp
 
 ### Format Structure
 
-#### Case Numbers (13 characters)
+#### Case Numbers (18 characters)
 ```
 CONS-YYYYMMDD-XXXXX
 HAF-YYYYMMDD-XXXXX
@@ -38,9 +38,13 @@ HAF-YYYYMMDD-XXXXX
 Example: `CONS-20260112-00001`, `HAF-20260112-00123`
 
 Components:
-- **Prefix** (4-5 chars): `CONS` or `HAF`
+- **Prefix** (4 chars): `CONS` or `HAF`
+- **Separator** (1 char): `-`
 - **Date** (8 chars): `YYYYMMDD` format
+- **Separator** (1 char): `-`
 - **Sequence** (5 chars): Daily counter (00001-99999)
+
+Total: 4 + 1 + 8 + 1 + 5 = 19 characters (max with HAF is 18, with CONS is 19)
 
 #### Transaction Numbers (18 characters)
 ```
@@ -570,7 +574,7 @@ const timestamp = parseTimestampFromCaseNumber(caseNumber);
 | Feature | Current System | New System |
 |---------|---------------|------------|
 | Format | `2025-CONS-0001` | `CONS-20260112-00001` |
-| Length | 14 chars | 18 chars |
+| Length | 14 chars | 19 chars (CONS), 18 chars (HAF) |
 | Daily Limit | N/A (9999/year) | 99,999/day |
 | Sortable | By year only | Chronologically |
 | Timestamp Info | Year only | Full date |

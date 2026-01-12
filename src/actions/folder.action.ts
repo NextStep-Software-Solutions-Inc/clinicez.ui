@@ -2,7 +2,7 @@
 
 import { hasCodeProperty, hasContextProperty } from "@/lib/utils";
 import { withErrorHandling } from "@/lib/with-error-handling";
-import { Prisma } from "@prisma";
+import { Prisma } from "@prisma/client";
 import { findUserSafely } from "@/lib/user-sync";
 import { withRetry } from "@/lib/database-health";
 import prisma from "@lib/prisma";

@@ -2,7 +2,7 @@
 
 import prisma from "@lib/prisma";
 
-import { Prisma } from "@prisma";
+import { Prisma } from "@prisma/client";
 import { cache } from "react";
 
 // Get total healthcare provider job titles

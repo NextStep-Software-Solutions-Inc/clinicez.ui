@@ -1,7 +1,7 @@
 "use server";
 
 import prisma from "@lib/prisma";
-import { Prisma } from "@prisma";
+import { Prisma } from "@prisma/client";
 
 
 export async function resolveOrgUidFromClinicUid(clinicUid: string): Promise<string | null> {

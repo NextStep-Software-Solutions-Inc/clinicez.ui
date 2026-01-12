@@ -3,7 +3,7 @@
  * Handles Auth0 to Clerk migration edge cases and ensures user consistency
  */
 
-import { Prisma } from "@prisma";
+import { Prisma } from "@prisma/client";
 import prisma from "@lib/prisma";
 
 export interface UserSyncResult {

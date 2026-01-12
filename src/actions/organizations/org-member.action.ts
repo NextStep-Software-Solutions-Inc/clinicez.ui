@@ -5,7 +5,7 @@ import fs from "fs/promises";
 import { sendMail } from "@actions/email.action";
 import { getCachedSession } from "@actions/session.action";
 import prisma from "@lib/prisma";
-import { Prisma } from "@prisma";
+import { Prisma } from "@prisma/client";
 import path from "path";
 import { cache } from "react";
 import { getPermissionsAction } from "@actions/permission.action";

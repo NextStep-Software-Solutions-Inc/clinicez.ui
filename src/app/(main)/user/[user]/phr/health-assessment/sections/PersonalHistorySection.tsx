@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { upsertPersonalHistoryAction } from "@/actions/family-and-personal-history.action";
-import type { PersonalHistory } from "@prisma";
+import type { PersonalHistory } from "@prisma/client";
 
 interface PersonalHistorySectionProps {
   userId: string;

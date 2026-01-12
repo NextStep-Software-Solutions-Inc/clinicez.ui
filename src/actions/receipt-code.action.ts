@@ -1,7 +1,7 @@
 "use server";
 
 import prisma from "@lib/prisma";
-import { Prisma } from "@prisma";
+import { Prisma } from "@prisma/client";
 import { getCachedSession } from "@actions/session.action";
 import { hasCodeProperty } from "@lib/utils";
 import { PrismaTransactionalClient } from "@actions/users/user.action";

@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Trash2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { createSurgicalHistoryAction, updateSurgicalHistoryAction, deleteSurgicalHistoryAction } from "@/actions/family-and-personal-history.action";
-import type { SurgicalHistory } from "@prisma";
+import type { SurgicalHistory } from "@prisma/client";
 
 interface SurgicalHistorySectionProps {
   userId: string;

@@ -3,7 +3,7 @@
 import { cache } from "react";
 import { getCachedSession } from "@actions/session.action";
 import prisma from "@lib/prisma";
-import { Prisma, UserPlanStatus } from "@prisma";
+import { Prisma, UserPlanStatus } from "@prisma/client";
 import dayjs from "@lib/day-utils";
 import { withErrorHandling } from "@/lib/with-error-handling";
 import { sessionCheck } from "@/lib/auth";

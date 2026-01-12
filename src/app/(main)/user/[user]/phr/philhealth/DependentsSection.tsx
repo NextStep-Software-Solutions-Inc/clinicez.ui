@@ -1,6 +1,6 @@
 import { getPhilHealthDependentsAction } from "@/actions/philhealth/philhealth-dependent.action";
 // Using dynamic import to avoid potential build-time resolution issues
-import type { PhilHealthDependent, Gender } from "@prisma";
+import type { PhilHealthDependent, Gender } from "@prisma/client";
 // Keep union types in sync with DependentsClient
 const RELATIONSHIP_OPTIONS = ["Spouse", "Child", "Foster Child", "Parent", "Parent-In-Law"] as const;
 const SUFFIX_OPTIONS = ["Jr.", "Sr.", "II", "III", "IV"] as const;

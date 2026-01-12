@@ -5,7 +5,7 @@ import { getCachedSession } from "@/actions/session.action";
 import { withErrorHandling } from "@/lib/with-error-handling";
 import { USER_WITH_HEALTHCARE_PROVIDERS_SELECT, validateHealthcareProviderAuth } from "@/lib/healthcare-provider-auth";
 import { generateSerialNumber } from "@/lib/utils";
-import { Prisma } from "@prisma";
+import { Prisma } from "@prisma/client";
 
 export type GetPrescriptionFilters = {
   clinicUid: string;

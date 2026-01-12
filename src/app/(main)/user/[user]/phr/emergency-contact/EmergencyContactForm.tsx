@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { ContactItem } from "./ContactItem";
 import ActionButton from "@components/ActionButton";
 import { z } from "zod";
-import { UserEmergencyContact } from "@prisma";
+import { UserEmergencyContact } from "@prisma/client";
 import { revalidatePath } from "@actions/cache.action";
 import ConditionalRender from "@components/utils/ConditionalRender";
 

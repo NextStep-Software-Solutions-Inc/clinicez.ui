@@ -1,7 +1,7 @@
 "use server";
 
 import prisma from "@lib/prisma";
-import { Prisma } from "@prisma";
+import { Prisma } from "@prisma/client";
 import dayjs from "@lib/day-utils";
 import crypt from "crypto";
 

@@ -8,7 +8,7 @@ import { HealthConditionStatus, Severity } from "@/types";
 import { withErrorHandling } from "@/lib/with-error-handling";
 import { withRetry } from "@/lib/database-health";
 import { findUserSafely } from "@/lib/user-sync";
-import { Prisma } from "@prisma";
+import { Prisma } from "@prisma/client";
 
 export const addUserIllnessAction = async (payload: {
   userId: string;

@@ -8,7 +8,7 @@ import { Input } from "@components/ui/input";
 import { DataTableViewOptions } from "./data-table-view-options";
 
 import { DataTableFacetedFilter } from "./data-table-faceted-filter";
-import { $Enums } from "@prisma";
+import { $Enums } from "@prisma/client";
 import React from "react";
 import { useOrganizationRoles } from "@/hooks/useOrganizationRole";
 import { useParams } from "next/navigation";

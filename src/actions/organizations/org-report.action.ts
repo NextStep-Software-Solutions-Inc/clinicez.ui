@@ -2,7 +2,7 @@
 
 import { getCachedSession } from "@actions/session.action";
 import prisma from "@lib/prisma";
-import { Gender } from "@prisma";
+import { Gender } from "@prisma/client";
 import { withErrorHandling } from "@/lib/with-error-handling";
 
 const ALLOWED_GENDERS = new Set<Gender>(["MALE", "FEMALE"]);

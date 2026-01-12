@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { upsertObGyneHistoryAction } from "@/actions/family-and-personal-history.action";
-import type { ObGyneHistory } from "@prisma";
+import type { ObGyneHistory } from "@prisma/client";
 
 interface ObGyneHistorySectionProps {
   userId: string;

@@ -20,7 +20,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@components/ui/chart"
-import { CivilStatus } from "@prisma";
+import { CivilStatus } from "@prisma/client";
 
 const civilStatuses = [...Object.values(CivilStatus), null]
 const chartConfig: ChartConfig = civilStatuses.reduce((config: ChartConfig, civilStatus: (typeof civilStatuses)[number], index: number) => {

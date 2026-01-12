@@ -6,7 +6,7 @@ import { RowDataPacket } from "mysql2";
 import { sendMail } from "./email.action";
 import fs from "fs/promises";
 import path from "path";
-import { Prisma } from "@prisma";
+import { Prisma } from "@prisma/client";
 import prisma from "@lib/prisma";
 
 export const getPatientAction = async (email: string) => {

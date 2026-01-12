@@ -13,7 +13,7 @@ import React from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
-import { $Enums, Gender } from "@prisma";
+import { $Enums, Gender } from "@prisma/client";
 import { format } from "date-fns";
 import Each from "@components/utils/Each";
 import { RadioGroup, RadioGroupItem } from "@components/ui/radio-group";

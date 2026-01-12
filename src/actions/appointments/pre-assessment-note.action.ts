@@ -6,8 +6,7 @@ import { getCachedSession } from '@actions/session.action';
 import { getPermissionsAction } from '@actions/permission.action';
 import { PERMISSIONS } from '@lib/permissions';
 import { withErrorHandling } from '@/lib/with-error-handling';
-import { tr } from '@faker-js/faker';
-import { Prisma } from '@prisma';
+import { Prisma } from '@prisma/client';
 
 type UpsertPreAssessmentNotePayload = {
   appointmentId: number;

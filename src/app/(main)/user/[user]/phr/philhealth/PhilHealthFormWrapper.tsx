@@ -4,7 +4,7 @@ import { getPhilHealthMemberTypesAction } from "@/actions/philhealth/philhealth-
 import { PhilHealthForm } from "./PhilHealthForm";
 import { PhilHealthPhoto } from "./PhilHealthPhoto";
 import { getPhilHealthRecordAction } from "@/actions/philhealth/philhealth-record.action";
-import { PhilHealthMemberType } from "@prisma";
+import { PhilHealthMemberType } from "@prisma/client";
 
 interface PhilHealthFormWrapperProps {
   userUid: string;

@@ -2,7 +2,7 @@
 import "server-only";
 
 import prisma from "@lib/prisma";
-import { Prisma } from '@prisma';
+import { Prisma } from '@prisma/client';
 import { cache } from "react";
 import { getCachedSession } from "@actions/session.action";
 import { hasCodeProperty } from "@lib/utils";

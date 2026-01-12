@@ -2,7 +2,7 @@
 
 import { getCachedSession } from '@actions/session.action';
 import prisma from '@lib/prisma';
-import { Prisma } from "@prisma"
+import { Prisma } from "@prisma/client"
 import { hasCodeProperty } from '@lib/utils';
 import { getPermissionsAction } from '@actions/permission.action';
 import { PERMISSIONS } from '@lib/permissions';

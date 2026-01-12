@@ -7,7 +7,7 @@ import { getPermissionsAction } from "@actions/permission.action";
 import { PERMISSIONS } from "@lib/permissions";
 import { withErrorHandling } from "@/lib/with-error-handling";
 import { withRetry } from "@/lib/database-health";
-import { Prisma } from "@prisma";
+import { Prisma } from "@prisma/client";
 
 
 export type GetMyUserPreference = Awaited<ReturnType<typeof getMyUserPreferenceAction>>;

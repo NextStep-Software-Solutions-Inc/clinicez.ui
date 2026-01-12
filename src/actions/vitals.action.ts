@@ -5,7 +5,7 @@ import { cache } from 'react';
 import { withErrorHandling } from "@/lib/with-error-handling";
 import { withRetry } from "@/lib/database-health";
 import { findUserSafely } from "@/lib/user-sync";
-import { Prisma } from "@prisma";
+import { Prisma } from "@prisma/client";
 
 const calculateBMI = (weight: number, height: number) => {
   return weight / Math.pow(height / 100, 2);

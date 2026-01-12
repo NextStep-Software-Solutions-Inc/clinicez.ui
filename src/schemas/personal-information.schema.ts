@@ -1,4 +1,4 @@
-import { BloodType, CivilStatus, Gender } from "@prisma";
+import { BloodType, CivilStatus, Gender } from "@prisma/client";
 import { startOfToday } from "date-fns"
 import { z } from "zod"
 

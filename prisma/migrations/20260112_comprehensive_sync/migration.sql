@@ -42,6 +42,16 @@ CREATE TABLE IF NOT EXISTS "SequenceGenerator" (
     CONSTRAINT "SequenceGenerator_clinicId_fkey" FOREIGN KEY ("clinicId") REFERENCES "Clinic"("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
+-- Add year column to SequenceGenerator if it doesn't exist (for existing tables)
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name='SequenceGenerator') THEN
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='SequenceGenerator' AND column_name='year') THEN
+            ALTER TABLE "SequenceGenerator" ADD COLUMN "year" INTEGER NOT NULL DEFAULT EXTRACT(YEAR FROM CURRENT_DATE);
+        END IF;
+    END IF;
+END $$;
+
 CREATE UNIQUE INDEX IF NOT EXISTS "SequenceGenerator_entityType_clinicId_year_key" ON "SequenceGenerator"("entityType", "clinicId", "year");
 CREATE INDEX IF NOT EXISTS "SequenceGenerator_clinicId_year_idx" ON "SequenceGenerator"("clinicId", "year");
 

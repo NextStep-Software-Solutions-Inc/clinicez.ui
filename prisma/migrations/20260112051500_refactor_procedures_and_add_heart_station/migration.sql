@@ -25,8 +25,8 @@ ALTER TABLE "LaboratoryProcedure"
   ADD COLUMN "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;
 
 -- Step 3: Rename unique constraints on master procedure tables
-ALTER INDEX "unique_imaging_diagnostic" RENAME TO "unique_imaging_procedure";
-ALTER INDEX "unique_laboratory_diagnostic" RENAME TO "unique_laboratory_procedure";
+ALTER INDEX "ImagingDiagnostic_name_category_key" RENAME TO "unique_imaging_procedure";
+ALTER INDEX "LaboratoryDiagnostic_name_category_key" RENAME TO "unique_laboratory_procedure";
 
 -- Step 4: Create HeartStationProcedure master table
 CREATE TABLE "HeartStationProcedure" (

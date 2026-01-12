@@ -46,18 +46,30 @@ Components:
 
 Total: 4 + 1 + 8 + 1 + 5 = **19 characters** (consistent for all case numbers)
 
-#### Transaction Numbers (18 characters)
+#### Transaction Numbers (20-24 characters)
 ```
-EKAS-YYYYMMDD-XXXXXX
-EKAS-C###-YYYYMMDD-XXXXXX
-PHK-YYYYMMDD-XXXXXX
-PHK-C###-YYYYMMDD-XXXXXX
+EKAS-YYYYMMDD-XXXXXX          (20 chars - without clinic)
+EKAS-C###-YYYYMMDD-XXXXXX     (24 chars - with clinic, assuming 3-digit clinic ID)
+PHK-YYYYMMDD-XXXXXX           (19 chars - without clinic)
+PHK-C###-YYYYMMDD-XXXXXX      (23 chars - with clinic, assuming 3-digit clinic ID)
 ```
 
 Example: `EKAS-20260112-000001`, `EKAS-C123-20260112-000456`
 
-Components:
+Components (without clinic):
 - **Prefix** (4 chars): `EKAS` or `PHK`
+- **Separator** (1 char): `-`
+- **Date** (8 chars): `YYYYMMDD` format
+- **Separator** (1 char): `-`
+- **Sequence** (6 chars): Daily counter (000001-999999)
+
+Total: 4 + 1 + 8 + 1 + 6 = **20 characters** (or 19 for PHK)
+
+Components (with clinic):
+- Add clinic identifier: `C###` (variable length based on clinic ID)
+- Add separator: `-`
+
+Total: Up to **24 characters** for typical clinic IDs
 - **Clinic ID** (optional): `C###`
 - **Date** (8 chars): `YYYYMMDD` format
 - **Sequence** (6 chars): Daily counter (000001-999999)
@@ -309,7 +321,7 @@ export async function GET() {
 #### 4.3 Alerting
 - Sequence generation failures
 - High error rate (>5%)
-- Slow generation (P95 > 2s)
+- Slow generation (P95 > 100ms or P99 > 200ms)
 - Daily limit approaching (>90% of 99,999)
 
 ### Phase 5: Testing (Week 4)
@@ -339,7 +351,7 @@ describe('Sequence Integration', () => {
 describe('Sequence Load Tests', () => {
   it('handles 1000 concurrent requests')
   it('maintains uniqueness under load')
-  it('performs within SLA (<500ms P95)')
+  it('performs within SLA (<100ms P95, <200ms P99)')
 })
 ```
 

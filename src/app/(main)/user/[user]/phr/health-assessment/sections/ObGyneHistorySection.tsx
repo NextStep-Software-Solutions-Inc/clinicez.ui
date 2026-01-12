@@ -69,7 +69,7 @@ export const ObGyneHistorySection = ({
           typeOfDelivery: formData.typeOfDelivery || null,
           hasPreEclampsia: formData.hasPreEclampsia,
         });
-        
+
         if (result.status) {
           toast.success(result.message);
         } else {

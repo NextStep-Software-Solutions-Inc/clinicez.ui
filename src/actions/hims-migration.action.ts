@@ -140,10 +140,10 @@ export const startMigrationTransactionAction = async ({ userId, data, orgUid }: 
       }
     })
   },
-  {
-    timeout: 5000,
-    maxWait: 10000,
-    isolationLevel: Prisma.TransactionIsolationLevel.Serializable
-  })
+    {
+      timeout: 5000,
+      maxWait: 10000,
+      isolationLevel: Prisma.TransactionIsolationLevel.Serializable
+    })
 
 }

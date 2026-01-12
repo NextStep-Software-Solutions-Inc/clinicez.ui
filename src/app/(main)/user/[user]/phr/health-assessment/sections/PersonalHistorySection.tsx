@@ -46,7 +46,7 @@ export const PersonalHistorySection = ({
           illicitDrugUse: formData.illicitDrugUse || null,
           sexuallyActive: formData.sexuallyActive || null,
         });
-        
+
         if (result.status) {
           toast.success(result.message);
         } else {

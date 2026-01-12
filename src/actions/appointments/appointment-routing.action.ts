@@ -106,11 +106,11 @@ export const assignAppointmentAction = withErrorHandling(async (data: AssignAppo
     })
 
   },
-  {
-    timeout: 5000,
-    maxWait: 10000,
-    isolationLevel: Prisma.TransactionIsolationLevel.Serializable
-  })
+    {
+      timeout: 5000,
+      maxWait: 10000,
+      isolationLevel: Prisma.TransactionIsolationLevel.Serializable
+    })
   return { message: `Appointment assigned`, data: null };
 }, async error => {
   if (hasCodeProperty(error) && error.code === 'P2025') return 'Appointment not found or you are not authorized to assign it';

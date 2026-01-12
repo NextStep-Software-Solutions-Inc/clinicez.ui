@@ -311,7 +311,7 @@ function extractUserIdFromInput(hp: Prisma.HealthcareProviderCreateArgs["data"])
   if (!hp.User || typeof hp.User !== 'object') {
     return undefined;
   }
-  
+
   // Handle User.connect pattern (e.g., { User: { connect: { id: 123 } } })
   if ('connect' in hp.User && hp.User.connect && typeof hp.User.connect === 'object') {
     const connect = hp.User.connect;
@@ -319,14 +319,14 @@ function extractUserIdFromInput(hp: Prisma.HealthcareProviderCreateArgs["data"])
       return connect.id;
     }
   }
-  
+
   return undefined;
 }
 
 export const createHpAction = async (hp: Prisma.HealthcareProviderCreateArgs["data"]) => {
   // Check if user already has an HP profile before creating
   const userId = extractUserIdFromInput(hp);
-  
+
   if (userId) {
     const existingHP = await prisma.healthcareProvider.findFirst({
       where: {
@@ -334,7 +334,7 @@ export const createHpAction = async (hp: Prisma.HealthcareProviderCreateArgs["da
         isActive: true,
       },
     });
-    
+
     if (existingHP) {
       throw new Error("User already has a Healthcare Provider profile. Only one HP profile is allowed per user.");
     }

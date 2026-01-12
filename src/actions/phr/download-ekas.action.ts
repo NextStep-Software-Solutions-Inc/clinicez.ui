@@ -68,12 +68,11 @@ export const downloadEKASAction = withErrorHandling(async (
   }
 
   // Generate transaction number and authorization code using sequence generator
-  const currentYear = new Date().getFullYear()
-  const transactionSeq = await getNextSequenceNumber('EKAS_TRANSACTION', clinicId || null, currentYear)
-  const authSeq = await getNextSequenceNumber('EKAS_AUTH_CODE', clinicId || null, currentYear)
+  const transactionSeq = await getNextSequenceNumber('EKAS_TRANSACTION', clinicId || null)
+  const authSeq = await getNextSequenceNumber('EKAS_AUTH_CODE', clinicId || null)
 
-  const finalTransactionNumber = formatTransactionNumber(clinicId || null, transactionSeq, currentYear)
-  const finalAuthCode = formatAuthorizationCode(clinicId || null, authSeq, currentYear)
+  const finalTransactionNumber = formatTransactionNumber(clinicId || null, transactionSeq)
+  const finalAuthCode = formatAuthorizationCode(clinicId || null, authSeq)
 
   // Get PhilHealth record
   let phr: PhilHealthRecordLite | undefined = hasPhilHealthRecord(user) ? user.PhilHealthRecord?.[0] : undefined

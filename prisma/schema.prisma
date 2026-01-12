@@ -2165,14 +2165,15 @@ enum PhilHealthMemberCategory {
 // Sequence Generator for auto-incrementing case numbers
 model SequenceGenerator {
   id           Int      @id @default(autoincrement())
-  entityType   String // "HEALTH_ASSESSMENT" | "CONSULTATION"
+  entityType   String // "HEALTH_ASSESSMENT" | "CONSULTATION" | "EKAS_TRANSACTION" | "EKAS_AUTH_CODE"
   clinicId     Int? // null for personal health records (HAF)
-  year         Int // 2025, 2026, etc.
+  date         String // Format: "YYYYMMDD" for timestamp-based sequences
   currentValue Int      @default(0)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   Clinic       Clinic?  @relation(fields: [clinicId], references: [id], onDelete: Cascade)
 
-  @@unique([entityType, clinicId, year], name: "unique_sequence")
-  @@index([clinicId, year])
+  @@unique([entityType, clinicId, date], name: "unique_sequence")
+  @@index([clinicId, date])
+  @@index([date])
 }

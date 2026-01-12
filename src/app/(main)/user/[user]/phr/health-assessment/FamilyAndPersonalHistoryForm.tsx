@@ -8,7 +8,7 @@ import { FamilyHistorySection } from "./sections/FamilyHistorySection";
 import { SurgicalHistorySection } from "./sections/SurgicalHistorySection";
 import { PersonalHistorySection } from "./sections/PersonalHistorySection";
 import { ObGyneHistorySection } from "./sections/ObGyneHistorySection";
-import type { Prisma } from "@prisma/client";
+import type { Prisma } from "@prisma";
 
 // Type for the health history data returned from getHealthHistoryAction
 type HealthHistoryData = Prisma.UserGetPayload<{

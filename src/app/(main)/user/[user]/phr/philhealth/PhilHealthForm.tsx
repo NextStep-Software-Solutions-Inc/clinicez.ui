@@ -10,7 +10,7 @@ import PhilHealthMemberTypeSelect from "./PhilHealthMemberTypeSelect";
 import { promiseWrapper } from "@/lib/with-error-handling"; // still used for submit
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { PhilHealthMemberType } from "@prisma/client";
+import { PhilHealthMemberType } from "@prisma";
 import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";

@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { upsertObGyneHistoryAction } from "@/actions/family-and-personal-history.action";
-import type { ObGyneHistory } from "@prisma/client";
+import type { ObGyneHistory } from "@prisma";
 
 interface ObGyneHistorySectionProps {
   userId: string;
@@ -69,7 +69,7 @@ export const ObGyneHistorySection = ({
           typeOfDelivery: formData.typeOfDelivery || null,
           hasPreEclampsia: formData.hasPreEclampsia,
         });
-        
+
         if (result.status) {
           toast.success(result.message);
         } else {

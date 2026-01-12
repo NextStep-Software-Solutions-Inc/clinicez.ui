@@ -11,7 +11,7 @@ import { useFieldArray, useForm } from "react-hook-form";
 import IllnessItem from "./IllnessItem";
 import { Badge } from "@components/ui/badge";
 import { Plus } from "lucide-react";
-import { Severity } from "@prisma/client";
+import { Severity } from "@prisma";
 import ConditionalRender from "@components/utils/ConditionalRender";
 import { Illness } from "./IllnessList";
 
@@ -20,14 +20,14 @@ export interface IllnessesFormProps {
   illnesses: Illness[]
 }
 
-export default function IllnessesForm({illnesses, readOnly = true}:IllnessesFormProps) {
-  const form = useForm<{illnesses: Illness[]}>({
+export default function IllnessesForm({ illnesses, readOnly = true }: IllnessesFormProps) {
+  const form = useForm<{ illnesses: Illness[] }>({
     defaultValues: {
       illnesses: illnesses
     }
   })
 
-  const {fields, append, remove, update} = useFieldArray({
+  const { fields, append, remove, update } = useFieldArray({
     control: form.control,
     name: "illnesses",
     keyName: "fieldId"
@@ -46,18 +46,18 @@ export default function IllnessesForm({illnesses, readOnly = true}:IllnessesForm
     DiagnosedBy: null,
     ResolvedBy: null,
   }
-  
+
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex flex-wrap gap-2 items-center">
-            Illnesses <Badge variant="destructive" className="ml-2">{fields.length}</Badge>
+          Illnesses <Badge variant="destructive" className="ml-2">{fields.length}</Badge>
           <ConditionalRender condition={!readOnly}>
             <Button className="ml-auto flex-grow sm:flex-grow-0" onClick={() => append(illnessInitialValues)}>Add Illness</Button>
           </ConditionalRender>
         </CardTitle>
-        <Separator/>
+        <Separator />
       </CardHeader>
       <CardContent className="space-y-2">
         <Accordion type="multiple" className="w-full space-y-5">
@@ -71,10 +71,10 @@ export default function IllnessesForm({illnesses, readOnly = true}:IllnessesForm
               <Each
                 of={fields}
                 fallback={<div className="text-muted-foreground text-center w-full">No declared illnesses.</div>}
-                render={(illness, index) => <IllnessItem readOnly={readOnly} illness={illness} index={index} remove={remove} update={update}/>}
+                render={(illness, index) => <IllnessItem readOnly={readOnly} illness={illness} index={index} remove={remove} update={update} />}
               />
               <ConditionalRender condition={!readOnly}>
-                <Button variant="ghost" className="w-full" onClick={() => append(illnessInitialValues)}><Plus className="mr-2 h-4 w-4"/>Add Illness</Button>
+                <Button variant="ghost" className="w-full" onClick={() => append(illnessInitialValues)}><Plus className="mr-2 h-4 w-4" />Add Illness</Button>
               </ConditionalRender>
             </AccordionContent>
           </AccordionItem>

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { PhilHealthMemberType, PhilHealthMemberCategory } from "@prisma/client";
+import { PhilHealthMemberType, PhilHealthMemberCategory } from "@prisma";
 import { cn } from "@/lib/utils";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";

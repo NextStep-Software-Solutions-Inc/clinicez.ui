@@ -1,6 +1,6 @@
 /* Seed PhilHealth Member Types (idempotent) */
 /* eslint-disable */
-const { PrismaClient, PhilHealthMemberCategory } = require('@prisma/client');
+const { PrismaClient, PhilHealthMemberCategory } = require('../app/generated/prisma/client');
 const prisma = new PrismaClient();
 
 const DIRECT = PhilHealthMemberCategory.DIRECT;

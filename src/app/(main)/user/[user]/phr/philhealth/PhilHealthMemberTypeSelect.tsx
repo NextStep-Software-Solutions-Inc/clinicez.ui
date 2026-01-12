@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { PhilHealthMemberType, PhilHealthMemberCategory } from "@prisma/client";
+import { PhilHealthMemberType, PhilHealthMemberCategory } from "@prisma";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectGroup, SelectLabel, SelectValue } from "@/components/ui/select";
 
 export interface PhilHealthMemberTypeSelectProps {

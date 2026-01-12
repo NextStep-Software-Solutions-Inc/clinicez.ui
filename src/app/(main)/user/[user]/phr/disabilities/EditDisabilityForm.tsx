@@ -10,7 +10,7 @@ import { ComboBox } from "./ComboBox";
 import { Separator } from "@components/ui/separator";
 import Each from "@components/utils/Each";
 import { RadioGroup, RadioGroupItem } from "@components/ui/radio-group";
-import { Severity } from "@prisma/client";
+import { Severity } from "@prisma";
 import { Input } from "@components/ui/input";
 import { format } from "date-fns";
 import { useEffect, useState } from "react";

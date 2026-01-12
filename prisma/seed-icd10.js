@@ -1,5 +1,5 @@
 // Use CommonJS for broad Node compatibility when running `node prisma/seed-icd10.js`
-const { PrismaClient } = require('../app/generated/prisma/client');
+const { PrismaClient } = require('../src/generated/prisma/client');
 
 const prisma = new PrismaClient();
 

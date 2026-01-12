@@ -60,7 +60,7 @@
         "./src/state/*"
       ],
       "@prisma": [
-        "./app/generated/prisma/client"
+        "./src/generated/prisma/client"
       ]
     }
   },

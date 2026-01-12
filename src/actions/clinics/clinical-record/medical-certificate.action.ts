@@ -5,7 +5,7 @@ import prismaClient from "@/lib/prisma";
 import { withErrorHandling } from "@/lib/with-error-handling";
 import prisma from "@lib/prisma";
 import { getCachedSession } from "@/actions/session.action";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma";
 import { generateSerialNumber } from "@/lib/utils";
 import { validateHealthcareProviderAuth, USER_WITH_HEALTHCARE_PROVIDERS_SELECT } from "@/lib/healthcare-provider-auth";
 

@@ -3,7 +3,7 @@
 import prisma from "@lib/prisma";
 import { getCachedSession } from "../session.action";
 import { withErrorHandling } from "@/lib/with-error-handling";
-import { Gender } from "@prisma/client";
+import { Gender } from "@prisma";
 
 export interface PhilHealthDependentDTO {
   id: number;

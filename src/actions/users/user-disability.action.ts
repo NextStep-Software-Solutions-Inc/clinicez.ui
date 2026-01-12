@@ -2,7 +2,7 @@
 
 import "server-only";
 import prisma from "@lib/prisma";
-import { Severity, Prisma } from "@prisma/client";
+import { Severity, Prisma } from "@prisma";
 import { cache } from "react";
 import { withErrorHandling } from "@/lib/with-error-handling";
 import { withRetry } from "@/lib/database-health";

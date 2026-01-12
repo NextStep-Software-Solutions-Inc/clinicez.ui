@@ -3,7 +3,7 @@
 import prisma from "@/lib/prisma";
 import { getCachedSession } from "@/actions/session.action";
 import { withErrorHandling } from "@/lib/with-error-handling";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma";
 
 export type GetMedicineFilters = {
   prescriptionId?: number;

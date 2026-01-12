@@ -1,6 +1,6 @@
 "use server";
 import prisma from "@lib/prisma";
-import { Prisma, $Enums } from "@prisma/client";
+import { Prisma, $Enums } from "@prisma";
 // import { managementClient } from "@services/auth0/management-client"; // Commented out for Clerk migration
 import { cache } from 'react';
 import dayjs from 'dayjs';

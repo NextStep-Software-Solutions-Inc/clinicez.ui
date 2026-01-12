@@ -6,7 +6,7 @@ import { withErrorHandling } from "@/lib/with-error-handling";
 import { getCachedSession } from "../session.action";
 import { sessionCheck } from "@/lib/auth";
 import { hasCodeProperty } from "@/lib/utils";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma";
 
 export type GetClinicPatient = Awaited<ReturnType<typeof getClinicPatientAction>>;
 export const getClinicPatientAction = withErrorHandling(async ({ userId, clinicUid }: { userId: number, clinicUid: string }) => {

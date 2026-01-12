@@ -109,7 +109,7 @@ export const hpApplicationTransactionAction = withErrorHandling(
             isActive: true,
           },
         });
-        
+
         if (existingHP) {
           throw new Error(message);
         }
@@ -180,8 +180,8 @@ export const hpApplicationTransactionAction = withErrorHandling(
             status: "ACTIVE",
           },
         }),
-        // Create healthcare provider
-        (message = "An error occurred while creating healthcare provider.");
+          // Create healthcare provider
+          (message = "An error occurred while creating healthcare provider.");
         await prisma.healthcareProvider.create({
           data: {
             HPType: {

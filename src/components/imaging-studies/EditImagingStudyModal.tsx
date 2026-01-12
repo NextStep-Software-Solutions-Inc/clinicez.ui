@@ -28,7 +28,7 @@ import { promiseWrapper } from "@/lib/with-error-handling";
 import { updateImagingStudyAction } from "@/actions/clinics/clinical-record/imaging-studies.action";
 import { ImagingStudy } from "./ImagingStudiesItem";
 import { PatientProfile } from "../consultation/ConsultationDetails";
-import ImagingDiagnosticsMultiSelect from "@/components/ImagingDiagnosticsMultiSelect";
+import ProcedureMultiSelect from "@/components/ProcedureMultiSelect";
 
 const formSchema = z.object({
   history: z.string().optional(),
@@ -48,6 +48,8 @@ interface EditImagingStudyModalProps {
   onOpenChange: (open: boolean) => void;
   onUpdated?: () => void;
   hpIds: number[];
+  clinicId: number;
+}
 }
 
 export default function EditImagingStudyModal({
@@ -57,6 +59,7 @@ export default function EditImagingStudyModal({
   onOpenChange,
   onUpdated,
   hpIds,
+  clinicId,
 }: EditImagingStudyModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [showAlert, setShowAlert] = useState(false);
@@ -84,8 +87,8 @@ export default function EditImagingStudyModal({
 
   useEffect(() => {
     if (open && study) {
-      const diagnosticIds = study.ImagingRequestDiagnostics?.map(
-        (diag) => diag.ImagingDiagnostic.id
+      const diagnosticIds = study.ImagingRequestProcedures?.map(
+        (proc) => proc.ImagingProcedure.id
       ) || [];
 
       const values = {
@@ -172,19 +175,21 @@ export default function EditImagingStudyModal({
                 name="diagnostics"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Diagnostics <span className="text-destructive">*</span></FormLabel>
+                    <FormLabel>Procedures <span className="text-destructive">*</span></FormLabel>
                     <FormControl>
-                      <ImagingDiagnosticsMultiSelect
+                      <ProcedureMultiSelect
                         value={field.value || []}
                         onChange={field.onChange}
-                        placeholder="Select diagnostics"
+                        procedureType="imaging"
+                        clinicId={clinicId}
+                        placeholder="Select procedures"
                         disabled={isLoading}
-                        searchPlaceholder="Type to search diagnostics..."
+                        searchPlaceholder="Type to search procedures..."
                         minSearchLength={2}
                       />
                     </FormControl>
                     <FormDescription>
-                      Select the relevant diagnostics for this imaging study.
+                      Select the relevant procedures for this imaging study.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

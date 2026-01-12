@@ -22,13 +22,14 @@ const CreateImagingStudiesModal = dynamic(
 export interface ImagingStudiesProps {
   consultationTicketId: number;
   clinicUid: string;
+  clinicId: number;
   hpIds: number[];
   isArchived?: boolean;
   patientId?: number;
   userInfo?: PatientProfile | null;
 }
 
-export default function ImagingStudies({ consultationTicketId, clinicUid, hpIds, patientId, userInfo }: ImagingStudiesProps) {
+export default function ImagingStudies({ consultationTicketId, clinicUid, clinicId, hpIds, patientId, userInfo }: ImagingStudiesProps) {
   const { data: studies, mutate, error, isLoading } = useImagingStudies({
     clinicUid,
     consultationTicketId,
@@ -81,7 +82,8 @@ export default function ImagingStudies({ consultationTicketId, clinicUid, hpIds,
                 study={study}
                 userInfo={userInfo}
                 onUpdated={mutate}
-                hpIds={hpIds} />
+                hpIds={hpIds}
+                clinicId={clinicId} />
             )}
           />
           )}

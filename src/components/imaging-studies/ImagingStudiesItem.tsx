@@ -25,8 +25,8 @@ export interface ImagingStudy {
   history?: string;
   reason?: string;
   impression?: string;
-  ImagingRequestDiagnostics?: Array<{
-    ImagingDiagnostic: {
+  ImagingRequestProcedures?: Array<{
+    ImagingProcedure: {
       id: number;
       name: string;
       description?: string;
@@ -40,9 +40,10 @@ export interface ImagingStudiesItemProps {
   userInfo?: PatientProfile | null;
   onUpdated?: () => void;
   hpIds: number[];
+  clinicId: number;
 }
 
-export default function ImagingStudiesItem({ study, userInfo, onUpdated, hpIds }: ImagingStudiesItemProps) {
+export default function ImagingStudiesItem({ study, userInfo, onUpdated, hpIds, clinicId }: ImagingStudiesItemProps) {
   const [editModalOpen, setEditModalOpen] = useState(false);
 
   const handleDeleteImagingStudy = async () => {
@@ -142,6 +143,7 @@ export default function ImagingStudiesItem({ study, userInfo, onUpdated, hpIds }
         onUpdated={onUpdated}
         userInfo={userInfo ?? null}
         hpIds={hpIds}
+        clinicId={clinicId}
       />
     </div>
   );

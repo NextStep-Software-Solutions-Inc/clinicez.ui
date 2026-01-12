@@ -7,7 +7,7 @@ This plan outlines the migration from year-based sequential numbers to timestamp
 ## Current State Analysis
 
 ### Current Implementation
-- **Case Numbers**: `2025-CONS-0001`, `2025-HAF-0023` (year + prefix + 4-digit sequence)
+- **Case Numbers**: `2025-CONS-0001`, `2025-HAFT-0023` (year + prefix + 4-digit sequence)
 - **Transaction Numbers**: `EKAS-C123-2025-000456` (clinic + year + 6-digit sequence)
 - **Limitations**:
   - Annual rollover complexity
@@ -29,22 +29,22 @@ This plan outlines the migration from year-based sequential numbers to timestamp
 
 ### Format Structure
 
-#### Case Numbers (18 characters)
+#### Case Numbers (19 characters)
 ```
 CONS-YYYYMMDD-XXXXX
-HAF-YYYYMMDD-XXXXX
+HAFT-YYYYMMDD-XXXXX
 ```
 
-Example: `CONS-20260112-00001`, `HAF-20260112-00123`
+Example: `CONS-20260112-00001`, `HAFT-20260112-00123`
 
 Components:
-- **Prefix** (4 chars): `CONS` or `HAF`
+- **Prefix** (4 chars): `CONS` or `HAFT` (standardized to 4 characters)
 - **Separator** (1 char): `-`
 - **Date** (8 chars): `YYYYMMDD` format
 - **Separator** (1 char): `-`
 - **Sequence** (5 chars): Daily counter (00001-99999)
 
-Total: 4 + 1 + 8 + 1 + 5 = 19 characters (max with HAF is 18, with CONS is 19)
+Total: 4 + 1 + 8 + 1 + 5 = **19 characters** (consistent for all case numbers)
 
 #### Transaction Numbers (18 characters)
 ```
@@ -133,7 +133,13 @@ model SequenceGenerator {
 -- Step 1: Add new column
 ALTER TABLE "SequenceGenerator" ADD COLUMN "date" TEXT;
 
--- Step 2: Backfill existing data
+-- Step 2: Backfill existing data using updatedAt or createdAt timestamps
+-- This preserves chronological accuracy better than using year + '0101'
+UPDATE "SequenceGenerator" 
+SET "date" = TO_CHAR(COALESCE("updatedAt", "createdAt"), 'YYYYMMDD')
+WHERE "date" IS NULL;
+
+-- For any remaining NULL values (should not happen), use year-based fallback
 UPDATE "SequenceGenerator" 
 SET "date" = year::text || '0101' 
 WHERE "date" IS NULL;
@@ -468,10 +474,11 @@ if (EMERGENCY_DISABLE_TIMESTAMP) {
 ## Success Criteria
 
 ### Performance Metrics
-- P95 latency < 500ms
-- P99 latency < 1000ms
+- P95 latency < 100ms (sequence generation should be fast)
+- P99 latency < 200ms
 - Error rate < 0.1%
 - 99.9% uptime
+- Database transaction time < 50ms (P95)
 
 ### Functional Requirements
 - ✅ All case numbers are unique
@@ -544,8 +551,8 @@ const caseNumber = await generateTimestampCaseNumber('CONSULTATION', clinicId);
 // Result: "CONS-20260112-00001"
 
 // Generate health assessment case number
-const hafNumber = await generateTimestampCaseNumber('HEALTH_ASSESSMENT');
-// Result: "HAF-20260112-00123"
+const haftNumber = await generateTimestampCaseNumber('HEALTH_ASSESSMENT');
+// Result: "HAFT-20260112-00123"
 ```
 
 ### Example 2: Generate Transaction Number
@@ -574,7 +581,7 @@ const timestamp = parseTimestampFromCaseNumber(caseNumber);
 | Feature | Current System | New System |
 |---------|---------------|------------|
 | Format | `2025-CONS-0001` | `CONS-20260112-00001` |
-| Length | 14 chars | 19 chars (CONS), 18 chars (HAF) |
+| Length | 14 chars | 19 chars (standardized) |
 | Daily Limit | N/A (9999/year) | 99,999/day |
 | Sortable | By year only | Chronologically |
 | Timestamp Info | Year only | Full date |

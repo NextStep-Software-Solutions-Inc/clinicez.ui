@@ -60,8 +60,8 @@ export default function ConsultationHistory({ clinicUid, patientId }: Consultati
         fallback={<p className="text-muted-foreground">No consultation records.</p>}
         render={(ticket) => {
           return (
-            <AccordionItem 
-              key={ticket.id} 
+            <AccordionItem
+              key={ticket.id}
               value={ticket.id.toString()}
               className="border rounded-lg shadow-sm bg-white overflow-hidden"
             >
@@ -85,14 +85,14 @@ export default function ConsultationHistory({ clinicUid, patientId }: Consultati
                 <div className="border-t bg-gray-50/50">
                   {/* Catered By Section */}
                   <CateredBySection ticket={ticket} />
-                  
+
                   {/* Notes Summary Section */}
                   <ConsultationHistorySummary
                     consultationTicketId={ticket.id}
                     clinicUid={clinicUid}
                     isPatientView={isPatientView}
                   />
-                  
+
                   {/* Clinical Files Section */}
                   <ClinicalFilesSection
                     consultationTicketId={ticket.id}
@@ -143,8 +143,8 @@ const CateredBySection = ({ ticket }: CateredBySectionProps) => {
             const user = provider?.User;
             const hpProfile = provider?.HPProfile;
             const roleName = user?.OrganizationMembers?.[0]?.OrganizationRole?.name;
-            
-            const displayName = hpProfile?.name 
+
+            const displayName = hpProfile?.name
               ? `${hpProfile.title || ''} ${hpProfile.name} ${hpProfile.suffix || ''}`.trim()
               : formatFullName(user?.firstName, user?.middleName, user?.lastName, user?.suffix);
 
@@ -175,7 +175,7 @@ const CateredBySection = ({ ticket }: CateredBySectionProps) => {
           of={preAssessmentNotes}
           render={(note) => {
             const createdBy = note.CreatedBy;
-            const displayName = createdBy 
+            const displayName = createdBy
               ? formatFullName(createdBy.firstName, createdBy.middleName, createdBy.lastName, createdBy.suffix)
               : 'Unknown';
             const roleName = createdBy?.OrganizationMembers?.[0]?.OrganizationRole?.name;
@@ -332,7 +332,7 @@ const ClinicalFilesSection = ({ consultationTicketId, clinicUid }: ClinicalFiles
               <Each
                 of={laboratoryRequests?.data || []}
                 render={(request) => {
-                  const testCount = request._count?.LaboratoryRequestDiagnostics || 0;
+                  const testCount = request._count?.LaboratoryRequestProcedures || 0;
                   return (
                     <div key={request.id} className="flex items-center justify-between p-2.5 bg-blue-50 rounded-lg border border-blue-100 text-sm">
                       <div className="flex-1 min-w-0">

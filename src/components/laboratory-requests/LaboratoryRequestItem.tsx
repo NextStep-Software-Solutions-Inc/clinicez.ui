@@ -24,12 +24,25 @@ export interface LaboratoryRequest {
   impression?: string | null;
   _count?: {
     LaboratoryRequestDiagnostics?: number;
+    LaboratoryRequestProcedures?: number;
   };
   LaboratoryRequestDiagnostics?: Array<{
     LaboratoryDiagnostic: {
       id: number;
       name: string;
       category?: string;
+    };
+  }>;
+  LaboratoryRequestProcedures?: Array<{
+    LaboratoryProcedure: {
+      id: number;
+      name: string;
+      description?: string | null;
+      MasterProcedure?: {
+        id: number;
+        name: string;
+        category?: string;
+      } | null;
     };
   }>;
   ClinicPatient?: {
@@ -90,7 +103,7 @@ export default function LaboratoryRequestItem({ request, onUpdated, hpIds, clini
         </div>
         <div className="flex items-center justify-between">
           <span className="text-xs text-muted-foreground truncate">
-            {request._count?.LaboratoryRequestDiagnostics ?? 0} {request._count?.LaboratoryRequestDiagnostics === 1 ? "test" : "tests"} requested
+            {(request._count?.LaboratoryRequestDiagnostics ?? request._count?.LaboratoryRequestProcedures ?? 0)} {((request._count?.LaboratoryRequestDiagnostics ?? request._count?.LaboratoryRequestProcedures ?? 0) === 1) ? "test" : "tests"} requested
           </span>
           <div className="flex items-center justify-center w-12 text-center text-xs text-muted-foreground font-medium">
             <span className="flex items-center justify-center w-full h-full">{calculateAge(patient?.dob) ?? "-"}</span>

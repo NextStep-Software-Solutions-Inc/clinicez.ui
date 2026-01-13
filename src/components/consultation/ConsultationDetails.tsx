@@ -84,6 +84,7 @@ export default async function ConsultationDetails({ consultation }: Consultation
       <ClinicalRecords
         consultationTicketId={consultation.id}
         clinicUid={consultation.Clinic.clinicUid}
+        clinicId={consultation.clinicId}
         hpIds={consultation.ConsultationTicketHPs.map(c => Number(c.hpId))}
         isArchived={false}
         patientId={appointment.data?.Requesters[0].User?.ClinicPatients[0]?.id}
@@ -192,6 +193,7 @@ export const BackgroundInfo = ({ appointment, consultation, user }: BackgroundIn
 interface ClinicalRecordsProps {
   consultationTicketId: number;
   clinicUid: string;
+  clinicId: number;
   hpIds: number[];
   isArchived?: boolean;
   patientId?: number;
@@ -203,6 +205,7 @@ interface ClinicalRecordsProps {
 export const ClinicalRecords = ({
   consultationTicketId,
   clinicUid,
+  clinicId,
   hpIds,
   isArchived = false,
   patientId,
@@ -283,6 +286,7 @@ export const ClinicalRecords = ({
                 <tab.Component
                   consultationTicketId={consultationTicketId}
                   clinicUid={clinicUid}
+                  clinicId={clinicId}
                   hpIds={hpIds}
                   isArchived={isArchived}
                   patientId={patientId}

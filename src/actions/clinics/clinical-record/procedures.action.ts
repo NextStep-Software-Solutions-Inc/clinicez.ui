@@ -167,11 +167,11 @@ export const searchProceduresAction = withErrorHandling(
     // Step 2: Search master procedures and create/get clinic procedures
     const searchFilter = searchTerm.trim()
       ? {
-          OR: [
-            { name: { contains: searchTerm, mode: "insensitive" as const } },
-            { description: { contains: searchTerm, mode: "insensitive" as const } },
-          ],
-        }
+        OR: [
+          { name: { contains: searchTerm, mode: "insensitive" as const } },
+          { description: { contains: searchTerm, mode: "insensitive" as const } },
+        ],
+      }
       : {};
 
     if (procedureType === "imaging") {
@@ -522,7 +522,7 @@ interface TrackProcedureUsageParams {
  */
 export const trackProcedureUsageAction = withErrorHandling(
   async ({ userId, clinicId, procedureType, procedureId, procedureName }: TrackProcedureUsageParams) => {
-    await prisma.procedureUsageHistory.create({
+    const result = await prisma.procedureUsageHistory.create({
       data: {
         userId,
         clinicId,
@@ -532,7 +532,7 @@ export const trackProcedureUsageAction = withErrorHandling(
       },
     });
 
-    return { message: "Procedure usage tracked successfully" };
+    return { message: "Procedure usage tracked successfully", data: result };
   }
 );
 

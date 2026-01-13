@@ -130,10 +130,20 @@ export const getImagingStudyAction = withErrorHandling(async (id: number) => {
       ImagingRequestProcedures: {
         include: {
           ImagingProcedure: {
+            include: {
+              MasterProcedure: {
+                select: {
+                  id: true,
+                  name: true,
+                  category: true,
+                },
+              },
+            },
             select: {
               id: true,
               name: true,
               description: true,
+              MasterProcedure: true,
             },
           },
         },

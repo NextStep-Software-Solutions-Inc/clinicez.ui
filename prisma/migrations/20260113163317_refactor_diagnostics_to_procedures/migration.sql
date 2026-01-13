@@ -1,0 +1,33 @@
+-- Refactor: Diagnostics → Procedures
+-- This migration tracks the refactoring of diagnostic-related tables to procedure-related tables.
+-- The changes were already applied to the database via `prisma db push`.
+--
+-- BREAKING CHANGE: Old diagnostic tables (ImagingDiagnostic, LaboratoryDiagnostic) were dropped.
+-- Data migration should have been performed before this point.
+--
+-- Changes included:
+-- 1. Renamed ImagingDiagnostic → ImagingProcedure
+-- 2. Renamed LaboratoryDiagnostic → LaboratoryProcedure
+-- 3. Added HeartStationProcedure (new feature)
+-- 4. Created clinic-specific procedure tables (ClinicImagingProcedure, ClinicLaboratoryProcedure, ClinicHeartStationProcedure)
+-- 5. Created junction tables (ClinicImagingRequestProcedure, ClinicLaboratoryRequestProcedure, ClinicHeartStationRequestProcedure)
+-- 6. Created ClinicHeartStationRequest table
+-- 7. Created SequenceGenerator table for transaction/case number generation
+-- 8. Created ProcedureUsageHistory table for tracking usage
+-- 9. Added transaction number columns to:
+--    - ClinicImagingRequest
+--    - ClinicLaboratoryRequest
+--    - ClinicHeartStationRequest
+--    - ClinicMedicalCertificate
+--    - ClinicReferralSlip
+--    - Prescription
+-- 10. Added case number columns to:
+--    - ConsultationTicket
+--    - User
+--    - Appointment
+-- 11. Added PhilHealth dependent fields:
+--    - PhilHealthDependent.citizenship
+--    - PhilHealthDependent.isPermanentlyDisabled
+--
+-- This migration file is intentionally empty as all changes were applied via db push.
+-- No SQL will execute, but the migration tracking will be updated.

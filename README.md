@@ -2,7 +2,7 @@
 
 A comprehensive healthcare management platform that streamlines appointment booking, patient records, and clinic operations.
 
-**Live Website:** https://www.clinicez.net/v2
+**Live Website:** <https://www.clinicez.net/v2>
 
 ## Overview
 
@@ -26,29 +26,34 @@ ClinicEZ is a modern, user-friendly healthcare management system built with Next
 ### Installation
 
 1. Clone the repository:
+
 ```bash
 git clone https://github.com/NextStep-Software-Solutions-Inc/clinicez.ui.git
 cd clinicez.ui
 ```
 
-2. Install dependencies:
+1. Install dependencies:
+
 ```bash
 pnpm install
 ```
 
-3. Set up environment variables:
+1. Set up environment variables:
+
 ```bash
 cp .env.example .env.local
 # Edit .env.local with your configuration
 ```
 
-4. Set up the database:
+1. Set up the database:
+
 ```bash
 npx prisma migrate dev
 npx prisma db seed
 ```
 
-5. Run the development server:
+1. Run the development server:
+
 ```bash
 pnpm dev
 ```
@@ -79,23 +84,27 @@ src/
 ## Key Features
 
 ### Authentication & Authorization
+
 - Clerk-based authentication
 - Role-based access control
 - User profile management
 
 ### Appointment Management
+
 - Smart booking system with conflict detection
 - Automated reminders
 - Calendar synchronization
 - Real-time scheduling updates
 
 ### Patient Records
+
 - Comprehensive patient profiles
 - Medical history tracking
 - Secure document storage
 - Healthcare data compliance
 
 ### Analytics & Reporting
+
 - Usage analytics
 - Appointment statistics
 - Patient insights
@@ -113,18 +122,21 @@ src/
 ## Documentation
 
 ### Core Documentation
+
 - **[Sequence Number Generation](./docs/SEQUENCE_NUMBER_GENERATION.md)** - Guide on case and transaction number generation
 - **[Sequence Number Generation Summary](./docs/SEQUENCE_NUMBER_GENERATION_SUMMARY.md)** - Quick reference
 - **[Case Number Architecture](./docs/CASE_NUMBER_ARCHITECTURE.md)** - System design and implementation
 - **[Production Migration Guide](./docs/PRODUCTION_MIGRATION_GUIDE.md)** - Deployment instructions
 
 ### Feature Documentation
+
 - [EMR Preview Enhancement](./docs/EMR_PREVIEW_ENHANCEMENT.md)
 - [Return Appointment Assignment](./docs/RETURN_APPOINTMENT_ASSIGNMENT.md)
 - [PHR Case Number Implementation](./docs/PHR_CASE_NUMBER_IMPLEMENTATION.md)
 - [Super Admin Implementation](./SUPER_ADMIN_IMPLEMENTATION.md)
 
 ### Database
+
 - [Migration Ready](./docs/MIGRATION_READY.md)
 - [Deployment Checklist](./docs/DEPLOYMENT_CHECKLIST.md)
 
@@ -205,21 +217,21 @@ We welcome contributions! Please:
 
 ## Support
 
-- **Email:** support@clinicez.net
-- **Website:** https://www.clinicez.net
+- **Email:** <clinicez.official@gmail.com>
+- **Website:** <https://www.clinicez.net>
 - **Documentation:** See `/docs` folder
 - **Issues:** Report via GitHub Issues
 
 ## Links
 
-- **Home Page:** https://www.clinicez.net/v2
-- **Healthcare Providers:** https://www.clinicez.net/v2/hp
-- **Clinics:** https://www.clinicez.net/v2/clinics
-- **Organizations:** https://www.clinicez.net/v2/organizations
-- **Pricing:** https://www.clinicez.net/v2/pricing
-- **Contact:** https://www.clinicez.net/v2/contact-us
-- **Privacy Policy:** https://www.clinicez.net/v2/privacy
-- **Terms of Conditions:** https://www.clinicez.net/v2/terms
+- **Home Page:** <https://www.clinicez.net/v2>
+- **Healthcare Providers:** <https://www.clinicez.net/v2/hp>
+- **Clinics:** <https://www.clinicez.net/v2/clinics>
+- **Organizations:** <https://www.clinicez.net/v2/organizations>
+- **Pricing:** <https://www.clinicez.net/v2/pricing>
+- **Contact:** <https://www.clinicez.net/v2/contact-us>
+- **Privacy Policy:** <https://www.clinicez.net/v2/privacy>
+- **Terms of Conditions:** <https://www.clinicez.net/v2/terms>
 
 ## License
 

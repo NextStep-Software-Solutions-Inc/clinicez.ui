@@ -33,7 +33,7 @@ export default function TermsOfServiceContent() {
 
       <section className="mb-8">
         <h2 className="text-2xl font-bold text-gray-900 mb-4">3. User Accounts and Responsibilities</h2>
-        
+
         <h3 className="text-xl font-semibold text-gray-800 mt-6 mb-3">3.1 Account Creation</h3>
         <p>
           To use certain features of ClinicEZ, you must create an account and provide accurate, current, and complete information. You are responsible for maintaining the confidentiality of your account credentials and password.
@@ -70,7 +70,7 @@ export default function TermsOfServiceContent() {
 
       <section className="mb-8">
         <h2 className="text-2xl font-bold text-gray-900 mb-4">5. Healthcare Data and Patient Information</h2>
-        
+
         <h3 className="text-xl font-semibold text-gray-800 mt-6 mb-3">5.1 Patient Privacy and Confidentiality</h3>
         <p>
           Healthcare providers using ClinicEZ must comply with all applicable healthcare privacy laws, including but not limited to HIPAA, the Philippines Data Privacy Act (RA 10173), and the Universal Health Care Act (RA 11223).
@@ -221,7 +221,7 @@ export default function TermsOfServiceContent() {
 
       <section className="mb-8">
         <h2 className="text-2xl font-bold text-gray-900 mb-4">15. Governing Law and Jurisdiction</h2>
-        
+
         <h3 className="text-xl font-semibold text-gray-800 mt-6 mb-3">15.1 Philippine Jurisdiction</h3>
         <p>
           These Terms shall be governed by and construed in accordance with the laws of the Republic of the Philippines, without regard to its conflict of law principles.
@@ -283,8 +283,8 @@ export default function TermsOfServiceContent() {
         </p>
         <div className="mt-4 p-4 bg-gray-100 rounded-lg">
           <p><strong>ClinicEZ Legal Team</strong></p>
-          <p>Email: legal@clinicez.net</p>
-          <p>Support: support@clinicez.net</p>
+          <p>Email: clinicez.official@gmail.comt</p>
+          <p>Support: clinicez.official@gmail.com</p>
           <p>Website: https://www.clinicez.net</p>
           <p>We will respond to your inquiry within 30 days.</p>
         </div>

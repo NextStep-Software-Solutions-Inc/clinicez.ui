@@ -18,7 +18,7 @@ export default function PrivacyPolicyContent() {
       <section className="mb-8">
         <h2 className="text-2xl font-bold text-gray-900 mb-4">2. Information We Collect</h2>
         <p>We may collect information about you in a variety of ways:</p>
-        
+
         <h3 className="text-xl font-semibold text-gray-800 mt-6 mb-3">2.1 Information You Provide Directly</h3>
         <ul className="list-disc pl-5 space-y-2">
           <li>Account registration information (name, email, organization details)</li>
@@ -153,7 +153,7 @@ export default function PrivacyPolicyContent() {
         </p>
         <div className="mt-4 p-4 bg-gray-100 rounded-lg">
           <p><strong>ClinicEZ Support Team</strong></p>
-          <p>Email: support@clinicez.net</p>
+          <p>Email: clinicez.official@gmail.com</p>
           <p>Website: https://www.clinicez.net</p>
           <p>We will respond to your inquiry within 30 days.</p>
         </div>
@@ -171,7 +171,7 @@ export default function PrivacyPolicyContent() {
 
       <section className="mb-8">
         <h2 className="text-2xl font-bold text-gray-900 mb-4">12. Jurisdiction-Specific Information</h2>
-        
+
         <h3 className="text-xl font-semibold text-gray-800 mt-6 mb-3">12.1 Philippines</h3>
         <p>
           For users and healthcare providers in the Philippines, ClinicEZ complies with:

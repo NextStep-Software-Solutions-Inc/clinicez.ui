@@ -60,11 +60,11 @@ const socialIcons = [
 const legalTerms = [
   {
     title: "Privacy Policy",
-    link: "#",
+    link: "/v2/privacy",
   },
   {
     title: "Terms of Conditions",
-    link: "#",
+    link: "/v2/terms",
   }
 ];
 
@@ -123,9 +123,9 @@ const RootFooter = ({ version = "v1" }: FooterProps) => {
             <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center items-center pt-4">
               {legalTerms.map((item, index) => {
                 return (
-                  <Link 
-                    href={item.link} 
-                    key={index} 
+                  <Link
+                    href={item.link}
+                    key={index}
                     className="text-sm text-gray-700 hover:text-primary transition-colors text-center"
                   >
                     <span>{item.title}</span>
@@ -144,16 +144,16 @@ const RootFooter = ({ version = "v1" }: FooterProps) => {
       <div className="container mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 ~text-sm/base">
         <div className="order-1 sm:order-first">
           <a href="/" className="flex h-20">
-            <AnimatedLogo/>
+            <AnimatedLogo />
           </a>
           <p className="mt-2">
             <strong>Clinic EZ</strong> is a platform that connects healthcare providers with patients. We provide a platform for healthcare providers to manage their appointments and patients to book appointments with their healthcare providers.
             Join our platform and be part of the future of healthcare.
           </p>
           <p className="space-x-2 my-5">
-            <span className="font-bold">&copy; {fullYear}</span> 
+            <span className="font-bold">&copy; {fullYear}</span>
             <span className="font-bold text-primary">PointersBit Inc.</span>,
-             All rights reserved.</p>
+            All rights reserved.</p>
         </div>
         <div className="flex flex-wrap justify-between md:mt-8 ">
           <div className="w-full md:w-1/3 text-center sm:text-left">

@@ -12,4 +12,3 @@ export const useDocumentTypes = (filters?: GetDocumentTypesFilters) => {
   const fetcher = (args:string) => self.get<GetDocumentTypes>(args)
   return useSWR(`/api/document-types?${searchParams.toString()}`, fetcher)
 }
-``

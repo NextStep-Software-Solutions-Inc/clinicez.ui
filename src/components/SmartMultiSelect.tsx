@@ -227,7 +227,7 @@ export default function SmartMultiSelect<T, IDType = number>({
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="w-full p-0"
+        className="w-[--radix-popover-trigger-width] p-0"
         align="start"
         onWheel={(e) => {
           // Prevent wheel events from bubbling up to prevent issues with portals
@@ -248,14 +248,14 @@ export default function SmartMultiSelect<T, IDType = number>({
               </CommandEmpty>
             ) : searchTerm !== debouncedSearchTerm && searchTerm.length >= minSearchLength ? (
               <CommandEmpty>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center justify-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
                   Searching...
                 </div>
               </CommandEmpty>
             ) : isSearching ? (
               <CommandEmpty>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center justify-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
                   Searching...
                 </div>

@@ -29,9 +29,12 @@ export interface DocumentTemplateItemProps {
       name: string;
     };
   };
+  clinicUid?: string;
 }
-export default function DocumentTemplateItem({ documentTemplate, onUpdated }: DocumentTemplateItemProps) {
+export default function DocumentTemplateItem({ documentTemplate, onUpdated, clinicUid }: DocumentTemplateItemProps) {
   const Icon = File;
+  const builderHref = clinicUid ? `/clinics/${clinicUid}/prescription-builder` : undefined;
+  const titleText = `${documentTemplate.name || `Document #${documentTemplate.id}`} - ${documentTemplate.DocumentTemplateType.name}`;
   return (
     <div
       className={cn(
@@ -41,17 +44,21 @@ export default function DocumentTemplateItem({ documentTemplate, onUpdated }: Do
       <Icon className="mt-px h-5 w-5 text-primary" />
       <div className="flex w-full">
         <div className="space-y-1">
-          <Link
-            href={`prescription-builder/${documentTemplate.id}`}
-            target="_blank"
-            rel="noreferrer"
-          >
+          {builderHref ? (
+            <Link
+              href={builderHref}
+              target="_blank"
+              rel="noreferrer"
+            >
+              <div className="text-sm font-medium leading-none space-x-2">
+                <span>{titleText}</span>
+              </div>
+            </Link>
+          ) : (
             <div className="text-sm font-medium leading-none space-x-2">
-              <span className="">
-                {documentTemplate.name || `Document #${documentTemplate.id}`} - {documentTemplate.DocumentTemplateType.name}
-              </span>
+              <span>{titleText}</span>
             </div>
-          </Link>
+          )}
           <p className="text-sm text-muted-foreground">
             {documentTemplate.createdAt &&
               dayjs(documentTemplate.createdAt).format("lll")}

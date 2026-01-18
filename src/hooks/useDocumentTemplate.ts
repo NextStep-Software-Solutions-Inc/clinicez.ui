@@ -12,4 +12,3 @@ export const useDocumentTemplates = (filters?: GetDocumentTemplatesFilters) => {
   const fetcher = (args:string) => self.get<GetDocumentTemplates>(args)
   return useSWR(`/api/document-templates?${searchParams.toString()}`, fetcher)
 }
-``

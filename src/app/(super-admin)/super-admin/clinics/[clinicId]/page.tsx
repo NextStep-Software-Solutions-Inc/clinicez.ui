@@ -7,6 +7,9 @@ import Link from "next/link";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@components/ui/tabs";
 import ClinicRolesTable from "@components/super-admin/ClinicRolesTable";
 import ClinicAppointmentTabsManager from "@components/super-admin/ClinicAppointmentTabsManager";
+import { ClinicProceduresManager } from "@components/super-admin/ClinicProceduresManager";
+import DocumentTemplateTypeManager from "@components/super-admin/DocumentTemplateTypeManager";
+import DocumentTemplates from "@components/DocumentTemplates";
 
 interface ClinicDetailPageProps {
   params: Promise<{
@@ -124,9 +127,11 @@ export default async function ClinicDetailPage({ params }: ClinicDetailPageProps
       </Card>
 
       <Tabs defaultValue="roles" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="roles">Clinic Roles</TabsTrigger>
           <TabsTrigger value="appointment-tabs">Appointment Tabs</TabsTrigger>
+          <TabsTrigger value="procedures">Procedures</TabsTrigger>
+          <TabsTrigger value="documents">Documents</TabsTrigger>
         </TabsList>
 
         <TabsContent value="roles" className="space-y-4">
@@ -158,6 +163,27 @@ export default async function ClinicDetailPage({ params }: ClinicDetailPageProps
               />
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="procedures" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Clinic Procedures</CardTitle>
+              <CardDescription>
+                Configure diagnostic and procedures available for this clinic. You can create clinic-specific procedures or link them to master procedures.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ClinicProceduresManager clinicId={clinicId} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="documents" className="space-y-4">
+          <div className="grid gap-4 lg:grid-cols-2">
+            <DocumentTemplateTypeManager />
+            <DocumentTemplates clinicUid={clinic.clinicUid} label="Clinic" />
+          </div>
         </TabsContent>
       </Tabs>
     </div>

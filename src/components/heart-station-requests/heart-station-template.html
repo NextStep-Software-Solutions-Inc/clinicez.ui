@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+  <meta charset='UTF-8' />
+  <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+  <title>Heart Station Request Form</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      font-size: 11pt;
+      line-height: 1.4;
+      color: #000;
+      background: white;
+      width: 148mm;
+      min-height: 210mm;
+      margin: 0 auto;
+      padding: 15mm;
+      display: flex;
+      flex-direction: column;
+    }
+    /* Fixed container height to use A5 dimensions consistently */
+    .certificate-container { 
+      width: 100%; 
+      display: flex; 
+      flex-direction: column; 
+      min-height: calc(210mm - 30mm); 
+      max-height: calc(210mm - 30mm);
+    }
+    .main-content { flex: 1; display: flex; flex-direction: column; }
+    .content-body { flex: 1; }
+    .bottom-section { margin-top: auto; padding-top: 20px; }
+    .header { display: flex; align-items: center; margin-bottom: 20px; }
+    .university-logo { width: 60px; height: 60px; margin-right: 15px; }
+    .header-content { text-align: center; flex: 1; }
+    .university-name { font-size: 8pt; font-weight: bold; margin-bottom: 3px; }
+    .university-address, .contact-info { font-size: 6pt; margin-bottom: 3px; }
+    .form-title { font-size: 12pt; font-weight: bold; text-align: center; margin: 15px 0; }
+    .personal-information { display: grid; grid-template-columns: 1fr 1fr; grid-gap: 10px; margin-bottom: 15px; }
+    .personal-item { font-size: 10pt; }
+    .separator { border-top: 2px solid #ccc; margin: 15px 0; }
+    .section-title { font-size: 10pt; font-weight: bold; margin-top: 12px; margin-bottom: 8px; }
+    .procedures-list { font-size: 9pt; margin-bottom: 15px; display: grid; grid-template-columns: 1fr 1fr; grid-gap: 8px; }
+    .procedure-item { display: flex; align-items: center; }
+    .procedure-checkbox { margin-right: 8px; }
+    .section-content { font-size: 9pt; margin-bottom: 12px; padding: 8px; border: 1px solid #e0e0e0; min-height: 50px; }
+    .doctor-info { margin: 20px 0; text-align: right; position: relative; }
+    .doctor-name { font-weight: bold; margin-bottom: 5px; }
+    .doctor-details { font-size: 8pt; }
+    .e-signature-overlay { position: absolute; top: -40px; right: -20px; width: 150px; height: 60px; z-index: 10; opacity: 0.9; display: flex; align-items: center; justify-content: center; font-size: 8pt; color: #666; text-align: center; line-height: 1.2; }
+    .auto-generated { margin-top: 15px; font-size: 6pt; color: #666; text-align: right; }
+    
+    /* Fixed print media query to use consistent A5 dimensions */
+    @media print {
+      body { 
+        margin: 0; 
+        padding: 15mm; 
+        width: 148mm; 
+        min-height: 210mm; 
+        max-height: 210mm;
+      }
+      .certificate-container { 
+        page-break-inside: avoid; 
+        min-height: calc(210mm - 30mm); 
+        max-height: calc(210mm - 30mm);
+        overflow: hidden;
+      }
+      @page { 
+        size: A5; 
+        margin: 0; 
+      }
+      /* Prevent page breaks within content sections */
+      .header, .personal-information, .doctor-info {
+        page-break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="certificate-container">
+    <div class="main-content">
+      <div class="content-body">
+        <div class="header">
+          <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS2D3DLCdheSiTlUMIHP9O5e7OC9nBxKg3qoQ&s" alt="USTP Logo" class="university-logo">
+          <div class="header-content">
+            <div class="university-name">University of Science and Technology of Southern Philippines</div>
+            <div class="university-address">C.M Recto Avenue, Lapasan, Cagayan de Oro City 9000 Philippines</div>
+            <div class="contact-info">Tel. No. +63 (88) 856 1738; Telefax +63 (88) 856 4696</div>
+          </div>
+        </div>
+        <div class="form-title">HEART STATION REQUEST FORM</div>
+        <div class="personal-information">
+          <div class="personal-item">Name: @{name}</div>
+          <div class="personal-item">Age/Sex: @{age}/@{gender}</div>
+          <div class="personal-item">Address: @{address}</div>
+          <div class="personal-item">Request Date: @{requestDate}</div>
+        </div>
+        <div class="separator"></div>
+        
+        <div class="section-title">Cardiovascular Procedures:</div>
+        <div class="procedures-list">
+          @{procedures}
+        </div>
+        
+        <div class="section-title">Clinical Impression/Diagnosis:</div>
+        <div class="section-content">
+          @{impression}
+        </div>
+        
+        <div class="section-title">Others:</div>
+        <div class="section-content">
+          @{others}
+        </div>
+      </div>
+      
+      <div class="bottom-section">
+        <div class="doctor-info">
+          <div class="e-signature-overlay">
+            <div class="e-signature-placeholder">
+              @{eSignatureUrl}
+            </div>
+          </div>
+          <div class="doctor-name">@{doctorName}</div>
+          <div class="doctor-details">License no: @{licenseNo}</div>
+          <div class="doctor-details">PTR no: @{ptrNo}</div>
+          <div class="doctor-details">Address: USTP Campus, CDO</div>
+        </div>
+        <div class="auto-generated">
+          This form is auto-generated by the system. Any information changed manually or electronically, requestor or creator will not be liable. Generated on: @{createdDateTime}
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,7 +1,12 @@
 // Use CommonJS for broad Node compatibility when running `node prisma/seed-procedures.js`
+require('dotenv').config();
 const { PrismaClient } = require('@prisma/client');
+const { Pool } = require('pg');
+const { PrismaPg } = require('@prisma/adapter-pg');
 
-const prisma = new PrismaClient();
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter, transactionOptions: { timeout: 30000, maxWait: 10000 } });
 
 const imagingProcedures = [
   { name: 'X-RAY', description: 'X-Ray Imaging', category: 'Imaging Procedures', isActive: true },

@@ -646,6 +646,102 @@ type UpdateConsultationTicketPayload = {
   consultationId: number;
   subject: string;
 }
+
+type AddConsultationTicketHPPayload = {
+  consultationId: number;
+  hpId: number;
+  clinicUid: string;
+}
+
+export const addConsultationTicketHPAction = withErrorHandling(async ({ consultationId, hpId, clinicUid }: AddConsultationTicketHPPayload) => {
+
+  const session = await getCachedSession()
+  if (!session) throw new Error("Unauthorized")
+
+  const [myPermissions] = await Promise.all([
+    getPermissionsAction({ userId: session.user.sub, type: "CLINIC" }),
+  ])
+
+  const userPermissionArray = myPermissions.map(p => p.name);
+
+  const updateConsultationTicketPermissions = [
+    PERMISSIONS.CLINIC["UPDATE:CLINIC:CONSULTATION_TICKET:CREATED"].name,
+    PERMISSIONS.CLINIC["UPDATE:CLINIC:CONSULTATION_TICKET:CO_CREATED"].name]
+  const canUpdateConsultationTicket = updateConsultationTicketPermissions.some(p => userPermissionArray.includes(p))
+
+  if (!canUpdateConsultationTicket) throw new Error("You do not have permission to update consultation tickets")
+
+  const consultationTicket = await prismaClient.consultationTicket.findFirst({
+    where: {
+      id: consultationId,
+      Clinic: {
+        clinicUid
+      },
+      isActive: true
+    },
+    select: {
+      ConsultationTicketHPs: {
+        select: {
+          hpId: true,
+          HealthCareProvider: {
+            select: {
+              User: {
+                select: {
+                  userId: true,
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  })
+
+  if (!consultationTicket) throw new Error("Consultation record not found")
+
+  const isTicketCreator = consultationTicket.ConsultationTicketHPs.some(hp => hp.HealthCareProvider?.User?.userId === session.user.sub)
+  if (!isTicketCreator) throw new Error("You do not have permission to update consultation tickets")
+
+  const targetHp = await prismaClient.healthcareProvider.findFirst({
+    where: {
+      id: hpId,
+      isActive: true,
+      User: {
+        ClinicMembers: {
+          some: {
+            Clinic: {
+              clinicUid
+            },
+            isActive: true
+          }
+        }
+      }
+    },
+    select: {
+      id: true
+    }
+  })
+
+  if (!targetHp) throw new Error("Healthcare provider is not active or not part of this clinic")
+
+  const alreadyAssigned = consultationTicket.ConsultationTicketHPs.some(hp => hp.hpId === hpId)
+  if (alreadyAssigned) return { message: "Healthcare provider is already assigned to this consultation", data: undefined }
+
+  await prismaClient.consultationTicketHP.create({
+    data: {
+      consultationTicketId: consultationId,
+      hpId,
+    }
+  })
+
+  return { message: "Healthcare provider added to consultation ticket", data: undefined }
+
+}, async error => {
+  if (hasCodeProperty(error) && error.code === 'P2025') return "Consultation record not found"
+  if (hasCodeProperty(error) && error.code === 'P2002') return "Healthcare provider is already assigned to this consultation"
+  return "Failed to add healthcare provider to consultation"
+})
+
 export const updateConsultationTicketAction = withErrorHandling(async ({ consultationId, subject }: UpdateConsultationTicketPayload) => {
 
   const session = await getCachedSession()

@@ -2,26 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { searchImagingDiagnosticsAction } from "@/actions/clinics/clinical-record/optimized-diagnostics.action";
 
 export async function GET(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const query = searchParams.get("q") || "";
-    const limit = Math.min(parseInt(searchParams.get("limit") || "20"), 50);
+    try {
+        const searchParams = request.nextUrl.searchParams;
+        const search = searchParams.get("q") || "";
+        const limit = parseInt(searchParams.get("limit") || "50", 10);
 
-    if (!query.trim()) {
-      return NextResponse.json({
-        message: "Search query is required",
-        data: []
-      });
+        const result = await searchImagingDiagnosticsAction(search, limit);
+
+        return NextResponse.json(result);
+    } catch (error) {
+        console.error("Error in imaging diagnostics search:", error);
+        return NextResponse.json(
+            { status: false, message: "Failed to search diagnostics", data: null },
+            { status: 500 }
+        );
     }
-
-    const result = await searchImagingDiagnosticsAction(query, limit);
-
-    return NextResponse.json(result);
-  } catch (error) {
-    console.error("Error in search diagnostics API:", error);
-    return NextResponse.json(
-      { message: "Failed to search diagnostics", data: [] },
-      { status: 500 }
-    );
-  }
 }

@@ -1,49 +1,73 @@
 "use server";
 
-import "server-only";
-import prisma from "@/lib/prisma";
-
-import { getCachedSession } from "@/actions/session.action";
+import prismaClient from "@/lib/prisma";
 import { withErrorHandling } from "@/lib/with-error-handling";
 
-export type GetImagingDiagnostics = Awaited<ReturnType<typeof getImagingDiagnosticsAction>>;
-export const getImagingDiagnosticsAction = withErrorHandling(async () => {
-  const session = await getCachedSession();
-  if (!session) throw new Error("Unauthorized");
+export const getLaboratoryDiagnosticsAction = withErrorHandling(
+    async (searchTerm: string, limit: number = 50) => {
+        const result = await prismaClient.laboratoryProcedure.findMany({
+            where: {
+                OR: [
+                    { name: { contains: searchTerm, mode: "insensitive" } },
+                    { description: { contains: searchTerm, mode: "insensitive" } },
+                ],
+            },
+            take: limit,
+            select: {
+                id: true,
+                name: true,
+                description: true,
+            },
+        });
 
-  const diagnostics = await prisma.imagingDiagnostic.findMany({
-    orderBy: { name: "asc" },
-    where: {
-      isActive: true,
-    },
-    select: {
-      id: true,
-      name: true,
-      description: true,
-      category: true,
-      isActive: true,
-    },
-  });
+        return {
+            message: "Laboratory diagnostics retrieved successfully",
+            data: result,
+        };
+    }
+);
 
-  return { message: "Imaging diagnostics fetched successfully", data: diagnostics };
-});
+export const getPaginatedLaboratoryDiagnosticsAction = withErrorHandling(
+    async (options: { search?: string; limit?: number; offset?: number }) => {
+        const { search = "", limit = 50, offset = 0 } = options;
 
-export type GetLaboratoryDiagnostics = Awaited<ReturnType<typeof getLaboratoryDiagnosticsAction>>;
-export const getLaboratoryDiagnosticsAction = withErrorHandling(async () => {
-  const session = await getCachedSession();
-  if (!session) throw new Error("Unauthorized");
+        const [result, total] = await Promise.all([
+            prismaClient.laboratoryProcedure.findMany({
+                where: search
+                    ? {
+                        OR: [
+                            { name: { contains: search, mode: "insensitive" } },
+                            { description: { contains: search, mode: "insensitive" } },
+                        ],
+                    }
+                    : undefined,
+                take: limit,
+                skip: offset,
+                select: {
+                    id: true,
+                    name: true,
+                    description: true,
+                },
+            }),
+            prismaClient.laboratoryProcedure.count({
+                where: search
+                    ? {
+                        OR: [
+                            { name: { contains: search, mode: "insensitive" } },
+                            { description: { contains: search, mode: "insensitive" } },
+                        ],
+                    }
+                    : undefined,
+            }),
+        ]);
 
-  const diagnostics = await prisma.laboratoryDiagnostic.findMany({
-    orderBy: { name: "asc" },
-    where: { isActive: true },
-    select: {
-      id: true,
-      name: true,
-      description: true,
-      category: true,
-      isActive: true,
-    },
-  });
-
-  return { message: "Laboratory diagnostics fetched successfully", data: diagnostics };
-});
+        return {
+            message: "Paginated laboratory diagnostics retrieved successfully",
+            data: {
+                items: result,
+                total,
+                hasMore: offset + limit < total,
+            },
+        };
+    }
+);

@@ -1,15 +1,20 @@
-import { getLaboratoryDiagnosticsAction } from "@/actions/clinics/clinical-record/diagnostics.action";
-import { withClerkAuth } from "@/middlewares/withClerkAuth";
 import { NextRequest, NextResponse } from "next/server";
+import { getLaboratoryDiagnosticsAction } from "@/actions/clinics/clinical-record/diagnostics.action";
 
-export const GET = withClerkAuth(async (req: NextRequest) => {
-  try {
-    const diagnosticsResult = await getLaboratoryDiagnosticsAction();
-    return NextResponse.json(diagnosticsResult, { status: 200 });
-  } catch (error) {
-    return NextResponse.json(
-      { message: "Failed to fetch laboratory diagnostics", data: null, status: false },
-      { status: 500 }
-    );
-  }
-});
+export async function GET(request: NextRequest) {
+    try {
+        const searchParams = request.nextUrl.searchParams;
+        const search = searchParams.get("search") || "";
+        const limit = parseInt(searchParams.get("limit") || "50", 10);
+
+        const result = await getLaboratoryDiagnosticsAction(search, limit);
+
+        return NextResponse.json(result);
+    } catch (error) {
+        console.error("Error in laboratory diagnostics search:", error);
+        return NextResponse.json(
+            { status: false, message: "Failed to search diagnostics", data: null },
+            { status: 500 }
+        );
+    }
+}

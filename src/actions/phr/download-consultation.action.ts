@@ -89,13 +89,18 @@ export const downloadConsultationAction = withErrorHandling(async (userId?: stri
         ImagingRequests: {
           where: { isActive: true, deletedAt: null },
           include: {
-            ImagingRequestDiagnostics: {
+            ImagingRequestProcedures: {
               include: {
-                ImagingDiagnostic: {
+                ImagingProcedure: {
                   select: {
                     name: true,
                     description: true,
-                    category: true
+                    MasterProcedure: {
+                      select: {
+                        name: true,
+                        category: true
+                      }
+                    }
                   }
                 }
               }
@@ -125,13 +130,18 @@ export const downloadConsultationAction = withErrorHandling(async (userId?: stri
           ImagingRequests: {
             where: { isActive: true, deletedAt: null },
             include: {
-              ImagingRequestDiagnostics: {
+              ImagingRequestProcedures: {
                 include: {
-                  ImagingDiagnostic: {
+                  ImagingProcedure: {
                     select: {
                       name: true,
                       description: true,
-                      category: true
+                      MasterProcedure: {
+                        select: {
+                          name: true,
+                          category: true
+                        }
+                      }
                     }
                   }
                 }
@@ -175,8 +185,8 @@ export const downloadConsultationAction = withErrorHandling(async (userId?: stri
 
   // Extract ICD-10 codes from imaging diagnostics
   const icd10Codes = consultation?.ImagingRequests
-    .flatMap(req => req.ImagingRequestDiagnostics)
-    .map(diag => diag.ImagingDiagnostic.name)
+    .flatMap(req => req.ImagingRequestProcedures)
+    .map(proc => proc.ImagingProcedure.MasterProcedure?.name || proc.ImagingProcedure.name)
     .filter(Boolean)
     .join(", ") || "";
 

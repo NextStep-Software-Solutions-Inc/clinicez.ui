@@ -16,6 +16,7 @@ import { calculateAge, capitalize, cn } from "@/lib/utils";
 import ActionButton from "@/components/ActionButton";
 import { createImagingStudyAction } from "@/actions/clinics/clinical-record/imaging-studies.action";
 import ImagingDiagnosticsMultiSelect from "@/components/ImagingDiagnosticsMultiSelect";
+import ProcedureMultiSelect from "@/components/ProcedureMultiSelect";
 import { PatientProfile } from "@/components/consultation/ConsultationDetails";
 import { Plus, User, ChevronDown, ChevronUp } from "lucide-react";
 import { promiseWrapper } from "@/lib/with-error-handling";
@@ -57,6 +58,7 @@ const createImagingStudiesSchema = z.object({
 
 interface CreateImagingStudiesModalProps {
   clinicUid: string;
+  clinicId: number;
   onCreateImagingStudy?: () => void;
   userInfo: PatientProfile | null;
   patientId?: number;
@@ -64,7 +66,7 @@ interface CreateImagingStudiesModalProps {
   consultationTicketId: number;
 }
 
-export default function CreateImagingStudiesModal({ clinicUid, onCreateImagingStudy, userInfo, patientId, hpIds, consultationTicketId }: CreateImagingStudiesModalProps) {
+export default function CreateImagingStudiesModal({ clinicUid, clinicId, onCreateImagingStudy, userInfo, patientId, hpIds, consultationTicketId }: CreateImagingStudiesModalProps) {
   const [open, setOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [showAlert, setShowAlert] = React.useState(false);
@@ -373,19 +375,21 @@ export default function CreateImagingStudiesModal({ clinicUid, onCreateImagingSt
                   name="diagnostics"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Diagnostics <span className="text-destructive">*</span></FormLabel>
+                      <FormLabel>Procedures <span className="text-destructive">*</span></FormLabel>
                       <FormControl>
-                        <ImagingDiagnosticsMultiSelect
+                        <ProcedureMultiSelect
                           value={field.value || []}
                           onChange={field.onChange}
-                          placeholder="Select diagnostics"
+                          procedureType="imaging"
+                          clinicId={clinicId}
+                          placeholder="Select procedures"
                           disabled={isSubmitting}
-                          searchPlaceholder="Type to search diagnostics..."
+                          searchPlaceholder="Type to search procedures..."
                           minSearchLength={2}
                         />
                       </FormControl>
                       <FormDescription>
-                        Select the relevant diagnostics for this imaging request.
+                        Select the relevant procedures for this imaging request.
                       </FormDescription>
                       <FormMessage />
                     </FormItem>

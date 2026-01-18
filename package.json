@@ -23,6 +23,7 @@
     "migrate:resolve:rollback": "prisma migrate resolve --rolled-back",
     "migrate:resolve:applied": "prisma migrate resolve --applied",
     "seed:philhealth": "node prisma/seed-philhealth-member-types.js",
+    "seed:procedures": "node prisma/seed-procedures.js",
     "db:test": "tsx scripts/test-database.ts",
     "db:studio": "prisma studio"
   },

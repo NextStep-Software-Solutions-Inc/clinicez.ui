@@ -24,6 +24,7 @@ import LaboratoryRequestWrapper from "@components/LaboratoryRequestWrapper";
 import HeartStationRequestWrapper from "@/components/HeartStationRequestWrapper";
 import ReferralSlipWrapper from "../clinic/clinical-records/referral-slip/ReferralSlipWrapper";
 import EKASWrapper from "../clinic/clinical-records/ekas/EKASWrapper";
+import { AddConsultationHealthcareProvider } from "./AddConsultationHealthcareProvider";
 
 const VitalSigns = dynamic(() => import('./VitalSigns'), { loading: () => <div>Loading...</div> });
 const Conversation = dynamic(() => import('./Conversation'), { loading: () => <div>Loading...</div> });
@@ -76,7 +77,13 @@ export default async function ConsultationDetails({ consultation }: Consultation
 
   return (
     <>
-      <PatientHpDetails creators={creators} user={appointment.data?.Requesters[0].User!} />
+      <PatientHpDetails
+        creators={creators}
+        user={appointment.data?.Requesters[0].User!}
+        consultationId={consultation.id}
+        clinicUid={consultation.Clinic.clinicUid}
+        hpIds={consultation.ConsultationTicketHPs.map(c => Number(c.hpId))}
+      />
       <BackgroundInfo
         appointment={appointment.data}
         consultation={consultation}
@@ -325,8 +332,11 @@ interface PatientHpDetailsProps {
     nickname: string | null;
     dob: Date | null;
   }
+  consultationId: number;
+  clinicUid: string;
+  hpIds: number[];
 }
-export const PatientHpDetails = ({ creators = [], user }: PatientHpDetailsProps) => {
+export const PatientHpDetails = ({ creators = [], user, consultationId, clinicUid, hpIds }: PatientHpDetailsProps) => {
   return (
     <div className="flex flex-wrap gap-2 justify-between">
       <Card className="grow">
@@ -362,8 +372,17 @@ export const PatientHpDetails = ({ creators = [], user }: PatientHpDetailsProps)
         </CardContent>
       </Card>
       <Card className="grow">
-        <CardHeader>
+        <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <CardTitle className="">Healthcare Provider Details</CardTitle>
+          <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-3">
+            <Badge className="bg-red-50 text-red-800 border border-red-200">Experimental</Badge>
+            <span className="text-xs text-red-800">Manual verification required: double-check provider assignments after saving.</span>
+            <AddConsultationHealthcareProvider
+              consultationId={consultationId}
+              clinicUid={clinicUid}
+              existingHpIds={hpIds}
+            />
+          </div>
         </CardHeader>
         <CardContent className="flex gap-5 items-center">
           <Each

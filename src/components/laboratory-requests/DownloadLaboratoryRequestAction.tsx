@@ -47,14 +47,15 @@ const DownloadLaboratoryRequestAction = React.forwardRef<
         const birthdate = patient.dob ? dayjs(patient.dob).format("MM/DD/YYYY") : ""
 
         const diagnosticsByCategory: Record<string, string[]> = {}
-        data.LaboratoryRequestDiagnostics?.forEach((item) => {
-          const diagnostic = item.LaboratoryDiagnostic
-          if (diagnostic) {
-            const category = diagnostic.category?.toUpperCase() || "OTHER"
+        data.LaboratoryRequestProcedures?.forEach((item) => {
+          const procedure = item.LaboratoryProcedure
+          const masterProc = procedure?.MasterProcedure
+          if (procedure) {
+            const category = masterProc?.category?.toUpperCase() || "OTHER"
             if (!diagnosticsByCategory[category]) {
               diagnosticsByCategory[category] = []
             }
-            diagnosticsByCategory[category].push(diagnostic.name)
+            diagnosticsByCategory[category].push(masterProc?.name || procedure.name)
           }
         })
 

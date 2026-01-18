@@ -46,13 +46,16 @@ const DownloadImagingStudiesAction = React.forwardRef<
 
         const address = formatPatientAddress(patient)
 
-        const diagnostics = data.ImagingRequestDiagnostics
+        const diagnostics = data.ImagingRequestProcedures
           ?.map(item => {
-            const diag = item.ImagingDiagnostic || {};
-            if (diag.name && diag.description && diag.name !== diag.description) {
-              return `${diag.name} (${diag.description})`;
+            const proc = item.ImagingProcedure;
+            const masterName = proc.MasterProcedure?.name;
+            const clinicName = proc.name;
+
+            if (masterName && clinicName && masterName !== clinicName) {
+              return `${masterName} (${clinicName})`;
             }
-            return diag.name || diag.description;
+            return masterName || clinicName;
           })
           .filter(Boolean)
           .join(", ") || "";

@@ -39,9 +39,9 @@ export const getImagingStudiesAction = withErrorHandling(async (filters: GetImag
       history: true,
       reason: true,
       impression: true,
-      ImagingRequestDiagnostics: {
+      ImagingRequestProcedures: {
         include: {
-          ImagingDiagnostic: {
+          ImagingProcedure: {
             select: {
               id: true,
               name: true,
@@ -127,13 +127,23 @@ export const getImagingStudyAction = withErrorHandling(async (id: number) => {
           ProfessionalDetails: true,
         }
       },
-      ImagingRequestDiagnostics: {
+      ImagingRequestProcedures: {
         include: {
-          ImagingDiagnostic: {
+          ImagingProcedure: {
+            include: {
+              MasterProcedure: {
+                select: {
+                  id: true,
+                  name: true,
+                  category: true,
+                },
+              },
+            },
             select: {
               id: true,
               name: true,
               description: true,
+              MasterProcedure: true,
             },
           },
         },
@@ -210,9 +220,9 @@ export const createImagingStudyAction = withErrorHandling(async (input: CreateIm
         HealthCareProvider: { connect: { id: authorizedHpId } },
         DocumentTemplate: { connect: { id: imagingTemplate.id } },
         CreatedBy: { connect: { id: createdBy } },
-        ImagingRequestDiagnostics: {
+        ImagingRequestProcedures: {
           create: diagnosticIds.map(diagnosticId => ({
-            imagingDiagnosticId: diagnosticId,
+            clinicImagingProcedureId: diagnosticId,
           })),
         },
         isActive: true,
@@ -284,16 +294,16 @@ export const updateImagingStudyAction = withErrorHandling(async (input: UpdateIm
     // Update diagnostics if provided
     if (diagnosticIds !== undefined) {
       // Delete existing diagnostics
-      await prisma.clinicImagingRequestDiagnostic.deleteMany({
+      await prisma.clinicImagingRequestProcedure.deleteMany({
         where: { clinicImagingRequestId: id }
       });
 
       // Create new diagnostics
       if (diagnosticIds.length > 0) {
-        await prisma.clinicImagingRequestDiagnostic.createMany({
+        await prisma.clinicImagingRequestProcedure.createMany({
           data: diagnosticIds.map(diagnosticId => ({
             clinicImagingRequestId: id,
-            imagingDiagnosticId: diagnosticId,
+            clinicImagingProcedureId: diagnosticId,
           }))
         });
       }

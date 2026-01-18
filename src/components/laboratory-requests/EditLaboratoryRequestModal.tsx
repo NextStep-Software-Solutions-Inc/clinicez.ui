@@ -20,6 +20,7 @@ import {
   FormMessage,
 } from "@components/ui/form";
 import { Checkbox } from "@components/ui/checkbox";
+import ProcedureMultiSelect from "@/components/ProcedureMultiSelect";
 import Each from "@components/utils/Each";
 import ActionButton from "@/components/ActionButton";
 import { useForm } from "react-hook-form";
@@ -29,12 +30,11 @@ import { toast } from "sonner";
 import { promiseWrapper } from "@/lib/with-error-handling";
 import { updateLaboratoryRequestAction } from "@/actions/clinics/clinical-record/laboratory-requests.action";
 import { LaboratoryRequest } from "./LaboratoryRequestItem";
-import { useLaboratoryDiagnostics } from "@/hooks/useLaboratoryDiagnostics";
 import { cn, getGridCols } from "@/lib/utils";
 
 const formSchema = z.object({
   impression: z.string().optional(),
-  diagnosticIds: z.array(z.number()).min(1, "Please select at least one diagnostic test"),
+  diagnosticIds: z.array(z.number()).min(1, "Please select at least one procedure"),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -45,6 +45,7 @@ interface EditLaboratoryRequestModalProps {
   onOpenChange: (open: boolean) => void;
   onUpdated?: () => void;
   hpIds: number[];
+  clinicId: number;
 }
 
 export default function EditLaboratoryRequestModal({
@@ -53,11 +54,11 @@ export default function EditLaboratoryRequestModal({
   onOpenChange,
   onUpdated,
   hpIds,
+  clinicId,
 }: EditLaboratoryRequestModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [showAlert, setShowAlert] = useState(false);
   const [originalValues, setOriginalValues] = useState<FormData | null>(null);
-  const { data: diagnosticsData, isLoading: diagnosticsLoading } = useLaboratoryDiagnostics();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -74,22 +75,6 @@ export default function EditLaboratoryRequestModal({
       diagnosticIds: [],
     });
   }, [form]);
-
-  const diagnostics = useMemo(() => diagnosticsData?.data || [], [diagnosticsData?.data]);
-
-  const groupedDiagnostics = useMemo(() => {
-    const groups: Record<string, typeof diagnostics> = {};
-
-    diagnostics.forEach((diagnostic) => {
-      const category = diagnostic.category || 'UNCATEGORIZED';
-      if (!groups[category]) {
-        groups[category] = [];
-      }
-      groups[category].push(diagnostic);
-    });
-
-    return groups;
-  }, [diagnostics]);
 
   useEffect(() => {
     if (open && request) {
@@ -173,59 +158,22 @@ export default function EditLaboratoryRequestModal({
                   name="diagnosticIds"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Laboratory Tests</FormLabel>
+                      <FormLabel>Laboratory Procedures</FormLabel>
                       <FormControl>
-                        <div className="space-y-6">
-                          {Object.keys(groupedDiagnostics).length > 0 ? (
-                            Object.entries(groupedDiagnostics).map(([category, categoryDiagnostics]) => {
-                              return (
-                                <div key={category} className="space-y-3">
-                                  <h4 className="font-semibold text-sm text-primary uppercase tracking-wide">
-                                    {category}
-                                  </h4>
-                                  <div className={cn("grid gap-3", getGridCols(categoryDiagnostics.length))}>
-                                    <Each
-                                      of={categoryDiagnostics}
-                                      render={(diagnostic) => (
-                                        <div
-                                          key={diagnostic.id}
-                                          className="w-full rounded-lg border p-3 flex items-center gap-2"
-                                          tabIndex={-1}
-                                          style={{ outline: "none" }}
-                                        >
-                                          <Checkbox
-                                            checked={field.value.includes(diagnostic.id)}
-                                            onCheckedChange={(checked) => {
-                                              if (checked) {
-                                                field.onChange([...field.value, diagnostic.id]);
-                                              } else {
-                                                field.onChange(field.value.filter(id => id !== diagnostic.id));
-                                              }
-                                            }}
-                                            className="cursor-pointer"
-                                          />
-                                          <div className="flex flex-col">
-                                            <span className="font-normal text-xs select-none">{diagnostic.name}</span>
-                                            {diagnostic.description && (
-                                              <span className="text-[10px] text-muted-foreground">{diagnostic.description}</span>
-                                            )}
-                                          </div>
-                                        </div>
-                                      )}
-                                    />
-                                  </div>
-                                </div>
-                              );
-                            })
-                          ) : (
-                            <div className="flex items-center justify-center py-8">
-                              <span className="text-sm text-muted-foreground">
-                                {diagnosticsLoading ? "Loading diagnostics..." : "No laboratory tests available"}
-                              </span>
-                            </div>
-                          )}
-                        </div>
+                        <ProcedureMultiSelect
+                          value={field.value || []}
+                          onChange={field.onChange}
+                          procedureType="laboratory"
+                          clinicId={clinicId}
+                          placeholder="Select laboratory procedures"
+                          disabled={isLoading}
+                          searchPlaceholder="Type to search procedures..."
+                          minSearchLength={2}
+                        />
                       </FormControl>
+                      <FormDescription>
+                        Select the relevant laboratory procedures for this request.
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

@@ -6,32 +6,31 @@ import { getCachedSession } from '@actions/session.action';
 import { getPermissionsAction } from '@actions/permission.action';
 import { PERMISSIONS } from '@lib/permissions';
 import { withErrorHandling } from '@/lib/with-error-handling';
-import { tr } from '@faker-js/faker';
 import { Prisma } from '@prisma/client';
 
 type UpsertPreAssessmentNotePayload = {
-    appointmentId: number;
-    assessment: string;
-    homeInstructions?: string;
-    remarks: string;
-    clinicUid: string;
+  appointmentId: number;
+  assessment: string;
+  homeInstructions?: string;
+  remarks: string;
+  clinicUid: string;
 }
 
-export const upsertPreAssessmentNoteAction = withErrorHandling(async ({appointmentId, clinicUid, assessment, homeInstructions, remarks}: UpsertPreAssessmentNotePayload) => {
-  
+export const upsertPreAssessmentNoteAction = withErrorHandling(async ({ appointmentId, clinicUid, assessment, homeInstructions, remarks }: UpsertPreAssessmentNotePayload) => {
+
   const session = await getCachedSession()
-  if(!session) throw new Error("User not authenticated.")
-  
-  const myPermissions = await getPermissionsAction({  userId:session.user.sub, type: "CLINIC" })
+  if (!session) throw new Error("User not authenticated.")
+
+  const myPermissions = await getPermissionsAction({ userId: session.user.sub, type: "CLINIC" })
   const writePreAssessmentNotePermissions = [PERMISSIONS.CLINIC["WRITE:CLINIC:PRE_ASSESSMENT_NOTE"].name]
   const myPermissionArray = myPermissions.map(permission => permission.name)
   const canWritePermission = writePreAssessmentNotePermissions.every(permission => myPermissionArray.includes(permission))
-    
-  if(!canWritePermission) throw new Error("You do not have permission to write pre-assessment note.")
-    
+
+  if (!canWritePermission) throw new Error("You do not have permission to write pre-assessment note.")
+
   await prisma.$transaction(async (prisma) => {
     const user = await prisma.user.findUniqueOrThrow({
-      where: {  userId: session.user.sub }, select: {id: true}
+      where: { userId: session.user.sub }, select: { id: true }
     })
     await prisma.preAssessmentNote.upsert({
       where: {
@@ -59,7 +58,7 @@ export const upsertPreAssessmentNoteAction = withErrorHandling(async ({appointme
             userId: session.user.sub
           }
         },
-        PreAssessmentNoteAttribute:{
+        PreAssessmentNoteAttribute: {
           create: {}
         }
       },
@@ -79,16 +78,16 @@ export const upsertPreAssessmentNoteAction = withErrorHandling(async ({appointme
 
 export type GetPreAssessmentNotes = Awaited<ReturnType<typeof getPreAssessmentNotesAction>>
 export const getPreAssessmentNotesAction = withErrorHandling(async (appointmentId: number) => {
-  
-  const session = await getCachedSession()
-  if(!session) throw new Error("User not authenticated.")
 
-  const myPermissions = await getPermissionsAction({userId: session.user.sub, type: "CLINIC"})
+  const session = await getCachedSession()
+  if (!session) throw new Error("User not authenticated.")
+
+  const myPermissions = await getPermissionsAction({ userId: session.user.sub, type: "CLINIC" })
   const readPreAssessmentNotePermissions = [PERMISSIONS.CLINIC["READ:CLINIC:PRE_ASSESSMENT_NOTE"].name]
   const myPermissionArray = myPermissions.map(permission => permission.name)
   const canReadPermission = readPreAssessmentNotePermissions.every(permission => myPermissionArray.includes(permission))
 
-  if(!canReadPermission) throw new Error("You do not have permission to read pre-assessment note.")
+  if (!canReadPermission) throw new Error("You do not have permission to read pre-assessment note.")
 
   const preAssessmentNote = await prisma.preAssessmentNote.findMany({
     orderBy: {
@@ -110,5 +109,5 @@ export const getPreAssessmentNotesAction = withErrorHandling(async (appointmentI
       }
     }
   })
-  return { message: "Pre-consultation note fetched successfully",  data: preAssessmentNote }
+  return { message: "Pre-consultation note fetched successfully", data: preAssessmentNote }
 })

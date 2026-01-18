@@ -20,13 +20,13 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@components/ui/chart"
-import { Gender } from "@prisma/client"
+import { Gender } from "@prisma/client";
 
 const genders = [...Object.values(Gender), null]
 const chartConfig: ChartConfig = genders.reduce((config: ChartConfig, gender: (typeof genders)[number], index: number) => {
   config[gender ?? "UNKNOWN"] = {
     label: gender ?? "UNKNOWN",
-    color: `hsl(var(--chart-${index+1 % genders.length}))`, // Cycle through colors if there are more types than colors
+    color: `hsl(var(--chart-${index + 1 % genders.length}))`, // Cycle through colors if there are more types than colors
   };
   return config;
 }, {});
@@ -94,7 +94,7 @@ export function GenderChart({ chartData }: GenderChartProps) {
                           y={(viewBox.cy || 0) + 24}
                           className="fill-muted-foreground"
                         >
-                            Members
+                          Members
                         </tspan>
                       </text>
                     )

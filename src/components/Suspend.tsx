@@ -5,8 +5,8 @@ import React, { Suspense } from "react";
 import GlobalError from "./GlobalError";
 
 interface Props {
-  errorFallback?: ({ error, reset }: { error: Error, reset?: () => void }) => JSX.Element;
-  loadingFallback?: JSX.Element;
+  errorFallback?: ({ error, reset }: { error: Error, reset?: () => void }) => React.JSX.Element;
+  loadingFallback?: React.JSX.Element;
   children: React.ReactNode;
 }
 

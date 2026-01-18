@@ -3,18 +3,9 @@ import SidebarNav from "@components/SidebarNav"
 
 interface SettingsLayoutProps {
   children: React.ReactNode
-  params: Promise<{
-    organization: string
-  }>
 }
 
 export default async function SettingsLayout(props: SettingsLayoutProps) {
-  const params = await props.params;
-
-  const {
-    organization
-  } = params;
-
   const {
     children
   } = props;

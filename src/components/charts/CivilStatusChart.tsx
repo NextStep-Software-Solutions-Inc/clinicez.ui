@@ -20,13 +20,13 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@components/ui/chart"
-import { CivilStatus } from "@prisma/client"
+import { CivilStatus } from "@prisma/client";
 
 const civilStatuses = [...Object.values(CivilStatus), null]
 const chartConfig: ChartConfig = civilStatuses.reduce((config: ChartConfig, civilStatus: (typeof civilStatuses)[number], index: number) => {
   config[civilStatus ?? "UNKNOWN"] = {
     label: civilStatus ?? "UNKNOWN",
-    color: `hsl(var(--chart-${index+1 % civilStatuses.length}))`, // Cycle through colors if there are more types than colors
+    color: `hsl(var(--chart-${index + 1 % civilStatuses.length}))`, // Cycle through colors if there are more types than colors
   };
   return config;
 }, {});
@@ -94,7 +94,7 @@ export function CivilStatusChart({ chartData }: CivilStatusChartProps) {
                           y={(viewBox.cy || 0) + 24}
                           className="fill-muted-foreground"
                         >
-                            Members
+                          Members
                         </tspan>
                       </text>
                     )

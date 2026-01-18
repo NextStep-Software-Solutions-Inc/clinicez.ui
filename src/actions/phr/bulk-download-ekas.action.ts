@@ -37,7 +37,6 @@ export const bulkDownloadEKASAction = withErrorHandling(
       },
       select: {
         id: true,
-        caseNumber: true,
         Appointment: {
           select: {
             Requesters: {
@@ -85,11 +84,11 @@ export const bulkDownloadEKASAction = withErrorHandling(
 
           // Add to ZIP with sanitized filename
           const sanitizedName = patientName.replace(/[^a-z0-9]/gi, '_')
-          const filename = `EKAS_${ticket.caseNumber || ticket.id}_${sanitizedName}.pdf`
+          const filename = `EKAS_${ticket.id}_${sanitizedName}.pdf`
           zip.file(filename, pdfBuffer)
         }
       } catch (error) {
-        errors.push(`Failed to generate EKAS for ${patientName} (Case: ${ticket.caseNumber || ticket.id})`)
+        errors.push(`Failed to generate EKAS for ${patientName} (ID: ${ticket.id})`)
         console.error(`Error generating EKAS for ticket ${ticket.id}:`, error)
       }
     }

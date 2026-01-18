@@ -191,8 +191,6 @@ export const upsertUserIllnessAction = withErrorHandling(async (payload: {
 
 
 type ResponseType = { status: boolean, message: string }
-export function setUserIllnessStatusAction(id: number, status: "RESOLVED", userId: string): Promise<ResponseType>;
-export function setUserIllnessStatusAction(id: number, status: Exclude<HealthConditionStatus, "RESOLVED">): Promise<ResponseType>;
 
 export async function setUserIllnessStatusAction(id: number, status: HealthConditionStatus, userId?: string): Promise<ResponseType> {
   const hp = await isHP()

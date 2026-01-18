@@ -123,7 +123,7 @@ export const getReferralSlipAction = withErrorHandling(async (id: number) => {
       },
       CreatedBy: {
         include: {
-          HealthcareProviders: {
+          HealthcareProvider: {
             include: {
               HPProfile: true,
               ProfessionalDetails: true,

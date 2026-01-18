@@ -21,6 +21,7 @@ import { calculateAge } from "@/lib/utils";
 import MedicalCertificateWrapper from "@components/MedicalCertificateWrapper";
 import ImagingStudiesWrapper from "@components/ImagingStudiesWrapper";
 import LaboratoryRequestWrapper from "@components/LaboratoryRequestWrapper";
+import HeartStationRequestWrapper from "@/components/HeartStationRequestWrapper";
 import ReferralSlipWrapper from "../clinic/clinical-records/referral-slip/ReferralSlipWrapper";
 import EKASWrapper from "../clinic/clinical-records/ekas/EKASWrapper";
 
@@ -241,6 +242,13 @@ export const ClinicalRecords = ({
       cardTitle: "Laboratory Request",
       description: "Create and manage laboratory test requests for your patients.",
       Component: LaboratoryRequestWrapper,
+    },
+    {
+      value: "heart-station",
+      tabTitle: "Heart Station",
+      cardTitle: "Heart Station Request",
+      description: "Create and manage heart station requests for your patients.",
+      Component: HeartStationRequestWrapper,
     },
     {
       value: "referral-slip",

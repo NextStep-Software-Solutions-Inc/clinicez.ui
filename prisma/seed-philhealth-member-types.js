@@ -1,7 +1,13 @@
 /* Seed PhilHealth Member Types (idempotent) */
 /* eslint-disable */
+require('dotenv').config();
 const { PrismaClient, PhilHealthMemberCategory } = require('@prisma/client');
-const prisma = new PrismaClient();
+const { Pool } = require('pg');
+const { PrismaPg } = require('@prisma/adapter-pg');
+
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter, transactionOptions: { timeout: 30000, maxWait: 10000 } });
 
 const DIRECT = PhilHealthMemberCategory.DIRECT;
 const INDIRECT = PhilHealthMemberCategory.INDIRECT;

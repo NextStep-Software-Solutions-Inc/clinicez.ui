@@ -4,8 +4,6 @@ import { createDocumentTemplateAction } from "@/actions/document-template.action
 import { Textarea } from "@/components/ui/textarea";
 import { useDocumentTypes } from "@/hooks/useDocumentType";
 import { promiseWrapper } from "@/lib/with-error-handling";
-import { createPrescriptionAction } from "@actions/medications/prescription.action";
-import { useUser } from "@clerk/nextjs";
 import ActionButton from "@components/ActionButton";
 import CustomModalContent from "@components/CustomModalContent";
 import { Button } from "@components/ui/button";
@@ -51,6 +49,7 @@ interface CreateDocumentTemplateModalProps {
   onCreated?: () => void;
   documentType?: string;
   label?: string;
+  clinicUid?: string;
 }
 
 type CreateDocumentTemplateForm = z.infer<typeof createDocumentTemplateFormSchema>;
@@ -70,9 +69,11 @@ const createDocumentTemplateFormSchema = z.object({
 export default function CreateDocumentTemplateModal({
   onCreated,
   documentType,
-  label
+  label,
+  clinicUid,
 }: CreateDocumentTemplateModalProps) {
-  const {clinicUid} = useParams<{clinicUid: string}>()
+  const params = useParams<{clinicUid?: string}>()
+  const resolvedClinicUid = clinicUid ?? params?.clinicUid
   const closeBtnRef = useRef<HTMLInputElement>(null);
 
   const { data: docTypes } = useDocumentTypes({
@@ -89,8 +90,12 @@ export default function CreateDocumentTemplateModal({
 
   const action = async () => {
     form.handleSubmit((data) => {
-      
-      toast.promise(promiseWrapper(createDocumentTemplateAction)({...data, clinicUid}), {
+      if(!resolvedClinicUid) {
+        toast.error("Clinic is required to create a document template");
+        return;
+      }
+
+      toast.promise(promiseWrapper(createDocumentTemplateAction)({...data, clinicUid: resolvedClinicUid}), {
         loading: "Creating new prescription...",
         success: (res) => {
           onCreated?.();
@@ -115,7 +120,7 @@ export default function CreateDocumentTemplateModal({
         <Tooltip>
           <TooltipTrigger asChild>
             <DialogTrigger asChild>
-              <Button className="w-full">
+              <Button className="w-full sm:w-auto whitespace-nowrap">
                 <Plus className="h-4 w-4 mr-2" />
                 New {label ?? "Document"} Template
               </Button>

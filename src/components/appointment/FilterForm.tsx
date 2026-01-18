@@ -327,7 +327,9 @@ export default function FilterForm({ onContinue }: FilterFormProps) {
                                 </Button>
                               </PopoverTrigger>
                               <PopoverContent className="w-full p-0" align="start">
-                                <Command shouldFilter={false}>
+                                <Command shouldFilter={false}
+                                  className="p-2"
+                                >
                                   <CommandInput
                                     placeholder="Type at least 2 characters to search by name or student ID..."
                                     value={memberSearch}
@@ -346,7 +348,7 @@ export default function FilterForm({ onContinue }: FilterFormProps) {
                                       </CommandEmpty>
                                     ) : orgMembersLoading ? (
                                       <CommandEmpty>
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex items-center justify-center gap-2">
                                           <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600" />
                                           Searching...
                                         </div>

@@ -24,6 +24,9 @@
     "migrate:resolve:applied": "prisma migrate resolve --applied",
     "seed:philhealth": "node prisma/seed-philhealth-member-types.js",
     "seed:procedures": "node prisma/seed-procedures.js",
+    "seed:philhealth:prod": "dotenv -e .env.production.local -- pnpm run seed:philhealth",
+    "seed:procedures:prod": "dotenv -e .env.production.local -- pnpm run seed:procedures",
+    "seed:all:prod": "dotenv -e .env.production.local -- pnpm run seed:philhealth && dotenv -e .env.production.local -- pnpm run seed:procedures",
     "db:test": "tsx scripts/test-database.ts",
     "db:studio": "prisma studio"
   },

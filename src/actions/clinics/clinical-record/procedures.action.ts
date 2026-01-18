@@ -431,6 +431,7 @@ interface CreateClinicProcedureParams {
   clinicId: number;
   procedureType: ProcedureType;
   name: string;
+  category?: string;
   description?: string;
 }
 
@@ -438,7 +439,7 @@ interface CreateClinicProcedureParams {
  * Create a custom clinic-specific procedure on-the-fly
  */
 export const createClinicProcedureAction = withErrorHandling(
-  async ({ clinicId, procedureType, name, description }: CreateClinicProcedureParams) => {
+  async ({ clinicId, procedureType, name, category, description }: CreateClinicProcedureParams) => {
     const session = await getCachedSession();
     if (!session) throw new Error("Unauthorized");
 
@@ -453,6 +454,7 @@ export const createClinicProcedureAction = withErrorHandling(
         data: {
           clinicId,
           name: name.trim(),
+          category: category?.trim() || null,
           description: description?.trim() || null,
           isActive: true,
           masterProcedureId: null, // Custom procedure
@@ -461,6 +463,7 @@ export const createClinicProcedureAction = withErrorHandling(
           id: true,
           name: true,
           description: true,
+          category: true,
         },
       });
     } else if (procedureType === "laboratory") {
@@ -468,6 +471,7 @@ export const createClinicProcedureAction = withErrorHandling(
         data: {
           clinicId,
           name: name.trim(),
+          category: category?.trim() || null,
           description: description?.trim() || null,
           isActive: true,
           masterProcedureId: null,
@@ -476,6 +480,7 @@ export const createClinicProcedureAction = withErrorHandling(
           id: true,
           name: true,
           description: true,
+          category: true,
         },
       });
     } else if (procedureType === "heart_station") {
@@ -483,6 +488,7 @@ export const createClinicProcedureAction = withErrorHandling(
         data: {
           clinicId,
           name: name.trim(),
+          category: category?.trim() || null,
           description: description?.trim() || null,
           isActive: true,
           masterProcedureId: null,
@@ -491,6 +497,7 @@ export const createClinicProcedureAction = withErrorHandling(
           id: true,
           name: true,
           description: true,
+          category: true,
         },
       });
     } else {
@@ -501,7 +508,7 @@ export const createClinicProcedureAction = withErrorHandling(
       message: "Custom procedure created successfully",
       data: {
         ...procedure,
-        category: "Custom",
+        category: procedure.category || "Custom",
         isClinicCustom: true,
         masterProcedureId: null,
       },

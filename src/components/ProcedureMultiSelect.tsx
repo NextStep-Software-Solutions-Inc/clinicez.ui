@@ -1,18 +1,21 @@
 "use client";
 
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import SmartMultiSelect from "./SmartMultiSelect";
-import { 
-  searchProceduresAction, 
-  getProceduresByIdsAction, 
+import {
+  searchProceduresAction,
+  getProceduresByIdsAction,
   createClinicProcedureAction,
-  ProcedureType 
+  ProcedureType
 } from "@/actions/clinics/clinical-record/procedures.action";
 import { Button } from "./ui/button";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, ChevronsUpDown, Check } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "./ui/command";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 interface Procedure {
@@ -50,7 +53,11 @@ export default function ProcedureMultiSelect({
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [newProcedureName, setNewProcedureName] = useState("");
   const [newProcedureDescription, setNewProcedureDescription] = useState("");
+  const [newProcedureCategory, setNewProcedureCategory] = useState("");
   const [isCreating, setIsCreating] = useState(false);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [categoryOpen, setCategoryOpen] = useState(false);
+  const [categorySearch, setCategorySearch] = useState("");
 
   const searchProcedures = useCallback(
     async (query: string): Promise<Procedure[]> => {
@@ -102,6 +109,10 @@ export default function ProcedureMultiSelect({
       toast.error("Please enter a procedure name");
       return;
     }
+    if (!newProcedureCategory.trim()) {
+      toast.error("Please select or type a category");
+      return;
+    }
 
     setIsCreating(true);
     try {
@@ -109,6 +120,7 @@ export default function ProcedureMultiSelect({
         clinicId,
         procedureType,
         name: newProcedureName.trim(),
+        category: newProcedureCategory.trim(),
         description: newProcedureDescription.trim() || undefined,
       });
 
@@ -119,6 +131,8 @@ export default function ProcedureMultiSelect({
         setShowAddDialog(false);
         setNewProcedureName("");
         setNewProcedureDescription("");
+        setNewProcedureCategory("");
+        setCategorySearch("");
       }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to create procedure");
@@ -126,6 +140,33 @@ export default function ProcedureMultiSelect({
       setIsCreating(false);
     }
   };
+
+  // Load master categories for combobox when dialog opens
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const result = await searchProceduresAction({
+          clinicId,
+          procedureType,
+          searchTerm: "",
+          limit: 200,
+        });
+
+        const cats = (result.data || [])
+          .map((proc: Procedure) => proc.category)
+          .filter((cat): cat is string => Boolean(cat && cat.trim()));
+
+        setCategories(Array.from(new Set(cats)).sort());
+      } catch (error) {
+        console.error("Error loading categories", error);
+        setCategories([]);
+      }
+    };
+
+    if (showAddDialog) {
+      loadCategories();
+    }
+  }, [clinicId, procedureType, showAddDialog]);
 
   return (
     <div className="space-y-2">
@@ -175,6 +216,82 @@ export default function ProcedureMultiSelect({
                 disabled={isCreating}
               />
             </div>
+
+            <div className="space-y-2">
+              <Label>Category *</Label>
+              <Popover open={categoryOpen} onOpenChange={setCategoryOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={categoryOpen}
+                    className="w-full justify-between"
+                    disabled={isCreating}
+                  >
+                    {newProcedureCategory || "Select or type category..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                  <Command shouldFilter={false}>
+                    <CommandInput
+                      placeholder="Select from list or type custom category..."
+                      value={categorySearch}
+                      onValueChange={setCategorySearch}
+                    />
+                    <CommandList>
+                      <CommandEmpty>
+                        {categorySearch ? (
+                          <div className="p-2 space-y-2">
+                            <p className="text-sm text-muted-foreground">No matching categories found</p>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="secondary"
+                              className="w-full"
+                              onClick={() => {
+                                setNewProcedureCategory(categorySearch);
+                                setCategoryOpen(false);
+                                setCategorySearch("");
+                              }}
+                            >
+                              <PlusCircle className="w-3 h-3 mr-1" />
+                              Use "{categorySearch}" as custom category
+                            </Button>
+                          </div>
+                        ) : (
+                          "Start typing to search or create custom category"
+                        )}
+                      </CommandEmpty>
+                      {categories.length > 0 && (
+                        <CommandGroup heading="Master Categories">
+                          {categories.map((cat) => (
+                            <CommandItem
+                              key={cat}
+                              value={cat}
+                              onSelect={() => {
+                                setNewProcedureCategory(cat);
+                                setCategoryOpen(false);
+                                setCategorySearch("");
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  newProcedureCategory === cat ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              {cat}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      )}
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
             
             <div className="space-y-2">
               <Label htmlFor="procedure-description">Description (Optional)</Label>
@@ -196,6 +313,8 @@ export default function ProcedureMultiSelect({
                 setShowAddDialog(false);
                 setNewProcedureName("");
                 setNewProcedureDescription("");
+                setNewProcedureCategory("");
+                setCategorySearch("");
               }}
               disabled={isCreating}
             >
@@ -204,7 +323,7 @@ export default function ProcedureMultiSelect({
             <Button
               type="button"
               onClick={handleCreateProcedure}
-              disabled={isCreating || !newProcedureName.trim()}
+              disabled={isCreating || !newProcedureName.trim() || !newProcedureCategory.trim()}
             >
               {isCreating ? "Creating..." : "Create Procedure"}
             </Button>

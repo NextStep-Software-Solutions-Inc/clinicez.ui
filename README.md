@@ -11,6 +11,7 @@ ClinicEZ is a modern, user-friendly healthcare management system built with Next
 - **Smart Appointment Booking** - 24/7 online booking with automated reminders and calendar sync
 - **Patient Management** - Complete patient profiles, medical history, and secure document storage
 - **Real-time Scheduling** - Dynamic scheduling with conflict detection and automatic optimization
+- **AI-Powered Features** - Medical note summarization, symptom analysis, and intelligent insights (NEW!)
 - **User-Friendly Interface** - Intuitive design that healthcare staff love
 - **Proven Reliability** - Battle-tested in real healthcare environments
 - **Quick Implementation** - Fast setup with comprehensive support
@@ -89,6 +90,15 @@ src/
 - Role-based access control
 - User profile management
 
+### AI-Powered Healthcare Features (NEW!)
+
+- **Medical Note Summarization**: Automatically summarize consultation notes into structured SOAP format
+- **Symptom Analysis**: AI-powered symptom assessment with urgency detection
+- **Patient Insights**: Generate actionable insights from patient data trends
+- **Data Visualization**: AI recommends optimal charts and visualizations
+- **Multi-Provider Support**: OpenAI, Anthropic Claude, Google Gemini
+- **Built on Vercel AI SDK**: Open-source, industry-standard LLM orchestration
+
 ### Appointment Management
 
 - Smart booking system with conflict detection
@@ -112,10 +122,11 @@ src/
 
 ## Technology Stack
 
-- **Frontend:** Next.js 14, React, TypeScript, TailwindCSS
+- **Frontend:** Next.js 16, React 19, TypeScript, TailwindCSS
 - **Backend:** Next.js API Routes, Prisma ORM
 - **Database:** PostgreSQL
 - **Authentication:** Clerk
+- **AI/ML:** Vercel AI SDK (OpenAI, Anthropic, Google)
 - **Deployment:** Vercel
 - **Monitoring:** Vercel Analytics, HotJar
 
@@ -123,6 +134,9 @@ src/
 
 ### Core Documentation
 
+- **[AI Features Quick Start](./docs/AI_QUICK_START.md)** - Get started with AI features
+- **[AI Integration Summary](./docs/AI_INTEGRATION_SUMMARY.md)** - Comprehensive AI architecture guide
+- **[AI Features Recommendations](./docs/AI_FEATURES_RECOMMENDATIONS.md)** - AI feature roadmap and recommendations
 - **[Sequence Number Generation](./docs/SEQUENCE_NUMBER_GENERATION.md)** - Guide on case and transaction number generation
 - **[Sequence Number Generation Summary](./docs/SEQUENCE_NUMBER_GENERATION_SUMMARY.md)** - Quick reference
 - **[Case Number Architecture](./docs/CASE_NUMBER_ARCHITECTURE.md)** - System design and implementation
@@ -165,12 +179,20 @@ CLERK_SECRET_KEY=your_secret
 # API Configuration
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 
+# AI Features (Optional - see docs/AI_QUICK_START.md)
+NEXT_PUBLIC_AI_ENABLED=true
+NEXT_PUBLIC_AI_PROVIDER=openai
+NEXT_PUBLIC_AI_MODEL=gpt-4o-mini
+OPENAI_API_KEY=sk-...
+
 # Analytics
 NEXT_PUBLIC_HOTJAR_ID=your_id
 
 # Other services
 # Add other required environment variables
 ```
+
+For detailed AI configuration, see [AI Quick Start Guide](./docs/AI_QUICK_START.md).
 
 ## Running Tests
 

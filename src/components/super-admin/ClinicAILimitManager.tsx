@@ -49,22 +49,22 @@ export function ClinicAILimitManager({ clinicId, clinicName }: ClinicAILimitMana
       const result = await getClinicAILimitAction(clinicId);
       setLimitData(result);
       
-      if (result.clinicLimit) {
+      if (result.data?.clinicLimit) {
         setUseCustomLimit(true);
         setFormData({
-          maxRequests: result.clinicLimit.maxRequests,
-          maxTokens: result.clinicLimit.maxTokens?.toString() || '',
-          maxCostUSD: result.clinicLimit.maxCostUSD?.toString() || '',
-          resetDay: result.clinicLimit.resetDay,
-          isActive: result.clinicLimit.isActive,
+          maxRequests: result.data?.clinicLimit.maxRequests,
+          maxTokens: result.data?.clinicLimit.maxTokens?.toString() || '',
+          maxCostUSD: result.data?.clinicLimit.maxCostUSD?.toString() || '',
+          resetDay: result.data?.clinicLimit.resetDay,
+          isActive: result.data?.clinicLimit.isActive,
         });
       } else {
         setUseCustomLimit(false);
         setFormData({
-          maxRequests: result.effectiveLimit.maxRequests,
-          maxTokens: result.effectiveLimit.maxTokens?.toString() || '',
-          maxCostUSD: result.effectiveLimit.maxCostUSD?.toString() || '',
-          resetDay: result.effectiveLimit.resetDay,
+          maxRequests: result.data?.effectiveLimit.maxRequests,
+          maxTokens: result.data?.effectiveLimit.maxTokens?.toString() || '',
+          maxCostUSD: result.data?.effectiveLimit.maxCostUSD?.toString() || '',
+          resetDay: result.data?.effectiveLimit.resetDay,
           isActive: true,
         });
       }

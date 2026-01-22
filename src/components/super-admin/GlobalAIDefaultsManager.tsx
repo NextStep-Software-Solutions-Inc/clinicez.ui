@@ -41,10 +41,10 @@ export function GlobalAIDefaultsManager() {
       const result = await getGlobalAIDefaultsAction();
       setDefaults(result);
       setFormData({
-        defaultMaxRequests: result.defaultMaxRequests,
-        defaultMaxTokens: result.defaultMaxTokens?.toString() || '',
-        defaultMaxCostUSD: result.defaultMaxCostUSD?.toString() || '',
-        defaultResetDay: result.defaultResetDay,
+        defaultMaxRequests: result.data?.defaultMaxRequests,
+        defaultMaxTokens: result.data?.defaultMaxTokens?.toString() || '',
+        defaultMaxCostUSD: result.data?.defaultMaxCostUSD?.toString() || '',
+        defaultResetDay: result.data?.defaultResetDay,
       });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to load defaults');

@@ -12,6 +12,7 @@
 import { auth } from '@clerk/nextjs/server';
 import prisma from '@/lib/prisma';
 import { withErrorHandling } from '@/lib/with-error-handling';
+import { isSuperAdminAction } from './admin-check.action';
 
 export interface AILimitConfig {
   maxRequests: number;
@@ -34,14 +35,12 @@ export interface GlobalAIDefaults {
 /**
  * Get or create global AI default settings
  */
-export const getGlobalAIDefaultsAction = withErrorHandling(async (): Promise<GlobalAIDefaults> => {
+export const getGlobalAIDefaultsAction = withErrorHandling(async () => {
   const { userId } = await auth();
   if (!userId) throw new Error('Authentication required');
 
   // Check if user is super admin
-  const isSuperAdmin = await prisma.systemAdmin.findUnique({
-    where: { userId },
-  });
+  const isSuperAdmin = await isSuperAdminAction();
 
   if (!isSuperAdmin) {
     throw new Error('Super admin access required');
@@ -61,7 +60,7 @@ export const getGlobalAIDefaultsAction = withErrorHandling(async (): Promise<Glo
     });
   }
 
-  return defaults;
+  return { message: 'Global AI defaults retrieved successfully', data: defaults };
 });
 
 /**
@@ -77,9 +76,7 @@ export const updateGlobalAIDefaultsAction = withErrorHandling(async (config: {
   if (!userId) throw new Error('Authentication required');
 
   // Check if user is super admin
-  const isSuperAdmin = await prisma.systemAdmin.findUnique({
-    where: { userId },
-  });
+  const isSuperAdmin = await isSuperAdminAction();
 
   if (!isSuperAdmin) {
     throw new Error('Super admin access required');
@@ -123,9 +120,7 @@ export const getTenantAILimitAction = withErrorHandling(async (tenantId: number)
   if (!userId) throw new Error('Authentication required');
 
   // Check if user is super admin
-  const isSuperAdmin = await prisma.systemAdmin.findUnique({
-    where: { userId },
-  });
+  const isSuperAdmin = await isSuperAdminAction();
 
   if (!isSuperAdmin) {
     throw new Error('Super admin access required');
@@ -138,14 +133,17 @@ export const getTenantAILimitAction = withErrorHandling(async (tenantId: number)
   const globalDefaults = await prisma.globalAIDefaults.findFirst();
 
   return {
-    tenantLimit: limit,
-    globalDefaults,
-    effectiveLimit: limit || {
-      maxRequests: globalDefaults?.defaultMaxRequests || 1000,
-      maxTokens: globalDefaults?.defaultMaxTokens,
-      maxCostUSD: globalDefaults?.defaultMaxCostUSD,
-      resetDay: globalDefaults?.defaultResetDay || 1,
-      isActive: true,
+    message: 'Tenant AI limit retrieved successfully',
+    data: {
+      tenantLimit: limit,
+      globalDefaults,
+      effectiveLimit: limit || {
+        maxRequests: globalDefaults?.defaultMaxRequests || 1000,
+        maxTokens: globalDefaults?.defaultMaxTokens,
+        maxCostUSD: globalDefaults?.defaultMaxCostUSD,
+        resetDay: globalDefaults?.defaultResetDay || 1,
+        isActive: true,
+      },
     },
   };
 });
@@ -161,9 +159,7 @@ export const setTenantAILimitAction = withErrorHandling(async (
   if (!userId) throw new Error('Authentication required');
 
   // Check if user is super admin
-  const isSuperAdmin = await prisma.systemAdmin.findUnique({
-    where: { userId },
-  });
+  const isSuperAdmin = await isSuperAdminAction();
 
   if (!isSuperAdmin) {
     throw new Error('Super admin access required');
@@ -248,13 +244,15 @@ export const getClinicAILimitAction = withErrorHandling(async (clinicId: number)
   if (!userId) throw new Error('Authentication required');
 
   // Check if user is super admin or tenant admin
-  const isSuperAdmin = await prisma.systemAdmin.findUnique({
-    where: { userId },
-  });
+  const isSuperAdmin = await isSuperAdminAction();
 
   const clinic = await prisma.clinic.findUnique({
     where: { id: clinicId },
-    include: { Tenant: true },
+    include: { 
+      Tenant: {
+        include: { Owner: true }
+      }
+    },
   });
 
   if (!clinic) {
@@ -262,7 +260,7 @@ export const getClinicAILimitAction = withErrorHandling(async (clinicId: number)
   }
 
   // Check if user is tenant owner
-  const isTenantOwner = clinic.Tenant.ownerId && clinic.Tenant.Owner?.userId === userId;
+  const isTenantOwner = clinic.Tenant.Owner?.userId === userId;
 
   if (!isSuperAdmin && !isTenantOwner) {
     throw new Error('Super admin or tenant owner access required');
@@ -281,7 +279,10 @@ export const getClinicAILimitAction = withErrorHandling(async (clinicId: number)
   // Calculate available capacity (tenant limit - sum of other clinic limits)
   const otherClinicLimits = await prisma.aIUsageLimit.findMany({
     where: {
-      clinicId: { not: null, not: clinicId },
+      AND: [
+        { clinicId: { not: null } },
+        { clinicId: { not: clinicId } },
+      ],
       Clinic: { tenantId: clinic.tenantId },
     },
   });
@@ -295,20 +296,23 @@ export const getClinicAILimitAction = withErrorHandling(async (clinicId: number)
   const allocatedCost = otherClinicLimits.reduce((sum, limit) => sum + (limit.maxCostUSD || 0), 0);
 
   return {
-    clinicLimit,
-    tenantLimit,
-    globalDefaults,
-    availableCapacity: {
-      requests: tenantMaxRequests - allocatedRequests,
-      tokens: tenantMaxTokens ? tenantMaxTokens - allocatedTokens : null,
-      cost: tenantMaxCost ? tenantMaxCost - allocatedCost : null,
-    },
-    effectiveLimit: clinicLimit || {
-      maxRequests: Math.min(100, tenantMaxRequests - allocatedRequests), // Default 100 or available
-      maxTokens: tenantMaxTokens ? Math.min(50000, tenantMaxTokens - allocatedTokens) : null,
-      maxCostUSD: tenantMaxCost ? Math.min(10, tenantMaxCost - allocatedCost) : null,
-      resetDay: tenantLimit?.resetDay || globalDefaults?.defaultResetDay || 1,
-      isActive: true,
+    message: 'Clinic AI limit retrieved successfully',
+    data: {
+      clinicLimit,
+      tenantLimit,
+      globalDefaults,
+      availableCapacity: {
+        requests: tenantMaxRequests - allocatedRequests,
+        tokens: tenantMaxTokens ? tenantMaxTokens - allocatedTokens : null,
+        cost: tenantMaxCost ? tenantMaxCost - allocatedCost : null,
+      },
+      effectiveLimit: clinicLimit || {
+        maxRequests: Math.min(100, tenantMaxRequests - allocatedRequests), // Default 100 or available
+        maxTokens: tenantMaxTokens ? Math.min(50000, tenantMaxTokens - allocatedTokens) : null,
+        maxCostUSD: tenantMaxCost ? Math.min(10, tenantMaxCost - allocatedCost) : null,
+        resetDay: tenantLimit?.resetDay || globalDefaults?.defaultResetDay || 1,
+        isActive: true,
+      },
     },
   };
 });
@@ -350,9 +354,7 @@ export const setClinicAILimitAction = withErrorHandling(async (
   }
 
   // Check permissions
-  const isSuperAdmin = await prisma.systemAdmin.findUnique({
-    where: { userId },
-  });
+  const isSuperAdmin = await isSuperAdminAction();
 
   const isTenantOwner = clinic.Tenant.Owner?.userId === userId;
 
@@ -374,7 +376,10 @@ export const setClinicAILimitAction = withErrorHandling(async (
   // Get other clinic limits in same tenant
   const otherClinicLimits = await prisma.aIUsageLimit.findMany({
     where: {
-      clinicId: { not: null, not: clinicId },
+      AND: [
+        { clinicId: { not: null } },
+        { clinicId: { not: clinicId } },
+      ],
       Clinic: { tenantId: clinic.tenantId },
     },
   });
@@ -423,9 +428,7 @@ export const getAllTenantAILimitsAction = withErrorHandling(async () => {
   const { userId } = await auth();
   if (!userId) throw new Error('Authentication required');
 
-  const isSuperAdmin = await prisma.systemAdmin.findUnique({
-    where: { userId },
-  });
+  const isSuperAdmin = await isSuperAdminAction();
 
   if (!isSuperAdmin) {
     throw new Error('Super admin access required');
@@ -448,8 +451,11 @@ export const getAllTenantAILimitsAction = withErrorHandling(async () => {
   const globalDefaults = await prisma.globalAIDefaults.findFirst();
 
   return {
-    limits,
-    globalDefaults,
+    message: 'Tenant AI limits retrieved successfully',
+    data: {
+      limits,
+      globalDefaults,
+    },
   };
 });
 
@@ -460,9 +466,7 @@ export const getTenantClinicAILimitsAction = withErrorHandling(async (tenantId: 
   const { userId } = await auth();
   if (!userId) throw new Error('Authentication required');
 
-  const isSuperAdmin = await prisma.systemAdmin.findUnique({
-    where: { userId },
-  });
+  const isSuperAdmin = await isSuperAdminAction();
 
   const tenant = await prisma.tenant.findUnique({
     where: { id: tenantId },
@@ -511,24 +515,27 @@ export const getTenantClinicAILimitsAction = withErrorHandling(async (tenantId: 
   const allocatedCost = clinicLimits.reduce((sum, limit) => sum + (limit.maxCostUSD || 0), 0);
 
   return {
-    clinicLimits,
-    tenantLimit,
-    globalDefaults,
-    summary: {
-      tenantCapacity: {
-        requests: tenantMaxRequests,
-        tokens: tenantMaxTokens,
-        cost: tenantMaxCost,
-      },
-      allocated: {
-        requests: allocatedRequests,
-        tokens: allocatedTokens,
-        cost: allocatedCost,
-      },
-      available: {
-        requests: tenantMaxRequests - allocatedRequests,
-        tokens: tenantMaxTokens ? tenantMaxTokens - allocatedTokens : null,
-        cost: tenantMaxCost ? tenantMaxCost - allocatedCost : null,
+    message: 'Clinic AI limits retrieved successfully',
+    data: {
+      clinicLimits,
+      tenantLimit,
+      globalDefaults,
+      summary: {
+        tenantCapacity: {
+          requests: tenantMaxRequests,
+          tokens: tenantMaxTokens,
+          cost: tenantMaxCost,
+        },
+        allocated: {
+          requests: allocatedRequests,
+          tokens: allocatedTokens,
+          cost: allocatedCost,
+        },
+        available: {
+          requests: tenantMaxRequests - allocatedRequests,
+          tokens: tenantMaxTokens ? tenantMaxTokens - allocatedTokens : null,
+          cost: tenantMaxCost ? tenantMaxCost - allocatedCost : null,
+        },
       },
     },
   };

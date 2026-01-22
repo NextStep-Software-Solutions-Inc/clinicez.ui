@@ -49,22 +49,22 @@ export function TenantAILimitManager({ tenantId, tenantName }: TenantAILimitMana
       const result = await getTenantAILimitAction(tenantId);
       setLimitData(result);
       
-      if (result.tenantLimit) {
+      if (result.data?.tenantLimit) {
         setUseCustomLimit(true);
         setFormData({
-          maxRequests: result.tenantLimit.maxRequests,
-          maxTokens: result.tenantLimit.maxTokens?.toString() || '',
-          maxCostUSD: result.tenantLimit.maxCostUSD?.toString() || '',
-          resetDay: result.tenantLimit.resetDay,
-          isActive: result.tenantLimit.isActive,
+          maxRequests: result.data?.tenantLimit.maxRequests,
+          maxTokens: result.data?.tenantLimit.maxTokens?.toString() || '',
+          maxCostUSD: result.data?.tenantLimit.maxCostUSD?.toString() || '',
+          resetDay: result.data?.tenantLimit.resetDay,
+          isActive: result.data?.tenantLimit.isActive,
         });
       } else {
         setUseCustomLimit(false);
         setFormData({
-          maxRequests: result.globalDefaults?.defaultMaxRequests || 1000,
-          maxTokens: result.globalDefaults?.defaultMaxTokens?.toString() || '',
-          maxCostUSD: result.globalDefaults?.defaultMaxCostUSD?.toString() || '',
-          resetDay: result.globalDefaults?.defaultResetDay || 1,
+          maxRequests: result.data?.globalDefaults?.defaultMaxRequests || 1000,
+          maxTokens: result.data?.globalDefaults?.defaultMaxTokens?.toString() || '',
+          maxCostUSD: result.data?.globalDefaults?.defaultMaxCostUSD?.toString() || '',
+          resetDay: result.data?.globalDefaults?.defaultResetDay || 1,
           isActive: true,
         });
       }

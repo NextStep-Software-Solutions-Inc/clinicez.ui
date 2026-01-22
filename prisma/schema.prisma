@@ -24,6 +24,9 @@ model Tenant {
   UserPlan           UserPlan?           @relation(fields: [userPlanId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   TenantSetting      TenantSetting?
   UserDefaultTenants UserDefaultTenant[]
+  AIUsageLogs        AIUsageLog[]
+  AIUsageLimit       AIUsageLimit?
+  AIUsageSummaries   AIUsageSummary[]
 }
 
 model TenantSetting {
@@ -1194,6 +1197,9 @@ model Clinic {
   clinicLaboratoryProcedures      ClinicLaboratoryProcedure[]
   clinicHeartStationProcedures    ClinicHeartStationProcedure[]
   procedureUsageHistories         ProcedureUsageHistory[]
+  AIUsageLogs                     AIUsageLog[]
+  AIUsageLimit                    AIUsageLimit?
+  AIUsageSummaries                AIUsageSummary[]
 
   @@index([tenantId, clinicUid], map: "clinic_index")
 }
@@ -2342,4 +2348,80 @@ model SequenceGenerator {
   @@unique([entityType, clinicId, date], name: "unique_sequence")
   @@index([clinicId, date])
   @@index([date])
+}
+
+// AI Usage Tracking Models
+model AIUsageLog {
+  id                Int      @id @default(autoincrement())
+  userId            String
+  clinicId          Int?
+  tenantId          Int?
+  featureType       String
+  provider          String
+  model             String
+  promptTokens      Int      @default(0)
+  completionTokens  Int      @default(0)
+  totalTokens       Int      @default(0)
+  estimatedCost     Float    @default(0)
+  success           Boolean  @default(true)
+  errorMessage      String?
+  createdAt         DateTime @default(now())
+  
+  Clinic  Clinic?  @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  Tenant  Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([clinicId])
+  @@index([tenantId])
+  @@index([createdAt])
+  @@index([featureType])
+}
+
+model AIUsageLimit {
+  id          Int      @id @default(autoincrement())
+  clinicId    Int?     @unique
+  tenantId    Int?     @unique
+  limitType   String   @default("MONTHLY")
+  maxRequests Int      @default(1000)
+  maxTokens   Int?
+  maxCostUSD  Float?
+  resetDay    Int?     @default(1)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  Clinic  Clinic?  @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  Tenant  Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+}
+
+model AIUsageSummary {
+  id                  Int      @id @default(autoincrement())
+  clinicId            Int?
+  tenantId            Int?
+  period              String
+  totalRequests       Int      @default(0)
+  totalTokens         Int      @default(0)
+  totalCostUSD        Float    @default(0)
+  successfulRequests  Int      @default(0)
+  failedRequests      Int      @default(0)
+  lastUpdated         DateTime
+  createdAt           DateTime @default(now())
+  
+  Clinic  Clinic?  @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  Tenant  Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([clinicId, period])
+  @@unique([tenantId, period])
+}
+
+model GlobalAIDefaults {
+  id                  Int      @id @default(autoincrement())
+  defaultMaxRequests  Int      @default(1000)
+  defaultMaxTokens    Int?
+  defaultMaxCostUSD   Float?
+  defaultResetDay     Int      @default(1)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@unique([id])
 }

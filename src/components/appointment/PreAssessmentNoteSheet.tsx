@@ -10,7 +10,7 @@ import {
   SheetTrigger,
 } from "@components/ui/sheet"
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@components/ui/form";
 import { Textarea } from "@components/ui/textarea";
 import { z } from "zod";
@@ -23,6 +23,9 @@ import { Checkbox } from "@components/ui/checkbox";
 import { useUser } from "@clerk/nextjs";
 import { useLocalStorage } from "@hooks/useLocalStorage";
 import { promiseWrapper } from "@/lib/with-error-handling";
+import { PreAssessmentAIAssistant } from "@/components/ai/PreAssessmentAIAssistant";
+import { Sparkles } from "lucide-react";
+import { isAIEnabled } from "@/lib/ai";
 
 const preAssessmentNotesSchema = z.object({
   createNew: z.boolean(),
@@ -59,6 +62,7 @@ export default function PreAssessmentNoteSheet({ children, disabled, preAssessme
     remarks,
     createNew: false
   })
+  const [showAIAssistant, setShowAIAssistant] = useState(false);
 
   const { user } = useUser()
   const closeBtnRef = useRef<HTMLButtonElement>(null)
@@ -80,6 +84,13 @@ export default function PreAssessmentNoteSheet({ children, disabled, preAssessme
     const subscription = watch((value) => setPreAssessmentNote(value))
     return () => subscription.unsubscribe()
   }, [setPreAssessmentNote, watch])
+
+  const handleApplyAIGenerated = (notes: { assessment: string; homeInstructions: string; remarks: string }) => {
+    form.setValue('assessment', notes.assessment);
+    form.setValue('homeInstructions', notes.homeInstructions);
+    form.setValue('remarks', notes.remarks);
+    setShowAIAssistant(false);
+  };
 
   const action = () => {
     form.handleSubmit((data) => {
@@ -112,11 +123,34 @@ export default function PreAssessmentNoteSheet({ children, disabled, preAssessme
         <Form {...form}>
           <form action={action} className="space-y-6 container">
             <SheetHeader>
-              <SheetTitle>Pre Assessment Notes</SheetTitle>
+              <SheetTitle className="flex items-center justify-between">
+                <span>Pre Assessment Notes</span>
+                {isAIEnabled() && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowAIAssistant(!showAIAssistant)}
+                  >
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    {showAIAssistant ? 'Hide' : 'Show'} AI Assistant
+                  </Button>
+                )}
+              </SheetTitle>
               <SheetDescription>
                 Notes to be taken before the actual consultation.
               </SheetDescription>
             </SheetHeader>
+
+            {showAIAssistant && isAIEnabled() && (
+              <div className="mb-6">
+                <PreAssessmentAIAssistant
+                  onApplyGenerated={handleApplyAIGenerated}
+                  currentAssessment={form.watch('assessment')}
+                  currentRemarks={form.watch('remarks')}
+                />
+              </div>
+            )}
 
             <FormField
               control={form.control}

@@ -55,16 +55,16 @@ export function ClinicAILimitManager({ clinicId, clinicName }: ClinicAILimitMana
           maxRequests: result.data?.clinicLimit.maxRequests,
           maxTokens: result.data?.clinicLimit.maxTokens?.toString() || '',
           maxCostUSD: result.data?.clinicLimit.maxCostUSD?.toString() || '',
-          resetDay: result.data?.clinicLimit.resetDay,
-          isActive: result.data?.clinicLimit.isActive,
+          resetDay: result.data?.clinicLimit.resetDay || 1,
+          isActive: result.data?.clinicLimit.isActive ?? true,
         });
       } else {
         setUseCustomLimit(false);
         setFormData({
-          maxRequests: result.data?.effectiveLimit.maxRequests,
+          maxRequests: result.data?.effectiveLimit.maxRequests || 1000,
           maxTokens: result.data?.effectiveLimit.maxTokens?.toString() || '',
           maxCostUSD: result.data?.effectiveLimit.maxCostUSD?.toString() || '',
-          resetDay: result.data?.effectiveLimit.resetDay,
+          resetDay: result.data?.effectiveLimit.resetDay || 1,
           isActive: true,
         });
       }

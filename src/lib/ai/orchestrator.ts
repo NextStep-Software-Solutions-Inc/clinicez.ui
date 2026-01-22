@@ -132,7 +132,7 @@ export class AIOrchestrator {
           model,
           messages,
           temperature: request.temperature ?? 0.7,
-          maxTokens: request.maxTokens,
+          ...(request.maxTokens ? { maxCompletionTokens: request.maxTokens } : {}),
           topP: request.topP,
           frequencyPenalty: request.frequencyPenalty,
           presencePenalty: request.presencePenalty,
@@ -149,9 +149,9 @@ export class AIOrchestrator {
           role: 'assistant',
           finishReason: this.mapFinishReason(result.finishReason),
           usage: {
-            promptTokens: result.usage.promptTokens,
-            completionTokens: result.usage.completionTokens,
-            totalTokens: result.usage.totalTokens,
+            promptTokens: (result.usage as any).promptTokens || 0,
+            completionTokens: (result.usage as any).completionTokens || 0,
+            totalTokens: (result.usage as any).totalTokens || 0,
           },
           metadata: {
             timestamp: result.response.timestamp,
@@ -194,7 +194,7 @@ export class AIOrchestrator {
           model: fallbackModel,
           messages,
           temperature: request.temperature ?? 0.7,
-          maxTokens: request.maxTokens,
+          ...(request.maxTokens ? { maxCompletionTokens: request.maxTokens } : {}),
           abortSignal: this.config.timeout 
             ? AbortSignal.timeout(this.config.timeout)
             : undefined,
@@ -208,9 +208,9 @@ export class AIOrchestrator {
           role: 'assistant',
           finishReason: this.mapFinishReason(result.finishReason),
           usage: {
-            promptTokens: result.usage.promptTokens,
-            completionTokens: result.usage.completionTokens,
-            totalTokens: result.usage.totalTokens,
+            promptTokens: (result.usage as any).promptTokens || 0,
+            completionTokens: (result.usage as any).completionTokens || 0,
+            totalTokens: (result.usage as any).totalTokens || 0,
           },
         };
       } catch (fallbackError) {
@@ -247,7 +247,7 @@ export class AIOrchestrator {
         model,
         messages,
         temperature: request.temperature ?? 0.7,
-        maxTokens: request.maxTokens,
+        ...(request.maxTokens ? { maxCompletionTokens: request.maxTokens } : {}),
         topP: request.topP,
         frequencyPenalty: request.frequencyPenalty,
         presencePenalty: request.presencePenalty,
@@ -289,7 +289,7 @@ export class AIOrchestrator {
             model: fallbackModel,
             messages,
             temperature: request.temperature ?? 0.7,
-            maxTokens: request.maxTokens,
+            ...(request.maxTokens ? { maxCompletionTokens: request.maxTokens } : {}),
           });
 
           for await (const chunk of fallbackResult.textStream) {

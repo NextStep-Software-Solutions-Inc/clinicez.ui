@@ -55,8 +55,8 @@ export function TenantAILimitManager({ tenantId, tenantName }: TenantAILimitMana
           maxRequests: result.data?.tenantLimit.maxRequests,
           maxTokens: result.data?.tenantLimit.maxTokens?.toString() || '',
           maxCostUSD: result.data?.tenantLimit.maxCostUSD?.toString() || '',
-          resetDay: result.data?.tenantLimit.resetDay,
-          isActive: result.data?.tenantLimit.isActive,
+          resetDay: result.data?.tenantLimit.resetDay || 1,
+          isActive: result.data?.tenantLimit.isActive ?? true,
         });
       } else {
         setUseCustomLimit(false);

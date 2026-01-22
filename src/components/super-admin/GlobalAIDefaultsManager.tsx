@@ -39,12 +39,12 @@ export function GlobalAIDefaultsManager() {
     setIsLoading(true);
     try {
       const result = await getGlobalAIDefaultsAction();
-      setDefaults(result);
+      setDefaults(result.data);
       setFormData({
-        defaultMaxRequests: result.data?.defaultMaxRequests,
+        defaultMaxRequests: result.data?.defaultMaxRequests || 1000,
         defaultMaxTokens: result.data?.defaultMaxTokens?.toString() || '',
         defaultMaxCostUSD: result.data?.defaultMaxCostUSD?.toString() || '',
-        defaultResetDay: result.data?.defaultResetDay,
+        defaultResetDay: result.data?.defaultResetDay || 1,
       });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to load defaults');

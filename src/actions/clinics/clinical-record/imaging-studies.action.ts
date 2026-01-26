@@ -7,6 +7,9 @@ import { getCachedSession } from "@/actions/session.action";
 import { withErrorHandling } from "@/lib/with-error-handling";
 import { generateSerialNumber } from "@/lib/utils";
 import { validateHealthcareProviderAuth, USER_WITH_HEALTHCARE_PROVIDERS_SELECT } from "@/lib/healthcare-provider-auth";
+import { getPermissionsAction } from "@/actions/permission.action";
+import { PERMISSIONS } from "@/lib/permissions";
+import { getHPsAction, GetHPsType } from "@/actions/hp.actions";
 
 export type GetImagingStudiesFilters = {
   clinicUid?: string;
@@ -22,6 +25,33 @@ export const getImagingStudiesAction = withErrorHandling(async (filters: GetImag
 
   const { clinicUid, patientId, hpId, consultationTicketId } = filters;
 
+  // Check permissions
+  const [permissions] = await Promise.all([
+    getPermissionsAction({ userId: session.user.sub, type: "CLINIC" }),
+  ]);
+
+  const userPermissionArray = permissions.map(p => p.name);
+  const readAllConsultationsPermissions = [PERMISSIONS.CLINIC["READ:CLINIC:CONSULTATION_TICKET:ALL"].name];
+  const readOwnConsultationPermissions = [PERMISSIONS.CLINIC["READ:CLINIC:CONSULTATION_TICKET:OWN"].name];
+  const readCreatedConsultationPermissions = [PERMISSIONS.CLINIC["READ:CLINIC:CONSULTATION_TICKET:CREATED"].name];
+  const readCoCreatedConsultationPermissions = [PERMISSIONS.CLINIC["READ:CLINIC:CONSULTATION_TICKET:CO_CREATED"].name];
+
+  const canReadAllConsultations = readAllConsultationsPermissions.every(p => userPermissionArray.includes(p));
+  const canReadOwnConsultations = readOwnConsultationPermissions.every(p => userPermissionArray.includes(p));
+  const canReadCreatedConsultations = readCreatedConsultationPermissions.every(p => userPermissionArray.includes(p));
+  const canReadCoCreatedConsultations = readCoCreatedConsultationPermissions.every(p => userPermissionArray.includes(p));
+
+  if (!canReadAllConsultations && !canReadOwnConsultations && !canReadCreatedConsultations && !canReadCoCreatedConsultations) {
+    throw new Error("You do not have permission to view imaging studies");
+  }
+
+  // Check if user has any nurse healthcare provider role
+  const userHps = await getHPsAction({ userId: session.user.sub });
+  const isNurse = (userHps ?? []).some((hp: NonNullable<GetHPsType>[number]) => {
+    const hpTypeName = hp.HPType?.name?.toLowerCase().trim() ?? "";
+    return hpTypeName.includes("nurse");
+  });
+
   const studies = await prisma.clinicImagingRequest.findMany({
     where: {
       isActive: true,
@@ -30,6 +60,75 @@ export const getImagingStudiesAction = withErrorHandling(async (filters: GetImag
       ...patientId ? { clinicPatientId: patientId } : {},
       ...consultationTicketId ? { consultationTicketId } : {},
       ...hpId ? { hpId } : {},
+      // Permission-based filtering - only add conditions for granted permissions
+      OR: [
+        ...(canReadAllConsultations ? [{ Clinic: { clinicUid } }] : []),
+        ...(canReadCreatedConsultations ? [{
+          ConsultationTicket: {
+            ConsultationTicketHPs: {
+              some: {
+                HealthCareProvider: {
+                  User: {
+                    userId: session.user.sub
+                  }
+                }
+              }
+            }
+          }
+        }] : []),
+        ...(canReadOwnConsultations ? [{
+          ConsultationTicket: {
+            Appointment: {
+              Requesters: {
+                some: {
+                  User: {
+                    userId: session.user.sub
+                  }
+                }
+              }
+            }
+          }
+        }] : []),
+        ...(canReadCoCreatedConsultations ? [{
+          ConsultationTicket: {
+            Appointment: {
+              AppointmentRouting: {
+                some: {
+                  status: "ACCEPTED",
+                  RoutedTo: {
+                    User: {
+                      userId: session.user.sub
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }] : []),
+        // Allow nurses who are assigned to the appointment
+        ...(isNurse ? [{
+          ConsultationTicket: {
+            Appointment: {
+              AppointmentRouting: {
+                some: {
+                  status: "ACCEPTED",
+                  RoutedTo: {
+                    User: {
+                      userId: session.user.sub
+                    },
+                    HPType: {
+                      name: {
+                        contains: "nurse",
+                        mode: "insensitive" as const
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }] : [])
+      ]
     },
     orderBy: { createdAt: "desc" },
     select: {

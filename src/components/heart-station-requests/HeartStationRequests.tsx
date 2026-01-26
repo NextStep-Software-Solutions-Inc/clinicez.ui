@@ -38,7 +38,6 @@ export default function HeartStationRequests({
   const { data: requests, mutate, error, isLoading } = useHeartStationRequests({
     clinicUid,
     consultationTicketId,
-    hpId: hpIds?.[0],
     patientId,
   });
 

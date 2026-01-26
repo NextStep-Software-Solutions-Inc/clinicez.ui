@@ -33,7 +33,6 @@ export default function ImagingStudies({ consultationTicketId, clinicUid, clinic
   const { data: studies, mutate, error, isLoading } = useImagingStudies({
     clinicUid,
     consultationTicketId,
-    hpId: hpIds[0],
     patientId
   });
 

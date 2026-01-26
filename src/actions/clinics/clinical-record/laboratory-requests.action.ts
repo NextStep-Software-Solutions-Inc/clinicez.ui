@@ -230,9 +230,12 @@ export const getLaboratoryRequestAction = withErrorHandling(async (id: number) =
         }
       },
       LaboratoryRequestProcedures: {
-        include: {
+        select: {
           LaboratoryProcedure: {
-            include: {
+            select: {
+              id: true,
+              name: true,
+              description: true,
               MasterProcedure: {
                 select: {
                   id: true,
@@ -240,12 +243,6 @@ export const getLaboratoryRequestAction = withErrorHandling(async (id: number) =
                   category: true,
                 },
               },
-            },
-            select: {
-              id: true,
-              name: true,
-              description: true,
-              MasterProcedure: true,
             }
           }
         }

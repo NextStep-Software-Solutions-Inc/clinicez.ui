@@ -11,7 +11,6 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@components/ui/tooltip"
 import Image from "next/image";
 import { Badge } from "@components/ui/badge";
 import { Separator } from "@components/ui/separator";
-import { GetHpsByIds, getHpsByIdsAction } from "@actions/hp.actions";
 import Each from "@components/utils/Each";
 import { Fragment } from "react";
 // import EMRPreviewSheetWrapper from "@components/EMRPreviewSheetWrapper";
@@ -71,9 +70,11 @@ export default async function ConsultationDetails({ consultation }: Consultation
     }
   };
 
-  const [creators] = await Promise.all([
-    await getHpsByIdsAction(consultation.ConsultationTicketHPs.map(c => Number(c.hpId))),
-  ]);
+  // Transform ConsultationTicketHPs to match the GetHpsByIds format
+  // Filter out inactive providers and those missing HPProfile
+  const creators = consultation.ConsultationTicketHPs
+    .map(ticket => ticket.HealthCareProvider)
+    .filter((hp): hp is NonNullable<typeof hp> => hp !== null && hp.isActive && hp.HPProfile !== null);
 
   return (
     <>
@@ -319,7 +320,7 @@ export const ClinicalRecords = ({
 }
 
 interface PatientHpDetailsProps {
-  creators: GetHpsByIds
+  creators: NonNullable<NonNullable<GetConsultationTicket["data"]>["ConsultationTicketHPs"][number]["HealthCareProvider"]>[]
   user: {
     id: number;
     userId: string;
@@ -385,30 +386,34 @@ export const PatientHpDetails = ({ creators = [], user, consultationId, clinicUi
           </div>
         </CardHeader>
         <CardContent className="flex gap-5 items-center">
-          <Each
-            of={creators}
-            render={(creator, index) => (
-              <Fragment key={creator.id} >
-                <div className="flex gap-3 items-center">
-                  <Avatar>
-                    {
-                      creator?.HPProfile?.picture
-                        ? <Image className="object-cover" width={80} height={80} src={creator.HPProfile.picture} alt={creator?.HPProfile?.name ?? ""} />
-                        : <AvatarFallback>{creator?.HPProfile?.name.slice(0, 2)}</AvatarFallback>
-                    }
+          {creators.length === 0 ? (
+            <div className="text-sm text-muted-foreground">No healthcare providers assigned</div>
+          ) : (
+            <Each
+              of={creators}
+              render={(creator, index) => (
+                <Fragment key={creator.id} >
+                  <div className="flex gap-3 items-center">
+                    <Avatar>
+                      {
+                        creator?.HPProfile?.picture
+                          ? <Image className="object-cover" width={80} height={80} src={creator.HPProfile.picture} alt={creator?.HPProfile?.name ?? ""} />
+                          : <AvatarFallback>{creator?.HPProfile?.name.slice(0, 2)}</AvatarFallback>
+                      }
 
-                  </Avatar>
-                  <div className="flex flex-col">
-                    <span className="text-sm font-semibold">{creator?.HPProfile?.title} {creator?.HPProfile?.name} {creator?.HPProfile?.suffix}</span>
-                    <div className="text-xs text-muted-foreground">
-                      <Badge variant="secondary">{creator?.HPProfile?.specialties}</Badge> / <span>{creator.HPType.name}</span>
+                    </Avatar>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-semibold">{creator?.HPProfile?.title} {creator?.HPProfile?.name} {creator?.HPProfile?.suffix}</span>
+                      <div className="text-xs text-muted-foreground">
+                        <Badge variant="secondary">{creator?.HPProfile?.specialties}</Badge> / <span>{creator.HPType.name}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-                {index !== (creators.length - 1) && <Separator orientation="vertical" className="h-10" />}
-              </Fragment>
-            )}
-          />
+                  {index !== (creators.length - 1) && <Separator orientation="vertical" className="h-10" />}
+                </Fragment>
+              )}
+            />
+          )}
         </CardContent>
       </Card>
     </div>

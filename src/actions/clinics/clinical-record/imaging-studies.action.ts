@@ -227,9 +227,12 @@ export const getImagingStudyAction = withErrorHandling(async (id: number) => {
         }
       },
       ImagingRequestProcedures: {
-        include: {
+        select: {
           ImagingProcedure: {
-            include: {
+            select: {
+              id: true,
+              name: true,
+              description: true,
               MasterProcedure: {
                 select: {
                   id: true,
@@ -237,12 +240,6 @@ export const getImagingStudyAction = withErrorHandling(async (id: number) => {
                   category: true,
                 },
               },
-            },
-            select: {
-              id: true,
-              name: true,
-              description: true,
-              MasterProcedure: true,
             },
           },
         },

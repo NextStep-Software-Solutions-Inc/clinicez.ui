@@ -4,12 +4,9 @@
  * AI Server Actions for Pre-Assessment Notes
  * 
  * Provides AI-powered features for generating and enhancing pre-assessment notes.
- * RESTRICTED TO HEALTHCARE PROVIDERS ONLY
  */
 
 import { auth } from '@clerk/nextjs/server';
-import { prisma } from '@/lib/prisma';
-import { USER_WITH_HEALTHCARE_PROVIDERS_SELECT } from '@/lib/healthcare-provider-auth';
 import {
   getOrchestrator,
   createMessage,
@@ -72,22 +69,6 @@ export async function generatePreAssessmentNotes(
       return {
         success: false,
         error: 'Authentication required',
-        provider: 'openai',
-        model: '',
-        timestamp: new Date(),
-      };
-    }
-
-    // Verify user is a healthcare provider
-    const user = await prisma.user.findUnique({
-      where: { clerkId: userId },
-      select: USER_WITH_HEALTHCARE_PROVIDERS_SELECT,
-    });
-
-    if (!user || !user.HealthcareProvider) {
-      return {
-        success: false,
-        error: 'AI features are restricted to registered healthcare providers only',
         provider: 'openai',
         model: '',
         timestamp: new Date(),
@@ -402,22 +383,6 @@ export async function enhancePreAssessmentNotes(
       };
     }
 
-    // Verify user is a healthcare provider
-    const user = await prisma.user.findUnique({
-      where: { clerkId: userId },
-      select: USER_WITH_HEALTHCARE_PROVIDERS_SELECT,
-    });
-
-    if (!user || !user.HealthcareProvider) {
-      return {
-        success: false,
-        error: 'AI features are restricted to registered healthcare providers only',
-        provider: 'openai',
-        model: '',
-        timestamp: new Date(),
-      };
-    }
-
     // Check usage limits
     const limitCheck = await checkAIUsageLimit({
       userId,
@@ -530,22 +495,6 @@ export async function generateHomeInstructions(
       return {
         success: false,
         error: 'Authentication required',
-        provider: 'openai',
-        model: '',
-        timestamp: new Date(),
-      };
-    }
-
-    // Verify user is a healthcare provider
-    const user = await prisma.user.findUnique({
-      where: { clerkId: userId },
-      select: USER_WITH_HEALTHCARE_PROVIDERS_SELECT,
-    });
-
-    if (!user || !user.HealthcareProvider) {
-      return {
-        success: false,
-        error: 'AI features are restricted to registered healthcare providers only',
         provider: 'openai',
         model: '',
         timestamp: new Date(),

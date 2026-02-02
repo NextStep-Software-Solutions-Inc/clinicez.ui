@@ -17,7 +17,7 @@ import {
 import { checkAIUsageLimit, logAIUsage } from '@/lib/ai/usage-tracking';
 
 /**
- * Generate pre-assessment notes from symptoms and comprehensive patient context
+ * Generate pre-assessment notes from symptoms, comprehensive patient context, and attached images
  */
 export async function generatePreAssessmentNotes(
   symptoms: string,
@@ -51,6 +51,11 @@ export async function generatePreAssessmentNotes(
     comorbidities?: string[];
     medicalHistory?: string;
   },
+  attachments?: Array<{
+    name: string;
+    url: string;
+    type?: string;
+  }>,
   clinicId?: number,
   tenantId?: number
 ): Promise<AIOperationResult<{
@@ -155,6 +160,17 @@ export async function generatePreAssessmentNotes(
       if (parts.length > 0) {
         contextStr = `\n\nPatient Information:\n${parts.join('\n')}`;
       }
+    }
+
+    // Add attachment information if images are provided
+    let attachmentContext = '';
+    const imageAttachments = attachments?.filter(att => {
+      const ext = att.name.toLowerCase().split('.').pop();
+      return ['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(ext || '');
+    }) || [];
+    
+    if (imageAttachments.length > 0) {
+      attachmentContext = `\n\nAttached Images: ${imageAttachments.length} medical image(s) provided for analysis.\nImage files: ${imageAttachments.map(a => a.name).join(', ')}`;
     }
 
     const systemPrompt = `You are an experienced healthcare provider with expertise in patient assessment and clinical documentation. 

@@ -8,7 +8,8 @@
 import { createOpenAI } from '@ai-sdk/openai';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
-import { generateText, streamText, LanguageModel, CoreMessage } from 'ai';
+import { generateText, streamText } from 'ai';
+import type { LanguageModel, CoreMessage } from 'ai';
 import {
   AIProvider,
   AICompletionRequest,

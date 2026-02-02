@@ -26,11 +26,19 @@ export type AIModel = {
 export type MessageRole = 'system' | 'user' | 'assistant' | 'function';
 
 /**
+ * Content part for multimodal messages
+ */
+export type AIMessageContentPart =
+  | { type: 'text'; text: string }
+  | { type: 'image'; image: string | URL }; // URL or base64 data URL
+
+/**
  * Message structure for AI conversations
+ * Supports both text-only and multimodal (text + images) content
  */
 export interface AIMessage {
   role: MessageRole;
-  content: string;
+  content: string | AIMessageContentPart[];
   name?: string;
   function_call?: {
     name: string;

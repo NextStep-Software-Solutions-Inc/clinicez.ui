@@ -162,8 +162,7 @@ export async function generatePreAssessmentNotes(
       }
     }
 
-    // Add attachment information if images are provided
-    let attachmentContext = '';
+    // Filter image attachments and prepare for AI analysis
     const imageAttachments = attachments?.filter(att => {
       // Check MIME type first if available (more reliable than extension)
       if (att.type) {
@@ -177,11 +176,36 @@ export async function generatePreAssessmentNotes(
       return ['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(ext || '');
     }) || [];
     
+    // Add image context to prompt
+    let imageContext = '';
     if (imageAttachments.length > 0) {
-      attachmentContext = `\n\nAttached Images: ${imageAttachments.length} medical image(s) provided for analysis.\nImage files: ${imageAttachments.map(a => a.name).join(', ')}`;
+      imageContext = `\n\nATTACHED MEDICAL IMAGES: ${imageAttachments.length} image(s) provided below for your analysis.\nImage files: ${imageAttachments.map(a => a.name).join(', ')}\nPlease analyze these images and incorporate relevant findings into your assessment.`;
     }
 
-    const systemPrompt = `You are an experienced healthcare provider with expertise in patient assessment and clinical documentation. 
+    const systemPrompt = `You are an experienced healthcare provider with expertise in patient assessment and clinical documentation.
+    
+    // Build multimodal message content with text and images
+    const messageContent: Array<{ type: 'text'; text: string } | { type: 'image'; image: string }> = [
+      { type: 'text', text: prompt }
+    ];
+    
+    // Add image attachments to message for actual AI analysis
+    if (imageAttachments.length > 0) {
+      imageAttachments.forEach(att => {
+        messageContent.push({
+          type: 'image',
+          image: att.url, // Pass image URL to AI for analysis
+        });
+      });
+    }
+
+    const orchestrator = getOrchestrator();
+    const response = await orchestrator.complete({
+      messages: [{ role: 'user', content: messageContent }],
+      systemPrompt,
+      temperature: getFeatureTemperature('medical-note-summarization'),
+      maxTokens: 1500,
+    }); 
 Your role is to generate structured, professional pre-assessment notes based on comprehensive patient information and symptoms.
 
 CRITICAL FORMATTING REQUIREMENTS:
@@ -224,7 +248,7 @@ Always include appropriate disclaimers that this is a preliminary assessment req
     
     const prompt = `Generate pre-assessment notes for a patient presenting with the following:
 
-CHIEF COMPLAINT: ${sanitizedSymptoms}${contextStr}${attachmentContext}
+CHIEF COMPLAINT: ${sanitizedSymptoms}${contextStr}${imageContext}
 
 TODAY'S DATE: ${currentDate} (Use this as reference for all date mentions)
 

@@ -118,10 +118,29 @@ export class AIOrchestrator {
         const model = this.getModel(provider, modelName);
         
         // Build messages for Vercel AI SDK
-        const messages = request.messages?.map(msg => ({
-          role: msg.role as 'user' | 'assistant' | 'system',
-          content: msg.content,
-        })) || [];
+        // Support both string content and multimodal content (text + images)
+        const messages = request.messages?.map(msg => {
+          // Handle multimodal content (array of text/image parts)
+          if (Array.isArray(msg.content)) {
+            return {
+              role: msg.role as 'user' | 'assistant' | 'system',
+              content: msg.content.map(part => {
+                if (part.type === 'text') {
+                  return { type: 'text', text: part.text };
+                } else if (part.type === 'image') {
+                  return { type: 'image', image: part.image };
+                }
+                return part;
+              }),
+            };
+          }
+          
+          // Handle simple string content
+          return {
+            role: msg.role as 'user' | 'assistant' | 'system',
+            content: msg.content,
+          };
+        }) || [];
 
         // Add system prompt if provided
         if (request.systemPrompt && !messages.some(m => m.role === 'system')) {

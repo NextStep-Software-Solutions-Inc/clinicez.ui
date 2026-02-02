@@ -295,7 +295,7 @@ export default function PreAssessmentNoteSheet({ children, disabled, preAssessme
                       <FormControl>
                         <Textarea
                           placeholder="Write your assessment here"
-                          className="resize-none min-h-[300px]"
+                          className="resize-y min-h-[120px]"
                           disabled={isQuickGenerating}
                           {...field}
                         />
@@ -316,7 +316,7 @@ export default function PreAssessmentNoteSheet({ children, disabled, preAssessme
                       <FormControl>
                         <Textarea
                           placeholder="Write home instructions here"
-                          className="resize-none"
+                          className="resize-y min-h-[100px]"
                           disabled={isQuickGenerating}
                           {...field}
                           value={field.value ?? ""}
@@ -338,7 +338,7 @@ export default function PreAssessmentNoteSheet({ children, disabled, preAssessme
                       <FormControl>
                         <Textarea
                           placeholder="Write remarks here"
-                          className="resize-none"
+                          className="resize-y min-h-[100px]"
                           disabled={isQuickGenerating}
                           {...field}
                         />

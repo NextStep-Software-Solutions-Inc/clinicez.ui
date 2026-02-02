@@ -29,25 +29,37 @@ The following packages are included:
 
 ### 2. Configure Environment Variables
 
-Copy the AI environment example:
+Copy the environment example:
 ```bash
-cp .env.ai.example .env.local
+cp .env.example .env.local
 ```
 
-Add your API keys to `.env.local`:
+Add your Google AI API key to `.env.local`:
 ```env
-# Minimum configuration - choose ONE provider
+# Recommended configuration - Google Gemini Flash
 NEXT_PUBLIC_AI_ENABLED=true
-NEXT_PUBLIC_AI_PROVIDER=openai
-NEXT_PUBLIC_AI_MODEL=gpt-4o-mini
-OPENAI_API_KEY=sk-your-key-here
+NEXT_PUBLIC_AI_PROVIDER=google
+NEXT_PUBLIC_AI_MODEL=gemini-1.5-flash
+GOOGLE_AI_API_KEY=your-google-ai-api-key-here
 ```
 
 ### 3. Supported Providers
 
-#### OpenAI (Recommended for most use cases)
+#### Google Gemini Flash (Recommended - Default)
+- **Models**: gemini-1.5-flash, gemini-1.5-pro, gemini-pro
+- **Best for**: Cost-efficiency, high volume, fast responses
+- **Advantages**: Free tier available, excellent performance/cost ratio
+- **Get API Key**: https://makersuite.google.com/app/apikey
+
+```env
+NEXT_PUBLIC_AI_PROVIDER=google
+NEXT_PUBLIC_AI_MODEL=gemini-1.5-flash
+GOOGLE_AI_API_KEY=...
+```
+
+#### OpenAI (Alternative)
 - **Models**: gpt-4o, gpt-4o-mini, gpt-4-turbo, gpt-3.5-turbo
-- **Best for**: General purpose, fast responses, cost-effective
+- **Best for**: General purpose, proven reliability
 - **Get API Key**: https://platform.openai.com/api-keys
 
 ```env
@@ -56,7 +68,7 @@ NEXT_PUBLIC_AI_MODEL=gpt-4o-mini
 OPENAI_API_KEY=sk-...
 ```
 
-#### Anthropic Claude (Best for complex medical reasoning)
+#### Anthropic Claude (Alternative - Best for complex reasoning)
 - **Models**: claude-3-5-sonnet-20241022, claude-3-opus-20240229, claude-3-haiku-20240307
 - **Best for**: Complex clinical scenarios, detailed analysis
 - **Get API Key**: https://console.anthropic.com/
@@ -67,18 +79,7 @@ NEXT_PUBLIC_AI_MODEL=claude-3-5-sonnet-20241022
 ANTHROPIC_API_KEY=sk-ant-...
 ```
 
-#### Google Gemini (Best for cost-efficiency)
-- **Models**: gemini-1.5-pro, gemini-1.5-flash, gemini-pro
-- **Best for**: High volume, cost-sensitive applications
-- **Get API Key**: https://makersuite.google.com/app/apikey
-
-```env
-NEXT_PUBLIC_AI_PROVIDER=google
-NEXT_PUBLIC_AI_MODEL=gemini-1.5-flash
-GOOGLE_AI_API_KEY=...
-```
-
-#### Azure OpenAI (Best for enterprise/compliance)
+#### Azure OpenAI (Alternative - Best for enterprise)
 - **Models**: gpt-4, gpt-4-turbo, gpt-3.5-turbo
 - **Best for**: Enterprise deployments, data residency requirements
 - **Setup**: Azure Portal

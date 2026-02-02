@@ -10,8 +10,8 @@ import { AIProvider, AIOrchestratorConfig } from './types';
  * Get AI configuration from environment variables
  */
 export function getAIConfig(): AIOrchestratorConfig {
-  const defaultProvider = (process.env.NEXT_PUBLIC_AI_PROVIDER || 'openai') as AIProvider;
-  const defaultModel = process.env.NEXT_PUBLIC_AI_MODEL || 'gpt-4o-mini';
+  const defaultProvider = (process.env.NEXT_PUBLIC_AI_PROVIDER || 'google') as AIProvider;
+  const defaultModel = process.env.NEXT_PUBLIC_AI_MODEL || 'gemini-1.5-flash';
   const fallbackProvider = process.env.NEXT_PUBLIC_AI_FALLBACK_PROVIDER as AIProvider | undefined;
   const fallbackModel = process.env.NEXT_PUBLIC_AI_FALLBACK_MODEL;
 

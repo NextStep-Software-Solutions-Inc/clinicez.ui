@@ -96,7 +96,8 @@ src/
 - **Symptom Analysis**: AI-powered symptom assessment with urgency detection
 - **Patient Insights**: Generate actionable insights from patient data trends
 - **Data Visualization**: AI recommends optimal charts and visualizations
-- **Multi-Provider Support**: OpenAI, Anthropic Claude, Google Gemini
+- **Powered by Google Gemini Flash**: Fast, cost-efficient, and highly capable AI model
+- **Multi-Provider Support**: OpenAI, Anthropic Claude, Google Gemini, Azure OpenAI
 - **Built on Vercel AI SDK**: Open-source, industry-standard LLM orchestration
 
 ### Appointment Management

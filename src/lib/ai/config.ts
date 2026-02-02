@@ -11,7 +11,7 @@ import { AIProvider, AIOrchestratorConfig } from './types';
  */
 export function getAIConfig(): AIOrchestratorConfig {
   const defaultProvider = (process.env.NEXT_PUBLIC_AI_PROVIDER || 'google') as AIProvider;
-  const defaultModel = process.env.NEXT_PUBLIC_AI_MODEL || 'gemini-2.0-flash-exp';
+  const defaultModel = process.env.NEXT_PUBLIC_AI_MODEL || 'gemini-2.5-flash';
   const fallbackProvider = process.env.NEXT_PUBLIC_AI_FALLBACK_PROVIDER as AIProvider | undefined;
   const fallbackModel = process.env.NEXT_PUBLIC_AI_FALLBACK_MODEL;
 
@@ -28,12 +28,13 @@ export function getAIConfig(): AIOrchestratorConfig {
 /**
  * Provider-specific configuration
  * 
- * Note: baseURL is optional - the Vercel AI SDK has sensible defaults:
+ * Note: The Vercel AI SDK has sensible defaults for base URLs:
  * - OpenAI: https://api.openai.com/v1
  * - Anthropic: https://api.anthropic.com
- * - Google: https://generativelanguage.googleapis.com/v1beta
+ * - Google: https://generativelanguage.googleapis.com/v1 (stable, production-ready)
  * 
  * Only set baseURL via environment variables if you need to use a proxy or custom endpoint.
+ * For Google, you can override to v1beta for experimental features, but v1 stable is recommended.
  */
 export const providerConfig = {
   openai: {
@@ -47,7 +48,7 @@ export const providerConfig = {
   },
   google: {
     apiKey: process.env.GOOGLE_AI_API_KEY,
-    baseURL: process.env.GOOGLE_AI_BASE_URL, // Optional: only for custom endpoints
+    baseURL: process.env.GOOGLE_AI_BASE_URL, // Optional: defaults to v1 stable, set to v1beta for experimental features
   },
   'azure-openai': {
     apiKey: process.env.AZURE_OPENAI_API_KEY,
@@ -59,15 +60,18 @@ export const providerConfig = {
 /**
  * Default model settings per provider
  * 
- * Note: For Google, Gemini 2.0 Flash is the latest generation model
- * - gemini-2.0-flash-exp: Gemini 2.0 Flash (experimental, latest)
- * - gemini-1.5-pro-latest: Gemini 1.5 Pro (stable, fallback)
- * - gemini-pro: Stable Gemini Pro model
+ * Note: For Google, using stable v1 API models for production reliability
+ * - gemini-2.5-flash: Latest stable Gemini Flash (v1 API, production-ready)
+ * - Released: June 17, 2025
+ * - Retirement: June 17, 2026
+ * - Features: Fast, cost-effective, thinking capabilities, 1M token context
+ * 
+ * For experimental features, you can use v1beta endpoint via GOOGLE_AI_BASE_URL env var
  */
 export const defaultModels: Record<AIProvider, string> = {
   openai: 'gpt-4o-mini',
   anthropic: 'claude-3-5-sonnet-20241022',
-  google: 'gemini-2.0-flash-exp',
+  google: 'gemini-2.5-flash',
   'azure-openai': 'gpt-4',
 };
 

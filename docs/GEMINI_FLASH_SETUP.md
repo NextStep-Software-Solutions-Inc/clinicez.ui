@@ -33,6 +33,9 @@ NEXT_PUBLIC_AI_MODEL=gemini-1.5-flash
 
 # Your Google AI API Key
 GOOGLE_AI_API_KEY=your-actual-api-key-here
+
+# Optional: Custom base URL (defaults to https://generativelanguage.googleapis.com/v1beta)
+# GOOGLE_AI_BASE_URL=https://generativelanguage.googleapis.com/v1beta
 ```
 
 ### 3. Restart Your Development Server

@@ -40,7 +40,7 @@ export const providerConfig = {
   },
   google: {
     apiKey: process.env.GOOGLE_AI_API_KEY,
-    baseURL: process.env.GOOGLE_AI_BASE_URL || 'https://generativelanguage.googleapis.com',
+    baseURL: process.env.GOOGLE_AI_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta',
   },
   'azure-openai': {
     apiKey: process.env.AZURE_OPENAI_API_KEY,

@@ -11,7 +11,7 @@ import { AIProvider, AIOrchestratorConfig } from './types';
  */
 export function getAIConfig(): AIOrchestratorConfig {
   const defaultProvider = (process.env.NEXT_PUBLIC_AI_PROVIDER || 'google') as AIProvider;
-  const defaultModel = process.env.NEXT_PUBLIC_AI_MODEL || 'gemini-1.5-pro-latest';
+  const defaultModel = process.env.NEXT_PUBLIC_AI_MODEL || 'gemini-2.0-flash-exp';
   const fallbackProvider = process.env.NEXT_PUBLIC_AI_FALLBACK_PROVIDER as AIProvider | undefined;
   const fallbackModel = process.env.NEXT_PUBLIC_AI_FALLBACK_MODEL;
 
@@ -59,14 +59,15 @@ export const providerConfig = {
 /**
  * Default model settings per provider
  * 
- * Note: For Google, use '-latest' suffix for v1beta API compatibility
- * - gemini-1.5-pro-latest: Latest Gemini 1.5 Pro (v1beta)
+ * Note: For Google, Gemini 2.0 Flash is the latest generation model
+ * - gemini-2.0-flash-exp: Gemini 2.0 Flash (experimental, latest)
+ * - gemini-1.5-pro-latest: Gemini 1.5 Pro (stable, fallback)
  * - gemini-pro: Stable Gemini Pro model
  */
 export const defaultModels: Record<AIProvider, string> = {
   openai: 'gpt-4o-mini',
   anthropic: 'claude-3-5-sonnet-20241022',
-  google: 'gemini-1.5-pro-latest',
+  google: 'gemini-2.0-flash-exp',
   'azure-openai': 'gpt-4',
 };
 

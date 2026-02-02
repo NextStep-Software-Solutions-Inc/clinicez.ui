@@ -27,20 +27,27 @@ export function getAIConfig(): AIOrchestratorConfig {
 
 /**
  * Provider-specific configuration
+ * 
+ * Note: baseURL is optional - the Vercel AI SDK has sensible defaults:
+ * - OpenAI: https://api.openai.com/v1
+ * - Anthropic: https://api.anthropic.com
+ * - Google: https://generativelanguage.googleapis.com/v1beta
+ * 
+ * Only set baseURL via environment variables if you need to use a proxy or custom endpoint.
  */
 export const providerConfig = {
   openai: {
     apiKey: process.env.OPENAI_API_KEY,
     organization: process.env.OPENAI_ORGANIZATION,
-    baseURL: process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1',
+    baseURL: process.env.OPENAI_BASE_URL, // Optional: only for custom endpoints
   },
   anthropic: {
     apiKey: process.env.ANTHROPIC_API_KEY,
-    baseURL: process.env.ANTHROPIC_BASE_URL || 'https://api.anthropic.com',
+    baseURL: process.env.ANTHROPIC_BASE_URL, // Optional: only for custom endpoints
   },
   google: {
     apiKey: process.env.GOOGLE_AI_API_KEY,
-    baseURL: process.env.GOOGLE_AI_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta',
+    baseURL: process.env.GOOGLE_AI_BASE_URL, // Optional: only for custom endpoints
   },
   'azure-openai': {
     apiKey: process.env.AZURE_OPENAI_API_KEY,

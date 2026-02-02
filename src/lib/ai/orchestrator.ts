@@ -33,6 +33,9 @@ export class AIOrchestrator {
 
   /**
    * Initialize provider models using Vercel AI SDK
+   * 
+   * Note: baseURL is only passed if explicitly set via environment variables.
+   * The SDK provides sensible defaults, so we don't need to specify them.
    */
   private initializeModels() {
     // OpenAI
@@ -40,7 +43,7 @@ export class AIOrchestrator {
       const openai = createOpenAI({
         apiKey: providerConfig.openai.apiKey,
         organization: providerConfig.openai.organization,
-        baseURL: providerConfig.openai.baseURL,
+        ...(providerConfig.openai.baseURL && { baseURL: providerConfig.openai.baseURL }),
       });
       this.models.set('openai', openai(this.config.defaultModel));
     }
@@ -49,7 +52,7 @@ export class AIOrchestrator {
     if (providerConfig.anthropic.apiKey) {
       const anthropic = createAnthropic({
         apiKey: providerConfig.anthropic.apiKey,
-        baseURL: providerConfig.anthropic.baseURL,
+        ...(providerConfig.anthropic.baseURL && { baseURL: providerConfig.anthropic.baseURL }),
       });
       this.models.set('anthropic', anthropic(this.config.defaultModel));
     }
@@ -58,7 +61,7 @@ export class AIOrchestrator {
     if (providerConfig.google.apiKey) {
       const google = createGoogleGenerativeAI({
         apiKey: providerConfig.google.apiKey,
-        baseURL: providerConfig.google.baseURL,
+        ...(providerConfig.google.baseURL && { baseURL: providerConfig.google.baseURL }),
       });
       this.models.set('google', google(this.config.defaultModel));
     }
@@ -78,19 +81,19 @@ export class AIOrchestrator {
         const openai = createOpenAI({
           apiKey: providerConfig.openai.apiKey,
           organization: providerConfig.openai.organization,
-          baseURL: providerConfig.openai.baseURL,
+          ...(providerConfig.openai.baseURL && { baseURL: providerConfig.openai.baseURL }),
         });
         return openai(modelName);
       } else if (provider === 'anthropic' && providerConfig.anthropic.apiKey) {
         const anthropic = createAnthropic({
           apiKey: providerConfig.anthropic.apiKey,
-          baseURL: providerConfig.anthropic.baseURL,
+          ...(providerConfig.anthropic.baseURL && { baseURL: providerConfig.anthropic.baseURL }),
         });
         return anthropic(modelName);
       } else if (provider === 'google' && providerConfig.google.apiKey) {
         const google = createGoogleGenerativeAI({
           apiKey: providerConfig.google.apiKey,
-          baseURL: providerConfig.google.baseURL,
+          ...(providerConfig.google.baseURL && { baseURL: providerConfig.google.baseURL }),
         });
         return google(modelName);
       }

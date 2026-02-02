@@ -50,34 +50,42 @@ GOOGLE_AI_API_KEY=your-google-ai-api-key-here
 - **Best for**: Cost-efficiency, high volume, fast responses
 - **Advantages**: Free tier available, excellent performance/cost ratio
 - **Get API Key**: https://makersuite.google.com/app/apikey
+- **Base URL**: Automatic (SDK default: `https://generativelanguage.googleapis.com/v1beta`)
 
 ```env
 NEXT_PUBLIC_AI_PROVIDER=google
 NEXT_PUBLIC_AI_MODEL=gemini-1.5-flash
 GOOGLE_AI_API_KEY=...
+# GOOGLE_AI_BASE_URL=... (optional, only for custom endpoints/proxies)
 ```
 
 #### OpenAI (Alternative)
 - **Models**: gpt-4o, gpt-4o-mini, gpt-4-turbo, gpt-3.5-turbo
 - **Best for**: General purpose, proven reliability
 - **Get API Key**: https://platform.openai.com/api-keys
+- **Base URL**: Automatic (SDK default: `https://api.openai.com/v1`)
 
 ```env
 NEXT_PUBLIC_AI_PROVIDER=openai
 NEXT_PUBLIC_AI_MODEL=gpt-4o-mini
 OPENAI_API_KEY=sk-...
+# OPENAI_BASE_URL=... (optional, only for custom endpoints/proxies)
 ```
 
 #### Anthropic Claude (Alternative - Best for complex reasoning)
 - **Models**: claude-3-5-sonnet-20241022, claude-3-opus-20240229, claude-3-haiku-20240307
 - **Best for**: Complex clinical scenarios, detailed analysis
 - **Get API Key**: https://console.anthropic.com/
+- **Base URL**: Automatic (SDK default: `https://api.anthropic.com`)
 
 ```env
 NEXT_PUBLIC_AI_PROVIDER=anthropic
 NEXT_PUBLIC_AI_MODEL=claude-3-5-sonnet-20241022
 ANTHROPIC_API_KEY=sk-ant-...
+# ANTHROPIC_BASE_URL=... (optional, only for custom endpoints/proxies)
 ```
+
+> **Note on Base URLs**: The Vercel AI SDK includes sensible default endpoints for all providers. You only need to set `*_BASE_URL` environment variables if you're using a custom proxy, internal gateway, or alternative endpoint.
 
 #### Azure OpenAI (Alternative - Best for enterprise)
 - **Models**: gpt-4, gpt-4-turbo, gpt-3.5-turbo

@@ -165,7 +165,13 @@ export async function generatePreAssessmentNotes(
     // Add attachment information if images are provided
     let attachmentContext = '';
     const imageAttachments = attachments?.filter(att => {
-      // Safely handle missing or invalid attachment names
+      // Check MIME type first if available (more reliable than extension)
+      if (att.type) {
+        // Only allow image MIME types
+        if (!att.type.startsWith('image/')) return false;
+      }
+      
+      // Also check file extension as secondary validation
       if (!att.name || typeof att.name !== 'string') return false;
       const ext = att.name.toLowerCase().split('.').pop();
       return ['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(ext || '');

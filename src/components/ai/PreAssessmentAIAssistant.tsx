@@ -67,7 +67,7 @@ export function PreAssessmentAIAssistant({
         heartRate: vitalSigns.heartRate || undefined,
         respiratoryRate: vitalSigns.respiratoryRate || undefined,
       },
-    }, clinicId, tenantId);
+    }, undefined, clinicId, tenantId);
   };
 
   const handleEnhance = async () => {

@@ -162,7 +162,7 @@ export default function PreAssessmentNoteSheet({ children, disabled, preAssessme
     }
 
     // Extract patient data
-    const age = patient?.dob ? calculateAge(patient.dob) : undefined;
+    const age = patient?.dob ? calculateAge(patient.dob) ?? undefined : undefined;
     const gender = patient?.gender || undefined;
     const chiefComplaint = appointment.complaint || appointment.subject || undefined;
     

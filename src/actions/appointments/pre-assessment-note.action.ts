@@ -8,6 +8,23 @@ import { PERMISSIONS } from '@lib/permissions';
 import { withErrorHandling } from '@/lib/with-error-handling';
 import { Prisma } from '@prisma/client';
 
+/**
+ * Pre-Assessment Notes Access Control
+ * 
+ * Pre-assessment notes can be created by ANY healthcare provider who has the
+ * WRITE:CLINIC:PRE_ASSESSMENT_NOTE permission. This is intentionally not
+ * restricted to nurses only, as different clinics have different workflows:
+ * 
+ * - Some clinics have nurses perform pre-assessment
+ * - Others use medical assistants or physician assistants
+ * - Some may not have nurses on staff
+ * - Doctors may also want to add pre-assessment notes
+ * 
+ * The permission-based system allows each clinic to configure access based on
+ * their specific needs and local regulations. Clinic administrators can assign
+ * the WRITE:CLINIC:PRE_ASSESSMENT_NOTE permission to appropriate roles.
+ */
+
 type UpsertPreAssessmentNotePayload = {
   appointmentId: number;
   assessment: string;

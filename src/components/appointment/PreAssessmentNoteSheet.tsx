@@ -138,7 +138,7 @@ export default function PreAssessmentNoteSheet({ children, disabled, preAssessme
                 )}
               </SheetTitle>
               <SheetDescription>
-                Notes to be taken before the actual consultation.
+                Notes to be taken before the actual consultation. Can be completed by any healthcare provider with the appropriate permissions.
               </SheetDescription>
             </SheetHeader>
 

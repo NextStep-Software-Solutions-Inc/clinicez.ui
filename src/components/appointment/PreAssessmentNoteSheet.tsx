@@ -65,7 +65,6 @@ export default function PreAssessmentNoteSheet({ children, disabled, preAssessme
     remarks,
     createNew: false
   })
-  const [showAIAssistant, setShowAIAssistant] = useState(false);
 
   const { user } = useUser()
   const closeBtnRef = useRef<HTMLButtonElement>(null)
@@ -102,12 +101,7 @@ export default function PreAssessmentNoteSheet({ children, disabled, preAssessme
     }
   }, [quickGeneratedNotes, form]);
 
-  const handleApplyAIGenerated = (notes: { assessment: string; homeInstructions: string; remarks: string }) => {
-    form.setValue('assessment', notes.assessment);
-    form.setValue('homeInstructions', notes.homeInstructions);
-    form.setValue('remarks', notes.remarks);
-    setShowAIAssistant(false);
-  };
+
 
   // Quick AI Generate - auto-extracts data from appointment
   const handleQuickAIGenerate = async () => {
@@ -193,14 +187,6 @@ export default function PreAssessmentNoteSheet({ children, disabled, preAssessme
                           </>
                         )}
                       </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowAIAssistant(!showAIAssistant)}
-                      >
-                        {showAIAssistant ? 'Hide' : 'Show'} Advanced
-                      </Button>
                     </>
                   )}
                 </div>
@@ -209,21 +195,11 @@ export default function PreAssessmentNoteSheet({ children, disabled, preAssessme
                 Notes to be taken before the actual consultation. Can be completed by any healthcare provider with the appropriate permissions.
                 {isAIEnabled() && (
                   <span className="block mt-2 text-xs text-muted-foreground">
-                    💡 Click "AI Generate" for instant AI-assisted notes using patient data, or "Show Advanced" for manual input options.
+                    💡 Click "AI Generate" for instant AI-assisted notes using patient data.
                   </span>
                 )}
               </SheetDescription>
             </SheetHeader>
-
-            {showAIAssistant && isAIEnabled() && (
-              <div className="px-6 pb-4">
-                <PreAssessmentAIAssistant
-                  onApplyGenerated={handleApplyAIGenerated}
-                  currentAssessment={form.watch('assessment')}
-                  currentRemarks={form.watch('remarks')}
-                />
-              </div>
-            )}
 
             <ScrollArea className="flex-1 px-6">
               <div className="space-y-6 pb-6">

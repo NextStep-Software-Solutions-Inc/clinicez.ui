@@ -17,7 +17,7 @@ import {
 import { checkAIUsageLimit, logAIUsage } from '@/lib/ai/usage-tracking';
 
 /**
- * Generate pre-assessment notes from symptoms and patient context
+ * Generate pre-assessment notes from symptoms and comprehensive patient context
  */
 export async function generatePreAssessmentNotes(
   symptoms: string,
@@ -31,6 +31,25 @@ export async function generatePreAssessmentNotes(
       heartRate?: string;
       respiratoryRate?: string;
     };
+    recentVitals?: Array<{
+      dateTaken: Date | string;
+      temp?: number;
+      pulseRate?: number;
+      respRate?: number;
+      spo2?: number;
+      weight?: number;
+      height?: number;
+      bmi?: number;
+      bpSystolic?: number;
+      bpDiastolic?: number;
+    }>;
+    allergies?: Array<{
+      allergen: string;
+      reaction: string;
+      notes?: string;
+    }>;
+    comorbidities?: string[];
+    medicalHistory?: string;
   },
   clinicId?: number,
   tenantId?: number
@@ -69,50 +88,106 @@ export async function generatePreAssessmentNotes(
       };
     }
 
-    // Build context string
+    // Build comprehensive context string
     let contextStr = '';
     if (patientContext) {
       const parts: string[] = [];
-      if (patientContext.age) parts.push(`Age: ${patientContext.age}`);
+      
+      // Basic patient information
+      if (patientContext.age) parts.push(`Age: ${patientContext.age} years old`);
       if (patientContext.gender) parts.push(`Gender: ${patientContext.gender}`);
       if (patientContext.chiefComplaint) parts.push(`Chief Complaint: ${patientContext.chiefComplaint}`);
       
+      // Current vital signs
       if (patientContext.vitalSigns) {
         const vitals: string[] = [];
-        if (patientContext.vitalSigns.bloodPressure) vitals.push(`BP: ${patientContext.vitalSigns.bloodPressure}`);
-        if (patientContext.vitalSigns.temperature) vitals.push(`Temp: ${patientContext.vitalSigns.temperature}`);
-        if (patientContext.vitalSigns.heartRate) vitals.push(`HR: ${patientContext.vitalSigns.heartRate}`);
-        if (patientContext.vitalSigns.respiratoryRate) vitals.push(`RR: ${patientContext.vitalSigns.respiratoryRate}`);
-        if (vitals.length > 0) parts.push(`Vital Signs: ${vitals.join(', ')}`);
+        if (patientContext.vitalSigns.bloodPressure) vitals.push(`BP ${patientContext.vitalSigns.bloodPressure}`);
+        if (patientContext.vitalSigns.temperature) vitals.push(`Temp ${patientContext.vitalSigns.temperature}`);
+        if (patientContext.vitalSigns.heartRate) vitals.push(`HR ${patientContext.vitalSigns.heartRate} bpm`);
+        if (patientContext.vitalSigns.respiratoryRate) vitals.push(`RR ${patientContext.vitalSigns.respiratoryRate}/min`);
+        if (vitals.length > 0) parts.push(`Current Vital Signs: ${vitals.join(', ')}`);
+      }
+      
+      // Recent vitals history with dates
+      if (patientContext.recentVitals && patientContext.recentVitals.length > 0) {
+        parts.push('\nRecent Vital Signs History:');
+        patientContext.recentVitals.forEach((vital, index) => {
+          const date = new Date(vital.dateTaken);
+          const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+          const vitalParts: string[] = [];
+          if (vital.bpSystolic && vital.bpDiastolic) vitalParts.push(`BP ${vital.bpSystolic}/${vital.bpDiastolic}`);
+          if (vital.temp) vitalParts.push(`Temp ${vital.temp}°C`);
+          if (vital.pulseRate) vitalParts.push(`HR ${vital.pulseRate}`);
+          if (vital.respRate) vitalParts.push(`RR ${vital.respRate}`);
+          if (vital.spo2) vitalParts.push(`SpO2 ${vital.spo2}%`);
+          if (vital.weight) vitalParts.push(`Weight ${vital.weight}kg`);
+          if (vital.bmi) vitalParts.push(`BMI ${vital.bmi.toFixed(1)}`);
+          if (vitalParts.length > 0) {
+            parts.push(`  ${dateStr}: ${vitalParts.join(', ')}`);
+          }
+        });
+      }
+      
+      // Allergies
+      if (patientContext.allergies && patientContext.allergies.length > 0) {
+        parts.push('\nKnown Allergies:');
+        patientContext.allergies.forEach(allergy => {
+          const allergyStr = `  - ${allergy.allergen}: ${allergy.reaction}${allergy.notes ? ` (${allergy.notes})` : ''}`;
+          parts.push(allergyStr);
+        });
+      } else {
+        parts.push('\nKnown Allergies: No known drug allergies (NKDA)');
+      }
+      
+      // Comorbidities
+      if (patientContext.comorbidities && patientContext.comorbidities.length > 0) {
+        parts.push('\nComorbidities/Chronic Conditions:');
+        patientContext.comorbidities.forEach(condition => {
+          parts.push(`  - ${condition}`);
+        });
+      }
+      
+      // Medical history
+      if (patientContext.medicalHistory) {
+        parts.push(`\nMedical History: ${patientContext.medicalHistory}`);
       }
       
       if (parts.length > 0) {
-        contextStr = `\n\nPatient Context:\n${parts.join('\n')}`;
+        contextStr = `\n\nPatient Information:\n${parts.join('\n')}`;
       }
     }
 
-    const systemPrompt = `You are a healthcare assistant helping nurses create pre-assessment notes before a doctor's consultation. 
-Your role is to generate structured, professional pre-assessment notes based on patient information and symptoms.
+    const systemPrompt = `You are an experienced healthcare provider with expertise in patient assessment and clinical documentation. 
+Your role is to generate structured, professional pre-assessment notes based on comprehensive patient information and symptoms.
+
+IMPORTANT INSTRUCTIONS:
+1. Provide your response in PLAIN TEXT format only - DO NOT use markdown formatting, bullet points, or special characters
+2. Write in clear, professional medical language as an experienced clinician would
+3. Base your assessment on the complete patient context including vitals, allergies, and medical history
+4. Be thorough but concise in your clinical observations
+5. Consider all patient safety factors including allergies and comorbidities
+6. Use proper medical terminology appropriately
 
 Generate notes in this format:
-1. Assessment: Detailed clinical observations and initial assessment
-2. Home Instructions: Clear, patient-friendly instructions for care at home
-3. Remarks: Important notes for the doctor's attention
+Assessment: [Your detailed clinical observations and initial assessment in plain text]
 
-Be thorough but concise. Use medical terminology appropriately but ensure clarity.
-Always include appropriate disclaimers that this is a preliminary assessment.`;
+Home Instructions: [Clear, patient-friendly instructions for care at home in plain text]
+
+Remarks: [Important notes for the doctor's attention in plain text]
+
+Always include appropriate disclaimers that this is a preliminary assessment requiring physician review.`;
 
     const sanitizedSymptoms = sanitizeInput(symptoms);
-    const prompt = `Generate pre-assessment notes for a patient with the following information:
+    const prompt = `Generate pre-assessment notes for a patient presenting with the following:
 
-Symptoms/Observations: ${sanitizedSymptoms}${contextStr}
+Symptoms/Chief Complaint: ${sanitizedSymptoms}${contextStr}
 
-Please provide:
-1. Assessment (detailed clinical observations)
-2. Home Instructions (clear instructions for the patient)
-3. Remarks (important notes for the consulting physician)
+Please provide a comprehensive pre-assessment including:
+1. Assessment - detailed clinical observations considering all available patient data
+2. Home Instructions - clear instructions for the patient
+3. Remarks - important notes for the consulting physician
 
-Format your response clearly with these three sections.`;
+Remember: Use plain text format only, no markdown or special formatting.`;
 
     const orchestrator = getOrchestrator();
     const response = await orchestrator.complete({

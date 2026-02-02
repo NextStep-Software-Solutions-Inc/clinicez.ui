@@ -29,6 +29,9 @@ import { isAIEnabled } from "@/lib/ai";
 import { usePreAssessmentAI } from "@/hooks/ai/use-pre-assessment-ai";
 import { calculateAge } from "@/lib/utils";
 import { ScrollArea } from "@components/ui/scroll-area";
+import { getUserAllergiesAction } from "@actions/users/user-allergy.action";
+import { getUserVitalSignsAction } from "@actions/vitals.action";
+
 
 const preAssessmentNotesSchema = z.object({
   createNew: z.boolean(),
@@ -76,6 +79,10 @@ export default function PreAssessmentNoteSheet({ children, disabled, preAssessme
   // Quick AI generation hook
   const { generate: quickGenerate, isLoading: isQuickGenerating, generatedNotes: quickGeneratedNotes } = usePreAssessmentAI();
 
+  // State for patient health data
+  const [patientAllergies, setPatientAllergies] = useState<any[]>([]);
+  const [patientVitals, setPatientVitals] = useState<any[]>([]);
+
   const form = useForm<PreConsultationNotes>({
     defaultValues: {
       createNew: preAssessmentNote.createNew,
@@ -85,6 +92,36 @@ export default function PreAssessmentNoteSheet({ children, disabled, preAssessme
     },
   })
   const watch = form.watch
+
+  // Fetch patient allergies and vitals when appointment data is available
+  useEffect(() => {
+    const fetchPatientHealthData = async () => {
+      if (!appointmentData?.data) return;
+      
+      const patient = appointmentData.data.Requesters?.[0]?.User;
+      if (!patient?.userId) return;
+
+      try {
+        // Fetch allergies
+        const allergies = await getUserAllergiesAction(patient.userId);
+        setPatientAllergies(allergies || []);
+
+        // Fetch recent vitals (last 5)
+        const vitals = await getUserVitalSignsAction(patient.userId);
+        if (vitals && vitals.length > 0) {
+          // Get last 5 vitals, sorted by date (most recent first)
+          const sortedVitals = [...vitals]
+            .sort((a: any, b: any) => new Date(b.dateTaken).getTime() - new Date(a.dateTaken).getTime())
+            .slice(0, 5);
+          setPatientVitals(sortedVitals);
+        }
+      } catch (error) {
+        console.error('Error fetching patient health data:', error);
+      }
+    };
+
+    fetchPatientHealthData();
+  }, [appointmentData]);
 
   useEffect(() => {
     const subscription = watch((value) => setPreAssessmentNote(value))
@@ -103,7 +140,7 @@ export default function PreAssessmentNoteSheet({ children, disabled, preAssessme
 
 
 
-  // Quick AI Generate - auto-extracts data from appointment
+  // Quick AI Generate - auto-extracts comprehensive data from appointment and patient records
   const handleQuickAIGenerate = async () => {
     if (!appointmentData?.data) {
       toast.error('Appointment data not available');
@@ -113,6 +150,11 @@ export default function PreAssessmentNoteSheet({ children, disabled, preAssessme
     const appointment = appointmentData.data;
     const patient = appointment.Requesters?.[0]?.User;
 
+    if (!patient) {
+      toast.error('Patient data not available');
+      return;
+    }
+
     // Extract patient data
     const age = patient?.dob ? calculateAge(patient.dob) : undefined;
     const gender = patient?.gender || undefined;
@@ -121,11 +163,35 @@ export default function PreAssessmentNoteSheet({ children, disabled, preAssessme
     // Use chief complaint as symptoms if available
     const symptoms = chiefComplaint || 'Patient consultation';
 
+    // Format allergies for AI
+    const allergies = patientAllergies.map((allergy: any) => ({
+      allergen: allergy.Allergen?.name || '',
+      reaction: allergy.reaction || '',
+      notes: allergy.notes || undefined,
+    }));
+
+    // Format recent vitals for AI
+    const recentVitals = patientVitals.map((vital: any) => ({
+      dateTaken: vital.dateTaken,
+      temp: vital.temp,
+      pulseRate: vital.pulseRate,
+      respRate: vital.respRate,
+      spo2: vital.spo2,
+      weight: vital.weight,
+      height: vital.height,
+      bmi: vital.bmi,
+      bpSystolic: vital.bpSystolic,
+      bpDiastolic: vital.bpDiastolic,
+    }));
+
     try {
       await quickGenerate(symptoms, {
         age,
         gender,
         chiefComplaint,
+        recentVitals: recentVitals.length > 0 ? recentVitals : undefined,
+        allergies: allergies.length > 0 ? allergies : undefined,
+        // Can be extended with comorbidities and medical history if available
       });
     } catch (error) {
       toast.error('Failed to generate notes. Please try again.');
@@ -195,7 +261,7 @@ export default function PreAssessmentNoteSheet({ children, disabled, preAssessme
                 Notes to be taken before the actual consultation. Can be completed by any healthcare provider with the appropriate permissions.
                 {isAIEnabled() && (
                   <span className="block mt-2 text-xs text-muted-foreground">
-                    💡 Click "AI Generate" for instant AI-assisted notes using patient data.
+                    💡 Click "AI Generate" for instant AI-assisted notes using comprehensive patient data including vitals, allergies, and medical history.
                   </span>
                 )}
               </SheetDescription>
@@ -213,6 +279,7 @@ export default function PreAssessmentNoteSheet({ children, disabled, preAssessme
                         <Textarea
                           placeholder="Write your assessment here"
                           className="resize-none min-h-[300px]"
+                          disabled={isQuickGenerating}
                           {...field}
                         />
                       </FormControl>
@@ -233,6 +300,7 @@ export default function PreAssessmentNoteSheet({ children, disabled, preAssessme
                         <Textarea
                           placeholder="Write home instructions here"
                           className="resize-none"
+                          disabled={isQuickGenerating}
                           {...field}
                           value={field.value ?? ""}
                         />
@@ -254,6 +322,7 @@ export default function PreAssessmentNoteSheet({ children, disabled, preAssessme
                         <Textarea
                           placeholder="Write remarks here"
                           className="resize-none"
+                          disabled={isQuickGenerating}
                           {...field}
                         />
                       </FormControl>

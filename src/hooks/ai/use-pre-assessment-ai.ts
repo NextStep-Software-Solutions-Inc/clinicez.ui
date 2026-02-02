@@ -30,6 +30,25 @@ export function usePreAssessmentAI() {
         heartRate?: string;
         respiratoryRate?: string;
       };
+      recentVitals?: Array<{
+        dateTaken: Date | string;
+        temp?: number;
+        pulseRate?: number;
+        respRate?: number;
+        spo2?: number;
+        weight?: number;
+        height?: number;
+        bmi?: number;
+        bpSystolic?: number;
+        bpDiastolic?: number;
+      }>;
+      allergies?: Array<{
+        allergen: string;
+        reaction: string;
+        notes?: string;
+      }>;
+      comorbidities?: string[];
+      medicalHistory?: string;
     },
     clinicId?: number,
     tenantId?: number

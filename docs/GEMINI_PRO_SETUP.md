@@ -10,6 +10,15 @@ ClinicEZ is now configured to use **Google Gemini Pro** as the default AI provid
 - ✅ **Free tier available** - Great for testing and small deployments
 - ✅ **Scalable** - Handles high request volumes efficiently
 
+## Important: Model Naming
+
+For v1beta API compatibility, use the `-latest` suffix:
+- ✅ **Correct**: `gemini-1.5-pro-latest` (default, recommended)
+- ✅ **Also works**: `gemini-pro` (stable version)
+- ❌ **Won't work**: `gemini-1.5-pro` (missing -latest suffix)
+
+The `-latest` suffix ensures the model name is recognized by Google's v1beta API endpoint.
+
 ## Quick Setup
 
 ### 1. Get a Google AI API Key
@@ -29,7 +38,7 @@ NEXT_PUBLIC_AI_ENABLED=true
 
 # Use Google Gemini Pro (default)
 NEXT_PUBLIC_AI_PROVIDER=google
-NEXT_PUBLIC_AI_MODEL=gemini-1.5-pro
+NEXT_PUBLIC_AI_MODEL=gemini-1.5-pro-latest  # Note: Use -latest suffix for v1beta API
 
 # Your Google AI API Key
 GOOGLE_AI_API_KEY=your-actual-api-key-here

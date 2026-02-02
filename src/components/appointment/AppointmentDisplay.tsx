@@ -89,13 +89,16 @@ export default function AppointmentDisplay() {
   const myClinicPermissionArray = myClinicPermissions?.map(p => p.name) ?? []
 
   // Check if the current user is an assigned nurse to this appointment
+  // Note: Currently not used for pre-assessment note access, but available for other nurse-specific features
   const isAssignedNurse = isAssignedNurseToAppointment(freshAppointment.data, user?.id);
 
   // Check if user has write permission for pre-assessment notes
   const hasWritePermission = [PERMISSIONS.CLINIC["WRITE:CLINIC:PRE_ASSESSMENT_NOTE"].name].every(p => myClinicPermissionArray.includes(p));
 
-  // Only assigned nurses can edit pre-assessment notes
-  const canEditPreAssessmentNotes = hasWritePermission && isAssignedNurse;
+  // Any healthcare provider with write permission can edit pre-assessment notes
+  // This allows flexible assignment based on clinic workflow (nurses, doctors, medical assistants, etc.)
+  // See docs/PRE_ASSESSMENT_NOTES_ACCESS.md for detailed rationale
+  const canEditPreAssessmentNotes = hasWritePermission;
 
   const preferredHPName = (() => {
     const title = preferredHp?.HPProfile?.title ?? "";

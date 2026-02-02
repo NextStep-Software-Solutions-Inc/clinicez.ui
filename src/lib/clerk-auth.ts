@@ -14,23 +14,47 @@ export interface TokenResponse {
   token: string | null;
 }
 
+/**
+ * Get the current session with user information
+ * 
+ * Falls back to basic user info (userId only) if Clerk API fails.
+ * This prevents the application from crashing due to Clerk API errors.
+ * 
+ * @returns SessionShape with user info, or null if not authenticated
+ */
 export const getSession = async (): Promise<SessionShape | null> => {
   const result = await auth();
   const { userId } = result;
 
   if (!userId) return null;
 
-  const user = await currentUser();
+  try {
+    const user = await currentUser();
 
-  return {
-    user: {
-      sub: userId,
-      id: undefined,
-      email: user?.emailAddresses?.[0]?.emailAddress ?? null,
-      given_name: user?.firstName ?? null,
-      family_name: user?.lastName ?? null,
-    },
-  };
+    return {
+      user: {
+        sub: userId,
+        id: undefined,
+        email: user?.emailAddresses?.[0]?.emailAddress ?? null,
+        given_name: user?.firstName ?? null,
+        family_name: user?.lastName ?? null,
+      },
+    };
+  } catch (error) {
+    // Log error but continue with basic user info
+    console.error('Clerk API error in getSession:', error);
+    
+    // Return session with only userId - allows app to function with degraded info
+    return {
+      user: {
+        sub: userId,
+        id: undefined,
+        email: null,
+        given_name: null,
+        family_name: null,
+      },
+    };
+  }
 };
 
 export const getAccessToken = async (): Promise<TokenResponse> => {

@@ -82,6 +82,7 @@ export default function PreAssessmentNoteSheet({ children, disabled, preAssessme
   // State for patient health data
   const [patientAllergies, setPatientAllergies] = useState<any[]>([]);
   const [patientVitals, setPatientVitals] = useState<any[]>([]);
+  const [appointmentAttachments, setAppointmentAttachments] = useState<any[]>([]);
 
   const form = useForm<PreConsultationNotes>({
     defaultValues: {
@@ -93,7 +94,7 @@ export default function PreAssessmentNoteSheet({ children, disabled, preAssessme
   })
   const watch = form.watch
 
-  // Fetch patient allergies and vitals when appointment data is available
+  // Fetch patient allergies, vitals, and attachments when appointment data is available
   useEffect(() => {
     const fetchPatientHealthData = async () => {
       if (!appointmentData?.data) return;
@@ -114,6 +115,11 @@ export default function PreAssessmentNoteSheet({ children, disabled, preAssessme
             .sort((a: any, b: any) => new Date(b.dateTaken).getTime() - new Date(a.dateTaken).getTime())
             .slice(0, 5);
           setPatientVitals(sortedVitals);
+        }
+
+        // Extract attachments from appointment data
+        if (appointmentData.data.AppointmentAttachments) {
+          setAppointmentAttachments(appointmentData.data.AppointmentAttachments);
         }
       } catch (error) {
         console.error('Error fetching patient health data:', error);
@@ -184,15 +190,26 @@ export default function PreAssessmentNoteSheet({ children, disabled, preAssessme
       bpDiastolic: vital.bpDiastolic,
     }));
 
+    // Format attachments for AI (images only)
+    const attachments = appointmentAttachments.map((att: any) => ({
+      name: att.name,
+      url: att.url,
+      type: att.type,
+    }));
+
     try {
-      await quickGenerate(symptoms, {
-        age,
-        gender,
-        chiefComplaint,
-        recentVitals: recentVitals.length > 0 ? recentVitals : undefined,
-        allergies: allergies.length > 0 ? allergies : undefined,
-        // Can be extended with comorbidities and medical history if available
-      });
+      await quickGenerate(
+        symptoms,
+        {
+          age,
+          gender,
+          chiefComplaint,
+          recentVitals: recentVitals.length > 0 ? recentVitals : undefined,
+          allergies: allergies.length > 0 ? allergies : undefined,
+          // Can be extended with comorbidities and medical history if available
+        },
+        attachments.length > 0 ? attachments : undefined
+      );
     } catch (error) {
       toast.error('Failed to generate notes. Please try again.');
     }

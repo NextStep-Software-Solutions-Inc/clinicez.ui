@@ -50,6 +50,11 @@ export function usePreAssessmentAI() {
       comorbidities?: string[];
       medicalHistory?: string;
     },
+    attachments?: Array<{
+      name: string;
+      url: string;
+      type?: string;
+    }>,
     clinicId?: number,
     tenantId?: number
   ) => {
@@ -59,7 +64,7 @@ export function usePreAssessmentAI() {
 
     try {
       const { generatePreAssessmentNotes } = await import('@/actions/ai/pre-assessment-ai-actions');
-      const result = await generatePreAssessmentNotes(symptoms, patientContext, clinicId, tenantId);
+      const result = await generatePreAssessmentNotes(symptoms, patientContext, attachments, clinicId, tenantId);
 
       if (result.success && result.data) {
         setGeneratedNotes(result.data);

@@ -182,40 +182,62 @@ CRITICAL FORMATTING REQUIREMENTS:
 3. Use standard medical abbreviations: HR (heart rate), BP (blood pressure), RR (respiratory rate), SpO2 (oxygen saturation), Temp (temperature), NKDA (no known drug allergies), HTN (hypertension), DM (diabetes), etc.
 4. Provide response in PLAIN TEXT format only - NO markdown, bullet points, asterisks, or special formatting
 5. Write in clear, professional medical language as an experienced clinician would
+6. Use ABSOLUTE DATES AND DEFINITE TERMS - NEVER use relative terms like "yesterday", "today", "recently", "lately", "a few days ago", "last week"
+   - ALWAYS use specific dates: "Jan 15, 2026" or "January 15, 2026"
+   - For time references, include the actual date: "3 days prior (Jan 12, 2026)" not "3 days ago"
+   - Use "On [specific date]" not "recently" or "last week"
+   - Example: "Fever started on Jan 12, 2026" NOT "Fever started 3 days ago"
+   - Example: "BP measured on Jan 10, 2026 was 120/80" NOT "Recent BP was 120/80"
 
 CONTENT REQUIREMENTS:
-1. Assessment: Clinical observations based on ALL available patient data including vitals, allergies, comorbidities, and medical history
+1. Assessment: Clinical observations based on ALL available patient data including vitals, allergies, comorbidities, medical history, and attached images
 2. Home Instructions: Must be SPECIFIC to the chief complaint and assessment findings - address the actual condition presented
 3. Remarks: Must REFERENCE the assessment findings and provide relevant clinical guidance for the consulting physician
 4. Consider all patient safety factors including allergies and comorbidities in your recommendations
+5. If medical images are attached, analyze and describe relevant findings in the assessment
 
 Generate notes in this exact format:
-Assessment: [Each clinical observation on a new line using medical symbols and abbreviations]
+Assessment: [Each clinical observation on a new line using medical symbols, abbreviations, and ABSOLUTE DATES]
 
 Home Instructions: [Each instruction on a new line, specific to the chief complaint and assessment]
 
-Remarks: [Each note on a new line, referencing assessment findings and patient history]
+Remarks: [Each note on a new line, referencing assessment findings with ABSOLUTE DATES and patient history]
 
 Always include appropriate disclaimers that this is a preliminary assessment requiring physician review.`;
 
     const sanitizedSymptoms = sanitizeInput(symptoms);
+    
+    // Get current date for reference
+    const currentDate = new Date().toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
+    });
+    
     const prompt = `Generate pre-assessment notes for a patient presenting with the following:
 
-CHIEF COMPLAINT: ${sanitizedSymptoms}${contextStr}
+CHIEF COMPLAINT: ${sanitizedSymptoms}${contextStr}${attachmentContext}
+
+TODAY'S DATE: ${currentDate} (Use this as reference for all date mentions)
 
 REQUIREMENTS:
-1. Assessment: Analyze the patient's condition based on the chief complaint and ALL available medical data (vitals, allergies, history). Write each observation on a new line using medical symbols (%, °, mmHg, etc.) and abbreviations (HR, BP, RR, SpO2).
+1. Assessment: Analyze the patient's condition based on the chief complaint and ALL available medical data (vitals, allergies, history, attached images). Write each observation on a new line using medical symbols (%, °, mmHg, etc.) and abbreviations (HR, BP, RR, SpO2). ALWAYS use ABSOLUTE DATES - never say "yesterday", "recently", or "a few days ago". Use specific dates like "Jan 15, 2026" or "3 days prior on Jan 12, 2026".
 
 2. Home Instructions: Provide specific care instructions that DIRECTLY ADDRESS the chief complaint (${sanitizedSymptoms}). Each instruction on a new line. Use symbols and abbreviations. Instructions must be relevant to the actual condition presented.
 
-3. Remarks: Reference findings from your assessment and patient's medical history. Each remark on a new line. Use medical abbreviations. Include relevant clinical considerations for the physician.
+3. Remarks: Reference findings from your assessment with ABSOLUTE DATES and patient's medical history. Each remark on a new line. Use medical abbreviations. Include relevant clinical considerations for the physician. Always use specific dates, not relative terms.
+
+4. If medical images are attached, describe relevant findings and integrate them into your assessment.
 
 CRITICAL: 
 - Each sentence must be on a NEW LINE
 - Use medical symbols: %, °, mmHg, mg, L, kg, bpm
 - Use abbreviations: HR, BP, RR, SpO2, Temp, NKDA, HTN, DM
+- ALWAYS use ABSOLUTE DATES: "Jan 15, 2026" NOT "yesterday" or "recently"
+- Example: "Fever started on Jan 12, 2026" NOT "Fever started 3 days ago"
+- Example: "BP on Jan 10, 2026 was 120/80" NOT "Recent BP was 120/80"
 - Home instructions must relate to the chief complaint: ${sanitizedSymptoms}
-- Remarks must reference the assessment findings
+- Remarks must reference the assessment findings with specific dates
 - NO markdown formatting, NO bullet points, NO asterisks
 - Plain text only with newlines between sentences`;
 

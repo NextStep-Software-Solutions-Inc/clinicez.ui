@@ -160,34 +160,48 @@ export async function generatePreAssessmentNotes(
     const systemPrompt = `You are an experienced healthcare provider with expertise in patient assessment and clinical documentation. 
 Your role is to generate structured, professional pre-assessment notes based on comprehensive patient information and symptoms.
 
-IMPORTANT INSTRUCTIONS:
-1. Provide your response in PLAIN TEXT format only - DO NOT use markdown formatting, bullet points, or special characters
-2. Write in clear, professional medical language as an experienced clinician would
-3. Base your assessment on the complete patient context including vitals, allergies, and medical history
-4. Be thorough but concise in your clinical observations
-5. Consider all patient safety factors including allergies and comorbidities
-6. Use proper medical terminology appropriately
+CRITICAL FORMATTING REQUIREMENTS:
+1. Write each sentence on a NEW LINE for better readability
+2. Use medical symbols and abbreviations to keep text concise: % (percent), ° (degree), mmHg, mg, L, mL, kg, bpm, etc.
+3. Use standard medical abbreviations: HR (heart rate), BP (blood pressure), RR (respiratory rate), SpO2 (oxygen saturation), Temp (temperature), NKDA (no known drug allergies), HTN (hypertension), DM (diabetes), etc.
+4. Provide response in PLAIN TEXT format only - NO markdown, bullet points, asterisks, or special formatting
+5. Write in clear, professional medical language as an experienced clinician would
 
-Generate notes in this format:
-Assessment: [Your detailed clinical observations and initial assessment in plain text]
+CONTENT REQUIREMENTS:
+1. Assessment: Clinical observations based on ALL available patient data including vitals, allergies, comorbidities, and medical history
+2. Home Instructions: Must be SPECIFIC to the chief complaint and assessment findings - address the actual condition presented
+3. Remarks: Must REFERENCE the assessment findings and provide relevant clinical guidance for the consulting physician
+4. Consider all patient safety factors including allergies and comorbidities in your recommendations
 
-Home Instructions: [Clear, patient-friendly instructions for care at home in plain text]
+Generate notes in this exact format:
+Assessment: [Each clinical observation on a new line using medical symbols and abbreviations]
 
-Remarks: [Important notes for the doctor's attention in plain text]
+Home Instructions: [Each instruction on a new line, specific to the chief complaint and assessment]
+
+Remarks: [Each note on a new line, referencing assessment findings and patient history]
 
 Always include appropriate disclaimers that this is a preliminary assessment requiring physician review.`;
 
     const sanitizedSymptoms = sanitizeInput(symptoms);
     const prompt = `Generate pre-assessment notes for a patient presenting with the following:
 
-Symptoms/Chief Complaint: ${sanitizedSymptoms}${contextStr}
+CHIEF COMPLAINT: ${sanitizedSymptoms}${contextStr}
 
-Please provide a comprehensive pre-assessment including:
-1. Assessment - detailed clinical observations considering all available patient data
-2. Home Instructions - clear instructions for the patient
-3. Remarks - important notes for the consulting physician
+REQUIREMENTS:
+1. Assessment: Analyze the patient's condition based on the chief complaint and ALL available medical data (vitals, allergies, history). Write each observation on a new line using medical symbols (%, °, mmHg, etc.) and abbreviations (HR, BP, RR, SpO2).
 
-Remember: Use plain text format only, no markdown or special formatting.`;
+2. Home Instructions: Provide specific care instructions that DIRECTLY ADDRESS the chief complaint (${sanitizedSymptoms}). Each instruction on a new line. Use symbols and abbreviations. Instructions must be relevant to the actual condition presented.
+
+3. Remarks: Reference findings from your assessment and patient's medical history. Each remark on a new line. Use medical abbreviations. Include relevant clinical considerations for the physician.
+
+CRITICAL: 
+- Each sentence must be on a NEW LINE
+- Use medical symbols: %, °, mmHg, mg, L, kg, bpm
+- Use abbreviations: HR, BP, RR, SpO2, Temp, NKDA, HTN, DM
+- Home instructions must relate to the chief complaint: ${sanitizedSymptoms}
+- Remarks must reference the assessment findings
+- NO markdown formatting, NO bullet points, NO asterisks
+- Plain text only with newlines between sentences`;
 
     const orchestrator = getOrchestrator();
     const response = await orchestrator.complete({

@@ -11,7 +11,7 @@ import { AIProvider, AIOrchestratorConfig } from './types';
  */
 export function getAIConfig(): AIOrchestratorConfig {
   const defaultProvider = (process.env.NEXT_PUBLIC_AI_PROVIDER || 'google') as AIProvider;
-  const defaultModel = process.env.NEXT_PUBLIC_AI_MODEL || 'gemini-1.5-flash';
+  const defaultModel = process.env.NEXT_PUBLIC_AI_MODEL || 'gemini-1.5-pro';
   const fallbackProvider = process.env.NEXT_PUBLIC_AI_FALLBACK_PROVIDER as AIProvider | undefined;
   const fallbackModel = process.env.NEXT_PUBLIC_AI_FALLBACK_MODEL;
 
@@ -62,7 +62,7 @@ export const providerConfig = {
 export const defaultModels: Record<AIProvider, string> = {
   openai: 'gpt-4o-mini',
   anthropic: 'claude-3-5-sonnet-20241022',
-  google: 'gemini-1.5-flash',
+  google: 'gemini-1.5-pro',
   'azure-openai': 'gpt-4',
 };
 

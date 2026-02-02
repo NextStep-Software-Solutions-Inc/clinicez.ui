@@ -36,17 +36,17 @@ cp .env.example .env.local
 
 Add your Google AI API key to `.env.local`:
 ```env
-# Recommended configuration - Google Gemini Flash
+# Recommended configuration - Google Gemini Pro
 NEXT_PUBLIC_AI_ENABLED=true
 NEXT_PUBLIC_AI_PROVIDER=google
-NEXT_PUBLIC_AI_MODEL=gemini-1.5-flash
+NEXT_PUBLIC_AI_MODEL=gemini-1.5-pro
 GOOGLE_AI_API_KEY=your-google-ai-api-key-here
 ```
 
 ### 3. Supported Providers
 
-#### Google Gemini Flash (Recommended - Default)
-- **Models**: gemini-1.5-flash, gemini-1.5-pro, gemini-pro
+#### Google Gemini Pro (Recommended - Default)
+- **Models**: gemini-1.5-pro, gemini-1.5-pro, gemini-pro
 - **Best for**: Cost-efficiency, high volume, fast responses
 - **Advantages**: Free tier available, excellent performance/cost ratio
 - **Get API Key**: https://makersuite.google.com/app/apikey
@@ -54,7 +54,7 @@ GOOGLE_AI_API_KEY=your-google-ai-api-key-here
 
 ```env
 NEXT_PUBLIC_AI_PROVIDER=google
-NEXT_PUBLIC_AI_MODEL=gemini-1.5-flash
+NEXT_PUBLIC_AI_MODEL=gemini-1.5-pro
 GOOGLE_AI_API_KEY=...
 # GOOGLE_AI_BASE_URL=... (optional, only for custom endpoints/proxies)
 ```
@@ -244,7 +244,7 @@ All AI operations support the following feature types:
 **For most tasks (notes, summaries):**
 - OpenAI: `gpt-4o-mini` ($0.15 per 1M input tokens)
 - Anthropic: `claude-3-haiku-20240307` ($0.25 per 1M input tokens)
-- Google: `gemini-1.5-flash` ($0.075 per 1M input tokens)
+- Google: `gemini-1.5-pro` ($0.075 per 1M input tokens)
 
 **For complex medical reasoning:**
 - OpenAI: `gpt-4o` ($5 per 1M input tokens)
@@ -262,7 +262,7 @@ AI_MAX_DAILY_BUDGET=500        # Hard limit at $500/day
 
 ```env
 NEXT_PUBLIC_AI_FALLBACK_PROVIDER=google
-NEXT_PUBLIC_AI_FALLBACK_MODEL=gemini-1.5-flash
+NEXT_PUBLIC_AI_FALLBACK_MODEL=gemini-1.5-pro
 ```
 
 ## Rate Limiting

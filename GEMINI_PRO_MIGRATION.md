@@ -1,17 +1,17 @@
-# ✨ Gemini Flash Migration Complete
+# ✨ Gemini Pro Migration Complete
 
 ## What Changed
 
-The ClinicEZ AI system now uses **Google Gemini Flash** as the default provider instead of OpenAI.
+The ClinicEZ AI system now uses **Google Gemini Pro** as the default provider instead of OpenAI.
 
 ```diff
 - Default Provider: OpenAI (gpt-4o-mini)
-+ Default Provider: Google Gemini (gemini-1.5-flash)
++ Default Provider: Google Gemini (gemini-1.5-pro)
 ```
 
-## Why Gemini Flash?
+## Why Gemini Pro?
 
-| Feature | Gemini Flash | GPT-4o-mini | Advantage |
+| Feature | Gemini Pro | GPT-4o-mini | Advantage |
 |---------|-------------|-------------|-----------|
 | **Speed** | ⚡⚡⚡ | ⚡⚡ | 🏆 **30-50% faster** |
 | **Cost** | $0.075/1M tokens | $150/1M tokens | 🏆 **~95% cheaper** |
@@ -31,7 +31,7 @@ const defaultModel = 'gpt-4o-mini';
 
 // After
 const defaultProvider = 'google';
-const defaultModel = 'gemini-1.5-flash';
+const defaultModel = 'gemini-1.5-pro';
 ```
 
 ### 2. Environment Template
@@ -40,7 +40,7 @@ const defaultModel = 'gemini-1.5-flash';
 ```env
 NEXT_PUBLIC_AI_ENABLED=true
 NEXT_PUBLIC_AI_PROVIDER=google
-NEXT_PUBLIC_AI_MODEL=gemini-1.5-flash
+NEXT_PUBLIC_AI_MODEL=gemini-1.5-pro
 GOOGLE_AI_API_KEY=your-google-ai-api-key-here
 ```
 
@@ -65,13 +65,13 @@ cp .env.example .env.local
 pnpm dev
 ```
 
-✅ **That's it!** All AI features now use Gemini Flash.
+✅ **That's it!** All AI features now use Gemini Pro.
 
 ## Migration Guide (For Existing Users)
 
-### If You Want to Use Gemini Flash (Recommended)
+### If You Want to Use Gemini Pro (Recommended)
 
-**Option A: Let it use defaults (Gemini Flash)**
+**Option A: Let it use defaults (Gemini Pro)**
 ```bash
 # Just add to .env.local:
 NEXT_PUBLIC_AI_ENABLED=true
@@ -82,7 +82,7 @@ GOOGLE_AI_API_KEY=your-google-ai-api-key-here
 ```bash
 NEXT_PUBLIC_AI_ENABLED=true
 NEXT_PUBLIC_AI_PROVIDER=google
-NEXT_PUBLIC_AI_MODEL=gemini-1.5-flash
+NEXT_PUBLIC_AI_MODEL=gemini-1.5-pro
 GOOGLE_AI_API_KEY=your-google-ai-api-key-here
 ```
 
@@ -100,10 +100,10 @@ OPENAI_API_KEY=sk-your-key-here
 ### If You Want Both (Gemini + OpenAI Fallback)
 
 ```bash
-# Primary: Gemini Flash
+# Primary: Gemini Pro
 NEXT_PUBLIC_AI_ENABLED=true
 NEXT_PUBLIC_AI_PROVIDER=google
-NEXT_PUBLIC_AI_MODEL=gemini-1.5-flash
+NEXT_PUBLIC_AI_MODEL=gemini-1.5-pro
 GOOGLE_AI_API_KEY=your-google-ai-api-key
 
 # Fallback: OpenAI (if Gemini fails)
@@ -112,7 +112,7 @@ NEXT_PUBLIC_AI_FALLBACK_MODEL=gpt-4o-mini
 OPENAI_API_KEY=sk-your-openai-key
 ```
 
-## Features That Work with Gemini Flash
+## Features That Work with Gemini Pro
 
 ✅ **All features work identically!**
 
@@ -139,7 +139,7 @@ OPENAI_API_KEY=sk-your-openai-key
 
 | Provider | Monthly Cost |
 |----------|--------------|
-| Gemini Flash | **~$3.75** |
+| Gemini Pro | **~$3.75** |
 | GPT-4o-mini | **~$75** |
 | **Savings** | **$71.25 (95%)** |
 
@@ -161,7 +161,7 @@ OPENAI_API_KEY=sk-your-openai-key
 ```bash
 # Check your environment
 echo $NEXT_PUBLIC_AI_PROVIDER  # Should show: google
-echo $NEXT_PUBLIC_AI_MODEL     # Should show: gemini-1.5-flash
+echo $NEXT_PUBLIC_AI_MODEL     # Should show: gemini-1.5-pro
 ```
 
 ### Test AI Features
@@ -217,11 +217,11 @@ git revert 3f2c3a4
 
 ## Support
 
-- [Gemini Flash Setup Guide](./docs/GEMINI_FLASH_SETUP.md)
+- [Gemini Pro Setup Guide](./docs/GEMINI_FLASH_SETUP.md)
 - [AI Quick Start Guide](./docs/AI_QUICK_START.md)
 - [AI Integration Summary](./docs/AI_INTEGRATION_SUMMARY.md)
 - [Google AI Documentation](https://ai.google.dev/docs)
 
 ---
 
-**🎉 Migration Complete!** Enjoy faster, cheaper AI features with Gemini Flash.
+**🎉 Migration Complete!** Enjoy faster, cheaper AI features with Gemini Pro.

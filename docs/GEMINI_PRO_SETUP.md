@@ -1,8 +1,8 @@
-# Gemini Flash Setup Guide
+# Gemini Pro Setup Guide
 
 ## Overview
 
-ClinicEZ is now configured to use **Google Gemini Flash** as the default AI provider. Gemini Flash offers:
+ClinicEZ is now configured to use **Google Gemini Pro** as the default AI provider. Gemini Pro offers:
 
 - ✅ **Fast responses** - Optimized for speed
 - ✅ **Cost-effective** - Lower costs compared to other models
@@ -27,9 +27,9 @@ Add to your `.env.local` file:
 # Enable AI features
 NEXT_PUBLIC_AI_ENABLED=true
 
-# Use Google Gemini Flash (default)
+# Use Google Gemini Pro (default)
 NEXT_PUBLIC_AI_PROVIDER=google
-NEXT_PUBLIC_AI_MODEL=gemini-1.5-flash
+NEXT_PUBLIC_AI_MODEL=gemini-1.5-pro
 
 # Your Google AI API Key
 GOOGLE_AI_API_KEY=your-actual-api-key-here
@@ -51,7 +51,7 @@ pnpm dev
 The system is now configured with these defaults:
 
 - **Provider**: Google (`google`)
-- **Model**: Gemini 1.5 Flash (`gemini-1.5-flash`)
+- **Model**: Gemini 1.5 Pro (`gemini-1.5-pro`)
 - **Timeout**: 30 seconds
 - **Retries**: 2 attempts
 
@@ -64,7 +64,7 @@ You can use other Gemini models by changing the `NEXT_PUBLIC_AI_MODEL` variable:
 NEXT_PUBLIC_AI_MODEL=gemini-1.5-pro
 
 # For standard tasks (default)
-NEXT_PUBLIC_AI_MODEL=gemini-1.5-flash
+NEXT_PUBLIC_AI_MODEL=gemini-1.5-pro
 ```
 
 ### Fallback Provider (Optional)
@@ -80,7 +80,7 @@ OPENAI_API_KEY=your-openai-key-here
 
 ## Features Available
 
-All AI features work with Gemini Flash:
+All AI features work with Gemini Pro:
 
 - ✅ Medical note summarization
 - ✅ Symptom analysis with urgency detection
@@ -92,9 +92,9 @@ All AI features work with Gemini Flash:
 
 ## Performance & Cost
 
-### Gemini Flash Advantages
+### Gemini Pro Advantages
 
-| Feature | Gemini Flash | GPT-4o-mini | Claude 3 Haiku |
+| Feature | Gemini Pro | GPT-4o-mini | Claude 3 Haiku |
 |---------|-------------|-------------|----------------|
 | Speed | ⚡⚡⚡ Very Fast | ⚡⚡ Fast | ⚡⚡ Fast |
 | Cost | 💰 Very Low | 💰💰 Low | 💰💰 Low |
@@ -103,7 +103,7 @@ All AI features work with Gemini Flash:
 
 ### Pricing (as of 2024)
 
-**Gemini Flash 1.5:**
+**Gemini Pro 1.5:**
 - Input: $0.000075 per 1K tokens
 - Output: $0.0003 per 1K tokens
 - Free tier: 15 requests per minute
@@ -169,7 +169,7 @@ For more information:
 - [AI Integration Summary](./AI_INTEGRATION_SUMMARY.md)
 - [Google AI Documentation](https://ai.google.dev/docs)
 
-## Benefits of Gemini Flash
+## Benefits of Gemini Pro
 
 1. **Cost Savings**: Significantly lower costs for high-volume applications
 2. **Speed**: Faster response times compared to larger models
@@ -180,4 +180,4 @@ For more information:
 
 ---
 
-**Ready to use Gemini Flash!** Just add your API key and start using AI features.
+**Ready to use Gemini Pro!** Just add your API key and start using AI features.

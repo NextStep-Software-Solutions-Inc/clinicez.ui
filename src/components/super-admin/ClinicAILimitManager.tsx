@@ -47,7 +47,8 @@ export function ClinicAILimitManager({ clinicId, clinicName }: ClinicAILimitMana
     setIsLoading(true);
     try {
       const result = await getClinicAILimitAction(clinicId);
-      setLimitData(result);
+      // Extract the data from the result to avoid accessing .data everywhere
+      setLimitData(result.data);
       
       if (result.data?.clinicLimit) {
         setUseCustomLimit(true);

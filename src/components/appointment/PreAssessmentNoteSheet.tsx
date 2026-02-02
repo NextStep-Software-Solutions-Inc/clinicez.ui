@@ -76,10 +76,6 @@ export default function PreAssessmentNoteSheet({ children, disabled, preAssessme
     clinicUid
   })
 
-  // Check if current user is a healthcare provider
-  const [isHealthcareProvider, setIsHealthcareProvider] = useState<boolean>(false);
-  const [hpCheckLoading, setHpCheckLoading] = useState<boolean>(true);
-
   // Quick AI generation hook
   const { generate: quickGenerate, isLoading: isQuickGenerating, generatedNotes: quickGeneratedNotes } = usePreAssessmentAI();
 
@@ -97,25 +93,6 @@ export default function PreAssessmentNoteSheet({ children, disabled, preAssessme
     },
   })
   const watch = form.watch
-
-  // Check if current user is a healthcare provider in this clinic
-  useEffect(() => {
-    const checkHealthcareProvider = async () => {
-      try {
-        setHpCheckLoading(true);
-        const { isClinicHealthcareProvider } = await import('@/lib/clinic-utils');
-        const isHP = await isClinicHealthcareProvider(clinicUid);
-        setIsHealthcareProvider(isHP);
-      } catch (error) {
-        console.error('Error checking healthcare provider status:', error);
-        setIsHealthcareProvider(false);
-      } finally {
-        setHpCheckLoading(false);
-      }
-    };
-
-    checkHealthcareProvider();
-  }, [clinicUid]);
 
   // Fetch patient allergies, vitals, and attachments when appointment data is available
   useEffect(() => {
@@ -272,7 +249,7 @@ export default function PreAssessmentNoteSheet({ children, disabled, preAssessme
               <SheetTitle className="flex items-center justify-between">
                 <span>Pre Assessment Notes</span>
                 <div className="flex gap-2">
-                  {isAIEnabled() && !hpCheckLoading && isHealthcareProvider && (
+                  {isAIEnabled() && (
                     <>
                       <Button
                         type="button"
@@ -299,14 +276,9 @@ export default function PreAssessmentNoteSheet({ children, disabled, preAssessme
               </SheetTitle>
               <SheetDescription>
                 Notes to be taken before the actual consultation. Can be completed by any healthcare provider with the appropriate permissions.
-                {isAIEnabled() && !hpCheckLoading && isHealthcareProvider && (
+                {isAIEnabled() && (
                   <span className="block mt-2 text-xs text-muted-foreground">
                     💡 Click "AI Generate" for instant AI-assisted notes using comprehensive patient data including vitals, allergies, and medical history.
-                  </span>
-                )}
-                {isAIEnabled() && !hpCheckLoading && !isHealthcareProvider && (
-                  <span className="block mt-2 text-xs text-amber-600">
-                    ℹ️ AI assistance tools are available for healthcare providers to aid in clinical documentation.
                   </span>
                 )}
               </SheetDescription>

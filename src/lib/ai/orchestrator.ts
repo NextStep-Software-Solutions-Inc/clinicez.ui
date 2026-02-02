@@ -9,7 +9,7 @@ import { createOpenAI } from '@ai-sdk/openai';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { generateText, streamText } from 'ai';
-import type { LanguageModel, CoreMessage } from 'ai';
+import type { LanguageModel } from 'ai';
 import {
   AIProvider,
   AICompletionRequest,
@@ -120,7 +120,7 @@ export class AIOrchestrator {
         
         // Build messages for Vercel AI SDK
         // Support both string content and multimodal content (text + images)
-        const messages: CoreMessage[] = request.messages?.map(msg => {
+        const messages: Array<{role: 'user' | 'assistant' | 'system'; content: any}> = request.messages?.map(msg => {
           // Handle multimodal content (array of text/image parts)
           if (Array.isArray(msg.content)) {
             return {
@@ -201,7 +201,7 @@ export class AIOrchestrator {
           this.config.fallbackModel || this.config.defaultModel
         );
 
-        const messages: CoreMessage[] = request.messages?.map(msg => ({
+        const messages: Array<{role: 'user' | 'assistant' | 'system'; content: any}> = request.messages?.map(msg => ({
           role: msg.role as 'user' | 'assistant' | 'system',
           content: msg.content,
         })) || [];
@@ -254,7 +254,7 @@ export class AIOrchestrator {
     try {
       const model = this.getModel(provider, modelName);
       
-      const messages: CoreMessage[] = request.messages?.map(msg => ({
+      const messages: Array<{role: 'user' | 'assistant' | 'system'; content: any}> = request.messages?.map(msg => ({
         role: msg.role as 'user' | 'assistant' | 'system',
         content: msg.content,
       })) || [];
@@ -296,7 +296,7 @@ export class AIOrchestrator {
             this.config.fallbackModel || this.config.defaultModel
           );
 
-          const messages: CoreMessage[] = request.messages?.map(msg => ({
+          const messages: Array<{role: 'user' | 'assistant' | 'system'; content: any}> = request.messages?.map(msg => ({
             role: msg.role as 'user' | 'assistant' | 'system',
             content: msg.content,
           })) || [];

@@ -28,7 +28,10 @@ export function MedicalNoteSummarizer({
   const [copied, setCopied] = useState(false);
 
   const handleSummarize = async () => {
-    const result = await summarize(consultationNotes, { clinicId, patientId });
+    const result = await summarize(consultationNotes, { 
+      clinicId: clinicId?.toString(), 
+      patientId: patientId?.toString() 
+    });
     
     if (result) {
       setEditedSummary(result);

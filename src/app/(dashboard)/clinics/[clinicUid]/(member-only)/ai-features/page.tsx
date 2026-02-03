@@ -1,13 +1,27 @@
 "use client";
 
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { SymptomAnalyzer, VisualizationRecommender } from "@/components/ai";
 import { useParams } from "next/navigation";
 
 export default function AIFeaturesPage() {
   const params = useParams<{ clinicUid: string }>();
   const clinicUid = params.clinicUid;
+
+  // State for Symptom Analyzer demo
+  const [symptoms, setSymptoms] = useState("");
+  const [patientAge, setPatientAge] = useState("45");
+  const [patientGender, setPatientGender] = useState("Male");
+  const [conditions, setConditions] = useState("Hypertension");
+  const [patientAllergies, setPatientAllergies] = useState("");
+
+  // State for Visualization Recommender demo
+  const [dataDescription, setDataDescription] = useState("");
 
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -32,14 +46,69 @@ export default function AIFeaturesPage() {
                 Analyze patient symptoms and get urgency recommendations (Emergency/Urgent/Routine)
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="symptoms">Patient Symptoms</Label>
+                  <Textarea
+                    id="symptoms"
+                    placeholder="Describe the patient's symptoms... (e.g., 'severe chest pain, shortness of breath, sweating')"
+                    value={symptoms}
+                    onChange={(e) => setSymptoms(e.target.value)}
+                    rows={4}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="age">Age</Label>
+                    <Input
+                      id="age"
+                      type="number"
+                      placeholder="Age"
+                      value={patientAge}
+                      onChange={(e) => setPatientAge(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="gender">Gender</Label>
+                    <Input
+                      id="gender"
+                      placeholder="Gender"
+                      value={patientGender}
+                      onChange={(e) => setPatientGender(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="conditions">Existing Conditions (comma-separated)</Label>
+                  <Input
+                    id="conditions"
+                    placeholder="e.g., Hypertension, Diabetes"
+                    value={conditions}
+                    onChange={(e) => setConditions(e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="allergies">Allergies (comma-separated)</Label>
+                  <Input
+                    id="allergies"
+                    placeholder="e.g., Penicillin, Aspirin"
+                    value={patientAllergies}
+                    onChange={(e) => setPatientAllergies(e.target.value)}
+                  />
+                </div>
+              </div>
+
               <SymptomAnalyzer
-                symptoms=""
+                symptoms={symptoms}
                 patientContext={{
-                  age: 45,
-                  gender: "Male",
-                  conditions: ["Hypertension"],
-                  allergies: []
+                  age: patientAge ? parseInt(patientAge) : undefined,
+                  gender: patientGender || undefined,
+                  conditions: conditions ? conditions.split(',').map(c => c.trim()).filter(Boolean) : [],
+                  allergies: patientAllergies ? patientAllergies.split(',').map(a => a.trim()).filter(Boolean) : []
                 }}
               />
             </CardContent>
@@ -54,9 +123,20 @@ export default function AIFeaturesPage() {
                 Get AI-powered recommendations for the best chart types and metrics for your data
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="dataDescription">Data Description</Label>
+                <Textarea
+                  id="dataDescription"
+                  placeholder="Describe the data you want to visualize... (e.g., 'monthly appointment trends by type over the past year')"
+                  value={dataDescription}
+                  onChange={(e) => setDataDescription(e.target.value)}
+                  rows={4}
+                />
+              </div>
+
               <VisualizationRecommender
-                dataDescription=""
+                dataDescription={dataDescription}
                 dataType="appointments"
               />
             </CardContent>

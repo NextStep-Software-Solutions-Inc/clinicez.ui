@@ -64,13 +64,8 @@ export const PatientCard = async ({ patient }: PatientCardProps) => {
       <CardFooter className="flex-col items-stretch gap-4">
         {/* AI Patient Insights - only show if we have patient data */}
         <PatientInsightsCard 
-          patientData={{
-            appointments: 0, // This would need to be fetched from actual data
-            conditions: [],
-            medications: [],
-            recentVisits: []
-          }}
-          clinicId={patient.Clinic?.id || 0}
+          userId={patient.userId}
+          clinicId={patient.Clinic?.id}
         />
       </CardFooter>
     </Card>

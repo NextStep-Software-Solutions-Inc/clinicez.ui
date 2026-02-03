@@ -41,7 +41,6 @@ export default function AIFeaturesPage() {
                   conditions: ["Hypertension"],
                   allergies: []
                 }}
-                clinicId={clinicUid}
               />
             </CardContent>
           </Card>

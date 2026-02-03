@@ -103,7 +103,7 @@ export async function generateAICompletion(
 export async function summarizeMedicalNotes(
   consultationNotes: string,
   options?: {
-    clinicId?: string;
+    clinicId?: number;
     patientId?: string;
   }
 ): Promise<AIOperationResult<string>> {
@@ -213,7 +213,7 @@ export async function analyzeSymptoms(
     // Parse the response to extract structured data
     const analysis = result.data;
     let urgencyLevel: 'emergency' | 'urgent' | 'routine' = 'routine';
-    
+
     if (analysis.toLowerCase().includes('emergency') || analysis.toLowerCase().includes('immediate')) {
       urgencyLevel = 'emergency';
     } else if (analysis.toLowerCase().includes('urgent')) {
@@ -221,7 +221,7 @@ export async function analyzeSymptoms(
     }
 
     const recommendations: string[] = [];
-    const recommendationMatch = analysis.match(/recommended action[s]?:(.*?)(?:\n\n|\*\*|$)/is);
+    const recommendationMatch = analysis.match(/recommended action[s]?:(.*?)(?:\n\n|\*\*|$)/i);
     if (recommendationMatch) {
       recommendations.push(recommendationMatch[1].trim());
     }
@@ -261,7 +261,7 @@ export async function generatePatientInsights(
     recentVisits?: Array<{ date: string; reason: string }>;
     vitalsTrends?: Record<string, number[]>;
   },
-  clinicId?: string
+  clinicId?: number
 ): Promise<AIOperationResult<string>> {
   try {
     const { userId } = await auth();
@@ -357,9 +357,9 @@ export async function recommendVisualization(
     // Extract structured recommendations
     const visualizationType: string[] = [];
     const metrics: string[] = [];
-    
+
     // Simple parsing logic
-    const typeMatches = result.data.match(/visualization type[s]?:(.*?)(?:\n\n|\d\.|$)/is);
+    const typeMatches = result.data.match(/visualization type[s]?:(.*?)(?:\n\n|\d\.|$)/i);
     if (typeMatches) {
       const types = typeMatches[1].match(/(?:^|\n)\s*[-•*]?\s*([^\n]+)/g);
       if (types) {
@@ -367,7 +367,7 @@ export async function recommendVisualization(
       }
     }
 
-    const metricsMatches = result.data.match(/key metrics:(.*?)(?:\n\n|\d\.|$)/is);
+    const metricsMatches = result.data.match(/key metrics:(.*?)(?:\n\n|\d\.|$)/i);
     if (metricsMatches) {
       const metricsList = metricsMatches[1].match(/(?:^|\n)\s*[-•*]?\s*([^\n]+)/g);
       if (metricsList) {

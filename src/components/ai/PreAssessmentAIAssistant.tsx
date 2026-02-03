@@ -30,8 +30,8 @@ interface PreAssessmentAIAssistantProps {
   }) => void;
   currentAssessment?: string;
   currentRemarks?: string;
-  clinicId?: string | number;
-  tenantId?: string | number;
+  clinicId?: number;
+  tenantId?: number;
 }
 
 export function PreAssessmentAIAssistant({ 

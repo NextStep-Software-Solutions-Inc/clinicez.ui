@@ -16,7 +16,7 @@ interface SymptomAnalyzerProps {
     conditions?: string[];
     allergies?: string[];
   };
-  clinicId?: string | number;
+  clinicId?: number;
   onAnalysisComplete?: (analysis: {
     analysis: string;
     urgencyLevel: 'emergency' | 'urgent' | 'routine';
@@ -38,12 +38,8 @@ export function SymptomAnalyzer({
       return;
     }
 
-    const result = await analyze(symptoms, patientContext, clinicId);
-    
-    if (result) {
-      setHasAnalyzed(true);
-      onAnalysisComplete?.(result);
-    }
+    await analyze(symptoms, patientContext);
+    setHasAnalyzed(true);
   };
 
   const getUrgencyColor = (level: string) => {

@@ -18,7 +18,7 @@ interface PatientInsightsCardProps {
     }>;
     vitalsTrends?: Record<string, number[]>;
   };
-  clinicId?: string | number;
+  clinicId?: number;
 }
 
 export function PatientInsightsCard({
@@ -29,11 +29,8 @@ export function PatientInsightsCard({
   const [showInsights, setShowInsights] = useState(false);
 
   const handleGenerate = async () => {
-    const result = await generate(patientData, clinicId);
-    
-    if (result) {
-      setShowInsights(true);
-    }
+    await generate(patientData, clinicId);
+    setShowInsights(true);
   };
 
   return (

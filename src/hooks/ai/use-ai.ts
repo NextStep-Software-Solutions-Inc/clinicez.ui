@@ -76,7 +76,7 @@ export function useAICompletion() {
             try {
               const jsonStr = trimmedLine.slice(6);
               const data: AIStreamChunk = JSON.parse(jsonStr);
-              
+
               if (data.delta) {
                 fullResponse += data.delta;
                 setResponse(fullResponse);
@@ -91,7 +91,7 @@ export function useAICompletion() {
       } else {
         // Non-streaming completion
         const { generateAICompletion } = await import('@/actions/ai/ai-actions');
-        
+
         const result = await generateAICompletion(
           options?.featureType || 'patient-communication',
           prompt,
@@ -145,8 +145,8 @@ export function useMedicalNoteSummarization() {
   const summarize = useCallback(async (
     consultationNotes: string,
     options?: {
-      clinicId?: string;
-      patientId?: string;
+      clinicId?: number;
+      patientId?: number;
     }
   ) => {
     setIsLoading(true);
@@ -155,7 +155,10 @@ export function useMedicalNoteSummarization() {
 
     try {
       const { summarizeMedicalNotes } = await import('@/actions/ai/ai-actions');
-      const result = await summarizeMedicalNotes(consultationNotes, options);
+      const result = await summarizeMedicalNotes(consultationNotes, {
+        clinicId: options?.clinicId,
+        patientId: options?.patientId?.toString(),
+      });
 
       if (result.success && result.data) {
         setSummary(result.data);
@@ -246,7 +249,7 @@ export function usePatientInsights() {
       recentVisits?: Array<{ date: string; reason: string }>;
       vitalsTrends?: Record<string, number[]>;
     },
-    clinicId?: string
+    clinicId?: number
   ) => {
     setIsLoading(true);
     setError(null);

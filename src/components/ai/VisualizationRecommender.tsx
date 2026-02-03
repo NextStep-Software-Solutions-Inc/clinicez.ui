@@ -22,11 +22,8 @@ export function VisualizationRecommender({
   const [showRecommendation, setShowRecommendation] = useState(false);
 
   const handleRecommend = async () => {
-    const result = await recommend(dataDescription, dataType);
-    
-    if (result) {
-      setShowRecommendation(true);
-    }
+    await recommend(dataDescription, dataType);
+    setShowRecommendation(true);
   };
 
   const getChartIcon = (chartType: string) => {

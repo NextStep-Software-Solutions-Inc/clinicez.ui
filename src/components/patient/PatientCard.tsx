@@ -65,13 +65,12 @@ export const PatientCard = async ({ patient }: PatientCardProps) => {
         {/* AI Patient Insights - only show if we have patient data */}
         <PatientInsightsCard 
           patientData={{
-            totalAppointments: 0, // This would need to be fetched from actual data
+            appointments: 0, // This would need to be fetched from actual data
             conditions: [],
             medications: [],
             recentVisits: []
           }}
-          clinicId={patient.clinicId}
-          patientName={name}
+          clinicId={patient.Clinic?.id || 0}
         />
       </CardFooter>
     </Card>

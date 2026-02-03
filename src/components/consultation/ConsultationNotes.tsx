@@ -64,8 +64,7 @@ export default function ConsultationNotes({ consultation, patientUserId }: Consu
             {isConsultationAuthor && allNotesText && (
               <MedicalNoteSummarizer
                 consultationNotes={allNotesText}
-                patientId={consultation.requesterId || ''}
-                clinicId={clinicUid}
+                clinicId={consultation.clinicId}
                 onApplyToForm={(summary) => {
                   // Handle applying summary to form if needed
                   console.log('Summary generated:', summary);

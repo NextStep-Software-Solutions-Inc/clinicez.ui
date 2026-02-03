@@ -10,8 +10,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface MedicalNoteSummarizerProps {
   consultationNotes: string;
-  clinicId?: string | number;
-  patientId?: string | number;
+  clinicId?: number;
+  patientId?: number;
   onSummaryGenerated?: (summary: string) => void;
   onApplyToForm?: (summary: string) => void;
 }
@@ -28,14 +28,13 @@ export function MedicalNoteSummarizer({
   const [copied, setCopied] = useState(false);
 
   const handleSummarize = async () => {
-    const result = await summarize(consultationNotes, { 
-      clinicId: clinicId?.toString(), 
-      patientId: patientId?.toString() 
+    await summarize(consultationNotes, { 
+      clinicId, 
+      patientId 
     });
-    
-    if (result) {
-      setEditedSummary(result);
-      onSummaryGenerated?.(result);
+    if (summary) {
+      setEditedSummary(summary);
+      onSummaryGenerated?.(summary);
     }
   };
 

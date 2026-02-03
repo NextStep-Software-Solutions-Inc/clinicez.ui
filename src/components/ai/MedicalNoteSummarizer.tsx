@@ -10,8 +10,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface MedicalNoteSummarizerProps {
   consultationNotes: string;
-  clinicId?: number;
-  patientId?: number;
+  clinicId?: string | number;
+  patientId?: string | number;
   onSummaryGenerated?: (summary: string) => void;
   onApplyToForm?: (summary: string) => void;
 }

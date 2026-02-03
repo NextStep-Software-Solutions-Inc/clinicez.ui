@@ -16,7 +16,7 @@ interface SymptomAnalyzerProps {
     conditions?: string[];
     allergies?: string[];
   };
-  clinicId?: number;
+  clinicId?: string | number;
   onAnalysisComplete?: (analysis: {
     analysis: string;
     urgencyLevel: 'emergency' | 'urgent' | 'routine';

@@ -18,7 +18,7 @@ interface PatientInsightsCardProps {
     }>;
     vitalsTrends?: Record<string, number[]>;
   };
-  clinicId?: number;
+  clinicId?: string | number;
 }
 
 export function PatientInsightsCard({

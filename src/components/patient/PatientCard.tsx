@@ -7,6 +7,7 @@ import { GetClinicPatients } from "@/actions/clinics/clinic-patient.action";
 import dayjs from "@lib/day-utils";
 import { ViewEMRButton } from "./ViewEMRButton";
 import { calculateAge } from "@/lib/utils";
+import { PatientInsightsCard } from "@/components/ai";
 
 interface PatientCardProps {
   patient: NonNullable<GetClinicPatients["data"]>[number] & {
@@ -60,7 +61,18 @@ export const PatientCard = async ({ patient }: PatientCardProps) => {
           </div>
         </div>
       </CardContent>
-      <CardFooter>
+      <CardFooter className="flex-col items-stretch gap-4">
+        {/* AI Patient Insights - only show if we have patient data */}
+        <PatientInsightsCard 
+          patientData={{
+            totalAppointments: 0, // This would need to be fetched from actual data
+            conditions: [],
+            medications: [],
+            recentVisits: []
+          }}
+          clinicId={patient.clinicId}
+          patientName={name}
+        />
       </CardFooter>
     </Card>
   );

@@ -20,6 +20,7 @@ import { useNoteTemplate } from "@hooks/useNoteTemplate";
 import { useHPs } from "@hooks/useHP";
 import { useUser } from "@clerk/nextjs";
 import { createOrderedConsultationNotes } from "@/utils/soap-ordering";
+import { MedicalNoteSummarizer } from "@/components/ai";
 interface ConsultationNotesProps {
   consultation: NonNullable<GetConsultationTicket["data"]>;
   patientUserId?: string;
@@ -44,6 +45,10 @@ export default function ConsultationNotes({ consultation, patientUserId }: Consu
     consultationNotes
   )
   if (loadingNoteTemplate) return <div>Loading...</div>
+  
+  // Collect all consultation notes text for AI summarization
+  const allNotesText = notes.map(note => `${note.label}: ${note.value || ''}`).join('\n\n');
+  
   return (
     <Card>
       <CardHeader>
@@ -55,7 +60,18 @@ export default function ConsultationNotes({ consultation, patientUserId }: Consu
             </CardDescription>
           </div>
           <div className="ml-auto">
-
+            {/* AI Medical Note Summarizer */}
+            {isConsultationAuthor && allNotesText && (
+              <MedicalNoteSummarizer
+                consultationNotes={allNotesText}
+                patientId={consultation.requesterId || ''}
+                clinicId={clinicUid}
+                onApplyToForm={(summary) => {
+                  // Handle applying summary to form if needed
+                  console.log('Summary generated:', summary);
+                }}
+              />
+            )}
           </div>
         </div>
       </CardHeader>

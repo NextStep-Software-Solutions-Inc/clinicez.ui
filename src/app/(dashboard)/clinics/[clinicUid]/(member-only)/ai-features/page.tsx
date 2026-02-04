@@ -7,6 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { SymptomAnalyzer, VisualizationRecommender } from "@/components/ai";
+import { DataVisualization } from "@/components/ai/DataVisualization";
+import { MarkdownRenderer } from "@/components/markdown/MarkdownRenderer";
 import { useParams } from "next/navigation";
 
 export default function AIFeaturesPage() {
@@ -23,6 +25,25 @@ export default function AIFeaturesPage() {
   // State for Visualization Recommender demo
   const [dataDescription, setDataDescription] = useState("");
 
+  // Sample data for visualization demo
+  const sampleAppointmentHistory = [
+    { date: "2024-01-15", subject: "Routine checkup" },
+    { date: "2024-02-20", subject: "Follow-up consultation" },
+    { date: "2024-03-10", subject: "Lab results review" },
+    { date: "2024-01-20", subject: "Routine checkup" },
+  ];
+
+  const sampleVitalSigns = [
+    { date: "2024-01-15", heartRate: 72, temperature: "37.2", bloodPressure: "120/80" },
+    { date: "2024-02-10", heartRate: 68, temperature: "36.8", bloodPressure: "118/78" },
+    { date: "2024-03-05", heartRate: 75, temperature: "37.0", bloodPressure: "122/82" },
+  ];
+
+  const sampleMedications = [
+    { name: "Lisinopril", dosage: "10mg daily" },
+    { name: "Metformin", dosage: "500mg twice daily" },
+  ];
+
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div>
@@ -33,9 +54,10 @@ export default function AIFeaturesPage() {
       </div>
 
       <Tabs defaultValue="symptom-analyzer" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="symptom-analyzer">Symptom Analyzer</TabsTrigger>
           <TabsTrigger value="visualization">Data Visualization</TabsTrigger>
+          <TabsTrigger value="markdown">Markdown Demo</TabsTrigger>
         </TabsList>
 
         <TabsContent value="symptom-analyzer" className="space-y-4">
@@ -138,6 +160,81 @@ export default function AIFeaturesPage() {
               <VisualizationRecommender
                 dataDescription={dataDescription}
                 dataType="appointments"
+              />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Patient Data Visualization</CardTitle>
+              <CardDescription>
+                Interactive charts showing patient appointment history, vital signs, and medications
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <DataVisualization
+                appointmentHistory={sampleAppointmentHistory}
+                vitalSigns={sampleVitalSigns}
+                conditions={conditions ? conditions.split(',').map(c => c.trim()).filter(Boolean) : []}
+                medications={sampleMedications}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="markdown" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Markdown Rendering Demo</CardTitle>
+              <CardDescription>
+                Example of how markdown content is rendered with rich formatting support
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <MarkdownRenderer
+                content={`# SOAP Note Example
+
+## Subjective
+Patient reports experiencing **persistent headaches** for the past 3 days. Associated with nausea and sensitivity to light. No recent head trauma. Patient rates pain as 7/10.
+
+### History of Present Illness
+- Onset: 3 days ago
+- Duration: Constant
+- Associated symptoms: Nausea, photophobia
+- Alleviating factors: Rest, dark room
+- Aggravating factors: Bright light, loud noise
+
+## Objective
+- **Vital Signs:**
+  - BP: 120/80 mmHg
+  - HR: 72 bpm
+  - Temperature: 37.0°C
+  
+- **Physical Examination:**
+  - Patient appears alert and oriented
+  - Neck: Supple, no meningeal signs
+  - Neurological: Alert and responsive
+
+## Assessment
+1. Primary headache disorder (likely migraine)
+2. Nausea - secondary to headache
+
+## Plan
+1. **Medication:**
+   - Ibuprofen 400mg PO every 6 hours
+   - Metoclopramide 10mg for nausea
+   
+2. **Non-pharmacological:**
+   - Rest in quiet, dark environment
+   - Avoid screens
+   - Hydration
+   
+3. **Follow-up:** Call if symptoms persist > 24 hours
+
+### Alternative Considerations
+- Consider CT head if symptoms worsen
+- Rule out infection if fever develops
+`}
               />
             </CardContent>
           </Card>

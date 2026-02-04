@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { prisma } from '@/lib/prisma';
+import prisma from '@/lib/prisma';
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: { userId: string } }
+    { params }: { params: Promise<{ userId: string }> }
 ) {
     try {
         const { userId: clerkUserId } = await auth();
@@ -14,7 +14,8 @@ export async function GET(
 
         const { searchParams } = new URL(request.url);
         const clinicId = searchParams.get('clinicId');
-        const userId = parseInt(params.userId);
+        const { userId: userIdParam } = await params;
+        const userId = parseInt(userIdParam);
 
         if (isNaN(userId)) {
             return NextResponse.json({ error: 'Invalid user ID' }, { status: 400 });
@@ -40,11 +41,10 @@ export async function GET(
             },
         });
 
-        // Count active medications
+        // Count medications
         const medicationsCount = await prisma.medication.count({
             where: {
-                userId,
-                isActive: true,
+                patientId: userId,
             },
         });
 

@@ -64,7 +64,7 @@ export const PatientCard = async ({ patient }: PatientCardProps) => {
       <CardFooter className="flex-col items-stretch gap-4">
         {/* AI Patient Insights - only show if we have patient data */}
         <PatientInsightsCard 
-          userId={patient.userId}
+          userId={patient.Patient?.userId ? parseInt(patient.Patient.userId.split('_')[1] || '0') : 0}
           clinicId={patient.Clinic?.id}
         />
       </CardFooter>

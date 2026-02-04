@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { prisma } from '@/lib/prisma';
+import prisma from '@/lib/prisma';
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: { userId: string } }
+    { params }: { params: Promise<{ userId: string }> }
 ) {
     try {
         const { userId: clerkUserId } = await auth();
@@ -14,7 +14,8 @@ export async function GET(
 
         const { searchParams } = new URL(request.url);
         const clinicId = searchParams.get('clinicId');
-        const userId = parseInt(params.userId);
+        const { userId: userIdParam } = await params;
+        const userId = parseInt(userIdParam);
 
         if (isNaN(userId)) {
             return NextResponse.json({ error: 'Invalid user ID' }, { status: 400 });
@@ -62,16 +63,10 @@ export async function GET(
             },
         });
 
-        // Get active medications
+        // Get medications for this user
         const medications = await prisma.medication.findMany({
             where: {
-                userId,
-                isActive: true,
-            },
-            select: {
-                genericName: true,
-                brandName: true,
-                dosage: true,
+                patientId: userId,
             },
             take: 20,
         });
@@ -84,40 +79,33 @@ export async function GET(
             orderBy: {
                 createdAt: 'desc',
             },
-            select: {
-                bloodPressureSystolic: true,
-                bloodPressureDiastolic: true,
-                heartRate: true,
-                temperature: true,
-                weight: true,
-                createdAt: true,
-            },
             take: 10,
         });
 
         return NextResponse.json({
             appointments: appointments.length,
-            conditions: healthConditions.map(c => c.HealthCondition.name),
-            medications: medications.map(m =>
-                `${m.genericName || m.brandName} ${m.dosage || ''}`.trim()
-            ),
-            recentVisits: appointments.slice(0, 5).map(a => ({
+            conditions: healthConditions.map((c: any) => c.HealthCondition.name),
+            medications: medications.map((m: any) => m.name),
+            recentVisits: appointments.slice(0, 5).map((a: any) => ({
                 date: a.Appointment.createdAt.toISOString(),
-                reason: a.Appointment.subject || a.Appointment.complaint || 'General checkup',
+                reason:
+                    a.Appointment.subject ||
+                    a.Appointment.complaint ||
+                    'General checkup',
             })),
             vitalsTrends: {
                 bloodPressure: vitalSigns
-                    .filter(v => v.bloodPressureSystolic && v.bloodPressureDiastolic)
-                    .map(v => v.bloodPressureSystolic!),
+                    .filter((v: any) => v.bpSystolic && v.bpDiastolic)
+                    .map((v: any) => v.bpSystolic!),
                 heartRate: vitalSigns
-                    .filter(v => v.heartRate)
-                    .map(v => v.heartRate!),
+                    .filter((v: any) => v.pulseRate)
+                    .map((v: any) => v.pulseRate!),
                 temperature: vitalSigns
-                    .filter(v => v.temperature)
-                    .map(v => parseFloat(v.temperature!)),
+                    .filter((v: any) => v.temp)
+                    .map((v: any) => v.temp!),
                 weight: vitalSigns
-                    .filter(v => v.weight)
-                    .map(v => parseFloat(v.weight!)),
+                    .filter((v: any) => v.weight)
+                    .map((v: any) => v.weight!),
             },
         });
     } catch (error) {

@@ -18,7 +18,6 @@ export const metadata: Metadata = {
 
 interface PatientsPageProps {
   params: Promise<{ clinicUid: string }>;
-  searchParams: Promise<{search?: string; cursor?: string;view: "list" | "grid"}>;
 }
 
 export default async function PatientsPage(props: PatientsPageProps) {
@@ -26,7 +25,6 @@ export default async function PatientsPage(props: PatientsPageProps) {
   const session = await getCachedSession();
   if (!session?.user?.sub) return <UnauthorizedWarning/>;
 
-  const { view, cursor, search } = await props.searchParams;
   const { clinicUid } = await props.params;
 
   
@@ -44,10 +42,6 @@ export default async function PatientsPage(props: PatientsPageProps) {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      <Suspend loadingFallback={<PageLoading label="Loading..." />}>
-         <PatientsHeader clinicUid={clinicUid} />
-      </Suspend>
-
       <div className="rounded-[0.5rem] border bg-background shadow">
         <PatientsContainer 
           clinicUid={clinicUid}

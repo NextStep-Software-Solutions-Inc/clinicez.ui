@@ -12,9 +12,11 @@ import { Label } from "../ui/label";
 
 interface PatientsHeaderProps {
   clinicUid: string;
+  patientCount?: number;
+  totalPatients?: number;
 }
 
-export default function PatientsHeader({ clinicUid }: PatientsHeaderProps) {
+export default function PatientsHeader({ clinicUid, patientCount = 0, totalPatients = 0 }: PatientsHeaderProps) {
   const searchParams = useSearchParams();
   const search = searchParams?.get("search") || "";
   const viewMode = (searchParams?.get("view") as 'list' | 'grid') || 'list';
@@ -39,7 +41,9 @@ export default function PatientsHeader({ clinicUid }: PatientsHeaderProps) {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="min-w-0">
             <h3 className="text-lg sm:text-xl font-bold">Patients</h3>
-            <p className="text-xs sm:text-sm text-muted-foreground">View and manage patients.</p>
+            <p className="text-xs sm:text-sm text-muted-foreground">
+              {totalPatients > 0 ? `Showing ${patientCount} of ${totalPatients} patients` : 'View and manage patients.'}
+            </p>
           </div>
           <AddPatientModal clinicUid={clinicUid} roleName="patient" />
         </div>

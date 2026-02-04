@@ -2,17 +2,16 @@
 
 import Each from '@components/utils/Each';
 import { PatientCard } from './PatientCard';
-import { useSearchParams } from 'next/navigation';
+import { GetClinicPatients } from '@/actions/clinics/clinic-patient.action';
 
 type ViewMode = 'list' | 'grid';
 
 interface PatientListViewProps {
-  patients: any[];
+  patients: NonNullable<GetClinicPatients['data']>;
+  viewMode?: ViewMode;
 }
 
-export function PatientListView({ patients }: PatientListViewProps) {
-  const searchParams = useSearchParams();
-  const viewMode = (searchParams?.get('view') as ViewMode) || 'list';
+export function PatientListView({ patients, viewMode = 'list' }: PatientListViewProps) {
 
   const gridClasses = {
     list: 'grid grid-cols-1 gap-2',

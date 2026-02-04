@@ -29,6 +29,11 @@ export const hasContextProperty = (context: unknown): context is { functionName:
   return typeof context === 'object' && context !== null && 'functionName' in context && 'args' in context;
 }
 
+export const formatBloodType = (bloodType: string | null | undefined): string => {
+  if (!bloodType) return '';
+  return bloodType.replace('_POSITIVE', '+').replace('_NEGATIVE', '-');
+}
+
 export function getBadgeVariantFromLabel(
   label: string
 ): ComponentProps<typeof Badge>["variant"] {
@@ -145,7 +150,7 @@ export function calculateAge(birthDate: Date | string | null | undefined): numbe
 
   const date = typeof birthDate === 'string' ? new Date(birthDate) : birthDate;
   const birthDay = dayjs(date);
-  
+
   // Return null if the date is invalid
   if (!birthDay.isValid()) {
     return null;

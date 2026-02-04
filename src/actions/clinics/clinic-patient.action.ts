@@ -86,6 +86,7 @@ export interface GetClinicPatientsResult {
       StudentRecords: Array<{ studentId: number }>;
     };
   }>;
+  total: number;
   nextCursor: number | null;
   hasMore: boolean;
 }
@@ -110,7 +111,7 @@ export const getClinicPatientsAction = async (filters: GetClinicPatientFilters):
     ...(cursor && { skip: 1, cursor: { id: cursor } }),
     ...!!distinct.length ? { distinct } : {},
     orderBy: {
-      id: "asc"
+      createdAt: "desc"
     },
     where: {
       Clinic: {
@@ -232,7 +233,34 @@ export const getClinicPatientsAction = async (filters: GetClinicPatientFilters):
     },
   }));
 
-  return { message: "Clinic Patients fetched successfully", data: clinicPatientsWithStats, nextCursor, hasMore } as unknown as GetClinicPatientsResult
+  // Calculate total count of patients matching the filters
+  const totalCount = await prismaClient.clinicPatient.count({
+    where: {
+      Clinic: {
+        clinicUid
+      },
+      Patient: {
+        ...userId ? { userId } : {},
+        ...(gender && gender !== 'all') ? { gender: gender as 'MALE' | 'FEMALE' } : {},
+        ...(minAge !== undefined || maxAge !== undefined) ? {
+          dob: {
+            ...(minBirthDate && { lte: minBirthDate }),
+            ...(maxBirthDate && { gte: maxBirthDate }),
+          }
+        } : {},
+        ...!!search ? {
+          OR: [
+            { firstName: { contains: search, mode: "insensitive" } },
+            { middleName: { contains: search, mode: "insensitive" } },
+            { lastName: { contains: search, mode: "insensitive" } },
+            { email: { contains: search, mode: "insensitive" } },
+          ]
+        } : {},
+      }
+    }
+  });
+
+  return { message: "Clinic Patients fetched successfully", data: clinicPatientsWithStats, total: totalCount, nextCursor, hasMore } as unknown as GetClinicPatientsResult
 }
 
 

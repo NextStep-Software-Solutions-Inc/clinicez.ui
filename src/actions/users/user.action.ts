@@ -476,9 +476,12 @@ const assignUserPermission = async (prisma: PrismaTransactionalClient, userId: n
 
   const permissions = await getPermissionsAction({ type: "USER" });
 
+  // Filter out SUPER_ADMIN permission as it should be granted manually
+  const filteredPermissions = permissions.filter(permission => permission.name !== "SUPER_ADMIN");
+
   const userPermission = await prisma.userPermission.createMany({
     skipDuplicates: true,
-    data: permissions.map(permission => ({
+    data: filteredPermissions.map(permission => ({
       permissionId: permission.id,
       userId
     }))

@@ -171,7 +171,50 @@ export const getConsultationTicketAction = withErrorHandling(cache(async (consul
       subject: true,
       appointmentId: true,
       clinicId: true,
-      ConsultationTicketHPs: true,
+      ConsultationTicketHPs: {
+        select: {
+          hpId: true,
+          HealthCareProvider: {
+            select: {
+              id: true,
+              isActive: true,
+              User: {
+                select: {
+                  firstName: true,
+                  middleName: true,
+                  lastName: true,
+                  suffix: true,
+                  OrganizationMembers: {
+                    select: {
+                      OrganizationRole: {
+                        select: {
+                          id: true,
+                          name: true,
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              HPProfile: {
+                select: {
+                  name: true,
+                  title: true,
+                  suffix: true,
+                  specialties: true,
+                  picture: true,
+                }
+              },
+              HPType: {
+                select: {
+                  id: true,
+                  name: true,
+                }
+              }
+            }
+          }
+        }
+      },
       createdAt: true,
       updatedAt: true,
       isArchived: true,

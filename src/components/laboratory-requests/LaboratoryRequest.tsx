@@ -33,7 +33,6 @@ export default function LaboratoryRequest({ consultationTicketId, clinicUid, cli
   const { data: requests, mutate, error, isLoading } = useLaboratoryRequests({
     clinicUid,
     consultationTicketId,
-    hpId: hpIds[0],
     patientId
   });
   return (

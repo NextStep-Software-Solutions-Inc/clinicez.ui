@@ -24,7 +24,7 @@ import { useUser } from "@clerk/nextjs";
 import { useLocalStorage } from "@hooks/useLocalStorage";
 import { promiseWrapper } from "@/lib/with-error-handling";
 import { PreAssessmentAIAssistant } from "@/components/ai/PreAssessmentAIAssistant";
-import { Sparkles, Loader2 } from "lucide-react";
+import { AIButton } from "@/components/ai/AIButton";
 import { isAIEnabled } from "@/lib/ai";
 import { usePreAssessmentAI } from "@/hooks/ai/use-pre-assessment-ai";
 import { calculateAge } from "@/lib/utils";
@@ -246,33 +246,8 @@ export default function PreAssessmentNoteSheet({ children, disabled, preAssessme
         <Form {...form}>
           <form action={action} className="flex flex-col h-full">
             <SheetHeader className="px-6 pt-6 pb-4">
-              <SheetTitle className="flex items-center justify-between">
+              <SheetTitle>
                 <span>Pre Assessment Notes</span>
-                <div className="flex gap-2">
-                  {isAIEnabled() && (
-                    <>
-                      <Button
-                        type="button"
-                        variant="default"
-                        size="sm"
-                        onClick={handleQuickAIGenerate}
-                        disabled={isQuickGenerating}
-                      >
-                        {isQuickGenerating ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Generating...
-                          </>
-                        ) : (
-                          <>
-                            <Sparkles className="mr-2 h-4 w-4" />
-                            AI Generate
-                          </>
-                        )}
-                      </Button>
-                    </>
-                  )}
-                </div>
               </SheetTitle>
               <SheetDescription>
                 Notes to be taken before the actual consultation. Can be completed by any healthcare provider with the appropriate permissions.
@@ -378,11 +353,27 @@ export default function PreAssessmentNoteSheet({ children, disabled, preAssessme
               </div>
             </ScrollArea>
 
-            <SheetFooter className="px-6 py-4 border-t">
-              <SheetClose asChild>
-                <Button ref={closeBtnRef} variant="outline" type="button">Close</Button>
-              </SheetClose>
-              <ActionButton type="submit">Save</ActionButton>
+            <SheetFooter className="px-6 py-4 border-t flex items-center justify-between">
+              <div className="flex gap-2">
+                 {isAIEnabled() && (
+                <AIButton
+                  type="button"
+                  onClick={handleQuickAIGenerate}
+                  disabled={isQuickGenerating}
+                  isLoading={isQuickGenerating}
+                  loadingText="Generating..."
+                  variant="outline"
+                  size="sm"
+                >
+                  AI Assessment
+                </AIButton>
+              )}
+                <SheetClose asChild>
+                  <Button ref={closeBtnRef} variant="outline" type="button">Close</Button>
+                </SheetClose>
+                <ActionButton type="submit">Save</ActionButton>
+              </div>
+             
             </SheetFooter>
 
           </form>

@@ -16,8 +16,9 @@ import { GetClinicPatients } from '@/actions/clinics/clinic-patient.action';
 import dayjs from '@lib/day-utils';
 import { ViewEMRButton } from './ViewEMRButton';
 import { calculateAge, formatBloodType } from '@/lib/utils';
-import { Heart, AlertCircle, Pill, Sparkles } from 'lucide-react';
+import { Heart, AlertCircle, Pill } from 'lucide-react';
 import { useState } from 'react';
+import { AIButton } from '@/components/ai/AIButton';
 import { usePatientInsights } from '@/hooks/ai/use-ai';
 import { usePatientComprehensiveData } from '@/hooks/usePatientComprehensiveData';
 import { AIInsightsDialog } from './AIInsightsDialog';
@@ -222,15 +223,16 @@ export function PatientCard({ patient, viewMode = 'grid' }: PatientCardProps) {
                     IC
                   </Badge>
                 </ConditionalRender>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-8 w-8 p-0"
+                <AIButton
                   onClick={handleOpenAIInsights}
-                  title="Generate AI Insights"
+                  disabled={false}
+                  isLoading={false}
+                  variant="outline"
+                  size="sm"
+                  className="h-8 p-0"
                 >
-                  <Sparkles className="h-4 w-4" />
-                </Button>
+                  Insights
+                  </AIButton>
                 <ViewEMRButton userId={userId} />
               </div>
             </div>
@@ -330,15 +332,16 @@ export function PatientCard({ patient, viewMode = 'grid' }: PatientCardProps) {
 
         {/* Footer Actions */}
         <div className="bg-muted/30 px-4 py-3 mt-auto flex gap-2">
-          <Button
-            size="sm"
-            variant="ghost"
-            className="flex-1 gap-2"
+          <AIButton
             onClick={handleOpenAIInsights}
+            disabled={false}
+            isLoading={false}
+            variant="outline"
+            size="sm"
+            className="flex-1"
           >
-            <Sparkles className="h-4 w-4" />
-            <span className="text-xs">AI Insights</span>
-          </Button>
+            AI Insights
+          </AIButton>
           <ViewEMRButton userId={userId} />
         </div>
       </Card>

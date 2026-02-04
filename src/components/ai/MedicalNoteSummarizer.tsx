@@ -14,6 +14,7 @@ import { Sparkles, Copy, Check, AlertCircle, Loader2 } from 'lucide-react';
 import { useMedicalNoteSummarization } from '@/hooks/ai/use-ai';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { MarkdownRenderer } from '@/components/markdown/MarkdownRenderer';
+import { AIButton } from './AIButton';
 
 interface MedicalNoteSummarizerProps {
   consultationNotes: string;
@@ -123,15 +124,15 @@ export function MedicalNoteSummarizer({
 
   return (
     <>
-      <Button
+      <AIButton
         onClick={handleSummarize}
         disabled={isLoading || !consultationNotes || consultationNotes.trim().length === 0}
+        isLoading={isLoading}
         variant="outline"
         size="sm"
       >
-        <Sparkles className="mr-2 h-4 w-4" />
         AI Summarize
-      </Button>
+      </AIButton>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">

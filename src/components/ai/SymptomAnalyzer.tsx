@@ -14,6 +14,7 @@ import { Sparkles, AlertCircle, Clock, CheckCircle, Loader2 } from 'lucide-react
 import { useSymptomAnalysis } from '@/hooks/ai/use-ai';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { MarkdownRenderer } from '@/components/markdown/MarkdownRenderer';
+import { AIButton } from './AIButton';
 
 interface SymptomAnalyzerProps {
   symptoms: string;
@@ -83,19 +84,19 @@ export function SymptomAnalyzer({
 
   return (
     <>
-      <Button
+      <AIButton
         onClick={handleAnalyze}
         disabled={isLoading || !symptoms || symptoms.trim().length === 0}
+        isLoading={isLoading}
         variant="outline"
         size="sm"
       >
-        <Sparkles className="mr-2 h-4 w-4" />
         Analyze Symptoms
-      </Button>
+      </AIButton>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
+        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-primary" />
               AI Symptom Analysis
@@ -105,7 +106,7 @@ export function SymptomAnalyzer({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4">
+          <div className="space-y-4 overflow-y-auto flex-1 pr-2">
             {isLoading && (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />

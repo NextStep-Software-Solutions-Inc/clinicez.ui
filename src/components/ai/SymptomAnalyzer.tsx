@@ -22,6 +22,12 @@ interface SymptomAnalyzerProps {
     gender?: string;
     conditions?: string[];
     allergies?: string[];
+    disabilities?: string[];
+    familyHistory?: string[];
+    surgicalHistory?: string[];
+    personalHistory?: string;
+    obGyneHistory?: string;
+    attachments?: string[];
   };
   clinicId?: number;
   onAnalysisComplete?: (analysis: {

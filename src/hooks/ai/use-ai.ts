@@ -201,6 +201,12 @@ export function useSymptomAnalysis() {
       gender?: string;
       conditions?: string[];
       allergies?: string[];
+      disabilities?: string[];
+      familyHistory?: string[];
+      surgicalHistory?: string[];
+      personalHistory?: string;
+      obGyneHistory?: string;
+      attachments?: string[];
     }
   ) => {
     setIsLoading(true);

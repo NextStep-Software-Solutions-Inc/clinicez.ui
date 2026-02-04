@@ -161,6 +161,12 @@ export async function analyzeSymptoms(
     gender?: string;
     conditions?: string[];
     allergies?: string[];
+    disabilities?: string[];
+    familyHistory?: string[];
+    surgicalHistory?: string[];
+    personalHistory?: string;
+    obGyneHistory?: string;
+    attachments?: string[];
   }
 ): Promise<AIOperationResult<{
   analysis: string;
@@ -195,15 +201,29 @@ export async function analyzeSymptoms(
       const parts: string[] = [];
       if (patientContext.age) parts.push(`Age: ${patientContext.age}`);
       if (patientContext.gender) parts.push(`Gender: ${patientContext.gender}`);
-      if (patientContext.conditions?.length) parts.push(`Conditions: ${patientContext.conditions.join(', ')}`);
+      if (patientContext.conditions?.length) parts.push(`Current Conditions: ${patientContext.conditions.join(', ')}`);
       if (patientContext.allergies?.length) parts.push(`Allergies: ${patientContext.allergies.join(', ')}`);
+      if (patientContext.disabilities?.length) parts.push(`Disabilities: ${patientContext.disabilities.join(', ')}`);
+      if (patientContext.familyHistory?.length) parts.push(`Family History: ${patientContext.familyHistory.join(', ')}`);
+      if (patientContext.surgicalHistory?.length) parts.push(`Surgical History: ${patientContext.surgicalHistory.join(', ')}`);
+      if (patientContext.personalHistory) parts.push(`Personal/Social History: ${patientContext.personalHistory}`);
+      if (patientContext.obGyneHistory) parts.push(`OB/Gyne History: ${patientContext.obGyneHistory}`);
+      if (patientContext.attachments?.length) parts.push(`Attachments/Documents: ${patientContext.attachments.join(', ')}`);
       contextInfo = parts.length > 0 ? `\n\nPatient Context:\n${parts.join('\n')}` : '';
     }
 
     const prompt = renderTemplate(template, { symptomDescription: symptomDescription + contextInfo });
 
     const result = await generateAICompletion('symptom-analysis', prompt, {
-      systemPrompt: template.systemPrompt,
+      systemPrompt: `You are a clinical decision support system for doctors and nurses. Provide practical clinical guidance based on the patient's symptom presentation and complete medical profile.
+
+Analyze and respond with:
+1. Clinical Assessment: Relevant findings considering patient age, gender, medical history, allergies, and current conditions
+2. Differential Diagnoses: Most likely conditions to consider, ordered by clinical probability given the presentation
+3. Urgency Triage: Emergency (immediate intervention needed) | Urgent (same-day evaluation) | Routine (scheduled evaluation acceptable)
+4. Clinical Actions: Specific investigations, vital signs monitoring, treatments, or specialist referrals to consider
+
+Use clinical terminology and evidence-based reasoning. Response must be actionable for immediate clinical decision-making. No introductory or closing phrases.`,
     });
 
     if (!result.success || !result.data) {

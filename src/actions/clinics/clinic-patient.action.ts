@@ -124,7 +124,63 @@ export const getClinicPatientsAction = withErrorHandling(async (filters: GetClin
     }
   })
 
-  return { message: "Clinic Patients fetched successfully", data: clinicPatients }
+  // Get all patient IDs
+  const patientIds = clinicPatients.map(cp => cp.Patient?.id).filter(Boolean) as number[];
+  const clinicId = clinicPatients[0]?.Clinic?.id;
+
+  // Batch queries for all stats at once
+  const [appointments, conditions, medications] = await Promise.all([
+    prismaClient.appointmentRequester.findMany({
+      where: {
+        userId: { in: patientIds },
+        ...(clinicId && {
+          Appointment: { clinicId },
+        }),
+      },
+      select: { userId: true },
+    }),
+    prismaClient.userHealthCondition.findMany({
+      where: {
+        userId: { in: patientIds },
+        status: 'UNRESOLVED',
+      },
+      select: { userId: true },
+    }),
+    prismaClient.medication.findMany({
+      where: {
+        patientId: { in: patientIds },
+      },
+      select: { patientId: true },
+    }),
+  ]);
+
+  // Aggregate counts by patient ID
+  const appointmentCounts = appointments.reduce((acc, app) => {
+    acc[app.userId] = (acc[app.userId] || 0) + 1;
+    return acc;
+  }, {} as Record<number, number>);
+
+  const conditionCounts = conditions.reduce((acc, cond) => {
+    acc[cond.userId] = (acc[cond.userId] || 0) + 1;
+    return acc;
+  }, {} as Record<number, number>);
+
+  const medicationCounts = medications.reduce((acc, med) => {
+    acc[med.patientId] = (acc[med.patientId] || 0) + 1;
+    return acc;
+  }, {} as Record<number, number>);
+
+  // Attach stats to each patient
+  const clinicPatientsWithStats = clinicPatients.map(clinicPatient => ({
+    ...clinicPatient,
+    stats: {
+      appointments: appointmentCounts[clinicPatient.Patient?.id] || 0,
+      conditions: conditionCounts[clinicPatient.Patient?.id] || 0,
+      medications: medicationCounts[clinicPatient.Patient?.id] || 0,
+    },
+  }));
+
+  return { message: "Clinic Patients fetched successfully", data: clinicPatientsWithStats }
 })
 
 

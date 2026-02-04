@@ -13,6 +13,7 @@ import {
 import { Sparkles, TrendingUp, AlertCircle, Loader2 } from 'lucide-react';
 import { usePatientInsights } from '@/hooks/ai/use-ai';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { MarkdownRenderer } from '@/components/markdown/MarkdownRenderer';
 
 interface PatientInsightsCardProps {
   userId: number;
@@ -159,8 +160,8 @@ export function PatientInsightsCard({
                     <TrendingUp className="h-4 w-4" />
                     Patient Analysis
                   </h4>
-                  <div className="rounded-md bg-muted p-4 text-sm whitespace-pre-line">
-                    {insights}
+                  <div className="rounded-md bg-muted p-4 text-sm">
+                    <MarkdownRenderer content={insights} />
                   </div>
                 </div>
 

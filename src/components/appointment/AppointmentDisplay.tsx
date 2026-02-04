@@ -28,7 +28,7 @@ import { getBadgeVariantFromLabel } from "@lib/utils";
 
 import { LabelValue } from "@components/LabelValue";
 import PreAssessmentNoteSheet from "./PreAssessmentNoteSheet";
-import { Fragment, useRef } from "react";
+import { Fragment, useRef, useState } from "react";
 import { GetAppointment } from "@actions/appointments/appointments.action";
 import AppointmentRoutingHistorySheet from "./AppointmentRoutingHistorySheet";
 import CompleteAppointment from "./CompleteAppointment";
@@ -39,6 +39,11 @@ import { getFullName, getDepartmentName, getProgramYear } from "@/lib/formatter-
 import { isAssignedNurseToAppointment } from "@/lib/nurse-utils";
 import { getHealthcareProviderName } from "@/lib/hp-utils";
 import TagHPsSheet from "./TagHPsSheet";
+import { SymptomAnalyzer } from "@components/ai/SymptomAnalyzer";
+import { useAllergies } from "@/hooks/useAllergy";
+import { useIllnesses } from "@/hooks/useIllness";
+import { useDisabilities } from "@/hooks/useDisability";
+import { useHealthHistory } from "@/hooks/useHealthHistory";
 
 
 export default function AppointmentDisplay() {
@@ -47,6 +52,11 @@ export default function AppointmentDisplay() {
   const { clinicUid } = useParams<{ clinicUid: string }>()
   const searchParams = useSearchParams()
   const appointmentId = parseInt(searchParams.get("_appointment") ?? "")
+  const [symptomAnalysis, setSymptomAnalysis] = useState<{
+    analysis: string;
+    urgencyLevel: 'emergency' | 'urgent' | 'routine';
+    recommendations: string[];
+  } | null>(null)
 
   const { data: freshAppointment, isLoading: loadingAppointment } = useClinicAppointment({
     clinicUid: clinicUid,
@@ -59,6 +69,13 @@ export default function AppointmentDisplay() {
   const { data: myHps } = useHPs({
     userId: user?.id ?? "",
   })
+
+  // Get the patient's medical history for AI analysis
+  const patientUserId = freshAppointment?.data?.Requesters?.[0]?.User?.userId ?? ""
+  const { data: patientAllergies } = useAllergies(patientUserId)
+  const { data: patientIllnesses } = useIllnesses(patientUserId)
+  const { data: patientDisabilities } = useDisabilities(patientUserId)
+  const { data: patientHealthHistory } = useHealthHistory(patientUserId)
 
   const requesters = freshAppointment?.data?.Requesters
   const preferredHp = freshAppointment?.data?.AppointmentAttribute?.PreferredAppointee
@@ -89,13 +106,16 @@ export default function AppointmentDisplay() {
   const myClinicPermissionArray = myClinicPermissions?.map(p => p.name) ?? []
 
   // Check if the current user is an assigned nurse to this appointment
+  // Note: Currently not used for pre-assessment note access, but available for other nurse-specific features
   const isAssignedNurse = isAssignedNurseToAppointment(freshAppointment.data, user?.id);
 
   // Check if user has write permission for pre-assessment notes
   const hasWritePermission = [PERMISSIONS.CLINIC["WRITE:CLINIC:PRE_ASSESSMENT_NOTE"].name].every(p => myClinicPermissionArray.includes(p));
 
-  // Only assigned nurses can edit pre-assessment notes
-  const canEditPreAssessmentNotes = hasWritePermission && isAssignedNurse;
+  // Any healthcare provider with write permission can edit pre-assessment notes
+  // This allows flexible assignment based on clinic workflow (nurses, doctors, medical assistants, etc.)
+  // See docs/PRE_ASSESSMENT_NOTES_ACCESS.md for detailed rationale
+  const canEditPreAssessmentNotes = hasWritePermission;
 
   const preferredHPName = (() => {
     const title = preferredHp?.HPProfile?.title ?? "";
@@ -214,6 +234,30 @@ export default function AppointmentDisplay() {
             <span className="font-semibold text-sm">Chief Complaint: </span>
             <div className="mt-1 whitespace-pre-wrap">{freshAppointment.data.complaint}</div>
           </div>
+          <Separator className="my-2" />
+
+          {/* AI Symptom Analysis for Healthcare Provider */}
+          {freshAppointment.data.complaint && freshAppointment.data.complaint.length > 5 && (
+            <div className="space-y-4 my-4">
+              <SymptomAnalyzer
+                symptoms={freshAppointment.data.complaint}
+                patientContext={{
+                  age: freshAppointment.data.Requesters?.[0]?.User?.dob ? calculateAge(freshAppointment.data.Requesters[0].User.dob) || undefined : undefined,
+                  gender: freshAppointment.data.Requesters?.[0]?.User?.gender || undefined,
+                  conditions: patientIllnesses?.map(illness => illness.HealthCondition?.name).filter(Boolean) as string[] ?? [],
+                  allergies: patientAllergies?.map(allergy => allergy.Allergen?.name).filter(Boolean) as string[] ?? [],
+                  disabilities: patientDisabilities?.map(disability => disability.Disability?.name).filter(Boolean) as string[] ?? [],
+                  familyHistory: patientHealthHistory?.FamilyMedicalHistories?.map(f => f.Condition?.name).filter(Boolean) as string[] ?? [],
+                  surgicalHistory: patientHealthHistory?.SurgicalHistories?.map(s => s.operationName).filter(Boolean) ?? [],
+                  personalHistory: patientHealthHistory?.PersonalHistory?.smokingStatus || undefined,
+                  obGyneHistory: patientHealthHistory?.ObGyneHistory?.menarche ? `Menarche: ${patientHealthHistory.ObGyneHistory.menarche}` : undefined,
+                  attachments: (freshAppointment.data.AppointmentAttachments ?? []).map(a => a.url),
+                }}
+                onAnalysisComplete={setSymptomAnalysis}
+              />
+            </div>
+          )}
+
           <Separator className="my-2" />
           <Attachments attachments={(freshAppointment.data.AppointmentAttachments ?? []).map(a => a.url)} />
         </div>

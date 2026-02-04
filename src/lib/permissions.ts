@@ -104,7 +104,7 @@ export const PERMISSIONS = {
     },
     "WRITE:CLINIC:PRE_ASSESSMENT_NOTE": {
       name: "write:clinic:pre_assessment_note",
-      description: "User can write pre-assessment note within the clinic.",
+      description: "User can write pre-assessment note within the clinic. This permission can be granted to any healthcare provider role (nurses, medical assistants, doctors, etc.) based on clinic workflow.",
     },
     "READ:CLINIC:PRE_ASSESSMENT_NOTE": {
       name: "read:clinic:pre_assessment_note",

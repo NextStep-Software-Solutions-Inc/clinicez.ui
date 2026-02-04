@@ -1,19 +1,29 @@
-"use client";
-
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 
 export const useDebounce = (value: string, delay: number) => {
   const [debouncedValue, setDebouncedValue] = useState(value);
-    
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const updateDebouncedValue = useCallback(() => {
+    setDebouncedValue(value);
+  }, [value]);
+
   useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-    
+    // Clear existing timeout
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+
+    // Set new timeout
+    timeoutRef.current = setTimeout(updateDebouncedValue, delay);
+
+    // Cleanup
     return () => {
-      clearTimeout(handler);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
     };
-  }, [value, delay]);
-    
+  }, [value, delay, updateDebouncedValue]);
+
   return debouncedValue;
 }

@@ -10,6 +10,7 @@ import ClinicAppointmentTabsManager from "@components/super-admin/ClinicAppointm
 import { ClinicProceduresManager } from "@components/super-admin/ClinicProceduresManager";
 import DocumentTemplateTypeManager from "@components/super-admin/DocumentTemplateTypeManager";
 import DocumentTemplates from "@components/DocumentTemplates";
+import { ClinicAILimitManager } from "@/components/super-admin/ClinicAILimitManager";
 
 interface ClinicDetailPageProps {
   params: Promise<{
@@ -127,11 +128,12 @@ export default async function ClinicDetailPage({ params }: ClinicDetailPageProps
       </Card>
 
       <Tabs defaultValue="roles" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="roles">Clinic Roles</TabsTrigger>
           <TabsTrigger value="appointment-tabs">Appointment Tabs</TabsTrigger>
           <TabsTrigger value="procedures">Procedures</TabsTrigger>
           <TabsTrigger value="documents">Documents</TabsTrigger>
+          <TabsTrigger value="ai-limits">AI Limits</TabsTrigger>
         </TabsList>
 
         <TabsContent value="roles" className="space-y-4">
@@ -184,6 +186,10 @@ export default async function ClinicDetailPage({ params }: ClinicDetailPageProps
             <DocumentTemplateTypeManager />
             <DocumentTemplates clinicUid={clinic.clinicUid} label="Clinic" />
           </div>
+        </TabsContent>
+
+        <TabsContent value="ai-limits" className="space-y-4">
+          <ClinicAILimitManager clinicId={clinicId} clinicName={clinic.name} />
         </TabsContent>
       </Tabs>
     </div>

@@ -8,6 +8,7 @@ import { getTenantOrganizationsAction, getTenantClinicsAction, GetTenantOrganiza
 import { Badge } from "@components/ui/badge";
 import { Building2, Hospital, Users, ExternalLink } from "lucide-react";
 import { Button } from "@components/ui/button";
+import { TenantAILimitManager } from "@/components/super-admin/TenantAILimitManager";
 
 interface TenantDetailTabsProps {
   tenant: {
@@ -80,13 +81,16 @@ export default function TenantDetailTabs({ tenant }: TenantDetailTabsProps) {
 
   return (
     <Tabs defaultValue="overview" className="w-full">
-      <TabsList className="grid w-full grid-cols-3">
+      <TabsList className="grid w-full grid-cols-4">
         <TabsTrigger value="overview">Overview</TabsTrigger>
         <TabsTrigger value="organizations" onClick={loadOrganizations}>
           Organizations
         </TabsTrigger>
         <TabsTrigger value="clinics" onClick={loadClinics}>
           Clinics
+        </TabsTrigger>
+        <TabsTrigger value="ai-limits">
+          AI Limits
         </TabsTrigger>
       </TabsList>
 
@@ -262,6 +266,10 @@ export default function TenantDetailTabs({ tenant }: TenantDetailTabsProps) {
             )}
           </CardContent>
         </Card>
+      </TabsContent>
+
+      <TabsContent value="ai-limits" className="space-y-4">
+        <TenantAILimitManager tenantId={tenant.id} tenantName={tenant.name} />
       </TabsContent>
     </Tabs>
   );

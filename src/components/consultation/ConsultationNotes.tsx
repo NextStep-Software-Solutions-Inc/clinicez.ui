@@ -40,11 +40,25 @@ export default function ConsultationNotes({ consultation, patientUserId }: Consu
   const { data: consultationNotes, mutate } = useConsultationNotes({ clinicUid, consultationId: consultation.id })
   const { data: noteTemplate, isLoading: loadingNoteTemplate } = useNoteTemplate(consultation.ConsultationTicketAttribute?.NoteTemplate.name ?? "")
 
+  // DEBUG: Log authorization details
+  console.log('🔍 ConsultationNotes Debug:', {
+    clerkUserId: user?.id,
+    authUserHPs: authUserHPS.data,
+    authUserHPsLoading: authUserHPS.isLoading,
+    authUserHPsError: authUserHPS.error,
+    consultationTicketHps,
+    isConsultationAuthor,
+    hpMatches: authUserHPS.data?.map(hp => ({
+      hpId: hp.id,
+      isMatch: consultationTicketHps.includes(hp.id)
+    }))
+  });
+
   const notes = createOrderedConsultationNotes(
     noteTemplate?.NoteSections ?? [],
     consultationNotes
   )
-  if (loadingNoteTemplate) return <div>Loading...</div>
+  if (loadingNoteTemplate || authUserHPS.isLoading) return <div>Loading...</div>
   
   // Collect all consultation notes text for AI summarization
   const allNotesText = notes.map(note => `${note.label}: ${note.value || ''}`).join('\n\n');

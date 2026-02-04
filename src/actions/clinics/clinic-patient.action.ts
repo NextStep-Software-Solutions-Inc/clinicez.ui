@@ -53,24 +53,64 @@ export type GetClinicPatientFilters = {
   search?: string
   clinicUid: string
   pageSize?: number
-  pageNumber?: number
+  cursor?: number
   distinct?: Prisma.ClinicPatientScalarFieldEnum[]
   userId?: string
+  gender?: string
+  minAge?: number
+  maxAge?: number
 }
-export type GetClinicPatients = Awaited<ReturnType<typeof getClinicPatientsAction>>
-export const getClinicPatientsAction = withErrorHandling(async (filters: GetClinicPatientFilters) => {
+export interface GetClinicPatientsResult {
+  message: string;
+  data: Array<{
+    stats: { appointments: number; conditions: number; medications: number };
+    id: number;
+    Clinic: {
+      id: number;
+      name: string;
+    };
+    Patient: {
+      id: number;
+      userId: string;
+      firstName: string;
+      middleName: string | null;
+      lastName: string;
+      suffix: string | null;
+      email: string;
+      dob: Date | null;
+      gender: string | null;
+      updatedAt: Date;
+      bloodType: string | null;
+      nickname: string | null;
+      picture: string | null;
+      StudentRecords: Array<{ studentId: number }>;
+    };
+  }>;
+  nextCursor: number | null;
+  hasMore: boolean;
+}
+
+export type GetClinicPatients = GetClinicPatientsResult;
+export const getClinicPatientsAction = async (filters: GetClinicPatientFilters): Promise<GetClinicPatientsResult> => {
 
 
   const session = await getCachedSession()
   if (!session) throw new Error("Unauthorized")
-  const { search, pageNumber = 1, pageSize = 50, distinct = [], clinicUid, userId } = filters ?? {}
+  const { search, cursor, pageSize = 50, distinct = [], clinicUid, userId, gender, minAge = 0, maxAge = 120 } = filters ?? {}
+
+  // Calculate birth date range based on age
+  // minAge (e.g., 20) = oldest person we want (born 20+ years ago, smaller date)
+  // maxAge (e.g., 30) = youngest person we want (born 30- years ago, larger date)
+  const now = new Date();
+  const minBirthDate = minAge !== undefined ? new Date(now.getFullYear() - minAge, now.getMonth(), now.getDate()) : undefined;
+  const maxBirthDate = maxAge !== undefined ? new Date(now.getFullYear() - maxAge, now.getMonth(), now.getDate()) : undefined;
 
   const clinicPatients = await prismaClient.clinicPatient.findMany({
-    ...pageSize ? { take: pageSize } : {},
-    ... !!distinct.length ? { distinct } : {},
-    skip: pageNumber ? (pageNumber - 1) * (pageSize || 10) : 0,
+    take: pageSize + 1, // Fetch one extra to know if there's a next page
+    ...(cursor && { skip: 1, cursor: { id: cursor } }),
+    ...!!distinct.length ? { distinct } : {},
     orderBy: {
-      createdAt: "desc"
+      id: "asc"
     },
     where: {
       Clinic: {
@@ -78,7 +118,14 @@ export const getClinicPatientsAction = withErrorHandling(async (filters: GetClin
       },
       Patient: {
         ...userId ? { userId } : {},
-        ... !!search ? {
+        ...(gender && gender !== 'all') ? { gender: gender as 'MALE' | 'FEMALE' } : {},
+        ...(minAge !== undefined || maxAge !== undefined) ? {
+          dob: {
+            ...(minBirthDate && { lte: minBirthDate }),
+            ...(maxBirthDate && { gte: maxBirthDate }),
+          }
+        } : {},
+        ...!!search ? {
           OR: [
             { firstName: { contains: search, mode: "insensitive" } },
             { middleName: { contains: search, mode: "insensitive" } },
@@ -124,9 +171,14 @@ export const getClinicPatientsAction = withErrorHandling(async (filters: GetClin
     }
   })
 
+  // Check if there's a next page
+  const hasMore = clinicPatients.length > pageSize;
+  const data = hasMore ? clinicPatients.slice(0, -1) : clinicPatients;
+  const nextCursor = hasMore ? data[data.length - 1]?.id : null;
+
   // Get all patient IDs
-  const patientIds = clinicPatients.map(cp => cp.Patient?.id).filter(Boolean) as number[];
-  const clinicId = clinicPatients[0]?.Clinic?.id;
+  const patientIds = data.map(cp => cp.Patient?.id).filter(Boolean) as number[];
+  const clinicId = data[0]?.Clinic?.id;
 
   // Batch queries for all stats at once
   const [appointments, conditions, medications] = await Promise.all([
@@ -171,7 +223,7 @@ export const getClinicPatientsAction = withErrorHandling(async (filters: GetClin
   }, {} as Record<number, number>);
 
   // Attach stats to each patient
-  const clinicPatientsWithStats = clinicPatients.map(clinicPatient => ({
+  const clinicPatientsWithStats = data.map(clinicPatient => ({
     ...clinicPatient,
     stats: {
       appointments: appointmentCounts[clinicPatient.Patient?.id] || 0,
@@ -180,8 +232,8 @@ export const getClinicPatientsAction = withErrorHandling(async (filters: GetClin
     },
   }));
 
-  return { message: "Clinic Patients fetched successfully", data: clinicPatientsWithStats }
-})
+  return { message: "Clinic Patients fetched successfully", data: clinicPatientsWithStats, nextCursor, hasMore } as unknown as GetClinicPatientsResult
+}
 
 
 export const addClinicPatientAction = withErrorHandling(async ({ clinicUid, userId }: { clinicUid: string, userId: string }) => {

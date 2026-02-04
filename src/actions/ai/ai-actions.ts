@@ -259,7 +259,13 @@ export async function generatePatientInsights(
     conditions?: string[];
     medications?: string[];
     recentVisits?: Array<{ date: string; reason: string }>;
-    vitalsTrends?: Record<string, number[]>;
+    vitalsTrends?: {
+      bloodPressure?: string[];
+      heartRate?: number[];
+      temperature?: number[];
+      weight?: number[];
+      respiratoryRate?: number[];
+    };
   },
   clinicId?: number
 ): Promise<AIOperationResult<string>> {

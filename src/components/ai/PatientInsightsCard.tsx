@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -18,50 +18,31 @@ import { MarkdownRenderer } from '@/components/markdown/MarkdownRenderer';
 interface PatientInsightsCardProps {
   userId: number;
   clinicId?: number;
+  isOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export function PatientInsightsCard({
   userId,
   clinicId,
+  isOpen: externalIsOpen,
+  onOpenChange,
 }: PatientInsightsCardProps) {
   const { generate, insights, isLoading, error } = usePatientInsights();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [patientStats, setPatientStats] = useState({
-    appointments: 0,
-    conditions: 0,
-    medications: 0,
-  });
-  const [isLoadingStats, setIsLoadingStats] = useState(true);
+  const [internalIsOpen, setInternalIsOpen] = useState(false);
 
-  useEffect(() => {
-    const fetchPatientStats = async () => {
-      try {
-        setIsLoadingStats(true);
-        const response = await fetch(`/api/patients/${userId}/stats?clinicId=${clinicId || ''}`);
-        if (response.ok) {
-          const data = await response.json();
-          setPatientStats({
-            appointments: data.appointments || 0,
-            conditions: data.conditions || 0,
-            medications: data.medications || 0,
-          });
-        }
-      } catch (err) {
-        console.error('Failed to fetch patient stats:', err);
-      } finally {
-        setIsLoadingStats(false);
-      }
-    };
-
-    fetchPatientStats();
-  }, [userId, clinicId]);
+  // Use external state if provided, otherwise use internal state
+  const isDialogOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen;
+  const setIsDialogOpen = onOpenChange || setInternalIsOpen;
 
   const handleGenerate = async () => {
     setIsDialogOpen(true);
-    
+
     // Fetch full patient data for AI analysis
     try {
-      const response = await fetch(`/api/patients/${userId}/data?clinicId=${clinicId || ''}`);
+      const response = await fetch(
+        `/api/patients/${userId}/data?clinicId=${clinicId || ''}`
+      );
       if (response.ok) {
         const patientData = await response.json();
         await generate(patientData, clinicId);
@@ -71,8 +52,9 @@ export function PatientInsightsCard({
     }
   };
 
-  return (
-    <>
+  // Return null if not used as dialog (grid view only shows card)
+  if (!externalIsOpen && internalIsOpen === false) {
+    return (
       <Card className="w-full">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -83,33 +65,10 @@ export function PatientInsightsCard({
             Get AI-powered analysis of patient trends and patterns
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <p className="text-muted-foreground">Total Appointments</p>
-              {isLoadingStats ? (
-                <div className="h-8 flex items-center">
-                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                </div>
-              ) : (
-                <p className="text-2xl font-bold">{patientStats.appointments}</p>
-              )}
-            </div>
-            <div>
-              <p className="text-muted-foreground">Active Conditions</p>
-              {isLoadingStats ? (
-                <div className="h-8 flex items-center">
-                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                </div>
-              ) : (
-                <p className="text-2xl font-bold">{patientStats.conditions}</p>
-              )}
-            </div>
-          </div>
-
+        <CardContent>
           <Button
             onClick={handleGenerate}
-            disabled={isLoading || isLoadingStats}
+            disabled={isLoading}
             className="w-full"
           >
             {isLoading ? (
@@ -126,7 +85,11 @@ export function PatientInsightsCard({
           </Button>
         </CardContent>
       </Card>
+    );
+  }
 
+  return (
+    <>
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>

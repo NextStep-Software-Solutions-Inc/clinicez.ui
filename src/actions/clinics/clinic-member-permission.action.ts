@@ -8,11 +8,11 @@ import { hasClinicPermissionAction } from "@actions/permission.action";
 import { PERMISSIONS } from "@lib/permissions";
 
 type SetOrgMemberPermissionsPayload = {
-    userId: string,
-    clinicUid: string,
-    permissionIds: number[]
+  userId: string,
+  clinicUid: string,
+  permissionIds: number[]
 }
-export const setClinicMemberPermissionsAction = async ({clinicUid, userId, permissionIds}:SetOrgMemberPermissionsPayload) => {
+export const setClinicMemberPermissionsAction = async ({ clinicUid, userId, permissionIds }: SetOrgMemberPermissionsPayload) => {
   let message = "Member permissions set successfully";
   try {
     const session = await getCachedSession();
@@ -51,7 +51,7 @@ export const setClinicMemberPermissionsAction = async ({clinicUid, userId, permi
       await prisma.clinicMemberPermission.deleteMany({
         where: { clinicMemberId: clinicMember.id }
       });
-      
+
       await prisma.clinicMemberPermission.createMany({
         skipDuplicates: true,
         data: permissionIds.map((permissionId) => ({
@@ -60,12 +60,12 @@ export const setClinicMemberPermissionsAction = async ({clinicUid, userId, permi
         }))
       });
     });
-    
+
     return { status: true, message }
   } catch (error) {
     console.error(`Error setting clinic member permissions: ${error}`);
     message = "Error setting clinic member permissions";
     if (error instanceof Error) message = error.message;
-    return { status: false,  message }
+    return { status: false, message }
   }
 };

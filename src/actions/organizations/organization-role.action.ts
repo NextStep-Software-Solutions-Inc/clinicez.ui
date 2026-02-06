@@ -23,7 +23,7 @@ export const createOrganizationRoleAction = withErrorHandling(async (payload: Cr
   const userId = session.user.sub as string;
 
   const { orgUid, name, description } = payload;
-  
+
   // Check permissions in parallel
   const [isSuperAdmin, hasPermission] = await Promise.all([
     isSuperAdminAction(),
@@ -123,7 +123,7 @@ export const setOrganizationRoleRequirementsAction = withErrorHandling(async (or
     where: { id: orgRoleId },
     select: { Organization: { select: { orgUid: true } } }
   });
-  
+
   if (!role) throw new Error("Role not found");
 
   // Check permissions in parallel
@@ -161,7 +161,7 @@ export const deleteOrganizationRoleAction = withErrorHandling(async (orgRoleId: 
     where: { id: orgRoleId },
     select: { Organization: { select: { orgUid: true } } }
   });
-  
+
   if (!role) throw new Error("Role not found");
 
   // Check permissions in parallel

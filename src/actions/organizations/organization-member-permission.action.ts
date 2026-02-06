@@ -8,11 +8,11 @@ import { hasOrgPermissionAction } from "@actions/permission.action";
 import { PERMISSIONS } from "@lib/permissions";
 
 type SetOrgMemberPermissionsPayload = {
-    userId: string,
-    orgUid: string,
-    permissionIds: number[]
+  userId: string,
+  orgUid: string,
+  permissionIds: number[]
 }
-export const setOrgMemberPermissionsAction = async ({orgUid, userId, permissionIds}:SetOrgMemberPermissionsPayload) => {
+export const setOrgMemberPermissionsAction = async ({ orgUid, userId, permissionIds }: SetOrgMemberPermissionsPayload) => {
   let message = "Member permissions set successfully";
 
   try {
@@ -53,7 +53,7 @@ export const setOrgMemberPermissionsAction = async ({orgUid, userId, permissionI
       await prisma.orgMemberPermission.deleteMany({
         where: { orgMemberId: userOrganization.id }
       });
-      
+
       await prisma.orgMemberPermission.createMany({
         skipDuplicates: true,
         data: permissionIds.map((permissionId) => ({
@@ -68,6 +68,6 @@ export const setOrgMemberPermissionsAction = async ({orgUid, userId, permissionI
     console.error(`Error setting organization member permissions: ${error}`);
     message = "Error setting organization member permissions";
     if (error instanceof Error) message = error.message;
-    return { status: false,  message }
+    return { status: false, message }
   }
 };

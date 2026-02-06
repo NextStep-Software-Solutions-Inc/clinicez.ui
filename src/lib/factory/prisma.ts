@@ -5,7 +5,7 @@ import { Pool } from "pg";
 export const createPrismaClient = (): PrismaClient => {
   // In Prisma 7, when not using URL in schema, we need an adapter
   const databaseUrl = process.env.DATABASE_URL_UNPOOLED || process.env.DATABASE_URL || "postgresql://dummy:dummy@localhost:5432/dummy";
-  const pool = new Pool({ 
+  const pool = new Pool({
     connectionString: databaseUrl,
     // Increased pool size to handle concurrent permission checks and transactions
     max: 20, // Maximum number of connections in the pool

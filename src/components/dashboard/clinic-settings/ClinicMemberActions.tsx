@@ -1,10 +1,12 @@
 import {
+  Info,
   MoreHorizontal,
   Pencil,
   Trash,
 } from "lucide-react"
   
 import { Button } from "@/components/ui/button"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -54,6 +56,7 @@ export default function ClinicMemberActions({clinicMember, onUpdated: mutate}: C
     }
   }
 
+  const isOwner = clinicMember.Role?.name === "owner"
   
   return (
     <Dialog open={openChangeRole|| openRemoveMember} onOpenChange={onCloseDialog}>
@@ -65,19 +68,28 @@ export default function ClinicMemberActions({clinicMember, onUpdated: mutate}: C
           <DropdownMenuLabel>Actions</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
-            <DropdownMenuItem 
-              onClick={() => handleOpenDialog("changeRole")}
-            >
-              <Pencil className="mr-1 w-4 h-4"/>
-              <span>Change Role</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              onClick={() => handleOpenDialog("removeMember")}
-              className="text-destructive"
-            >
-              <Trash className="mr-1 w-4 h-4"/>
-              <span>Remove</span>
-            </DropdownMenuItem>
+            {!isOwner && (
+              <DropdownMenuItem 
+                onClick={() => handleOpenDialog("changeRole")}
+              >
+                <Pencil className="mr-1 w-4 h-4"/>
+                <span>Change Role</span>
+              </DropdownMenuItem>
+            )}
+            {!isOwner && (
+              <DropdownMenuItem 
+                onClick={() => handleOpenDialog("removeMember")}
+                className="text-destructive"
+              >
+                <Trash className="mr-1 w-4 h-4"/>
+                <span>Remove</span>
+              </DropdownMenuItem>
+            )}
+            {isOwner && (
+              <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                Owner role cannot be modified
+              </div>
+            )}
           </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -95,6 +107,7 @@ interface ChangeRoleContentProps {
 }
 export const ChangeRoleContent = ({onUpdated, clinicMember}: ChangeRoleContentProps) => {
   const {data: clinicRoles} = useClinicRoles({})
+  const closeBtnRef = useRef<HTMLButtonElement>(null)
 
   const handleUpdateRole = async (form: FormData) => {
     const roleId = Number(form.get("role"))
@@ -102,6 +115,7 @@ export const ChangeRoleContent = ({onUpdated, clinicMember}: ChangeRoleContentPr
       loading: "Updating role...",
       success: res => {
         onUpdated?.()
+        closeBtnRef.current?.click()
         return res.message
       },
       error: err => err
@@ -110,20 +124,32 @@ export const ChangeRoleContent = ({onUpdated, clinicMember}: ChangeRoleContentPr
 
   return (
     
-    <DialogContent >
+    <DialogContent className="max-w-lg">
       <form action={handleUpdateRole}>
         <DialogHeader>
-          <DialogTitle>Are you absolutely sure to change role?</DialogTitle>
+          <DialogTitle>Change Member Role</DialogTitle>
           <DialogDescription>
-          This action cannot be undone. Are you sure you want to permanently change role of this member?
+            Update the role for this clinic member. Role-based permissions will be updated automatically.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
+          <Alert>
+            <Info className="h-4 w-4" />
+            <AlertDescription className="text-sm">
+              <strong>What happens when you change the role:</strong>
+              <ul className="mt-2 ml-4 list-disc space-y-1">
+                <li>New role permissions will be applied</li>
+                <li>Custom permissions granted manually will be preserved</li>
+                <li>Old role-specific permissions will be removed</li>
+              </ul>
+            </AlertDescription>
+          </Alert>
+          
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="role" className="text-right">
               Role
             </Label>
-            <Select defaultValue={clinicMember.roleId?.toString()}>
+            <Select defaultValue={clinicMember.roleId?.toString()} name="role">
               <SelectTrigger className="w-[180px]">
                 <SelectValue id="role" placeholder="Select a role" />
               </SelectTrigger>
@@ -142,6 +168,9 @@ export const ChangeRoleContent = ({onUpdated, clinicMember}: ChangeRoleContentPr
           </div>
         </div>
         <DialogFooter>
+          <DialogClose ref={closeBtnRef}>
+            <Button variant="outline">Cancel</Button>
+          </DialogClose>
           <ActionButton type="submit">Confirm</ActionButton>
         </DialogFooter>
       </form>  

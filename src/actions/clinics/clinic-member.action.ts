@@ -134,27 +134,106 @@ export const updateClinicMemberRoleAction = withErrorHandling(async (clinicMembe
   if (!session) throw new Error("User not authenticated")
 
   try {
-    await prisma.clinicMember.update({
-      where: {
-        id: clinicMemberId,
+    if (!Number.isInteger(roleId) || roleId <= 0) {
+      throw new Error("Invalid role.")
+    }
+
+    const clinicMember = await prisma.clinicMember.findUnique({
+      where: { id: clinicMemberId },
+      select: {
+        clinicId: true,
+        roleId: true,
         Role: {
-          name: {
-            not: "owner"
-          }
-        }
-      },
-      data: {
-        Role: {
-          connect: {
-            id: roleId
-          }
+          select: { name: true }
         }
       }
     })
 
-    return { message: "Successfully updated clinic member role.", data: null }
+    if (!clinicMember) throw new Error("Clinic member not found.")
+    if (clinicMember.Role?.name === "owner") throw new Error("Owner role cannot be updated.")
+
+    // Update role and preserve custom permissions in a transaction
+    await prisma.$transaction(async (prisma) => {
+      // Get old role's initial permissions
+      const oldRolePermissions = await prisma.clinicRoleInitialPermission.findMany({
+        where: {
+          clinicId: clinicMember.clinicId,
+          clinicRoleId: clinicMember.roleId,
+        },
+        select: {
+          permissionId: true,
+        }
+      });
+      const oldRolePermissionIds = new Set(oldRolePermissions.map(p => p.permissionId));
+
+      // Get current member's permissions
+      const currentPermissions = await prisma.clinicMemberPermission.findMany({
+        where: { clinicMemberId },
+        select: {
+          permissionId: true,
+        }
+      });
+      const currentPermissionIds = new Set(currentPermissions.map(p => p.permissionId));
+
+      // Calculate custom permissions (granted manually, not from role)
+      const customPermissionIds = Array.from(currentPermissionIds).filter(
+        permId => !oldRolePermissionIds.has(permId)
+      );
+
+      // Get new role's initial permissions
+      const newRolePermissions = await prisma.clinicRoleInitialPermission.findMany({
+        where: {
+          clinicId: clinicMember.clinicId,
+          clinicRoleId: roleId,
+          ClinicRole: {
+            isActive: true,
+          },
+          Permission: { isActive: true }
+        },
+        select: {
+          permissionId: true,
+        }
+      });
+
+      // Combine new role permissions with custom permissions (preserve customizations)
+      const allPermissionIds = new Set([
+        ...newRolePermissions.map(p => p.permissionId),
+        ...customPermissionIds
+      ]);
+
+      // Update the role
+      await prisma.clinicMember.update({
+        where: {
+          id: clinicMemberId
+        },
+        data: {
+          Role: {
+            connect: {
+              id: roleId
+            }
+          }
+        }
+      });
+
+      // Replace all permissions with new role + custom permissions
+      await prisma.clinicMemberPermission.deleteMany({
+        where: { clinicMemberId }
+      });
+
+      if (allPermissionIds.size > 0) {
+        await prisma.clinicMemberPermission.createMany({
+          skipDuplicates: true,
+          data: Array.from(allPermissionIds).map(permissionId => ({
+            clinicMemberId: clinicMemberId,
+            permissionId: permissionId
+          }))
+        });
+      }
+    });
+
+    return { message: "Successfully updated clinic member role and preserved custom permissions.", data: null }
   } catch (error) {
-    if (hasCodeProperty(error) && error.code === "P2025") throw new Error("An error occurred while updating the clinic member role. owner cannot be updated.")
+    if (hasCodeProperty(error) && error.code === "P2025") throw new Error("Role not found.")
     throw new Error("An error occurred while updating the clinic member role.")
   }
 })

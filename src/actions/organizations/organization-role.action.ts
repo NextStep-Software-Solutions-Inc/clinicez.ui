@@ -24,13 +24,15 @@ export const createOrganizationRoleAction = withErrorHandling(async (payload: Cr
 
   const { orgUid, name, description } = payload;
   
-  // Check permissions
-  const isSuperAdmin = await isSuperAdminAction();
-  const hasPermission = await hasOrgPermissionAction({
-    userId,
-    orgUid,
-    permissionName: PERMISSIONS.ORGANIZATION["UPDATE:ORG:MEMBERS"].name
-  });
+  // Check permissions in parallel
+  const [isSuperAdmin, hasPermission] = await Promise.all([
+    isSuperAdminAction(),
+    hasOrgPermissionAction({
+      userId,
+      orgUid,
+      permissionName: PERMISSIONS.ORGANIZATION["UPDATE:ORG:MEMBERS"].name
+    })
+  ]);
 
   if (!isSuperAdmin && !hasPermission) {
     throw new Error("You do not have permission to create organization roles");
@@ -124,13 +126,15 @@ export const setOrganizationRoleRequirementsAction = withErrorHandling(async (or
   
   if (!role) throw new Error("Role not found");
 
-  // Check permissions
-  const isSuperAdmin = await isSuperAdminAction();
-  const hasPermission = await hasOrgPermissionAction({
-    userId,
-    orgUid: role.Organization.orgUid,
-    permissionName: PERMISSIONS.ORGANIZATION["UPDATE:ORG:MEMBERS"].name
-  });
+  // Check permissions in parallel
+  const [isSuperAdmin, hasPermission] = await Promise.all([
+    isSuperAdminAction(),
+    hasOrgPermissionAction({
+      userId,
+      orgUid: role.Organization.orgUid,
+      permissionName: PERMISSIONS.ORGANIZATION["UPDATE:ORG:MEMBERS"].name
+    })
+  ]);
 
   if (!isSuperAdmin && !hasPermission) {
     throw new Error("You do not have permission to update role requirements");
@@ -160,13 +164,15 @@ export const deleteOrganizationRoleAction = withErrorHandling(async (orgRoleId: 
   
   if (!role) throw new Error("Role not found");
 
-  // Check permissions
-  const isSuperAdmin = await isSuperAdminAction();
-  const hasPermission = await hasOrgPermissionAction({
-    userId,
-    orgUid: role.Organization.orgUid,
-    permissionName: PERMISSIONS.ORGANIZATION["UPDATE:ORG:MEMBERS"].name
-  });
+  // Check permissions in parallel
+  const [isSuperAdmin, hasPermission] = await Promise.all([
+    isSuperAdminAction(),
+    hasOrgPermissionAction({
+      userId,
+      orgUid: role.Organization.orgUid,
+      permissionName: PERMISSIONS.ORGANIZATION["UPDATE:ORG:MEMBERS"].name
+    })
+  ]);
 
   if (!isSuperAdmin && !hasPermission) {
     throw new Error("You do not have permission to delete organization roles");

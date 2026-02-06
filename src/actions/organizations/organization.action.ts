@@ -269,13 +269,15 @@ export const updateOrganizationAction = async (orgUid: string, data: UpdateOrgan
     const session = await getCachedSession();
     if (!session) throw new Error("User not authenticated.");
 
-    // Check if user is super admin or has permission to update org info
-    const isSuperAdmin = await isSuperAdminAction();
-    const hasPermission = await hasOrgPermissionAction({
-      userId: session.user.sub,
-      orgUid,
-      permissionName: PERMISSIONS.ORGANIZATION["UPDATE:ORG:INFO"].name
-    });
+    // Check if user is super admin or has permission to update org info in parallel
+    const [isSuperAdmin, hasPermission] = await Promise.all([
+      isSuperAdminAction(),
+      hasOrgPermissionAction({
+        userId: session.user.sub,
+        orgUid,
+        permissionName: PERMISSIONS.ORGANIZATION["UPDATE:ORG:INFO"].name
+      })
+    ]);
 
     if (!isSuperAdmin && !hasPermission) {
       throw new Error("You don't have permission to update organization information.");

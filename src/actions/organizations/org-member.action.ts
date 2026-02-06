@@ -12,6 +12,8 @@ import { getPermissionsAction } from "@actions/permission.action";
 import { PERMISSIONS } from "@lib/permissions";
 import { OrganizationMemberStatus } from "@/types";
 import { withErrorHandling } from "@/lib/with-error-handling";
+import { isSuperAdminAction } from "@actions/super-admin/admin-check.action";
+import { hasOrgPermissionAction } from "@actions/permission.action";
 
 export const isOrgHealthcareProviderAction = async (userId: string, orgUid: string) => {
   const orgMember = await prisma.organizationMember.findFirst({
@@ -320,16 +322,26 @@ export const setMembershipRequestStatusAction = withErrorHandling(
     if (!session) throw new Error("User not authenticated.");
 
     const userId = session.user.sub as string;
-    const updateMembershipPermissions = [
-      PERMISSIONS.ORGANIZATION["UPDATE:ORG:MEMBERS"].name
-    ];
-    const myPermissions = await getPermissionsAction({ userId });
-    const myPermissionArray = myPermissions.map((item) => item.name);
-    const hasMembershipPermission = updateMembershipPermissions.every((item) =>
-      myPermissionArray.includes(item)
-    );
 
-    if (!hasMembershipPermission)
+    // First, get the membership to find the orgUid
+    const membership = await prisma.organizationMember.findUnique({
+      where: { id },
+      select: { Organization: { select: { orgUid: true } } }
+    });
+
+    if (!membership) throw new Error("Membership not found");
+
+    // Check permissions in parallel
+    const [isSuperAdmin, hasPermission] = await Promise.all([
+      isSuperAdminAction(),
+      hasOrgPermissionAction({
+        userId,
+        orgUid: membership.Organization.orgUid,
+        permissionName: PERMISSIONS.ORGANIZATION["UPDATE:ORG:MEMBERS"].name
+      })
+    ]);
+
+    if (!isSuperAdmin && !hasPermission)
       throw new Error(
         "You do not have permission to update membership request status"
       );
@@ -423,14 +435,26 @@ export const deleteMembershipAction = async (id: number) => {
     if (!session) throw new Error("User not authenticated.");
 
     const userId = session.user.sub as string;
-    const deletePermissions = [PERMISSIONS.ORGANIZATION["DELETE:ORG:MEMBERS"].name];
-    const myPermissions = await getPermissionsAction({ userId });
-    const myPermissionArray = myPermissions.map((item) => item.name);
-    const hasDeletePermission = deletePermissions.every((item) =>
-      myPermissionArray.includes(item)
-    );
 
-    if (!hasDeletePermission)
+    // First, get the membership to find the orgUid
+    const membership = await prisma.organizationMember.findUnique({
+      where: { id },
+      select: { Organization: { select: { orgUid: true } } }
+    });
+
+    if (!membership) throw new Error("Membership not found");
+
+    // Check permissions in parallel
+    const [isSuperAdmin, hasPermission] = await Promise.all([
+      isSuperAdminAction(),
+      hasOrgPermissionAction({
+        userId,
+        orgUid: membership.Organization.orgUid,
+        permissionName: PERMISSIONS.ORGANIZATION["DELETE:ORG:MEMBERS"].name
+      })
+    ]);
+
+    if (!isSuperAdmin && !hasPermission)
       throw new Error("You do not have permission to delete membership");
 
     await prisma.$transaction(async (prisma) => {

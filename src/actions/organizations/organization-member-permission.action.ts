@@ -22,13 +22,15 @@ export const setOrgMemberPermissionsAction = async ({orgUid, userId, permissionI
 
     const currentUserId = session.user.sub as string;
 
-    // Check permissions
-    const isSuperAdmin = await isSuperAdminAction();
-    const hasPermission = await hasOrgPermissionAction({
-      userId: currentUserId,
-      orgUid,
-      permissionName: PERMISSIONS.ORGANIZATION["UPDATE:ORG:PERMISSIONS"].name
-    });
+    // Check permissions in parallel
+    const [isSuperAdmin, hasPermission] = await Promise.all([
+      isSuperAdminAction(),
+      hasOrgPermissionAction({
+        userId: currentUserId,
+        orgUid,
+        permissionName: PERMISSIONS.ORGANIZATION["UPDATE:ORG:PERMISSIONS"].name
+      })
+    ]);
 
     if (!isSuperAdmin && !hasPermission) {
       throw new Error("You do not have permission to update member permissions");

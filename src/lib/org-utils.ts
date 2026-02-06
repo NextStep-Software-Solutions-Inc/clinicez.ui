@@ -98,6 +98,14 @@ export const canViewOrgMembers = cache(async (orgUid?: string) => {
   return checkOrgPermission(PERMISSIONS.ORGANIZATION["READ:ORG:MEMBERS"].name, orgUid);
 });
 
+export const canUpdateOrgInfo = cache(async (orgUid?: string) => {
+  return checkOrgPermission(PERMISSIONS.ORGANIZATION["UPDATE:ORG:INFO"].name, orgUid);
+});
+
 export const canManageOrgMembers = cache(async (orgUid?: string) => {
   return checkOrgPermission(PERMISSIONS.ORGANIZATION["UPDATE:ORG:MEMBERS"].name, orgUid);
+});
+
+export const canManageOrgPermissions = cache(async (orgUid?: string) => {
+  return checkOrgPermission(PERMISSIONS.ORGANIZATION["UPDATE:ORG:PERMISSIONS"].name, orgUid);
 });

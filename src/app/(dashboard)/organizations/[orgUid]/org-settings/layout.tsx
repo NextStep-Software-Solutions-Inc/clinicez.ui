@@ -1,4 +1,3 @@
-import { canManageOrgMembers } from "@lib/org-utils";
 import { getCachedSession } from "@actions/session.action";
 import { redirect } from "next/navigation";
 
@@ -20,9 +19,8 @@ export default async function OrgSettingLayout(props: OrgSettingLayoutProps) {
   } = props;
 
   const session = await getCachedSession();
-  const hasPermission = await canManageOrgMembers(orgUid);
+  if (!session) redirect("/sign-in");
 
-  if (!hasPermission) redirect("/unauthorized");
   return (
     <>{children}</>
   );

@@ -176,6 +176,10 @@ export const PERMISSIONS = {
     },
   },
   ORGANIZATION: {
+    "UPDATE:ORG:INFO": {
+      name: "update:org:info",
+      description: "User can update organization information and settings.",
+    },
     "READ:ORG:MEMBERS": {
       name: "read:org:members",
       description: "User can read and view organization members.",

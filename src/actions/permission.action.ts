@@ -95,3 +95,32 @@ export async function hasOrgPermissionAction({ userId, orgUid, permissionName }:
     return false;
   }
 }
+
+export async function hasClinicPermissionAction({ userId, clinicUid, permissionName }: { userId: string, clinicUid: string, permissionName: string }) {
+  try {
+    const permission = await prisma.permission.findFirst({
+      where: {
+        name: permissionName,
+        isActive: true,
+        ClinicMemberPermissions: {
+          some: {
+            ClinicMember: {
+              User: {
+                userId
+              },
+              Clinic: {
+                clinicUid
+              },
+              status: "ACTIVE"
+            }
+          }
+        }
+      }
+    });
+
+    return !!permission;
+  } catch (error) {
+    console.error("Error checking clinic permission:", error);
+    return false;
+  }
+}

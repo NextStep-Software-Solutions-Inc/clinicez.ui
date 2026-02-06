@@ -3,7 +3,7 @@ import { Metadata } from "next"
 import { Separator } from "@components/ui/separator"
 import SidebarNav from "@components/SidebarNav"
 import ConditionalRender from "@components/utils/ConditionalRender"
-import { isHP, isOrgAdmin, isSameOrg, isUserOwner } from "@lib/org-utils"
+import { isHP, canViewOrgMembers, isSameOrg, isUserOwner } from "@lib/org-utils"
 import { redirect } from "next/navigation"
 import { getCachedSession } from "@actions/session.action"
 
@@ -45,11 +45,11 @@ export default async function PHRLayout(props: PHRLayoutProps) {
 
       if (!sameOrg) throw new Error("You must be same organization as the PHR owner to view this page.");
       else {
-        const [orgAdmin, hp] = await Promise.all([
-          isOrgAdmin(),
+        const [canView, hp] = await Promise.all([
+          canViewOrgMembers(),
           isHP()
         ]);
-        if (!orgAdmin && !hp) throw new Error("You must be an organization admin and healthcare provider to view this page.");
+        if (!canView && !hp) throw new Error("You must have organization member view permission and be a healthcare provider to view this page.");
       }
     }
   }

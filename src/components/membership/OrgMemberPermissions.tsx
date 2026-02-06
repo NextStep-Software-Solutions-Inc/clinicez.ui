@@ -9,6 +9,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import Each from "@components/utils/Each";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { usePermissions } from "@hooks/usePermission";
+import { useSuperAdmin } from "@hooks/useSuperAdmin";
 import { PERMISSIONS } from "@lib/permissions";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -26,13 +27,14 @@ interface OrgMemberPermissionsProps {
 
 export default function OrgMemberPermissions({ orgUid, userId }: OrgMemberPermissionsProps) {
   const { user } = useUser()
+  const { isSuperAdmin } = useSuperAdmin()
   const { data: myPermissions } = usePermissions({
     userId: user?.id ?? undefined,
     type: "ORGANIZATION",
   })
   const myPermissionArray = myPermissions?.map((item) => item.name) ?? []
   const updateOrgPermissions = [PERMISSIONS.ORGANIZATION["UPDATE:ORG:PERMISSIONS"].name]
-  const canUpdateOrgPermissions = updateOrgPermissions.every((item) => myPermissionArray.includes(item))
+  const canUpdateOrgPermissions = isSuperAdmin || updateOrgPermissions.every((item) => myPermissionArray.includes(item))
 
   const { data: permissions, mutate: mutateMemberPermissions, isLoading: loadingMemberPermissions } = usePermissions({
     userId,

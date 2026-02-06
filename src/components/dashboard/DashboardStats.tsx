@@ -5,7 +5,7 @@ import {
 } from "@components/ui/card";
 import { CircleDashed, CircleOff, Files, LucideIcon, User, UserCheck, Users, UserXIcon } from "lucide-react";
 import ConditionalRender from "@components/utils/ConditionalRender";
-import { isOrgMember, isOrgAdmin } from "@lib/org-utils";
+import { isOrgMember, canViewOrgMembers } from "@lib/org-utils";
 import { getDashboardData } from "@actions/dashboard/overview.actions";
 import Link from "next/link";
 import Each from "@components/utils/Each";
@@ -17,10 +17,10 @@ interface DashboardStatsProps {
 }
 
 export const DashboardStats = async ({ userId, orgUid }: DashboardStatsProps) => {
-  const [stats, member, orgAdmin] = await Promise.all([
+  const [stats, member, canView] = await Promise.all([
     getDashboardData(orgUid),
     isOrgMember(),
-    isOrgAdmin(orgUid)
+    canViewOrgMembers(orgUid)
   ]);
 
   const { files, memberships, members, roles } = stats;
@@ -52,7 +52,7 @@ export const DashboardStats = async ({ userId, orgUid }: DashboardStatsProps) =>
       {/* <ConditionalRender condition>
         <MyMemberships userId={userId}/>
       </ConditionalRender> */}
-      <ConditionalRender condition={member || orgAdmin}>
+      <ConditionalRender condition={member || canView}>
         <div>
           <h3 className="text-lg font-medium mb-2 ml-1">Organization Overview</h3>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -82,7 +82,7 @@ export const DashboardStats = async ({ userId, orgUid }: DashboardStatsProps) =>
           </div>
         </div>
       </ConditionalRender>
-      <ConditionalRender condition={member || orgAdmin}>
+      <ConditionalRender condition={member || canView}>
         <div>
           <h3 className="text-lg font-medium mb-2 ml-1">Membership Statuses</h3>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -104,7 +104,7 @@ export const DashboardStats = async ({ userId, orgUid }: DashboardStatsProps) =>
           </div>
         </div>
       </ConditionalRender>
-      <ConditionalRender condition={member || orgAdmin}>
+      <ConditionalRender condition={member || canView}>
         <div>
           <h3 className="text-lg font-medium mb-2 ml-1">Organization Roles</h3>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

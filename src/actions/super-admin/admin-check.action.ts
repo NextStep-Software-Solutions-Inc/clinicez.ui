@@ -13,14 +13,14 @@ const SUPER_ADMIN_PERMISSION = "SUPER_ADMIN";
  */
 export async function isSuperAdminAction(): Promise<boolean> {
   const session = await getCachedSession();
-  
+
   if (!session?.user?.sub) {
     return false;
   }
-  
+
   const user = await prisma.user.findUnique({
     where: { userId: session.user.sub },
-    select: { 
+    select: {
       id: true,
       UserPermissions: {
         where: {
@@ -35,7 +35,7 @@ export async function isSuperAdminAction(): Promise<boolean> {
       },
     },
   });
-  
+
   return (user?.UserPermissions.length ?? 0) > 0;
 }
 
@@ -55,7 +55,7 @@ export async function getAdminStatusAction(): Promise<{
   isSystemAdmin: boolean;
 }> {
   const isSuperAdmin = await isSuperAdminAction();
-  
+
   return {
     isSuperAdmin,
     isSystemAdmin: isSuperAdmin,

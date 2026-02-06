@@ -7,6 +7,9 @@ import { getCachedSession } from "@actions/session.action";
 import { withErrorHandling } from "@/lib/with-error-handling";
 import { sessionCheck } from "@/lib/auth";
 import { hasCodeProperty } from "@/lib/utils";
+import { isSuperAdminAction } from "@actions/super-admin/admin-check.action";
+import { hasOrgPermissionAction } from "@actions/permission.action";
+import { PERMISSIONS } from "@lib/permissions";
 
 type CreateOrgRolePayload = {
   orgUid: string;
@@ -16,9 +19,24 @@ type CreateOrgRolePayload = {
 
 export const createOrganizationRoleAction = withErrorHandling(async (payload: CreateOrgRolePayload) => {
 
-  await sessionCheck();
+  const session = await sessionCheck();
+  const userId = session.user.sub as string;
 
   const { orgUid, name, description } = payload;
+
+  // Check permissions in parallel
+  const [isSuperAdmin, hasPermission] = await Promise.all([
+    isSuperAdminAction(),
+    hasOrgPermissionAction({
+      userId,
+      orgUid,
+      permissionName: PERMISSIONS.ORGANIZATION["UPDATE:ORG:MEMBERS"].name
+    })
+  ]);
+
+  if (!isSuperAdmin && !hasPermission) {
+    throw new Error("You do not have permission to create organization roles");
+  }
   const newOrgRole = await prisma.organizationRole.create({
     data: {
       Organization: {
@@ -97,7 +115,30 @@ export const getOrganizationRolesAction = withErrorHandling(cache(async (filters
 
 export const setOrganizationRoleRequirementsAction = withErrorHandling(async (orgRoleId: number, requirements: string[]) => {
 
-  await sessionCheck();
+  const session = await sessionCheck();
+  const userId = session.user.sub as string;
+
+  // Get orgUid from role
+  const role = await prisma.organizationRole.findUnique({
+    where: { id: orgRoleId },
+    select: { Organization: { select: { orgUid: true } } }
+  });
+
+  if (!role) throw new Error("Role not found");
+
+  // Check permissions in parallel
+  const [isSuperAdmin, hasPermission] = await Promise.all([
+    isSuperAdminAction(),
+    hasOrgPermissionAction({
+      userId,
+      orgUid: role.Organization.orgUid,
+      permissionName: PERMISSIONS.ORGANIZATION["UPDATE:ORG:MEMBERS"].name
+    })
+  ]);
+
+  if (!isSuperAdmin && !hasPermission) {
+    throw new Error("You do not have permission to update role requirements");
+  }
 
   await prisma.organizationRole.update({
     where: {
@@ -112,7 +153,30 @@ export const setOrganizationRoleRequirementsAction = withErrorHandling(async (or
 
 export const deleteOrganizationRoleAction = withErrorHandling(async (orgRoleId: number) => {
 
-  await sessionCheck();
+  const session = await sessionCheck();
+  const userId = session.user.sub as string;
+
+  // Get orgUid from role
+  const role = await prisma.organizationRole.findUnique({
+    where: { id: orgRoleId },
+    select: { Organization: { select: { orgUid: true } } }
+  });
+
+  if (!role) throw new Error("Role not found");
+
+  // Check permissions in parallel
+  const [isSuperAdmin, hasPermission] = await Promise.all([
+    isSuperAdminAction(),
+    hasOrgPermissionAction({
+      userId,
+      orgUid: role.Organization.orgUid,
+      permissionName: PERMISSIONS.ORGANIZATION["UPDATE:ORG:MEMBERS"].name
+    })
+  ]);
+
+  if (!isSuperAdmin && !hasPermission) {
+    throw new Error("You do not have permission to delete organization roles");
+  }
 
   await prisma.organizationRole.update({
     where: {

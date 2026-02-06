@@ -16,6 +16,8 @@ import { toast } from "sonner";
 import PageLoading from "@components/PageLoading";
 import { Badge } from "@components/ui/badge";
 import dayjs from "@lib/day-utils";
+import { Alert, AlertDescription } from "@components/ui/alert";
+import { Info } from "lucide-react";
 
 type GeneralSettingsForm = z.infer<typeof generalSettingsForm>
 const generalSettingsForm = z.object({
@@ -37,7 +39,11 @@ const generalSettingsForm = z.object({
   emailToOrgOnly: z.boolean().default(true),
 })
 
-export default function GeneralSettings() {
+interface OrgGeneralSettingsProps {
+  canUpdate: boolean;
+}
+
+export default function GeneralSettings({ canUpdate }: OrgGeneralSettingsProps) {
   
   const params = useParams<{orgUid: string}>()
 
@@ -85,6 +91,14 @@ export default function GeneralSettings() {
         </CardDescription>
       </CardHeader>
       <CardContent>
+        {!canUpdate && (
+          <Alert className="mb-6">
+            <Info className="h-4 w-4" />
+            <AlertDescription>
+              You are viewing this information in read-only mode. You need the UPDATE:ORG:INFO permission to edit organization details.
+            </AlertDescription>
+          </Alert>
+        )}
         <Form {...form}>
           <form action={action} className="w-full space-y-6">
             <div className="flex flex-wrap gap-2 items-baseline">
@@ -133,6 +147,7 @@ export default function GeneralSettings() {
                     <Checkbox
                       checked={field.value}
                       onCheckedChange={field.onChange}
+                      disabled={!canUpdate}
                     />
                   </FormControl>
                   <div className="space-y-1 leading-none">
@@ -153,7 +168,7 @@ export default function GeneralSettings() {
                 <FormItem>
                   <FormLabel>Organization Description</FormLabel>
                   <FormControl>
-                    <Textarea {...field} />
+                    <Textarea {...field} disabled={!canUpdate} />
                   </FormControl>
                   <FormDescription>
                 A brief description of your organization.
@@ -170,7 +185,7 @@ export default function GeneralSettings() {
                   <FormItem className="grow">
                     <FormLabel>Organization Logo URL</FormLabel>
                     <FormControl>
-                      <Input {...field} />
+                      <Input {...field} disabled={!canUpdate} />
                     </FormControl>
                     <FormDescription>
                       The logo for your organization.
@@ -187,7 +202,7 @@ export default function GeneralSettings() {
                 <FormItem>
                   <FormLabel>Organization Email</FormLabel>
                   <FormControl>
-                    <Input type="email" {...field} />
+                    <Input type="email" {...field} disabled={!canUpdate} />
                   </FormControl>
                   <FormDescription>
                     The email address for your organization.
@@ -208,7 +223,7 @@ export default function GeneralSettings() {
                   <FormControl>
                     <Checkbox
                       checked={field.value}
-                      onCheckedChange={field.onChange}
+                      disabled={!canUpdate}
                     />
                   </FormControl>
                   <div className="space-y-1 leading-none">
@@ -231,6 +246,7 @@ export default function GeneralSettings() {
                     <Checkbox
                       checked={field.value}
                       onCheckedChange={field.onChange}
+                      disabled={!canUpdate}
                     />
                   </FormControl>
                   <div className="space-y-1 leading-none">
@@ -249,6 +265,7 @@ export default function GeneralSettings() {
               <Separator/>
             </div> */}
             {
+              canUpdate &&
               form.formState.isDirty &&
               <ActionButton type="submit">Save Changes</ActionButton>
             }

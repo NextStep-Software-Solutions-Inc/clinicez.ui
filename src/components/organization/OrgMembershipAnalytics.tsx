@@ -1,16 +1,16 @@
-import { isOrgMember, isOrgAdmin, isOrgHealthcareProvider } from "@lib/org-utils";
+import { isOrgMember, canViewOrgMembers, isOrgHealthcareProvider } from "@lib/org-utils";
 import OrgAnalytics from "./OrgAnalytics";
 import ConditionalRender from "@components/utils/ConditionalRender";
 
 
 export const OrgMembershipAnalytics = async ({ orgUid }: { orgUid: string; }) => {
-  const [member, orgAdmin, hp] = await Promise.all([
+  const [member, canView, hp] = await Promise.all([
     isOrgMember(orgUid),
-    isOrgAdmin(orgUid),
+    canViewOrgMembers(orgUid),
     isOrgHealthcareProvider(orgUid),
   ]);
   return (
-    <ConditionalRender condition={(member && hp) || orgAdmin}>
+    <ConditionalRender condition={(member && hp) || canView}>
       <OrgAnalytics orgUid={orgUid} />
     </ConditionalRender>
   );

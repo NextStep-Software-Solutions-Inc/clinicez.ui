@@ -3,7 +3,7 @@
 import prismaClient from '@lib/prisma';
 import { getCachedSession } from '@actions/session.action';
 import { cache } from 'react';
-import { getPermissionsAction } from '@actions/permission.action';
+import { getPermissionsAction, hasClinicPermissionAction } from '@actions/permission.action';
 import { PERMISSIONS } from '@lib/permissions';
 import { hasCodeProperty } from '@lib/utils';
 import { withErrorHandling } from '@/lib/with-error-handling';
@@ -22,10 +22,13 @@ export const createConsultationTicketAction = withErrorHandling(async ({ systemI
   const session = await getCachedSession()
   if (!session) throw new Error("Unauthorized")
 
-  const myPermissions = await getPermissionsAction({ userId: session.user.sub, type: "CLINIC" })
-  const userPermissionArray = myPermissions.map(p => p.name);
-  const createConsultationTicketPermissions = [PERMISSIONS.CLINIC["CREATE:CLINIC:CONSULTATION_TICKET"].name]
-  const canCreateConsultationTicket = createConsultationTicketPermissions.some(p => userPermissionArray.includes(p))
+  const userId = session.user.sub as string;
+
+  const canCreateConsultationTicket = await hasClinicPermissionAction({
+    userId,
+    clinicUid,
+    permissionName: PERMISSIONS.CLINIC["CREATE:CLINIC:CONSULTATION_TICKET"].name
+  })
 
   if (!canCreateConsultationTicket) throw new Error("You do not have permission to create consultation tickets")
 
@@ -701,18 +704,16 @@ export const addConsultationTicketHPAction = withErrorHandling(async ({ consulta
   const session = await getCachedSession()
   if (!session) throw new Error("Unauthorized")
 
-  const [myPermissions] = await Promise.all([
-    getPermissionsAction({ userId: session.user.sub, type: "CLINIC" }),
-  ])
+  const userId = session.user.sub as string;
 
-  const userPermissionArray = myPermissions.map(p => p.name);
+  // Check permission to add healthcare provider to consultation ticket
+  const hasPermissionToAddHP = await hasClinicPermissionAction({
+    userId,
+    clinicUid,
+    permissionName: PERMISSIONS.CLINIC["ADD:CLINIC:CONSULTATION_TICKET:HP"].name
+  })
 
-  const updateConsultationTicketPermissions = [
-    PERMISSIONS.CLINIC["UPDATE:CLINIC:CONSULTATION_TICKET:CREATED"].name,
-    PERMISSIONS.CLINIC["UPDATE:CLINIC:CONSULTATION_TICKET:CO_CREATED"].name]
-  const canUpdateConsultationTicket = updateConsultationTicketPermissions.some(p => userPermissionArray.includes(p))
-
-  if (!canUpdateConsultationTicket) throw new Error("You do not have permission to update consultation tickets")
+  if (!hasPermissionToAddHP) throw new Error("You do not have permission to add healthcare provider to consultation tickets")
 
   const consultationTicket = await prismaClient.consultationTicket.findFirst({
     where: {

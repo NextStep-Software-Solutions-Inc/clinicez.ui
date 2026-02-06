@@ -5,6 +5,9 @@ import { cache } from "react";
 import { OrganizationMemberStatus } from "@/types";
 import { getCachedSession } from "@actions/session.action";
 import { withErrorHandling } from "@/lib/with-error-handling";
+import { isSuperAdminAction } from "@actions/super-admin/admin-check.action";
+import { PERMISSIONS } from "@lib/permissions";
+import { hasOrgPermissionAction } from "@actions/permission.action";
 
 
 type CreateOrganizationPayload = {
@@ -265,6 +268,20 @@ export const updateOrganizationAction = async (orgUid: string, data: UpdateOrgan
 
     const session = await getCachedSession();
     if (!session) throw new Error("User not authenticated.");
+
+    // Check if user is super admin or has permission to update org info in parallel
+    const [isSuperAdmin, hasPermission] = await Promise.all([
+      isSuperAdminAction(),
+      hasOrgPermissionAction({
+        userId: session.user.sub,
+        orgUid,
+        permissionName: PERMISSIONS.ORGANIZATION["UPDATE:ORG:INFO"].name
+      })
+    ]);
+
+    if (!isSuperAdmin && !hasPermission) {
+      throw new Error("You don't have permission to update organization information.");
+    }
 
     const { name, logo, description, customUrl, email, isPublic, sendEmailNotification, emailToOrgOnly } = data;
     const organization = await prisma.organization.update({

@@ -7,6 +7,10 @@ export const PERMISSIONS = {
     "UPDATE:USER:PERMISSIONS": {
       name: "update:user:permissions",
       description: "User can update the permissions.",
+    },
+    "SUPER_ADMIN": {
+      name: "super_admin",
+      description: "User has super admin privileges.",
     }
   },
   CLINIC: {
@@ -102,6 +106,10 @@ export const PERMISSIONS = {
       name: "create:clinic:consultation_ticket",
       description: "User can create consultation ticket within the clinic.",
     },
+    "ADD:CLINIC:CONSULTATION_TICKET:HP": {
+      name: "add:clinic:consultation_ticket:hp",
+      description: "User can add healthcare provider to consultation ticket within the clinic.",
+    },
     "WRITE:CLINIC:PRE_ASSESSMENT_NOTE": {
       name: "write:clinic:pre_assessment_note",
       description: "User can write pre-assessment note within the clinic. This permission can be granted to any healthcare provider role (nurses, medical assistants, doctors, etc.) based on clinic workflow.",
@@ -176,9 +184,25 @@ export const PERMISSIONS = {
     },
   },
   ORGANIZATION: {
-    "UPDATE:ORG:MEMBERSHIP_REQUEST": {
-      name: "update:org:membership_request",
-      description: "User can update membership request within the organization.",
+    "UPDATE:ORG:INFO": {
+      name: "update:org:info",
+      description: "User can update organization information and settings.",
+    },
+    "READ:ORG:MEMBERS": {
+      name: "read:org:members",
+      description: "User can read and view organization members.",
+    },
+    "CREATE:ORG:MEMBERS": {
+      name: "create:org:members",
+      description: "User can create and invite new organization members.",
+    },
+    "UPDATE:ORG:MEMBERS": {
+      name: "update:org:members",
+      description: "User can update organization member status, roles, and assignments.",
+    },
+    "DELETE:ORG:MEMBERS": {
+      name: "delete:org:members",
+      description: "User can delete and remove organization members.",
     },
     "UPDATE:ORG:PERMISSIONS": {
       name: "update:org:permissions",

@@ -12,41 +12,72 @@ import OrgGeneralSettings from "../dashboard/org-settings/OrgGeneralSettings";
 import OrganizationRolesSetting from "../dashboard/org-settings/OrgRolesSetting";
 import OrgPermissionsSetting from "../dashboard/org-settings/OrgPermissionsSetting";
 import OrgMembershipSettings from "../dashboard/org-settings/OrgMembershipSettings";
+import { Alert, AlertDescription, AlertTitle } from "@components/ui/alert";
+import { ShieldAlert } from "lucide-react";
 
-const tabs = ["general", "membership", "roles", "permissions"]
-export default function OrgSettings() {
+interface OrgSettingsProps {
+  isMember: boolean;
+  canUpdateInfo: boolean;
+  canManageMembers: boolean;
+  canManagePerms: boolean;
+}
+
+export default function OrgSettings({ isMember, canUpdateInfo, canManageMembers, canManagePerms }: OrgSettingsProps) {
+  // Define available tabs based on permissions
+  const availableTabs = [
+    ...(isMember ? ["general"] : []), // Members can view
+    ...(canManageMembers ? ["membership", "roles"] : []),
+    ...(canManagePerms ? ["permissions"] : [])
+  ];
+
+  // If user has no access to any tabs, show message
+  if (availableTabs.length === 0) {
+    return (
+      <Alert variant="destructive">
+        <ShieldAlert className="h-4 w-4" />
+        <AlertTitle>Access Denied</AlertTitle>
+        <AlertDescription>
+          You don't have permission to access organization settings. Contact your organization administrator.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
   return (
-
     <div className="container mx-auto space-y-5">
-      {/* <h5 className="text-lg font-bold">Organization Membership Requirements</h5> */}
-      <Tabs defaultValue={tabs[0]} className="w-full">
+      <Tabs defaultValue={availableTabs[0]} className="w-full">
         <TabsList className="flex gap-1 justify-start">
           <Each
-            of={tabs}
+            of={availableTabs}
             render={(value) => {
               const name = value.split("_").map((word) => word[0].toUpperCase() + word.slice(1)).join(" ")
               return (
-                (
-                  <TabsTrigger key={value} value={value}>{name}</TabsTrigger>
-                )
+                <TabsTrigger key={value} value={value}>{name}</TabsTrigger>
               )
             }}
           />
         </TabsList>
-        <TabsContent value="general">
-          <OrgGeneralSettings/>
-        </TabsContent>
-        <TabsContent value="membership">
-          <OrgMembershipSettings/>
-        </TabsContent>
-        <TabsContent value="roles">
-          <OrganizationRolesSetting/>
-        </TabsContent>
-        <TabsContent value="permissions">
-          <OrgPermissionsSetting/>
-        </TabsContent>
+        {isMember && (
+          <TabsContent value="general">
+            <OrgGeneralSettings canUpdate={canUpdateInfo} />
+          </TabsContent>
+        )}
+        {canManageMembers && (
+          <>
+            <TabsContent value="membership">
+              <OrgMembershipSettings/>
+            </TabsContent>
+            <TabsContent value="roles">
+              <OrganizationRolesSetting/>
+            </TabsContent>
+          </>
+        )}
+        {canManagePerms && (
+          <TabsContent value="permissions">
+            <OrgPermissionsSetting/>
+          </TabsContent>
+        )}
       </Tabs>
     </div>
-
   );
 }

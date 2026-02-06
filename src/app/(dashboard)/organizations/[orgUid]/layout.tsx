@@ -26,7 +26,7 @@ import { Suspense } from "react";
 import UserAvatarWrapper from "@components/UserAvatarWrapper";
 import Suspend from "@components/Suspend";
 import { getCachedSession } from "@actions/session.action";
-import { redirect } from "next/navigation";
+import UnauthorizedWarning from "@/components/UnauthorizedWarning";
 
 interface ProcessLayoutProps {
   children: React.ReactNode;
@@ -50,7 +50,7 @@ export default async function ProcessLayout(props: ProcessLayoutProps) {
     isOrgMember(orgUid)
   ]);
 
-  if (!isMember) redirect("/unauthorized");
+  if (!isMember) return <UnauthorizedWarning/>;
 
   return (
     <TooltipProvider>

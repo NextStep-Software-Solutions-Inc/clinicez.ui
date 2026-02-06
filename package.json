@@ -27,9 +27,11 @@
     "migrate:resolve:applied": "prisma migrate resolve --applied",
     "seed:philhealth": "node prisma/seed-philhealth-member-types.js",
     "seed:procedures": "node prisma/seed-procedures.js",
+    "seed:permissions": "tsx prisma/seed-permissions.ts",
     "seed:philhealth:prod": "dotenv -e .env.production.local -- pnpm run seed:philhealth",
     "seed:procedures:prod": "dotenv -e .env.production.local -- pnpm run seed:procedures",
-    "seed:all:prod": "dotenv -e .env.production.local -- pnpm run seed:philhealth && dotenv -e .env.production.local -- pnpm run seed:procedures",
+    "seed:permissions:prod": "dotenv -e .env.production.local -- pnpm run seed:permissions",
+    "seed:all:prod": "dotenv -e .env.production.local -- pnpm run seed:philhealth && dotenv -e .env.production.local -- pnpm run seed:procedures && dotenv -e .env.production.local -- pnpm run seed:permissions",
     "db:test": "tsx scripts/test-database.ts",
     "db:studio": "prisma studio"
   },

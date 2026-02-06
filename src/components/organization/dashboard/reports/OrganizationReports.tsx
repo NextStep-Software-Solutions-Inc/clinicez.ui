@@ -1,7 +1,7 @@
 import Suspend from "@components/Suspend";
 import ConditionalRender from "@components/utils/ConditionalRender";
 import { getOrganizationAction } from "@actions/organizations/organization.action";
-import { isOrgAdmin, isOrgHealthcareProvider, isOrgOwner } from "@/lib/org-utils";
+import { canViewOrgMembers, isOrgHealthcareProvider, isOrgOwner } from "@/lib/org-utils";
 
 import { OrganizationReportsFilters } from "./OrganizationReportsFilters";
 
@@ -10,17 +10,17 @@ interface OrganizationReportsProps {
 }
 
 export const OrganizationReports = async ({ orgUid }: OrganizationReportsProps) => {
-  const [owner, admin, healthcareProviderMember, organization] = await Promise.all([
+  const [owner, canView, healthcareProviderMember, organization] = await Promise.all([
     isOrgOwner(orgUid),
-    isOrgAdmin(orgUid),
+    canViewOrgMembers(orgUid),
     isOrgHealthcareProvider(orgUid),
     getOrganizationAction(orgUid),
   ]);
 
-  const canView = Boolean(organization && (owner || admin || healthcareProviderMember));
+  const canViewReports = Boolean(organization && (owner || canView || healthcareProviderMember));
 
   return (
-    <ConditionalRender condition={canView}>
+    <ConditionalRender condition={canViewReports}>
       <div className="space-y-6">
         <Suspend>
           {organization && (

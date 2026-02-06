@@ -1,5 +1,5 @@
 import { Separator } from "@components/ui/separator";
-import { isOrgAdmin } from "@lib/org-utils";
+import { canViewOrgMembers } from "@lib/org-utils";
 import React from "react";
 import Suspend from "@components/Suspend";
 import { redirect } from "next/navigation";
@@ -13,15 +13,15 @@ export const revalidate = 120; // revalidation interval in seconds
 export const metadata: Metadata = {
   title: "Organization Memberships | Clinic EZ",
   description:
-    "View and manage organization memberships. (Only available to organization administrators)"
+    "View and manage organization memberships. (Requires read:org:members permission)"
 };
 
 export default async function MembershipPage(props: AppRouterPageRouteOpts) {
   const params = await props.params;
   const orgUid = String(params?.orgUid);
-  const orgAdmin = await isOrgAdmin(orgUid);
+  const hasPermission = await canViewOrgMembers(orgUid);
 
-  if (!orgAdmin) {
+  if (!hasPermission) {
     redirect("/unauthorized");
   }
 
@@ -33,8 +33,7 @@ export default async function MembershipPage(props: AppRouterPageRouteOpts) {
             Organization Memberships
           </h2>
           <p className="text-sm text-muted-foreground">
-            View and manage organization memberships. (Only available to
-            organization administrators)
+            View and manage organization memberships. (Requires read:org:members permission)
           </p>
         </div>
         <Separator />

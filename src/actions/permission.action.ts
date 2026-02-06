@@ -5,7 +5,7 @@ import prisma from "@lib/prisma";
 import { PermissionType } from "@/types";
 
 export type GetPermissions = Awaited<ReturnType<typeof getPermissionsAction>>;
-export async function getPermissionsAction({userId, type}: {userId?: string, type?: PermissionType}) {
+export async function getPermissionsAction({ userId, type }: { userId?: string, type?: PermissionType }) {
 
   const permissions = await prisma.permission.findMany({
     where: {
@@ -13,7 +13,7 @@ export async function getPermissionsAction({userId, type}: {userId?: string, typ
       ...(type ? { type } : {}),
       ...(userId ? {
         OR: [
-          { 
+          {
             OrgMemberPermissions: {
               some: {
                 OrganizationMember: {
@@ -57,7 +57,7 @@ export async function getPermissionsAction({userId, type}: {userId?: string, typ
           }
         ]
       } : {}),
-    }, 
+    },
     select: {
       id: true,
       name: true,
@@ -65,4 +65,33 @@ export async function getPermissionsAction({userId, type}: {userId?: string, typ
     }
   })
   return permissions;
+}
+
+export async function hasOrgPermissionAction({ userId, orgUid, permissionName }: { userId: string, orgUid: string, permissionName: string }) {
+  try {
+    const permission = await prisma.permission.findFirst({
+      where: {
+        name: permissionName,
+        isActive: true,
+        OrgMemberPermissions: {
+          some: {
+            OrganizationMember: {
+              User: {
+                userId
+              },
+              Organization: {
+                orgUid
+              },
+              status: "ACTIVE"
+            }
+          }
+        }
+      }
+    });
+
+    return !!permission;
+  } catch (error) {
+    console.error("Error checking organization permission:", error);
+    return false;
+  }
 }

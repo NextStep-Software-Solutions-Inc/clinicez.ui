@@ -321,7 +321,7 @@ export const setMembershipRequestStatusAction = withErrorHandling(
 
     const userId = session.user.sub as string;
     const updateMembershipPermissions = [
-      PERMISSIONS.ORGANIZATION["UPDATE:ORG:MEMBERSHIP_REQUEST"].name
+      PERMISSIONS.ORGANIZATION["UPDATE:ORG:MEMBERS"].name
     ];
     const myPermissions = await getPermissionsAction({ userId });
     const myPermissionArray = myPermissions.map((item) => item.name);

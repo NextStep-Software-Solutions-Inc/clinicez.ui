@@ -176,9 +176,21 @@ export const PERMISSIONS = {
     },
   },
   ORGANIZATION: {
-    "UPDATE:ORG:MEMBERSHIP_REQUEST": {
-      name: "update:org:membership_request",
-      description: "User can update membership request within the organization.",
+    "READ:ORG:MEMBERS": {
+      name: "read:org:members",
+      description: "User can read and view organization members.",
+    },
+    "CREATE:ORG:MEMBERS": {
+      name: "create:org:members",
+      description: "User can create and invite new organization members.",
+    },
+    "UPDATE:ORG:MEMBERS": {
+      name: "update:org:members",
+      description: "User can update organization member status, roles, and assignments.",
+    },
+    "DELETE:ORG:MEMBERS": {
+      name: "delete:org:members",
+      description: "User can delete and remove organization members.",
     },
     "UPDATE:ORG:PERMISSIONS": {
       name: "update:org:permissions",

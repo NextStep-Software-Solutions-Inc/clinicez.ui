@@ -3,6 +3,9 @@
 import "server-only";
 import { getCachedSession } from "@actions/session.action";
 import prisma from "@lib/prisma";
+import { isSuperAdminAction } from "@actions/super-admin/admin-check.action";
+import { hasOrgPermissionAction } from "@actions/permission.action";
+import { PERMISSIONS } from "@lib/permissions";
 
 type SetOrgMemberPermissionsPayload = {
     userId: string,
@@ -16,6 +19,20 @@ export const setOrgMemberPermissionsAction = async ({orgUid, userId, permissionI
 
     const session = await getCachedSession();
     if (!session) throw new Error("User not authenticated");
+
+    const currentUserId = session.user.sub as string;
+
+    // Check permissions
+    const isSuperAdmin = await isSuperAdminAction();
+    const hasPermission = await hasOrgPermissionAction({
+      userId: currentUserId,
+      orgUid,
+      permissionName: PERMISSIONS.ORGANIZATION["UPDATE:ORG:PERMISSIONS"].name
+    });
+
+    if (!isSuperAdmin && !hasPermission) {
+      throw new Error("You do not have permission to update member permissions");
+    }
 
     await prisma.$transaction(async (prisma) => {
       const userOrganization = await prisma.organizationMember.findFirstOrThrow({

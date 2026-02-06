@@ -419,6 +419,20 @@ export const setMembershipRequestStatusAction = withErrorHandling(
 
 export const deleteMembershipAction = async (id: number) => {
   try {
+    const session = await getCachedSession();
+    if (!session) throw new Error("User not authenticated.");
+
+    const userId = session.user.sub as string;
+    const deletePermissions = [PERMISSIONS.ORGANIZATION["DELETE:ORG:MEMBERS"].name];
+    const myPermissions = await getPermissionsAction({ userId });
+    const myPermissionArray = myPermissions.map((item) => item.name);
+    const hasDeletePermission = deletePermissions.every((item) =>
+      myPermissionArray.includes(item)
+    );
+
+    if (!hasDeletePermission)
+      throw new Error("You do not have permission to delete membership");
+
     await prisma.$transaction(async (prisma) => {
       const userOrganization = await prisma.organizationMember.delete({
         where: { id },

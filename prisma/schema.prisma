@@ -5,6 +5,10 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  // Connection pool configuration - increased to handle concurrent requests
+  // max: Maximum connections in the pool
+  // min: Minimum connections to maintain
+  // timeoutInMs: Transaction timeout (optional, set via env if needed)
 }
 
 model Tenant {

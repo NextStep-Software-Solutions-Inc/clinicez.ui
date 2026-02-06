@@ -8,6 +8,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import Each from "@components/utils/Each";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { usePermissions } from "@hooks/usePermission";
+import { useSuperAdmin } from "@hooks/useSuperAdmin";
 import { PERMISSIONS } from "@lib/permissions";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -24,13 +25,14 @@ interface ClinicMemberPermissionsProps {
 }
 
 export const ClinicMemberPermissions = ({ clinicUid, userId }: ClinicMemberPermissionsProps) => {
+  const { isSuperAdmin } = useSuperAdmin();
   const { data: myPermissions } = usePermissions({
     userId,
     type: "CLINIC"
   })
   const myPermissionArray = myPermissions?.map((item) => item.name) ?? []
   const updateClinicPermissions = [PERMISSIONS.CLINIC["UPDATE:CLINIC:PERMISSIONS"].name]
-  const canUpdateClinicPermissions = updateClinicPermissions.every((item) => myPermissionArray.includes(item))
+  const canUpdateClinicPermissions = isSuperAdmin || updateClinicPermissions.every((item) => myPermissionArray.includes(item))
 
   const { data: permissions, mutate: mutateClinicMemberPermissions, isLoading: loadingClinicMemberPermissions } = usePermissions({
     userId,

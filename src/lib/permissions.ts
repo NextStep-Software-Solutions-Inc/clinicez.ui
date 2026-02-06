@@ -7,6 +7,10 @@ export const PERMISSIONS = {
     "UPDATE:USER:PERMISSIONS": {
       name: "update:user:permissions",
       description: "User can update the permissions.",
+    },
+    "SUPER_ADMIN": {
+      name: "super_admin",
+      description: "User has super admin privileges.",
     }
   },
   CLINIC: {
@@ -101,6 +105,10 @@ export const PERMISSIONS = {
     "CREATE:CLINIC:CONSULTATION_TICKET": {
       name: "create:clinic:consultation_ticket",
       description: "User can create consultation ticket within the clinic.",
+    },
+    "ADD:CLINIC:CONSULTATION_TICKET:HP": {
+      name: "add:clinic:consultation_ticket:hp",
+      description: "User can add healthcare provider to consultation ticket within the clinic.",
     },
     "WRITE:CLINIC:PRE_ASSESSMENT_NOTE": {
       name: "write:clinic:pre_assessment_note",

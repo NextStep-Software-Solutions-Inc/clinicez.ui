@@ -3,6 +3,9 @@
 import "server-only";
 import { getCachedSession } from "@actions/session.action";
 import prisma from "@lib/prisma";
+import { isSuperAdminAction } from "@actions/super-admin/admin-check.action";
+import { hasClinicPermissionAction } from "@actions/permission.action";
+import { PERMISSIONS } from "@lib/permissions";
 
 type SetOrgMemberPermissionsPayload = {
     userId: string,
@@ -14,6 +17,22 @@ export const setClinicMemberPermissionsAction = async ({clinicUid, userId, permi
   try {
     const session = await getCachedSession();
     if (!session) throw new Error("User not authenticated");
+
+    const currentUserId = session.user.sub as string;
+
+    // Check permissions in parallel
+    const [isSuperAdmin, hasPermission] = await Promise.all([
+      isSuperAdminAction(),
+      hasClinicPermissionAction({
+        userId: currentUserId,
+        clinicUid,
+        permissionName: PERMISSIONS.CLINIC["UPDATE:CLINIC:PERMISSIONS"].name
+      })
+    ]);
+
+    if (!isSuperAdmin && !hasPermission) {
+      throw new Error("You do not have permission to update member permissions");
+    }
 
     await prisma.$transaction(async (prisma) => {
       const clinicMember = await prisma.clinicMember.findFirstOrThrow({

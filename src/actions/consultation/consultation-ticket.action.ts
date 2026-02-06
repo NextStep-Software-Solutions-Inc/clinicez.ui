@@ -706,23 +706,14 @@ export const addConsultationTicketHPAction = withErrorHandling(async ({ consulta
 
   const userId = session.user.sub as string;
 
-  // Check permissions in parallel for the specific clinic
-  const [canUpdateCreated, canUpdateCoCreated] = await Promise.all([
-    hasClinicPermissionAction({
-      userId,
-      clinicUid,
-      permissionName: PERMISSIONS.CLINIC["UPDATE:CLINIC:CONSULTATION_TICKET:CREATED"].name
-    }),
-    hasClinicPermissionAction({
-      userId,
-      clinicUid,
-      permissionName: PERMISSIONS.CLINIC["UPDATE:CLINIC:CONSULTATION_TICKET:CO_CREATED"].name
-    })
-  ])
+  // Check permission to add healthcare provider to consultation ticket
+  const hasPermissionToAddHP = await hasClinicPermissionAction({
+    userId,
+    clinicUid,
+    permissionName: PERMISSIONS.CLINIC["ADD:CLINIC:CONSULTATION_TICKET:HP"].name
+  })
 
-  const canUpdateConsultationTicket = canUpdateCreated || canUpdateCoCreated
-
-  if (!canUpdateConsultationTicket) throw new Error("You do not have permission to update consultation tickets")
+  if (!hasPermissionToAddHP) throw new Error("You do not have permission to add healthcare provider to consultation tickets")
 
   const consultationTicket = await prismaClient.consultationTicket.findFirst({
     where: {

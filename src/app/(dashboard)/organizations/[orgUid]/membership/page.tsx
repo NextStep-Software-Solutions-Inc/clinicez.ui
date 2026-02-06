@@ -6,6 +6,8 @@ import { redirect } from "next/navigation";
 import { Metadata } from "next";
 import { MembershipTable } from "@components/membership/MembershipTable";
 import { AppRouterPageRouteOpts } from "@/types";
+import UnauthorizedPage from "@/app/unauthorized/page";
+import UnauthorizedWarning from "@/components/UnauthorizedWarning";
 
 export const maxDuration = 40; // page timeout in seconds
 export const revalidate = 120; // revalidation interval in seconds
@@ -22,7 +24,7 @@ export default async function MembershipPage(props: AppRouterPageRouteOpts) {
   const hasPermission = await canViewOrgMembers(orgUid);
 
   if (!hasPermission) {
-    redirect("/unauthorized");
+    return <UnauthorizedWarning/>;
   }
 
   return (

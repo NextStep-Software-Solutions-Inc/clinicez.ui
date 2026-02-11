@@ -4,6 +4,7 @@ import prisma from "@lib/prisma";
 import { $Enums, Prisma } from "@prisma/client";
 import { sessionCheck } from "@/lib/auth";
 import { withErrorHandling } from "@/lib/with-error-handling";
+export { diffFields } from "@/lib/audit-utils";
 
 type PrismaTransactionalClient = Parameters<
   Parameters<typeof prisma["$transaction"]>[0]
@@ -98,40 +99,6 @@ export async function createFieldChangeLogs(
       performedBy: payload.performedBy,
     })),
   });
-}
-
-/**
- * Compare two objects and return an array of field-level changes.
- * Only includes fields where the value has actually changed.
- */
-export function diffFields(
-  previous: Record<string, unknown>,
-  updated: Record<string, unknown>,
-  fields: string[]
-): { fieldName: string; previousValue?: string; newValue?: string }[] {
-  const changes: {
-    fieldName: string;
-    previousValue?: string;
-    newValue?: string;
-  }[] = [];
-
-  for (const field of fields) {
-    const prev = previous[field];
-    const next = updated[field];
-
-    const prevStr = prev == null ? undefined : String(prev);
-    const nextStr = next == null ? undefined : String(next);
-
-    if (prevStr !== nextStr) {
-      changes.push({
-        fieldName: field,
-        previousValue: prevStr,
-        newValue: nextStr,
-      });
-    }
-  }
-
-  return changes;
 }
 
 // ─── Actions ─────────────────────────────────────────────────────────────────

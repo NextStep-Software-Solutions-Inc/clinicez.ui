@@ -426,10 +426,28 @@ export const findOrCreateUserAction = withErrorHandling(cache(async () => {
         email: session.user.email,
         mobile: "",
         firstName: session.user.given_name || "",
-        lastName: session.user.family_name || ""
+        lastName: session.user.family_name || "",
+        onboardingStatus: 'PENDING' // Set onboarding status for new users
       })
 
       await assignUserPermission(prisma, dbUser.id);
+      
+      // Initialize onboarding steps for new users
+      const defaultSteps = [
+        { stepType: 'PROFILE', stepName: 'Basic Information' },
+        { stepType: 'PROFILE', stepName: 'Contact Details' },
+        { stepType: 'PROFILE', stepName: 'Additional Information' },
+      ];
+      
+      await prisma.onboardingStep.createMany({
+        data: defaultSteps.map((step) => ({
+          userId: dbUser.id,
+          ...step,
+          status: 'PENDING',
+        })),
+        skipDuplicates: true,
+      });
+      
       message = "New user created";
     }
 

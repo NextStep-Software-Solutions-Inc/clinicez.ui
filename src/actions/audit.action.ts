@@ -4,7 +4,6 @@ import prisma from "@lib/prisma";
 import { $Enums, Prisma } from "@prisma/client";
 import { sessionCheck } from "@/lib/auth";
 import { withErrorHandling } from "@/lib/with-error-handling";
-export { diffFields } from "@/lib/audit-utils";
 
 type PrismaTransactionalClient = Parameters<
   Parameters<typeof prisma["$transaction"]>[0]

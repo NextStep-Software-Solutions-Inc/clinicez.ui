@@ -11,7 +11,15 @@ export const PERMISSIONS = {
     "SUPER_ADMIN": {
       name: "super_admin",
       description: "User has super admin privileges.",
-    }
+    },
+    "COMPLETE:USER:ONBOARDING": {
+      name: "complete:user:onboarding",
+      description: "User can complete their own onboarding process.",
+    },
+    "VIEW:USER:AUDIT_LOG:OWN": {
+      name: "view:user:audit_log:own",
+      description: "User can view their own audit log.",
+    },
   },
   CLINIC: {
     "CONFIRM:CLINIC:APPOINTMENT": {
@@ -182,6 +190,18 @@ export const PERMISSIONS = {
       name: "update:clinic:permissions",
       description: "User can update permissions within the clinic.",
     },
+    "CREATE:CLINIC:PATIENT:SHELL_ACCOUNT": {
+      name: "create:clinic:patient:shell_account",
+      description: "User can create shell patient accounts within the clinic.",
+    },
+    "VIEW:CLINIC:PATIENT:AUDIT_LOG": {
+      name: "view:clinic:patient:audit_log",
+      description: "User can view patient audit logs within the clinic.",
+    },
+    "COMPLETE:CLINIC:PATIENT:ONBOARDING": {
+      name: "complete:clinic:patient:onboarding",
+      description: "User can complete patient onboarding within the clinic.",
+    },
   },
   ORGANIZATION: {
     "UPDATE:ORG:INFO": {
@@ -207,6 +227,14 @@ export const PERMISSIONS = {
     "UPDATE:ORG:PERMISSIONS": {
       name: "update:org:permissions",
       description: "User can update permissions within the organization.",
+    },
+    "COMPLETE:ORG:MEMBER:ONBOARDING": {
+      name: "complete:org:member:onboarding",
+      description: "User can complete organization member onboarding.",
+    },
+    "VIEW:ORG:AUDIT_LOG": {
+      name: "view:org:audit_log",
+      description: "User can view organization audit logs.",
     },
   },
 }

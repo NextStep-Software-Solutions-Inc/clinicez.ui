@@ -1,0 +1,347 @@
+'use server';
+
+import { db } from '@/lib/db';
+import { OnboardingStatus, AuditActionType, EntityType } from '@prisma/client';
+import { createAuditLog } from '../audit.action';
+
+export interface OnboardingStepInput {
+  userId: number;
+  stepType: string;
+  stepName: string;
+  status?: OnboardingStatus;
+  metadata?: Record<string, unknown>;
+}
+
+export interface UserProfileData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  dob: Date;
+  gender: 'MALE' | 'FEMALE';
+  mobile: string;
+  middleName?: string;
+  suffix?: string;
+  nickname?: string;
+  placeOfBirth?: string;
+  civilStatus?: 'SINGLE' | 'MARRIED' | 'DIVORCED' | 'WIDOWED' | 'SEPARATED';
+  bloodType?: string;
+  telephone?: string;
+  religion?: string;
+  nationality?: string;
+  picture?: string;
+}
+
+/**
+ * Check if user profile meets onboarding requirements
+ */
+export async function validateUserOnboarding(userId: number) {
+  try {
+    const user = await db.user.findUnique({
+      where: { id: userId },
+      select: {
+        firstName: true,
+        lastName: true,
+        email: true,
+        dob: true,
+        gender: true,
+        mobile: true,
+        onboardingStatus: true,
+      },
+    });
+
+    if (!user) {
+      return { success: false, error: 'User not found' };
+    }
+
+    const requiredFields = {
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      dob: user.dob,
+      gender: user.gender,
+      mobile: user.mobile,
+    };
+
+    const missingFields = Object.entries(requiredFields)
+      .filter(([, value]) => !value)
+      .map(([key]) => key);
+
+    const isComplete = missingFields.length === 0;
+
+    return {
+      success: true,
+      data: {
+        isComplete,
+        missingFields,
+        currentStatus: user.onboardingStatus,
+      },
+    };
+  } catch (error) {
+    console.error('Failed to validate user onboarding:', error);
+    return { success: false, error: 'Failed to validate user onboarding' };
+  }
+}
+
+/**
+ * Complete user onboarding
+ */
+export async function completeUserOnboarding(params: {
+  userId: number;
+  profileData: UserProfileData;
+  actorId?: number;
+}) {
+  const { userId, profileData, actorId } = params;
+
+  try {
+    // Validate required fields
+    const requiredFields: (keyof UserProfileData)[] = [
+      'firstName',
+      'lastName',
+      'email',
+      'dob',
+      'gender',
+      'mobile',
+    ];
+    const missing = requiredFields.filter((field) => !profileData[field]);
+
+    if (missing.length > 0) {
+      return {
+        success: false,
+        error: `Missing required fields: ${missing.join(', ')}`,
+      };
+    }
+
+    // Get current user data for audit trail
+    const currentUser = await db.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!currentUser) {
+      return { success: false, error: 'User not found' };
+    }
+
+    // Update user profile
+    const updatedUser = await db.user.update({
+      where: { id: userId },
+      data: {
+        ...profileData,
+        onboardingStatus: OnboardingStatus.COMPLETED,
+        profileCompletionDate: new Date(),
+        isShellAccount: false,
+      },
+    });
+
+    // Log field changes
+    const changes: Array<{ fieldName: string; oldValue: string; newValue: string }> = [];
+    
+    (Object.keys(profileData) as Array<keyof UserProfileData>).forEach((key) => {
+      const oldValue = currentUser[key as keyof typeof currentUser];
+      const newValue = profileData[key];
+      if (oldValue !== newValue && newValue !== undefined) {
+        changes.push({
+          fieldName: key,
+          oldValue: String(oldValue ?? ''),
+          newValue: String(newValue),
+        });
+      }
+    });
+
+    // Add onboarding status change
+    changes.push({
+      fieldName: 'onboardingStatus',
+      oldValue: currentUser.onboardingStatus,
+      newValue: OnboardingStatus.COMPLETED,
+    });
+
+    // Create audit log for onboarding completion
+    await createAuditLog({
+      actorId: actorId || userId,
+      actionType: AuditActionType.ONBOARDING_COMPLETE,
+      entityType: EntityType.USER,
+      entityId: userId,
+      targetUserId: userId,
+      metadata: {
+        completedAt: new Date().toISOString(),
+        changes,
+      },
+    });
+
+    // Mark all onboarding steps as completed
+    await db.onboardingStep.updateMany({
+      where: {
+        userId,
+        status: { not: OnboardingStatus.COMPLETED },
+      },
+      data: {
+        status: OnboardingStatus.COMPLETED,
+        completedAt: new Date(),
+      },
+    });
+
+    return { success: true, data: updatedUser };
+  } catch (error) {
+    console.error('Failed to complete user onboarding:', error);
+    return { success: false, error: 'Failed to complete user onboarding' };
+  }
+}
+
+/**
+ * Create or update onboarding step
+ */
+export async function upsertOnboardingStep(params: OnboardingStepInput) {
+  const { userId, stepType, stepName, status = OnboardingStatus.PENDING, metadata } = params;
+
+  try {
+    const existingStep = await db.onboardingStep.findFirst({
+      where: { userId, stepType, stepName },
+    });
+
+    let step;
+    if (existingStep) {
+      step = await db.onboardingStep.update({
+        where: { id: existingStep.id },
+        data: {
+          status,
+          startedAt: status === OnboardingStatus.IN_PROGRESS && !existingStep.startedAt
+            ? new Date()
+            : existingStep.startedAt,
+          completedAt: status === OnboardingStatus.COMPLETED ? new Date() : existingStep.completedAt,
+          metadata: metadata ? JSON.parse(JSON.stringify(metadata)) : existingStep.metadata,
+        },
+      });
+    } else {
+      step = await db.onboardingStep.create({
+        data: {
+          userId,
+          stepType,
+          stepName,
+          status,
+          startedAt: status === OnboardingStatus.IN_PROGRESS ? new Date() : null,
+          completedAt: status === OnboardingStatus.COMPLETED ? new Date() : null,
+          metadata: metadata ? JSON.parse(JSON.stringify(metadata)) : null,
+        },
+      });
+    }
+
+    return { success: true, data: step };
+  } catch (error) {
+    console.error('Failed to upsert onboarding step:', error);
+    return { success: false, error: 'Failed to create/update onboarding step' };
+  }
+}
+
+/**
+ * Get user onboarding steps
+ */
+export async function getUserOnboardingSteps(userId: number) {
+  try {
+    const steps = await db.onboardingStep.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    const totalSteps = steps.length;
+    const completedSteps = steps.filter(
+      (step) => step.status === OnboardingStatus.COMPLETED
+    ).length;
+    const progress = totalSteps > 0 ? (completedSteps / totalSteps) * 100 : 0;
+
+    return {
+      success: true,
+      data: {
+        steps,
+        progress,
+        totalSteps,
+        completedSteps,
+      },
+    };
+  } catch (error) {
+    console.error('Failed to fetch onboarding steps:', error);
+    return { success: false, error: 'Failed to fetch onboarding steps' };
+  }
+}
+
+/**
+ * Initialize default onboarding steps for a new user
+ */
+export async function initializeUserOnboarding(userId: number) {
+  try {
+    const defaultSteps = [
+      { stepType: 'PROFILE', stepName: 'Basic Information' },
+      { stepType: 'PROFILE', stepName: 'Contact Details' },
+      { stepType: 'PROFILE', stepName: 'Additional Information' },
+    ];
+
+    await db.onboardingStep.createMany({
+      data: defaultSteps.map((step) => ({
+        userId,
+        ...step,
+        status: OnboardingStatus.PENDING,
+      })),
+      skipDuplicates: true,
+    });
+
+    // Update user onboarding status
+    await db.user.update({
+      where: { id: userId },
+      data: { onboardingStatus: OnboardingStatus.PENDING },
+    });
+
+    // Create audit log
+    await createAuditLog({
+      actorId: userId,
+      actionType: AuditActionType.ONBOARDING_START,
+      entityType: EntityType.USER,
+      entityId: userId,
+      targetUserId: userId,
+      metadata: {
+        startedAt: new Date().toISOString(),
+      },
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error('Failed to initialize onboarding:', error);
+    return { success: false, error: 'Failed to initialize onboarding' };
+  }
+}
+
+/**
+ * Check if user is a shell account (created by provider)
+ */
+export async function checkShellAccount(userId: number) {
+  try {
+    const user = await db.user.findUnique({
+      where: { id: userId },
+      select: {
+        isShellAccount: true,
+        shellAccountCreatedBy: true,
+        onboardingStatus: true,
+        ShellAccountCreator: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      return { success: false, error: 'User not found' };
+    }
+
+    return {
+      success: true,
+      data: {
+        isShellAccount: user.isShellAccount,
+        createdBy: user.ShellAccountCreator,
+        onboardingStatus: user.onboardingStatus,
+      },
+    };
+  } catch (error) {
+    console.error('Failed to check shell account:', error);
+    return { success: false, error: 'Failed to check shell account status' };
+  }
+}

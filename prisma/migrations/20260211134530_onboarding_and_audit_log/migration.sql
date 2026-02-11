@@ -157,3 +157,28 @@ ALTER TABLE "OnboardingStepLog" ADD CONSTRAINT "OnboardingStepLog_userId_fkey" F
 
 -- AddForeignKey
 ALTER TABLE "OrgOnboardingRequirement" ADD CONSTRAINT "OrgOnboardingRequirement_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE NO ACTION;
+
+-- Data migration: Set existing users with completed profiles to COMPLETED onboarding
+UPDATE "User"
+SET "onboardingStatus" = 'COMPLETED',
+    "profileCompletionStatus" = 'COMPLETE',
+    "onboardingCompletedAt" = "createdAt"
+WHERE "firstName" IS NOT NULL
+  AND "lastName" IS NOT NULL
+  AND "email" IS NOT NULL
+  AND "dob" IS NOT NULL
+  AND "onboardingStatus" = 'NOT_STARTED';
+
+-- Data migration: Users who have partial profile data are set to IN_PROGRESS
+UPDATE "User"
+SET "onboardingStatus" = 'IN_PROGRESS',
+    "profileCompletionStatus" = 'PARTIAL'
+WHERE ("firstName" IS NOT NULL OR "lastName" IS NOT NULL)
+  AND "onboardingStatus" = 'NOT_STARTED';
+
+-- Data migration: Set existing clinic patients with active status to COMPLETED
+UPDATE "ClinicPatient"
+SET "onboardingStatus" = 'COMPLETED',
+    "profileCompletionStatus" = 'COMPLETE'
+WHERE "isActive" = true
+  AND "onboardingStatus" = 'NOT_STARTED';

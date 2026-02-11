@@ -140,6 +140,16 @@ export const downloadEKASAction = withErrorHandling(async (
   // Get preferred konsulta provider (clinic name)
   const providerName = await resolvePreferredKonsultaProvider(userId)
 
+  // Fetch clinic settings to get PhilHealth accreditation number
+  let philhealthAccreditationNumber = ''
+  if (clinicId) {
+    const clinicSetting = await prisma.clinicSetting.findUnique({
+      where: { clinicId },
+      select: { philhealthAccreditationNumber: true }
+    })
+    philhealthAccreditationNumber = clinicSetting?.philhealthAccreditationNumber || ''
+  }
+
   // Calculate age
   const age = user.dob ? calculateAge(user.dob) : undefined
 
@@ -153,7 +163,7 @@ export const downloadEKASAction = withErrorHandling(async (
   const textMappings = [
     { field: 'preferredKonsulTaProvider', value: upper(providerName) },
     { field: 'caseNumber', value: finalCaseNumber || '' },
-    { field: 'hciAccreditationNumber', value: '' },
+    { field: 'hciAccreditationNumber', value: philhealthAccreditationNumber },
     { field: 'transactionNumber', value: finalTransactionNumber },
     { field: 'memberPin', value: phr?.pin || '' },
     { field: 'memberType', value: upper(memberType?.name) },

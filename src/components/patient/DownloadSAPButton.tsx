@@ -8,12 +8,14 @@ import { toast } from "sonner"
 interface DownloadSAPButtonProps {
   userId: string
   patientName?: string
+  consultationTicketId?: number
+  clinicId?: number
 }
 
-export function DownloadSAPButton({ userId, patientName }: DownloadSAPButtonProps) {
+export function DownloadSAPButton({ userId, patientName, consultationTicketId, clinicId }: DownloadSAPButtonProps) {
   const handleDownload = async () => {
     await toast.promise(
-      downloadSAPAction(userId),
+      downloadSAPAction(userId, consultationTicketId, clinicId),
       {
         loading: `Generating SAP form for ${patientName || 'patient'}...`,
         success: (result) => {

@@ -18,7 +18,8 @@ export const getClinicSettingAction = cache(async (clinicUid: string) => {
         Clinic: {
           select: {
             AppointmentConfig: true,
-            ConsultationConfig: true
+            ConsultationConfig: true,
+            updatedAt: true
           }
         }
       }
@@ -83,6 +84,52 @@ export const updateClinicSettingsAction = async (clinicSettingId: number, { enab
   } catch (error) {
     console.error(`Error updating clinic settings: ${error}`);
     message = "Failed to update clinic settings";
+    if(error instanceof Error) message = error.message;
+    return { status: false, message, data: null }
+  }
+};
+
+type UpdatePhilHealthSettings = {
+  philhealthAccreditationNumber?: string;
+  facilityName?: string;
+}
+export const updatePhilHealthSettingsAction = async (clinicUid: string, data: UpdatePhilHealthSettings) => {
+
+  let message = "PhilHealth settings updated successfully";
+
+  try {
+
+    const session = await getCachedSession();
+    if(!session) throw new Error("User not authenticated.");
+
+    // Get the clinic first to ensure it exists and user has access
+    const clinic = await prisma.clinic.findFirst({
+      where: { clinicUid, isActive: true }
+    });
+
+    if (!clinic) {
+      throw new Error("Clinic not found or unauthorized.");
+    }
+
+    // Upsert clinic setting - create if doesn't exist, update if it does
+    const clinicSetting = await prisma.clinicSetting.upsert({
+      where: { 
+        clinicId: clinic.id
+      },
+      create: {
+        clinicId: clinic.id,
+        philhealthAccreditationNumber: data.philhealthAccreditationNumber,
+        facilityName: data.facilityName,
+      },
+      update: {
+        philhealthAccreditationNumber: data.philhealthAccreditationNumber,
+        facilityName: data.facilityName,
+      }
+    });
+    return { status: true, message, data: clinicSetting }
+  } catch (error) {
+    console.error(`Error updating PhilHealth settings: ${error}`);
+    message = "Failed to update PhilHealth settings";
     if(error instanceof Error) message = error.message;
     return { status: false, message, data: null }
   }

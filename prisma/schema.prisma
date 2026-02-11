@@ -67,6 +67,15 @@ model User {
   telephone                        String?
   caseNumber                       String?                          @unique
   caseNumberGeneratedAt            DateTime?
+  onboardingStatus                 OnboardingStatus                 @default(PENDING)
+  profileCompletionDate            DateTime?
+  isShellAccount                   Boolean                          @default(false)
+  shellAccountCreatedBy            Int?
+  ShellAccountsCreated             User[]                           @relation("ShellAccountCreator")
+  ShellAccountCreator              User?                            @relation("ShellAccountCreator", fields: [shellAccountCreatedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  OnboardingSteps                  OnboardingStep[]
+  AuditLogChanges                  AuditLog[]                       @relation("AuditLogActor")
+  AuditLogTargetUser               AuditLog[]                       @relation("AuditLogTargetUser")
   ActivationCodes                  ActivationCode[]
   CompletedByAppointments          AppointmentAttribute[]           @relation("CompletedBy")
   ReceivedByAppointments           AppointmentAttribute[]           @relation("ReceivedBy")
@@ -209,6 +218,9 @@ model ClinicPatient {
   updatedAt                    DateTime                      @updatedAt
   isActive                     Boolean                       @default(true)
   deletedAt                    DateTime?
+  onboardingStatus             OnboardingStatus              @default(PENDING)
+  onboardingCompletionDate     DateTime?
+  addedBy                      Int?
   ImagingRequests              ClinicImagingRequest[]
   LaboratoryRequests           ClinicLaboratoryRequest[]
   HeartStationRequests         ClinicHeartStationRequest[]
@@ -359,6 +371,8 @@ model OrganizationMember {
   createdAt            DateTime              @default(now())
   status               String                @default("PENDING")
   role                 Int
+  onboardingStatus     OnboardingStatus      @default(PENDING)
+  onboardingCompletionDate DateTime?
   OrgMemberPermissions OrgMemberPermission[]
   AcceptedBy           User?                 @relation("AcceptedBy", fields: [acceptedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
   Organization         Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
@@ -2428,4 +2442,77 @@ model GlobalAIDefaults {
   updatedAt           DateTime @updatedAt
 
   @@unique([id])
+}
+
+// Onboarding & Audit Trail Models
+enum OnboardingStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  INCOMPLETE
+}
+
+enum AuditActionType {
+  CREATE
+  UPDATE
+  DELETE
+  VIEW
+  LOGIN
+  LOGOUT
+  ONBOARDING_START
+  ONBOARDING_COMPLETE
+  PERMISSION_GRANT
+  PERMISSION_REVOKE
+}
+
+enum EntityType {
+  USER
+  CLINIC_PATIENT
+  ORGANIZATION_MEMBER
+  CLINIC_MEMBER
+  PERMISSION
+  APPOINTMENT
+  CONSULTATION
+  PRESCRIPTION
+  OTHER
+}
+
+model OnboardingStep {
+  id            Int              @id @default(autoincrement())
+  userId        Int
+  stepType      String
+  stepName      String
+  status        OnboardingStatus @default(PENDING)
+  startedAt     DateTime?
+  completedAt   DateTime?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  metadata      Json?
+  User          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+}
+
+model AuditLog {
+  id            Int              @id @default(autoincrement())
+  actorId       Int?
+  actionType    AuditActionType
+  entityType    EntityType
+  entityId      Int?
+  targetUserId  Int?
+  fieldName     String?
+  oldValue      String?
+  newValue      String?
+  metadata      Json?
+  ipAddress     String?
+  userAgent     String?
+  createdAt     DateTime         @default(now())
+  Actor         User?            @relation("AuditLogActor", fields: [actorId], references: [id], onDelete: SetNull)
+  TargetUser    User?            @relation("AuditLogTargetUser", fields: [targetUserId], references: [id], onDelete: Cascade)
+
+  @@index([actorId])
+  @@index([entityType, entityId])
+  @@index([targetUserId])
+  @@index([createdAt])
+  @@index([actionType])
 }

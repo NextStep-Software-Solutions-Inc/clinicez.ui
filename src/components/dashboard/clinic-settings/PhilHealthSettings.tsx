@@ -16,11 +16,12 @@ import { promiseWrapper } from "@/lib/with-error-handling";
 import { useClinicSetting } from "@/hooks/useClinicSetting";
 import { updatePhilHealthSettingsAction } from "@actions/clinics/clinic-setting.action";
 
-type PhilHealthSettingsForm = z.infer<typeof philHealthSettingsForm>
 const philHealthSettingsForm = z.object({
   philhealthAccreditationNumber: z.string().trim().optional(),
   facilityName: z.string().trim().optional(),
 })
+
+type PhilHealthSettingsForm = z.infer<typeof philHealthSettingsForm>
 
 export default function PhilHealthSettings() {
 
@@ -43,7 +44,7 @@ export default function PhilHealthSettings() {
         return;
       }
       
-      toast.promise(promiseWrapper(updatePhilHealthSettingsAction)(clinicSetting.data.id, data), {
+      toast.promise(promiseWrapper(updatePhilHealthSettingsAction)(clinicUid, clinicSetting.data.id, data), {
         loading: "Saving PhilHealth settings...",
         success: (res) => {
           mutate()
@@ -116,10 +117,10 @@ export default function PhilHealthSettings() {
       </CardContent>
       <CardFooter>
         {
-          clinicSetting?.data?.Clinic?.updatedAt && 
+          clinicSetting?.data?.updatedAt && 
           (
             <Badge variant="secondary">
-              Updated last {dayjs(clinicSetting.data.Clinic.updatedAt).fromNow()}
+              Updated last {dayjs(clinicSetting.data.updatedAt).fromNow()}
             </Badge>
           )
         }

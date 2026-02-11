@@ -1,7 +1,7 @@
 'use client';
 
 import SearchBar from "@components/dashboard/SearchBar";
-import AddPatientModal from "@components/patient/modal/AddPatientModal";
+import PatientCreationModal from "@components/patient/PatientCreationModal";
 import { PatientViewToggle } from "@components/patient/PatientViewToggle";
 import { Slider } from "@components/ui/slider";
 import { updateUrlParam } from "@/lib/url-utils";
@@ -12,11 +12,19 @@ import { Label } from "../ui/label";
 
 interface PatientsHeaderProps {
   clinicUid: string;
+  clinicId?: number;
+  currentUserId?: number;
   patientCount?: number;
   totalPatients?: number;
 }
 
-export default function PatientsHeader({ clinicUid, patientCount = 0, totalPatients = 0 }: PatientsHeaderProps) {
+export default function PatientsHeader({ 
+  clinicUid, 
+  clinicId,
+  currentUserId,
+  patientCount = 0, 
+  totalPatients = 0 
+}: PatientsHeaderProps) {
   const searchParams = useSearchParams();
   const search = searchParams?.get("search") || "";
   const viewMode = (searchParams?.get("view") as 'list' | 'grid') || 'list';
@@ -45,7 +53,9 @@ export default function PatientsHeader({ clinicUid, patientCount = 0, totalPatie
               {totalPatients > 0 ? `Showing ${patientCount} of ${totalPatients} patients` : 'View and manage patients.'}
             </p>
           </div>
-          <AddPatientModal clinicUid={clinicUid} roleName="patient" />
+          {clinicId && currentUserId && (
+            <PatientCreationModal clinicId={clinicId} createdBy={currentUserId} />
+          )}
         </div>
         
         <div className="flex flex-col lg:flex-row gap-3 lg:gap-4 lg:items-center just">

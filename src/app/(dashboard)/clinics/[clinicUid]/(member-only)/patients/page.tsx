@@ -8,6 +8,7 @@ import { getCachedSession } from "@actions/session.action";
 import { PatientsContainer } from "@components/patient/PatientsContainer";
 import PatientsHeader from "@components/patient/PatientsHeader";
 import UnauthorizedWarning from "@/components/UnauthorizedWarning";
+import { getClinicAction } from "@/actions/clinics/clinic.action";
 
 export const maxDuration = 30;
 export const revalidate = 60;
@@ -28,10 +29,11 @@ export default async function PatientsPage(props: PatientsPageProps) {
   const { clinicUid } = await props.params;
 
   
-  const [isOwner, myClinicMembership, myOrganizationMembership] = await Promise.all([
+  const [isOwner, myClinicMembership, myOrganizationMembership, clinic] = await Promise.all([
     isClinicOwner(clinicUid),
     getClinicMembersAction({ userId: session.user.sub, clinicUid, status: "ACTIVE" }),
     getOrgMembersAction({ clinicUid, userId: session.user.sub, status: ["ACTIVE"] }),
+    getClinicAction(clinicUid),
   ]);
 
   const hasAccess = isOwner || !!myClinicMembership.data?.length || !!myOrganizationMembership.data?.data?.length;
@@ -45,6 +47,8 @@ export default async function PatientsPage(props: PatientsPageProps) {
       <div className="rounded-[0.5rem] border bg-background shadow">
         <PatientsContainer 
           clinicUid={clinicUid}
+          clinicId={clinic.data?.id}
+          currentUserId={session.user.id}
           pageSize={pageSize}
         />
       </div>

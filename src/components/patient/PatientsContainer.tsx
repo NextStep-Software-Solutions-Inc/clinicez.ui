@@ -10,10 +10,12 @@ import PatientsHeader from './PatientsHeader';
 
 interface PatientsContainerProps {
   clinicUid: string;
+  clinicId?: number;
+  currentUserId?: number;
   pageSize: number;
 }
 
-export function PatientsContainer({ clinicUid, pageSize }: PatientsContainerProps) {
+export function PatientsContainer({ clinicUid, clinicId, currentUserId, pageSize }: PatientsContainerProps) {
   const searchParams = useSearchParams();
   const search = searchParams?.get('search') || '';
   const view = (searchParams?.get('view') as 'list' | 'grid') || 'list';
@@ -104,7 +106,13 @@ export function PatientsContainer({ clinicUid, pageSize }: PatientsContainerProp
 
   return (
     <div className="flex flex-col h-full">
-      <PatientsHeader clinicUid={clinicUid} patientCount={allData.length} totalPatients={totalCount} />
+      <PatientsHeader 
+        clinicUid={clinicUid} 
+        clinicId={clinicId}
+        currentUserId={currentUserId}
+        patientCount={allData.length} 
+        totalPatients={totalCount} 
+      />
       
       {isLoading ? (
         <LoadingState />

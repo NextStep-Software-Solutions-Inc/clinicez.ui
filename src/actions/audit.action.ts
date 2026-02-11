@@ -1,6 +1,6 @@
 'use server';
 
-import { db } from '@/lib/db';
+import prisma from '@/lib/prisma';
 import { AuditActionType, EntityType } from '@prisma/client';
 
 export interface AuditLogInput {
@@ -22,7 +22,7 @@ export interface AuditLogInput {
  */
 export async function createAuditLog(input: AuditLogInput) {
   try {
-    const auditLog = await db.auditLog.create({
+    const auditLog = await prisma.auditLog.create({
       data: {
         actorId: input.actorId,
         actionType: input.actionType,
@@ -93,7 +93,7 @@ export async function getAuditLogs(params: {
     }
 
     const [logs, total] = await Promise.all([
-      db.auditLog.findMany({
+      prisma.auditLog.findMany({
         where,
         include: {
           Actor: {
@@ -119,7 +119,7 @@ export async function getAuditLogs(params: {
         skip: (page - 1) * perPage,
         take: perPage,
       }),
-      db.auditLog.count({ where }),
+      prisma.auditLog.count({ where }),
     ]);
 
     return {
@@ -156,7 +156,7 @@ export async function logFieldChanges(params: {
   const { actorId, entityType, entityId, targetUserId, changes, metadata } = params;
 
   try {
-    const auditLogs = await db.auditLog.createMany({
+    const auditLogs = await prisma.auditLog.createMany({
       data: changes.map((change) => ({
         actorId,
         actionType: AuditActionType.UPDATE,
@@ -195,7 +195,17 @@ export async function exportAuditLogs(params: {
 
   const csv = [
     'Date,Actor,Action,Entity Type,Entity ID,Target User,Field,Old Value,New Value',
-    ...result.data.map((log) =>
+    ...result.data.map((log: {
+      createdAt: Date;
+      Actor: { firstName: string | null; lastName: string | null; email: string } | null;
+      actionType: AuditActionType;
+      entityType: EntityType;
+      entityId: number | null;
+      TargetUser: { firstName: string | null; lastName: string | null } | null;
+      fieldName: string | null;
+      oldValue: string | null;
+      newValue: string | null;
+    }) =>
       [
         log.createdAt.toISOString(),
         log.Actor

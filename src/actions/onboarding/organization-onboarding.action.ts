@@ -1,6 +1,6 @@
 'use server';
 
-import { db } from '@/lib/db';
+import prisma from '@/lib/prisma';
 import { OnboardingStatus, AuditActionType, EntityType } from '@prisma/client';
 import { createAuditLog } from '../audit.action';
 
@@ -21,7 +21,7 @@ export async function validateOrganizationOnboarding(params: {
   const { userId, organizationId } = params;
 
   try {
-    const member = await db.organizationMember.findFirst({
+    const member = await prisma.organizationMember.findFirst({
       where: {
         userId,
         organizationId,
@@ -67,7 +67,7 @@ export async function validateOrganizationOnboarding(params: {
 
     // Check org-specific requirements
     const roleRequirements = member.OrganizationRole.requirements || [];
-    const missingOrgRequirements = roleRequirements.filter((req) => {
+    const missingOrgRequirements = roleRequirements.filter((_req: string) => {
       // TODO: Implement actual requirement checking logic
       return false;
     });
@@ -104,7 +104,7 @@ export async function completeOrganizationOnboarding(
 
   try {
     // Find the organization member
-    const member = await db.organizationMember.findFirst({
+    const member = await prisma.organizationMember.findFirst({
       where: {
         userId,
         organizationId,
@@ -116,7 +116,7 @@ export async function completeOrganizationOnboarding(
     }
 
     // Update member onboarding status
-    const updatedMember = await db.organizationMember.update({
+    const updatedMember = await prisma.organizationMember.update({
       where: { id: member.id },
       data: {
         onboardingStatus: OnboardingStatus.COMPLETED,
@@ -126,26 +126,26 @@ export async function completeOrganizationOnboarding(
     });
 
     // Grant role-based permissions if not already granted
-    const rolePermissions = await db.orgRoleInitialPermission.findMany({
+    const rolePermissions = await prisma.orgRoleInitialPermission.findMany({
       where: { orgRoleId: member.role },
     });
 
     // Check existing permissions
-    const existingPermissions = await db.orgMemberPermission.findMany({
+    const existingPermissions = await prisma.orgMemberPermission.findMany({
       where: { orgMemberId: member.id },
     });
 
     const existingPermissionIds = new Set(
-      existingPermissions.map((p) => p.permissionId)
+      existingPermissions.map((p: { permissionId: number }) => p.permissionId)
     );
 
     const permissionsToAdd = rolePermissions.filter(
-      (rp) => !existingPermissionIds.has(rp.permissionId)
+      (rp: { permissionId: number }) => !existingPermissionIds.has(rp.permissionId)
     );
 
     if (permissionsToAdd.length > 0) {
-      await db.orgMemberPermission.createMany({
-        data: permissionsToAdd.map((rp) => ({
+      await prisma.orgMemberPermission.createMany({
+        data: permissionsToAdd.map((rp: { permissionId: number }) => ({
           orgMemberId: member.id,
           permissionId: rp.permissionId,
         })),
@@ -202,7 +202,7 @@ export async function getOrganizationOnboardingRequirements(params: {
   const { userId, organizationId } = params;
 
   try {
-    const member = await db.organizationMember.findFirst({
+    const member = await prisma.organizationMember.findFirst({
       where: {
         userId,
         organizationId,
@@ -258,7 +258,7 @@ export async function updateOrganizationOnboardingProgress(params: {
   const { userId, organizationId, status, metadata } = params;
 
   try {
-    const member = await db.organizationMember.findFirst({
+    const member = await prisma.organizationMember.findFirst({
       where: {
         userId,
         organizationId,
@@ -269,7 +269,7 @@ export async function updateOrganizationOnboardingProgress(params: {
       return { success: false, error: 'Organization member not found' };
     }
 
-    const updatedMember = await db.organizationMember.update({
+    const updatedMember = await prisma.organizationMember.update({
       where: { id: member.id },
       data: {
         onboardingStatus: status,

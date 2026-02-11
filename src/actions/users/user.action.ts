@@ -439,14 +439,16 @@ export const findOrCreateUserAction = withErrorHandling(cache(async () => {
         { stepType: 'PROFILE', stepName: 'Additional Information' },
       ];
       
-      await prisma.onboardingStep.createMany({
-        data: defaultSteps.map((step) => ({
-          userId: dbUser.id,
-          ...step,
-          status: 'PENDING',
-        })),
-        skipDuplicates: true,
-      });
+      if (dbUser) {
+        await prisma.onboardingStep.createMany({
+          data: defaultSteps.map((step) => ({
+            userId: dbUser.id,
+            ...step,
+            status: 'PENDING',
+          })),
+          skipDuplicates: true,
+        });
+      }
       
       message = "New user created";
     }
@@ -592,14 +594,15 @@ type createUserToDbPayload = {
   lastName: string,
   gender?: $Enums.Gender,
   dob?: Date,
-  picture?: string
+  picture?: string,
+  onboardingStatus?: $Enums.OnboardingStatus
 }
 const createUserToDb = async (prisma: PrismaTransactionalClient, payload: createUserToDbPayload) => {
 
-  const { userId, email, mobile, firstName, lastName, dob = null, gender = null, picture } = payload;
+  const { userId, email, mobile, firstName, lastName, dob = null, gender = null, picture, onboardingStatus } = payload;
 
   const newUser = await prisma.user.create({
-    data: { userId, email, mobile, firstName, lastName, dob, gender, picture }
+    data: { userId, email, mobile, firstName, lastName, dob, gender, picture, onboardingStatus }
   });
 
   return newUser

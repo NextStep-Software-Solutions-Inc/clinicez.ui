@@ -1,6 +1,6 @@
 'use server';
 
-import { db } from '@/lib/db';
+import prisma from '@/lib/prisma';
 import { OnboardingStatus, AuditActionType, EntityType } from '@prisma/client';
 import { createAuditLog } from '../audit.action';
 
@@ -36,7 +36,7 @@ export interface UserProfileData {
  */
 export async function validateUserOnboarding(userId: number) {
   try {
-    const user = await db.user.findUnique({
+    const user = await prisma.user.findUnique({
       where: { id: userId },
       select: {
         firstName: true,
@@ -112,7 +112,7 @@ export async function completeUserOnboarding(params: {
     }
 
     // Get current user data for audit trail
-    const currentUser = await db.user.findUnique({
+    const currentUser = await prisma.user.findUnique({
       where: { id: userId },
     });
 
@@ -121,7 +121,7 @@ export async function completeUserOnboarding(params: {
     }
 
     // Update user profile
-    const updatedUser = await db.user.update({
+    const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: {
         ...profileData,
@@ -167,7 +167,7 @@ export async function completeUserOnboarding(params: {
     });
 
     // Mark all onboarding steps as completed
-    await db.onboardingStep.updateMany({
+    await prisma.onboardingStep.updateMany({
       where: {
         userId,
         status: { not: OnboardingStatus.COMPLETED },
@@ -192,13 +192,13 @@ export async function upsertOnboardingStep(params: OnboardingStepInput) {
   const { userId, stepType, stepName, status = OnboardingStatus.PENDING, metadata } = params;
 
   try {
-    const existingStep = await db.onboardingStep.findFirst({
+    const existingStep = await prisma.onboardingStep.findFirst({
       where: { userId, stepType, stepName },
     });
 
     let step;
     if (existingStep) {
-      step = await db.onboardingStep.update({
+      step = await prisma.onboardingStep.update({
         where: { id: existingStep.id },
         data: {
           status,
@@ -210,7 +210,7 @@ export async function upsertOnboardingStep(params: OnboardingStepInput) {
         },
       });
     } else {
-      step = await db.onboardingStep.create({
+      step = await prisma.onboardingStep.create({
         data: {
           userId,
           stepType,
@@ -235,14 +235,14 @@ export async function upsertOnboardingStep(params: OnboardingStepInput) {
  */
 export async function getUserOnboardingSteps(userId: number) {
   try {
-    const steps = await db.onboardingStep.findMany({
+    const steps = await prisma.onboardingStep.findMany({
       where: { userId },
       orderBy: { createdAt: 'asc' },
     });
 
     const totalSteps = steps.length;
     const completedSteps = steps.filter(
-      (step) => step.status === OnboardingStatus.COMPLETED
+      (step: { status: OnboardingStatus }) => step.status === OnboardingStatus.COMPLETED
     ).length;
     const progress = totalSteps > 0 ? (completedSteps / totalSteps) * 100 : 0;
 
@@ -272,7 +272,7 @@ export async function initializeUserOnboarding(userId: number) {
       { stepType: 'PROFILE', stepName: 'Additional Information' },
     ];
 
-    await db.onboardingStep.createMany({
+    await prisma.onboardingStep.createMany({
       data: defaultSteps.map((step) => ({
         userId,
         ...step,
@@ -282,7 +282,7 @@ export async function initializeUserOnboarding(userId: number) {
     });
 
     // Update user onboarding status
-    await db.user.update({
+    await prisma.user.update({
       where: { id: userId },
       data: { onboardingStatus: OnboardingStatus.PENDING },
     });
@@ -311,7 +311,7 @@ export async function initializeUserOnboarding(userId: number) {
  */
 export async function checkShellAccount(userId: number) {
   try {
-    const user = await db.user.findUnique({
+    const user = await prisma.user.findUnique({
       where: { id: userId },
       select: {
         isShellAccount: true,

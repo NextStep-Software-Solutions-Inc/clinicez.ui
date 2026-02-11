@@ -1,6 +1,6 @@
 import { auth } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
-import { db } from '@/lib/db';
+import prisma from '@/lib/prisma';
 import UserOnboardingPage from '@/components/onboarding/UserOnboardingPage';
 import { OnboardingStatus } from '@prisma/client';
 
@@ -12,7 +12,7 @@ export default async function OnboardingPage() {
   }
 
   // Get user from database
-  const user = await db.user.findUnique({
+  const user = await prisma.user.findUnique({
     where: { userId: clerkUserId },
     select: {
       id: true,

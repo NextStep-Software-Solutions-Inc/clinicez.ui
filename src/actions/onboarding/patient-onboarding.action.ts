@@ -1,6 +1,6 @@
 'use server';
 
-import { db } from '@/lib/db';
+import prisma from '@/lib/prisma';
 import { OnboardingStatus, AuditActionType, EntityType } from '@prisma/client';
 import { createAuditLog } from '../audit.action';
 
@@ -39,13 +39,13 @@ export async function createPatientShellAccount(params: {
 
   try {
     // Check if email already exists
-    const existingUser = await db.user.findUnique({
+    const existingUser = await prisma.user.findUnique({
       where: { email: patientData.email },
     });
 
     if (existingUser) {
       // If user exists, just add them to the clinic
-      const existingPatient = await db.clinicPatient.findUnique({
+      const existingPatient = await prisma.clinicPatient.findUnique({
         where: {
           unique_clinic_patient: {
             clinicId,
@@ -62,7 +62,7 @@ export async function createPatientShellAccount(params: {
       }
 
       // Add existing user as patient
-      const clinicPatient = await db.clinicPatient.create({
+      const clinicPatient = await prisma.clinicPatient.create({
         data: {
           clinicId,
           patientId: existingUser.id,
@@ -98,7 +98,7 @@ export async function createPatientShellAccount(params: {
     // Generate a temporary userId for Clerk (will be updated when they sign up)
     const tempUserId = `temp_${Date.now()}_${Math.random().toString(36).substring(7)}`;
 
-    const newUser = await db.user.create({
+    const newUser = await prisma.user.create({
       data: {
         userId: tempUserId,
         ...patientData,
@@ -110,7 +110,7 @@ export async function createPatientShellAccount(params: {
     });
 
     // Add user as clinic patient
-    const clinicPatient = await db.clinicPatient.create({
+    const clinicPatient = await prisma.clinicPatient.create({
       data: {
         clinicId,
         patientId: newUser.id,
@@ -120,7 +120,7 @@ export async function createPatientShellAccount(params: {
     });
 
     // Assign default patient permissions
-    const patientRole = await db.clinicRole.findFirst({
+    const patientRole = await prisma.clinicRole.findFirst({
       where: {
         clinicId,
         name: 'Patient',
@@ -128,13 +128,13 @@ export async function createPatientShellAccount(params: {
     });
 
     if (patientRole) {
-      const initialPermissions = await db.clinicRoleInitialPermission.findMany({
+      const initialPermissions = await prisma.clinicRoleInitialPermission.findMany({
         where: { clinicRoleId: patientRole.id },
       });
 
       if (initialPermissions.length > 0) {
-        await db.clinicPatientPermission.createMany({
-          data: initialPermissions.map((perm) => ({
+        await prisma.clinicPatientPermission.createMany({
+          data: initialPermissions.map((perm: { permissionId: number }) => ({
             clinicPatientId: clinicPatient.id,
             permissionId: perm.permissionId,
           })),
@@ -204,7 +204,7 @@ export async function completePatientOnboarding(params: {
     }
 
     // Get current user data
-    const currentUser = await db.user.findUnique({
+    const currentUser = await prisma.user.findUnique({
       where: { id: userId },
     });
 
@@ -213,7 +213,7 @@ export async function completePatientOnboarding(params: {
     }
 
     // Update user profile
-    const updatedUser = await db.user.update({
+    const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: {
         ...profileData,
@@ -224,7 +224,7 @@ export async function completePatientOnboarding(params: {
     });
 
     // Update clinic patient status
-    const clinicPatient = await db.clinicPatient.update({
+    const clinicPatient = await prisma.clinicPatient.update({
       where: {
         unique_clinic_patient: {
           clinicId,
@@ -289,7 +289,7 @@ export async function validatePatientOnboarding(params: {
   const { userId, clinicId } = params;
 
   try {
-    const user = await db.user.findUnique({
+    const user = await prisma.user.findUnique({
       where: { id: userId },
       select: {
         firstName: true,
@@ -307,7 +307,7 @@ export async function validatePatientOnboarding(params: {
       return { success: false, error: 'User not found' };
     }
 
-    const clinicPatient = await db.clinicPatient.findUnique({
+    const clinicPatient = await prisma.clinicPatient.findUnique({
       where: {
         unique_clinic_patient: {
           clinicId,

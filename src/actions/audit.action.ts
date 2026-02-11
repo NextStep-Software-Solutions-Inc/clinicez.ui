@@ -1,7 +1,7 @@
 'use server';
 
 import prisma from '@/lib/prisma';
-import { AuditActionType, EntityType } from '@prisma/client';
+import { AuditActionType, EntityType, Prisma } from '@prisma/client';
 
 export interface AuditLogInput {
   actorId?: number;
@@ -12,7 +12,7 @@ export interface AuditLogInput {
   fieldName?: string;
   oldValue?: string;
   newValue?: string;
-  metadata?: Record<string, unknown>;
+  metadata?: Prisma.InputJsonValue;
   ipAddress?: string;
   userAgent?: string;
 }
@@ -32,7 +32,7 @@ export async function createAuditLog(input: AuditLogInput) {
         fieldName: input.fieldName,
         oldValue: input.oldValue,
         newValue: input.newValue,
-        metadata: input.metadata ? JSON.parse(JSON.stringify(input.metadata)) : null,
+        ...(input.metadata !== undefined && { metadata: input.metadata }),
         ipAddress: input.ipAddress,
         userAgent: input.userAgent,
       },
@@ -151,26 +151,48 @@ export async function logFieldChanges(params: {
     oldValue: string;
     newValue: string;
   }>;
-  metadata?: Record<string, unknown>;
+  metadata?: Prisma.InputJsonValue;
 }) {
   const { actorId, entityType, entityId, targetUserId, changes, metadata } = params;
 
   try {
-    const auditLogs = await prisma.auditLog.createMany({
-      data: changes.map((change) => ({
+    // Create audit logs individually
+    const auditLogs = [];
+    for (const change of changes) {
+      const baseData = {
         actorId,
         actionType: AuditActionType.UPDATE,
         entityType,
         entityId,
-        targetUserId,
         fieldName: change.fieldName,
         oldValue: change.oldValue,
         newValue: change.newValue,
-        metadata: metadata || null,
-      })),
-    });
+      };
 
-    return { success: true, data: auditLogs };
+      // Handle optional fields explicitly to maintain type safety
+      let log;
+      if (targetUserId !== undefined && metadata !== undefined) {
+        log = await prisma.auditLog.create({
+          data: { ...baseData, targetUserId, metadata },
+        });
+      } else if (targetUserId !== undefined) {
+        log = await prisma.auditLog.create({
+          data: { ...baseData, targetUserId },
+        });
+      } else if (metadata !== undefined) {
+        log = await prisma.auditLog.create({
+          data: { ...baseData, metadata },
+        });
+      } else {
+        log = await prisma.auditLog.create({
+          data: baseData,
+        });
+      }
+      
+      auditLogs.push(log);
+    }
+
+    return { success: true, data: { count: auditLogs.length } };
   } catch (error) {
     console.error('Failed to log field changes:', error);
     return { success: false, error: 'Failed to log field changes' };

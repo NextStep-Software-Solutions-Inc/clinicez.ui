@@ -1,7 +1,7 @@
 'use server';
 
 import prisma from '@/lib/prisma';
-import { OnboardingStatus, AuditActionType, EntityType } from '@prisma/client';
+import { OnboardingStatus, AuditActionType, EntityType, BloodType, Prisma } from '@prisma/client';
 import { createAuditLog } from '../audit.action';
 
 export interface OnboardingStepInput {
@@ -9,7 +9,7 @@ export interface OnboardingStepInput {
   stepType: string;
   stepName: string;
   status?: OnboardingStatus;
-  metadata?: Record<string, unknown>;
+  metadata?: Prisma.InputJsonValue;
 }
 
 export interface UserProfileData {
@@ -24,7 +24,7 @@ export interface UserProfileData {
   nickname?: string;
   placeOfBirth?: string;
   civilStatus?: 'SINGLE' | 'MARRIED' | 'DIVORCED' | 'WIDOWED' | 'SEPARATED';
-  bloodType?: string;
+  bloodType?: BloodType | null;
   telephone?: string;
   religion?: string;
   nationality?: string;
@@ -213,29 +213,46 @@ export async function upsertOnboardingStep(params: OnboardingStepInput) {
 
     let step;
     if (existingStep) {
-      step = await prisma.onboardingStep.update({
-        where: { id: existingStep.id },
-        data: {
-          status,
-          startedAt: status === OnboardingStatus.IN_PROGRESS && !existingStep.startedAt
-            ? new Date()
-            : existingStep.startedAt,
-          completedAt: status === OnboardingStatus.COMPLETED ? new Date() : existingStep.completedAt,
-          metadata: metadata ? JSON.parse(JSON.stringify(metadata)) : existingStep.metadata,
-        },
-      });
+      const baseUpdate = {
+        status,
+        startedAt: status === OnboardingStatus.IN_PROGRESS && !existingStep.startedAt
+          ? new Date()
+          : existingStep.startedAt,
+        completedAt: status === OnboardingStatus.COMPLETED ? new Date() : existingStep.completedAt,
+      };
+      
+      // Handle optional metadata explicitly for type safety
+      if (metadata !== undefined) {
+        step = await prisma.onboardingStep.update({
+          where: { id: existingStep.id },
+          data: { ...baseUpdate, metadata },
+        });
+      } else {
+        step = await prisma.onboardingStep.update({
+          where: { id: existingStep.id },
+          data: baseUpdate,
+        });
+      }
     } else {
-      step = await prisma.onboardingStep.create({
-        data: {
-          userId,
-          stepType,
-          stepName,
-          status,
-          startedAt: status === OnboardingStatus.IN_PROGRESS ? new Date() : null,
-          completedAt: status === OnboardingStatus.COMPLETED ? new Date() : null,
-          metadata: metadata || null,
-        },
-      });
+      const baseCreate = {
+        userId,
+        stepType,
+        stepName,
+        status,
+        startedAt: status === OnboardingStatus.IN_PROGRESS ? new Date() : null,
+        completedAt: status === OnboardingStatus.COMPLETED ? new Date() : null,
+      };
+      
+      // Handle optional metadata explicitly for type safety
+      if (metadata !== undefined) {
+        step = await prisma.onboardingStep.create({
+          data: { ...baseCreate, metadata },
+        });
+      } else {
+        step = await prisma.onboardingStep.create({
+          data: baseCreate,
+        });
+      }
     }
 
     return { success: true, data: step };

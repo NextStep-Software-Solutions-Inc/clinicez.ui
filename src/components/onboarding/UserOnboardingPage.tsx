@@ -39,8 +39,9 @@ import {
   completeUserOnboarding,
   checkShellAccount,
   upsertOnboardingStep,
+  UserProfileData,
 } from '@/actions/onboarding/user-onboarding.action';
-import { OnboardingStatus } from '@prisma/client';
+import { OnboardingStatus, BloodType } from '@prisma/client';
 
 // Form validation schemas
 const basicInfoSchema = z.object({
@@ -182,10 +183,16 @@ export default function UserOnboardingPage({ userId, currentUser }: OnboardingPa
       const basicData = basicForm.getValues();
       const additionalData = additionalForm.getValues();
 
-      const profileData = {
+      // Convert bloodType string to enum or null
+      const bloodType = additionalData.bloodType && additionalData.bloodType in BloodType
+        ? (additionalData.bloodType as BloodType)
+        : null;
+
+      const profileData: UserProfileData = {
         ...basicData,
         ...additionalData,
         dob: new Date(basicData.dob),
+        bloodType,
       };
 
       const result = await completeUserOnboarding({

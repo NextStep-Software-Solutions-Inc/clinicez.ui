@@ -1,7 +1,7 @@
 'use server';
 
 import prisma from '@/lib/prisma';
-import { OnboardingStatus, AuditActionType, EntityType } from '@prisma/client';
+import { OnboardingStatus, AuditActionType, EntityType, Prisma } from '@prisma/client';
 import { createAuditLog } from '../audit.action';
 
 export interface OrganizationOnboardingData {
@@ -253,7 +253,7 @@ export async function updateOrganizationOnboardingProgress(params: {
   userId: number;
   organizationId: number;
   status: OnboardingStatus;
-  metadata?: Record<string, unknown>;
+  metadata?: Prisma.InputJsonValue;
 }) {
   const { userId, organizationId, status, metadata } = params;
 

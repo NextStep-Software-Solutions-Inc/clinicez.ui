@@ -1,7 +1,7 @@
 'use server';
 
 import prisma from '@/lib/prisma';
-import { OnboardingStatus, AuditActionType, EntityType } from '@prisma/client';
+import { OnboardingStatus, AuditActionType, EntityType, BloodType } from '@prisma/client';
 import { createAuditLog } from '../audit.action';
 
 export interface PatientCreationData {
@@ -19,7 +19,7 @@ export interface PatientCreationData {
   nickname?: string;
   placeOfBirth?: string;
   civilStatus?: 'SINGLE' | 'MARRIED' | 'DIVORCED' | 'WIDOWED' | 'SEPARATED';
-  bloodType?: string;
+  bloodType?: BloodType | null;
   telephone?: string;
   religion?: string;
   nationality?: string;
@@ -137,16 +137,16 @@ export async function createPatientShellAccount(params: {
     // Assign default patient permissions
     const patientRole = await prisma.clinicRole.findFirst({
       where: {
-        Clinic: {
-          id: clinicId,
-        },
         name: 'Patient',
       },
     });
 
     if (patientRole) {
       const initialPermissions = await prisma.clinicRoleInitialPermission.findMany({
-        where: { clinicRoleId: patientRole.id },
+        where: { 
+          clinicRoleId: patientRole.id,
+          clinicId: clinicId,
+        },
       });
 
       if (initialPermissions.length > 0) {

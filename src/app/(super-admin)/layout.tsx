@@ -34,6 +34,10 @@ const sidebarNavItems = [
     title: "Users",
     href: "/super-admin/users",
   },
+  {
+    title: "Audit Logs",
+    href: "/super-admin/audit-logs",
+  },
 ];
 
 export default async function SuperAdminLayout({

@@ -101,7 +101,22 @@ export async function createPatientShellAccount(params: {
     const newUser = await prisma.user.create({
       data: {
         userId: tempUserId,
-        ...patientData,
+        firstName: patientData.firstName,
+        lastName: patientData.lastName,
+        email: patientData.email,
+        dob: patientData.dob,
+        gender: patientData.gender,
+        mobile: patientData.mobile,
+        middleName: patientData.middleName,
+        suffix: patientData.suffix,
+        nickname: patientData.nickname,
+        placeOfBirth: patientData.placeOfBirth,
+        civilStatus: patientData.civilStatus,
+        bloodType: patientData.bloodType,
+        telephone: patientData.telephone,
+        religion: patientData.religion,
+        nationality: patientData.nationality,
+        picture: patientData.picture,
         isShellAccount: true,
         shellAccountCreatedBy: createdBy,
         onboardingStatus: OnboardingStatus.INCOMPLETE,
@@ -122,7 +137,9 @@ export async function createPatientShellAccount(params: {
     // Assign default patient permissions
     const patientRole = await prisma.clinicRole.findFirst({
       where: {
-        clinicId,
+        Clinic: {
+          id: clinicId,
+        },
         name: 'Patient',
       },
     });
@@ -216,7 +233,22 @@ export async function completePatientOnboarding(params: {
     const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: {
-        ...profileData,
+        firstName: profileData.firstName,
+        lastName: profileData.lastName,
+        email: profileData.email,
+        dob: profileData.dob,
+        gender: profileData.gender,
+        mobile: profileData.mobile,
+        middleName: profileData.middleName,
+        suffix: profileData.suffix,
+        nickname: profileData.nickname,
+        placeOfBirth: profileData.placeOfBirth,
+        civilStatus: profileData.civilStatus,
+        bloodType: profileData.bloodType,
+        telephone: profileData.telephone,
+        religion: profileData.religion,
+        nationality: profileData.nationality,
+        picture: profileData.picture,
         onboardingStatus: OnboardingStatus.COMPLETED,
         profileCompletionDate: new Date(),
         isShellAccount: false,

@@ -442,7 +442,7 @@ export const findOrCreateUserAction = withErrorHandling(cache(async () => {
       if (dbUser) {
         await prisma.onboardingStep.createMany({
           data: defaultSteps.map((step) => ({
-            userId: dbUser.id,
+            userId: dbUser!.id,
             ...step,
             status: 'PENDING',
           })),
@@ -451,6 +451,11 @@ export const findOrCreateUserAction = withErrorHandling(cache(async () => {
       }
       
       message = "New user created";
+    }
+
+    // TypeScript null safety: by this point dbUser should always be defined
+    if (!dbUser) {
+      throw new Error("Failed to create or find user");
     }
 
     return dbUser;

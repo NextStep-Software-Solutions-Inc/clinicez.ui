@@ -29,7 +29,7 @@ export type CompleteOnboardingStepPayload = {
 };
 
 export type CreateOnboardingStepsPayload = {
-  userId: number;
+  userId: string;
   entityType?: $Enums.OnboardingEntityType;
   entityId?: number;
   steps: {
@@ -159,11 +159,15 @@ export const createOnboardingStepsAction = withErrorHandling(
     await sessionCheck();
 
     const result = await prisma.$transaction(async (tx: PrismaTransactionalClient) => {
+      const user = await tx.user.findUniqueOrThrow({
+        where: { userId: payload.userId },
+      });
+
       const steps = await Promise.all(
         payload.steps.map(async (step) => {
           const existing = await tx.onboardingStep.findFirst({
             where: {
-              userId: payload.userId,
+              userId: user.id,
               entityType: payload.entityType ?? "USER",
               entityId: payload.entityId ?? null,
               stepName: step.stepName,
@@ -182,7 +186,7 @@ export const createOnboardingStepsAction = withErrorHandling(
 
           return tx.onboardingStep.create({
             data: {
-              userId: payload.userId,
+              userId: user.id,
               entityType: payload.entityType ?? "USER",
               entityId: payload.entityId,
               stepName: step.stepName,
@@ -225,7 +229,7 @@ export const completeOnboardingStepAction = withErrorHandling(
       });
 
       if (!step) {
-        throw new Error(`Onboarding step '${payload.stepName}' not found`);
+        throw new Error(`Onboarding step '${payload.stepName}' not found for user '${payload.userId}' (entityType: ${payload.entityType ?? "USER"})`);
       }
 
       const updatedStep = await tx.onboardingStep.update({
@@ -272,11 +276,11 @@ export const claimShellAccountAction = withErrorHandling(
       });
 
       if (shellUser.accountType !== "SHELL") {
-        throw new Error("Account is not a shell account");
+        throw new Error(`Account is not a shell account (current type: ${shellUser.accountType})`);
       }
 
       if (shellUser.claimedAt) {
-        throw new Error("Account has already been claimed");
+        throw new Error(`Account has already been claimed on ${shellUser.claimedAt.toISOString()} by user ID ${shellUser.claimedBy}`);
       }
 
       const claimingUser = await tx.user.findUniqueOrThrow({

@@ -46,7 +46,7 @@ export default function PhilHealthSettings() {
           form.reset(data)
           return res.message;
         },
-        error: error => error.message,
+        error: (error) => error?.message || "Failed to update PhilHealth settings. Please try again.",
         position: "top-center"
       })
     })();

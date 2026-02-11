@@ -28,16 +28,24 @@ export const downloadSAPAction = withErrorHandling(async (
   // Note: This is a fallback. Ideally, clinicId should be explicitly provided.
   // Using most recent clinic as fallback when user has multiple clinic associations.
   if (!clinicId) {
-    const clinicPatient = await prisma.clinicPatient.findFirst({
-      where: {
-        User: { userId },
-        isActive: true,
-        deletedAt: null
-      },
-      select: { clinicId: true },
-      orderBy: { createdAt: 'desc' }
+    // First get the user's internal ID from userId
+    const user = await prisma.user.findUnique({
+      where: { userId },
+      select: { id: true }
     })
-    clinicId = clinicPatient?.clinicId || null
+    
+    if (user) {
+      const clinicPatient = await prisma.clinicPatient.findFirst({
+        where: {
+          patientId: user.id,
+          isActive: true,
+          deletedAt: null
+        },
+        select: { clinicId: true },
+        orderBy: { createdAt: 'desc' }
+      })
+      clinicId = clinicPatient?.clinicId || null
+    }
   }
 
   // Fetch clinic settings to get PhilHealth information

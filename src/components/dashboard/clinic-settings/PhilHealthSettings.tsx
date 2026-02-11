@@ -117,10 +117,10 @@ export default function PhilHealthSettings() {
       </CardContent>
       <CardFooter>
         {
-          clinicSetting?.data?.updatedAt && 
+          clinicSetting?.data?.Clinic?.updatedAt && 
           (
             <Badge variant="secondary">
-              Updated last {dayjs(clinicSetting.data.updatedAt).fromNow()}
+              Updated last {dayjs(clinicSetting.data.Clinic.updatedAt).fromNow()}
             </Badge>
           )
         }

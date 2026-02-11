@@ -25,6 +25,8 @@ export const downloadSAPAction = withErrorHandling(async (
   }
 
   // If still no clinic ID, try to get from user's clinic patient records
+  // Note: This is a fallback. Ideally, clinicId should be explicitly provided.
+  // Using most recent clinic as fallback when user has multiple clinic associations.
   if (!clinicId) {
     const clinicPatient = await prisma.clinicPatient.findFirst({
       where: {

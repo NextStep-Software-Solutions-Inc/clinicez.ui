@@ -18,7 +18,8 @@ export const getClinicSettingAction = cache(async (clinicUid: string) => {
         Clinic: {
           select: {
             AppointmentConfig: true,
-            ConsultationConfig: true
+            ConsultationConfig: true,
+            updatedAt: true
           }
         }
       }
@@ -83,6 +84,44 @@ export const updateClinicSettingsAction = async (clinicSettingId: number, { enab
   } catch (error) {
     console.error(`Error updating clinic settings: ${error}`);
     message = "Failed to update clinic settings";
+    if(error instanceof Error) message = error.message;
+    return { status: false, message, data: null }
+  }
+};
+
+type UpdatePhilHealthSettings = {
+  philhealthAccreditationNumber?: string;
+  facilityName?: string;
+}
+export const updatePhilHealthSettingsAction = async (clinicSettingId: number, data: UpdatePhilHealthSettings) => {
+
+  let message = "PhilHealth settings updated successfully";
+
+  try {
+
+    const session = await getCachedSession();
+    if(!session) throw new Error("User not authenticated.");
+
+    const clinicSetting = await prisma.clinicSetting.update({
+      where: { 
+        id: clinicSettingId
+      },
+      data: {
+        philhealthAccreditationNumber: data.philhealthAccreditationNumber,
+        facilityName: data.facilityName,
+      },
+      include: {
+        Clinic: {
+          select: {
+            updatedAt: true
+          }
+        }
+      }
+    });
+    return { status: true, message, data: clinicSetting }
+  } catch (error) {
+    console.error(`Error updating PhilHealth settings: ${error}`);
+    message = "Failed to update PhilHealth settings";
     if(error instanceof Error) message = error.message;
     return { status: false, message, data: null }
   }

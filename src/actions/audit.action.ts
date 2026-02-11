@@ -49,7 +49,7 @@ export type GetAuditLogsPayload = {
   endDate?: string;
   page?: number;
   pageSize?: number;
-  clinicUid?: string; // Required for permission check
+  clinicUid?: string; // Optional - required only for clinic-scoped audit logs
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────

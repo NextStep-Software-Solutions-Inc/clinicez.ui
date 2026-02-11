@@ -68,14 +68,18 @@ export const updateOnboardingStatusAction = withErrorHandling(
   async (payload: UpdateOnboardingStatusPayload) => {
     const session = await sessionCheck();
     
-    // Check permission: allow if user is updating their own status or has the permission
+    // Check permission: allow if user is updating their own status
     const isOwn = await isOwnResource(payload.userId);
     
     if (!isOwn) {
       // For updating other users, need explicit permission
-      // Since this is a USER-level permission, we check if user has super_admin or update:user:onboarding_status
-      // Note: For now, we'll allow it with session check. In production, you'd verify the permission via JWT or database
-      // This would typically check against UserPermission table
+      // USER-level permissions require checking UserPermission table or JWT claims
+      // For now, deny access unless user is acting on their own record
+      throw new PermissionError(
+        "You can only update your own onboarding status. Updating other users requires admin privileges.",
+        PERMISSIONS.USER["UPDATE:USER:ONBOARDING_STATUS"].name,
+        "USER"
+      );
     }
 
     const result = await prisma.$transaction(async (tx: PrismaTransactionalClient) => {
@@ -234,6 +238,11 @@ export const completeOnboardingStepAction = withErrorHandling(
     if (!isOwn) {
       // For completing steps for other users, need explicit permission
       // This is typically used by admins/support to help users complete onboarding
+      throw new PermissionError(
+        "You can only complete your own onboarding steps. Completing steps for other users requires admin privileges.",
+        PERMISSIONS.USER["COMPLETE:USER:ONBOARDING_STEP"].name,
+        "USER"
+      );
     }
 
     const result = await prisma.$transaction(async (tx: PrismaTransactionalClient) => {
@@ -364,7 +373,11 @@ export const getOnboardingStatusAction = withErrorHandling(
     
     if (!isOwn) {
       // For viewing other users' status, typically requires permission
-      // In production, you'd check VIEW:USER:ONBOARDING_STATUS permission
+      throw new PermissionError(
+        "You can only view your own onboarding status. Viewing other users' status requires admin privileges.",
+        PERMISSIONS.USER["VIEW:USER:ONBOARDING_STATUS"].name,
+        "USER"
+      );
     }
 
     const user = await prisma.user.findUniqueOrThrow({

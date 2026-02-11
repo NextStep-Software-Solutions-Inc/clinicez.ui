@@ -233,7 +233,7 @@ export async function upsertOnboardingStep(params: OnboardingStepInput) {
           status,
           startedAt: status === OnboardingStatus.IN_PROGRESS ? new Date() : null,
           completedAt: status === OnboardingStatus.COMPLETED ? new Date() : null,
-          metadata: metadata ? JSON.parse(JSON.stringify(metadata)) : null,
+          metadata: metadata || null,
         },
       });
     }

@@ -166,7 +166,7 @@ export async function logFieldChanges(params: {
         fieldName: change.fieldName,
         oldValue: change.oldValue,
         newValue: change.newValue,
-        metadata: metadata ? JSON.parse(JSON.stringify(metadata)) : null,
+        metadata: metadata || null,
       })),
     });
 

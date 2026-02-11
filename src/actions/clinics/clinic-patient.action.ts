@@ -7,11 +7,33 @@ import { getCachedSession } from "../session.action";
 import { sessionCheck } from "@/lib/auth";
 import { hasCodeProperty } from "@/lib/utils";
 import { Prisma } from "@prisma/client";
+import { requireClinicPermission, requirePermissionOrOwnership } from "@/lib/permission-checker";
+import { PERMISSIONS } from "@/lib/permissions";
 
 export type GetClinicPatient = Awaited<ReturnType<typeof getClinicPatientAction>>;
 export const getClinicPatientAction = withErrorHandling(async ({ userId, clinicUid }: { userId: number, clinicUid: string }) => {
   const session = await getCachedSession();
   if (!session) throw new Error("Unauthorized");
+
+  // Fetch the user to get their userId for permission check
+  const targetUser = await prismaClient.user.findUnique({
+    where: { id: userId },
+    select: { userId: true }
+  });
+  
+  if (!targetUser) {
+    throw new Error("User not found");
+  }
+
+  // Check permission: user can view all patients or their own record
+  await requirePermissionOrOwnership(
+    session.user.sub,
+    clinicUid,
+    targetUser.userId,
+    PERMISSIONS.CLINIC["READ:CLINIC:PATIENT:ALL"].name,
+    PERMISSIONS.CLINIC["READ:CLINIC:PATIENT:OWN"].name,
+    "view patient record"
+  );
 
   const clinicPatient = await prismaClient.clinicPatient.findFirst({
     where: {
@@ -94,9 +116,17 @@ export interface GetClinicPatientsResult {
 export type GetClinicPatients = GetClinicPatientsResult;
 export const getClinicPatientsAction = async (filters: GetClinicPatientFilters): Promise<GetClinicPatientsResult> => {
 
-
   const session = await getCachedSession()
   if (!session) throw new Error("Unauthorized")
+  
+  // Check permission: user must have permission to view all patients in the clinic
+  await requireClinicPermission(
+    session.user.sub,
+    filters.clinicUid,
+    PERMISSIONS.CLINIC["READ:CLINIC:PATIENT:ALL"].name,
+    "view patient list"
+  );
+  
   const { search, cursor, pageSize = 50, distinct = [], clinicUid, userId, gender, minAge = 0, maxAge = 120 } = filters ?? {}
 
   // Calculate birth date range based on age
@@ -265,7 +295,15 @@ export const getClinicPatientsAction = async (filters: GetClinicPatientFilters):
 
 
 export const addClinicPatientAction = withErrorHandling(async ({ clinicUid, userId }: { clinicUid: string, userId: string }) => {
-  await sessionCheck()
+  const session = await sessionCheck()
+
+  // Check permission: user must have permission to create patients in the clinic
+  await requireClinicPermission(
+    session.user.sub,
+    clinicUid,
+    PERMISSIONS.CLINIC["CREATE:CLINIC:PATIENT"].name,
+    "add patient to clinic"
+  );
 
   try {
     await prismaClient.$transaction(async (prisma) => {

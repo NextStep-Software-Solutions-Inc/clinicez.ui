@@ -11,7 +11,31 @@ export const PERMISSIONS = {
     "SUPER_ADMIN": {
       name: "super_admin",
       description: "User has super admin privileges.",
-    }
+    },
+    "UPDATE:USER:PROFILE:OWN": {
+      name: "update:user:profile:own",
+      description: "User can update their own profile information.",
+    },
+    "UPDATE:USER:PROFILE:ANY": {
+      name: "update:user:profile:any",
+      description: "User can update any user's profile information (admin/superadmin).",
+    },
+    "UPDATE:USER:ONBOARDING_STATUS": {
+      name: "update:user:onboarding_status",
+      description: "User can update onboarding status for users.",
+    },
+    "COMPLETE:USER:ONBOARDING_STEP": {
+      name: "complete:user:onboarding_step",
+      description: "User can complete onboarding steps.",
+    },
+    "CLAIM:USER:SHELL_ACCOUNT": {
+      name: "claim:user:shell_account",
+      description: "User can claim a shell account and convert it to a full account.",
+    },
+    "VIEW:USER:ONBOARDING_STATUS": {
+      name: "view:user:onboarding_status",
+      description: "User can view onboarding status and steps.",
+    },
   },
   CLINIC: {
     "CONFIRM:CLINIC:APPOINTMENT": {
@@ -181,6 +205,38 @@ export const PERMISSIONS = {
     "UPDATE:CLINIC:PERMISSIONS": {
       name: "update:clinic:permissions",
       description: "User can update permissions within the clinic.",
+    },
+    "CREATE:CLINIC:PATIENT": {
+      name: "create:clinic:patient",
+      description: "User can create and add new patients to the clinic.",
+    },
+    "READ:CLINIC:PATIENT:ALL": {
+      name: "read:clinic:patient:all",
+      description: "User can read all patient records within the clinic.",
+    },
+    "READ:CLINIC:PATIENT:OWN": {
+      name: "read:clinic:patient:own",
+      description: "User can read their own patient record within the clinic.",
+    },
+    "UPDATE:CLINIC:PATIENT:ALL": {
+      name: "update:clinic:patient:all",
+      description: "User can update any patient record within the clinic.",
+    },
+    "UPDATE:CLINIC:PATIENT:OWN": {
+      name: "update:clinic:patient:own",
+      description: "User can update their own patient record within the clinic.",
+    },
+    "UPDATE:CLINIC:PATIENT:ONBOARDING_STATUS": {
+      name: "update:clinic:patient:onboarding_status",
+      description: "User can update patient onboarding status within the clinic.",
+    },
+    "COMPLETE:CLINIC:PATIENT:ONBOARDING": {
+      name: "complete:clinic:patient:onboarding",
+      description: "User can complete patient onboarding process within the clinic.",
+    },
+    "VIEW:CLINIC:AUDIT_LOG": {
+      name: "view:clinic:audit_log",
+      description: "User can view audit logs within the clinic.",
     },
   },
   ORGANIZATION: {

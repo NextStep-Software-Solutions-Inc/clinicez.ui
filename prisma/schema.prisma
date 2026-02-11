@@ -154,6 +154,7 @@ model User {
   StudentRecords                   UserStudentRecord[]
   UserVaccinations                 UserVaccination[]
   VitalSigns                       VitalSign[]
+  AuditLogsPerformed               AuditLog[]                       @relation("AuditLogPerformer")
 
   @@index([caseNumber])
 }
@@ -2382,6 +2383,55 @@ enum OnboardingStepStatus {
 enum OnboardingEntityType {
   USER
   PATIENT
+}
+
+// Audit action types for field-level audit trail
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  PERMISSION_GRANT
+  PERMISSION_REVOKE
+  STATUS_CHANGE
+  ONBOARDING
+  JOIN
+  LEAVE
+  CLAIM
+}
+
+// Entity types for audit trail (extensible for future entities)
+enum AuditEntityType {
+  USER
+  PATIENT
+  ORGANIZATION
+  CLINIC
+  PERMISSION
+  CLINIC_MEMBER
+  ORG_MEMBER
+  PROVIDER
+  ONBOARDING
+}
+
+// AuditLog: generic, entity-agnostic field-level audit trail
+model AuditLog {
+  id              Int             @id @default(autoincrement())
+  entityType      AuditEntityType
+  entityId        Int
+  action          AuditAction
+  fieldName       String?
+  previousValue   String?
+  newValue        String?
+  reason          String?
+  metadata        Json?
+  performedBy     Int?
+  performedAt     DateTime        @default(now())
+  Performer       User?           @relation("AuditLogPerformer", fields: [performedBy], references: [id], onDelete: SetNull, onUpdate: NoAction)
+
+  @@index([entityType, entityId])
+  @@index([performedBy])
+  @@index([performedAt])
+  @@index([action])
+  @@index([entityType, entityId, fieldName])
 }
 
 // Sequence Generator for auto-incrementing case numbers

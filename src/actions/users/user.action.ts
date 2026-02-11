@@ -13,6 +13,8 @@ import { withErrorHandling } from '@/lib/with-error-handling';
 // import { updateAuth0UserAction } from './user-management.action'; // Commented out for Clerk migration
 import { getPermissionsAction } from '../permission.action';
 import { sessionCheck } from '@/lib/auth';
+import { isOwnResource, PermissionError } from '@/lib/permission-checker';
+import { PERMISSIONS } from '@/lib/permissions';
 
 export type PrismaTransactionalClient = Parameters<Parameters<typeof prisma['$transaction']>[0]>[0];
 
@@ -321,7 +323,22 @@ export const createUserAction = withErrorHandling(async (payload: CreateUserPayl
 
 export const updateUserAction = withErrorHandling(async (userId: string, data: Prisma.UserUpdateArgs["data"]) => {
 
-  await sessionCheck();
+  const session = await sessionCheck();
+  
+  // Check permission: user can update their own profile or has permission to update any profile
+  const isOwn = await isOwnResource(userId);
+  
+  if (!isOwn) {
+    // For updating other users, need explicit permission
+    // Note: This is a USER-level permission check
+    // In production, you'd check UPDATE:USER:PROFILE:ANY permission via UserPermission table
+    // For now, we'll throw an error as this requires superadmin privileges
+    throw new PermissionError(
+      "You can only update your own profile. Updating other users requires admin privileges.",
+      PERMISSIONS.USER["UPDATE:USER:PROFILE:ANY"].name,
+      "USER"
+    );
+  }
 
   const updatedUser = await prisma.user.update({
     where: { userId },

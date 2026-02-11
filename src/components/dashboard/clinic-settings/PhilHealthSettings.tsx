@@ -39,12 +39,7 @@ export default function PhilHealthSettings() {
 
   const action = async () => {
     form.handleSubmit(async (data) => {
-      if (!clinicSetting?.data?.id) {
-        toast.error("Clinic setting not found");
-        return;
-      }
-      
-      toast.promise(promiseWrapper(updatePhilHealthSettingsAction)(clinicUid, clinicSetting.data.id, data), {
+      toast.promise(promiseWrapper(updatePhilHealthSettingsAction)(clinicUid, data), {
         loading: "Saving PhilHealth settings...",
         success: (res) => {
           mutate()
@@ -78,7 +73,7 @@ export default function PhilHealthSettings() {
                   <FormLabel>PhilHealth Accreditation Number (PAN)</FormLabel>
                   <FormControl>
                     <Input 
-                      placeholder="e.g., P10038831" 
+                      placeholder="Enter PhilHealth Accreditation Number" 
                       {...field} 
                     />
                   </FormControl>
@@ -97,7 +92,7 @@ export default function PhilHealthSettings() {
                   <FormLabel>Konsulta Facility Name</FormLabel>
                   <FormControl>
                     <Input 
-                      placeholder="e.g., USTP-CDO Medical Clinic" 
+                      placeholder="Enter facility name" 
                       {...field} 
                     />
                   </FormControl>

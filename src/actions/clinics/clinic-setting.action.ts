@@ -93,7 +93,7 @@ type UpdatePhilHealthSettings = {
   philhealthAccreditationNumber?: string;
   facilityName?: string;
 }
-export const updatePhilHealthSettingsAction = async (clinicUid: string, clinicSettingId: number, data: UpdatePhilHealthSettings) => {
+export const updatePhilHealthSettingsAction = async (clinicUid: string, data: UpdatePhilHealthSettings) => {
 
   let message = "PhilHealth settings updated successfully";
 
@@ -102,23 +102,26 @@ export const updatePhilHealthSettingsAction = async (clinicUid: string, clinicSe
     const session = await getCachedSession();
     if(!session) throw new Error("User not authenticated.");
 
-    // Verify the clinic setting belongs to the provided clinic
-    const existingSetting = await prisma.clinicSetting.findFirst({
-      where: {
-        id: clinicSettingId,
-        Clinic: { clinicUid }
-      }
+    // Get the clinic first to ensure it exists and user has access
+    const clinic = await prisma.clinic.findFirst({
+      where: { clinicUid, isActive: true }
     });
 
-    if (!existingSetting) {
-      throw new Error("Clinic setting not found or unauthorized.");
+    if (!clinic) {
+      throw new Error("Clinic not found or unauthorized.");
     }
 
-    const clinicSetting = await prisma.clinicSetting.update({
+    // Upsert clinic setting - create if doesn't exist, update if it does
+    const clinicSetting = await prisma.clinicSetting.upsert({
       where: { 
-        id: clinicSettingId
+        clinicId: clinic.id
       },
-      data: {
+      create: {
+        clinicId: clinic.id,
+        philhealthAccreditationNumber: data.philhealthAccreditationNumber,
+        facilityName: data.facilityName,
+      },
+      update: {
         philhealthAccreditationNumber: data.philhealthAccreditationNumber,
         facilityName: data.facilityName,
       }

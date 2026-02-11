@@ -4,7 +4,7 @@ import prisma from "@lib/prisma";
 import { $Enums } from "@prisma/client";
 import { sessionCheck } from "@/lib/auth";
 import { withErrorHandling } from "@/lib/with-error-handling";
-import { requirePermissionOrOwnership, isOwnResource, PermissionError } from "@/lib/permission-checker";
+import { requirePermissionOrOwnership, isOwnResource, PermissionError, requireUserPermission } from "@/lib/permission-checker";
 import { PERMISSIONS } from "@/lib/permissions";
 
 type PrismaTransactionalClient = Parameters<
@@ -72,13 +72,11 @@ export const updateOnboardingStatusAction = withErrorHandling(
     const isOwn = await isOwnResource(payload.userId);
     
     if (!isOwn) {
-      // For updating other users, need explicit permission
-      // USER-level permissions require checking UserPermission table or JWT claims
-      // For now, deny access unless user is acting on their own record
-      throw new PermissionError(
-        "You can only update your own onboarding status. Updating other users requires admin privileges.",
+      // For updating other users, need explicit USER-level permission
+      await requireUserPermission(
+        session.user.sub,
         PERMISSIONS.USER["UPDATE:USER:ONBOARDING_STATUS"].name,
-        "USER"
+        "update other users' onboarding status"
       );
     }
 
@@ -236,12 +234,11 @@ export const completeOnboardingStepAction = withErrorHandling(
     const isOwn = await isOwnResource(payload.userId);
     
     if (!isOwn) {
-      // For completing steps for other users, need explicit permission
-      // This is typically used by admins/support to help users complete onboarding
-      throw new PermissionError(
-        "You can only complete your own onboarding steps. Completing steps for other users requires admin privileges.",
+      // For completing steps for other users, need explicit USER-level permission
+      await requireUserPermission(
+        session.user.sub,
         PERMISSIONS.USER["COMPLETE:USER:ONBOARDING_STEP"].name,
-        "USER"
+        "complete onboarding steps for other users"
       );
     }
 
@@ -372,11 +369,11 @@ export const getOnboardingStatusAction = withErrorHandling(
     const isOwn = await isOwnResource(payload.userId);
     
     if (!isOwn) {
-      // For viewing other users' status, typically requires permission
-      throw new PermissionError(
-        "You can only view your own onboarding status. Viewing other users' status requires admin privileges.",
+      // For viewing other users' status, need explicit USER-level permission
+      await requireUserPermission(
+        session.user.sub,
         PERMISSIONS.USER["VIEW:USER:ONBOARDING_STATUS"].name,
-        "USER"
+        "view other users' onboarding status"
       );
     }
 

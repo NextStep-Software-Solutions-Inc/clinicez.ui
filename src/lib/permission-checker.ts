@@ -2,6 +2,7 @@
 
 import { sessionCheck } from "./auth";
 import { hasOrgPermissionAction, hasClinicPermissionAction } from "@/actions/permission.action";
+import prisma from "./prisma";
 
 /**
  * Permission checking utilities for server actions
@@ -11,6 +12,53 @@ export class PermissionError extends Error {
   constructor(message: string, public permissionName?: string, public context?: string) {
     super(message);
     this.name = "PermissionError";
+  }
+}
+
+/**
+ * Check if a user has a specific USER-level permission
+ * Throws PermissionError if the check fails
+ */
+export async function requireUserPermission(
+  userId: string,
+  permissionName: string,
+  actionDescription?: string
+): Promise<void> {
+  try {
+    const permission = await prisma.permission.findFirst({
+      where: {
+        name: permissionName,
+        isActive: true,
+        type: "USER",
+        UserPermissions: {
+          some: {
+            User: {
+              userId
+            }
+          }
+        }
+      }
+    });
+
+    if (!permission) {
+      throw new PermissionError(
+        actionDescription 
+          ? `Permission denied: ${actionDescription}. Required permission: ${permissionName}`
+          : `Permission denied. Required permission: ${permissionName}`,
+        permissionName,
+        "USER"
+      );
+    }
+  } catch (error) {
+    if (error instanceof PermissionError) {
+      throw error;
+    }
+    console.error("Error checking user permission:", error);
+    throw new PermissionError(
+      `Failed to verify permission: ${permissionName}`,
+      permissionName,
+      "USER"
+    );
   }
 }
 

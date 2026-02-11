@@ -202,6 +202,38 @@ export const PERMISSIONS = {
       name: "complete:clinic:patient:onboarding",
       description: "User can complete patient onboarding within the clinic.",
     },
+    "VIEW:CLINIC:PATIENT:PROFILE": {
+      name: "view:clinic:patient:profile",
+      description: "User can view patient profile within the clinic.",
+    },
+    "EDIT:CLINIC:PATIENT:PROFILE": {
+      name: "edit:clinic:patient:profile",
+      description: "User can edit patient profile within the clinic.",
+    },
+    "VIEW:CLINIC:PATIENT:HEALTH_RECORDS": {
+      name: "view:clinic:patient:health_records",
+      description: "User can view patient health records within the clinic.",
+    },
+    "EDIT:CLINIC:PATIENT:HEALTH_RECORDS": {
+      name: "edit:clinic:patient:health_records",
+      description: "User can edit patient health records within the clinic.",
+    },
+    "ADD:CLINIC:PATIENT:HEALTH_RECORDS": {
+      name: "add:clinic:patient:health_records",
+      description: "User can add patient health records within the clinic.",
+    },
+    "VIEW:CLINIC:PATIENT:CONSULTATIONS": {
+      name: "view:clinic:patient:consultations",
+      description: "User can view patient consultations within the clinic.",
+    },
+    "EXPORT:CLINIC:PATIENT:AUDIT_LOG": {
+      name: "export:clinic:patient:audit_log",
+      description: "User can export patient audit logs within the clinic.",
+    },
+    "GENERATE:CLINIC:PATIENT:REPORT": {
+      name: "generate:clinic:patient:report",
+      description: "User can generate patient reports within the clinic.",
+    },
   },
   ORGANIZATION: {
     "UPDATE:ORG:INFO": {

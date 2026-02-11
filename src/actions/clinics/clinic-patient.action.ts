@@ -65,6 +65,8 @@ export interface GetClinicPatientsResult {
   data: Array<{
     stats: { appointments: number; conditions: number; medications: number };
     id: number;
+    onboardingStatus: string | null;
+    addedBy: number | null;
     Clinic: {
       id: number;
       name: string;
@@ -83,6 +85,8 @@ export interface GetClinicPatientsResult {
       bloodType: string | null;
       nickname: string | null;
       picture: string | null;
+      isShellAccount: boolean | null;
+      onboardingStatus: string | null;
       StudentRecords: Array<{ studentId: number }>;
     };
   }>;
@@ -138,6 +142,8 @@ export const getClinicPatientsAction = async (filters: GetClinicPatientFilters):
     },
     select: {
       id: true,
+      onboardingStatus: true,
+      addedBy: true,
       Clinic: {
         select: {
           id: true,
@@ -159,6 +165,8 @@ export const getClinicPatientsAction = async (filters: GetClinicPatientFilters):
           bloodType: true,
           nickname: true,
           picture: true,
+          isShellAccount: true,
+          onboardingStatus: true,
           StudentRecords: {
             where: {
               isActive: true

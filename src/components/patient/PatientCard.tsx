@@ -41,6 +41,7 @@ export function PatientCard({ patient, viewMode = 'grid' }: PatientCardProps) {
   // Destructure patient data first
   const {
     id: clinicPatientId,
+    onboardingStatus: clinicPatientOnboardingStatus,
     Patient: {
       id: patientId,
       dob,
@@ -53,6 +54,8 @@ export function PatientCard({ patient, viewMode = 'grid' }: PatientCardProps) {
       bloodType,
       nickname,
       userId,
+      isShellAccount,
+      onboardingStatus: patientOnboardingStatus,
       picture = 'https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png',
     },
     immunocompromised,
@@ -223,6 +226,21 @@ export function PatientCard({ patient, viewMode = 'grid' }: PatientCardProps) {
                     IC
                   </Badge>
                 </ConditionalRender>
+                <ConditionalRender condition={isShellAccount === true}>
+                  <Badge variant="outline" className="text-xs gap-1 border-amber-500 text-amber-700">
+                    Shell
+                  </Badge>
+                </ConditionalRender>
+                <ConditionalRender condition={patientOnboardingStatus === 'INCOMPLETE' || clinicPatientOnboardingStatus === 'INCOMPLETE'}>
+                  <Badge variant="secondary" className="text-xs gap-1">
+                    Incomplete
+                  </Badge>
+                </ConditionalRender>
+                <ConditionalRender condition={patientOnboardingStatus === 'PENDING' || clinicPatientOnboardingStatus === 'PENDING'}>
+                  <Badge variant="outline" className="text-xs gap-1 border-blue-500 text-blue-700">
+                    Pending
+                  </Badge>
+                </ConditionalRender>
                 <AIButton
                   onClick={handleOpenAIInsights}
                   disabled={false}
@@ -328,6 +346,30 @@ export function PatientCard({ patient, viewMode = 'grid' }: PatientCardProps) {
               <p className="text-xs font-medium text-destructive">Immunocompromised patient</p>
             </div>
           </ConditionalRender>
+
+          {/* Onboarding Status */}
+          <div className="flex flex-wrap gap-2">
+            <ConditionalRender condition={isShellAccount === true}>
+              <Badge variant="outline" className="text-xs gap-1 border-amber-500 text-amber-700">
+                Shell Account
+              </Badge>
+            </ConditionalRender>
+            <ConditionalRender condition={patientOnboardingStatus === 'INCOMPLETE' || clinicPatientOnboardingStatus === 'INCOMPLETE'}>
+              <Badge variant="secondary" className="text-xs gap-1">
+                Onboarding Incomplete
+              </Badge>
+            </ConditionalRender>
+            <ConditionalRender condition={patientOnboardingStatus === 'PENDING' || clinicPatientOnboardingStatus === 'PENDING'}>
+              <Badge variant="outline" className="text-xs gap-1 border-blue-500 text-blue-700">
+                Onboarding Pending
+              </Badge>
+            </ConditionalRender>
+            <ConditionalRender condition={patientOnboardingStatus === 'COMPLETED' && clinicPatientOnboardingStatus === 'COMPLETED'}>
+              <Badge variant="outline" className="text-xs gap-1 border-green-500 text-green-700">
+                Onboarding Complete
+              </Badge>
+            </ConditionalRender>
+          </div>
         </CardContent>
 
         {/* Footer Actions */}

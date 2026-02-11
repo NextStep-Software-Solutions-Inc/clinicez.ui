@@ -5,13 +5,13 @@ This implementation provides a comprehensive onboarding and patient management s
 
 ## Implementation Status
 
-### ✅ Completed (Phases 1-3)
+### ✅ Completed (Phases 1-4)
 - **Phase 1**: Database Schema & Infrastructure
 - **Phase 2**: Core Server Actions  
 - **Phase 3**: User Onboarding UI
+- **Phase 4**: Organization Onboarding UI (In Progress - 80% Complete)
 
-### 🔄 Remaining (Phases 4-7)
-- **Phase 4**: Organization Onboarding UI
+### 🔄 Remaining (Phases 5-7)
 - **Phase 5**: Provider Patient Creation UI
 - **Phase 6**: Patient Details Interface
 - **Phase 7**: Testing & Polish
@@ -110,6 +110,23 @@ Server-rendered onboarding route:
 - Database user lookup
 - Auto-redirect if completed
 - Clean, minimal layout
+
+#### src/components/onboarding/OrganizationOnboardingWrapper.tsx
+Organization onboarding validation wrapper:
+- Validates user profile completion before org join
+- Checks organization onboarding status
+- Shows missing user fields if incomplete
+- Displays org requirements
+- Provides navigation and status messages
+- Responsive loading states
+
+#### src/components/onboarding/OnboardingStatusBanner.tsx
+Status display component:
+- Shows pending approval status
+- Displays completion confirmation
+- In-progress indicators
+- Incomplete status warnings
+- Color-coded alerts with icons
 
 ### 4. Permissions System
 
@@ -408,6 +425,87 @@ Key metrics to monitor:
 - [Permissions System](./src/lib/permissions.ts)
 - [Audit Logging](./src/actions/audit.action.ts)
 - [User Onboarding](./src/components/onboarding/UserOnboardingPage.tsx)
+- [Organization Onboarding](./src/components/onboarding/OrganizationOnboardingWrapper.tsx)
+
+## Phase 4: Organization Onboarding Implementation
+
+### Overview
+Phase 4 integrates the organization joining flow with the new onboarding system, ensuring users complete their profile before joining and tracking onboarding status through approval.
+
+### Key Components Added
+
+1. **OrganizationOnboardingWrapper** - Validates prerequisites before org join
+2. **OnboardingStatusBanner** - Visual status indicators for members
+3. **Enhanced join-organization.action.ts** - Profile validation and audit logging
+4. **Updated org-member.action.ts** - Onboarding completion on approval
+
+### Integration Flow
+
+```
+User Initiates Join
+    ↓
+Validate User Profile (Required)
+    ↓
+Create Membership (Status: PENDING, Onboarding: PENDING)
+    ↓
+Log Join Action in Audit Trail
+    ↓
+Send Notifications
+    ↓
+Admin Approves
+    ↓
+Update Status (Status: ACTIVE, Onboarding: COMPLETED)
+    ↓
+Grant Role Permissions
+    ↓
+Log Completion in Audit Trail
+    ↓
+User Access Granted
+```
+
+### Features Implemented
+
+✅ **Profile Validation**: Users must complete profile before joining
+✅ **Status Tracking**: Onboarding status tracked from join to approval
+✅ **Audit Logging**: All actions logged with metadata
+✅ **Permission Grants**: Automatic on approval
+✅ **Status Display**: Visual indicators for all states
+✅ **Error Handling**: Graceful errors with actionable messages
+
+### Example Usage
+
+```typescript
+// Check if user can join organization
+const wrapper = (
+  <OrganizationOnboardingWrapper
+    userId={userId}
+    organizationId={orgId}
+    orgUid={orgUid}
+    orgName={orgName}
+  >
+    <OrganizationJoinFlow />
+  </OrganizationOnboardingWrapper>
+);
+
+// Display onboarding status
+<OnboardingStatusBanner
+  status={member.onboardingStatus}
+  organizationName={org.name}
+  completionDate={member.onboardingCompletionDate}
+/>
+```
+
+### Testing Checklist
+
+- [ ] User with incomplete profile blocked from joining
+- [ ] User with complete profile can join successfully
+- [ ] Membership status shows as PENDING after join
+- [ ] Admin can approve membership
+- [ ] Onboarding status updates to COMPLETED on approval
+- [ ] Permissions granted automatically
+- [ ] Audit logs created correctly
+- [ ] Email notifications sent
+- [ ] Status banner displays correctly for all states
 
 ## Contributors
 
@@ -422,5 +520,5 @@ Same as parent project (ClinicEZ)
 ---
 
 **Last Updated**: 2026-02-11
-**Status**: Phase 1-3 Complete, Phases 4-7 Pending
-**Version**: 1.0.0
+**Status**: Phases 1-4 In Progress (80% complete), Phases 5-7 Pending
+**Version**: 1.1.0

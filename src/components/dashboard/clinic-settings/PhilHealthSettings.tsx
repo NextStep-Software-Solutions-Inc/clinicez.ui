@@ -32,8 +32,8 @@ export default function PhilHealthSettings() {
   const form = useForm<PhilHealthSettingsForm>({
     resolver: zodResolver(philHealthSettingsForm),
     values: {
-      philhealthAccreditationNumber: clinicSetting?.data?.data?.philhealthAccreditationNumber ?? "",
-      facilityName: clinicSetting?.data?.data?.facilityName ?? "",
+      philhealthAccreditationNumber: clinicSetting?.data?.philhealthAccreditationNumber ?? "",
+      facilityName: clinicSetting?.data?.facilityName ?? "",
     }
   })
 
@@ -112,10 +112,10 @@ export default function PhilHealthSettings() {
       </CardContent>
       <CardFooter>
         {
-          clinicSetting?.data?.data?.Clinic?.updatedAt && 
+          clinicSetting?.data?.Clinic?.updatedAt && 
           (
             <Badge variant="secondary">
-              Updated last {dayjs(clinicSetting.data.data.Clinic.updatedAt).fromNow()}
+              Updated last {dayjs(clinicSetting.data.Clinic.updatedAt).fromNow()}
             </Badge>
           )
         }

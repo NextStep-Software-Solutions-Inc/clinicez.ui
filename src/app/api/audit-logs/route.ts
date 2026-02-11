@@ -8,14 +8,20 @@ import { getAuditLogsAction, GetAuditLogsPayload } from "@actions/audit.action";
 export const GET = withClerkAuth(async (req: NextRequest) => {
   const searchParams = req.nextUrl.searchParams;
 
+  const entityType = searchParams.get("entityType");
+  const action = searchParams.get("action");
+  const fieldName = searchParams.get("fieldName");
+  const startDate = searchParams.get("startDate");
+  const endDate = searchParams.get("endDate");
+
   const payload: GetAuditLogsPayload = {
-    entityType: searchParams.get("entityType") as GetAuditLogsPayload["entityType"] ?? undefined,
+    entityType: entityType ? entityType as NonNullable<GetAuditLogsPayload["entityType"]> : undefined,
     entityId: searchParams.get("entityId") ? Number(searchParams.get("entityId")) : undefined,
-    action: searchParams.get("action") as GetAuditLogsPayload["action"] ?? undefined,
-    fieldName: searchParams.get("fieldName") ?? undefined,
+    action: action ? action as NonNullable<GetAuditLogsPayload["action"]> : undefined,
+    fieldName: fieldName ? fieldName : undefined,
     performedBy: searchParams.get("performedBy") ? Number(searchParams.get("performedBy")) : undefined,
-    startDate: searchParams.get("startDate") ?? undefined,
-    endDate: searchParams.get("endDate") ?? undefined,
+    startDate: startDate ? startDate : undefined,
+    endDate: endDate ? endDate : undefined,
     page: searchParams.get("page") ? Number(searchParams.get("page")) : undefined,
     pageSize: searchParams.get("pageSize") ? Number(searchParams.get("pageSize")) : undefined,
   };

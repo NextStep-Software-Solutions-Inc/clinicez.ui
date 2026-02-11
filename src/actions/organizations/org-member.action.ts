@@ -14,6 +14,7 @@ import { OrganizationMemberStatus } from "@/types";
 import { withErrorHandling } from "@/lib/with-error-handling";
 import { isSuperAdminAction } from "@actions/super-admin/admin-check.action";
 import { hasOrgPermissionAction } from "@actions/permission.action";
+import { createAuditLog } from "@actions/audit.action";
 
 export const isOrgHealthcareProviderAction = async (userId: string, orgUid: string) => {
   const orgMember = await prisma.organizationMember.findFirst({
@@ -326,7 +327,10 @@ export const setMembershipRequestStatusAction = withErrorHandling(
     // First, get the membership to find the orgUid
     const membership = await prisma.organizationMember.findUnique({
       where: { id },
-      select: { Organization: { select: { orgUid: true } } }
+      select: { 
+        Organization: { select: { orgUid: true, id: true } },
+        userId: true,
+      }
     });
 
     if (!membership) throw new Error("Membership not found");
@@ -356,7 +360,9 @@ export const setMembershipRequestStatusAction = withErrorHandling(
               connect: {
                 userId
               }
-            }
+            },
+            onboardingStatus: 'COMPLETED',
+            onboardingCompletionDate: new Date(),
           })
         },
         select: {
@@ -400,12 +406,26 @@ export const setMembershipRequestStatusAction = withErrorHandling(
 
         await prisma.orgMemberPermission.createMany({
           skipDuplicates: true,
-          data: permissions.map((item) => {
+          data: permissions.map((item: { Permission: { id: number } }) => {
             return {
               permissionId: item.Permission.id,
               orgMemberId: userOrganization.id
             };
           })
+        });
+
+        // Create audit log for onboarding completion
+        await createAuditLog({
+          actorId: membership.userId,
+          actionType: 'ONBOARDING_COMPLETE' as any,
+          entityType: 'ORGANIZATION_MEMBER' as any,
+          entityId: id,
+          targetUserId: membership.userId,
+          metadata: {
+            organizationId: membership.Organization.id,
+            completedAt: new Date().toISOString(),
+            approvedBy: userId,
+          },
         });
       }
 

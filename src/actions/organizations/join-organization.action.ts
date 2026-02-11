@@ -7,6 +7,9 @@ import path from 'path';
 import { capitalize, hasCodeProperty } from "@lib/utils";
 import { getCachedSession } from "../session.action";
 import { withErrorHandling } from "@/lib/with-error-handling";
+import { OnboardingStatus, AuditActionType, EntityType } from '@prisma/client';
+import { createAuditLog } from '../audit.action';
+import { validateUserOnboarding } from '../onboarding/user-onboarding.action';
 
 export type JoinOrganizationPayload = {
   userId: string;
@@ -25,8 +28,17 @@ export const joinOrganizationAction = withErrorHandling(async (payload: JoinOrga
   // Find the user by userId string first
   const currentUser = await prisma.user.findUniqueOrThrow({
     where: { userId, isActive: true },
-    select: { id: true },
+    select: { 
+      id: true,
+      onboardingStatus: true,
+    },
   });
+
+  // Validate user has completed their profile before joining organization
+  const userOnboardingResult = await validateUserOnboarding(currentUser.id);
+  if (userOnboardingResult.success && !userOnboardingResult.data?.isComplete) {
+    throw new Error("Please complete your user profile before joining an organization");
+  }
 
   const userOrganization = await prisma.organizationMember.create({
     data: {
@@ -38,7 +50,8 @@ export const joinOrganizationAction = withErrorHandling(async (payload: JoinOrga
       },
       Organization: {
         connect: { orgUid }
-      }
+      },
+      onboardingStatus: OnboardingStatus.PENDING,
     },
     include: {
       User: {
@@ -50,11 +63,13 @@ export const joinOrganizationAction = withErrorHandling(async (payload: JoinOrga
       },
       OrganizationRole: {
         select: {
-          requirements: true
+          requirements: true,
+          name: true,
         }
       },
       Organization: {
         select: {
+          id: true,
           name: true,
           OrganizationMembers: {
             select: {
@@ -78,6 +93,22 @@ export const joinOrganizationAction = withErrorHandling(async (payload: JoinOrga
 
   if (!(userOrganization)) throw new Error("Error sending membership request");
 
+  // Create audit log for organization join
+  await createAuditLog({
+    actorId: currentUser.id,
+    actionType: AuditActionType.CREATE,
+    entityType: EntityType.ORGANIZATION_MEMBER,
+    entityId: userOrganization.id,
+    targetUserId: currentUser.id,
+    metadata: {
+      organizationId: userOrganization.Organization.id,
+      organizationName: userOrganization.Organization.name,
+      roleId: orgRoleId,
+      roleName: userOrganization.OrganizationRole.name,
+      onboardingStatus: OnboardingStatus.PENDING,
+    },
+  });
+
   const adminEmails = userOrganization.Organization.OrganizationMembers.filter(u => u.OrganizationRole.name.toUpperCase() === "ADMIN" && u.status === "ACTIVE").map(u => u.User.email);
   const applicantEmail = userOrganization.User.email;
   const applicantName = capitalize(`${userOrganization.User.firstName} ${userOrganization.User.lastName}`);
@@ -89,6 +120,7 @@ export const joinOrganizationAction = withErrorHandling(async (payload: JoinOrga
 }, async error => {
   if (hasCodeProperty(error) && error.code === "P2002") return "User is already a member of the organization";
   if (error instanceof Error && error.message === "User email is not verified") return "Your email address is not verified. Please verify your email before joining an organization.";
+  if (error instanceof Error && error.message.includes("complete your user profile")) return error.message;
   return "An error occurred while sending the membership request. Please try again later.";
 })
 

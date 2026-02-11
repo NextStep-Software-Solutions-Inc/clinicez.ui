@@ -49,17 +49,17 @@ export default function ClinicGeneralSettings() {
   const form = useForm<ClinicGeneralSettingsForm>({
     resolver: zodResolver(generalSettingsForm),
     values: {
-      clinicUid: clinic?.data?.clinicUid ?? "",
-      name: clinic?.data?.name ?? "",
-      description: clinic?.data?.description ?? "",
-      logo: clinic?.data?.logo ?? "",
-      customUrl: clinic?.data?.customUrl ?? "",
-      email: clinic?.data?.email ?? "",
-      isPublic: clinic?.data?.ClinicSetting?.isPublic ?? false,
-      sendEmailNotification: clinic?.data?.ClinicSetting?.sendEmailNotification ?? false,
-      emailToClinicOnly: clinic?.data?.ClinicSetting?.emailToClinicOnly ?? false,
-      enableAppointment: clinic?.data?.ClinicSetting?.enableAppointment ?? false,
-      enableConsultation: clinic?.data?.ClinicSetting?.enableConsultation ?? false,
+      clinicUid: clinic?.data?.data?.clinicUid ?? "",
+      name: clinic?.data?.data?.name ?? "",
+      description: clinic?.data?.data?.description ?? "",
+      logo: clinic?.data?.data?.logo ?? "",
+      customUrl: clinic?.data?.data?.customUrl ?? "",
+      email: clinic?.data?.data?.email ?? "",
+      isPublic: clinic?.data?.data?.ClinicSetting?.isPublic ?? false,
+      sendEmailNotification: clinic?.data?.data?.ClinicSetting?.sendEmailNotification ?? false,
+      emailToClinicOnly: clinic?.data?.data?.ClinicSetting?.emailToClinicOnly ?? false,
+      enableAppointment: clinic?.data?.data?.ClinicSetting?.enableAppointment ?? false,
+      enableConsultation: clinic?.data?.data?.ClinicSetting?.enableConsultation ?? false,
     }
   })
 
@@ -304,10 +304,10 @@ export default function ClinicGeneralSettings() {
       </CardContent>
       <CardFooter>
         {
-          clinic?.data?.updatedAt && 
+          clinic?.data?.data?.updatedAt && 
           (
             <Badge variant="secondary">
-              Updated last {dayjs(clinic.data.updatedAt).fromNow()}
+              Updated last {dayjs(clinic.data.data.updatedAt).fromNow()}
             </Badge>
           )
         }

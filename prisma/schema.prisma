@@ -67,6 +67,17 @@ model User {
   telephone                        String?
   caseNumber                       String?                          @unique
   caseNumberGeneratedAt            DateTime?
+  onboardingStatus                 OnboardingStatus                 @default(NOT_STARTED)
+  profileCompletionStatus          ProfileCompletionStatus          @default(INCOMPLETE)
+  accountType                      AccountType                      @default(FULL)
+  firstLogin                       DateTime?
+  onboardingCompletedAt            DateTime?
+  claimedAt                        DateTime?
+  claimedBy                        Int?
+  ClaimedByUser                    User?                            @relation("ClaimedByUser", fields: [claimedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  ClaimedUsers                     User[]                           @relation("ClaimedByUser")
+  OnboardingSteps                  OnboardingStep[]
+  OnboardingStepLogs               OnboardingStepLog[]
   ActivationCodes                  ActivationCode[]
   CompletedByAppointments          AppointmentAttribute[]           @relation("CompletedBy")
   ReceivedByAppointments           AppointmentAttribute[]           @relation("ReceivedBy")
@@ -209,6 +220,11 @@ model ClinicPatient {
   updatedAt                    DateTime                      @updatedAt
   isActive                     Boolean                       @default(true)
   deletedAt                    DateTime?
+  onboardingStatus             OnboardingStatus              @default(NOT_STARTED)
+  profileCompletionStatus      ProfileCompletionStatus       @default(INCOMPLETE)
+  accountType                  AccountType                   @default(FULL)
+  claimedAt                    DateTime?
+  claimedBy                    Int?
   ImagingRequests              ClinicImagingRequest[]
   LaboratoryRequests           ClinicLaboratoryRequest[]
   HeartStationRequests         ClinicHeartStationRequest[]
@@ -274,6 +290,7 @@ model Organization {
   UserEmployments              UserEmploymentRecord[]
   UserMigrations               UserMigration[]
   UserStudentRecords           UserStudentRecord[]
+  OrgOnboardingRequirements    OrgOnboardingRequirement[]
 }
 
 model OrganizationSetting {
@@ -2338,6 +2355,35 @@ enum PhilHealthMemberCategory {
   INDIRECT
 }
 
+enum OnboardingStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  SKIPPED
+}
+
+enum ProfileCompletionStatus {
+  INCOMPLETE
+  PARTIAL
+  COMPLETE
+}
+
+enum AccountType {
+  FULL
+  SHELL
+}
+
+enum OnboardingStepStatus {
+  PENDING
+  COMPLETED
+  SKIPPED
+}
+
+enum OnboardingEntityType {
+  USER
+  PATIENT
+}
+
 // Sequence Generator for auto-incrementing case numbers
 model SequenceGenerator {
   id           Int      @id @default(autoincrement())
@@ -2428,4 +2474,62 @@ model GlobalAIDefaults {
   updatedAt           DateTime @updatedAt
 
   @@unique([id])
+}
+
+// Onboarding Step: tracks required onboarding steps or missing fields per user/patient
+model OnboardingStep {
+  id                Int                   @id @default(autoincrement())
+  userId            Int
+  entityType        OnboardingEntityType  @default(USER)
+  entityId          Int?
+  stepName          String
+  stepLabel         String?
+  status            OnboardingStepStatus  @default(PENDING)
+  isRequired        Boolean               @default(true)
+  completedAt       DateTime?
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+  User              User                  @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([userId, entityType, entityId, stepName], name: "unique_onboarding_step")
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([status])
+}
+
+// Onboarding Step Log: audit trail for all onboarding-related changes
+model OnboardingStepLog {
+  id                Int                   @id @default(autoincrement())
+  userId            Int
+  entityType        OnboardingEntityType  @default(USER)
+  entityId          Int?
+  action            String
+  stepName          String?
+  previousStatus    String?
+  newStatus         String?
+  metadata          String?
+  performedBy       Int?
+  createdAt         DateTime              @default(now())
+  User              User                  @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
+
+// Org-level custom onboarding requirements for forward compatibility
+model OrgOnboardingRequirement {
+  id                Int              @id @default(autoincrement())
+  organizationId    Int
+  entityType        OnboardingEntityType @default(USER)
+  fieldName         String
+  fieldLabel        String?
+  isRequired        Boolean          @default(true)
+  isActive          Boolean          @default(true)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  Organization      Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([organizationId, entityType, fieldName], name: "unique_org_onboarding_requirement")
+  @@index([organizationId])
 }

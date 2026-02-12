@@ -36,12 +36,10 @@ export default async function RootLayout({ children }: Props) {
 
   const session = await getCachedSession();
   let onboardingStatus = "COMPLETED";
-  let accountType = "FULL";
   if (session) {
     const dbUser = await findOrCreateUserAction();
     if (!dbUser.data) redirect(`/sign-in?error=user-sync-error`);
     onboardingStatus = dbUser.data.onboardingStatus;
-    accountType = dbUser.data.accountType;
   }
 
   return (
@@ -57,7 +55,6 @@ export default async function RootLayout({ children }: Props) {
               {!!session && (
                 <OnboardingGuard
                   onboardingStatus={onboardingStatus}
-                  accountType={accountType}
                 />
               )}
               {children}

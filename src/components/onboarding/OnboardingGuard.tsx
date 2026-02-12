@@ -5,7 +5,6 @@ import { usePathname, useRouter } from "next/navigation";
 
 interface OnboardingGuardProps {
   onboardingStatus: string;
-  accountType: string;
 }
 
 /** Excluded paths that should not trigger onboarding redirect */
@@ -15,11 +14,11 @@ const EXCLUDED_PATHS = [
   "/sign-up",
   "/api",
   "/maintenance",
+  "/organizations",
 ];
 
 export default function OnboardingGuard({
   onboardingStatus,
-  accountType,
 }: OnboardingGuardProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -34,13 +33,10 @@ export default function OnboardingGuard({
       onboardingStatus === "NOT_STARTED" ||
       onboardingStatus === "IN_PROGRESS";
 
-    // Shell accounts always need onboarding
-    const isShellAccount = accountType === "SHELL";
-
-    if (needsOnboarding || isShellAccount) {
+    if (needsOnboarding) {
       router.replace("/onboarding");
     }
-  }, [onboardingStatus, accountType, pathname, router]);
+  }, [onboardingStatus, pathname, router]);
 
   return null;
 }

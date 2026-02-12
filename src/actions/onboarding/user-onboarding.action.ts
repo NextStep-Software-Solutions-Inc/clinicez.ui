@@ -16,10 +16,6 @@ import {
   type OnboardingStep3Values,
 } from "@/schemas/onboarding.schema";
 
-type PrismaTransactionalClient = Parameters<
-  Parameters<typeof prisma["$transaction"]>[0]
->[0];
-
 // ─── Actions ─────────────────────────────────────────────────────────────────
 
 /**

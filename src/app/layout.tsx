@@ -34,7 +34,7 @@ interface Props {
 export default async function RootLayout({ children }: Props) {
   const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
-  const session = await getCachedSession();
+  const [session, dbUser] = await Promise.all([getCachedSession(), getCurrentUserAction()])
   let onboardingStatus = "COMPLETED";
   let firstName: string | null = null;
   let lastName: string | null = null;
@@ -42,12 +42,17 @@ export default async function RootLayout({ children }: Props) {
   let gender: string | null = null;
   let mobile: string | null = null;
   if (session) {
-    const dbUser = await getCurrentUserAction();
     if (!dbUser.data) {
       // User not found in database - redirect to error page
       // This should not happen if Clerk webhook is properly configured
       redirect(`/sign-in?error=user-not-found`);
     }
+    onboardingStatus = dbUser.data.onboardingStatus;
+    firstName = dbUser.data.firstName;
+    lastName = dbUser.data.lastName;
+    dob = dbUser.data.dob ? new Date(dbUser.data.dob) : null;
+    gender = dbUser.data.gender;
+    mobile = dbUser.data.mobile;
   }
 
   return (

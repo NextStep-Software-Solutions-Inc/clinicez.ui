@@ -5,6 +5,7 @@ import prisma from "@lib/prisma";
 import { cache } from "react";
 import { withErrorHandling } from "@/lib/with-error-handling";
 import { sessionCheck } from "@/lib/auth";
+import { getCachedSession } from "@actions/session.action";
 
 type CreateClinicPayload = {
   clinicUid: string;
@@ -270,3 +271,82 @@ export const createLaboratoryRequestAction = withErrorHandling(async (data: Crea
 
   return { message: "Laboratory request created successfully", data: newLaboratoryRequest };
 });
+
+/**
+ * Get the user's default clinic, or first active clinic if no default is set
+ */
+export const getMyDefaultClinicAction = cache(
+  withErrorHandling(async () => {
+    const session = await getCachedSession();
+    if (!session) throw new Error("User not authenticated.");
+
+    // First, check if user has a default clinic through UserDefaultClinicRole
+    const defaultClinicRole = await prisma.userDefaultClinicRole.findFirst({
+      where: {
+        User: {
+          userId: session.user.sub
+        },
+        isActive: true
+      },
+      select: {
+        Clinic: {
+          select: {
+            id: true,
+            name: true,
+            clinicUid: true
+          }
+        }
+      }
+    });
+
+    if (defaultClinicRole) {
+      return {
+        message: "Default clinic retrieved",
+        data: {
+          Clinic: defaultClinicRole.Clinic
+        }
+      };
+    }
+
+    // Fallback: if no default clinic, get first active clinic membership
+    const firstClinic = await prisma.clinicMember.findFirst({
+      where: {
+        User: {
+          userId: session.user.sub
+        },
+        Clinic: {
+          isActive: true
+        },
+        isActive: true,
+        status: "ACTIVE",
+        deletedAt: null
+      },
+      select: {
+        Clinic: {
+          select: {
+            id: true,
+            name: true,
+            clinicUid: true
+          }
+        }
+      },
+      orderBy: {
+        createdAt: "asc"
+      }
+    });
+
+    if (!firstClinic) {
+      return {
+        message: "No active clinic memberships found",
+        data: null
+      };
+    }
+
+    return {
+      message: "First clinic retrieved",
+      data: {
+        Clinic: firstClinic.Clinic
+      }
+    };
+  })
+);

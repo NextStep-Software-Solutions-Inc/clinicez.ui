@@ -46,9 +46,9 @@ interface ProfileTabProps {
     addedBy: number | null;
     Patient: {
       id: number;
-      firstName: string;
+      firstName: string | null;
       middleName: string | null;
-      lastName: string;
+      lastName: string | null;
       suffix: string | null;
       nickname: string | null;
       email: string | null;
@@ -70,8 +70,8 @@ interface ProfileTabProps {
     } | null;
     addedByUser?: {
       id: number;
-      firstName: string;
-      lastName: string;
+      firstName: string | null;
+      lastName: string | null;
     } | null;
   };
   canEdit: boolean;

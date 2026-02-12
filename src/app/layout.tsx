@@ -63,7 +63,6 @@ export default async function RootLayout({ children }: Props) {
           <BypassAutoplay />
           <JotaiProvider>
             <SyncTokenClient />
-            {/* {!!session && <SyncSessionClinic/>} */}
             <SWRProvider>
               {!!session && (
                 <OnboardingGuard

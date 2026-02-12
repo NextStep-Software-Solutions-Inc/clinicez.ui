@@ -200,12 +200,12 @@ export default function TimelineTab({ patientId, clinicId }: TimelineTabProps) {
             </CardDescription>
           </div>
           <div className="w-[200px]">
-            <Select value={actionFilter} onValueChange={(value) => setActionFilter(value as AuditActionType | "")}>
+            <Select value={actionFilter || "all"} onValueChange={(value) => setActionFilter(value === "all" ? "" : (value as AuditActionType))}>
               <SelectTrigger>
                 <SelectValue placeholder="All events" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All events</SelectItem>
+                <SelectItem value="all">All events</SelectItem>
                 <SelectItem value={AuditActionType.CREATE}>Created</SelectItem>
                 <SelectItem value={AuditActionType.UPDATE}>Updated</SelectItem>
                 <SelectItem value={AuditActionType.PROFILE_UPDATE}>Profile Updates</SelectItem>

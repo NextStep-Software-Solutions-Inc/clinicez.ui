@@ -207,12 +207,12 @@ export default function AuditTrailTab({ patientId, clinicId, canExport }: AuditT
 
             <div className="space-y-2">
               <Label htmlFor="action-type" className="text-xs">Action Type</Label>
-              <Select value={actionTypeFilter} onValueChange={(value) => setActionTypeFilter(value as AuditActionType | "")}>
+              <Select value={actionTypeFilter || "all"} onValueChange={(value) => setActionTypeFilter(value === "all" ? "" : (value as AuditActionType))}>
                 <SelectTrigger id="action-type">
                   <SelectValue placeholder="All actions" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All actions</SelectItem>
+                  <SelectItem value="all">All actions</SelectItem>
                   <SelectItem value={AuditActionType.CREATE}>Create</SelectItem>
                   <SelectItem value={AuditActionType.UPDATE}>Update</SelectItem>
                   <SelectItem value={AuditActionType.DELETE}>Delete</SelectItem>

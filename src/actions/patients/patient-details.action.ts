@@ -3,6 +3,7 @@
 import prisma from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { createAuditLog } from "../audit.action";
+import { PERMISSIONS } from "@/lib/permissions";
 
 /**
  * Get comprehensive patient details including profile, health records, and related data
@@ -352,27 +353,27 @@ export async function getPatientTimeline(params: {
 /**
  * Get user permissions for a specific patient
  */
-export async function getPatientPermissions(params: {
+/**
+ * Get the accessing user's permissions for patient-related actions
+ * (what the user accessing THIS page can do, not what the patient can do)
+ */
+export async function getAccessorPatientPermissions(params: {
   userId: number;
   clinicId: number;
 }) {
   const { userId, clinicId } = params;
 
   try {
-    // Fetch user's clinic member record with permissions
+    // Fetch user's clinic member record with ACTUAL permissions (not just role initial)
     const clinicMember = await prisma.clinicMember.findFirst({
       where: {
         userId,
         clinicId,
       },
       include: {
-        Role: {
+        ClinicMemberPermissions: {
           include: {
-            ClinicRoleInitialPermissions: {
-              include: {
-                Permission: true,
-              },
-            },
+            Permission: true,
           },
         },
       },
@@ -385,22 +386,22 @@ export async function getPatientPermissions(params: {
       };
     }
 
-    // Extract permissions
-    const permissions = clinicMember.Role?.ClinicRoleInitialPermissions.map(
-      (rp) => rp.Permission.name
+    // Extract actual permissions assigned to this clinic member
+    const permissions = clinicMember.ClinicMemberPermissions.map(
+      (mp) => mp.Permission.name
     ) || [];
 
-    // Check specific patient-related permissions
+    // Check specific patient-related permissions using PERMISSIONS constants
     const patientPermissions = {
-      canViewProfile: permissions.includes("view:clinic:patient:profile"),
-      canEditProfile: permissions.includes("edit:clinic:patient:profile"),
-      canViewHealthRecords: permissions.includes("view:clinic:patient:health_records"),
-      canEditHealthRecords: permissions.includes("edit:clinic:patient:health_records"),
-      canAddHealthRecords: permissions.includes("add:clinic:patient:health_records"),
-      canViewConsultations: permissions.includes("view:clinic:patient:consultations"),
-      canViewAuditLog: permissions.includes("view:clinic:patient:audit_log"),
-      canExportAuditLog: permissions.includes("export:clinic:patient:audit_log"),
-      canGenerateReport: permissions.includes("generate:clinic:patient:report"),
+      canViewProfile: permissions.includes(PERMISSIONS.CLINIC["VIEW:CLINIC:PATIENT:PROFILE"].name),
+      canEditProfile: permissions.includes(PERMISSIONS.CLINIC["EDIT:CLINIC:PATIENT:PROFILE"].name),
+      canViewHealthRecords: permissions.includes(PERMISSIONS.CLINIC["VIEW:CLINIC:PATIENT:HEALTH_RECORDS"].name),
+      canEditHealthRecords: permissions.includes(PERMISSIONS.CLINIC["EDIT:CLINIC:PATIENT:HEALTH_RECORDS"].name),
+      canAddHealthRecords: permissions.includes(PERMISSIONS.CLINIC["ADD:CLINIC:PATIENT:HEALTH_RECORDS"].name),
+      canViewConsultations: permissions.includes(PERMISSIONS.CLINIC["VIEW:CLINIC:PATIENT:CONSULTATIONS"].name),
+      canViewAuditLog: permissions.includes(PERMISSIONS.CLINIC["VIEW:CLINIC:PATIENT:AUDIT_LOG"].name),
+      canExportAuditLog: permissions.includes(PERMISSIONS.CLINIC["EXPORT:CLINIC:PATIENT:AUDIT_LOG"].name),
+      canGenerateReport: permissions.includes(PERMISSIONS.CLINIC["GENERATE:CLINIC:PATIENT:REPORT"].name),
     };
 
     return {
@@ -411,13 +412,16 @@ export async function getPatientPermissions(params: {
       },
     };
   } catch (error) {
-    console.error("Error fetching patient permissions:", error);
+    console.error("Error fetching accessor permissions:", error);
     return {
       success: false,
       error: "Failed to fetch permissions",
     };
   }
 }
+
+// Keep old name for backwards compatibility, but mark as deprecated
+export const getPatientPermissions = getAccessorPatientPermissions;
 
 /**
  * Generate patient report (simplified version - returns data for export)
@@ -433,7 +437,7 @@ export async function generatePatientReport(params: {
 
   try {
     const patientResult = await getPatientDetails({ patientId, clinicId, userId });
-    
+
     if (!patientResult.success || !patientResult.data) {
       return {
         success: false,

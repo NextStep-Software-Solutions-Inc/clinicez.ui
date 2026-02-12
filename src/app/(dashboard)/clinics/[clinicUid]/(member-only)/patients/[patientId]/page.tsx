@@ -1,33 +1,39 @@
 import { notFound } from "next/navigation";
 import { sessionCheck } from "@/lib/auth";
 import { getClinicAction } from "@/actions/clinics/clinic.action";
-import { getPatientDetails, getPatientPermissions } from "@/actions/patients/patient-details.action";
+import { getPatientDetails, getAccessorPatientPermissions } from "@/actions/patients/patient-details.action";
 import PatientDetailsLayout from "@/components/patient/details/PatientDetailsLayout";
+import { getUserAction } from "@/actions/users/user.action";
 
 interface PatientDetailsPageProps {
-  params: {
+  params: Promise<{
     clinicUid: string;
     patientId: string;
-  };
+  }>;
 }
 
 export default async function PatientDetailsPage({ params }: PatientDetailsPageProps) {
   // Check authentication
   const session = await sessionCheck();
-  if (!session?.user?.id) {
+  if (!session?.user?.sub) {
     return notFound();
   }
 
-  const userId = session.user.id;
+  const [{data}, paramsResolved] = await Promise.all([getUserAction(session.user.sub), params]); // Placeholder for any future parallel data fetching needs
+  if (!data || !data.id) {
+    return notFound();
+  }
 
   // Parse patientId
-  const patientId = parseInt(params.patientId, 10);
+
+  const patientId = parseInt(paramsResolved.patientId, 10);
+  console.log(paramsResolved.patientId, patientId);
   if (isNaN(patientId)) {
     return notFound();
   }
 
   // Get clinic data
-  const clinicResult = await getClinicAction(params.clinicUid);
+  const clinicResult = await getClinicAction(paramsResolved.clinicUid);
   if (!clinicResult.status || !clinicResult.data) {
     return notFound();
   }
@@ -38,7 +44,7 @@ export default async function PatientDetailsPage({ params }: PatientDetailsPageP
   const patientResult = await getPatientDetails({
     patientId,
     clinicId: clinic.id,
-    userId,
+    userId: data.id,
   });
 
   if (!patientResult.success || !patientResult.data) {
@@ -47,10 +53,10 @@ export default async function PatientDetailsPage({ params }: PatientDetailsPageP
 
   const patient = patientResult.data;
 
-  // Get user permissions for this patient
-  const permissionsResult = await getPatientPermissions({
+  // Get accessor permissions for this patient
+  const permissionsResult = await getAccessorPatientPermissions({
     clinicId: clinic.id,
-    userId,
+    userId: data.id,
   });
 
   const permissions = permissionsResult.success && permissionsResult.data?.patientPermissions
@@ -72,8 +78,8 @@ export default async function PatientDetailsPage({ params }: PatientDetailsPageP
       <PatientDetailsLayout
         patientId={patientId}
         clinicId={clinic.id}
-        clinicUid={params.clinicUid}
-        userId={userId}
+        clinicUid={paramsResolved.clinicUid}
+        userId={data.id}
         patientData={patient}
         permissions={permissions}
       />

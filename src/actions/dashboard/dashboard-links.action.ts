@@ -27,7 +27,9 @@ export async function getDashboardLinksAction(): Promise<DashboardLink[]> {
     { label: "Patient Dashboard", href: "/patient/dashboard", type: "patient" },
   ];
 
-  // Run queries in parallel
+  // Run queries in parallel — limit to 5 results each to keep the avatar
+  // menu compact. Users with more memberships can access full lists from
+  // their respective dashboard pages.
   const [tenants, clinicMemberships, orgMemberships] = await Promise.all([
     prisma.tenant.findMany({
       where: { Owner: { userId }, isActive: true },

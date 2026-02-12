@@ -393,6 +393,14 @@ const sendCreateUserNotification = async ({ email, password, senderName }: SendC
   }
 }
 
+/**
+ * @deprecated Use getCurrentUserAction() instead.
+ * 
+ * This function creates users on-demand during authentication, which is not the recommended approach.
+ * Users should be created via Clerk webhook (user.created event) at /api/webhooks/clerk.
+ * 
+ * This function is kept for backward compatibility during migration period only.
+ */
 export const findOrCreateUserAction = withErrorHandling(cache(async () => {
 
   const session = await sessionCheck();
@@ -485,6 +493,45 @@ export const findOrCreateUserAction = withErrorHandling(cache(async () => {
     if (error.code === "P2025")
       return "User already exists in the system and associated with another account";
   };
+});
+
+/**
+ * Get the currently authenticated user from the database
+ * 
+ * This action finds the user in the database based on their Clerk session.
+ * Users should already exist in the database via the Clerk webhook (user.created event).
+ * 
+ * @returns The user data if found, or null if not found
+ */
+export const getCurrentUserAction = withErrorHandling(cache(async () => {
+  const session = await sessionCheck();
+  
+  // Find user in database by Clerk userId
+  const user = await prisma.user.findUnique({
+    where: {
+      userId: session.user.sub
+    }
+  });
+
+  if (!user) {
+    // User doesn't exist in database - this shouldn't happen if webhook is properly configured
+    console.error(`User ${session.user.sub} not found in database. Webhook may not be configured.`);
+    return { 
+      success: false, 
+      message: "User not found in database", 
+      data: null 
+    };
+  }
+
+  return { 
+    success: true, 
+    message: "User found", 
+    data: user 
+  };
+
+}), async (error) => {
+  console.error("Error in getCurrentUserAction:", error);
+  return "Failed to get current user. User may not exist in database - verify Clerk webhook is configured correctly.";
 });
 
 const assignUserPermission = async (prisma: PrismaTransactionalClient, userId: number) => {

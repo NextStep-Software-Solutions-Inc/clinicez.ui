@@ -86,9 +86,10 @@ src/
 
 ### Authentication & Authorization
 
-- Clerk-based authentication
+- Clerk-based authentication with webhook-based user sync
 - Role-based access control
 - User profile management
+- **Setup Guide:** See [Clerk Webhook Setup Guide](./docs/CLERK_WEBHOOK_SETUP.md) for configuration
 
 ### AI-Powered Healthcare Features (NEW!)
 
@@ -176,6 +177,7 @@ DATABASE_URL="postgresql://user:password@localhost:5432/clinicez"
 # Authentication
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_key
 CLERK_SECRET_KEY=your_secret
+CLERK_WEBHOOK_SECRET=whsec_your_webhook_secret  # Required for user sync webhook
 
 # API Configuration
 NEXT_PUBLIC_APP_URL=http://localhost:3000

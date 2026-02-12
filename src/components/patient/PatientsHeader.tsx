@@ -1,7 +1,7 @@
 'use client';
 
 import SearchBar from "@components/dashboard/SearchBar";
-import PatientCreationModal from "@components/patient/PatientCreationModal";
+import AddPatientSlideOver from "@components/patient/AddPatientSlideOver";
 import { PatientViewToggle } from "@components/patient/PatientViewToggle";
 import { Slider } from "@components/ui/slider";
 import { updateUrlParam } from "@/lib/url-utils";
@@ -54,7 +54,7 @@ export default function PatientsHeader({
             </p>
           </div>
           {clinicId && currentUserId && (
-            <PatientCreationModal clinicId={clinicId} createdBy={currentUserId} />
+            <AddPatientSlideOver clinicId={clinicId} createdBy={currentUserId} />
           )}
         </div>
         

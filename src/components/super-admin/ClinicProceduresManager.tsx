@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ClinicProceduresTable } from "@/app/(super-admin)/super-admin/diagnostics-procedures/clinic-procedures-table";
+import { ClinicProceduresTable } from "@app/(v1)/(super-admin)/super-admin/diagnostics-procedures";
 import { getAllMasterImagingProceduresAction, getAllMasterLaboratoryProceduresAction, getAllMasterHeartStationProceduresAction } from "@/actions/super-admin/diagnostics-procedures.action";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Plus, Search } from "lucide-react";
-import { ClinicProcedureForm } from "@/app/(super-admin)/super-admin/diagnostics-procedures/clinic-procedure-form";
+import { ClinicProcedureForm } from "@app/(v1)/(super-admin)/super-admin/diagnostics-procedures";
 
 interface ClinicProceduresManagerProps {
   clinicId: number;

@@ -1,7 +1,7 @@
 "use server";
 
 import prisma from "@lib/prisma";
-import { AddressItemProps } from "@/app/(main)/user/[user]/phr/address/AddressItem";
+import { AddressItemProps } from "@app/(v1)/(main)/user/[user]/phr/address/AddressItem";
 
 type AddressUpsertData = {
   isPrimary: boolean;

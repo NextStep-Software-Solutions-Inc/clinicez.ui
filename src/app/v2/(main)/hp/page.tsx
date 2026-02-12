@@ -6,6 +6,8 @@ import HeroBackground from "@/components/HeroBackground"
 import HPListByType from "@/components/v2/hp/HPListByType"
 import HPListByTypeFallback from "@/components/v2/hp/HPListByTypeFallback"
 
+export const dynamic = "force-dynamic"
+
 const header = {
   title: [{ text: "Meet our Healthcare Providers", className: "text-primary-v2" }],
   description:

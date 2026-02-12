@@ -1,5 +1,41 @@
 # GitHub Copilot Instructions for ClinicEZ.UI
 
+> 📌 **NOTE:** The comprehensive **Clinicez Fullstack Dev Agent** documentation is available in `docs/agents/README.md` and `docs/agents/` directory. Please refer to it for complete development guidelines. This file contains quick copilot-specific instructions.
+
+## ⚠️ Consultation First - Never Over-Confident
+
+### When to Ask Before Acting
+
+1. ✅ **DO**: Ask for clarification if requirements are ambiguous
+2. ✅ **DO**: Verify assumptions about existing code before making changes
+3. ✅ **DO**: Check if similar features already exist instead of assuming
+4. ✅ **DO**: Show what you plan to do and wait for approval on non-trivial changes
+5. ✅ **DO**: Admit uncertainty rather than guessing
+
+**Examples:**
+- "I'll search for existing appointment queries before writing new ones"
+- "Should I modify the existing DashboardShell or create a new component?"
+- "I'm not 100% certain about this type - let me verify the Prisma schema first"
+- "This pattern appears in 3 different places - which one should I refactor?"
+
+### When You're Unsure
+
+❌ **DON'T**: Proceed with uncertain assumptions  
+❌ **DON'T**: Guess at architecture decisions without input  
+❌ **DON'T**: Make sweeping changes without verification  
+❌ **DON'T**: Say "I'll just try this approach" without explaining alternatives
+
+✅ **DO**: Research the codebase first (search, read files)  
+✅ **DO**: Present options: "Option A: ... Option B: ..."  
+✅ **DO**: Ask for direction: "Which approach do you prefer?"  
+✅ **DO**: Explain what you found: "I found X existing patterns, suggesting we..."  
+
+**Example (Bad):**
+> "I'll build this new feature using a hook pattern mixed with server actions."
+
+**Example (Good):**
+> "I checked the codebase and found 2 existing patterns: (1) Direct server actions in components and (2) Custom hooks wrapping actions. Which do you prefer for this feature?"
+
 ## TypeScript & Code Quality
 
 ### ⚠️ CRITICAL: No `any` Types Allowed
@@ -7,26 +43,43 @@
 **Never use `any` type in this codebase.**
 
 For accurate typing:
-1. ✅ **DO**: Always refer to [prisma/schema.prisma](prisma/schema.prisma) for data model definitions
+1. ✅ **DO**: Always refer to `prisma/schema.prisma` for data model definitions
 2. ✅ **DO**: Generate types from Prisma schema using `npx prisma generate`
 3. ✅ **DO**: Use explicit interfaces for component props, function parameters, and return types
 4. ✅ **DO**: Leverage existing types from server actions and API responses
+5. ✅ **DO**: Use type inference instead of type assertions whenever possible
+6. ✅ **DO**: Ensure all code is lint-free (follow ESLint rules)
 
 **Why?** 
 - Prevents runtime errors and type-related bugs
 - Makes code more maintainable and self-documenting
 - Enables better IDE autocomplete and refactoring support
 - Catches errors at compile-time instead of runtime
+- Type inference is safer and more readable than assertions
 
 **Example:**
 ```tsx
-// ❌ WRONG
+// ❌ WRONG - Using `any` type
 const handleData = (data: any) => { ... }
+
+// ❌ WRONG - Type assertion
+const user = data as User;
 
 // ✅ RIGHT - Use actual type from schema
 import type { GetClinicPatients } from '@/actions/clinics/clinic-patient.action';
 const handleData = (data: GetClinicPatients['data']) => { ... }
+
+// ✅ RIGHT - Type inference
+const user = { name: 'John', age: 30 }; // const user: { name: string; age: number }
 ```
+
+### Code Quality Standards
+
+1. ✅ **DO**: Write lint-free code that passes all ESLint checks
+2. ✅ **DO**: Prefer type inference over type assertions
+3. ✅ **DO**: Use `const` for immutability; avoid `let` and `var`
+4. ❌ **DON'T**: Use `any` type (use `unknown` if necessary, then type narrow)
+5. ❌ **DON'T**: Use type assertions (`as`) without exhausting all other options
 
 ## Build & Compilation
 
@@ -58,6 +111,36 @@ npx tsc --noEmit
 # Step 3: Full build only when types pass
 npm run build
 ```
+
+## Development Workflow Guidelines
+
+### Code Changes & Building
+
+1. ✅ **DO**: Make code changes as needed
+2. ❌ **DON'T**: Build or run the application unless explicitly told to
+   - Skip `npm run build` after changes
+   - Skip `pnpm dev` or `pnpm start` to avoid port conflicts
+3. ✅ **DO**: Only run build/dev commands when specifically requested
+
+**Why?**
+- Prevents port 3000 conflicts if server already running
+- Avoids unnecessary build times during development
+- Keeps focus on code changes and fixes
+
+### Post-Implementation Workflow
+
+After making code changes, fixes, or adding features:
+
+1. ✅ **DO**: Suggest good-to-implement features for the current component/feature
+2. ✅ **DO**: Identify potential improvements and optimizations
+3. ✅ **DO**: Point out related features that could enhance functionality
+4. ✅ **DO**: Never assume work is "complete" - always suggest next steps
+
+**Example Format:**
+- "Code changes complete. Consider implementing..."
+- "This feature could benefit from..."
+- "Suggested improvements: ..."
+- "Future enhancements to consider: ..."
 
 ## Database Migration Guidelines
 

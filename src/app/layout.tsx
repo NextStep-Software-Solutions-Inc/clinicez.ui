@@ -17,6 +17,7 @@ import { Analytics } from "@vercel/analytics/react";
 import "@styles/globals.css";
 import { findOrCreateUserAction } from "@actions/users/user.action";
 import { redirect } from "next/navigation";
+import OnboardingGuard from "@components/onboarding/OnboardingGuard";
 const HotJar = dynamic(() => import("@components/HotJar"), { ssr: true });
 
 const plusJakartaSans = Plus_Jakarta_Sans({ subsets: ["latin"] });
@@ -34,9 +35,13 @@ export default async function RootLayout({ children }: Props) {
   const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
   const session = await getCachedSession();
+  let onboardingStatus = "COMPLETED";
+  let accountType = "FULL";
   if (session) {
     const dbUser = await findOrCreateUserAction();
     if (!dbUser.data) redirect(`/sign-in?error=user-sync-error`);
+    onboardingStatus = dbUser.data.onboardingStatus;
+    accountType = dbUser.data.accountType;
   }
 
   return (
@@ -49,6 +54,12 @@ export default async function RootLayout({ children }: Props) {
             <SyncTokenClient />
             {/* {!!session && <SyncSessionClinic/>} */}
             <SWRProvider>
+              {!!session && (
+                <OnboardingGuard
+                  onboardingStatus={onboardingStatus}
+                  accountType={accountType}
+                />
+              )}
               {children}
               <SpeedInsights />
               <Analytics />

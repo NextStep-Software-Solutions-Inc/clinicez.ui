@@ -34,14 +34,18 @@ This implementation adds comprehensive fine-grained permission checking for all 
 - `src/actions/users/user.action.ts` - Added permission checks for profile updates
 - `src/actions/audit.action.ts` - Added permission checks for audit log viewing
 
-**New Utility Library:**
-- `src/lib/permission-checker.ts` - Comprehensive permission checking utilities
+**New Utility Libraries:**
+- `src/lib/permission-errors.ts` - PermissionError class (no "use server" directive)
+- `src/lib/permission-checker.ts` - Comprehensive permission checking utilities (with "use server")
+  - `requireUserPermission()` - User-level permission check
   - `requireOrgPermission()` - Org-level permission check
   - `requireClinicPermission()` - Clinic-level permission check
   - `requireAnyOrgPermission()` - Check for any of multiple org permissions
   - `requireAnyClinicPermission()` - Check for any of multiple clinic permissions
   - `requirePermissionOrOwnership()` - Allow with permission OR ownership
   - `isOwnResource()` - Check resource ownership
+
+**Important Note:** The `PermissionError` class is in a separate file (`permission-errors.ts`) without the `"use server"` directive because files with `"use server"` can only export async functions. This is a Next.js/Turbopack constraint.
 
 ### 3. Client-Side Permission Integration
 
@@ -182,6 +186,7 @@ The following items are ready for implementation but require additional context:
 
 ### Core Implementation
 - `src/lib/permissions.ts` - Added new permission constants
+- `src/lib/permission-errors.ts` - PermissionError class (NEW - separated from permission-checker)
 - `src/lib/permission-checker.ts` - New permission checking utilities
 - `src/actions/onboarding.action.ts` - Added permission checks
 - `src/actions/clinics/clinic-patient.action.ts` - Added permission checks
@@ -198,12 +203,14 @@ The following items are ready for implementation but require additional context:
 
 ## Validation
 
-✅ TypeScript compilation passes (no new errors)
+✅ TypeScript compilation passes (only pre-existing image import errors)
+✅ Build passes (except Google Fonts network issue in sandbox)
 ✅ All permission checks use constants from permissions.ts
 ✅ Server actions enforce permissions before operations
 ✅ UI hooks available for conditional rendering
 ✅ Documentation complete with examples
 ✅ Error handling provides actionable feedback
+✅ Fixed "use server" constraint violation by separating PermissionError class
 
 ## Next Steps
 

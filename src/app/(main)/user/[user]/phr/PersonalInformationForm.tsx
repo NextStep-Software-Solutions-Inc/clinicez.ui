@@ -1,7 +1,6 @@
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
-import { format, isValid } from "date-fns"
 import { useForm } from "react-hook-form"
 import {
   Form,
@@ -13,6 +12,7 @@ import {
   FormMessage,
 } from "@components/ui/form"
 import { Input } from "@components/ui/input"
+import { DatePicker } from "@components/ui/date-picker"
 import ActionButton from "@components/ActionButton"
 import { toast } from "sonner"
 import { updateUserAction } from "@actions/users/user.action"
@@ -23,7 +23,6 @@ import { useUser } from "@clerk/nextjs"
 import ConditionalRender from "@components/utils/ConditionalRender"
 import { personalInformationFormSchema, PersonalInformationFormValues } from "@schemas/personal-information.schema"
 import { promiseWrapper } from "@/lib/with-error-handling"
-import { getMaxDate } from "@/lib/day-utils"
 
 interface PersonalInformationFormProps {
   user: User,
@@ -188,14 +187,13 @@ export function PersonalInformationForm({ readOnly, ...props }: PersonalInformat
               className="flex flex-col">
               <FormLabel>Date of birth</FormLabel>
               <FormControl>
-                <Input
+                <DatePicker
                   disabled={readOnly}
-                  name={field.name}
-                  onChange={e => field.onChange(new Date(e.target.value))}
-                  defaultValue={field.value instanceof Date && isValid(field.value) ? format(field.value, "yyyy-MM-dd") : ""}
-                  type="date"
-                  placeholder="Select date"
-                  max={getMaxDate()}
+                  value={field.value ? new Date(field.value) : undefined}
+                  onChange={field.onChange}
+                  placeholder="Select your date of birth"
+                  toDate={new Date()}
+                  captionLayout="dropdown-buttons"
                 />
               </FormControl>
               <FormDescription>

@@ -1,5 +1,41 @@
 # GitHub Copilot Instructions for ClinicEZ.UI
 
+> 📌 **NOTE:** The comprehensive **Clinicez Fullstack Dev Agent** documentation is available in [`.github/agents/README.md`](./agents/README.md) and [`docs/agents/`](../docs/agents/). Please refer to it for complete development guidelines. This file contains quick copilot-specific instructions.
+
+## ⚠️ Consultation First - Never Over-Confident
+
+### When to Ask Before Acting
+
+1. ✅ **DO**: Ask for clarification if requirements are ambiguous
+2. ✅ **DO**: Verify assumptions about existing code before making changes
+3. ✅ **DO**: Check if similar features already exist instead of assuming
+4. ✅ **DO**: Show what you plan to do and wait for approval on non-trivial changes
+5. ✅ **DO**: Admit uncertainty rather than guessing
+
+**Examples:**
+- "I'll search for existing appointment queries before writing new ones"
+- "Should I modify the existing DashboardShell or create a new component?"
+- "I'm not 100% certain about this type - let me verify the Prisma schema first"
+- "This pattern appears in 3 different places - which one should I refactor?"
+
+### When You're Unsure
+
+❌ **DON'T**: Proceed with uncertain assumptions  
+❌ **DON'T**: Guess at architecture decisions without input  
+❌ **DON'T**: Make sweeping changes without verification  
+❌ **DON'T**: Say "I'll just try this approach" without explaining alternatives
+
+✅ **DO**: Research the codebase first (search, read files)  
+✅ **DO**: Present options: "Option A: ... Option B: ..."  
+✅ **DO**: Ask for direction: "Which approach do you prefer?"  
+✅ **DO**: Explain what you found: "I found X existing patterns, suggesting we..."  
+
+**Example (Bad):**
+> "I'll build this new feature using a hook pattern mixed with server actions."
+
+**Example (Good):**
+> "I checked the codebase and found 2 existing patterns: (1) Direct server actions in components and (2) Custom hooks wrapping actions. Which do you prefer for this feature?"
+
 ## TypeScript & Code Quality
 
 ### ⚠️ CRITICAL: No `any` Types Allowed

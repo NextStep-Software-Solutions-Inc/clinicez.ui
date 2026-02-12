@@ -36,10 +36,20 @@ export default async function RootLayout({ children }: Props) {
 
   const session = await getCachedSession();
   let onboardingStatus = "COMPLETED";
+  let firstName: string | null = null;
+  let lastName: string | null = null;
+  let dob: Date | null = null;
+  let gender: string | null = null;
+  let mobile: string | null = null;
   if (session) {
     const dbUser = await findOrCreateUserAction();
     if (!dbUser.data) redirect(`/sign-in?error=user-sync-error`);
     onboardingStatus = dbUser.data.onboardingStatus;
+    firstName = dbUser.data.firstName;
+    lastName = dbUser.data.lastName;
+    dob = dbUser.data.dob;
+    gender = dbUser.data.gender;
+    mobile = dbUser.data.mobile;
   }
 
   return (
@@ -55,6 +65,11 @@ export default async function RootLayout({ children }: Props) {
               {!!session && (
                 <OnboardingGuard
                   onboardingStatus={onboardingStatus}
+                  firstName={firstName}
+                  lastName={lastName}
+                  dob={dob}
+                  gender={gender}
+                  mobile={mobile}
                 />
               )}
               {children}

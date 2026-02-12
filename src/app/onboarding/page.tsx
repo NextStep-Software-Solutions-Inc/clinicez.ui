@@ -21,10 +21,7 @@ export default async function OnboardingPage() {
   }
 
   // If onboarding is already completed, redirect to home
-  if (
-    result.data.onboardingStatus === "COMPLETED" ||
-    result.data.onboardingStatus === "SKIPPED"
-  ) {
+  if (result.data.onboardingStatus === "COMPLETED") {
     redirect("/");
   }
 

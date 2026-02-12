@@ -9,9 +9,10 @@ type ViewMode = 'list' | 'grid';
 interface PatientListViewProps {
   patients: NonNullable<GetClinicPatients['data']>;
   viewMode?: ViewMode;
+  clinicUid?: string;
 }
 
-export function PatientListView({ patients, viewMode = 'list' }: PatientListViewProps) {
+export function PatientListView({ patients, viewMode = 'list', clinicUid }: PatientListViewProps) {
 
   const gridClasses = {
     list: 'grid grid-cols-1 gap-2',
@@ -30,6 +31,7 @@ export function PatientListView({ patients, viewMode = 'list' }: PatientListView
               key={patient.id}
               patient={patient}
               viewMode={viewMode}
+              clinicUid={clinicUid}
             />
           )}
         />

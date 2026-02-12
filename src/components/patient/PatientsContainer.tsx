@@ -120,7 +120,7 @@ export function PatientsContainer({ clinicUid, clinicId, currentUserId, pageSize
         <EmptyState search={search} />
       ) : (
         <>
-          <PatientListView patients={allData} viewMode={view} />
+          <PatientListView patients={allData} viewMode={view} clinicUid={clinicUid} />
           {/* Infinite scroll trigger */}
           {hasMore && (
             <div ref={observerTarget} className="flex justify-center items-center py-8">

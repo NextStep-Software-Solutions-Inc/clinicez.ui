@@ -21,9 +21,9 @@ interface PatientDetailsLayoutProps {
     addedBy: number | null;
     Patient: {
       id: number;
-      firstName: string;
+      firstName: string | null;
       middleName: string | null;
-      lastName: string;
+      lastName: string | null;
       suffix: string | null;
       nickname: string | null;
       email: string | null;

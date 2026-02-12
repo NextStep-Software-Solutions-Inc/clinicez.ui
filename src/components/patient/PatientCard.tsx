@@ -12,11 +12,12 @@ import {
 } from '@components/ui/card';
 import ConditionalRender from '@components/utils/ConditionalRender';
 import Image from 'next/image';
+import Link from 'next/link';
 import { GetClinicPatients } from '@/actions/clinics/clinic-patient.action';
 import dayjs from '@lib/day-utils';
 import { ViewEMRButton } from './ViewEMRButton';
 import { calculateAge, formatBloodType } from '@/lib/utils';
-import { Heart, AlertCircle, Pill } from 'lucide-react';
+import { Heart, AlertCircle, Pill, ExternalLink } from 'lucide-react';
 import { useState } from 'react';
 import { AIButton } from '@/components/ai/AIButton';
 import { usePatientInsights } from '@/hooks/ai/use-ai';
@@ -30,9 +31,10 @@ interface PatientCardProps {
     immunocompromised?: boolean;
   };
   viewMode?: ViewMode;
+  clinicUid?: string;
 }
 
-export function PatientCard({ patient, viewMode = 'grid' }: PatientCardProps) {
+export function PatientCard({ patient, viewMode = 'grid', clinicUid }: PatientCardProps) {
   const [showAIInsights, setShowAIInsights] = useState(false);
   const [debugPatientData, setDebugPatientData] = useState<any>(null);
   const [aiStatus, setAiStatus] = useState<'idle' | 'fetching' | 'analyzing' | 'generating' | 'complete'>('idle');
@@ -241,6 +243,14 @@ export function PatientCard({ patient, viewMode = 'grid' }: PatientCardProps) {
                     Pending
                   </Badge>
                 </ConditionalRender>
+                {clinicUid && (
+                  <Link href={`/clinics/${clinicUid}/patients/${clinicPatientId}`}>
+                    <Button variant="ghost" size="sm" className="h-8 gap-1">
+                      <ExternalLink className="h-3 w-3" />
+                      Details
+                    </Button>
+                  </Link>
+                )}
                 <AIButton
                   onClick={handleOpenAIInsights}
                   disabled={false}
@@ -374,6 +384,14 @@ export function PatientCard({ patient, viewMode = 'grid' }: PatientCardProps) {
 
         {/* Footer Actions */}
         <div className="bg-muted/30 px-4 py-3 mt-auto flex gap-2">
+          {clinicUid && (
+            <Link href={`/clinics/${clinicUid}/patients/${clinicPatientId}`} className="flex-1">
+              <Button variant="default" size="sm" className="w-full gap-1">
+                <ExternalLink className="h-3 w-3" />
+                View Details
+              </Button>
+            </Link>
+          )}
           <AIButton
             onClick={handleOpenAIInsights}
             disabled={false}

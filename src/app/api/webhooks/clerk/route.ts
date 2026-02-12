@@ -3,7 +3,6 @@ import { headers } from "next/headers";
 import { Webhook } from "svix";
 import prisma from "@lib/prisma";
 import { $Enums } from "@prisma/client";
-import { getPermissionsAction } from "@actions/permission.action";
 
 // Webhook event types from Clerk
 type ClerkWebhookEvent = {
@@ -153,8 +152,8 @@ export async function POST(request: NextRequest) {
           }
         },
         {
-          timeout: 5000,
-          maxWait: 10000,
+          timeout: 15000, // 15 seconds timeout for webhook processing
+          maxWait: 20000, // 20 seconds max wait
         }
       );
     }
@@ -171,13 +170,20 @@ export async function POST(request: NextRequest) {
 
 /**
  * Assign default permissions to a new user
+ * 
+ * Queries permissions within the transaction to ensure consistency
  */
 async function assignUserPermissions(
   tx: Parameters<Parameters<typeof prisma["$transaction"]>[0]>[0],
   userId: number
 ) {
-  // Get all permissions with 'USER' type
-  const permissions = await getPermissionsAction({ type: "USER" });
+  // Query permissions directly within the transaction for consistency
+  const permissions = await tx.permission.findMany({
+    where: {
+      isActive: true,
+      type: "USER",
+    },
+  });
 
   // Filter out SUPER_ADMIN permission as it should be granted manually
   const filteredPermissions = permissions.filter(

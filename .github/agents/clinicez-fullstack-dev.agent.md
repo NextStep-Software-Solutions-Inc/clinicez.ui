@@ -1,7 +1,6 @@
 ---
 name: Clinicez Fullstack Dev
 description: Expert development agent for the ClinicEZ.UI healthcare platform. Provides full-stack guidance for Next.js, PostgreSQL, TypeScript, and AI integration with strict code quality standards.
-tools: ["read", "edit", "search", "web", "agent", "todo", "agent/runSubagent"]
 target: "vscode"
 model: "Claude Haiku 4.5"
 ---
@@ -42,7 +41,7 @@ Provide expert-level guidance for full-stack healthcare application development 
 ### 1. Type Safety First
 - **NO `any` types** - Use explicit interfaces and Prisma-generated types
 - Leverage `prisma generate` after schema changes
-- Reference [prisma/schema.prisma](prisma/schema.prisma) for all data modeling
+- Reference the Prisma schema at `prisma/schema.prisma` for all data modeling
 - Prefer type inference over assertions
 
 ### 2. Database Integrity

@@ -27,9 +27,9 @@ export type AppointmentStatus = "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELL
  * From AppointmentMode model
  */
 export interface AppointmentMode {
-  id: number;
-  name: string;
-  description: string | null;
+    id: number;
+    name: string;
+    description: string | null;
 }
 
 /**
@@ -37,11 +37,11 @@ export interface AppointmentMode {
  * Represents the doctor assigned to an appointment
  */
 export interface AppointmentDoctor {
-  id: number;
-  firstName: string | null;
-  lastName: string | null;
-  specialization: string | null;
-  picture: string | null;
+    id: number;
+    firstName: string | null;
+    lastName: string | null;
+    specialization: string | null;
+    picture: string | null;
 }
 
 /**
@@ -49,9 +49,9 @@ export interface AppointmentDoctor {
  * Shows where the appointment will take place
  */
 export interface AppointmentClinic {
-  id: number;
-  name: string;
-  address: string | null;
+    id: number;
+    name: string;
+    address: string | null;
 }
 
 /**
@@ -59,38 +59,38 @@ export interface AppointmentClinic {
  * Combines data from Appointment + AppointmentAttribute + relationships
  */
 export interface UpcomingAppointment {
-  id: number;
-  caseNumber: string | null;
-  subject: string; // Appointment title/subject
-  complaint: string | null; // Reason for visit
-  status: AppointmentStatus;
-  appointmentType: string; // From AppointmentType.name
-  doctor: AppointmentDoctor;
-  clinic: AppointmentClinic;
-  date: Date;
-  timeStart: string | null; // e.g., "14:30"
-  timeEnd: string | null; // e.g., "15:00"
-  appointmentMode: AppointmentMode; // ONLINE or IN-PERSON
-  meetingUrl: string | null; // For virtual appointments
-  duration: number; // in minutes
-  recurring: boolean;
-  isActive: boolean;
-  attachments?: Array<{
     id: number;
-    name: string;
-    url: string;
-  }>;
-  createdAt: Date;
-  updatedAt: Date;
+    caseNumber: string | null;
+    subject: string; // Appointment title/subject
+    complaint: string | null; // Reason for visit
+    status: AppointmentStatus;
+    appointmentType: string; // From AppointmentType.name
+    doctor: AppointmentDoctor;
+    clinic: AppointmentClinic;
+    date: Date;
+    timeStart: string | null; // e.g., "14:30"
+    timeEnd: string | null; // e.g., "15:00"
+    appointmentMode: AppointmentMode; // ONLINE or IN-PERSON
+    meetingUrl: string | null; // For virtual appointments
+    duration: number; // in minutes
+    recurring: boolean;
+    isActive: boolean;
+    attachments?: Array<{
+        id: number;
+        name: string;
+        url: string;
+    }>;
+    createdAt: Date;
+    updatedAt: Date;
 }
 
 /**
  * Paginated list of upcoming appointments
  */
 export interface UpcomingAppointmentsData {
-  appointments: UpcomingAppointment[];
-  total: number;
-  hasMore: boolean;
+    appointments: UpcomingAppointment[];
+    total: number;
+    hasMore: boolean;
 }
 
 // ============================================================================
@@ -102,22 +102,22 @@ export interface UpcomingAppointmentsData {
  * Represents one measurement (BP, heart rate, etc.)
  */
 export interface HealthMetric {
-  id: string; // unique identifier
-  label: string; // "Blood Pressure", "Heart Rate", etc.
-  value: string | number;
-  unit: string; // "mmHg", "bpm", etc.
-  referenceRange?: {
-    min: number | string;
-    max: number | string;
-  };
-  trend?: {
-    direction: "up" | "down" | "stable";
+    id: string; // unique identifier
+    label: string; // "Blood Pressure", "Heart Rate", etc.
     value: string | number;
-    percentage?: number;
-  };
-  status: "normal" | "warning" | "critical"; // Color coding
-  lastUpdated: Date;
-  timestamp?: Date;
+    unit: string; // "mmHg", "bpm", etc.
+    referenceRange?: {
+        min: number | string;
+        max: number | string;
+    };
+    trend?: {
+        direction: "up" | "down" | "stable";
+        value: string | number;
+        percentage?: number;
+    };
+    status: "normal" | "warning" | "critical"; // Color coding
+    lastUpdated: Date;
+    timestamp?: Date;
 }
 
 /**
@@ -125,9 +125,9 @@ export interface HealthMetric {
  * From PhysicalExamination model
  */
 export interface HealthMetricsData {
-  metrics: HealthMetric[];
-  lastUpdated: Date;
-  examId?: number; // From PhysicalExamination.id
+    metrics: HealthMetric[];
+    lastUpdated: Date;
+    examId?: number; // From PhysicalExamination.id
 }
 
 // ============================================================================
@@ -139,16 +139,16 @@ export interface HealthMetricsData {
  * From Medicine model
  */
 export interface PrescriptionMedicine {
-  id: number;
-  name: string;
-  brandName: string | null;
-  genericName: string | null;
-  dosage: string | null; // e.g., "500mg"
-  frequency: string | null; // e.g., "Twice a day"
-  unit: string | null;
-  duration: number; // days
-  qty: number | null; // quantity
-  notes: string | null;
+    id: number;
+    name: string;
+    brandName: string | null;
+    genericName: string | null;
+    dosage: string | null; // e.g., "500mg"
+    frequency: string | null; // e.g., "Twice a day"
+    unit: string | null;
+    duration: number; // days
+    qty: number | null; // quantity
+    notes: string | null;
 }
 
 /**
@@ -156,38 +156,38 @@ export interface PrescriptionMedicine {
  * From Prescription model + Medicine relations
  */
 export interface RecentPrescription {
-  id: number;
-  serialNumber: string | null;
-  name: string | null;
-  subject: string; // consultation subject
-  status: "active" | "archived" | "expired" | "partial";
-  prescribedBy: {
     id: number;
-    firstName: string | null;
-    lastName: string | null;
-    specialization: string | null;
-  };
-  clinic: {
-    id: number;
-    name: string;
-  };
-  medicines: PrescriptionMedicine[];
-  transactionNumber: string | null;
-  isActive: boolean;
-  isArchived: boolean;
-  dateArchived: Date | null;
-  remarks: string | null;
-  createdAt: Date;
-  updatedAt: Date;
+    serialNumber: string | null;
+    name: string | null;
+    subject: string; // consultation subject
+    status: "active" | "archived" | "expired" | "partial";
+    prescribedBy: {
+        id: number;
+        firstName: string | null;
+        lastName: string | null;
+        specialization: string | null;
+    };
+    clinic: {
+        id: number;
+        name: string;
+    };
+    medicines: PrescriptionMedicine[];
+    transactionNumber: string | null;
+    isActive: boolean;
+    isArchived: boolean;
+    dateArchived: Date | null;
+    remarks: string | null;
+    createdAt: Date;
+    updatedAt: Date;
 }
 
 /**
  * Paginated prescriptions data
  */
 export interface RecentPrescriptionsData {
-  prescriptions: RecentPrescription[];
-  total: number;
-  hasMore: boolean;
+    prescriptions: RecentPrescription[];
+    total: number;
+    hasMore: boolean;
 }
 
 // ============================================================================
@@ -197,41 +197,41 @@ export interface RecentPrescriptionsData {
 /**
  * Activity types for timeline
  */
-export type ActivityType = 
-  | "appointment_booked"
-  | "appointment_completed"
-  | "appointment_cancelled"
-  | "prescription_created"
-  | "lab_request"
-  | "imaging_request"
-  | "medical_certificate"
-  | "consultation_note"
-  | "vital_recorded"
-  | "document_uploaded";
+export type ActivityType =
+    | "appointment_booked"
+    | "appointment_completed"
+    | "appointment_cancelled"
+    | "prescription_created"
+    | "lab_request"
+    | "imaging_request"
+    | "medical_certificate"
+    | "consultation_note"
+    | "vital_recorded"
+    | "document_uploaded";
 
 /**
  * Single activity in timeline
  * Generic type that cabins different activity types
  */
 export interface TimelineActivity {
-  id: string; // Unique ID
-  type: ActivityType;
-  title: string; // e.g., "Appointment with Dr. Smith"
-  description: string | null;
-  timestamp: Date;
-  icon?: string; // Icon name for display
-  relatedId?: number; // Link to appointment/prescription/etc
-  relatedType?: "appointment" | "prescription" | "lab" | "imaging" | "certificate" | "note";
-  metadata?: Record<string, any>;
+    id: string; // Unique ID
+    type: ActivityType;
+    title: string; // e.g., "Appointment with Dr. Smith"
+    description: string | null;
+    timestamp: Date;
+    icon?: string; // Icon name for display
+    relatedId?: number; // Link to appointment/prescription/etc
+    relatedType?: "appointment" | "prescription" | "lab" | "imaging" | "certificate" | "note";
+    metadata?: Record<string, any>;
 }
 
 /**
  * Patient activity feed/timeline
  */
 export interface ActivityFeedData {
-  activities: TimelineActivity[];
-  total: number;
-  hasMore: boolean;
+    activities: TimelineActivity[];
+    total: number;
+    hasMore: boolean;
 }
 
 // ============================================================================
@@ -246,37 +246,37 @@ export type AlertSeverity = "info" | "warning" | "error" | "critical";
 /**
  * Alert types
  */
-export type AlertType = 
-  | "upcoming_appointment"
-  | "prescription_expiry"
-  | "laboratory_result"
-  | "medication_reminder"
-  | "health_warning"
-  | "system_notice";
+export type AlertType =
+    | "upcoming_appointment"
+    | "prescription_expiry"
+    | "laboratory_result"
+    | "medication_reminder"
+    | "health_warning"
+    | "system_notice";
 
 /**
  * Single alert/notification
  */
 export interface Alert {
-  id: string;
-  type: AlertType;
-  title: string;
-  message: string;
-  severity: AlertSeverity;
-  actionUrl?: string; // URL to take action
-  actionLabel?: string; // e.g., "View Details", "Reschedule"
-  dismissible: boolean;
-  createdAt: Date;
-  metadata?: Record<string, any>;
+    id: string;
+    type: AlertType;
+    title: string;
+    message: string;
+    severity: AlertSeverity;
+    actionUrl?: string; // URL to take action
+    actionLabel?: string; // e.g., "View Details", "Reschedule"
+    dismissible: boolean;
+    createdAt: Date;
+    metadata?: Record<string, any>;
 }
 
 /**
  * Alert banner data
  */
 export interface AlertBannerData {
-  alerts: Alert[];
-  hasNewAlerts: boolean;
-  totalAlerts: number;
+    alerts: Alert[];
+    hasNewAlerts: boolean;
+    totalAlerts: number;
 }
 
 // ============================================================================
@@ -288,24 +288,24 @@ export interface AlertBannerData {
  * From ConsultationNote model
  */
 export interface DoctorMessage {
-  id: number;
-  consultationTicketId: number;
-  doctorName: string; // From HealthcareProvider
-  doctorSpecialization: string | null;
-  section: string; // Type of note (consultation, assessment, etc)
-  content: string; // Message content
-  showOnPatient: boolean; // Visibility to patient
-  createdAt: Date;
-  doctorId: number;
+    id: number;
+    consultationTicketId: number;
+    doctorName: string; // From HealthcareProvider
+    doctorSpecialization: string | null;
+    section: string; // Type of note (consultation, assessment, etc)
+    content: string; // Message content
+    showOnPatient: boolean; // Visibility to patient
+    createdAt: Date;
+    doctorId: number;
 }
 
 /**
  * Doctor messages preview
  */
 export interface DoctorMessagesData {
-  messages: DoctorMessage[];
-  total: number;
-  hasMore: boolean;
+    messages: DoctorMessage[];
+    total: number;
+    hasMore: boolean;
 }
 
 // ============================================================================
@@ -316,10 +316,10 @@ export interface DoctorMessagesData {
  * Patient dashboard summary stats
  */
 export interface DashboardStats {
-  upcomingAppointmentsCount: number;
-  activePrescriptionsCount: number;
-  labResultsCount: number;
-  healthScore: number; // 0-100
+    upcomingAppointmentsCount: number;
+    activePrescriptionsCount: number;
+    labResultsCount: number;
+    healthScore: number; // 0-100
 }
 
 /**
@@ -327,21 +327,21 @@ export interface DashboardStats {
  * Combines all sections
  */
 export interface PatientDashboardData {
-  patient: {
-    id: number;
-    firstName: string | null;
-    lastName: string | null;
-    email: string;
-    picture: string | null;
-  };
-  stats: DashboardStats;
-  upcomingAppointments: UpcomingAppointmentsData;
-  healthMetrics: HealthMetricsData;
-  prescriptions: RecentPrescriptionsData;
-  activityFeed: ActivityFeedData;
-  alerts: AlertBannerData;
-  doctorMessages: DoctorMessagesData;
-  lastUpdated: Date;
+    patient: {
+        id: number;
+        firstName: string | null;
+        lastName: string | null;
+        email: string;
+        picture: string | null;
+    };
+    stats: DashboardStats;
+    upcomingAppointments: UpcomingAppointmentsData;
+    healthMetrics: HealthMetricsData;
+    prescriptions: RecentPrescriptionsData;
+    activityFeed: ActivityFeedData;
+    alerts: AlertBannerData;
+    doctorMessages: DoctorMessagesData;
+    lastUpdated: Date;
 }
 
 // ============================================================================
@@ -352,39 +352,39 @@ export interface PatientDashboardData {
  * API response wrapper for dashboard data
  */
 export interface DashboardApiResponse<T> {
-  success: boolean;
-  data?: T;
-  error?: {
-    code: string;
-    message: string;
-  };
-  timestamp: Date;
+    success: boolean;
+    data?: T;
+    error?: {
+        code: string;
+        message: string;
+    };
+    timestamp: Date;
 }
 
 /**
  * Component loading/error states
  */
 export interface ComponentState<T> {
-  data: T | null;
-  isLoading: boolean;
-  error: Error | null;
-  isEmpty: boolean;
+    data: T | null;
+    isLoading: boolean;
+    error: Error | null;
+    isEmpty: boolean;
 }
 
 /**
  * Pagination params
  */
 export interface PaginationParams {
-  page: number;
-  limit: number;
-  sortBy?: string;
-  sortOrder?: "asc" | "desc";
+    page: number;
+    limit: number;
+    sortBy?: string;
+    sortOrder?: "asc" | "desc";
 }
 
 /**
  * Date range filter
  */
 export interface DateRange {
-  from: Date;
-  to: Date;
+    from: Date;
+    to: Date;
 }

@@ -1,6 +1,6 @@
 # GitHub Copilot Instructions for ClinicEZ.UI
 
-> 📌 **NOTE:** The comprehensive **Clinicez Fullstack Dev Agent** documentation is available in [`.github/agents/README.md`](./agents/README.md) and [`docs/agents/`](../docs/agents/). Please refer to it for complete development guidelines. This file contains quick copilot-specific instructions.
+> 📌 **NOTE:** The comprehensive **Clinicez Fullstack Dev Agent** documentation is available in `docs/agents/README.md` and `docs/agents/` directory. Please refer to it for complete development guidelines. This file contains quick copilot-specific instructions.
 
 ## ⚠️ Consultation First - Never Over-Confident
 
@@ -43,7 +43,7 @@
 **Never use `any` type in this codebase.**
 
 For accurate typing:
-1. ✅ **DO**: Always refer to [prisma/schema.prisma](prisma/schema.prisma) for data model definitions
+1. ✅ **DO**: Always refer to `prisma/schema.prisma` for data model definitions
 2. ✅ **DO**: Generate types from Prisma schema using `npx prisma generate`
 3. ✅ **DO**: Use explicit interfaces for component props, function parameters, and return types
 4. ✅ **DO**: Leverage existing types from server actions and API responses

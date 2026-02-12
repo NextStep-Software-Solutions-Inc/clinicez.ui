@@ -1,0 +1,11 @@
+export { ClinicProceduresTable } from "./clinic-procedures-table";
+export { ClinicProcedureForm } from "./clinic-procedure-form";
+export { ClinicProceduresSelector } from "./clinic-procedures-selector";
+export { ClinicProceduresTab } from "./clinic-procedures-tab";
+export { MasterLaboratoryProceduresTable } from "./master-laboratory-procedures-table";
+export { MasterImagingProceduresTable } from "./master-imaging-procedures-table";
+export { MasterHeartStationProceduresTable } from "./master-heart-station-procedures-table";
+export { MasterProcedureForm } from "./master-procedure-form";
+export { MasterProceduresTab } from "./master-procedures-tab";
+export { CategoriesManager } from "./categories-manager";
+export { DiagnosticsProceduresConsole } from "./diagnostics-procedures-console";

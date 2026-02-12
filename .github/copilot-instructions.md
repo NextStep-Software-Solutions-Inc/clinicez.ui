@@ -11,22 +11,39 @@ For accurate typing:
 2. ✅ **DO**: Generate types from Prisma schema using `npx prisma generate`
 3. ✅ **DO**: Use explicit interfaces for component props, function parameters, and return types
 4. ✅ **DO**: Leverage existing types from server actions and API responses
+5. ✅ **DO**: Use type inference instead of type assertions whenever possible
+6. ✅ **DO**: Ensure all code is lint-free (follow ESLint rules)
 
 **Why?** 
 - Prevents runtime errors and type-related bugs
 - Makes code more maintainable and self-documenting
 - Enables better IDE autocomplete and refactoring support
 - Catches errors at compile-time instead of runtime
+- Type inference is safer and more readable than assertions
 
 **Example:**
 ```tsx
-// ❌ WRONG
+// ❌ WRONG - Using `any` type
 const handleData = (data: any) => { ... }
+
+// ❌ WRONG - Type assertion
+const user = data as User;
 
 // ✅ RIGHT - Use actual type from schema
 import type { GetClinicPatients } from '@/actions/clinics/clinic-patient.action';
 const handleData = (data: GetClinicPatients['data']) => { ... }
+
+// ✅ RIGHT - Type inference
+const user = { name: 'John', age: 30 }; // const user: { name: string; age: number }
 ```
+
+### Code Quality Standards
+
+1. ✅ **DO**: Write lint-free code that passes all ESLint checks
+2. ✅ **DO**: Prefer type inference over type assertions
+3. ✅ **DO**: Use `const` for immutability; avoid `let` and `var`
+4. ❌ **DON'T**: Use `any` type (use `unknown` if necessary, then type narrow)
+5. ❌ **DON'T**: Use type assertions (`as`) without exhausting all other options
 
 ## Build & Compilation
 
@@ -58,6 +75,36 @@ npx tsc --noEmit
 # Step 3: Full build only when types pass
 npm run build
 ```
+
+## Development Workflow Guidelines
+
+### Code Changes & Building
+
+1. ✅ **DO**: Make code changes as needed
+2. ❌ **DON'T**: Build or run the application unless explicitly told to
+   - Skip `npm run build` after changes
+   - Skip `pnpm dev` or `pnpm start` to avoid port conflicts
+3. ✅ **DO**: Only run build/dev commands when specifically requested
+
+**Why?**
+- Prevents port 3000 conflicts if server already running
+- Avoids unnecessary build times during development
+- Keeps focus on code changes and fixes
+
+### Post-Implementation Workflow
+
+After making code changes, fixes, or adding features:
+
+1. ✅ **DO**: Suggest good-to-implement features for the current component/feature
+2. ✅ **DO**: Identify potential improvements and optimizations
+3. ✅ **DO**: Point out related features that could enhance functionality
+4. ✅ **DO**: Never assume work is "complete" - always suggest next steps
+
+**Example Format:**
+- "Code changes complete. Consider implementing..."
+- "This feature could benefit from..."
+- "Suggested improvements: ..."
+- "Future enhancements to consider: ..."
 
 ## Database Migration Guidelines
 

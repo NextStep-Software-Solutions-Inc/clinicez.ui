@@ -531,7 +531,7 @@ export const getCurrentUserAction = withErrorHandling(cache(async () => {
 
 }), async (error) => {
   console.error("Error in getCurrentUserAction:", error);
-  return "Failed to get current user";
+  return "Failed to get current user. User may not exist in database - verify Clerk webhook is configured correctly.";
 });
 
 const assignUserPermission = async (prisma: PrismaTransactionalClient, userId: number) => {

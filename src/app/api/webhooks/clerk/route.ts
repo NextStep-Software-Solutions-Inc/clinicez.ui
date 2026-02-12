@@ -4,6 +4,9 @@ import { Webhook } from "svix";
 import prisma from "@lib/prisma";
 import { $Enums } from "@prisma/client";
 
+// Type alias for Prisma transaction client
+type PrismaTransaction = Parameters<Parameters<typeof prisma["$transaction"]>[0]>[0];
+
 // Webhook event types from Clerk
 type ClerkWebhookEvent = {
   type: "user.created" | "user.updated";
@@ -174,7 +177,7 @@ export async function POST(request: NextRequest) {
  * Queries permissions within the transaction to ensure consistency
  */
 async function assignUserPermissions(
-  tx: Parameters<Parameters<typeof prisma["$transaction"]>[0]>[0],
+  tx: PrismaTransaction,
   userId: number
 ) {
   // Query permissions directly within the transaction for consistency

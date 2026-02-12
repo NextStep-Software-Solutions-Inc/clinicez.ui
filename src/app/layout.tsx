@@ -85,24 +85,4 @@ export default async function RootLayout({ children }: Props) {
       </html>
     </ClerkProvider>
   );
-
-  // return (
-  //   <html lang="en">
-  //     <HotJar />
-  //     <body className={`${plusJakartaSans.className}`}>
-  //       <BypassAutoplay />
-  //       <JotaiProvider>
-  //         <SyncTokenClient />
-  //         {/* {!!session && <SyncSessionClinic/>} */}
-  //         <SWRProvider>
-  //           {children}
-  //           <SpeedInsights />
-  //           <Analytics />
-  //           <SonnerToaster richColors />
-  //           <Toaster />
-  //         </SWRProvider>
-  //       </JotaiProvider>
-  //     </body>
-  //   </html>
-  // );
 }

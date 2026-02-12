@@ -15,7 +15,7 @@ import dynamic from "next/dynamic";
 import { Analytics } from "@vercel/analytics/react";
 
 import "@styles/globals.css";
-import { findOrCreateUserAction } from "@actions/users/user.action";
+import { getCurrentUserAction } from "@actions/users/user.action";
 import { redirect } from "next/navigation";
 const HotJar = dynamic(() => import("@components/HotJar"), { ssr: true });
 
@@ -35,8 +35,12 @@ export default async function RootLayout({ children }: Props) {
 
   const session = await getCachedSession();
   if (session) {
-    const dbUser = await findOrCreateUserAction();
-    if (!dbUser.data) redirect(`/sign-in?error=user-sync-error`);
+    const dbUser = await getCurrentUserAction();
+    if (!dbUser.data) {
+      // User not found in database - redirect to error page
+      // This should not happen if Clerk webhook is properly configured
+      redirect(`/sign-in?error=user-not-found`);
+    }
   }
 
   return (

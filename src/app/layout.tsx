@@ -17,6 +17,7 @@ import { Analytics } from "@vercel/analytics/react";
 import "@styles/globals.css";
 import { getCurrentUserAction } from "@actions/users/user.action";
 import { redirect } from "next/navigation";
+import OnboardingGuard from "@components/onboarding/OnboardingGuard";
 const HotJar = dynamic(() => import("@components/HotJar"), { ssr: true });
 
 const plusJakartaSans = Plus_Jakarta_Sans({ subsets: ["latin"] });
@@ -34,6 +35,12 @@ export default async function RootLayout({ children }: Props) {
   const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
   const session = await getCachedSession();
+  let onboardingStatus = "COMPLETED";
+  let firstName: string | null = null;
+  let lastName: string | null = null;
+  let dob: Date | null = null;
+  let gender: string | null = null;
+  let mobile: string | null = null;
   if (session) {
     const dbUser = await getCurrentUserAction();
     if (!dbUser.data) {
@@ -53,6 +60,16 @@ export default async function RootLayout({ children }: Props) {
             <SyncTokenClient />
             {/* {!!session && <SyncSessionClinic/>} */}
             <SWRProvider>
+              {!!session && (
+                <OnboardingGuard
+                  onboardingStatus={onboardingStatus}
+                  firstName={firstName}
+                  lastName={lastName}
+                  dob={dob}
+                  gender={gender}
+                  mobile={mobile}
+                />
+              )}
               {children}
               <SpeedInsights />
               <Analytics />

@@ -3,20 +3,45 @@
 
 import Suspend from "./Suspend";
 import { SignedIn, UserButton, useUser } from "@clerk/nextjs";
-import { User, Building2, Stethoscope, Settings, LifeBuoy, LayoutDashboard } from "lucide-react";
+import { User, Building2, Stethoscope, Settings, LifeBuoy, LayoutDashboard, HeartPulse, KeyRound } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useHPs } from "@hooks/useHP";
 import { useEffect, useState } from "react";
 import { getMyDefaultOrganizationAction } from "@actions/organizations/organization.action";
 import { isHP, isOrgMember } from "@lib/org-utils";
+import { getDashboardLinksAction, type DashboardLink } from "@actions/dashboard/dashboard-links.action";
+
+const DASHBOARD_ICONS: Record<DashboardLink["type"], React.ReactNode> = {
+  patient: <HeartPulse size={16} />,
+  tenant: <KeyRound size={16} />,
+  clinic: <Stethoscope size={16} />,
+  organization: <Building2 size={16} />,
+};
 
 export default function UserAvatarWrapper() {
   const { user } = useUser();
   const router = useRouter();
   const [orgDashboardUrl, setOrgDashboardUrl] = useState<string | null>(null);
   const [showOrgDashboard, setShowOrgDashboard] = useState(false);
+  const [dashboardLinks, setDashboardLinks] = useState<DashboardLink[]>([]);
 
   const { data: hpProfiles } = useHPs({ userId: user?.id ?? "" }, !!user?.id);
+
+  // Fetch v2 dashboard links
+  useEffect(() => {
+    const fetchLinks = async () => {
+      try {
+        const links = await getDashboardLinksAction();
+        setDashboardLinks(links);
+      } catch (error) {
+        console.error("Error fetching dashboard links:", error);
+      }
+    };
+
+    if (user?.id) {
+      fetchLinks();
+    }
+  }, [user?.id]);
 
   // Determine organization dashboard URL
   useEffect(() => {
@@ -66,6 +91,18 @@ export default function UserAvatarWrapper() {
                 }
               }}
             />
+
+            {/* V2 Dashboard Links */}
+            {dashboardLinks.map((link) => (
+              <UserButton.Action
+                key={link.href}
+                label={link.label}
+                labelIcon={DASHBOARD_ICONS[link.type]}
+                onClick={() => {
+                  router.push(link.href);
+                }}
+              />
+            ))}
 
             {/* Dynamic HP Profiles */}
             {hpProfiles?.map((item) => (

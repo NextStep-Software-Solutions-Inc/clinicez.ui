@@ -1,9 +1,9 @@
 import React from "react";
 import "@styles/v2-dashboard.css";
-import { V2DashboardShell } from "@/components/v2/dashboard";
-import type { V2NavItem } from "@/components/v2/dashboard";
+import { DashboardShell } from "@/components/v2/dashboard";
+import type { NavItem } from "@/components/v2/dashboard";
 
-const navItems: V2NavItem[] = [
+const navItems: NavItem[] = [
   { name: "Dashboard", href: "/tenant/dashboard", icon: "home" },
   {
     name: "Organizations",
@@ -28,12 +28,12 @@ export default function TenantDashboardLayout({
   children,
 }: TenantDashboardLayoutProps) {
   return (
-    <V2DashboardShell
+    <DashboardShell
       dashboardType="tenant"
       title="Tenant Console"
       navItems={navItems}
     >
       {children}
-    </V2DashboardShell>
+    </DashboardShell>
   );
 }

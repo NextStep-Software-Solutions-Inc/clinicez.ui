@@ -42,15 +42,15 @@ import {
 /*  Types                                                              */
 /* ------------------------------------------------------------------ */
 
-export interface V2NavItem {
+export interface NavItem {
   name: string;
   href: string;
   icon: string;
   badgeCount?: number;
 }
 
-export interface V2DashboardSidebarProps {
-  navItems: V2NavItem[];
+export interface DashboardSidebarProps {
+  navItems: NavItem[];
   dashboardType: "patient" | "tenant" | "clinic" | "organization";
   title: string;
 }
@@ -83,7 +83,7 @@ function resolveIcon(name: string): LucideIcon {
 /* ------------------------------------------------------------------ */
 
 interface NavLinkProps {
-  item: V2NavItem;
+  item: NavItem;
   isActive: boolean;
   collapsed: boolean;
 }
@@ -141,7 +141,7 @@ function NavLink({ item, isActive, collapsed }: NavLinkProps) {
 /* ------------------------------------------------------------------ */
 
 interface SidebarBodyProps {
-  navItems: V2NavItem[];
+  navItems: NavItem[];
   title: string;
   pathname: string;
   collapsed: boolean;
@@ -207,11 +207,11 @@ function SidebarBody({
 /*  Mobile menu trigger + sheet (rendered inside topbar)               */
 /* ------------------------------------------------------------------ */
 
-export function V2MobileMenu({
+export function MobileMenu({
   navItems,
   dashboardType,
   title,
-}: V2DashboardSidebarProps) {
+}: DashboardSidebarProps) {
   const pathname = usePathname();
 
   return (
@@ -245,11 +245,11 @@ export function V2MobileMenu({
 /*  Main export                                                        */
 /* ------------------------------------------------------------------ */
 
-export default function V2DashboardSidebar({
+export default function DashboardSidebar({
   navItems,
   dashboardType,
   title,
-}: V2DashboardSidebarProps) {
+}: DashboardSidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
 

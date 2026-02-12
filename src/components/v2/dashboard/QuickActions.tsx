@@ -7,15 +7,15 @@ import { Card, CardContent } from "@components/ui/card";
 /*  Types                                                              */
 /* ------------------------------------------------------------------ */
 
-export interface V2QuickAction {
+export interface QuickAction {
   icon: React.ReactNode;
   label: string;
   description: string;
   href: string;
 }
 
-export interface V2QuickActionsProps {
-  actions: V2QuickAction[];
+export interface QuickActionsProps {
+  actions: QuickAction[];
   className?: string;
 }
 
@@ -23,10 +23,10 @@ export interface V2QuickActionsProps {
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
 
-export default function V2QuickActions({
+export default function QuickActions({
   actions,
   className,
-}: V2QuickActionsProps) {
+}: QuickActionsProps) {
   return (
     <div
       className={cn(

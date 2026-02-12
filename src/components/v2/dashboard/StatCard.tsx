@@ -7,7 +7,7 @@ import { TrendingUp, TrendingDown } from "lucide-react";
 /*  Types                                                              */
 /* ------------------------------------------------------------------ */
 
-export interface V2StatCardProps {
+export interface StatCardProps {
   label: string;
   value: string | number;
   trend?: { direction: "up" | "down"; value: string };
@@ -19,13 +19,13 @@ export interface V2StatCardProps {
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
 
-export default function V2StatCard({
+export default function StatCard({
   label,
   value,
   trend,
   icon,
   className,
-}: V2StatCardProps) {
+}: StatCardProps) {
   return (
     <Card
       className={cn(

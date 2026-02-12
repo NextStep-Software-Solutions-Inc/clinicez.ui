@@ -1,7 +1,7 @@
 import React from "react";
 import "@styles/v2-dashboard.css";
-import { V2DashboardShell } from "@/components/v2/dashboard";
-import type { V2NavItem } from "@/components/v2/dashboard";
+import { DashboardShell } from "@/components/v2/dashboard";
+import type { NavItem } from "@/components/v2/dashboard";
 
 interface OrgDashboardLayoutProps {
   children: React.ReactNode;
@@ -14,7 +14,7 @@ export default async function OrgDashboardLayout(
   const params = await props.params;
   const { orgUid } = params;
 
-  const navItems: V2NavItem[] = [
+  const navItems: NavItem[] = [
     { name: "Dashboard", href: `/org/${orgUid}/dashboard`, icon: "home" },
     {
       name: "Members",
@@ -44,12 +44,12 @@ export default async function OrgDashboardLayout(
   ];
 
   return (
-    <V2DashboardShell
+    <DashboardShell
       dashboardType="organization"
       title="Organization Hub"
       navItems={navItems}
     >
       {props.children}
-    </V2DashboardShell>
+    </DashboardShell>
   );
 }

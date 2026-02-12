@@ -1,11 +1,11 @@
 "use client";
 
 import {
-  V2WelcomeHeader,
-  V2StatCard,
-  V2QuickActions,
+  WelcomeHeader,
+  StatCard,
+  QuickActions,
 } from "@/components/v2/dashboard";
-import type { V2QuickAction } from "@/components/v2/dashboard";
+import type { QuickAction } from "@/components/v2/dashboard";
 import { Separator } from "@components/ui/separator";
 import {
   Users,
@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 
 // TODO: Replace placeholder hrefs with dynamic routes once orgUid is available via useParams
-const quickActions: V2QuickAction[] = [
+const quickActions: QuickAction[] = [
   {
     icon: <UserCog className="h-5 w-5" />,
     label: "Manage Members",
@@ -49,7 +49,7 @@ const quickActions: V2QuickAction[] = [
 export default function OrgDashboardPage() {
   return (
     <div className="space-y-6">
-      <V2WelcomeHeader
+      <WelcomeHeader
         name="Administrator"
         subtitle="Organization performance overview"
         dashboardType="organization"
@@ -58,24 +58,24 @@ export default function OrgDashboardPage() {
       <Separator />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <V2StatCard
+        <StatCard
           label="Total Members"
           value={86}
           trend={{ direction: "up", value: "+5" }}
           icon={<Users className="h-5 w-5 text-muted-foreground" />}
         />
-        <V2StatCard
+        <StatCard
           label="Active Clinics"
           value={4}
           icon={<Building2 className="h-5 w-5 text-muted-foreground" />}
         />
-        <V2StatCard
+        <StatCard
           label="Monthly Revenue"
           value="$48,200"
           trend={{ direction: "up", value: "+12%" }}
           icon={<DollarSign className="h-5 w-5 text-muted-foreground" />}
         />
-        <V2StatCard
+        <StatCard
           label="Pending Requests"
           value={7}
           trend={{ direction: "down", value: "-3" }}
@@ -85,7 +85,7 @@ export default function OrgDashboardPage() {
 
       <Separator />
 
-      <V2QuickActions actions={quickActions} />
+      <QuickActions actions={quickActions} />
     </div>
   );
 }

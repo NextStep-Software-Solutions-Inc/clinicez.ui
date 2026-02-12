@@ -1,11 +1,11 @@
 "use client";
 
 import {
-  V2WelcomeHeader,
-  V2StatCard,
-  V2QuickActions,
+  WelcomeHeader,
+  StatCard,
+  QuickActions,
 } from "@/components/v2/dashboard";
-import type { V2QuickAction } from "@/components/v2/dashboard";
+import type { QuickAction } from "@/components/v2/dashboard";
 import { Separator } from "@components/ui/separator";
 import {
   Building2,
@@ -18,7 +18,7 @@ import {
   Settings,
 } from "lucide-react";
 
-const quickActions: V2QuickAction[] = [
+const quickActions: QuickAction[] = [
   {
     icon: <Network className="h-5 w-5" />,
     label: "Manage Organizations",
@@ -48,7 +48,7 @@ const quickActions: V2QuickAction[] = [
 export default function TenantDashboardPage() {
   return (
     <div className="space-y-6">
-      <V2WelcomeHeader
+      <WelcomeHeader
         name="Admin"
         subtitle="System overview and management"
         dashboardType="tenant"
@@ -57,24 +57,24 @@ export default function TenantDashboardPage() {
       <Separator />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <V2StatCard
+        <StatCard
           label="Total Organizations"
           value={12}
           icon={<Building2 className="h-5 w-5 text-muted-foreground" />}
         />
-        <V2StatCard
+        <StatCard
           label="Active Clinics"
           value={38}
           trend={{ direction: "up", value: "+4" }}
           icon={<Stethoscope className="h-5 w-5 text-muted-foreground" />}
         />
-        <V2StatCard
+        <StatCard
           label="Registered Users"
           value="1,240"
           trend={{ direction: "up", value: "+12%" }}
           icon={<Users className="h-5 w-5 text-muted-foreground" />}
         />
-        <V2StatCard
+        <StatCard
           label="System Health"
           value="99.9%"
           icon={<Activity className="h-5 w-5 text-muted-foreground" />}
@@ -83,7 +83,7 @@ export default function TenantDashboardPage() {
 
       <Separator />
 
-      <V2QuickActions actions={quickActions} />
+      <QuickActions actions={quickActions} />
     </div>
   );
 }

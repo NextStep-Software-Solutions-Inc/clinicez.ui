@@ -1,11 +1,11 @@
 "use client";
 
 import {
-  V2WelcomeHeader,
-  V2StatCard,
-  V2QuickActions,
+  WelcomeHeader,
+  StatCard,
+  QuickActions,
 } from "@/components/v2/dashboard";
-import type { V2QuickAction } from "@/components/v2/dashboard";
+import type { QuickAction } from "@/components/v2/dashboard";
 import { Separator } from "@components/ui/separator";
 import {
   Users,
@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 
 // TODO: Replace placeholder hrefs with dynamic routes once clinicUid is available via useParams
-const quickActions: V2QuickAction[] = [
+const quickActions: QuickAction[] = [
   {
     icon: <Eye className="h-5 w-5" />,
     label: "View Patients",
@@ -49,7 +49,7 @@ const quickActions: V2QuickAction[] = [
 export default function ClinicDashboardPage() {
   return (
     <div className="space-y-6">
-      <V2WelcomeHeader
+      <WelcomeHeader
         name="Doctor"
         subtitle="Your clinic at a glance"
         dashboardType="clinic"
@@ -58,24 +58,24 @@ export default function ClinicDashboardPage() {
       <Separator />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <V2StatCard
+        <StatCard
           label="Patients Today"
           value={24}
           icon={<Users className="h-5 w-5 text-muted-foreground" />}
         />
-        <V2StatCard
+        <StatCard
           label="Pending Appointments"
           value={8}
           trend={{ direction: "down", value: "-2" }}
           icon={<CalendarClock className="h-5 w-5 text-muted-foreground" />}
         />
-        <V2StatCard
+        <StatCard
           label="Consultations"
           value={156}
           trend={{ direction: "up", value: "+18%" }}
           icon={<Stethoscope className="h-5 w-5 text-muted-foreground" />}
         />
-        <V2StatCard
+        <StatCard
           label="Revenue"
           value="$12,450"
           trend={{ direction: "up", value: "+8%" }}
@@ -85,7 +85,7 @@ export default function ClinicDashboardPage() {
 
       <Separator />
 
-      <V2QuickActions actions={quickActions} />
+      <QuickActions actions={quickActions} />
     </div>
   );
 }

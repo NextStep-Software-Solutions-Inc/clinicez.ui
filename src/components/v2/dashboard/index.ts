@@ -1,13 +1,13 @@
-export { default as V2DashboardSidebar, V2MobileMenu } from "./V2DashboardSidebar";
-export { default as V2DashboardTopbar } from "./V2DashboardTopbar";
-export { default as V2DashboardShell } from "./V2DashboardShell";
-export { default as V2StatCard } from "./V2StatCard";
-export { default as V2WelcomeHeader } from "./V2WelcomeHeader";
-export { default as V2QuickActions } from "./V2QuickActions";
+export { default as DashboardSidebar, MobileMenu } from "./DashboardSidebar";
+export { default as DashboardTopbar } from "./DashboardTopbar";
+export { default as DashboardShell } from "./DashboardShell";
+export { default as StatCard } from "./StatCard";
+export { default as WelcomeHeader } from "./WelcomeHeader";
+export { default as QuickActions } from "./QuickActions";
 
-export type { V2NavItem, V2DashboardSidebarProps } from "./V2DashboardSidebar";
-export type { V2DashboardTopbarProps } from "./V2DashboardTopbar";
-export type { V2DashboardShellProps, V2DashboardType } from "./V2DashboardShell";
-export type { V2StatCardProps } from "./V2StatCard";
-export type { V2WelcomeHeaderProps } from "./V2WelcomeHeader";
-export type { V2QuickAction, V2QuickActionsProps } from "./V2QuickActions";
+export type { NavItem, DashboardSidebarProps } from "./DashboardSidebar";
+export type { DashboardTopbarProps } from "./DashboardTopbar";
+export type { DashboardShellProps, DashboardType } from "./DashboardShell";
+export type { StatCardProps } from "./StatCard";
+export type { WelcomeHeaderProps } from "./WelcomeHeader";
+export type { QuickAction, QuickActionsProps } from "./QuickActions";

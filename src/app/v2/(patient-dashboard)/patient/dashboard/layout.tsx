@@ -1,9 +1,9 @@
 import React from "react";
 import "@styles/v2-dashboard.css";
-import { V2DashboardShell } from "@/components/v2/dashboard";
-import type { V2NavItem } from "@/components/v2/dashboard";
+import { DashboardShell } from "@/components/v2/dashboard";
+import type { NavItem } from "@/components/v2/dashboard";
 
-const navItems: V2NavItem[] = [
+const navItems: NavItem[] = [
   { name: "Home", href: "/patient/dashboard", icon: "home" },
   { name: "Health Records", href: "/patient/dashboard/records", icon: "heart" },
   {
@@ -28,12 +28,12 @@ export default function PatientDashboardLayout({
   children,
 }: PatientDashboardLayoutProps) {
   return (
-    <V2DashboardShell
+    <DashboardShell
       dashboardType="patient"
       title="Patient Portal"
       navItems={navItems}
     >
       {children}
-    </V2DashboardShell>
+    </DashboardShell>
   );
 }

@@ -1,7 +1,7 @@
 import React from "react";
 import "@styles/v2-dashboard.css";
-import { V2DashboardShell } from "@/components/v2/dashboard";
-import type { V2NavItem } from "@/components/v2/dashboard";
+import { DashboardShell } from "@/components/v2/dashboard";
+import type { NavItem } from "@/components/v2/dashboard";
 
 interface ClinicDashboardLayoutProps {
   children: React.ReactNode;
@@ -14,7 +14,7 @@ export default async function ClinicDashboardLayout(
   const params = await props.params;
   const { clinicUid } = params;
 
-  const navItems: V2NavItem[] = [
+  const navItems: NavItem[] = [
     { name: "Dashboard", href: `/clinic/${clinicUid}/dashboard`, icon: "home" },
     {
       name: "Patients",
@@ -49,12 +49,12 @@ export default async function ClinicDashboardLayout(
   ];
 
   return (
-    <V2DashboardShell
+    <DashboardShell
       dashboardType="clinic"
       title="Clinic Dashboard"
       navItems={navItems}
     >
       {props.children}
-    </V2DashboardShell>
+    </DashboardShell>
   );
 }

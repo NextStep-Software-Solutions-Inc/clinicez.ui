@@ -1,15 +1,15 @@
 import React from "react";
 import { cn } from "@lib/utils";
-import type { V2DashboardType } from "./V2DashboardShell";
+import type { DashboardType } from "./DashboardShell";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
 /* ------------------------------------------------------------------ */
 
-export interface V2WelcomeHeaderProps {
+export interface WelcomeHeaderProps {
   name: string;
   subtitle?: string;
-  dashboardType?: V2DashboardType;
+  dashboardType?: DashboardType;
   /** Optional action buttons rendered on the right */
   actions?: React.ReactNode;
   className?: string;
@@ -32,13 +32,13 @@ function formatDate(): string {
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
 
-export default function V2WelcomeHeader({
+export default function WelcomeHeader({
   name,
   subtitle,
   dashboardType,
   actions,
   className,
-}: V2WelcomeHeaderProps) {
+}: WelcomeHeaderProps) {
   return (
     <div
       className={cn(

@@ -9,7 +9,7 @@ import { Search } from "lucide-react";
 /*  Types                                                              */
 /* ------------------------------------------------------------------ */
 
-export interface V2DashboardTopbarProps {
+export interface DashboardTopbarProps {
   title: string;
   subtitle?: string;
   /** Right-side actions (e.g. user avatar dropdown) */
@@ -22,12 +22,12 @@ export interface V2DashboardTopbarProps {
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
 
-export default function V2DashboardTopbar({
+export default function DashboardTopbar({
   title,
   subtitle,
   children,
   mobileMenuTrigger,
-}: V2DashboardTopbarProps) {
+}: DashboardTopbarProps) {
   return (
     <header className="v2-topbar">
       {/* Left section: mobile trigger + breadcrumb area */}

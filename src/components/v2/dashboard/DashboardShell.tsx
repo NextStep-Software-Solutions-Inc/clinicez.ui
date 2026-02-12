@@ -2,21 +2,21 @@
 
 import React from "react";
 import "@styles/v2-dashboard.css";
-import V2DashboardSidebar, {
-  V2MobileMenu,
-  type V2NavItem,
-} from "./V2DashboardSidebar";
-import V2DashboardTopbar from "./V2DashboardTopbar";
+import DashboardSidebar, {
+  MobileMenu,
+  type NavItem,
+} from "./DashboardSidebar";
+import DashboardTopbar from "./DashboardTopbar";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
 /* ------------------------------------------------------------------ */
 
-export type V2DashboardType = "patient" | "tenant" | "clinic" | "organization";
+export type DashboardType = "patient" | "tenant" | "clinic" | "organization";
 
-export interface V2DashboardShellProps {
-  dashboardType: V2DashboardType;
-  navItems: V2NavItem[];
+export interface DashboardShellProps {
+  dashboardType: DashboardType;
+  navItems: NavItem[];
   title: string;
   subtitle?: string;
   /** Right-side topbar actions (e.g. user avatar dropdown) */
@@ -28,21 +28,21 @@ export interface V2DashboardShellProps {
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
 
-export default function V2DashboardShell({
+export default function DashboardShell({
   dashboardType,
   navItems,
   title,
   subtitle,
   topbarActions,
   children,
-}: V2DashboardShellProps) {
+}: DashboardShellProps) {
   return (
     <div
       data-dashboard={dashboardType}
       className="flex min-h-dvh bg-background"
     >
       {/* Desktop sidebar */}
-      <V2DashboardSidebar
+      <DashboardSidebar
         navItems={navItems}
         dashboardType={dashboardType}
         title={title}
@@ -50,11 +50,11 @@ export default function V2DashboardShell({
 
       {/* Main area */}
       <div className="flex flex-1 flex-col">
-        <V2DashboardTopbar
+        <DashboardTopbar
           title={title}
           subtitle={subtitle}
           mobileMenuTrigger={
-            <V2MobileMenu
+            <MobileMenu
               navItems={navItems}
               dashboardType={dashboardType}
               title={title}
@@ -62,7 +62,7 @@ export default function V2DashboardShell({
           }
         >
           {topbarActions}
-        </V2DashboardTopbar>
+        </DashboardTopbar>
 
         <main className="v2-content">{children}</main>
       </div>

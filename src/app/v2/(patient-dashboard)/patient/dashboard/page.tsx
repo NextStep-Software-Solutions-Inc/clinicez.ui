@@ -1,11 +1,11 @@
 "use client";
 
 import {
-  V2WelcomeHeader,
-  V2StatCard,
-  V2QuickActions,
+  WelcomeHeader,
+  StatCard,
+  QuickActions,
 } from "@/components/v2/dashboard";
-import type { V2QuickAction } from "@/components/v2/dashboard";
+import type { QuickAction } from "@/components/v2/dashboard";
 import { Separator } from "@components/ui/separator";
 import {
   CalendarDays,
@@ -18,7 +18,7 @@ import {
   Search,
 } from "lucide-react";
 
-const quickActions: V2QuickAction[] = [
+const quickActions: QuickAction[] = [
   {
     icon: <CalendarPlus className="h-5 w-5" />,
     label: "Book Appointment",
@@ -48,7 +48,7 @@ const quickActions: V2QuickAction[] = [
 export default function PatientDashboardPage() {
   return (
     <div className="space-y-6">
-      <V2WelcomeHeader
+      <WelcomeHeader
         name="Patient"
         subtitle="Here's your health overview"
         dashboardType="patient"
@@ -57,23 +57,23 @@ export default function PatientDashboardPage() {
       <Separator />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <V2StatCard
+        <StatCard
           label="Upcoming Appointments"
           value={3}
           icon={<CalendarDays className="h-5 w-5 text-muted-foreground" />}
         />
-        <V2StatCard
+        <StatCard
           label="Active Prescriptions"
           value={5}
           icon={<Pill className="h-5 w-5 text-muted-foreground" />}
         />
-        <V2StatCard
+        <StatCard
           label="Lab Results"
           value={2}
           trend={{ direction: "up", value: "+1" }}
           icon={<FlaskConical className="h-5 w-5 text-muted-foreground" />}
         />
-        <V2StatCard
+        <StatCard
           label="Health Score"
           value={85}
           trend={{ direction: "up", value: "+3%" }}
@@ -83,7 +83,7 @@ export default function PatientDashboardPage() {
 
       <Separator />
 
-      <V2QuickActions actions={quickActions} />
+      <QuickActions actions={quickActions} />
     </div>
   );
 }

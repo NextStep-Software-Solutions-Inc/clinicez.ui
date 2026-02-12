@@ -4,7 +4,8 @@ import prisma from "@lib/prisma";
 import { $Enums } from "@prisma/client";
 import { sessionCheck } from "@/lib/auth";
 import { withErrorHandling } from "@/lib/with-error-handling";
-import { requirePermissionOrOwnership, isOwnResource, PermissionError, requireUserPermission } from "@/lib/permission-checker";
+import { requirePermissionOrOwnership, isOwnResource, requireUserPermission } from "@/lib/permission-checker";
+import { PermissionError } from "@/lib/permission-errors";
 import { PERMISSIONS } from "@/lib/permissions";
 
 type PrismaTransactionalClient = Parameters<

@@ -13,7 +13,8 @@ import { withErrorHandling } from '@/lib/with-error-handling';
 // import { updateAuth0UserAction } from './user-management.action'; // Commented out for Clerk migration
 import { getPermissionsAction } from '../permission.action';
 import { sessionCheck } from '@/lib/auth';
-import { isOwnResource, PermissionError, requireUserPermission } from '@/lib/permission-checker';
+import { isOwnResource, requireUserPermission } from '@/lib/permission-checker';
+import { PermissionError } from '@/lib/permission-errors';
 import { PERMISSIONS } from '@/lib/permissions';
 
 export type PrismaTransactionalClient = Parameters<Parameters<typeof prisma['$transaction']>[0]>[0];

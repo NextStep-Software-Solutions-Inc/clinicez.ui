@@ -3,17 +3,11 @@
 import { sessionCheck } from "./auth";
 import { hasOrgPermissionAction, hasClinicPermissionAction } from "@/actions/permission.action";
 import prisma from "./prisma";
+import { PermissionError } from "./permission-errors";
 
 /**
  * Permission checking utilities for server actions
  */
-
-export class PermissionError extends Error {
-  constructor(message: string, public permissionName?: string, public context?: string) {
-    super(message);
-    this.name = "PermissionError";
-  }
-}
 
 /**
  * Check if a user has a specific USER-level permission

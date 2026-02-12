@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Gender } from "@prisma/client";
-import { format } from "date-fns";
 import { toast } from "sonner";
 import { Card, CardContent } from "@components/ui/card";
 import {
@@ -17,6 +16,7 @@ import {
   FormMessage,
 } from "@components/ui/form";
 import { Input } from "@components/ui/input";
+import { DatePicker } from "@components/ui/date-picker";
 import {
   Select,
   SelectContent,
@@ -177,18 +177,11 @@ export default function UserOnboardingPage({
                         <span className="text-destructive">*</span>
                       </FormLabel>
                       <FormControl>
-                        <Input
-                          type="date"
-                          max={format(new Date(), "yyyy-MM-dd")}
-                          value={
-                            field.value
-                              ? format(new Date(field.value), "yyyy-MM-dd")
-                              : ""
-                          }
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            field.onChange(val ? new Date(val) : undefined);
-                          }}
+                        <DatePicker
+                          value={field.value ? new Date(field.value) : undefined}
+                          onChange={field.onChange}
+                          placeholder="Select your date of birth"
+                          toDate={new Date()}
                         />
                       </FormControl>
                       <FormMessage />

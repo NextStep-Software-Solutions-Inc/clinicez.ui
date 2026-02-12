@@ -6,9 +6,9 @@ export const useDocumentTemplates = (filters?: GetDocumentTemplatesFilters) => {
 
   const searchParams = new URLSearchParams();
   Object.entries(filters ?? {}).forEach(([key, value]) => {
-    if(value) searchParams.set(key, value.toString())
+    if (value) searchParams.set(key, value.toString())
   })
 
-  const fetcher = (args:string) => self.get<GetDocumentTemplates>(args)
+  const fetcher = (args: string) => self.get<GetDocumentTemplates>(args)
   return useSWR(`/api/document-templates?${searchParams.toString()}`, fetcher)
 }

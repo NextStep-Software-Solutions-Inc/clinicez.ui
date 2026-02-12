@@ -13,8 +13,8 @@ export type GetDocumentTypes = Awaited<ReturnType<typeof getDocumentTypesAction>
 export const getDocumentTypesAction = withErrorHandling(async (filters: GetDocumentTypesFilters) => {
 
   const session = await getCachedSession()
-  if(!session) throw new Error("Unauthorized")
-  
+  if (!session) throw new Error("Unauthorized")
+
   const { name } = filters
   const documentTemplates = await prismaClient.documentTemplateType.findMany({
     where: {
@@ -31,7 +31,7 @@ export const getDocumentTypesAction = withErrorHandling(async (filters: GetDocum
       },
     }
   })
-  return {message: "", data: documentTemplates}
+  return { message: "", data: documentTemplates }
 })
 
 type UpsertDocumentTypePayload = {
@@ -42,7 +42,7 @@ type UpsertDocumentTypePayload = {
 export const createDocumentTypeAction = withErrorHandling(async (payload: UpsertDocumentTypePayload) => {
 
   const session = await getCachedSession()
-  if(!session) throw new Error("Unauthorized")
+  if (!session) throw new Error("Unauthorized")
 
   const { name, description } = payload
   const documentTemplateType = await prismaClient.documentTemplateType.create({
@@ -54,13 +54,13 @@ export const createDocumentTypeAction = withErrorHandling(async (payload: Upsert
 
   return { message: "Document template type created successfully", data: documentTemplateType }
 }, async (error) => {
-  if(hasCodeProperty(error) && error.code === "P2002") return "Document template type already exists"
+  if (hasCodeProperty(error) && error.code === "P2002") return "Document template type already exists"
 })
 
 export const updateDocumentTypeAction = withErrorHandling(async (id: number, payload: UpsertDocumentTypePayload) => {
 
   const session = await getCachedSession()
-  if(!session) throw new Error("Unauthorized")
+  if (!session) throw new Error("Unauthorized")
 
   const { name, description } = payload
   const documentTemplateType = await prismaClient.documentTemplateType.update({
@@ -73,14 +73,14 @@ export const updateDocumentTypeAction = withErrorHandling(async (id: number, pay
 
   return { message: "Document template type updated successfully", data: documentTemplateType }
 }, async (error) => {
-  if(hasCodeProperty(error) && error.code === "P2025") return "Document template type not found"
-  if(hasCodeProperty(error) && error.code === "P2002") return "Document template type already exists"
+  if (hasCodeProperty(error) && error.code === "P2025") return "Document template type not found"
+  if (hasCodeProperty(error) && error.code === "P2002") return "Document template type already exists"
 })
 
 export const deleteDocumentTypeAction = withErrorHandling(async (id: number) => {
 
   const session = await getCachedSession()
-  if(!session) throw new Error("Unauthorized")
+  if (!session) throw new Error("Unauthorized")
 
   const documentTemplateType = await prismaClient.documentTemplateType.delete({
     where: { id }
@@ -88,6 +88,6 @@ export const deleteDocumentTypeAction = withErrorHandling(async (id: number) => 
 
   return { message: "Document template type deleted successfully", data: documentTemplateType }
 }, async (error) => {
-  if(hasCodeProperty(error) && error.code === "P2025") return "Document template type not found"
-  if(hasCodeProperty(error) && error.code === "P2003") return "Cannot delete document template type because it is in use"
+  if (hasCodeProperty(error) && error.code === "P2025") return "Document template type not found"
+  if (hasCodeProperty(error) && error.code === "P2003") return "Cannot delete document template type because it is in use"
 })

@@ -7,23 +7,23 @@ CREATE TYPE "AuditActionType" AS ENUM ('CREATE', 'UPDATE', 'DELETE', 'VIEW', 'LO
 -- CreateEnum
 CREATE TYPE "EntityType" AS ENUM ('USER', 'CLINIC_PATIENT', 'ORGANIZATION_MEMBER', 'CLINIC_MEMBER', 'PERMISSION', 'APPOINTMENT', 'CONSULTATION', 'PRESCRIPTION', 'OTHER');
 
--- AlterTable: Add onboarding fields to User
-ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "onboardingStatus" "OnboardingStatus" NOT NULL DEFAULT 'PENDING';
-ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "profileCompletionDate" TIMESTAMP(3);
-ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "isShellAccount" BOOLEAN NOT NULL DEFAULT false;
-ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "shellAccountCreatedBy" INTEGER;
+-- AlterTable
+ALTER TABLE "ClinicPatient" ADD COLUMN     "addedBy" INTEGER,
+ADD COLUMN     "onboardingCompletionDate" TIMESTAMP(3),
+ADD COLUMN     "onboardingStatus" "OnboardingStatus" NOT NULL DEFAULT 'PENDING';
 
--- AlterTable: Add onboarding fields to ClinicPatient
-ALTER TABLE "ClinicPatient" ADD COLUMN IF NOT EXISTS "onboardingStatus" "OnboardingStatus" NOT NULL DEFAULT 'PENDING';
-ALTER TABLE "ClinicPatient" ADD COLUMN IF NOT EXISTS "onboardingCompletionDate" TIMESTAMP(3);
-ALTER TABLE "ClinicPatient" ADD COLUMN IF NOT EXISTS "addedBy" INTEGER;
+-- AlterTable
+ALTER TABLE "OrganizationMember" ADD COLUMN     "onboardingCompletionDate" TIMESTAMP(3),
+ADD COLUMN     "onboardingStatus" "OnboardingStatus" NOT NULL DEFAULT 'PENDING';
 
--- AlterTable: Add onboarding fields to OrganizationMember
-ALTER TABLE "OrganizationMember" ADD COLUMN IF NOT EXISTS "onboardingStatus" "OnboardingStatus" NOT NULL DEFAULT 'PENDING';
-ALTER TABLE "OrganizationMember" ADD COLUMN IF NOT EXISTS "onboardingCompletionDate" TIMESTAMP(3);
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN     "isShellAccount" BOOLEAN NOT NULL DEFAULT false,
+ADD COLUMN     "onboardingStatus" "OnboardingStatus" NOT NULL DEFAULT 'PENDING',
+ADD COLUMN     "profileCompletionDate" TIMESTAMP(3),
+ADD COLUMN     "shellAccountCreatedBy" INTEGER;
 
--- CreateTable: OnboardingStep
-CREATE TABLE IF NOT EXISTS "OnboardingStep" (
+-- CreateTable
+CREATE TABLE "OnboardingStep" (
     "id" SERIAL NOT NULL,
     "userId" INTEGER NOT NULL,
     "stepType" TEXT NOT NULL,
@@ -38,8 +38,8 @@ CREATE TABLE IF NOT EXISTS "OnboardingStep" (
     CONSTRAINT "OnboardingStep_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable: AuditLog
-CREATE TABLE IF NOT EXISTS "AuditLog" (
+-- CreateTable
+CREATE TABLE "AuditLog" (
     "id" SERIAL NOT NULL,
     "actorId" INTEGER,
     "actionType" "AuditActionType" NOT NULL,
@@ -58,25 +58,25 @@ CREATE TABLE IF NOT EXISTS "AuditLog" (
 );
 
 -- CreateIndex
-CREATE INDEX IF NOT EXISTS "OnboardingStep_userId_status_idx" ON "OnboardingStep"("userId", "status");
+CREATE INDEX "OnboardingStep_userId_status_idx" ON "OnboardingStep"("userId", "status");
 
 -- CreateIndex
-CREATE INDEX IF NOT EXISTS "AuditLog_actorId_idx" ON "AuditLog"("actorId");
+CREATE INDEX "AuditLog_actorId_idx" ON "AuditLog"("actorId");
 
 -- CreateIndex
-CREATE INDEX IF NOT EXISTS "AuditLog_entityType_entityId_idx" ON "AuditLog"("entityType", "entityId");
+CREATE INDEX "AuditLog_entityType_entityId_idx" ON "AuditLog"("entityType", "entityId");
 
 -- CreateIndex
-CREATE INDEX IF NOT EXISTS "AuditLog_targetUserId_idx" ON "AuditLog"("targetUserId");
+CREATE INDEX "AuditLog_targetUserId_idx" ON "AuditLog"("targetUserId");
 
 -- CreateIndex
-CREATE INDEX IF NOT EXISTS "AuditLog_createdAt_idx" ON "AuditLog"("createdAt");
+CREATE INDEX "AuditLog_createdAt_idx" ON "AuditLog"("createdAt");
 
 -- CreateIndex
-CREATE INDEX IF NOT EXISTS "AuditLog_actionType_idx" ON "AuditLog"("actionType");
+CREATE INDEX "AuditLog_actionType_idx" ON "AuditLog"("actionType");
 
 -- AddForeignKey
-ALTER TABLE "User" ADD CONSTRAINT IF NOT EXISTS "User_shellAccountCreatedBy_fkey" FOREIGN KEY ("shellAccountCreatedBy") REFERENCES "User"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+ALTER TABLE "User" ADD CONSTRAINT "User_shellAccountCreatedBy_fkey" FOREIGN KEY ("shellAccountCreatedBy") REFERENCES "User"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
 
 -- AddForeignKey
 ALTER TABLE "OnboardingStep" ADD CONSTRAINT "OnboardingStep_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;

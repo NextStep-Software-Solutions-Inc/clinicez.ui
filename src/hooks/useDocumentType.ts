@@ -6,9 +6,9 @@ export const useDocumentTypes = (filters?: GetDocumentTypesFilters) => {
 
   const searchParams = new URLSearchParams();
   Object.entries(filters ?? {}).forEach(([key, value]) => {
-    if(value) searchParams.set(key, value.toString())
+    if (value) searchParams.set(key, value.toString())
   })
 
-  const fetcher = (args:string) => self.get<GetDocumentTypes>(args)
+  const fetcher = (args: string) => self.get<GetDocumentTypes>(args)
   return useSWR(`/api/document-types?${searchParams.toString()}`, fetcher)
 }

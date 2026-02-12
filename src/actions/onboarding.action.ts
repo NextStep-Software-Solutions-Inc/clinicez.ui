@@ -4,6 +4,9 @@ import prisma from "@lib/prisma";
 import { $Enums } from "@prisma/client";
 import { sessionCheck } from "@/lib/auth";
 import { withErrorHandling } from "@/lib/with-error-handling";
+import { requirePermissionOrOwnership, isOwnResource, requireUserPermission } from "@/lib/permission-checker";
+import { PermissionError } from "@/lib/permission-errors";
+import { PERMISSIONS } from "@/lib/permissions";
 
 type PrismaTransactionalClient = Parameters<
   Parameters<typeof prisma["$transaction"]>[0]
@@ -60,10 +63,23 @@ export type CreateOrgOnboardingRequirementPayload = {
 
 /**
  * Update onboarding status for a user
+ * Requires UPDATE:USER:ONBOARDING_STATUS permission or user accessing their own record
  */
 export const updateOnboardingStatusAction = withErrorHandling(
   async (payload: UpdateOnboardingStatusPayload) => {
-    await sessionCheck();
+    const session = await sessionCheck();
+    
+    // Check permission: allow if user is updating their own status
+    const isOwn = await isOwnResource(payload.userId);
+    
+    if (!isOwn) {
+      // For updating other users, need explicit USER-level permission
+      await requireUserPermission(
+        session.user.sub,
+        PERMISSIONS.USER["UPDATE:USER:ONBOARDING_STATUS"].name,
+        "update other users' onboarding status"
+      );
+    }
 
     const result = await prisma.$transaction(async (tx: PrismaTransactionalClient) => {
       const user = await tx.user.findUniqueOrThrow({
@@ -209,10 +225,23 @@ export const createOnboardingStepsAction = withErrorHandling(
 
 /**
  * Complete a specific onboarding step
+ * Requires COMPLETE:USER:ONBOARDING_STEP permission or user completing their own step
  */
 export const completeOnboardingStepAction = withErrorHandling(
   async (payload: CompleteOnboardingStepPayload) => {
-    await sessionCheck();
+    const session = await sessionCheck();
+    
+    // Check permission: allow if user is completing their own step
+    const isOwn = await isOwnResource(payload.userId);
+    
+    if (!isOwn) {
+      // For completing steps for other users, need explicit USER-level permission
+      await requireUserPermission(
+        session.user.sub,
+        PERMISSIONS.USER["COMPLETE:USER:ONBOARDING_STEP"].name,
+        "complete onboarding steps for other users"
+      );
+    }
 
     const result = await prisma.$transaction(async (tx: PrismaTransactionalClient) => {
       const user = await tx.user.findUniqueOrThrow({
@@ -265,10 +294,20 @@ export const completeOnboardingStepAction = withErrorHandling(
 
 /**
  * Claim a shell account (transition from provider-created to end-user owned)
+ * Requires CLAIM:USER:SHELL_ACCOUNT permission
  */
 export const claimShellAccountAction = withErrorHandling(
   async (payload: ClaimShellAccountPayload) => {
-    await sessionCheck();
+    const session = await sessionCheck();
+    
+    // Verify the claiming user is the authenticated user
+    if (session.user.sub !== payload.claimingUserId) {
+      throw new PermissionError(
+        "You can only claim accounts for yourself",
+        PERMISSIONS.USER["CLAIM:USER:SHELL_ACCOUNT"].name,
+        "USER"
+      );
+    }
 
     const result = await prisma.$transaction(async (tx: PrismaTransactionalClient) => {
       const shellUser = await tx.user.findUniqueOrThrow({
@@ -321,10 +360,23 @@ export const claimShellAccountAction = withErrorHandling(
 
 /**
  * Get onboarding status and steps for a user
+ * Requires VIEW:USER:ONBOARDING_STATUS permission or user viewing their own status
  */
 export const getOnboardingStatusAction = withErrorHandling(
   async (payload: GetOnboardingStatusPayload) => {
-    await sessionCheck();
+    const session = await sessionCheck();
+    
+    // Check permission: allow if user is viewing their own status
+    const isOwn = await isOwnResource(payload.userId);
+    
+    if (!isOwn) {
+      // For viewing other users' status, need explicit USER-level permission
+      await requireUserPermission(
+        session.user.sub,
+        PERMISSIONS.USER["VIEW:USER:ONBOARDING_STATUS"].name,
+        "view other users' onboarding status"
+      );
+    }
 
     const user = await prisma.user.findUniqueOrThrow({
       where: { userId: payload.userId },

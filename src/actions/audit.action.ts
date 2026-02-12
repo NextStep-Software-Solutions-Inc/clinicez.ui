@@ -4,6 +4,8 @@ import prisma from "@lib/prisma";
 import { $Enums, Prisma } from "@prisma/client";
 import { sessionCheck } from "@/lib/auth";
 import { withErrorHandling } from "@/lib/with-error-handling";
+import { requireClinicPermission } from "@/lib/permission-checker";
+import { PERMISSIONS } from "@/lib/permissions";
 
 type PrismaTransactionalClient = Parameters<
   Parameters<typeof prisma["$transaction"]>[0]
@@ -47,6 +49,7 @@ export type GetAuditLogsPayload = {
   endDate?: string;
   page?: number;
   pageSize?: number;
+  clinicUid?: string; // Optional - required only for clinic-scoped audit logs
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -104,10 +107,21 @@ export async function createFieldChangeLogs(
 
 /**
  * Retrieve audit logs with flexible filtering, pagination, and ordering.
+ * Requires VIEW:CLINIC:AUDIT_LOG permission if clinicUid is provided.
  */
 export const getAuditLogsAction = withErrorHandling(
   async (payload: GetAuditLogsPayload) => {
-    await sessionCheck();
+    const session = await sessionCheck();
+
+    // If clinicUid is provided, check for audit log viewing permission
+    if (payload.clinicUid) {
+      await requireClinicPermission(
+        session.user.sub,
+        payload.clinicUid,
+        PERMISSIONS.CLINIC["VIEW:CLINIC:AUDIT_LOG"].name,
+        "view audit logs"
+      );
+    }
 
     const page = payload.page ?? 1;
     const pageSize = Math.min(payload.pageSize ?? 25, 100);

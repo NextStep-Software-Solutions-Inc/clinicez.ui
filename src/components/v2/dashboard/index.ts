@@ -1,4 +1,4 @@
-export { default as V2DashboardSidebar } from "./V2DashboardSidebar";
+export { default as V2DashboardSidebar, V2MobileMenu } from "./V2DashboardSidebar";
 export { default as V2DashboardTopbar } from "./V2DashboardTopbar";
 export { default as V2DashboardShell } from "./V2DashboardShell";
 export { default as V2StatCard } from "./V2StatCard";

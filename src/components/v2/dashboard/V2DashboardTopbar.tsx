@@ -48,6 +48,7 @@ export default function V2DashboardTopbar({
           <Input
             type="search"
             placeholder="Search…"
+            aria-label="Search"
             className={cn("h-8 pl-8 text-sm")}
           />
         </div>

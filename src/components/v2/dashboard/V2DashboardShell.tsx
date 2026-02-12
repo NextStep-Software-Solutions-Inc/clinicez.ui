@@ -3,6 +3,7 @@
 import React from "react";
 import "@styles/v2-dashboard.css";
 import V2DashboardSidebar, {
+  V2MobileMenu,
   type V2NavItem,
 } from "./V2DashboardSidebar";
 import V2DashboardTopbar from "./V2DashboardTopbar";
@@ -40,7 +41,7 @@ export default function V2DashboardShell({
       data-dashboard={dashboardType}
       className="flex min-h-dvh bg-background"
     >
-      {/* Sidebar (hidden on mobile, Sheet used instead) */}
+      {/* Desktop sidebar */}
       <V2DashboardSidebar
         navItems={navItems}
         dashboardType={dashboardType}
@@ -49,7 +50,17 @@ export default function V2DashboardShell({
 
       {/* Main area */}
       <div className="flex flex-1 flex-col">
-        <V2DashboardTopbar title={title} subtitle={subtitle}>
+        <V2DashboardTopbar
+          title={title}
+          subtitle={subtitle}
+          mobileMenuTrigger={
+            <V2MobileMenu
+              navItems={navItems}
+              dashboardType={dashboardType}
+              title={title}
+            />
+          }
+        >
           {topbarActions}
         </V2DashboardTopbar>
 

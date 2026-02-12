@@ -204,6 +204,44 @@ function SidebarBody({
 }
 
 /* ------------------------------------------------------------------ */
+/*  Mobile menu trigger + sheet (rendered inside topbar)               */
+/* ------------------------------------------------------------------ */
+
+export function V2MobileMenu({
+  navItems,
+  dashboardType,
+  title,
+}: V2DashboardSidebarProps) {
+  const pathname = usePathname();
+
+  return (
+    <Sheet>
+      <SheetTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="md:hidden"
+          aria-label="Open menu"
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
+      </SheetTrigger>
+      <SheetContent side="left" className="w-64 p-0">
+        <SheetTitle className="sr-only">{title} navigation</SheetTitle>
+        <div className="flex h-full flex-col" data-dashboard={dashboardType}>
+          <SidebarBody
+            navItems={navItems}
+            title={title}
+            pathname={pathname}
+            collapsed={false}
+          />
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /*  Main export                                                        */
 /* ------------------------------------------------------------------ */
 
@@ -216,48 +254,20 @@ export default function V2DashboardSidebar({
   const [collapsed, setCollapsed] = useState(false);
 
   return (
-    <>
-      {/* Desktop sidebar */}
-      <aside
-        className={cn(
-          "v2-sidebar hidden md:flex",
-          collapsed && "v2-sidebar--collapsed",
-        )}
-        data-dashboard={dashboardType}
-      >
-        <SidebarBody
-          navItems={navItems}
-          title={title}
-          pathname={pathname}
-          collapsed={collapsed}
-          onToggle={() => setCollapsed((c) => !c)}
-        />
-      </aside>
-
-      {/* Mobile sidebar (Sheet) */}
-      <Sheet>
-        <SheetTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="md:hidden"
-            aria-label="Open menu"
-          >
-            <Menu className="h-5 w-5" />
-          </Button>
-        </SheetTrigger>
-        <SheetContent side="left" className="w-64 p-0">
-          <SheetTitle className="sr-only">{title} navigation</SheetTitle>
-          <div className="flex h-full flex-col" data-dashboard={dashboardType}>
-            <SidebarBody
-              navItems={navItems}
-              title={title}
-              pathname={pathname}
-              collapsed={false}
-            />
-          </div>
-        </SheetContent>
-      </Sheet>
-    </>
+    <aside
+      className={cn(
+        "v2-sidebar hidden md:flex",
+        collapsed && "v2-sidebar--collapsed",
+      )}
+      data-dashboard={dashboardType}
+    >
+      <SidebarBody
+        navItems={navItems}
+        title={title}
+        pathname={pathname}
+        collapsed={collapsed}
+        onToggle={() => setCollapsed((c) => !c)}
+      />
+    </aside>
   );
 }

@@ -8,6 +8,7 @@ import { useHPs } from "@hooks/useHP";
 import { useEffect, useState } from "react";
 import { getDashboardLinksAction, type DashboardLink } from "@actions/dashboard/dashboard-links.action";
 import { ClinicOrgSelectorModal } from "@/components/dashboard/clinic-org-selector-modal";
+import { dark } from "@clerk/themes";
 
 const DASHBOARD_ICONS: Record<DashboardLink["type"], React.ReactNode> = {
   patient: <HeartPulse size={16} />,
@@ -16,7 +17,10 @@ const DASHBOARD_ICONS: Record<DashboardLink["type"], React.ReactNode> = {
   organization: <Building2 size={16} />,
 };
 
-export function ModernUserButton() {
+interface ModernUserButtonProps {
+  isDark?: boolean;
+}
+export function ModernUserButton({ isDark }: ModernUserButtonProps) {
   const { user } = useUser();
   const router = useRouter();
   const [dashboardLinks, setDashboardLinks] = useState<DashboardLink[]>([]);
@@ -69,7 +73,9 @@ export function ModernUserButton() {
     <>
       <SignedIn>
         <UserButton
+          
           appearance={{
+            baseTheme: isDark ? dark : undefined,
             elements: {
               avatarBox: "w-10 h-10"
             }

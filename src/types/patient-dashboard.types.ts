@@ -93,6 +93,21 @@ export interface UpcomingAppointmentsData {
     hasMore: boolean;
 }
 
+/**
+ * Simplified appointment card for dashboard display
+ * Used in the UpcomingAppointmentsSection component
+ */
+export interface AppointmentCard {
+    id: string;
+    doctorName: string;
+    specialty: string;
+    clinic: string;
+    date: Date;
+    time: string;
+    status: "confirmed" | "pending" | "cancelled";
+    type: "in-person" | "telemedicine";
+}
+
 // ============================================================================
 // HEALTH METRICS TYPES
 // ============================================================================
@@ -179,6 +194,22 @@ export interface RecentPrescription {
     remarks: string | null;
     createdAt: Date;
     updatedAt: Date;
+}
+
+/**
+ * Simplified prescription card for dashboard display
+ * Used in the PrescriptionsSection component
+ */
+export interface PrescriptionCard {
+    id: string;
+    name: string;
+    dosage: string;
+    frequency: string;
+    provider: string;
+    startDate: Date;
+    endDate: Date;
+    refillsRemaining: number;
+    status: "active" | "expired" | "pending";
 }
 
 /**

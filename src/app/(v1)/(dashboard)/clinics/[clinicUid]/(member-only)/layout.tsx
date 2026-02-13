@@ -29,6 +29,7 @@ import { getClinicMembersAction } from "@/actions/clinics/clinic-member.action";
 import { redirect } from "next/navigation";
 import { getOrgMembersAction } from "@/actions/organizations/org-member.action";
 import { getClinicPatientsAction } from "@/actions/clinics/clinic-patient.action";
+import UnauthorizedWarning from "@/components/UnauthorizedWarning";
 
 interface ProcessLayoutProps {
   children: React.ReactNode;
@@ -56,15 +57,11 @@ export default async function ProcessLayout(props: ProcessLayoutProps) {
     return redirect("/unauthorized");
   }
 
-  const [myClinicMembership, clinicPatients, myOrganizationMembership] = await Promise.all([
+  const [myClinicMembership, myOrganizationMembership] = await Promise.all([
     getClinicMembersAction({
       userId: session.user.sub,
       clinicUid,
       status: "ACTIVE"
-    }),
-    getClinicPatientsAction({
-      clinicUid,
-      userId: session.user.sub
     }),
     await getOrgMembersAction({
       clinicUid,
@@ -73,8 +70,8 @@ export default async function ProcessLayout(props: ProcessLayoutProps) {
     })
   ])
 
-  if (!myOrganizationMembership.data?.data.length && !clinicPatients.data?.length && !myClinicMembership.data?.length) {
-    return redirect("/unauthorized");
+  if (!myOrganizationMembership.data?.data.length && !myClinicMembership.data?.length) {
+    return <UnauthorizedWarning/>;
   }
 
   return (

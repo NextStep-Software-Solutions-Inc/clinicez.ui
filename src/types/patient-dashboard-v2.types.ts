@@ -270,6 +270,64 @@ export interface LaboratoryRequestData {
   updatedAt: Date
 }
 
+export interface ImagingRequestData {
+  id: number
+  serialNumber: string
+  consultationTicketId: number
+
+  // Ordered by
+  orderedBy: {
+    id: number
+    firstName: string | null
+    lastName: string | null
+    specialization: string | null
+  }
+
+  // At clinic
+  clinic: {
+    id: number
+    name: string
+  }
+
+  status: 'pending' | 'completed' | 'cancelled'
+  impression: string | null
+  reason: string | null
+  history: string | null
+  procedures: string[] // procedure names
+
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface HeartStationRequestData {
+  id: number
+  serialNumber: string
+  consultationTicketId: number
+
+  // Ordered by
+  orderedBy: {
+    id: number
+    firstName: string | null
+    lastName: string | null
+    specialization: string | null
+  }
+
+  // At clinic
+  clinic: {
+    id: number
+    name: string
+  }
+
+  status: 'pending' | 'completed' | 'cancelled'
+  impression: string | null
+  reason: string | null
+  history: string | null
+  procedures: string[] // procedure names
+
+  createdAt: Date
+  updatedAt: Date
+}
+
 export interface PendingLabWorkData {
   requests: LaboratoryRequestData[]
   total: number
@@ -313,6 +371,12 @@ export interface PatientDashboardData {
 
   // Pending lab work
   pendingLabWork: PendingLabWorkData
+
+  // Imaging requests
+  imagingRequests: { requests: ImagingRequestData[]; total: number; pendingCount: number }
+
+  // Heart station requests
+  heartStationRequests: { requests: HeartStationRequestData[]; total: number; pendingCount: number }
 
   // Metadata
   lastUpdated: Date

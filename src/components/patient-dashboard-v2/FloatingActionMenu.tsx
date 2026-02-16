@@ -1,19 +1,19 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, Calendar, MessageSquare, Phone, Stethoscope, X } from 'lucide-react';
+import { Plus, Calendar, Beaker, Pill, Stethoscope, X } from 'lucide-react';
 
 interface FloatingActionMenuProps {
   onScheduleAppointment?: () => void;
-  onMessage?: () => void;
-  onCall?: () => void;
+  onViewTestRequests?: () => void;
+  onViewPrescriptions?: () => void;
   onViewProfile?: () => void;
 }
 
 export function FloatingActionMenu({
   onScheduleAppointment,
-  onMessage,
-  onCall,
+  onViewTestRequests,
+  onViewPrescriptions,
   onViewProfile,
 }: FloatingActionMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -30,22 +30,22 @@ export function FloatingActionMenu({
       },
     },
     {
-      icon: <MessageSquare className="w-5 h-5" />,
-      label: 'Message Doctor',
-      description: 'Send a message',
+      icon: <Beaker className="w-5 h-5" />,
+      label: 'View Test Requests',
+      description: 'Lab, imaging & heart tests',
       color: 'from-purple-600 to-purple-500',
       onClick: () => {
-        onMessage?.();
+        onViewTestRequests?.();
         setIsOpen(false);
       },
     },
     {
-      icon: <Phone className="w-5 h-5" />,
-      label: 'Start Call',
-      description: 'Make a video call',
-      color: 'from-emerald-600 to-emerald-500',
+      icon: <Pill className="w-5 h-5" />,
+      label: 'View Prescriptions',
+      description: 'Current medications',
+      color: 'from-orange-600 to-orange-500',
       onClick: () => {
-        onCall?.();
+        onViewPrescriptions?.();
         setIsOpen(false);
       },
     },
@@ -53,7 +53,7 @@ export function FloatingActionMenu({
       icon: <Stethoscope className="w-5 h-5" />,
       label: 'View Profile',
       description: 'Edit your profile',
-      color: 'from-orange-600 to-orange-500',
+      color: 'from-cyan-600 to-cyan-500',
       onClick: () => {
         onViewProfile?.();
         setIsOpen(false);

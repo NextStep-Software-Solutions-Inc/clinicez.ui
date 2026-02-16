@@ -8,6 +8,8 @@ import { getLatestVitals, getVitalsHistory } from './get-vitals'
 import { getActivePrescriptions } from './get-prescriptions'
 import { getRecentConsultations } from './get-consultations'
 import { getPendingLabWork } from './get-lab-work'
+import { getImagingRequests } from './get-imaging-requests'
+import { getHeartStationRequests } from './get-heart-station-requests'
 
 /**
  * Get complete patient dashboard data
@@ -55,6 +57,8 @@ export async function getPatientDashboardData(): Promise<PatientDashboardData | 
       prescriptions,
       recentConsultations,
       pendingLabWork,
+      imagingRequests,
+      heartStationRequests,
     ] = await Promise.all([
       getNextAppointment(patient.id),
       getUpcomingAppointments(patient.id, 3),
@@ -63,6 +67,8 @@ export async function getPatientDashboardData(): Promise<PatientDashboardData | 
       getActivePrescriptions(clinicPatient.id),
       getRecentConsultations(clinicPatient.id, 5),
       getPendingLabWork(clinicPatient.id),
+      getImagingRequests(clinicPatient.id),
+      getHeartStationRequests(clinicPatient.id),
     ])
 
     return {
@@ -83,6 +89,8 @@ export async function getPatientDashboardData(): Promise<PatientDashboardData | 
       prescriptions,
       recentConsultations,
       pendingLabWork,
+      imagingRequests,
+      heartStationRequests,
       lastUpdated: new Date(),
       dataCompleteness: {
         hasAppointments: nextAppointment.appointment !== null,

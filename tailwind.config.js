@@ -112,6 +112,10 @@ module.exports = {
           "0%, 100%": { "box-shadow": "0 0 15px rgba(0, 0, 0, 0.1)" },
           "50%": { "box-shadow": "0 0 25px rgba(0, 0, 0, 0.15)" },
         },
+        "shimmer": {
+          "0%": { backgroundPosition: "200% center" },
+          "100%": { backgroundPosition: "-200% center" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -120,6 +124,7 @@ module.exports = {
         "float-phase-2": "float-phase-2 8s ease-in-out infinite 1.3s backwards",
         "float-phase-3": "float-phase-3 8s ease-in-out infinite 2.6s backwards",
         "shimmer-slow": "shimmer-slow 6s ease-in-out infinite",
+        "shimmer": "shimmer 2s infinite",
         "gradient-shift": "gradient-shift 12s ease-in-out infinite",
         "soft-glow": "soft-glow 4s ease-in-out infinite",
       },

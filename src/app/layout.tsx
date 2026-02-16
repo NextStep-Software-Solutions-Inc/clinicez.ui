@@ -8,6 +8,7 @@ import type { Metadata } from "next";
 
 import { SWRProvider } from "@provider/swr-provider";
 import JotaiProvider from "@provider/JotaiProvider";
+import { ThemeProvider } from "@provider/theme-provider";
 import SyncTokenClient from "@components/SyncTokenClient";
 import BypassAutoplay from "@components/BypassAutoplay";
 
@@ -40,20 +41,22 @@ export default function RootLayout({ children }: Props) {
 
   return (
     <ClerkProvider publishableKey={publishableKey}>
-      <html lang="en">
+      <html lang="en" suppressHydrationWarning>
         <HotJar />
         <body>
-          <BypassAutoplay />
-          <JotaiProvider>
-            <SyncTokenClient />
-            <SWRProvider>
-              {children}
-              <SpeedInsights />
-              <Analytics />
-              <SonnerToaster richColors />
-              <Toaster />
-            </SWRProvider>
-          </JotaiProvider>
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+            <BypassAutoplay />
+            <JotaiProvider>
+              <SyncTokenClient />
+              <SWRProvider>
+                {children}
+                <SpeedInsights />
+                <Analytics />
+                <SonnerToaster richColors />
+                <Toaster />
+              </SWRProvider>
+            </JotaiProvider>
+          </ThemeProvider>
         </body>
       </html>
     </ClerkProvider>

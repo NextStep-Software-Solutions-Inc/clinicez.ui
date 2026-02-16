@@ -1,7 +1,8 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useRef } from 'react';
 import useSWR from 'swr';
+import { useRouter } from 'next/navigation';
 import {
   NextAppointmentHeroCard,
   VitalsGrid,
@@ -43,6 +44,11 @@ function DashboardLoadingSkeleton() {
 }
 
 function PatientDashboardContent() {
+  const router = useRouter();
+  const diagnosticRequestsRef = useRef<HTMLDivElement>(null);
+  const prescriptionsRef = useRef<HTMLDivElement>(null);
+  const appointmentRef = useRef<HTMLDivElement>(null);
+  
   const { data: dashboardData, isLoading, error } = useSWR(
     'patient-dashboard',
     getPatientDashboardData,
@@ -73,6 +79,23 @@ function PatientDashboardContent() {
     return 'Good evening';
   };
 
+  // FAB handlers
+  const handleScheduleAppointment = () => {
+    router.push('/v2/appointments/book');
+  };
+
+  const handleViewTestRequests = () => {
+    diagnosticRequestsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const handleViewPrescriptions = () => {
+    prescriptionsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const handleViewProfile = () => {
+    router.push('/v2/profile');
+  };
+
   return (
     <div className="w-full">
       {/* Header with greeting and theme toggle */}
@@ -98,10 +121,12 @@ function PatientDashboardContent() {
       {/* Main Dashboard Grid - Mobile responsive */}
       <div className="space-y-6">
         {/* Hero: Next Appointment - Full Width */}
-        <NextAppointmentHeroCard
-          appointment={dashboardData?.nextAppointment || null}
-          isLoading={isLoading}
-        />
+        <div ref={appointmentRef}>
+          <NextAppointmentHeroCard
+            appointment={dashboardData?.nextAppointment || null}
+            isLoading={isLoading}
+          />
+        </div>
 
         {/* 3 Column Layout: 2 col main + 1 col sidebar */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -117,7 +142,7 @@ function PatientDashboardContent() {
             </div>
 
             {/* Medications Carousel */}
-            <div>
+            <div ref={prescriptionsRef}>
               <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
                 <span className="w-1 h-6 bg-emerald-500 rounded-full"></span>
                 Current Medications
@@ -142,10 +167,12 @@ function PatientDashboardContent() {
             </div>
 
             {/* Pending Lab Work */}
-            <div>
-              <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Lab Work</h2>
+            <div ref={diagnosticRequestsRef}>
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Diagnostic Requests</h2>
               <PendingLabWork
                 labRequests={dashboardData?.pendingLabWork?.requests || null}
+                imagingRequests={dashboardData?.imagingRequests?.requests || null}
+                heartStationRequests={dashboardData?.heartStationRequests?.requests || null}
                 isLoading={isLoading}
               />
             </div>
@@ -181,10 +208,10 @@ function PatientDashboardContent() {
 
       {/* Floating Action Menu */}
       <FloatingActionMenu
-        onScheduleAppointment={() => console.log('Schedule appointment')}
-        onMessage={() => console.log('Message doctor')}
-        onCall={() => console.log('Start call')}
-        onViewProfile={() => console.log('View profile')}
+        onScheduleAppointment={handleScheduleAppointment}
+        onViewTestRequests={handleViewTestRequests}
+        onViewPrescriptions={handleViewPrescriptions}
+        onViewProfile={handleViewProfile}
       />
     </div>
   );

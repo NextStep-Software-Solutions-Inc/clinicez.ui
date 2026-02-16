@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   description: 'Your personal health dashboard',
 };
 
-export default function PatientLayout({
+export default function PatientDashboardLayout({
   children,
 }: {
   children: React.ReactNode;

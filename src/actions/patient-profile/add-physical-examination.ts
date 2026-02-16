@@ -3,7 +3,7 @@
 import { currentUser } from '@clerk/nextjs/server'
 import prisma from '@/lib/prisma'
 import { physicalExaminationSchema, type PhysicalExaminationFormInput } from '@/schemas'
-import { userCanEditSection } from '@/lib/permissions'
+import { userCanEditSection, getDatabaseUserId } from '@/lib/permissions'
 import { UserRole } from '@/types/edit-permissions'
 import { logAudit, AuditAction, AuditEntityType } from '@/lib/audit-logger'
 
@@ -44,9 +44,15 @@ export async function addPhysicalExamination(
       return { success: false, error: `Validation failed: ${errorMessages}` }
     }
 
-    const examination = await prisma.physicalExamination.create({
+    // Get target user's database ID
+    const dbUserId = await getDatabaseUserId(userId)
+    if (!dbUserId) {
+      return { success: false, error: 'User not found' }
+    }
+
+    const physicalExam = await prisma.physicalExamination.create({
       data: {
-        userId: parseInt(userId),
+        userId: dbUserId,
         visualAcuityLeft: validatedInput.visualAcuityLeft,
         visualAcuityRight: validatedInput.visualAcuityRight,
         status: validatedInput.status,
@@ -55,7 +61,7 @@ export async function addPhysicalExamination(
 
     await logAudit({
       entityType: AuditEntityType.PHYSICAL_EXAM,
-      entityId: examination.id.toString(),
+      entityId: physicalExam.id.toString(),
       action: AuditAction.CREATE,
       performedBy: authUser.id,
       targetUser: !isOwn ? userId : undefined,
@@ -69,7 +75,7 @@ export async function addPhysicalExamination(
     return {
       success: true,
       message: 'Physical examination recorded successfully',
-      examinationId: examination.id,
+      examinationId: physicalExam.id,
     }
   } catch (error) {
     console.error('[ADD_PHYSICAL_EXAMINATION_ERROR]', error)

@@ -3,7 +3,7 @@
 import { currentUser } from '@clerk/nextjs/server'
 import prisma from '@/lib/prisma'
 import { personalHistorySchema, type PersonalHistoryFormInput } from '@/schemas'
-import { userCanEditSection } from '@/lib/permissions'
+import { userCanEditSection, getDatabaseUserId } from '@/lib/permissions'
 import { UserRole } from '@/types/edit-permissions'
 import { logAudit, AuditAction, AuditEntityType, trackChanges } from '@/lib/audit-logger'
 
@@ -43,20 +43,26 @@ export async function updatePersonalHistory(
       return { success: false, error: `Validation failed: ${errorMessages}` }
     }
 
+    // Get target user's database ID
+    const dbUserId = await getDatabaseUserId(userId)
+    if (!dbUserId) {
+      return { success: false, error: 'User not found' }
+    }
+
     const currentRecord = await prisma.personalHistory.findUnique({
-      where: { userId: parseInt(userId) },
+      where: { userId: dbUserId },
     })
 
     let action = AuditAction.CREATE
     if (currentRecord) {
       action = AuditAction.UPDATE
       await prisma.personalHistory.update({
-        where: { userId: parseInt(userId) },
+        where: { userId: dbUserId },
         data: validatedInput,
       })
     } else {
       await prisma.personalHistory.create({
-        data: { userId: parseInt(userId), ...validatedInput },
+        data: { userId: dbUserId, ...validatedInput },
       })
     }
 

@@ -3,7 +3,7 @@
 import { currentUser } from '@clerk/nextjs/server'
 import prisma from '@/lib/prisma'
 import { vitalSignSchema, type VitalSignFormInput } from '@/schemas'
-import { userCanEditSection } from '@/lib/permissions'
+import { userCanEditSection, getDatabaseUserId } from '@/lib/permissions'
 import { UserRole } from '@/types/edit-permissions'
 import { logAudit, AuditAction, AuditEntityType } from '@/lib/audit-logger'
 
@@ -42,9 +42,15 @@ export async function addVitalSign(
       return { success: false, error: `Validation failed: ${errorMessages}` }
     }
 
+    // Get target user's database ID
+    const dbUserId = await getDatabaseUserId(userId)
+    if (!dbUserId) {
+      return { success: false, error: 'User not found' }
+    }
+
     const vitalSign = await prisma.vitalSign.create({
       data: {
-        userId: parseInt(userId),
+        userId: dbUserId,
         dateTaken: validatedInput.dateTaken,
         height: validatedInput.height,
         weight: validatedInput.weight,

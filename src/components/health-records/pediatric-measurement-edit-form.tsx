@@ -78,32 +78,19 @@ export function PediatricMeasurementEditForm({
 
   const formContent = (
     <>
-      <EditButton onClick={() => setIsOpen(true)} label="Record Measurements" />
+      {/* Date */}
+      <div className="space-y-4 border-b pb-4">
+        <h3 className="text-sm font-semibold">Measurement Date</h3>
 
-      <FormModal
-        isOpen={isOpen}
-        title="Pediatric Growth Measurements"
-        description="Record your child's growth and development measurements"
-        onClose={() => setIsOpen(false)}
-        onSubmit={handleSubmit}
-        isLoading={isLoading}
-        submitLabel="Save Measurements"
-        size="lg"
-      >formContent
-
-        {/* Date */}
-        <div className="space-y-4 border-b pb-4">
-          <h3 className="text-sm font-semibold">Measurement Date</h3>
-
-          <FormField label="Date Taken" required htmlFor="dateTaken">
-            <Input
-              id="dateTaken"
-              type="date"
-              value={formData.dateTaken ? new Date(formData.dateTaken).toISOString().split('T')[0] : ''}
-              onChange={(e) => handleFieldChange('dateTaken', e.target.value ? new Date(e.target.value) : null)}
-            />
-          </FormField>
-        </div>
+        <FormField label="Date Taken" required htmlFor="dateTaken">
+          <Input
+            id="dateTaken"
+            type="date"
+            value={formData.dateTaken ? new Date(formData.dateTaken).toISOString().split('T')[0] : ''}
+            onChange={(e) => handleFieldChange('dateTaken', e.target.value ? new Date(e.target.value) : null)}
+          />
+        </FormField>
+      </div>
 
         {/* Linear Measurements */}
         <div className="space-y-4 border-b py-4">
@@ -231,7 +218,6 @@ export function PediatricMeasurementEditForm({
             />
           </FormField>
         </div>
-      </FormModal>
     </>
   )
 

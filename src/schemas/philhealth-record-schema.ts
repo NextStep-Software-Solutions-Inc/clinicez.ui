@@ -1,11 +1,58 @@
 import { z } from "zod"
 
 /**
+ * PhilHealthDependent Schema
+ * Dependent family members covered under PhilHealth
+ */
+export const philHealthDependentSchema = z.object({
+  id: z.number().int().optional(),
+  firstName: z
+    .string()
+    .min(1, "First name is required")
+    .max(100, "First name must be less than 100 characters"),
+  middleName: z
+    .string()
+    .max(100, "Middle name must be less than 100 characters")
+    .optional()
+    .nullable(),
+  lastName: z
+    .string()
+    .max(100, "Last name must be less than 100 characters")
+    .optional()
+    .nullable(),
+  suffix: z
+    .string()
+    .max(20, "Suffix must be less than 20 characters")
+    .optional()
+    .nullable(),
+  relationship: z
+    .string()
+    .max(50, "Relationship must be less than 50 characters")
+    .optional()
+    .nullable(),
+  dob: z
+    .date()
+    .optional()
+    .nullable(),
+  gender: z
+    .enum(["MALE", "FEMALE"])
+    .optional()
+    .nullable(),
+  citizenship: z
+    .string()
+    .max(100, "Citizenship must be less than 100 characters")
+    .optional()
+    .nullable(),
+  isPermanentlyDisabled: z.boolean().default(false).optional(),
+})
+
+export type PhilHealthDependentFormInput = z.infer<typeof philHealthDependentSchema>
+
+/**
  * PhilHealth Record Schema
  * Philippine Health Insurance coverage information
  * User-centric: clear explanations of required fields
  */
-
 export const philHealthRecordSchema = z.object({
   pin: z
     .string()
@@ -35,6 +82,11 @@ export const philHealthRecordSchema = z.object({
     .url("Photo URL must be a valid URL")
     .optional()
     .nullable(),
+
+  dependents: z
+    .array(philHealthDependentSchema)
+    .optional()
+    .default([]),
 })
 
 export type PhilHealthRecordFormInput = z.infer<typeof philHealthRecordSchema>

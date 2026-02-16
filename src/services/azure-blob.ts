@@ -49,7 +49,8 @@ async function uploadFile(blobName: string, data: ArrayBuffer, fileType?: string
     });
     return {url: blobClient.url};
   } catch (error) {
-    return {url: ''};
+    console.error('[AZURE_BLOB_UPLOAD_ERROR]', error);
+    throw new Error(`Failed to upload file: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 

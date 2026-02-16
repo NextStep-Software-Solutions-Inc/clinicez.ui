@@ -85,6 +85,9 @@ export async function getPatientHealthRecords() {
         // PhilHealth Records
         PhilHealthRecords: {
           where: { isActive: true },
+          include: {
+            PhilHealthDependents: true,
+          },
           orderBy: { createdAt: 'desc' },
           take: 5,
         },

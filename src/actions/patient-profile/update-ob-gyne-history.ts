@@ -3,7 +3,7 @@
 import { currentUser } from '@clerk/nextjs/server'
 import prisma from '@/lib/prisma'
 import { obGyneHistorySchema, type ObGyneHistoryFormInput } from '@/schemas'
-import { userCanEditSection } from '@/lib/permissions'
+import { userCanEditSection, getDatabaseUserId } from '@/lib/permissions'
 import { UserRole } from '@/types/edit-permissions'
 import { logAudit, AuditAction, AuditEntityType, trackChanges } from '@/lib/audit-logger'
 import { validateObGyneConsistency } from '@/schemas/ob-gyne-history-schema'
@@ -24,8 +24,14 @@ export async function updateObGyneHistory(
       return { success: false, error: 'You must be logged in' }
     }
 
+    // Get target user's database ID
+    const dbUserId = await getDatabaseUserId(userId)
+    if (!dbUserId) {
+      return { success: false, error: 'User not found' }
+    }
+
     const user = await prisma.user.findUnique({
-      where: { id: parseInt(userId) },
+      where: { id: dbUserId },
       select: { gender: true },
     })
 
@@ -59,19 +65,19 @@ export async function updateObGyneHistory(
     }
 
     const currentRecord = await prisma.obGyneHistory.findUnique({
-      where: { userId: parseInt(userId) },
+      where: { userId: dbUserId },
     })
 
     let action = AuditAction.CREATE
     if (currentRecord) {
       action = AuditAction.UPDATE
       await prisma.obGyneHistory.update({
-        where: { userId: parseInt(userId) },
+        where: { userId: dbUserId },
         data: validatedInput as any,
       })
     } else {
       await prisma.obGyneHistory.create({
-        data: { userId: parseInt(userId), ...validatedInput } as any,
+        data: { userId: dbUserId, ...validatedInput } as any,
       })
     }
 

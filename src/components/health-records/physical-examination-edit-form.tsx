@@ -70,17 +70,7 @@ export function PhysicalExaminationEditForm({
 
   const formContent = (
     <>
-      <FormModal
-        isOpen={isOpen}
-        title="Physical Examination"
-        description="Document physical examination findings"
-        onClose={() => setIsOpen(false)}
-        onSubmit={handleSubmit}
-        isLoading={isLoading}
-        submitLabel="Save Examination"
-      >formContent
-
-        {/* Vision Assessment */}
+      {/* Visual Acuity */}
         <div className="space-y-4 border-b pb-4">
           <h3 className="text-sm font-semibold">Visual Acuity (Optional)</h3>
 
@@ -134,7 +124,6 @@ export function PhysicalExaminationEditForm({
             />
           </FormField>
         </div>
-      </FormModal>
     </>
   )
 

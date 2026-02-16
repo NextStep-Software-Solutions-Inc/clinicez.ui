@@ -3,7 +3,7 @@
 import { currentUser } from '@clerk/nextjs/server'
 import prisma from '@/lib/prisma'
 import { pediatricMeasurementSchema, type PediatricMeasurementFormInput } from '@/schemas'
-import { userCanEditSection } from '@/lib/permissions'
+import { userCanEditSection, getDatabaseUserId } from '@/lib/permissions'
 import { UserRole } from '@/types/edit-permissions'
 import { logAudit, AuditAction, AuditEntityType } from '@/lib/audit-logger'
 import { evaluateMUAC } from '@/schemas/pediatric-measurement-schema'
@@ -43,13 +43,19 @@ export async function addPediatricMeasurement(
       return { success: false, error: `Validation failed: ${errorMessages}` }
     }
 
+    // Get target user's database ID
+    const dbUserId = await getDatabaseUserId(userId)
+    if (!dbUserId) {
+      return { success: false, error: 'User not found' }
+    }
+
     const muacStatus = validatedInput.midUpperArmCircumference
       ? evaluateMUAC(Number(validatedInput.midUpperArmCircumference))
       : null
 
     const measurement = await prisma.pediatricMeasurement.create({
       data: {
-        userId: parseInt(userId),
+        userId: dbUserId,
         dateTaken: validatedInput.dateTaken,
         length: validatedInput.length,
         headCircumference: validatedInput.headCircumference,

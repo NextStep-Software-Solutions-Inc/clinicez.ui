@@ -118,3 +118,147 @@ export async function deletePermissionAction(id: number) {
 
   return { success: true };
 }
+/**
+ * Get all permissions assigned to a user
+ */
+export async function getUserPermissionsAction(userId: number) {
+  try {
+    const permissions = await prisma.userPermission.findMany({
+      where: {
+        userId,
+        Permission: {
+          isActive: true,
+          deletedAt: null
+        }
+      },
+      include: {
+        Permission: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            type: true
+          }
+        }
+      }
+    })
+
+    return { success: true, data: permissions }
+  } catch (error) {
+    console.error('[GET_USER_PERMISSIONS_ERROR]', error)
+    return { success: false, error: 'Failed to fetch user permissions' }
+  }
+}
+
+/**
+ * Get all available permissions
+ */
+export async function getAllAvailablePermissionsAction() {
+  try {
+    const permissions = await prisma.permission.findMany({
+      where: {
+        isActive: true,
+        deletedAt: null
+      },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        type: true
+      },
+      orderBy: [{ type: 'asc' }, { name: 'asc' }]
+    })
+
+    return { success: true, data: permissions }
+  } catch (error) {
+    console.error('[GET_ALL_AVAILABLE_PERMISSIONS_ERROR]', error)
+    return { success: false, error: 'Failed to fetch permissions' }
+  }
+}
+
+/**
+ * Assign a permission to a user
+ */
+export async function assignPermissionToUserAction(
+  userId: number,
+  permissionId: number
+) {
+  try {
+    // Check if already assigned
+    const existing = await prisma.userPermission.findFirst({
+      where: { userId, permissionId }
+    })
+
+    if (existing) {
+      return { success: false, error: 'User already has this permission' }
+    }
+
+    await prisma.userPermission.create({
+      data: { userId, permissionId }
+    })
+
+    return { success: true, message: 'Permission assigned successfully' }
+  } catch (error) {
+    console.error('[ASSIGN_PERMISSION_ERROR]', error)
+    return { success: false, error: 'Failed to assign permission' }
+  }
+}
+
+/**
+ * Revoke a permission from a user
+ */
+export async function revokePermissionFromUserAction(
+  userId: number,
+  permissionId: number
+) {
+  try {
+    await prisma.userPermission.deleteMany({
+      where: { userId, permissionId }
+    })
+
+    return { success: true, message: 'Permission revoked successfully' }
+  } catch (error) {
+    console.error('[REVOKE_PERMISSION_ERROR]', error)
+    return { success: false, error: 'Failed to revoke permission' }
+  }
+}
+
+/**
+ * Assign all permissions to a user
+ */
+export async function assignAllPermissionsToUserAction(userId: number) {
+  try {
+    const allPermissions = await prisma.permission.findMany({
+      where: {
+        isActive: true,
+        deletedAt: null
+      },
+      select: { id: true }
+    })
+
+    const existingPermissions = await prisma.userPermission.findMany({
+      where: { userId },
+      select: { permissionId: true }
+    })
+
+    const existingIds = new Set(existingPermissions.map(p => p.permissionId))
+    const permissionsToAdd = allPermissions
+      .filter(p => !existingIds.has(p.id))
+      .map(p => ({ userId, permissionId: p.id }))
+
+    if (permissionsToAdd.length > 0) {
+      await prisma.userPermission.createMany({
+        data: permissionsToAdd,
+        skipDuplicates: true
+      })
+    }
+
+    return { 
+      success: true, 
+      message: `${permissionsToAdd.length} permission(s) assigned successfully` 
+    }
+  } catch (error) {
+    console.error('[ASSIGN_ALL_PERMISSIONS_ERROR]', error)
+    return { success: false, error: 'Failed to assign permissions' }
+  }
+}

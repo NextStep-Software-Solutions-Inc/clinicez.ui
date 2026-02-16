@@ -3,7 +3,7 @@
 import { currentUser } from '@clerk/nextjs/server'
 import prisma from '@/lib/prisma'
 import { medicalHistorySchema, type MedicalHistoryFormInput } from '@/schemas'
-import { userCanEditSection } from '@/lib/permissions'
+import { userCanEditSection, getDatabaseUserId } from '@/lib/permissions'
 import { UserRole } from '@/types/edit-permissions'
 import { logAudit, AuditAction, AuditEntityType } from '@/lib/audit-logger'
 
@@ -48,8 +48,14 @@ export async function updateMedicalConditions(
       return { success: false, error: `Validation failed: ${errorMessages}` }
     }
 
+    // Get target user's database ID
+    const dbUserId = await getDatabaseUserId(userId)
+    if (!dbUserId) {
+      return { success: false, error: 'User not found' }
+    }
+
     const currentConditions = await prisma.medicalHistory.findMany({
-      where: { userId: parseInt(userId) },
+      where: { userId: dbUserId },
       select: { id: true, conditionId: true },
     })
 
@@ -63,7 +69,7 @@ export async function updateMedicalConditions(
     for (const condition of toAdd) {
       await prisma.medicalHistory.create({
         data: {
-          userId: parseInt(userId),
+          userId: dbUserId,
           conditionId: condition.conditionId,
           details: condition.details,
         },

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, useMemo, useCallback, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
+import useSWR from 'swr'
 import { ArrowLeft } from 'lucide-react'
 import { getPatientHealthRecords } from '@/actions/patient-profile/get-patient-health-records'
 import type { PatientHealthRecordsResponse } from '@/types/patient-profile'
@@ -31,9 +32,6 @@ interface LoadedSections {
 
 export default function EditProfilePage() {
   const router = useRouter()
-  const [patientData, setPatientData] = useState<PatientHealthRecordsResponse | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string>()
   const [activeSection, setActiveSection] = useState('demographics')
   const [loadedSections, setLoadedSections] = useState<LoadedSections>({
     demographics: true,
@@ -46,6 +44,22 @@ export default function EditProfilePage() {
     examination: true,
     philhealth: true,
   })
+
+  // Use SWR for data fetching and automatic revalidation
+  const { data: patientData, isLoading, error, mutate } = useSWR(
+    'patient-health-records',
+    async () => {
+      const result = await getPatientHealthRecords()
+      return result
+    },
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+      dedupingInterval: 5 * 60 * 1000, // 5 minutes
+      focusThrottleInterval: 5 * 60 * 1000,
+    },
+  )
+
   // Create refs for all sections
   const demographicsRef = useRef<HTMLDivElement>(null)
   const vitalSignsRef = useRef<HTMLDivElement>(null)
@@ -72,31 +86,14 @@ export default function EditProfilePage() {
     [],
   )
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setIsLoading(true)
-        const data = await getPatientHealthRecords()
-        setPatientData(data)
-      } catch (err) {
-        setError('Failed to load profile data. Please try again.')
-        console.error(err)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    fetchData()
-  }, [])
-
   // Intersection Observer - track active section based on what's in view
   useEffect(() => {
-    if (typeof window === 'undefined') return
+    if (typeof window === 'undefined' || !patientData) return
 
-    // Setup observer
+    // Setup observer with adjusted margins for sticky header
     const observerOptions = {
       root: null,
-      rootMargin: '-80px 0px -66% 0px',
+      rootMargin: '-120px 0px -66% 0px', // Adjusted for sticky header height
       threshold: 0,
     }
 
@@ -117,37 +114,77 @@ export default function EditProfilePage() {
       }
     }
 
-    const observer = new IntersectionObserver(observerCallback, observerOptions)
+    let observer: IntersectionObserver | null = null
     const timeoutIds: NodeJS.Timeout[] = []
 
-    const setupObserver = () => {
-      // Observe all section refs
+    const setupObserver = (attempt = 1) => {
+      if (!observer) {
+        observer = new IntersectionObserver(observerCallback, observerOptions)
+      }
+
+      // Count how many refs are actually attached to DOM
+      const attachedRefs = sections.filter((s) => s.ref.current).length
+
+      if (attachedRefs === 0 && attempt < 5) {
+        // If no refs are attached yet, try again with exponential backoff
+        timeoutIds.push(setTimeout(() => setupObserver(attempt + 1), attempt * 150))
+        return
+      }
+
+      // Observe all section refs that are in DOM
       sections.forEach((section) => {
-        if (section.ref.current) {
+        if (section.ref.current && observer) {
           observer.observe(section.ref.current)
         }
       })
 
       // Manually detect current visible section
+      let foundActive = false
       sections.forEach((section) => {
-        if (section.ref.current) {
+        if (section.ref.current && !foundActive) {
           const rect = section.ref.current.getBoundingClientRect()
-          // Check if section is in viewport with the same margin logic
-          if (rect.top >= -80 && rect.top < window.innerHeight - (window.innerHeight * 0.66)) {
+          // Adjusted detection with sticky header in mind
+          if (rect.top >= -120 && rect.top < window.innerHeight - (window.innerHeight * 0.66)) {
             setActiveSection(section.id)
+            foundActive = true
+          }
+        }
+      })
+
+      // If no section is in view, default to first section
+      if (!foundActive) {
+        setActiveSection('demographics')
+      }
+    }
+
+    // Initial setup with multiple attempts to handle Suspense rendering
+    setupObserver()
+    timeoutIds.push(setTimeout(() => setupObserver(), 200))
+    timeoutIds.push(setTimeout(() => setupObserver(), 500))
+    timeoutIds.push(setTimeout(() => setupObserver(), 1000))
+
+    // Also setup observer on scroll to catch intersection changes
+    const handleScroll = () => {
+      // Re-validate observer setup periodically during scroll
+      sections.forEach((section) => {
+        if (section.ref.current && observer && !observer.disconnect) {
+          try {
+            observer.observe(section.ref.current)
+          } catch (e) {
+            // Silently handle if observer is disconnected
           }
         }
       })
     }
 
-    // Use multiple attempts with increasing delays to handle Suspense rendering
-    timeoutIds.push(setTimeout(setupObserver, 100))
-    timeoutIds.push(setTimeout(setupObserver, 300))
-    timeoutIds.push(setTimeout(setupObserver, 600))
+    window.addEventListener('scroll', handleScroll, { passive: true })
 
     return () => {
       timeoutIds.forEach((id) => clearTimeout(id))
-      observer.disconnect()
+      window.removeEventListener('scroll', handleScroll)
+      if (observer) {
+        observer.disconnect()
+      }
     }
   }, [sections, patientData])
 
@@ -169,13 +206,9 @@ export default function EditProfilePage() {
   )
 
   const handleSuccess = useCallback(async () => {
-    try {
-      const data = await getPatientHealthRecords()
-      setPatientData(data)
-    } catch (err) {
-      console.error('Failed to refresh data:', err)
-    }
-  }, [])
+    // Revalidate SWR cache to refresh data
+    await mutate()
+  }, [mutate])
 
   // Loading fallback component for Suspense boundaries
   const FormLoadingFallback = () => (
@@ -210,7 +243,7 @@ export default function EditProfilePage() {
     )
   }
 
-  if (error) {
+  if (error instanceof Error) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 dark:from-slate-950 dark:via-blue-950 dark:to-slate-900 p-4 md:p-8">
         <div className="max-w-4xl mx-auto">
@@ -224,7 +257,7 @@ export default function EditProfilePage() {
             <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Edit Profile</h1>
           </div>
           <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-2xl p-4">
-            <p className="text-red-800 dark:text-red-200">{error}</p>
+            <p className="text-red-800 dark:text-red-200">Failed to load profile data. Please try again.</p>
           </div>
         </div>
       </div>
@@ -544,6 +577,8 @@ export default function EditProfilePage() {
                         philSysId: patientData.philHealthRecords[0].philSysId || undefined,
                         memberTypeId: patientData.philHealthRecords[0].memberTypeId || undefined,
                         photoUrl: patientData.philHealthRecords[0].photoUrl || undefined,
+                        dependents: patientData.philHealthRecords[0].PhilHealthDependents || [],
+                        id: patientData.philHealthRecords[0].id,
                       }}
                       onSuccess={() => handleSuccess()}
                     />
@@ -568,9 +603,16 @@ export default function EditProfilePage() {
           >
             ← Back to Profile
           </button>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
-            Changes are saved automatically per section
-          </p>
+          <div className="flex flex-col sm:flex-row items-center gap-4">
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              Changes are saved automatically per section
+            </p>
+            {patientData && (
+              <p className="text-xs text-slate-500 dark:text-slate-500">
+                Last updated: {new Date().toLocaleTimeString()}
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Add CSS animations */}

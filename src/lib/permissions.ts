@@ -431,3 +431,18 @@ export function logPermissionCheck(
   // In production, this would send to logging service
   // await logToAuditTrail({ action, currentUserId, targetUserId, userRole, permission, allowed, timestamp })
 }
+
+/**
+ * Convert Clerk userId (string) to database user ID (integer)
+ * All health record operations require the database integer ID
+ * @param clerkUserId - Clerk user ID string
+ * @returns Database user ID or null if not found
+ */
+export async function getDatabaseUserId(clerkUserId: string): Promise<number | null> {
+  const prisma = await import('@/lib/prisma').then(m => m.default)
+  const user = await prisma.user.findUnique({
+    where: { userId: clerkUserId },
+    select: { id: true }
+  })
+  return user?.id ?? null
+}

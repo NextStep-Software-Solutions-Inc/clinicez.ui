@@ -24,7 +24,7 @@ async function userHasPhilHealthPermission(authUserId: string, targetUserId: str
     where: { userId: authUserId },
     select: { id: true }
   })
-  
+
   if (!authUser) {
     return { allowed: false, requiredPermissions: ['User profile not found in system'] }
   }
@@ -75,19 +75,19 @@ export async function updatePhilhealthRecord(
 
     // STRICT: Check explicit database permission - no bypass even for self-editing
     const permissionCheck = await userHasPhilHealthPermission(authUser.id, userId)
-    
+
     if (!permissionCheck.allowed) {
       // Provide helpful error message with required permissions
       const permList = permissionCheck.requiredPermissions.join(', ')
       if (isOwn) {
-        return { 
-          success: false, 
-          error: `Permission denied. To edit your PhilHealth information, you need one of these permissions: ${permList}. Contact your administrator to request access.` 
+        return {
+          success: false,
+          error: `Permission denied. To edit your PhilHealth information, you need one of these permissions: ${permList}. Contact your administrator to request access.`
         }
       } else {
-        return { 
-          success: false, 
-          error: `Permission denied. To edit another user's PhilHealth information, you need one of these permissions: ${permList}. Only authorized healthcare providers can edit other users' health records.` 
+        return {
+          success: false,
+          error: `Permission denied. To edit another user's PhilHealth information, you need one of these permissions: ${permList}. Only authorized healthcare providers can edit other users' health records.`
         }
       }
     }

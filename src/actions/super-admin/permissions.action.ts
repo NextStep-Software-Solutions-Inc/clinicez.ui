@@ -253,9 +253,9 @@ export async function assignAllPermissionsToUserAction(userId: number) {
       })
     }
 
-    return { 
-      success: true, 
-      message: `${permissionsToAdd.length} permission(s) assigned successfully` 
+    return {
+      success: true,
+      message: `${permissionsToAdd.length} permission(s) assigned successfully`
     }
   } catch (error) {
     console.error('[ASSIGN_ALL_PERMISSIONS_ERROR]', error)

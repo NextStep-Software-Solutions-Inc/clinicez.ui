@@ -7,20 +7,20 @@ export const uploadMediaAction = async (formData: FormData) => {
   try {
     const media = formData.get("media") as File;
     const directory = formData.get("directory") as string;
-    
+
     if (!media) {
       throw new Error("No file provided");
     }
-    
+
     if (!directory) {
       throw new Error("No directory specified");
     }
-    
+
     const size = media.size / 1024 / 1024;
     if (size > 10) {
       throw new Error("File size should not exceed 10MB");
     }
-    
+
     const filepath = `${directory}/${Date.now()}-${media.name}`;
     const buffer = await media.arrayBuffer();
     const data = await uploadFile(filepath, buffer, media.type);

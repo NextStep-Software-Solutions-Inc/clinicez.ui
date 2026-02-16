@@ -12,6 +12,7 @@
 This document outlines a detailed plan for implementing full editing functionality for the Patient Health Records system. The current system displays comprehensive health data across 5 tabs. The editing feature will allow patients and healthcare providers to update their health information through a modal-based or inline editing interface.
 
 **Key Facts:**
+
 - **11 Health Record Models** to support
 - **150+ individual fields** across all models
 - **3 Complexity Tiers**: Simple (strings/dates), Intermediate (relations), Complex (arrays)
@@ -22,6 +23,7 @@ This document outlines a detailed plan for implementing full editing functionali
 ## 🗂️ SCHEMA ANALYSIS & FIELD MAPPING
 
 ### Model 1: User (Demographics)
+
 **Location**: Prisma User model  
 **Edit Scope**: Demographics tab + Profile header
 
@@ -45,12 +47,14 @@ This document outlines a detailed plan for implementing full editing functionali
 | picture | String | | ✓ | Image URL | Profile photo |
 
 **Read-Only Fields:**
+
 - `id`, `userId` (system generated)
 - `createdAt`, `updatedAt` (system managed)
 - `caseNumber` (clinic assigned)
 - `accountType`, `claimedAt`, `claimedBy` (system managed)
 
 **Validation Rules:**
+
 ```typescript
 // Age must be > 0 and < 150
 age: dob ? Math.floor((Date.now() - new Date(dob)) / (365.25 * 24 * 60 * 60 * 1000)) : null
@@ -60,6 +64,7 @@ age: dob ? Math.floor((Date.now() - new Date(dob)) / (365.25 * 24 * 60 * 60 * 10
 ---
 
 ### Model 2: VitalSign
+
 **Location**: Vitals & Exams tab  
 **Edit Scope**: Add new vitals, edit recent vitals
 
@@ -79,6 +84,7 @@ age: dob ? Math.floor((Date.now() - new Date(dob)) / (365.25 * 24 * 60 * 60 * 10
 | isActive | Boolean | | | Default true | Soft delete flag |
 
 **Validation Rules:**
+
 ```typescript
 // Height and weight validation
 if (height && weight && height > 0) {
@@ -101,6 +107,7 @@ if (pulseRate) {
 ---
 
 ### Model 3: PhysicalExamination
+
 **Location**: Vitals & Exams tab  
 **Edit Scope**: Latest physical exam or add new
 
@@ -115,6 +122,7 @@ if (pulseRate) {
 **Note**: NO "notes" field exists - only "status"
 
 **Validation Rules:**
+
 ```typescript
 // Vision format: /\d+\/\d+/
 // Status: freetext clinical findings
@@ -123,6 +131,7 @@ if (pulseRate) {
 ---
 
 ### Model 4: ObGyneHistory
+
 **Location**: Lifestyle & Social tab (Women only)  
 **Edit Scope**: Editable only for female patients
 
@@ -147,6 +156,7 @@ if (pulseRate) {
 | hasPreEclampsia | Boolean | | | Default false | Pregnancy complication |
 
 **Conditional Display:**
+
 ```typescript
 // Only show if: patient.gender === 'FEMALE'
 // Visibility logic in component:
@@ -158,6 +168,7 @@ if (patient.gender?.toLowerCase() === 'female') {
 ---
 
 ### Model 5: PediatricMeasurement
+
 **Location**: Lifestyle & Social tab  
 **Edit Scope**: Add/edit measurements
 
@@ -174,6 +185,7 @@ if (patient.gender?.toLowerCase() === 'female') {
 | remarks | String | | ✓ | Max 500 | Clinical notes |
 
 **Validation Rules:**
+
 ```typescript
 // Decimal(5,2) = max 999.99
 // Realistic ranges for pediatric measurements
@@ -183,6 +195,7 @@ if (patient.gender?.toLowerCase() === 'female') {
 ---
 
 ### Model 6: PersonalHistory
+
 **Location**: Lifestyle & Social tab  
 **Edit Scope**: Editable
 
@@ -196,6 +209,7 @@ if (patient.gender?.toLowerCase() === 'female') {
 | sexuallyActive | String | | ✓ | YES\|NO\|INACTIVE | Sexual activity |
 
 **Conditional Fields:**
+
 ```typescript
 // numberOfPacksPerYear: Only if smokingStatus === 'CURRENT' or 'FORMER'
 // numberOfBottlesPerDay: Only if alcoholStatus !== 'NEVER'
@@ -204,6 +218,7 @@ if (patient.gender?.toLowerCase() === 'female') {
 ---
 
 ### Model 7: MedicalHistory
+
 **Location**: Medical Profile tab  
 **Edit Scope**: Add/remove conditions with details
 
@@ -214,6 +229,7 @@ if (patient.gender?.toLowerCase() === 'female') {
 | Condition | Object | ✓ | | Relation | HealthCondition.name |
 
 **Structure:**
+
 ```typescript
 interface MedicalHistoryInput {
   conditionId: Int        // Selected from dropdown
@@ -224,6 +240,7 @@ interface MedicalHistoryInput {
 ```
 
 **Validation:**
+
 ```typescript
 // Must select condition
 // Details optional but recommended
@@ -233,6 +250,7 @@ interface MedicalHistoryInput {
 ---
 
 ### Model 8: FamilyMedicalHistory
+
 **Location**: Medical Profile tab  
 **Edit Scope**: Add/remove family conditions
 
@@ -245,6 +263,7 @@ interface MedicalHistoryInput {
 | deletedAt | DateTime | | | Soft delete | |
 
 **Structure:**
+
 ```typescript
 interface FamilyMedicalHistoryInput {
   conditionId: Int        // Which family member
@@ -255,6 +274,7 @@ interface FamilyMedicalHistoryInput {
 ---
 
 ### Model 9: PhilHealthRecord
+
 **Location**: Insurance & Docs tab  
 **Edit Scope**: Read-only display OR update PIN/TIN if new
 
@@ -268,6 +288,7 @@ interface FamilyMedicalHistoryInput {
 | isActive | Boolean | | | Default true | Active flag |
 
 **Edit Permissions:**
+
 ```typescript
 // Only allow edit if:
 // - User is the patient (self-edit), OR
@@ -278,6 +299,7 @@ interface FamilyMedicalHistoryInput {
 ---
 
 ### Model 10: ProcedureUsageHistory
+
 **Location**: Insurance & Docs tab  
 **Edit Scope**: Read-only reference (Procedures are linked to clinic visits)
 
@@ -296,30 +318,40 @@ interface FamilyMedicalHistoryInput {
 ### Editing Patterns (3 Approaches)
 
 #### Pattern 1: Modal Edit (Recommended for Complex Forms)
+
 **Use Case**: Demographics, ObGyn, Medical History
+
 ```
 Profile View → Click "Edit" Button → Modal Opens → Form → Save → Close
 ```
+
 **Pros**: Full-screen editing, complex validation, clear separation
 **Cons**: Takes screen real estate, context switching
 
 #### Pattern 2: Inline Edit (For Simple Fields)
+
 **Use Case**: Single field updates, quick edits
+
 ```
 Field → Hover → Click Edit Icon → Input → Save → Display Updated
 ```
+
 **Pros**: Quick, contextual, less disruption
 **Cons**: Limited space, hard for complex validations
 
 #### Pattern 3: Tab-Based Edit (Recommended for Multi-step)
+
 **Use Case**: Vitals, multiple measurements
+
 ```
 View Tab → Click "Add New" → Form stays in tab → Save → Refresh list
 ```
+
 **Pros**: In-context, no modal overhead
 **Cons**: Limited space in tab
 
 ### Recommended Approach
+
 - **Demographics**: Modal (complex form, ~15 fields)
 - **Medical History**: Modal List (add/remove conditions)
 - **Vitals**: Tab-based "Add New Vital" form
@@ -334,6 +366,7 @@ View Tab → Click "Add New" → Form stays in tab → Save → Refresh list
 ## 📊 FORM SCHEMAS & VALIDATION
 
 ### Schema 1: Demographics Form (ZOD)
+
 ```typescript
 import { z } from "zod"
 
@@ -359,6 +392,7 @@ export type DemographicsFormInput = z.infer<typeof demographicsSchema>
 ```
 
 ### Schema 2: Vitals Form
+
 ```typescript
 export const vitalSignSchema = z.object({
   dateTaken: z.date().max(new Date(), "Date must be today or earlier"),
@@ -383,6 +417,7 @@ export type VitalSignFormInput = z.infer<typeof vitalSignSchema>
 ```
 
 ### Schema 3: Medical History
+
 ```typescript
 export const medicalHistorySchema = z.object({
   conditions: z.array(z.object({
@@ -395,6 +430,7 @@ export type MedicalHistoryFormInput = z.infer<typeof medicalHistorySchema>
 ```
 
 ### Schema 4: OB/Gyn History
+
 ```typescript
 export const obGyneSchema = z.object({
   menarche: z.number().min(8).max(16).optional().nullable(),
@@ -412,6 +448,7 @@ export const obGyneSchema = z.object({
 ## 🔧 SERVER ACTIONS (Update Operations)
 
 ### Action 1: Update Demographics
+
 ```typescript
 // File: src/actions/patient-profile/update-demographics.ts
 
@@ -454,6 +491,7 @@ export async function updateDemographics(
 ```
 
 ### Action 2: Add Vital Sign
+
 ```typescript
 export async function addVitalSign(
   input: VitalSignFormInput
@@ -496,6 +534,7 @@ export async function addVitalSign(
 ```
 
 ### Action 3: Update Medical Conditions
+
 ```typescript
 export async function updateMedicalConditions(
   input: MedicalHistoryFormInput
@@ -532,6 +571,7 @@ export async function updateMedicalConditions(
 ## 🎨 UI COMPONENTS
 
 ### Component Structure
+
 ```
 src/components/patient-profile/editing/
 ├── DemographicsModal.tsx          // Full demographics form
@@ -548,6 +588,7 @@ src/components/patient-profile/editing/
 ```
 
 ### EditButton Component
+
 ```typescript
 interface EditButtonProps {
   onClick: () => void
@@ -573,6 +614,7 @@ export function EditButton({ onClick, disabled, variant = 'icon' }: EditButtonPr
 ```
 
 ### Form Modal Wrapper
+
 ```typescript
 interface FormModalProps {
   isOpen: boolean
@@ -619,6 +661,7 @@ export function FormModal({
 ## 🔐 PERMISSION & AUTHORIZATION
 
 ### Permission Levels
+
 ```typescript
 enum EditPermission {
   SELF_EDIT = 'SELF_EDIT',           // Patient editing own records
@@ -643,6 +686,7 @@ function getEditPermission(currentUser: User, targetUser: User): EditPermission 
 ```
 
 ### Field-Level Permissions
+
 ```typescript
 interface FieldPermission {
   fieldName: string
@@ -663,6 +707,7 @@ const fieldPermissions: FieldPermission[] = [
 ## 📋 IMPLEMENTATION PHASES
 
 ### Phase 1: Foundation (Week 1-2)
+
 - [x] Schema analysis & field mapping (DONE)
 - [ ] Create ZOD validation schemas for all models
 - [ ] Create server actions for each update operation
@@ -670,6 +715,7 @@ const fieldPermissions: FieldPermission[] = [
 - [ ] Create reusable form components
 
 ### Phase 2: Demographics & Basic Edit (Week 2-3)
+
 - [ ] Implement DemographicsModal
 - [ ] Wire up updateDemographics server action
 - [ ] Add edit buttons to profile header
@@ -677,6 +723,7 @@ const fieldPermissions: FieldPermission[] = [
 - [ ] Add audit logging
 
 ### Phase 3: Health Records Edit (Week 3-4)
+
 - [ ] VitalSigns: Add new, edit recent
 - [ ] PhysicalExamination: Add new
 - [ ] Medical conditions: Add/remove interface
@@ -684,12 +731,14 @@ const fieldPermissions: FieldPermission[] = [
 - [ ] PersonalHistory form
 
 ### Phase 4: Complex Forms (Week 4-5)
+
 - [ ] ObGyn history form (conditional fields)
 - [ ] PediatricMeasurement form
 - [ ] Insurance/PhilHealth form
 - [ ] Procedure history (view-only)
 
 ### Phase 5: Polish & Testing (Week 5)
+
 - [ ] Form validation across all types
 - [ ] Error handling & user feedback
 - [ ] Dark mode compatibility
@@ -702,16 +751,19 @@ const fieldPermissions: FieldPermission[] = [
 ## 🧪 TESTING STRATEGY
 
 ### Unit Tests
+
 - Validation schema tests
 - Permission logic tests
 - Server action tests
 
 ### Integration Tests
+
 - Create → Read → Update flow
 - Permission enforcement
 - Audit log creation
 
 ### E2E Tests (Optional)
+
 - User completes edit workflow
 - Form submission & redirect
 - Error state handling

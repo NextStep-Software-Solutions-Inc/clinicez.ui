@@ -19,7 +19,7 @@ export const personalHistorySchema = z
       })
       .optional()
       .nullable(),
-    
+
     numberOfPacksPerYear: z
       .number()
       .int()
@@ -27,28 +27,28 @@ export const personalHistorySchema = z
       .max(100, "Must be less than 100 packs per year")
       .optional()
       .nullable(),
-    
+
     alcoholStatus: z
       .enum(ALCOHOL_STATUS, {
         errorMap: () => ({ message: "Please select an alcohol consumption status" }),
       })
       .optional()
       .nullable(),
-    
+
     numberOfBottlesPerDay: z
       .number()
       .min(0, "Cannot be negative")
       .max(10, "Must be less than 10 bottles per day")
       .optional()
       .nullable(),
-    
+
     illicitDrugUse: z
       .enum(DRUG_STATUS, {
         errorMap: () => ({ message: "Please select a drug use status" }),
       })
       .optional()
       .nullable(),
-    
+
     sexuallyActive: z
       .enum(SEXUALLY_ACTIVE, {
         errorMap: () => ({ message: "Please select a status" }),

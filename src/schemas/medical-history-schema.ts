@@ -11,7 +11,7 @@ export const medicalHistorySchema = z.object({
     .number()
     .int()
     .min(1, "Please select a medical condition"),
-  
+
   details: z
     .string()
     .max(500, "Details must be less than 500 characters. Include: onset date, severity, treatment, status")

@@ -36,14 +36,14 @@ export async function addPediatricMeasurement(
     } catch (validationError: any) {
       const fieldErrors = validationError.flatten?.().fieldErrors || {}
       const errorMessages = Object.entries(fieldErrors)
-        .map(([field, errors]: [string, any]) => 
+        .map(([field, errors]: [string, any]) =>
           `${field}: ${Array.isArray(errors) ? errors.join(', ') : String(errors)}`
         )
         .join('; ')
       return { success: false, error: `Validation failed: ${errorMessages}` }
     }
 
-    const muacStatus = validatedInput.midUpperArmCircumference 
+    const muacStatus = validatedInput.midUpperArmCircumference
       ? evaluateMUAC(Number(validatedInput.midUpperArmCircumference))
       : null
 

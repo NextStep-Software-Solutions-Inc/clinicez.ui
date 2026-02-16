@@ -22,7 +22,7 @@ export interface MedicalHistoryData {
   details: string | null
 }
 
-export interface PhysicalExaminationData extends PhysicalExamination {}
+export interface PhysicalExaminationData extends PhysicalExamination { }
 
 export interface ClinicInfo {
   id: number
@@ -75,33 +75,33 @@ export interface PatientHealthRecordsResponse {
   createdAt: Date
   updatedAt: Date
   clinic: ClinicInfo | null
-  
+
   // Medical Profile
   medicalHistories: MedicalHistoryData[]
   familyMedicalHistories: MedicalHistoryData[]
-  
+
   // Vital Signs
   vitalSigns: VitalSign[]
   latestVitals: VitalSign | null
-  
+
   // Physical Examinations
   physicalExaminations: PhysicalExaminationData[]
-  
+
   // OB/Gyn History
   obGyneHistory: ObGyneHistory | null
-  
+
   // Pediatric Measurements
   pediatricMeasurements: PediatricMeasurement[]
-  
+
   // Personal History & Lifestyle
   personalHistory: PersonalHistory | null
-  
+
   // Insurance & PhilHealth
   philHealthRecords: PhilHealthRecord[]
-  
+
   // Procedure History
   procedureHistory: ProcedureUsageHistory[]
-  
+
   // Clinical Documents
   medicalCertificates: CertificateData[]
   referralSlips: ReferralData[]

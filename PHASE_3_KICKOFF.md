@@ -1,9 +1,11 @@
 # 🚀 Phase 3: UI Components & Forms - Kickoff Guide
 
 ## Overview
+
 Phase 3 builds reusable React components and form implementations that use the Phase 2 server actions.
 
 **Phase 3 Objectives**:
+
 1. Create reusable form components (FormModal, EditButton, FormField, etc.)
 2. Build demographics edit form (template reference)
 3. Implement individual forms for each health model
@@ -14,10 +16,13 @@ Phase 3 builds reusable React components and form implementations that use the P
 ## 📋 Phase 3 Development Plan
 
 ### Step 1: Reusable Form Components (Week 1)
+
 **Location**: `src/components/health-records/`
 
 #### 1.1 FormModal
+
 Wrapper component for editing forms
+
 ```typescript
 interface FormModalProps {
   isOpen: boolean
@@ -28,7 +33,9 @@ interface FormModalProps {
   children: ReactNode
 }
 ```
+
 Features:
+
 - Modal dialog (use shadcn Dialog)
 - Loading state management
 - Error display area
@@ -36,7 +43,9 @@ Features:
 - Keyboard shortcuts (Esc to close)
 
 #### 1.2 EditButton
+
 Trigger button to open form modal
+
 ```typescript
 interface EditButtonProps {
   label?: string
@@ -45,14 +54,18 @@ interface EditButtonProps {
   disabled?: boolean
 }
 ```
+
 Features:
+
 - Icon + label variant
 - Tooltip showing what can be edited
 - Permission-aware (hide if no edit access)
 - Loading state
 
 #### 1.3 FormField
+
 Controlled form field wrapper
+
 ```typescript
 interface FormFieldProps {
   label: string
@@ -62,14 +75,18 @@ interface FormFieldProps {
   children: ReactNode
 }
 ```
+
 Features:
+
 - Label with required indicator
 - Error message display
 - Help text below field
 - Accessible (proper labeling)
 
 #### 1.4 ErrorDisplay
+
 User-friendly error messages
+
 ```typescript
 interface ErrorDisplayProps {
   error?: string
@@ -77,14 +94,18 @@ interface ErrorDisplayProps {
   variant?: 'error' | 'warning' | 'info'
 }
 ```
+
 Features:
+
 - Color-coded by severity
 - Dismiss button
 - Icon indicator
 - Accessible alerts
 
 #### 1.5 LoadingState
+
 Skeleton/loading placeholder
+
 ```typescript
 interface LoadingStateProps {
   isLoading: boolean
@@ -94,7 +115,9 @@ interface LoadingStateProps {
 ```
 
 #### 1.6 SuccessMessage
+
 Temporary success notification
+
 ```typescript
 interface SuccessMessageProps {
   message: string
@@ -105,9 +128,11 @@ interface SuccessMessageProps {
 ---
 
 ### Step 2: Demographics Edit Form (Week 1-2)
+
 **File**: `src/components/health-records/demographics-edit-form.tsx`
 
 **Template Structure**:
+
 ```typescript
 export function DemographicsEditForm({ userId }: { userId: string }) {
   const [isOpen, setIsOpen] = useState(false)
@@ -159,6 +184,7 @@ export function DemographicsEditForm({ userId }: { userId: string }) {
 ```
 
 **Key Aspects**:
+
 - Fieldgroup organization (Personal, Contact, Medical)
 - Conditional rendering (optional fields)
 - Real-time validation feedback
@@ -169,7 +195,9 @@ export function DemographicsEditForm({ userId }: { userId: string }) {
 ### Step 3: Individual Form Implementations (Week 2-3)
 
 #### 3.1 VitalSignForm
+
 **Components**: Vital Sign recording
+
 ```
 src/components/health-records/vital-sign-form.tsx
 - Measurements grouped (Height/Weight, BP, Temperature, Pulse, O₂, Respiration)
@@ -179,7 +207,9 @@ src/components/health-records/vital-sign-form.tsx
 ```
 
 #### 3.2 PersonalHistoryForm
+
 **Components**: Lifestyle/social history
+
 ```
 src/components/health-records/personal-history-form.tsx
 - Smoking status (enum dropdown + conditional pack count)
@@ -190,7 +220,9 @@ src/components/health-records/personal-history-form.tsx
 ```
 
 #### 3.3 MedicalConditionsForm
+
 **Components**: Manage patient conditions
+
 ```
 src/components/health-records/medical-conditions-form.tsx
 - Condition picker (searchable dropdown)
@@ -201,7 +233,9 @@ src/components/health-records/medical-conditions-form.tsx
 ```
 
 #### 3.4 OBGyneHistoryForm
+
 **Components**: Reproductive health (FEMALE ONLY)
+
 ```
 src/components/health-records/ob-gyne-history-form.tsx
 - Conditional rendering (only for FEMALE patients)
@@ -216,7 +250,9 @@ src/components/health-records/ob-gyne-history-form.tsx
 ```
 
 #### 3.5 PediatricMeasurementForm
+
 **Components**: Growth tracking
+
 ```
 src/components/health-records/pediatric-measurement-form.tsx
 - Field groups:
@@ -229,7 +265,9 @@ src/components/health-records/pediatric-measurement-form.tsx
 ```
 
 #### 3.6 FamilyMedicalHistoryForm
+
 **Components**: Family genetic risk
+
 ```
 src/components/health-records/family-medical-history-form.tsx
 - Similar to medical conditions
@@ -238,7 +276,9 @@ src/components/health-records/family-medical-history-form.tsx
 ```
 
 #### 3.7 PhysicalExaminationForm
+
 **Components**: Exam findings
+
 ```
 src/components/health-records/physical-examination-form.tsx
 - Vision acuity (format: 20/20, 6/6, etc.)
@@ -248,7 +288,9 @@ src/components/health-records/physical-examination-form.tsx
 ```
 
 #### 3.8 PhilHealthForm
+
 **Components**: Insurance records
+
 ```
 src/components/health-records/philhealth-form.tsx
 - PIN (unique, required, searchable)
@@ -261,9 +303,11 @@ src/components/health-records/philhealth-form.tsx
 ---
 
 ### Step 4: Layout & Integration (Week 3)
+
 **File**: `src/app/patient/[id]/health-records/page.tsx`
 
 Create unified health records view:
+
 ```
 ┌─────────────────────────────────────────┐
 │ Patient Health Records                   │
@@ -290,17 +334,20 @@ Create unified health records view:
 ## 🎨 UI/UX Considerations
 
 ### Design Patterns
+
 1. **Edit-in-place**: Click button → Modal opens → Edit → Save
 2. **Add new**: Always shows confirmation before creating
 3. **Remove**: Requires confirmation
 4. **Status indicators**: Shows if data is complete/missing
 
 ### Dark Mode
+
 - All components use Tailwind CSS classes
 - Use `dark:` prefixes for dark mode
 - Test with `prefers-color-scheme`
 
 ### Accessibility
+
 - All forms use proper ARIA labels
 - Error messages linked to fields
 - Keyboard navigation (Tab through fields)
@@ -308,6 +355,7 @@ Create unified health records view:
 - Screen reader friendly
 
 ### Mobile Responsiveness
+
 - Stack fields vertically on small screens
 - Touch-friendly buttons (min 44px)
 - Readable font sizes
@@ -318,6 +366,7 @@ Create unified health records view:
 ## 🔌 Component API Summary
 
 ### Available Server Actions
+
 ```typescript
 // Demographics
 updateDemographics(userId: string, input: DemographicsFormInput) 

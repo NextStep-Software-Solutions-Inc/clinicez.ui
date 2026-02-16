@@ -7,6 +7,7 @@
 ## 🚀 Quick Start
 
 ### Import Schemas
+
 ```typescript
 import {
   demographicsSchema,
@@ -19,6 +20,7 @@ import {
 ```
 
 ### Import Permissions
+
 ```typescript
 import {
   userCanEditField,
@@ -33,6 +35,7 @@ import {
 ## 📋 Schema Quick Reference
 
 ### Demographics Schema
+
 ```typescript
 const input = {
   firstName: "John",
@@ -49,12 +52,14 @@ const age = calculateAge(validated.dob) // Returns number or null
 ```
 
 **User-Centric Features**:
+
 - Age auto-calculated (shows in form as read-only)
 - Blood type displayed as "O+" not "O_POSITIVE"
 - Phone validation with format guidance
 - DOB past-date validation
 
 ### Vital Signs Schema
+
 ```typescript
 const vitals = {
   dateTaken: new Date(),
@@ -77,10 +82,12 @@ const bpStatus = getBPClassification(validated.bpSystolic, validated.bpDiastolic
 ```
 
 **Cross-Field Validation**:
+
 - Systolic must be > Diastolic
 - Realistic BP relationship (diff 15-50 mmHg)
 
 ### OB/Gyn Schema (Women Only)
+
 ```typescript
 const obGyn = {
   menarche: 12,
@@ -100,6 +107,7 @@ const errors = validateObGyneConsistency(validated)
 ```
 
 **Conditional Display**:
+
 ```typescript
 if (patient.gender === 'FEMALE') {
   // Show OB/Gyn section
@@ -107,6 +115,7 @@ if (patient.gender === 'FEMALE') {
 ```
 
 ### Personal History Schema
+
 ```typescript
 const history = {
   smokingStatus: "CURRENT", // "NEVER" | "FORMER" | "CURRENT"
@@ -121,6 +130,7 @@ const validated = personalHistorySchema.parse(history)
 ```
 
 **User-Friendly Labels**:
+
 ```typescript
 import { personalHistoryLabels } from '@/schemas'
 
@@ -136,6 +146,7 @@ console.log(personalHistoryLabels.alcoholStatus.OCCASIONAL)
 ## 🔐 Permission Quick Reference
 
 ### Check if User Can Edit
+
 ```typescript
 import { UserRole, EditPermissionLevel } from '@/types/edit-permissions'
 import { userCanEditField, userCanEditSection } from '@/lib/permissions'
@@ -168,6 +179,7 @@ const sections = getUserEditableSections(
 ```
 
 ### Permission Hierarchy
+
 ```
 SELF_EDIT (Patient editing own)
   ↓
@@ -181,6 +193,7 @@ DENIED (No access)
 ```
 
 ### Permission Labels
+
 ```typescript
 import { permissionLabels } from '@/types/edit-permissions'
 
@@ -196,6 +209,7 @@ console.log(permissionLabels.READONLY)
 ## 💡 Common Patterns
 
 ### Pattern 1: Form Submission with Validation
+
 ```typescript
 async function handleFormSubmit(formData: DemographicsFormInput) {
   try {
@@ -227,6 +241,7 @@ async function handleFormSubmit(formData: DemographicsFormInput) {
 ```
 
 ### Pattern 2: Conditional Field Visibility
+
 ```typescript
 function DemographicsForm({ patient }) {
   const permission = getUserPermissionLevel(currentUserId, targetUserId, userRole)
@@ -254,6 +269,7 @@ function DemographicsForm({ patient }) {
 ```
 
 ### Pattern 3: Auto-Calculated Fields
+
 ```typescript
 function VitalSignsForm({ height, weight, bpSystolic, bpDiastolic }) {
   // Auto-calculate BMI
@@ -289,6 +305,7 @@ function VitalSignsForm({ height, weight, bpSystolic, bpDiastolic }) {
 ## 🧪 Testing Examples
 
 ### Test Validation
+
 ```typescript
 import { demographicsSchema } from '@/schemas'
 
@@ -322,6 +339,7 @@ describe('DemographicsSchema', () => {
 ```
 
 ### Test Permissions
+
 ```typescript
 import { userCanEditField } from '@/lib/permissions'
 import { UserRole } from '@/types/edit-permissions'

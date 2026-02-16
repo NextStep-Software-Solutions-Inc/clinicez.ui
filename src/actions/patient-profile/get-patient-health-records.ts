@@ -56,45 +56,45 @@ export async function getPatientHealthRecords() {
           orderBy: { createdAt: 'desc' },
           take: 15,
         },
-        
+
         // Vital Signs
         VitalSigns: {
           where: { isActive: true, deletedAt: null },
           orderBy: { dateTaken: 'desc' },
           take: 5,
         },
-        
+
         // Physical Examinations
         PhysicalExaminations: {
           orderBy: { createdAt: 'desc' },
           take: 10,
         },
-        
+
         // OB/Gyn History
         ObGyneHistory: true,
-        
+
         // Pediatric Measurements
         PediatricMeasurements: {
           orderBy: { createdAt: 'desc' },
           take: 10,
         },
-        
+
         // Personal History
         PersonalHistory: true,
-        
+
         // PhilHealth Records
         PhilHealthRecords: {
           where: { isActive: true },
           orderBy: { createdAt: 'desc' },
           take: 5,
         },
-        
+
         // Procedure History
         ProcedureUsageHistory: {
           orderBy: { usedAt: 'desc' },
           take: 10,
         },
-        
+
         // Clinic Patients (to get primary clinic)
         ClinicPatients: {
           where: { isActive: true, deletedAt: null },
@@ -112,7 +112,7 @@ export async function getPatientHealthRecords() {
 
     // Fetch medical certificates and referral slips from clinic
     const clinicPatient = patient.ClinicPatients[0]
-    
+
     let certificateDataList: CertificateData[] = []
     let referralDataList: ReferralData[] = []
 
@@ -200,7 +200,7 @@ export async function getPatientHealthRecords() {
       createdAt: patient.createdAt,
       updatedAt: patient.updatedAt,
       clinic: patient.ClinicPatients[0]?.Clinic || null,
-      
+
       // Medical Profile
       medicalHistories: patient.MedicalHistories.map((h) => ({
         id: h.id,
@@ -214,29 +214,29 @@ export async function getPatientHealthRecords() {
         condition: h.Condition?.name || 'Unknown',
         details: h.details,
       })),
-      
+
       // Vital Signs
       vitalSigns: patient.VitalSigns,
       latestVitals: patient.VitalSigns[0] || null,
-      
+
       // Physical Examinations
       physicalExaminations: patient.PhysicalExaminations,
-      
+
       // OB/Gyn History
       obGyneHistory: patient.ObGyneHistory || null,
-      
+
       // Pediatric Measurements
       pediatricMeasurements: patient.PediatricMeasurements,
-      
+
       // Personal History & Lifestyle
       personalHistory: patient.PersonalHistory || null,
-      
+
       // Insurance & PhilHealth
       philHealthRecords: patient.PhilHealthRecords,
-      
+
       // Procedure History
       procedureHistory: patient.ProcedureUsageHistory,
-      
+
       // Clinical Documents
       medicalCertificates: certificateDataList,
       referralSlips: referralDataList,

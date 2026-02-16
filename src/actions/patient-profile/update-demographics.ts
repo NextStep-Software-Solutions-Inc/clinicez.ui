@@ -9,7 +9,7 @@
 import { currentUser } from '@clerk/nextjs/server'
 import prisma from '@/lib/prisma'
 import { demographicsSchema, type DemographicsFormInput } from '@/schemas'
-import { 
+import {
   userCanEditField,
   getUserPermissionLevel,
 } from '@/lib/permissions'
@@ -34,8 +34,8 @@ export async function updateDemographics(
     // 1. Get current user (for permission checking)
     const authUser = await currentUser()
     if (!authUser?.id) {
-      return { 
-        success: false, 
+      return {
+        success: false,
         error: 'You must be logged in to update profile information',
       }
     }
@@ -49,7 +49,7 @@ export async function updateDemographics(
         userId,
         UserRole.HEALTHCARE_PROVIDER // Default to provider role for non-self edits
       )
-      
+
       if (permission === 'READONLY' || permission === 'DENIED') {
         return {
           success: false,
@@ -67,7 +67,7 @@ export async function updateDemographics(
       const errorMessages = Object.entries(fieldErrors)
         .map(([field, errors]: [string, any]) => `${field}: ${Array.isArray(errors) ? errors.join(', ') : String(errors)}`)
         .join('; ')
-      
+
       return {
         success: false,
         error: `Validation failed: ${errorMessages}`,

@@ -46,7 +46,7 @@ export async function updateObGyneHistory(
     } catch (validationError: any) {
       const fieldErrors = validationError.flatten?.().fieldErrors || {}
       const errorMessages = Object.entries(fieldErrors)
-        .map(([field, errors]: [string, any]) => 
+        .map(([field, errors]: [string, any]) =>
           `${field}: ${Array.isArray(errors) ? errors.join(', ') : String(errors)}`
         )
         .join('; ')

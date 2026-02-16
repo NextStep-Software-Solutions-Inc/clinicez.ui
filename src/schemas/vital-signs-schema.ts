@@ -10,21 +10,21 @@ export const vitalSignSchema = z
     dateTaken: z
       .date()
       .max(new Date(), "Vital sign date must be today or earlier"),
-    
+
     height: z
       .number()
       .min(50, "Height must be at least 50 cm (about 1.6 feet)")
       .max(250, "Height must be less than 250 cm (about 8.2 feet)")
       .optional()
       .nullable(),
-    
+
     weight: z
       .number()
       .min(1, "Weight must be at least 1 kg")
       .max(500, "Weight must be less than 500 kg")
       .optional()
       .nullable(),
-    
+
     bpSystolic: z
       .number()
       .int()
@@ -32,7 +32,7 @@ export const vitalSignSchema = z
       .max(250, "Systolic BP must be less than 250 mmHg")
       .optional()
       .nullable(),
-    
+
     bpDiastolic: z
       .number()
       .int()
@@ -40,7 +40,7 @@ export const vitalSignSchema = z
       .max(160, "Diastolic BP must be less than 160 mmHg")
       .optional()
       .nullable(),
-    
+
     pulseRate: z
       .number()
       .int()
@@ -48,21 +48,21 @@ export const vitalSignSchema = z
       .max(200, "Pulse rate must be less than 200 bpm (typical range is 60-100 bpm)")
       .optional()
       .nullable(),
-    
+
     temp: z
       .number()
       .min(35, "Temperature must be at least 35°C")
       .max(43, "Temperature must be less than 43°C (typical range is 36.5-37.5°C)")
       .optional()
       .nullable(),
-    
+
     spo2: z
       .number()
       .min(80, "Oxygen saturation must be at least 80%")
       .max(100, "Oxygen saturation cannot exceed 100%")
       .optional()
       .nullable(),
-    
+
     respRate: z
       .number()
       .int()
@@ -70,7 +70,7 @@ export const vitalSignSchema = z
       .max(40, "Respiration rate must be less than 40 breaths/min (typical range is 12-20)")
       .optional()
       .nullable(),
-    
+
     notes: z
       .string()
       .max(500, "Notes must be less than 500 characters")

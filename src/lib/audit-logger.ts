@@ -51,7 +51,7 @@ export async function logAudit(entry: AuditLogEntry): Promise<AuditResult> {
   try {
     // In a real implementation, this would write to a dedicated audit table
     // For now, we'll log to console and can integrate with database later
-    
+
     const timestamp = new Date().toISOString()
     const logEntry = {
       timestamp,

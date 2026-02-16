@@ -10,6 +10,7 @@
 ## ✅ What's Done (Phase 1)
 
 ### **Zod Validation Schemas** (9 files, ~680 lines)
+
 1. ✅ Demographics (98 lines) - 15 fields with age validation
 2. ✅ Vital Signs (115 lines) - Height, weight, BP, temp, etc. with BMI + BP classification
 3. ✅ Physical Exam (22 lines) - Vision acuity, status
@@ -21,6 +22,7 @@
 9. ✅ PhilHealth Records (61 lines) - Insurance information
 
 **Features**:
+
 - User-centric error messages (tell users WHAT'S wrong and HOW TO FIX IT)
 - Helper functions: `calculateBMI()`, `getBPClassification()`, `calculateAge()`, `evaluateMUAC()`
 - Cross-field validation (e.g., Systolic > Diastolic BP)
@@ -28,6 +30,7 @@
 - Realistic health ranges with guidance
 
 ### **Permission & Authorization System** (2 files, ~460 lines)
+
 1. ✅ Permission types & definitions (`src/types/edit-permissions.ts`)
    - 5 permission levels: SELF_EDIT, PROFESSIONAL_EDIT, CLINIC_ADMIN_EDIT, READONLY, DENIED
    - 4 user roles: PATIENT, HEALTHCARE_PROVIDER, CLINIC_ADMIN, SYSTEM_ADMIN
@@ -48,7 +51,9 @@
 ## 🏗️ How Phase 1 Enables Phase 2
 
 ### **Server Actions** (Next Phase)
+
 All schemas validated ✅ → Can now create:
+
 ```typescript
 // Example server action pattern (to be created in Phase 2)
 export async function updateDemographics(input: DemographicsFormInput) {
@@ -69,7 +74,9 @@ export async function updateDemographics(input: DemographicsFormInput) {
 ```
 
 ### **Reusable Components** (Phase 3)
+
 All form inputs typed ✅ → Can now create:
+
 ```tsx
 <FormModal
   title="Edit Demographics"
@@ -89,7 +96,9 @@ All form inputs typed ✅ → Can now create:
 ```
 
 ### **Edit Forms** (Phase 4-5)
+
 All components available ✅ → Can now build:
+
 ```tsx
 export function DemographicsEditModal() {
   const [open, setOpen] = useState(false)
@@ -109,35 +118,43 @@ export function DemographicsEditModal() {
 ## 📊 Design Highlights (User-Centric)
 
 ### 1. **Clear Error Messages**
+
 Instead of: "Invalid input"  
 We have: "Height must be between 50-250 cm (about 1.6-8.2 feet)"
 
 ### 2. **Smart Validation**
+
 - BMI auto-calculated from height/weight
 - Age auto-calculated from DOB (shows as read-only)
 - BP classification shown (Normal/Elevated/High BP Stage 1/2)
 - MUAC evaluation shows nutritional status
 
 ### 3. **Permission-Based UI**
+
 - Patients see edit buttons for personal info
 - Healthcare providers see edit buttons for clinical findings
 - Read-only users see view-only interface
 - Each field shows help text explaining why it's read-only
 
 ### 4. **Conditional Fields**
+
 - OB/Gyn only shown for female patients
 - Pack count only shown if smoking status is CURRENT/FORMER
 - Bottle count only shown if alcohol status is not NEVER
 
 ### 5. **Helpful Context**
+
 Every form field has guidance:
+
 - "Your legal first name" for firstName
 - "System calculates your age automatically" for DOB
 - "Important for emergency medical care" for blood type
 - "Keep this updated for appointment notifications" for mobile
 
 ### 6. **Non-Judgmental Language**
+
 Healthcare app respects privacy:
+
 - "Former smoker" not "quit smoking"
 - "Occasional" not "sometimes drinks"
 - "Prefer not to answer" available for sensitive questions
@@ -154,7 +171,8 @@ Ready to create ~10 server actions that will:
 4. ✅ Log changes for audit trail
 5. ✅ Return type-safe responses
 
-### **Actions to Create (in Phase 2)**:
+### **Actions to Create (in Phase 2)**
+
 ```
 1. updateDemographics() - 30-40 lines
 2. addVitalSign() - 40-50 lines

@@ -364,7 +364,7 @@ export function verifyEditPermission(
   requiredPermission: EditPermissionLevel
 ): boolean {
   const actualPermission = determineEditPermission(currentUserId, targetUserId, userRole)
-  
+
   // Permission hierarchy: more permissive = higher in list
   const permissionHierarchy = [
     'SELF_EDIT',
@@ -373,10 +373,10 @@ export function verifyEditPermission(
     'READONLY',
     'DENIED',
   ] as const
-  
+
   const actualLevel = permissionHierarchy.indexOf(actualPermission as any)
   const requiredLevel = permissionHierarchy.indexOf(requiredPermission as any)
-  
+
   // User has permission if their level is more or equally permissive
   return actualLevel <= requiredLevel
 }
@@ -392,11 +392,11 @@ export function getFieldHelpText(
 ): string {
   const field = fieldPermissions.find((f) => f.fieldName === fieldName)
   if (!field) return ""
-  
+
   if (canEditField(permission, fieldName, fieldPermissions)) {
     return field.helpText || ""
   }
-  
+
   // Explain why field is read-only
   if (field.readOnlyFor.includes(permission)) {
     if (permission === 'READONLY' as any) {
@@ -406,7 +406,7 @@ export function getFieldHelpText(
       return "This field can only be updated by the patient"
     }
   }
-  
+
   return ""
 }
 
@@ -423,11 +423,11 @@ export function logPermissionCheck(
 ): void {
   const permission = determineEditPermission(currentUserId, targetUserId, userRole)
   const timestamp = new Date().toISOString()
-  
+
   console.log(
     `[PERMISSION CHECK] ${timestamp} - Action: ${action}, Permission: ${permission}, Allowed: ${allowed}`
   )
-  
+
   // In production, this would send to logging service
   // await logToAuditTrail({ action, currentUserId, targetUserId, userRole, permission, allowed, timestamp })
 }

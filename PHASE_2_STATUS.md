@@ -3,12 +3,15 @@
 ## ✅ Completed (Phase 2)
 
 ### 1. Foundation Layer
+
 - **Audit Logger** (`src/lib/audit-logger.ts`) - Centralized audit logging with change tracking
 - **Demographics Action** (`src/actions/patient-profile/update-demographics.ts`) - Profile updates with field-level permissions
 - **Vital Signs Action** (`src/actions/patient-profile/add-vital-sign.ts`) - Vital sign recording
 
 ### 2. Pattern Established
+
 All server actions follow consistent architecture:
+
 ```
 'use server'
 1. Import Clerk currentUser
@@ -27,33 +30,40 @@ All server actions follow consistent architecture:
 ### Critical Field Mappings by Model
 
 **PersonalHistory** (userId unique):
+
 - Schema: smokingStatus, numberOfPacksPerYear, alcoholStatus, numberOfBottlesPerDay, illicitDrugUse, sexuallyActive
 - Action: Create OR update (1:1 relation)
 
 **ObGyneHistory** (userId unique, FEMALE only):
+
 - Schema: menarche, lastMenstrualPeriod, menopauseAge, menopauseStatus, ageAtFirstSexualIntercourse, birthControlMethod, menstrualPeriodDuration, menstrualCycleInterval, ...
 - Action: Create OR update with cross-field validation
 - Add gender check: `user.gender !== 'FEMALE'` → error
 
 **PediatricMeasurement** (multiple records, userId not unique):
+
 - Schema: dateTaken, length, headCircumference, skinfoldThickness, waistCircumference, hipCircumference, limbCircumference, midUpperArmCircumference, remarks
 - Action: Create (append new measurement)
 - Note: Prisma model uses Decimal type for measurements (from Zod numbers)
 
 **MedicalHistory** (add/remove with duplicate prevention):
+
 - Schema fields: conditionId (Int), details (String)
 - Action: Takes array of conditions, compares with existing, adds new, removes old
 - Unique constraint: userId + conditionId
 
 **FamilyMedicalHistory** (add/remove):
+
 - Schema fields: conditionId (Int), details (String)
 - Action: Similar to medical conditions but for family relations
 
 **PhysicalExamination** (multiple records):
+
 - Schema fields: visualAcuityLeft (String), visualAcuityRight (String), status (String)
 - Action: Create new examination record
 
 **PhilHealthRecord** (userId not unique for Prisma, but single active record):
+
 - Schema fields: pin (String, unique), tin (String, unique), philSysId (String, unique), memberTypeId (Int)
 - Action: Create OR update
 - Note: pin is UNIQUE, not userId - different pattern than others
@@ -61,6 +71,7 @@ All server actions follow consistent architecture:
 ## 📋 Implementation Checklist for Remaining Actions
 
 ### 1. **update-personal-history.ts**
+
 ```typescript
 // Validate with personalHistorySchema
 // Check: userCanEditSection(..., 'personal-history')
@@ -71,6 +82,7 @@ All server actions follow consistent architecture:
 ```
 
 ### 2. **update-ob-gyne-history.ts**
+
 ```typescript
 // Add gender check: if (user.gender !== 'FEMALE') return error
 // Validate with obGyneHistorySchema
@@ -81,6 +93,7 @@ All server actions follow consistent architecture:
 ```
 
 ### 3. **add-pediatric-measurement.ts**
+
 ```typescript
 // Validate with pediatricMeasurementSchema
 // Check: userCanEditSection(..., 'pediatric-measurements')
@@ -94,6 +107,7 @@ All server actions follow consistent architecture:
 ```
 
 ### 4. **update-medical-conditions.ts**
+
 ```typescript
 // Input: { conditions: Array<{ conditionId, notes }> }
 // Get current conditions, find adds/removes
@@ -104,6 +118,7 @@ All server actions follow consistent architecture:
 ```
 
 ### 5. **update-family-medical-conditions.ts**
+
 ```typescript
 // Same pattern as medical-conditions
 // Input: { conditions: Array<{ conditionId, details }> }
@@ -112,6 +127,7 @@ All server actions follow consistent architecture:
 ```
 
 ### 6. **add-physical-examination.ts**
+
 ```typescript
 // Validate with physicalExaminationSchema
 // Check: userCanEditSection(..., 'physical-examination')
@@ -121,6 +137,7 @@ All server actions follow consistent architecture:
 ```
 
 ### 7. **update-philhealth-record.ts**
+
 ```typescript
 // IMPORTANT: Uses 'pin' (not userId) as unique identifier
 // Validate with philHealthRecordSchema  
@@ -133,6 +150,7 @@ All server actions follow consistent architecture:
 ## 🔧 Common Patterns
 
 ### Error Handling for Zod
+
 ```typescript
 const fieldErrors = validationError.flatten?.().fieldErrors || {}
 const errorMessages = Object.entries(fieldErrors)
@@ -144,6 +162,7 @@ return { success: false, error: `Validation failed: ${errorMessages}` }
 ```
 
 ### Type-Safe User ID
+
 ```typescript
 // Use parseInt() for string-to-int conversion
 const vitalSign = await prisma.vitalSign.create({
@@ -155,6 +174,7 @@ const vitalSign = await prisma.vitalSign.create({
 ```
 
 ### Audit Logging Pattern
+
 ```typescript
 await logAudit({
   entityType: AuditEntityType.VITAL_SIGN,
@@ -170,18 +190,22 @@ await logAudit({
 ```
 
 ## 📦 Barrel Export (Already Created)
+
 - File: `src/actions/patient-profile/index.ts`
 - Exports all 9 server actions
 - Usage: `import { addVitalSign, updateDemographics } from '@/actions/patient-profile'`
 
 ## 🎯 Next Phase (Phase 3)
+
 Once all 9 server actions are complete and TypeScript validates:
+
 1. Create reusable form components (FormModal, EditButton, FormField)
 2. Build demographics edit form (template)
 3. Implement individual forms for each health model
 4. Polish UI/UX and testing
 
 ## 📝 Notes
+
 - All actions use Clerk for authentication
 - All actions check permissions before database operations
 - All database mutations are logged for audit trail

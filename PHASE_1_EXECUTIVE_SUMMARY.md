@@ -26,39 +26,46 @@
 ## ✨ What Makes This User-Centric
 
 ### 1. **Clear Validation Messages**
+
 - ❌ Bad: "Invalid input"
 - ✅ Good: "Height must be between 50-250 cm (about 1.6-8.2 feet)"
 
 Every validation error tells users WHAT'S wrong and HOW TO FIX IT.
 
 ### 2. **Smart Auto-Calculations**
+
 - BMI auto-calculated from height/weight
 - Age auto-calculated and displayed
 - BP classification shown (Normal/Elevated/High BP Stage 1/2)
 - MUAC evaluation displays nutritional status
 
 ### 3. **Conditional Visibility**
+
 - OB/Gyn fields only show for female patients
 - Smoking pack count only appears if smoking status = CURRENT/FORMER
 - Alcohol bottle count only appears if not abstinent
 
 ### 4. **Permission-Based UI**
+
 - Different roles see different edit options
 - Each field shows why it's read-only if applicable
 - Help text explains what information is needed
 
 ### 5. **Respectful Healthcare Language**
+
 - "Former smoker" not "quit smoking"
 - "Prefer not to answer" for sensitive questions
 - "Never" vs "abstain" for drug use
 - Age-appropriate field labels
 
 ### 6. **Grouped Organization**
+
 - Demographics: Basic Info, Contact, Demographics
 - Pediatric: Linear Measurements, Body Circumferences, Tissue Measurements
 - Visual Acuity, Status, and other logically grouped
 
 ### 7. **Cross-Field Validation**
+
 - Systolic BP > Diastolic BP
 - Realistic BP relationship (difference 15-50 mmHg)
 - Parity ≤ Gravidity
@@ -69,6 +76,7 @@ Every validation error tells users WHAT'S wrong and HOW TO FIX IT.
 ## 📁 Files Created
 
 ### Schemas (9 files, 1,138 lines)
+
 ```
 ✅ src/schemas/demographics-schema.ts           (98 lines)
 ✅ src/schemas/vital-signs-schema.ts            (115 lines)
@@ -83,12 +91,14 @@ Every validation error tells users WHAT'S wrong and HOW TO FIX IT.
 ```
 
 ### Permissions (2 files, 460 lines)
+
 ```
 ✅ src/types/edit-permissions.ts                (305 lines)
 ✅ src/lib/permissions.ts                       (+155 lines appended)
 ```
 
 ### Documentation (4 files)
+
 ```
 ✅ EDITING_IMPLEMENTATION_PLAN.md               (500+ line master plan)
 ✅ PHASE_1_COMPLETION.md                        (Detailed report)
@@ -101,9 +111,11 @@ Every validation error tells users WHAT'S wrong and HOW TO FIX IT.
 ## 🎯 What Each Schema Validates
 
 ### Demographics Schema
+
 **15 fields**: firstName, lastName, middleName, suffix, nickname, dob, gender, bloodType, civilStatus, mobile, telephone, placeOfBirth, nationality, religion
 
 **Validations**:
+
 - Age 0-120 years (calculated from DOB)
 - Phone format (7-15 digits)
 - Blood type enum (8 types: A+, A-, B+, B-, O+, O-, AB+, AB-)
@@ -114,9 +126,11 @@ Every validation error tells users WHAT'S wrong and HOW TO FIX IT.
 ---
 
 ### Vital Signs Schema
+
 **10 fields**: dateTaken, height, weight, bpSystolic, bpDiastolic, pulseRate, temp, spo2, respRate, notes
 
 **Validations**:
+
 - Height: 50-250 cm
 - Weight: 1-500 kg
 - BP: Systolic > Diastolic, realistic relationship
@@ -125,16 +139,19 @@ Every validation error tells users WHAT'S wrong and HOW TO FIX IT.
 - SpO2: 80-100%
 - Respiration: 8-40 breaths/min
 
-**Helpers**: 
+**Helpers**:
+
 - `calculateBMI()` - returns BMI and category (Underweight/Normal/Overweight/Obesity)
 - `getBPClassification()` - returns BP status (Normal/Elevated/High BP Stage 1/2)
 
 ---
 
 ### OB/Gyn History Schema
+
 **16 fields**: menarche, lastMenstrualPeriod, menopauseAge, menopauseStatus, ageAtFirstSexualIntercourse, birthControlMethod, menstrualPeriodDuration, menstrualCycleInterval, numberOfPadsPerDay, gravidity, parity, fullTerm, premature, abortion, livingChildren, typeOfDelivery, hasPreEclampsia
 
 **Validations**:
+
 - Menarche: 8-16 years
 - Menopause age: 40-60 years
 - Gravidity ≥ Parity
@@ -150,9 +167,11 @@ Every validation error tells users WHAT'S wrong and HOW TO FIX IT.
 ---
 
 ### Personal History Schema
+
 **6 fields**: smokingStatus, numberOfPacksPerYear, alcoholStatus, numberOfBottlesPerDay, illicitDrugUse, sexuallyActive
 
 **Validations**:
+
 - Pack count only if smoking CURRENT/FORMER
 - Bottle count only if alcohol not NEVER
 - Enum validation with helpful labels
@@ -162,9 +181,11 @@ Every validation error tells users WHAT'S wrong and HOW TO FIX IT.
 ---
 
 ### Pediatric Measurement Schema
+
 **9 fields**: dateTaken, length, headCircumference, skinfoldThickness, waistCircumference, hipCircumference, limbCircumference, midUpperArmCircumference, remarks
 
 **Validations**:
+
 - All measurements in realistic pediatric ranges
 - Decimal precision (5,2)
 - Field grouping for form organization
@@ -174,6 +195,7 @@ Every validation error tells users WHAT'S wrong and HOW TO FIX IT.
 ---
 
 ### Other Schemas
+
 - **Physical Examination**: visualAcuityLeft, visualAcuityRight, status
 - **Medical History**: conditionId (required), details (optional)
 - **Family Medical History**: conditionId (required), details (optional with relationship guidance)
@@ -184,6 +206,7 @@ Every validation error tells users WHAT'S wrong and HOW TO FIX IT.
 ## 🔐 Permission System
 
 ### Levels
+
 1. **SELF_EDIT**: Patient editing own records
 2. **PROFESSIONAL_EDIT**: Healthcare provider
 3. **CLINIC_ADMIN_EDIT**: Clinic administration
@@ -191,6 +214,7 @@ Every validation error tells users WHAT'S wrong and HOW TO FIX IT.
 5. **DENIED**: No access
 
 ### Helper Functions
+
 - `userCanEditField()` - Check field-level permission
 - `userCanEditSection()` - Check section-level permission
 - `getUserEditableSections()` - Get all editable sections for user
@@ -202,7 +226,9 @@ Every validation error tells users WHAT'S wrong and HOW TO FIX IT.
 ## 🚀 Ready for Phase 2
 
 ### Phase 2: Server Actions (2-3 hours)
+
 Will create 9-10 server actions:
+
 ```
 1. updateDemographics() - User profile updates
 2. addVitalSign() - Health measurements
@@ -216,6 +242,7 @@ Will create 9-10 server actions:
 ```
 
 Each action will:
+
 - Validate input with Zod schema
 - Check permissions before allowing update
 - Update database safely
@@ -227,30 +254,35 @@ Each action will:
 ## 💡 Key Design Decisions
 
 ### 1. **Zod for Validation**
+
 - Type-safe at runtime
 - Custom error messages
 - Cross-field validation support
 - Schema reuse across components and server
 
 ### 2. **Permission System in Types**
+
 - Permission checks at compile time (types)
 - Runtime checks for security gates
 - Field-level granularity
 - Easy to extend
 
 ### 3. **Helper Functions Over Helpers**
+
 - `calculateBMI()` instead of magic
 - `getBPClassification()` for clarity
 - `evaluateMUAC()` for guidance
 - `calculateAge()` for consistency
 
 ### 4. **Conditional Fields**
+
 - OB/Gyn only for females
 - Pack count only if smoking
 - Bottle count only if drinking
 - Smart form layout
 
 ### 5. **Non-Destructive Updates**
+
 - All fields optional
 - Partial updates allowed
 - Soft deletes (deletedAt flag)
@@ -306,6 +338,7 @@ Each action will:
 ## 🎓 Lessons Applied
 
 ### User-Centric Design Principles
+
 1. **Clear Communication**: Error messages guide users
 2. **Smart Defaults**: Auto-calculations reduce manual entry
 3. **Conditional Display**: Show only relevant fields
@@ -320,6 +353,7 @@ Each action will:
 ## 📞 Next Steps
 
 ### Option 1: Continue to Phase 2 (Server Actions)
+
 ```bash
 npm run dev  # Start dev server
 # Build updateDemographics(), addVitalSign(), etc.
@@ -327,6 +361,7 @@ npm run dev  # Start dev server
 ```
 
 ### Option 2: Refine Based on Feedback
+
 ```bash
 # Review current implementation
 # Suggest improvements
@@ -334,6 +369,7 @@ npm run dev  # Start dev server
 ```
 
 ### Option 3: Jump to Phase 3 (Components)
+
 ```bash
 # Build FormModal, EditButton, etc.
 # Can work in parallel with Phase 2

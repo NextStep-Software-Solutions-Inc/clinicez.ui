@@ -14,12 +14,12 @@ export const obGyneHistorySchema = z.object({
     .max(16, "Age at menarche must be 16 or younger")
     .optional()
     .nullable(),
-  
+
   lastMenstrualPeriod: z
     .date()
     .optional()
     .nullable(),
-  
+
   menopauseAge: z
     .number()
     .int()
@@ -27,14 +27,14 @@ export const obGyneHistorySchema = z.object({
     .max(60, "Menopause typically occurs between 40-60 years")
     .optional()
     .nullable(),
-  
+
   menopauseStatus: z
     .enum(["PRE", "PERI", "POST", "NONE"], {
       errorMap: () => ({ message: "Please select a menopause status" }),
     })
     .optional()
     .nullable(),
-  
+
   ageAtFirstSexualIntercourse: z
     .number()
     .int()
@@ -42,13 +42,13 @@ export const obGyneHistorySchema = z.object({
     .max(35, "Please enter a realistic age")
     .optional()
     .nullable(),
-  
+
   birthControlMethod: z
     .string()
     .max(100, "Method description must be less than 100 characters")
     .optional()
     .nullable(),
-  
+
   menstrualPeriodDuration: z
     .number()
     .int()
@@ -56,7 +56,7 @@ export const obGyneHistorySchema = z.object({
     .max(10, "Duration should typically be 3-7 days")
     .optional()
     .nullable(),
-  
+
   menstrualCycleInterval: z
     .number()
     .int()
@@ -64,7 +64,7 @@ export const obGyneHistorySchema = z.object({
     .max(35, "Cycle interval should be 21-35 days (typical)")
     .optional()
     .nullable(),
-  
+
   numberOfPadsPerDay: z
     .number()
     .int()
@@ -72,7 +72,7 @@ export const obGyneHistorySchema = z.object({
     .max(20, "Please enter a realistic number")
     .optional()
     .nullable(),
-  
+
   gravidity: z
     .number()
     .int()
@@ -80,7 +80,7 @@ export const obGyneHistorySchema = z.object({
     .max(20, "Total pregnancies must be 20 or fewer")
     .optional()
     .nullable(),
-  
+
   parity: z
     .number()
     .int()
@@ -88,42 +88,42 @@ export const obGyneHistorySchema = z.object({
     .max(20, "Delivered pregnancies must be 20 or fewer")
     .optional()
     .nullable(),
-  
+
   fullTerm: z
     .number()
     .int()
     .min(0, "Cannot be negative")
     .optional()
     .nullable(),
-  
+
   premature: z
     .number()
     .int()
     .min(0, "Cannot be negative")
     .optional()
     .nullable(),
-  
+
   abortion: z
     .number()
     .int()
     .min(0, "Cannot be negative")
     .optional()
     .nullable(),
-  
+
   livingChildren: z
     .number()
     .int()
     .min(0, "Cannot be negative")
     .optional()
     .nullable(),
-  
+
   typeOfDelivery: z
     .enum(["VAGINAL", "CESAREAN", "MIXED"], {
       errorMap: () => ({ message: "Please select a delivery type" }),
     })
     .optional()
     .nullable(),
-  
+
   hasPreEclampsia: z
     .boolean()
     .optional()

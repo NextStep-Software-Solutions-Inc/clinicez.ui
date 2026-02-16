@@ -11,7 +11,7 @@ export const familyMedicalHistorySchema = z.object({
     .number()
     .int()
     .min(1, "Please select a medical condition"),
-  
+
   details: z
     .string()
     .max(500, "Details must be less than 500 characters. Include: family member relation, their age, condition onset")

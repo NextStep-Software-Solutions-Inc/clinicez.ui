@@ -11,25 +11,25 @@ export const philHealthRecordSchema = z.object({
     .string()
     .min(1, "PIN (PhilHealth ID Number) is required")
     .max(50, "PIN must be less than 50 characters"),
-  
+
   tin: z
     .string()
     .max(50, "TIN (Tax Identification Number) must be less than 50 characters")
     .optional()
     .nullable(),
-  
+
   philSysId: z
     .string()
     .max(50, "PhilSys ID must be less than 50 characters")
     .optional()
     .nullable(),
-  
+
   memberTypeId: z
     .number()
     .int()
     .optional()
     .nullable(),
-  
+
   photoUrl: z
     .string()
     .url("Photo URL must be a valid URL")

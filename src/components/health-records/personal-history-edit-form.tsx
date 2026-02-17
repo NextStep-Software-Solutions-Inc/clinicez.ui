@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { updatePersonalHistory } from '@/actions/patient-profile'
 import { personalHistorySchema, personalHistoryLabels, type PersonalHistoryFormInput } from '@/schemas'
 import { FormModal, FormField, EditButton } from './index'
@@ -31,6 +31,11 @@ export function PersonalHistoryEditForm({
     currentData || {}
   )
 
+  // Update formData when currentData changes
+  useEffect(() => {
+    setFormData(currentData || {})
+  }, [currentData])
+
   // Track if form has unsaved changes
   const hasChanges = useMemo(() => {
     return JSON.stringify(formData) !== JSON.stringify(currentData || {})
@@ -50,7 +55,7 @@ export function PersonalHistoryEditForm({
       if (result.success) {
         toast.success(result.message || 'Personal history updated successfully')
         if (!inline) setIsOpen(false)
-        setFormData({})
+        setFormData(currentData || {})
         onSuccess?.()
       } else {
         toast.error(result.error || 'An unexpected error occurred')

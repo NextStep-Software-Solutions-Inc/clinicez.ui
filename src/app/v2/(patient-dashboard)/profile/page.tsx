@@ -220,8 +220,8 @@ export default function PatientProfilePage() {
   return (
     <div className="w-full">
       {/* Full-Width Header Background */}
-      <div className="w-screen relative left-[calc(-50vw+50%)] bg-gradient-to-b from-slate-50 via-blue-50 to-transparent dark:from-slate-950 dark:via-blue-950 dark:to-transparent backdrop-blur-lg mb-8 -mx-8 px-8 pt-4 pb-6">
-        <div className="max-w-4xl mx-auto">
+      <div className=" sticky top-0 z-50 bg-gradient-to-b from-slate-50/20 via-blue-50/20 to-transparent dark:from-slate-950/20 dark:via-blue-950/20 dark:to-transparent backdrop-blur-sm mb-8 px-8 pt-4 pb-6 rounded-xl">
+        <div className="max-w-6xl mx-auto">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <button
@@ -240,7 +240,7 @@ export default function PatientProfilePage() {
       </div>
 
       {/* Containerized Main Content */}
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         {/* Profile Card */}
         <div className="glassmorphic-card overflow-hidden mb-8">
         <div className="bg-gradient-to-r from-blue-600 to-cyan-500 h-32 flex items-end px-8 pb-4">

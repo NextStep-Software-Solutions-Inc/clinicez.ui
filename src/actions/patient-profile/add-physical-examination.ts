@@ -3,7 +3,7 @@
 import { currentUser } from '@clerk/nextjs/server'
 import prisma from '@/lib/prisma'
 import { physicalExaminationSchema, type PhysicalExaminationFormInput } from '@/schemas'
-import { getDatabaseUserId } from '@/lib/permissions'
+import { getDatabaseUserId } from '@/lib/database-helpers'
 import { logAudit, AuditAction, AuditEntityType } from '@/lib/audit-logger'
 
 export interface AddPhysicalExaminationResponse {
@@ -24,13 +24,13 @@ export async function addPhysicalExamination(
     }
 
     const isOwn = authUser.id === userId
-    
+
     // Check if user has permission to record physical examinations (for self or others)
     const dbUserId = await getDatabaseUserId(userId)
     if (!dbUserId) {
       return { success: false, error: 'User not found' }
     }
-    
+
     const authDbUserId = await getDatabaseUserId(authUser.id)
     if (!authDbUserId) {
       return { success: false, error: 'You do not have permission to record physical examinations' }

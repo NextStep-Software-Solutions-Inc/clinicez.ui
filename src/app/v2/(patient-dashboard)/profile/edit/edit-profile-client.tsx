@@ -258,18 +258,23 @@ export function EditProfileClient({ initialData, onDataRefresh }: EditProfileCli
 
   // Memoize PhilHealth currentData to prevent unnecessary re-renders and useEffect re-triggers in child component
   const philHealthCurrentData = useMemo(
-    () =>
-      patientData?.philHealthRecords?.[0]
-        ? {
-            pin: patientData.philHealthRecords[0].pin,
-            tin: patientData.philHealthRecords[0].tin || undefined,
-            philSysId: patientData.philHealthRecords[0].philSysId || undefined,
-            memberTypeId: patientData.philHealthRecords[0].memberTypeId || undefined,
-            photoUrl: patientData.philHealthRecords[0].photoUrl || undefined,
-            dependents: patientData.philHealthRecords[0].PhilHealthDependents || [],
-            id: patientData.philHealthRecords[0].id,
-          }
-        : undefined,
+    () => {
+      const record = patientData?.philHealthRecords?.[0]
+      if (!record) return undefined
+      
+      // Access the included PhilHealthDependents from Prisma relations
+      const recordWithDependents = record as typeof record & { PhilHealthDependents?: any[] }
+      
+      return {
+        pin: record.pin,
+        tin: record.tin || undefined,
+        philSysId: record.philSysId || undefined,
+        memberTypeId: record.memberTypeId || undefined,
+        photoUrl: record.photoUrl || undefined,
+        dependents: recordWithDependents.PhilHealthDependents || [],
+        id: record.id,
+      }
+    },
     [patientData?.philHealthRecords],
   )
 

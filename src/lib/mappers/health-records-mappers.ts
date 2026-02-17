@@ -150,15 +150,21 @@ export function mapPediatricMeasurementToFormInput(
     const latestMeasurement = pediatricMeasurements[0]
     if (!latestMeasurement) return undefined
 
+    // Convert Decimal values to numbers
+    const toNumber = (val: any): number | null => {
+        if (val === null || val === undefined) return null
+        return typeof val === 'number' ? val : Number(val)
+    }
+
     return {
         dateTaken: latestMeasurement.dateTaken,
-        length: latestMeasurement.length,
-        headCircumference: latestMeasurement.headCircumference,
-        skinfoldThickness: latestMeasurement.skinfoldThickness,
-        waistCircumference: latestMeasurement.waistCircumference,
-        hipCircumference: latestMeasurement.hipCircumference,
-        limbCircumference: latestMeasurement.limbCircumference,
-        midUpperArmCircumference: latestMeasurement.midUpperArmCircumference,
+        length: toNumber(latestMeasurement.length),
+        headCircumference: toNumber(latestMeasurement.headCircumference),
+        skinfoldThickness: toNumber(latestMeasurement.skinfoldThickness),
+        waistCircumference: toNumber(latestMeasurement.waistCircumference),
+        hipCircumference: toNumber(latestMeasurement.hipCircumference),
+        limbCircumference: toNumber(latestMeasurement.limbCircumference),
+        midUpperArmCircumference: toNumber(latestMeasurement.midUpperArmCircumference),
         remarks: latestMeasurement.remarks,
     }
 }

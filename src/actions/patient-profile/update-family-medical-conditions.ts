@@ -3,7 +3,8 @@
 import { currentUser } from '@clerk/nextjs/server'
 import prisma from '@/lib/prisma'
 import { familyMedicalHistorySchema, type FamilyMedicalHistoryFormInput } from '@/schemas'
-import { userCanEditSection, getDatabaseUserId } from '@/lib/permissions'
+import { userCanEditSection } from '@/lib/permissions'
+import { getDatabaseUserId } from '@/lib/database-helpers'
 import { UserRole } from '@/types/edit-permissions'
 import { logAudit, AuditAction, AuditEntityType } from '@/lib/audit-logger'
 

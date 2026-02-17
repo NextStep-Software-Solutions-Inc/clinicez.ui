@@ -3,7 +3,7 @@
 import { currentUser } from '@clerk/nextjs/server'
 import prisma from '@/lib/prisma'
 import { vitalSignSchema, type VitalSignFormInput } from '@/schemas'
-import { getDatabaseUserId } from '@/lib/permissions'
+import { getDatabaseUserId } from '@/lib/database-helpers'
 import { logAudit, AuditAction, AuditEntityType } from '@/lib/audit-logger'
 
 export interface UpdateVitalSignResponse {
@@ -31,7 +31,7 @@ export async function updateVitalSign(
     if (!dbUserId) {
       return { success: false, error: 'User not found' }
     }
-    
+
     const authDbUserId = await getDatabaseUserId(authUser.id)
     if (!authDbUserId) {
       return { success: false, error: 'You do not have permission to update vital signs' }
@@ -62,7 +62,7 @@ export async function updateVitalSign(
     const existingRecord = await prisma.vitalSign.findUnique({
       where: { id: vitalSignId }
     })
-    
+
     if (!existingRecord) {
       return { success: false, error: 'Vital sign record not found' }
     }

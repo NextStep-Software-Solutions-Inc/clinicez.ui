@@ -2,35 +2,17 @@
 
 import { currentUser } from '@clerk/nextjs/server'
 import prisma from '@/lib/prisma'
-import type {
-  MedicalHistory,
-  FamilyMedicalHistory,
-  VitalSign,
-  PhysicalExamination,
-  ObGyneHistory,
-  PediatricMeasurement,
-  PersonalHistory,
-  PhilHealthRecord,
-  ProcedureUsageHistory,
-  ClinicMedicalCertificate,
-  ClinicReferralSlip,
-  HealthCondition,
-  Clinic,
-  User,
-} from '@prisma/client'
+
 import type {
   PatientHealthRecordsResponse,
-  MedicalHistoryData,
-  PhysicalExaminationData,
-  ClinicInfo,
   CertificateData,
   ReferralData,
 } from '@/types/patient-profile'
 
-export async function getPatientHealthRecords() {
+export async function getPatientHealthRecords(): Promise<PatientHealthRecordsResponse | null> {
   try {
     let user: any = null
-    
+
     try {
       user = await currentUser()
     } catch (clerkError: any) {
@@ -42,7 +24,7 @@ export async function getPatientHealthRecords() {
       // Return null to show error message instead of crashing
       return null
     }
-    
+
     if (!user?.id) {
       console.error('[GET_PATIENT_HEALTH_RECORDS] No user or user.id', { user })
       return null
@@ -273,17 +255,8 @@ export async function getPatientHealthRecords() {
       // OB/Gyn History
       obGyneHistory: obGyne || null,
 
-      // Pediatric Measurements - Convert Decimal to number for client serialization
-      pediatricMeasurements: pediatric.map((pm) => ({
-        ...pm,
-        length: pm.length ? Number(pm.length) : pm.length,
-        headCircumference: pm.headCircumference ? Number(pm.headCircumference) : pm.headCircumference,
-        skinfoldThickness: pm.skinfoldThickness ? Number(pm.skinfoldThickness) : pm.skinfoldThickness,
-        waistCircumference: pm.waistCircumference ? Number(pm.waistCircumference) : pm.waistCircumference,
-        hipCircumference: pm.hipCircumference ? Number(pm.hipCircumference) : pm.hipCircumference,
-        limbCircumference: pm.limbCircumference ? Number(pm.limbCircumference) : pm.limbCircumference,
-        midUpperArmCircumference: pm.midUpperArmCircumference ? Number(pm.midUpperArmCircumference) : pm.midUpperArmCircumference,
-      })),
+      // Pediatric Measurements
+      pediatricMeasurements: pediatric,
 
       // Personal History & Lifestyle
       personalHistory: personal || null,

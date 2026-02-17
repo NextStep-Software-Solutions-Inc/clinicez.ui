@@ -3,7 +3,8 @@
 import { currentUser } from '@clerk/nextjs/server'
 import prisma from '@/lib/prisma'
 import { pediatricMeasurementSchema, type PediatricMeasurementFormInput } from '@/schemas'
-import { userCanEditSection, getDatabaseUserId } from '@/lib/permissions'
+import { userCanEditSection } from '@/lib/permissions'
+import { getDatabaseUserId } from '@/lib/database-helpers'
 import { UserRole } from '@/types/edit-permissions'
 import { logAudit, AuditAction, AuditEntityType } from '@/lib/audit-logger'
 import { evaluateMUAC } from '@/schemas/pediatric-measurement-schema'
@@ -26,7 +27,7 @@ export async function addPediatricMeasurement(
     }
 
     const isOwn = authUser.id === userId
-    
+
     // Check if user has permission to edit this section
     // Permission is based on actual user role and whether editing own record
     if (!userCanEditSection(authUser.id, userId, isOwn ? UserRole.PATIENT : UserRole.HEALTHCARE_PROVIDER, 'pediatric-measurements')) {

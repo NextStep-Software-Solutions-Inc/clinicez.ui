@@ -98,6 +98,8 @@ export interface VitalSignRecord {
 export interface LatestVitalsData {
   vitals: VitalSignRecord | null
   previousVitals: VitalSignRecord | null
+  bodyFatPercentage: number | null
+  bodyFatCategory: 'essential' | 'athletes' | 'fitness' | 'average' | 'obese' | null
   trends: {
     bp: TrendIndicator | null
     hr: TrendIndicator | null

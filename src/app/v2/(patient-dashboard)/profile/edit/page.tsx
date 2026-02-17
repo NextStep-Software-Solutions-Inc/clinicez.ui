@@ -1,6 +1,8 @@
 import { getPatientHealthRecords } from '@/actions/patient-profile/get-patient-health-records'
 import { EditProfileClient } from './edit-profile-client'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * Edit Profile Page - Server Component
  *

@@ -18,6 +18,7 @@ interface VitalMetric {
   status: 'normal' | 'warning' | 'critical';
   trend?: TrendIndicator;
   normalRange: string;
+  remark?: string;
 }
 
 function getTrendIcon(trend: TrendIndicator | undefined) {
@@ -40,6 +41,42 @@ function getStatusBadge(status: 'normal' | 'warning' | 'critical') {
   if (status === 'warning')
     return <span className="inline-block w-2 h-2 bg-yellow-500 rounded-full" />;
   return <span className="inline-block w-2 h-2 bg-green-500 rounded-full" />;
+}
+
+function getBodyFatNormalRange(category: 'essential' | 'athletes' | 'fitness' | 'average' | 'obese'): string {
+  const ranges: Record<string, string> = {
+    essential: '< 13% (M) / < 20% (F)',
+    athletes: '13-17% (M) / 20-24% (F)',
+    fitness: '17-21% (M) / 24-31% (F)',
+    average: '21-26% (M) / 31-36% (F)',
+    obese: '> 26% (M) / > 36% (F)',
+  };
+  return ranges[category] || 'Variable';
+}
+
+function getBodyFatRemark(category: 'essential' | 'athletes' | 'fitness' | 'average' | 'obese'): string {
+  const remarks: Record<string, string> = {
+    essential: 'Essential fat - vital for health',
+    athletes: 'Athletic fitness level - excellent',
+    fitness: 'Fitness level - good health',
+    average: 'Average - consider increased activity',
+    obese: 'High risk - consult healthcare provider',
+  };
+  return remarks[category] || 'Monitor body composition';
+}
+
+function getBMIRemark(bmi: number): string {
+  const remarks: Record<string, string> = {
+    underweight: 'Below normal weight - consult provider',
+    normal: 'Healthy weight range - maintain lifestyle',
+    overweight: 'Above ideal weight - increase activity',
+    obese: 'High risk - seek medical guidance',
+  };
+
+  if (bmi < 18.5) return remarks.underweight;
+  if (bmi < 24.9) return remarks.normal;
+  if (bmi < 29.9) return remarks.overweight;
+  return remarks.obese;
 }
 
 export function VitalsGrid({ vitals, isLoading }: VitalsGridProps) {
@@ -133,9 +170,22 @@ export function VitalsGrid({ vitals, isLoading }: VitalsGridProps) {
       icon: <Activity className="w-5 h-5" />,
       color: 'text-green-400',
       bgGradient: 'from-green-600/20 to-green-500/10',
-      status: ((current.bmi ?? 0) > 24.9) ? 'warning' : 'normal',
+      status: current.bmi && current.bmi < 18.5 ? 'warning' : ((current.bmi ?? 0) > 29.9) ? 'critical' : ((current.bmi ?? 0) > 24.9) ? 'warning' : 'normal',
       trend: undefined,
       normalRange: '18.5-24.9',
+      remark: current.bmi ? getBMIRemark(parseFloat(current.bmi.toString())) : undefined,
+    },
+    {
+      label: 'Body Fat %',
+      value: vitals?.bodyFatPercentage ? parseFloat(vitals.bodyFatPercentage.toString()).toFixed(1) : '—',
+      unit: '%',
+      icon: <Activity className="w-5 h-5" />,
+      color: 'text-blue-400',
+      bgGradient: 'from-blue-600/20 to-blue-500/10',
+      status: vitals?.bodyFatCategory === 'obese' ? 'critical' : vitals?.bodyFatCategory === 'average' ? 'warning' : 'normal',
+      trend: undefined,
+      normalRange: vitals?.bodyFatCategory ? getBodyFatNormalRange(vitals.bodyFatCategory) : 'Variable',
+      remark: vitals?.bodyFatCategory ? getBodyFatRemark(vitals.bodyFatCategory) : undefined,
     },
   ];
 
@@ -185,6 +235,13 @@ export function VitalsGrid({ vitals, isLoading }: VitalsGridProps) {
             <div className="mt-3 pt-3 dark:border-t dark:border-yellow-500/30 border-t border-yellow-300 flex items-center gap-1.5">
               <AlertCircle className="w-3 h-3 text-yellow-400" />
               <p className="text-xs dark:text-yellow-300 text-yellow-600 font-medium">Monitor closely</p>
+            </div>
+          )}
+
+          {/* Clinical remark */}
+          {metric.remark && (
+            <div className="mt-2 pt-2">
+              <p className="text-xs dark:text-slate-300 text-slate-700 italic leading-snug">{metric.remark}</p>
             </div>
           )}
         </div>

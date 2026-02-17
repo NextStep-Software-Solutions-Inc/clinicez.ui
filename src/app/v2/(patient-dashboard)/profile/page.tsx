@@ -373,7 +373,8 @@ export default function PatientProfilePage() {
                 <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Latest Vital Signs</h3>
               </div>
               
-              {(() => {
+              {patient.latestVitals ? (
+                (() => {
                 // Calculate BMI from height and weight if not stored
                 const calculateBMI = (weight: number | null, height: number | null) => {
                   if (!weight || !height) return null
@@ -396,7 +397,8 @@ export default function PatientProfilePage() {
 
                 // Generate clinical remarks based on vital values
                 const generateClinicalRemarks = () => {
-                  const remarks = []
+                  if (!patient.latestVitals) return []
+                  const remarks: { icon: string; text: string }[] = []
 
                   // BP remarks
                   if (patient.latestVitals.bpSystolic && patient.latestVitals.bpDiastolic) {
@@ -629,7 +631,12 @@ export default function PatientProfilePage() {
                     )}
                   </>
                 )
-              })()}
+              })()
+              ) : (
+                <div className="text-center py-8 text-slate-600 dark:text-slate-400">
+                  <p>No vital signs recorded yet</p>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -1239,23 +1246,11 @@ export default function PatientProfilePage() {
           ) : patient.obGyneHistory ? (
             <div className="glassmorphic-card p-6">
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">👶 OB/GYN History</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {patient.obGyneHistory.menarche && (
                   <div className="p-4 rounded-lg bg-slate-100/50 dark:bg-white/5 border border-slate-300/30 dark:border-white/10">
-                    <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">Menarche Age</p>
-                    <p className="text-lg font-semibold text-slate-900 dark:text-white">{patient.obGyneHistory.menarche} years</p>
-                  </div>
-                )}
-                {patient.obGyneHistory.cycleFrequency && (
-                  <div className="p-4 rounded-lg bg-slate-100/50 dark:bg-white/5 border border-slate-300/30 dark:border-white/10">
-                    <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">Cycle Frequency</p>
-                    <p className="text-lg font-semibold text-slate-900 dark:text-white">{patient.obGyneHistory.cycleFrequency} days</p>
-                  </div>
-                )}
-                {patient.obGyneHistory.cycleDuration && (
-                  <div className="p-4 rounded-lg bg-slate-100/50 dark:bg-white/5 border border-slate-300/30 dark:border-white/10">
-                    <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">Cycle Duration</p>
-                    <p className="text-lg font-semibold text-slate-900 dark:text-white">{patient.obGyneHistory.cycleDuration} days</p>
+                    <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">Menarche</p>
+                    <p className="text-lg font-semibold text-slate-900 dark:text-white">{patient.obGyneHistory.menarche} yrs</p>
                   </div>
                 )}
                 {patient.obGyneHistory.lastMenstrualPeriod && (
@@ -1264,23 +1259,35 @@ export default function PatientProfilePage() {
                     <p className="text-lg font-semibold text-slate-900 dark:text-white">{new Date(patient.obGyneHistory.lastMenstrualPeriod).toLocaleDateString()}</p>
                   </div>
                 )}
+                {patient.obGyneHistory.gravidity && (
+                  <div className="p-4 rounded-lg bg-slate-100/50 dark:bg-white/5 border border-slate-300/30 dark:border-white/10">
+                    <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">Gravidity</p>
+                    <p className="text-lg font-semibold text-slate-900 dark:text-white">{patient.obGyneHistory.gravidity}</p>
+                  </div>
+                )}
                 {patient.obGyneHistory.parity && (
                   <div className="p-4 rounded-lg bg-slate-100/50 dark:bg-white/5 border border-slate-300/30 dark:border-white/10">
                     <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">Parity</p>
                     <p className="text-lg font-semibold text-slate-900 dark:text-white">{patient.obGyneHistory.parity}</p>
                   </div>
                 )}
-                {patient.obGyneHistory.gravida && (
+                {patient.obGyneHistory.menstrualCycleInterval && (
                   <div className="p-4 rounded-lg bg-slate-100/50 dark:bg-white/5 border border-slate-300/30 dark:border-white/10">
-                    <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">Gravida</p>
-                    <p className="text-lg font-semibold text-slate-900 dark:text-white">{patient.obGyneHistory.gravida}</p>
+                    <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">Cycle Interval</p>
+                    <p className="text-lg font-semibold text-slate-900 dark:text-white">{patient.obGyneHistory.menstrualCycleInterval} days</p>
+                  </div>
+                )}
+                {patient.obGyneHistory.menstrualPeriodDuration && (
+                  <div className="p-4 rounded-lg bg-slate-100/50 dark:bg-white/5 border border-slate-300/30 dark:border-white/10">
+                    <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">Period Duration</p>
+                    <p className="text-lg font-semibold text-slate-900 dark:text-white">{patient.obGyneHistory.menstrualPeriodDuration} days</p>
                   </div>
                 )}
               </div>
-              {patient.obGyneHistory.notes && (
+              {patient.obGyneHistory.birthControlMethod && (
                 <div className="mt-4 p-4 rounded-lg bg-slate-100/50 dark:bg-white/5 border border-slate-300/30 dark:border-white/10">
-                  <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-2">Notes</p>
-                  <p className="text-slate-700 dark:text-slate-300">{patient.obGyneHistory.notes}</p>
+                  <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-2">Birth Control Method</p>
+                  <p className="text-slate-700 dark:text-slate-300">{patient.obGyneHistory.birthControlMethod}</p>
                 </div>
               )}
             </div>
@@ -1584,7 +1591,7 @@ export default function PatientProfilePage() {
       {activeTab === 'insurance' && (
         <div className="space-y-6">
           {/* PhilHealth Records */}
-          <PhilHealthRecords records={patient.philHealthRecords} />
+          <PhilHealthRecords records={patient.philHealthRecords?.filter(r => r.PhilHealthMemberType) || []} />
 
           {/* Medical Certificates */}
           {patient.medicalCertificates.length > 0 ? (

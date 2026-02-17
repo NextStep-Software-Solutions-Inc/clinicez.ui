@@ -279,8 +279,8 @@ export function EditProfileClient({ initialData, onDataRefresh }: EditProfileCli
       const { getPatientHealthRecords } = await import('@/actions/patient-profile/get-patient-health-records')
       const result = await getPatientHealthRecords()
       if (result) {
-        setPatientData(result)
-        onDataRefresh?.(result)
+        setPatientData(result as PatientHealthRecordsResponse)
+        onDataRefresh?.(result as PatientHealthRecordsResponse)
       }
     } catch (error) {
       console.error('Failed to refresh patient data:', error)
@@ -467,7 +467,7 @@ export function EditProfileClient({ initialData, onDataRefresh }: EditProfileCli
                   <PediatricMeasurementEditForm
                     userId={patientData.userId}
                     inline={true}
-                    currentData={getPediatricData()}
+                    currentData={getPediatricData()! as PediatricMeasurementFormInput}
                     onSuccess={() => handleSuccess()}
                   />
                 </Suspense>

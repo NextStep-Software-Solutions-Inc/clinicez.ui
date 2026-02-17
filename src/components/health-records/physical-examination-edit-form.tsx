@@ -33,7 +33,6 @@ export function PhysicalExaminationEditForm({
   // Sync form data when currentData prop changes (e.g., after successful save and refetch)
   useEffect(() => {
     if (currentData) {
-      console.log('[PhysicalExamForm] Syncing form data from prop:', currentData)
       setFormData(currentData)
     }
   }, [currentData])

@@ -34,7 +34,6 @@ export function PediatricMeasurementEditForm({
   // Sync form data when currentData prop changes (e.g., after successful save and refetch)
   useEffect(() => {
     if (currentData) {
-      console.log('[PediatricForm] Syncing form data from prop:', currentData)
       setFormData(currentData)
     }
   }, [currentData])

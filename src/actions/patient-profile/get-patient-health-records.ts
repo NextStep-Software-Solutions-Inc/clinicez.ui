@@ -4,12 +4,12 @@ import { currentUser } from '@clerk/nextjs/server'
 import prisma from '@/lib/prisma'
 
 import type {
-  PatientHealthRecordsResponse,
+  SerializedPatientHealthRecordsResponse,
   CertificateData,
   ReferralData,
 } from '@/types/patient-profile'
 
-export async function getPatientHealthRecords(): Promise<PatientHealthRecordsResponse | null> {
+export async function getPatientHealthRecords(): Promise<SerializedPatientHealthRecordsResponse | null> {
   try {
     let user: any = null
 
@@ -187,7 +187,7 @@ export async function getPatientHealthRecords(): Promise<PatientHealthRecordsRes
         id: cert.id,
         serialNumber: cert.serialNumber,
         transactionNumber: cert.transactionNumber,
-        createdAt: cert.createdAt,
+        createdAt: cert.createdAt.toISOString(),
         clinic: cert.Clinic?.name,
         createdBy: cert.CreatedBy ? `${cert.CreatedBy.firstName} ${cert.CreatedBy.lastName}` : 'Unknown',
       }))
@@ -198,7 +198,7 @@ export async function getPatientHealthRecords(): Promise<PatientHealthRecordsRes
         transactionNumber: slip.transactionNumber,
         referredTo: slip.referredTo,
         reason: slip.reason,
-        createdAt: slip.createdAt,
+        createdAt: slip.createdAt.toISOString(),
         clinic: slip.Clinic?.name,
         createdBy: slip.CreatedBy ? `${slip.CreatedBy.firstName} ${slip.CreatedBy.lastName}` : 'Unknown',
       }))
@@ -216,7 +216,7 @@ export async function getPatientHealthRecords(): Promise<PatientHealthRecordsRes
       email: patient.email,
       mobile: patient.mobile,
       telephone: patient.telephone,
-      dob: patient.dob,
+      dob: patient.dob ? patient.dob.toISOString() : null,
       age: patient.dob ? Math.floor((new Date().getTime() - new Date(patient.dob).getTime()) / (365.25 * 24 * 60 * 60 * 1000)) : null,
       gender: patient.gender,
       bloodType: patient.bloodType,
@@ -227,8 +227,8 @@ export async function getPatientHealthRecords(): Promise<PatientHealthRecordsRes
       suffix: patient.suffix,
       nickname: patient.nickname,
       caseNumber: patient.caseNumber,
-      createdAt: patient.createdAt,
-      updatedAt: patient.updatedAt,
+      createdAt: patient.createdAt.toISOString(),
+      updatedAt: patient.updatedAt.toISOString(),
       clinic: clinicPatients[0]?.Clinic || null,
 
       // Medical Profile
@@ -246,26 +246,81 @@ export async function getPatientHealthRecords(): Promise<PatientHealthRecordsRes
       })),
 
       // Vital Signs
-      vitalSigns: vitals,
-      latestVitals: vitals[0] || null,
+      vitalSigns: vitals.map(v => ({
+        ...v,
+        dateTaken: v.dateTaken.toISOString(),
+        createdAt: v.createdAt.toISOString(),
+        updatedAt: v.updatedAt.toISOString(),
+        deletedAt: v.deletedAt ? v.deletedAt.toISOString() : null,
+      })),
+      latestVitals: vitals[0] ? {
+        ...vitals[0],
+        dateTaken: vitals[0].dateTaken.toISOString(),
+        createdAt: vitals[0].createdAt.toISOString(),
+        updatedAt: vitals[0].updatedAt.toISOString(),
+        deletedAt: vitals[0].deletedAt ? vitals[0].deletedAt.toISOString() : null,
+      } : null,
 
       // Physical Examinations
-      physicalExaminations: exams,
+      physicalExaminations: exams.map(e => ({
+        ...e,
+        createdAt: e.createdAt.toISOString(),
+        updatedAt: e.updatedAt.toISOString(),
+        deletedAt: e.deletedAt ? e.deletedAt.toISOString() : null,
+      })),
 
       // OB/Gyn History
-      obGyneHistory: obGyne || null,
+      obGyneHistory: obGyne ? {
+        ...obGyne,
+        createdAt: obGyne.createdAt.toISOString(),
+        updatedAt: obGyne.updatedAt.toISOString(),
+        deletedAt: obGyne.deletedAt ? obGyne.deletedAt.toISOString() : null,
+      } : null,
 
       // Pediatric Measurements
-      pediatricMeasurements: pediatric,
+      pediatricMeasurements: pediatric.map(p => ({
+        id: p.id,
+        userId: p.userId,
+        dateTaken: p.dateTaken.toISOString(),
+        length: p.length ? Number(p.length) : null,
+        headCircumference: p.headCircumference ? Number(p.headCircumference) : null,
+        skinfoldThickness: p.skinfoldThickness ? Number(p.skinfoldThickness) : null,
+        waistCircumference: p.waistCircumference ? Number(p.waistCircumference) : null,
+        hipCircumference: p.hipCircumference ? Number(p.hipCircumference) : null,
+        limbCircumference: p.limbCircumference ? Number(p.limbCircumference) : null,
+        midUpperArmCircumference: p.midUpperArmCircumference ? Number(p.midUpperArmCircumference) : null,
+        remarks: p.remarks,
+        createdAt: p.createdAt.toISOString(),
+        updatedAt: p.updatedAt.toISOString(),
+        deletedAt: p.deletedAt ? p.deletedAt.toISOString() : null,
+      })),
 
       // Personal History & Lifestyle
-      personalHistory: personal || null,
+      personalHistory: personal ? {
+        ...personal,
+        createdAt: personal.createdAt.toISOString(),
+        updatedAt: personal.updatedAt.toISOString(),
+        deletedAt: personal.deletedAt ? personal.deletedAt.toISOString() : null,
+      } : null,
 
       // Insurance & PhilHealth
-      philHealthRecords: philHealth,
+      philHealthRecords: philHealth.map(p => ({
+        ...p,
+        createdAt: p.createdAt.toISOString(),
+        updatedAt: p.updatedAt.toISOString(),
+        deletedAt: p.deletedAt ? p.deletedAt.toISOString() : null,
+        PhilHealthMemberType: p.PhilHealthMemberType ? {
+          ...p.PhilHealthMemberType,
+          createdAt: p.PhilHealthMemberType.createdAt.toISOString(),
+          updatedAt: p.PhilHealthMemberType.updatedAt.toISOString(),
+        } : null,
+      })),
 
       // Procedure History
-      procedureHistory: procedures,
+      procedureHistory: procedures.map(p => ({
+        ...p,
+        usedAt: p.usedAt.toISOString(),
+      })),
 
       // Clinical Documents
       medicalCertificates: certificateDataList,

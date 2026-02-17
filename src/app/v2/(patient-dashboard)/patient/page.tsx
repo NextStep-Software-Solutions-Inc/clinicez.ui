@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useRef } from 'react';
+import { Suspense, useRef, useState } from 'react';
 import useSWR from 'swr';
 import { useRouter } from 'next/navigation';
 import {
@@ -11,9 +11,11 @@ import {
   ConsultationNotes,
   PendingLabWork,
   FloatingActionMenu,
+  SelectClinicDialog,
 } from '@/components/patient-dashboard-v2';
 import { ThemeToggle } from '@/components/patient-dashboard-v2/ThemeToggle';
 import { getPatientDashboardData } from '@/actions/patient-dashboard';
+import BookAppointmentSheet from '@/components/appointment/BookAppointmentSheet';
 
 // Loading skeleton for initial page load
 function DashboardLoadingSkeleton() {
@@ -45,6 +47,7 @@ function DashboardLoadingSkeleton() {
 
 function PatientDashboardContent() {
   const router = useRouter();
+  const [showClinicDialog, setShowClinicDialog] = useState(false);
   const diagnosticRequestsRef = useRef<HTMLDivElement>(null);
   const prescriptionsRef = useRef<HTMLDivElement>(null);
   const appointmentRef = useRef<HTMLDivElement>(null);
@@ -81,7 +84,12 @@ function PatientDashboardContent() {
 
   // FAB handlers
   const handleScheduleAppointment = () => {
-    router.push('/v2/appointments/book');
+    setShowClinicDialog(true);
+  };
+
+  const handleClinicSelected = (clinicUid: string) => {
+    setShowClinicDialog(false);
+    router.push(`?book-appointment=true&clinic=${clinicUid}`);
   };
 
   const handleViewTestRequests = () => {
@@ -213,6 +221,16 @@ function PatientDashboardContent() {
         onViewPrescriptions={handleViewPrescriptions}
         onViewProfile={handleViewProfile}
       />
+
+      {/* Select Clinic Dialog */}
+      <SelectClinicDialog
+        isOpen={showClinicDialog}
+        onClose={() => setShowClinicDialog(false)}
+        onClinicSelected={handleClinicSelected}
+      />
+
+      {/* Book Appointment Sheet (v1) */}
+      <BookAppointmentSheet />
     </div>
   );
 }

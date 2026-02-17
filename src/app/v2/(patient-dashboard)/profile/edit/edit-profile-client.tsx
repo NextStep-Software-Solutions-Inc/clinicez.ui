@@ -9,6 +9,8 @@ import {
   mapVitalSignToFormInput,
   mapPediatricMeasurementToFormInput,
   mapPhysicalExaminationToFormInput,
+  convertVitalSignsToDateObjects,
+  convertPediatricMeasurementsToDateObjects,
 } from '@/lib/mappers/health-records-mappers'
 import type {
   DemographicsFormInput,
@@ -400,7 +402,7 @@ export function EditProfileClient({ initialData, onDataRefresh }: EditProfileCli
                     userId={patientData.userId}
                     inline={true}
                     currentData={getVitalSignData()}
-                    recentVitals={patientData?.vitalSigns || []}
+                    recentVitals={convertVitalSignsToDateObjects(patientData?.vitalSigns)}
                     onSuccess={() => handleSuccess()}
                   />
                 </Suspense>

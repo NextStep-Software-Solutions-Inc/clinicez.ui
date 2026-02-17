@@ -7,6 +7,8 @@ import type {
   PediatricMeasurement,
   PersonalHistory,
   PhilHealthRecord,
+  PhilHealthMemberType,
+  PhilHealthDependent,
   ProcedureUsageHistory,
   ClinicMedicalCertificate,
   ClinicReferralSlip,
@@ -22,7 +24,11 @@ export interface MedicalHistoryData {
   details: string | null
 }
 
-export interface PhysicalExaminationData extends PhysicalExamination { }
+export interface PhysicalExaminationData extends Omit<PhysicalExamination, 'createdAt' | 'updatedAt' | 'deletedAt'> {
+  createdAt: string
+  updatedAt: string
+  deletedAt: string | null
+}
 
 export interface ClinicInfo {
   id: number
@@ -33,7 +39,7 @@ export interface CertificateData {
   id: number
   serialNumber: string
   transactionNumber: string | null
-  createdAt: Date
+  createdAt: string  // ISO string
   clinic: string | undefined
   createdBy: string
 }
@@ -44,12 +50,12 @@ export interface ReferralData {
   transactionNumber: string | null
   referredTo: string | null
   reason: string | null
-  createdAt: Date
+  createdAt: string  // ISO string
   clinic: string | undefined
   createdBy: string
 }
 
-export interface PatientHealthRecordsResponse {
+export interface SerializedPatientHealthRecordsResponse {
   // Demographics
   id: number
   userId: string
@@ -61,7 +67,7 @@ export interface PatientHealthRecordsResponse {
   email: string
   mobile: string | null
   telephone: string | null
-  dob: Date | null
+  dob: string | null  // ISO string
   age: number | null
   gender: string | null
   bloodType: string | null
@@ -72,8 +78,8 @@ export interface PatientHealthRecordsResponse {
   suffix: string | null
   nickname: string | null
   caseNumber: string | null
-  createdAt: Date
-  updatedAt: Date
+  createdAt: string  // ISO string
+  updatedAt: string  // ISO string
   clinic: ClinicInfo | null
 
   // Medical Profile
@@ -81,28 +87,52 @@ export interface PatientHealthRecordsResponse {
   familyMedicalHistories: MedicalHistoryData[]
 
   // Vital Signs
-  vitalSigns: VitalSign[]
-  latestVitals: VitalSign | null
+  vitalSigns: Array<Omit<VitalSign, 'dateTaken' | 'createdAt' | 'updatedAt' | 'deletedAt'> & { dateTaken: string; createdAt: string; updatedAt: string; deletedAt: string | null }>
+  latestVitals: (Omit<VitalSign, 'dateTaken' | 'createdAt' | 'updatedAt' | 'deletedAt'> & { dateTaken: string; createdAt: string; updatedAt: string; deletedAt: string | null }) | null
 
   // Physical Examinations
   physicalExaminations: PhysicalExaminationData[]
 
   // OB/Gyn History
-  obGyneHistory: ObGyneHistory | null
+  obGyneHistory: (Omit<ObGyneHistory, 'createdAt' | 'updatedAt' | 'deletedAt'> & { createdAt: string; updatedAt: string; deletedAt: string | null }) | null
 
   // Pediatric Measurements
-  pediatricMeasurements: PediatricMeasurement[]
+  pediatricMeasurements: Array<{
+    id: number
+    userId: number
+    dateTaken: string
+    length: number | null
+    headCircumference: number | null
+    skinfoldThickness: number | null
+    waistCircumference: number | null
+    hipCircumference: number | null
+    limbCircumference: number | null
+    midUpperArmCircumference: number | null
+    remarks: string | null
+    createdAt: string
+    updatedAt: string
+    deletedAt: string | null
+  }>
 
   // Personal History & Lifestyle
-  personalHistory: PersonalHistory | null
+  personalHistory: (Omit<PersonalHistory, 'createdAt' | 'updatedAt' | 'deletedAt'> & { createdAt: string; updatedAt: string; deletedAt: string | null }) | null
 
   // Insurance & PhilHealth
-  philHealthRecords: PhilHealthRecord[]
+  philHealthRecords: Array<Omit<PhilHealthRecord, 'createdAt' | 'updatedAt' | 'deletedAt'> & {
+    createdAt: string
+    updatedAt: string
+    deletedAt: string | null
+    PhilHealthMemberType?: (Omit<PhilHealthMemberType, 'createdAt' | 'updatedAt'> & { createdAt: string; updatedAt: string }) | null
+    PhilHealthDependents?: PhilHealthDependent[]
+  }>
 
   // Procedure History
-  procedureHistory: ProcedureUsageHistory[]
+  procedureHistory: Array<Omit<ProcedureUsageHistory, 'usedAt'> & { usedAt: string }>
 
   // Clinical Documents
   medicalCertificates: CertificateData[]
   referralSlips: ReferralData[]
 }
+
+// Original type for backwards compatibility
+export type PatientHealthRecordsResponse = SerializedPatientHealthRecordsResponse

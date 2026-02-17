@@ -31,7 +31,6 @@ export function FamilyMedicalHistoryEditForm({
   // Sync form state with parent props when dialog opens or props change
   useEffect(() => {
     if (isOpen || inline) {
-      console.log('[FamilyMedicalHistoryForm] Syncing conditions from prop:', currentConditions)
       setConditions(currentConditions || [])
     }
   }, [isOpen, currentConditions, inline])

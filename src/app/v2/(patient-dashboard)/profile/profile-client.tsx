@@ -13,106 +13,10 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import { ThemeToggle } from '@/components/patient-dashboard-v2/ThemeToggle'
 import { PhilHealthRecords } from '@/components/patient-dashboard-v2/PhilHealthRecords'
 import { formatBloodType } from '@/lib/utils'
-import type { 
-  VitalSign, 
-  PhysicalExamination, 
-  ObGyneHistory, 
-  PediatricMeasurement, 
-  PersonalHistory, 
-  PhilHealthRecord, 
-  ProcedureUsageHistory
-} from '@prisma/client'
-
-interface ClinicInfo {
-  id: number
-  name: string
-}
-
-interface MedicalHistoryData {
-  id: number
-  condition: string
-  details: string | null
-}
-
-interface CertificateData {
-  id: number
-  serialNumber: string
-  transactionNumber: string | null
-  createdAt: Date
-  clinic: string | undefined
-  createdBy: string
-}
-
-interface ReferralData {
-  id: number
-  serialNumber: string
-  transactionNumber: string | null
-  referredTo: string | null
-  reason: string | null
-  createdAt: Date
-  clinic: string | undefined
-  createdBy: string
-}
-
-interface PatientHealthRecords {
-  // Demographics
-  id: number
-  userId: string
-  firstName: string | null
-  lastName: string | null
-  middleName: string | null
-  fullName: string
-  picture: string | null
-  email: string
-  mobile: string | null
-  telephone: string | null
-  dob: Date | null
-  age: number | null
-  gender: string | null
-  bloodType: string | null
-  civilStatus: string | null
-  placeOfBirth: string | null
-  nationality: string | null
-  religion: string | null
-  suffix: string | null
-  nickname: string | null
-  caseNumber: string | null
-  createdAt: Date
-  updatedAt: Date
-  clinic: ClinicInfo | null
-  
-  // Medical Profile
-  medicalHistories: MedicalHistoryData[]
-  familyMedicalHistories: MedicalHistoryData[]
-  
-  // Vital Signs
-  vitalSigns: VitalSign[]
-  latestVitals: VitalSign | null
-  
-  // Physical Examinations
-  physicalExaminations: PhysicalExamination[]
-  
-  // OB/Gyn History
-  obGyneHistory: ObGyneHistory | null
-  
-  // Pediatric Measurements
-  pediatricMeasurements: PediatricMeasurement[]
-  
-  // Personal History
-  personalHistory: PersonalHistory | null
-  
-  // Insurance & Documents
-  philHealthRecords: (PhilHealthRecord & {
-    PhilHealthMemberType?: { id: number; type: string }
-    PhilHealthDependents?: { id: number; firstName: string; middleName?: string; lastName?: string; suffix?: string; relationship?: string }[]
-  })[]
-  procedureHistory: ProcedureUsageHistory[]
-  medicalCertificates: CertificateData[]
-  referralSlips: ReferralData[]
-}
+import type { SerializedPatientHealthRecordsResponse } from '@/types/patient-profile'
 
 interface ProfileClientProps {
-  patient: PatientHealthRecords
+  patient: SerializedPatientHealthRecordsResponse
 }
 
 export default function ProfileClient({ patient }: ProfileClientProps) {

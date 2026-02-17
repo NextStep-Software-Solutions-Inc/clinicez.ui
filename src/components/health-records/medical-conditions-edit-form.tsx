@@ -30,10 +30,11 @@ export function MedicalConditionsEditForm({
 
   // Sync form state with parent props when dialog opens or props change
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen || inline) {
+      console.log('[MedicalConditionsForm] Syncing conditions from prop:', currentConditions)
       setConditions(currentConditions || [])
     }
-  }, [isOpen, currentConditions])
+  }, [isOpen, currentConditions, inline])
 
   // Track if form has unsaved changes
   const hasChanges = useMemo(() => {

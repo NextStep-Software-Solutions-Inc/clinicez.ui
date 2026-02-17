@@ -26,7 +26,10 @@ export async function addPediatricMeasurement(
     }
 
     const isOwn = authUser.id === userId
-    if (!userCanEditSection(authUser.id, userId, UserRole.HEALTHCARE_PROVIDER, 'pediatric-measurements')) {
+    
+    // Check if user has permission to edit this section
+    // Permission is based on actual user role and whether editing own record
+    if (!userCanEditSection(authUser.id, userId, isOwn ? UserRole.PATIENT : UserRole.HEALTHCARE_PROVIDER, 'pediatric-measurements')) {
       return { success: false, error: 'You do not have permission to record pediatric measurements' }
     }
 

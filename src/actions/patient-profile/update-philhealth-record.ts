@@ -124,6 +124,7 @@ export async function updatePhilhealthRecord(
       tin: validatedInput.tin,
       philSysId: validatedInput.philSysId,
       memberTypeId: validatedInput.memberTypeId,
+      photoUrl: validatedInput.photoUrl,
     }
 
     let action = AuditAction.CREATE

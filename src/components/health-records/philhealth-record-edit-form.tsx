@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { updatePhilhealthRecord } from '@/actions/patient-profile'
 import { addPhilHealthDependent, removePhilHealthDependent, updatePhilHealthDependent } from '@/actions/patient-profile/manage-philhealth-dependents'
 import { uploadMediaAction } from '@/actions/blob.action'
@@ -39,6 +39,32 @@ export function PhilHealthRecordEditForm({
   const [dependents, setDependents] = useState<any[]>(currentData?.dependents || [])
   const [newDependent, setNewDependent] = useState<Partial<PhilHealthDependentFormInput>>({})
   const [isAddingDependent, setIsAddingDependent] = useState(false)
+  const [isReplacingPhoto, setIsReplacingPhoto] = useState(false)
+
+  // Sync form data when currentData changes
+  useEffect(() => {
+    if (currentData) {
+      // Sync all form fields
+      setFormData({
+        pin: currentData.pin,
+        tin: currentData.tin,
+        philSysId: currentData.philSysId,
+        memberTypeId: currentData.memberTypeId,
+        photoUrl: currentData.photoUrl,
+      })
+      
+      // Sync photo preview
+      if (currentData.photoUrl) {
+        setPhotoPreview(currentData.photoUrl)
+      } else {
+        setPhotoPreview(null)
+      }
+      
+      // Sync dependents
+      setDependents(currentData.dependents || [])
+      setIsReplacingPhoto(false)
+    }
+  }, [currentData])
 
   // Track if form has unsaved changes
   const hasChanges = useMemo(() => {
@@ -271,63 +297,103 @@ export function PhilHealthRecordEditForm({
 
         <FormField label="PhilHealth Card Photo" htmlFor="photoFile" helpText={philHealthRecordLabels.photoUrl}>
           <div className="space-y-4">
-            {/* Photo Preview */}
-            {photoPreview && (
-              <div className="relative w-full max-w-xs">
-                <img
-                  src={photoPreview}
-                  alt="PhilHealth Card Preview"
-                  className="w-full h-48 object-cover rounded-lg border border-gray-200"
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    setPhotoPreview(null)
-                    setFormData((prev) => ({
-                      ...prev,
-                      photoUrl: null,
-                    }))
-                  }}
-                  className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
-                >
-                  <X className="h-4 w-4" />
-                </button>
+            {/* Current Photo Display */}
+            {photoPreview && !isReplacingPhoto && (
+              <div className="space-y-3">
+                <div className="relative w-full">
+                  <div className="relative inline-block w-full max-w-sm">
+                    <img
+                      src={photoPreview}
+                      alt="PhilHealth Card Preview"
+                      className="w-full h-64 object-cover rounded-xl border-2 border-blue-200 dark:border-blue-700 shadow-lg"
+                    />
+                    <div className="absolute inset-0 rounded-xl rings-2 ring-blue-300 dark:ring-blue-600"></div>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => setIsReplacingPhoto(true)}
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                  >
+                    Replace Photo
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setPhotoPreview(null)
+                      setFormData((prev) => ({
+                        ...prev,
+                        photoUrl: null,
+                      }))
+                    }}
+                    variant="ghost"
+                    size="sm"
+                    className="text-red-500 hover:bg-red-50 dark:hover:bg-red-950"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             )}
 
-            {/* File Upload Input */}
-            <div className="flex items-center gap-3">
-              <input
-                id="photoFile"
-                type="file"
-                accept="image/*"
-                onChange={handlePhotoUpload}
-                disabled={isUploadingPhoto}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm file:mr-2 file:py-1 file:px-3 file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed"
-              />
-              {isUploadingPhoto && <Loader2 className="h-4 w-4 animate-spin text-blue-600" />}
-            </div>
+            {/* Upload Section - Show when no photo or replacing */}
+            {(!photoPreview || isReplacingPhoto) && (
+              <div className="space-y-3 p-4 border-2 border-dashed border-blue-300 dark:border-blue-600 rounded-lg bg-blue-50/30 dark:bg-blue-950/10">
+                {isReplacingPhoto && photoPreview && (
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm font-medium text-blue-900 dark:text-blue-100">Replace current photo?</p>
+                    <Button
+                      onClick={() => setIsReplacingPhoto(false)}
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                )}
 
-            {/* Manual URL Input Alternative */}
-            <div className="text-sm text-gray-600">
-              Or paste the image URL directly:
-            </div>
-            <Input
-              type="url"
-              value={formData.photoUrl || ''}
-              onChange={(e) => {
-                const url = e.target.value || null
-                setFormData((prev) => ({
-                  ...prev,
-                  photoUrl: url,
-                }))
-                if (url) {
-                  setPhotoPreview(url)
-                }
-              }}
-              placeholder="https://example.com/philhealth-card.jpg"
-              className="text-sm"
-            />
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {isReplacingPhoto ? 'Upload a new photo to replace the current one' : 'Upload your PhilHealth card photo'}
+                </p>
+
+                {/* File Upload Input */}
+                <div className="flex items-center gap-3">
+                  <input
+                    id="photoFile"
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoUpload}
+                    disabled={isUploadingPhoto}
+                    className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm file:mr-2 file:py-1 file:px-3 file:border-0 file:text-sm file:font-semibold file:bg-blue-500 file:text-white hover:file:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed dark:file:bg-blue-600"
+                  />
+                  {isUploadingPhoto && <Loader2 className="h-4 w-4 animate-spin text-blue-600" />}
+                </div>
+
+                {/* Manual URL Input Alternative */}
+                <div className="border-t border-blue-200 dark:border-blue-700 pt-3">
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">Or paste an image URL:</p>
+                  <Input
+                    type="url"
+                    value={formData.photoUrl || ''}
+                    onChange={(e) => {
+                      const url = e.target.value || null
+                      setFormData((prev) => ({
+                        ...prev,
+                        photoUrl: url,
+                      }))
+                      if (url) {
+                        setPhotoPreview(url)
+                        setIsReplacingPhoto(false)
+                      }
+                    }}
+                    placeholder="https://example.com/philhealth-card.jpg"
+                    className="text-sm"
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </FormField>
       </div>

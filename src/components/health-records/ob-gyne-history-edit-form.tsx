@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { updateObGyneHistory } from '@/actions/patient-profile'
 import { obGyneHistorySchema, obGyneHistoryLabels, type ObGyneHistoryFormInput } from '@/schemas'
 import { FormModal, FormField, EditButton } from './index'
@@ -31,6 +31,14 @@ export function ObGyneHistoryEditForm({
   const [formData, setFormData] = useState<Partial<ObGyneHistoryFormInput>>(
     currentData || {}
   )
+
+  // Sync form data when currentData prop changes (e.g., after successful save and refetch)
+  useEffect(() => {
+    if (currentData) {
+      console.log('[ObGyneForm] Syncing form data from prop:', currentData)
+      setFormData(currentData)
+    }
+  }, [currentData])
 
   // Track if form has unsaved changes
   const hasChanges = useMemo(() => {

@@ -3,8 +3,7 @@
 import { currentUser } from '@clerk/nextjs/server'
 import prisma from '@/lib/prisma'
 import { vitalSignSchema, type VitalSignFormInput } from '@/schemas'
-import { userCanEditSection, getDatabaseUserId } from '@/lib/permissions'
-import { UserRole } from '@/types/edit-permissions'
+import { getDatabaseUserId } from '@/lib/permissions'
 import { logAudit, AuditAction, AuditEntityType } from '@/lib/audit-logger'
 
 export interface AddVitalSignResponse {
@@ -25,8 +24,37 @@ export async function addVitalSign(
     }
 
     const isOwn = authUser.id === userId
-    if (!userCanEditSection(authUser.id, userId, UserRole.HEALTHCARE_PROVIDER, 'vital-signs')) {
+
+    // Check if user has permission to record vital signs (for self or others)
+    const dbUserId = await getDatabaseUserId(userId)
+    if (!dbUserId) {
+      return { success: false, error: 'User not found' }
+    }
+    
+    const authDbUserId = await getDatabaseUserId(authUser.id)
+    if (!authDbUserId) {
       return { success: false, error: 'You do not have permission to record vital signs' }
+    }
+
+    // Check if user has explicit permission to edit vital signs
+    const hasPermission = await prisma.userPermission.findFirst({
+      where: {
+        userId: authDbUserId,
+        Permission: {
+          isActive: true,
+          deletedAt: null,
+          name: {
+            in: isOwn
+              ? ['update:user:profile:own', 'update:patient:health-record:own', 'super_admin']
+              : ['update:clinic:patient:all', 'update:patient:health-record:any', 'super_admin']
+          }
+        }
+      },
+    })
+
+    if (!hasPermission) {
+      const permissionNeeded = isOwn ? 'to edit your own vital signs' : 'to edit vital signs for other users'
+      return { success: false, error: `You do not have permission ${permissionNeeded}` }
     }
 
     let validatedInput: VitalSignFormInput
@@ -42,12 +70,7 @@ export async function addVitalSign(
       return { success: false, error: `Validation failed: ${errorMessages}` }
     }
 
-    // Get target user's database ID
-    const dbUserId = await getDatabaseUserId(userId)
-    if (!dbUserId) {
-      return { success: false, error: 'User not found' }
-    }
-
+    // Create new vital sign record
     const vitalSign = await prisma.vitalSign.create({
       data: {
         userId: dbUserId,
@@ -84,6 +107,9 @@ export async function addVitalSign(
     }
   } catch (error) {
     console.error('[ADD_VITAL_SIGN_ERROR]', error)
+    if (error instanceof Error) {
+      console.error('[ADD_VITAL_SIGN_ERROR] Message:', error.message)
+    }
     return { success: false, error: 'An unexpected error occurred. Please try again.' }
   }
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { addPhysicalExamination } from '@/actions/patient-profile'
 import { physicalExaminationSchema, type PhysicalExaminationFormInput } from '@/schemas'
 import { FormModal, FormField, EditButton } from './index'
@@ -30,6 +30,14 @@ export function PhysicalExaminationEditForm({
     currentData || {}
   )
 
+  // Sync form data when currentData prop changes (e.g., after successful save and refetch)
+  useEffect(() => {
+    if (currentData) {
+      console.log('[PhysicalExamForm] Syncing form data from prop:', currentData)
+      setFormData(currentData)
+    }
+  }, [currentData])
+
   // Track if form has unsaved changes
   const hasChanges = useMemo(() => {
     return JSON.stringify(formData) !== JSON.stringify(currentData || {})
@@ -44,17 +52,22 @@ export function PhysicalExaminationEditForm({
     setIsLoading(true)
 
     try {
+      console.log('[PhysicalExamForm] Submitting:', formData)
       const result = await addPhysicalExamination(userId, formData as PhysicalExaminationFormInput)
+      console.log('[PhysicalExamForm] Save result:', result)
 
       if (result.success) {
+        console.log('[PhysicalExamForm] Save successful')
         toast.success(result.message || 'Physical examination recorded successfully')
         if (!inline) setIsOpen(false)
         setFormData({})
-        onSuccess?.()
+        await onSuccess?.()
+        console.log('[PhysicalExamForm] After onSuccess, waiting for data sync')
       } else {
         toast.error(result.error || 'An unexpected error occurred')
       }
     } catch (err) {
+      console.error('[PhysicalExamForm] Error:', err)
       toast.error('An unexpected error occurred. Please try again.')
     } finally {
       setIsLoading(false)

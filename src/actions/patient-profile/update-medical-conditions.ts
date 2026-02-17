@@ -56,14 +56,19 @@ export async function updateMedicalConditions(
 
     const currentConditions = await prisma.medicalHistory.findMany({
       where: { userId: dbUserId },
-      select: { id: true, conditionId: true },
+      select: { id: true, conditionId: true, details: true },
     })
 
     const currentConditionIds = new Set(currentConditions.map((c: any) => c.conditionId))
     const newConditionIds = new Set(validatedConditions.map((c: any) => c.conditionId))
 
+    // Separate into: add (new), remove (deleted), and update (existing with changed details)
     const toAdd = validatedConditions.filter((c: any) => !currentConditionIds.has(c.conditionId))
     const toRemove = currentConditions.filter((c: any) => !newConditionIds.has(c.conditionId))
+    const toUpdate = validatedConditions.filter((c: any) => {
+      const existing = currentConditions.find((existing: any) => existing.conditionId === c.conditionId)
+      return existing && existing.details !== c.details
+    })
 
     let addedCount = 0
     for (const condition of toAdd) {
@@ -77,6 +82,20 @@ export async function updateMedicalConditions(
       addedCount++
     }
 
+    let updatedCount = 0
+    for (const condition of toUpdate) {
+      const existing = currentConditions.find((c: any) => c.conditionId === condition.conditionId)
+      if (existing) {
+        await prisma.medicalHistory.update({
+          where: { id: existing.id },
+          data: {
+            details: condition.details,
+          },
+        })
+        updatedCount++
+      }
+    }
+
     let removedCount = 0
     for (const condition of toRemove) {
       await prisma.medicalHistory.delete({
@@ -85,24 +104,25 @@ export async function updateMedicalConditions(
       removedCount++
     }
 
-    if (addedCount > 0 || removedCount > 0) {
+    if (addedCount > 0 || removedCount > 0 || updatedCount > 0) {
       await logAudit({
         entityType: AuditEntityType.MEDICAL_HISTORY,
         entityId: userId,
-        action: addedCount > 0 && removedCount > 0 ? AuditAction.UPDATE : (addedCount > 0 ? AuditAction.CREATE : AuditAction.DELETE),
+        action: addedCount > 0 || updatedCount > 0 ? AuditAction.UPDATE : AuditAction.DELETE,
         performedBy: authUser.id,
         targetUser: !isOwn ? userId : undefined,
-        metadata: { addedCount, removedCount, source: 'updateMedicalConditions' },
+        metadata: { addedCount, updatedCount, removedCount, source: 'updateMedicalConditions' },
       })
     }
 
     const message = []
     if (addedCount > 0) message.push(`Added ${addedCount} condition(s)`)
+    if (updatedCount > 0) message.push(`Updated ${updatedCount} condition(s)`)
     if (removedCount > 0) message.push(`Removed ${removedCount} condition(s)`)
 
     return {
       success: true,
-      message: message.length > 0 ? message.join(', ') : 'Medical conditions updated',
+      message: message.length > 0 ? message.join(', ') : 'Medical conditions unchanged',
       addedCount,
       removedCount,
     }

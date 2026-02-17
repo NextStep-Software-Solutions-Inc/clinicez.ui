@@ -14,6 +14,11 @@ export {
 } from './add-vital-sign'
 
 export {
+  updateVitalSign,
+  type UpdateVitalSignResponse,
+} from './update-vital-sign'
+
+export {
   updatePersonalHistory,
   type UpdatePersonalHistoryResponse,
 } from './update-personal-history'

@@ -149,6 +149,7 @@ export const permissionMatrix: Record<EditPermissionLevel, Set<string>> = {
     "personal-history",
     "medical-history",
     "family-history",
+    "pediatric-measurements",
   ]),
   [EditPermissionLevel.PROFESSIONAL_EDIT]: new Set([
     "demographics",
@@ -158,7 +159,7 @@ export const permissionMatrix: Record<EditPermissionLevel, Set<string>> = {
     "medical-history",
     "family-history",
     "ob-gyne",
-    "pediatric",
+    "pediatric-measurements",
   ]),
   [EditPermissionLevel.CLINIC_ADMIN_EDIT]: new Set([
     "all", // Can edit most things except contact info
@@ -209,7 +210,7 @@ export function getEditableSections(permission: EditPermissionLevel): string[] {
       "medical-history",
       "family-history",
       "ob-gyne",
-      "pediatric",
+      "pediatric-measurements",
       "insurance",
     ]
   }

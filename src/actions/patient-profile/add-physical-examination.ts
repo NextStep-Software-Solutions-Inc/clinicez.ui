@@ -3,8 +3,7 @@
 import { currentUser } from '@clerk/nextjs/server'
 import prisma from '@/lib/prisma'
 import { physicalExaminationSchema, type PhysicalExaminationFormInput } from '@/schemas'
-import { userCanEditSection, getDatabaseUserId } from '@/lib/permissions'
-import { UserRole } from '@/types/edit-permissions'
+import { getDatabaseUserId } from '@/lib/permissions'
 import { logAudit, AuditAction, AuditEntityType } from '@/lib/audit-logger'
 
 export interface AddPhysicalExaminationResponse {
@@ -25,10 +24,37 @@ export async function addPhysicalExamination(
     }
 
     const isOwn = authUser.id === userId
-    if (!userCanEditSection(authUser.id, userId, UserRole.HEALTHCARE_PROVIDER, 'physical-examination')) {
-      if (!userCanEditSection(authUser.id, userId, UserRole.CLINIC_ADMIN, 'physical-examination')) {
-        return { success: false, error: 'You do not have permission to record physical examinations' }
-      }
+    
+    // Check if user has permission to record physical examinations (for self or others)
+    const dbUserId = await getDatabaseUserId(userId)
+    if (!dbUserId) {
+      return { success: false, error: 'User not found' }
+    }
+    
+    const authDbUserId = await getDatabaseUserId(authUser.id)
+    if (!authDbUserId) {
+      return { success: false, error: 'You do not have permission to record physical examinations' }
+    }
+
+    // Check if user has explicit permission to edit physical examinations
+    const hasPermission = await prisma.userPermission.findFirst({
+      where: {
+        userId: authDbUserId,
+        Permission: {
+          isActive: true,
+          deletedAt: null,
+          name: {
+            in: isOwn
+              ? ['update:user:profile:own', 'update:patient:health-record:own', 'super_admin']
+              : ['update:clinic:patient:all', 'update:patient:health-record:any', 'super_admin']
+          }
+        }
+      },
+    })
+
+    if (!hasPermission) {
+      const permissionNeeded = isOwn ? 'to record your own physical examinations' : 'to record physical examinations for other users'
+      return { success: false, error: `You do not have permission ${permissionNeeded}` }
     }
 
     let validatedInput: PhysicalExaminationFormInput
@@ -42,12 +68,6 @@ export async function addPhysicalExamination(
         )
         .join('; ')
       return { success: false, error: `Validation failed: ${errorMessages}` }
-    }
-
-    // Get target user's database ID
-    const dbUserId = await getDatabaseUserId(userId)
-    if (!dbUserId) {
-      return { success: false, error: 'User not found' }
     }
 
     const physicalExam = await prisma.physicalExamination.create({

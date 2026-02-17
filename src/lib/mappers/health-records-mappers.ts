@@ -69,6 +69,32 @@ export function mapPersonalHistoryToFormInput(
 }
 
 /**
+ * Mapper: Latest VitalSign → form input
+ * 
+ * Maps the most recent vital sign record to the form input type
+ * This prepopulates the form with the user's latest measurements
+ */
+export function mapVitalSignToFormInput(
+    latestVitals: PatientHealthRecordsResponse['latestVitals'] | null | undefined
+) {
+    if (!latestVitals) return undefined
+
+    return {
+        id: latestVitals.id,
+        dateTaken: latestVitals.dateTaken,
+        height: latestVitals.height,
+        weight: latestVitals.weight,
+        bpSystolic: latestVitals.bpSystolic,
+        bpDiastolic: latestVitals.bpDiastolic,
+        pulseRate: latestVitals.pulseRate,
+        temp: latestVitals.temp,
+        spo2: latestVitals.spo2,
+        respRate: latestVitals.respRate,
+        notes: latestVitals.notes,
+    }
+}
+
+/**
  * Mapper: PatientHealthRecords → Demographics form input
  * 
  * Validates enum values at data boundary using Zod
@@ -103,5 +129,60 @@ export function mapPatientDataToDemographicsFormInput(
     } catch (error) {
         console.error('Demographics validation error:', error)
         return undefined
+    }
+}
+
+/**
+ * Mapper: Latest PediatricMeasurement → form input
+ * 
+ * Maps the most recent pediatric measurement record to the form input type
+ * This prepopulates the form with the patient's latest pediatric measurements
+ * Schema handles Decimal/number coercion via Zod
+ * 
+ * Data is already sorted by createdAt DESC in server action, so [0] is the latest
+ */
+export function mapPediatricMeasurementToFormInput(
+    pediatricMeasurements: PatientHealthRecordsResponse['pediatricMeasurements'] | null | undefined
+) {
+    if (!pediatricMeasurements || pediatricMeasurements.length === 0) return undefined
+
+    // Get the most recent measurement (first in array, already sorted by createdAt DESC)
+    const latestMeasurement = pediatricMeasurements[0]
+    if (!latestMeasurement) return undefined
+
+    return {
+        dateTaken: latestMeasurement.dateTaken,
+        length: latestMeasurement.length,
+        headCircumference: latestMeasurement.headCircumference,
+        skinfoldThickness: latestMeasurement.skinfoldThickness,
+        waistCircumference: latestMeasurement.waistCircumference,
+        hipCircumference: latestMeasurement.hipCircumference,
+        limbCircumference: latestMeasurement.limbCircumference,
+        midUpperArmCircumference: latestMeasurement.midUpperArmCircumference,
+        remarks: latestMeasurement.remarks,
+    }
+}
+
+/**
+ * Mapper: Latest PhysicalExamination → form input
+ * 
+ * Maps the most recent physical examination record to the form input type
+ * This prepopulates the form with the patient's latest examination findings
+ * 
+ * Data is already sorted by createdAt DESC in server action, so [0] is the latest
+ */
+export function mapPhysicalExaminationToFormInput(
+    physicalExaminations: PatientHealthRecordsResponse['physicalExaminations'] | null | undefined
+) {
+    if (!physicalExaminations || physicalExaminations.length === 0) return undefined
+
+    // Get the most recent examination (first in array, already sorted by createdAt DESC)
+    const latestExamination = physicalExaminations[0]
+    if (!latestExamination) return undefined
+
+    return {
+        visualAcuityLeft: latestExamination.visualAcuityLeft,
+        visualAcuityRight: latestExamination.visualAcuityRight,
+        status: latestExamination.status,
     }
 }

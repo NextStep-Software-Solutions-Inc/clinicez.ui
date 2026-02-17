@@ -3,7 +3,20 @@
 import { useEffect, useState, useRef, useMemo, useCallback, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
-import { mapPersonalHistoryToFormInput, mapPatientDataToDemographicsFormInput } from '@/lib/mappers/health-records-mappers'
+import {
+  mapPersonalHistoryToFormInput,
+  mapPatientDataToDemographicsFormInput,
+  mapVitalSignToFormInput,
+  mapPediatricMeasurementToFormInput,
+  mapPhysicalExaminationToFormInput,
+} from '@/lib/mappers/health-records-mappers'
+import type {
+  DemographicsFormInput,
+  VitalSignFormInput,
+  PersonalHistoryFormInput,
+  PediatricMeasurementFormInput,
+  PhysicalExaminationFormInput,
+} from '@/schemas'
 import { ThemeToggle } from '@/components/patient-dashboard-v2/ThemeToggle'
 import {
   DemographicsEditForm,
@@ -201,16 +214,63 @@ export function EditProfileClient({ initialData, onDataRefresh }: EditProfileCli
     [sections],
   )
 
-  // Memoized personal history form data to avoid unnecessary rerenders
-  const personalHistoryFormData = useMemo(
-    () => mapPersonalHistoryToFormInput(patientData?.personalHistory),
-    [patientData?.personalHistory],
+  // Lazily prepare data only for visible sections to reduce initial load
+  // Data is only computed when section becomes visible, not upfront
+  const getDemographicsData = useCallback(
+    (): DemographicsFormInput | undefined =>
+      activeSection === 'demographics' || loadedSections['demographics']
+        ? mapPatientDataToDemographicsFormInput(patientData)
+        : undefined,
+    [patientData, activeSection, loadedSections],
   )
 
-  // Memoized demographics form data to avoid unnecessary rerenders
-  const demographicsFormData = useMemo(
-    () => mapPatientDataToDemographicsFormInput(patientData),
-    [patientData],
+  const getVitalSignData = useCallback(
+    (): VitalSignFormInput | undefined =>
+      activeSection === 'vital-signs' || loadedSections['vital-signs']
+        ? mapVitalSignToFormInput(patientData?.latestVitals)
+        : undefined,
+    [patientData, activeSection, loadedSections],
+  )
+
+  const getPersonalHistoryData = useCallback(
+    (): PersonalHistoryFormInput | undefined =>
+      activeSection === 'personal-history' || loadedSections['personal-history']
+        ? mapPersonalHistoryToFormInput(patientData?.personalHistory)
+        : undefined,
+    [patientData, activeSection, loadedSections],
+  )
+
+  const getPediatricData = useCallback(
+    (): PediatricMeasurementFormInput | undefined =>
+      activeSection === 'pediatric' || loadedSections['pediatric']
+        ? mapPediatricMeasurementToFormInput(patientData?.pediatricMeasurements)
+        : undefined,
+    [patientData, activeSection, loadedSections],
+  )
+
+  const getPhysicalExaminationData = useCallback(
+    (): PhysicalExaminationFormInput | undefined =>
+      activeSection === 'examination' || loadedSections['examination']
+        ? mapPhysicalExaminationToFormInput(patientData?.physicalExaminations)
+        : undefined,
+    [patientData, activeSection, loadedSections],
+  )
+
+  // Memoize PhilHealth currentData to prevent unnecessary re-renders and useEffect re-triggers in child component
+  const philHealthCurrentData = useMemo(
+    () =>
+      patientData?.philHealthRecords?.[0]
+        ? {
+            pin: patientData.philHealthRecords[0].pin,
+            tin: patientData.philHealthRecords[0].tin || undefined,
+            philSysId: patientData.philHealthRecords[0].philSysId || undefined,
+            memberTypeId: patientData.philHealthRecords[0].memberTypeId || undefined,
+            photoUrl: patientData.philHealthRecords[0].photoUrl || undefined,
+            dependents: patientData.philHealthRecords[0].PhilHealthDependents || [],
+            id: patientData.philHealthRecords[0].id,
+          }
+        : undefined,
+    [patientData?.philHealthRecords],
   )
 
   const handleSuccess = useCallback(async () => {
@@ -269,21 +329,25 @@ export function EditProfileClient({ initialData, onDataRefresh }: EditProfileCli
           </div>
 
           {/* Horizontal Section Navigation */}
-          <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 md:-mx-8 px-4 md:px-8 scrollbar-hide mt-4">
-            {sections.map((section) => (
-              <button
-                key={section.id}
-                onClick={() => scrollToSection(section.id)}
-                className={`whitespace-nowrap px-4 py-2 rounded-lg font-medium text-sm transition-all ${
-                  activeSection === section.id
-                    ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg shadow-blue-500/30'
-                    : 'bg-white/40 dark:bg-slate-800/40 text-slate-700 dark:text-slate-300 hover:bg-white/60 dark:hover:bg-slate-800/60 backdrop-blur-sm border border-white/20 dark:border-slate-700/20'
-                }`}
-              >
-                <span className="mr-2">{section.icon}</span>
-                {section.label}
-              </button>
-            ))}
+          <div className="relative mt-4">
+            <div className="flex gap-2 overflow-x-auto scroll-smooth pb-3 -mx-4 md:-mx-8 px-4 md:px-8 mt-4" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(100,116,139,0.4) transparent' }}>
+              {sections.map((section) => (
+                <button
+                  key={section.id}
+                  onClick={() => scrollToSection(section.id)}
+                  className={`whitespace-nowrap px-4 py-2 rounded-lg font-medium text-sm transition-all ${
+                    activeSection === section.id
+                      ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg shadow-blue-500/30'
+                      : 'bg-white/40 dark:bg-slate-800/40 text-slate-700 dark:text-slate-300 hover:bg-white/60 dark:hover:bg-slate-800/60 backdrop-blur-sm border border-white/20 dark:border-slate-700/20'
+                  }`}
+                >
+                  <span className="mr-2">{section.icon}</span>
+                  {section.label}
+                </button>
+              ))}
+            </div>
+            {/* Scroll indicator gradient (right side) */}
+            <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-white/30 dark:from-slate-950/30 to-transparent pointer-events-none rounded-r-lg"></div>
           </div>
         </div>
       </div>
@@ -307,7 +371,7 @@ export function EditProfileClient({ initialData, onDataRefresh }: EditProfileCli
                   <DemographicsEditForm
                     userId={patientData.userId}
                     inline={true}
-                    currentData={demographicsFormData}
+                    currentData={getDemographicsData()}
                     onSuccess={() => handleSuccess()}
                   />
                 </Suspense>
@@ -327,7 +391,13 @@ export function EditProfileClient({ initialData, onDataRefresh }: EditProfileCli
               </div>
               {loadedSections['vital-signs'] && (
                 <Suspense fallback={<FormLoadingFallback />}>
-                  <VitalSignEditForm userId={patientData.userId} inline={true} onSuccess={() => handleSuccess()} />
+                  <VitalSignEditForm
+                    userId={patientData.userId}
+                    inline={true}
+                    currentData={getVitalSignData()}
+                    recentVitals={patientData?.vitalSigns || []}
+                    onSuccess={() => handleSuccess()}
+                  />
                 </Suspense>
               )}
             </div>
@@ -348,7 +418,7 @@ export function EditProfileClient({ initialData, onDataRefresh }: EditProfileCli
                   <PersonalHistoryEditForm
                     userId={patientData.userId}
                     inline={true}
-                    currentData={personalHistoryFormData}
+                    currentData={getPersonalHistoryData()}
                     onSuccess={() => handleSuccess()}
                   />
                 </Suspense>
@@ -367,9 +437,17 @@ export function EditProfileClient({ initialData, onDataRefresh }: EditProfileCli
                 </div>
               </div>
               {loadedSections['ob-gyne'] && (
-                <Suspense fallback={<FormLoadingFallback />}>
-                  <ObGyneHistoryEditForm userId={patientData.userId} inline={true} onSuccess={() => handleSuccess()} />
-                </Suspense>
+                <>
+                  {patientData.gender === 'MALE' ? (
+                    <div className="p-4 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg">
+                      <p className="text-blue-800 dark:text-blue-200">This section is for female patients only.</p>
+                    </div>
+                  ) : (
+                    <Suspense fallback={<FormLoadingFallback />}>
+                      <ObGyneHistoryEditForm userId={patientData.userId} inline={true} onSuccess={() => handleSuccess()} />
+                    </Suspense>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -386,7 +464,12 @@ export function EditProfileClient({ initialData, onDataRefresh }: EditProfileCli
               </div>
               {loadedSections['pediatric'] && (
                 <Suspense fallback={<FormLoadingFallback />}>
-                  <PediatricMeasurementEditForm userId={patientData.userId} inline={true} onSuccess={() => handleSuccess()} />
+                  <PediatricMeasurementEditForm
+                    userId={patientData.userId}
+                    inline={true}
+                    currentData={getPediatricData()}
+                    onSuccess={() => handleSuccess()}
+                  />
                 </Suspense>
               )}
             </div>
@@ -456,7 +539,12 @@ export function EditProfileClient({ initialData, onDataRefresh }: EditProfileCli
               </div>
               {loadedSections['examination'] && (
                 <Suspense fallback={<FormLoadingFallback />}>
-                  <PhysicalExaminationEditForm userId={patientData.userId} inline={true} onSuccess={() => handleSuccess()} />
+                  <PhysicalExaminationEditForm
+                    userId={patientData.userId}
+                    inline={true}
+                    currentData={getPhysicalExaminationData()}
+                    onSuccess={() => handleSuccess()}
+                  />
                 </Suspense>
               )}
             </div>
@@ -478,15 +566,7 @@ export function EditProfileClient({ initialData, onDataRefresh }: EditProfileCli
                     <PhilHealthRecordEditForm
                       userId={patientData.userId}
                       inline={true}
-                      currentData={{
-                        pin: patientData.philHealthRecords[0].pin,
-                        tin: patientData.philHealthRecords[0].tin || undefined,
-                        philSysId: patientData.philHealthRecords[0].philSysId || undefined,
-                        memberTypeId: patientData.philHealthRecords[0].memberTypeId || undefined,
-                        photoUrl: patientData.philHealthRecords[0].photoUrl || undefined,
-                        dependents: [],
-                        id: patientData.philHealthRecords[0].id,
-                      }}
+                      currentData={philHealthCurrentData}
                       onSuccess={() => handleSuccess()}
                     />
                   ) : (

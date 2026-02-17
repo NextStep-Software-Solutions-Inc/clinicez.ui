@@ -29,92 +29,137 @@ import type {
 
 export async function getPatientHealthRecords() {
   try {
-    const user = await currentUser()
-    if (!user?.id) return null
+    let user: any = null
+    
+    try {
+      user = await currentUser()
+    } catch (clerkError: any) {
+      console.error('[CLERK_ERROR] Failed to get current user:', {
+        message: clerkError?.message,
+        status: clerkError?.status,
+        errors: clerkError?.errors,
+      })
+      // Return null to show error message instead of crashing
+      return null
+    }
+    
+    if (!user?.id) {
+      console.error('[GET_PATIENT_HEALTH_RECORDS] No user or user.id', { user })
+      return null
+    }
 
-    // Get patient record with comprehensive health data
+    // Get basic patient record first
     const patient = await prisma.user.findUnique({
       where: { userId: user.id },
-      include: {
-        // Medical & Family History
-        MedicalHistories: {
-          include: {
-            Condition: {
-              select: { id: true, name: true },
-            },
-          },
-          orderBy: { createdAt: 'desc' },
-          take: 15,
-        },
-        FamilyMedicalHistories: {
-          where: { deletedAt: null },
-          include: {
-            Condition: {
-              select: { id: true, name: true },
-            },
-          },
-          orderBy: { createdAt: 'desc' },
-          take: 15,
-        },
-
-        // Vital Signs
-        VitalSigns: {
-          where: { isActive: true, deletedAt: null },
-          orderBy: { dateTaken: 'desc' },
-          take: 5,
-        },
-
-        // Physical Examinations
-        PhysicalExaminations: {
-          orderBy: { createdAt: 'desc' },
-          take: 10,
-        },
-
-        // OB/Gyn History
-        ObGyneHistory: true,
-
-        // Pediatric Measurements
-        PediatricMeasurements: {
-          orderBy: { createdAt: 'desc' },
-          take: 10,
-        },
-
-        // Personal History
-        PersonalHistory: true,
-
-        // PhilHealth Records
-        PhilHealthRecords: {
-          where: { isActive: true },
-          include: {
-            PhilHealthDependents: true,
-          },
-          orderBy: { createdAt: 'desc' },
-          take: 5,
-        },
-
-        // Procedure History
-        ProcedureUsageHistory: {
-          orderBy: { usedAt: 'desc' },
-          take: 10,
-        },
-
-        // Clinic Patients (to get primary clinic)
-        ClinicPatients: {
-          where: { isActive: true, deletedAt: null },
-          include: {
-            Clinic: {
-              select: { id: true, name: true },
-            },
-          },
-          take: 1,
-        },
+      select: {
+        id: true,
+        userId: true,
+        firstName: true,
+        lastName: true,
+        middleName: true,
+        picture: true,
+        email: true,
+        mobile: true,
+        telephone: true,
+        dob: true,
+        gender: true,
+        bloodType: true,
+        civilStatus: true,
+        placeOfBirth: true,
+        nationality: true,
+        religion: true,
+        suffix: true,
+        nickname: true,
+        caseNumber: true,
+        createdAt: true,
+        updatedAt: true,
       },
     })
 
-    if (!patient) return null
+    if (!patient) {
+      return null
+    }
+
+    // Fetch related data in separate queries
+    const [medical, familyMedical, vitals, exams, obGyne, pediatric, personal, philHealth, procedures, clinicPatients] = await Promise.all([
+      // Medical Histories
+      prisma.medicalHistory.findMany({
+        where: { userId: patient.id },
+        include: {
+          Condition: {
+            select: { id: true, name: true },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 15,
+      }),
+      // Family Medical Histories
+      prisma.familyMedicalHistory.findMany({
+        where: { userId: patient.id, deletedAt: null },
+        include: {
+          Condition: {
+            select: { id: true, name: true },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 15,
+      }),
+      // Vital Signs
+      prisma.vitalSign.findMany({
+        where: { userId: patient.id, isActive: true, deletedAt: null },
+        orderBy: { dateTaken: 'desc' },
+        take: 5,
+      }),
+      // Physical Examinations
+      prisma.physicalExamination.findMany({
+        where: { userId: patient.id },
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+      }),
+      // OB/Gyn History
+      prisma.obGyneHistory.findFirst({
+        where: { userId: patient.id },
+      }),
+      // Pediatric Measurements
+      prisma.pediatricMeasurement.findMany({
+        where: { userId: patient.id },
+        orderBy: { dateTaken: 'asc' },
+        take: 100,
+      }),
+      // Personal History
+      prisma.personalHistory.findFirst({
+        where: { userId: patient.id },
+      }),
+      // PhilHealth Records
+      prisma.philHealthRecord.findMany({
+        where: { userId: patient.id, isActive: true },
+        include: {
+          PhilHealthDependents: true,
+          PhilHealthMemberType: true,
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+      }),
+      // Procedure History
+      prisma.procedureUsageHistory.findMany({
+        where: { userId: patient.id },
+        orderBy: { usedAt: 'desc' },
+        take: 10,
+      }),
+      // Clinic Patients
+      prisma.clinicPatient.findMany({
+        where: { patientId: patient.id, isActive: true, deletedAt: null },
+        include: {
+          Clinic: {
+            select: { id: true, name: true },
+          },
+        },
+        take: 1,
+      }),
+    ])
 
     // Fetch medical certificates and referral slips from clinic
-    const clinicPatient = patient.ClinicPatients[0]
+    const clinicPatient = clinicPatients[0]
 
     let certificateDataList: CertificateData[] = []
     let referralDataList: ReferralData[] = []
@@ -202,16 +247,16 @@ export async function getPatientHealthRecords() {
       caseNumber: patient.caseNumber,
       createdAt: patient.createdAt,
       updatedAt: patient.updatedAt,
-      clinic: patient.ClinicPatients[0]?.Clinic || null,
+      clinic: clinicPatients[0]?.Clinic || null,
 
       // Medical Profile
-      medicalHistories: patient.MedicalHistories.map((h) => ({
+      medicalHistories: medical.map((h) => ({
         id: h.id,
         conditionId: h.conditionId,
         condition: h.Condition?.name || 'Unknown',
         details: h.details,
       })),
-      familyMedicalHistories: patient.FamilyMedicalHistories.map((h) => ({
+      familyMedicalHistories: familyMedical.map((h) => ({
         id: h.id,
         conditionId: h.conditionId,
         condition: h.Condition?.name || 'Unknown',
@@ -219,33 +264,45 @@ export async function getPatientHealthRecords() {
       })),
 
       // Vital Signs
-      vitalSigns: patient.VitalSigns,
-      latestVitals: patient.VitalSigns[0] || null,
+      vitalSigns: vitals,
+      latestVitals: vitals[0] || null,
 
       // Physical Examinations
-      physicalExaminations: patient.PhysicalExaminations,
+      physicalExaminations: exams,
 
       // OB/Gyn History
-      obGyneHistory: patient.ObGyneHistory || null,
+      obGyneHistory: obGyne || null,
 
-      // Pediatric Measurements
-      pediatricMeasurements: patient.PediatricMeasurements,
+      // Pediatric Measurements - Convert Decimal to number for client serialization
+      pediatricMeasurements: pediatric.map((pm) => ({
+        ...pm,
+        length: pm.length ? Number(pm.length) : pm.length,
+        headCircumference: pm.headCircumference ? Number(pm.headCircumference) : pm.headCircumference,
+        skinfoldThickness: pm.skinfoldThickness ? Number(pm.skinfoldThickness) : pm.skinfoldThickness,
+        waistCircumference: pm.waistCircumference ? Number(pm.waistCircumference) : pm.waistCircumference,
+        hipCircumference: pm.hipCircumference ? Number(pm.hipCircumference) : pm.hipCircumference,
+        limbCircumference: pm.limbCircumference ? Number(pm.limbCircumference) : pm.limbCircumference,
+        midUpperArmCircumference: pm.midUpperArmCircumference ? Number(pm.midUpperArmCircumference) : pm.midUpperArmCircumference,
+      })),
 
       // Personal History & Lifestyle
-      personalHistory: patient.PersonalHistory || null,
+      personalHistory: personal || null,
 
       // Insurance & PhilHealth
-      philHealthRecords: patient.PhilHealthRecords,
+      philHealthRecords: philHealth,
 
       // Procedure History
-      procedureHistory: patient.ProcedureUsageHistory,
+      procedureHistory: procedures,
 
       // Clinical Documents
       medicalCertificates: certificateDataList,
       referralSlips: referralDataList,
     }
   } catch (error) {
-    console.error('Error fetching patient health records:', error)
+    console.error('[GET_PATIENT_HEALTH_RECORDS_CATCH] Error:', {
+      message: error instanceof Error ? error.message : String(error),
+      type: error instanceof Error ? error.constructor.name : typeof error,
+    })
     return null
   }
 }

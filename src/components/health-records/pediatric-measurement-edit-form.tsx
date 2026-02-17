@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { addPediatricMeasurement } from '@/actions/patient-profile'
 import { pediatricMeasurementSchema, evaluateMUAC, type PediatricMeasurementFormInput } from '@/schemas'
 import { FormModal, FormField, EditButton } from './index'
@@ -31,6 +31,14 @@ export function PediatricMeasurementEditForm({
     currentData || {}
   )
 
+  // Sync form data when currentData prop changes (e.g., after successful save and refetch)
+  useEffect(() => {
+    if (currentData) {
+      console.log('[PediatricForm] Syncing form data from prop:', currentData)
+      setFormData(currentData)
+    }
+  }, [currentData])
+
   // Track if form has unsaved changes
   const hasChanges = useMemo(() => {
     return JSON.stringify(formData) !== JSON.stringify(currentData || {})
@@ -52,17 +60,27 @@ export function PediatricMeasurementEditForm({
     setIsLoading(true)
 
     try {
+      console.log('[PediatricForm] Submitting:', formData)
       const result = await addPediatricMeasurement(userId, formData as PediatricMeasurementFormInput)
+      console.log('[PediatricForm] Save result:', result)
 
       if (result.success) {
+        console.log('[PediatricForm] Save successful, measurement ID:', result.measurementId)
         toast.success('Measurement recorded successfully')
-        if (!inline) setIsOpen(false)
-        setFormData({})
-        onSuccess?.()
+        // For modal mode, close the modal and clear form
+        if (!inline) {
+          setIsOpen(false)
+          setFormData({})
+        }
+        // For inline mode, let parent refetch and useEffect will sync new data
+        // Don't clear formData here - wait for useEffect to sync with fresh data
+        await onSuccess?.()
+        console.log('[PediatricForm] After onSuccess, waiting for data sync')
       } else {
         toast.error(result.error || 'An unexpected error occurred')
       }
     } catch (err) {
+      console.error('[PediatricForm] Error:', err)
       toast.error('An unexpected error occurred. Please try again.')
     } finally {
       setIsLoading(false)

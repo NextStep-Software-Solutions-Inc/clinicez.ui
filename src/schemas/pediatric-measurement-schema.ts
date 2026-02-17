@@ -12,49 +12,49 @@ export const pediatricMeasurementSchema = z.object({
     .max(new Date(), "Measurement date must be today or earlier"),
 
   length: z
-    .number()
+    .coerce.number()
     .min(20, "Length must be at least 20 cm")
     .max(150, "Length must be less than 150 cm")
     .optional()
     .nullable(),
 
   headCircumference: z
-    .number()
+    .coerce.number()
     .min(20, "Head circumference must be at least 20 cm")
     .max(60, "Head circumference must be less than 60 cm")
     .optional()
     .nullable(),
 
   skinfoldThickness: z
-    .number()
+    .coerce.number()
     .min(0, "Skinfold thickness cannot be negative")
     .max(40, "Skinfold thickness must be less than 40 mm")
     .optional()
     .nullable(),
 
   waistCircumference: z
-    .number()
+    .coerce.number()
     .min(10, "Waist circumference must be at least 10 cm")
     .max(150, "Waist circumference must be less than 150 cm")
     .optional()
     .nullable(),
 
   hipCircumference: z
-    .number()
+    .coerce.number()
     .min(10, "Hip circumference must be at least 10 cm")
     .max(150, "Hip circumference must be less than 150 cm")
     .optional()
     .nullable(),
 
   limbCircumference: z
-    .number()
+    .coerce.number()
     .min(5, "Limb circumference must be at least 5 cm")
     .max(40, "Limb circumference must be less than 40 cm")
     .optional()
     .nullable(),
 
   midUpperArmCircumference: z
-    .number()
+    .coerce.number()
     .min(10, "MUAC must be at least 10 cm (typically 12-20 cm for children)")
     .max(50, "MUAC must be less than 50 cm")
     .optional()

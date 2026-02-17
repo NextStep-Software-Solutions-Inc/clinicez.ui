@@ -125,10 +125,10 @@ export async function getLatestVitals(userId: number): Promise<LatestVitalsData>
 
     // Calculate BMI if not already in database
     const bmi = latest.bmi || calculateBMI(latest.height, latest.weight)
-    
+
     // Calculate body fat percentage
     const { percentage: bodyFatPercentage, category: bodyFatCategory } = calculateBodyFat(bmi, age, user?.gender || null)
-    
+
     // Create vitals object with calculated BMI
     const vitalsWithBMI = {
       ...latest,
@@ -144,23 +144,23 @@ export async function getLatestVitals(userId: number): Promise<LatestVitalsData>
         bp:
           latest.bpSystolic && previous?.bpSystolic
             ? calculateTrend(latest.bpSystolic, previous.bpSystolic, {
-                min: 90,
-                max: 120,
-              })
+              min: 90,
+              max: 120,
+            })
             : null,
         hr:
           latest.pulseRate && previous?.pulseRate
             ? calculateTrend(latest.pulseRate, previous.pulseRate, {
-                min: 60,
-                max: 100,
-              })
+              min: 60,
+              max: 100,
+            })
             : null,
         temp:
           latest.temp && previous?.temp
             ? calculateTrend(latest.temp, previous.temp, {
-                min: 98,
-                max: 98.6,
-              })
+              min: 98,
+              max: 98.6,
+            })
             : null,
         weight:
           latest.weight && previous?.weight
@@ -169,9 +169,9 @@ export async function getLatestVitals(userId: number): Promise<LatestVitalsData>
         spo2:
           latest.spo2 && previous?.spo2
             ? calculateTrend(latest.spo2, previous.spo2, {
-                min: 95,
-                max: 100,
-              })
+              min: 95,
+              max: 100,
+            })
             : null,
       },
     }
@@ -218,45 +218,45 @@ export async function getVitalsHistory(
       bpSystolic:
         vitals.length > 0
           ? Math.round(
-              vitals.reduce((sum: number, v: (typeof vitals)[0]) => sum + (v.bpSystolic || 0), 0) /
-                vitals.length
-            )
+            vitals.reduce((sum: number, v: (typeof vitals)[0]) => sum + (v.bpSystolic || 0), 0) /
+            vitals.length
+          )
           : null,
       bpDiastolic:
         vitals.length > 0
           ? Math.round(
-              vitals.reduce((sum: number, v: (typeof vitals)[0]) => sum + (v.bpDiastolic || 0), 0) /
-                vitals.length
-            )
+            vitals.reduce((sum: number, v: (typeof vitals)[0]) => sum + (v.bpDiastolic || 0), 0) /
+            vitals.length
+          )
           : null,
       pulseRate:
         vitals.length > 0
           ? Math.round(
-              vitals.reduce((sum: number, v: (typeof vitals)[0]) => sum + (v.pulseRate || 0), 0) /
-                vitals.length
-            )
+            vitals.reduce((sum: number, v: (typeof vitals)[0]) => sum + (v.pulseRate || 0), 0) /
+            vitals.length
+          )
           : null,
       temp:
         vitals.length > 0
           ? Math.round(
-              (vitals.reduce((sum: number, v: (typeof vitals)[0]) => sum + (v.temp || 0), 0) /
-                vitals.length) *
-                10
-            ) / 10
+            (vitals.reduce((sum: number, v: (typeof vitals)[0]) => sum + (v.temp || 0), 0) /
+              vitals.length) *
+            10
+          ) / 10
           : null,
       weight:
         vitals.length > 0
           ? Math.round(
-              (vitals.reduce((sum: number, v: (typeof vitals)[0]) => sum + (v.weight || 0), 0) /
-                vitals.length) *
-                10
-            ) / 10
+            (vitals.reduce((sum: number, v: (typeof vitals)[0]) => sum + (v.weight || 0), 0) /
+              vitals.length) *
+            10
+          ) / 10
           : null,
       spo2:
         vitals.length > 0
           ? Math.round(
-              vitals.reduce((sum: number, v: (typeof vitals)[0]) => sum + (v.spo2 || 0), 0) / vitals.length
-            )
+            vitals.reduce((sum: number, v: (typeof vitals)[0]) => sum + (v.spo2 || 0), 0) / vitals.length
+          )
           : null,
     }
 

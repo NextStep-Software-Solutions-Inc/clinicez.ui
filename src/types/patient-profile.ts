@@ -139,6 +139,29 @@ export interface SerializedPatientHealthRecordsResponse {
     address: string | null
   }>
 
+  // Vaccinations
+  userVaccinations: Array<{
+    id: number
+    vaccine: string
+    dose: string
+    route: string
+    dateGiven: string
+    notes: string | null
+    administeredBy: string | null
+  }>
+
+  // Disabilities & Illnesses
+  userDisabilities: Array<{
+    id: number
+    disability: string
+    dateDiagnosed: string | null
+    severity: string
+    notes: string | null
+    isManaged: boolean | null
+    reason: string | null
+    diagnosedBy: string | null
+  }>
+
   // Insurance & PhilHealth
   philHealthRecords: Array<Omit<PhilHealthRecord, 'createdAt' | 'updatedAt' | 'deletedAt'> & {
     createdAt: string

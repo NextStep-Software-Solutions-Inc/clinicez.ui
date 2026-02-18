@@ -63,7 +63,7 @@ export async function getPatientHealthRecords(): Promise<SerializedPatientHealth
     }
 
     // Fetch related data in separate queries
-    const [medical, familyMedical, vitals, exams, obGyne, pediatric, personal, philHealth, procedures, clinicPatients, allergies, emergencyContacts] = await Promise.all([
+    const [medical, familyMedical, vitals, exams, obGyne, pediatric, personal, philHealth, procedures, clinicPatients, allergies, emergencyContacts, vaccinations, disabilities] = await Promise.all([
       // Medical Histories
       prisma.medicalHistory.findMany({
         where: { userId: patient.id },
@@ -154,6 +154,37 @@ export async function getPatientHealthRecords(): Promise<SerializedPatientHealth
       prisma.userEmergencyContact.findMany({
         where: { userId: patient.id, isActive: true },
         orderBy: { createdAt: 'desc' },
+      }),
+      // Vaccinations
+      prisma.userVaccination.findMany({
+        where: { userId: patient.id, isActive: true, deletedAt: null },
+        include: {
+          Vaccine: {
+            select: { name: true },
+          },
+          Dose: {
+            select: { dose: true },
+          },
+          Route: {
+            select: { route: true },
+          },
+        },
+        orderBy: { dateGiven: 'desc' },
+        take: 20,
+      }),
+      // Disabilities
+      prisma.userDisability.findMany({
+        where: { userId: patient.id },
+        include: {
+          Disability: {
+            select: { name: true },
+          },
+          DiagnosedBy: {
+            select: { firstName: true, lastName: true },
+          },
+        },
+        orderBy: { dateDiagnosed: 'desc' },
+        take: 20,
       }),
     ])
 
@@ -340,6 +371,29 @@ export async function getPatientHealthRecords(): Promise<SerializedPatientHealth
         phone: contact.phone,
         isPrimary: contact.isPrimary,
         address: contact.address,
+      })),
+
+      // Vaccinations
+      userVaccinations: vaccinations.map((vac) => ({
+        id: vac.id,
+        vaccine: vac.Vaccine.name,
+        dose: vac.Dose.dose,
+        route: vac.Route.route,
+        dateGiven: vac.dateGiven.toISOString(),
+        notes: vac.notes,
+        administeredBy: vac.administeredBy,
+      })),
+
+      // Disabilities & Illnesses
+      userDisabilities: disabilities.map((dis) => ({
+        id: dis.id,
+        disability: dis.Disability.name,
+        dateDiagnosed: dis.dateDiagnosed ? dis.dateDiagnosed.toISOString() : null,
+        severity: dis.severity,
+        notes: dis.notes,
+        isManaged: dis.isManaged,
+        reason: dis.reason,
+        diagnosedBy: dis.DiagnosedBy ? `${dis.DiagnosedBy.firstName} ${dis.DiagnosedBy.lastName}` : null,
       })),
 
       // Insurance & PhilHealth

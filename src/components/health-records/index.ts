@@ -23,4 +23,6 @@ export { PhilHealthRecordEditForm, type PhilHealthRecordEditFormProps } from './
 export { AllergyEditForm, type AllergyEditFormProps } from './allergy-edit-form'
 export { EmergencyContactEditForm, type EmergencyContactEditFormProps } from './emergency-contact-edit-form'
 export { AddressEditForm, type AddressEditFormProps } from './address-edit-form'
+export { VaccinationEditForm, type VaccinationEditFormProps } from './vaccination-edit-form'
+export { DisabilitiesEditForm, type DisabilitiesEditFormProps } from './disabilities-illnesses-edit-form'
 export { ProfilePictureUpload, type ProfilePictureUploadProps } from './profile-picture-upload'

@@ -545,75 +545,401 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
       {/* VITALS TAB */}
       {activeTab === 'vitals' && (
         <div className="space-y-6">
-          <div className="backdrop-blur-xl bg-white/30 dark:bg-slate-800/30 border border-white/40 dark:border-slate-700/40 rounded-2xl shadow-2xl p-6 md:p-8">
-            <div className="mb-6 flex items-center gap-3">
-              <div className="w-1.5 h-8 bg-gradient-to-b from-red-500 to-rose-500 rounded-full"></div>
-              <h3 className="text-2xl font-bold text-slate-900 dark:text-white">❤️ Vital Signs History</h3>
-            </div>
-            <div className="flex items-center justify-end mb-6">
-              {patient.vitalSigns.length > 0 && (
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setVitalsViewMode('list')}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
-                      vitalsViewMode === 'list'
-                        ? 'bg-gradient-to-r from-red-500 to-rose-500 text-white shadow-lg'
-                        : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
-                    }`}
-                  >
-                    <List className="w-4 h-4" />
-                    <span>List</span>
-                  </button>
-                  <button
-                    onClick={() => setVitalsViewMode('chart')}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
-                      vitalsViewMode === 'chart'
-                        ? 'bg-gradient-to-r from-red-500 to-rose-500 text-white shadow-lg'
-                        : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
-                    }`}
-                  >
-                    <BarChart3 className="w-4 h-4" />
-                    <span>Chart</span>
-                  </button>
+          {patient.vitalSigns.length > 0 ? (
+            <div className="glassmorphic-card p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-1">📊 Vital Signs History</h3>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">Latest measurements and trends</p>
+                </div>
+                {patient.vitalSigns.length > 0 && (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setVitalsViewMode('list')}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+                        vitalsViewMode === 'list'
+                          ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                      }`}
+                    >
+                      <List className="w-4 h-4" />
+                      <span className="text-sm font-medium">List</span>
+                    </button>
+                    <button
+                      onClick={() => setVitalsViewMode('chart')}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+                        vitalsViewMode === 'chart'
+                          ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                      }`}
+                    >
+                      <BarChart3 className="w-4 h-4" />
+                      <span className="text-sm font-medium">Chart</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+              
+              {vitalsViewMode === 'list' ? (
+                <div className="space-y-3">
+                  {patient.vitalSigns.map((v, i) => {
+                    const getStatusColor = (value: number | null, min: number, optimal: number, max: number) => {
+                      if (value === null) return 'text-slate-500'
+                      if (value < min || value > max) return 'text-red-600 dark:text-red-400'
+                      if (value < optimal || value > optimal + 10) return 'text-amber-600 dark:text-amber-400'
+                      return 'text-green-600 dark:text-green-400'
+                    }
+
+                    const calculateBMI = (weight: number | null, height: number | null) => {
+                      if (!weight || !height) return null
+                      const heightInMeters = height / 100
+                      return (weight / (heightInMeters * heightInMeters)).toFixed(1)
+                    }
+
+                    const calculateBodyFat = (weight: number | null, height: number | null, gender: string | null) => {
+                      if (!weight || !height) return null
+                      const bmi = parseFloat(calculateBMI(weight, height) || '0')
+                      if (bmi === 0) return null
+                      
+                      if (gender?.toUpperCase() === 'MALE') {
+                        return ((bmi * 1.07) - 7).toFixed(1)
+                      } else {
+                        return ((bmi * 1.07) - 2).toFixed(1)
+                      }
+                    }
+
+                    const getBodyFatCategory = (bodyFat: number | null, gender: string | null) => {
+                      if (bodyFat === null) return { category: 'N/A', color: 'text-slate-500' }
+                      
+                      const bf = parseFloat(bodyFat.toString())
+                      const isMale = gender?.toUpperCase() === 'MALE'
+                      
+                      if (isMale) {
+                        if (bf < 10) return { category: 'Very Low', color: 'text-blue-600 dark:text-blue-400' }
+                        if (bf < 20) return { category: 'Healthy', color: 'text-green-600 dark:text-green-400' }
+                        if (bf < 25) return { category: 'Moderate', color: 'text-amber-600 dark:text-amber-400' }
+                        return { category: 'High', color: 'text-red-600 dark:text-red-400' }
+                      } else {
+                        if (bf < 18) return { category: 'Very Low', color: 'text-blue-600 dark:text-blue-400' }
+                        if (bf < 25) return { category: 'Healthy', color: 'text-green-600 dark:text-green-400' }
+                        if (bf < 32) return { category: 'Moderate', color: 'text-amber-600 dark:text-amber-400' }
+                        return { category: 'High', color: 'text-red-600 dark:text-red-400' }
+                      }
+                    }
+
+                    const getBMICategory = (bmi: number | null) => {
+                      if (bmi === null) return { category: 'N/A', color: 'text-slate-500' }
+                      if (bmi < 18.5) return { category: 'Underweight', color: 'text-blue-600 dark:text-blue-400' }
+                      if (bmi < 25) return { category: 'Normal', color: 'text-green-600 dark:text-green-400' }
+                      if (bmi < 30) return { category: 'Overweight', color: 'text-amber-600 dark:text-amber-400' }
+                      return { category: 'Obese', color: 'text-red-600 dark:text-red-400' }
+                    }
+
+                    const generateRemarks = () => {
+                      const remarks: string[] = []
+                      const isMale = patient.gender?.toUpperCase() === 'MALE'
+                      
+                      if (v.bpSystolic && v.bpSystolic > 140) {
+                        remarks.push('⚠️ Blood pressure is elevated - consider monitoring')
+                      } else if (v.bpSystolic && v.bpSystolic > 130) {
+                        remarks.push('📊 Blood pressure is slightly elevated')
+                      }
+                      
+                      if (v.pulseRate) {
+                        if (v.pulseRate < 60 || v.pulseRate > 100) {
+                          remarks.push(`⚠️ Heart rate is ${v.pulseRate < 60 ? 'low' : 'high'} - may need attention`)
+                        }
+                      }
+                      
+                      if (v.temp && v.temp > 38) {
+                        remarks.push('🌡️ Temperature is elevated - possible fever')
+                      } else if (v.temp && v.temp < 36.5) {
+                        remarks.push('❄️ Temperature is low')
+                      }
+                      
+                      if (v.spo2 && v.spo2 < 95) {
+                        remarks.push('⚠️ Oxygen saturation is low - consult healthcare provider')
+                      }
+                      
+                      const bmi = calculateBMI(v.weight, v.height)
+                      if (bmi) {
+                        const bmiNum = parseFloat(bmi)
+                        if (bmiNum >= 30) {
+                          remarks.push('📈 BMI indicates obesity - lifestyle changes recommended')
+                        } else if (bmiNum >= 25) {
+                          remarks.push('📊 BMI indicates overweight - consider exercise and diet')
+                        }
+                      }
+                      
+                      const bodyFat = calculateBodyFat(v.weight, v.height, patient.gender)
+                      if (bodyFat) {
+                        const bf = parseFloat(bodyFat)
+                        if (isMale) {
+                          if (bf >= 25) remarks.push('💪 Body fat is higher than healthy range for males')
+                          else if (bf < 10) remarks.push('💪 Body fat is in athlete/very fit range')
+                        } else {
+                          if (bf >= 32) remarks.push('💪 Body fat is higher than healthy range for females')
+                          else if (bf < 18) remarks.push('💪 Body fat is in athlete/very fit range')
+                        }
+                      }
+                      
+                      return remarks.length > 0 ? remarks : ['✅ Vital signs appear normal']
+                    }
+
+                    const bmi = calculateBMI(v.weight, v.height)
+                    const bodyFat = calculateBodyFat(v.weight, v.height, patient.gender)
+                    const bmiInfo = getBMICategory(bmi ? parseFloat(bmi) : null)
+                    const bodyFatInfo = getBodyFatCategory(bodyFat ? parseFloat(bodyFat) : null, patient.gender)
+                    const remarks = generateRemarks()
+
+                    const dateTime = new Date(v.dateTaken)
+                    const date = dateTime.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                    const time = dateTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })
+
+                    return (
+                      <div key={i} className="border border-slate-200 dark:border-slate-700 rounded-xl p-4 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                        {/* Header: Date & Time */}
+                        <div className="flex items-center justify-between mb-3">
+                          <div>
+                            <p className="font-semibold text-slate-900 dark:text-white">{date}</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">{time}</p>
+                          </div>
+                        </div>
+
+                        {/* Measurements Grid */}
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                          {(v.bpSystolic || v.bpDiastolic) && (
+                            <div className="flex flex-col">
+                              <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">BP</p>
+                              <p className={`text-sm font-bold ${getStatusColor(v.bpSystolic, 90, 120, 140)}`}>
+                                {v.bpSystolic}/{v.bpDiastolic}
+                              </p>
+                              <p className="text-xs text-slate-500 dark:text-slate-400">mmHg</p>
+                            </div>
+                          )}
+
+                          {v.pulseRate && (
+                            <div className="flex flex-col">
+                              <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">HR</p>
+                              <p className={`text-sm font-bold ${getStatusColor(v.pulseRate, 50, 72, 100)}`}>
+                                {v.pulseRate}
+                              </p>
+                              <p className="text-xs text-slate-500 dark:text-slate-400">bpm</p>
+                            </div>
+                          )}
+
+                          {v.temp && (
+                            <div className="flex flex-col">
+                              <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">Temp</p>
+                              <p className={`text-sm font-bold ${getStatusColor(v.temp, 36, 37, 38.5)}`}>
+                                {v.temp}
+                              </p>
+                              <p className="text-xs text-slate-500 dark:text-slate-400">°C</p>
+                            </div>
+                          )}
+
+                          {v.spo2 && (
+                            <div className="flex flex-col">
+                              <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">SpO₂</p>
+                              <p className={`text-sm font-bold ${getStatusColor(v.spo2, 94, 98, 100)}`}>
+                                {v.spo2}
+                              </p>
+                              <p className="text-xs text-slate-500 dark:text-slate-400">%</p>
+                            </div>
+                          )}
+
+                          {v.respRate && (
+                            <div className="flex flex-col">
+                              <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">RR</p>
+                              <p className={`text-sm font-bold ${getStatusColor(v.respRate, 12, 16, 20)}`}>
+                                {v.respRate}
+                              </p>
+                              <p className="text-xs text-slate-500 dark:text-slate-400">br/min</p>
+                            </div>
+                          )}
+
+                          {v.weight && (
+                            <div className="flex flex-col">
+                              <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">Weight</p>
+                              <p className="text-sm font-bold text-slate-900 dark:text-white">
+                                {v.weight}
+                              </p>
+                              <p className="text-xs text-slate-500 dark:text-slate-400">kg</p>
+                            </div>
+                          )}
+
+                          {v.height && (
+                            <div className="flex flex-col">
+                              <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">Height</p>
+                              <p className="text-sm font-bold text-slate-900 dark:text-white">
+                                {v.height}
+                              </p>
+                              <p className="text-xs text-slate-500 dark:text-slate-400">cm</p>
+                            </div>
+                          )}
+
+                          {bmi && (
+                            <div className="flex flex-col">
+                              <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">BMI</p>
+                              <p className={`text-sm font-bold ${bmiInfo.color}`}>
+                                {bmi}
+                              </p>
+                              <p className="text-xs text-slate-500 dark:text-slate-400">{bmiInfo.category}</p>
+                            </div>
+                          )}
+
+                          {bodyFat && (
+                            <div className="flex flex-col">
+                              <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">Body Fat</p>
+                              <p className={`text-sm font-bold ${bodyFatInfo.color}`}>
+                                {bodyFat}%
+                              </p>
+                              <p className="text-xs text-slate-500 dark:text-slate-400">{bodyFatInfo.category}</p>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Remarks */}
+                        {remarks.length > 0 && (
+                          <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700">
+                            <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-2">Remarks</p>
+                            <ul className="space-y-1">
+                              {remarks.map((remark, idx) => (
+                                <li key={idx} className="text-sm text-slate-700 dark:text-slate-300">
+                                  {remark}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {/* Notes */}
+                        {v.notes && (
+                          <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700">
+                            <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">Notes</p>
+                            <p className="text-sm text-slate-700 dark:text-slate-300">{v.notes}</p>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              ) : (
+                <div className="w-full h-96">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      data={patient.vitalSigns
+                        .slice()
+                        .reverse()
+                        .map((v, i) => ({
+                          date: new Date(v.dateTaken).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                          timestamp: new Date(v.dateTaken).getTime(),
+                          bpSystolic: v.bpSystolic,
+                          bpDiastolic: v.bpDiastolic,
+                          pulseRate: v.pulseRate,
+                          temp: v.temp,
+                          spo2: v.spo2,
+                          respRate: v.respRate,
+                        }))
+                        .sort((a, b) => a.timestamp - b.timestamp)
+                      }
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(100, 116, 139, 0.1)" />
+                      <XAxis 
+                        dataKey="date"
+                        stroke="rgb(100, 116, 139)"
+                        strokeOpacity={0.5}
+                        tick={{ fontSize: 12 }}
+                      />
+                      <YAxis 
+                        stroke="rgb(100, 116, 139)"
+                        strokeOpacity={0.5}
+                        tick={{ fontSize: 12 }}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: 'rgb(15, 23, 42)',
+                          border: '1px solid rgb(71, 85, 105)',
+                          borderRadius: '8px',
+                          color: 'rgb(226, 232, 240)',
+                        }}
+                        labelStyle={{ color: 'rgb(226, 232, 240)' }}
+                      />
+                      <Legend
+                        wrapperStyle={{ paddingTop: '20px' }}
+                        iconType="line"
+                      />
+                      {patient.vitalSigns.some(v => v.bpSystolic) && (
+                        <Line
+                          type="monotone"
+                          dataKey="bpSystolic"
+                          stroke="#ef4444"
+                          dot={false}
+                          name="BP Systolic (mmHg)"
+                          strokeWidth={2}
+                        />
+                      )}
+                      {patient.vitalSigns.some(v => v.bpDiastolic) && (
+                        <Line
+                          type="monotone"
+                          dataKey="bpDiastolic"
+                          stroke="#f97316"
+                          dot={false}
+                          name="BP Diastolic (mmHg)"
+                          strokeWidth={2}
+                        />
+                      )}
+                      {patient.vitalSigns.some(v => v.pulseRate) && (
+                        <Line
+                          type="monotone"
+                          dataKey="pulseRate"
+                          stroke="#06b6d4"
+                          dot={false}
+                          name="Heart Rate (bpm)"
+                          strokeWidth={2}
+                        />
+                      )}
+                      {patient.vitalSigns.some(v => v.temp) && (
+                        <Line
+                          type="monotone"
+                          dataKey="temp"
+                          stroke="#ec4899"
+                          dot={false}
+                          name="Temperature (°C)"
+                          strokeWidth={2}
+                        />
+                      )}
+                      {patient.vitalSigns.some(v => v.spo2) && (
+                        <Line
+                          type="monotone"
+                          dataKey="spo2"
+                          stroke="#8b5cf6"
+                          dot={false}
+                          name="SpO₂ (%)"
+                          strokeWidth={2}
+                        />
+                      )}
+                      {patient.vitalSigns.some(v => v.respRate) && (
+                        <Line
+                          type="monotone"
+                          dataKey="respRate"
+                          stroke="#14b8a6"
+                          dot={false}
+                          name="Respiration Rate (br/min)"
+                          strokeWidth={2}
+                        />
+                      )}
+                    </LineChart>
+                  </ResponsiveContainer>
                 </div>
               )}
             </div>
-            
-            {patient.vitalSigns.length > 0 ? (
-              <>
-                {vitalsViewMode === 'list' ? (
-                  <div className="space-y-3 max-h-96 overflow-y-auto">
-                {patient.vitalSigns.map((v, i) => (
-                  <div key={i} className="border rounded-lg p-4 text-sm">
-                    <p className="font-semibold">{new Date(v.dateTaken).toLocaleDateString()}</p>
-                    <p className="text-xs text-slate-500">BP: {v.bpSystolic}/{v.bpDiastolic} | HR: {v.pulseRate} | Temp: {v.temp} | SpO₂: {v.spo2}%</p>
-                  </div>
-                ))}
-                  </div>
-                ) : (
-                  <div className="w-full h-80">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={patient.vitalSigns.map(v => ({
-                        date: new Date(v.dateTaken).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-                        bpSystolic: v.bpSystolic,
-                        pulseRate: v.pulseRate,
-                      }))}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(100, 116, 139, 0.1)" />
-                        <XAxis dataKey="date" stroke="rgb(100, 116, 139)" strokeOpacity={0.5} />
-                        <YAxis stroke="rgb(100, 116, 139)" strokeOpacity={0.5} />
-                        <Tooltip contentStyle={{backgroundColor: 'rgb(15, 23, 42)', border: '1px solid rgb(71, 85, 105)', borderRadius: '8px', color: 'rgb(226, 232, 240)'}} />
-                        <Legend />
-                        <Line type="monotone" dataKey="bpSystolic" stroke="#ef4444" />
-                        <Line type="monotone" dataKey="pulseRate" stroke="#06b6d4" />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                )}
-              </>
-            ) : (
-              <p className="text-slate-600 dark:text-slate-400 text-center py-8">No vital signs recorded</p>
-            )}
-          </div>
+          ) : (
+            <div className="glassmorphic-card p-6">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">❤️ Vital Signs</h3>
+              <p className="text-slate-600 dark:text-slate-400 text-center py-8">No vital signs recorded yet</p>
+            </div>
+          )}
         </div>
       )}
 
@@ -621,27 +947,106 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
       {activeTab === 'exams' && (
         <div className="space-y-6">
           {patient.physicalExaminations.length > 0 ? (
-            <div className="backdrop-blur-xl bg-white/30 dark:bg-slate-800/30 border border-white/40 dark:border-slate-700/40 rounded-2xl shadow-2xl p-6 md:p-8">
-              <div className="mb-6 flex items-center gap-3">
-                <div className="w-1.5 h-8 bg-gradient-to-b from-orange-500 to-amber-500 rounded-full"></div>
-                <h2 className="text-2xl font-bold text-slate-900 dark:text-white">🔍 Physical Examinations</h2>
-              </div>
-              <div className="space-y-3 max-h-96 overflow-y-auto">
-                {patient.physicalExaminations.slice(0, 5).map((e, i) => (
-                  <div key={i} className="p-4 rounded-lg border border-slate-200/50 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-900/30 text-sm hover:bg-slate-100/50 dark:hover:bg-slate-800/50 transition-colors">
-                    <p className="font-semibold">{new Date(e.createdAt).toLocaleDateString()}</p>
-                    <p className="text-xs text-slate-600 dark:text-slate-400">Status: {e.status}</p>
-                  </div>
-                ))}
+            <div className="glassmorphic-card p-6">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">🔍 Physical Examinations</h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">Latest physical examination records</p>
+              <div className="space-y-3">
+                {patient.physicalExaminations.map((e, i) => {
+                  const getStatusColor = (status: string | null) => {
+                    if (!status) return { color: 'text-slate-500', bg: 'bg-slate-100 dark:bg-slate-800' }
+                    const statusLower = status.toLowerCase()
+                    if (statusLower === 'good' || statusLower === 'normal') 
+                      return { color: 'text-green-600 dark:text-green-400', bg: 'bg-green-50 dark:bg-green-900/20' }
+                    if (statusLower === 'fair' || statusLower === 'moderate') 
+                      return { color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/20' }
+                    if (statusLower === 'poor' || statusLower === 'abnormal') 
+                      return { color: 'text-red-600 dark:text-red-400', bg: 'bg-red-50 dark:bg-red-900/20' }
+                    return { color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-900/20' }
+                  }
+
+                  const getVisionStatus = (acuity: string | null) => {
+                    if (!acuity) return 'Not recorded'
+                    const acuityNum = parseFloat(acuity)
+                    if (isNaN(acuityNum)) return acuity
+                    if (acuityNum >= 1.0) return `${acuity} - Normal`
+                    if (acuityNum >= 0.8) return `${acuity} - Good`
+                    if (acuityNum >= 0.5) return `${acuity} - Fair`
+                    return `${acuity} - Poor`
+                  }
+
+                  const statusInfo = getStatusColor(e.status)
+                  const dateTime = new Date(e.createdAt)
+                  const date = dateTime.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                  const time = dateTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })
+
+                  return (
+                    <div key={i} className="border border-slate-200 dark:border-slate-700 rounded-xl p-4 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                      {/* Header: Date, Time & Status */}
+                      <div className="flex items-start justify-between mb-3">
+                        <div>
+                          <p className="font-semibold text-slate-900 dark:text-white">{date}</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">{time}</p>
+                        </div>
+                        {e.status && (
+                          <div className={`px-3 py-1 rounded-full text-sm font-semibold ${statusInfo.color} ${statusInfo.bg}`}>
+                            {e.status}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Examination Findings */}
+                      <div className="space-y-3">
+                        {/* Visual Acuity */}
+                        {(e.visualAcuityLeft || e.visualAcuityRight) && (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-3 border-b border-slate-200 dark:border-slate-700">
+                            {e.visualAcuityLeft && (
+                              <div className="flex flex-col">
+                                <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">Visual Acuity (Left)</p>
+                                <p className="text-sm font-bold text-slate-900 dark:text-white">{getVisionStatus(e.visualAcuityLeft)}</p>
+                              </div>
+                            )}
+                            {e.visualAcuityRight && (
+                              <div className="flex flex-col">
+                                <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">Visual Acuity (Right)</p>
+                                <p className="text-sm font-bold text-slate-900 dark:text-white">{getVisionStatus(e.visualAcuityRight)}</p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Examination Summary */}
+                        {e.status && (
+                          <div className="flex items-center gap-2">
+                            <div className="h-2 w-2 rounded-full" style={{
+                              backgroundColor: e.status.toLowerCase() === 'good' || e.status.toLowerCase() === 'normal' ? '#16a34a' :
+                                             e.status.toLowerCase() === 'fair' || e.status.toLowerCase() === 'moderate' ? '#d97706' :
+                                             e.status.toLowerCase() === 'poor' || e.status.toLowerCase() === 'abnormal' ? '#dc2626' : '#3b82f6'
+                            }}></div>
+                            <p className="text-sm text-slate-700 dark:text-slate-300">
+                              {e.status.toLowerCase() === 'good' && '✅ Physical examination is within normal limits'}
+                              {e.status.toLowerCase() === 'normal' && '✅ All findings are normal'}
+                              {e.status.toLowerCase() === 'fair' && '📊 Some findings observed - follow-up recommended'}
+                              {e.status.toLowerCase() === 'moderate' && '⚠️ Moderate findings - medical attention advised'}
+                              {e.status.toLowerCase() === 'poor' && '⚠️ Significant findings - consult healthcare provider'}
+                              {e.status.toLowerCase() === 'abnormal' && '⚠️ Abnormal findings - requires evaluation'}
+                              {!['good', 'normal', 'fair', 'moderate', 'poor', 'abnormal'].includes(e.status.toLowerCase()) && `Examination status: ${e.status}`}
+                            </p>
+                          </div>
+                        )}
+
+                        {!e.status && (
+                          <p className="text-sm text-slate-600 dark:text-slate-400">No additional details recorded for this examination</p>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             </div>
           ) : (
-            <div className="backdrop-blur-xl bg-white/30 dark:bg-slate-800/30 border border-white/40 dark:border-slate-700/40 rounded-2xl shadow-2xl p-6 md:p-8">
-              <div className="mb-6 flex items-center gap-3">
-                <div className="w-1.5 h-8 bg-gradient-to-b from-orange-500 to-amber-500 rounded-full"></div>
-                <h2 className="text-2xl font-bold text-slate-900 dark:text-white">🔍 Physical Examinations</h2>
-              </div>
-              <p className="text-slate-600 dark:text-slate-400 text-center py-8">No physical examinations recorded</p>
+            <div className="glassmorphic-card p-6">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">🔍 Physical Examinations</h3>
+              <p className="text-slate-600 dark:text-slate-400 text-center py-8">No physical examinations recorded yet</p>
             </div>
           )}
         </div>

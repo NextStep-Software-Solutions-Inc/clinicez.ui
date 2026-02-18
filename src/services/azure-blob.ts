@@ -30,7 +30,7 @@ async function getFile(blobName: string): Promise<Buffer | null> {
 
   try {
     const downloadResponse: BlobDownloadResponseModel = await blobClient.download();
-    if(!downloadResponse.readableStreamBody) throw new Error('No readable stream body');
+    if (!downloadResponse.readableStreamBody) throw new Error('No readable stream body');
     const buffer = await streamToBuffer(downloadResponse.readableStreamBody);
     return buffer;
   } catch (error) {
@@ -38,7 +38,7 @@ async function getFile(blobName: string): Promise<Buffer | null> {
   }
 }
 
-async function uploadFile(blobName: string, data: ArrayBuffer, fileType?: string): Promise<{url: string}> {
+async function uploadFile(blobName: string, data: ArrayBuffer, fileType?: string): Promise<{ url: string }> {
   const blobClient = containerClient.getBlockBlobClient(blobName);
 
   try {
@@ -47,9 +47,10 @@ async function uploadFile(blobName: string, data: ArrayBuffer, fileType?: string
         blobContentType: fileType || 'application/octet-stream' // Replace with the appropriate content type if known
       }
     });
-    return {url: blobClient.url};
+    return { url: blobClient.url };
   } catch (error) {
-    return {url: ''};
+    console.error('[AZURE_BLOB_UPLOAD_ERROR]', error);
+    throw new Error(`Failed to upload file: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 
@@ -77,9 +78,9 @@ async function streamToBuffer(readableStream: NodeJS.ReadableStream): Promise<Bu
   });
 }
 
-export { 
+export {
   // listBlobs, 
-  getFile, 
-  uploadFile, 
-  deleteFile 
+  getFile,
+  uploadFile,
+  deleteFile
 };

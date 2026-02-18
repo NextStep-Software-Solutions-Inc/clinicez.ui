@@ -7,14 +7,14 @@ import { Trash } from "lucide-react";
 import { useParams } from "next/navigation";
 import React from "react";
 import { toast } from "sonner";
-import { useOrgAppointmentModes } from "@hooks/useOrgAppointmentMode";
+import { useClinicAppointmentModes } from "@hooks/useOrgAppointmentMode";
 import { deleteAppointmentModeAction, GetAppointmentModes } from "@actions/appointments/appointment-mode.action";
 import AddAppointmentModeModal from "./modal/AddAppointmentModeModal";
 import UpdateAppointmentModeModal from "./modal/UpdateAppointmentModeModal";
 
 export default function AppointmentModeList() {
   const params = useParams<{clinicUid: string}>()
-  const {data: appointmentModes, isLoading, mutate} = useOrgAppointmentModes(params.clinicUid)
+  const {data: appointmentModes, isLoading, mutate} = useClinicAppointmentModes(params.clinicUid)
 
   const deleteAppointmentMode = (id: number) => {
     toast.promise(deleteAppointmentModeAction(id), {

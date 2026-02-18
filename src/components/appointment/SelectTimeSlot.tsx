@@ -38,10 +38,10 @@ export default function SelectTimeSlot({nextStep, prevStep, isFirstStep, isLastS
   })), [isValidating, timeSlots?.data, bookAppointmentForm.preferredDate]) ?? []
 
   return (
-    <div className="shadow-lg w-full p-8 bg-white rounded-md">
-      <h5 className="text-lg font-semibold">Pick Time Slot (optional)</h5>
-      <div className="overflow-y-auto max-h-[calc(50dvh)] no-scrollbar scrollBox">
-        <Alert className="my-5">
+    <div className="shadow-lg w-full p-8 bg-white/20 dark:bg-gray-800/20 rounded-md">
+      <h5 className="text-lg font-semibold dark:text-white/50">Pick Time Slot (optional)</h5>
+      <div className="overflow-y-auto max-h-[calc(50dvh)] no-scrollbar scrollBox p-2">
+        <Alert>
           <Info className="h-4 w-4" />
           <AlertTitle>
             Time slots refresh every minute to show the most up-to-date availability.

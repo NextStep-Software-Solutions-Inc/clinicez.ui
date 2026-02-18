@@ -11,6 +11,7 @@ type AddressUpsertData = {
   addressLine: string | null;
   street: string | null;
   subdivision: string | null;
+  region: string | null;
   barangay: string | null;
   city: string;
   state: string;
@@ -26,6 +27,7 @@ const mapAddressInput = (data: Omit<AddressItemProps["address"], "id">): Address
   addressLine: data.addressLine || null,
   street: data.street || null,
   subdivision: data.subdivision || null,
+  region: (data as any).region || null,
   barangay: data.barangay || null,
   city: data.city,
   state: data.state,

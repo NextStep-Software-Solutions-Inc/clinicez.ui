@@ -1,64 +1,137 @@
+@import './globals.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /**
- * Patient Dashboard Global Styles & Theme Variables
+ * Patient Dashboard Design System
  * 
- * Provides dashboard-specific theme configuration and global styles.
- * Patient dashboard has its own visual identity separate from other dashboards.
- * 
- * Components use inline Tailwind className (not CSS component classes).
+ * Comprehensive design system with shadcn principles:
+ * - Semantic color tokens for different card types
+ * - Animated pattern backgrounds with phase motion
+ * - Consistent spacing and typography scale
+ * - Component-level design tokens
  * 
  * Structure:
- * 1. CSS Variables - Dashboard theme colors and design tokens
- * 2. Base Styles - Foundation and global styles
- * 3. Animations - Keyframe animations
- * 4. Accessibility - A11y enhancements
- * 5. Print Styles - Print-optimized layouts
+ * 1. Design Tokens - Semantic colors, spacing, typography
+ * 2. Pattern Backgrounds - SVG patterns with animation
+ * 3. Base Styles - Foundation and global styles
+ * 4. Component Tokens - Card and element specific tokens
+ * 5. Animations - Keyframe animations including phase motion
+ * 6. Accessibility & Print Styles
  */
 
 /* ============================================================================
-   1. CSS VARIABLES - Dashboard Theme
+   1. DESIGN TOKENS - Semantic Color System & Typography Scale
    ============================================================================ */
 
 :root {
-  /* Primary Colors */
-  --color-primary: hsl(var(--color-primary-hsl) / <alpha-value>);
-  --color-primary-hsl: 210 100% 50%; /* Blue */
+  /* ─────────────────────────────────────────────────────────────────────── */
+  /* Semantic Color Palette - Following shadcn Design System */
+  /* ─────────────────────────────────────────────────────────────────────── */
   
-  /* Semantic Colors */
-  --color-success: hsl(142 76% 36%); /* Green */
-  --color-warning: hsl(38 92% 50%); /* Amber */
-  --color-danger: hsl(0 84% 60%); /* Red */
-  --color-info: hsl(200 100% 50%); /* Cyan */
+  /* Appointment Card (Blue) */
+  --color-appointment: oklch(55% 0.22 264);
+  --color-appointment-light: oklch(92% 0.04 264);
+  --color-appointment-dark: oklch(40% 0.18 264);
+  --color-appointment-accent: oklch(70% 0.15 264);
   
-  /* Neutral Colors */
+  /* Vitals/Health Metrics (Green/Emerald) */
+  --color-health: oklch(55% 0.2 142);
+  --color-health-light: oklch(92% 0.03 142);
+  --color-health-dark: oklch(40% 0.15 142);
+  --color-health-accent: oklch(70% 0.12 142);
+  
+  /* Medications (Teal) */
+  --color-medication: oklch(55% 0.18 215);
+  --color-medication-light: oklch(92% 0.03 215);
+  --color-medication-dark: oklch(40% 0.14 215);
+  --color-medication-accent: oklch(70% 0.11 215);
+  
+  /* Labs/Diagnostics (Purple) */
+  --color-lab: oklch(55% 0.2 290);
+  --color-lab-light: oklch(92% 0.04 290);
+  --color-lab-dark: oklch(40% 0.16 290);
+  --color-lab-accent: oklch(70% 0.14 290);
+  
+  /* Status Colors */
+  --color-success: oklch(65% 0.2 142);
+  --color-warning: oklch(70% 0.2 70);
+  --color-danger: oklch(60% 0.2 20);
+  --color-info: oklch(65% 0.15 260);
+  
+  /* Neutral Colors - Light Mode (Default) */
   --color-bg-primary: hsl(0 0% 100%);
   --color-bg-secondary: hsl(0 0% 97%);
   --color-bg-tertiary: hsl(0 0% 94%);
-  --color-text-primary: hsl(0 0% 13%);
-  --color-text-secondary: hsl(0 0% 43%);
-  --color-text-muted: hsl(0 0% 63%);
-  --color-border: hsl(0 0% 90%);
+  --color-bg-hover: hsl(0 0% 91%);
+  --color-bg-active: hsl(0 0% 88%);
   
-  /* Spacing */
-  --spacing-xs: 0.25rem; /* 4px */
-  --spacing-sm: 0.5rem; /* 8px */
-  --spacing-md: 1rem; /* 16px */
-  --spacing-lg: 1.5rem; /* 24px */
-  --spacing-xl: 2rem; /* 32px */
-  --spacing-2xl: 3rem; /* 48px */
+  --color-text-primary: hsl(240 10% 8%);
+  --color-text-secondary: hsl(240 5% 30%);
+  --color-text-muted: hsl(240 3% 50%);
+  --color-text-disabled: hsl(240 2% 65%);
   
-  /* Border Radius */
-  --radius-sm: 0.375rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
-  --radius-xl: 1rem;
+  --color-border: hsl(240 5% 85%);
+  --color-border-light: hsl(240 5% 92%);
   
+  /* Light Mode Pattern - Continuous Live ECG Graph with rose/pink and green lines */
+  --pattern-primary: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="120"><defs><pattern id="liveecg" width="400" height="120" patternUnits="userSpaceOnUse"><line x1="0" y1="60" x2="400" y2="60" stroke="rgba(196, 181, 253, 0.08)" stroke-width="0.8"/><path d="M 0 60 L 15 60 L 20 35 L 25 60 L 30 60 L 35 48 L 40 75 L 45 60 L 60 60 L 65 50 L 70 60 L 85 60 L 90 52 L 95 60 L 110 60 L 115 35 L 120 60 L 125 60 L 130 48 L 135 75 L 140 60 L 155 60 L 160 50 L 165 60 L 180 60 L 185 52 L 190 60 L 200 60 L 215 60 L 220 35 L 225 60 L 230 60 L 235 48 L 240 75 L 245 60 L 260 60 L 265 50 L 270 60 L 285 60 L 290 52 L 295 60 L 310 60 L 315 35 L 320 60 L 325 60 L 330 48 L 335 75 L 340 60 L 355 60 L 360 50 L 365 60 L 380 60 L 385 52 L 390 60 L 400 60" fill="none" stroke="rgba(236, 72, 153, 0.20)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M 0 85 L 25 85 L 30 65 L 35 85 L 50 85 L 55 72 L 60 85 L 75 85 L 80 78 L 85 85 L 100 85 L 125 85 L 130 65 L 135 85 L 150 85 L 155 72 L 160 85 L 175 85 L 180 78 L 185 85 L 200 85 L 225 85 L 230 65 L 235 85 L 250 85 L 255 72 L 260 85 L 275 85 L 280 78 L 285 85 L 300 85 L 325 85 L 330 65 L 335 85 L 350 85 L 355 72 L 360 85 L 375 85 L 380 78 L 385 85 L 400 85" fill="none" stroke="rgba(16, 185, 129, 0.12)" stroke-width="1" stroke-linecap="round"/></pattern></defs><rect width="100%" height="100%" fill="url(%23liveecg)"/></svg>');
+  --pattern-secondary: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="150" height="100"><defs><pattern id="vitals" width="150" height="100" patternUnits="userSpaceOnUse"><circle cx="20" cy="25" r="2" fill="rgba(0,0,0,0.08)"/><circle cx="70" cy="25" r="2" fill="rgba(0,0,0,0.08)"/><circle cx="120" cy="25" r="2" fill="rgba(0,0,0,0.08)"/><circle cx="35" cy="60" r="2" fill="rgba(0,0,0,0.08)"/><circle cx="105" cy="60" r="2" fill="rgba(0,0,0,0.08)"/><line x1="20" y1="25" x2="70" y2="25" stroke="rgba(0,0,0,0.05)" stroke-width="0.8"/><line x1="70" y1="25" x2="120" y2="25" stroke="rgba(0,0,0,0.05)" stroke-width="0.8"/><path d="M 10 50 L 140 50" stroke="rgba(0,0,0,0.04)" stroke-width="1" stroke-dasharray="4,3"/></pattern></defs><rect width="100%" height="100%" fill="url(%23vitals)"/></svg>');
+  
+  /* ─────────────────────────────────────────────────────────────────────── */
+  /* Spacing Scale - 4px base unit */
+  /* ─────────────────────────────────────────────────────────────────────── */
+  --spacing-xs: 0.25rem;   /* 4px */
+  --spacing-sm: 0.5rem;    /* 8px */
+  --spacing-md: 1rem;      /* 16px */
+  --spacing-lg: 1.5rem;    /* 24px */
+  --spacing-xl: 2rem;      /* 32px */
+  --spacing-2xl: 3rem;     /* 48px */
+  --spacing-3xl: 4rem;     /* 64px */
+  
+  /* ─────────────────────────────────────────────────────────────────────── */
+  /* Typography Scale */
+  /* ─────────────────────────────────────────────────────────────────────── */
+  --font-size-xs: 0.75rem;     /* 12px */
+  --font-size-sm: 0.875rem;    /* 14px */
+  --font-size-base: 1rem;      /* 16px */
+  --font-size-lg: 1.125rem;    /* 18px */
+  --font-size-xl: 1.25rem;     /* 20px */
+  --font-size-2xl: 1.5rem;     /* 24px */
+  --font-size-3xl: 1.875rem;   /* 30px */
+  --font-size-4xl: 2.25rem;    /* 36px */
+  
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+  
+  /* ─────────────────────────────────────────────────────────────────────── */
+  /* Border & Radius */
+  /* ─────────────────────────────────────────────────────────────────────── */
+  --radius-sm: 0.375rem;   /* 6px */
+  --radius-md: 0.5rem;     /* 8px */
+  --radius-lg: 0.75rem;    /* 12px */
+  --radius-xl: 1rem;       /* 16px */
+  --radius-2xl: 1.5rem;    /* 24px */
+  
+  /* ─────────────────────────────────────────────────────────────────────── */
   /* Shadows */
+  /* ─────────────────────────────────────────────────────────────────────── */
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
   --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1);
   
-  /* Z-Index */
+  /* ─────────────────────────────────────────────────────────────────────── */
+  /* Z-Index Scale */
+  /* ─────────────────────────────────────────────────────────────────────── */
   --z-dropdown: 40;
   --z-sticky: 30;
   --z-fixed: 20;
@@ -66,46 +139,88 @@
   --z-modal: 50;
   --z-tooltip: 60;
   --z-notification: 70;
+  
+  /* ─────────────────────────────────────────────────────────────────────── */
+  /* Animation Timing */
+  /* ─────────────────────────────────────────────────────────────────────── */
+  --duration-fast: 150ms;
+  --duration-base: 200ms;
+  --duration-slow: 300ms;
+  --duration-slower: 500ms;
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Dark mode */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-bg-primary: hsl(0 0% 13%);
-    --color-bg-secondary: hsl(0 0% 20%);
-    --color-bg-tertiary: hsl(0 0% 26%);
-    --color-text-primary: hsl(0 0% 97%);
-    --color-text-secondary: hsl(0 0% 73%);
-    --color-text-muted: hsl(0 0% 53%);
-    --color-border: hsl(0 0% 30%);
-  }
+/* ─────────────────────────────────────────────────────────────────────── */
+/* Dark Mode Overrides - Using `.dark` class selector */
+/* ─────────────────────────────────────────────────────────────────────── */
+.dark {
+  /* Neutral Colors - Dark Mode */
+  --color-bg-primary: hsl(240 10% 10%);
+  --color-bg-secondary: hsl(240 8% 16%);
+  --color-bg-tertiary: hsl(240 8% 22%);
+  --color-bg-hover: hsl(240 8% 28%);
+  --color-bg-active: hsl(240 8% 34%);
+  
+  --color-text-primary: hsl(0 0% 98%);
+  --color-text-secondary: hsl(240 5% 78%);
+  --color-text-muted: hsl(240 3% 55%);
+  --color-text-disabled: hsl(240 2% 40%);
+  
+  --color-border: hsl(240 5% 25%);
+  --color-border-light: hsl(240 5% 20%);
+  
+  /* Pattern background for dark mode - Continuous Live ECG Graph with subtle white lines */
+  --pattern-primary: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="120"><defs><pattern id="liveecg" width="400" height="120" patternUnits="userSpaceOnUse"><line x1="0" y1="60" x2="400" y2="60" stroke="rgba(255,255,255,0.015)" stroke-width="0.8"/><path d="M 0 60 L 15 60 L 20 35 L 25 60 L 30 60 L 35 48 L 40 75 L 45 60 L 60 60 L 65 50 L 70 60 L 85 60 L 90 52 L 95 60 L 110 60 L 115 35 L 120 60 L 125 60 L 130 48 L 135 75 L 140 60 L 155 60 L 160 50 L 165 60 L 180 60 L 185 52 L 190 60 L 200 60 L 215 60 L 220 35 L 225 60 L 230 60 L 235 48 L 240 75 L 245 60 L 260 60 L 265 50 L 270 60 L 285 60 L 290 52 L 295 60 L 310 60 L 315 35 L 320 60 L 325 60 L 330 48 L 335 75 L 340 60 L 355 60 L 360 50 L 365 60 L 380 60 L 385 52 L 390 60 L 400 60" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M 0 85 L 25 85 L 30 65 L 35 85 L 50 85 L 55 72 L 60 85 L 75 85 L 80 78 L 85 85 L 100 85 L 125 85 L 130 65 L 135 85 L 150 85 L 155 72 L 160 85 L 175 85 L 180 78 L 185 85 L 200 85 L 225 85 L 230 65 L 235 85 L 250 85 L 255 72 L 260 85 L 275 85 L 280 78 L 285 85 L 300 85 L 325 85 L 330 65 L 335 85 L 350 85 L 355 72 L 360 85 L 375 85 L 380 78 L 385 85 L 400 85" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1" stroke-linecap="round"/></pattern></defs><rect width="100%" height="100%" fill="url(%23liveecg)"/></svg>');
+  --pattern-secondary: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="150" height="100"><defs><pattern id="vitals" width="150" height="100" patternUnits="userSpaceOnUse"><circle cx="20" cy="25" r="2" fill="rgba(100,200,255,0.3)"/><circle cx="70" cy="25" r="2" fill="rgba(0,200,200,0.3)"/><circle cx="120" cy="25" r="2" fill="rgba(147,112,219,0.3)"/><circle cx="35" cy="60" r="2" fill="rgba(100,200,255,0.3)"/><circle cx="105" cy="60" r="2" fill="rgba(255,100,130,0.3)"/><line x1="20" y1="25" x2="70" y2="25" stroke="rgba(100,200,255,0.25)" stroke-width="0.8"/><line x1="70" y1="25" x2="120" y2="25" stroke="rgba(100,200,255,0.25)" stroke-width="0.8"/><path d="M 10 50 L 140 50" stroke="rgba(147,112,219,0.2)" stroke-width="1" stroke-dasharray="4,3"/></pattern></defs><rect width="100%" height="100%" fill="url(%23vitals)"/></svg>');
 }
 
 /* ============================================================================
-   2. BASE STYLES - Foundation & Global Styles
+   2. PATTERN BACKGROUNDS - SVG Patterns with Animation
    ============================================================================ */
 
-@layer base {
-  html,
-  body {
-    @apply h-full bg-white text-gray-900 dark:bg-neutral-950 dark:text-white;
-  }
-
-  /* Scrollbar Styling */
-  ::-webkit-scrollbar {
-    @apply w-2 h-2;
-  }
-
-  ::-webkit-scrollbar-track {
-    @apply bg-gray-100 dark:bg-neutral-800;
-  }
-
-  ::-webkit-scrollbar-thumb {
-    @apply bg-gray-300 dark:bg-neutral-600 rounded hover:bg-gray-400 dark:hover:bg-neutral-500;
 /* ============================================================================
-   3. ANIMATIONS - Keyframe Animations
+   3. BASE STYLES - Foundation & Global Styles
    ============================================================================ */
 
+html,
+body {
+  height: 100%;
+  background-color: var(--color-bg-primary);
+  background-image: var(--pattern-primary);
+  background-attachment: fixed;
+  background-size: 400px 120px;
+  animation: ecgScroll 40s linear infinite;
+  color: var(--color-text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease, background-image 0.3s ease;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 0.5rem;
+  height: 0.5rem;
+}
+
+::-webkit-scrollbar-track {
+  background-color: var(--color-bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--color-border);
+  border-radius: 0.25rem;
+  transition: background-color 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-border-light);
+}
+
+/* ============================================================================
+   3. ANIMATIONS - Keyframe Animations with Phase Motion
+   ============================================================================ */
+
+/* Fade In Animation */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -115,6 +230,7 @@
   }
 }
 
+/* Slide Up Animation */
 @keyframes slideUp {
   from {
     opacity: 0;
@@ -126,9 +242,9 @@
   }
 }
 
+/* Subtle Pulse Animation */
 @keyframes pulseSubtle {
-  0%,
-  100% {
+  0%, 100% {
     opacity: 1;
   }
   50% {
@@ -136,35 +252,309 @@
   }
 }
 
+/* ECG/Heartbeat Scroll Animation - Live Graph Effect */
+@keyframes ecgScroll {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 400px 0;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────── */
+/* Phase Motion Animations - Slow Harmonic Motion */
+/* ─────────────────────────────────────────────────────────────────────── */
+
+/* Gentle floating effect - Phase 1 (Slow, 8s cycle) */
+@keyframes floatPhase1 {
+  0%, 100% {
+    transform: translateY(0px);
+    opacity: 0.8;
+  }
+  25% {
+    transform: translateY(-8px);
+    opacity: 0.95;
+  }
+  50% {
+    transform: translateY(0px);
+    opacity: 0.85;
+  }
+  75% {
+    transform: translateY(6px);
+    opacity: 0.75;
+  }
+}
+
+/* Gentle floating effect - Phase 2 (Offset, creates wave effect) */
+@keyframes floatPhase2 {
+  0%, 100% {
+    transform: translateY(0px);
+    opacity: 0.75;
+  }
+  25% {
+    transform: translateY(6px);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translateY(0px);
+    opacity: 0.9;
+  }
+  75% {
+    transform: translateY(-8px);
+    opacity: 0.85;
+  }
+}
+
+/* Gentle floating effect - Phase 3 */
+@keyframes floatPhase3 {
+  0%, 100% {
+    transform: translateY(0px);
+    opacity: 0.82;
+  }
+  25% {
+    transform: translateY(-4px);
+    opacity: 0.88;
+  }
+  50% {
+    transform: translateY(0px);
+    opacity: 0.8;
+  }
+  75% {
+    transform: translateY(4px);
+    opacity: 0.8;
+  }
+}
+
+/* Slow background shimmer */
+@keyframes shimmerSlow {
+  0%, 100% {
+    background-position: 0% center;
+  }
+  50% {
+    background-position: 100% center;
+  }
+}
+
+/* Gradient shift animation */
+@keyframes gradientShift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/* Soft glow pulse */
+@keyframes softGlow {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────── */
+/* Animation Utility Classes */
+/* ─────────────────────────────────────────────────────────────────────── */
+
+.animate-float-phase-1 {
+  animation: floatPhase1 8s ease-in-out infinite;
+}
+
+.animate-float-phase-2 {
+  animation: floatPhase2 8s ease-in-out infinite 1.3s backwards;
+}
+
+.animate-float-phase-3 {
+  animation: floatPhase3 8s ease-in-out infinite 2.6s backwards;
+}
+
+.animate-shimmer-slow {
+  animation: shimmerSlow 6s ease-in-out infinite;
+}
+
+.animate-gradient-shift {
+  animation: gradientShift 12s ease-in-out infinite;
+}
+
+.animate-soft-glow {
+  animation: softGlow 4s ease-in-out infinite;
+}
+
+/* ============================================================================
+   4. COMPONENT DESIGN TOKENS - Semantic Styling for Cards
+   ============================================================================ */
+
+/* ─────────────────────────────────────────────────────────────────────── */
+/* Appointment Card Design Token */
+/* ─────────────────────────────────────────────────────────────────────── */
+.card-appointment {
+  --card-color-bg: var(--color-appointment-light);
+  --card-color-border: var(--color-appointment);
+  --card-color-accent: var(--color-appointment-accent);
+  --card-color-text: var(--color-appointment-dark);
+}
+
+.dark .card-appointment {
+  --card-color-bg: color-mix(in srgb, var(--color-appointment) 10%, transparent);
+  --card-color-border: color-mix(in srgb, var(--color-appointment) 30%, transparent);
+  --card-color-text: color-mix(in srgb, var(--color-appointment) 100%, transparent);
+}
+
+/* ─────────────────────────────────────────────────────────────────────── */
+/* Health/Vitals Card Design Token */
+/* ─────────────────────────────────────────────────────────────────────── */
+.card-health {
+  --card-color-bg: var(--color-health-light);
+  --card-color-border: var(--color-health);
+  --card-color-accent: var(--color-health-accent);
+  --card-color-text: var(--color-health-dark);
+}
+
+.dark .card-health {
+  --card-color-bg: color-mix(in srgb, var(--color-health) 10%, transparent);
+  --card-color-border: color-mix(in srgb, var(--color-health) 30%, transparent);
+  --card-color-text: color-mix(in srgb, var(--color-health) 100%, transparent);
+}
+
+/* ─────────────────────────────────────────────────────────────────────── */
+/* Medication Card Design Token */
+/* ─────────────────────────────────────────────────────────────────────── */
+.card-medication {
+  --card-color-bg: var(--color-medication-light);
+  --card-color-border: var(--color-medication);
+  --card-color-accent: var(--color-medication-accent);
+  --card-color-text: var(--color-medication-dark);
+}
+
+.dark .card-medication {
+  --card-color-bg: color-mix(in srgb, var(--color-medication) 10%, transparent);
+  --card-color-border: color-mix(in srgb, var(--color-medication) 30%, transparent);
+  --card-color-text: color-mix(in srgb, var(--color-medication) 100%, transparent);
+}
+
+/* ─────────────────────────────────────────────────────────────────────── */
+/* Lab/Diagnostics Card Design Token */
+/* ─────────────────────────────────────────────────────────────────────── */
+.card-lab {
+  --card-color-bg: var(--color-lab-light);
+  --card-color-border: var(--color-lab);
+  --card-color-accent: var(--color-lab-accent);
+  --card-color-text: var(--color-lab-dark);
+}
+
+.dark .card-lab {
+  --card-color-bg: color-mix(in srgb, var(--color-lab) 10%, transparent);
+  --card-color-border: color-mix(in srgb, var(--color-lab) 30%, transparent);
+  --card-color-text: color-mix(in srgb, var(--color-lab) 100%, transparent);
+}
+
+/* ─────────────────────────────────────────────────────────────────────── */
+/* Base Card Styling with Design Tokens */
+/* ─────────────────────────────────────────────────────────────────────── */
+.dashboard-card {
+  background-color: var(--card-color-bg, var(--color-bg-secondary));
+  border: 1px solid var(--card-color-border, var(--color-border));
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  transition: all var(--duration-base) var(--ease-out);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08),
+              0 4px 16px rgba(0, 0, 0, 0.06);
+  backdrop-filter: blur(0.5px);
+}
+
+.dashboard-card:hover {
+  border-color: var(--card-color-accent, var(--color-border));
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--card-color-accent, var(--color-border)) 20%, transparent),
+              0 12px 28px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+}
+
+.dark .dashboard-card {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4),
+              0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.dark .dashboard-card:hover {
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--card-color-accent, var(--color-border)) 30%, transparent),
+              0 12px 28px rgba(0, 0, 0, 0.5);
+}
+
+/* ─────────────────────────────────────────────────────────────────────── */
+/* Glassmorphic Sidebar Cards - Upcoming, Lab Work, etc. */
+/* Matches VitalsGrid styling for visual consistency */
+/* ─────────────────────────────────────────────────────────────────────── */
+.glassmorphic-card {
+  background: linear-gradient(135deg, 
+    rgba(226, 232, 240, 0.6) 0%,
+    rgba(255, 255, 255, 0.4) 100%);
+  border: 1px solid rgb(226, 232, 240);
+  border-radius: 0.75rem; /* rounded-xl */
+  padding: 1rem; /* p-4 */
+  backdrop-filter: blur(4px); /* backdrop-blur-sm */
+  -webkit-backdrop-filter: blur(4px);
+  transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+}
+
+.glassmorphic-card:hover {
+  border-color: rgb(226, 232, 240);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  transform: translateY(0);
+}
+
+.dark .glassmorphic-card {
+  background: linear-gradient(135deg,
+    rgba(15, 23, 42, 0.5) 0%,
+    rgba(30, 41, 59, 0.5) 100%);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+}
+
+.dark .glassmorphic-card:hover {
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+}
+
 /* ============================================================================
    4. ACCESSIBILITY - A11y Enhancements
    ============================================================================ */
 
-@layer utilities {
-  /* Reduced motion support */
-  @media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
-      @apply !animate-none !transition-none;
-    }
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: more) {
+  .dashboard-card {
+    border-width: 2px;
   }
 
-  /* High contrast mode */
-  @media (prefers-contrast: more) {
-    .dashboard-card {
-      @apply border-2;
-    }
-
-    .status-badge {
-      @apply font-bold;
-    }
+  .status-badge {
+    font-weight: bold;
   }
+}
 
-  /* Screen reader only */
-  .sr-only {
-    @apply absolute w-px h-px p-0 m-px overflow-hidden clip-rect-0 whitespace-nowrap border-0;
-  }
+/* Screen reader only */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
 }
 
 /* ============================================================================
@@ -177,14 +567,24 @@
   }
 
   body {
-    @apply bg-white text-black;
+    background-color: white;
+    background-image: none;
+    color: black;
   }
 
   .dashboard-card {
-    @apply border-gray-400 page-break-inside-avoid;
+    border-color: #d1d5db;
+    page-break-inside: avoid;
   }
 
   .no-print {
-    @apply !hidden;
+    display: none !important;
+  }
+  
+  /* Disable animations in print */
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
   }
 }

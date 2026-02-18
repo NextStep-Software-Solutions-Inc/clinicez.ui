@@ -38,14 +38,14 @@ import {
   CommandList,
 } from "@components/ui/command"
 import Each from "@components/utils/Each"
-import { useOrgAppointmentTypes } from "@hooks/useOrgAppointmentType"
-import { useParams } from "next/navigation"
+import { useClinicAppointmentTypes } from "@hooks/useOrgAppointmentType"
+import { useParams, useSearchParams } from "next/navigation"
 import { useHPs } from "@hooks/useHP"
 import { bookAppointmentAtom } from "../../state/book-appointment"
 import { useAtom } from "jotai"
 import ActionButton from "@components/ActionButton"
 import { toast } from "sonner"
-import { useOrgAppointmentModes } from "@hooks/useOrgAppointmentMode"
+import { useClinicAppointmentModes } from "@hooks/useOrgAppointmentMode"
 import { useClinicServiceCategories } from "@/hooks/useClinicServiceCategory"
 import { Checkbox } from "@components/ui/checkbox"
 import { Separator } from "@components/ui/separator"
@@ -108,11 +108,20 @@ interface FilterFormProps {
 }
 
 export default function FilterForm({ onContinue }: FilterFormProps) {
-  const { clinicUid } = useParams<{ clinicUid: string }>()
+  const paramsClinicUid = useParams<{ clinicUid: string }>().clinicUid;
+  const searchParams = useSearchParams();
+  const queryClinicUid = searchParams.get('clinic');
   const { user } = useUser()
   const [bookAppointmentForm, setBookAppointmentForm] = useAtom(bookAppointmentAtom)
-  const { data: appointmentTypes } = useOrgAppointmentTypes(clinicUid)
-  const { data: appointmentModes } = useOrgAppointmentModes(clinicUid);
+  
+  // Use clinicUid from multiple sources in priority order:
+  // 1. From bookAppointmentForm (set by clinic selection dialog)
+  // 2. From URL query params (?clinic=XXX)
+  // 3. From route params (/clinic/[clinicUid])
+  const clinicUid = bookAppointmentForm.clinicUid || queryClinicUid || paramsClinicUid;
+  
+  const { data: appointmentTypes } = useClinicAppointmentTypes(clinicUid)
+  const { data: appointmentModes } = useClinicAppointmentModes(clinicUid);
   const { data: serviceCategories } = useClinicServiceCategories(clinicUid)
 
   // Use search-based approach instead of loading all members
@@ -125,6 +134,16 @@ export default function FilterForm({ onContinue }: FilterFormProps) {
     studentIds?: string[];
   } | null>(null)
   const debouncedSearch = useDebounce(memberSearch, 300)
+
+  // Sync clinicUid from query params into bookAppointmentForm if it came from URL
+  useEffect(() => {
+    if (queryClinicUid && !bookAppointmentForm.clinicUid) {
+      setBookAppointmentForm(prev => ({
+        ...prev,
+        clinicUid: queryClinicUid
+      }))
+    }
+  }, [queryClinicUid, bookAppointmentForm.clinicUid, setBookAppointmentForm])
 
   const shouldFetchMembers = debouncedSearch.length >= 2
   const { data: orgMembersData, isLoading: orgMembersLoading } = useOrgMembers({
@@ -139,7 +158,7 @@ export default function FilterForm({ onContinue }: FilterFormProps) {
     type: "CLINIC"
   })
 
-  const { data: hps } = useHPs()
+  const { data: hps } = useHPs({ clinicUid })
 
   const groupedHps = useMemo(() => {
     // array of array of hps
@@ -268,7 +287,7 @@ export default function FilterForm({ onContinue }: FilterFormProps) {
   if (!canWritePermission) return <div role="alert" aria-live="assertive">Sorry, You do not have permission to book an appointment.</div>
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className=" space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         {
           canWriteBookAFriendPermission && (
             <>

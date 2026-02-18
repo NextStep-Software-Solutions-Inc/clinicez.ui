@@ -6,18 +6,26 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@components/ui/button";
 import { Input } from "@components/ui/input";
 import { Badge } from "@components/ui/badge";
-import { Search } from "lucide-react";
+import { Search, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistance } from "date-fns";
+import { UserPermissionsDialog } from "./UserPermissionsDialog";
 
 interface UsersTableProps {
   initialData: GetAllUsers;
+}
+
+interface SelectedUser {
+  id: number;
+  email: string;
 }
 
 export default function UsersTable({ initialData }: UsersTableProps) {
   const [data, setData] = useState(initialData);
   const [search, setSearch] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<SelectedUser | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   const loadData = async (page = 1, searchTerm = search) => {
     setIsLoading(true);
@@ -37,6 +45,11 @@ export default function UsersTable({ initialData }: UsersTableProps) {
 
   const handleSearch = () => {
     loadData(1, search);
+  };
+
+  const handleManagePermissions = (userId: number, email: string) => {
+    setSelectedUser({ id: userId, email });
+    setDialogOpen(true);
   };
 
   return (
@@ -64,12 +77,13 @@ export default function UsersTable({ initialData }: UsersTableProps) {
               <TableHead>Org Memberships</TableHead>
               <TableHead>Owned Tenants</TableHead>
               <TableHead>Joined</TableHead>
+              <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {data.data.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground">
+                <TableCell colSpan={7} className="text-center text-muted-foreground">
                   No users found
                 </TableCell>
               </TableRow>
@@ -96,6 +110,16 @@ export default function UsersTable({ initialData }: UsersTableProps) {
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {formatDistance(new Date(user.createdAt), new Date(), { addSuffix: true })}
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleManagePermissions(user.id, user.email)}
+                      title="Manage permissions for this user"
+                    >
+                      <Lock className="h-4 w-4" />
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))
@@ -129,6 +153,15 @@ export default function UsersTable({ initialData }: UsersTableProps) {
             </Button>
           </div>
         </div>
+      )}
+
+      {selectedUser && (
+        <UserPermissionsDialog
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          userId={selectedUser.id}
+          userEmail={selectedUser.email}
+        />
       )}
     </div>
   );

@@ -4,17 +4,18 @@ import { GetUserTimeSlots } from "@actions/schedule/time-slot.actions";
 import { atom } from "jotai";
 
 export type BookAppointmentForm = Partial<{
+  clinicUid: string
   bookAFriend: boolean
   requester: string
   orgUid: string
-  appointmentTypeId:  number
+  appointmentTypeId: number
   serviceId: number
   hpId: number
   hpUserId: string
   modeId: number
   selectedTimeSlot: {
-      start: Date
-      end: Date
+    start: Date
+    end: Date
   }
   availabilities: GetUserTimeSlots["data"]
   preferredDate?: Date

@@ -29,7 +29,7 @@ export const addUserDisabilityAction = async (payload: {
       severity,
       notes: notes,
       dateDiagnosed,
-      ...(isManaged ? { isManage: true } : {}),
+      ...(isManaged ? { isManaged: true } : {}),
       User: {
         connect: {
           id: currentUser.id

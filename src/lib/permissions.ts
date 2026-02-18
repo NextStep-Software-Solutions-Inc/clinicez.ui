@@ -266,3 +266,169 @@ export const PERMISSIONS = {
     },
   },
 }
+
+/**
+ * ============================================================================
+ * HEALTH RECORDS EDITING - ROLE-BASED PERMISSION UTILITIES
+ * ============================================================================
+ * User-centric: Safe, easy-to-use helpers for permission checks throughout the app
+ */
+
+import type {
+  EditPermissionLevel,
+  FieldEditPermission,
+} from '@/types/edit-permissions'
+import {
+  UserRole,
+  canEditField,
+  canEditSection,
+  getEditableSections,
+  determineEditPermission,
+  isEditingSelfRecord,
+  demographicsFieldPermissions,
+} from '@/types/edit-permissions'
+
+/**
+ * Check if current user can edit a specific field
+ * User-centric: Safe function with fallback to read-only
+ */
+export function userCanEditField(
+  currentUserId: string | null,
+  targetUserId: string | null,
+  userRole: UserRole,
+  fieldName: string,
+  fieldPermissions: FieldEditPermission[] = demographicsFieldPermissions
+): boolean {
+  const permission = determineEditPermission(currentUserId, targetUserId, userRole)
+  return canEditField(permission, fieldName, fieldPermissions)
+}
+
+/**
+ * Check if current user can edit an entire section
+ * User-centric: Used to show/hide edit buttons and sections
+ */
+export function userCanEditSection(
+  currentUserId: string | null,
+  targetUserId: string | null,
+  userRole: UserRole,
+  sectionName: string
+): boolean {
+  const permission = determineEditPermission(currentUserId, targetUserId, userRole)
+  return canEditSection(permission, sectionName)
+}
+
+/**
+ * Get list of sections user can edit
+ * User-centric: Used to render edit UI conditionally
+ */
+export function getUserEditableSections(
+  currentUserId: string | null,
+  targetUserId: string | null,
+  userRole: UserRole
+): string[] {
+  const permission = determineEditPermission(currentUserId, targetUserId, userRole)
+  return getEditableSections(permission)
+}
+
+/**
+ * Check if user is editing their own profile
+ * User-centric: Determine which messaging to show
+ */
+export function isUserEditingOwnProfile(
+  currentUserId: string | null,
+  targetUserId: string | null
+): boolean {
+  return isEditingSelfRecord(currentUserId, targetUserId)
+}
+
+/**
+ * Get permission level for current user
+ * User-centric: Used for logging, debugging, permission checks
+ */
+export function getUserPermissionLevel(
+  currentUserId: string | null,
+  targetUserId: string | null,
+  userRole: UserRole
+): EditPermissionLevel {
+  return determineEditPermission(currentUserId, targetUserId, userRole)
+}
+
+/**
+ * Verify user has permission before showing edit UI
+ * User-centric: Security check - called before rendering edit components
+ */
+export function verifyEditPermission(
+  currentUserId: string | null,
+  targetUserId: string | null,
+  userRole: UserRole,
+  requiredPermission: EditPermissionLevel
+): boolean {
+  const actualPermission = determineEditPermission(currentUserId, targetUserId, userRole)
+
+  // Permission hierarchy: more permissive = higher in list
+  const permissionHierarchy = [
+    'SELF_EDIT',
+    'PROFESSIONAL_EDIT',
+    'CLINIC_ADMIN_EDIT',
+    'READONLY',
+    'DENIED',
+  ] as const
+
+  const actualLevel = permissionHierarchy.indexOf(actualPermission as any)
+  const requiredLevel = permissionHierarchy.indexOf(requiredPermission as any)
+
+  // User has permission if their level is more or equally permissive
+  return actualLevel <= requiredLevel
+}
+
+/**
+ * Get help text for field based on permission level
+ * User-centric: Explains why field is read-only or what user can do
+ */
+export function getFieldHelpText(
+  fieldName: string,
+  permission: EditPermissionLevel,
+  fieldPermissions: FieldEditPermission[] = demographicsFieldPermissions
+): string {
+  const field = fieldPermissions.find((f) => f.fieldName === fieldName)
+  if (!field) return ""
+
+  if (canEditField(permission, fieldName, fieldPermissions)) {
+    return field.helpText || ""
+  }
+
+  // Explain why field is read-only
+  if (field.readOnlyFor.includes(permission)) {
+    if (permission === 'READONLY' as any) {
+      return "You have read-only access to this record"
+    }
+    if (permission === 'PROFESSIONAL_EDIT' as any) {
+      return "This field can only be updated by the patient"
+    }
+  }
+
+  return ""
+}
+
+/**
+ * Log permission check for audit trail
+ * User-centric: Security logging
+ */
+export function logPermissionCheck(
+  action: string,
+  currentUserId: string | null,
+  targetUserId: string | null,
+  userRole: UserRole,
+  allowed: boolean
+): void {
+  const permission = determineEditPermission(currentUserId, targetUserId, userRole)
+  const timestamp = new Date().toISOString()
+
+  console.log(
+    `[PERMISSION CHECK] ${timestamp} - Action: ${action}, Permission: ${permission}, Allowed: ${allowed}`
+  )
+
+  // In production, this would send to logging service
+  // await logToAuditTrail({ action, currentUserId, targetUserId, userRole, permission, allowed, timestamp })
+}
+

@@ -28,7 +28,7 @@ export async function getDashboardLinksAction(): Promise<DashboardLink[]> {
   const userId = session.user.sub;
 
   const links: DashboardLink[] = [
-    { label: "Patient Dashboard", href: "/v2/patient/dashboard", type: "patient" },
+    { label: "Patient Dashboard", href: "/v2/patient/", type: "patient" },
   ];
 
   // Run queries in parallel — limit to 5 results each to keep the avatar

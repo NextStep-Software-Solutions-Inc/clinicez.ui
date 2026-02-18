@@ -16,7 +16,7 @@ export const FamilyAndPersonalHistory = async ({
     <FamilyAndPersonalHistoryForm 
       userId={userId} 
       readOnly={readOnly}
-      initialData={history.data}
+      initialData={history.data as any}
     />
   );
 }

@@ -85,6 +85,15 @@ export interface SerializedPatientHealthRecordsResponse {
   // Medical Profile
   medicalHistories: MedicalHistoryData[]
   familyMedicalHistories: MedicalHistoryData[]
+  surgicalHistories: Array<{
+    id: number
+    operationName: string
+    operationDate: string | null
+    notes: string | null
+    createdAt: string
+    updatedAt: string
+    deletedAt: string | null
+  }>
 
   // Vital Signs
   vitalSigns: Array<Omit<VitalSign, 'dateTaken' | 'createdAt' | 'updatedAt' | 'deletedAt'> & { dateTaken: string; createdAt: string; updatedAt: string; deletedAt: string | null }>

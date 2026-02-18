@@ -63,7 +63,7 @@ export async function getPatientHealthRecords(): Promise<SerializedPatientHealth
     }
 
     // Fetch related data in separate queries
-    const [medical, familyMedical, vitals, exams, obGyne, pediatric, personal, philHealth, procedures, clinicPatients, allergies, emergencyContacts, vaccinations, disabilities, addresses] = await Promise.all([
+    const [medical, familyMedical, vitals, exams, obGyne, pediatric, personal, philHealth, procedures, clinicPatients, allergies, emergencyContacts, vaccinations, disabilities, addresses, surgical] = await Promise.all([
       // Medical Histories
       prisma.medicalHistory.findMany({
         where: { userId: patient.id },
@@ -125,6 +125,16 @@ export async function getPatientHealthRecords(): Promise<SerializedPatientHealth
       // Procedure History
       prisma.procedureUsageHistory.findMany({
         where: { userId: patient.id },
+        select: {
+          id: true,
+          userId: true,
+          clinicId: true,
+          procedureType: true,
+          procedureId: true,
+          procedureName: true,
+          usedAt: true,
+          clinicPatientId: true,
+        },
         orderBy: { usedAt: 'desc' },
         take: 10,
       }),
@@ -190,6 +200,12 @@ export async function getPatientHealthRecords(): Promise<SerializedPatientHealth
       prisma.userAddress.findMany({
         where: { userId: patient.id, isActive: true },
         orderBy: { createdAt: 'desc' },
+      }),
+      // Surgical History
+      prisma.surgicalHistory.findMany({
+        where: { userId: patient.id, deletedAt: null },
+        orderBy: { createdAt: 'desc' },
+        take: 20,
       }),
     ])
 
@@ -296,6 +312,15 @@ export async function getPatientHealthRecords(): Promise<SerializedPatientHealth
         conditionId: h.conditionId,
         condition: h.Condition?.name || 'Unknown',
         details: h.details,
+      })),
+      surgicalHistories: surgical.map((s) => ({
+        id: s.id,
+        operationName: s.operationName,
+        operationDate: s.operationDate ? s.operationDate.toISOString() : null,
+        notes: s.notes,
+        createdAt: s.createdAt.toISOString(),
+        updatedAt: s.updatedAt.toISOString(),
+        deletedAt: s.deletedAt ? s.deletedAt.toISOString() : null,
       })),
 
       // Vital Signs

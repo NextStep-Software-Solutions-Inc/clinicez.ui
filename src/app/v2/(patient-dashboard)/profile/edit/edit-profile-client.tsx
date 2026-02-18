@@ -39,6 +39,7 @@ import {
   VaccinationEditForm,
   DisabilitiesEditForm,
   ProfilePictureUpload,
+  SurgicalHistoryEditForm,
 } from '@/components/health-records'
 import type { PatientHealthRecordsResponse } from '@/types/patient-profile'
 import './edit-profile.css'
@@ -75,6 +76,7 @@ export function EditProfileClient({ initialData, onDataRefresh }: EditProfileCli
     'ob-gyne': true,
     pediatric: true,
     medical: true,
+    surgical: true,
     family: true,
     examination: true,
     philhealth: true,
@@ -100,6 +102,7 @@ export function EditProfileClient({ initialData, onDataRefresh }: EditProfileCli
   const addressesRef = useRef<HTMLDivElement>(null)
   const vaccinationsRef = useRef<HTMLDivElement>(null)
   const disabilitiesRef = useRef<HTMLDivElement>(null)
+  const surgicalRef = useRef<HTMLDivElement>(null)
 
   const sections: Section[] = useMemo(
     () => [
@@ -114,6 +117,7 @@ export function EditProfileClient({ initialData, onDataRefresh }: EditProfileCli
       { id: 'ob-gyne', label: 'OB/GYN', icon: '👶', ref: obGyneRef },
       { id: 'pediatric', label: 'Pediatric', icon: '📏', ref: pediatricRef },
       { id: 'medical', label: 'Conditions', icon: '🏥', ref: medicalRef },
+      { id: 'surgical', label: 'Surgical', icon: '⚕️', ref: surgicalRef },
       { id: 'family', label: 'Family', icon: '👨‍👩‍👧‍👦', ref: familyRef },
       { id: 'examination', label: 'Exam', icon: '🔍', ref: examinationRef },
       { id: 'philhealth', label: 'PhilHealth', icon: '🏛️', ref: philhealthRef },
@@ -652,8 +656,31 @@ export function EditProfileClient({ initialData, onDataRefresh }: EditProfileCli
             </div>
           </div>
 
+          {/* Surgical History Section */}
+          <div ref={sections[11].ref} id="surgical" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-575">
+            <div className="backdrop-blur-xl bg-white/30 dark:bg-slate-800/30 border border-white/40 dark:border-slate-700/40 rounded-2xl shadow-2xl p-6 md:p-8 hover:bg-white/40 dark:hover:bg-slate-800/40 transition-all duration-300">
+              <div className="mb-6 flex items-center gap-3">
+                <div className="w-1.5 h-8 bg-gradient-to-b from-orange-500 to-amber-500 rounded-full"></div>
+                <div>
+                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Surgical History</h2>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">Track your surgical procedures</p>
+                </div>
+              </div>
+              {loadedSections['surgical'] && (
+                <Suspense fallback={<FormLoadingFallback />}>
+                  <SurgicalHistoryEditForm
+                    userId={patientData.userId}
+                    inline={true}
+                    currentSurgeries={patientData.surgicalHistories}
+                    onSuccess={() => handleSuccess()}
+                  />
+                </Suspense>
+              )}
+            </div>
+          </div>
+
           {/* Family Medical History Section */}
-          <div ref={sections[11].ref} id="family" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-600">
+          <div ref={sections[12].ref} id="family" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-600">
             <div className="backdrop-blur-xl bg-white/30 dark:bg-slate-800/30 border border-white/40 dark:border-slate-700/40 rounded-2xl shadow-2xl p-6 md:p-8 hover:bg-white/40 dark:hover:bg-slate-800/40 transition-all duration-300">
               <div className="mb-6 flex items-center gap-3">
                 <div className="w-1.5 h-8 bg-gradient-to-b from-teal-500 to-cyan-500 rounded-full"></div>
@@ -679,7 +706,7 @@ export function EditProfileClient({ initialData, onDataRefresh }: EditProfileCli
           </div>
 
           {/* Physical Examination Section */}
-          <div ref={sections[12].ref} id="examination" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-650">
+          <div ref={sections[13].ref} id="examination" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-650">
             <div className="backdrop-blur-xl bg-white/30 dark:bg-slate-800/30 border border-white/40 dark:border-slate-700/40 rounded-2xl shadow-2xl p-6 md:p-8 hover:bg-white/40 dark:hover:bg-slate-800/40 transition-all duration-300">
               <div className="mb-6 flex items-center gap-3">
                 <div className="w-1.5 h-8 bg-gradient-to-b from-indigo-500 to-blue-500 rounded-full"></div>
@@ -702,7 +729,7 @@ export function EditProfileClient({ initialData, onDataRefresh }: EditProfileCli
           </div>
 
           {/* PhilHealth Record Section */}
-          <div ref={sections[13].ref} id="philhealth" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-700">
+          <div ref={sections[14].ref} id="philhealth" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-700">
             <div className="backdrop-blur-xl bg-white/30 dark:bg-slate-800/30 border border-white/40 dark:border-slate-700/40 rounded-2xl shadow-2xl p-6 md:p-8 hover:bg-white/40 dark:hover:bg-slate-800/40 transition-all duration-300">
               <div className="mb-6 flex items-center gap-3">
                 <div className="w-1.5 h-8 bg-gradient-to-b from-blue-600 to-blue-500 rounded-full"></div>

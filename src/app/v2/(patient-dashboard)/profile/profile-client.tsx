@@ -51,6 +51,7 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
         let incompleteCount = 0
         if (patient.medicalHistories.length === 0) incompleteCount++
         if (patient.familyMedicalHistories.length === 0) incompleteCount++
+        if (patient.surgicalHistories.length === 0) incompleteCount++
         return incompleteCount > 0 ? { status: 'Incomplete', count: incompleteCount } : null
       }
       case 'vitals': {
@@ -579,6 +580,35 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
               )}
             </div>
           </div>
+
+          {/* Surgical History */}
+          {patient.surgicalHistories.length > 0 ? (
+            <div className="glassmorphic-card p-6">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">⚕️ Surgical History</h3>
+              <div className="space-y-3">
+                {patient.surgicalHistories.map((surgery) => (
+                  <div key={surgery.id} className="p-4 rounded-lg border border-orange-200 dark:border-orange-800 bg-orange-50/50 dark:bg-orange-950/20">
+                    <p className="font-semibold text-slate-900 dark:text-white">{surgery.operationName}</p>
+                    {surgery.operationDate && (
+                      <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
+                        📅 {new Date(surgery.operationDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                      </p>
+                    )}
+                    {surgery.notes && (
+                      <p className="text-xs text-slate-600 dark:text-slate-400 mt-2">
+                        📝 {surgery.notes}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="glassmorphic-card p-6">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">⚕️ Surgical History</h3>
+              <p className="text-slate-600 dark:text-slate-400 text-center py-8">No surgical procedures recorded</p>
+            </div>
+          )}
         </div>
       )}
 

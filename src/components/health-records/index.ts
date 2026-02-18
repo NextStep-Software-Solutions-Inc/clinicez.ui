@@ -18,6 +18,7 @@ export { ObGyneHistoryEditForm, type ObGyneHistoryEditFormProps } from './ob-gyn
 export { PediatricMeasurementEditForm, type PediatricMeasurementEditFormProps } from './pediatric-measurement-edit-form'
 export { MedicalConditionsEditForm, type MedicalConditionsEditFormProps } from './medical-conditions-edit-form'
 export { FamilyMedicalHistoryEditForm, type FamilyMedicalHistoryEditFormProps } from './family-medical-history-edit-form'
+export { SurgicalHistoryEditForm, type SurgicalHistoryEditFormProps } from './surgical-history-edit-form'
 export { PhysicalExaminationEditForm, type PhysicalExaminationEditFormProps } from './physical-examination-edit-form'
 export { PhilHealthRecordEditForm, type PhilHealthRecordEditFormProps } from './philhealth-record-edit-form'
 export { AllergyEditForm, type AllergyEditFormProps } from './allergy-edit-form'

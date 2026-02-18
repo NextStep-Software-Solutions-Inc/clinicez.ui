@@ -63,7 +63,7 @@ export async function getPatientHealthRecords(): Promise<SerializedPatientHealth
     }
 
     // Fetch related data in separate queries
-    const [medical, familyMedical, vitals, exams, obGyne, pediatric, personal, philHealth, procedures, clinicPatients, allergies, emergencyContacts, vaccinations, disabilities] = await Promise.all([
+    const [medical, familyMedical, vitals, exams, obGyne, pediatric, personal, philHealth, procedures, clinicPatients, allergies, emergencyContacts, vaccinations, disabilities, addresses] = await Promise.all([
       // Medical Histories
       prisma.medicalHistory.findMany({
         where: { userId: patient.id },
@@ -185,6 +185,11 @@ export async function getPatientHealthRecords(): Promise<SerializedPatientHealth
         },
         orderBy: { dateDiagnosed: 'desc' },
         take: 20,
+      }),
+      // Addresses
+      prisma.userAddress.findMany({
+        where: { userId: patient.id, isActive: true },
+        orderBy: { createdAt: 'desc' },
       }),
     ])
 
@@ -394,6 +399,24 @@ export async function getPatientHealthRecords(): Promise<SerializedPatientHealth
         isManaged: dis.isManaged,
         reason: dis.reason,
         diagnosedBy: dis.DiagnosedBy ? `${dis.DiagnosedBy.firstName} ${dis.DiagnosedBy.lastName}` : null,
+      })),
+
+      // Addresses
+      userAddresses: addresses.map((addr) => ({
+        id: addr.id,
+        address: addr.address,
+        apartmentUnit: addr.apartmentUnit,
+        bldgName: addr.bldgName,
+        addressLine: addr.addressLine,
+        street: addr.street,
+        subdivision: addr.subdivision,
+        region: addr.region,
+        barangay: addr.barangay,
+        city: addr.city,
+        state: addr.state,
+        zipCode: addr.zipCode,
+        country: addr.country,
+        isPrimary: addr.isPrimary,
       })),
 
       // Insurance & PhilHealth

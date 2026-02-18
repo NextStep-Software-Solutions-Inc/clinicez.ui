@@ -162,6 +162,24 @@ export interface SerializedPatientHealthRecordsResponse {
     diagnosedBy: string | null
   }>
 
+  // Addresses
+  userAddresses: Array<{
+    id: number
+    address: string
+    apartmentUnit: string | null
+    bldgName: string | null
+    addressLine: string | null
+    street: string | null
+    subdivision: string | null
+    region: string | null
+    barangay: string | null
+    city: string
+    state: string
+    zipCode: string
+    country: string
+    isPrimary: boolean
+  }>
+
   // Insurance & PhilHealth
   philHealthRecords: Array<Omit<PhilHealthRecord, 'createdAt' | 'updatedAt' | 'deletedAt'> & {
     createdAt: string

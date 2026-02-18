@@ -6,6 +6,7 @@ import { demographicsSchema, type DemographicsFormInput } from '@/schemas'
 import { FormModal, FormField, EditButton, ProfilePictureUpload } from './index'
 import { Input } from '@/components/ui/input'
 import { toast } from 'sonner'
+import { formatBloodType } from '@/lib/utils'
 import {
   Select,
   SelectContent,
@@ -13,20 +14,27 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import {
+  RadioGroup,
+  RadioGroupItem,
+} from '@/components/ui/radio-group'
 
 const BLOOD_TYPES = [
-  'O_POSITIVE',
-  'O_NEGATIVE',
   'A_POSITIVE',
   'A_NEGATIVE',
   'B_POSITIVE',
   'B_NEGATIVE',
   'AB_POSITIVE',
   'AB_NEGATIVE',
+  'O_POSITIVE',
+  'O_NEGATIVE',
+  'RH_POSITIVE',
+  'RH_NEGATIVE',
+  'UNKNOWN',
 ]
 
-const GENDERS = ['MALE', 'FEMALE', 'OTHER']
-const CIVIL_STATUS = ['SINGLE', 'MARRIED', 'DIVORCED', 'WIDOWED']
+const GENDERS = ['MALE', 'FEMALE']
+const CIVIL_STATUS = ['SINGLE', 'MARRIED', 'DIVORCED', 'WIDOWED', 'SEPARATED']
 
 export interface DemographicsEditFormProps {
   userId: string
@@ -174,34 +182,34 @@ export function DemographicsEditForm({
             />
           </FormField>
 
-          <FormField label="Gender" htmlFor="gender">
-            <Select value={formData.gender || ''} onValueChange={(value) => handleFieldChange('gender', value)}>
-              <SelectTrigger id="gender">
-                <SelectValue placeholder="Select gender" />
-              </SelectTrigger>
-              <SelectContent>
+          <FormField label="Gender">
+            <RadioGroup value={formData.gender || ''} onValueChange={(value) => handleFieldChange('gender', value)}>
+              <div className="flex items-center gap-6">
                 {GENDERS.map((g) => (
-                  <SelectItem key={g} value={g}>
-                    {g.charAt(0) + g.slice(1).toLowerCase()}
-                  </SelectItem>
+                  <div key={g} className="flex items-center gap-2">
+                    <RadioGroupItem value={g} id={g} />
+                    <label htmlFor={g} className="cursor-pointer font-medium text-slate-700 dark:text-slate-300">
+                      {g.charAt(0) + g.slice(1).toLowerCase()}
+                    </label>
+                  </div>
                 ))}
-              </SelectContent>
-            </Select>
+              </div>
+            </RadioGroup>
           </FormField>
 
-          <FormField label="Blood Type" htmlFor="bloodType">
-            <Select value={formData.bloodType || ''} onValueChange={(value) => handleFieldChange('bloodType', value)}>
-              <SelectTrigger id="bloodType">
-                <SelectValue placeholder="Select blood type" />
-              </SelectTrigger>
-              <SelectContent>
+          <FormField label="Blood Type">
+            <RadioGroup value={formData.bloodType || ''} onValueChange={(value) => handleFieldChange('bloodType', value)}>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {BLOOD_TYPES.map((bt) => (
-                  <SelectItem key={bt} value={bt}>
-                    {bt.replace('_', ' ')}
-                  </SelectItem>
+                  <div key={bt} className="flex items-center gap-2">
+                    <RadioGroupItem value={bt} id={bt} />
+                    <label htmlFor={bt} className="cursor-pointer font-medium text-slate-700 dark:text-slate-300">
+                      {formatBloodType(bt)}
+                    </label>
+                  </div>
                 ))}
-              </SelectContent>
-            </Select>
+              </div>
+            </RadioGroup>
           </FormField>
         </div>
 
@@ -212,19 +220,19 @@ export function DemographicsEditForm({
             Social Information
           </h3>
 
-          <FormField label="Civil Status" htmlFor="civilStatus">
-            <Select value={formData.civilStatus || ''} onValueChange={(value) => handleFieldChange('civilStatus', value)}>
-              <SelectTrigger id="civilStatus">
-                <SelectValue placeholder="Select civil status" />
-              </SelectTrigger>
-              <SelectContent>
+          <FormField label="Civil Status">
+            <RadioGroup value={formData.civilStatus || ''} onValueChange={(value) => handleFieldChange('civilStatus', value)}>
+              <div className="flex flex-wrap gap-4">
                 {CIVIL_STATUS.map((cs) => (
-                  <SelectItem key={cs} value={cs}>
-                    {cs.charAt(0) + cs.slice(1).toLowerCase()}
-                  </SelectItem>
+                  <div key={cs} className="flex items-center gap-2">
+                    <RadioGroupItem value={cs} id={cs} />
+                    <label htmlFor={cs} className="cursor-pointer font-medium text-slate-700 dark:text-slate-300">
+                      {cs.charAt(0) + cs.slice(1).toLowerCase()}
+                    </label>
+                  </div>
                 ))}
-              </SelectContent>
-            </Select>
+              </div>
+            </RadioGroup>
           </FormField>
 
           <FormField label="Religion" htmlFor="religion">

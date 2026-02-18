@@ -70,6 +70,31 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
         if (patient.pediatricMeasurements.length === 0) incompleteCount++
         return incompleteCount > 0 ? { status: 'Incomplete', count: incompleteCount } : null
       }
+      case 'allergies': {
+        let incompleteCount = 0
+        if (patient.userAllergies.length === 0) incompleteCount++
+        return incompleteCount > 0 ? { status: 'Incomplete', count: incompleteCount } : null
+      }
+      case 'vaccinations': {
+        let incompleteCount = 0
+        if (patient.userVaccinations.length === 0) incompleteCount++
+        return incompleteCount > 0 ? { status: 'Incomplete', count: incompleteCount } : null
+      }
+      case 'disabilities': {
+        let incompleteCount = 0
+        if (patient.userDisabilities.length === 0) incompleteCount++
+        return incompleteCount > 0 ? { status: 'Incomplete', count: incompleteCount } : null
+      }
+      case 'addresses': {
+        let incompleteCount = 0
+        if (patient.userAddresses.length === 0) incompleteCount++
+        return incompleteCount > 0 ? { status: 'Incomplete', count: incompleteCount } : null
+      }
+      case 'contacts': {
+        let incompleteCount = 0
+        if (patient.userEmergencyContacts.length === 0) incompleteCount++
+        return incompleteCount > 0 ? { status: 'Incomplete', count: incompleteCount } : null
+      }
       case 'insurance': {
         let incompleteCount = 0
         if (patient.philHealthRecords.length === 0) incompleteCount++
@@ -85,6 +110,11 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: '📋' },
+    { id: 'addresses', label: 'Addresses', icon: '📍' },
+    { id: 'contacts', label: 'Contacts', icon: '🆘' },
+    { id: 'allergies', label: 'Allergies', icon: '⚠️' },
+    { id: 'vaccinations', label: 'Vaccinations', icon: '💉' },
+    { id: 'disabilities', label: 'Disabilities', icon: '♿' },
     { id: 'medical', label: 'Medical Profile', icon: '🏥' },
     { id: 'vitals', label: 'Vital Signs', icon: '❤️' },
     { id: 'exams', label: 'Physical Exams', icon: '🔍' },
@@ -1093,6 +1123,376 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
         </div>
       )}
 
+      {/* PEDIATRIC TAB */}
+      {activeTab === 'pediatric' && (
+        <div className="space-y-6">
+          {patient.pediatricMeasurements.length > 0 ? (
+            <div className="glassmorphic-card p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">👶 Pediatric Measurements</h3>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setPediatricViewMode('list')}
+                    className={`flex items-center gap-2 px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                      pediatricViewMode === 'list'
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600'
+                    }`}
+                  >
+                    <List className="w-4 h-4" />
+                    List
+                  </button>
+                  <button
+                    onClick={() => setPediatricViewMode('chart')}
+                    className={`flex items-center gap-2 px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                      pediatricViewMode === 'chart'
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600'
+                    }`}
+                  >
+                    <BarChart3 className="w-4 h-4" />
+                    Chart
+                  </button>
+                </div>
+              </div>
+
+              {pediatricViewMode === 'list' ? (
+                <div className="space-y-4">
+                  {patient.pediatricMeasurements.map((p, i) => {
+                    const ageMonths = calculateAgeInMonths(new Date(patient.dob!), new Date(p.dateTaken))
+                    const lengthPercentile = p.length ? getLengthPercentile(ageMonths, Number(p.length), patient.gender as 'MALE' | 'FEMALE') : null
+                    const weightPercentile = p.length ? getWeightPercentile(ageMonths, Number(p.length), patient.gender as 'MALE' | 'FEMALE') : null
+
+                    return (
+                      <div key={i} className="border rounded-lg p-4 bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700">
+                        {/* Header with Date and Age */}
+                        <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-200 dark:border-slate-700">
+                          <div className="flex items-center gap-3">
+                            <div>
+                              <p className="font-semibold text-slate-900 dark:text-white">
+                                {new Date(p.dateTaken).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                              </p>
+                              <p className="text-xs text-slate-600 dark:text-slate-400">
+                                Age: {formatAge(new Date(patient.dob!), new Date(p.dateTaken))} ({ageMonths} months)
+                              </p>
+                            </div>
+                          </div>
+                          <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                            {new Date(p.dateTaken).toLocaleDateString('en-US', { weekday: 'short' })}
+                          </span>
+                        </div>
+
+                        {/* Measurements Grid */}
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
+                          {/* Length */}
+                          {p.length && (
+                            <div className="p-3 rounded-lg bg-white dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600">
+                              <p className="text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">Length</p>
+                              <p className="text-lg font-bold text-slate-900 dark:text-white mb-1">{p.length.toString()} cm</p>
+                              {lengthPercentile && (
+                                <p className={`text-xs font-semibold ${getGrowthStatusColor(lengthPercentile.status)}`}>
+                                  {lengthPercentile.percentile}
+                                </p>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Head Circumference */}
+                          {p.headCircumference && (
+                            <div className="p-3 rounded-lg bg-white dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600">
+                              <p className="text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">HC</p>
+                              <p className="text-lg font-bold text-slate-900 dark:text-white mb-1">{p.headCircumference.toString()} cm</p>
+                              <p className="text-xs text-slate-500">Head Circum.</p>
+                            </div>
+                          )}
+
+                          {/* Waist Circumference */}
+                          {p.waistCircumference && (
+                            <div className="p-3 rounded-lg bg-white dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600">
+                              <p className="text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">Waist</p>
+                              <p className="text-lg font-bold text-slate-900 dark:text-white">{p.waistCircumference.toString()} cm</p>
+                            </div>
+                          )}
+
+                          {/* Hip Circumference */}
+                          {p.hipCircumference && (
+                            <div className="p-3 rounded-lg bg-white dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600">
+                              <p className="text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">Hip</p>
+                              <p className="text-lg font-bold text-slate-900 dark:text-white">{p.hipCircumference.toString()} cm</p>
+                            </div>
+                          )}
+
+                          {/* MUAC */}
+                          {p.midUpperArmCircumference && (
+                            <div className="p-3 rounded-lg bg-white dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600">
+                              <p className="text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">MUAC</p>
+                              <p className="text-lg font-bold text-slate-900 dark:text-white">{p.midUpperArmCircumference.toString()} cm</p>
+                            </div>
+                          )}
+
+                          {/* Limb Circumference */}
+                          {p.limbCircumference && (
+                            <div className="p-3 rounded-lg bg-white dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600">
+                              <p className="text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">Limb</p>
+                              <p className="text-lg font-bold text-slate-900 dark:text-white">{p.limbCircumference.toString()} cm</p>
+                            </div>
+                          )}
+
+                          {/* Skinfold Thickness */}
+                          {p.skinfoldThickness && (
+                            <div className="p-3 rounded-lg bg-white dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600">
+                              <p className="text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">Skinfold</p>
+                              <p className="text-lg font-bold text-slate-900 dark:text-white">{p.skinfoldThickness.toString()} mm</p>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Remarks */}
+                        {p.remarks && (
+                          <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700">
+                            <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">Remarks</p>
+                            <p className="text-sm text-slate-700 dark:text-slate-300">{p.remarks}</p>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              ) : (
+                // Chart View
+                <div className="w-full h-96">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      data={patient.pediatricMeasurements
+                        .map((p, i) => {
+                          const ageMonths = calculateAgeInMonths(new Date(patient.dob!), new Date(p.dateTaken))
+                          return {
+                            date: new Date(p.dateTaken).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                            timestamp: new Date(p.dateTaken).getTime(),
+                            ageMonths: ageMonths,
+                            length: p.length ? Number(p.length) : null,
+                            headCircumference: p.headCircumference ? Number(p.headCircumference) : null,
+                            waistCircumference: p.waistCircumference ? Number(p.waistCircumference) : null,
+                            hipCircumference: p.hipCircumference ? Number(p.hipCircumference) : null,
+                            midUpperArmCircumference: p.midUpperArmCircumference ? Number(p.midUpperArmCircumference) : null,
+                            limbCircumference: p.limbCircumference ? Number(p.limbCircumference) : null,
+                            skinfoldThickness: p.skinfoldThickness ? Number(p.skinfoldThickness) : null,
+                          }
+                        })
+                        .sort((a, b) => a.timestamp - b.timestamp)
+                      }
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(100, 116, 139, 0.1)" />
+                      <XAxis 
+                        dataKey="date"
+                        stroke="rgb(100, 116, 139)"
+                        strokeOpacity={0.5}
+                        tick={{ fontSize: 12 }}
+                      />
+                      <YAxis 
+                        stroke="rgb(100, 116, 139)"
+                        strokeOpacity={0.5}
+                        tick={{ fontSize: 12 }}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: 'rgb(15, 23, 42)',
+                          border: '1px solid rgb(71, 85, 105)',
+                          borderRadius: '8px',
+                          color: 'rgb(226, 232, 240)',
+                        }}
+                        labelStyle={{ color: 'rgb(226, 232, 240)' }}
+                        formatter={(value, name) => {
+                          if (value === null) return 'N/A'
+                          const labels: Record<string, string> = {
+                            length: 'Length (cm)',
+                            headCircumference: 'HC (cm)',
+                            waistCircumference: 'Waist (cm)',
+                            hipCircumference: 'Hip (cm)',
+                            midUpperArmCircumference: 'MUAC (cm)',
+                            limbCircumference: 'Limb (cm)',
+                            skinfoldThickness: 'Skinfold (mm)',
+                          }
+                          return [value, labels[name] || name]
+                        }}
+                      />
+                      <Legend
+                        wrapperStyle={{ paddingTop: '20px' }}
+                        iconType="line"
+                      />
+                      {patient.pediatricMeasurements.some(p => p.length) && (
+                        <Line
+                          type="monotone"
+                          dataKey="length"
+                          stroke="#06b6d4"
+                          dot={false}
+                          name="Length (cm)"
+                          strokeWidth={2}
+                        />
+                      )}
+                      {patient.pediatricMeasurements.some(p => p.headCircumference) && (
+                        <Line
+                          type="monotone"
+                          dataKey="headCircumference"
+                          stroke="#f97316"
+                          dot={false}
+                          name="HC (cm)"
+                          strokeWidth={2}
+                        />
+                      )}
+                      {patient.pediatricMeasurements.some(p => p.waistCircumference) && (
+                        <Line
+                          type="monotone"
+                          dataKey="waistCircumference"
+                          stroke="#ec4899"
+                          dot={false}
+                          name="Waist (cm)"
+                          strokeWidth={2}
+                        />
+                      )}
+                      {patient.pediatricMeasurements.some(p => p.midUpperArmCircumference) && (
+                        <Line
+                          type="monotone"
+                          dataKey="midUpperArmCircumference"
+                          stroke="#8b5cf6"
+                          dot={false}
+                          name="MUAC (cm)"
+                          strokeWidth={2}
+                        />
+                      )}
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="glassmorphic-card p-6">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">👶 Pediatric Measurements</h3>
+              <p className="text-slate-600 dark:text-slate-400 text-center py-8">No pediatric measurements recorded</p>
+            </div>
+          )}
+        </div>
+      )}
+
+   
+      {/* ADDRESSES TAB */}
+      {activeTab === 'addresses' && (
+        <div className="space-y-6">
+          {patient.userAddresses.length > 0 ? (
+            <div className="glassmorphic-card p-6">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">📍 Addresses</h3>
+              <div className="space-y-3">
+                {patient.userAddresses.map((addr) => (
+                  <div key={addr.id} className="p-4 rounded-lg bg-green-50/30 dark:bg-green-950/20 border border-green-200/30 dark:border-green-800/30">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-xs text-slate-600 dark:text-slate-400 font-semibold uppercase">Primary</p>
+                        <p className="text-slate-900 dark:text-white font-semibold">{addr.isPrimary ? 'Yes' : 'No'}</p>
+                      </div>
+                      <div className="md:col-span-2">
+                        <p className="text-xs text-slate-600 dark:text-slate-400 font-semibold uppercase">Address</p>
+                        <p className="text-slate-900 dark:text-white font-semibold">{addr.address}</p>
+                      </div>
+                      {addr.apartmentUnit && (
+                        <div>
+                          <p className="text-xs text-slate-600 dark:text-slate-400 font-semibold uppercase">Unit</p>
+                          <p className="text-slate-700 dark:text-slate-300">{addr.apartmentUnit}</p>
+                        </div>
+                      )}
+                      {addr.bldgName && (
+                        <div>
+                          <p className="text-xs text-slate-600 dark:text-slate-400 font-semibold uppercase">Building</p>
+                          <p className="text-slate-700 dark:text-slate-300">{addr.bldgName}</p>
+                        </div>
+                      )}
+                      {addr.street && (
+                        <div>
+                          <p className="text-xs text-slate-600 dark:text-slate-400 font-semibold uppercase">Street</p>
+                          <p className="text-slate-700 dark:text-slate-300">{addr.street}</p>
+                        </div>
+                      )}
+                      {addr.barangay && (
+                        <div>
+                          <p className="text-xs text-slate-600 dark:text-slate-400 font-semibold uppercase">Barangay</p>
+                          <p className="text-slate-700 dark:text-slate-300">{addr.barangay}</p>
+                        </div>
+                      )}
+                      <div>
+                        <p className="text-xs text-slate-600 dark:text-slate-400 font-semibold uppercase">City</p>
+                        <p className="text-slate-700 dark:text-slate-300">{addr.city}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-600 dark:text-slate-400 font-semibold uppercase">State/Province</p>
+                        <p className="text-slate-700 dark:text-slate-300">{addr.state}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-600 dark:text-slate-400 font-semibold uppercase">Country</p>
+                        <p className="text-slate-700 dark:text-slate-300">{addr.country}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-600 dark:text-slate-400 font-semibold uppercase">Zip Code</p>
+                        <p className="text-slate-700 dark:text-slate-300">{addr.zipCode}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="glassmorphic-card p-6">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">📍 Addresses</h3>
+              <p className="text-slate-600 dark:text-slate-400 text-center py-8">No addresses recorded</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* CONTACTS TAB */}
+      {activeTab === 'contacts' && (
+        <div className="space-y-6">
+          {patient.userEmergencyContacts.length > 0 ? (
+            <div className="glassmorphic-card p-6">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">🆘 Emergency Contacts</h3>
+              <div className="space-y-3">
+                {patient.userEmergencyContacts.map((contact) => (
+                  <div key={contact.id} className="p-4 rounded-lg bg-blue-50/30 dark:bg-blue-950/20 border border-blue-200/30 dark:border-blue-800/30">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-xs text-slate-600 dark:text-slate-400 font-semibold uppercase">Name</p>
+                        <p className="text-slate-900 dark:text-white font-semibold">{contact.name}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-600 dark:text-slate-400 font-semibold uppercase">Relationship</p>
+                        <p className="text-slate-900 dark:text-white font-semibold">{contact.relationship}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-600 dark:text-slate-400 font-semibold uppercase">Phone</p>
+                        <p className="text-slate-900 dark:text-white font-semibold">{contact.phone}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-600 dark:text-slate-400 font-semibold uppercase">Primary</p>
+                        <p className="text-slate-900 dark:text-white font-semibold">{contact.isPrimary ? 'Yes' : 'No'}</p>
+                      </div>
+                      {contact.address && (
+                        <div className="md:col-span-2">
+                          <p className="text-xs text-slate-600 dark:text-slate-400 font-semibold uppercase">Address</p>
+                          <p className="text-slate-700 dark:text-slate-300">{contact.address}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="glassmorphic-card p-6">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">🆘 Emergency Contacts</h3>
+              <p className="text-slate-600 dark:text-slate-400 text-center py-8">No emergency contacts recorded</p>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* LIFESTYLE TAB */}
       {activeTab === 'lifestyle' && (
         <div className="space-y-6">
@@ -1113,6 +1513,156 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
             </div>
           )}
 
+        </div>
+      )}
+
+      {/* ALLERGIES TAB */}
+      {activeTab === 'allergies' && (
+        <div className="space-y-6">
+          {patient.userAllergies.length > 0 ? (
+            <div className="glassmorphic-card p-6">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">⚠️ Allergies</h3>
+              <div className="space-y-3">
+                {patient.userAllergies.map((allergy) => (
+                  <div key={allergy.id} className="p-4 rounded-lg bg-red-50/30 dark:bg-red-950/20 border border-red-200/30 dark:border-red-800/30">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-xs text-slate-600 dark:text-slate-400 font-semibold uppercase">Allergen</p>
+                        <p className="text-slate-900 dark:text-white font-semibold">{allergy.allergen}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-600 dark:text-slate-400 font-semibold uppercase">Reaction</p>
+                        <p className="text-slate-900 dark:text-white font-semibold">{allergy.reaction}</p>
+                      </div>
+                      {allergy.notes && (
+                        <div className="md:col-span-2">
+                          <p className="text-xs text-slate-600 dark:text-slate-400 font-semibold uppercase">Notes</p>
+                          <p className="text-slate-700 dark:text-slate-300">{allergy.notes}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="glassmorphic-card p-6">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">⚠️ Allergies</h3>
+              <p className="text-slate-600 dark:text-slate-400 text-center py-8">No allergies recorded</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* VACCINATIONS TAB */}
+      {activeTab === 'vaccinations' && (
+        <div className="space-y-6">
+          {patient.userVaccinations.length > 0 ? (
+            <div className="glassmorphic-card p-6">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">💉 Vaccinations & Immunizations</h3>
+              <div className="space-y-3">
+                {patient.userVaccinations.map((vaccination) => (
+                  <div key={vaccination.id} className="p-4 rounded-lg bg-blue-50/30 dark:bg-blue-950/20 border border-blue-200/30 dark:border-blue-800/30">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-xs text-slate-600 dark:text-slate-400 font-semibold uppercase">Vaccine</p>
+                        <p className="text-slate-900 dark:text-white font-semibold">{vaccination.vaccine}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-600 dark:text-slate-400 font-semibold uppercase">Dose</p>
+                        <p className="text-slate-900 dark:text-white font-semibold">{vaccination.dose}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-600 dark:text-slate-400 font-semibold uppercase">Route</p>
+                        <p className="text-slate-900 dark:text-white font-semibold">{vaccination.route}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-600 dark:text-slate-400 font-semibold uppercase">Date Given</p>
+                        <p className="text-slate-900 dark:text-white font-semibold">{new Date(vaccination.dateGiven).toLocaleDateString()}</p>
+                      </div>
+                      {vaccination.administeredBy && (
+                        <div>
+                          <p className="text-xs text-slate-600 dark:text-slate-400 font-semibold uppercase">Administered By</p>
+                          <p className="text-slate-900 dark:text-white font-semibold">{vaccination.administeredBy}</p>
+                        </div>
+                      )}
+                      {vaccination.notes && (
+                        <div className="md:col-span-2">
+                          <p className="text-xs text-slate-600 dark:text-slate-400 font-semibold uppercase">Notes</p>
+                          <p className="text-slate-700 dark:text-slate-300">{vaccination.notes}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="glassmorphic-card p-6">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">💉 Vaccinations & Immunizations</h3>
+              <p className="text-slate-600 dark:text-slate-400 text-center py-8">No vaccinations recorded</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* DISABILITIES TAB */}
+      {activeTab === 'disabilities' && (
+        <div className="space-y-6">
+          {patient.userDisabilities.length > 0 ? (
+            <div className="glassmorphic-card p-6">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">♿ Disabilities & Illnesses</h3>
+              <div className="space-y-3">
+                {patient.userDisabilities.map((disability) => (
+                  <div key={disability.id} className="p-4 rounded-lg bg-purple-50/30 dark:bg-purple-950/20 border border-purple-200/30 dark:border-purple-800/30">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-xs text-slate-600 dark:text-slate-400 font-semibold uppercase">Disability/Illness</p>
+                        <p className="text-slate-900 dark:text-white font-semibold">{disability.disability}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-600 dark:text-slate-400 font-semibold uppercase">Severity</p>
+                        <p className="text-slate-900 dark:text-white font-semibold">{disability.severity}</p>
+                      </div>
+                      {disability.dateDiagnosed && (
+                        <div>
+                          <p className="text-xs text-slate-600 dark:text-slate-400 font-semibold uppercase">Date Diagnosed</p>
+                          <p className="text-slate-900 dark:text-white font-semibold">{new Date(disability.dateDiagnosed).toLocaleDateString()}</p>
+                        </div>
+                      )}
+                      <div>
+                        <p className="text-xs text-slate-600 dark:text-slate-400 font-semibold uppercase">Managed</p>
+                        <p className="text-slate-900 dark:text-white font-semibold">{disability.isManaged ? 'Yes' : 'No'}</p>
+                      </div>
+                      {disability.diagnosedBy && (
+                        <div>
+                          <p className="text-xs text-slate-600 dark:text-slate-400 font-semibold uppercase">Diagnosed By</p>
+                          <p className="text-slate-900 dark:text-white font-semibold">{disability.diagnosedBy}</p>
+                        </div>
+                      )}
+                      {disability.reason && (
+                        <div className="md:col-span-2">
+                          <p className="text-xs text-slate-600 dark:text-slate-400 font-semibold uppercase">Reason</p>
+                          <p className="text-slate-700 dark:text-slate-300">{disability.reason}</p>
+                        </div>
+                      )}
+                      {disability.notes && (
+                        <div className="md:col-span-2">
+                          <p className="text-xs text-slate-600 dark:text-slate-400 font-semibold uppercase">Notes</p>
+                          <p className="text-slate-700 dark:text-slate-300">{disability.notes}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="glassmorphic-card p-6">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">♿ Disabilities & Illnesses</h3>
+              <p className="text-slate-600 dark:text-slate-400 text-center py-8">No disabilities recorded</p>
+            </div>
+          )}
         </div>
       )}
 

@@ -350,3 +350,116 @@ export const getMyDefaultClinicAction = cache(
     };
   })
 );
+
+export type GetClinicWithUserRole = Awaited<ReturnType<typeof getClinicWithUserRoleAction>>;
+export const getClinicWithUserRoleAction = withErrorHandling(cache(async (clinicUid: string) => {
+  const session = await getCachedSession();
+  if (!session) throw new Error("User not authenticated");
+
+  // Fetch the clinic
+  const clinic = await prisma.clinic.findFirst({
+    where: {
+      isActive: true,
+      clinicUid
+    },
+    select: {
+      id: true,
+      clinicUid: true,
+      name: true,
+      description: true,
+      customUrl: true,
+      logo: true,
+      email: true
+    }
+  });
+
+  if (!clinic) {
+    throw new Error(`Clinic with UID ${clinicUid} not found`);
+  }
+
+  // Fetch user's role in this clinic (if they're a member)
+  const clinicMember = await prisma.clinicMember.findFirst({
+    where: {
+      Clinic: {
+        clinicUid
+      },
+      User: {
+        userId: session.user.sub
+      },
+      isActive: true,
+      status: "ACTIVE",
+      deletedAt: null
+    },
+    select: {
+      Role: {
+        select: {
+          id: true,
+          name: true
+        }
+      }
+    }
+  });
+
+  return {
+    message: "Clinic with user role retrieved successfully",
+    data: {
+      clinic,
+      userRole: clinicMember?.Role || null
+    }
+  };
+}));
+
+export type GetUserClinicsWithRoles = Awaited<ReturnType<typeof getUserClinicsWithRolesAction>>;
+export const getUserClinicsWithRolesAction = withErrorHandling(cache(async () => {
+  const session = await getCachedSession();
+  if (!session) throw new Error("User not authenticated");
+
+  // Fetch all clinics where user is an active member with their roles
+  const clinicMemberships = await prisma.clinicMember.findMany({
+    where: {
+      User: {
+        userId: session.user.sub
+      },
+      isActive: true,
+      status: "ACTIVE",
+      deletedAt: null,
+      Clinic: {
+        isActive: true
+      }
+    },
+    select: {
+      Clinic: {
+        select: {
+          id: true,
+          clinicUid: true,
+          name: true,
+          logo: true
+        }
+      },
+      Role: {
+        select: {
+          id: true,
+          name: true
+        }
+      }
+    },
+    orderBy: {
+      Clinic: {
+        name: "asc"
+      }
+    }
+  });
+
+  const clinics = clinicMemberships.map(membership => ({
+    id: membership.Clinic.id,
+    clinicUid: membership.Clinic.clinicUid,
+    name: membership.Clinic.name,
+    logo: membership.Clinic.logo,
+    role: membership.Role.name
+  }));
+
+  return {
+    message: "User clinics with roles retrieved successfully",
+    data: clinics
+  };
+}));

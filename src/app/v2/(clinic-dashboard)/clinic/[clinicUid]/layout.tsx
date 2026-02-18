@@ -1,6 +1,8 @@
 import React from "react";
 import { DashboardShell } from "@/components/v2/dashboard";
 import type { NavItem } from "@/components/v2/dashboard";
+import { getClinicWithUserRoleAction, getUserClinicsWithRolesAction } from "@/actions/clinics/clinic.action";
+import { notFound } from "next/navigation";
 
 interface ClinicUidLayoutProps {
   children: React.ReactNode;
@@ -12,6 +14,21 @@ export default async function ClinicUidLayout(
 ) {
   const params = await props.params;
   const { clinicUid } = params;
+
+  // Load clinic data and user's role in this clinic
+  const clinicWithRoleResult = await getClinicWithUserRoleAction(clinicUid);
+  
+  // Check if clinic was found and loaded successfully
+  if (!clinicWithRoleResult.status || !clinicWithRoleResult.data) {
+    notFound();
+  }
+
+  const clinic = clinicWithRoleResult.data.clinic;
+  const userRole = clinicWithRoleResult.data.userRole;
+
+  // Load all user's clinics with their roles for the selector
+  const userClinicsResult = await getUserClinicsWithRolesAction();
+  const userClinics = userClinicsResult.data;
 
   // Navigation items for clinic dashboard
   const navItems: NavItem[] = [
@@ -64,27 +81,17 @@ export default async function ClinicUidLayout(
       dashboardType="clinic"
       title="Clinic Dashboard"
       activeClinic={{
-        id: clinicUid,
-        name: "My Clinic", // TODO: Fetch actual clinic name from API
-        uid: clinicUid,
-        role: "Doctor", // TODO: Fetch user's role in this clinic from API
+        id: clinic.id.toString(),
+        name: clinic.name,
+        uid: clinic.clinicUid,
+        role: userRole?.name || "Member",
       }}
-      clinics={[
-        // TODO: Fetch user's clinics from API with their roles in each clinic
-        {
-          id: clinicUid,
-          name: "My Clinic",
-          uid: clinicUid,
-          role: "Doctor",
-        },
-        // Example of additional clinic:
-        // {
-        //   id: "clinic-2",
-        //   name: "Secondary Clinic",
-        //   uid: "secondary-clinic",
-        //   role: "Manager",
-        // },
-      ]}
+      clinics={(userClinics || []).map(c => ({
+        id: c.id.toString(),
+        name: c.name,
+        uid: c.clinicUid,
+        role: c.role,
+      }))}
       headerActions={null}
       navItems={navItems}
     >

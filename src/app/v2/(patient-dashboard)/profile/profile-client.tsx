@@ -119,7 +119,7 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
       {/* Containerized Main Content */}
       <div className="max-w-6xl mx-auto pb-32">
         {/* Profile Card */}
-        <div className="glassmorphic-card overflow-hidden mb-8">
+        <div className="glassmorphic-card overflow-visible mb-8">
         <div className="bg-gradient-to-r from-blue-600 to-cyan-500 h-32 flex items-end px-8 pb-4">
           {patient.picture ? (
             <img 
@@ -1087,19 +1087,23 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
       {/* LIFESTYLE TAB */}
       {activeTab === 'lifestyle' && (
         <div className="space-y-6">
+          {/* Personal History */}
           {patient.personalHistory ? (
             <div className="glassmorphic-card p-6">
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">👤 Lifestyle & Personal History</h3>
-              <div className="space-y-2">
-                {patient.personalHistory.smokingStatus && <p className="text-sm"><span className="font-semibold">Smoking:</span> {patient.personalHistory.smokingStatus}</p>}
-                {patient.personalHistory.alcoholStatus && <p className="text-sm"><span className="font-semibold">Alcohol:</span> {patient.personalHistory.alcoholStatus}</p>}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {patient.personalHistory.smokingStatus && <div><p className="text-xs text-slate-600 dark:text-slate-400">Smoking</p><p className="font-semibold text-slate-900 dark:text-white">{patient.personalHistory.smokingStatus}</p></div>}
+                {patient.personalHistory.alcoholStatus && <div><p className="text-xs text-slate-600 dark:text-slate-400">Alcohol</p><p className="font-semibold text-slate-900 dark:text-white">{patient.personalHistory.alcoholStatus}</p></div>}
+                {patient.personalHistory.illicitDrugUse && <div><p className="text-xs text-slate-600 dark:text-slate-400">Drug Use</p><p className="font-semibold text-slate-900 dark:text-white">{patient.personalHistory.illicitDrugUse}</p></div>}
               </div>
             </div>
           ) : (
             <div className="glassmorphic-card p-6">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">👤 Lifestyle & Personal History</h3>
               <p className="text-slate-600 dark:text-slate-400 text-center py-8">No personal history recorded</p>
             </div>
           )}
+
         </div>
       )}
 

@@ -6,7 +6,7 @@
  * User-centric: Validates all fields, checks permissions, logs changes
  */
 
-import { currentUser } from '@clerk/nextjs/server'
+import { currentUser, clerkClient } from '@clerk/nextjs/server'
 import prisma from '@/lib/prisma'
 import { demographicsSchema, type DemographicsFormInput } from '@/schemas'
 import {
@@ -144,7 +144,30 @@ export async function updateDemographics(
       },
     })
 
-    // 7. Log the change for audit trail
+    // 7. Sync name changes to Clerk if applicable
+    try {
+      const clerkUpdateData: Partial<{ firstName: string; lastName: string }> = {}
+
+      if (validatedData.firstName !== undefined && validatedData.firstName !== currentUserData.firstName) {
+        clerkUpdateData.firstName = validatedData.firstName
+      }
+
+      if (validatedData.lastName !== undefined && validatedData.lastName !== currentUserData.lastName) {
+        clerkUpdateData.lastName = validatedData.lastName
+      }
+
+      // Only update Clerk if there are name changes
+      if (Object.keys(clerkUpdateData).length > 0) {
+        const client = await clerkClient()
+        await client.users.updateUser(authUser.id, clerkUpdateData)
+        console.log(`[CLERK_SYNC] Updated user ${authUser.id} with demographics changes`)
+      }
+    } catch (clerkError) {
+      console.error('[CLERK_SYNC_ERROR] Failed to sync demographics to Clerk:', clerkError)
+      // Don't fail the entire update if Clerk sync fails - database update succeeded
+    }
+
+    // 8. Log the change for audit trail
     const changes = trackChanges(currentUserData, validatedData)
     await logAudit({
       entityType: AuditEntityType.USER,

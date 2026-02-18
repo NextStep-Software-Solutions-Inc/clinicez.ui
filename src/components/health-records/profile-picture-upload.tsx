@@ -2,6 +2,7 @@
 
 import React, { useState, useRef } from 'react'
 import { uploadMediaAction } from '@/actions/blob.action'
+import { updateClerkProfileImageAction } from '@/actions/users/update-profile-image.action'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
@@ -67,7 +68,18 @@ export function ProfilePictureUpload({
 
       const uploadResult = await uploadMediaAction(formData)
       if (uploadResult && uploadResult.url) {
-        toast.success('Profile picture updated successfully')
+        // Sync profile image to Clerk
+        try {
+          const clerkSyncSuccess = await updateClerkProfileImageAction(uploadResult.url)
+          if (clerkSyncSuccess) {
+            toast.success('Profile picture updated and synced to your account')
+          } else {
+            toast.success('Profile picture updated (Clerk sync pending)')
+          }
+        } catch (clerkError) {
+          console.error('Clerk sync error:', clerkError)
+          toast.success('Profile picture updated (sync may require a moment)')
+        }
         onSuccess?.(uploadResult.url)
       } else {
         throw new Error('Failed to upload image')
@@ -96,20 +108,22 @@ export function ProfilePictureUpload({
     <div className="space-y-4">
       <div className="flex items-center gap-4">
         {/* Current/Preview Picture */}
-        <div className="relative w-24 h-24 rounded-full overflow-hidden border-4 border-slate-200 dark:border-slate-700 flex-shrink-0">
-          {preview ? (
-            <Image
-              src={preview}
-              alt="Profile preview"
-              fill
-              className="object-cover"
-              priority
-            />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-br from-slate-300 to-slate-400 dark:from-slate-600 dark:to-slate-700 flex items-center justify-center">
-              <span className="text-3xl text-slate-600 dark:text-slate-300">👤</span>
-            </div>
-          )}
+        <div className="relative w-24 h-24 rounded-full border-4 border-slate-200 dark:border-slate-700 flex-shrink-0">
+          <div className="w-full h-full rounded-full overflow-hidden">
+            {preview ? (
+              <Image
+                src={preview}
+                alt="Profile preview"
+                fill
+                className="object-cover"
+                priority
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-slate-300 to-slate-400 dark:from-slate-600 dark:to-slate-700 flex items-center justify-center">
+                <span className="text-3xl text-slate-600 dark:text-slate-300">👤</span>
+              </div>
+            )}
+          </div>
           {preview && (
             <button
               onClick={handleRemovePicture}

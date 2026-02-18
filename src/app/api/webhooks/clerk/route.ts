@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
   try {
     // Get the webhook secret from environment
     const webhookSecret = process.env.CLERK_WEBHOOK_SECRET;
-    
+
     if (!webhookSecret) {
       console.error("CLERK_WEBHOOK_SECRET is not set");
       return NextResponse.json(
@@ -106,7 +106,8 @@ export async function POST(request: NextRequest) {
     const email = primaryEmail.email_address;
     const firstName = data.first_name || "";
     const lastName = data.last_name || "";
-    const picture = data.image_url || data.profile_image_url || null;
+    // Prioritize profile_image_url (user's uploaded image) over image_url (social login image)
+    const picture = data.profile_image_url || data.image_url || null;
 
     // Upsert user to database
     if (type === "user.created" || type === "user.updated") {

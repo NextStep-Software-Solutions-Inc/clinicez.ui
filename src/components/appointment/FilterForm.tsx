@@ -287,7 +287,7 @@ export default function FilterForm({ onContinue }: FilterFormProps) {
   if (!canWritePermission) return <div role="alert" aria-live="assertive">Sorry, You do not have permission to book an appointment.</div>
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className=" space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         {
           canWriteBookAFriendPermission && (
             <>

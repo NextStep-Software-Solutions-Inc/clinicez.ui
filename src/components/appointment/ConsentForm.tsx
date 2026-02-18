@@ -53,9 +53,9 @@ export default function ConsentForm({ nextStep, prevStep, isFirstStep, isComplet
 
   return (
     <Form {...form}>
-      <div className="prose max-w-full shadow-lg w-full p-8 bg-white rounded-md">
-        <h2 className="">Consent Form</h2>
-        <p className="mt-2">Your application is ready for submission. Please carefully review all the details you have provided.</p>
+      <div className="prose max-w-full shadow-lg w-full p-8 bg-white/20 dark:bg-gray-800/20 rounded-md">
+        <h2 className="dark:text-white/50">Consent Form</h2>
+        <p className="mt-2 dark:text-white/50">Your application is ready for submission. Please carefully review all the details you have provided.</p>
         <form action={action} className="mt-4 flex flex-col gap-2 ">
           <FormField
             control={form.control}

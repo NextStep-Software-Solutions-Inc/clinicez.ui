@@ -14,7 +14,7 @@ export default function SelectService({nextStep, prevStep, isFirstStep, isLastSt
     nextStep?.();
   }
   return (
-    <div className="shadow-lg w-full p-8 bg-white rounded-md ">
+    <div className="shadow-lg w-full p-8 bg-white/20 dark:bg-gray-800/20 rounded-md ">
      
       <div className="overflow-y-auto max-h-[calc(50dvh)] no-scrollbar scrollBox px-2">
         <div className="flex lg:flex-row flex-col items-center gap-5 justify-center my-5">

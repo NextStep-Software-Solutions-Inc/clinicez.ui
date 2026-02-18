@@ -152,10 +152,10 @@ export default function ReviewBooking({ nextStep, prevStep, isLastStep, isFirstS
   }, [hp]);
   const requesterName = `${dbUser?.data?.firstName || "-"} ${dbUser?.data?.middleName || ""} ${dbUser?.data?.lastName || "-"} ${dbUser?.data?.suffix || ""}`.replace(/\s+/g, " ").trim();
   return (
-    <div className="shadow-lg p-8 space-y-5 bg-white rounded-md">
-      <h2 className="text-2xl  font-bold ">Review details</h2>
+    <div className="shadow-lg p-8 space-y-5 bg-white/20 dark:bg-gray-800/20 rounded-md">
+      <h2 className="text-2xl  font-bold dark:text-white/50">Review details</h2>
       <form onSubmit={handleBookAppointment}>
-        <div className="p-5 mb-5 space-y-2 text-sm bg-gray-100 rounded-sm select-none">
+        <div className="p-5 mb-5 space-y-2 text-sm bg-gray-100 dark:bg-gray-700 rounded-sm select-none">
           {
             bookAppointmentForm.bookAFriend && (
               <>

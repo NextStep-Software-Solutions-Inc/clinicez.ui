@@ -49,8 +49,8 @@ export default function ChiefComplaint({ nextStep, prevStep, isLastStep, isFirst
   return (
 
     <Form {...form}>
-      <div className="prose max-w-full shadow-lg w-full p-8 bg-white rounded-md">
-        <h2>Chief Complaint Form</h2>
+      <div className="prose max-w-full shadow-lg w-full p-8 bg-white/20 dark:bg-gray-800/20 rounded-md">
+        <h2 className="dark:text-white/50">Chief Complaint Form</h2>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           <FormField
             control={form.control}

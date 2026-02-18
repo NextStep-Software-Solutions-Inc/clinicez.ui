@@ -77,25 +77,43 @@ export default async function ClinicUidLayout(
   ];
 
   return (
-    <DashboardShell
-      dashboardType="clinic"
-      title="Clinic Dashboard"
-      activeClinic={{
-        id: clinic.id.toString(),
-        name: clinic.name,
-        uid: clinic.clinicUid,
-        role: userRole?.name || "Member",
-      }}
-      clinics={(userClinics || []).map(c => ({
-        id: c.id.toString(),
-        name: c.name,
-        uid: c.clinicUid,
-        role: c.role,
-      }))}
-      headerActions={null}
-      navItems={navItems}
-    >
-      {props.children}
-    </DashboardShell>
+    <div className="relative min-h-screen overflow-hidden">
+      {/* Fixed Mesh Grid Pattern Background */}
+      <div 
+        className="fixed inset-0 pointer-events-none"
+        style={{
+          backgroundImage: `
+            linear-gradient(0deg, hsl(var(--color-border) / 0.5) 1px, transparent 1px),
+            linear-gradient(90deg, hsl(var(--color-border) / 0.5) 1px, transparent 1px)
+          `,
+          backgroundSize: '50px 50px',
+          backgroundPosition: '0 0',
+          zIndex: 0,
+        }}
+      />
+      
+      <div className="relative z-10">
+        <DashboardShell
+          dashboardType="clinic"
+          title="Clinic Dashboard"
+          activeClinic={{
+            id: clinic.id.toString(),
+            name: clinic.name,
+            uid: clinic.clinicUid,
+            role: userRole?.name || "Member",
+          }}
+          clinics={(userClinics || []).map(c => ({
+            id: c.id.toString(),
+            name: c.name,
+            uid: c.clinicUid,
+            role: c.role,
+          }))}
+          headerActions={null}
+          navItems={navItems}
+        >
+          {props.children}
+        </DashboardShell>
+      </div>
+    </div>
   );
 }

@@ -106,26 +106,20 @@ export default function DashboardShell({
   contentClassName = "",
   children,
 }: DashboardShellProps) {
-  const { theme, setTheme, resolvedTheme } = useTheme();
   const pathname = usePathname();
   const [searchQuery, setSearchQuery] = useState("");
   const [showMobileSearch, setShowMobileSearch] = useState(false);
 
-  const isDark = resolvedTheme === "dark";
-
-  const toggleTheme = () => {
-    setTheme(theme === "dark" ? "light" : "dark");
-  };
 
   return (
     <div
       data-dashboard={dashboardType}
-      className="flex h-dvh flex-col overflow-hidden bg-background"
+      className="flex h-dvh flex-col overflow-hidden bg-background/20"
     >
       {/* ===== SCROLLABLE AREA (Header + Nav + Content) ===== */}
       <div className="flex flex-1 flex-col overflow-y-auto">
         {/* ===== HEADER ===== */}
-        <header className="z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 transition-all">
+        <header className="z-30 bg-background/20 backdrop-blur supports-[backdrop-filter]:bg-background/80 transition-all">
           {/* Desktop Header */}
           <div className="hidden sm:flex h-16 items-center justify-between px-6 gap-6">
           {/* Left: Title/Clinic Section */}
@@ -295,7 +289,7 @@ export default function DashboardShell({
 
         {/* Main Content */}
         <main
-          className={`bg-background ${
+          className={`bg-background/50 ${
             contentClassName || "px-4 sm:px-6 py-6"
           }`}
         >

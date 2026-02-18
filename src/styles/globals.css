@@ -230,3 +230,52 @@ body {
   /* Opera doesn't support this in the shorthand */
   background-attachment: local, local, scroll, scroll;
 }
+
+/* ─────────────────────────────────────────────────────────────────────── */
+/* Glassmorphic Design System - Global Styles */
+/* Frosted glass effect with backdrop blur for modern UI */
+/* ─────────────────────────────────────────────────────────────────────── */
+
+.glassmorphic-card {
+  background: hsla(var(--color-bg-primary), 0.6);
+  border: 1px solid hsl(var(--color-border-light));
+  border-radius: 0.75rem;
+  padding: 1rem;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.08);
+  color: hsl(var(--color-text-primary));
+}
+
+.glassmorphic-card:hover {
+  border-color: hsl(var(--color-border));
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.12);
+}
+
+.dark .glassmorphic-card,
+[data-theme="dark"] .glassmorphic-card {
+  background: hsla(var(--color-bg-primary), 0.5);
+  border-color: hsl(var(--color-border-light));
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+  color: hsl(var(--color-text-primary));
+}
+
+.dark .glassmorphic-card:hover,
+[data-theme="dark"] .glassmorphic-card:hover {
+  border-color: hsl(var(--color-border));
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+}
+
+/* Glassmorphic enhanced variants */
+.glassmorphic-card-lg {
+  padding: 1.5rem;
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+}
+
+.glassmorphic-card-sm {
+  padding: 0.75rem;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}

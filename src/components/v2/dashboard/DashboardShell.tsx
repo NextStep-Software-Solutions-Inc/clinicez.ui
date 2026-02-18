@@ -109,6 +109,7 @@ export default function DashboardShell({
   const { theme, setTheme, resolvedTheme } = useTheme();
   const pathname = usePathname();
   const [searchQuery, setSearchQuery] = useState("");
+  const [showMobileSearch, setShowMobileSearch] = useState(false);
 
   const isDark = resolvedTheme === "dark";
 
@@ -182,50 +183,62 @@ export default function DashboardShell({
         {/* Mobile Header */}
         <div className="sm:hidden flex h-14 items-center justify-between px-4 gap-3">
           <div className="flex-1 min-w-0">
-            <h1 className="text-lg font-bold text-foreground/90 truncate">
-              {title}
-            </h1>
+            {activeClinic ? (
+              <ClinicSelector
+                activeClinic={activeClinic}
+                clinics={clinics}
+                onClinicChange={onClinicChange}
+              />
+            ) : (
+              <h1 className="text-lg font-bold text-foreground/90 truncate">
+                {title}
+              </h1>
+            )}
           </div>
           <div className="flex items-center gap-2 shrink-0">
             {headerActions}
             <Button
               variant="ghost"
               size="icon"
-              onClick={toggleTheme}
+              onClick={() => setShowMobileSearch(!showMobileSearch)}
               className="h-8 w-8 rounded-lg hover:bg-muted"
-              aria-label="Toggle theme"
+              aria-label="Search"
             >
-              {isDark ? (
-                <Sun className="h-4 w-4 text-amber-400" />
+              {showMobileSearch ? (
+                <X className="h-4 w-4" />
               ) : (
-                <Moon className="h-4 w-4 text-slate-600" />
+                <Search className="h-4 w-4" />
               )}
             </Button>
+           <ThemeToggle/>
           </div>
         </div>
 
-        {/* Mobile Search Bar */}
-        <div className="sm:hidden bg-background/50 px-4 py-2">
-          <div className="relative group">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground/40" />
-            <Input
-              type="text"
-              placeholder="Search..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-8 pl-9 pr-8 text-sm border-border/50 bg-muted/40 rounded-lg focus:bg-background transition-all"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-1"
-                aria-label="Clear search"
-              >
-                <X className="h-3 w-3 text-foreground/40" />
-              </button>
-            )}
+        {/* Mobile Search Bar - Shows on demand */}
+        {showMobileSearch && (
+          <div className="sm:hidden bg-background/50 px-4 py-2 border-b border-border/50">
+            <div className="relative group">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground/40" />
+              <Input
+                type="text"
+                placeholder="Search..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                autoFocus
+                className="h-8 pl-9 pr-8 text-sm border-border/50 bg-muted/40 rounded-lg focus:bg-background transition-all"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1"
+                  aria-label="Clear search"
+                >
+                  <X className="h-3 w-3 text-foreground/40" />
+                </button>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </header>
 
       {/* ===== TOP NAVIGATION ===== */}

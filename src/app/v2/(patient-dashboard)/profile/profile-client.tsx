@@ -51,7 +51,6 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
         let incompleteCount = 0
         if (patient.medicalHistories.length === 0) incompleteCount++
         if (patient.familyMedicalHistories.length === 0) incompleteCount++
-        if (patient.surgicalHistories.length === 0) incompleteCount++
         return incompleteCount > 0 ? { status: 'Incomplete', count: incompleteCount } : null
       }
       case 'vitals': {
@@ -67,14 +66,20 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
       case 'lifestyle': {
         let incompleteCount = 0
         if (!patient.personalHistory) incompleteCount++
-        if (!patient.obGyneHistory && patient.gender?.toLowerCase() === 'female') incompleteCount++
+        return incompleteCount > 0 ? { status: 'Incomplete', count: incompleteCount } : null
+      }
+      case 'obgyn': {
+        let incompleteCount = 0
+        if (!patient.obGyneHistory) incompleteCount++
+        return incompleteCount > 0 ? { status: 'Incomplete', count: incompleteCount } : null
+      }
+      case 'pediatric': {
+        let incompleteCount = 0
         if (patient.pediatricMeasurements.length === 0) incompleteCount++
         return incompleteCount > 0 ? { status: 'Incomplete', count: incompleteCount } : null
       }
       case 'allergies': {
-        let incompleteCount = 0
-        if (patient.userAllergies.length === 0) incompleteCount++
-        return incompleteCount > 0 ? { status: 'Incomplete', count: incompleteCount } : null
+        return null
       }
       case 'vaccinations': {
         let incompleteCount = 0
@@ -82,9 +87,7 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
         return incompleteCount > 0 ? { status: 'Incomplete', count: incompleteCount } : null
       }
       case 'disabilities': {
-        let incompleteCount = 0
-        if (patient.userDisabilities.length === 0) incompleteCount++
-        return incompleteCount > 0 ? { status: 'Incomplete', count: incompleteCount } : null
+        return null
       }
       case 'addresses': {
         let incompleteCount = 0
@@ -99,10 +102,18 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
       case 'insurance': {
         let incompleteCount = 0
         if (patient.philHealthRecords.length === 0) incompleteCount++
-        if (patient.medicalCertificates.length === 0) incompleteCount++
-        if (patient.referralSlips.length === 0) incompleteCount++
-        if (patient.procedureHistory.length === 0) incompleteCount++
-        return incompleteCount > 0 ? { status: 'Incomplete', count: incompleteCount } : null
+        
+        const optionalDocsCount = 
+          (patient.medicalCertificates?.length || 0) +
+          (patient.referralSlips?.length || 0) +
+          (patient.procedureHistory?.length || 0)
+        
+        if (incompleteCount > 0) {
+          return { status: 'Incomplete', count: incompleteCount }
+        } else if (optionalDocsCount > 0) {
+          return { status: 'Available', count: optionalDocsCount }
+        }
+        return null
       }
       default:
         return null

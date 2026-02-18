@@ -3,6 +3,7 @@
 import { Suspense, useRef, useState } from 'react';
 import useSWR from 'swr';
 import { useRouter } from 'next/navigation';
+import { useSetAtom } from 'jotai';
 import {
   NextAppointmentHeroCard,
   VitalsGrid,
@@ -16,6 +17,7 @@ import {
 import { ThemeToggle } from '@/components/patient-dashboard-v2/ThemeToggle';
 import { getPatientDashboardData } from '@/actions/patient-dashboard';
 import BookAppointmentSheet from '@/components/appointment/BookAppointmentSheet';
+import { bookAppointmentAtom } from '@/state/book-appointment';
 
 // Loading skeleton for initial page load
 function DashboardLoadingSkeleton() {
@@ -47,6 +49,7 @@ function DashboardLoadingSkeleton() {
 
 function PatientDashboardContent() {
   const router = useRouter();
+  const setBookAppointmentForm = useSetAtom(bookAppointmentAtom);
   const [showClinicDialog, setShowClinicDialog] = useState(false);
   const diagnosticRequestsRef = useRef<HTMLDivElement>(null);
   const prescriptionsRef = useRef<HTMLDivElement>(null);
@@ -89,7 +92,8 @@ function PatientDashboardContent() {
 
   const handleClinicSelected = (clinicUid: string) => {
     setShowClinicDialog(false);
-    router.push(`?book-appointment=true&clinic=${clinicUid}`);
+    setBookAppointmentForm((prev) => ({ ...prev, clinicUid }));
+    router.push(`?book-appointment=true`);
   };
 
   const handleViewTestRequests = () => {

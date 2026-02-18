@@ -12,6 +12,9 @@ export * from './pediatric-measurement-schema'
 export * from './medical-history-schema'
 export * from './family-medical-history-schema'
 export * from './philhealth-record-schema'
+export * from './allergy-schema'
+export * from './emergency-contact-schema'
+export * from './address-schema'
 
 /**
  * Combined type registry for all form inputs

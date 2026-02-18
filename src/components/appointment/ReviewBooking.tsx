@@ -9,7 +9,6 @@ import useSound from "use-sound";
 import { useAtom } from "jotai";
 import { bookAppointmentAtom } from "@state/book-appointment";
 import { useUser as useDbUser } from "@hooks/useUser";
-import { useParams } from "next/navigation";
 import { uploadMediaAction } from "@actions/blob.action";
 import { mutate } from "swr";
 import dayjs from "@lib/day-utils";
@@ -19,8 +18,8 @@ import { LabelValue } from "@components/LabelValue";
 import Each from "@components/utils/Each";
 import { Separator } from "@components/ui/separator";
 import { useClinicServices } from "@/hooks/useClinicService";
-import { useOrgAppointmentTypes } from "@hooks/useOrgAppointmentType";
-import { useOrgAppointmentModes } from "@hooks/useOrgAppointmentMode";
+import { useClinicAppointmentTypes } from "@hooks/useOrgAppointmentType";
+import { useClinicAppointmentModes } from "@hooks/useOrgAppointmentMode";
 import { useHP } from "@hooks/useHP";
 import { Button } from "@components/ui/button";
 
@@ -35,11 +34,12 @@ interface ReviewBookingProps {
 
 export default function ReviewBooking({ nextStep, prevStep, isLastStep, isFirstStep, setComplete, startOver }: ReviewBookingProps) {
   const [bookAppointmentForm, setBookAppointmentForm] = useAtom(bookAppointmentAtom);
-  const params = useParams<{ clinicUid: string }>();
   const { user } = useUser()
-  const { data: services } = useClinicServices({ clinicUid: params.clinicUid });
-  const { data: appointmentTypes } = useOrgAppointmentTypes(params.clinicUid);
-  const { data: appointmentModes } = useOrgAppointmentModes(params.clinicUid);
+  const clinicUid = bookAppointmentForm.clinicUid;
+  
+  const { data: services } = useClinicServices({ clinicUid: clinicUid || "" });
+  const { data: appointmentTypes } = useClinicAppointmentTypes(clinicUid || "");
+  const { data: appointmentModes } = useClinicAppointmentModes(clinicUid || "");
   const { data: hp } = useHP(bookAppointmentForm.hpId ?? 0)
   const { data: dbUser } = useDbUser({ userId: bookAppointmentForm.requester });
 
@@ -48,7 +48,7 @@ export default function ReviewBooking({ nextStep, prevStep, isLastStep, isFirstS
   const handleBookAppointment = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
 
-    if (!params.clinicUid) {
+    if (!bookAppointmentForm.clinicUid) {
       toast.error("Clinic UID is required")
       return;
     }
@@ -94,7 +94,7 @@ export default function ReviewBooking({ nextStep, prevStep, isLastStep, isFirstS
     }
 
     toast.promise(createAppointmentAction({
-      clinicUid: params.clinicUid,
+      clinicUid: bookAppointmentForm.clinicUid,
       subject: bookAppointmentForm.subject ?? "Appointment Request",
       complaint: bookAppointmentForm.chiefComplaint,
       modeId: bookAppointmentForm.modeId,
@@ -114,7 +114,7 @@ export default function ReviewBooking({ nextStep, prevStep, isLastStep, isFirstS
         if (res.status) {
           setComplete?.(true);
           playSuccess();
-          mutate((key) => typeof key === 'string' && key.startsWith(`/api/clinics/${params.clinicUid}/appointments`), undefined, {
+          mutate((key) => typeof key === 'string' && key.startsWith(`/api/clinics/${bookAppointmentForm.clinicUid}/appointments`), undefined, {
             revalidate: true
           })
         }
@@ -126,7 +126,12 @@ export default function ReviewBooking({ nextStep, prevStep, isLastStep, isFirstS
   }
 
   const reset = async () => {
-    setBookAppointmentForm({})
+    setBookAppointmentForm(state => ({
+      clinicUid: state.clinicUid,
+      bookAFriend: state.bookAFriend,
+      requester: state.requester,
+      orgUid: state.orgUid,
+    }))
     startOver?.();
   }
 

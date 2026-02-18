@@ -1,6 +1,7 @@
 "use server"
 
 import { withErrorHandling } from "@/lib/with-error-handling";
+import { serializeForClient } from "@/lib/serialize";
 import prisma from "@/lib/prisma";
 import type {
   MedicalHistoryInput,
@@ -81,10 +82,13 @@ export const getHealthHistoryAction = withErrorHandling(async (userId: string) =
 
   if (!user) throw new Error("User not found");
 
+  // Serialize data for client consumption (converts Decimal to number)
+  const serializedUser = serializeForClient(user);
+
   return {
     status: true,
     message: "Health history fetched successfully",
-    data: user
+    data: serializedUser
   };
 });
 

@@ -38,14 +38,14 @@ import {
   CommandList,
 } from "@components/ui/command"
 import Each from "@components/utils/Each"
-import { useOrgAppointmentTypes } from "@hooks/useOrgAppointmentType"
+import { useClinicAppointmentTypes } from "@hooks/useOrgAppointmentType"
 import { useParams, useSearchParams } from "next/navigation"
 import { useHPs } from "@hooks/useHP"
 import { bookAppointmentAtom } from "../../state/book-appointment"
 import { useAtom } from "jotai"
 import ActionButton from "@components/ActionButton"
 import { toast } from "sonner"
-import { useOrgAppointmentModes } from "@hooks/useOrgAppointmentMode"
+import { useClinicAppointmentModes } from "@hooks/useOrgAppointmentMode"
 import { useClinicServiceCategories } from "@/hooks/useClinicServiceCategory"
 import { Checkbox } from "@components/ui/checkbox"
 import { Separator } from "@components/ui/separator"
@@ -120,8 +120,8 @@ export default function FilterForm({ onContinue }: FilterFormProps) {
   // 3. From route params (/clinic/[clinicUid])
   const clinicUid = bookAppointmentForm.clinicUid || queryClinicUid || paramsClinicUid;
   
-  const { data: appointmentTypes } = useOrgAppointmentTypes(clinicUid)
-  const { data: appointmentModes } = useOrgAppointmentModes(clinicUid);
+  const { data: appointmentTypes } = useClinicAppointmentTypes(clinicUid)
+  const { data: appointmentModes } = useClinicAppointmentModes(clinicUid);
   const { data: serviceCategories } = useClinicServiceCategories(clinicUid)
 
   // Use search-based approach instead of loading all members

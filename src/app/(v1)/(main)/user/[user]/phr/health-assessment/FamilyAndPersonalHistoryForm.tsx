@@ -10,7 +10,7 @@ import { PersonalHistorySection } from "./sections/PersonalHistorySection";
 import { ObGyneHistorySection } from "./sections/ObGyneHistorySection";
 import type { Prisma } from "@prisma/client";
 
-// Type for the health history data returned from getHealthHistoryAction
+// Serialized type for the health history data with Decimal fields converted to numbers
 type HealthHistoryData = Prisma.UserGetPayload<{
   select: {
     id: true;
@@ -31,7 +31,24 @@ type HealthHistoryData = Prisma.UserGetPayload<{
     PhysicalExaminations: true;
     PediatricMeasurements: true;
   }
-}>;
+}> & {
+  PediatricMeasurements: Array<{
+    id: number;
+    userId: number;
+    createdAt: Date;
+    updatedAt: Date;
+    deletedAt: Date | null;
+    dateTaken: Date;
+    remarks: string | null;
+    length: number | null;
+    headCircumference: number | null;
+    skinfoldThickness: number | null;
+    waistCircumference: number | null;
+    hipCircumference: number | null;
+    limbCircumference: number | null;
+    midUpperArmCircumference: number | null;
+  }>;
+};
 
 interface FamilyAndPersonalHistoryFormProps {
   userId: string;

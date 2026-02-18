@@ -18,6 +18,9 @@ import type {
   PersonalHistoryFormInput,
   PediatricMeasurementFormInput,
   PhysicalExaminationFormInput,
+  AllergyFormInput,
+  EmergencyContactFormInput,
+  AddressFormInput,
 } from '@/schemas'
 import { ThemeToggle } from '@/components/patient-dashboard-v2/ThemeToggle'
 import {
@@ -30,6 +33,10 @@ import {
   FamilyMedicalHistoryEditForm,
   PhysicalExaminationEditForm,
   PhilHealthRecordEditForm,
+  AllergyEditForm,
+  EmergencyContactEditForm,
+  AddressEditForm,
+  ProfilePictureUpload,
 } from '@/components/health-records'
 import type { PatientHealthRecordsResponse } from '@/types/patient-profile'
 import './edit-profile.css'
@@ -69,6 +76,9 @@ export function EditProfileClient({ initialData, onDataRefresh }: EditProfileCli
     family: true,
     examination: true,
     philhealth: true,
+    allergies: true,
+    'emergency-contacts': true,
+    addresses: true,
   })
 
   // Create refs for all sections
@@ -81,6 +91,9 @@ export function EditProfileClient({ initialData, onDataRefresh }: EditProfileCli
   const familyRef = useRef<HTMLDivElement>(null)
   const examinationRef = useRef<HTMLDivElement>(null)
   const philhealthRef = useRef<HTMLDivElement>(null)
+  const allergiesRef = useRef<HTMLDivElement>(null)
+  const emergencyContactsRef = useRef<HTMLDivElement>(null)
+  const addressesRef = useRef<HTMLDivElement>(null)
 
   const sections: Section[] = useMemo(
     () => [
@@ -93,6 +106,9 @@ export function EditProfileClient({ initialData, onDataRefresh }: EditProfileCli
       { id: 'family', label: 'Family', icon: '👨‍👩‍👧‍👦', ref: familyRef },
       { id: 'examination', label: 'Exam', icon: '🔍', ref: examinationRef },
       { id: 'philhealth', label: 'PhilHealth', icon: '🏛️', ref: philhealthRef },
+      { id: 'allergies', label: 'Allergies', icon: '⚠️', ref: allergiesRef },
+      { id: 'emergency-contacts', label: 'Contacts', icon: '🆘', ref: emergencyContactsRef },
+      { id: 'addresses', label: 'Addresses', icon: '📍', ref: addressesRef },
     ],
     [],
   )
@@ -377,6 +393,7 @@ export function EditProfileClient({ initialData, onDataRefresh }: EditProfileCli
                 <Suspense fallback={<FormLoadingFallback />}>
                   <DemographicsEditForm
                     userId={patientData.userId}
+                    currentPicture={patientData.picture}
                     inline={true}
                     currentData={getDemographicsData()}
                     onSuccess={() => handleSuccess()}
@@ -579,6 +596,72 @@ export function EditProfileClient({ initialData, onDataRefresh }: EditProfileCli
                   ) : (
                     <PhilHealthRecordEditForm userId={patientData.userId} inline={true} onSuccess={() => handleSuccess()} />
                   )}
+                </Suspense>
+              )}
+            </div>
+          </div>
+
+          {/* Allergies Section */}
+          <div ref={sections[9].ref} id="allergies" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-900">
+            <div className="backdrop-blur-xl bg-white/30 dark:bg-slate-800/30 border border-white/40 dark:border-slate-700/40 rounded-2xl shadow-2xl p-6 md:p-8 hover:bg-white/40 dark:hover:bg-slate-800/40 transition-all duration-300">
+              <div className="mb-6 flex items-center gap-3">
+                <div className="w-1.5 h-8 bg-gradient-to-b from-red-500 to-orange-500 rounded-full"></div>
+                <div>
+                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Allergies</h2>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">Manage your known allergies</p>
+                </div>
+              </div>
+              {loadedSections['allergies'] && (
+                <Suspense fallback={<FormLoadingFallback />}>
+                  <AllergyEditForm
+                    userId={patientData.userId}
+                    inline={true}
+                    onSuccess={() => handleSuccess()}
+                  />
+                </Suspense>
+              )}
+            </div>
+          </div>
+
+          {/* Emergency Contacts Section */}
+          <div ref={sections[10].ref} id="emergency-contacts" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-950">
+            <div className="backdrop-blur-xl bg-white/30 dark:bg-slate-800/30 border border-white/40 dark:border-slate-700/40 rounded-2xl shadow-2xl p-6 md:p-8 hover:bg-white/40 dark:hover:bg-slate-800/40 transition-all duration-300">
+              <div className="mb-6 flex items-center gap-3">
+                <div className="w-1.5 h-8 bg-gradient-to-b from-blue-500 to-cyan-500 rounded-full"></div>
+                <div>
+                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Emergency Contacts</h2>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">Add people to contact in case of emergency</p>
+                </div>
+              </div>
+              {loadedSections['emergency-contacts'] && (
+                <Suspense fallback={<FormLoadingFallback />}>
+                  <EmergencyContactEditForm
+                    userId={patientData.userId}
+                    inline={true}
+                    onSuccess={() => handleSuccess()}
+                  />
+                </Suspense>
+              )}
+            </div>
+          </div>
+
+          {/* Addresses Section */}
+          <div ref={sections[11].ref} id="addresses" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-1000">
+            <div className="backdrop-blur-xl bg-white/30 dark:bg-slate-800/30 border border-white/40 dark:border-slate-700/40 rounded-2xl shadow-2xl p-6 md:p-8 hover:bg-white/40 dark:hover:bg-slate-800/40 transition-all duration-300">
+              <div className="mb-6 flex items-center gap-3">
+                <div className="w-1.5 h-8 bg-gradient-to-b from-green-500 to-emerald-500 rounded-full"></div>
+                <div>
+                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Addresses</h2>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">Manage your residential addresses</p>
+                </div>
+              </div>
+              {loadedSections['addresses'] && (
+                <Suspense fallback={<FormLoadingFallback />}>
+                  <AddressEditForm
+                    userId={patientData.userId}
+                    inline={true}
+                    onSuccess={() => handleSuccess()}
+                  />
                 </Suspense>
               )}
             </div>

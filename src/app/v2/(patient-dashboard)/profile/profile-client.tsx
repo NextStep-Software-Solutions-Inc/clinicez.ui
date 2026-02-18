@@ -542,35 +542,38 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
         </div>
       )}
 
-      {/* VITALS & EXAMS TAB - ABBREVIATED FOR SPACE */}
+      {/* VITALS TAB */}
       {activeTab === 'vitals' && (
         <div className="space-y-6">
-          <div className="glassmorphic-card p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">📊 Vital Signs History</h3>
+          <div className="backdrop-blur-xl bg-white/30 dark:bg-slate-800/30 border border-white/40 dark:border-slate-700/40 rounded-2xl shadow-2xl p-6 md:p-8">
+            <div className="mb-6 flex items-center gap-3">
+              <div className="w-1.5 h-8 bg-gradient-to-b from-red-500 to-rose-500 rounded-full"></div>
+              <h3 className="text-2xl font-bold text-slate-900 dark:text-white">❤️ Vital Signs History</h3>
+            </div>
+            <div className="flex items-center justify-end mb-6">
               {patient.vitalSigns.length > 0 && (
                 <div className="flex gap-2">
                   <button
                     onClick={() => setVitalsViewMode('list')}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
                       vitalsViewMode === 'list'
-                        ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                        ? 'bg-gradient-to-r from-red-500 to-rose-500 text-white shadow-lg'
+                        : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
                     }`}
                   >
                     <List className="w-4 h-4" />
-                    <span className="text-sm">List</span>
+                    <span>List</span>
                   </button>
                   <button
                     onClick={() => setVitalsViewMode('chart')}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
                       vitalsViewMode === 'chart'
-                        ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                        ? 'bg-gradient-to-r from-red-500 to-rose-500 text-white shadow-lg'
+                        : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
                     }`}
                   >
                     <BarChart3 className="w-4 h-4" />
-                    <span className="text-sm">Chart</span>
+                    <span>Chart</span>
                   </button>
                 </div>
               )}
@@ -618,11 +621,14 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
       {activeTab === 'exams' && (
         <div className="space-y-6">
           {patient.physicalExaminations.length > 0 ? (
-            <div className="glassmorphic-card p-6">
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">🔍 Physical Examinations</h3>
-              <div className="space-y-2">
+            <div className="backdrop-blur-xl bg-white/30 dark:bg-slate-800/30 border border-white/40 dark:border-slate-700/40 rounded-2xl shadow-2xl p-6 md:p-8">
+              <div className="mb-6 flex items-center gap-3">
+                <div className="w-1.5 h-8 bg-gradient-to-b from-orange-500 to-amber-500 rounded-full"></div>
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white">🔍 Physical Examinations</h2>
+              </div>
+              <div className="space-y-3 max-h-96 overflow-y-auto">
                 {patient.physicalExaminations.slice(0, 5).map((e, i) => (
-                  <div key={i} className="p-3 rounded-lg bg-slate-100/50 dark:bg-white/5 text-sm">
+                  <div key={i} className="p-4 rounded-lg border border-slate-200/50 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-900/30 text-sm hover:bg-slate-100/50 dark:hover:bg-slate-800/50 transition-colors">
                     <p className="font-semibold">{new Date(e.createdAt).toLocaleDateString()}</p>
                     <p className="text-xs text-slate-600 dark:text-slate-400">Status: {e.status}</p>
                   </div>
@@ -630,8 +636,11 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
               </div>
             </div>
           ) : (
-            <div className="glassmorphic-card p-6">
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">🔍 Physical Examinations</h3>
+            <div className="backdrop-blur-xl bg-white/30 dark:bg-slate-800/30 border border-white/40 dark:border-slate-700/40 rounded-2xl shadow-2xl p-6 md:p-8">
+              <div className="mb-6 flex items-center gap-3">
+                <div className="w-1.5 h-8 bg-gradient-to-b from-orange-500 to-amber-500 rounded-full"></div>
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white">🔍 Physical Examinations</h2>
+              </div>
               <p className="text-slate-600 dark:text-slate-400 text-center py-8">No physical examinations recorded</p>
             </div>
           )}
@@ -673,28 +682,41 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
       {activeTab === 'pediatric' && (
         <div className="space-y-6">
           {patient.pediatricMeasurements && patient.pediatricMeasurements.length > 0 ? (
-            <div className="glassmorphic-card p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">📏 Pediatric Measurements</h3>
+            <div className="backdrop-blur-xl bg-white/30 dark:bg-slate-800/30 border border-white/40 dark:border-slate-700/40 rounded-2xl shadow-2xl p-6 md:p-8">
+              <div className="mb-6 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-1.5 h-8 bg-gradient-to-b from-cyan-500 to-blue-500 rounded-full"></div>
+                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white">📏 Pediatric Measurements</h2>
+                </div>
                 <div className="flex gap-2">
                   <button
                     onClick={() => setPediatricViewMode('list')}
-                    className={`px-3 py-1 rounded text-sm ${pediatricViewMode === 'list' ? 'bg-blue-500 text-white' : 'bg-slate-200 dark:bg-slate-700'}`}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+                      pediatricViewMode === 'list'
+                        ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg'
+                        : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
+                    }`}
                   >
-                    List
+                    <List className="w-4 h-4" />
+                    <span>List</span>
                   </button>
                   <button
                     onClick={() => setPediatricViewMode('chart')}
-                    className={`px-3 py-1 rounded text-sm ${pediatricViewMode === 'chart' ? 'bg-blue-500 text-white' : 'bg-slate-200 dark:bg-slate-700'}`}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+                      pediatricViewMode === 'chart'
+                        ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg'
+                        : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
+                    }`}
                   >
-                    Chart
+                    <BarChart3 className="w-4 h-4" />
+                    <span>Chart</span>
                   </button>
                 </div>
               </div>
               {pediatricViewMode === 'list' ? (
-                <div className="space-y-2 max-h-80 overflow-y-auto">
+                <div className="space-y-3 max-h-96 overflow-y-auto">
                   {patient.pediatricMeasurements.map((p, i) => (
-                    <div key={i} className="p-3 rounded-lg bg-slate-100/50 dark:bg-white/5 text-sm">
+                    <div key={i} className="p-4 rounded-lg border border-slate-200/50 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-900/30 text-sm hover:bg-slate-100/50 dark:hover:bg-slate-800/50 transition-colors">
                       <p className="font-semibold">{new Date(p.dateTaken).toLocaleDateString()}</p>
                       <p className="text-xs text-slate-600 dark:text-slate-400">Length: {Number(p.length)} cm | HC: {Number(p.headCircumference)} cm</p>
                     </div>
@@ -718,7 +740,11 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
               )}
             </div>
           ) : (
-            <div className="glassmorphic-card p-6">
+            <div className="backdrop-blur-xl bg-white/30 dark:bg-slate-800/30 border border-white/40 dark:border-slate-700/40 rounded-2xl shadow-2xl p-6 md:p-8">
+              <div className="mb-6 flex items-center gap-3">
+                <div className="w-1.5 h-8 bg-gradient-to-b from-cyan-500 to-blue-500 rounded-full"></div>
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white">📏 Pediatric Measurements</h2>
+              </div>
               <p className="text-slate-600 dark:text-slate-400 text-center py-8">No pediatric measurements recorded</p>
             </div>
           )}

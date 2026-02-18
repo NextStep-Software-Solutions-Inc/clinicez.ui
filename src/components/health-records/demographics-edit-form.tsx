@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useMemo } from 'react'
 import { updateDemographics } from '@/actions/patient-profile'
 import { demographicsSchema, type DemographicsFormInput } from '@/schemas'
-import { FormModal, FormField, EditButton } from './index'
+import { FormModal, FormField, EditButton, ProfilePictureUpload } from './index'
 import { Input } from '@/components/ui/input'
 import { toast } from 'sonner'
 import {
@@ -31,6 +31,7 @@ const CIVIL_STATUS = ['SINGLE', 'MARRIED', 'DIVORCED', 'WIDOWED']
 export interface DemographicsEditFormProps {
   userId: string
   currentData?: DemographicsFormInput
+  currentPicture?: string | null
   onSuccess?: () => void
   inline?: boolean
 }
@@ -42,6 +43,7 @@ export interface DemographicsEditFormProps {
 export function DemographicsEditForm({
   userId,
   currentData,
+  currentPicture,
   onSuccess,
   inline = false,
 }: DemographicsEditFormProps) {
@@ -90,8 +92,21 @@ export function DemographicsEditForm({
 
   const formContent = (
     <>
-        {/* Basic Information */}
+        {/* Profile Picture */}
         <div className="space-y-5 border-b border-slate-200 dark:border-slate-700 pb-6">
+          <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <span className="w-1 h-6 bg-gradient-to-b from-purple-500 to-pink-500 rounded-full"></span>
+            Profile Picture
+          </h3>
+          <ProfilePictureUpload
+            userId={userId}
+            currentPicture={currentPicture}
+            onSuccess={() => onSuccess?.()}
+          />
+        </div>
+
+        {/* Basic Information */}
+        <div className="space-y-5 border-b border-slate-200 dark:border-slate-700 py-6">
           <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
             <span className="w-1 h-6 bg-gradient-to-b from-blue-500 to-cyan-500 rounded-full"></span>
             Basic Information

@@ -19,7 +19,12 @@ export default function BookAppointmentSteps({ initialStep = 1, children }: Book
   })
 
   const reset = async () => {
-    setBookAppointmentForm({})
+    setBookAppointmentForm((state) => ({
+      clinicUid: state.clinicUid,
+      bookAFriend: state.bookAFriend,
+      requester: state.requester,
+      orgUid: state.orgUid,
+    }))
     startOver?.();
   }
 

@@ -3,8 +3,8 @@ import { self } from "@services/request";
 import useSWR from "swr";
 import type { Prisma } from "@prisma/client";
 
-// Type for comprehensive health history
-export type HealthHistoryData = Prisma.UserGetPayload<{
+// Serialized version of HealthHistoryData with Decimal fields converted to numbers
+export type SerializedHealthHistoryData = Prisma.UserGetPayload<{
     select: {
         id: true;
         dob: true;
@@ -24,13 +24,30 @@ export type HealthHistoryData = Prisma.UserGetPayload<{
         PhysicalExaminations: true;
         PediatricMeasurements: true;
     };
-}>;
+}> & {
+    PediatricMeasurements: Array<{
+        id: number;
+        userId: number;
+        createdAt: Date;
+        updatedAt: Date;
+        deletedAt: Date | null;
+        dateTaken: Date;
+        remarks: string | null;
+        length: number | null;
+        headCircumference: number | null;
+        skinfoldThickness: number | null;
+        waistCircumference: number | null;
+        hipCircumference: number | null;
+        limbCircumference: number | null;
+        midUpperArmCircumference: number | null;
+    }>;
+};
 
 export const useHealthHistory = (userId: string) => {
     const fetcher = async () => {
         if (!userId) return null;
         const result = await getHealthHistoryAction(userId);
-        return result.data;
+        return result.data as SerializedHealthHistoryData;
     };
 
     return useSWR(userId ? `/api/health-history/${userId}` : null, fetcher);

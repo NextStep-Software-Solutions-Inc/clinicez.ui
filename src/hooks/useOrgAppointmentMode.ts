@@ -2,7 +2,7 @@ import { GetAppointmentModes } from "@actions/appointments/appointment-mode.acti
 import { self } from "@services/request"
 import useSWR from "swr"
 
-export const useOrgAppointmentModes = (orgUid: string) => {
+export const useClinicAppointmentModes = (clinicUid: string) => {
   const fetcher = (args: string) => self.get<GetAppointmentModes>(args)
-  return useSWR(`/api/clinics/${orgUid}/appointment-modes`, fetcher)
+  return useSWR(`/api/clinics/${clinicUid}/appointment-modes`, fetcher)
 }

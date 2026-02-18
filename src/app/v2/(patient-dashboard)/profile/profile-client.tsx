@@ -118,46 +118,55 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
 
       {/* Containerized Main Content */}
       <div className="max-w-6xl mx-auto pb-32">
-        {/* Profile Card */}
-        <div className="glassmorphic-card overflow-visible mb-8">
-        <div className="bg-gradient-to-r from-blue-600 to-cyan-500 h-32 flex items-end px-8 pb-4">
-          {patient.picture ? (
-            <img 
-              src={patient.picture} 
-              alt={patient.fullName}
-              className="w-24 h-24 rounded-full object-cover border-4 border-white"
-            />
-          ) : (
-            <div className="w-24 h-24 rounded-full bg-white/20 flex items-center justify-center text-white text-3xl font-bold">
-              {patient.firstName?.[0]}{patient.lastName?.[0]}
-            </div>
-          )}
-        </div>
-        <div className="p-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div>
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
-                {patient.fullName}
-              </h2>
-              {patient.caseNumber && (
-                <p className="text-sm text-slate-600 dark:text-slate-400">ID: {patient.caseNumber}</p>
-              )}
-            </div>
-            <div className="space-y-1">
-              <p className="text-xs text-slate-600 dark:text-slate-400">Age</p>
-              <p className="font-semibold text-slate-900 dark:text-white">{patient.age} years</p>
-            </div>
-            <div className="space-y-1">
-              <p className="text-xs text-slate-600 dark:text-slate-400">Blood Type</p>
-              <p className="font-semibold text-lg text-red-500">{formatBloodType(patient.bloodType) || 'N/A'}</p>
-            </div>
-            <div className="space-y-1">
-              <p className="text-xs text-slate-600 dark:text-slate-400">Primary Clinic</p>
-              <p className="font-semibold text-slate-900 dark:text-white text-sm">{patient.clinic?.name || 'N/A'}</p>
+        {/* Profile Card - Redesigned without banner */}
+        <div className="glassmorphic-card mb-8">
+          <div className="p-8">
+            <div className="flex flex-col md:flex-row gap-8 items-start">
+              {/* Profile Picture Section */}
+              <div className="flex-shrink-0">
+                {patient.picture ? (
+                  <img 
+                    src={patient.picture} 
+                    alt={patient.fullName}
+                    className="w-32 h-32 rounded-xl object-cover shadow-lg border-2 border-slate-200 dark:border-slate-700"
+                  />
+                ) : (
+                  <div className="w-32 h-32 rounded-xl bg-gradient-to-br from-blue-400 to-cyan-400 flex items-center justify-center text-white text-4xl font-bold shadow-lg border-2 border-slate-200 dark:border-slate-700">
+                    {patient.firstName?.[0]}{patient.lastName?.[0]}
+                  </div>
+                )}
+              </div>
+
+              {/* Patient Info Section */}
+              <div className="flex-grow">
+                <div className="mb-2">
+                  <h2 className="text-3xl font-bold text-slate-900 dark:text-white">
+                    {patient.fullName}
+                  </h2>
+                  {patient.caseNumber && (
+                    <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">Patient ID: {patient.caseNumber}</p>
+                  )}
+                </div>
+
+                {/* Quick Info Grid */}
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mt-6">
+                  <div className="flex flex-col gap-1">
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Age</p>
+                    <p className="text-xl font-semibold text-slate-900 dark:text-white">{patient.age} years</p>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Blood Type</p>
+                    <p className="text-2xl font-bold text-red-500">{formatBloodType(patient.bloodType) || 'N/A'}</p>
+                  </div>
+                  <div className="flex flex-col gap-1 col-span-2 md:col-span-1">
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Primary Clinic</p>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-white">{patient.clinic?.name || 'N/A'}</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
       {/* Tab Navigation */}
       <div className="flex gap-2 mb-6 overflow-x-auto pb-2">

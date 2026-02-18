@@ -98,6 +98,9 @@ export function EditProfileClient({ initialData, onDataRefresh }: EditProfileCli
   const sections: Section[] = useMemo(
     () => [
       { id: 'demographics', label: 'Demographics', icon: '👤', ref: demographicsRef },
+      { id: 'allergies', label: 'Allergies', icon: '⚠️', ref: allergiesRef },
+      { id: 'emergency-contacts', label: 'Contacts', icon: '🆘', ref: emergencyContactsRef },
+      { id: 'addresses', label: 'Addresses', icon: '📍', ref: addressesRef },
       { id: 'vital-signs', label: 'Vitals', icon: '❤️', ref: vitalSignsRef },
       { id: 'personal-history', label: 'History', icon: '📋', ref: personalHistoryRef },
       { id: 'ob-gyne', label: 'OB/GYN', icon: '👶', ref: obGyneRef },
@@ -106,9 +109,6 @@ export function EditProfileClient({ initialData, onDataRefresh }: EditProfileCli
       { id: 'family', label: 'Family', icon: '👨‍👩‍👧‍👦', ref: familyRef },
       { id: 'examination', label: 'Exam', icon: '🔍', ref: examinationRef },
       { id: 'philhealth', label: 'PhilHealth', icon: '🏛️', ref: philhealthRef },
-      { id: 'allergies', label: 'Allergies', icon: '⚠️', ref: allergiesRef },
-      { id: 'emergency-contacts', label: 'Contacts', icon: '🆘', ref: emergencyContactsRef },
-      { id: 'addresses', label: 'Addresses', icon: '📍', ref: addressesRef },
     ],
     [],
   )
@@ -403,8 +403,81 @@ export function EditProfileClient({ initialData, onDataRefresh }: EditProfileCli
             </div>
           </div>
 
+          {/* Allergies Section */}
+          <div ref={sections[1].ref} id="allergies" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-100">
+            <div className="backdrop-blur-xl bg-white/30 dark:bg-slate-800/30 border border-white/40 dark:border-slate-700/40 rounded-2xl shadow-2xl p-6 md:p-8 hover:bg-white/40 dark:hover:bg-slate-800/40 transition-all duration-300">
+              <div className="mb-6 flex items-center gap-3">
+                <div className="w-1.5 h-8 bg-gradient-to-b from-red-500 to-orange-500 rounded-full"></div>
+                <div>
+                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Allergies</h2>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">Manage your known allergies</p>
+                </div>
+              </div>
+              {loadedSections['allergies'] && (
+                <Suspense fallback={<FormLoadingFallback />}>
+                  <AllergyEditForm
+                    userId={patientData.userId}
+                    currentAllergies={patientData.userAllergies?.map(allergy => ({
+                      id: allergy.id,
+                      allergen: allergy.allergen,
+                      reaction: allergy.reaction,
+                      notes: allergy.notes,
+                    })) || []}
+                    inline={true}
+                    onSuccess={() => handleSuccess()}
+                  />
+                </Suspense>
+              )}
+            </div>
+          </div>
+
+          {/* Emergency Contacts Section */}
+          <div ref={sections[2].ref} id="emergency-contacts" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-200">
+            <div className="backdrop-blur-xl bg-white/30 dark:bg-slate-800/30 border border-white/40 dark:border-slate-700/40 rounded-2xl shadow-2xl p-6 md:p-8 hover:bg-white/40 dark:hover:bg-slate-800/40 transition-all duration-300">
+              <div className="mb-6 flex items-center gap-3">
+                <div className="w-1.5 h-8 bg-gradient-to-b from-blue-500 to-cyan-500 rounded-full"></div>
+                <div>
+                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Emergency Contacts</h2>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">Add people to contact in case of emergency</p>
+                </div>
+              </div>
+              {loadedSections['emergency-contacts'] && (
+                <Suspense fallback={<FormLoadingFallback />}>
+                  <EmergencyContactEditForm
+                    userId={patientData.userId}
+                    currentContacts={patientData.userEmergencyContacts}
+                    inline={true}
+                    onSuccess={() => handleSuccess()}
+                  />
+                </Suspense>
+              )}
+            </div>
+          </div>
+
+          {/* Addresses Section */}
+          <div ref={sections[3].ref} id="addresses" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-300">
+            <div className="backdrop-blur-xl bg-white/30 dark:bg-slate-800/30 border border-white/40 dark:border-slate-700/40 rounded-2xl shadow-2xl p-6 md:p-8 hover:bg-white/40 dark:hover:bg-slate-800/40 transition-all duration-300">
+              <div className="mb-6 flex items-center gap-3">
+                <div className="w-1.5 h-8 bg-gradient-to-b from-green-500 to-emerald-500 rounded-full"></div>
+                <div>
+                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Addresses</h2>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">Manage your residential addresses</p>
+                </div>
+              </div>
+              {loadedSections['addresses'] && (
+                <Suspense fallback={<FormLoadingFallback />}>
+                  <AddressEditForm
+                    userId={patientData.userId}
+                    inline={true}
+                    onSuccess={() => handleSuccess()}
+                  />
+                </Suspense>
+              )}
+            </div>
+          </div>
+
           {/* Vital Signs Section */}
-          <div ref={sections[1].ref} id="vital-signs" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-100">
+          <div ref={sections[4].ref} id="vital-signs" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-400">
             <div className="backdrop-blur-xl bg-white/30 dark:bg-slate-800/30 border border-white/40 dark:border-slate-700/40 rounded-2xl shadow-2xl p-6 md:p-8 hover:bg-white/40 dark:hover:bg-slate-800/40 transition-all duration-300">
               <div className="mb-6 flex items-center gap-3">
                 <div className="w-1.5 h-8 bg-gradient-to-b from-red-500 to-pink-500 rounded-full"></div>
@@ -428,7 +501,7 @@ export function EditProfileClient({ initialData, onDataRefresh }: EditProfileCli
           </div>
 
           {/* Personal History Section */}
-          <div ref={sections[2].ref} id="personal-history" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-200">
+          <div ref={sections[5].ref} id="personal-history" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-500">
             <div className="backdrop-blur-xl bg-white/30 dark:bg-slate-800/30 border border-white/40 dark:border-slate-700/40 rounded-2xl shadow-2xl p-6 md:p-8 hover:bg-white/40 dark:hover:bg-slate-800/40 transition-all duration-300">
               <div className="mb-6 flex items-center gap-3">
                 <div className="w-1.5 h-8 bg-gradient-to-b from-amber-500 to-orange-500 rounded-full"></div>
@@ -451,7 +524,7 @@ export function EditProfileClient({ initialData, onDataRefresh }: EditProfileCli
           </div>
 
           {/* OB/GYN History Section */}
-          <div ref={sections[3].ref} id="ob-gyne" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-300">
+          <div ref={sections[6].ref} id="ob-gyne" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-600">
             <div className="backdrop-blur-xl bg-white/30 dark:bg-slate-800/30 border border-white/40 dark:border-slate-700/40 rounded-2xl shadow-2xl p-6 md:p-8 hover:bg-white/40 dark:hover:bg-slate-800/40 transition-all duration-300">
               <div className="mb-6 flex items-center gap-3">
                 <div className="w-1.5 h-8 bg-gradient-to-b from-rose-500 to-pink-500 rounded-full"></div>
@@ -477,7 +550,7 @@ export function EditProfileClient({ initialData, onDataRefresh }: EditProfileCli
           </div>
 
           {/* Pediatric Measurements Section */}
-          <div ref={sections[4].ref} id="pediatric" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-400">
+          <div ref={sections[7].ref} id="pediatric" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-700">
             <div className="backdrop-blur-xl bg-white/30 dark:bg-slate-800/30 border border-white/40 dark:border-slate-700/40 rounded-2xl shadow-2xl p-6 md:p-8 hover:bg-white/40 dark:hover:bg-slate-800/40 transition-all duration-300">
               <div className="mb-6 flex items-center gap-3">
                 <div className="w-1.5 h-8 bg-gradient-to-b from-purple-500 to-indigo-500 rounded-full"></div>
@@ -500,7 +573,7 @@ export function EditProfileClient({ initialData, onDataRefresh }: EditProfileCli
           </div>
 
           {/* Medical Conditions Section */}
-          <div ref={sections[5].ref} id="medical" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-500">
+          <div ref={sections[8].ref} id="medical" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-800">
             <div className="backdrop-blur-xl bg-white/30 dark:bg-slate-800/30 border border-white/40 dark:border-slate-700/40 rounded-2xl shadow-2xl p-6 md:p-8 hover:bg-white/40 dark:hover:bg-slate-800/40 transition-all duration-300">
               <div className="mb-6 flex items-center gap-3">
                 <div className="w-1.5 h-8 bg-gradient-to-b from-green-500 to-emerald-500 rounded-full"></div>
@@ -526,7 +599,7 @@ export function EditProfileClient({ initialData, onDataRefresh }: EditProfileCli
           </div>
 
           {/* Family Medical History Section */}
-          <div ref={sections[6].ref} id="family" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-600">
+          <div ref={sections[9].ref} id="family" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-900">
             <div className="backdrop-blur-xl bg-white/30 dark:bg-slate-800/30 border border-white/40 dark:border-slate-700/40 rounded-2xl shadow-2xl p-6 md:p-8 hover:bg-white/40 dark:hover:bg-slate-800/40 transition-all duration-300">
               <div className="mb-6 flex items-center gap-3">
                 <div className="w-1.5 h-8 bg-gradient-to-b from-teal-500 to-cyan-500 rounded-full"></div>
@@ -552,7 +625,7 @@ export function EditProfileClient({ initialData, onDataRefresh }: EditProfileCli
           </div>
 
           {/* Physical Examination Section */}
-          <div ref={sections[7].ref} id="examination" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-700">
+          <div ref={sections[10].ref} id="examination" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-950">
             <div className="backdrop-blur-xl bg-white/30 dark:bg-slate-800/30 border border-white/40 dark:border-slate-700/40 rounded-2xl shadow-2xl p-6 md:p-8 hover:bg-white/40 dark:hover:bg-slate-800/40 transition-all duration-300">
               <div className="mb-6 flex items-center gap-3">
                 <div className="w-1.5 h-8 bg-gradient-to-b from-indigo-500 to-blue-500 rounded-full"></div>
@@ -575,7 +648,7 @@ export function EditProfileClient({ initialData, onDataRefresh }: EditProfileCli
           </div>
 
           {/* PhilHealth Record Section */}
-          <div ref={sections[8].ref} id="philhealth" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-800">
+          <div ref={sections[11].ref} id="philhealth" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-1000">
             <div className="backdrop-blur-xl bg-white/30 dark:bg-slate-800/30 border border-white/40 dark:border-slate-700/40 rounded-2xl shadow-2xl p-6 md:p-8 hover:bg-white/40 dark:hover:bg-slate-800/40 transition-all duration-300">
               <div className="mb-6 flex items-center gap-3">
                 <div className="w-1.5 h-8 bg-gradient-to-b from-blue-600 to-blue-500 rounded-full"></div>
@@ -596,72 +669,6 @@ export function EditProfileClient({ initialData, onDataRefresh }: EditProfileCli
                   ) : (
                     <PhilHealthRecordEditForm userId={patientData.userId} inline={true} onSuccess={() => handleSuccess()} />
                   )}
-                </Suspense>
-              )}
-            </div>
-          </div>
-
-          {/* Allergies Section */}
-          <div ref={sections[9].ref} id="allergies" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-900">
-            <div className="backdrop-blur-xl bg-white/30 dark:bg-slate-800/30 border border-white/40 dark:border-slate-700/40 rounded-2xl shadow-2xl p-6 md:p-8 hover:bg-white/40 dark:hover:bg-slate-800/40 transition-all duration-300">
-              <div className="mb-6 flex items-center gap-3">
-                <div className="w-1.5 h-8 bg-gradient-to-b from-red-500 to-orange-500 rounded-full"></div>
-                <div>
-                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Allergies</h2>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">Manage your known allergies</p>
-                </div>
-              </div>
-              {loadedSections['allergies'] && (
-                <Suspense fallback={<FormLoadingFallback />}>
-                  <AllergyEditForm
-                    userId={patientData.userId}
-                    inline={true}
-                    onSuccess={() => handleSuccess()}
-                  />
-                </Suspense>
-              )}
-            </div>
-          </div>
-
-          {/* Emergency Contacts Section */}
-          <div ref={sections[10].ref} id="emergency-contacts" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-950">
-            <div className="backdrop-blur-xl bg-white/30 dark:bg-slate-800/30 border border-white/40 dark:border-slate-700/40 rounded-2xl shadow-2xl p-6 md:p-8 hover:bg-white/40 dark:hover:bg-slate-800/40 transition-all duration-300">
-              <div className="mb-6 flex items-center gap-3">
-                <div className="w-1.5 h-8 bg-gradient-to-b from-blue-500 to-cyan-500 rounded-full"></div>
-                <div>
-                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Emergency Contacts</h2>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">Add people to contact in case of emergency</p>
-                </div>
-              </div>
-              {loadedSections['emergency-contacts'] && (
-                <Suspense fallback={<FormLoadingFallback />}>
-                  <EmergencyContactEditForm
-                    userId={patientData.userId}
-                    inline={true}
-                    onSuccess={() => handleSuccess()}
-                  />
-                </Suspense>
-              )}
-            </div>
-          </div>
-
-          {/* Addresses Section */}
-          <div ref={sections[11].ref} id="addresses" className="scroll-mt-32 opacity-0 animate-fade-in animation-delay-1000">
-            <div className="backdrop-blur-xl bg-white/30 dark:bg-slate-800/30 border border-white/40 dark:border-slate-700/40 rounded-2xl shadow-2xl p-6 md:p-8 hover:bg-white/40 dark:hover:bg-slate-800/40 transition-all duration-300">
-              <div className="mb-6 flex items-center gap-3">
-                <div className="w-1.5 h-8 bg-gradient-to-b from-green-500 to-emerald-500 rounded-full"></div>
-                <div>
-                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Addresses</h2>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">Manage your residential addresses</p>
-                </div>
-              </div>
-              {loadedSections['addresses'] && (
-                <Suspense fallback={<FormLoadingFallback />}>
-                  <AddressEditForm
-                    userId={patientData.userId}
-                    inline={true}
-                    onSuccess={() => handleSuccess()}
-                  />
                 </Suspense>
               )}
             </div>

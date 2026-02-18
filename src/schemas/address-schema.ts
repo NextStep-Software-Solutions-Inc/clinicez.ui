@@ -42,6 +42,12 @@ export const addressSchema = z.object({
         .optional()
         .nullable(),
 
+    region: z
+        .string()
+        .max(100, "Region must be less than 100 characters")
+        .optional()
+        .nullable(),
+
     barangay: z
         .string()
         .max(100, "Barangay must be less than 100 characters")
@@ -50,18 +56,21 @@ export const addressSchema = z.object({
 
     city: z
         .string()
-        .min(1, "City is required")
-        .max(100, "City must be less than 100 characters"),
+        .max(100, "City must be less than 100 characters")
+        .optional()
+        .nullable(),
 
     state: z
         .string()
-        .min(1, "State/Province is required")
-        .max(100, "State/Province must be less than 100 characters"),
+        .max(100, "State/Province must be less than 100 characters")
+        .optional()
+        .nullable(),
 
     zipCode: z
         .string()
-        .min(1, "ZIP/Postal code is required")
-        .max(20, "ZIP/Postal code must be less than 20 characters"),
+        .max(20, "ZIP/Postal code must be less than 20 characters")
+        .optional()
+        .nullable(),
 
     country: z
         .string()

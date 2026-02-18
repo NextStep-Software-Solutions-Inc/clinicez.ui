@@ -1,14 +1,24 @@
 'use client'
 
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect, useRef } from 'react'
 import {
   createAddressAction,
   updateAddressAction,
   deleteAddressAction,
+  getAddressesAction,
 } from '@/actions/address.action'
+import { getRegions } from '@/actions/locations.action'
 import { addressSchema, type AddressFormInput } from '@/schemas'
 import { FormModal, FormField, EditButton } from './index'
 import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { LocationSelector } from './LocationSelector'
 import { toast } from 'sonner'
 import { Trash2, Plus, MapPin } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -35,6 +45,67 @@ export function AddressEditForm({
   const [addresses, setAddresses] = useState<AddressFormInput[]>(currentAddresses)
   const [editingId, setEditingId] = useState<number | null>(null)
   const [newAddress, setNewAddress] = useState<Partial<AddressFormInput>>({})
+  const [selectedCountry, setSelectedCountry] = useState<string>('Philippines')
+  const [selectedRegion, setSelectedRegion] = useState<string>('')
+  const [selectedRegionName, setSelectedRegionName] = useState<string>('')
+  const [selectedProvinceCode, setSelectedProvinceCode] = useState<string>('')
+  const [selectedCityCode, setSelectedCityCode] = useState<string>('')
+  const [selectedBarangayCode, setSelectedBarangayCode] = useState<string>('')
+  const hasInitializedRef = useRef(false)
+  const formRef = useRef<HTMLDivElement>(null)
+  const [allRegions, setAllRegions] = useState<any[]>([])
+
+  // Load all regions on mount to support region lookups during edit
+  useEffect(() => {
+    const loadAllRegions = async () => {
+      try {
+        const regions = await getRegions()
+        setAllRegions(regions)
+      } catch (err) {
+        console.error('Failed to load regions:', err)
+      }
+    }
+    loadAllRegions()
+  }, [])
+
+  // Fetch addresses on mount and when userId changes
+  useEffect(() => {
+    // Skip if already initialized to prevent infinite renders
+    if (hasInitializedRef.current) return
+
+    const fetchAddresses = async () => {
+      try {
+        const fetchedAddresses = await getAddressesAction(userId)
+        // Map fullAddress to address field to match AddressFormInput type
+        const mappedAddresses = fetchedAddresses.map((addr: Record<string, unknown>) => ({
+          address: (addr.fullAddress as string) || '',
+          id: addr.id as number,
+          apartmentUnit: (addr.apartmentUnit as string | null) || null,
+          bldgName: (addr.bldgName as string | null) || null,
+          addressLine: (addr.addressLine as string | null) || null,
+          street: (addr.street as string | null) || null,
+          subdivision: (addr.subdivision as string | null) || null,
+          region: (addr.region as string | null) || null,
+          barangay: (addr.barangay as string | null) || null,
+          city: (addr.city as string) || 'N/A',
+          state: (addr.state as string) || 'N/A',
+          zipCode: (addr.zipCode as string | null) || null,
+          country: (addr.country as string) || 'Philippines',
+          isPrimary: (addr.isPrimary as boolean) || false,
+        } as AddressFormInput))
+        setAddresses(mappedAddresses)
+        hasInitializedRef.current = true
+      } catch (err) {
+        console.error('Failed to fetch addresses:', err)
+      }
+    }
+
+    if (!currentAddresses || currentAddresses.length === 0) {
+      fetchAddresses()
+    } else {
+      hasInitializedRef.current = true
+    }
+  }, [userId])
 
   const hasChanges = useMemo(() => {
     return JSON.stringify(addresses) !== JSON.stringify(currentAddresses || [])
@@ -42,7 +113,16 @@ export function AddressEditForm({
 
   const handleAddAddress = async () => {
     try {
-      const validatedAddress = addressSchema.omit({ id: true }).parse(newAddress)
+      const addressToValidate = {
+        ...newAddress,
+        country: selectedCountry,
+        region: selectedRegionName || null,
+        // Provide default values for optional fields
+        city: newAddress.city || 'N/A',
+        state: newAddress.state || 'N/A',
+        barangay: newAddress.barangay || null,
+      }
+      const validatedAddress = addressSchema.omit({ id: true }).parse(addressToValidate)
       setIsLoading(true)
 
       const result = await createAddressAction(userId, {
@@ -52,8 +132,14 @@ export function AddressEditForm({
 
       if (result) {
         toast.success('Address added successfully')
-        setAddresses([...addresses, { ...newAddress, id: result.id } as AddressFormInput])
+        setAddresses([...addresses, { ...addressToValidate, id: result.id } as AddressFormInput])
         setNewAddress({})
+        setSelectedCountry('Philippines')
+        setSelectedRegion('')
+        setSelectedRegionName('')
+        setSelectedProvinceCode('')
+        setSelectedCityCode('')
+        setSelectedBarangayCode('')
         onSuccess?.()
       }
     } catch (err) {
@@ -69,7 +155,16 @@ export function AddressEditForm({
 
   const handleUpdateAddress = async (id: number) => {
     try {
-      const validatedAddress = addressSchema.parse(newAddress)
+      const addressToValidate = {
+        ...newAddress,
+        country: selectedCountry,
+        region: selectedRegionName || null,
+        // Provide default values for optional fields
+        city: newAddress.city || 'N/A',
+        state: newAddress.state || 'N/A',
+        barangay: newAddress.barangay || null,
+      }
+      const validatedAddress = addressSchema.parse(addressToValidate)
       setIsLoading(true)
 
       await updateAddressAction({
@@ -80,10 +175,16 @@ export function AddressEditForm({
 
       toast.success('Address updated successfully')
       setAddresses((prev) =>
-        prev.map((a) => (a.id === id ? { ...newAddress, id } : a) as AddressFormInput)
+        prev.map((a) => (a.id === id ? { ...addressToValidate, id } : a) as AddressFormInput)
       )
       setEditingId(null)
       setNewAddress({})
+      setSelectedCountry('Philippines')
+      setSelectedRegion('')
+      setSelectedRegionName('')
+      setSelectedProvinceCode('')
+      setSelectedCityCode('')
+      setSelectedBarangayCode('')
       onSuccess?.()
     } catch (err) {
       if (err instanceof Error) {
@@ -138,7 +239,7 @@ export function AddressEditForm({
   }
 
   const formContent = (
-    <div className="space-y-6">
+    <div className="space-y-6" ref={formRef}>
       {/* Add/Edit Address Form */}
       <div className="space-y-4 p-4 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg">
         <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
@@ -191,54 +292,60 @@ export function AddressEditForm({
           />
         </FormField>
 
-        <FormField label="Barangay" htmlFor="barangay">
-          <Input
-            id="barangay"
-            value={newAddress.barangay || ''}
-            onChange={(e) => setNewAddress((prev) => ({ ...prev, barangay: e.target.value }))}
-            placeholder="Barangay (optional)"
-          />
+        {/* Country */}
+        <FormField label="Country" required htmlFor="country">
+          <Select value={selectedCountry} onValueChange={setSelectedCountry}>
+            <SelectTrigger id="country">
+              <SelectValue placeholder="Select country" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Philippines">Philippines</SelectItem>
+              <SelectItem value="Other">Outside Philippines</SelectItem>
+            </SelectContent>
+          </Select>
         </FormField>
 
-        <div className="grid grid-cols-2 gap-4">
-          <FormField label="City" required htmlFor="city">
-            <Input
-              id="city"
-              value={newAddress.city || ''}
-              onChange={(e) => setNewAddress((prev) => ({ ...prev, city: e.target.value }))}
-              placeholder="City"
-            />
-          </FormField>
+        {/* Location Selector - Only show for Philippines */}
+        {selectedCountry === 'Philippines' && (
+          <LocationSelector
+            region={selectedRegion}
+            province={selectedProvinceCode}
+            city={selectedCityCode}
+            barangay={selectedBarangayCode}
+            onRegionChange={(regionData) => {
+              setSelectedRegion(regionData.code)
+              setSelectedRegionName(regionData.name)
+              setNewAddress((prev) => ({ ...prev, region: regionData.name, state: '', city: '', barangay: '' }))
+              setSelectedProvinceCode('')
+              setSelectedCityCode('')
+              setSelectedBarangayCode('')
+            }}
+            onProvinceChange={(provinceData) => {
+              setSelectedProvinceCode(provinceData.code)
+              setNewAddress((prev) => ({ ...prev, state: provinceData.name, city: '', barangay: '' }))
+              setSelectedCityCode('')
+              setSelectedBarangayCode('')
+            }}
+            onCityChange={(cityData) => {
+              setSelectedCityCode(cityData.code)
+              setNewAddress((prev) => ({ ...prev, city: cityData.name }))
+              setSelectedBarangayCode('')
+            }}
+            onBarangayChange={(barangayData) => {
+              setSelectedBarangayCode(barangayData.code)
+              setNewAddress((prev) => ({ ...prev, barangay: barangayData.name }))
+            }}
+          />
+        )}
 
-          <FormField label="State/Province" required htmlFor="state">
-            <Input
-              id="state"
-              value={newAddress.state || ''}
-              onChange={(e) => setNewAddress((prev) => ({ ...prev, state: e.target.value }))}
-              placeholder="State/Province"
-            />
-          </FormField>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <FormField label="ZIP/Postal Code" required htmlFor="zipCode">
-            <Input
-              id="zipCode"
-              value={newAddress.zipCode || ''}
-              onChange={(e) => setNewAddress((prev) => ({ ...prev, zipCode: e.target.value }))}
-              placeholder="ZIP/Postal code"
-            />
-          </FormField>
-
-          <FormField label="Country" required htmlFor="country">
-            <Input
-              id="country"
-              value={newAddress.country || ''}
-              onChange={(e) => setNewAddress((prev) => ({ ...prev, country: e.target.value }))}
-              placeholder="Country"
-            />
-          </FormField>
-        </div>
+        <FormField label="ZIP/Postal Code" htmlFor="zipCode">
+          <Input
+            id="zipCode"
+            value={newAddress.zipCode || ''}
+            onChange={(e) => setNewAddress((prev) => ({ ...prev, zipCode: e.target.value }))}
+            placeholder="ZIP/Postal code (optional)"
+          />
+        </FormField>
 
         <div className="flex gap-3">
           <Button
@@ -246,10 +353,8 @@ export function AddressEditForm({
             disabled={
               isLoading ||
               !newAddress.address ||
-              !newAddress.city ||
-              !newAddress.state ||
-              !newAddress.zipCode ||
-              !newAddress.country
+              !selectedCountry ||
+              (selectedCountry === 'Philippines' && (!newAddress.city || !newAddress.state))
             }
             className="flex-1 bg-green-600 hover:bg-green-700 text-white"
           >
@@ -261,6 +366,12 @@ export function AddressEditForm({
               onClick={() => {
                 setEditingId(null)
                 setNewAddress({})
+                setSelectedCountry('Philippines')
+                setSelectedRegion('')
+                setSelectedRegionName('')
+                setSelectedProvinceCode('')
+                setSelectedCityCode('')
+                setSelectedBarangayCode('')
               }}
               variant="outline"
               className="flex-1"
@@ -327,6 +438,18 @@ export function AddressEditForm({
                       onClick={() => {
                         setEditingId(address.id || null)
                         setNewAddress(address)
+                        setSelectedCountry(address.country || 'Philippines')
+                        // Look up region code from region name
+                        const regionCode = allRegions.find((r) => r.name === address.region)?.id || ''
+                        setSelectedRegion(regionCode)
+                        setSelectedRegionName(address.region || '')
+                        // Note: Province, city, and barangay codes are not looked up during edit
+                        // User may need to re-select them if they want to change
+                        setSelectedProvinceCode('')
+                        setSelectedCityCode('')
+                        setSelectedBarangayCode('')
+                        // Scroll to form
+                        formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
                       }}
                       className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors text-slate-600 dark:text-slate-400"
                     >

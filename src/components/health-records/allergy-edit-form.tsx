@@ -1,10 +1,10 @@
 'use client'
 
 import React, { useState, useMemo } from 'react'
-import { createUserAllergyAction } from '@/actions/users/user-allergy.action'
+import { createUserAllergyAction, deleteUserAllergyAction } from '@/actions/users/user-allergy.action'
 import { allergySchema, type AllergyFormInput } from '@/schemas'
 import { FormModal, FormField, EditButton } from './index'
-import { Input } from '@/components/ui/input'
+import { AllergenCombobox } from './AllergenCombobox'
 import { Textarea } from '@/components/ui/textarea'
 import { toast } from 'sonner'
 import { Trash2, Plus } from 'lucide-react'
@@ -66,8 +66,30 @@ export function AllergyEditForm({
     }
   }
 
-  const handleRemoveAllergy = (index: number) => {
-    setAllergies((prev) => prev.filter((_, i) => i !== index))
+  const handleRemoveAllergy = async (index: number) => {
+    const allergyToDelete = allergies[index]
+    
+    if (!allergyToDelete?.id) {
+      toast.error('Cannot delete allergy: missing ID')
+      return
+    }
+
+    try {
+      setIsLoading(true)
+      await deleteUserAllergyAction(allergyToDelete.id)
+      
+      toast.success('Allergy removed successfully')
+      setAllergies((prev) => prev.filter((_, i) => i !== index))
+      onSuccess?.()
+    } catch (err) {
+      if (err instanceof Error) {
+        toast.error(err.message)
+      } else {
+        toast.error('Failed to remove allergy')
+      }
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const formContent = (
@@ -79,11 +101,11 @@ export function AllergyEditForm({
         </h3>
 
         <FormField label="Allergen" required htmlFor="allergen">
-          <Input
-            id="allergen"
+          <AllergenCombobox
             value={newAllergy.allergen || ''}
-            onChange={(e) => setNewAllergy((prev) => ({ ...prev, allergen: e.target.value }))}
-            placeholder="e.g., Penicillin, Shellfish, Peanuts"
+            onChange={(value) => setNewAllergy((prev) => ({ ...prev, allergen: value }))}
+            existingAllergens={allergies.map(a => a.allergen)}
+            placeholder="Search or add allergen..."
           />
         </FormField>
 
@@ -144,8 +166,9 @@ export function AllergyEditForm({
                     )}
                   </div>
                   <button
-                    onClick={() => handleRemoveAllergy(index)}
-                    className="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors text-red-600 dark:text-red-400"
+                    onClick={() => void handleRemoveAllergy(index)}
+                    disabled={isLoading}
+                    className="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors text-red-600 dark:text-red-400 disabled:opacity-50"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>

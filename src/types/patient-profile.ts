@@ -117,6 +117,28 @@ export interface SerializedPatientHealthRecordsResponse {
   // Personal History & Lifestyle
   personalHistory: (Omit<PersonalHistory, 'createdAt' | 'updatedAt' | 'deletedAt'> & { createdAt: string; updatedAt: string; deletedAt: string | null }) | null
 
+  // Allergies
+  userAllergies: Array<{
+    id: number
+    allergen: string
+    reaction: string
+    notes: string | null
+  }>
+
+  // Emergency Contacts
+  userEmergencyContacts: Array<{
+    id: number
+    name: string
+    firstName: string
+    lastName: string
+    middleName: string | null
+    suffix: string | null
+    relationship: string
+    phone: string
+    isPrimary: boolean
+    address: string | null
+  }>
+
   // Insurance & PhilHealth
   philHealthRecords: Array<Omit<PhilHealthRecord, 'createdAt' | 'updatedAt' | 'deletedAt'> & {
     createdAt: string

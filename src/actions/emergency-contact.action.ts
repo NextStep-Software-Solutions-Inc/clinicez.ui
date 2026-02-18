@@ -77,6 +77,32 @@ export const deleteEmergencyContactAction = async (emergencyContactId: number) =
   });
 }
 
+export const setPrimaryEmergencyContactAction = async (userId: string, contactId: number) => {
+  // First, set all contacts for this user to non-primary
+  await prisma.userEmergencyContact.updateMany({
+    where: {
+      User: {
+        userId,
+      },
+      isActive: true,
+    },
+    data: {
+      isPrimary: false,
+    },
+  })
+
+  // Then set the selected contact as primary
+  return await prisma.userEmergencyContact.update({
+    where: {
+      id: contactId,
+      isActive: true,
+    },
+    data: {
+      isPrimary: true,
+    },
+  })
+}
+
 export const upsertEmergencyContactAction = async (userId: string, data: {
   id: number;
   firstName: string;

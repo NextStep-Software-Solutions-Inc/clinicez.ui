@@ -5,11 +5,13 @@ import {
   createEmergencyContactAction,
   updateEmergencyContactAction,
   deleteEmergencyContactAction,
+  setPrimaryEmergencyContactAction,
   getEmergencyContactsAction,
 } from '@/actions/emergency-contact.action'
 import { emergencyContactSchema, type EmergencyContactFormInput } from '@/schemas'
 import { FormModal, FormField, EditButton } from './index'
 import { Input } from '@/components/ui/input'
+import { RelationshipCombobox } from './RelationshipCombobox'
 import { toast } from 'sonner'
 import { Trash2, Plus, Star } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -44,12 +46,15 @@ export function EmergencyContactEditForm({
 
   const handleAddContact = async () => {
     try {
-      const validatedContact = emergencyContactSchema.omit({ id: true }).parse(newContact)
+      const dataToValidate = {
+        ...newContact,
+        name: `${newContact.firstName} ${newContact.lastName}`,
+      }
+      const validatedContact = emergencyContactSchema.omit({ id: true }).parse(dataToValidate)
       setIsLoading(true)
 
       const result = await createEmergencyContactAction(userId, {
         ...validatedContact,
-        name: `${validatedContact.firstName} ${validatedContact.lastName}`,
         middleName: validatedContact.middleName || undefined,
         suffix: validatedContact.suffix || undefined,
         address: validatedContact.address || null,
@@ -74,11 +79,15 @@ export function EmergencyContactEditForm({
 
   const handleUpdateContact = async (id: number) => {
     try {
-      const validatedContact = emergencyContactSchema.omit({ id: true }).parse(newContact)
+      const dataToValidate = {
+        ...newContact,
+        name: `${newContact.firstName} ${newContact.lastName}`,
+      }
+      const validatedContact = emergencyContactSchema.omit({ id: true }).parse(dataToValidate)
       setIsLoading(true)
 
       await updateEmergencyContactAction(id, {
-        name: `${validatedContact.firstName} ${validatedContact.lastName}`,
+        name: validatedContact.name,
         relationship: validatedContact.relationship,
         phone: validatedContact.phone,
         isPrimary: validatedContact.isPrimary,
@@ -106,12 +115,20 @@ export function EmergencyContactEditForm({
   const handleRemoveContact = async (id: number) => {
     try {
       setIsLoading(true)
-      await deleteEmergencyContactAction(id)
+      const result = await deleteEmergencyContactAction(id)
+      if (!result) {
+        throw new Error('Failed to delete contact')
+      }
       toast.success('Emergency contact removed')
       setContacts((prev) => prev.filter((c) => c.id !== id))
       onSuccess?.()
     } catch (err) {
-      toast.error('Failed to remove emergency contact')
+      console.error('Delete contact error:', err)
+      if (err instanceof Error) {
+        toast.error(err.message)
+      } else {
+        toast.error('Failed to remove emergency contact')
+      }
     } finally {
       setIsLoading(false)
     }
@@ -120,26 +137,22 @@ export function EmergencyContactEditForm({
   const handleSetPrimary = async (id: number) => {
     try {
       setIsLoading(true)
-      const contact = contacts.find((c) => c.id === id)
-      if (contact) {
-        await updateEmergencyContactAction(id, {
-          name: `${contact.firstName} ${contact.lastName}`,
-          relationship: contact.relationship,
-          phone: contact.phone,
-          isPrimary: true,
-          address: contact.address || null,
-        })
-        setContacts((prev) =>
-          prev.map((c) => ({
-            ...c,
-            isPrimary: c.id === id,
-          }))
-        )
-        toast.success('Primary contact updated')
-        onSuccess?.()
-      }
+      await setPrimaryEmergencyContactAction(userId, id)
+      setContacts((prev) =>
+        prev.map((c) => ({
+          ...c,
+          isPrimary: c.id === id,
+        }))
+      )
+      toast.success('Primary contact updated')
+      onSuccess?.()
     } catch (err) {
-      toast.error('Failed to update primary contact')
+      console.error('Set primary contact error:', err)
+      if (err instanceof Error) {
+        toast.error(err.message)
+      } else {
+        toast.error('Failed to update primary contact')
+      }
     } finally {
       setIsLoading(false)
     }
@@ -184,11 +197,10 @@ export function EmergencyContactEditForm({
         </FormField>
 
         <FormField label="Relationship" required htmlFor="relationship">
-          <Input
-            id="relationship"
+          <RelationshipCombobox
             value={newContact.relationship || ''}
-            onChange={(e) => setNewContact((prev) => ({ ...prev, relationship: e.target.value }))}
-            placeholder="e.g., Mother, Spouse, Sister"
+            onChange={(value) => setNewContact((prev) => ({ ...prev, relationship: value }))}
+            placeholder="Select or type relationship..."
           />
         </FormField>
 

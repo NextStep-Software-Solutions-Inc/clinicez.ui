@@ -63,7 +63,7 @@ export async function getPatientHealthRecords(): Promise<SerializedPatientHealth
     }
 
     // Fetch related data in separate queries
-    const [medical, familyMedical, vitals, exams, obGyne, pediatric, personal, philHealth, procedures, clinicPatients] = await Promise.all([
+    const [medical, familyMedical, vitals, exams, obGyne, pediatric, personal, philHealth, procedures, clinicPatients, allergies, emergencyContacts] = await Promise.all([
       // Medical Histories
       prisma.medicalHistory.findMany({
         where: { userId: patient.id },
@@ -137,6 +137,23 @@ export async function getPatientHealthRecords(): Promise<SerializedPatientHealth
           },
         },
         take: 1,
+      }),
+      // Allergies
+      prisma.userAllergy.findMany({
+        where: { userId: patient.id },
+        select: {
+          id: true,
+          reaction: true,
+          notes: true,
+          Allergen: {
+            select: { name: true },
+          },
+        },
+      }) as Promise<Array<{ id: number; reaction: string; notes: string | null; Allergen: { name: string } }>>,
+      // Emergency Contacts
+      prisma.userEmergencyContact.findMany({
+        where: { userId: patient.id, isActive: true },
+        orderBy: { createdAt: 'desc' },
       }),
     ])
 
@@ -302,6 +319,28 @@ export async function getPatientHealthRecords(): Promise<SerializedPatientHealth
         updatedAt: personal.updatedAt.toISOString(),
         deletedAt: personal.deletedAt ? personal.deletedAt.toISOString() : null,
       } : null,
+
+      // Allergies
+      userAllergies: allergies.map((allergy) => ({
+        id: allergy.id,
+        allergen: allergy.Allergen.name,
+        reaction: allergy.reaction,
+        notes: allergy.notes,
+      })),
+
+      // Emergency Contacts
+      userEmergencyContacts: emergencyContacts.map((contact) => ({
+        id: contact.id,
+        name: `${contact.firstName} ${contact.lastName}`,
+        firstName: contact.firstName || '',
+        lastName: contact.lastName || '',
+        middleName: contact.middleName,
+        suffix: contact.suffix,
+        relationship: contact.relationship,
+        phone: contact.phone,
+        isPrimary: contact.isPrimary,
+        address: contact.address,
+      })),
 
       // Insurance & PhilHealth
       philHealthRecords: philHealth.map(p => ({

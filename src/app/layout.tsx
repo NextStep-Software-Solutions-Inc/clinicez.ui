@@ -5,6 +5,7 @@ import { Toaster } from "@components/ui/toaster";
 import dynamic from "next/dynamic";
 import { Analytics } from "@vercel/analytics/react";
 import type { Metadata } from "next";
+import "@styles/globals.css";
 
 import { SWRProvider } from "@provider/swr-provider";
 import JotaiProvider from "@provider/JotaiProvider";
@@ -42,10 +43,11 @@ export default function RootLayout({ children }: Props) {
   return (
     <ClerkProvider publishableKey={publishableKey}>
       <html lang="en" suppressHydrationWarning>
-        <HotJar />
+        <head />
         <body>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             <BypassAutoplay />
+            <HotJar />
             <JotaiProvider>
               <SyncTokenClient />
               <SWRProvider>

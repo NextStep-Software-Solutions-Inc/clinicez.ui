@@ -3,7 +3,7 @@ import tailwindTypography from '@tailwindcss/typography'
 import fluid, { extract, screens, fontSize } from 'fluid-tailwind'
 
 module.exports = {
-  darkMode: ["class"],
+  darkMode: 'class',
   content: {
     files: [
       './pages/**/*.{ts,tsx}',

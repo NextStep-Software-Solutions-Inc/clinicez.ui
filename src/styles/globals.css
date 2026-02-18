@@ -46,6 +46,21 @@
 
     /* v2.0 text colors */
     --label-v2: oklch(49.706% 0.00125 14.712);
+
+    /* Patient Dashboard semantic colors - Light mode */
+    --color-bg-primary: 0 0% 100%;
+    --color-bg-secondary: 0 0% 97%;
+    --color-bg-tertiary: 0 0% 94%;
+    --color-bg-hover: 0 0% 91%;
+    --color-bg-active: 0 0% 88%;
+    
+    --color-text-primary: 240 10% 8%;
+    --color-text-secondary: 240 5% 30%;
+    --color-text-muted: 240 3% 50%;
+    --color-text-disabled: 240 2% 65%;
+    
+    --color-border: 240 5% 85%;
+    --color-border-light: 240 5% 92%;
   }
 
   .dark {
@@ -81,6 +96,21 @@
     --chart-10: 440 75% 55%;
     --chart-11: 340 65% 75%;
     --chart-12: 210 75% 25%;
+
+    /* Patient Dashboard semantic colors - Dark mode */
+    --color-bg-primary: 240 10% 10%;
+    --color-bg-secondary: 240 8% 16%;
+    --color-bg-tertiary: 240 8% 22%;
+    --color-bg-hover: 240 8% 28%;
+    --color-bg-active: 240 8% 34%;
+    
+    --color-text-primary: 0 0% 98%;
+    --color-text-secondary: 240 5% 78%;
+    --color-text-muted: 240 3% 55%;
+    --color-text-disabled: 240 2% 40%;
+    
+    --color-border: 240 5% 25%;
+    --color-border-light: 240 5% 20%;
   }
 }
 

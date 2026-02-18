@@ -42,7 +42,7 @@ export default function WelcomeHeader({
   return (
     <div
       className={cn(
-        "v2-content__header flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between",
+        "flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between",
         className,
       )}
       data-dashboard={dashboardType}

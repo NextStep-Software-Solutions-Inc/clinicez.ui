@@ -95,19 +95,26 @@ function NavLink({ item, isActive, collapsed }: NavLinkProps) {
     <Link
       href={item.href}
       className={cn(
-        "v2-sidebar__nav-item",
-        isActive && "v2-sidebar__nav-item--active",
+        "relative flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-all",
+        "text-muted-foreground hover:text-foreground hover:bg-muted/50",
+        isActive && [
+          "bg-muted text-[var(--dash-accent)] font-semibold",
+          "shadow-sm ring-1 ring-[var(--dash-accent)]/20",
+        ],
         collapsed && "justify-center px-2",
       )}
     >
-      <Icon className="h-4 w-4 shrink-0" />
+      <Icon className="h-5 w-5 shrink-0" />
       {!collapsed && (
         <>
           <span className="truncate">{item.name}</span>
           {item.badgeCount !== undefined && item.badgeCount > 0 && (
             <Badge
               variant="secondary"
-              className="ml-auto h-5 min-w-5 justify-center px-1.5 text-[0.625rem]"
+              className={cn(
+                "ml-auto h-5 min-w-5 justify-center px-1.5 text-[0.625rem]",
+                isActive && "bg-[var(--dash-accent)]/10 text-[var(--dash-accent)]",
+              )}
             >
               {item.badgeCount}
             </Badge>
@@ -124,7 +131,13 @@ function NavLink({ item, isActive, collapsed }: NavLinkProps) {
         <TooltipContent side="right" className="flex items-center gap-2">
           {item.name}
           {item.badgeCount !== undefined && item.badgeCount > 0 && (
-            <Badge variant="secondary" className="h-5 px-1.5 text-[0.625rem]">
+            <Badge 
+              variant="secondary" 
+              className={cn(
+                "h-5 px-1.5 text-[0.625rem]",
+                isActive && "bg-[var(--dash-accent)]/10 text-[var(--dash-accent)]",
+              )}
+            >
               {item.badgeCount}
             </Badge>
           )}
@@ -157,21 +170,31 @@ function SidebarBody({
 }: SidebarBodyProps) {
   return (
     <>
-      {/* Branding */}
+      {/* Branding Header */}
       <div
         className={cn(
-          "flex h-14 items-center gap-2 px-4",
+          "flex h-16 shrink-0 items-center justify-between border-b border-border px-4 transition-all",
           collapsed && "justify-center px-2",
         )}
       >
         {!collapsed && (
-          <span className="truncate text-sm font-semibold">{title}</span>
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="h-8 w-8 rounded-md bg-[var(--dash-accent)] flex items-center justify-center text-white text-xs font-bold shrink-0">
+              {title.charAt(0)}
+            </div>
+            <span className="truncate text-sm font-semibold text-foreground">
+              {title}
+            </span>
+          </div>
         )}
         {onToggle && (
           <Button
             variant="ghost"
             size="icon"
-            className={cn("h-8 w-8 shrink-0", !collapsed && "ml-auto")}
+            className={cn(
+              "h-8 w-8 shrink-0 hover:bg-muted",
+              !collapsed && "ml-auto"
+            )}
             onClick={onToggle}
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
@@ -184,10 +207,8 @@ function SidebarBody({
         )}
       </div>
 
-      <Separator />
-
       {/* Navigation */}
-      <nav className="flex-1 space-y-1 overflow-y-auto px-2 py-3">
+      <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
         <TooltipProvider delayDuration={0}>
           {navItems.map((item) => (
             <NavLink
@@ -199,6 +220,13 @@ function SidebarBody({
           ))}
         </TooltipProvider>
       </nav>
+
+      {/* Footer */}
+      {!collapsed && (
+        <div className="border-t border-border px-3 py-3 text-xs text-muted-foreground">
+          <p className="px-2">v1.0.0</p>
+        </div>
+      )}
     </>
   );
 }
@@ -256,8 +284,10 @@ export default function DashboardSidebar({
   return (
     <aside
       className={cn(
-        "v2-sidebar hidden md:flex",
-        collapsed && "v2-sidebar--collapsed",
+        "hidden flex-col border-r border-border bg-background md:flex",
+        collapsed ? "w-16" : "w-64",
+        "sticky top-0 h-dvh overflow-y-auto transition-all duration-200 ease-in-out",
+        "supports-[scrollbar-gutter:stable]:scrollbar-gutter-stable",
       )}
       data-dashboard={dashboardType}
     >

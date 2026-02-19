@@ -1,0 +1,52 @@
+/* ─────────────────────────────────────────────────────────────────────── */
+/* V2 Dashboard - Theme variables and layout utilities                      */
+/* ─────────────────────────────────────────────────────────────────────── */
+
+/* Default (patient) dashboard accent */
+[data-dashboard="patient"] {
+  --dash-accent:        hsl(var(--primary));
+  --dash-accent-light:  hsl(var(--primary) / 0.10);
+  --dash-accent-muted:  hsl(var(--primary) / 0.06);
+  --dash-accent-border: hsl(var(--primary) / 0.30);
+}
+
+/* Clinic dashboard accent */
+[data-dashboard="clinic"] {
+  --dash-accent:        hsl(var(--primary));
+  --dash-accent-light:  hsl(var(--primary) / 0.10);
+  --dash-accent-muted:  hsl(var(--primary) / 0.06);
+  --dash-accent-border: hsl(var(--primary) / 0.30);
+}
+
+/* Tenant dashboard accent */
+[data-dashboard="tenant"] {
+  --dash-accent:        hsl(var(--chart-3));
+  --dash-accent-light:  hsl(var(--chart-3) / 0.10);
+  --dash-accent-muted:  hsl(var(--chart-3) / 0.06);
+  --dash-accent-border: hsl(var(--chart-3) / 0.30);
+}
+
+/* Organization dashboard accent */
+[data-dashboard="organization"] {
+  --dash-accent:        hsl(var(--chart-1));
+  --dash-accent-light:  hsl(var(--chart-1) / 0.10);
+  --dash-accent-muted:  hsl(var(--chart-1) / 0.06);
+  --dash-accent-border: hsl(var(--chart-1) / 0.30);
+}
+
+/* Stagger animation for children */
+.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-children > *:nth-child(2) { animation-delay: 60ms; }
+.stagger-children > *:nth-child(3) { animation-delay: 120ms; }
+.stagger-children > *:nth-child(4) { animation-delay: 180ms; }
+.stagger-children > *:nth-child(5) { animation-delay: 240ms; }
+.stagger-children > *:nth-child(6) { animation-delay: 300ms; }
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.25s ease-out both;
+}

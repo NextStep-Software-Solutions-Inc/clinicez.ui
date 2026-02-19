@@ -16,8 +16,8 @@ interface KPICardProps {
 
 const colorMap = {
   primary: "--primary",
-  secondary: "--chart-2",   // teal – visible in both light and dark mode
-  accent: "--chart-1",      // orange – visible in both light and dark mode
+  secondary: "--secondary",
+  accent: "--accent",
 };
 
 export function KPICard({

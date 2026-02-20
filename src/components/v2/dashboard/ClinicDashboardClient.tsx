@@ -44,6 +44,7 @@ interface ClinicDashboardClientProps {
   clinicUid: string;
   data: ClinicDashboardData;
   userName: string;
+  professionalTitle?: string;
 }
 
 /* ─────────────────────────────────────────────────────────────────── */
@@ -111,6 +112,7 @@ export function ClinicDashboardClient({
   clinicUid: _clinicUid,
   data,
   userName,
+  professionalTitle,
 }: ClinicDashboardClientProps) {
   const { metrics, diagnosticRequests, workload, schedule, teamStatus } = data;
 
@@ -148,6 +150,7 @@ export function ClinicDashboardClient({
       {/* ── 1. Welcome banner ──────────────────────────────────────── */}
       <WelcomeHeader
         name={userName}
+        professionalTitle={professionalTitle}
         subtitle={`${data.clinic.name} — Today's overview`}
         dashboardType="clinic"
       />

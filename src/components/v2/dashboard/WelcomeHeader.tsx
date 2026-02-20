@@ -9,6 +9,8 @@ import { Calendar, Clock, Stethoscope, Building2, Activity } from "lucide-react"
 
 export interface WelcomeHeaderProps {
   name: string;
+  /** Professional title (e.g., "Dr.", "Nurse Practitioner", "Manager") */
+  professionalTitle?: string;
   subtitle?: string;
   dashboardType?: DashboardType;
   /** Optional action buttons rendered on the right */
@@ -50,6 +52,7 @@ function getTimeOfDayGreeting(): string {
 
 export default function WelcomeHeader({
   name,
+  professionalTitle,
   subtitle,
   dashboardType,
   actions,
@@ -109,7 +112,8 @@ export default function WelcomeHeader({
             <div>
               <p className="text-sm font-medium text-white/70 leading-none mb-1">{greeting}</p>
               <h1 className="text-2xl sm:text-3xl font-bold text-white leading-tight">
-                Dr. {name}
+                {professionalTitle && `${professionalTitle} `}
+                {name}
               </h1>
             </div>
           </div>

@@ -117,7 +117,7 @@ export default function DashboardShell({
       className="flex h-dvh flex-col overflow-hidden bg-background/20"
     >
       {/* ===== SCROLLABLE AREA (Header + Nav + Content) ===== */}
-      <div className="flex flex-1 flex-col overflow-y-auto">
+      <div className="flex flex-1 flex-col overflow-y-auto" data-scroll-root>
         {/* ===== HEADER ===== */}
         <header className="z-30 bg-background/20 backdrop-blur supports-[backdrop-filter]:bg-background/80 transition-all">
           {/* Desktop Header */}

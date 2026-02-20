@@ -3,7 +3,7 @@ export interface ClinicDashboardMetrics {
     pendingAppointments: number;
     totalAppointmentsToday: number;
     totalConsultations: number;
-    monthlyRevenue: number;
+    completedAppointmentsToday: number;
 }
 
 export interface ActivityItemData {

@@ -12,7 +12,7 @@ import {
   Users,
   CalendarClock,
   Stethoscope,
-  Banknote,
+  CheckCircle2,
   Activity,
   Clock,
   FlaskConical,
@@ -23,7 +23,6 @@ import {
   Calendar,
   UserCheck,
   ClipboardList,
-  CheckCircle2,
   AlertTriangle,
 } from "lucide-react";
 import type { ClinicDashboardData } from "@/types/clinic-dashboard.types";
@@ -181,11 +180,22 @@ export function ClinicDashboardClient({
             color="accent"
           />
           <KPICard
-            label="Est. Revenue"
-            value={`₱${(metrics.monthlyRevenue / 1000).toFixed(1)}k`}
-            icon={Banknote}
-            trend={{ direction: "up", text: "this month" }}
-            progress={71}
+            label="Completed Today"
+            value={metrics.completedAppointmentsToday}
+            icon={CheckCircle2}
+            trend={{ direction: "up", text: "appointments done" }}
+            progress={
+              metrics.totalAppointmentsToday > 0
+                ? Math.min(
+                    Math.round(
+                      (metrics.completedAppointmentsToday /
+                        metrics.totalAppointmentsToday) *
+                        100
+                    ),
+                    100
+                  )
+                : 0
+            }
             color="primary"
           />
         </div>

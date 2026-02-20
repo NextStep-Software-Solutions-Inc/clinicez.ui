@@ -54,6 +54,8 @@ export const getClinicDashboardDataAction = withErrorHandling(
             upcomingAppointments,
             // Team metrics
             teamMembers,
+            // KPI: Completed appointments today
+            completedAppointmentsToday,
         ] = await Promise.all([
             // KPI: Appointment stats for today
             prisma.appointmentAttribute.count({
@@ -275,6 +277,22 @@ export const getClinicDashboardDataAction = withErrorHandling(
                 },
                 take: 8,
             }),
+
+            // KPI: Completed appointments today
+            prisma.appointmentAttribute.count({
+                where: {
+                    Appointment: {
+                        Clinic: { clinicUid },
+                        isActive: true,
+                        deletedAt: null,
+                    },
+                    date: {
+                        gte: today,
+                        lt: tomorrow,
+                    },
+                    status: "COMPLETED",
+                },
+            }),
         ]);
 
         return {
@@ -286,13 +304,7 @@ export const getClinicDashboardDataAction = withErrorHandling(
                     pendingAppointments,
                     totalAppointmentsToday: appointmentCount,
                     totalConsultations: consultationCount.length,
-                    // Calculate estimated monthly revenue: (consultations × avg service fee $50) + (referrals × $25) + (lab requests × $35)
-                    monthlyRevenue: Math.round(
-                        consultationCount.length * 50 +
-                        referralSlipsCount * 25 +
-                        labRequestsCount * 35 +
-                        imagingRequestsCount * 45
-                    ),
+                    completedAppointmentsToday,
                 },
                 diagnosticRequests: {
                     referrals: referralSlipsCount,

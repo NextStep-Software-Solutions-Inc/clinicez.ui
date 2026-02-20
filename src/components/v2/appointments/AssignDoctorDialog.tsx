@@ -17,7 +17,7 @@ import { assignAppointmentAction } from "@/actions/appointments/appointment-rout
 import type { GetAppointments } from "@/actions/appointments/appointments.action";
 import type { GetHPsType } from "@/actions/hp.actions";
 
-type Appointment = GetAppointments["data"][number];
+type Appointment = NonNullable<GetAppointments["data"]>[number];
 
 interface AssignDoctorDialogProps {
   open: boolean;

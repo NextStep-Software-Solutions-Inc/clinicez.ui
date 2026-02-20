@@ -27,7 +27,7 @@ import type { GetAppointmentTypes } from "@/actions/appointments/appointment-typ
 import type { GetClinicServices } from "@/actions/clinics/clinic-service.action";
 import type { GetHPsType } from "@/actions/hp.actions";
 
-type Appointment = GetAppointments["data"][number];
+type Appointment = NonNullable<GetAppointments["data"]>[number];
 
 interface ConfirmBookingSheetProps {
   open: boolean;
@@ -172,8 +172,7 @@ export function ConfirmBookingSheet({
           {/* Assign Doctor (optional) */}
           <div className="space-y-1.5">
             <Label htmlFor="hp" className="text-xs font-medium">
-              Assign Doctor{" "}
-              <span className="text-muted-foreground font-normal">(optional — routes immediately)</span>
+              Assign Doctor <span className="text-muted-foreground font-normal">(optional — routes immediately)</span>
             </Label>
             <Select value={hpId} onValueChange={setHpId}>
               <SelectTrigger id="hp">

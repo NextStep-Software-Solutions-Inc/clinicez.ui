@@ -44,7 +44,7 @@ import type { GetAppointmentTypes } from "@/actions/appointments/appointment-typ
 import type { GetClinicServices } from "@/actions/clinics/clinic-service.action";
 import type { GetHPsType } from "@/actions/hp.actions";
 
-type Appointment = GetAppointments["data"][number];
+type Appointment = NonNullable<GetAppointments["data"]>[number];
 
 interface AppointmentDetailSheetProps {
   clinicUid: string;

@@ -20,7 +20,7 @@ import {
   rejectAppointmentAction,
 } from "@/actions/appointments/appointment-attribute.action";
 
-type Appointment = GetAppointments["data"][number];
+type Appointment = NonNullable<GetAppointments["data"]>[number];
 
 export const STATUS_CONFIG = {
   PENDING: {
@@ -51,7 +51,6 @@ export const STATUS_CONFIG = {
 
 interface AppointmentCardProps {
   appointment: Appointment;
-  clinicUid: string;
   onSelect: (appointment: Appointment) => void;
   onRefresh: () => void;
 }

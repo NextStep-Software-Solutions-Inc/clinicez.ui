@@ -12,7 +12,7 @@ import { AppointmentCard } from "./AppointmentCard";
 import { AppointmentDetailSheet } from "./AppointmentDetailSheet";
 import { cn } from "@/lib/utils";
 
-type Appointment = GetAppointments["data"][number];
+type Appointment = NonNullable<GetAppointments["data"]>[number];
 
 const STATUS_TABS = [
   { key: "ALL", label: "All" },
@@ -117,7 +117,6 @@ export function AppointmentsClient({
               <AppointmentCard
                 key={appointment.id}
                 appointment={appointment}
-                clinicUid={clinicUid}
                 onSelect={setSelectedAppointment}
                 onRefresh={refresh}
               />

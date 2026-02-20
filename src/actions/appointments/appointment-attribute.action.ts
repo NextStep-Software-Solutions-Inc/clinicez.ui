@@ -149,18 +149,23 @@ export const confirmAppointmentBookingAction = withErrorHandling(async (payload:
   const { appointmentId, modeId, typeId, serviceId, hpId, date, timeStart, timeEnd } = payload;
 
   await prismaClient.$transaction(async (tx) => {
+    const user = await tx.user.findUniqueOrThrow({
+      where: { userId: session.user.sub },
+      select: { id: true },
+    });
+
     await tx.appointmentAttribute.update({
       where: { appointmentId },
       data: {
         modeId,
         typeId,
         serviceId,
-        date: date ?? null,
-        timeStart: timeStart ?? null,
-        timeEnd: timeEnd ?? null,
+        date,
+        timeStart,
+        timeEnd,
         status: hpId ? "ROUTED" : "RECEIVED",
         receivedAt: new Date(),
-        ReceivedBy: { connect: { userId: session.user.sub } },
+        receivedBy: user.id,
       },
     });
 

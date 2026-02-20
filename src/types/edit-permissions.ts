@@ -107,15 +107,15 @@ export const demographicsFieldPermissions: FieldEditPermission[] = [
   {
     fieldName: "mobile",
     label: "Mobile Number",
-    allowedRoles: [EditPermissionLevel.SELF_EDIT],
-    readOnlyFor: [EditPermissionLevel.PROFESSIONAL_EDIT, EditPermissionLevel.READONLY],
+    allowedRoles: [EditPermissionLevel.SELF_EDIT, EditPermissionLevel.PROFESSIONAL_EDIT],
+    readOnlyFor: [EditPermissionLevel.READONLY],
     helpText: "Keep this updated for appointment notifications",
   },
   {
     fieldName: "telephone",
     label: "Landline/Telephone",
-    allowedRoles: [EditPermissionLevel.SELF_EDIT],
-    readOnlyFor: [EditPermissionLevel.PROFESSIONAL_EDIT, EditPermissionLevel.READONLY],
+    allowedRoles: [EditPermissionLevel.SELF_EDIT, EditPermissionLevel.PROFESSIONAL_EDIT],
+    readOnlyFor: [EditPermissionLevel.READONLY],
   },
   {
     fieldName: "placeOfBirth",
@@ -132,8 +132,8 @@ export const demographicsFieldPermissions: FieldEditPermission[] = [
   {
     fieldName: "religion",
     label: "Religion",
-    allowedRoles: [EditPermissionLevel.SELF_EDIT],
-    readOnlyFor: [EditPermissionLevel.PROFESSIONAL_EDIT, EditPermissionLevel.READONLY],
+    allowedRoles: [EditPermissionLevel.SELF_EDIT, EditPermissionLevel.PROFESSIONAL_EDIT],
+    readOnlyFor: [EditPermissionLevel.READONLY],
     helpText: "Optional - for cultural sensitivity in care",
   },
 ]

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getClinicPatientProfileAction } from "@/actions/clinics/get-clinic-patient-profile.action";
 import { getCachedSession } from "@/actions/session.action";
 import ProfileClient from "@/app/v2/(patient-dashboard)/profile/profile-client";
+import { ClinicPatientPageHeader } from "@/components/v2/patients/ClinicPatientPageHeader";
 import type { SerializedPatientHealthRecordsResponse } from "@/types/patient-profile";
 
 export const metadata: Metadata = {
@@ -41,6 +42,17 @@ export default async function ClinicPatientProfilePage({
   }
 
   return (
-    <ProfileClient patient={patient as SerializedPatientHealthRecordsResponse} />
+    <ProfileClient
+      patient={patient as SerializedPatientHealthRecordsResponse}
+      headerSlot={
+        <ClinicPatientPageHeader
+          clinicUid={clinicUid}
+          patientId={numericPatientId}
+          patientName={patient.fullName}
+          mode="view"
+        />
+      }
+      editProfileHref={`/v2/clinic/${clinicUid}/patients/${patientId}/edit`}
+    />
   );
 }

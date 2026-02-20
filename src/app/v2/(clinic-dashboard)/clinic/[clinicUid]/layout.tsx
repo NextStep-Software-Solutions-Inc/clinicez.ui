@@ -37,6 +37,7 @@ export default async function ClinicUidLayout(
       href: `/v2/clinic/${clinicUid}`,
       icon: "home",
       badgeCount: undefined,
+      exact: true,
     },
     {
       name: "Patients",

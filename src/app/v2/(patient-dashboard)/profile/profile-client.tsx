@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { 
   ArrowLeft, 
@@ -18,21 +18,41 @@ import type { SerializedPatientHealthRecordsResponse } from '@/types/patient-pro
 
 interface ProfileClientProps {
   patient: SerializedPatientHealthRecordsResponse
+  /** undefined = render default sticky header; null = hide header entirely; ReactNode = render custom header */
+  headerSlot?: React.ReactNode
+  /** undefined = use default '/v2/profile/edit'; null = hide edit button; string = navigate to that URL */
+  editProfileHref?: string | null
 }
 
-export default function ProfileClient({ patient }: ProfileClientProps) {
+const PROFILE_TABS = [
+  { id: 'overview', label: 'Overview', icon: '📋' },
+  { id: 'addresses', label: 'Addresses', icon: '📍' },
+  { id: 'contacts', label: 'Contacts', icon: '🆘' },
+  { id: 'allergies', label: 'Allergies', icon: '⚠️' },
+  { id: 'vaccinations', label: 'Vaccinations', icon: '💉' },
+  { id: 'disabilities', label: 'Disabilities', icon: '♿' },
+  { id: 'medical', label: 'Medical Profile', icon: '🏥' },
+  { id: 'vitals', label: 'Vital Signs', icon: '❤️' },
+  { id: 'exams', label: 'Physical Exams', icon: '🔍' },
+  { id: 'obgyn', label: 'OB/GYN', icon: '👶' },
+  { id: 'pediatric', label: 'Pediatric', icon: '📏' },
+  { id: 'lifestyle', label: 'Lifestyle & Social', icon: '👤' },
+  { id: 'insurance', label: 'Insurance & Docs', icon: '📄' },
+]
+
+export default function ProfileClient({ patient, headerSlot, editProfileHref }: ProfileClientProps) {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState('overview')
   const [vitalsViewMode, setVitalsViewMode] = useState<'list' | 'chart'>('list')
   const [pediatricViewMode, setPediatricViewMode] = useState<'list' | 'chart'>('list')
   const [expandedSections, setExpandedSections] = useState<{ [key: string]: boolean }>({})
 
-  const toggleSection = (section: string) => {
+  const toggleSection = useCallback((section: string) => {
     setExpandedSections(prev => ({
       ...prev,
       [section]: !prev[section]
     }))
-  }
+  }, [])
 
   // Badge status helpers
   const getTabBadge = (tabId: string): { status: string; count: number } | null => {
@@ -120,43 +140,34 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
     }
   }
 
-  const tabs = [
-    { id: 'overview', label: 'Overview', icon: '📋' },
-    { id: 'addresses', label: 'Addresses', icon: '📍' },
-    { id: 'contacts', label: 'Contacts', icon: '🆘' },
-    { id: 'allergies', label: 'Allergies', icon: '⚠️' },
-    { id: 'vaccinations', label: 'Vaccinations', icon: '💉' },
-    { id: 'disabilities', label: 'Disabilities', icon: '♿' },
-    { id: 'medical', label: 'Medical Profile', icon: '🏥' },
-    { id: 'vitals', label: 'Vital Signs', icon: '❤️' },
-    { id: 'exams', label: 'Physical Exams', icon: '🔍' },
-    { id: 'obgyn', label: 'OB/GYN', icon: '👶' },
-    { id: 'pediatric', label: 'Pediatric', icon: '📏' },
-    { id: 'lifestyle', label: 'Lifestyle & Social', icon: '👤' },
-    { id: 'insurance', label: 'Insurance & Docs', icon: '📄' },
-  ]
+  // Pre-compute all tab badges once. patient is a stable RSC prop so this only runs on initial mount.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const tabBadges = useMemo(() => Object.fromEntries(PROFILE_TABS.map(t => [t.id, getTabBadge(t.id)])) as Record<string, { status: string; count: number } | null>, [patient])
+
+  const defaultHeader = (
+    <div className="sticky top-0 z-50 bg-gradient-to-b from-slate-50/20 via-blue-50/20 to-transparent dark:from-slate-950/20 dark:via-blue-950/20 dark:to-transparent backdrop-blur-sm mb-8 px-8 pt-4 pb-6 rounded-xl">
+      <div className="max-w-6xl mx-auto">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => router.back()}
+              className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+              Comprehensive Health Records
+            </h1>
+          </div>
+          <ThemeToggle />
+        </div>
+      </div>
+    </div>
+  )
 
   return (
     <div className="w-full">
-      {/* Full-Width Header Background */}
-      <div className=" sticky top-0 z-50 bg-gradient-to-b from-slate-50/20 via-blue-50/20 to-transparent dark:from-slate-950/20 dark:via-blue-950/20 dark:to-transparent backdrop-blur-sm mb-8 px-8 pt-4 pb-6 rounded-xl">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => router.back()}
-                className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </button>
-              <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-                Comprehensive Health Records
-              </h1>
-            </div>
-            <ThemeToggle />
-          </div>
-        </div>
-      </div>
+      {headerSlot !== null && (headerSlot ?? defaultHeader)}
 
       {/* Containerized Main Content */}
       <div className="max-w-6xl mx-auto pb-32">
@@ -183,8 +194,11 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
               <div className="flex-grow">
                 <div className="mb-2">
                   <h2 className="text-3xl font-bold text-slate-900 dark:text-white">
-                    {patient.fullName}
+                    {patient.fullName}{patient.suffix ? ` ${patient.suffix}` : ''}
                   </h2>
+                  {patient.nickname && (
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">"{patient.nickname}"</p>
+                  )}
                   {patient.caseNumber && (
                     <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">Patient ID: {patient.caseNumber}</p>
                   )}
@@ -212,8 +226,8 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
 
       {/* Tab Navigation */}
       <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-        {tabs.map(tab => {
-          const badge = getTabBadge(tab.id)
+        {PROFILE_TABS.map(tab => {
+          const badge = tabBadges[tab.id]
           return (
             <button
               key={tab.id}
@@ -249,8 +263,11 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {patient.email && <div><p className="text-xs text-slate-600 dark:text-slate-400">Email</p><p className="text-slate-900 dark:text-white">{patient.email}</p></div>}
               {patient.mobile && <div><p className="text-xs text-slate-600 dark:text-slate-400">Mobile</p><p className="text-slate-900 dark:text-white">{patient.mobile}</p></div>}
+              {patient.telephone && <div><p className="text-xs text-slate-600 dark:text-slate-400">Telephone</p><p className="text-slate-900 dark:text-white">{patient.telephone}</p></div>}
               {patient.dob && <div><p className="text-xs text-slate-600 dark:text-slate-400">DOB</p><p className="text-slate-900 dark:text-white">{new Date(patient.dob).toLocaleDateString()}</p></div>}
               {patient.gender && <div><p className="text-xs text-slate-600 dark:text-slate-400">Gender</p><p className="text-slate-900 dark:text-white capitalize">{patient.gender}</p></div>}
+              {patient.suffix && <div><p className="text-xs text-slate-600 dark:text-slate-400">Suffix</p><p className="text-slate-900 dark:text-white">{patient.suffix}</p></div>}
+              {patient.nickname && <div><p className="text-xs text-slate-600 dark:text-slate-400">Nickname</p><p className="text-slate-900 dark:text-white">{patient.nickname}</p></div>}
               {patient.nationality && <div><p className="text-xs text-slate-600 dark:text-slate-400">Nationality</p><p className="text-slate-900 dark:text-white">{patient.nationality}</p></div>}
               {patient.religion && <div><p className="text-xs text-slate-600 dark:text-slate-400">Religion</p><p className="text-slate-900 dark:text-white">{patient.religion}</p></div>}
             </div>
@@ -1777,15 +1794,17 @@ export default function ProfileClient({ patient }: ProfileClientProps) {
       )}
 
       {/* Edit Profile Button - Floating */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40">
-        <button
-          onClick={() => router.push('/v2/profile/edit')}
-          className="flex items-center gap-2 px-6 py-3 rounded-lg bg-gradient-to-br from-blue-600 to-blue-500 text-white font-semibold hover:shadow-lg transition-all duration-300 hover:scale-105 shadow-lg"
-        >
-          <Edit2 className="w-4 h-4" />
-          Edit Profile
-        </button>
-      </div>
+      {editProfileHref !== null && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40">
+          <button
+            onClick={() => router.push(editProfileHref ?? '/v2/profile/edit')}
+            className="flex items-center gap-2 px-6 py-3 rounded-lg bg-gradient-to-br from-blue-600 to-blue-500 text-white font-semibold hover:shadow-lg transition-all duration-300 hover:scale-105 shadow-lg"
+          >
+            <Edit2 className="w-4 h-4" />
+            Edit Profile
+          </button>
+        </div>
+      )}
       </div>
     </div>
   )

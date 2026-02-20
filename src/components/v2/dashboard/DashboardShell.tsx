@@ -240,7 +240,9 @@ export default function DashboardShell({
         <div className="flex items-center gap-0 h-12 overflow-x-auto overflow-y-hidden [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-foreground/20">
           {navItems.map((item) => {
             const Icon = resolveIcon(item.icon);
-            const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+            const isActive = item.exact
+              ? pathname === item.href
+              : pathname === item.href || pathname.startsWith(item.href + "/");
             
             return (
               <a

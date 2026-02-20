@@ -103,39 +103,48 @@ export async function updateDemographics(
     }
 
     // 5. Check field-level permissions
+    // Derive the correct role: self-edits use PATIENT, third-party edits use HEALTHCARE_PROVIDER
+    const editorRole = isOwn ? UserRole.PATIENT : UserRole.HEALTHCARE_PROVIDER
     const allowedFields = Object.keys(validatedData).filter((field) =>
-      userCanEditField(authUser.id, userId, UserRole.PATIENT, field)
+      userCanEditField(authUser.id, userId, editorRole, field)
     )
 
-    const invalidFields = Object.keys(validatedData).filter(
-      (field) => !allowedFields.includes(field)
-    )
-
-    if (invalidFields.length > 0) {
-      return {
-        success: false,
-        error: `You do not have permission to edit: ${invalidFields.join(', ')}`,
+    if (isOwn) {
+      // Patient editing own record: strict — reject if any submitted field is not allowed
+      const invalidFields = Object.keys(validatedData).filter(
+        (field) => !allowedFields.includes(field)
+      )
+      if (invalidFields.length > 0) {
+        return {
+          success: false,
+          error: `You do not have permission to edit: ${invalidFields.join(', ')}`,
+        }
       }
     }
+    // Healthcare provider: silently drop fields they cannot edit (e.g. mobile, telephone, religion)
+    // rather than rejecting the entire save.
+    const dataToUpdate = Object.fromEntries(
+      Object.entries(validatedData).filter(([field]) => allowedFields.includes(field))
+    ) as Partial<DemographicsFormInput>
 
     // 6. Update database with validated data
     const updatedUser = await prisma.user.update({
       where: { userId },
       data: {
-        firstName: validatedData.firstName !== undefined ? validatedData.firstName : undefined,
-        lastName: validatedData.lastName !== undefined ? validatedData.lastName : undefined,
-        middleName: validatedData.middleName !== undefined ? validatedData.middleName : undefined,
-        suffix: validatedData.suffix !== undefined ? validatedData.suffix : undefined,
-        nickname: validatedData.nickname !== undefined ? validatedData.nickname : undefined,
-        dob: validatedData.dob !== undefined ? validatedData.dob : undefined,
-        gender: validatedData.gender !== undefined ? validatedData.gender : undefined,
-        bloodType: validatedData.bloodType !== undefined ? validatedData.bloodType : undefined,
-        civilStatus: validatedData.civilStatus !== undefined ? validatedData.civilStatus : undefined,
-        mobile: validatedData.mobile !== undefined ? validatedData.mobile : undefined,
-        telephone: validatedData.telephone !== undefined ? validatedData.telephone : undefined,
-        placeOfBirth: validatedData.placeOfBirth !== undefined ? validatedData.placeOfBirth : undefined,
-        nationality: validatedData.nationality !== undefined ? validatedData.nationality : undefined,
-        religion: validatedData.religion !== undefined ? validatedData.religion : undefined,
+        firstName: dataToUpdate.firstName !== undefined ? dataToUpdate.firstName : undefined,
+        lastName: dataToUpdate.lastName !== undefined ? dataToUpdate.lastName : undefined,
+        middleName: dataToUpdate.middleName !== undefined ? dataToUpdate.middleName : undefined,
+        suffix: dataToUpdate.suffix !== undefined ? dataToUpdate.suffix : undefined,
+        nickname: dataToUpdate.nickname !== undefined ? dataToUpdate.nickname : undefined,
+        dob: dataToUpdate.dob !== undefined ? dataToUpdate.dob : undefined,
+        gender: dataToUpdate.gender !== undefined ? dataToUpdate.gender : undefined,
+        bloodType: dataToUpdate.bloodType !== undefined ? dataToUpdate.bloodType : undefined,
+        civilStatus: dataToUpdate.civilStatus !== undefined ? dataToUpdate.civilStatus : undefined,
+        mobile: dataToUpdate.mobile !== undefined ? dataToUpdate.mobile : undefined,
+        telephone: dataToUpdate.telephone !== undefined ? dataToUpdate.telephone : undefined,
+        placeOfBirth: dataToUpdate.placeOfBirth !== undefined ? dataToUpdate.placeOfBirth : undefined,
+        nationality: dataToUpdate.nationality !== undefined ? dataToUpdate.nationality : undefined,
+        religion: dataToUpdate.religion !== undefined ? dataToUpdate.religion : undefined,
       } as any,
       select: {
         id: true,
@@ -148,19 +157,20 @@ export async function updateDemographics(
     try {
       const clerkUpdateData: Partial<{ firstName: string; lastName: string }> = {}
 
-      if (validatedData.firstName !== undefined && validatedData.firstName !== currentUserData.firstName) {
-        clerkUpdateData.firstName = validatedData.firstName
+      if (dataToUpdate.firstName !== undefined && dataToUpdate.firstName !== currentUserData.firstName) {
+        clerkUpdateData.firstName = dataToUpdate.firstName
       }
 
-      if (validatedData.lastName !== undefined && validatedData.lastName !== currentUserData.lastName) {
-        clerkUpdateData.lastName = validatedData.lastName
+      if (dataToUpdate.lastName !== undefined && dataToUpdate.lastName !== currentUserData.lastName) {
+        clerkUpdateData.lastName = dataToUpdate.lastName
       }
 
       // Only update Clerk if there are name changes
       if (Object.keys(clerkUpdateData).length > 0) {
         const client = await clerkClient()
-        await client.users.updateUser(authUser.id, clerkUpdateData)
-        console.log(`[CLERK_SYNC] Updated user ${authUser.id} with demographics changes`)
+        // Use `userId` (the patient's Clerk ID), not `authUser.id` (the editing HP's ID)
+        await client.users.updateUser(userId, clerkUpdateData)
+        console.log(`[CLERK_SYNC] Updated user ${userId} with demographics changes`)
       }
     } catch (clerkError) {
       console.error('[CLERK_SYNC_ERROR] Failed to sync demographics to Clerk:', clerkError)
@@ -168,7 +178,7 @@ export async function updateDemographics(
     }
 
     // 8. Log the change for audit trail
-    const changes = trackChanges(currentUserData, validatedData)
+    const changes = trackChanges(currentUserData, dataToUpdate)
     await logAudit({
       entityType: AuditEntityType.USER,
       entityId: updatedUser.id,

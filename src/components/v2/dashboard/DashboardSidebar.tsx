@@ -47,6 +47,8 @@ export interface NavItem {
   href: string;
   icon: string;
   badgeCount?: number;
+  /** When true, only exact pathname match marks this item as active */
+  exact?: boolean;
 }
 
 export interface DashboardSidebarProps {

@@ -236,7 +236,7 @@ export default function DashboardShell({
       </header>
 
       {/* ===== TOP NAVIGATION ===== */}
-      <nav className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b border-border/50 shrink-0">
+      <nav className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b border-border/50 shrink-0 lg:px-6">
         <div className="flex items-center gap-0 h-12 overflow-x-auto overflow-y-hidden [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-foreground/20">
           {navItems.map((item) => {
             const Icon = resolveIcon(item.icon);

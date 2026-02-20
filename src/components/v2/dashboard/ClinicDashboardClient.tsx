@@ -1,34 +1,36 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import {
   WelcomeHeader,
-  StatCard,
   ActivityLog,
   ProgressBar,
 } from "@/components/v2/dashboard";
 import { KPICard } from "@/components/v2/dashboard/KPICard";
-import { Separator } from "@components/ui/separator";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "@components/ui/card";
 import {
   Users,
   CalendarClock,
   Stethoscope,
-  DollarSign,
+  CheckCircle2,
   Activity,
   Clock,
-  Beaker,
+  FlaskConical,
   Microscope,
   Heart,
   Share2,
   TrendingUp,
-  AlertCircle,
   Calendar,
   UserCheck,
+  ClipboardList,
+  AlertTriangle,
 } from "lucide-react";
 import type { ClinicDashboardData } from "@/types/clinic-dashboard.types";
 import { formatDistanceToNow, format } from "date-fns";
+
+/* ─────────────────────────────────────────────────────────────────── */
+/*  Types                                                              */
+/* ─────────────────────────────────────────────────────────────────── */
 
 interface ActivityItem {
   id: string;
@@ -44,330 +46,506 @@ interface ClinicDashboardClientProps {
   userName: string;
 }
 
+/* ─────────────────────────────────────────────────────────────────── */
+/*  Sub-components                                                     */
+/* ─────────────────────────────────────────────────────────────────── */
+
+/** Reusable glass card with consistent header treatment */
+function GlassCard({
+  icon: Icon,
+  title,
+  subtitle,
+  accentVar,
+  children,
+}: {
+  icon: React.ElementType;
+  title: string;
+  subtitle?: string;
+  accentVar: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Card
+      className="glassmorphic-card overflow-hidden border"
+      style={{ borderColor: "hsl(var(--color-border-light))" }}
+    >
+      <CardHeader
+        className="px-5 py-4 border-b"
+        style={{
+          borderColor: "hsl(var(--color-border-light))",
+          background: `hsl(var(${accentVar}) / 0.06)`,
+        }}
+      >
+        <CardTitle className="flex items-center gap-2.5">
+          <div
+            className="h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0"
+            style={{ background: `hsl(var(${accentVar}) / 0.15)` }}
+          >
+            <Icon className="h-4 w-4" style={{ color: `hsl(var(${accentVar}))` }} />
+          </div>
+          <div className="min-w-0">
+            <p
+              className="text-sm font-semibold leading-tight"
+              style={{ color: `hsl(var(${accentVar}))` }}
+            >
+              {title}
+            </p>
+            {subtitle && (
+              <p className="text-xs text-muted-foreground leading-tight mt-0.5">
+                {subtitle}
+              </p>
+            )}
+          </div>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-5">{children}</CardContent>
+    </Card>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────────── */
+/*  Main component                                                     */
+/* ─────────────────────────────────────────────────────────────────── */
+
 export function ClinicDashboardClient({
-  clinicUid,
+  clinicUid: _clinicUid,
   data,
   userName,
 }: ClinicDashboardClientProps) {
   const { metrics, diagnosticRequests, workload, schedule, teamStatus } = data;
-  const [activeWorkloadTab, setActiveWorkloadTab] = useState("consultations");
 
-  // Activity items
+  /* Build activity feed from server data */
   const activityItems: ActivityItem[] = [
     ...data.recentActivity.appointments.map((apt) => ({
-      id: apt.id?.toString() || Math.random().toString(),
+      id: apt.id?.toString() ?? Math.random().toString(),
       action: apt.action,
-      detail: `${apt.detail}${apt.detail2 ? ` - ${apt.detail2}` : ""}`,
-      time: apt.time ? formatDistanceToNow(new Date(apt.time), { addSuffix: true }) : "just now",
+      detail: apt.detail2 ? `${apt.detail} — ${apt.detail2}` : apt.detail,
+      time: apt.time
+        ? formatDistanceToNow(new Date(apt.time), { addSuffix: true })
+        : "just now",
       icon: <Calendar className="h-4 w-4" />,
     })),
-    ...data.recentActivity.newPatients.map((patient: typeof data.recentActivity.newPatients[0], idx: number) => ({
-      id: `patient-${idx}`,
-      action: patient.action,
-      detail: patient.detail,
-      time: "recently",
-      icon: <Users className="h-4 w-4" />,
-    })),
+    ...data.recentActivity.newPatients.map(
+      (p: (typeof data.recentActivity.newPatients)[0], idx: number) => ({
+        id: `patient-${idx}`,
+        action: p.action,
+        detail: p.detail,
+        time: "recently",
+        icon: <Users className="h-4 w-4" />,
+      })
+    ),
   ].slice(0, 8);
 
+  const totalDiagnostics =
+    diagnosticRequests.labRequests +
+    diagnosticRequests.imagingRequests +
+    diagnosticRequests.heartRequests +
+    diagnosticRequests.referrals;
+
   return (
-    <div className="space-y-6 pb-8">
-      {/* 1. Welcome & Summary Header */}
-      <div className="space-y-6">
-        <WelcomeHeader
-          name={userName}
-          subtitle="Your clinic at a glance"
-          dashboardType="clinic"
-        />
-        
-        {/* Compact KPI Row - Secondary Focus */}
+    <div className="space-y-6 pb-10">
+
+      {/* ── 1. Welcome banner ──────────────────────────────────────── */}
+      <WelcomeHeader
+        name={userName}
+        subtitle={`${data.clinic.name} — Today's overview`}
+        dashboardType="clinic"
+      />
+
+      {/* ── 2. KPI row ─────────────────────────────────────────────── */}
+      <section aria-label="Key performance indicators">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <KPICard
-            label="Patients"
+            label="Patients Today"
             value={metrics.patientsToday}
             icon={Users}
-            trend={{ direction: "up", text: "+6 today" }}
-            progress={68}
+            trend={{ direction: "up", text: "registered today" }}
+            progress={Math.min(metrics.patientsToday * 5, 100)}
             color="primary"
           />
-          
           <KPICard
             label="Pending"
             value={metrics.pendingAppointments}
             icon={CalendarClock}
-            trend={{ direction: "down", text: "-2 this hour" }}
-            progress={44}
+            trend={{ direction: "down", text: "awaiting action" }}
+            progress={Math.min(metrics.pendingAppointments * 10, 100)}
             color="secondary"
           />
-          
           <KPICard
-            label="Active"
+            label="Active Consults"
             value={workload.activeConsultations}
             icon={Stethoscope}
-            trend={{ direction: "up", text: "+3 in progress" }}
-            progress={83}
+            trend={{ direction: "up", text: "in progress now" }}
+            progress={Math.min(workload.activeConsultations * 12, 100)}
             color="accent"
           />
-          
           <KPICard
-            label="Revenue"
-            value={`$${(metrics.monthlyRevenue / 1000).toFixed(1)}k`}
-            icon={DollarSign}
-            trend={{ direction: "up", text: "+8% month" }}
-            progress={71}
+            label="Completed Today"
+            value={metrics.completedAppointmentsToday}
+            icon={CheckCircle2}
+            trend={{ direction: "up", text: "appointments done" }}
+            progress={
+              metrics.totalAppointmentsToday > 0
+                ? Math.min(
+                    Math.round(
+                      (metrics.completedAppointmentsToday /
+                        metrics.totalAppointmentsToday) *
+                        100
+                    ),
+                    100
+                  )
+                : 0
+            }
             color="primary"
           />
         </div>
-      </div>
+      </section>
 
-      {/* 2. Primary Content - Full Width Schedule (Hero Section) */}
-      <div>
-        <Card className="glassmorphic-card-lg overflow-hidden border" style={{borderColor: `hsl(var(--color-border-light))`}}>
-          <CardHeader className="border-b" style={{borderColor: `hsl(var(--color-border-light))`, background: `hsl(var(--primary) / 0.05)`}}>
-            <CardTitle className="flex items-center gap-2 text-lg font-semibold" style={{color: `hsl(var(--primary))`}}>
-              <Calendar className="h-6 w-6" />
-              Schedule Today
-            </CardTitle>
-            <CardDescription>Next {schedule.upcomingCount} appointments</CardDescription>
-          </CardHeader>
-          <CardContent className="p-6">
-            {schedule.upcomingAppointments.length > 0 ? (
-              <div className="space-y-2">
-                {schedule.upcomingAppointments.map((apt) => (
+      {/* ── 3. Today's schedule (primary focus, full-width) ────────── */}
+      <section aria-label="Today's schedule">
+        <GlassCard
+          icon={Calendar}
+          title="Today's Schedule"
+          subtitle={
+            schedule.upcomingAppointments.length > 0
+              ? `${schedule.upcomingCount} appointment${schedule.upcomingCount !== 1 ? "s" : ""} queued`
+              : "No appointments scheduled"
+          }
+          accentVar="--primary"
+        >
+          {schedule.upcomingAppointments.length > 0 ? (
+            <ol className="space-y-2" role="list">
+              {schedule.upcomingAppointments.map((apt, idx) => (
+                <li
+                  key={apt.id}
+                  className="flex items-center gap-4 p-4 rounded-xl border transition-all hover:shadow-sm hover:bg-muted/20"
+                  style={{ borderColor: "hsl(var(--color-border-light))" }}
+                >
+                  {/* Position badge */}
                   <div
-                    key={apt.id}
-                    className="flex items-center gap-4 p-4 rounded-lg border transition-colors hover:bg-muted/30"
-                    style={{borderColor: `hsl(var(--color-border-light))`}}
+                    className="h-9 w-9 rounded-lg flex items-center justify-center flex-shrink-0 text-sm font-bold"
+                    style={{
+                      background: "hsl(var(--primary) / 0.12)",
+                      color: "hsl(var(--primary))",
+                    }}
                   >
-                    <div className="h-12 w-12 rounded-lg flex items-center justify-center flex-shrink-0" style={{background: `hsl(var(--primary) / 0.2)`}}>
-                      <Clock className="h-5 w-5" style={{color: `hsl(var(--primary))`}} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-foreground truncate">{apt.subject}</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {apt.timeStart && apt.timeEnd ? `${apt.timeStart} - ${apt.timeEnd}` : apt.timeStart || "Time not set"}
-                      </p>
-                    </div>
-                    <div className="text-right flex-shrink-0">
-                      <p className="text-xs font-semibold px-3 py-1.5 rounded-full" style={{background: `hsl(var(--primary) / 0.1)`, color: `hsl(var(--primary))`}}>
-                        {apt.date ? format(new Date(apt.date), "MMM d") : "TBD"}
-                      </p>
-                    </div>
+                    {idx + 1}
                   </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12 text-muted-foreground">
-                <Calendar className="h-12 w-12 mx-auto mb-3 opacity-30" />
-                <p className="text-sm">No upcoming appointments</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
 
-      {/* 3. Three-Column Analysis Zone */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Workload & Consultations */}
-        <Card className="glassmorphic-card-lg overflow-hidden border" style={{borderColor: `hsl(var(--color-border-light))`}}>
-          <CardHeader className="border-b" style={{borderColor: `hsl(var(--color-border-light))`, background: `hsl(var(--secondary) / 0.05)`}}>
-            <CardTitle className="flex items-center gap-2 text-base font-semibold" style={{color: `hsl(var(--secondary))`}}>
-              <Stethoscope className="h-5 w-5" />
-              Active Workload
-            </CardTitle>
-            <CardDescription>{workload.activeConsultations} in progress</CardDescription>
-          </CardHeader>
-          <CardContent className="p-6">
-            {workload.consultationDetails.length > 0 ? (
-              <div className="space-y-2">
-                {workload.consultationDetails.slice(0, 5).map((consultation) => (
+                  {/* Time block */}
                   <div
-                    key={consultation.id}
-                    className="p-3 rounded-lg border text-sm"
-                    style={{background: `hsl(var(--secondary) / 0.08)`, borderColor: `hsl(var(--secondary) / 0.2)`}}
+                    className="flex-shrink-0 text-center w-16 px-2 py-1.5 rounded-lg"
+                    style={{
+                      background: "hsl(var(--primary) / 0.08)",
+                    }}
                   >
-                    <p className="font-medium text-foreground truncate">{consultation.subject}</p>
-                    <div className="flex items-center justify-between mt-2">
-                      <p className="text-xs text-muted-foreground">
-                        {formatDistanceToNow(new Date(consultation.createdAt), { addSuffix: true })}
+                    <Clock
+                      className="h-3.5 w-3.5 mx-auto mb-0.5"
+                      style={{ color: "hsl(var(--primary))" }}
+                    />
+                    <p
+                      className="text-xs font-semibold leading-tight"
+                      style={{ color: "hsl(var(--primary))" }}
+                    >
+                      {apt.timeStart ?? "—"}
+                    </p>
+                  </div>
+
+                  {/* Details */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground truncate">
+                      {apt.subject}
+                    </p>
+                    {apt.timeEnd && (
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Ends {apt.timeEnd}
                       </p>
-                      <span className="text-xs font-medium px-2 py-0.5 rounded" style={{background: `hsl(var(--secondary) / 0.2)`, color: `hsl(var(--secondary))`}}>
-                        {consultation.status}
-                      </span>
-                    </div>
+                    )}
                   </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <Stethoscope className="h-8 w-8 mx-auto mb-2 opacity-30" />
-                <p className="text-sm">No active consultations</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
 
-        {/* Diagnostic Requests Summary */}
-        <Card className="glassmorphic-card-lg overflow-hidden border" style={{borderColor: `hsl(var(--color-border-light))`}}>
-          <CardHeader className="border-b" style={{borderColor: `hsl(var(--color-border-light))`, background: `hsl(var(--muted) / 0.05)`}}>
-            <CardTitle className="flex items-center gap-2 text-base font-semibold" style={{color: `hsl(var(--muted))`}}>
-              <AlertCircle className="h-5 w-5" />
-              Diagnostics
-            </CardTitle>
-            <CardDescription>Pending requests</CardDescription>
-          </CardHeader>
-          <CardContent className="p-6">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Beaker className="h-4 w-4" style={{color: `hsl(var(--muted))`}} />
-                  <span className="text-sm text-foreground">Lab</span>
-                </div>
-                <span className="text-lg font-bold" style={{color: `hsl(var(--muted))`}}>{diagnosticRequests.labRequests}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Microscope className="h-4 w-4" style={{color: `hsl(var(--secondary))`}} />
-                  <span className="text-sm text-foreground">Imaging</span>
-                </div>
-                <span className="text-lg font-bold" style={{color: `hsl(var(--secondary))`}}>{diagnosticRequests.imagingRequests}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Heart className="h-4 w-4" style={{color: `hsl(var(--muted))`}} />
-                  <span className="text-sm text-foreground">Heart</span>
-                </div>
-                <span className="text-lg font-bold" style={{color: `hsl(var(--muted))`}}>{diagnosticRequests.heartRequests}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Share2 className="h-4 w-4" style={{color: `hsl(var(--accent))`}} />
-                  <span className="text-sm text-foreground">Referrals</span>
-                </div>
-                <span className="text-lg font-bold" style={{color: `hsl(var(--accent))`}}>{diagnosticRequests.referrals}</span>
-              </div>
-              <div className="pt-2 border-t" style={{borderColor: `hsl(var(--color-border-light))`}}>
-                <p className="text-xs text-muted-foreground font-medium">
-                  {diagnosticRequests.labRequests + diagnosticRequests.imagingRequests + diagnosticRequests.heartRequests + diagnosticRequests.referrals} total
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Performance Metrics */}
-        <Card className="glassmorphic-card-lg overflow-hidden border" style={{borderColor: `hsl(var(--color-border-light))`}}>
-          <CardHeader className="border-b" style={{borderColor: `hsl(var(--color-border-light))`, background: `hsl(var(--accent) / 0.05)`}}>
-            <CardTitle className="flex items-center gap-2 text-base font-semibold" style={{color: `hsl(var(--accent))`}}>
-              <TrendingUp className="h-5 w-5" />
-              Performance
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6 space-y-4">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-medium text-foreground">Completion</span>
-                <span className="text-sm font-bold">88%</span>
-              </div>
-              <ProgressBar label="" value={88} max={100} color="blue" />
-            </div>
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-medium text-foreground">Consultation</span>
-                <span className="text-sm font-bold">92%</span>
-              </div>
-              <ProgressBar label="" value={92} max={100} color="blue" />
-            </div>
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-medium text-foreground">Satisfaction</span>
-                <span className="text-sm font-bold">96%</span>
-              </div>
-              <ProgressBar label="" value={96} max={100} color="green" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* 4. Team & Activity Section */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Team Status */}
-        <Card className="glassmorphic-card-lg overflow-hidden border" style={{borderColor: `hsl(var(--color-border-light))`}}>
-          <CardHeader className="border-b" style={{borderColor: `hsl(var(--color-border-light))`, background: `hsl(var(--accent) / 0.05)`}}>
-            <CardTitle className="flex items-center gap-2 text-base font-semibold" style={{color: `hsl(var(--accent))`}}>
-              <UserCheck className="h-5 w-5" />
-              Team Status
-            </CardTitle>
-            <CardDescription>{teamStatus.totalMembers} active members</CardDescription>
-          </CardHeader>
-          <CardContent className="p-6">
-            {teamStatus.members.length > 0 ? (
-              <div className="space-y-2">
-                {teamStatus.members.map((member) => (
-                  <div
-                    key={member.id}
-                    className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/30 transition-colors"
+                  {/* Date badge */}
+                  <span
+                    className="flex-shrink-0 text-xs font-medium px-2.5 py-1 rounded-full"
+                    style={{
+                      background: "hsl(var(--primary) / 0.1)",
+                      color: "hsl(var(--primary))",
+                    }}
                   >
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      {member.avatar ? (
-                        <img
-                          src={member.avatar}
-                          alt={member.name}
-                          className="h-8 w-8 rounded-full object-cover flex-shrink-0"
-                        />
-                      ) : (
-                        <div className="h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0" style={{background: `linear-gradient(135deg, hsl(var(--accent)), hsl(var(--accent) / 0.7))`}}>
-                          {member.name.charAt(0)}
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground truncate">{member.name}</p>
-                        <p className="text-xs text-muted-foreground truncate">{member.role}</p>
-                      </div>
-                    </div>
-                    <div className="h-2 w-2 rounded-full flex-shrink-0 animate-pulse" style={{background: `hsl(var(--accent))`}} />
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <Users className="h-10 w-10 mx-auto mb-2 opacity-30" />
-                <p className="text-sm">No team members</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Recent Activity */}
-        <Card className="glassmorphic-card-lg overflow-hidden border" style={{borderColor: `hsl(var(--color-border-light))`}}>
-          <CardHeader className="border-b" style={{borderColor: `hsl(var(--color-border-light))`, background: `hsl(var(--primary) / 0.05)`}}>
-            <CardTitle className="flex items-center gap-2 text-base font-semibold" style={{color: `hsl(var(--primary))`}}>
-              <Activity className="h-5 w-5" />
-              Recent Activity
-            </CardTitle>
-            <CardDescription>Latest clinic events</CardDescription>
-          </CardHeader>
-          <CardContent className="p-6">
-            <ActivityLog items={activityItems} />
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* 5. Footer Status Bar */}
-      <Card className="glassmorphic-card-lg border" style={{borderColor: `hsl(var(--color-border-light))`, background: `linear-gradient(135deg, hsl(var(--primary) / 0.05) 0%, hsl(var(--secondary) / 0.05) 100%)`}}>
-        <CardContent className="p-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider" style={{color: `hsl(var(--primary))`}}>
-                Dashboard Status
-              </p>
-              <p className="text-sm text-muted-foreground mt-1">
-                {schedule.upcomingCount} appointments • {workload.activeConsultations} consultations • Last updated {format(new Date(), "HH:mm")}
-              </p>
+                    {apt.date ? format(new Date(apt.date), "MMM d") : "TBD"}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-14 text-muted-foreground">
+              <CheckCircle2 className="h-12 w-12 mb-3 opacity-25" />
+              <p className="text-sm font-medium">All clear — no appointments today</p>
+              <p className="text-xs mt-1 opacity-70">Check back tomorrow</p>
             </div>
+          )}
+        </GlassCard>
+      </section>
+
+      {/* ── 4. Three-column analysis zone ─────────────────────────── */}
+      <section aria-label="Clinical analysis" className="grid gap-5 lg:grid-cols-3">
+
+        {/* Active workload */}
+        <GlassCard
+          icon={Stethoscope}
+          title="Active Workload"
+          subtitle={`${workload.activeConsultations} consultation${workload.activeConsultations !== 1 ? "s" : ""} in progress`}
+          accentVar="--primary"
+        >
+          {workload.consultationDetails.length > 0 ? (
+            <ul className="space-y-2" role="list">
+              {workload.consultationDetails.slice(0, 5).map((c) => (
+                <li
+                  key={c.id}
+                  className="p-3 rounded-lg border text-sm"
+                  style={{
+                    background: "hsl(var(--primary) / 0.05)",
+                    borderColor: "hsl(var(--primary) / 0.15)",
+                  }}
+                >
+                  <p className="font-medium text-foreground truncate">{c.subject}</p>
+                  <div className="flex items-center justify-between mt-1.5">
+                    <p className="text-xs text-muted-foreground">
+                      {formatDistanceToNow(new Date(c.createdAt), { addSuffix: true })}
+                    </p>
+                    <span
+                      className="text-xs font-semibold px-2 py-0.5 rounded-full"
+                      style={{
+                        background: "hsl(var(--primary) / 0.15)",
+                        color: "hsl(var(--primary))",
+                      }}
+                    >
+                      {c.status}
+                    </span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-10 text-muted-foreground">
+              <ClipboardList className="h-9 w-9 mb-2 opacity-25" />
+              <p className="text-sm">No active consultations</p>
+            </div>
+          )}
+        </GlassCard>
+
+        {/* Diagnostic requests */}
+        <GlassCard
+          icon={AlertTriangle}
+          title="Diagnostic Requests"
+          subtitle={`${totalDiagnostics} pending total`}
+          accentVar="--chart-2"
+        >
+          <div className="space-y-3">
+            {(
+              [
+                {
+                  icon: FlaskConical,
+                  label: "Laboratory",
+                  count: diagnosticRequests.labRequests,
+                  colorVar: "--chart-2",
+                },
+                {
+                  icon: Microscope,
+                  label: "Imaging",
+                  count: diagnosticRequests.imagingRequests,
+                  colorVar: "--chart-1",
+                },
+                {
+                  icon: Heart,
+                  label: "Heart Station",
+                  count: diagnosticRequests.heartRequests,
+                  colorVar: "--destructive",
+                },
+                {
+                  icon: Share2,
+                  label: "Referrals",
+                  count: diagnosticRequests.referrals,
+                  colorVar: "--chart-3",
+                },
+              ] as const
+            ).map(({ icon: ItemIcon, label, count, colorVar }) => (
+              <div
+                key={label}
+                className="flex items-center gap-3 p-3 rounded-lg border"
+                style={{
+                  background: `hsl(var(${colorVar}) / 0.06)`,
+                  borderColor: `hsl(var(${colorVar}) / 0.18)`,
+                }}
+              >
+                <ItemIcon
+                  className="h-4 w-4 flex-shrink-0"
+                  style={{ color: `hsl(var(${colorVar}))` }}
+                />
+                <span className="flex-1 text-sm font-medium text-foreground">
+                  {label}
+                </span>
+                <span
+                  className="text-lg font-bold tabular-nums"
+                  style={{ color: `hsl(var(${colorVar}))` }}
+                >
+                  {count}
+                </span>
+              </div>
+            ))}
           </div>
-        </CardContent>
-      </Card>
+        </GlassCard>
+
+        {/* Performance metrics */}
+        <GlassCard
+          icon={TrendingUp}
+          title="Performance"
+          subtitle="Clinic efficiency metrics"
+          accentVar="--chart-7"
+        >
+          <div className="space-y-5">
+            {(
+              [
+                {
+                  label: "Appointment Completion",
+                  value: 88,
+                  color: "blue" as const,
+                },
+                {
+                  label: "Consultation Rate",
+                  value: 92,
+                  color: "blue" as const,
+                },
+                {
+                  label: "Patient Satisfaction",
+                  value: 96,
+                  color: "green" as const,
+                },
+              ] as const
+            ).map(({ label, value, color }) => (
+              <div key={label}>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs font-medium text-foreground/80">
+                    {label}
+                  </span>
+                  <span className="text-sm font-bold text-foreground">
+                    {value}%
+                  </span>
+                </div>
+                <ProgressBar
+                  label=""
+                  value={value}
+                  max={100}
+                  color={color}
+                  showPercentage={false}
+                />
+              </div>
+            ))}
+          </div>
+        </GlassCard>
+      </section>
+
+      {/* ── 5. Team & activity ─────────────────────────────────────── */}
+      <section aria-label="Team and activity" className="grid gap-5 lg:grid-cols-2">
+
+        {/* Team status */}
+        <GlassCard
+          icon={UserCheck}
+          title="Team On Duty"
+          subtitle={`${teamStatus.totalMembers} active member${teamStatus.totalMembers !== 1 ? "s" : ""}`}
+          accentVar="--chart-3"
+        >
+          {teamStatus.members.length > 0 ? (
+            <ul className="space-y-1" role="list">
+              {teamStatus.members.map((member) => (
+                <li
+                  key={member.id}
+                  className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-muted/30 transition-colors"
+                >
+                  {member.avatar ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={member.avatar}
+                      alt={member.name}
+                      className="h-9 w-9 rounded-full object-cover flex-shrink-0 ring-2 ring-border"
+                    />
+                  ) : (
+                    <div
+                      className="h-9 w-9 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
+                      style={{
+                        background:
+                          "linear-gradient(135deg, hsl(var(--chart-3)), hsl(var(--chart-2)))",
+                      }}
+                    >
+                      {member.name.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground truncate">
+                      {member.name}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {member.role}
+                    </p>
+                  </div>
+                  {/* Online indicator */}
+                  <div
+                    className="h-2.5 w-2.5 rounded-full flex-shrink-0 animate-pulse"
+                    style={{ background: "hsl(var(--chart-2))" }}
+                    title="Online"
+                  />
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-10 text-muted-foreground">
+              <Users className="h-10 w-10 mb-2 opacity-25" />
+              <p className="text-sm">No team members found</p>
+            </div>
+          )}
+        </GlassCard>
+
+        {/* Recent activity */}
+        <GlassCard
+          icon={Activity}
+          title="Recent Activity"
+          subtitle="Latest clinic events"
+          accentVar="--primary"
+        >
+          {activityItems.length > 0 ? (
+            <ActivityLog items={activityItems} />
+          ) : (
+            <div className="flex flex-col items-center justify-center py-10 text-muted-foreground">
+              <Activity className="h-10 w-10 mb-2 opacity-25" />
+              <p className="text-sm">No recent activity</p>
+            </div>
+          )}
+        </GlassCard>
+      </section>
+
+      {/* ── 6. Status footer ──────────────────────────────────────── */}
+      <footer aria-label="Dashboard status">
+        <div
+          className="glassmorphic-card-sm rounded-xl border px-5 py-3.5 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between"
+          style={{
+            borderColor: "hsl(var(--color-border-light))",
+            background:
+              "linear-gradient(135deg, hsl(var(--primary) / 0.04) 0%, hsl(var(--chart-2) / 0.04) 100%)",
+          }}
+        >
+          <p
+            className="text-xs font-semibold uppercase tracking-wider"
+            style={{ color: "hsl(var(--primary))" }}
+          >
+            Live Dashboard
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {schedule.upcomingCount} scheduled&ensp;·&ensp;
+            {workload.activeConsultations} active&ensp;·&ensp;
+            {totalDiagnostics} diagnostics pending&ensp;·&ensp;
+            Last updated {format(new Date(), "HH:mm")}
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }

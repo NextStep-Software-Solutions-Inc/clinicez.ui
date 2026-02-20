@@ -51,7 +51,7 @@ export function PreAssessmentNoteDialog({
       appointmentId,
       clinicUid,
       assessment,
-      homeInstructions: homeInstructions || undefined,
+      homeInstructions: homeInstructions.trim() ? homeInstructions : undefined,
       remarks,
     });
     setIsPending(false);

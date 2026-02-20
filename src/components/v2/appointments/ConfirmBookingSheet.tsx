@@ -185,7 +185,11 @@ export function ConfirmBookingSheet({
                     hp.HPProfile?.name ??
                     `${hp.User.firstName ?? ""} ${hp.User.lastName ?? ""}`.trim();
                   return (
-                    <SelectItem key={hp.id} value={String(hp.id)}>
+                    <SelectItem
+                      key={hp.id}
+                      value={String(hp.id)}
+                      aria-label={`${hp.HPProfile?.title ? hp.HPProfile.title + " " : ""}${name}${hp.HPType?.name ? " - " + hp.HPType.name : ""}`}
+                    >
                       <span className="flex items-center gap-1.5">
                         <Stethoscope className="h-3.5 w-3.5 text-muted-foreground" />
                         {hp.HPProfile?.title ? `${hp.HPProfile.title} ` : ""}

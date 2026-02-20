@@ -346,8 +346,8 @@ export function AppointmentDetailSheet({
                     <Button
                       size="sm"
                       className="gap-1.5 bg-teal-600 hover:bg-teal-700 text-white"
-                      disabled={isPending}
-                      onClick={() => handleAcceptRouting(activeRouting.routingCode ?? "")}
+                      disabled={isPending || !activeRouting.routingCode}
+                      onClick={() => activeRouting.routingCode && handleAcceptRouting(activeRouting.routingCode)}
                     >
                       <CheckCircle className="h-4 w-4" />
                       Accept Assignment
@@ -356,8 +356,8 @@ export function AppointmentDetailSheet({
                       size="sm"
                       variant="destructive"
                       className="gap-1.5"
-                      disabled={isPending}
-                      onClick={() => handleDeclineRouting(activeRouting.routingCode ?? "")}
+                      disabled={isPending || !activeRouting.routingCode}
+                      onClick={() => activeRouting.routingCode && handleDeclineRouting(activeRouting.routingCode)}
                     >
                       <XCircle className="h-4 w-4" />
                       Decline Assignment

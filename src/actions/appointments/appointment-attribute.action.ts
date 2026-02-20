@@ -124,6 +124,64 @@ export const completeAppointmentAction = withErrorHandling(async (formData: Form
   return "An error occurred while completing appointment."
 })
 
+type ConfirmAppointmentBookingPayload = {
+  appointmentId: number;
+  modeId: number;
+  typeId: number;
+  serviceId: number;
+  hpId?: number;
+  date?: Date;
+  timeStart?: string;
+  timeEnd?: string;
+};
+
+export const confirmAppointmentBookingAction = withErrorHandling(async (payload: ConfirmAppointmentBookingPayload) => {
+  const session = await getCachedSession();
+  if (!session) throw new Error("User not authenticated.");
+
+  const myPermissions = await getPermissionsAction({ userId: session.user.sub });
+  const requiredPermissions = [PERMISSIONS.CLINIC["RECEIVE:CLINIC:APPOINTMENT"].name];
+  const myPermissionArray = myPermissions.map(permission => permission.name);
+  const canReceiveAppointment = requiredPermissions.some(permission => myPermissionArray.includes(permission));
+
+  if (!canReceiveAppointment) throw new Error("You do not have permission to confirm appointment booking.");
+
+  const { appointmentId, modeId, typeId, serviceId, hpId, date, timeStart, timeEnd } = payload;
+
+  await prismaClient.$transaction(async (tx) => {
+    await tx.appointmentAttribute.update({
+      where: { appointmentId },
+      data: {
+        modeId,
+        typeId,
+        serviceId,
+        date: date ?? null,
+        timeStart: timeStart ?? null,
+        timeEnd: timeEnd ?? null,
+        status: hpId ? "ROUTED" : "RECEIVED",
+        receivedAt: new Date(),
+        ReceivedBy: { connect: { userId: session.user.sub } },
+      },
+    });
+
+    if (hpId) {
+      await tx.appointmentRouting.create({
+        data: {
+          RoutedBy: { connect: { userId: session.user.sub } },
+          RoutedTo: { connect: { id: hpId } },
+          Appointment: { connect: { id: appointmentId } },
+          status: "PENDING",
+        },
+      });
+    }
+  });
+
+  return { message: "Appointment booking confirmed", data: undefined };
+}, async (error) => {
+  if (error instanceof Error) return error.message;
+  return "An error occurred while confirming appointment booking.";
+});
+
 export const rejectAppointmentAction = withErrorHandling(async (formData: FormData) => {
 
   const session = await getCachedSession();

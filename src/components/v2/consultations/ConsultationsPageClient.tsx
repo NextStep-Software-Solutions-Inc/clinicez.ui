@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useCallback } from "react";
+import { useState, useTransition, useCallback, useEffect } from "react";
 import { ClipboardPlus, Stethoscope, Clock, CheckCircle2, Archive } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -79,11 +79,12 @@ export default function ConsultationsPageClient({
   );
 
   // Auto-load first consultation on mount
-  const [initialized, setInitialized] = useState(false);
-  if (!initialized && initialConsultations[0]?.id) {
-    setInitialized(true);
-    loadDetail(initialConsultations[0].id);
-  }
+  useEffect(() => {
+    if (initialConsultations[0]?.id) {
+      loadDetail(initialConsultations[0].id);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleCreated = (newTicket: Consultation) => {
     setConsultations((prev) => [newTicket, ...prev]);

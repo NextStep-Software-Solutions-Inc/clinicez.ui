@@ -36,6 +36,10 @@ export default async function PatientConsultationsPage({ params }: Consultations
 
   if (!patient) notFound();
 
+  if (!patient.clinicPatientId) {
+    throw new Error("Patient is not linked to this clinic");
+  }
+
   const consultationsResult = await getPatientConsultationsAction({
     clinicUid,
     patientUserId: patient.userId,
@@ -53,7 +57,7 @@ export default async function PatientConsultationsPage({ params }: Consultations
         clinicUid={clinicUid}
         patient={{
           id: patient.id,
-          clinicPatientId: patient.clinicPatientId ?? 0,
+          clinicPatientId: patient.clinicPatientId,
           userId: patient.userId,
           fullName: patient.fullName,
           dob: patient.dob,

@@ -127,7 +127,7 @@ export default function NewConsultationDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <div onClick={() => setOpen(true)} role="button" tabIndex={0} onKeyDown={(e) => e.key === "Enter" && setOpen(true)}>
+      <div onClick={() => setOpen(true)} role="button" tabIndex={0} onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && setOpen(true)}>
         {children}
       </div>
       <DialogContent className="sm:max-w-md">

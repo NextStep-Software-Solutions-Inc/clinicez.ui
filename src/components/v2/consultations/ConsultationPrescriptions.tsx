@@ -348,6 +348,24 @@ export default function ConsultationPrescriptions({
   );
 }
 
+function formatMedicineDetails(med: {
+  dosage?: string | null;
+  frequency?: string | null;
+  unit?: string | null;
+  duration?: number | null;
+  qty?: number | null;
+}): string {
+  return [
+    med.dosage,
+    med.frequency,
+    med.unit,
+    med.duration ? `${med.duration}d` : null,
+    med.qty ? `Qty: ${med.qty}` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+}
+
 function PrescriptionCard({
   rx,
   expanded,
@@ -406,10 +424,8 @@ function PrescriptionCard({
               >
                 <div className="min-w-0">
                   <p className="font-medium text-foreground">{med.name}</p>
-                  <p className="text-muted-foreground">
-                    {[med.dosage, med.frequency, med.unit && `${med.unit}`, med.duration && `${med.duration}d`, med.qty && `Qty: ${med.qty}`]
-                      .filter(Boolean)
-                      .join(" · ")}
+                   <p className="text-muted-foreground">
+                    {formatMedicineDetails(med)}
                   </p>
                   {med.notes && <p className="text-muted-foreground/70 italic">{med.notes}</p>}
                 </div>

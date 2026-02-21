@@ -302,6 +302,7 @@ export const getClinicLabProceduresAction = withErrorHandling(
     const session = await getCachedSession();
     if (!session) throw new Error("Unauthorized");
 
+    const sanitizedSearch = search?.trim().slice(0, 100);
     const clinic = await prisma.clinic.findUnique({ where: { clinicUid }, select: { id: true } });
     if (!clinic) throw new Error("Clinic not found");
 
@@ -309,7 +310,7 @@ export const getClinicLabProceduresAction = withErrorHandling(
       where: {
         clinicId: clinic.id,
         isActive: true,
-        ...(search ? { name: { contains: search, mode: "insensitive" } } : {}),
+        ...(sanitizedSearch ? { name: { contains: sanitizedSearch, mode: "insensitive" } } : {}),
       },
       take: 50,
       select: {
@@ -329,6 +330,7 @@ export const getClinicImagingProceduresAction = withErrorHandling(
     const session = await getCachedSession();
     if (!session) throw new Error("Unauthorized");
 
+    const sanitizedSearch = search?.trim().slice(0, 100);
     const clinic = await prisma.clinic.findUnique({ where: { clinicUid }, select: { id: true } });
     if (!clinic) throw new Error("Clinic not found");
 
@@ -336,7 +338,7 @@ export const getClinicImagingProceduresAction = withErrorHandling(
       where: {
         clinicId: clinic.id,
         isActive: true,
-        ...(search ? { name: { contains: search, mode: "insensitive" } } : {}),
+        ...(sanitizedSearch ? { name: { contains: sanitizedSearch, mode: "insensitive" } } : {}),
       },
       take: 50,
       select: {

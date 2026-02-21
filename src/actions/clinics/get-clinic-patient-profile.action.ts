@@ -239,6 +239,7 @@ export async function getClinicPatientProfileAction({
         return {
             // Demographics
             id: patient.id,
+            clinicPatientId: clinicPatientRecord.id,
             userId: patient.userId,
             firstName: patient.firstName,
             lastName: patient.lastName,

@@ -12,7 +12,9 @@ import {
   CheckCircle2,
   AlertCircle,
   Info,
+  ExternalLink,
 } from "lucide-react";
+import Link from "next/link";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -142,11 +144,21 @@ export default function ConsultationWorkspace({
               )}
             </div>
             <div className="flex items-center gap-4 mt-1.5 flex-wrap">
-              {/* Patient name from prop or appointment requester */}
+              {/* Patient name + profile link */}
               {patient?.fullName && (
                 <span className="flex items-center gap-1 text-xs text-muted-foreground">
                   <User className="h-3.5 w-3.5" />
                   {patient.fullName}
+                  <Link
+                    href={`/v2/clinic/${clinicUid}/patients/${patient.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="ml-0.5 inline-flex items-center gap-0.5 text-primary hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary rounded"
+                    title="View patient profile"
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                    <span className="sr-only">View patient profile</span>
+                  </Link>
                 </span>
               )}
               {apt?.AppointmentAttribute?.date && (

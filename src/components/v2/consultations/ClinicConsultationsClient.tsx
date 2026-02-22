@@ -413,9 +413,7 @@ export default function ClinicConsultationsClient({
 
         {/* ── Right Panel: Workspace ── */}
         <main
-          className={`flex-1 overflow-hidden ${
-            mobileView === "list" ? "hidden md:flex" : "flex"
-          }`}
+          className={`flex-1 overflow-hidden`}
         >
           {loadingDetail ? (
             <div className="flex items-center justify-center h-full w-full">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useTransition } from "react";
+import { useState, useEffect, useRef, useTransition, useCallback } from "react";
 import { Users, Search, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
@@ -115,12 +115,13 @@ export function ClinicPatientsClient({ clinicUid }: ClinicPatientsClientProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clinicUid, debouncedSearch, gender]);
 
-  const handleLoadMore = () => {
+  const handleLoadMore = useCallback(() => {
     if (!nextCursor || isPending) return;
     startTransition(async () => {
       await fetchPatients(nextCursor, true);
     });
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nextCursor, isPending]);
 
   // Infinite scroll via IntersectionObserver
   useEffect(() => {
@@ -137,8 +138,7 @@ export function ClinicPatientsClient({ clinicUid }: ClinicPatientsClientProps) {
     return () => {
       if (target) observer.unobserve(target);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasMore, isPending]);
+  }, [hasMore, isPending, handleLoadMore]);
 
   return (
     <div className="flex flex-col h-full rounded-[0.5rem] border bg-background shadow">

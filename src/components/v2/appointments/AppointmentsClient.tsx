@@ -421,6 +421,7 @@ export function AppointmentsClient({
       {/* Detail sheet — hidden when a sub-panel is active */}
       <AppointmentDetailSheet
         appointment={activePanel === "detail" ? selectedAppointment : null}
+        clinicUid={clinicUid}
         currentUserHpIds={currentUserHpIds}
         onClose={closeAll}
         onRefresh={refresh}

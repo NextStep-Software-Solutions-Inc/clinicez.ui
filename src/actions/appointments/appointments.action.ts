@@ -1200,6 +1200,7 @@ export const getAppointmentCountsAction = withErrorHandling(cache(async (clinicU
         select: {
           User: {
             select: {
+              id: true,
               userId: true,
               firstName: true,
               middleName: true,

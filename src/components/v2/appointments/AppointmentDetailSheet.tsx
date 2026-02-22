@@ -19,6 +19,7 @@ import {
   ChevronDown,
   ChevronUp,
   FileText,
+  ExternalLink,
 } from "lucide-react";
 import {
   Sheet,
@@ -58,6 +59,7 @@ type PreAssessmentNote = NonNullable<NonNullable<GetPreAssessmentNotes["data"]>[
 
 interface AppointmentDetailSheetProps {
   appointment: Appointment | null;
+  clinicUid: string;
   currentUserHpIds: number[];
   onClose: () => void;
   onRefresh: () => void;
@@ -66,6 +68,7 @@ interface AppointmentDetailSheetProps {
 
 export function AppointmentDetailSheet({
   appointment,
+  clinicUid,
   currentUserHpIds,
   onClose,
   onRefresh,
@@ -287,6 +290,17 @@ export function AppointmentDetailSheet({
                 )}
               </div>
             </div>
+            {!isWalkIn && requester?.id && (
+              <a
+                href={`/v2/clinic/${clinicUid}/patients/${requester.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+                View Patient Profile
+              </a>
+            )}
           </div>
 
           {/* Appointment Info */}

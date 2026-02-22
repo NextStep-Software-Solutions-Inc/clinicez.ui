@@ -1,5 +1,3 @@
-@import './globals.css';
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -26,154 +24,28 @@
    1. DESIGN TOKENS - Semantic Color System & Typography Scale
    ============================================================================ */
 
+/* Patient Dashboard - Uses globals.css variables exclusively */
 :root {
-  /* ─────────────────────────────────────────────────────────────────────── */
-  /* Semantic Color Palette - Following shadcn Design System */
-  /* ─────────────────────────────────────────────────────────────────────── */
-  
-  /* Appointment Card (Blue) */
-  --color-appointment: oklch(55% 0.22 264);
-  --color-appointment-light: oklch(92% 0.04 264);
-  --color-appointment-dark: oklch(40% 0.18 264);
-  --color-appointment-accent: oklch(70% 0.15 264);
-  
-  /* Vitals/Health Metrics (Green/Emerald) */
-  --color-health: oklch(55% 0.2 142);
-  --color-health-light: oklch(92% 0.03 142);
-  --color-health-dark: oklch(40% 0.15 142);
-  --color-health-accent: oklch(70% 0.12 142);
-  
-  /* Medications (Teal) */
-  --color-medication: oklch(55% 0.18 215);
-  --color-medication-light: oklch(92% 0.03 215);
-  --color-medication-dark: oklch(40% 0.14 215);
-  --color-medication-accent: oklch(70% 0.11 215);
-  
-  /* Labs/Diagnostics (Purple) */
-  --color-lab: oklch(55% 0.2 290);
-  --color-lab-light: oklch(92% 0.04 290);
-  --color-lab-dark: oklch(40% 0.16 290);
-  --color-lab-accent: oklch(70% 0.14 290);
-  
-  /* Status Colors */
-  --color-success: oklch(65% 0.2 142);
-  --color-warning: oklch(70% 0.2 70);
-  --color-danger: oklch(60% 0.2 20);
-  --color-info: oklch(65% 0.15 260);
-  
-  /* Neutral Colors - Light Mode (Default) */
-  --color-bg-primary: hsl(0 0% 100%);
-  --color-bg-secondary: hsl(0 0% 97%);
-  --color-bg-tertiary: hsl(0 0% 94%);
-  --color-bg-hover: hsl(0 0% 91%);
-  --color-bg-active: hsl(0 0% 88%);
-  
-  --color-text-primary: hsl(240 10% 8%);
-  --color-text-secondary: hsl(240 5% 30%);
-  --color-text-muted: hsl(240 3% 50%);
-  --color-text-disabled: hsl(240 2% 65%);
-  
-  --color-border: hsl(240 5% 85%);
-  --color-border-light: hsl(240 5% 92%);
-  
-  /* Light Mode Pattern - Continuous Live ECG Graph with rose/pink and green lines */
+  /* Background patterns for patient dashboard */
   --pattern-primary: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="120"><defs><pattern id="liveecg" width="400" height="120" patternUnits="userSpaceOnUse"><line x1="0" y1="60" x2="400" y2="60" stroke="rgba(196, 181, 253, 0.08)" stroke-width="0.8"/><path d="M 0 60 L 15 60 L 20 35 L 25 60 L 30 60 L 35 48 L 40 75 L 45 60 L 60 60 L 65 50 L 70 60 L 85 60 L 90 52 L 95 60 L 110 60 L 115 35 L 120 60 L 125 60 L 130 48 L 135 75 L 140 60 L 155 60 L 160 50 L 165 60 L 180 60 L 185 52 L 190 60 L 200 60 L 215 60 L 220 35 L 225 60 L 230 60 L 235 48 L 240 75 L 245 60 L 260 60 L 265 50 L 270 60 L 285 60 L 290 52 L 295 60 L 310 60 L 315 35 L 320 60 L 325 60 L 330 48 L 335 75 L 340 60 L 355 60 L 360 50 L 365 60 L 380 60 L 385 52 L 390 60 L 400 60" fill="none" stroke="rgba(236, 72, 153, 0.20)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M 0 85 L 25 85 L 30 65 L 35 85 L 50 85 L 55 72 L 60 85 L 75 85 L 80 78 L 85 85 L 100 85 L 125 85 L 130 65 L 135 85 L 150 85 L 155 72 L 160 85 L 175 85 L 180 78 L 185 85 L 200 85 L 225 85 L 230 65 L 235 85 L 250 85 L 255 72 L 260 85 L 275 85 L 280 78 L 285 85 L 300 85 L 325 85 L 330 65 L 335 85 L 350 85 L 355 72 L 360 85 L 375 85 L 380 78 L 385 85 L 400 85" fill="none" stroke="rgba(16, 185, 129, 0.12)" stroke-width="1" stroke-linecap="round"/></pattern></defs><rect width="100%" height="100%" fill="url(%23liveecg)"/></svg>');
   --pattern-secondary: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="150" height="100"><defs><pattern id="vitals" width="150" height="100" patternUnits="userSpaceOnUse"><circle cx="20" cy="25" r="2" fill="rgba(0,0,0,0.08)"/><circle cx="70" cy="25" r="2" fill="rgba(0,0,0,0.08)"/><circle cx="120" cy="25" r="2" fill="rgba(0,0,0,0.08)"/><circle cx="35" cy="60" r="2" fill="rgba(0,0,0,0.08)"/><circle cx="105" cy="60" r="2" fill="rgba(0,0,0,0.08)"/><line x1="20" y1="25" x2="70" y2="25" stroke="rgba(0,0,0,0.05)" stroke-width="0.8"/><line x1="70" y1="25" x2="120" y2="25" stroke="rgba(0,0,0,0.05)" stroke-width="0.8"/><path d="M 10 50 L 140 50" stroke="rgba(0,0,0,0.04)" stroke-width="1" stroke-dasharray="4,3"/></pattern></defs><rect width="100%" height="100%" fill="url(%23vitals)"/></svg>');
-  
-  /* ─────────────────────────────────────────────────────────────────────── */
-  /* Spacing Scale - 4px base unit */
-  /* ─────────────────────────────────────────────────────────────────────── */
-  --spacing-xs: 0.25rem;   /* 4px */
-  --spacing-sm: 0.5rem;    /* 8px */
-  --spacing-md: 1rem;      /* 16px */
-  --spacing-lg: 1.5rem;    /* 24px */
-  --spacing-xl: 2rem;      /* 32px */
-  --spacing-2xl: 3rem;     /* 48px */
-  --spacing-3xl: 4rem;     /* 64px */
-  
-  /* ─────────────────────────────────────────────────────────────────────── */
-  /* Typography Scale */
-  /* ─────────────────────────────────────────────────────────────────────── */
-  --font-size-xs: 0.75rem;     /* 12px */
-  --font-size-sm: 0.875rem;    /* 14px */
-  --font-size-base: 1rem;      /* 16px */
-  --font-size-lg: 1.125rem;    /* 18px */
-  --font-size-xl: 1.25rem;     /* 20px */
-  --font-size-2xl: 1.5rem;     /* 24px */
-  --font-size-3xl: 1.875rem;   /* 30px */
-  --font-size-4xl: 2.25rem;    /* 36px */
-  
-  --font-weight-normal: 400;
-  --font-weight-medium: 500;
-  --font-weight-semibold: 600;
-  --font-weight-bold: 700;
-  
-  --line-height-tight: 1.25;
-  --line-height-normal: 1.5;
-  --line-height-relaxed: 1.75;
-  
-  /* ─────────────────────────────────────────────────────────────────────── */
-  /* Border & Radius */
-  /* ─────────────────────────────────────────────────────────────────────── */
-  --radius-sm: 0.375rem;   /* 6px */
-  --radius-md: 0.5rem;     /* 8px */
-  --radius-lg: 0.75rem;    /* 12px */
-  --radius-xl: 1rem;       /* 16px */
-  --radius-2xl: 1.5rem;    /* 24px */
-  
-  /* ─────────────────────────────────────────────────────────────────────── */
-  /* Shadows */
-  /* ─────────────────────────────────────────────────────────────────────── */
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
-  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1);
-  
-  /* ─────────────────────────────────────────────────────────────────────── */
-  /* Z-Index Scale */
-  /* ─────────────────────────────────────────────────────────────────────── */
-  --z-dropdown: 40;
-  --z-sticky: 30;
-  --z-fixed: 20;
-  --z-modal-backdrop: 40;
-  --z-modal: 50;
-  --z-tooltip: 60;
-  --z-notification: 70;
-  
-  /* ─────────────────────────────────────────────────────────────────────── */
-  /* Animation Timing */
-  /* ─────────────────────────────────────────────────────────────────────── */
-  --duration-fast: 150ms;
-  --duration-base: 200ms;
-  --duration-slow: 300ms;
-  --duration-slower: 500ms;
-  --ease-in: cubic-bezier(0.4, 0, 1, 1);
-  --ease-out: cubic-bezier(0, 0, 0.2, 1);
-  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Gradient orb colors for animated background */
+  --color-appointment-light: rgb(236, 72, 153);  /* Pink/Appointment */
+  --color-health-light: rgb(16, 185, 129);       /* Teal/Health */
+  --color-medication-light: rgb(168, 85, 247);   /* Purple/Medication */
 }
 
-/* ─────────────────────────────────────────────────────────────────────── */
-/* Dark Mode Overrides - Using `.dark` class selector */
-/* ─────────────────────────────────────────────────────────────────────── */
-.dark {
-  /* Neutral Colors - Dark Mode */
-  --color-bg-primary: hsl(240 10% 10%);
-  --color-bg-secondary: hsl(240 8% 16%);
-  --color-bg-tertiary: hsl(240 8% 22%);
-  --color-bg-hover: hsl(240 8% 28%);
-  --color-bg-active: hsl(240 8% 34%);
-  
-  --color-text-primary: hsl(0 0% 98%);
-  --color-text-secondary: hsl(240 5% 78%);
-  --color-text-muted: hsl(240 3% 55%);
-  --color-text-disabled: hsl(240 2% 40%);
-  
-  --color-border: hsl(240 5% 25%);
-  --color-border-light: hsl(240 5% 20%);
-  
-  /* Pattern background for dark mode - Continuous Live ECG Graph with subtle white lines */
+/* Dark mode overrides - Pattern backgrounds */
+.dark,
+[data-theme="dark"] {
   --pattern-primary: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="120"><defs><pattern id="liveecg" width="400" height="120" patternUnits="userSpaceOnUse"><line x1="0" y1="60" x2="400" y2="60" stroke="rgba(255,255,255,0.015)" stroke-width="0.8"/><path d="M 0 60 L 15 60 L 20 35 L 25 60 L 30 60 L 35 48 L 40 75 L 45 60 L 60 60 L 65 50 L 70 60 L 85 60 L 90 52 L 95 60 L 110 60 L 115 35 L 120 60 L 125 60 L 130 48 L 135 75 L 140 60 L 155 60 L 160 50 L 165 60 L 180 60 L 185 52 L 190 60 L 200 60 L 215 60 L 220 35 L 225 60 L 230 60 L 235 48 L 240 75 L 245 60 L 260 60 L 265 50 L 270 60 L 285 60 L 290 52 L 295 60 L 310 60 L 315 35 L 320 60 L 325 60 L 330 48 L 335 75 L 340 60 L 355 60 L 360 50 L 365 60 L 380 60 L 385 52 L 390 60 L 400 60" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M 0 85 L 25 85 L 30 65 L 35 85 L 50 85 L 55 72 L 60 85 L 75 85 L 80 78 L 85 85 L 100 85 L 125 85 L 130 65 L 135 85 L 150 85 L 155 72 L 160 85 L 175 85 L 180 78 L 185 85 L 200 85 L 225 85 L 230 65 L 235 85 L 250 85 L 255 72 L 260 85 L 275 85 L 280 78 L 285 85 L 300 85 L 325 85 L 330 65 L 335 85 L 350 85 L 355 72 L 360 85 L 375 85 L 380 78 L 385 85 L 400 85" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1" stroke-linecap="round"/></pattern></defs><rect width="100%" height="100%" fill="url(%23liveecg)"/></svg>');
   --pattern-secondary: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="150" height="100"><defs><pattern id="vitals" width="150" height="100" patternUnits="userSpaceOnUse"><circle cx="20" cy="25" r="2" fill="rgba(100,200,255,0.3)"/><circle cx="70" cy="25" r="2" fill="rgba(0,200,200,0.3)"/><circle cx="120" cy="25" r="2" fill="rgba(147,112,219,0.3)"/><circle cx="35" cy="60" r="2" fill="rgba(100,200,255,0.3)"/><circle cx="105" cy="60" r="2" fill="rgba(255,100,130,0.3)"/><line x1="20" y1="25" x2="70" y2="25" stroke="rgba(100,200,255,0.25)" stroke-width="0.8"/><line x1="70" y1="25" x2="120" y2="25" stroke="rgba(100,200,255,0.25)" stroke-width="0.8"/><path d="M 10 50 L 140 50" stroke="rgba(147,112,219,0.2)" stroke-width="1" stroke-dasharray="4,3"/></pattern></defs><rect width="100%" height="100%" fill="url(%23vitals)"/></svg>');
+
+  /* Gradient orb colors for dark mode - slightly brighter */
+  --color-appointment-light: rgb(244, 114, 182);  /* Lighter pink */
+  --color-health-light: rgb(32, 211, 184);        /* Lighter teal */
+  --color-medication-light: rgb(196, 124, 255);   /* Lighter purple */
 }
 
 /* ============================================================================
@@ -389,136 +261,18 @@ body {
    ============================================================================ */
 
 /* ─────────────────────────────────────────────────────────────────────── */
-/* Appointment Card Design Token */
-/* ─────────────────────────────────────────────────────────────────────── */
-.card-appointment {
-  --card-color-bg: var(--color-appointment-light);
-  --card-color-border: var(--color-appointment);
-  --card-color-accent: var(--color-appointment-accent);
-  --card-color-text: var(--color-appointment-dark);
-}
-
-.dark .card-appointment {
-  --card-color-bg: color-mix(in srgb, var(--color-appointment) 10%, transparent);
-  --card-color-border: color-mix(in srgb, var(--color-appointment) 30%, transparent);
-  --card-color-text: color-mix(in srgb, var(--color-appointment) 100%, transparent);
-}
-
-/* ─────────────────────────────────────────────────────────────────────── */
-/* Health/Vitals Card Design Token */
-/* ─────────────────────────────────────────────────────────────────────── */
-.card-health {
-  --card-color-bg: var(--color-health-light);
-  --card-color-border: var(--color-health);
-  --card-color-accent: var(--color-health-accent);
-  --card-color-text: var(--color-health-dark);
-}
-
-.dark .card-health {
-  --card-color-bg: color-mix(in srgb, var(--color-health) 10%, transparent);
-  --card-color-border: color-mix(in srgb, var(--color-health) 30%, transparent);
-  --card-color-text: color-mix(in srgb, var(--color-health) 100%, transparent);
-}
-
-/* ─────────────────────────────────────────────────────────────────────── */
-/* Medication Card Design Token */
-/* ─────────────────────────────────────────────────────────────────────── */
-.card-medication {
-  --card-color-bg: var(--color-medication-light);
-  --card-color-border: var(--color-medication);
-  --card-color-accent: var(--color-medication-accent);
-  --card-color-text: var(--color-medication-dark);
-}
-
-.dark .card-medication {
-  --card-color-bg: color-mix(in srgb, var(--color-medication) 10%, transparent);
-  --card-color-border: color-mix(in srgb, var(--color-medication) 30%, transparent);
-  --card-color-text: color-mix(in srgb, var(--color-medication) 100%, transparent);
-}
-
-/* ─────────────────────────────────────────────────────────────────────── */
-/* Lab/Diagnostics Card Design Token */
-/* ─────────────────────────────────────────────────────────────────────── */
-.card-lab {
-  --card-color-bg: var(--color-lab-light);
-  --card-color-border: var(--color-lab);
-  --card-color-accent: var(--color-lab-accent);
-  --card-color-text: var(--color-lab-dark);
-}
-
-.dark .card-lab {
-  --card-color-bg: color-mix(in srgb, var(--color-lab) 10%, transparent);
-  --card-color-border: color-mix(in srgb, var(--color-lab) 30%, transparent);
-  --card-color-text: color-mix(in srgb, var(--color-lab) 100%, transparent);
-}
-
-/* ─────────────────────────────────────────────────────────────────────── */
-/* Base Card Styling with Design Tokens */
+/* Base Card Styling */
+/* Uses standard Tailwind classes in components */
 /* ─────────────────────────────────────────────────────────────────────── */
 .dashboard-card {
-  background-color: var(--card-color-bg, var(--color-bg-secondary));
-  border: 1px solid var(--card-color-border, var(--color-border));
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-lg);
-  transition: all var(--duration-base) var(--ease-out);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08),
-              0 4px 16px rgba(0, 0, 0, 0.06);
-  backdrop-filter: blur(0.5px);
+  @apply bg-card border border-border rounded-lg p-6 transition-all shadow-sm;
 }
 
 .dashboard-card:hover {
-  border-color: var(--card-color-accent, var(--color-border));
-  box-shadow: 0 4px 12px color-mix(in srgb, var(--card-color-accent, var(--color-border)) 20%, transparent),
-              0 12px 28px rgba(0, 0, 0, 0.12);
-  transform: translateY(-2px);
+  @apply shadow-md -translate-y-0.5;
 }
 
-.dark .dashboard-card {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4),
-              0 4px 16px rgba(0, 0, 0, 0.3);
-}
-
-.dark .dashboard-card:hover {
-  box-shadow: 0 4px 12px color-mix(in srgb, var(--card-color-accent, var(--color-border)) 30%, transparent),
-              0 12px 28px rgba(0, 0, 0, 0.5);
-}
-
-/* ─────────────────────────────────────────────────────────────────────── */
-/* Glassmorphic Sidebar Cards - Upcoming, Lab Work, etc. */
-/* Matches VitalsGrid styling for visual consistency */
-/* ─────────────────────────────────────────────────────────────────────── */
-.glassmorphic-card {
-  background: linear-gradient(135deg, 
-    rgba(226, 232, 240, 0.6) 0%,
-    rgba(255, 255, 255, 0.4) 100%);
-  border: 1px solid rgb(226, 232, 240);
-  border-radius: 0.75rem; /* rounded-xl */
-  padding: 1rem; /* p-4 */
-  backdrop-filter: blur(4px); /* backdrop-blur-sm */
-  -webkit-backdrop-filter: blur(4px);
-  transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
-}
-
-.glassmorphic-card:hover {
-  border-color: rgb(226, 232, 240);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
-  transform: translateY(0);
-}
-
-.dark .glassmorphic-card {
-  background: linear-gradient(135deg,
-    rgba(15, 23, 42, 0.5) 0%,
-    rgba(30, 41, 59, 0.5) 100%);
-  border-color: rgba(255, 255, 255, 0.1);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
-}
-
-.dark .glassmorphic-card:hover {
-  border-color: rgba(255, 255, 255, 0.1);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
-}
-
+/* Dark mode shadows handled by Tailwind */
 /* ============================================================================
    4. ACCESSIBILITY - A11y Enhancements
    ============================================================================ */

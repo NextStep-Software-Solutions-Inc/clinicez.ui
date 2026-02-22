@@ -4,6 +4,8 @@ import { getOrganizationsV2Action } from "@/actions/organizations/organization.a
 import Suspend from "@/components/Suspend";
 import HeroBackground from "@/components/HeroBackground";
 
+export const dynamic = "force-dynamic";
+
 export default async function OrganizationsPage() {
   const orgs = await getOrganizationsV2Action();
 

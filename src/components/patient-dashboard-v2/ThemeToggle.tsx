@@ -1,37 +1,21 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { UserButton } from '@clerk/nextjs'; 
-import { dark } from '@clerk/themes';
+import { useEffect, useState } from 'react';
+import { useTheme } from 'next-themes';
 import { ModernUserButton } from '../avatar/ModernUserButton';
 
 export function ThemeToggle() {
-  const [isDark, setIsDark] = useState(true);
+  const { theme, setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    // Check localStorage for saved theme preference
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'light') {
-      setIsDark(false);
-      document.documentElement.classList.remove('dark');
-    } else {
-      setIsDark(true);
-      document.documentElement.classList.add('dark');
-    }
   }, []);
 
+  const isDark = resolvedTheme === 'dark';
+
   const toggleTheme = () => {
-    if (isDark) {
-      setIsDark(false);
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    } else {
-      setIsDark(true);
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    }
+    setTheme(theme === 'dark' ? 'light' : 'dark');
   };
 
   if (!mounted) return null;

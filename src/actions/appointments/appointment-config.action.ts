@@ -19,6 +19,8 @@ type UpsertAppointmentConfig = {
   maxAppointmentsPerClient?: number;
   perClientResetInterval?: number;
   maxAppointmentsPerDay?: number;
+  privacyPolicyUrl?: string;
+  termsAndConditionsUrl?: string;
   clinicUid: string;
 }
 export const upsertClinicAppointmentConfigAction = async (appointmentConfigId: number, data: UpsertAppointmentConfig) => {
@@ -36,11 +38,15 @@ export const upsertClinicAppointmentConfigAction = async (appointmentConfigId: n
         maxAppointmentsPerClient: data.maxAppointmentsPerClient,
         perClientResetInterval: data.perClientResetInterval,
         maxAppointmentsPerDay: data.maxAppointmentsPerDay,
+        privacyPolicyUrl: data.privacyPolicyUrl,
+        termsAndConditionsUrl: data.termsAndConditionsUrl,
       },
       update: {
         maxAppointmentsPerClient: data.maxAppointmentsPerClient,
         perClientResetInterval: data.perClientResetInterval,
         maxAppointmentsPerDay: data.maxAppointmentsPerDay,
+        privacyPolicyUrl: data.privacyPolicyUrl,
+        termsAndConditionsUrl: data.termsAndConditionsUrl,
       }
     });
     return {

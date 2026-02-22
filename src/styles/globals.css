@@ -12,12 +12,12 @@
     --popover-foreground: 175 10% 3.9%;
     --primary: 175 83% 32%;
     --primary-foreground: 355.7 100% 97.3%;
-    --secondary: 175 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
+    --secondary: 195 65% 42%;
+    --secondary-foreground: 0 0% 100%;
     --muted: 175 4.8% 95.9%;
     --muted-foreground: 240 3.8% 46.1%;
-    --accent: 175 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
+    --accent: 20 82% 54%;
+    --accent-foreground: 0 0% 100%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
     --border: 175 5.9% 90%;
@@ -46,27 +46,42 @@
 
     /* v2.0 text colors */
     --label-v2: oklch(49.706% 0.00125 14.712);
+
+    /* Patient Dashboard semantic colors - Light mode */
+    --color-bg-primary: 0 0% 100%;
+    --color-bg-secondary: 0 0% 97%;
+    --color-bg-tertiary: 0 0% 94%;
+    --color-bg-hover: 0 0% 91%;
+    --color-bg-active: 0 0% 88%;
+    
+    --color-text-primary: 240 10% 8%;
+    --color-text-secondary: 240 5% 30%;
+    --color-text-muted: 240 3% 50%;
+    --color-text-disabled: 240 2% 65%;
+    
+    --color-border: 240 5% 85%;
+    --color-border-light: 240 5% 92%;
   }
 
   .dark {
-    --background: 20 14.3% 4.1%;
+    --background: 220 13% 14%;
     --foreground: 0 0% 95%;
-    --card: 24 9.8% 10%;
+    --card: 220 11% 20%;
     --card-foreground: 0 0% 95%;
-    --popover: 0 0% 9%;
+    --popover: 220 11% 16%;
     --popover-foreground: 0 0% 95%;
     --primary: 142.1 70.6% 45.3%;
     --primary-foreground: 144.9 80.4% 10%;
-    --secondary: 240 3.7% 15.9%;
+    --secondary: 220 10% 25%;
     --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 15%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 12 6.5% 15.1%;
+    --muted: 220 9% 30%;
+    --muted-foreground: 220 8% 65%;
+    --accent: 220 8% 34%;
     --accent-foreground: 0 0% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 85.7% 97.3%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
+    --border: 220 10% 25%;
+    --input: 220 11% 20%;
     --ring: 142.4 71.8% 29.2%;
 
     --chart-1: 220 70% 50%;
@@ -81,6 +96,21 @@
     --chart-10: 440 75% 55%;
     --chart-11: 340 65% 75%;
     --chart-12: 210 75% 25%;
+
+    /* Patient Dashboard semantic colors - Dark mode */
+    --color-bg-primary: 220 13% 14%;
+    --color-bg-secondary: 220 11% 20%;
+    --color-bg-tertiary: 220 10% 25%;
+    --color-bg-hover: 220 9% 30%;
+    --color-bg-active: 220 8% 35%;
+    
+    --color-text-primary: 0 0% 98%;
+    --color-text-secondary: 0 0% 75%;
+    --color-text-muted: 0 0% 55%;
+    --color-text-disabled: 0 0% 40%;
+    
+    --color-border: 240 5% 25%;
+    --color-border-light: 240 5% 20%;
   }
 }
 
@@ -199,4 +229,53 @@ body {
   background-size: 100% 40px, 100% 40px, 100% 14px, 100% 14px;
   /* Opera doesn't support this in the shorthand */
   background-attachment: local, local, scroll, scroll;
+}
+
+/* ─────────────────────────────────────────────────────────────────────── */
+/* Glassmorphic Design System - Global Styles */
+/* Frosted glass effect with backdrop blur for modern UI */
+/* ─────────────────────────────────────────────────────────────────────── */
+
+.glassmorphic-card {
+  background: hsla(var(--color-bg-primary), 0.6);
+  border: 1px solid hsl(var(--color-border-light));
+  border-radius: 0.75rem;
+  padding: 1rem;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.08);
+  color: hsl(var(--color-text-primary));
+}
+
+.glassmorphic-card:hover {
+  border-color: hsl(var(--color-border));
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.12);
+}
+
+.dark .glassmorphic-card,
+[data-theme="dark"] .glassmorphic-card {
+  background: hsla(var(--color-bg-primary), 0.5);
+  border-color: hsl(var(--color-border-light));
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+  color: hsl(var(--color-text-primary));
+}
+
+.dark .glassmorphic-card:hover,
+[data-theme="dark"] .glassmorphic-card:hover {
+  border-color: hsl(var(--color-border));
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+}
+
+/* Glassmorphic enhanced variants */
+.glassmorphic-card-lg {
+  padding: 1.5rem;
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+}
+
+.glassmorphic-card-sm {
+  padding: 0.75rem;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }

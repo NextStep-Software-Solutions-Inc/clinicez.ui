@@ -58,6 +58,22 @@ interface LoadedSections {
 interface EditProfileClientProps {
   initialData: PatientHealthRecordsResponse | null
   onDataRefresh?: (data: PatientHealthRecordsResponse) => void
+  /** undefined = render default sticky header; null = hide header entirely; ReactNode = render custom header */
+  headerSlot?: React.ReactNode
+  /** Override the data-refresh function called after each section save. Defaults to getPatientHealthRecords() (authed user). */
+  refreshFn?: () => Promise<PatientHealthRecordsResponse | null>
+}
+
+/** Suspense fallback — defined at module level so React preserves its identity across re-renders */
+function FormLoadingFallback() {
+  return (
+    <div className="space-y-4">
+      <div className="h-4 bg-gradient-to-r from-slate-300 via-slate-200 to-slate-300 dark:from-slate-600 dark:via-slate-500 dark:to-slate-600 rounded w-3/4 animate-shimmer"></div>
+      <div className="h-4 bg-gradient-to-r from-slate-300 via-slate-200 to-slate-300 dark:from-slate-600 dark:via-slate-500 dark:to-slate-600 rounded w-full animate-shimmer"></div>
+      <div className="h-4 bg-gradient-to-r from-slate-300 via-slate-200 to-slate-300 dark:from-slate-600 dark:via-slate-500 dark:to-slate-600 rounded w-5/6 animate-shimmer"></div>
+      <div className="h-10 bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 dark:from-slate-700 dark:via-slate-600 dark:to-slate-700 rounded mt-6 animate-shimmer"></div>
+    </div>
+  )
 }
 
 /**
@@ -65,7 +81,7 @@ interface EditProfileClientProps {
  * Handles all interactive features: navigation, state management, data mutations
  * Server component (page.tsx) handles data fetching and initial load
  */
-export function EditProfileClient({ initialData, onDataRefresh }: EditProfileClientProps) {
+export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refreshFn }: EditProfileClientProps) {
   const router = useRouter()
   const [activeSection, setActiveSection] = useState('demographics')
   const [patientData, setPatientData] = useState<PatientHealthRecordsResponse | null>(initialData)
@@ -202,25 +218,8 @@ export function EditProfileClient({ initialData, onDataRefresh }: EditProfileCli
     timeoutIds.push(setTimeout(() => setupObserver(), 500))
     timeoutIds.push(setTimeout(() => setupObserver(), 1000))
 
-    // Also setup observer on scroll to catch intersection changes
-    const handleScroll = () => {
-      // Re-validate observer setup periodically during scroll
-      sections.forEach((section) => {
-        if (section.ref.current && observer && !observer.disconnect) {
-          try {
-            observer.observe(section.ref.current)
-          } catch (e) {
-            // Silently handle if observer is disconnected
-          }
-        }
-      })
-    }
-
-    window.addEventListener('scroll', handleScroll, { passive: true })
-
     return () => {
       timeoutIds.forEach((id) => clearTimeout(id))
-      window.removeEventListener('scroll', handleScroll)
       if (observer) {
         observer.disconnect()
       }
@@ -244,46 +243,30 @@ export function EditProfileClient({ initialData, onDataRefresh }: EditProfileCli
     [sections],
   )
 
-  // Lazily prepare data only for visible sections to reduce initial load
-  // Data is only computed when section becomes visible, not upfront
-  const getDemographicsData = useCallback(
-    (): DemographicsFormInput | undefined =>
-      activeSection === 'demographics' || loadedSections['demographics']
-        ? mapPatientDataToDemographicsFormInput(patientData)
-        : undefined,
-    [patientData, activeSection, loadedSections],
+  // Memoize mapped form data — only recompute when patientData changes, not on every scroll / activeSection update
+  const demographicsData = useMemo(
+    () => mapPatientDataToDemographicsFormInput(patientData),
+    [patientData],
   )
 
-  const getVitalSignData = useCallback(
-    (): VitalSignFormInput | undefined =>
-      activeSection === 'vital-signs' || loadedSections['vital-signs']
-        ? mapVitalSignToFormInput(patientData?.latestVitals)
-        : undefined,
-    [patientData, activeSection, loadedSections],
+  const vitalSignData = useMemo(
+    () => mapVitalSignToFormInput(patientData?.latestVitals),
+    [patientData],
   )
 
-  const getPersonalHistoryData = useCallback(
-    (): PersonalHistoryFormInput | undefined =>
-      activeSection === 'personal-history' || loadedSections['personal-history']
-        ? mapPersonalHistoryToFormInput(patientData?.personalHistory)
-        : undefined,
-    [patientData, activeSection, loadedSections],
+  const personalHistoryData = useMemo(
+    () => mapPersonalHistoryToFormInput(patientData?.personalHistory),
+    [patientData],
   )
 
-  const getPediatricData = useCallback(
-    (): PediatricMeasurementFormInput | undefined =>
-      activeSection === 'pediatric' || loadedSections['pediatric']
-        ? mapPediatricMeasurementToFormInput(patientData?.pediatricMeasurements)
-        : undefined,
-    [patientData, activeSection, loadedSections],
+  const pediatricData = useMemo(
+    () => mapPediatricMeasurementToFormInput(patientData?.pediatricMeasurements),
+    [patientData],
   )
 
-  const getPhysicalExaminationData = useCallback(
-    (): PhysicalExaminationFormInput | undefined =>
-      activeSection === 'examination' || loadedSections['examination']
-        ? mapPhysicalExaminationToFormInput(patientData?.physicalExaminations)
-        : undefined,
-    [patientData, activeSection, loadedSections],
+  const physicalExaminationData = useMemo(
+    () => mapPhysicalExaminationToFormInput(patientData?.physicalExaminations),
+    [patientData],
   )
 
   // Memoize PhilHealth currentData to prevent unnecessary re-renders and useEffect re-triggers in child component
@@ -311,24 +294,49 @@ export function EditProfileClient({ initialData, onDataRefresh }: EditProfileCli
   const handleSuccess = useCallback(async () => {
     // Fetch fresh data after mutation
     try {
-      const { getPatientHealthRecords } = await import('@/actions/patient-profile/get-patient-health-records')
-      const result = await getPatientHealthRecords()
+      let result: PatientHealthRecordsResponse | null = null
+      if (refreshFn) {
+        result = await refreshFn()
+      } else {
+        const { getPatientHealthRecords } = await import('@/actions/patient-profile/get-patient-health-records')
+        result = (await getPatientHealthRecords()) as PatientHealthRecordsResponse | null
+      }
       if (result) {
-        setPatientData(result as PatientHealthRecordsResponse)
-        onDataRefresh?.(result as PatientHealthRecordsResponse)
+        setPatientData(result)
+        onDataRefresh?.(result)
       }
     } catch (error) {
       console.error('Failed to refresh patient data:', error)
     }
-  }, [onDataRefresh])
+  }, [refreshFn, onDataRefresh])
 
-  // Loading fallback component for Suspense boundaries
-  const FormLoadingFallback = () => (
-    <div className="space-y-4">
-      <div className="h-4 bg-gradient-to-r from-slate-300 via-slate-200 to-slate-300 dark:from-slate-600 dark:via-slate-500 dark:to-slate-600 rounded w-3/4 animate-shimmer"></div>
-      <div className="h-4 bg-gradient-to-r from-slate-300 via-slate-200 to-slate-300 dark:from-slate-600 dark:via-slate-500 dark:to-slate-600 rounded w-full animate-shimmer"></div>
-      <div className="h-4 bg-gradient-to-r from-slate-300 via-slate-200 to-slate-300 dark:from-slate-600 dark:via-slate-500 dark:to-slate-600 rounded w-5/6 animate-shimmer"></div>
-      <div className="h-10 bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 dark:from-slate-700 dark:via-slate-600 dark:to-slate-700 rounded mt-6 animate-shimmer"></div>
+  // Section nav strip — defined before early return so it's always in scope.
+  // topClass controls sticky offset:
+  //   'top-12' when headerSlot=null (just below DashboardShell horizontal nav)
+  //   'top-24' when a custom headerSlot is provided (below nav + breadcrumb)
+  const makeSectionNav = (topClass: string) => (
+    <div className={`sticky ${topClass} z-40 backdrop-blur-sm bg-white/20 dark:bg-slate-950/20 border-b border-slate-200/20 dark:border-slate-800/20 mb-8 -mx-8 px-8 py-3`}>
+      <div className="max-w-6xl mx-auto">
+        <div className="relative">
+          <div className="flex gap-2 overflow-x-auto scroll-smooth pb-1" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(100,116,139,0.4) transparent' }}>
+            {sections.map((section) => (
+              <button
+                key={section.id}
+                onClick={() => scrollToSection(section.id)}
+                className={`whitespace-nowrap px-4 py-2 rounded-lg font-medium text-sm transition-all ${
+                  activeSection === section.id
+                    ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg shadow-blue-500/30'
+                    : 'bg-white/40 dark:bg-slate-800/40 text-slate-700 dark:text-slate-300 hover:bg-white/60 dark:hover:bg-slate-800/60 backdrop-blur-sm border border-white/20 dark:border-slate-700/20'
+                }`}
+              >
+                <span className="mr-2">{section.icon}</span>
+                {section.label}
+              </button>
+            ))}
+          </div>
+          <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-white/30 dark:from-slate-950/30 to-transparent pointer-events-none rounded-r-lg"></div>
+        </div>
+      </div>
     </div>
   )
 
@@ -342,50 +350,57 @@ export function EditProfileClient({ initialData, onDataRefresh }: EditProfileCli
     )
   }
 
-  return (
-    <div className="w-full">
-      {/* Sticky Header */}
-      <div className="sticky top-0 z-50 backdrop-blur-sm bg-white/20 dark:bg-slate-950/20 border-b border-slate-200/20 dark:border-slate-800/20 mb-8 -mx-8 px-8 py-4 rounded-b-3xl">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => router.back()}
-                className="p-2 hover:bg-white/50 dark:hover:bg-slate-800/50 rounded-lg transition-colors backdrop-blur-sm border border-white/20 dark:border-slate-700/20"
-              >
-                <ArrowLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-              </button>
-              <div>
-                <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Edit Profile</h1>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Update your health information</p>
-              </div>
+  const defaultHeader = (
+    <div className="sticky top-0 z-50 backdrop-blur-sm bg-white/20 dark:bg-slate-950/20 border-b border-slate-200/20 dark:border-slate-800/20 mb-8 -mx-8 px-8 py-4 rounded-b-3xl">
+      <div className="max-w-6xl mx-auto">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => router.back()}
+              className="p-2 hover:bg-white/50 dark:hover:bg-slate-800/50 rounded-lg transition-colors backdrop-blur-sm border border-white/20 dark:border-slate-700/20"
+            >
+              <ArrowLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+            </button>
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Edit Profile</h1>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Update your health information</p>
             </div>
-            <ThemeToggle />
           </div>
+          <ThemeToggle />
+        </div>
 
-          {/* Horizontal Section Navigation */}
-          <div className="relative mt-4">
-            <div className="flex gap-2 overflow-x-auto scroll-smooth pb-3 -mx-4 md:-mx-8 px-4 md:px-8 mt-4" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(100,116,139,0.4) transparent' }}>
-              {sections.map((section) => (
-                <button
-                  key={section.id}
-                  onClick={() => scrollToSection(section.id)}
-                  className={`whitespace-nowrap px-4 py-2 rounded-lg font-medium text-sm transition-all ${
-                    activeSection === section.id
-                      ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg shadow-blue-500/30'
-                      : 'bg-white/40 dark:bg-slate-800/40 text-slate-700 dark:text-slate-300 hover:bg-white/60 dark:hover:bg-slate-800/60 backdrop-blur-sm border border-white/20 dark:border-slate-700/20'
-                  }`}
-                >
-                  <span className="mr-2">{section.icon}</span>
-                  {section.label}
-                </button>
-              ))}
-            </div>
-            {/* Scroll indicator gradient (right side) */}
-            <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-white/30 dark:from-slate-950/30 to-transparent pointer-events-none rounded-r-lg"></div>
+        {/* Horizontal Section Navigation */}
+        <div className="relative mt-4">
+          <div className="flex gap-2 overflow-x-auto scroll-smooth pb-3 -mx-4 md:-mx-8 px-4 md:px-8 mt-4" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(100,116,139,0.4) transparent' }}>
+            {sections.map((section) => (
+              <button
+                key={section.id}
+                onClick={() => scrollToSection(section.id)}
+                className={`whitespace-nowrap px-4 py-2 rounded-lg font-medium text-sm transition-all ${
+                  activeSection === section.id
+                    ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg shadow-blue-500/30'
+                    : 'bg-white/40 dark:bg-slate-800/40 text-slate-700 dark:text-slate-300 hover:bg-white/60 dark:hover:bg-slate-800/60 backdrop-blur-sm border border-white/20 dark:border-slate-700/20'
+                }`}
+              >
+                <span className="mr-2">{section.icon}</span>
+                {section.label}
+              </button>
+            ))}
           </div>
+          {/* Scroll indicator gradient (right side) */}
+          <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-white/30 dark:from-slate-950/30 to-transparent pointer-events-none rounded-r-lg"></div>
         </div>
       </div>
+    </div>
+  )
+
+  return (
+    <div className="w-full">
+      {headerSlot !== null && (headerSlot ?? defaultHeader)}
+      {/* null → no header, show section nav at top-12 */}
+      {headerSlot === null && makeSectionNav('top-12')}
+      {/* custom node → show section nav below the custom header at top-24 */}
+      {headerSlot !== undefined && headerSlot !== null && makeSectionNav('top-24')}
 
       {/* Containerized Content */}
       <div className="max-w-6xl mx-auto">
@@ -407,8 +422,8 @@ export function EditProfileClient({ initialData, onDataRefresh }: EditProfileCli
                     userId={patientData.userId}
                     currentPicture={patientData.picture}
                     inline={true}
-                    currentData={getDemographicsData()}
-                    onSuccess={() => handleSuccess()}
+                    currentData={demographicsData}
+                    onSuccess={handleSuccess}
                   />
                 </Suspense>
               )}
@@ -436,7 +451,7 @@ export function EditProfileClient({ initialData, onDataRefresh }: EditProfileCli
                       notes: allergy.notes,
                     })) || []}
                     inline={true}
-                    onSuccess={() => handleSuccess()}
+                    onSuccess={handleSuccess}
                   />
                 </Suspense>
               )}
@@ -459,7 +474,7 @@ export function EditProfileClient({ initialData, onDataRefresh }: EditProfileCli
                     userId={patientData.userId}
                     currentContacts={patientData.userEmergencyContacts}
                     inline={true}
-                    onSuccess={() => handleSuccess()}
+                    onSuccess={handleSuccess}
                   />
                 </Suspense>
               )}
@@ -481,7 +496,7 @@ export function EditProfileClient({ initialData, onDataRefresh }: EditProfileCli
                   <AddressEditForm
                     userId={patientData.userId}
                     inline={true}
-                    onSuccess={() => handleSuccess()}
+                    onSuccess={handleSuccess}
                   />
                 </Suspense>
               )}
@@ -504,7 +519,7 @@ export function EditProfileClient({ initialData, onDataRefresh }: EditProfileCli
                     userId={patientData.userId}
                     inline={true}
                     currentVaccinations={patientData.userVaccinations}
-                    onSuccess={() => handleSuccess()}
+                    onSuccess={handleSuccess}
                   />
                 </Suspense>
               )}
@@ -527,7 +542,7 @@ export function EditProfileClient({ initialData, onDataRefresh }: EditProfileCli
                     userId={patientData.userId}
                     inline={true}
                     currentDisabilities={patientData.userDisabilities}
-                    onSuccess={() => handleSuccess()}
+                    onSuccess={handleSuccess}
                   />
                 </Suspense>
               )}
@@ -549,9 +564,9 @@ export function EditProfileClient({ initialData, onDataRefresh }: EditProfileCli
                   <VitalSignEditForm
                     userId={patientData.userId}
                     inline={true}
-                    currentData={getVitalSignData()}
+                    currentData={vitalSignData}
                     recentVitals={convertVitalSignsToDateObjects(patientData?.vitalSigns)}
-                    onSuccess={() => handleSuccess()}
+                    onSuccess={handleSuccess}
                   />
                 </Suspense>
               )}
@@ -573,8 +588,8 @@ export function EditProfileClient({ initialData, onDataRefresh }: EditProfileCli
                   <PersonalHistoryEditForm
                     userId={patientData.userId}
                     inline={true}
-                    currentData={getPersonalHistoryData()}
-                    onSuccess={() => handleSuccess()}
+                    currentData={personalHistoryData}
+                    onSuccess={handleSuccess}
                   />
                 </Suspense>
               )}
@@ -599,7 +614,7 @@ export function EditProfileClient({ initialData, onDataRefresh }: EditProfileCli
                     </div>
                   ) : (
                     <Suspense fallback={<FormLoadingFallback />}>
-                      <ObGyneHistoryEditForm userId={patientData.userId} inline={true} onSuccess={() => handleSuccess()} />
+                      <ObGyneHistoryEditForm userId={patientData.userId} inline={true} onSuccess={handleSuccess} />
                     </Suspense>
                   )}
                 </>
@@ -622,8 +637,8 @@ export function EditProfileClient({ initialData, onDataRefresh }: EditProfileCli
                   <PediatricMeasurementEditForm
                     userId={patientData.userId}
                     inline={true}
-                    currentData={getPediatricData()! as PediatricMeasurementFormInput}
-                    onSuccess={() => handleSuccess()}
+                    currentData={pediatricData as PediatricMeasurementFormInput}
+                    onSuccess={handleSuccess}
                   />
                 </Suspense>
               )}
@@ -649,7 +664,7 @@ export function EditProfileClient({ initialData, onDataRefresh }: EditProfileCli
                       conditionId: h.conditionId,
                       details: h.details || undefined,
                     }))}
-                    onSuccess={() => handleSuccess()}
+                    onSuccess={handleSuccess}
                   />
                 </Suspense>
               )}
@@ -672,7 +687,7 @@ export function EditProfileClient({ initialData, onDataRefresh }: EditProfileCli
                     userId={patientData.userId}
                     inline={true}
                     currentSurgeries={patientData.surgicalHistories}
-                    onSuccess={() => handleSuccess()}
+                    onSuccess={handleSuccess}
                   />
                 </Suspense>
               )}
@@ -698,7 +713,7 @@ export function EditProfileClient({ initialData, onDataRefresh }: EditProfileCli
                       conditionId: h.conditionId,
                       details: h.details || undefined,
                     }))}
-                    onSuccess={() => handleSuccess()}
+                    onSuccess={handleSuccess}
                   />
                 </Suspense>
               )}
@@ -720,8 +735,8 @@ export function EditProfileClient({ initialData, onDataRefresh }: EditProfileCli
                   <PhysicalExaminationEditForm
                     userId={patientData.userId}
                     inline={true}
-                    currentData={getPhysicalExaminationData()}
-                    onSuccess={() => handleSuccess()}
+                    currentData={physicalExaminationData}
+                    onSuccess={handleSuccess}
                   />
                 </Suspense>
               )}
@@ -745,10 +760,10 @@ export function EditProfileClient({ initialData, onDataRefresh }: EditProfileCli
                       userId={patientData.userId}
                       inline={true}
                       currentData={philHealthCurrentData}
-                      onSuccess={() => handleSuccess()}
+                      onSuccess={handleSuccess}
                     />
                   ) : (
-                    <PhilHealthRecordEditForm userId={patientData.userId} inline={true} onSuccess={() => handleSuccess()} />
+                    <PhilHealthRecordEditForm userId={patientData.userId} inline={true} onSuccess={handleSuccess} />
                   )}
                 </Suspense>
               )}

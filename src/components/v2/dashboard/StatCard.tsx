@@ -29,21 +29,21 @@ export default function StatCard({
   return (
     <Card
       className={cn(
-        "v2-stat-card v2-animate-slide-up border shadow-sm",
+        "border shadow-sm transition-all hover:shadow-md animate-slide-up",
         className,
       )}
     >
       <CardContent className="flex items-start justify-between p-5">
         <div className="space-y-1">
-          <p className="v2-stat-card__label">{label}</p>
-          <p className="v2-stat-card__value">{value}</p>
+          <p className="text-xs font-medium text-muted-foreground">{label}</p>
+          <p className="text-2xl font-bold text-foreground">{value}</p>
           {trend && (
             <span
               className={cn(
-                "v2-stat-card__trend",
+                "flex items-center gap-1 text-xs font-medium",
                 trend.direction === "up"
-                  ? "v2-stat-card__trend--up"
-                  : "v2-stat-card__trend--down",
+                  ? "text-green-600 dark:text-green-400"
+                  : "text-red-600 dark:text-red-400",
               )}
             >
               {trend.direction === "up" ? (

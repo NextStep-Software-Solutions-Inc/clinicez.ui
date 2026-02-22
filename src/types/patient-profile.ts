@@ -58,6 +58,7 @@ export interface ReferralData {
 export interface SerializedPatientHealthRecordsResponse {
   // Demographics
   id: number
+  clinicPatientId?: number
   userId: string
   firstName: string | null
   lastName: string | null

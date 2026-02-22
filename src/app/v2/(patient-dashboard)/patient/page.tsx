@@ -146,7 +146,7 @@ function PatientDashboardContent() {
           <div className="lg:col-span-2 space-y-6">
             {/* Vitals Grid */}
             <div>
-              <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
                 <span className="w-1 h-6 bg-blue-500 rounded-full"></span>
                 Health Metrics
               </h2>

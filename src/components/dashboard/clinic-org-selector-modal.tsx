@@ -57,7 +57,7 @@ export function ClinicOrgSelectorModal({
   const handleSelect = (uid: string) => {
     const path =
       type === "clinic"
-        ? `/v2/clinic/${uid}/dashboard`
+        ? `/v2/clinic/${uid}`
         : `/v2/org/${uid}/dashboard`;
 
     onClose();

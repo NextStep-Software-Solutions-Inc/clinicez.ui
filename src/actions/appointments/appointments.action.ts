@@ -316,6 +316,8 @@ export type GetAppointmentFilter = {
   tagged?: string;
   appointmentId?: number;
   sort?: "request" | "schedule";
+  /** Filter by a specific healthcare provider involved (assigned or tagged) */
+  hpId?: number;
   /** Cursor-based pagination: ID of the last item from the previous page */
   cursor?: number;
   /** Number of items to fetch per page (default: 20) */
@@ -332,7 +334,7 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
     getHPsAction({ userId: session.user.sub })
   ])
 
-  const { clinicUid, userId, status, routedAptStatus, tagged, sort, cursor, limit } = filter || {};
+  const { clinicUid, userId, status, routedAptStatus, tagged, sort, cursor, limit, hpId } = filter || {};
   const PAGE_SIZE = limit ?? 20;
 
   const userPermissionArray = permissions.map(p => p.name);
@@ -376,6 +378,15 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
               }
             }
           }
+        }
+        : {}),
+      // Filter by a specific HP being involved (assigned via routing OR tagged)
+      ...(hpId
+        ? {
+          OR: [
+            { AppointmentRouting: { some: { routedTo: hpId } } },
+            { AppointmentTag: { some: { healthcareProviderId: hpId } } },
+          ]
         }
         : {}),
       ...(routedAptStatus

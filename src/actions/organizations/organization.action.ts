@@ -259,6 +259,8 @@ type UpdateOrganizationPayload = {
   isPublic: boolean;
   sendEmailNotification: boolean;
   emailToOrgOnly: boolean;
+  privacyPolicyUrl?: string;
+  termsAndConditionsUrl?: string;
 }
 export const updateOrganizationAction = async (orgUid: string, data: UpdateOrganizationPayload) => {
 
@@ -283,7 +285,7 @@ export const updateOrganizationAction = async (orgUid: string, data: UpdateOrgan
       throw new Error("You don't have permission to update organization information.");
     }
 
-    const { name, logo, description, customUrl, email, isPublic, sendEmailNotification, emailToOrgOnly } = data;
+    const { name, logo, description, customUrl, email, isPublic, sendEmailNotification, emailToOrgOnly, privacyPolicyUrl, termsAndConditionsUrl } = data;
     const organization = await prisma.organization.update({
       where: { orgUid, isActive: true },
       data: {
@@ -292,6 +294,8 @@ export const updateOrganizationAction = async (orgUid: string, data: UpdateOrgan
         logo,
         customUrl,
         email,
+        ...(privacyPolicyUrl !== undefined && { privacyPolicyUrl }),
+        ...(termsAndConditionsUrl !== undefined && { termsAndConditionsUrl }),
         OrganizationSetting: {
           upsert: {
             where: {

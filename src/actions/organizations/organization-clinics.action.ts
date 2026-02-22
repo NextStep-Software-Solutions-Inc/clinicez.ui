@@ -23,4 +23,7 @@ export const getOrganizationClinics = async (orgUid: string) => {
       }
     }
   });
+  return clinics;
 }
+
+export type GetOrgClinics = Awaited<ReturnType<typeof getOrganizationClinics>>;

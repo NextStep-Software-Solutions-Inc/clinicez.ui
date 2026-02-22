@@ -225,10 +225,12 @@ export const declineAppointmentAction = withErrorHandling(async (formData: FormD
   return 'Failed to decline appointment';
 })
 
-export const cancelAppointmentRoutingAction = withErrorHandling(async (appointmentRoutingId: number) => {
+export const cancelAppointmentRoutingAction = withErrorHandling(async ({ appointmentRoutingId, reason }: { appointmentRoutingId: number; reason: string }) => {
 
   const session = await getCachedSession();
   if (!session) throw new Error('Unauthorized');
+
+  if (!reason?.trim()) throw new Error('A reason is required to cancel an assignment');
 
   const myPermissions = await getPermissionsAction({ userId: session.user.sub, type: 'CLINIC' });
   const myPermissionArray = myPermissions.map(permission => permission.name);
@@ -257,7 +259,7 @@ export const cancelAppointmentRoutingAction = withErrorHandling(async (appointme
           }
         },
         amendedAt: new Date(),
-        amendment: 'Cancelled by the assigner'
+        amendment: reason.trim()
       },
       select: {
         appointmentId: true,

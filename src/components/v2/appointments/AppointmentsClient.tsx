@@ -1,16 +1,14 @@
 "use client";
 
-import { useState, useTransition, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarDays, Clock, UserPlus, Loader2, Tag } from "lucide-react";
+import { CalendarDays, Clock, UserPlus, Loader2, Tag, ChevronDown, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { getAppointmentsAction, type GetAppointments } from "@/actions/appointments/appointments.action";
 import type { GetAppointmentModes } from "@/actions/appointments/appointment-mode.action";
 import type { GetAppointmentTypes } from "@/actions/appointments/appointment-type.action";
@@ -80,13 +78,12 @@ export function AppointmentsClient({
   currentUserHpIds,
 }: AppointmentsClientProps) {
   const router = useRouter();
-  const [, startTransition] = useTransition();
 
   // Status tab filter (client-side on loaded items)
   const [activeTab, setActiveTab] = useState<StatusTabKey>("ALL");
 
   // Server-side filters — when changed, reset pagination and re-fetch
-  const [hpFilter, setHpFilter] = useState<number | null>(null);
+  const [hpFilters, setHpFilters] = useState<number[]>([]);
   const [taggedOnly, setTaggedOnly] = useState(false);
 
   // Pagination: start with initial data; hasMore=true when initial page is full
@@ -123,12 +120,12 @@ export function AppointmentsClient({
   // ── Server-side filter reload ───────────────────────────────────────────────
 
   const reloadWithFilters = useCallback(
-    async (opts: { hpId: number | null; tagged: boolean }) => {
+    async (opts: { hpIds: number[]; tagged: boolean }) => {
       setIsReloading(true);
       try {
         const result = await getAppointmentsAction({
           clinicUid,
-          ...(opts.hpId ? { hpId: opts.hpId } : {}),
+          ...(opts.hpIds.length > 0 ? { hpIds: opts.hpIds } : {}),
           ...(opts.tagged ? { tagged: "true" } : {}),
         });
         if (result.status && result.data) {
@@ -145,22 +142,30 @@ export function AppointmentsClient({
     [clinicUid]
   );
 
-  const handleHpFilterChange = useCallback(
-    (value: string) => {
-      const id = value === "ALL" ? null : Number(value);
-      setHpFilter(id);
-      setActiveTab("ALL"); // reset status tab when HP filter changes
-      void reloadWithFilters({ hpId: id, tagged: taggedOnly });
+  const handleHpFilterToggle = useCallback(
+    (id: number) => {
+      const next = hpFilters.includes(id)
+        ? hpFilters.filter((x) => x !== id)
+        : [...hpFilters, id];
+      setHpFilters(next);
+      setActiveTab("ALL");
+      void reloadWithFilters({ hpIds: next, tagged: taggedOnly });
     },
-    [taggedOnly, reloadWithFilters]
+    [hpFilters, taggedOnly, reloadWithFilters]
   );
+
+  const handleClearHpFilters = useCallback(() => {
+    setHpFilters([]);
+    setActiveTab("ALL");
+    void reloadWithFilters({ hpIds: [], tagged: taggedOnly });
+  }, [taggedOnly, reloadWithFilters]);
 
   const handleTaggedToggle = useCallback(() => {
     const next = !taggedOnly;
     setTaggedOnly(next);
     setActiveTab("ALL");
-    void reloadWithFilters({ hpId: hpFilter, tagged: next });
-  }, [taggedOnly, hpFilter, reloadWithFilters]);
+    void reloadWithFilters({ hpIds: hpFilters, tagged: next });
+  }, [taggedOnly, hpFilters, reloadWithFilters]);
 
   // ── Refresh ────────────────────────────────────────────────────────────────
 
@@ -186,7 +191,7 @@ export function AppointmentsClient({
       const result = await getAppointmentsAction({
         clinicUid,
         cursor: lastId,
-        ...(hpFilter ? { hpId: hpFilter } : {}),
+        ...(hpFilters.length > 0 ? { hpIds: hpFilters } : {}),
         ...(taggedOnly ? { tagged: "true" } : {}),
       });
       if (result.status && result.data) {
@@ -204,7 +209,7 @@ export function AppointmentsClient({
     } finally {
       setIsLoadingMore(false);
     }
-  }, [clinicUid, appointments, hasMore, isLoadingMore, hpFilter, taggedOnly]);
+  }, [clinicUid, appointments, hasMore, isLoadingMore, hpFilters, taggedOnly]);
 
   // IntersectionObserver for scroll-to-load-more
   useEffect(() => {
@@ -283,25 +288,76 @@ export function AppointmentsClient({
             ))}
           </div>
 
-          {/* HP filter + Tagged toggle */}
+          {/* HP multi-filter + Tagged toggle */}
           <div className="flex items-center gap-2 flex-shrink-0">
-            {/* HP Dropdown */}
-            <Select
-              value={hpFilter ? String(hpFilter) : "ALL"}
-              onValueChange={handleHpFilterChange}
-            >
-              <SelectTrigger className="h-7 text-xs w-44 border-border/60">
-                <SelectValue placeholder="All providers" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">All providers</SelectItem>
-                {hps.map((hp) => (
-                  <SelectItem key={hp.id} value={String(hp.id)}>
-                    {getHpDisplayName(hp)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {/* HP multi-select Popover */}
+            {hps.length > 0 && (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button
+                    className={cn(
+                      "flex items-center gap-1.5 h-7 px-2.5 text-xs rounded-md border transition-all duration-150 font-medium",
+                      hpFilters.length > 0
+                        ? "bg-primary/10 text-primary border-primary/40 shadow-sm"
+                        : "bg-background/60 border-border/50 text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                    )}
+                  >
+                    <span>
+                      {hpFilters.length === 0
+                        ? "All Providers"
+                        : hpFilters.length === 1
+                        ? getHpDisplayName(hps.find((h) => h.id === hpFilters[0]) ?? hps[0])
+                        : `${hpFilters.length} Providers`}
+                    </span>
+                    <ChevronDown className="h-3 w-3 opacity-60" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64 p-2" align="end">
+                  <div className="space-y-0.5 max-h-64 overflow-y-auto">
+                    {hps.map((hp) => {
+                      const checked = hpFilters.includes(hp.id);
+                      return (
+                        <button
+                          key={hp.id}
+                          type="button"
+                          onClick={() => handleHpFilterToggle(hp.id)}
+                          className={cn(
+                            "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-sm transition-colors",
+                            checked
+                              ? "bg-primary/10 text-primary"
+                              : "hover:bg-muted/50 text-foreground"
+                          )}
+                        >
+                          <div className={cn(
+                            "w-4 h-4 rounded border flex items-center justify-center flex-shrink-0",
+                            checked ? "bg-primary border-primary" : "border-border"
+                          )}>
+                            {checked && <Check className="h-2.5 w-2.5 text-primary-foreground" />}
+                          </div>
+                          <span className="line-clamp-1">{getHpDisplayName(hp)}</span>
+                          {hp.HPType?.name && (
+                            <span className="ml-auto text-xs text-muted-foreground flex-shrink-0">
+                              {hp.HPType.name}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {hpFilters.length > 0 && (
+                    <div className="border-t mt-1.5 pt-1.5">
+                      <button
+                        type="button"
+                        onClick={handleClearHpFilters}
+                        className="w-full text-xs text-muted-foreground hover:text-foreground px-2 py-1 text-center"
+                      >
+                        Clear filter
+                      </button>
+                    </div>
+                  )}
+                </PopoverContent>
+              </Popover>
+            )}
 
             {/* My Tagged toggle */}
             <button
@@ -330,7 +386,7 @@ export function AppointmentsClient({
           </div>
         )}
         {filtered.length === 0 && !isLoadingMore && !isReloading ? (
-          <EmptyState status={activeTab} taggedOnly={taggedOnly} hpFiltered={!!hpFilter} />
+          <EmptyState status={activeTab} taggedOnly={taggedOnly} hpFiltered={hpFilters.length > 0} />
         ) : (
           <div className="flex flex-col gap-2 px-4 py-4">
             {filtered.map((appointment) => (

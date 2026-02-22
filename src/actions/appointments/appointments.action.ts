@@ -316,8 +316,8 @@ export type GetAppointmentFilter = {
   tagged?: string;
   appointmentId?: number;
   sort?: "request" | "schedule";
-  /** Filter by a specific healthcare provider involved (assigned or tagged) */
-  hpId?: number;
+  /** Filter by one or more healthcare providers involved (assigned or tagged) */
+  hpIds?: number[];
   /** Cursor-based pagination: ID of the last item from the previous page */
   cursor?: number;
   /** Number of items to fetch per page (default: 20) */
@@ -334,7 +334,7 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
     getHPsAction({ userId: session.user.sub })
   ])
 
-  const { clinicUid, userId, status, routedAptStatus, tagged, sort, cursor, limit, hpId } = filter || {};
+  const { clinicUid, userId, status, routedAptStatus, tagged, sort, cursor, limit, hpIds } = filter || {};
   const PAGE_SIZE = limit ?? 20;
 
   const userPermissionArray = permissions.map(p => p.name);
@@ -380,12 +380,12 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
           }
         }
         : {}),
-      // Filter by a specific HP being involved (assigned via routing OR tagged)
-      ...(hpId
+      // Filter by one or more HPs being involved (assigned via routing OR tagged)
+      ...(hpIds && hpIds.length > 0
         ? {
           OR: [
-            { AppointmentRouting: { some: { routedTo: hpId } } },
-            { AppointmentTag: { some: { healthcareProviderId: hpId } } },
+            { AppointmentRouting: { some: { routedTo: { in: hpIds } } } },
+            { AppointmentTag: { some: { healthcareProviderId: { in: hpIds } } } },
           ]
         }
         : {}),
@@ -634,8 +634,12 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
 
 type CreateWalkInAppointmentPayload = {
   clinicUid: string;
-  patientName: string;
-  complaint?: string;
+  /** Existing clinic patient's Clerk userId — if provided, appointment links to this patient */
+  patientId?: string;
+  /** Walk-in patient name (used when no patientId) */
+  patientName?: string;
+  subject: string;
+  complaint: string;
   modeId: number;
   typeId: number;
   serviceId: number;
@@ -646,17 +650,19 @@ type CreateWalkInAppointmentPayload = {
 };
 
 /**
- * Creates a walk-in appointment on behalf of a patient who has no account.
- * The secretary provides the patient's name and chief complaint.
+ * Creates a walk-in appointment on behalf of a patient.
+ * Can link to an existing clinic patient (via patientId) or use a plain name.
  * The appointment starts in RECEIVED status (no PENDING step needed).
  */
 export const createWalkInAppointmentAction = withErrorHandling(async (payload: CreateWalkInAppointmentPayload) => {
   const session = await getCachedSession();
   if (!session) throw new Error("Unauthorized");
 
-  const { clinicUid, patientName, complaint, modeId, typeId, serviceId, hpId, date, timeStart, timeEnd } = payload;
+  const { clinicUid, patientId, patientName, subject, complaint, modeId, typeId, serviceId, hpId, date, timeStart, timeEnd } = payload;
 
-  if (!patientName.trim()) throw new Error("Patient name is required");
+  if (!subject?.trim()) throw new Error("Subject is required");
+  if (!complaint?.trim()) throw new Error("Chief complaint is required");
+  if (!patientId && !patientName?.trim()) throw new Error("Patient is required");
 
   const myPermissions = await getPermissionsAction({ userId: session.user.sub });
   const userPermissionArray = myPermissions.map(p => p.name);
@@ -677,11 +683,38 @@ export const createWalkInAppointmentAction = withErrorHandling(async (payload: C
       select: { id: true },
     });
 
+    // Resolve the display name for the subject line
+    let displayName = patientName?.trim() ?? "";
+    if (patientId) {
+      const patient = await tx.user.findUnique({
+        where: { userId: patientId },
+        select: { firstName: true, lastName: true },
+      });
+      if (patient) {
+        displayName = `${patient.firstName ?? ""} ${patient.lastName ?? ""}`.trim();
+      }
+    }
+
+    // Compute final subject: walk-ins without an account get a prefix with the patient name
+    const finalSubject = !patientId && displayName
+      ? `Walk-in: ${displayName} — ${subject.trim()}`
+      : subject.trim();
+
     const appointment = await tx.appointment.create({
       data: {
-        subject: `Walk-in: ${patientName.trim()}`,
-        complaint: complaint?.trim() || null,
+        subject: finalSubject,
+        complaint: complaint.trim(),
         Clinic: { connect: { id: clinic.id } },
+        // Link to existing patient if provided
+        ...(patientId
+          ? {
+            Requesters: {
+              create: {
+                User: { connect: { userId: patientId } },
+              },
+            },
+          }
+          : {}),
         AppointmentAttribute: {
           create: {
             modeId,

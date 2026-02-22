@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import {
   User,
@@ -16,6 +16,9 @@ import {
   Tags,
   Lock,
   UserCheck,
+  ChevronDown,
+  ChevronUp,
+  FileText,
 } from "lucide-react";
 import {
   Sheet,
@@ -28,6 +31,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import type { GetAppointments } from "@/actions/appointments/appointments.action";
 import {
@@ -39,11 +44,16 @@ import {
   acceptAppointmentAction,
   declineAppointmentAction,
 } from "@/actions/appointments/appointment-routing.action";
+import {
+  getPreAssessmentNotesAction,
+  type GetPreAssessmentNotes,
+} from "@/actions/appointments/pre-assessment-note.action";
 import { STATUS_CONFIG } from "./AppointmentCard";
 import { isWalkInAppointment, getAppointmentPatientName, getAppointmentInitials } from "./appointment-utils";
 
 type Appointment = NonNullable<GetAppointments["data"]>[number];
 type SubPanel = "confirm" | "assign" | "preAssessment" | "tag";
+type PreAssessmentNote = NonNullable<NonNullable<GetPreAssessmentNotes["data"]>[number]>;
 
 interface AppointmentDetailSheetProps {
   appointment: Appointment | null;
@@ -62,6 +72,43 @@ export function AppointmentDetailSheet({
 }: AppointmentDetailSheetProps) {
   const [isPending, setIsPending] = useState(false);
 
+  // Inline reject reason state
+  const [showRejectForm, setShowRejectForm] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
+
+  // Inline decline reason state
+  const [showDeclineForm, setShowDeclineForm] = useState(false);
+  const [declineReason, setDeclineReason] = useState("");
+  const [decliningRoutingCode, setDecliningRoutingCode] = useState<string | null>(null);
+
+  // Pre-assessment notes state
+  const [preAssessmentNotes, setPreAssessmentNotes] = useState<PreAssessmentNote[]>([]);
+  const [notesExpanded, setNotesExpanded] = useState(false);
+
+  // Fetch pre-assessment notes when appointment changes
+  useEffect(() => {
+    if (!appointment) {
+      setPreAssessmentNotes([]);
+      return;
+    }
+    getPreAssessmentNotesAction(appointment.id).then((result) => {
+      if (result.status && result.data) {
+        setPreAssessmentNotes(result.data as PreAssessmentNote[]);
+      } else {
+        setPreAssessmentNotes([]);
+      }
+    });
+  }, [appointment]);
+
+  // Reset inline forms when appointment changes
+  useEffect(() => {
+    setShowRejectForm(false);
+    setRejectReason("");
+    setShowDeclineForm(false);
+    setDeclineReason("");
+    setDecliningRoutingCode(null);
+  }, [appointment]);
+
   if (!appointment) return null;
 
   const status = appointment.AppointmentAttribute?.status ?? "PENDING";
@@ -75,17 +122,17 @@ export function AppointmentDetailSheet({
   const scheduledDate = appointment.AppointmentAttribute?.date;
   const timeStart = appointment.AppointmentAttribute?.timeStart;
   const routings = appointment.AppointmentRouting ?? [];
-  // Show only the most recent PENDING or ACCEPTED routing
-  const activeRouting = routings.find((r) => r.status === "ACCEPTED" || r.status === "PENDING");
+  // Pending routing for accept/decline (only PENDING — not ACCEPTED)
+  const pendingRouting = routings.find((r) => r.status === "PENDING");
 
   const receivedBy = appointment.AppointmentAttribute?.ReceivedBy;
   const receivedByName = receivedBy
     ? `${receivedBy.firstName ?? ""} ${receivedBy.lastName ?? ""}`.trim()
     : null;
 
-  // Accept/Decline guard: only the assigned HP can accept or decline
+  // Accept/Decline guard: only the assigned HP, and only when routing is PENDING
   const isAssignedToCurrentUser =
-    !!activeRouting && currentUserHpIds.includes(activeRouting.RoutedTo.id);
+    !!pendingRouting && currentUserHpIds.includes(pendingRouting.RoutedTo.id);
 
   // ── Action handlers ────────────────────────────────────────────────────────
 
@@ -119,11 +166,15 @@ export function AppointmentDetailSheet({
     }
   };
 
-  const handleReject = async () => {
+  const handleRejectSubmit = async () => {
+    if (!rejectReason.trim()) {
+      toast.error("A reason is required to reject this appointment.");
+      return;
+    }
     setIsPending(true);
     const fd = new FormData();
     fd.append("appointmentId", String(appointment.id));
-    fd.append("reason", "Rejected by clinic staff");
+    fd.append("reason", rejectReason.trim());
     const result = await rejectAppointmentAction(fd);
     setIsPending(false);
     if (result.status) {
@@ -149,20 +200,31 @@ export function AppointmentDetailSheet({
     }
   };
 
-  const handleDeclineRouting = async (routingCode: string) => {
+  const handleDeclineSubmit = async () => {
+    if (!declineReason.trim()) {
+      toast.error("A reason is required to decline this assignment.");
+      return;
+    }
+    if (!decliningRoutingCode) return;
     setIsPending(true);
     const fd = new FormData();
-    fd.append("routingCode", routingCode);
-    fd.append("reason", "Declined by healthcare provider");
+    fd.append("routingCode", decliningRoutingCode);
+    fd.append("reason", declineReason.trim());
     const result = await declineAppointmentAction(fd);
     setIsPending(false);
     if (result.status) {
       toast.success(result.message);
+      setShowDeclineForm(false);
+      setDeclineReason("");
+      setDecliningRoutingCode(null);
       onRefresh();
     } else {
       toast.error(result.message);
     }
   };
+
+  // Whether pre-assessment actions should be shown
+  const canAccessPreAssessment = ["RECEIVED", "ROUTED", "ACCEPTED", "COMPLETED"].includes(status);
 
   return (
     <Sheet open={!!appointment} onOpenChange={(open) => !open && onClose()}>
@@ -277,6 +339,95 @@ export function AppointmentDetailSheet({
             </div>
           </div>
 
+          {/* Pre-Assessment Notes — visible if notes exist or user can add */}
+          {canAccessPreAssessment && (
+            <div className="rounded-xl border bg-muted/30 p-4 space-y-2">
+              <button
+                type="button"
+                className="w-full flex items-center justify-between text-left"
+                onClick={() => setNotesExpanded((v) => !v)}
+              >
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                  <FileText className="h-3.5 w-3.5" />
+                  Pre-Assessment Notes
+                  {preAssessmentNotes.length > 0 && (
+                    <Badge variant="outline" className="text-xs px-1.5 py-0 border-teal-400/40 text-teal-700">
+                      {preAssessmentNotes.length}
+                    </Badge>
+                  )}
+                </h3>
+                {notesExpanded ? <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" /> : <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />}
+              </button>
+
+              {notesExpanded && (
+                <div className="space-y-3 pt-1">
+                  {preAssessmentNotes.length === 0 ? (
+                    <p className="text-xs text-muted-foreground italic">No pre-assessment notes yet.</p>
+                  ) : (
+                    preAssessmentNotes.map((note) => {
+                      const author = `${note.CreatedBy?.firstName ?? ""} ${note.CreatedBy?.lastName ?? ""}`.trim() || "Staff";
+                      return (
+                        <div key={note.id} className="rounded-lg bg-background/60 p-3 space-y-1.5 border border-border/30">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium text-primary">{author}</span>
+                            <span className="text-xs text-muted-foreground">
+                              {format(new Date(note.createdAt), "MMM d, yyyy h:mm a")}
+                            </span>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">Assessment</p>
+                            <p className="text-sm whitespace-pre-wrap">{note.assessment}</p>
+                          </div>
+                          {note.homeInstructions && (
+                            <div>
+                              <p className="text-xs text-muted-foreground">Home Instructions</p>
+                              <p className="text-sm whitespace-pre-wrap">{note.homeInstructions}</p>
+                            </div>
+                          )}
+                          {note.remarks && (
+                            <div>
+                              <p className="text-xs text-muted-foreground">Remarks</p>
+                              <p className="text-sm whitespace-pre-wrap">{note.remarks}</p>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
+                  {status !== "COMPLETED" && status !== "REJECTED" && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="gap-1.5 border-teal-400/40 text-teal-700 hover:bg-teal-600 hover:text-white w-full"
+                      onClick={() => onOpenSubPanel("preAssessment")}
+                    >
+                      <ClipboardList className="h-4 w-4" />
+                      {preAssessmentNotes.length > 0 ? "Add Another Note" : "Add Pre-Assessment Note"}
+                    </Button>
+                  )}
+                </div>
+              )}
+              {!notesExpanded && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 text-xs gap-1 w-full text-teal-700 hover:text-teal-800 hover:bg-teal-50"
+                  onClick={() => {
+                    setNotesExpanded(true);
+                    if (preAssessmentNotes.length === 0 && status !== "COMPLETED" && status !== "REJECTED") {
+                      onOpenSubPanel("preAssessment");
+                    }
+                  }}
+                >
+                  <ClipboardList className="h-3 w-3" />
+                  {preAssessmentNotes.length > 0
+                    ? `View ${preAssessmentNotes.length} note${preAssessmentNotes.length === 1 ? "" : "s"}`
+                    : "Add Pre-Assessment Note"}
+                </Button>
+              )}
+            </div>
+          )}
+
           {/* Tagged HPs */}
           {(appointment.AppointmentTag ?? []).length > 0 && (
             <div className="rounded-xl border bg-muted/30 p-4 space-y-2">
@@ -343,7 +494,7 @@ export function AppointmentDetailSheet({
           <Separator />
 
           {/* Actions */}
-          <div className="space-y-2">
+          <div className="space-y-3">
             <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
               Actions
             </h3>
@@ -361,32 +512,24 @@ export function AppointmentDetailSheet({
                     <Lock className="h-4 w-4" />
                     Receive &amp; Lock
                   </Button>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    className="gap-1.5"
-                    disabled={isPending}
-                    onClick={handleReject}
-                  >
-                    <AlertTriangle className="h-4 w-4" />
-                    Reject
-                  </Button>
+                  {!showRejectForm && (
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      className="gap-1.5"
+                      disabled={isPending}
+                      onClick={() => setShowRejectForm(true)}
+                    >
+                      <AlertTriangle className="h-4 w-4" />
+                      Reject
+                    </Button>
+                  )}
                 </>
               )}
 
-              {/* RECEIVED: Pre-Assess, Assign Doctor (first), Confirm Booking, Tag HPs, Complete, Reject */}
+              {/* RECEIVED: Assign Doctor (first), Confirm Booking, Tag HPs, Complete, Reject */}
               {status === "RECEIVED" && (
                 <>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="gap-1.5 border-teal-400/40 text-teal-700 hover:bg-teal-600 hover:text-white"
-                    disabled={isPending}
-                    onClick={() => onOpenSubPanel("preAssessment")}
-                  >
-                    <ClipboardList className="h-4 w-4" />
-                    Pre-Assessment
-                  </Button>
                   <Button
                     size="sm"
                     variant="outline"
@@ -425,43 +568,50 @@ export function AppointmentDetailSheet({
                     <CheckCircle className="h-4 w-4" />
                     Complete
                   </Button>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    className="gap-1.5"
-                    disabled={isPending}
-                    onClick={handleReject}
-                  >
-                    <AlertTriangle className="h-4 w-4" />
-                    Reject
-                  </Button>
+                  {!showRejectForm && (
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      className="gap-1.5"
+                      disabled={isPending}
+                      onClick={() => setShowRejectForm(true)}
+                    >
+                      <AlertTriangle className="h-4 w-4" />
+                      Reject
+                    </Button>
+                  )}
                 </>
               )}
 
-              {/* ROUTED: Accept/Decline (assigned user only) + Reassign */}
-              {status === "ROUTED" && activeRouting && (
+              {/* ROUTED: Accept/Decline (PENDING routing + assigned user only) + Reassign */}
+              {status === "ROUTED" && pendingRouting && (
                 <>
                   {isAssignedToCurrentUser ? (
                     <>
                       <Button
                         size="sm"
                         className="gap-1.5 bg-teal-600 hover:bg-teal-700 text-white"
-                        disabled={isPending || !activeRouting.routingCode}
-                        onClick={() => activeRouting.routingCode && handleAcceptRouting(activeRouting.routingCode)}
+                        disabled={isPending || !pendingRouting.routingCode || showDeclineForm}
+                        onClick={() => pendingRouting.routingCode && handleAcceptRouting(pendingRouting.routingCode)}
                       >
                         <CheckCircle className="h-4 w-4" />
                         Accept Assignment
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        className="gap-1.5"
-                        disabled={isPending || !activeRouting.routingCode}
-                        onClick={() => activeRouting.routingCode && handleDeclineRouting(activeRouting.routingCode)}
-                      >
-                        <XCircle className="h-4 w-4" />
-                        Decline Assignment
-                      </Button>
+                      {!showDeclineForm && (
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          className="gap-1.5"
+                          disabled={isPending || !pendingRouting.routingCode}
+                          onClick={() => {
+                            setDecliningRoutingCode(pendingRouting.routingCode ?? null);
+                            setShowDeclineForm(true);
+                          }}
+                        >
+                          <XCircle className="h-4 w-4" />
+                          Decline Assignment
+                        </Button>
+                      )}
                     </>
                   ) : (
                     <p className="text-xs text-muted-foreground italic">
@@ -481,31 +631,105 @@ export function AppointmentDetailSheet({
                 </>
               )}
 
-              {/* ACCEPTED: Pre-Assess + Complete */}
+              {/* ACCEPTED: Complete */}
               {status === "ACCEPTED" && (
-                <>
-                  <Button
-                    size="sm"
-                    className="gap-1.5 bg-green-600 hover:bg-green-700 text-white"
+                <Button
+                  size="sm"
+                  className="gap-1.5 bg-green-600 hover:bg-green-700 text-white"
+                  disabled={isPending}
+                  onClick={handleComplete}
+                >
+                  <CheckCircle className="h-4 w-4" />
+                  Mark Complete
+                </Button>
+              )}
+            </div>
+
+            {/* Inline reject form */}
+            {showRejectForm && (
+              <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 space-y-3">
+                <h4 className="text-xs font-semibold text-destructive uppercase tracking-wide">
+                  Reject Appointment
+                </h4>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">
+                    Reason <span className="text-destructive">*</span>
+                  </Label>
+                  <Textarea
+                    value={rejectReason}
+                    onChange={(e) => setRejectReason(e.target.value)}
+                    placeholder="Please provide a reason for rejection..."
+                    rows={3}
+                    className="resize-none text-sm"
                     disabled={isPending}
-                    onClick={handleComplete}
-                  >
-                    <CheckCircle className="h-4 w-4" />
-                    Mark Complete
-                  </Button>
+                  />
+                </div>
+                <div className="flex gap-2">
                   <Button
                     size="sm"
                     variant="outline"
-                    className="gap-1.5"
+                    className="flex-1"
                     disabled={isPending}
-                    onClick={() => onOpenSubPanel("preAssessment")}
+                    onClick={() => { setShowRejectForm(false); setRejectReason(""); }}
                   >
-                    <ClipboardList className="h-4 w-4" />
-                    Add Pre-Assessment Note
+                    Cancel
                   </Button>
-                </>
-              )}
-            </div>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    className="flex-1 gap-1.5"
+                    disabled={isPending || !rejectReason.trim()}
+                    onClick={handleRejectSubmit}
+                  >
+                    <AlertTriangle className="h-4 w-4" />
+                    {isPending ? "Rejecting..." : "Confirm Reject"}
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Inline decline assignment form */}
+            {showDeclineForm && (
+              <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 space-y-3">
+                <h4 className="text-xs font-semibold text-destructive uppercase tracking-wide">
+                  Decline Assignment
+                </h4>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">
+                    Reason <span className="text-destructive">*</span>
+                  </Label>
+                  <Textarea
+                    value={declineReason}
+                    onChange={(e) => setDeclineReason(e.target.value)}
+                    placeholder="Please provide a reason for declining..."
+                    rows={3}
+                    className="resize-none text-sm"
+                    disabled={isPending}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="flex-1"
+                    disabled={isPending}
+                    onClick={() => { setShowDeclineForm(false); setDeclineReason(""); setDecliningRoutingCode(null); }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    className="flex-1 gap-1.5"
+                    disabled={isPending || !declineReason.trim()}
+                    onClick={handleDeclineSubmit}
+                  >
+                    <XCircle className="h-4 w-4" />
+                    {isPending ? "Declining..." : "Confirm Decline"}
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </SheetContent>

@@ -719,7 +719,7 @@ export function ClinicRecordsClient({
         const html = await builder(id);
         setPreview({ open: true, html, title, loading: false });
       } catch {
-        toast.error("Failed to load preview");
+        toast.error("Unable to load document preview. Please try again.");
         setPreview({ open: false, html: "", title: "", loading: false });
       }
     },
@@ -814,7 +814,7 @@ export function ClinicRecordsClient({
         onValueChange={(v) => setActiveTab(v as TabKey)}
         className="w-full"
       >
-        <TabsList className="flex w-full overflow-x-auto [&::-webkit-scrollbar]:hidden h-auto gap-0 p-1 rounded-lg">
+        <TabsList className="w-full justify-start h-auto p-1 overflow-x-auto flex-nowrap [&::-webkit-scrollbar]:hidden">
           {TABS.map(({ key, label, icon: Icon }) => (
             <TabsTrigger
               key={key}
@@ -822,8 +822,7 @@ export function ClinicRecordsClient({
               className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 text-sm"
             >
               <Icon className="h-4 w-4" />
-              <span className="hidden sm:inline">{label}</span>
-              <span className="sm:hidden">{label.split(" ")[0]}</span>
+              {label}
               {counts[key] > 0 && (
                 <Badge
                   variant="secondary"

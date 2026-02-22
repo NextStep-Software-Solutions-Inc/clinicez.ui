@@ -18,8 +18,7 @@ export default async function OrgLayout(props: OrgLayoutProps) {
   if (!org) notFound();
 
   const navItems: NavItem[] = [
-    { name: "Dashboard", href: `/v2/org/${orgUid}/dashboard`, icon: "home" },
-    { name: "Members", href: `/v2/orgs/${orgUid}/members`, icon: "users" },
+    { name: "Members", href: `/v2/orgs/${orgUid}/members`, icon: "users", exact: true },
   ];
 
   return (

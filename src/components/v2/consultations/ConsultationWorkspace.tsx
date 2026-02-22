@@ -120,7 +120,7 @@ export default function ConsultationWorkspace({
       )}
 
       {/* ── Appointment / Consultation Summary Bar ── */}
-      <div className="shrink-0 px-6 py-4 border-b border-border/50 bg-background/80 backdrop-blur">
+      <div className="shrink-0 px-4 sm:px-6 py-3 sm:py-4 border-b border-border/50 bg-background/80 backdrop-blur">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
@@ -219,7 +219,7 @@ export default function ConsultationWorkspace({
           onValueChange={setActiveTab}
           className="flex flex-col h-full"
         >
-          <TabsList className="shrink-0 w-full justify-start rounded-none border-b border-border/50 bg-transparent h-10 px-6 gap-0">
+          <TabsList className="shrink-0 w-full justify-start rounded-none border-b border-border/50 bg-transparent h-10 px-2 sm:px-6 gap-0 overflow-x-auto [&::-webkit-scrollbar]:hidden">
             <TabsTrigger
               value="notes"
               className="flex items-center gap-1.5 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary h-full px-3 text-xs"
@@ -275,7 +275,7 @@ export default function ConsultationWorkspace({
               />
             </TabsContent>
 
-            <TabsContent value="rx" className="mt-0 p-6">
+            <TabsContent value="rx" className="mt-0 p-4 sm:p-6">
               {hasPatient ? (
                 <ConsultationPrescriptions
                   clinicUid={clinicUid}
@@ -289,7 +289,7 @@ export default function ConsultationWorkspace({
               )}
             </TabsContent>
 
-            <TabsContent value="certs" className="mt-0 p-6">
+            <TabsContent value="certs" className="mt-0 p-4 sm:p-6">
               {hasPatient ? (
                 <ConsultationMedCerts
                   clinicUid={clinicUid}
@@ -303,7 +303,7 @@ export default function ConsultationWorkspace({
               )}
             </TabsContent>
 
-            <TabsContent value="diagnostics" className="mt-0 p-6">
+            <TabsContent value="diagnostics" className="mt-0 p-4 sm:p-6">
               {hasPatient ? (
                 <ConsultationDiagnostics
                   clinicUid={clinicUid}

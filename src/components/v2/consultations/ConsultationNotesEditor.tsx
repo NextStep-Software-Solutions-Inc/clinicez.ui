@@ -87,7 +87,7 @@ export default function ConsultationNotesEditor({
   }
 
   return (
-    <div className="p-6 space-y-3">
+    <div className="p-4 sm:p-6 space-y-3">
       {sections.map((section) => (
         <div
           key={section.name}

@@ -11,6 +11,7 @@ import {
   CalendarDays,
   Filter,
   Loader2,
+  ChevronLeft,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -88,6 +89,11 @@ export default function ClinicConsultationsClient({
   initialActiveId = null,
   initialActiveDetail = null,
 }: ClinicConsultationsClientProps) {
+  // ── Mobile view state (list | workspace) ─────────────────────────────────
+  const [mobileView, setMobileView] = useState<"list" | "workspace">(
+    initialActiveId ? "workspace" : "list"
+  );
+
   // ── Queue state ──────────────────────────────────────────────────────────
   const [items, setItems] = useState<QueueItem[]>(initialItems);
   const [total, setTotal] = useState(initialTotal);
@@ -118,6 +124,15 @@ export default function ClinicConsultationsClient({
   const listRef = useRef<HTMLDivElement>(null);
   /** Guards against multiple simultaneous load-more requests. */
   const loadMoreInFlight = useRef(false);
+
+  /* ── Handle item selection (loads detail + switches to workspace on mobile) ── */
+  const handleSelect = useCallback(
+    (item: QueueItem) => {
+      loadDetail(item);
+      setMobileView("workspace"); // setMobileView is a stable useState setter — no dep needed
+    },
+    [loadDetail]
+  );
 
   /* ── Navigate to consultation without remounting (preserves scroll) ── */
   const pushUrl = useCallback(
@@ -263,151 +278,176 @@ export default function ClinicConsultationsClient({
   const shownCount = filteredItems.length;
 
   return (
-    <div className="flex h-[calc(100dvh-11rem)] gap-0 overflow-hidden">
-      {/* ── Left Panel: Queue ── */}
-      <aside className="w-80 shrink-0 flex flex-col border-r border-border/50 bg-background/60 overflow-hidden">
-        {/* Filters */}
-        <div className="shrink-0 px-3 py-3 border-b border-border/50 space-y-2">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-            <Input
-              placeholder="Search patient, subject…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="h-8 pl-8 text-xs"
-            />
-          </div>
-          <div className="flex items-center gap-1.5">
-            <Filter className="h-3 w-3 text-muted-foreground shrink-0" />
-            <div className="flex gap-1 flex-1">
-              {(["all", "PROCESSING", "RESOLVED"] as StatusFilter[]).map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => setStatusFilter(s)}
-                  className={`flex-1 text-[10px] font-medium py-1 rounded-md transition-colors ${
-                    statusFilter === s
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted/60 text-muted-foreground hover:bg-muted"
-                  }`}
-                >
-                  {s === "all" ? "All" : s === "PROCESSING" ? "Active" : "Resolved"}
-                </button>
-              ))}
+    <div className="flex flex-col h-[calc(100dvh-11rem)] overflow-hidden">
+      {/* ── Mobile back button (workspace → list) ── */}
+      {mobileView === "workspace" && (
+        <div className="md:hidden shrink-0 flex items-center gap-2 px-4 py-2.5 border-b border-border/50 bg-background/80 backdrop-blur">
+          <button
+            type="button"
+            onClick={() => setMobileView("list")}
+            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Back to Queue
+          </button>
+        </div>
+      )}
+
+      {/* ── Split panel row ── */}
+      <div className="flex flex-1 overflow-hidden min-h-0">
+        {/* ── Left Panel: Queue ── */}
+        <aside
+          className={`shrink-0 flex-col border-r border-border/50 bg-background/60 overflow-hidden w-full md:w-80 ${
+            mobileView === "workspace" ? "hidden md:flex" : "flex"
+          }`}
+        >
+          {/* Filters */}
+          <div className="shrink-0 px-3 py-3 border-b border-border/50 space-y-2">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+              <Input
+                placeholder="Search patient, subject…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="h-8 pl-8 text-xs"
+              />
             </div>
-            <button
-              type="button"
-              onClick={() => setHpOnly((v) => !v)}
-              className={`text-[10px] font-medium px-2 py-1 rounded-md transition-colors shrink-0 ${
-                hpOnly
-                  ? "bg-secondary text-secondary-foreground"
-                  : "bg-muted/60 text-muted-foreground hover:bg-muted"
-              }`}
-            >
-              Mine
-            </button>
+            <div className="flex items-center gap-1.5">
+              <Filter className="h-3 w-3 text-muted-foreground shrink-0" />
+              <div className="flex gap-1 flex-1">
+                {(["all", "PROCESSING", "RESOLVED"] as StatusFilter[]).map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setStatusFilter(s)}
+                    className={`flex-1 text-[10px] font-medium py-1 rounded-md transition-colors ${
+                      statusFilter === s
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted/60 text-muted-foreground hover:bg-muted"
+                    }`}
+                  >
+                    {s === "all" ? "All" : s === "PROCESSING" ? "Active" : "Resolved"}
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={() => setHpOnly((v) => !v)}
+                className={`text-[10px] font-medium px-2 py-1 rounded-md transition-colors shrink-0 ${
+                  hpOnly
+                    ? "bg-secondary text-secondary-foreground"
+                    : "bg-muted/60 text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                Mine
+              </button>
+            </div>
+            {/* Showing X of Y */}
+            <p className="text-[10px] text-muted-foreground">
+              {refreshingQueue ? (
+                "Loading…"
+              ) : (
+                <>
+                  Showing{" "}
+                  <span className="font-semibold text-foreground/70">{shownCount}</span>
+                  {!search.trim() && shownCount < total && (
+                    <> of <span className="font-semibold text-foreground/70">{total}</span></>
+                  )}{" "}
+                  consultation{total !== 1 ? "s" : ""}
+                </>
+              )}
+            </p>
           </div>
-          {/* Showing X of Y */}
-          <p className="text-[10px] text-muted-foreground">
-            {refreshingQueue ? (
-              "Loading…"
+
+          {/* Scrollable list */}
+          <div
+            ref={listRef}
+            className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full"
+          >
+            {filteredItems.length === 0 && !refreshingQueue ? (
+              <div className="flex flex-col items-center justify-center h-full gap-3 px-6 text-center">
+                <div className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center">
+                  <Stethoscope className="h-6 w-6 text-muted-foreground/50" />
+                </div>
+                <p className="text-sm text-muted-foreground">No consultations found</p>
+              </div>
             ) : (
               <>
-                Showing{" "}
-                <span className="font-semibold text-foreground/70">{shownCount}</span>
-                {!search.trim() && shownCount < total && (
-                  <> of <span className="font-semibold text-foreground/70">{total}</span></>
-                )}{" "}
-                consultation{total !== 1 ? "s" : ""}
+                {filteredItems.map((item) => (
+                  <QueueListItem
+                    key={item.id}
+                    item={item}
+                    isSelected={selectedId === item.id}
+                    onClick={() => handleSelect(item)}
+                  />
+                ))}
+
+                {/* Sentinel for IntersectionObserver */}
+                <div ref={sentinelRef} className="h-1" />
+
+                {/* Load-more indicator */}
+                {loadingMore && (
+                  <div className="flex items-center justify-center gap-2 py-3 text-xs text-muted-foreground">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    Loading more…
+                  </div>
+                )}
+                {!loadingMore && nextCursor && !search.trim() && (
+                  <button
+                    type="button"
+                    onClick={loadMore}
+                    className="w-full py-2.5 text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors"
+                  >
+                    Load {Math.min(PAGE_SIZE, total - shownCount)} more
+                  </button>
+                )}
+                {!nextCursor && items.length > 0 && !search.trim() && (
+                  <p className="text-center text-[10px] text-muted-foreground/50 py-3">
+                    All {total} consultation{total !== 1 ? "s" : ""} loaded
+                  </p>
+                )}
               </>
             )}
-          </p>
-        </div>
+          </div>
+        </aside>
 
-        {/* Scrollable list */}
-        <div
-          ref={listRef}
-          className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full"
+        {/* ── Right Panel: Workspace ── */}
+        <main
+          className={`flex-1 overflow-hidden ${
+            mobileView === "list" ? "hidden md:flex" : "flex"
+          }`}
         >
-          {filteredItems.length === 0 && !refreshingQueue ? (
-            <div className="flex flex-col items-center justify-center h-full gap-3 px-6 text-center">
-              <div className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center">
-                <Stethoscope className="h-6 w-6 text-muted-foreground/50" />
+          {loadingDetail ? (
+            <div className="flex items-center justify-center h-full w-full">
+              <div className="flex flex-col items-center gap-3">
+                <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+                <p className="text-sm text-muted-foreground">Loading consultation…</p>
               </div>
-              <p className="text-sm text-muted-foreground">No consultations found</p>
             </div>
+          ) : activeDetail ? (
+            <ConsultationWorkspace
+              clinicUid={clinicUid}
+              patient={activePatient}
+              consultation={activeDetail}
+              myHPs={myHPs}
+              onRefresh={refreshDetail}
+              onResolved={handleResolved}
+            />
           ) : (
-            <>
-              {filteredItems.map((item) => (
-                <QueueListItem
-                  key={item.id}
-                  item={item}
-                  isSelected={selectedId === item.id}
-                  onClick={() => loadDetail(item)}
-                />
-              ))}
-
-              {/* Sentinel for IntersectionObserver */}
-              <div ref={sentinelRef} className="h-1" />
-
-              {/* Load-more indicator */}
-              {loadingMore && (
-                <div className="flex items-center justify-center gap-2 py-3 text-xs text-muted-foreground">
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  Loading more…
-                </div>
-              )}
-              {!loadingMore && nextCursor && !search.trim() && (
-                <button
-                  type="button"
-                  onClick={loadMore}
-                  className="w-full py-2.5 text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors"
-                >
-                  Load {Math.min(PAGE_SIZE, total - shownCount)} more
-                </button>
-              )}
-              {!nextCursor && items.length > 0 && !search.trim() && (
-                <p className="text-center text-[10px] text-muted-foreground/50 py-3">
-                  All {total} consultation{total !== 1 ? "s" : ""} loaded
+            <div className="flex flex-col items-center justify-center h-full gap-3 text-center px-6 w-full">
+              <div className="w-16 h-16 rounded-full bg-muted/40 flex items-center justify-center">
+                <Stethoscope className="h-8 w-8 text-muted-foreground/40" />
+              </div>
+              <div>
+                <p className="text-base font-semibold text-foreground/70">Consultation Queue</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Select a consultation from the list to open the workspace
                 </p>
-              )}
-            </>
+              </div>
+            </div>
           )}
-        </div>
-      </aside>
-
-      {/* ── Right Panel: Workspace ── */}
-      <main className="flex-1 overflow-hidden">
-        {loadingDetail ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="flex flex-col items-center gap-3">
-              <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-              <p className="text-sm text-muted-foreground">Loading consultation…</p>
-            </div>
-          </div>
-        ) : activeDetail ? (
-          <ConsultationWorkspace
-            clinicUid={clinicUid}
-            patient={activePatient}
-            consultation={activeDetail}
-            myHPs={myHPs}
-            onRefresh={refreshDetail}
-            onResolved={handleResolved}
-          />
-        ) : (
-          <div className="flex flex-col items-center justify-center h-full gap-3 text-center px-6">
-            <div className="w-16 h-16 rounded-full bg-muted/40 flex items-center justify-center">
-              <Stethoscope className="h-8 w-8 text-muted-foreground/40" />
-            </div>
-            <div>
-              <p className="text-base font-semibold text-foreground/70">Consultation Queue</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                Select a consultation from the list to open the workspace
-              </p>
-            </div>
-          </div>
-        )}
-      </main>
+        </main>
+      </div>
     </div>
   );
 }

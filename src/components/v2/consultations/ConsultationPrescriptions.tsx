@@ -179,7 +179,7 @@ export default function ConsultationPrescriptions({
           <h4 className="text-xs font-semibold text-foreground/80 uppercase tracking-wide">
             New Prescription
           </h4>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
               <Label className="text-xs">Rx Name (optional)</Label>
               <Input
@@ -217,8 +217,8 @@ export default function ConsultationPrescriptions({
             </div>
             {medicines.map((med, idx) => (
               <div key={idx} className="rounded border border-border/40 bg-background p-3 space-y-2">
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="col-span-2 space-y-1">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <div className="sm:col-span-2 space-y-1">
                     <Label className="text-xs">Drug Name *</Label>
                     <Input
                       placeholder="e.g. Amoxicillin"
@@ -237,7 +237,7 @@ export default function ConsultationPrescriptions({
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-4 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   <div className="space-y-1">
                     <Label className="text-xs">Frequency</Label>
                     <Input

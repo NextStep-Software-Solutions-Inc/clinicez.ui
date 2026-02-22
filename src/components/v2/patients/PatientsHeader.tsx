@@ -14,6 +14,7 @@ import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useState, useCallback, useEffect, memo } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import type { ClinicPatientFilters } from "@/types/clinic-patients-v2.types";
 import { AddPatientSheet } from "./AddPatientSheet";
 
@@ -24,6 +25,8 @@ interface PatientsHeaderProps {
   loadedCount: number;
   onFiltersChange: (patch: Partial<ClinicPatientFilters>) => void;
   onPatientAdded?: () => void;
+  /** Auto-open the AddPatientSheet on first render (e.g. after redirect from walk-in flow) */
+  initialAddPatientOpen?: boolean;
 }
 
 export const PatientsHeader = memo(function PatientsHeader({
@@ -33,12 +36,26 @@ export const PatientsHeader = memo(function PatientsHeader({
   loadedCount,
   onFiltersChange,
   onPatientAdded,
+  initialAddPatientOpen = false,
 }: PatientsHeaderProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [localSearch, setLocalSearch] = useState(filters.search);
   const [localMinAge, setLocalMinAge] = useState(filters.minAge);
   const [localMaxAge, setLocalMaxAge] = useState(filters.maxAge);
-  const [addPatientOpen, setAddPatientOpen] = useState(false);
+  const [addPatientOpen, setAddPatientOpen] = useState(initialAddPatientOpen);
+
+  // Remove ?addPatient=1 from URL once the sheet opens, keeping other params intact
+  useEffect(() => {
+    if (!initialAddPatientOpen) return;
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("addPatient");
+    const qs = params.toString();
+    router.replace(`${pathname}${qs ? `?${qs}` : ""}`, { scroll: false });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Debounce search by 300ms
   useEffect(() => {

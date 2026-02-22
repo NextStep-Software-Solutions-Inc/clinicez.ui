@@ -50,6 +50,8 @@ export function ClinicPatientsClient({
 
   // Parse initial filters from URL once (stable across renders via ref)
   const initialFilters = useRef(parseFiltersFromParams(searchParams)).current;
+  // Auto-open AddPatientSheet when navigated from walk-in flow (?addPatient=1)
+  const initialAddPatientOpen = searchParams.get("addPatient") === "1";
   const {
     patients,
     totalCount,
@@ -128,6 +130,7 @@ export function ClinicPatientsClient({
         loadedCount={patients.length}
         onFiltersChange={handleFiltersChange}
         onPatientAdded={refresh}
+        initialAddPatientOpen={initialAddPatientOpen}
       />
 
       {/* Content area */}

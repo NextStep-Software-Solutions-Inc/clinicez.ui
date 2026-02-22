@@ -87,6 +87,7 @@ export interface GetClinicPatientsResult {
   data: Array<{
     stats: { appointments: number; conditions: number; medications: number };
     id: number;
+    profileCompletionStatus: string;
     Clinic: {
       id: number;
       name: string;
@@ -168,6 +169,7 @@ export const getClinicPatientsAction = async (filters: GetClinicPatientFilters):
     },
     select: {
       id: true,
+      profileCompletionStatus: true,
       Clinic: {
         select: {
           id: true,

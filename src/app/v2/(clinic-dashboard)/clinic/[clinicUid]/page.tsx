@@ -3,6 +3,8 @@ import { getClinicDashboardDataAction } from "@/actions/clinics/clinic-dashboard
 import { ClinicDashboardClient } from "@/components/v2/dashboard/ClinicDashboardClient";
 import prisma from "@lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 interface ClinicDashboardPageProps {
   params: Promise<{ clinicUid: string }>;
 }

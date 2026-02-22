@@ -316,6 +316,10 @@ export type GetAppointmentFilter = {
   tagged?: string;
   appointmentId?: number;
   sort?: "request" | "schedule";
+  /** Cursor-based pagination: ID of the last item from the previous page */
+  cursor?: number;
+  /** Number of items to fetch per page (default: 20) */
+  limit?: number;
 };
 export type GetAppointments = Awaited<ReturnType<typeof getAppointmentsAction>>;
 export const getAppointmentsAction = withErrorHandling(cache(async (filter?: GetAppointmentFilter) => {
@@ -328,7 +332,8 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
     getHPsAction({ userId: session.user.sub })
   ])
 
-  const { clinicUid, userId, status, routedAptStatus, tagged, sort } = filter || {};
+  const { clinicUid, userId, status, routedAptStatus, tagged, sort, cursor, limit } = filter || {};
+  const PAGE_SIZE = limit ?? 20;
 
   const userPermissionArray = permissions.map(p => p.name);
 
@@ -343,6 +348,8 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
 
   const myHpIds = myHps.map((hp) => hp.id);
   const appointments = await prisma.appointment.findMany({
+    take: PAGE_SIZE + 1, // fetch one extra to determine if there's a next page
+    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     orderBy: {
       ...(sort === "schedule"
         ? {
@@ -605,7 +612,11 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
     });
   });
 
-  return { message: "Appointments fetched", data: filteredAppointments };
+  // Cursor pagination: determine if there is a next page
+  const hasNextPage = filteredAppointments.length > PAGE_SIZE;
+  const pageItems = hasNextPage ? filteredAppointments.slice(0, PAGE_SIZE) : filteredAppointments;
+
+  return { message: "Appointments fetched", data: pageItems };
 }));
 
 // ─── Walk-In Appointment Creation ────────────────────────────────────────────

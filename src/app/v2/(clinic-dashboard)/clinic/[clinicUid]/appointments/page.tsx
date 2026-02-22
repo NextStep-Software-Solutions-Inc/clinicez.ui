@@ -7,6 +7,7 @@ import { getClinicServicesAction } from "@/actions/clinics/clinic-service.action
 import { getHPsAction } from "@/actions/hp.actions";
 import { AppointmentsClient } from "@/components/v2/appointments/AppointmentsClient";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getCachedSession } from "@/actions/session.action";
 
 export const dynamic = "force-dynamic";
 
@@ -22,14 +23,20 @@ interface AppointmentsPageProps {
 export default async function AppointmentsPage({ params }: AppointmentsPageProps) {
   const { clinicUid } = await params;
 
-  const [appointmentsResult, countsResult, modes, types, hps, services] = await Promise.all([
+  const session = await getCachedSession();
+
+  const [appointmentsResult, countsResult, modes, types, hps, services, myHps] = await Promise.all([
     getAppointmentsAction({ clinicUid }),
     getAppointmentCountsAction(clinicUid),
     getAppointmentModesAction(clinicUid),
     getAppointmentTypesAction(clinicUid),
     getHPsAction({ clinicUid }),
     getClinicServicesAction({ clinicUid }),
+    // Fetch current user's HPs for accept/decline guard
+    session ? getHPsAction({ userId: session.user.sub }) : Promise.resolve([]),
   ]);
+
+  const currentUserHpIds = myHps.map((hp) => hp.id);
 
   return (
     <div className="pb-10">
@@ -49,6 +56,7 @@ export default async function AppointmentsPage({ params }: AppointmentsPageProps
           types={types}
           services={services}
           hps={hps}
+          currentUserHpIds={currentUserHpIds}
         />
       </Suspense>
     </div>

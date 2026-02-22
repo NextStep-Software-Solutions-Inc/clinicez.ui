@@ -55,11 +55,12 @@ export const assignAppointmentAction = withErrorHandling(async (data: AssignAppo
 
   if (!canAssignAppointment) throw new Error('You do not have permission to assign appointment');
 
-  // Get the healthcare provider's user preference for auto-accept
+  // Get the healthcare provider details and check HP type
   const healthcareProvider = await prisma.healthcareProvider.findUnique({
     where: { id: routedTo },
     select: {
       id: true,
+      hpTypeId: true,
       User: {
         select: {
           UserPreference: {
@@ -74,6 +75,21 @@ export const assignAppointmentAction = withErrorHandling(async (data: AssignAppo
 
   if (!healthcareProvider) {
     throw new Error('Healthcare provider not found');
+  }
+
+  // One active assignment per HP role — block if an active routing already exists for this role
+  const activeRoutingForRole = await prisma.appointmentRouting.findFirst({
+    where: {
+      appointmentId,
+      status: { in: ['PENDING', 'ACCEPTED'] },
+      RoutedTo: { hpTypeId: healthcareProvider.hpTypeId },
+    },
+    select: { id: true, RoutedTo: { select: { HPType: { select: { name: true } } } } },
+  });
+
+  if (activeRoutingForRole) {
+    const roleName = activeRoutingForRole.RoutedTo.HPType?.name ?? 'this role';
+    throw new Error(`An active assignment for ${roleName} already exists. It must be declined or completed first.`);
   }
 
   const autoAccept = healthcareProvider.User?.UserPreference?.autoAcceptAppointmentAssignment ?? false;
@@ -114,6 +130,7 @@ export const assignAppointmentAction = withErrorHandling(async (data: AssignAppo
   return { message: `Appointment assigned`, data: null };
 }, async error => {
   if (hasCodeProperty(error) && error.code === 'P2025') return 'Appointment not found or you are not authorized to assign it';
+  if (error instanceof Error) return error.message;
   return 'Failed to assign appointment';
 })
 

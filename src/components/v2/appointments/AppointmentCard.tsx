@@ -11,6 +11,7 @@ import {
   ClipboardList,
   Lock,
   UserCheck,
+  Tags,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -86,8 +87,12 @@ export function AppointmentCard({
       ? `${assignedDoctor.User.firstName ?? ""} ${assignedDoctor.User.lastName ?? ""}`.trim()
       : null);
 
-  const handleReceive = async (e: React.MouseEvent) => {
-    e.stopPropagation();
+  // Tagged HP names
+  const taggedHps = appointment.AppointmentTag ?? [];
+
+  // ── Handlers (no stopPropagation needed — actions area is outside the click zone) ──
+
+  const handleReceive = async () => {
     setIsPending(true);
     const fd = new FormData();
     fd.append("appointmentId", String(appointment.id));
@@ -102,8 +107,7 @@ export function AppointmentCard({
     }
   };
 
-  const handleComplete = async (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleComplete = async () => {
     setIsPending(true);
     const fd = new FormData();
     fd.append("appointmentId", String(appointment.id));
@@ -117,8 +121,7 @@ export function AppointmentCard({
     }
   };
 
-  const handleReject = async (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleReject = async () => {
     setIsPending(true);
     const fd = new FormData();
     fd.append("appointmentId", String(appointment.id));
@@ -135,73 +138,86 @@ export function AppointmentCard({
 
   return (
     <div
-      role="button"
-      tabIndex={0}
-      onClick={() => onSelect(appointment)}
-      onKeyDown={(e) => e.key === "Enter" && onSelect(appointment)}
-      className="group flex items-start gap-3 sm:gap-4 px-4 py-3 rounded-xl border border-white/30 dark:border-slate-700/30 bg-white/20 dark:bg-slate-800/20 backdrop-blur-sm shadow-sm hover:shadow-md hover:border-primary/40 hover:bg-white/40 dark:hover:bg-slate-700/40 transition-all duration-200 cursor-pointer"
+      className="flex items-start gap-3 sm:gap-4 rounded-xl border border-white/30 dark:border-slate-700/30 bg-white/20 dark:bg-slate-800/20 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden"
       style={{ borderLeftWidth: 4, borderLeftColor: "hsl(var(--primary) / 0.25)" }}
     >
-      {/* Avatar */}
-      <Avatar className="h-10 w-10 rounded-full border border-white/50 dark:border-slate-600/50 flex-shrink-0 mt-0.5">
-        <AvatarFallback className="text-xs font-semibold bg-primary/10 text-primary">
-          {initials || <User className="h-4 w-4" />}
-        </AvatarFallback>
-      </Avatar>
-
-      {/* Main content */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-start gap-2 flex-wrap">
-          <p className="font-semibold text-sm line-clamp-1 group-hover:text-primary transition-colors">
-            {fullName}
-          </p>
-          <Badge className={`text-xs px-2 py-0.5 border-0 font-medium ${statusConfig.className}`}>
-            {statusConfig.label}
-          </Badge>
-          {isWalkIn && (
-            <Badge variant="outline" className="text-xs px-2 py-0.5 border-primary/30 text-primary gap-1">
-              <UserCheck className="h-2.5 w-2.5" />
-              Walk-In
-            </Badge>
-          )}
-        </div>
-        {displaySubject && (
-          <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{displaySubject}</p>
-        )}
-
-        {/* Meta row */}
-        <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-          {scheduledDate && (
-            <span className="flex items-center gap-1 text-xs text-muted-foreground">
-              <CalendarDays className="h-3 w-3" />
-              {format(new Date(scheduledDate), "MMM d, yyyy")}
-            </span>
-          )}
-          {timeStart && (
-            <span className="flex items-center gap-1 text-xs text-muted-foreground">
-              <Clock className="h-3 w-3" />
-              {timeStart}
-            </span>
-          )}
-          {doctorName && (
-            <span className="flex items-center gap-1 text-xs text-muted-foreground">
-              <Stethoscope className="h-3 w-3" />
-              {doctorName}
-            </span>
-          )}
-          {appointment.AppointmentAttribute?.AppointmentType && (
-            <span className="text-xs text-muted-foreground/60">
-              {appointment.AppointmentAttribute.AppointmentType.name}
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* Actions */}
-      <div
-        className="flex items-center gap-1.5 flex-shrink-0 flex-wrap justify-end"
-        onClick={(e) => e.stopPropagation()}
+      {/* ── Clickable info area ──────────────────────────────────────────────── */}
+      <button
+        type="button"
+        className="flex flex-1 items-start gap-3 sm:gap-4 px-4 py-3 text-left group hover:bg-white/30 dark:hover:bg-slate-700/30 transition-colors min-w-0"
+        onClick={() => onSelect(appointment)}
       >
+        <Avatar className="h-10 w-10 rounded-full border border-white/50 dark:border-slate-600/50 flex-shrink-0 mt-0.5">
+          <AvatarFallback className="text-xs font-semibold bg-primary/10 text-primary">
+            {initials || <User className="h-4 w-4" />}
+          </AvatarFallback>
+        </Avatar>
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start gap-2 flex-wrap">
+            <p className="font-semibold text-sm line-clamp-1 group-hover:text-primary transition-colors">
+              {fullName}
+            </p>
+            <Badge className={`text-xs px-2 py-0.5 border-0 font-medium ${statusConfig.className}`}>
+              {statusConfig.label}
+            </Badge>
+            {isWalkIn && (
+              <Badge variant="outline" className="text-xs px-2 py-0.5 border-primary/30 text-primary gap-1">
+                <UserCheck className="h-2.5 w-2.5" />
+                Walk-In
+              </Badge>
+            )}
+          </div>
+          {displaySubject && (
+            <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{displaySubject}</p>
+          )}
+
+          {/* Meta row */}
+          <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+            {scheduledDate && (
+              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                <CalendarDays className="h-3 w-3" />
+                {format(new Date(scheduledDate), "MMM d, yyyy")}
+              </span>
+            )}
+            {timeStart && (
+              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                <Clock className="h-3 w-3" />
+                {timeStart}
+              </span>
+            )}
+            {doctorName && (
+              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                <Stethoscope className="h-3 w-3" />
+                {doctorName}
+              </span>
+            )}
+            {taggedHps.length > 0 && (
+              <span className="flex items-center gap-1 text-xs text-muted-foreground/70">
+                <Tags className="h-3 w-3" />
+                {taggedHps
+                  .map((t) => {
+                    const hp = t.HealthcareProvider;
+                    return (
+                      hp.HPProfile?.name ??
+                      `${hp.User.firstName ?? ""} ${hp.User.lastName ?? ""}`.trim()
+                    );
+                  })
+                  .filter(Boolean)
+                  .join(", ")}
+              </span>
+            )}
+            {appointment.AppointmentAttribute?.AppointmentType && (
+              <span className="text-xs text-muted-foreground/60">
+                {appointment.AppointmentAttribute.AppointmentType.name}
+              </span>
+            )}
+          </div>
+        </div>
+      </button>
+
+      {/* ── Actions area (NOT inside the clickable zone) ─────────────────────── */}
+      <div className="flex items-center gap-1.5 flex-shrink-0 flex-wrap justify-end px-3 py-3 self-center">
         {status === "PENDING" && (
           <>
             <Button
@@ -231,10 +247,7 @@ export function AppointmentCard({
             variant="outline"
             className="h-7 text-xs border-teal-400/40 text-teal-700 hover:bg-teal-600 hover:text-white"
             disabled={isPending}
-            onClick={(e) => {
-              e.stopPropagation();
-              onSelect(appointment);
-            }}
+            onClick={() => onSelect(appointment)}
           >
             <ClipboardList className="h-3 w-3 mr-1" />
             Manage
@@ -246,10 +259,7 @@ export function AppointmentCard({
             variant="outline"
             className="h-7 text-xs border-purple-400/40 text-purple-600 hover:bg-purple-600 hover:text-white"
             disabled={isPending}
-            onClick={(e) => {
-              e.stopPropagation();
-              onSelect(appointment);
-            }}
+            onClick={() => onSelect(appointment)}
           >
             <Stethoscope className="h-3 w-3 mr-1" />
             View &amp; Act
@@ -272,10 +282,7 @@ export function AppointmentCard({
               variant="outline"
               className="h-7 text-xs"
               disabled={isPending}
-              onClick={(e) => {
-                e.stopPropagation();
-                onSelect(appointment);
-              }}
+              onClick={() => onSelect(appointment)}
             >
               <ClipboardList className="h-3 w-3 mr-1" />
               Pre-Assess
@@ -287,10 +294,7 @@ export function AppointmentCard({
             size="sm"
             variant="ghost"
             className="h-7 text-xs text-muted-foreground"
-            onClick={(e) => {
-              e.stopPropagation();
-              onSelect(appointment);
-            }}
+            onClick={() => onSelect(appointment)}
           >
             View Details
           </Button>
@@ -299,4 +303,3 @@ export function AppointmentCard({
     </div>
   );
 }
-

@@ -93,7 +93,7 @@ export default function ConsultationWorkspace({
   const labCount = consultation.LaboratoryRequests?.length ?? 0;
   const imgCount = consultation.ImagingRequests?.length ?? 0;
   const hsCount = consultation.HeartStationRequests?.length ?? 0;
-  const refCount = consultation.ReferralSlips?.length ?? 0;
+  const refCount = consultation.ClinicReferralSlips?.length ?? 0;
 
   // Placeholder shown inside patient-requiring tabs when patient context is unavailable
   const NoPatientPlaceholder = () => (

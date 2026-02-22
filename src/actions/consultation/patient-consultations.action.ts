@@ -235,7 +235,7 @@ export const getPatientConsultationDetailAction = withErrorHandling(
             },
           },
         },
-        ReferralSlips: {
+        ClinicReferralSlips: {
           where: { isActive: true, deletedAt: null },
           orderBy: { createdAt: "desc" },
           select: {

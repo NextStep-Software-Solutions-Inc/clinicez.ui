@@ -20,7 +20,7 @@ import type { GetHPsType } from "@/actions/hp.actions";
 import DownloadReferralSlipAction from "@/components/referral-slip/DownloadReferralSlipAction";
 
 type Detail = NonNullable<GetPatientConsultationDetail["data"]>;
-type ReferralSlip = NonNullable<Detail["ReferralSlips"]>[number];
+type ReferralSlip = NonNullable<Detail["ClinicReferralSlips"]>[number];
 
 interface PatientInfo {
   id: number;
@@ -80,7 +80,7 @@ export default function ConsultationReferrals({
   const refreshReferrals = async () => {
     const result = await getConsultationReferralsForTicketAction({ ticketId: consultation.id });
     if (result.status && result.data) {
-      onPatchDetail({ ReferralSlips: result.data });
+      onPatchDetail({ ClinicReferralSlips: result.data });
     }
   };
 
@@ -230,13 +230,13 @@ export default function ConsultationReferrals({
         </div>
       )}
 
-      {(consultation.ReferralSlips?.length ?? 0) === 0 ? (
+      {(consultation.ClinicReferralSlips?.length ?? 0) === 0 ? (
         <div className="text-center py-10 text-sm text-muted-foreground">
           No referral slips issued yet.
         </div>
       ) : (
         <div className="space-y-2">
-          {consultation.ReferralSlips?.map((slip) => (
+          {consultation.ClinicReferralSlips?.map((slip) => (
             <ReferralCard
               key={slip.id}
               slip={slip}

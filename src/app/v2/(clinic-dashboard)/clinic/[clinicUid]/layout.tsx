@@ -2,6 +2,7 @@ import React from "react";
 import { DashboardShell } from "@/components/v2/dashboard";
 import type { NavItem } from "@/components/v2/dashboard";
 import { getClinicWithUserRoleAction, getUserClinicsWithRolesAction } from "@/actions/clinics/clinic.action";
+import { getAppointmentCountsAction } from "@/actions/appointments/appointments.action";
 import { notFound } from "next/navigation";
 
 interface ClinicUidLayoutProps {
@@ -30,6 +31,10 @@ export default async function ClinicUidLayout(
   const userClinicsResult = await getUserClinicsWithRolesAction();
   const userClinics = userClinicsResult.data;
 
+  // Load appointment counts for the dynamic badge
+  const appointmentCountsResult = await getAppointmentCountsAction(clinicUid);
+  const pendingAppointmentCount = appointmentCountsResult.data?.["PENDING"] ?? 0;
+
   // Navigation items for clinic dashboard
   const navItems: NavItem[] = [
     {
@@ -49,7 +54,7 @@ export default async function ClinicUidLayout(
       name: "Appointments",
       href: `/v2/clinic/${clinicUid}/appointments`,
       icon: "calendar",
-      badgeCount: 3,
+      badgeCount: pendingAppointmentCount,
     },
     {
       name: "Consultations",

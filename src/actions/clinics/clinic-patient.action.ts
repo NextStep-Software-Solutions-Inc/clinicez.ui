@@ -6,9 +6,10 @@ import { withErrorHandling } from "@/lib/with-error-handling";
 import { getCachedSession } from "../session.action";
 import { sessionCheck } from "@/lib/auth";
 import { hasCodeProperty } from "@/lib/utils";
-import { Prisma } from "@prisma/client";
+import { Prisma, $Enums } from "@prisma/client";
 import { requireClinicPermission, requirePermissionOrOwnership } from "@/lib/permission-checker";
 import { PERMISSIONS } from "@/lib/permissions";
+import { clerkClient } from "@clerk/nextjs/server";
 
 export type GetClinicPatient = Awaited<ReturnType<typeof getClinicPatientAction>>;
 export const getClinicPatientAction = withErrorHandling(async ({ userId, clinicUid }: { userId: number, clinicUid: string }) => {
@@ -356,3 +357,108 @@ export const addClinicPatientAction = withErrorHandling(async ({ clinicUid, user
 })
 
 
+type CreateAndAddClinicPatientPayload = {
+  clinicUid: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  gender?: $Enums.Gender;
+  dob?: Date;
+};
+
+export type CreateAndAddClinicPatient = Awaited<ReturnType<typeof createAndAddClinicPatientAction>>;
+export const createAndAddClinicPatientAction = withErrorHandling(async (payload: CreateAndAddClinicPatientPayload) => {
+  const session = await sessionCheck();
+
+  await requireClinicPermission(
+    session.user.sub,
+    payload.clinicUid,
+    PERMISSIONS.CLINIC["CREATE:CLINIC:PATIENT"].name,
+    "create patient in clinic"
+  );
+
+  const { clinicUid, firstName, lastName, email, gender, dob } = payload;
+
+  // Check if email is already registered in our database
+  const existingUser = await prismaClient.user.findUnique({ where: { email } });
+  if (existingUser) {
+    throw new Error("A user with this email address already exists. Please search for them using the 'Add Existing User' option.");
+  }
+
+  // Create user in Clerk
+  const clerk = await clerkClient();
+  let clerkUserId: string;
+  try {
+    const clerkUser = await clerk.users.createUser({
+      emailAddress: [email],
+      firstName,
+      lastName,
+      skipPasswordRequirement: true,
+    });
+    clerkUserId = clerkUser.id;
+  } catch (clerkError: unknown) {
+    if (
+      clerkError instanceof Error &&
+      clerkError.message.toLowerCase().includes("email")
+    ) {
+      throw new Error("This email address is already registered. Please use the 'Add Existing User' option instead.");
+    }
+    throw new Error("Failed to create user account. Please try again.");
+  }
+
+  // Create user in database and add as clinic patient in a single transaction
+  await prismaClient.$transaction(async (prisma) => {
+    // Create user in our database (mirrors Clerk webhook logic)
+    const newUser = await prisma.user.create({
+      data: {
+        userId: clerkUserId,
+        email,
+        firstName,
+        lastName,
+        mobile: "",
+        picture: null,
+        isActive: true,
+        gender: gender ?? null,
+        dob: dob ?? null,
+        onboardingStatus: $Enums.OnboardingStatus.NOT_STARTED,
+        profileCompletionStatus: $Enums.ProfileCompletionStatus.INCOMPLETE,
+        accountType: $Enums.AccountType.FULL,
+      },
+    });
+
+    // Assign default user permissions
+    const userPermissions = await prisma.permission.findMany({
+      where: { isActive: true, type: "USER" },
+    });
+    const filteredPermissions = userPermissions.filter((p) => p.name !== "SUPER_ADMIN");
+    if (filteredPermissions.length > 0) {
+      await prisma.userPermission.createMany({
+        data: filteredPermissions.map((p) => ({ userId: newUser.id, permissionId: p.id })),
+        skipDuplicates: true,
+      });
+    }
+
+    // Add user as clinic patient with patient role permissions
+    const patientRole = await prisma.clinicRole.findFirstOrThrow({
+      where: { name: { equals: "Patient", mode: "insensitive" } },
+    });
+    const rolePermissions = await prisma.clinicRoleInitialPermission.findMany({
+      where: { Clinic: { clinicUid }, clinicRoleId: patientRole.id },
+    });
+    await prisma.clinicPatient.create({
+      data: {
+        Clinic: { connect: { clinicUid } },
+        Patient: { connect: { userId: clerkUserId } },
+        ClinicPatientPermissions: {
+          createMany: {
+            data: rolePermissions.map((permission) => ({
+              permissionId: permission.permissionId,
+            })),
+          },
+        },
+      },
+    });
+  });
+
+  return { message: "Patient created and added to clinic successfully", data: null };
+})

@@ -1,6 +1,5 @@
 "use server";
 
-import "server-only";
 import prisma from "@lib/prisma";
 import { withErrorHandling } from "@/lib/with-error-handling";
 import { getCachedSession } from "@actions/session.action";

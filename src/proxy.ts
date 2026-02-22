@@ -21,8 +21,6 @@ const isPublicRoute = createRouteMatcher([
   '/maintenance',
   '/unauthorized',
   '/v2',
-  '/v2/clinics(.*)',
-  '/v2/organizations(.*)',
   '/v2/hp(.*)',
   '/v2/pricing(.*)',
   '/v2/terms(.*)',

@@ -186,8 +186,7 @@ export const getClinicReportsAction = withErrorHandling(
         const hp = ctHp.HealthCareProvider;
         const hpName =
           hp.HPProfile?.name ??
-          `${hp.User.firstName ?? ""} ${hp.User.lastName ?? ""}`.trim() ||
-          "Unknown";
+          (`${hp.User.firstName ?? ""} ${hp.User.lastName ?? ""}`.trim() || "Unknown");
         hpConsultationCounts[hpName] =
           (hpConsultationCounts[hpName] ?? 0) + 1;
       }

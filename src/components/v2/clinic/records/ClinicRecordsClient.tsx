@@ -13,6 +13,7 @@ import {
   RefreshCw,
   Loader2,
   CalendarDays,
+  Download,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -35,6 +36,13 @@ import { getImagingStudiesAction } from "@/actions/clinics/clinical-record/imagi
 import { getHeartStationRequestsAction } from "@/actions/clinics/clinical-record/heart-station.action";
 import { getMedicalCertificatesAction } from "@/actions/clinics/clinical-record/medical-certificate.action";
 import { getReferralSlipsAction } from "@/actions/clinics/clinical-record/referral-slip.action";
+
+import DownloadPrescriptionAction from "@/components/clinic/clinical-records/prescription/DownloadPrescriptionAction";
+import DownloadLaboratoryRequestAction from "@/components/laboratory-requests/DownloadLaboratoryRequestAction";
+import DownloadImagingStudiesAction from "@/components/imaging-studies/DownloadImagingStudiesAction";
+import DownloadHeartStationRequestAction from "@/components/heart-station-requests/DownloadHeartStationRequestAction";
+import DownloadMedicalCertificateAction from "@/components/medical-certificate/DownloadMedicalCertificateAction";
+import DownloadReferralSlipAction from "@/components/referral-slip/DownloadReferralSlipAction";
 
 type Prescriptions = NonNullable<GetPrescriptions["data"]>;
 type LabRequests = NonNullable<GetLaboratoryRequests["data"]>;
@@ -86,6 +94,21 @@ function PatientCell({
 
 function getMedicineName(m: { name?: string | null; genericName?: string | null; brandName?: string | null }) {
   return m.name || m.genericName || m.brandName || "—";
+}
+
+function DownloadIconButton() {
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      type="submit"
+      aria-label="Download / Print"
+      className="h-8 w-8 text-muted-foreground hover:text-primary shrink-0"
+      title="Download / Print"
+    >
+      <Download className="h-4 w-4" />
+    </Button>
+  );
 }
 
 /* ─────────────── Prescriptions tab ─────────────── */
@@ -155,9 +178,14 @@ function PrescriptionsTab({
                   </div>
                 )}
               </div>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground shrink-0">
-                <CalendarDays className="h-3.5 w-3.5" />
-                {dayjs(rx.createdAt).format("MMM D, YYYY")}
+              <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <CalendarDays className="h-3.5 w-3.5" />
+                  {dayjs(rx.createdAt).format("MMM D, YYYY")}
+                </div>
+                <DownloadPrescriptionAction prescription={{ id: rx.id }}>
+                  <DownloadIconButton />
+                </DownloadPrescriptionAction>
               </div>
             </div>
           </CardContent>
@@ -241,9 +269,14 @@ function LabRequestsTab({
                   </div>
                 )}
               </div>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground shrink-0">
-                <CalendarDays className="h-3.5 w-3.5" />
-                {dayjs(req.createdAt).format("MMM D, YYYY")}
+              <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <CalendarDays className="h-3.5 w-3.5" />
+                  {dayjs(req.createdAt).format("MMM D, YYYY")}
+                </div>
+                <DownloadLaboratoryRequestAction request={{ id: req.id }}>
+                  <DownloadIconButton />
+                </DownloadLaboratoryRequestAction>
               </div>
             </div>
           </CardContent>
@@ -326,9 +359,14 @@ function ImagingTab({
                   </p>
                 )}
               </div>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground shrink-0">
-                <CalendarDays className="h-3.5 w-3.5" />
-                {dayjs(study.createdAt).format("MMM D, YYYY")}
+              <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <CalendarDays className="h-3.5 w-3.5" />
+                  {dayjs(study.createdAt).format("MMM D, YYYY")}
+                </div>
+                <DownloadImagingStudiesAction study={{ id: study.id }}>
+                  <DownloadIconButton />
+                </DownloadImagingStudiesAction>
               </div>
             </div>
           </CardContent>
@@ -411,9 +449,14 @@ function HeartStationTab({
                   </p>
                 )}
               </div>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground shrink-0">
-                <CalendarDays className="h-3.5 w-3.5" />
-                {dayjs(req.createdAt).format("MMM D, YYYY")}
+              <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <CalendarDays className="h-3.5 w-3.5" />
+                  {dayjs(req.createdAt).format("MMM D, YYYY")}
+                </div>
+                <DownloadHeartStationRequestAction request={{ id: req.id }}>
+                  <DownloadIconButton />
+                </DownloadHeartStationRequestAction>
               </div>
             </div>
           </CardContent>
@@ -491,9 +534,14 @@ function MedicalCertsTab({
                   </p>
                 )}
               </div>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground shrink-0">
-                <CalendarDays className="h-3.5 w-3.5" />
-                {dayjs(cert.createdAt).format("MMM D, YYYY")}
+              <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <CalendarDays className="h-3.5 w-3.5" />
+                  {dayjs(cert.createdAt).format("MMM D, YYYY")}
+                </div>
+                <DownloadMedicalCertificateAction certificate={{ id: cert.id }}>
+                  <DownloadIconButton />
+                </DownloadMedicalCertificateAction>
               </div>
             </div>
           </CardContent>
@@ -565,9 +613,14 @@ function ReferralSlipsTab({
                   </p>
                 )}
               </div>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground shrink-0">
-                <CalendarDays className="h-3.5 w-3.5" />
-                {dayjs(slip.createdAt).format("MMM D, YYYY")}
+              <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <CalendarDays className="h-3.5 w-3.5" />
+                  {dayjs(slip.createdAt).format("MMM D, YYYY")}
+                </div>
+                <DownloadReferralSlipAction referralSlip={{ id: slip.id }}>
+                  <DownloadIconButton />
+                </DownloadReferralSlipAction>
               </div>
             </div>
           </CardContent>

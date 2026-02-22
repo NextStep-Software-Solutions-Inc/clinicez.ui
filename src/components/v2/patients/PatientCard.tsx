@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Heart, AlertCircle, Pill, ChevronRight, User } from "lucide-react";
+import { Heart, AlertCircle, Pill, ChevronRight, User, CheckCircle2, Clock, XCircle } from "lucide-react";
 import { calculateAge, formatBloodType } from "@/lib/utils";
 import type { ClinicPatientListItem } from "@/types/clinic-patients-v2.types";
 
@@ -15,12 +15,39 @@ interface PatientCardProps {
   viewMode?: "list" | "grid";
 }
 
+/** Maps ProfileCompletionStatus enum values to a visual badge */
+function ProfileStatusBadge({ status }: { status: string }) {
+  if (status === "COMPLETE") {
+    return (
+      <span className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-700 dark:text-emerald-400">
+        <CheckCircle2 className="h-3 w-3" />
+        Complete
+      </span>
+    );
+  }
+  if (status === "PARTIAL") {
+    return (
+      <span className="inline-flex items-center gap-1 text-[10px] font-medium text-amber-600 dark:text-amber-400">
+        <Clock className="h-3 w-3" />
+        Partial
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 text-[10px] font-medium text-muted-foreground">
+      <XCircle className="h-3 w-3" />
+      Incomplete
+    </span>
+  );
+}
+
 export const PatientCard = memo(function PatientCard({
   patient,
   clinicUid,
   viewMode = "list",
 }: PatientCardProps) {
   const {
+    profileCompletionStatus,
     Patient: {
       id: patientId,
       dob,
@@ -32,6 +59,7 @@ export const PatientCard = memo(function PatientCard({
       bloodType,
       nickname,
       picture,
+      email,
     },
     stats = { appointments: 0, conditions: 0, medications: 0 },
   } = patient;
@@ -44,8 +72,6 @@ export const PatientCard = memo(function PatientCard({
     : null;
 
   const profileHref = `/v2/clinic/${clinicUid}/patients/${patientId}`;
-  const defaultPicture =
-    "https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png";
 
   /* ── Grid View ─────────────────────────────────────────────────────────── */
   if (viewMode === "grid") {
@@ -74,6 +100,7 @@ export const PatientCard = memo(function PatientCard({
             <p className="font-semibold text-sm line-clamp-1 group-hover:text-primary transition-colors">
               {fullName}
             </p>
+            <p className="text-xs text-muted-foreground truncate">{email}</p>
             <div className="flex items-center gap-2 mt-1 flex-wrap">
               {genderLabel && (
                 <span className="text-xs text-muted-foreground">
@@ -117,9 +144,12 @@ export const PatientCard = memo(function PatientCard({
           />
         </div>
 
-        <div className="flex items-center justify-end text-xs text-muted-foreground group-hover:text-primary transition-colors">
-          View Profile
-          <ChevronRight className="h-3.5 w-3.5 ml-0.5" />
+        <div className="flex items-center justify-between">
+          <ProfileStatusBadge status={profileCompletionStatus} />
+          <span className="text-xs text-muted-foreground group-hover:text-primary transition-colors flex items-center gap-0.5">
+            View Profile
+            <ChevronRight className="h-3.5 w-3.5" />
+          </span>
         </div>
       </Link>
     );
@@ -154,6 +184,7 @@ export const PatientCard = memo(function PatientCard({
         <p className="font-semibold text-sm sm:text-base line-clamp-1 group-hover:text-primary transition-colors">
           {fullName}
         </p>
+        <p className="text-xs text-muted-foreground truncate">{email}</p>
         <div className="flex items-center gap-2 mt-0.5 flex-wrap">
           {genderLabel && (
             <span className="text-xs text-muted-foreground">{genderLabel}</span>
@@ -169,6 +200,7 @@ export const PatientCard = memo(function PatientCard({
               {formatBloodType(bloodType)}
             </Badge>
           )}
+          <ProfileStatusBadge status={profileCompletionStatus} />
         </div>
       </div>
 

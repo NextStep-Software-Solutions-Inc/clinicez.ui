@@ -278,7 +278,7 @@ export function WalkInAppointmentSheet({
                         variant="outline"
                         size="sm"
                         className="w-full gap-1.5 text-xs"
-                        onClick={() => router.push(`/v2/clinic/${clinicUid}/patients`)}
+                        onClick={() => router.push(`/v2/clinic/${clinicUid}/patients?addPatient=1`)}
                       >
                         <ExternalLink className="h-3.5 w-3.5" />
                         Add New Patient

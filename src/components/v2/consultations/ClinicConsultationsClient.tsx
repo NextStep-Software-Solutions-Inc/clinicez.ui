@@ -125,15 +125,6 @@ export default function ClinicConsultationsClient({
   /** Guards against multiple simultaneous load-more requests. */
   const loadMoreInFlight = useRef(false);
 
-  /* ── Handle item selection (loads detail + switches to workspace on mobile) ── */
-  const handleSelect = useCallback(
-    (item: QueueItem) => {
-      loadDetail(item);
-      setMobileView("workspace"); // setMobileView is a stable useState setter — no dep needed
-    },
-    [loadDetail]
-  );
-
   /* ── Navigate to consultation without remounting (preserves scroll) ── */
   const pushUrl = useCallback(
     (id: number) => {
@@ -166,6 +157,15 @@ export default function ClinicConsultationsClient({
       });
     },
     [clinicUid, pushUrl]
+  );
+
+  /* ── Handle item selection (loads detail + switches to workspace on mobile) ── */
+  const handleSelect = useCallback(
+    (item: QueueItem) => {
+      loadDetail(item);
+      setMobileView("workspace"); // setMobileView is a stable useState setter — no dep needed
+    },
+    [loadDetail]
   );
 
   /* ── Auto-load first item on mount if no initial selection ── */

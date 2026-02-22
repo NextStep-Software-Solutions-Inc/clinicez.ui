@@ -292,7 +292,7 @@ export function OrgSettingsClient({
           ...result.data,
           UserDefaultOrganizationRoles: [],
         };
-        setRoles((prev) => [...prev, newRole]);
+        setRoles((prev: RoleItem[]) => [...prev, newRole]);
         toast.success("Role created");
         addRoleForm.reset();
         setAddRoleOpen(false);
@@ -306,7 +306,7 @@ export function OrgSettingsClient({
     startTransition(async () => {
       const result = await deleteOrganizationRoleAction(roleId);
       if (result.status) {
-        setRoles((prev) => prev.filter((r) => r.id !== roleId));
+        setRoles((prev: RoleItem[]) => prev.filter((r: RoleItem) => r.id !== roleId));
         toast.success("Role deleted");
         setConfirmDeleteRoleId(null);
       } else {
@@ -691,7 +691,7 @@ export function OrgSettingsClient({
                   No roles defined yet.
                 </p>
               ) : (
-                roles.map((role) => (
+                roles.map((role: RoleItem) => (
                   <div
                     key={role.id}
                     className="flex items-center justify-between p-3 rounded-lg border"

@@ -17,6 +17,7 @@ import {
   BarChart3,
   Loader2,
   RefreshCw,
+  Printer,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -39,6 +40,7 @@ import {
   REPORT_PERIOD_LABELS,
   getDateRangeForPeriod,
 } from "@/lib/report-period-utils";
+import { handlePrintHtmlToPDF } from "@/lib/print-pdf";
 
 type ReportData = NonNullable<GetClinicReports["data"]>;
 
@@ -60,6 +62,159 @@ function formatDate(iso: string) {
 
 function toInputDate(d: Date) {
   return d.toISOString().slice(0, 10);
+}
+
+/* ──────────────────────────────────────── */
+/*  Build printable HTML report             */
+/* ──────────────────────────────────────── */
+function buildReportHtml(data: ReportData, periodLabel: string): string {
+  const { clinic, period, appointments, consultations, patients, diagnostics } = data;
+  const fromLabel = formatDate(period.from);
+  const toLabel = formatDate(period.to);
+  const generatedAt = new Date().toLocaleString("en-PH", {
+    dateStyle: "long",
+    timeStyle: "short",
+  });
+
+  const row = (label: string, value: string | number) =>
+    `<tr><td style="padding:4px 8px;border:1px solid #e5e7eb">${label}</td><td style="padding:4px 8px;border:1px solid #e5e7eb;text-align:right;font-weight:600">${value}</td></tr>`;
+
+  const sectionTable = (title: string, rows: string) =>
+    `<div style="margin-bottom:20px;page-break-inside:avoid">
+      <h3 style="font-size:13px;font-weight:700;margin:0 0 6px;text-transform:uppercase;letter-spacing:.05em;color:#374151">${title}</h3>
+      <table style="width:100%;border-collapse:collapse;font-size:12px">${rows}</table>
+    </div>`;
+
+  const appointmentStatusRows = appointments.byStatus
+    .map((s) => row(s.status, `${s.count} (${appointments.total > 0 ? Math.round((s.count / appointments.total) * 100) : 0}%)`))
+    .join("");
+
+  const appointmentModeRows = appointments.byMode
+    .map((m) => row(m.mode, m.count))
+    .join("");
+
+  const appointmentTypeRows = appointments.byType
+    .map((t) => row(t.type, t.count))
+    .join("");
+
+  const topServicesRows = appointments.byService
+    .map((s) => `<tr><td style="padding:4px 8px;border:1px solid #e5e7eb">${s.service}</td><td style="padding:4px 8px;border:1px solid #e5e7eb;color:#6b7280;font-size:11px">${s.category}</td><td style="padding:4px 8px;border:1px solid #e5e7eb;text-align:right;font-weight:600">${s.count}</td></tr>`)
+    .join("");
+
+  const consultationStatusRows = consultations.byStatus
+    .map((s) => row(s.status, `${s.count} (${consultations.total > 0 ? Math.round((s.count / consultations.total) * 100) : 0}%)`))
+    .join("");
+
+  const hpRows = consultations.byHP
+    .map((h) => row(h.hp, h.count))
+    .join("");
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Clinic Report — ${clinic.name}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; font-size: 13px; color: #111; background: #fff; padding: 32px; }
+    h1 { font-size: 20px; font-weight: 700; margin-bottom: 2px; }
+    h2 { font-size: 15px; font-weight: 700; margin: 24px 0 10px; padding-bottom: 4px; border-bottom: 2px solid #e5e7eb; text-transform: uppercase; letter-spacing: .05em; color: #1f2937; }
+    .header { margin-bottom: 28px; }
+    .meta { font-size: 11px; color: #6b7280; margin-top: 2px; }
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+    .kpi-box { border: 1px solid #e5e7eb; border-radius: 6px; padding: 10px 14px; }
+    .kpi-label { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: #6b7280; }
+    .kpi-value { font-size: 22px; font-weight: 700; margin-top: 2px; }
+    .kpi-sub { font-size: 10px; color: #9ca3af; margin-top: 2px; }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+    .diag-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+    .diag-box { border: 1px solid #e5e7eb; border-radius: 6px; padding: 10px 14px; }
+    .diag-label { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: #6b7280; }
+    .diag-value { font-size: 18px; font-weight: 700; margin-top: 2px; }
+    footer { margin-top: 32px; border-top: 1px solid #e5e7eb; padding-top: 10px; font-size: 10px; color: #9ca3af; }
+    @media print {
+      @page { margin: 1.5cm; }
+      body { padding: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>${clinic.name} — Clinic Report</h1>
+    <p class="meta">Period: <strong>${periodLabel}</strong> &nbsp;|&nbsp; ${fromLabel} – ${toLabel}</p>
+    <p class="meta">Generated: ${generatedAt}</p>
+  </div>
+
+  <h2>Overview</h2>
+  <div class="kpi-grid">
+    <div class="kpi-box">
+      <div class="kpi-label">Appointments</div>
+      <div class="kpi-value">${appointments.total}</div>
+      <div class="kpi-sub">${appointments.scheduled} scheduled · ${appointments.walkIn} walk-in</div>
+    </div>
+    <div class="kpi-box">
+      <div class="kpi-label">Consultations</div>
+      <div class="kpi-value">${consultations.total}</div>
+    </div>
+    <div class="kpi-box">
+      <div class="kpi-label">New Patients</div>
+      <div class="kpi-value">${patients.newInPeriod}</div>
+      <div class="kpi-sub">${patients.totalActive} total active</div>
+    </div>
+    <div class="kpi-box">
+      <div class="kpi-label">Diagnostics Issued</div>
+      <div class="kpi-value">${diagnostics.total}</div>
+    </div>
+  </div>
+
+  <h2>Appointments</h2>
+  <div class="two-col">
+    ${sectionTable("By Status", appointmentStatusRows || "<tr><td colspan='2' style='padding:6px 8px;color:#9ca3af'>No data</td></tr>")}
+    ${sectionTable("By Mode", appointmentModeRows || "<tr><td colspan='2' style='padding:6px 8px;color:#9ca3af'>No data</td></tr>")}
+    ${sectionTable("By Type", appointmentTypeRows || "<tr><td colspan='2' style='padding:6px 8px;color:#9ca3af'>No data</td></tr>")}
+    ${appointments.byService.length > 0 ? `<div style="margin-bottom:20px;page-break-inside:avoid">
+      <h3 style="font-size:13px;font-weight:700;margin:0 0 6px;text-transform:uppercase;letter-spacing:.05em;color:#374151">Top Services Availed</h3>
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead><tr>
+          <th style="padding:4px 8px;border:1px solid #e5e7eb;text-align:left;background:#f9fafb">Service</th>
+          <th style="padding:4px 8px;border:1px solid #e5e7eb;text-align:left;background:#f9fafb">Category</th>
+          <th style="padding:4px 8px;border:1px solid #e5e7eb;text-align:right;background:#f9fafb">Count</th>
+        </tr></thead>
+        <tbody>${topServicesRows}</tbody>
+      </table>
+    </div>` : ""}
+  </div>
+
+  <h2>Consultations</h2>
+  <div class="two-col">
+    ${sectionTable("By Status", consultationStatusRows || "<tr><td colspan='2' style='padding:6px 8px;color:#9ca3af'>No data</td></tr>")}
+    ${sectionTable("By Healthcare Provider", hpRows || "<tr><td colspan='2' style='padding:6px 8px;color:#9ca3af'>No data</td></tr>")}
+  </div>
+
+  <h2>Diagnostics &amp; Documents</h2>
+  <div class="diag-grid">
+    <div class="diag-box"><div class="diag-label">Prescriptions</div><div class="diag-value">${diagnostics.prescriptions}</div></div>
+    <div class="diag-box"><div class="diag-label">Lab Requests</div><div class="diag-value">${diagnostics.labRequests}</div></div>
+    <div class="diag-box"><div class="diag-label">Imaging Requests</div><div class="diag-value">${diagnostics.imagingRequests}</div></div>
+    <div class="diag-box"><div class="diag-label">Heart Station</div><div class="diag-value">${diagnostics.heartRequests}</div></div>
+    <div class="diag-box"><div class="diag-label">Medical Certificates</div><div class="diag-value">${diagnostics.medicalCertificates}</div></div>
+    <div class="diag-box"><div class="diag-label">Referral Slips</div><div class="diag-value">${diagnostics.referralSlips}</div></div>
+  </div>
+
+  <h2>Patients</h2>
+  <div style="max-width:400px">
+    <table style="width:100%;border-collapse:collapse;font-size:12px">
+      ${row("New registrations (this period)", patients.newInPeriod)}
+      ${row("Total active patients (all time)", patients.totalActive)}
+    </table>
+  </div>
+
+  <footer>
+    This report was generated automatically by ClinicEZ for ${clinic.name}.
+    Period: ${fromLabel} – ${toLabel} · Generated: ${generatedAt}
+  </footer>
+</body>
+</html>`;
 }
 
 /* ──────────────────────────────────────── */
@@ -276,6 +431,11 @@ export function ClinicReportsClient({
   const fromLabel = formatDate(data.period.from);
   const toLabel = formatDate(data.period.to);
 
+  const handlePrint = () => {
+    const html = buildReportHtml(data, periodLabel);
+    handlePrintHtmlToPDF(html);
+  };
+
   return (
     <div className="space-y-6 p-4 md:p-6">
       {/* ── Header ── */}
@@ -353,6 +513,16 @@ export function ClinicReportsClient({
               Refresh
             </Button>
           )}
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5"
+            onClick={handlePrint}
+            disabled={isPending}
+          >
+            <Printer className="h-4 w-4" />
+            Print / Save PDF
+          </Button>
         </div>
       </div>
 

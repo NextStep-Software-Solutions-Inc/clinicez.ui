@@ -291,6 +291,67 @@ export const addClinicMemberAction = withErrorHandling(async (payload: AddClinic
   }
 })
 
+/**
+ * Returns the appointment tab names visible to the current user based on their
+ * clinic role's ClinicRoleAppointmentTab configuration.
+ * Returns null when the user has no membership record (fallback: show all tabs).
+ * Returns an empty array when the role has no tabs configured (also: show all tabs).
+ */
+export type GetCurrentMemberVisibleTabs = Awaited<ReturnType<typeof getCurrentMemberVisibleTabsAction>>;
+export const getCurrentMemberVisibleTabsAction = async (clinicUid: string): Promise<string[] | null> => {
+  try {
+    const session = await getCachedSession();
+    if (!session) return null;
+
+    const member = await prisma.clinicMember.findFirst({
+      where: {
+        User: { userId: session.user.sub },
+        Clinic: { clinicUid },
+        isActive: true,
+        deletedAt: null,
+      },
+      select: {
+        roleId: true,
+        Role: {
+          select: {
+            ClinicRoleAppointmentTabs: {
+              where: {
+                ClinicAppointmentTab: {
+                  Clinic: { clinicUid },
+                },
+              },
+              select: {
+                ClinicAppointmentTab: {
+                  select: {
+                    AppointmentTab: {
+                      select: { name: true },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!member) return null;
+
+    const tabs = member.Role?.ClinicRoleAppointmentTabs ?? [];
+    // When zero tabs are assigned to the role it means the admin has not yet
+    // configured any restrictions for this role → treat as "unrestricted" and
+    // show all status tabs (same as null).  A role can be explicitly restricted
+    // to zero tabs only if the Roles settings tab explicitly removes all tabs, but
+    // even then the UI always injects "ALL" on the client, so users are never
+    // locked out entirely.
+    if (tabs.length === 0) return null;
+
+    return tabs.map((t) => t.ClinicAppointmentTab.AppointmentTab.name.toUpperCase());
+  } catch {
+    return null; // fallback: show all tabs
+  }
+};
+
 export type SearchNonMembers = Awaited<ReturnType<typeof searchNonMembersAction>>;
 export const searchNonMembersAction = withErrorHandling(async (clinicUid: string, query: string) => {
   const session = await getCachedSession();

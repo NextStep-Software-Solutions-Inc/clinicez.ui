@@ -464,13 +464,12 @@ export const createAndAddClinicPatientAction = withErrorHandling(async (
     });
     clerkUserId = clerkUser.id;
   } catch (err) {
-    if (
-      err instanceof Error &&
-      (err.message.includes("already") || err.message.includes("duplicate") || err.message.includes("taken"))
-    ) {
+    // Surface the actual Clerk error so the caller receives a meaningful message
+    const clerkMessage = err instanceof Error ? err.message : String(err);
+    if (clerkMessage.toLowerCase().includes("already") || clerkMessage.toLowerCase().includes("taken") || clerkMessage.toLowerCase().includes("exist")) {
       throw new Error("This email address is already registered in the authentication system.");
     }
-    throw new Error("Failed to create user account. Please try again.");
+    throw new Error(`Failed to create user account: ${clerkMessage}`);
   }
 
   // Create user in database and add as clinic patient in a transaction
@@ -531,6 +530,4 @@ export const createAndAddClinicPatientAction = withErrorHandling(async (
   });
 
   return { message: "Patient created and added to clinic successfully", data: null };
-}, async () => {
-  return "Failed to create and add patient.";
 });

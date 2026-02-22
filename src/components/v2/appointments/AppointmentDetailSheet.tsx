@@ -13,6 +13,9 @@ import {
   CheckCircle,
   XCircle,
   AlertTriangle,
+  Tags,
+  Lock,
+  UserCheck,
 } from "lucide-react";
 import {
   Sheet,
@@ -28,6 +31,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import type { GetAppointments } from "@/actions/appointments/appointments.action";
 import {
+  receiveAppointmentAction,
   completeAppointmentAction,
   rejectAppointmentAction,
 } from "@/actions/appointments/appointment-attribute.action";
@@ -39,6 +43,8 @@ import { STATUS_CONFIG } from "./AppointmentCard";
 import { ConfirmBookingSheet } from "./ConfirmBookingSheet";
 import { AssignDoctorDialog } from "./AssignDoctorDialog";
 import { PreAssessmentNoteDialog } from "./PreAssessmentNoteDialog";
+import { TagHPDialog } from "./TagHPDialog";
+import { isWalkInAppointment, getAppointmentPatientName, getAppointmentInitials } from "./appointment-utils";
 import type { GetAppointmentModes } from "@/actions/appointments/appointment-mode.action";
 import type { GetAppointmentTypes } from "@/actions/appointments/appointment-type.action";
 import type { GetClinicServices } from "@/actions/clinics/clinic-service.action";
@@ -71,21 +77,46 @@ export function AppointmentDetailSheet({
   const [showConfirmBooking, setShowConfirmBooking] = useState(false);
   const [showAssignDoctor, setShowAssignDoctor] = useState(false);
   const [showPreAssessment, setShowPreAssessment] = useState(false);
+  const [showTagHP, setShowTagHP] = useState(false);
 
   if (!appointment) return null;
 
   const status = appointment.AppointmentAttribute?.status ?? "PENDING";
   const statusConfig = STATUS_CONFIG[status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.PENDING;
+
   const requester = appointment.Requesters?.[0]?.User;
-  const fullName = requester
-    ? `${requester.firstName ?? ""} ${requester.middleName ? requester.middleName + " " : ""}${requester.lastName ?? ""}${requester.suffix ? " " + requester.suffix : ""}`.trim()
-    : "Unknown Patient";
-  const initials = `${requester?.firstName?.charAt(0) ?? ""}${requester?.lastName?.charAt(0) ?? ""}`;
+  const isWalkIn = isWalkInAppointment(appointment);
+  const fullName = getAppointmentPatientName(appointment);
+  const initials = getAppointmentInitials(appointment);
 
   const scheduledDate = appointment.AppointmentAttribute?.date;
   const timeStart = appointment.AppointmentAttribute?.timeStart;
   const routings = appointment.AppointmentRouting ?? [];
   const activeRouting = routings.find((r) => r.status === "ACCEPTED" || r.status === "PENDING");
+
+  const receivedBy = appointment.AppointmentAttribute?.ReceivedBy;
+  const receivedByName = receivedBy
+    ? `${receivedBy.firstName ?? ""} ${receivedBy.lastName ?? ""}`.trim()
+    : null;
+
+  const taggedHpIds = (appointment.AppointmentTag ?? []).map((t) => t.HealthcareProvider.id);
+
+  // ── Action handlers ────────────────────────────────────────────────────────
+
+  const handleReceive = async () => {
+    setIsPending(true);
+    const fd = new FormData();
+    fd.append("appointmentId", String(appointment.id));
+    fd.append("status", "RECEIVED");
+    const result = await receiveAppointmentAction(fd);
+    setIsPending(false);
+    if (result.status) {
+      toast.success("Appointment received and locked to you.");
+      onRefresh();
+    } else {
+      toast.error(result.message);
+    }
+  };
 
   const handleComplete = async () => {
     setIsPending(true);
@@ -162,10 +193,24 @@ export function AppointmentDetailSheet({
           </SheetHeader>
 
           <div className="space-y-5">
-            {/* Status badge */}
-            <Badge className={`text-sm px-3 py-1 border-0 font-medium ${statusConfig.className}`}>
-              {statusConfig.label}
-            </Badge>
+            {/* Status + lock info */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <Badge className={`text-sm px-3 py-1 border-0 font-medium ${statusConfig.className}`}>
+                {statusConfig.label}
+              </Badge>
+              {isWalkIn && (
+                <Badge variant="outline" className="text-xs border-primary/30 text-primary gap-1">
+                  <UserCheck className="h-3 w-3" />
+                  Walk-In
+                </Badge>
+              )}
+              {receivedByName && (
+                <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <Lock className="h-3 w-3" />
+                  Received by {receivedByName}
+                </span>
+              )}
+            </div>
 
             {/* Patient Info */}
             <div className="rounded-xl border bg-muted/30 p-4 space-y-3">
@@ -202,10 +247,12 @@ export function AppointmentDetailSheet({
                 Appointment Details
               </h3>
               <div className="space-y-2 text-sm">
-                <div>
-                  <span className="text-muted-foreground text-xs">Subject</span>
-                  <p className="font-medium">{appointment.subject}</p>
-                </div>
+                {!isWalkIn && (
+                  <div>
+                    <span className="text-muted-foreground text-xs">Subject</span>
+                    <p className="font-medium">{appointment.subject}</p>
+                  </div>
+                )}
                 {appointment.complaint && (
                   <div>
                     <span className="text-muted-foreground text-xs">Complaint</span>
@@ -244,6 +291,28 @@ export function AppointmentDetailSheet({
                 )}
               </div>
             </div>
+
+            {/* Tagged HPs */}
+            {(appointment.AppointmentTag ?? []).length > 0 && (
+              <div className="rounded-xl border bg-muted/30 p-4 space-y-2">
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  Tagged Providers
+                </h3>
+                <div className="flex flex-wrap gap-1.5">
+                  {appointment.AppointmentTag.map((tag) => {
+                    const hp = tag.HealthcareProvider;
+                    const name = hp.HPProfile?.name ??
+                      `${hp.User.firstName ?? ""} ${hp.User.lastName ?? ""}`.trim();
+                    return (
+                      <Badge key={tag.id} variant="outline" className="text-xs gap-1 border-primary/30 text-primary">
+                        <Stethoscope className="h-3 w-3" />
+                        {hp.HPProfile?.title ? `${hp.HPProfile.title} ` : ""}{name}
+                      </Badge>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Assignment History */}
             {routings.length > 0 && (
@@ -294,16 +363,18 @@ export function AppointmentDetailSheet({
                 Actions
               </h3>
               <div className="flex flex-wrap gap-2">
+
+                {/* PENDING: Receive (lock) + Reject */}
                 {status === "PENDING" && (
                   <>
                     <Button
                       size="sm"
                       className="gap-1.5 bg-primary/90 hover:bg-primary"
                       disabled={isPending}
-                      onClick={() => setShowConfirmBooking(true)}
+                      onClick={handleReceive}
                     >
-                      <ClipboardList className="h-4 w-4" />
-                      Confirm Booking
+                      <Lock className="h-4 w-4" />
+                      Receive &amp; Lock
                     </Button>
                     <Button
                       size="sm"
@@ -317,8 +388,29 @@ export function AppointmentDetailSheet({
                     </Button>
                   </>
                 )}
+
+                {/* RECEIVED: Pre-Assess, Confirm Booking, Tag HPs, Assign Doctor, Complete, Reject */}
                 {status === "RECEIVED" && (
                   <>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="gap-1.5 border-teal-400/40 text-teal-700 hover:bg-teal-600 hover:text-white"
+                      disabled={isPending}
+                      onClick={() => setShowPreAssessment(true)}
+                    >
+                      <ClipboardList className="h-4 w-4" />
+                      Pre-Assessment
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="gap-1.5 bg-primary/90 hover:bg-primary"
+                      disabled={isPending}
+                      onClick={() => setShowConfirmBooking(true)}
+                    >
+                      <CalendarDays className="h-4 w-4" />
+                      Confirm Booking
+                    </Button>
                     <Button
                       size="sm"
                       variant="outline"
@@ -331,6 +423,25 @@ export function AppointmentDetailSheet({
                     </Button>
                     <Button
                       size="sm"
+                      variant="outline"
+                      className="gap-1.5 border-blue-400/40 text-blue-600 hover:bg-blue-600 hover:text-white"
+                      disabled={isPending}
+                      onClick={() => setShowTagHP(true)}
+                    >
+                      <Tags className="h-4 w-4" />
+                      Tag Providers
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="gap-1.5 bg-green-600 hover:bg-green-700 text-white"
+                      disabled={isPending}
+                      onClick={handleComplete}
+                    >
+                      <CheckCircle className="h-4 w-4" />
+                      Complete
+                    </Button>
+                    <Button
+                      size="sm"
                       variant="destructive"
                       className="gap-1.5"
                       disabled={isPending}
@@ -341,6 +452,8 @@ export function AppointmentDetailSheet({
                     </Button>
                   </>
                 )}
+
+                {/* ROUTED: Accept/Decline + Reassign */}
                 {status === "ROUTED" && activeRouting && (
                   <>
                     <Button
@@ -362,8 +475,20 @@ export function AppointmentDetailSheet({
                       <XCircle className="h-4 w-4" />
                       Decline Assignment
                     </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="gap-1.5 border-purple-400/40 text-purple-600 hover:bg-purple-600 hover:text-white"
+                      disabled={isPending}
+                      onClick={() => setShowAssignDoctor(true)}
+                    >
+                      <Stethoscope className="h-4 w-4" />
+                      Reassign Doctor
+                    </Button>
                   </>
                 )}
+
+                {/* ACCEPTED: Pre-Assess + Complete */}
                 {status === "ACCEPTED" && (
                   <>
                     <Button
@@ -430,6 +555,19 @@ export function AppointmentDetailSheet({
           onRefresh();
         }}
       />
+
+      <TagHPDialog
+        open={showTagHP}
+        appointmentId={appointment.id}
+        hps={hps}
+        taggedHpIds={taggedHpIds}
+        onClose={() => setShowTagHP(false)}
+        onSuccess={() => {
+          setShowTagHP(false);
+          onRefresh();
+        }}
+      />
     </>
   );
 }
+

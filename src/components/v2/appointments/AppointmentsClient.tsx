@@ -2,7 +2,8 @@
 
 import { useState, useTransition, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarDays, Clock } from "lucide-react";
+import { CalendarDays, Clock, UserPlus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import type { GetAppointments } from "@/actions/appointments/appointments.action";
 import type { GetAppointmentModes } from "@/actions/appointments/appointment-mode.action";
 import type { GetAppointmentTypes } from "@/actions/appointments/appointment-type.action";
@@ -10,6 +11,7 @@ import type { GetClinicServices } from "@/actions/clinics/clinic-service.action"
 import type { GetHPsType } from "@/actions/hp.actions";
 import { AppointmentCard } from "./AppointmentCard";
 import { AppointmentDetailSheet } from "./AppointmentDetailSheet";
+import { WalkInAppointmentSheet } from "./WalkInAppointmentSheet";
 import { cn } from "@/lib/utils";
 
 type Appointment = NonNullable<GetAppointments["data"]>[number];
@@ -49,6 +51,7 @@ export function AppointmentsClient({
   const [, startTransition] = useTransition();
   const [activeTab, setActiveTab] = useState<StatusTabKey>("ALL");
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+  const [showWalkIn, setShowWalkIn] = useState(false);
 
   const refresh = useCallback(() => {
     startTransition(() => {
@@ -84,26 +87,34 @@ export function AppointmentsClient({
             </p>
           </div>
           <div className="flex items-center gap-1.5 flex-wrap">
-            <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-xs text-muted-foreground mr-1">Filter:</span>
-            {STATUS_TABS.map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className={cn(
-                  "px-3 py-1 text-xs rounded-full border transition-all duration-150 font-medium",
-                  activeTab === tab.key
-                    ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                    : "bg-background/60 border-border/50 text-muted-foreground hover:border-primary/40 hover:text-foreground"
-                )}
+              <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground mr-1">Filter:</span>
+              {STATUS_TABS.map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={cn(
+                    "px-3 py-1 text-xs rounded-full border transition-all duration-150 font-medium",
+                    activeTab === tab.key
+                      ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                      : "bg-background/60 border-border/50 text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                  )}
+                >
+                  {tab.label}
+                  {counts[tab.key] !== undefined && (
+                    <span className="ml-1 opacity-70">({counts[tab.key]})</span>
+                  )}
+                </button>
+              ))}
+              <Button
+                size="sm"
+                className="ml-1 h-7 gap-1.5 bg-primary/90 hover:bg-primary text-xs"
+                onClick={() => setShowWalkIn(true)}
               >
-                {tab.label}
-                {counts[tab.key] !== undefined && (
-                  <span className="ml-1 opacity-70">({counts[tab.key]})</span>
-                )}
-              </button>
-            ))}
-          </div>
+                <UserPlus className="h-3.5 w-3.5" />
+                Walk-In
+              </Button>
+            </div>
         </div>
       </div>
 
@@ -135,6 +146,21 @@ export function AppointmentsClient({
         hps={hps}
         onClose={() => setSelectedAppointment(null)}
         onRefresh={refresh}
+      />
+
+      {/* Walk-in creation sheet */}
+      <WalkInAppointmentSheet
+        open={showWalkIn}
+        clinicUid={clinicUid}
+        modes={modes}
+        types={types}
+        services={services}
+        hps={hps}
+        onClose={() => setShowWalkIn(false)}
+        onSuccess={() => {
+          setShowWalkIn(false);
+          refresh();
+        }}
       />
     </div>
   );

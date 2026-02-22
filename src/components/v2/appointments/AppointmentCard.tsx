@@ -9,6 +9,8 @@ import {
   Stethoscope,
   CheckCircle,
   ClipboardList,
+  Lock,
+  UserCheck,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,9 +18,11 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import type { GetAppointments } from "@/actions/appointments/appointments.action";
 import {
+  receiveAppointmentAction,
   completeAppointmentAction,
   rejectAppointmentAction,
 } from "@/actions/appointments/appointment-attribute.action";
+import { isWalkInAppointment, getAppointmentPatientName, getAppointmentInitials } from "./appointment-utils";
 
 type Appointment = NonNullable<GetAppointments["data"]>[number];
 
@@ -65,11 +69,10 @@ export function AppointmentCard({
   const status = appointment.AppointmentAttribute?.status ?? "PENDING";
   const statusConfig = STATUS_CONFIG[status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.PENDING;
 
-  const requester = appointment.Requesters?.[0]?.User;
-  const fullName = requester
-    ? `${requester.firstName ?? ""} ${requester.middleName ? requester.middleName + " " : ""}${requester.lastName ?? ""}${requester.suffix ? " " + requester.suffix : ""}`.trim()
-    : "Unknown Patient";
-  const initials = `${requester?.firstName?.charAt(0) ?? ""}${requester?.lastName?.charAt(0) ?? ""}`;
+  const isWalkIn = isWalkInAppointment(appointment);
+  const fullName = getAppointmentPatientName(appointment);
+  const displaySubject = isWalkIn ? appointment.complaint ?? "" : appointment.subject;
+  const initials = getAppointmentInitials(appointment);
 
   const scheduledDate = appointment.AppointmentAttribute?.date;
   const timeStart = appointment.AppointmentAttribute?.timeStart;
@@ -82,6 +85,22 @@ export function AppointmentCard({
     (assignedDoctor?.User
       ? `${assignedDoctor.User.firstName ?? ""} ${assignedDoctor.User.lastName ?? ""}`.trim()
       : null);
+
+  const handleReceive = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsPending(true);
+    const fd = new FormData();
+    fd.append("appointmentId", String(appointment.id));
+    fd.append("status", "RECEIVED");
+    const result = await receiveAppointmentAction(fd);
+    setIsPending(false);
+    if (result.status) {
+      toast.success("Appointment received and locked to you.");
+      onRefresh();
+    } else {
+      toast.error(result.message);
+    }
+  };
 
   const handleComplete = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -139,14 +158,15 @@ export function AppointmentCard({
           <Badge className={`text-xs px-2 py-0.5 border-0 font-medium ${statusConfig.className}`}>
             {statusConfig.label}
           </Badge>
+          {isWalkIn && (
+            <Badge variant="outline" className="text-xs px-2 py-0.5 border-primary/30 text-primary gap-1">
+              <UserCheck className="h-2.5 w-2.5" />
+              Walk-In
+            </Badge>
+          )}
         </div>
-        <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
-          {appointment.subject}
-        </p>
-        {appointment.complaint && (
-          <p className="text-xs text-muted-foreground/70 line-clamp-1">
-            {appointment.complaint}
-          </p>
+        {displaySubject && (
+          <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{displaySubject}</p>
         )}
 
         {/* Meta row */}
@@ -183,10 +203,33 @@ export function AppointmentCard({
         onClick={(e) => e.stopPropagation()}
       >
         {status === "PENDING" && (
+          <>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 text-xs border-primary/40 text-primary hover:bg-primary hover:text-primary-foreground"
+              disabled={isPending}
+              onClick={handleReceive}
+            >
+              <Lock className="h-3 w-3 mr-1" />
+              Receive
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 text-xs text-destructive hover:text-destructive"
+              disabled={isPending}
+              onClick={handleReject}
+            >
+              Reject
+            </Button>
+          </>
+        )}
+        {status === "RECEIVED" && (
           <Button
             size="sm"
             variant="outline"
-            className="h-7 text-xs border-primary/40 text-primary hover:bg-primary hover:text-primary-foreground"
+            className="h-7 text-xs border-teal-400/40 text-teal-700 hover:bg-teal-600 hover:text-white"
             disabled={isPending}
             onClick={(e) => {
               e.stopPropagation();
@@ -194,22 +237,7 @@ export function AppointmentCard({
             }}
           >
             <ClipboardList className="h-3 w-3 mr-1" />
-            Confirm Booking
-          </Button>
-        )}
-        {status === "RECEIVED" && (
-          <Button
-            size="sm"
-            variant="outline"
-            className="h-7 text-xs border-purple-400/40 text-purple-600 hover:bg-purple-600 hover:text-white"
-            disabled={isPending}
-            onClick={(e) => {
-              e.stopPropagation();
-              onSelect(appointment);
-            }}
-          >
-            <Stethoscope className="h-3 w-3 mr-1" />
-            Assign Doctor
+            Manage
           </Button>
         )}
         {status === "ROUTED" && (
@@ -224,7 +252,7 @@ export function AppointmentCard({
             }}
           >
             <Stethoscope className="h-3 w-3 mr-1" />
-            View & Act
+            View &amp; Act
           </Button>
         )}
         {status === "ACCEPTED" && (
@@ -237,7 +265,7 @@ export function AppointmentCard({
               onClick={handleComplete}
             >
               <CheckCircle className="h-3 w-3 mr-1" />
-              Mark Complete
+              Complete
             </Button>
             <Button
               size="sm"
@@ -250,7 +278,7 @@ export function AppointmentCard({
               }}
             >
               <ClipboardList className="h-3 w-3 mr-1" />
-              Pre-Assessment
+              Pre-Assess
             </Button>
           </>
         )}
@@ -267,18 +295,8 @@ export function AppointmentCard({
             View Details
           </Button>
         )}
-        {status === "PENDING" && (
-          <Button
-            size="sm"
-            variant="ghost"
-            className="h-7 text-xs text-destructive hover:text-destructive"
-            disabled={isPending}
-            onClick={handleReject}
-          >
-            Reject
-          </Button>
-        )}
       </div>
     </div>
   );
 }
+

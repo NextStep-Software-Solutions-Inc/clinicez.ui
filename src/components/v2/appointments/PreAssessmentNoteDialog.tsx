@@ -1,24 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ClipboardList } from "lucide-react";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { upsertPreAssessmentNoteAction } from "@/actions/appointments/pre-assessment-note.action";
+import { MarkdownEditor } from "./MarkdownEditor";
 
 interface PreAssessmentNoteDialogProps {
   open: boolean;
   appointmentId: number;
   clinicUid: string;
+  initialAssessment?: string;
+  initialHomeInstructions?: string;
+  initialRemarks?: string;
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -27,13 +30,23 @@ export function PreAssessmentNoteDialog({
   open,
   appointmentId,
   clinicUid,
+  initialAssessment = "",
+  initialHomeInstructions = "",
+  initialRemarks = "",
   onClose,
   onSuccess,
 }: PreAssessmentNoteDialogProps) {
   const [isPending, setIsPending] = useState(false);
-  const [assessment, setAssessment] = useState("");
-  const [homeInstructions, setHomeInstructions] = useState("");
-  const [remarks, setRemarks] = useState("");
+  const [assessment, setAssessment] = useState(initialAssessment);
+  const [homeInstructions, setHomeInstructions] = useState(initialHomeInstructions);
+  const [remarks, setRemarks] = useState(initialRemarks);
+
+  // Sync state when initial values change (e.g. opening for a different appointment)
+  useEffect(() => {
+    setAssessment(initialAssessment);
+    setHomeInstructions(initialHomeInstructions);
+    setRemarks(initialRemarks);
+  }, [initialAssessment, initialHomeInstructions, initialRemarks]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,59 +81,53 @@ export function PreAssessmentNoteDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+    <Sheet open={open} onOpenChange={(o) => !o && onClose()}>
+      <SheetContent className="w-full sm:max-w-lg overflow-y-auto" side="right">
+        <SheetHeader className="pb-4">
+          <SheetTitle className="flex items-center gap-2">
             <ClipboardList className="h-5 w-5 text-primary" />
             Pre-Assessment Note
-          </DialogTitle>
-          <DialogDescription>
-            Document the pre-assessment for this appointment.
-          </DialogDescription>
-        </DialogHeader>
+          </SheetTitle>
+          <SheetDescription>
+            Document findings in markdown. Use **bold**, _italic_, ## headings, - lists.
+          </SheetDescription>
+        </SheetHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-1.5">
-            <Label htmlFor="assessment" className="text-xs font-medium">
+            <Label className="text-xs font-medium">
               Assessment <span className="text-destructive">*</span>
             </Label>
-            <Textarea
-              id="assessment"
-              placeholder="Enter assessment findings..."
+            <MarkdownEditor
               value={assessment}
-              onChange={(e) => setAssessment(e.target.value)}
-              rows={3}
-              className="resize-none"
+              onChange={setAssessment}
+              placeholder={`## Vitals\n- BP: \n- HR: \n- Temp: \n\n## Findings\n`}
+              rows={8}
             />
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="homeInstructions" className="text-xs font-medium">
+            <Label className="text-xs font-medium">
               Home Instructions{" "}
               <span className="text-muted-foreground font-normal">(optional)</span>
             </Label>
-            <Textarea
-              id="homeInstructions"
-              placeholder="Enter home care instructions..."
+            <MarkdownEditor
               value={homeInstructions}
-              onChange={(e) => setHomeInstructions(e.target.value)}
-              rows={2}
-              className="resize-none"
+              onChange={setHomeInstructions}
+              placeholder={`- Rest and hydration\n- Return if symptoms worsen\n`}
+              rows={4}
             />
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="remarks" className="text-xs font-medium">
+            <Label className="text-xs font-medium">
               Remarks <span className="text-destructive">*</span>
             </Label>
-            <Textarea
-              id="remarks"
-              placeholder="Enter remarks..."
+            <MarkdownEditor
               value={remarks}
-              onChange={(e) => setRemarks(e.target.value)}
-              rows={2}
-              className="resize-none"
+              onChange={setRemarks}
+              placeholder="Additional remarks..."
+              rows={3}
             />
           </div>
 
@@ -143,7 +150,7 @@ export function PreAssessmentNoteDialog({
             </Button>
           </div>
         </form>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 }

@@ -5,6 +5,7 @@ import prismaClient from '@lib/prisma';
 import { getPermissionsAction } from '@actions/permission.action';
 import { PERMISSIONS } from '@lib/permissions';
 import { withErrorHandling } from '@/lib/with-error-handling';
+import { hasCodeProperty } from '@lib/utils';
 
 export const receiveAppointmentAction = withErrorHandling(async (formData: FormData) => {
   const session = await getCachedSession();
@@ -49,7 +50,8 @@ export const receiveAppointmentAction = withErrorHandling(async (formData: FormD
   const newStatus = formData.get('status') as string;
   await prismaClient.appointmentAttribute.update({
     where: {
-      appointmentId
+      appointmentId,
+      receivedBy: null,  // Atomic lock: only proceed if not yet received
     },
     data: {
       status: autoAssignToSelf ? "ROUTED" : newStatus,
@@ -84,6 +86,9 @@ export const receiveAppointmentAction = withErrorHandling(async (formData: FormD
   })
   return { message: 'Appointment received', data: undefined };
 }, async error => {
+  if (hasCodeProperty(error) && error.code === 'P2025') {
+    return "This appointment is already being handled by another staff member. Please refresh to see the current status.";
+  }
   if (error instanceof Error) return error.message;
   return "An error occurred while receiving appointment."
 })

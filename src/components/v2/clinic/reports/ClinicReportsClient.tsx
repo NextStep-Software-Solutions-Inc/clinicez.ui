@@ -18,6 +18,12 @@ import {
   Loader2,
   RefreshCw,
   Printer,
+  UserCheck,
+  Droplets,
+  ShieldAlert,
+  Pill,
+  PersonStanding,
+  Wrench,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -68,7 +74,7 @@ function toInputDate(d: Date) {
 /*  Build printable HTML report             */
 /* ──────────────────────────────────────── */
 function buildReportHtml(data: ReportData, periodLabel: string): string {
-  const { clinic, period, appointments, consultations, patients, diagnostics } = data;
+  const { clinic, period, appointments, consultations, patients, diagnostics, staff, services } = data;
   const fromLabel = formatDate(period.from);
   const toLabel = formatDate(period.to);
   const generatedAt = new Date().toLocaleString("en-PH", {
@@ -109,6 +115,32 @@ function buildReportHtml(data: ReportData, periodLabel: string): string {
     .map((h) => row(h.hp, h.count))
     .join("");
 
+  // Patient insights rows
+  const genderRows = patients.byGender.map((g) => row(g.gender, `${g.count} (${patients.totalActive > 0 ? Math.round((g.count / patients.totalActive) * 100) : 0}%)`)).join("");
+  const ageGroupRows = patients.byAgeGroup.map((a) => row(a.group === "Unknown" ? "Age unknown" : `${a.group} yrs`, a.count)).join("");
+  const civilStatusRows = patients.byCivilStatus.map((c) => row(c.status, c.count)).join("");
+  const bloodTypeRows = patients.byBloodType.map((b) => row(b.type.replace("_", " "), b.count)).join("");
+  const conditionRows = patients.topConditions.map((c) => row(c.condition, c.count)).join("");
+  const allergyRows = patients.topAllergies.map((a) => row(a.allergen, a.count)).join("");
+  const profileRows = patients.byProfileCompletion.map((p) => row(p.status, p.count)).join("");
+
+  // Staff activity rows
+  const memberRoleRows = staff.byRole.map((r) => row(r.role, r.count)).join("");
+  const hpActivityRows = staff.hpActivity.map((hp) =>
+    `<tr>
+      <td style="padding:4px 8px;border:1px solid #e5e7eb">${hp.name}</td>
+      <td style="padding:4px 8px;border:1px solid #e5e7eb;text-align:right">${hp.consultations}</td>
+      <td style="padding:4px 8px;border:1px solid #e5e7eb;text-align:right">${hp.prescriptions}</td>
+      <td style="padding:4px 8px;border:1px solid #e5e7eb;text-align:right">${hp.labRequests}</td>
+      <td style="padding:4px 8px;border:1px solid #e5e7eb;text-align:right">${hp.imagingRequests}</td>
+      <td style="padding:4px 8px;border:1px solid #e5e7eb;text-align:right">${hp.medicalCertificates}</td>
+    </tr>`
+  ).join("");
+
+  // Services rows
+  const procedureTypeRows = services.byType.map((t) => row(t.type, t.count)).join("");
+  const topProcedureRows = services.topProcedures.map((p) => `<tr><td style="padding:4px 8px;border:1px solid #e5e7eb">${p.name}</td><td style="padding:4px 8px;border:1px solid #e5e7eb;color:#6b7280;font-size:11px">${p.type}</td><td style="padding:4px 8px;border:1px solid #e5e7eb;text-align:right;font-weight:600">${p.count}</td></tr>`).join("");
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -127,6 +159,7 @@ function buildReportHtml(data: ReportData, periodLabel: string): string {
     .kpi-value { font-size: 22px; font-weight: 700; margin-top: 2px; }
     .kpi-sub { font-size: 10px; color: #9ca3af; margin-top: 2px; }
     .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+    .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 24px; }
     .diag-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
     .diag-box { border: 1px solid #e5e7eb; border-radius: 6px; padding: 10px 14px; }
     .diag-label { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: #6b7280; }
@@ -191,6 +224,23 @@ function buildReportHtml(data: ReportData, periodLabel: string): string {
     ${sectionTable("By Healthcare Provider", hpRows || "<tr><td colspan='2' style='padding:6px 8px;color:#9ca3af'>No data</td></tr>")}
   </div>
 
+  <h2>Patient Insights</h2>
+  <div class="kpi-grid" style="grid-template-columns:repeat(2,1fr)">
+    <div class="kpi-box"><div class="kpi-label">New Registrations (Period)</div><div class="kpi-value">${patients.newInPeriod}</div></div>
+    <div class="kpi-box"><div class="kpi-label">Total Active Patients</div><div class="kpi-value">${patients.totalActive}</div></div>
+  </div>
+  <div class="three-col">
+    ${sectionTable("Gender", genderRows || "<tr><td colspan='2' style='padding:6px 8px;color:#9ca3af'>No data</td></tr>")}
+    ${sectionTable("Age Groups", ageGroupRows || "<tr><td colspan='2' style='padding:6px 8px;color:#9ca3af'>No data</td></tr>")}
+    ${sectionTable("Civil Status", civilStatusRows || "<tr><td colspan='2' style='padding:6px 8px;color:#9ca3af'>No data</td></tr>")}
+  </div>
+  <div class="two-col">
+    ${sectionTable("Blood Type", bloodTypeRows || "<tr><td colspan='2' style='padding:6px 8px;color:#9ca3af'>No data</td></tr>")}
+    ${sectionTable("Profile Completion", profileRows || "<tr><td colspan='2' style='padding:6px 8px;color:#9ca3af'>No data</td></tr>")}
+    ${sectionTable("Top Health Conditions", conditionRows || "<tr><td colspan='2' style='padding:6px 8px;color:#9ca3af'>No recorded conditions</td></tr>")}
+    ${sectionTable("Top Allergies", allergyRows || "<tr><td colspan='2' style='padding:6px 8px;color:#9ca3af'>No recorded allergies</td></tr>")}
+  </div>
+
   <h2>Diagnostics &amp; Documents</h2>
   <div class="diag-grid">
     <div class="diag-box"><div class="diag-label">Prescriptions</div><div class="diag-value">${diagnostics.prescriptions}</div></div>
@@ -201,12 +251,39 @@ function buildReportHtml(data: ReportData, periodLabel: string): string {
     <div class="diag-box"><div class="diag-label">Referral Slips</div><div class="diag-value">${diagnostics.referralSlips}</div></div>
   </div>
 
-  <h2>Patients</h2>
-  <div style="max-width:400px">
+  <h2>Staff Activity</h2>
+  <div class="two-col" style="margin-bottom:16px">
+    ${sectionTable("Members by Role", memberRoleRows || "<tr><td colspan='2' style='padding:6px 8px;color:#9ca3af'>No data</td></tr>")}
+  </div>
+  ${staff.hpActivity.length > 0 ? `<div style="margin-bottom:24px;page-break-inside:avoid">
+    <h3 style="font-size:13px;font-weight:700;margin:0 0 6px;text-transform:uppercase;letter-spacing:.05em;color:#374151">Healthcare Provider Activity</h3>
     <table style="width:100%;border-collapse:collapse;font-size:12px">
-      ${row("New registrations (this period)", patients.newInPeriod)}
-      ${row("Total active patients (all time)", patients.totalActive)}
+      <thead><tr>
+        <th style="padding:4px 8px;border:1px solid #e5e7eb;text-align:left;background:#f9fafb">Provider</th>
+        <th style="padding:4px 8px;border:1px solid #e5e7eb;text-align:right;background:#f9fafb">Consults</th>
+        <th style="padding:4px 8px;border:1px solid #e5e7eb;text-align:right;background:#f9fafb">Rx</th>
+        <th style="padding:4px 8px;border:1px solid #e5e7eb;text-align:right;background:#f9fafb">Lab</th>
+        <th style="padding:4px 8px;border:1px solid #e5e7eb;text-align:right;background:#f9fafb">Imaging</th>
+        <th style="padding:4px 8px;border:1px solid #e5e7eb;text-align:right;background:#f9fafb">Med Certs</th>
+      </tr></thead>
+      <tbody>${hpActivityRows}</tbody>
     </table>
+  </div>` : ""}
+
+  <h2>Service Utilization</h2>
+  <div class="two-col">
+    ${sectionTable("By Procedure Type", procedureTypeRows || "<tr><td colspan='2' style='padding:6px 8px;color:#9ca3af'>No data</td></tr>")}
+    ${services.topProcedures.length > 0 ? `<div style="margin-bottom:20px;page-break-inside:avoid">
+      <h3 style="font-size:13px;font-weight:700;margin:0 0 6px;text-transform:uppercase;letter-spacing:.05em;color:#374151">Top Procedures</h3>
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead><tr>
+          <th style="padding:4px 8px;border:1px solid #e5e7eb;text-align:left;background:#f9fafb">Procedure</th>
+          <th style="padding:4px 8px;border:1px solid #e5e7eb;text-align:left;background:#f9fafb">Type</th>
+          <th style="padding:4px 8px;border:1px solid #e5e7eb;text-align:right;background:#f9fafb">Count</th>
+        </tr></thead>
+        <tbody>${topProcedureRows}</tbody>
+      </table>
+    </div>` : sectionTable("Top Procedures", "<tr><td colspan='3' style='padding:6px 8px;color:#9ca3af'>No data</td></tr>")}
   </div>
 
   <footer>
@@ -425,7 +502,7 @@ export function ClinicReportsClient({
     refresh("custom", from, to);
   };
 
-  const { appointments, consultations, patients, diagnostics } = data;
+  const { appointments, consultations, patients, diagnostics, staff, services } = data;
 
   const periodLabel = REPORT_PERIOD_LABELS[period] ?? "This Month";
   const fromLabel = formatDate(data.period.from);
@@ -532,8 +609,10 @@ export function ClinicReportsClient({
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="appointments">Appointments</TabsTrigger>
           <TabsTrigger value="consultations">Consultations</TabsTrigger>
-          <TabsTrigger value="patients">Patients</TabsTrigger>
+          <TabsTrigger value="patients">Patient Insights</TabsTrigger>
           <TabsTrigger value="diagnostics">Diagnostics</TabsTrigger>
+          <TabsTrigger value="staff">Staff Activity</TabsTrigger>
+          <TabsTrigger value="services">Service Utilization</TabsTrigger>
         </TabsList>
 
         {/* ── Overview Tab ── */}
@@ -897,51 +976,250 @@ export function ClinicReportsClient({
           </Card>
         </TabsContent>
 
-        {/* ── Patients Tab ── */}
+        {/* ── Patient Insights Tab ── */}
         <TabsContent value="patients" className="space-y-5 mt-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Summary KPIs */}
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <KPICard
               icon={Users}
-              label="New Patients"
+              label="New Registrations"
               value={patients.newInPeriod}
-              sub={`Registered during ${periodLabel}`}
+              sub={`During ${periodLabel}`}
             />
             <KPICard
-              icon={Users}
+              icon={UserCheck}
               label="Total Active Patients"
               value={patients.totalActive}
               sub="All time"
             />
+            <KPICard
+              icon={PersonStanding}
+              label="Profile Completion"
+              value={`${patients.byProfileCompletion.find((x) => x.status === "COMPLETE")?.count ?? 0} / ${patients.totalActive}`}
+              sub="Profiles marked complete"
+            />
           </div>
 
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Gender */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <Users className="h-4 w-4 text-primary" />
+                  Gender Distribution
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {patients.byGender.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No data</p>
+                ) : (
+                  patients.byGender.map(({ gender, count }) => (
+                    <BreakdownRow
+                      key={gender}
+                      label={gender}
+                      count={count}
+                      total={patients.totalActive}
+                    />
+                  ))
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Age Groups */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <Activity className="h-4 w-4 text-primary" />
+                  Age Groups
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {patients.byAgeGroup.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No data</p>
+                ) : (
+                  patients.byAgeGroup.map(({ group, count }) => (
+                    <BreakdownRow
+                      key={group}
+                      label={group === "Unknown" ? "Age unknown" : `${group} yrs`}
+                      count={count}
+                      total={patients.totalActive}
+                    />
+                  ))
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Civil Status */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <ClipboardList className="h-4 w-4 text-primary" />
+                  Civil Status
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {patients.byCivilStatus.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No data</p>
+                ) : (
+                  patients.byCivilStatus.map(({ status, count }) => (
+                    <BreakdownRow
+                      key={status}
+                      label={status}
+                      count={count}
+                      total={patients.totalActive}
+                    />
+                  ))
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Blood Type */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <Droplets className="h-4 w-4 text-red-500" />
+                  Blood Type Distribution
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {patients.byBloodType.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No data</p>
+                ) : (
+                  patients.byBloodType.map(({ type, count }) => (
+                    <BreakdownRow
+                      key={type}
+                      label={type.replace("_", " ")}
+                      count={count}
+                      total={patients.totalActive}
+                    />
+                  ))
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Top Health Conditions */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <ShieldAlert className="h-4 w-4 text-amber-500" />
+                  Top Health Conditions
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {patients.topConditions.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No recorded conditions</p>
+                ) : (
+                  patients.topConditions.map(({ condition, count }) => (
+                    <BreakdownRow
+                      key={condition}
+                      label={condition}
+                      count={count}
+                      total={patients.topConditions.reduce((s, x) => s + x.count, 0)}
+                    />
+                  ))
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Top Allergies */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <Pill className="h-4 w-4 text-rose-500" />
+                  Top Allergies
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {patients.topAllergies.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No recorded allergies</p>
+                ) : (
+                  patients.topAllergies.map(({ allergen, count }) => (
+                    <BreakdownRow
+                      key={allergen}
+                      label={allergen}
+                      count={count}
+                      total={patients.topAllergies.reduce((s, x) => s + x.count, 0)}
+                    />
+                  ))
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Profile completion & account type */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <UserCheck className="h-4 w-4 text-primary" />
+                  Profile Completion Status
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {patients.byProfileCompletion.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No data</p>
+                ) : (
+                  patients.byProfileCompletion.map(({ status, count }) => (
+                    <BreakdownRow
+                      key={status}
+                      label={status}
+                      count={count}
+                      total={patients.totalActive}
+                    />
+                  ))
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <Users className="h-4 w-4 text-primary" />
+                  Account Type
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {patients.byAccountType.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No data</p>
+                ) : (
+                  patients.byAccountType.map(({ type, count }) => (
+                    <BreakdownRow
+                      key={type}
+                      label={type}
+                      count={count}
+                      total={patients.totalActive}
+                    />
+                  ))
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Registration trend (last 12 months) */}
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Users className="h-4 w-4 text-primary" />
-                Patient Growth
+                <TrendingUp className="h-4 w-4 text-primary" />
+                Patient Registration Trend (Last 12 Months)
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center gap-6 py-4">
-                <div className="text-center">
-                  <p className="text-3xl font-bold text-primary">
-                    {patients.newInPeriod}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    New registrations
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {periodLabel}
-                  </p>
-                </div>
-                <div className="flex-1 h-px bg-border" />
-                <div className="text-center">
-                  <p className="text-3xl font-bold">{patients.totalActive}</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Total patients
-                  </p>
-                  <p className="text-xs text-muted-foreground">All time</p>
-                </div>
+              <DailyTrendChart
+                data={patients.registrationTrend.map((r) => ({
+                  date: r.month,
+                  count: r.count,
+                }))}
+                color="hsl(var(--primary) / 0.65)"
+              />
+              <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                {patients.registrationTrend.length > 0 && (
+                  <>
+                    <span>{patients.registrationTrend[0]?.month}</span>
+                    <span>
+                      {patients.registrationTrend[patients.registrationTrend.length - 1]?.month}
+                    </span>
+                  </>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -1042,6 +1320,159 @@ export function ClinicReportsClient({
               ))}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* ── Staff Activity Tab ── */}
+        <TabsContent value="staff" className="space-y-5 mt-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <KPICard
+              icon={Users}
+              label="Total Staff Members"
+              value={staff.totalMembers}
+              sub="Active clinic members"
+            />
+            <KPICard
+              icon={Stethoscope}
+              label="Active Healthcare Providers"
+              value={staff.hpActivity.length}
+              sub={`With activity in ${periodLabel}`}
+            />
+          </div>
+
+          {/* Members by role */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <Users className="h-4 w-4 text-primary" />
+                Members by Role
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {staff.byRole.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No members</p>
+              ) : (
+                staff.byRole.map(({ role, count }) => (
+                  <BreakdownRow
+                    key={role}
+                    label={role}
+                    count={count}
+                    total={staff.totalMembers}
+                  />
+                ))
+              )}
+            </CardContent>
+          </Card>
+
+          {/* HP Activity table */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <Stethoscope className="h-4 w-4 text-primary" />
+                Healthcare Provider Activity — {periodLabel}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {staff.hpActivity.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No HP activity in this period</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b text-xs text-muted-foreground">
+                        <th className="text-left py-2 pr-3 font-medium">Provider</th>
+                        <th className="text-right py-2 px-2 font-medium">Consults</th>
+                        <th className="text-right py-2 px-2 font-medium">Rx</th>
+                        <th className="text-right py-2 px-2 font-medium">Lab</th>
+                        <th className="text-right py-2 px-2 font-medium">Imaging</th>
+                        <th className="text-right py-2 pl-2 font-medium">Med Certs</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {staff.hpActivity.map((hp) => (
+                        <tr key={hp.name} className="border-b last:border-0 hover:bg-muted/40">
+                          <td className="py-2 pr-3 font-medium truncate max-w-[160px]">{hp.name}</td>
+                          <td className="py-2 px-2 text-right tabular-nums">{hp.consultations}</td>
+                          <td className="py-2 px-2 text-right tabular-nums">{hp.prescriptions}</td>
+                          <td className="py-2 px-2 text-right tabular-nums">{hp.labRequests}</td>
+                          <td className="py-2 px-2 text-right tabular-nums">{hp.imagingRequests}</td>
+                          <td className="py-2 pl-2 text-right tabular-nums">{hp.medicalCertificates}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ── Service Utilization Tab ── */}
+        <TabsContent value="services" className="space-y-5 mt-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <KPICard
+              icon={Wrench}
+              label="Total Procedures Used"
+              value={services.totalProcedures}
+              sub={`During ${periodLabel}`}
+            />
+            <KPICard
+              icon={Activity}
+              label="Procedure Types"
+              value={services.byType.length}
+              sub="Distinct categories"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* By type */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <BarChart3 className="h-4 w-4 text-primary" />
+                  By Procedure Type
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {services.byType.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No procedure data in this period</p>
+                ) : (
+                  services.byType.map(({ type, count }) => (
+                    <BreakdownRow
+                      key={type}
+                      label={type}
+                      count={count}
+                      total={services.totalProcedures}
+                    />
+                  ))
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Top procedures */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4 text-primary" />
+                  Top Procedures
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {services.topProcedures.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No procedure data in this period</p>
+                ) : (
+                  services.topProcedures.map(({ name, count, type }) => (
+                    <div key={name} className="flex items-start justify-between py-1 border-b last:border-0 gap-2">
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate">{name}</p>
+                        <p className="text-xs text-muted-foreground">{type}</p>
+                      </div>
+                      <Badge variant="secondary" className="flex-shrink-0">{count}</Badge>
+                    </div>
+                  ))
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
     </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -14,11 +14,16 @@ import {
   Users,
   Save,
   Loader2,
-  Mail,
   Globe,
-  Lock,
   CheckCircle2,
   XCircle,
+  UserPlus,
+  Search,
+  Crown,
+  Trash2,
+  ChevronDown,
+  ShieldCheck,
+  ShieldX,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -37,6 +42,29 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
@@ -44,15 +72,24 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 
 import { updateClinicAction } from "@/actions/clinics/clinic.action";
 import { updatePhilHealthSettingsAction } from "@/actions/clinics/clinic-setting.action";
 import { upsertClinicAppointmentConfigAction } from "@/actions/appointments/appointment-config.action";
+import {
+  addClinicMemberAction,
+  updateClinicMemberRoleAction,
+  removeClinicMemberAction,
+  searchNonMembersAction,
+} from "@/actions/clinics/clinic-member.action";
 
 import type { GetClinic } from "@/actions/clinics/clinic.action";
 import type { GetClinicSetting } from "@/actions/clinics/clinic-setting.action";
 import type { GetClinicAppointmentConfig } from "@/actions/appointments/appointment-config.action";
-import type { GetClinicMembers } from "@/actions/clinics/clinic-member.action";
+import type { GetClinicMembers, SearchNonMembers } from "@/actions/clinics/clinic-member.action";
+import type { GetClinicRoles } from "@/actions/clinics/clinic-role.action";
 
 /* ─────────────────────────────────────────────────────────────────── */
 /*  Types                                                              */
@@ -62,6 +99,8 @@ type ClinicData = NonNullable<GetClinic["data"]>;
 type ClinicSettingData = NonNullable<GetClinicSetting["data"]>;
 type AppointmentConfigData = NonNullable<GetClinicAppointmentConfig>;
 type MembersData = NonNullable<GetClinicMembers["data"]>;
+type RolesData = NonNullable<GetClinicRoles>;
+type UserSearchResult = NonNullable<SearchNonMembers["data"]>[number];
 
 interface ClinicSettingsClientProps {
   clinicUid: string;
@@ -69,6 +108,7 @@ interface ClinicSettingsClientProps {
   clinicSetting: ClinicSettingData | null;
   appointmentConfig: AppointmentConfigData | null;
   members: MembersData;
+  roles: RolesData;
 }
 
 /* ─────────────────────────────────────────────────────────────────── */
@@ -412,7 +452,6 @@ function GeneralTab({
 function AppointmentsTab({
   clinicUid,
   appointmentConfig,
-  clinic,
 }: {
   clinicUid: string;
   appointmentConfig: AppointmentConfigData | null;
@@ -683,33 +722,437 @@ function PhilHealthTab({
 }
 
 /* ─────────────────────────────────────────────────────────────────── */
+/*  Members Tab helpers                                                */
+/* ─────────────────────────────────────────────────────────────────── */
+
+function getInitials(firstName?: string | null, lastName?: string | null) {
+  return ((firstName?.charAt(0) ?? "") + (lastName?.charAt(0) ?? "")).toUpperCase() || "?";
+}
+
+function isOwner(roleName: string) {
+  return roleName.toLowerCase() === "owner";
+}
+
+/* ── Add Member Dialog ─────────────────────────────────────────────── */
+
+interface AddMemberDialogProps {
+  clinicUid: string;
+  roles: RolesData;
+  onAdded: (member: MembersData[number]) => void;
+}
+
+function AddMemberDialog({ clinicUid, roles, onAdded }: AddMemberDialogProps) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<UserSearchResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<UserSearchResult | null>(null);
+  const [selectedRoleId, setSelectedRoleId] = useState<string>("");
+  const [isPending, startTransition] = useTransition();
+  const [showDropdown, setShowDropdown] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const DROPDOWN_CLOSE_DELAY = 150;
+
+  const searchUsers = useCallback(
+    (q: string) => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      if (!q || q.trim().length < 2) {
+        setResults([]);
+        setShowDropdown(false);
+        return;
+      }
+      debounceRef.current = setTimeout(async () => {
+        setIsSearching(true);
+        try {
+          const res = await searchNonMembersAction(clinicUid, q);
+          setResults(res.data ?? []);
+          setShowDropdown(true);
+        } finally {
+          setIsSearching(false);
+        }
+      }, 350);
+    },
+    [clinicUid],
+  );
+
+  const reset = () => {
+    setQuery("");
+    setResults([]);
+    setSelectedUser(null);
+    setSelectedRoleId("");
+    setShowDropdown(false);
+  };
+
+  const handleAdd = () => {
+    if (!selectedUser || !selectedRoleId) return;
+    startTransition(async () => {
+      const result = await addClinicMemberAction({
+        clinicUid,
+        userId: selectedUser.userId,
+        roleId: Number(selectedRoleId),
+      });
+      if (result.status) {
+        toast.success("Member added successfully.");
+        // Build a local member object so the list updates without a reload
+        const role = roles.find(r => r.id === Number(selectedRoleId));
+        const newMember: MembersData[number] = {
+          id: Date.now(), // temporary; server will have real id on next load
+          createdAt: new Date(),
+          status: "ACTIVE",
+          roleId: Number(selectedRoleId),
+          Role: { name: role?.name ?? "Member" },
+          User: {
+            email: selectedUser.email,
+            firstName: selectedUser.firstName,
+            lastName: selectedUser.lastName,
+            middleName: selectedUser.middleName,
+            suffix: null,
+            picture: selectedUser.picture,
+          },
+        };
+        onAdded(newMember);
+        reset();
+        setOpen(false);
+      } else {
+        toast.error(result.message ?? "Failed to add member.");
+      }
+    });
+  };
+
+  const nonOwnerRoles = roles.filter(r => !isOwner(r.name));
+
+  return (
+    <>
+      <Button size="sm" onClick={() => setOpen(true)} className="gap-1.5">
+        <UserPlus className="h-4 w-4" />
+        Add Member
+      </Button>
+
+      <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset(); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Clinic Member</DialogTitle>
+            <DialogDescription>
+              Search for a registered user and assign them a role. Initial permissions will be applied automatically.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            {/* User search */}
+            <div className="space-y-1.5">
+              <Label>Search User</Label>
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+                <Input
+                  className="pl-8"
+                  placeholder="Name or email…"
+                  value={selectedUser
+                    ? [selectedUser.firstName, selectedUser.lastName].filter(Boolean).join(" ") || selectedUser.email
+                    : query}
+                  onChange={(e) => {
+                    if (selectedUser) setSelectedUser(null);
+                    setQuery(e.target.value);
+                    searchUsers(e.target.value);
+                  }}
+                  onFocus={() => { if (results.length > 0) setShowDropdown(true); }}
+                  onBlur={() => setTimeout(() => setShowDropdown(false), DROPDOWN_CLOSE_DELAY)}
+                />
+                {isSearching && (
+                  <Loader2 className="absolute right-2.5 top-2.5 h-4 w-4 animate-spin text-muted-foreground" />
+                )}
+              </div>
+
+              {showDropdown && results.length > 0 && !selectedUser && (
+                <div className="rounded-md border bg-popover shadow-md z-50 max-h-44 overflow-y-auto">
+                  {results.map((u) => (
+                    <button
+                      key={u.userId}
+                      type="button"
+                      className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-accent text-sm"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => {
+                        setSelectedUser(u);
+                        setShowDropdown(false);
+                        setQuery("");
+                      }}
+                    >
+                      <Avatar className="h-7 w-7 flex-shrink-0">
+                        <AvatarImage src={u.picture ?? undefined} />
+                        <AvatarFallback className="text-xs">
+                          {getInitials(u.firstName, u.lastName)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0">
+                        <p className="font-medium truncate">
+                          {[u.firstName, u.lastName].filter(Boolean).join(" ") || u.email}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate">{u.email}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {showDropdown && results.length === 0 && !isSearching && query.length >= 2 && (
+                <p className="text-xs text-muted-foreground pl-1">No users found.</p>
+              )}
+
+              {selectedUser && (
+                <div className="flex items-center gap-3 rounded-md border bg-muted/40 px-3 py-2">
+                  <Avatar className="h-7 w-7 flex-shrink-0">
+                    <AvatarImage src={selectedUser.picture ?? undefined} />
+                    <AvatarFallback className="text-xs">
+                      {getInitials(selectedUser.firstName, selectedUser.lastName)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">
+                      {[selectedUser.firstName, selectedUser.lastName].filter(Boolean).join(" ") || selectedUser.email}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate">{selectedUser.email}</p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0 flex-shrink-0"
+                    onClick={() => { setSelectedUser(null); setQuery(""); }}
+                  >
+                    <XCircle className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {/* Role select — owner excluded */}
+            <div className="space-y-1.5">
+              <Label>Role</Label>
+              <Select value={selectedRoleId} onValueChange={setSelectedRoleId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a role…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {nonOwnerRoles.map((r) => (
+                    <SelectItem key={r.id} value={String(r.id)}>
+                      {r.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                The owner role cannot be assigned here. Initial permissions for the selected role will be applied automatically.
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setOpen(false); reset(); }}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleAdd}
+              disabled={!selectedUser || !selectedRoleId || isPending}
+            >
+              {isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <UserPlus className="h-4 w-4 mr-2" />}
+              Add Member
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+/* ── Change Role + Permission Mode Dialog ─────────────────────────── */
+
+interface ChangeRoleDialogProps {
+  member: MembersData[number];
+  roles: RolesData;
+  onChanged: (memberId: number, newRoleId: number, newRoleName: string) => void;
+}
+
+function ChangeRoleDialog({ member, roles, onChanged }: ChangeRoleDialogProps) {
+  const [open, setOpen] = useState(false);
+  const [newRoleId, setNewRoleId] = useState<string>("");
+  const [permMode, setPermMode] = useState<"replace" | "merge">("replace");
+  const [isPending, startTransition] = useTransition();
+
+  const nonOwnerRoles = roles.filter(r => !isOwner(r.name));
+
+  const handleConfirm = () => {
+    if (!newRoleId) return;
+    startTransition(async () => {
+      const result = await updateClinicMemberRoleAction(member.id, Number(newRoleId), permMode);
+      if (result.status) {
+        const role = roles.find(r => r.id === Number(newRoleId));
+        toast.success(result.message ?? "Role updated.");
+        onChanged(member.id, Number(newRoleId), role?.name ?? "");
+        setOpen(false);
+        setNewRoleId("");
+        setPermMode("replace");
+      } else {
+        toast.error(result.message ?? "Failed to update role.");
+      }
+    });
+  };
+
+  return (
+    <>
+      <DropdownMenuItem
+        onSelect={(e) => { e.preventDefault(); setOpen(true); }}
+        className="gap-2"
+      >
+        <ShieldCheck className="h-4 w-4" />
+        Change Role
+      </DropdownMenuItem>
+
+      <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setNewRoleId(""); setPermMode("replace"); } }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Change Member Role</DialogTitle>
+            <DialogDescription>
+              Select a new role for{" "}
+              <span className="font-medium">
+                {[member.User.firstName, member.User.lastName].filter(Boolean).join(" ") || member.User.email}
+              </span>
+              .
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label>New Role</Label>
+              <Select value={newRoleId} onValueChange={setNewRoleId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select role…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {nonOwnerRoles.map((r) => (
+                    <SelectItem key={r.id} value={String(r.id)} disabled={r.id === member.roleId}>
+                      {r.name}{r.id === member.roleId ? " (current)" : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Permission Update Mode</Label>
+              <RadioGroup
+                value={permMode}
+                onValueChange={(v) => setPermMode(v as "replace" | "merge")}
+                className="space-y-2"
+              >
+                <div className="flex items-start gap-3 rounded-lg border p-3 cursor-pointer hover:bg-accent/50"
+                     onClick={() => setPermMode("replace")}>
+                  <RadioGroupItem value="replace" id="replace" className="mt-0.5" />
+                  <div>
+                    <Label htmlFor="replace" className="font-medium cursor-pointer flex items-center gap-1.5">
+                      <ShieldX className="h-3.5 w-3.5 text-destructive" />
+                      Replace
+                      <Badge variant="secondary" className="text-xs ml-1">Default</Badge>
+                    </Label>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Remove all existing permissions and apply only the new role&apos;s initial permissions.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 rounded-lg border p-3 cursor-pointer hover:bg-accent/50"
+                     onClick={() => setPermMode("merge")}>
+                  <RadioGroupItem value="merge" id="merge" className="mt-0.5" />
+                  <div>
+                    <Label htmlFor="merge" className="font-medium cursor-pointer flex items-center gap-1.5">
+                      <ShieldCheck className="h-3.5 w-3.5 text-primary" />
+                      Merge
+                    </Label>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Keep all existing permissions and additionally grant the new role&apos;s initial permissions.
+                    </p>
+                  </div>
+                </div>
+              </RadioGroup>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+            <Button onClick={handleConfirm} disabled={!newRoleId || isPending}>
+              {isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Confirm
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────────── */
 /*  Tab: Members                                                       */
 /* ─────────────────────────────────────────────────────────────────── */
 
-function MembersTab({ members }: { members: MembersData }) {
-  const getInitials = (firstName?: string | null, lastName?: string | null) => {
-    const f = firstName?.charAt(0) ?? "";
-    const l = lastName?.charAt(0) ?? "";
-    return (f + l).toUpperCase() || "?";
-  };
+function MembersTab({
+  clinicUid,
+  initialMembers,
+  roles,
+}: {
+  clinicUid: string;
+  initialMembers: MembersData;
+  roles: RolesData;
+}) {
+  const [members, setMembers] = useState<MembersData>(initialMembers);
+  const [removingId, setRemovingId] = useState<number | null>(null);
 
-  const statusVariant = (status: string) => {
+  const statusVariant = (status: string): "default" | "secondary" | "outline" => {
     if (status === "ACTIVE") return "default";
     if (status === "PENDING") return "secondary";
     return "outline";
+  };
+
+  const handleAdded = (member: MembersData[number]) => {
+    setMembers(prev => [...prev, member]);
+  };
+
+  const handleRoleChanged = (memberId: number, newRoleId: number, newRoleName: string) => {
+    setMembers(prev =>
+      prev.map(m =>
+        m.id === memberId ? { ...m, roleId: newRoleId, Role: { name: newRoleName } } : m,
+      ),
+    );
+  };
+
+  const handleRemove = (memberId: number) => {
+    setRemovingId(memberId);
+    const doRemove = async () => {
+      const result = await removeClinicMemberAction(memberId);
+      if (result.status) {
+        toast.success("Member removed.");
+        setMembers(prev => prev.filter(m => m.id !== memberId));
+      } else {
+        toast.error(result.message ?? "Failed to remove member.");
+      }
+      setRemovingId(null);
+    };
+    doRemove();
   };
 
   return (
     <div className="space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <Users className="h-4 w-4 text-primary" />
-            Clinic Members
-          </CardTitle>
-          <CardDescription>
-            Staff members who have access to this clinic. Manage roles and permissions from the admin panel.
-          </CardDescription>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Users className="h-4 w-4 text-primary" />
+                Clinic Members
+              </CardTitle>
+              <CardDescription className="mt-1">
+                Manage who has access to this clinic. The owner role cannot be changed or removed.
+              </CardDescription>
+            </div>
+            <AddMemberDialog clinicUid={clinicUid} roles={roles} onAdded={handleAdded} />
+          </div>
         </CardHeader>
         <CardContent>
           {members.length === 0 ? (
@@ -719,40 +1162,87 @@ function MembersTab({ members }: { members: MembersData }) {
             </div>
           ) : (
             <div className="space-y-2">
-              {members.map((member) => (
-                <div
-                  key={member.id}
-                  className="flex items-center gap-4 rounded-lg border p-3"
-                >
-                  <Avatar className="h-9 w-9 flex-shrink-0">
-                    <AvatarImage src={member.User.picture ?? undefined} />
-                    <AvatarFallback className="text-xs">
-                      {getInitials(member.User.firstName, member.User.lastName)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">
-                      {[member.User.firstName, member.User.middleName, member.User.lastName, member.User.suffix]
-                        .filter(Boolean)
-                        .join(" ") || member.User.email}
-                    </p>
-                    <p className="text-xs text-muted-foreground truncate">{member.User.email}</p>
-                  </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <Badge variant="outline" className="text-xs">
-                      {member.Role.name}
-                    </Badge>
-                    <Badge variant={statusVariant(member.status)} className="text-xs">
-                      {member.status === "ACTIVE" ? (
-                        <CheckCircle2 className="h-3 w-3 mr-1" />
+              {members.map((member) => {
+                const memberIsOwner = isOwner(member.Role.name);
+                return (
+                  <div
+                    key={member.id}
+                    className="flex items-center gap-3 rounded-lg border p-3"
+                  >
+                    <Avatar className="h-9 w-9 flex-shrink-0">
+                      <AvatarImage src={member.User.picture ?? undefined} />
+                      <AvatarFallback className="text-xs">
+                        {getInitials(member.User.firstName, member.User.lastName)}
+                      </AvatarFallback>
+                    </Avatar>
+
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">
+                        {[member.User.firstName, member.User.middleName, member.User.lastName, member.User.suffix]
+                          .filter(Boolean)
+                          .join(" ") || member.User.email}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">{member.User.email}</p>
+                    </div>
+
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {memberIsOwner ? (
+                        <Badge className="gap-1 text-xs bg-amber-500/15 text-amber-700 border-amber-300 dark:text-amber-300">
+                          <Crown className="h-3 w-3" />
+                          Owner
+                        </Badge>
                       ) : (
-                        <XCircle className="h-3 w-3 mr-1" />
+                        <Badge variant="outline" className="text-xs">
+                          {member.Role.name}
+                        </Badge>
                       )}
-                      {member.status}
-                    </Badge>
+                      <Badge variant={statusVariant(member.status)} className="text-xs">
+                        {member.status === "ACTIVE" ? (
+                          <CheckCircle2 className="h-3 w-3 mr-1" />
+                        ) : (
+                          <XCircle className="h-3 w-3 mr-1" />
+                        )}
+                        {member.status}
+                      </Badge>
+
+                      {/* Actions — hidden for owner */}
+                      {!memberIsOwner && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              <ChevronDown className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-44">
+                            <DropdownMenuLabel className="text-xs text-muted-foreground font-normal truncate max-w-36">
+                              {[member.User.firstName, member.User.lastName].filter(Boolean).join(" ") || member.User.email}
+                            </DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <ChangeRoleDialog
+                              member={member}
+                              roles={roles}
+                              onChanged={handleRoleChanged}
+                            />
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-destructive gap-2 focus:text-destructive"
+                              disabled={removingId === member.id}
+                              onSelect={() => handleRemove(member.id)}
+                            >
+                              {removingId === member.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Trash2 className="h-4 w-4" />
+                              )}
+                              Remove
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>
@@ -771,6 +1261,7 @@ export function ClinicSettingsClient({
   clinicSetting,
   appointmentConfig,
   members,
+  roles,
 }: ClinicSettingsClientProps) {
   const [activeTab, setActiveTab] = useState("general");
 
@@ -835,9 +1326,14 @@ export function ClinicSettingsClient({
         </TabsContent>
 
         <TabsContent value="members" className="mt-6">
-          <MembersTab members={members} />
+          <MembersTab
+            clinicUid={clinicUid}
+            initialMembers={members}
+            roles={roles}
+          />
         </TabsContent>
       </Tabs>
     </div>
   );
 }
+

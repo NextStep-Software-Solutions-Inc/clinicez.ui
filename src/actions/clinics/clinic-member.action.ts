@@ -128,7 +128,11 @@ export const removeClinicMemberAction = withErrorHandling(async (clinicMemberId:
   }
 });
 
-export const updateClinicMemberRoleAction = withErrorHandling(async (clinicMemberId: number, roleId: number) => {
+export const updateClinicMemberRoleAction = withErrorHandling(async (
+  clinicMemberId: number,
+  roleId: number,
+  permissionMode: "replace" | "merge" = "replace",
+) => {
 
   const session = await getCachedSession()
   if (!session) throw new Error("User not authenticated")
@@ -150,88 +154,46 @@ export const updateClinicMemberRoleAction = withErrorHandling(async (clinicMembe
     })
 
     if (!clinicMember) throw new Error("Clinic member not found.")
-    if (clinicMember.Role?.name === "owner") throw new Error("Owner role cannot be updated.")
+    if (clinicMember.Role?.name?.toLowerCase() === "owner") throw new Error("Owner role cannot be updated.")
 
-    // Update role and preserve custom permissions in a transaction
-    await prisma.$transaction(async (prisma) => {
-      // Get old role's initial permissions
-      const oldRolePermissions = await prisma.clinicRoleInitialPermission.findMany({
-        where: {
-          clinicId: clinicMember.clinicId,
-          clinicRoleId: clinicMember.roleId,
-        },
-        select: {
-          permissionId: true,
-        }
-      });
-      const oldRolePermissionIds = new Set(oldRolePermissions.map(p => p.permissionId));
-
-      // Get current member's permissions
-      const currentPermissions = await prisma.clinicMemberPermission.findMany({
-        where: { clinicMemberId },
-        select: {
-          permissionId: true,
-        }
-      });
-      const currentPermissionIds = new Set(currentPermissions.map(p => p.permissionId));
-
-      // Calculate custom permissions (granted manually, not from role)
-      const customPermissionIds = Array.from(currentPermissionIds).filter(
-        permId => !oldRolePermissionIds.has(permId)
-      );
-
+    await prisma.$transaction(async (tx) => {
       // Get new role's initial permissions
-      const newRolePermissions = await prisma.clinicRoleInitialPermission.findMany({
+      const newRolePermissions = await tx.clinicRoleInitialPermission.findMany({
         where: {
           clinicId: clinicMember.clinicId,
           clinicRoleId: roleId,
-          ClinicRole: {
-            isActive: true,
-          },
-          Permission: { isActive: true }
+          ClinicRole: { isActive: true },
+          Permission: { isActive: true },
         },
-        select: {
-          permissionId: true,
+        select: { permissionId: true },
+      });
+
+      // Update the role first
+      await tx.clinicMember.update({
+        where: { id: clinicMemberId },
+        data: { Role: { connect: { id: roleId } } },
+      });
+
+      if (permissionMode === "replace") {
+        // Clear all existing permissions and apply only the new role's initial permissions
+        await tx.clinicMemberPermission.deleteMany({ where: { clinicMemberId } });
+        if (newRolePermissions.length > 0) {
+          await tx.clinicMemberPermission.createMany({
+            skipDuplicates: true,
+            data: newRolePermissions.map(p => ({ clinicMemberId, permissionId: p.permissionId })),
+          });
         }
-      });
-
-      // Combine new role permissions with custom permissions (preserve customizations)
-      const allPermissionIds = new Set([
-        ...newRolePermissions.map(p => p.permissionId),
-        ...customPermissionIds
-      ]);
-
-      // Update the role
-      await prisma.clinicMember.update({
-        where: {
-          id: clinicMemberId
-        },
-        data: {
-          Role: {
-            connect: {
-              id: roleId
-            }
-          }
-        }
-      });
-
-      // Replace all permissions with new role + custom permissions
-      await prisma.clinicMemberPermission.deleteMany({
-        where: { clinicMemberId }
-      });
-
-      if (allPermissionIds.size > 0) {
-        await prisma.clinicMemberPermission.createMany({
+      } else {
+        // Merge: keep all existing permissions and add the new role's initial permissions on top
+        await tx.clinicMemberPermission.createMany({
           skipDuplicates: true,
-          data: Array.from(allPermissionIds).map(permissionId => ({
-            clinicMemberId: clinicMemberId,
-            permissionId: permissionId
-          }))
+          data: newRolePermissions.map(p => ({ clinicMemberId, permissionId: p.permissionId })),
         });
       }
     });
 
-    return { message: "Successfully updated clinic member role and preserved custom permissions.", data: null }
+    const modeLabel = permissionMode === "replace" ? "replaced" : "merged";
+    return { message: `Successfully updated clinic member role. Permissions ${modeLabel}.`, data: null }
   } catch (error) {
     if (hasCodeProperty(error) && error.code === "P2025") throw new Error("Role not found.")
     throw new Error("An error occurred while updating the clinic member role.")
@@ -251,6 +213,22 @@ export const addClinicMemberAction = withErrorHandling(async (payload: AddClinic
   try {
     // Start transaction
     const result = await prisma.$transaction(async (prisma) => {
+      // Enforce: only one owner per clinic
+      const roleRecord = await prisma.clinicRole.findUnique({
+        where: { id: roleId },
+        select: { name: true },
+      });
+      if (roleRecord?.name?.toLowerCase() === "owner") {
+        const existingOwner = await prisma.clinicMember.findFirst({
+          where: {
+            Clinic: { clinicUid },
+            Role: { name: { equals: "owner", mode: "insensitive" } },
+            isActive: true,
+          },
+        });
+        if (existingOwner) throw new Error("This clinic already has an owner.");
+      }
+
       const initialPermissions = await prisma.clinicRoleInitialPermission.findMany({
         where: {
           Clinic: {
@@ -306,3 +284,45 @@ export const addClinicMemberAction = withErrorHandling(async (payload: AddClinic
     throw new Error("An error occurred while adding the clinic member.")
   }
 })
+
+export type SearchNonMembers = Awaited<ReturnType<typeof searchNonMembersAction>>;
+export const searchNonMembersAction = withErrorHandling(async (clinicUid: string, query: string) => {
+  const session = await getCachedSession();
+  if (!session) throw new Error("User not authenticated");
+
+  if (!query || query.trim().length < 2) {
+    return { message: "Query too short", data: [] };
+  }
+
+  const users = await prisma.user.findMany({
+    take: 10,
+    orderBy: { lastName: "asc" },
+    where: {
+      isActive: true,
+      OR: [
+        { firstName: { contains: query, mode: "insensitive" } },
+        { lastName: { contains: query, mode: "insensitive" } },
+        { email: { contains: query, mode: "insensitive" } },
+      ],
+      NOT: {
+        ClinicMembers: {
+          some: {
+            Clinic: { clinicUid },
+            isActive: true,
+            deletedAt: null,
+          },
+        },
+      },
+    },
+    select: {
+      userId: true,
+      email: true,
+      firstName: true,
+      lastName: true,
+      middleName: true,
+      picture: true,
+    },
+  });
+
+  return { message: "Users found", data: users };
+});

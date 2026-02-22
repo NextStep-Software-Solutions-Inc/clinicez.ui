@@ -1,12 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
-import { useTheme } from "next-themes";
 import { usePathname } from "next/navigation";
 import {
   type NavItem,
 } from "./DashboardSidebar";
-import { Sun, Moon, Search, X } from "lucide-react";
+import { Search, X, Printer } from "lucide-react";
 import {
   Home,
   Users,
@@ -40,6 +39,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   building: Building2,
   activity: Activity,
   "bar-chart": BarChart3,
+  printer: Printer,
   bell: Bell,
   clipboard: ClipboardList,
   heart: Heart,
@@ -292,7 +292,7 @@ export default function DashboardShell({
         {/* Main Content */}
         <main
           className={`bg-background/50 ${
-            contentClassName || "px-4 sm:px-6 py-6"
+            contentClassName || "px-1 sm:px-2 py-2"
           }`}
         >
           {children}

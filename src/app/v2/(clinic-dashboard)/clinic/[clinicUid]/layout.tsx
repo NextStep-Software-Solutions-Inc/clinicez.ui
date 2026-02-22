@@ -71,7 +71,7 @@ export default async function ClinicUidLayout(
     {
       name: "Reports",
       href: `/v2/clinic/${clinicUid}/reports`,
-      icon: "bar-chart-2",
+      icon: "printer",
       badgeCount: undefined,
     },
     {

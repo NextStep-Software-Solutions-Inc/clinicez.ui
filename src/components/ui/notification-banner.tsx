@@ -63,24 +63,31 @@ export function NotificationBanner() {
   }
 
   return (
-    <div className="bg-accent-foreground text-white px-4 py-3 relative">
-      <div className="container mx-auto flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3 flex-1">
-          <Sparkles className="h-5 w-5 flex-shrink-0" />
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-            <span className="font-medium">Clinic EZ V2 is Here!</span>
-            <span className="text-sm opacity-90">
+    <div className="relative overflow-hidden bg-gradient-to-r from-teal-600 via-teal-500 to-cyan-500 dark:from-teal-800 dark:via-teal-700 dark:to-cyan-700 text-white px-4 py-2.5">
+      {/* Subtle shimmer overlay */}
+      <div className="pointer-events-none absolute inset-0 bg-white/5" />
+
+      <div className="container relative mx-auto flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <span className="flex-shrink-0 flex h-7 w-7 items-center justify-center rounded-full bg-white/20">
+            <Sparkles className="h-4 w-4" />
+          </span>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-2 min-w-0">
+            <span className="font-semibold text-sm leading-tight">
+              Clinic EZ V2 is Here!
+            </span>
+            <span className="hidden sm:inline text-white/60 text-sm">·</span>
+            <span className="text-xs sm:text-sm text-white/80 truncate">
               Experience our new design of ClinicEZ
             </span>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-shrink-0 items-center gap-1.5">
           <Button
             asChild
-            variant="secondary"
             size="sm"
-            className="bg-white/20 hover:bg-white/30 text-white border-white/30"
+            className="h-8 bg-white text-teal-700 hover:bg-white/90 font-semibold text-xs px-3 shadow-sm dark:text-teal-800"
           >
             <Link href="/v2" className="flex items-center gap-1">
               Try V2

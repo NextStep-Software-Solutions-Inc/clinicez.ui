@@ -8,6 +8,7 @@ import { getHPsAction } from "@/actions/hp.actions";
 import { AppointmentsClient } from "@/components/v2/appointments/AppointmentsClient";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getCachedSession } from "@/actions/session.action";
+import { getCurrentMemberVisibleTabsAction } from "@/actions/clinics/clinic-member.action";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +26,7 @@ export default async function AppointmentsPage({ params }: AppointmentsPageProps
 
   const session = await getCachedSession();
 
-  const [appointmentsResult, countsResult, modes, types, hps, services, myHps] = await Promise.all([
+  const [appointmentsResult, countsResult, modes, types, hps, services, myHps, visibleTabNames] = await Promise.all([
     getAppointmentsAction({ clinicUid }),
     getAppointmentCountsAction(clinicUid),
     getAppointmentModesAction(clinicUid),
@@ -34,6 +35,8 @@ export default async function AppointmentsPage({ params }: AppointmentsPageProps
     getClinicServicesAction({ clinicUid }),
     // Fetch current user's HPs for accept/decline guard
     session ? getHPsAction({ userId: session.user.sub }) : Promise.resolve([]),
+    // Fetch visible appointment tab names for the current user's role
+    getCurrentMemberVisibleTabsAction(clinicUid),
   ]);
 
   const currentUserHpIds = myHps.map((hp) => hp.id);
@@ -57,6 +60,7 @@ export default async function AppointmentsPage({ params }: AppointmentsPageProps
           services={services}
           hps={hps}
           currentUserHpIds={currentUserHpIds}
+          visibleTabNames={visibleTabNames}
         />
       </Suspense>
     </div>

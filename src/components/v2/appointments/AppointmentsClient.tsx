@@ -65,6 +65,8 @@ interface AppointmentsClientProps {
   services: GetClinicServices;
   hps: GetHPsType;
   currentUserHpIds: number[];
+  /** Tab names (uppercased) visible to the current user's role. null = show all. */
+  visibleTabNames: string[] | null;
 }
 
 export function AppointmentsClient({
@@ -76,8 +78,17 @@ export function AppointmentsClient({
   services,
   hps,
   currentUserHpIds,
+  visibleTabNames,
 }: AppointmentsClientProps) {
   const router = useRouter();
+
+  // Filter status tabs based on the current user's role configuration.
+  // "ALL" is always shown. If visibleTabNames is null (no restriction), show everything.
+  const allowedStatusTabs = visibleTabNames
+    ? STATUS_TABS.filter(
+        (t) => t.key === "ALL" || visibleTabNames.includes(t.key)
+      )
+    : STATUS_TABS;
 
   // Status tab filter (client-side on loaded items)
   const [activeTab, setActiveTab] = useState<StatusTabKey>("ALL");
@@ -269,7 +280,7 @@ export function AppointmentsClient({
           {/* Status tabs */}
           <div className="flex items-center gap-1 flex-wrap flex-1">
             <Clock className="h-3.5 w-3.5 text-muted-foreground mr-0.5 flex-shrink-0" />
-            {STATUS_TABS.map((tab) => (
+            {allowedStatusTabs.map((tab) => (
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}

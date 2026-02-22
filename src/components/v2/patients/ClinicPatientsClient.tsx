@@ -50,6 +50,8 @@ export function ClinicPatientsClient({
 
   // Parse initial filters from URL once (stable across renders via ref)
   const initialFilters = useRef(parseFiltersFromParams(searchParams)).current;
+  // Auto-open AddPatientSheet when navigated from walk-in flow (?addPatient=1)
+  const initialAddPatientOpen = searchParams.get("addPatient") === "1";
   const {
     patients,
     totalCount,
@@ -59,6 +61,7 @@ export function ClinicPatientsClient({
     loadMore,
     filters,
     setFilters,
+    refresh,
   } = useClinicPatientsPagination({ clinicUid, pageSize, initialData, initialFilters });
 
   // ── Infinite scroll ──────────────────────────────────────────────────────
@@ -121,10 +124,13 @@ export function ClinicPatientsClient({
     >
       {/* Header / Filters */}
       <PatientsHeader
+        clinicUid={clinicUid}
         filters={filters}
         totalCount={totalCount}
         loadedCount={patients.length}
         onFiltersChange={handleFiltersChange}
+        onPatientAdded={refresh}
+        initialAddPatientOpen={initialAddPatientOpen}
       />
 
       {/* Content area */}

@@ -31,6 +31,7 @@ export interface UseClinicPatientsPaginationResult {
     isLoadingMore: boolean;
     hasMore: boolean;
     loadMore: () => void;
+    refresh: () => void;
     filters: ClinicPatientFilters;
     setFilters: React.Dispatch<React.SetStateAction<ClinicPatientFilters>>;
 }

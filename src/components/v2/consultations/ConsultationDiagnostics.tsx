@@ -16,6 +16,9 @@ import {
   getClinicLabProceduresAction,
   getClinicImagingProceduresAction,
 } from "@/actions/consultation/patient-consultations.action";
+import {
+  getConsultationDiagnosticsForTicketAction,
+} from "@/actions/consultation/patient-consultations.action";
 import type {
   GetPatientConsultationDetail,
   GetClinicLabProcedures,
@@ -41,7 +44,7 @@ interface ConsultationDiagnosticsProps {
   patient: PatientInfo;
   consultation: Detail;
   myHPs: NonNullable<GetHPsType>;
-  onRefresh: () => void;
+  onPatchDetail: (patch: Partial<Detail>) => void;
 }
 
 export default function ConsultationDiagnostics({
@@ -49,13 +52,20 @@ export default function ConsultationDiagnostics({
   patient,
   consultation,
   myHPs,
-  onRefresh,
+  onPatchDetail,
 }: ConsultationDiagnosticsProps) {
   const ticketHpIds = consultation.ConsultationTicketHPs.map((h) => h.HealthCareProvider.id);
   const myActiveHp = myHPs.find((hp) => ticketHpIds.includes(hp.id)) ?? myHPs[0] ?? null;
 
   const [showLabForm, setShowLabForm] = useState(false);
   const [showImagingForm, setShowImagingForm] = useState(false);
+
+  const handleDiagnosticsCreated = async () => {
+    const result = await getConsultationDiagnosticsForTicketAction({ ticketId: consultation.id });
+    if (result.status && result.data) {
+      onPatchDetail({ LaboratoryRequests: result.data.labs, ImagingRequests: result.data.imaging });
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -98,7 +108,7 @@ export default function ConsultationDiagnostics({
           patient={patient}
           consultation={consultation}
           hpId={myActiveHp.id}
-          onDone={() => { setShowLabForm(false); onRefresh(); }}
+          onDone={() => { setShowLabForm(false); handleDiagnosticsCreated(); }}
           onCancel={() => setShowLabForm(false)}
         />
       )}
@@ -109,7 +119,7 @@ export default function ConsultationDiagnostics({
           patient={patient}
           consultation={consultation}
           hpId={myActiveHp.id}
-          onDone={() => { setShowImagingForm(false); onRefresh(); }}
+          onDone={() => { setShowImagingForm(false); handleDiagnosticsCreated(); }}
           onCancel={() => setShowImagingForm(false)}
         />
       )}

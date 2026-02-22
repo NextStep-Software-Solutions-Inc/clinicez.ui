@@ -44,8 +44,7 @@ interface ConsultationWorkspaceProps {
   patient: PatientInfo | null;
   consultation: Detail;
   myHPs: NonNullable<GetHPsType>;
-  onUpdated?: (updated: Detail) => void;
-  onRefresh: () => void;
+  onPatchDetail: (patch: Partial<Detail>) => void;
   /** Called with the consultation id after it has been resolved. */
   onResolved?: (id: number) => void;
 }
@@ -55,7 +54,7 @@ export default function ConsultationWorkspace({
   patient,
   consultation,
   myHPs,
-  onRefresh,
+  onPatchDetail,
   onResolved,
 }: ConsultationWorkspaceProps) {
   const [activeTab, setActiveTab] = useState("notes");
@@ -283,7 +282,7 @@ export default function ConsultationWorkspace({
                 clinicUid={clinicUid}
                 consultation={consultation}
                 myHPs={myHPs}
-                onRefresh={onRefresh}
+                onPatchDetail={onPatchDetail}
               />
             </TabsContent>
 
@@ -294,7 +293,7 @@ export default function ConsultationWorkspace({
                   patient={patient}
                   consultation={consultation}
                   myHPs={myHPs}
-                  onRefresh={onRefresh}
+                  onPatchDetail={onPatchDetail}
                 />
               ) : (
                 <NoPatientPlaceholder />
@@ -308,7 +307,7 @@ export default function ConsultationWorkspace({
                   patient={patient}
                   consultation={consultation}
                   myHPs={myHPs}
-                  onRefresh={onRefresh}
+                  onPatchDetail={onPatchDetail}
                 />
               ) : (
                 <NoPatientPlaceholder />
@@ -322,7 +321,7 @@ export default function ConsultationWorkspace({
                   patient={patient}
                   consultation={consultation}
                   myHPs={myHPs}
-                  onRefresh={onRefresh}
+                  onPatchDetail={onPatchDetail}
                 />
               ) : (
                 <NoPatientPlaceholder />

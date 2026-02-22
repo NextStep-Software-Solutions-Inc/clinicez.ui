@@ -15,6 +15,9 @@ import {
   createMedicineAction,
   deleteMedicineAction,
 } from "@/actions/clinics/clinical-record/medicine.action";
+import {
+  getConsultationPrescriptionsForTicketAction,
+} from "@/actions/consultation/patient-consultations.action";
 import type { GetPatientConsultationDetail } from "@/actions/consultation/patient-consultations.action";
 import type { GetHPsType } from "@/actions/hp.actions";
 import DownloadPrescriptionAction from "@/components/clinic/clinical-records/prescription/DownloadPrescriptionAction";
@@ -34,7 +37,7 @@ interface ConsultationPrescriptionsProps {
   patient: PatientInfo;
   consultation: Detail;
   myHPs: NonNullable<GetHPsType>;
-  onRefresh: () => void;
+  onPatchDetail: (patch: Partial<Detail>) => void;
 }
 
 interface NewMedicineForm {
@@ -68,7 +71,7 @@ export default function ConsultationPrescriptions({
   patient,
   consultation,
   myHPs,
-  onRefresh,
+  onPatchDetail,
 }: ConsultationPrescriptionsProps) {
   const ticketHpIds = consultation.ConsultationTicketHPs.map((h) => h.HealthCareProvider.id);
   const myActiveHp = myHPs.find((hp) => ticketHpIds.includes(hp.id)) ?? myHPs[0] ?? null;
@@ -136,7 +139,11 @@ export default function ConsultationPrescriptions({
       setRxName("");
       setRxRemarks("");
       setMedicines([{ ...emptyMedicine }]);
-      onRefresh();
+      // Patch only the prescriptions section
+      const prescriptionsResult = await getConsultationPrescriptionsForTicketAction({ ticketId: consultation.id });
+      if (prescriptionsResult.status && prescriptionsResult.data) {
+        onPatchDetail({ Prescriptions: prescriptionsResult.data });
+      }
     });
   };
 
@@ -145,7 +152,13 @@ export default function ConsultationPrescriptions({
       const result = await deleteMedicineAction({ medicineId });
       if (result.status) {
         toast.success("Medicine removed");
-        onRefresh();
+        // Remove medicine in-place — no server re-fetch needed
+        onPatchDetail({
+          Prescriptions: consultation.Prescriptions.map((rx) => ({
+            ...rx,
+            Medicines: rx.Medicines?.filter((m) => m.id !== medicineId) ?? [],
+          })),
+        });
       } else {
         toast.error(result.message ?? "Failed to remove medicine");
       }

@@ -20,6 +20,9 @@ import {
   getMedicalCertificateFindingsAction,
   getMedicalCertificateClassificationsAction,
 } from "@/actions/clinics/clinical-record/medical-certificate.action";
+import {
+  getConsultationCertsForTicketAction,
+} from "@/actions/consultation/patient-consultations.action";
 import type { GetPatientConsultationDetail } from "@/actions/consultation/patient-consultations.action";
 import type { GetHPsType } from "@/actions/hp.actions";
 import DownloadMedicalCertificateAction from "@/components/medical-certificate/DownloadMedicalCertificateAction";
@@ -39,7 +42,7 @@ interface ConsultationMedCertsProps {
   patient: PatientInfo;
   consultation: Detail;
   myHPs: NonNullable<GetHPsType>;
-  onRefresh: () => void;
+  onPatchDetail: (patch: Partial<Detail>) => void;
 }
 
 type Reason = { id: number; name: string; documentTemplateId: number };
@@ -51,7 +54,7 @@ export default function ConsultationMedCerts({
   patient,
   consultation,
   myHPs,
-  onRefresh,
+  onPatchDetail,
 }: ConsultationMedCertsProps) {
   const ticketHpIds = consultation.ConsultationTicketHPs.map((h) => h.HealthCareProvider.id);
   const myActiveHp = myHPs.find((hp) => ticketHpIds.includes(hp.id)) ?? myHPs[0] ?? null;
@@ -123,7 +126,11 @@ export default function ConsultationMedCerts({
         setClassificationId(null);
         setRemarks("");
         setImpression("");
-        onRefresh();
+        // Patch only the certs section
+        const certsResult = await getConsultationCertsForTicketAction({ ticketId: consultation.id });
+        if (certsResult.status && certsResult.data) {
+          onPatchDetail({ MedicalCertificates: certsResult.data });
+        }
       } else {
         toast.error(result.message ?? "Failed to create certificate");
       }

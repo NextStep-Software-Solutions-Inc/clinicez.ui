@@ -252,6 +252,86 @@ export const getPatientConsultationDetailAction = withErrorHandling(
   }
 );
 
+/** Fetch only the MedicalCertificates section for a ticket (same shape as detail). */
+export const getConsultationCertsForTicketAction = withErrorHandling(
+  async ({ ticketId }: { ticketId: number }) => {
+    const session = await getCachedSession();
+    if (!session) throw new Error("Unauthorized");
+    return await prisma.clinicMedicalCertificate.findMany({
+      where: { consultationTicketId: ticketId, isActive: true, deletedAt: null },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true, serialNumber: true, remarks: true, impression: true, createdAt: true,
+        Reason: { select: { name: true } },
+        Finding: { select: { name: true } },
+        Classification: { select: { name: true } },
+        HealthCareProvider: {
+          select: {
+            HPProfile: { select: { title: true, name: true } },
+            User: { select: { firstName: true, lastName: true } },
+          },
+        },
+      },
+    });
+  }
+);
+
+/** Fetch only the Prescriptions section for a ticket (same shape as detail). */
+export const getConsultationPrescriptionsForTicketAction = withErrorHandling(
+  async ({ ticketId }: { ticketId: number }) => {
+    const session = await getCachedSession();
+    if (!session) throw new Error("Unauthorized");
+    return await prisma.prescription.findMany({
+      where: { consultationTicketId: ticketId, isActive: true, isArchived: false },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true, serialNumber: true, name: true, remarks: true, createdAt: true,
+        HealthcareProvider: {
+          select: {
+            HPProfile: { select: { title: true, name: true } },
+            User: { select: { firstName: true, lastName: true } },
+          },
+        },
+        Medicines: {
+          where: { isActive: true },
+          select: { id: true, name: true, brandName: true, genericName: true, dosage: true, frequency: true, unit: true, duration: true, qty: true, notes: true },
+        },
+      },
+    });
+  }
+);
+
+/** Fetch only LaboratoryRequests + ImagingRequests for a ticket (same shapes as detail). */
+export const getConsultationDiagnosticsForTicketAction = withErrorHandling(
+  async ({ ticketId }: { ticketId: number }) => {
+    const session = await getCachedSession();
+    if (!session) throw new Error("Unauthorized");
+    const [labs, imaging] = await Promise.all([
+      prisma.clinicLaboratoryRequest.findMany({
+        where: { consultationTicketId: ticketId, isActive: true, deletedAt: null },
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true, serialNumber: true, impression: true, createdAt: true,
+          LaboratoryRequestProcedures: {
+            select: { LaboratoryProcedure: { select: { name: true } } },
+          },
+        },
+      }),
+      prisma.clinicImagingRequest.findMany({
+        where: { consultationTicketId: ticketId, isActive: true, deletedAt: null },
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true, serialNumber: true, impression: true, history: true, reason: true, createdAt: true,
+          ImagingRequestProcedures: {
+            select: { ImagingProcedure: { select: { name: true } } },
+          },
+        },
+      }),
+    ]);
+    return { labs, imaging };
+  }
+);
+
 /**
  * Clinic-wide consultation queue — returns all consultation tickets the
  * current user is allowed to see, enriched with patient identity so the

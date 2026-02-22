@@ -9,6 +9,7 @@ const isProtectedRoute = createRouteMatcher([
   '/user(.*)',
   '/console(.*)',
   '/hp(.*)',
+  '/v2(.*)',
 ]);
 
 const isPublicRoute = createRouteMatcher([
@@ -17,7 +18,6 @@ const isPublicRoute = createRouteMatcher([
   '/contact-us',
   '/sign-in(.*)',
   '/sign-up(.*)',
-  '/v2(.*)',
   '/maintenance',
   '/unauthorized',
 ]);

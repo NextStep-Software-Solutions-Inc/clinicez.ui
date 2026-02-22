@@ -38,6 +38,15 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import type { GetClinicReports } from "@/actions/clinics/clinic-reports.action";
 import { getClinicReportsAction } from "@/actions/clinics/clinic-reports.action";
@@ -71,9 +80,42 @@ function toInputDate(d: Date) {
 }
 
 /* ──────────────────────────────────────── */
+/*  Print section keys                       */
+/* ──────────────────────────────────────── */
+type PrintSections = {
+  overview: boolean;
+  appointments: boolean;
+  consultations: boolean;
+  patientInsights: boolean;
+  diagnostics: boolean;
+  staffActivity: boolean;
+  serviceUtilization: boolean;
+};
+
+const ALL_PRINT_SECTIONS: PrintSections = {
+  overview: true,
+  appointments: true,
+  consultations: true,
+  patientInsights: true,
+  diagnostics: true,
+  staffActivity: true,
+  serviceUtilization: true,
+};
+
+const PRINT_SECTION_LABELS: Record<keyof PrintSections, string> = {
+  overview: "Overview (KPI summary)",
+  appointments: "Appointments",
+  consultations: "Consultations",
+  patientInsights: "Patient Insights",
+  diagnostics: "Diagnostics & Documents",
+  staffActivity: "Staff Activity",
+  serviceUtilization: "Service Utilization",
+};
+
+/* ──────────────────────────────────────── */
 /*  Build printable HTML report             */
 /* ──────────────────────────────────────── */
-function buildReportHtml(data: ReportData, periodLabel: string): string {
+function buildReportHtml(data: ReportData, periodLabel: string, sections: PrintSections): string {
   const { clinic, period, appointments, consultations, patients, diagnostics, staff, services } = data;
   const fromLabel = formatDate(period.from);
   const toLabel = formatDate(period.to);
@@ -178,7 +220,7 @@ function buildReportHtml(data: ReportData, periodLabel: string): string {
     <p class="meta">Generated: ${generatedAt}</p>
   </div>
 
-  <h2>Overview</h2>
+  ${sections.overview ? `<h2>Overview</h2>
   <div class="kpi-grid">
     <div class="kpi-box">
       <div class="kpi-label">Appointments</div>
@@ -198,9 +240,9 @@ function buildReportHtml(data: ReportData, periodLabel: string): string {
       <div class="kpi-label">Diagnostics Issued</div>
       <div class="kpi-value">${diagnostics.total}</div>
     </div>
-  </div>
+  </div>` : ""}
 
-  <h2>Appointments</h2>
+  ${sections.appointments ? `<h2>Appointments</h2>
   <div class="two-col">
     ${sectionTable("By Status", appointmentStatusRows || "<tr><td colspan='2' style='padding:6px 8px;color:#9ca3af'>No data</td></tr>")}
     ${sectionTable("By Mode", appointmentModeRows || "<tr><td colspan='2' style='padding:6px 8px;color:#9ca3af'>No data</td></tr>")}
@@ -216,15 +258,15 @@ function buildReportHtml(data: ReportData, periodLabel: string): string {
         <tbody>${topServicesRows}</tbody>
       </table>
     </div>` : ""}
-  </div>
+  </div>` : ""}
 
-  <h2>Consultations</h2>
+  ${sections.consultations ? `<h2>Consultations</h2>
   <div class="two-col">
     ${sectionTable("By Status", consultationStatusRows || "<tr><td colspan='2' style='padding:6px 8px;color:#9ca3af'>No data</td></tr>")}
     ${sectionTable("By Healthcare Provider", hpRows || "<tr><td colspan='2' style='padding:6px 8px;color:#9ca3af'>No data</td></tr>")}
-  </div>
+  </div>` : ""}
 
-  <h2>Patient Insights</h2>
+  ${sections.patientInsights ? `<h2>Patient Insights</h2>
   <div class="kpi-grid" style="grid-template-columns:repeat(2,1fr)">
     <div class="kpi-box"><div class="kpi-label">New Registrations (Period)</div><div class="kpi-value">${patients.newInPeriod}</div></div>
     <div class="kpi-box"><div class="kpi-label">Total Active Patients</div><div class="kpi-value">${patients.totalActive}</div></div>
@@ -239,9 +281,9 @@ function buildReportHtml(data: ReportData, periodLabel: string): string {
     ${sectionTable("Profile Completion", profileRows || "<tr><td colspan='2' style='padding:6px 8px;color:#9ca3af'>No data</td></tr>")}
     ${sectionTable("Top Health Conditions", conditionRows || "<tr><td colspan='2' style='padding:6px 8px;color:#9ca3af'>No recorded conditions</td></tr>")}
     ${sectionTable("Top Allergies", allergyRows || "<tr><td colspan='2' style='padding:6px 8px;color:#9ca3af'>No recorded allergies</td></tr>")}
-  </div>
+  </div>` : ""}
 
-  <h2>Diagnostics &amp; Documents</h2>
+  ${sections.diagnostics ? `<h2>Diagnostics &amp; Documents</h2>
   <div class="diag-grid">
     <div class="diag-box"><div class="diag-label">Prescriptions</div><div class="diag-value">${diagnostics.prescriptions}</div></div>
     <div class="diag-box"><div class="diag-label">Lab Requests</div><div class="diag-value">${diagnostics.labRequests}</div></div>
@@ -249,9 +291,9 @@ function buildReportHtml(data: ReportData, periodLabel: string): string {
     <div class="diag-box"><div class="diag-label">Heart Station</div><div class="diag-value">${diagnostics.heartRequests}</div></div>
     <div class="diag-box"><div class="diag-label">Medical Certificates</div><div class="diag-value">${diagnostics.medicalCertificates}</div></div>
     <div class="diag-box"><div class="diag-label">Referral Slips</div><div class="diag-value">${diagnostics.referralSlips}</div></div>
-  </div>
+  </div>` : ""}
 
-  <h2>Staff Activity</h2>
+  ${sections.staffActivity ? `<h2>Staff Activity</h2>
   <div class="two-col" style="margin-bottom:16px">
     ${sectionTable("Members by Role", memberRoleRows || "<tr><td colspan='2' style='padding:6px 8px;color:#9ca3af'>No data</td></tr>")}
   </div>
@@ -268,9 +310,9 @@ function buildReportHtml(data: ReportData, periodLabel: string): string {
       </tr></thead>
       <tbody>${hpActivityRows}</tbody>
     </table>
-  </div>` : ""}
+  </div>` : ""}` : ""}
 
-  <h2>Service Utilization</h2>
+  ${sections.serviceUtilization ? `<h2>Service Utilization</h2>
   <div class="two-col">
     ${sectionTable("By Procedure Type", procedureTypeRows || "<tr><td colspan='2' style='padding:6px 8px;color:#9ca3af'>No data</td></tr>")}
     ${services.topProcedures.length > 0 ? `<div style="margin-bottom:20px;page-break-inside:avoid">
@@ -284,7 +326,7 @@ function buildReportHtml(data: ReportData, periodLabel: string): string {
         <tbody>${topProcedureRows}</tbody>
       </table>
     </div>` : sectionTable("Top Procedures", "<tr><td colspan='3' style='padding:6px 8px;color:#9ca3af'>No data</td></tr>")}
-  </div>
+  </div>` : ""}
 
   <footer>
     This report was generated automatically by ClinicEZ for ${clinic.name}.
@@ -446,6 +488,8 @@ export function ClinicReportsClient({
   const [period, setPeriod] = useState<ReportPeriod>(initialPeriod as ReportPeriod);
   const [customFrom, setCustomFrom] = useState(() => toInputDate(new Date()));
   const [customTo, setCustomTo] = useState(() => toInputDate(new Date()));
+  const [printDialogOpen, setPrintDialogOpen] = useState(false);
+  const [printSections, setPrintSections] = useState<PrintSections>({ ...ALL_PRINT_SECTIONS });
 
   const refresh = useCallback(
     (nextPeriod: ReportPeriod, fromDate?: Date, toDate?: Date) => {
@@ -509,7 +553,18 @@ export function ClinicReportsClient({
   const toLabel = formatDate(data.period.to);
 
   const handlePrint = () => {
-    const html = buildReportHtml(data, periodLabel);
+    setPrintSections({ ...ALL_PRINT_SECTIONS });
+    setPrintDialogOpen(true);
+  };
+
+  const handleConfirmPrint = () => {
+    const anySelected = Object.values(printSections).some(Boolean);
+    if (!anySelected) {
+      toast.error("Please select at least one section to include in the report.");
+      return;
+    }
+    setPrintDialogOpen(false);
+    const html = buildReportHtml(data, periodLabel, printSections);
     handlePrintHtmlToPDF(html);
   };
 
@@ -1475,6 +1530,75 @@ export function ClinicReportsClient({
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* ── Print Section Selector Dialog ── */}
+      <Dialog open={printDialogOpen} onOpenChange={setPrintDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Printer className="h-4 w-4" />
+              Print / Save PDF
+            </DialogTitle>
+            <DialogDescription>
+              Choose which sections to include in the exported report.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-2 space-y-3">
+            {(Object.keys(printSections) as (keyof PrintSections)[]).map((key) => (
+              <div key={key} className="flex items-center gap-3">
+                <Checkbox
+                  id={`section-${key}`}
+                  checked={printSections[key]}
+                  onCheckedChange={(checked) =>
+                    setPrintSections((prev) => ({ ...prev, [key]: checked === true }))
+                  }
+                />
+                <label
+                  htmlFor={`section-${key}`}
+                  className="text-sm font-medium leading-none cursor-pointer select-none"
+                >
+                  {PRINT_SECTION_LABELS[key]}
+                </label>
+              </div>
+            ))}
+            <div className="flex items-center gap-4 pt-1 border-t">
+              <button
+                type="button"
+                className="text-xs text-primary underline-offset-2 hover:underline"
+                onClick={() => setPrintSections({ ...ALL_PRINT_SECTIONS })}
+              >
+                Select all
+              </button>
+              <button
+                type="button"
+                className="text-xs text-muted-foreground underline-offset-2 hover:underline"
+                onClick={() =>
+                  setPrintSections({
+                    overview: false,
+                    appointments: false,
+                    consultations: false,
+                    patientInsights: false,
+                    diagnostics: false,
+                    staffActivity: false,
+                    serviceUtilization: false,
+                  })
+                }
+              >
+                Deselect all
+              </button>
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" size="sm" onClick={() => setPrintDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button size="sm" className="gap-1.5" onClick={handleConfirmPrint}>
+              <Printer className="h-4 w-4" />
+              Generate PDF
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

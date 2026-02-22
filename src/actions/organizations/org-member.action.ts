@@ -144,6 +144,7 @@ export const getOrgMembersAction = withErrorHandling(
                 suffix: true,
                 gender: true,
                 dob: true,
+                email: true,
                 StudentRecords: {
                   where: {
                     isActive: true,
@@ -234,6 +235,11 @@ export const getOrgMembersAction = withErrorHandling(
                 name: true,
                 orgUid: true,
                 id: true
+              }
+            },
+            OrgMemberPermissions: {
+              select: {
+                permissionId: true
               }
             }
           }
@@ -646,6 +652,182 @@ const sendMembershipDeletionEmailNotification = async ({
     return false;
   }
 };
+
+type AddOrgMemberPayload = {
+  orgUid: string;
+  userId: string;
+  roleId: number;
+};
+
+export const addOrgMemberAction = withErrorHandling(async (payload: AddOrgMemberPayload) => {
+  const session = await getCachedSession();
+  if (!session) throw new Error("User not authenticated.");
+
+  const currentUserId = session.user.sub as string;
+  const { orgUid, userId, roleId } = payload;
+
+  const [isSuperAdmin, hasPermission] = await Promise.all([
+    isSuperAdminAction(),
+    hasOrgPermissionAction({
+      userId: currentUserId,
+      orgUid,
+      permissionName: PERMISSIONS.ORGANIZATION["UPDATE:ORG:MEMBERS"].name,
+    }),
+  ]);
+
+  if (!isSuperAdmin && !hasPermission)
+    throw new Error("You do not have permission to add members");
+
+  const org = await prisma.organization.findUniqueOrThrow({
+    where: { orgUid },
+    select: { id: true },
+  });
+
+  const user = await prisma.user.findUniqueOrThrow({
+    where: { userId },
+    select: { id: true },
+  });
+
+  const newMember = await prisma.$transaction(async (tx) => {
+    const member = await tx.organizationMember.create({
+      data: {
+        organizationId: org.id,
+        userId: user.id,
+        role: roleId,
+        status: "ACTIVE",
+      },
+      select: {
+        id: true,
+        createdAt: true,
+        status: true,
+        role: true,
+        OrganizationRole: { select: { id: true, name: true, description: true, requirements: true } },
+        User: {
+          select: {
+            id: true,
+            picture: true,
+            userId: true,
+            firstName: true,
+            lastName: true,
+            suffix: true,
+            gender: true,
+            dob: true,
+            StudentRecords: { where: { isActive: true, Organization: { orgUid } }, select: { studentId: true, lrn: true, Level: { select: { name: true } }, OrganizationYearLevel: { select: { name: true } }, Program: { select: { name: true } }, Department: { select: { name: true } }, College: { select: { name: true } } } },
+            UserEmployments: { where: { isActive: true, Organization: { orgUid } }, select: { employeeId: true, position: true, designation: true, Office: { select: { name: true } }, Department: { select: { name: true } }, College: { select: { name: true } } } },
+            email: true,
+          },
+        },
+        AcceptedBy: { select: { id: true, userId: true, firstName: true, lastName: true } },
+        OrgMemberPermissions: { select: { permissionId: true } },
+        Organization: { select: { name: true, orgUid: true, id: true } },
+      },
+    });
+
+    // Apply initial permissions for the role
+    const initialPerms = await tx.orgRoleInitialPermission.findMany({
+      where: { orgId: org.id, orgRoleId: roleId },
+      select: { permissionId: true },
+    });
+
+    if (initialPerms.length > 0) {
+      await tx.orgMemberPermission.createMany({
+        skipDuplicates: true,
+        data: initialPerms.map((p) => ({ orgMemberId: member.id, permissionId: p.permissionId })),
+      });
+    }
+
+    return { ...member, OrgMemberPermissions: initialPerms };
+  });
+
+  return { message: "Member added successfully", data: newMember };
+});
+
+export const updateOrgMemberRoleAction = withErrorHandling(
+  async (memberId: number, roleId: number) => {
+    const session = await getCachedSession();
+    if (!session) throw new Error("User not authenticated.");
+
+    const userId = session.user.sub as string;
+
+    const membership = await prisma.organizationMember.findUnique({
+      where: { id: memberId },
+      select: {
+        Organization: { select: { orgUid: true } },
+        OrganizationRole: { select: { name: true } },
+      },
+    });
+
+    if (!membership) throw new Error("Membership not found");
+    if (isOwner(membership.OrganizationRole.name)) throw new Error("Owner role cannot be changed.");
+
+    const [isSuperAdmin, hasPermission] = await Promise.all([
+      isSuperAdminAction(),
+      hasOrgPermissionAction({
+        userId,
+        orgUid: membership.Organization.orgUid,
+        permissionName: PERMISSIONS.ORGANIZATION["UPDATE:ORG:MEMBERS"].name,
+      }),
+    ]);
+
+    if (!isSuperAdmin && !hasPermission)
+      throw new Error("You do not have permission to update member role");
+
+    await prisma.organizationMember.update({
+      where: { id: memberId },
+      data: { role: roleId },
+    });
+
+    return { message: "Member role updated successfully", data: null };
+  },
+  async (error) => {
+    if (error instanceof Error) return error.message;
+    return "Error updating member role";
+  }
+);
+
+function isOwner(roleName: string) {
+  return roleName.toLowerCase() === "owner";
+}
+
+export type SearchNonOrgMembers = Awaited<ReturnType<typeof searchNonOrgMembersAction>>;
+export const searchNonOrgMembersAction = withErrorHandling(async (orgUid: string, query: string) => {
+  const session = await getCachedSession();
+  if (!session) throw new Error("User not authenticated");
+
+  if (!query || query.trim().length < 2) {
+    return { message: "Query too short", data: [] };
+  }
+
+  const users = await prisma.user.findMany({
+    take: 10,
+    orderBy: { lastName: "asc" },
+    where: {
+      isActive: true,
+      OR: [
+        { firstName: { contains: query, mode: "insensitive" } },
+        { lastName: { contains: query, mode: "insensitive" } },
+        { email: { contains: query, mode: "insensitive" } },
+      ],
+      NOT: {
+        OrganizationMembers: {
+          some: {
+            Organization: { orgUid },
+          },
+        },
+      },
+    },
+    select: {
+      userId: true,
+      email: true,
+      firstName: true,
+      lastName: true,
+      middleName: true,
+      picture: true,
+    },
+  });
+
+  return { message: "Users found", data: users };
+});
 
 const sendMembershipAdditionalInfo = async ({
   name,

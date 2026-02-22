@@ -257,7 +257,7 @@ export const getConsultationCertsForTicketAction = withErrorHandling(
   async ({ ticketId }: { ticketId: number }) => {
     const session = await getCachedSession();
     if (!session) throw new Error("Unauthorized");
-    return await prisma.clinicMedicalCertificate.findMany({
+    const data = await prisma.clinicMedicalCertificate.findMany({
       where: { consultationTicketId: ticketId, isActive: true, deletedAt: null },
       orderBy: { createdAt: "desc" },
       select: {
@@ -273,6 +273,7 @@ export const getConsultationCertsForTicketAction = withErrorHandling(
         },
       },
     });
+    return { message: "Certificates fetched", data };
   }
 );
 
@@ -281,7 +282,7 @@ export const getConsultationPrescriptionsForTicketAction = withErrorHandling(
   async ({ ticketId }: { ticketId: number }) => {
     const session = await getCachedSession();
     if (!session) throw new Error("Unauthorized");
-    return await prisma.prescription.findMany({
+    const data = await prisma.prescription.findMany({
       where: { consultationTicketId: ticketId, isActive: true, isArchived: false },
       orderBy: { createdAt: "desc" },
       select: {
@@ -298,6 +299,7 @@ export const getConsultationPrescriptionsForTicketAction = withErrorHandling(
         },
       },
     });
+    return { message: "Prescriptions fetched", data };
   }
 );
 
@@ -328,7 +330,7 @@ export const getConsultationDiagnosticsForTicketAction = withErrorHandling(
         },
       }),
     ]);
-    return { labs, imaging };
+    return { message: "Diagnostics fetched", data: { labs, imaging } };
   }
 );
 

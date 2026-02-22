@@ -5,6 +5,8 @@ import { getClinicWithUserRoleAction, getUserClinicsWithRolesAction } from "@/ac
 import { getAppointmentCountsAction } from "@/actions/appointments/appointments.action";
 import { notFound } from "next/navigation";
 
+export const dynamic = "force-dynamic";
+
 interface ClinicUidLayoutProps {
   children: React.ReactNode;
   params: Promise<{ clinicUid: string }>;

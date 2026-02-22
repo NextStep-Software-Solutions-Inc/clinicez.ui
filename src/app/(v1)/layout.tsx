@@ -11,6 +11,8 @@ const plusJakartaSans = Plus_Jakarta_Sans({ subsets: ["latin"] });
 
 export const maxDuration = 40;
 
+export const dynamic = "force-dynamic";
+
 interface Props {
   children: React.ReactNode;
 }

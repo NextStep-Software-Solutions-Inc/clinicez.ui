@@ -1,6 +1,8 @@
 import { getHPAction } from "@/actions/hp.actions";
 import { notFound } from "next/navigation";
 
+export const dynamic = "force-dynamic";
+
 interface HPProps {
   params: Promise<{
     hpId: string;

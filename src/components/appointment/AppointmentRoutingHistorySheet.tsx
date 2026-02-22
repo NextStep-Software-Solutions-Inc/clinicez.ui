@@ -205,7 +205,7 @@ export const Route = ({ record, appointmentId, clinicUid }: RouteProps) => {
 export const CancelAssignment = ({ appointmentRoutingId, onCancel }: { appointmentRoutingId: number, onCancel?: () => void }) => {
 
   const handleCancelAssignment = () => {
-    toast.promise(promiseWrapper(cancelAppointmentRoutingAction)(appointmentRoutingId), {
+    toast.promise(promiseWrapper(cancelAppointmentRoutingAction)({ appointmentRoutingId, reason: "Cancelled" }), {
       loading: "Cancelling assignment...",
       success: (res) => {
         onCancel?.()

@@ -316,6 +316,12 @@ export type GetAppointmentFilter = {
   tagged?: string;
   appointmentId?: number;
   sort?: "request" | "schedule";
+  /** Filter by one or more healthcare providers involved (assigned or tagged) */
+  hpIds?: number[];
+  /** Cursor-based pagination: ID of the last item from the previous page */
+  cursor?: number;
+  /** Number of items to fetch per page (default: 20) */
+  limit?: number;
 };
 export type GetAppointments = Awaited<ReturnType<typeof getAppointmentsAction>>;
 export const getAppointmentsAction = withErrorHandling(cache(async (filter?: GetAppointmentFilter) => {
@@ -328,7 +334,8 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
     getHPsAction({ userId: session.user.sub })
   ])
 
-  const { clinicUid, userId, status, routedAptStatus, tagged, sort } = filter || {};
+  const { clinicUid, userId, status, routedAptStatus, tagged, sort, cursor, limit, hpIds } = filter || {};
+  const PAGE_SIZE = limit ?? 20;
 
   const userPermissionArray = permissions.map(p => p.name);
 
@@ -343,6 +350,8 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
 
   const myHpIds = myHps.map((hp) => hp.id);
   const appointments = await prisma.appointment.findMany({
+    take: PAGE_SIZE + 1, // fetch one extra to determine if there's a next page
+    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     orderBy: {
       ...(sort === "schedule"
         ? {
@@ -369,6 +378,15 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
               }
             }
           }
+        }
+        : {}),
+      // Filter by one or more HPs being involved (assigned via routing OR tagged)
+      ...(hpIds && hpIds.length > 0
+        ? {
+          OR: [
+            { AppointmentRouting: { some: { routedTo: { in: hpIds } } } },
+            { AppointmentTag: { some: { healthcareProviderId: { in: hpIds } } } },
+          ]
         }
         : {}),
       ...(routedAptStatus
@@ -413,6 +431,7 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
           userId: true,
           User: {
             select: {
+              id: true,
               userId: true,
               firstName: true,
               middleName: true,
@@ -485,6 +504,7 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
       AppointmentRouting: {
         select: {
           id: true,
+          routingCode: true,
           status: true,
           RoutedTo: {
             select: {
@@ -514,6 +534,7 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
           timeStart: true,
           completedAt: true,
           receivedAt: true,
+          receivedBy: true,
           rejectedAt: true,
           rescheduledAt: true,
           AppointmentType: {
@@ -531,6 +552,12 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
           Service: {
             select: {
               name: true
+            }
+          },
+          ReceivedBy: {
+            select: {
+              firstName: true,
+              lastName: true,
             }
           }
         }
@@ -597,8 +624,136 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
     });
   });
 
-  return { message: "Appointments fetched", data: filteredAppointments };
+  // Cursor pagination: determine if there is a next page
+  const hasNextPage = filteredAppointments.length > PAGE_SIZE;
+  const pageItems = hasNextPage ? filteredAppointments.slice(0, PAGE_SIZE) : filteredAppointments;
+
+  return { message: "Appointments fetched", data: pageItems };
 }));
+
+// ─── Walk-In Appointment Creation ────────────────────────────────────────────
+
+type CreateWalkInAppointmentPayload = {
+  clinicUid: string;
+  /** Existing clinic patient's Clerk userId — if provided, appointment links to this patient */
+  patientId?: string;
+  /** Walk-in patient name (used when no patientId) */
+  patientName?: string;
+  subject: string;
+  complaint: string;
+  modeId: number;
+  typeId: number;
+  serviceId: number;
+  hpId?: number;
+  date?: Date;
+  timeStart?: string;
+  timeEnd?: string;
+};
+
+/**
+ * Creates a walk-in appointment on behalf of a patient.
+ * Can link to an existing clinic patient (via patientId) or use a plain name.
+ * The appointment starts in RECEIVED status (no PENDING step needed).
+ */
+export const createWalkInAppointmentAction = withErrorHandling(async (payload: CreateWalkInAppointmentPayload) => {
+  const session = await getCachedSession();
+  if (!session) throw new Error("Unauthorized");
+
+  const { clinicUid, patientId, patientName, subject, complaint, modeId, typeId, serviceId, hpId, date, timeStart, timeEnd } = payload;
+
+  if (!subject?.trim()) throw new Error("Subject is required");
+  if (!complaint?.trim()) throw new Error("Chief complaint is required");
+  if (!patientId && !patientName?.trim()) throw new Error("Patient is required");
+
+  const myPermissions = await getPermissionsAction({ userId: session.user.sub });
+  const userPermissionArray = myPermissions.map(p => p.name);
+  const canCreate = [PERMISSIONS.CLINIC["WRITE:CLINIC:APPOINTMENT"].name].every(p => userPermissionArray.includes(p));
+  const canReceive = [PERMISSIONS.CLINIC["RECEIVE:CLINIC:APPOINTMENT"].name].some(p => userPermissionArray.includes(p));
+
+  if (!canCreate) throw new Error("You do not have permission to create an appointment");
+  if (!canReceive) throw new Error("You do not have permission to receive an appointment");
+
+  await prisma.$transaction(async (tx) => {
+    const receivingUser = await tx.user.findUniqueOrThrow({
+      where: { userId: session.user.sub },
+      select: { id: true },
+    });
+
+    const clinic = await tx.clinic.findUniqueOrThrow({
+      where: { clinicUid },
+      select: { id: true },
+    });
+
+    // Resolve the display name for the subject line
+    let displayName = patientName?.trim() ?? "";
+    if (patientId) {
+      const patient = await tx.user.findUnique({
+        where: { userId: patientId },
+        select: { firstName: true, lastName: true },
+      });
+      if (patient) {
+        displayName = `${patient.firstName ?? ""} ${patient.lastName ?? ""}`.trim();
+      }
+    }
+
+    // Compute final subject: walk-ins without an account get a prefix with the patient name
+    const finalSubject = !patientId && displayName
+      ? `Walk-in: ${displayName} — ${subject.trim()}`
+      : subject.trim();
+
+    const appointment = await tx.appointment.create({
+      data: {
+        subject: finalSubject,
+        complaint: complaint.trim(),
+        Clinic: { connect: { id: clinic.id } },
+        // Link to existing patient if provided
+        ...(patientId
+          ? {
+            Requesters: {
+              create: {
+                User: { connect: { userId: patientId } },
+              },
+            },
+          }
+          : {}),
+        AppointmentAttribute: {
+          create: {
+            modeId,
+            typeId,
+            serviceId,
+            // Walk-in appointments skip PENDING: the secretary creates and locks in one step.
+            // If a doctor is pre-assigned, go straight to ROUTED; otherwise RECEIVED.
+            status: hpId ? "ROUTED" : "RECEIVED",
+            receivedAt: new Date(),
+            receivedBy: receivingUser.id,
+            preferredAppointee: hpId,
+            date: date ?? null,
+            timeStart: timeStart ?? null,
+            timeEnd: timeEnd ?? null,
+          },
+        },
+      },
+      select: { id: true },
+    });
+
+    if (hpId) {
+      await tx.appointmentRouting.create({
+        data: {
+          RoutedBy: { connect: { userId: session.user.sub } },
+          RoutedTo: { connect: { id: hpId } },
+          Appointment: { connect: { id: appointment.id } },
+          status: "PENDING",
+        },
+      });
+    }
+  });
+
+  return { message: "Walk-in appointment created", data: null };
+}, async (error) => {
+  if (error instanceof Error) return error.message;
+  return "Failed to create walk-in appointment";
+});
+
 
 export type GetAppointment = Awaited<ReturnType<typeof getAppointmentAction>>;
 export const getAppointmentAction = withErrorHandling(cache(async (id: number, clinicUid: string) => {

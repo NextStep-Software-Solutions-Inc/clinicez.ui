@@ -5,6 +5,7 @@ import prismaClient from '@lib/prisma';
 import { getPermissionsAction } from '@actions/permission.action';
 import { PERMISSIONS } from '@lib/permissions';
 import { withErrorHandling } from '@/lib/with-error-handling';
+import { hasCodeProperty } from '@lib/utils';
 
 export const receiveAppointmentAction = withErrorHandling(async (formData: FormData) => {
   const session = await getCachedSession();
@@ -49,7 +50,8 @@ export const receiveAppointmentAction = withErrorHandling(async (formData: FormD
   const newStatus = formData.get('status') as string;
   await prismaClient.appointmentAttribute.update({
     where: {
-      appointmentId
+      appointmentId,
+      receivedBy: null,  // Atomic lock: only proceed if not yet received
     },
     data: {
       status: autoAssignToSelf ? "ROUTED" : newStatus,
@@ -84,6 +86,9 @@ export const receiveAppointmentAction = withErrorHandling(async (formData: FormD
   })
   return { message: 'Appointment received', data: undefined };
 }, async error => {
+  if (hasCodeProperty(error) && error.code === 'P2025') {
+    return "This appointment is already being handled by another staff member. Please refresh to see the current status.";
+  }
   if (error instanceof Error) return error.message;
   return "An error occurred while receiving appointment."
 })
@@ -123,6 +128,69 @@ export const completeAppointmentAction = withErrorHandling(async (formData: Form
   if (error instanceof Error) return error.message;
   return "An error occurred while completing appointment."
 })
+
+type ConfirmAppointmentBookingPayload = {
+  appointmentId: number;
+  modeId: number;
+  typeId: number;
+  serviceId: number;
+  hpId?: number;
+  date?: Date;
+  timeStart?: string;
+  timeEnd?: string;
+};
+
+export const confirmAppointmentBookingAction = withErrorHandling(async (payload: ConfirmAppointmentBookingPayload) => {
+  const session = await getCachedSession();
+  if (!session) throw new Error("User not authenticated.");
+
+  const myPermissions = await getPermissionsAction({ userId: session.user.sub });
+  const requiredPermissions = [PERMISSIONS.CLINIC["RECEIVE:CLINIC:APPOINTMENT"].name];
+  const myPermissionArray = myPermissions.map(permission => permission.name);
+  const canReceiveAppointment = requiredPermissions.some(permission => myPermissionArray.includes(permission));
+
+  if (!canReceiveAppointment) throw new Error("You do not have permission to confirm appointment booking.");
+
+  const { appointmentId, modeId, typeId, serviceId, hpId, date, timeStart, timeEnd } = payload;
+
+  await prismaClient.$transaction(async (tx) => {
+    const user = await tx.user.findUniqueOrThrow({
+      where: { userId: session.user.sub },
+      select: { id: true },
+    });
+
+    await tx.appointmentAttribute.update({
+      where: { appointmentId },
+      data: {
+        modeId,
+        typeId,
+        serviceId,
+        date,
+        timeStart,
+        timeEnd,
+        status: hpId ? "ROUTED" : "RECEIVED",
+        receivedAt: new Date(),
+        receivedBy: user.id,
+      },
+    });
+
+    if (hpId) {
+      await tx.appointmentRouting.create({
+        data: {
+          RoutedBy: { connect: { userId: session.user.sub } },
+          RoutedTo: { connect: { id: hpId } },
+          Appointment: { connect: { id: appointmentId } },
+          status: "PENDING",
+        },
+      });
+    }
+  });
+
+  return { message: "Appointment booking confirmed", data: undefined };
+}, async (error) => {
+  if (error instanceof Error) return error.message;
+  return "An error occurred while confirming appointment booking.";
+});
 
 export const rejectAppointmentAction = withErrorHandling(async (formData: FormData) => {
 

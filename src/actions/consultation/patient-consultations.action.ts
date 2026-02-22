@@ -261,7 +261,7 @@ export const getPatientConsultationDetailAction = withErrorHandling(
  * get the next page. Always returns `total` (matching rows) and `nextCursor`
  * (null when no more pages).
  */
-export const PAGE_SIZE = 20;
+const PAGE_SIZE = 20;
 export type GetClinicConsultationQueue = Awaited<ReturnType<typeof getClinicConsultationQueueAction>>;
 export const getClinicConsultationQueueAction = withErrorHandling(
   async ({

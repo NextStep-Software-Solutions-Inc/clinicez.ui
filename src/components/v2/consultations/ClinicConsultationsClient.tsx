@@ -16,13 +16,15 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import dayjs from "@/lib/day-utils";
 import type { GetClinicConsultationQueue } from "@/actions/consultation/patient-consultations.action";
-import { PAGE_SIZE } from "@/actions/consultation/patient-consultations.action";
 import type { GetHPsType } from "@/actions/hp.actions";
 import {
   getPatientConsultationDetailAction,
   getClinicConsultationQueueAction,
 } from "@/actions/consultation/patient-consultations.action";
 import ConsultationWorkspace from "./ConsultationWorkspace";
+
+/** Must match PAGE_SIZE in patient-consultations.action.ts */
+const PAGE_SIZE = 20;
 
 type QueueResult = NonNullable<GetClinicConsultationQueue["data"]>;
 type QueueItem = QueueResult["items"][number];

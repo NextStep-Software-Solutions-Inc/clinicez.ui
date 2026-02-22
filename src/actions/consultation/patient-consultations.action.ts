@@ -235,6 +235,20 @@ export const getPatientConsultationDetailAction = withErrorHandling(
             },
           },
         },
+        ReferralSlips: {
+          where: { isActive: true, deletedAt: null },
+          orderBy: { createdAt: "desc" },
+          select: {
+            id: true,
+            serialNumber: true,
+            referredTo: true,
+            reason: true,
+            history: true,
+            impression: true,
+            recommendation: true,
+            createdAt: true,
+          },
+        },
         Appointment: {
           select: {
             id: true,
@@ -627,5 +641,28 @@ export const getClinicHeartStationProceduresAction = withErrorHandling(
       },
     });
     return { message: "Heart station procedures fetched", data: procedures };
+  }
+);
+
+/** Fetch only ReferralSlips for a ticket. */
+export const getConsultationReferralsForTicketAction = withErrorHandling(
+  async ({ ticketId }: { ticketId: number }) => {
+    const session = await getCachedSession();
+    if (!session) throw new Error("Unauthorized");
+    const data = await prisma.clinicReferralSlip.findMany({
+      where: { consultationTicketId: ticketId, isActive: true, deletedAt: null },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        serialNumber: true,
+        referredTo: true,
+        reason: true,
+        history: true,
+        impression: true,
+        recommendation: true,
+        createdAt: true,
+      },
+    });
+    return { message: "Referral slips fetched", data };
   }
 );

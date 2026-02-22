@@ -13,6 +13,7 @@ import {
   AlertCircle,
   Info,
   ExternalLink,
+  GitFork,
 } from "lucide-react";
 import Link from "next/link";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -27,6 +28,7 @@ import ConsultationNotesEditor from "./ConsultationNotesEditor";
 import ConsultationPrescriptions from "./ConsultationPrescriptions";
 import ConsultationMedCerts from "./ConsultationMedCerts";
 import ConsultationDiagnostics from "./ConsultationDiagnostics";
+import ConsultationReferrals from "./ConsultationReferrals";
 
 type Detail = NonNullable<GetPatientConsultationDetail["data"]>;
 
@@ -90,6 +92,8 @@ export default function ConsultationWorkspace({
   const certCount = consultation.MedicalCertificates?.length ?? 0;
   const labCount = consultation.LaboratoryRequests?.length ?? 0;
   const imgCount = consultation.ImagingRequests?.length ?? 0;
+  const hsCount = consultation.HeartStationRequests?.length ?? 0;
+  const refCount = consultation.ReferralSlips?.length ?? 0;
 
   // Placeholder shown inside patient-requiring tabs when patient context is unavailable
   const NoPatientPlaceholder = () => (
@@ -268,9 +272,21 @@ export default function ConsultationWorkspace({
             >
               <FlaskConical className="h-3.5 w-3.5" />
               Diagnostics
-              {(labCount + imgCount) > 0 && (
+              {(labCount + imgCount + hsCount) > 0 && (
                 <span className="ml-1 bg-primary/10 text-primary text-[10px] px-1.5 rounded-full">
-                  {labCount + imgCount}
+                  {labCount + imgCount + hsCount}
+                </span>
+              )}
+            </TabsTrigger>
+            <TabsTrigger
+              value="referrals"
+              className="flex items-center gap-1.5 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary h-full px-3 text-xs"
+            >
+              <GitFork className="h-3.5 w-3.5" />
+              Referrals
+              {refCount > 0 && (
+                <span className="ml-1 bg-primary/10 text-primary text-[10px] px-1.5 rounded-full">
+                  {refCount}
                 </span>
               )}
             </TabsTrigger>
@@ -317,6 +333,20 @@ export default function ConsultationWorkspace({
             <TabsContent value="diagnostics" className="mt-0 p-4 sm:p-6">
               {hasPatient ? (
                 <ConsultationDiagnostics
+                  clinicUid={clinicUid}
+                  patient={patient}
+                  consultation={consultation}
+                  myHPs={myHPs}
+                  onPatchDetail={onPatchDetail}
+                />
+              ) : (
+                <NoPatientPlaceholder />
+              )}
+            </TabsContent>
+
+            <TabsContent value="referrals" className="mt-0 p-4 sm:p-6">
+              {hasPatient ? (
+                <ConsultationReferrals
                   clinicUid={clinicUid}
                   patient={patient}
                   consultation={consultation}

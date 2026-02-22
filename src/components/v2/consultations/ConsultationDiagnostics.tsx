@@ -28,6 +28,7 @@ import type {
 import type { GetHPsType } from "@/actions/hp.actions";
 import DownloadLaboratoryRequestAction from "@/components/laboratory-requests/DownloadLaboratoryRequestAction";
 import DownloadImagingStudiesAction from "@/components/imaging-studies/DownloadImagingStudiesAction";
+import DownloadHeartStationRequestAction from "@/components/heart-station-requests/DownloadHeartStationRequestAction";
 
 type Detail = NonNullable<GetPatientConsultationDetail["data"]>;
 type LabProc = NonNullable<GetClinicLabProcedures["data"]>[number];
@@ -751,7 +752,13 @@ function DiagnosticCard({
                 <FileDown className="h-3.5 w-3.5" />
               </Button>
             </DownloadImagingStudiesAction>
-          ) : null}
+          ) : (
+            <DownloadHeartStationRequestAction request={{ id }}>
+              <Button size="sm" variant="ghost" className="h-7 w-7 p-0" title="Preview PDF">
+                <FileDown className="h-3.5 w-3.5" />
+              </Button>
+            </DownloadHeartStationRequestAction>
+          )}
         </div>
       </div>
     </div>

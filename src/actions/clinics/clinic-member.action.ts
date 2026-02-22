@@ -65,12 +65,18 @@ export const getClinicMembersAction = withErrorHandling(async (filters: GetClini
       },
       User: {
         select: {
+          userId: true,
           email: true,
           firstName: true,
           lastName: true,
           middleName: true,
           suffix: true,
           picture: true
+        }
+      },
+      ClinicMemberPermissions: {
+        select: {
+          permissionId: true
         }
       }
     }

@@ -3,11 +3,11 @@
 import { useState, useTransition } from "react";
 import { Save, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { upsertConsultationNotesAction } from "@/actions/consultation/consultation-notes.action";
 import type { GetPatientConsultationDetail } from "@/actions/consultation/patient-consultations.action";
 import type { GetHPsType } from "@/actions/hp.actions";
+import MarkdownEditor from "./MarkdownEditor";
 
 type Detail = NonNullable<GetPatientConsultationDetail["data"]>;
 
@@ -115,13 +115,12 @@ export default function ConsultationNotesEditor({
 
           {expanded[section.name] && (
             <div className="px-4 pb-4 space-y-2">
-              <Textarea
+              <MarkdownEditor
                 value={noteValues[section.name] ?? ""}
-                onChange={(e) =>
-                  setNoteValues((prev) => ({ ...prev, [section.name]: e.target.value }))
+                onChange={(v) =>
+                  setNoteValues((prev) => ({ ...prev, [section.name]: v }))
                 }
-                placeholder={`Enter ${section.label || section.name} notes…`}
-                className="min-h-28 resize-y text-sm bg-muted/30 border-border/50 focus:bg-background"
+                placeholder={`Enter ${section.label || section.name} notes… (supports **bold**, _italic_, ### headings, - lists)`}
               />
               <div className="flex justify-end">
                 <Button

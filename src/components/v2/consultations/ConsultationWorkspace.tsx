@@ -6,12 +6,12 @@ import {
   Pill,
   Award,
   FlaskConical,
-  ImageIcon,
   CalendarDays,
   Clock,
   User,
   CheckCircle2,
   AlertCircle,
+  Info,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -36,7 +36,7 @@ interface PatientInfo {
 
 interface ConsultationWorkspaceProps {
   clinicUid: string;
-  patient: PatientInfo;
+  patient: PatientInfo | null;
   consultation: Detail;
   myHPs: NonNullable<GetHPsType>;
   onUpdated?: (updated: Detail) => void;
@@ -55,6 +55,7 @@ export default function ConsultationWorkspace({
   const status = consultation.ConsultationTicketAttribute?.status;
   const apt = consultation.Appointment;
   const preAssessment = apt?.PreAssessmentNotes?.[0];
+  const hasPatient = patient !== null;
 
   const hpNames = consultation.ConsultationTicketHPs.map((h) => {
     const hp = h.HealthCareProvider;
@@ -68,8 +69,35 @@ export default function ConsultationWorkspace({
   const labCount = consultation.LaboratoryRequests?.length ?? 0;
   const imgCount = consultation.ImagingRequests?.length ?? 0;
 
+  // Placeholder shown inside patient-requiring tabs when patient context is unavailable
+  const NoPatientPlaceholder = () => (
+    <div className="flex flex-col items-center justify-center gap-3 py-16 text-center px-6">
+      <div className="w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+        <Info className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+      </div>
+      <div>
+        <p className="text-sm font-semibold text-foreground/80">Patient not linked</p>
+        <p className="text-xs text-muted-foreground mt-1 max-w-xs">
+          This consultation has no linked patient record. Contact a clinic admin to associate
+          a patient, or use the appointment-based workflow to issue prescriptions, certificates,
+          and diagnostic requests.
+        </p>
+      </div>
+    </div>
+  );
+
   return (
     <div className="flex flex-col h-full overflow-hidden bg-background/40">
+      {/* ── No-patient banner ── */}
+      {!hasPatient && (
+        <div className="shrink-0 flex items-center gap-2 px-6 py-2 bg-amber-50 dark:bg-amber-950/30 border-b border-amber-200 dark:border-amber-800/40">
+          <Info className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+          <p className="text-xs text-amber-700 dark:text-amber-300">
+            Patient info not available for this consultation. Notes can still be edited.
+          </p>
+        </div>
+      )}
+
       {/* ── Appointment / Consultation Summary Bar ── */}
       <div className="shrink-0 px-6 py-4 border-b border-border/50 bg-background/80 backdrop-blur">
         <div className="flex items-start justify-between gap-4">
@@ -93,6 +121,13 @@ export default function ConsultationWorkspace({
               )}
             </div>
             <div className="flex items-center gap-4 mt-1.5 flex-wrap">
+              {/* Patient name from prop or appointment requester */}
+              {patient?.fullName && (
+                <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <User className="h-3.5 w-3.5" />
+                  {patient.fullName}
+                </span>
+              )}
               {apt?.AppointmentAttribute?.date && (
                 <span className="flex items-center gap-1 text-xs text-muted-foreground">
                   <CalendarDays className="h-3.5 w-3.5" />
@@ -204,33 +239,45 @@ export default function ConsultationWorkspace({
             </TabsContent>
 
             <TabsContent value="rx" className="mt-0 p-6">
-              <ConsultationPrescriptions
-                clinicUid={clinicUid}
-                patient={patient}
-                consultation={consultation}
-                myHPs={myHPs}
-                onRefresh={onRefresh}
-              />
+              {hasPatient ? (
+                <ConsultationPrescriptions
+                  clinicUid={clinicUid}
+                  patient={patient}
+                  consultation={consultation}
+                  myHPs={myHPs}
+                  onRefresh={onRefresh}
+                />
+              ) : (
+                <NoPatientPlaceholder />
+              )}
             </TabsContent>
 
             <TabsContent value="certs" className="mt-0 p-6">
-              <ConsultationMedCerts
-                clinicUid={clinicUid}
-                patient={patient}
-                consultation={consultation}
-                myHPs={myHPs}
-                onRefresh={onRefresh}
-              />
+              {hasPatient ? (
+                <ConsultationMedCerts
+                  clinicUid={clinicUid}
+                  patient={patient}
+                  consultation={consultation}
+                  myHPs={myHPs}
+                  onRefresh={onRefresh}
+                />
+              ) : (
+                <NoPatientPlaceholder />
+              )}
             </TabsContent>
 
             <TabsContent value="diagnostics" className="mt-0 p-6">
-              <ConsultationDiagnostics
-                clinicUid={clinicUid}
-                patient={patient}
-                consultation={consultation}
-                myHPs={myHPs}
-                onRefresh={onRefresh}
-              />
+              {hasPatient ? (
+                <ConsultationDiagnostics
+                  clinicUid={clinicUid}
+                  patient={patient}
+                  consultation={consultation}
+                  myHPs={myHPs}
+                  onRefresh={onRefresh}
+                />
+              ) : (
+                <NoPatientPlaceholder />
+              )}
             </TabsContent>
           </div>
         </Tabs>

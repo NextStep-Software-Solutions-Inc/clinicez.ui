@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition, useCallback, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import {
   Stethoscope,
   Search,
@@ -11,7 +12,6 @@ import {
   CalendarDays,
   Filter,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import dayjs from "@/lib/day-utils";
@@ -37,6 +37,7 @@ interface PatientInfo {
   gender: string | null;
 }
 
+/** Extracts patient info from a queue item. Returns null for walk-in consultations. */
 function buildPatientInfo(item: QueueItem): PatientInfo | null {
   const requester = item.Appointment?.Requesters?.[0]?.User;
   if (!requester) return null;
@@ -66,17 +67,28 @@ interface ClinicConsultationsClientProps {
   clinicUid: string;
   initialQueue: NonNullable<GetClinicConsultationQueue["data"]>;
   myHPs: NonNullable<GetHPsType>;
+  /** Pre-selected consultation ID (from URL param). */
+  initialActiveId?: number | null;
+  /** Pre-fetched detail for the initial consultation (from server). */
+  initialActiveDetail?: ConsultationDetail | null;
 }
 
 export default function ClinicConsultationsClient({
   clinicUid,
   initialQueue,
   myHPs,
+  initialActiveId = null,
+  initialActiveDetail = null,
 }: ClinicConsultationsClientProps) {
+  const router = useRouter();
   const [queue, setQueue] = useState<NonNullable<GetClinicConsultationQueue["data"]>>(initialQueue);
-  const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [activeDetail, setActiveDetail] = useState<ConsultationDetail | null>(null);
-  const [activePatient, setActivePatient] = useState<PatientInfo | null>(null);
+  const [selectedId, setSelectedId] = useState<number | null>(initialActiveId);
+  const [activeDetail, setActiveDetail] = useState<ConsultationDetail | null>(initialActiveDetail);
+  const [activePatient, setActivePatient] = useState<PatientInfo | null>(() => {
+    if (!initialActiveId) return null;
+    const item = initialQueue.find((q) => q.id === initialActiveId);
+    return item ? buildPatientInfo(item) : null;
+  });
   const [loadingDetail, startDetailTransition] = useTransition();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [hpOnly, setHpOnly] = useState(false);
@@ -84,12 +96,14 @@ export default function ClinicConsultationsClient({
   const [refreshingQueue, startQueueTransition] = useTransition();
   const initialLoadDone = useRef(false);
 
-  /* ── Load detail ── */
+  /* ── Load detail and navigate to URL ── */
   const loadDetail = useCallback(
     (item: QueueItem) => {
       const patient = buildPatientInfo(item);
       setSelectedId(item.id);
       setActivePatient(patient);
+      // Update URL without full navigation so the list stays visible
+      router.push(`/v2/clinic/${clinicUid}/consultations/${item.id}`, { scroll: false });
       startDetailTransition(async () => {
         const result = await getPatientConsultationDetailAction({
           clinicUid,
@@ -102,16 +116,16 @@ export default function ClinicConsultationsClient({
         }
       });
     },
-    [clinicUid]
+    [clinicUid, router]
   );
 
-  /* ── Auto-load first item on mount ── */
+  /* ── Auto-load first item on mount if no initial selection ── */
   useEffect(() => {
-    if (!initialLoadDone.current && initialQueue[0]) {
+    if (!initialLoadDone.current && !initialActiveId && initialQueue[0]) {
       initialLoadDone.current = true;
       loadDetail(initialQueue[0]);
     }
-  }, [initialQueue, loadDetail]);
+  }, [initialQueue, initialActiveId, loadDetail]);
 
   /* ── Refresh queue when filters change ── */
   useEffect(() => {
@@ -229,7 +243,7 @@ export default function ClinicConsultationsClient({
               <p className="text-sm text-muted-foreground">Loading consultation…</p>
             </div>
           </div>
-        ) : activeDetail && activePatient ? (
+        ) : activeDetail ? (
           <ConsultationWorkspace
             clinicUid={clinicUid}
             patient={activePatient}
@@ -292,13 +306,13 @@ function QueueListItem({
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          {/* Patient name */}
-          {patientName && (
-            <div className="flex items-center gap-1 mb-0.5">
-              <User className="h-3 w-3 text-muted-foreground/60 shrink-0" />
-              <p className="text-xs font-semibold text-foreground truncate">{patientName}</p>
-            </div>
-          )}
+          {/* Patient name or walk-in indicator */}
+          <div className="flex items-center gap-1 mb-0.5">
+            <User className="h-3 w-3 text-muted-foreground/60 shrink-0" />
+            <p className="text-xs font-semibold text-foreground truncate">
+              {patientName || <span className="text-muted-foreground italic">Walk-in / no patient linked</span>}
+            </p>
+          </div>
           {/* Subject / complaint */}
           <p className="text-xs text-muted-foreground truncate">
             {item.subject || item.Appointment?.subject || item.Appointment?.complaint || `Ticket #${item.id}`}
@@ -357,3 +371,5 @@ function QueueListItem({
     </button>
   );
 }
+
+

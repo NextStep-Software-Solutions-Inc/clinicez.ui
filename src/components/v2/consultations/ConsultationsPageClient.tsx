@@ -96,7 +96,7 @@ export default function ConsultationsPageClient({
   }, [selectedId, loadDetail]);
 
   return (
-    <div className="flex h-[calc(100dvh-11rem)] gap-0 overflow-hidden">
+    <div className="flex h-[calc(100dvh-16rem)] gap-0 overflow-hidden">
       {/* ── Left Panel: Consultation List ── */}
       <aside className="w-80 shrink-0 flex flex-col border-r border-border/50 bg-background/60 overflow-hidden">
         {/* Header */}

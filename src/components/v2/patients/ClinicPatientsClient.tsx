@@ -59,6 +59,7 @@ export function ClinicPatientsClient({
     loadMore,
     filters,
     setFilters,
+    refresh,
   } = useClinicPatientsPagination({ clinicUid, pageSize, initialData, initialFilters });
 
   // ── Infinite scroll ──────────────────────────────────────────────────────
@@ -121,10 +122,12 @@ export function ClinicPatientsClient({
     >
       {/* Header / Filters */}
       <PatientsHeader
+        clinicUid={clinicUid}
         filters={filters}
         totalCount={totalCount}
         loadedCount={patients.length}
         onFiltersChange={handleFiltersChange}
+        onPatientAdded={refresh}
       />
 
       {/* Content area */}

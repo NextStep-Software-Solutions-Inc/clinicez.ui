@@ -145,6 +145,11 @@ export function useClinicPatientsPagination({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [filters]);
 
+    /** Refresh current page from scratch (e.g. after adding a patient) */
+    const refresh = useCallback(() => {
+        fetchInitial(filtersRef.current);
+    }, [fetchInitial]);
+
     return {
         patients,
         totalCount,
@@ -152,6 +157,7 @@ export function useClinicPatientsPagination({
         isLoadingMore,
         hasMore,
         loadMore,
+        refresh,
         filters,
         setFilters,
     };

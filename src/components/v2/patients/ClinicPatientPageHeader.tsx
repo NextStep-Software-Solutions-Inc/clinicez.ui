@@ -22,7 +22,7 @@ export function ClinicPatientPageHeader({
 }: ClinicPatientPageHeaderProps) {
   return (
     <div className="sticky top-12 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b border-border/50 px-6 sm:px-8 py-4 -mx-6 sm:-mx-8">
-      <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
+      <div className="flex items-center justify-between gap-4">
         <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-base min-w-0">
           <Link
             href={`/v2/clinic/${clinicUid}/patients`}

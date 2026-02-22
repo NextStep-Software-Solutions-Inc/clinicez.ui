@@ -46,9 +46,11 @@ export const createConsultationTicketAction = withErrorHandling(async ({ systemI
         System: {
           connect: { id: systemId }
         },
-        Appointment: {
-          connect: { id: appointmentId }
-        },
+        ...(appointmentId ? {
+          Appointment: {
+            connect: { id: appointmentId }
+          }
+        } : {}),
         Clinic: {
           connect: { clinicUid }
         },

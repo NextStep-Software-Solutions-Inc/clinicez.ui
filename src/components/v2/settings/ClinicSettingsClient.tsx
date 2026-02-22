@@ -30,6 +30,10 @@ import {
   Package,
   Layers,
   Clock,
+  Settings2,
+  ListChecks,
+  ChevronRight,
+  KeyRound,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -82,6 +86,12 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 import { updateClinicAction } from "@/actions/clinics/clinic.action";
 import { updatePhilHealthSettingsAction } from "@/actions/clinics/clinic-setting.action";
@@ -113,16 +123,28 @@ import {
   updateClinicServiceAction,
   deleteClinicServiceAction,
 } from "@/actions/clinics/clinic-service.action";
+import {
+  createClinicRoleAction,
+  updateClinicRoleAction,
+  deleteClinicRoleAction,
+} from "@/actions/clinics/clinic-role.action";
+import { setClinicRoleInitialPermissionsAction } from "@/actions/clinic-role-initial-permission.action";
+import {
+  setClinicAppointmentTabsAction,
+  setClinicRoleAppointmentTabsAction,
+} from "@/actions/clinics/clinic-appointment-tab..action";
 
 import type { GetClinic } from "@/actions/clinics/clinic.action";
 import type { GetClinicSetting } from "@/actions/clinics/clinic-setting.action";
 import type { GetClinicAppointmentConfig } from "@/actions/appointments/appointment-config.action";
 import type { GetClinicMembers, SearchNonMembers } from "@/actions/clinics/clinic-member.action";
-import type { GetClinicRoles } from "@/actions/clinics/clinic-role.action";
+import type { GetClinicRoles, GetClinicRolesWithPermissions } from "@/actions/clinics/clinic-role.action";
 import type { GetPermissions } from "@/actions/permission.action";
 import type { GetAppointmentModes } from "@/actions/appointments/appointment-mode.action";
 import type { GetAppointmentTypes } from "@/actions/appointments/appointment-type.action";
 import type { GetClinicServiceCategories } from "@/actions/clinics/clinic-service-category.action";
+import type { GetClinicAppointmentTabs } from "@/actions/clinics/clinic-appointment-tab..action";
+import type { GetAppointmentTabs } from "@/actions/appointment-tab.action";
 
 /* ─────────────────────────────────────────────────────────────────── */
 /*  Types                                                              */
@@ -138,6 +160,9 @@ type PermissionsData = NonNullable<GetPermissions>;
 type AppointmentModesData = NonNullable<GetAppointmentModes>;
 type AppointmentTypesData = NonNullable<GetAppointmentTypes>;
 type ServiceCategoriesData = NonNullable<GetClinicServiceCategories>;
+type RolesWithPermissionsData = NonNullable<GetClinicRolesWithPermissions>;
+type ClinicAppointmentTabsData = NonNullable<GetClinicAppointmentTabs["data"]>;
+type AllAppointmentTabsData = NonNullable<GetAppointmentTabs>;
 
 interface ClinicSettingsClientProps {
   clinicUid: string;
@@ -146,10 +171,13 @@ interface ClinicSettingsClientProps {
   appointmentConfig: AppointmentConfigData | null;
   members: MembersData;
   roles: RolesData;
+  rolesWithPermissions: RolesWithPermissionsData;
   allClinicPermissions: PermissionsData;
   appointmentModes: AppointmentModesData;
   appointmentTypes: AppointmentTypesData;
   serviceCategories: ServiceCategoriesData;
+  clinicAppointmentTabs: ClinicAppointmentTabsData;
+  allAppointmentTabs: AllAppointmentTabsData;
 }
 
 /* ─────────────────────────────────────────────────────────────────── */
@@ -2047,6 +2075,473 @@ function MembersTab({
   );
 }
 
+);
+}
+
+/* ─────────────────────────────────────────────────────────────────── */
+/*  Tab: Roles                                                         */
+/* ─────────────────────────────────────────────────────────────────── */
+
+type RoleWithPerms = RolesWithPermissionsData[number];
+
+function RolePermissionsSection({
+  role,
+  clinicUid,
+  allPermissions,
+}: {
+  role: RoleWithPerms;
+  clinicUid: string;
+  allPermissions: PermissionsData;
+}) {
+  const [isPending, startTransition] = useTransition();
+  const [selected, setSelected] = useState<number[]>(
+    role.ClinicRoleInitialPermissions.map((rp) => rp.Permission.id),
+  );
+
+  const isDirty =
+    JSON.stringify([...selected].sort()) !==
+    JSON.stringify(
+      role.ClinicRoleInitialPermissions.map((rp) => rp.Permission.id).sort(),
+    );
+
+  const toggle = (id: number, checked: boolean) =>
+    setSelected((prev) =>
+      checked ? [...prev, id] : prev.filter((x) => x !== id),
+    );
+
+  const handleSave = () => {
+    startTransition(async () => {
+      const result = await setClinicRoleInitialPermissionsAction({
+        clinicRoleId: role.id,
+        clinicUid,
+        permissionIds: selected,
+      });
+      if (result.status) {
+        toast.success("Initial permissions saved.");
+      } else {
+        toast.error(result.message ?? "Failed to save permissions.");
+      }
+    });
+  };
+
+  return (
+    <div className="space-y-3">
+      <p className="text-xs text-muted-foreground">
+        These permissions are automatically granted when a member is assigned this role.
+      </p>
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        {allPermissions.map((perm) => (
+          <label
+            key={perm.id}
+            className="flex items-start gap-2 cursor-pointer rounded-md border p-2 hover:bg-muted/50 transition-colors"
+          >
+            <Checkbox
+              checked={selected.includes(perm.id)}
+              onCheckedChange={(v) => toggle(perm.id, !!v)}
+              className="mt-0.5"
+            />
+            <div className="min-w-0">
+              <p className="text-xs font-medium leading-snug truncate">{perm.description}</p>
+              <p className="text-[10px] text-muted-foreground italic truncate">{perm.name}</p>
+            </div>
+          </label>
+        ))}
+      </div>
+      {isDirty && (
+        <Button size="sm" onClick={handleSave} disabled={isPending} className="gap-1.5 mt-1">
+          {isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+          Save Permissions
+        </Button>
+      )}
+    </div>
+  );
+}
+
+function RoleAppointmentTabsSection({
+  role,
+  clinicAppointmentTabs,
+}: {
+  role: RoleWithPerms;
+  clinicAppointmentTabs: ClinicAppointmentTabsData;
+}) {
+  const [isPending, startTransition] = useTransition();
+  const [selected, setSelected] = useState<number[]>(
+    role.ClinicRoleAppointmentTabs.map((t) => t.ClinicAppointmentTab.id),
+  );
+
+  const isDirty =
+    JSON.stringify([...selected].sort()) !==
+    JSON.stringify(
+      role.ClinicRoleAppointmentTabs.map((t) => t.ClinicAppointmentTab.id).sort(),
+    );
+
+  const toggle = (id: number, checked: boolean) =>
+    setSelected((prev) =>
+      checked ? [...prev, id] : prev.filter((x) => x !== id),
+    );
+
+  const handleSave = () => {
+    startTransition(async () => {
+      const result = await setClinicRoleAppointmentTabsAction(role.id, selected);
+      if (result.status) {
+        toast.success("Appointment tabs saved.");
+      } else {
+        toast.error(result.message ?? "Failed to save tabs.");
+      }
+    });
+  };
+
+  if (clinicAppointmentTabs.length === 0) {
+    return (
+      <p className="text-xs text-muted-foreground">
+        No appointment tabs are enabled for this clinic yet. Configure them in the <em>Appt Tabs</em> tab first.
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <p className="text-xs text-muted-foreground">
+        Select which appointment tabs members with this role can see.
+      </p>
+      <div className="flex flex-wrap gap-2">
+        {clinicAppointmentTabs.map((cat) => (
+          <label
+            key={cat.id}
+            className="flex items-center gap-2 cursor-pointer rounded-md border px-3 py-1.5 hover:bg-muted/50 transition-colors"
+          >
+            <Checkbox
+              checked={selected.includes(cat.id)}
+              onCheckedChange={(v) => toggle(cat.id, !!v)}
+            />
+            <span className="text-sm capitalize">{cat.AppointmentTab.name}</span>
+          </label>
+        ))}
+      </div>
+      {isDirty && (
+        <Button size="sm" onClick={handleSave} disabled={isPending} className="gap-1.5 mt-1">
+          {isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+          Save Tabs
+        </Button>
+      )}
+    </div>
+  );
+}
+
+function RolesTab({
+  clinicUid,
+  initialRoles,
+  allPermissions,
+  clinicAppointmentTabs,
+}: {
+  clinicUid: string;
+  initialRoles: RolesWithPermissionsData;
+  allPermissions: PermissionsData;
+  clinicAppointmentTabs: ClinicAppointmentTabsData;
+}) {
+  const [roles, setRoles] = useState(initialRoles);
+  const [showCreate, setShowCreate] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editName, setEditName] = useState("");
+  const [isPending, startTransition] = useTransition();
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+
+  const handleCreate = () => {
+    if (!newName.trim()) return;
+    startTransition(async () => {
+      const result = await createClinicRoleAction({ name: newName.trim() });
+      if (result.status && result.data) {
+        setRoles((prev) => [
+          ...prev,
+          {
+            id: result.data!.id,
+            name: result.data!.name,
+            ClinicMembers: [],
+            ClinicRoleInitialPermissions: [],
+            ClinicRoleAppointmentTabs: [],
+          },
+        ]);
+        setNewName("");
+        setShowCreate(false);
+        toast.success("Role created.");
+      } else {
+        toast.error(result.message ?? "Failed to create role.");
+      }
+    });
+  };
+
+  const handleRename = (id: number) => {
+    if (!editName.trim()) return;
+    startTransition(async () => {
+      const result = await updateClinicRoleAction({ id, name: editName.trim() });
+      if (result.status) {
+        setRoles((prev) =>
+          prev.map((r) => (r.id === id ? { ...r, name: editName.trim() } : r)),
+        );
+        setEditingId(null);
+        toast.success("Role renamed.");
+      } else {
+        toast.error(result.message ?? "Failed to rename role.");
+      }
+    });
+  };
+
+  const handleDelete = (id: number) => {
+    setDeletingId(id);
+    startTransition(async () => {
+      const result = await deleteClinicRoleAction(id);
+      if (result.status) {
+        setRoles((prev) => prev.filter((r) => r.id !== id));
+        toast.success("Role deleted.");
+      } else {
+        toast.error(result.message ?? "Failed to delete role.");
+      }
+      setDeletingId(null);
+    });
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Create dialog */}
+      <Dialog open={showCreate} onOpenChange={setShowCreate}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create Clinic Role</DialogTitle>
+            <DialogDescription>Add a new role that can be assigned to clinic members.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label>Role Name</Label>
+            <Input
+              placeholder="e.g. Receptionist"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleCreate()}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShowCreate(false)}>Cancel</Button>
+            <Button onClick={handleCreate} disabled={isPending || !newName.trim()} className="gap-1.5">
+              {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+              Create Role
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <div className="flex justify-end">
+        <Button size="sm" onClick={() => setShowCreate(true)} className="gap-1.5">
+          <Plus className="h-4 w-4" />
+          Add Role
+        </Button>
+      </div>
+
+      {roles.length === 0 && (
+        <Card>
+          <CardContent className="py-10 flex flex-col items-center gap-2 text-muted-foreground">
+            <Settings2 className="h-8 w-8 opacity-40" />
+            <p className="text-sm">No roles found. Create one above.</p>
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="space-y-3">
+        {roles.map((role) => {
+          const owner = isOwner(role.name);
+          return (
+            <Card key={role.id}>
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 min-w-0">
+                    {owner && <Crown className="h-4 w-4 text-amber-500 flex-shrink-0" />}
+                    {editingId === role.id ? (
+                      <div className="flex items-center gap-2">
+                        <Input
+                          className="h-7 text-sm"
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") handleRename(role.id);
+                            if (e.key === "Escape") setEditingId(null);
+                          }}
+                          autoFocus
+                        />
+                        <Button size="sm" variant="default" onClick={() => handleRename(role.id)} disabled={isPending} className="h-7 px-2">
+                          <Save className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => setEditingId(null)} className="h-7 px-2">
+                          <XCircle className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <CardTitle className="text-base capitalize">{role.name}</CardTitle>
+                    )}
+                    <Badge variant="secondary" className="text-xs h-5 px-1.5 flex-shrink-0">
+                      {role.ClinicMembers.length} member{role.ClinicMembers.length !== 1 ? "s" : ""}
+                    </Badge>
+                    <Badge variant="outline" className="text-xs h-5 px-1.5 flex-shrink-0 gap-1">
+                      <KeyRound className="h-3 w-3" />
+                      {role.ClinicRoleInitialPermissions.length} perms
+                    </Badge>
+                  </div>
+                  {!owner && editingId !== role.id && (
+                    <div className="flex gap-1">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 px-2"
+                        onClick={() => {
+                          setEditingId(role.id);
+                          setEditName(role.name);
+                        }}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 px-2 text-destructive hover:text-destructive"
+                        disabled={deletingId === role.id}
+                        onClick={() => handleDelete(role.id)}
+                      >
+                        {deletingId === role.id ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-3.5 w-3.5" />
+                        )}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <Accordion type="multiple" className="w-full">
+                  <AccordionItem value="perms" className="border-none">
+                    <AccordionTrigger className="text-sm font-medium py-2 hover:no-underline">
+                      <span className="flex items-center gap-1.5">
+                        <ShieldCheck className="h-4 w-4 text-primary" />
+                        Initial Permissions
+                      </span>
+                    </AccordionTrigger>
+                    <AccordionContent className="pb-3">
+                      <RolePermissionsSection
+                        role={role}
+                        clinicUid={clinicUid}
+                        allPermissions={allPermissions}
+                      />
+                    </AccordionContent>
+                  </AccordionItem>
+                  <AccordionItem value="tabs" className="border-none">
+                    <AccordionTrigger className="text-sm font-medium py-2 hover:no-underline">
+                      <span className="flex items-center gap-1.5">
+                        <ListChecks className="h-4 w-4 text-primary" />
+                        Visible Appointment Tabs
+                      </span>
+                    </AccordionTrigger>
+                    <AccordionContent className="pb-3">
+                      <RoleAppointmentTabsSection
+                        role={role}
+                        clinicAppointmentTabs={clinicAppointmentTabs}
+                      />
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────────── */
+/*  Tab: Appointment Tabs                                              */
+/* ─────────────────────────────────────────────────────────────────── */
+
+function AppointmentTabsTab({
+  clinicUid,
+  allAppointmentTabs,
+  initialClinicAppointmentTabs,
+}: {
+  clinicUid: string;
+  allAppointmentTabs: AllAppointmentTabsData;
+  initialClinicAppointmentTabs: ClinicAppointmentTabsData;
+}) {
+  const [isPending, startTransition] = useTransition();
+  const [selected, setSelected] = useState<number[]>(
+    initialClinicAppointmentTabs.map((t) => t.AppointmentTab.id),
+  );
+
+  const isDirty =
+    JSON.stringify([...selected].sort()) !==
+    JSON.stringify(
+      initialClinicAppointmentTabs.map((t) => t.AppointmentTab.id).sort(),
+    );
+
+  const toggle = (id: number, checked: boolean) =>
+    setSelected((prev) =>
+      checked ? [...prev, id] : prev.filter((x) => x !== id),
+    );
+
+  const handleSave = () => {
+    startTransition(async () => {
+      const result = await setClinicAppointmentTabsAction(clinicUid, selected);
+      if (result.status) {
+        toast.success("Appointment tabs saved.");
+      } else {
+        toast.error(result.message ?? "Failed to save appointment tabs.");
+      }
+    });
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base flex items-center gap-2">
+          <ListChecks className="h-4 w-4 text-primary" />
+          Clinic Appointment Tabs
+        </CardTitle>
+        <CardDescription>
+          Choose which appointment tabs are available in this clinic. Role-level visibility can be further restricted in the <em>Roles</em> tab.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {allAppointmentTabs.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No appointment tabs configured in the system.</p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {allAppointmentTabs.map((tab) => (
+              <label
+                key={tab.id}
+                className="flex items-start gap-3 cursor-pointer rounded-lg border p-3 hover:bg-muted/50 transition-colors"
+              >
+                <Checkbox
+                  checked={selected.includes(tab.id)}
+                  onCheckedChange={(v) => toggle(tab.id, !!v)}
+                  className="mt-0.5"
+                />
+                <div className="min-w-0">
+                  <p className="text-sm font-medium capitalize">{tab.name}</p>
+                  {tab.description && (
+                    <p className="text-xs text-muted-foreground mt-0.5">{tab.description}</p>
+                  )}
+                </div>
+              </label>
+            ))}
+          </div>
+        )}
+        {isDirty && (
+          <Button onClick={handleSave} disabled={isPending} className="gap-1.5">
+            {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            Save Changes
+          </Button>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 /* ─────────────────────────────────────────────────────────────────── */
 /*  Root component                                                     */
 /* ─────────────────────────────────────────────────────────────────── */
@@ -2058,10 +2553,13 @@ export function ClinicSettingsClient({
   appointmentConfig,
   members,
   roles,
+  rolesWithPermissions,
   allClinicPermissions,
   appointmentModes,
   appointmentTypes,
   serviceCategories,
+  clinicAppointmentTabs,
+  allAppointmentTabs,
 }: ClinicSettingsClientProps) {
   const [activeTab, setActiveTab] = useState("general");
 
@@ -2100,6 +2598,19 @@ export function ClinicSettingsClient({
             <Package className="h-3.5 w-3.5" />
             Services
           </TabsTrigger>
+          <TabsTrigger value="appt-tabs" className="gap-1.5 flex-shrink-0">
+            <ListChecks className="h-3.5 w-3.5" />
+            Appt Tabs
+          </TabsTrigger>
+          <TabsTrigger value="roles" className="gap-1.5 flex-shrink-0">
+            <Settings2 className="h-3.5 w-3.5" />
+            Roles
+            {rolesWithPermissions.length > 0 && (
+              <Badge variant="secondary" className="ml-1 text-xs h-4 px-1">
+                {rolesWithPermissions.length}
+              </Badge>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="philhealth" className="gap-1.5 flex-shrink-0">
             <Heart className="h-3.5 w-3.5" />
             PhilHealth
@@ -2133,6 +2644,23 @@ export function ClinicSettingsClient({
 
         <TabsContent value="services" className="mt-6">
           <ServicesTab clinicUid={clinicUid} initialCategories={serviceCategories} />
+        </TabsContent>
+
+        <TabsContent value="appt-tabs" className="mt-6">
+          <AppointmentTabsTab
+            clinicUid={clinicUid}
+            allAppointmentTabs={allAppointmentTabs}
+            initialClinicAppointmentTabs={clinicAppointmentTabs}
+          />
+        </TabsContent>
+
+        <TabsContent value="roles" className="mt-6">
+          <RolesTab
+            clinicUid={clinicUid}
+            initialRoles={rolesWithPermissions}
+            allPermissions={allClinicPermissions}
+            clinicAppointmentTabs={clinicAppointmentTabs}
+          />
         </TabsContent>
 
         <TabsContent value="philhealth" className="mt-6">

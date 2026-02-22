@@ -234,11 +234,16 @@ export default function ClinicConsultationsClient({
   }, [nextCursor, loadMore]);
 
   /* ── Refresh current detail (called by workspace after mutations) ── */
-  const refreshDetail = useCallback(() => {
+  const refreshDetail = useCallback(async () => {
     if (!selectedId) return;
-    const found = items.find((q) => q.id === selectedId);
-    if (found) loadDetail(found);
-  }, [selectedId, items, loadDetail]);
+    const result = await getPatientConsultationDetailAction({
+      clinicUid,
+      ticketId: selectedId,
+    });
+    if (result.status && result.data) {
+      setActiveDetail(result.data);
+    }
+  }, [selectedId, clinicUid]);
 
   /* ── Update queue item status after resolve ── */
   const handleResolved = useCallback((id: number) => {

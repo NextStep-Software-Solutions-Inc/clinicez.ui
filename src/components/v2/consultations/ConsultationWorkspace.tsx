@@ -110,7 +110,7 @@ export default function ConsultationWorkspace({
   );
 
   return (
-    <div className="flex flex-col h-full overflow-hidden bg-background/40">
+    <div className="flex flex-col h-full w-full overflow-hidden bg-background/40">
       {/* ── No-patient banner ── */}
       {!hasPatient && (
         <div className="shrink-0 flex items-center gap-2 px-6 py-2 bg-amber-50 dark:bg-amber-950/30 border-b border-amber-200 dark:border-amber-800/40">

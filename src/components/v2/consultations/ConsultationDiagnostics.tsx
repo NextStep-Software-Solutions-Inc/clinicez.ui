@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition, useCallback } from "react";
-import { Plus, FlaskConical, ImageIcon, Search, X } from "lucide-react";
+import { Plus, FlaskConical, ImageIcon, Search, X, FileDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,6 +22,8 @@ import type {
   GetClinicImagingProcedures,
 } from "@/actions/consultation/patient-consultations.action";
 import type { GetHPsType } from "@/actions/hp.actions";
+import DownloadLaboratoryRequestAction from "@/components/laboratory-requests/DownloadLaboratoryRequestAction";
+import DownloadImagingStudiesAction from "@/components/imaging-studies/DownloadImagingStudiesAction";
 
 type Detail = NonNullable<GetPatientConsultationDetail["data"]>;
 type LabProc = NonNullable<GetClinicLabProcedures["data"]>[number];
@@ -123,6 +125,7 @@ export default function ConsultationDiagnostics({
           {consultation.LaboratoryRequests?.map((req) => (
             <DiagnosticCard
               key={`lab-${req.id}`}
+              id={req.id}
               type="lab"
               serialNumber={req.serialNumber}
               impression={req.impression ?? undefined}
@@ -135,6 +138,7 @@ export default function ConsultationDiagnostics({
           {consultation.ImagingRequests?.map((req) => (
             <DiagnosticCard
               key={`img-${req.id}`}
+              id={req.id}
               type="imaging"
               serialNumber={req.serialNumber}
               impression={req.impression ?? undefined}
@@ -441,12 +445,14 @@ function ImagingRequestForm({
 
 /* ── Diagnostic Card ── */
 function DiagnosticCard({
+  id,
   type,
   serialNumber,
   impression,
   createdAt,
   procedures,
 }: {
+  id: number;
   type: "lab" | "imaging";
   serialNumber: string;
   impression?: string;
@@ -481,6 +487,19 @@ function DiagnosticCard({
             <p className="text-xs text-muted-foreground mt-1 italic">{impression}</p>
           )}
         </div>
+        {type === "lab" ? (
+          <DownloadLaboratoryRequestAction request={{ id }}>
+            <Button size="sm" variant="ghost" className="h-7 w-7 p-0 shrink-0" title="Preview PDF">
+              <FileDown className="h-3.5 w-3.5" />
+            </Button>
+          </DownloadLaboratoryRequestAction>
+        ) : (
+          <DownloadImagingStudiesAction study={{ id }}>
+            <Button size="sm" variant="ghost" className="h-7 w-7 p-0 shrink-0" title="Preview PDF">
+              <FileDown className="h-3.5 w-3.5" />
+            </Button>
+          </DownloadImagingStudiesAction>
+        )}
       </div>
     </div>
   );

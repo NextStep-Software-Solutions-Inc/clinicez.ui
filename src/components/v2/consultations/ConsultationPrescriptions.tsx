@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Plus, Pill, Trash2, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Pill, Trash2, ChevronDown, ChevronUp, FileDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,6 +17,7 @@ import {
 } from "@/actions/clinics/clinical-record/medicine.action";
 import type { GetPatientConsultationDetail } from "@/actions/consultation/patient-consultations.action";
 import type { GetHPsType } from "@/actions/hp.actions";
+import DownloadPrescriptionAction from "@/components/clinic/clinical-records/prescription/DownloadPrescriptionAction";
 
 type Detail = NonNullable<GetPatientConsultationDetail["data"]>;
 type Prescription = NonNullable<Detail["Prescriptions"]>[number];
@@ -383,33 +384,42 @@ function PrescriptionCard({
 
   return (
     <div className="rounded-lg border border-border/50 bg-background overflow-hidden">
-      <button
-        type="button"
-        onClick={onToggle}
-        className="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors text-left"
-      >
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <Pill className="h-3.5 w-3.5 text-primary shrink-0" />
-            <span className="text-sm font-medium text-foreground truncate">
-              {rx.name || `Prescription #${rx.id}`}
-            </span>
-            <Badge variant="outline" className="text-[10px] h-4 px-1.5">
-              {rx.Medicines?.length ?? 0} item{(rx.Medicines?.length ?? 0) !== 1 ? "s" : ""}
-            </Badge>
+      <div className="flex items-center">
+        <button
+          type="button"
+          onClick={onToggle}
+          className="flex-1 flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors text-left min-w-0"
+        >
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <Pill className="h-3.5 w-3.5 text-primary shrink-0" />
+              <span className="text-sm font-medium text-foreground truncate">
+                {rx.name || `Prescription #${rx.id}`}
+              </span>
+              <Badge variant="outline" className="text-[10px] h-4 px-1.5">
+                {rx.Medicines?.length ?? 0} item{(rx.Medicines?.length ?? 0) !== 1 ? "s" : ""}
+              </Badge>
+            </div>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {hpName && <span>{hpName} · </span>}
+              {dayjs(rx.createdAt).format("MMM D, YYYY")}
+              {rx.serialNumber && <span className="ml-1 font-mono text-[10px]">#{rx.serialNumber}</span>}
+            </p>
           </div>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            {hpName && <span>{hpName} · </span>}
-            {dayjs(rx.createdAt).format("MMM D, YYYY")}
-            {rx.serialNumber && <span className="ml-1 font-mono text-[10px]">#{rx.serialNumber}</span>}
-          </p>
+          {expanded ? (
+            <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0" />
+          ) : (
+            <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+          )}
+        </button>
+        <div className="shrink-0 pr-3">
+          <DownloadPrescriptionAction prescription={{ id: rx.id }}>
+            <Button size="sm" variant="ghost" className="h-7 w-7 p-0" title="Preview PDF">
+              <FileDown className="h-3.5 w-3.5" />
+            </Button>
+          </DownloadPrescriptionAction>
         </div>
-        {expanded ? (
-          <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0" />
-        ) : (
-          <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
-        )}
-      </button>
+      </div>
 
       {expanded && (
         <div className="px-4 pb-4">

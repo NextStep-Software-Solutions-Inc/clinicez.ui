@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition, useEffect } from "react";
-import { Plus, Award } from "lucide-react";
+import { Plus, Award, FileDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -22,6 +22,7 @@ import {
 } from "@/actions/clinics/clinical-record/medical-certificate.action";
 import type { GetPatientConsultationDetail } from "@/actions/consultation/patient-consultations.action";
 import type { GetHPsType } from "@/actions/hp.actions";
+import DownloadMedicalCertificateAction from "@/components/medical-certificate/DownloadMedicalCertificateAction";
 
 type Detail = NonNullable<GetPatientConsultationDetail["data"]>;
 type MedCert = NonNullable<Detail["MedicalCertificates"]>[number];
@@ -291,6 +292,11 @@ function CertCard({ cert }: { cert: MedCert }) {
             <p className="text-xs text-muted-foreground mt-1">{cert.impression}</p>
           )}
         </div>
+        <DownloadMedicalCertificateAction certificate={{ id: cert.id }}>
+          <Button size="sm" variant="ghost" className="h-7 w-7 p-0 shrink-0" title="Preview PDF">
+            <FileDown className="h-3.5 w-3.5" />
+          </Button>
+        </DownloadMedicalCertificateAction>
       </div>
     </div>
   );

@@ -103,9 +103,13 @@ export default function ConsultationsPageClient({
     [loadDetail]
   );
 
-  const refreshDetail = useCallback(() => {
-    if (selectedId) loadDetail(selectedId);
-  }, [selectedId, loadDetail]);
+  const refreshDetail = useCallback(async () => {
+    if (!selectedId) return;
+    const result = await getPatientConsultationDetailAction({ clinicUid, ticketId: selectedId });
+    if (result.status && result.data) {
+      setActiveDetail(result.data);
+    }
+  }, [selectedId, clinicUid]);
 
   return (
     <div className="flex flex-col h-[calc(100dvh-16rem)] overflow-hidden">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import {
   Stethoscope,
   Pill,
@@ -15,9 +15,12 @@ import {
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import dayjs from "@/lib/day-utils";
 import type { GetPatientConsultationDetail } from "@/actions/consultation/patient-consultations.action";
 import type { GetHPsType } from "@/actions/hp.actions";
+import { resolveConsultationTicket } from "@/actions/consultation/consultation-ticket.action";
 import ConsultationNotesEditor from "./ConsultationNotesEditor";
 import ConsultationPrescriptions from "./ConsultationPrescriptions";
 import ConsultationMedCerts from "./ConsultationMedCerts";
@@ -41,6 +44,8 @@ interface ConsultationWorkspaceProps {
   myHPs: NonNullable<GetHPsType>;
   onUpdated?: (updated: Detail) => void;
   onRefresh: () => void;
+  /** Called with the consultation id after it has been resolved. */
+  onResolved?: (id: number) => void;
 }
 
 export default function ConsultationWorkspace({
@@ -49,13 +54,29 @@ export default function ConsultationWorkspace({
   consultation,
   myHPs,
   onRefresh,
+  onResolved,
 }: ConsultationWorkspaceProps) {
   const [activeTab, setActiveTab] = useState("notes");
+  const [resolving, startResolveTransition] = useTransition();
 
   const status = consultation.ConsultationTicketAttribute?.status;
   const apt = consultation.Appointment;
   const preAssessment = apt?.PreAssessmentNotes?.[0];
   const hasPatient = patient !== null;
+  /** True when the consultation can still be resolved (not yet done). */
+  const canBeResolved = status !== "RESOLVED";
+
+  const handleResolve = () => {
+    startResolveTransition(async () => {
+      const result = await resolveConsultationTicket(consultation.id);
+      if (result.status) {
+        toast.success("Consultation marked as resolved");
+        onResolved?.(consultation.id);
+      } else {
+        toast.error(result.message ?? "Failed to resolve consultation");
+      }
+    });
+  };
 
   const hpNames = consultation.ConsultationTicketHPs.map((h) => {
     const hp = h.HealthCareProvider;
@@ -172,6 +193,22 @@ export default function ConsultationWorkspace({
               </p>
             )}
           </div>
+
+          {/* ── Resolve button (only for the consulting HP, status not yet resolved) ── */}
+          {canBeResolved && myHPs.length > 0 && (
+            <div className="shrink-0 pl-4">
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5 h-8 text-xs border-emerald-300 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 dark:border-emerald-700 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
+                disabled={resolving}
+                onClick={handleResolve}
+              >
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                {resolving ? "Resolving…" : "Resolve"}
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 

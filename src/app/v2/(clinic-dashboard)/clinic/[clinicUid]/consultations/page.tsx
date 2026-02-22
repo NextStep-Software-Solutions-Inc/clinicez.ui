@@ -29,7 +29,9 @@ export default async function ClinicConsultationsPage({ params }: ConsultationsP
   return (
     <ClinicConsultationsClient
       clinicUid={clinicUid}
-      initialQueue={queueResult.data ?? []}
+      initialItems={queueResult.data?.items ?? []}
+      initialTotal={queueResult.data?.total ?? 0}
+      initialNextCursor={queueResult.data?.nextCursor ?? null}
       myHPs={myHPs ?? []}
     />
   );

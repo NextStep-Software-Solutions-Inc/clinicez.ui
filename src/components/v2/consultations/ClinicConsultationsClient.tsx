@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition, useCallback, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
 import {
   Stethoscope,
   Search,
@@ -11,11 +10,13 @@ import {
   User,
   CalendarDays,
   Filter,
+  Loader2,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import dayjs from "@/lib/day-utils";
 import type { GetClinicConsultationQueue } from "@/actions/consultation/patient-consultations.action";
+import { PAGE_SIZE } from "@/actions/consultation/patient-consultations.action";
 import type { GetHPsType } from "@/actions/hp.actions";
 import {
   getPatientConsultationDetailAction,
@@ -23,7 +24,8 @@ import {
 } from "@/actions/consultation/patient-consultations.action";
 import ConsultationWorkspace from "./ConsultationWorkspace";
 
-type QueueItem = NonNullable<GetClinicConsultationQueue["data"]>[number];
+type QueueResult = NonNullable<GetClinicConsultationQueue["data"]>;
+type QueueItem = QueueResult["items"][number];
 type ConsultationDetail = NonNullable<
   Awaited<ReturnType<typeof getPatientConsultationDetailAction>>["data"]
 >;
@@ -65,9 +67,11 @@ type StatusFilter = "all" | "PROCESSING" | "RESOLVED";
 
 interface ClinicConsultationsClientProps {
   clinicUid: string;
-  initialQueue: NonNullable<GetClinicConsultationQueue["data"]>;
+  initialItems: QueueItem[];
+  initialTotal: number;
+  initialNextCursor: number | null;
   myHPs: NonNullable<GetHPsType>;
-  /** Pre-selected consultation ID (from URL param). */
+  /** Pre-selected consultation ID (from URL param / SSR). */
   initialActiveId?: number | null;
   /** Pre-fetched detail for the initial consultation (from server). */
   initialActiveDetail?: ConsultationDetail | null;
@@ -75,35 +79,63 @@ interface ClinicConsultationsClientProps {
 
 export default function ClinicConsultationsClient({
   clinicUid,
-  initialQueue,
+  initialItems,
+  initialTotal,
+  initialNextCursor,
   myHPs,
   initialActiveId = null,
   initialActiveDetail = null,
 }: ClinicConsultationsClientProps) {
-  const router = useRouter();
-  const [queue, setQueue] = useState<NonNullable<GetClinicConsultationQueue["data"]>>(initialQueue);
+  // ── Queue state ──────────────────────────────────────────────────────────
+  const [items, setItems] = useState<QueueItem[]>(initialItems);
+  const [total, setTotal] = useState(initialTotal);
+  const [nextCursor, setNextCursor] = useState<number | null>(initialNextCursor);
+
+  // ── Workspace state ──────────────────────────────────────────────────────
   const [selectedId, setSelectedId] = useState<number | null>(initialActiveId);
   const [activeDetail, setActiveDetail] = useState<ConsultationDetail | null>(initialActiveDetail);
   const [activePatient, setActivePatient] = useState<PatientInfo | null>(() => {
     if (!initialActiveId) return null;
-    const item = initialQueue.find((q) => q.id === initialActiveId);
-    return item ? buildPatientInfo(item) : null;
+    const found = initialItems.find((q) => q.id === initialActiveId);
+    return found ? buildPatientInfo(found) : null;
   });
+
+  // ── Transitions ──────────────────────────────────────────────────────────
   const [loadingDetail, startDetailTransition] = useTransition();
+  const [loadingMore, startLoadMoreTransition] = useTransition();
+  const [refreshingQueue, startQueueTransition] = useTransition();
+
+  // ── Filters ──────────────────────────────────────────────────────────────
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [hpOnly, setHpOnly] = useState(false);
   const [search, setSearch] = useState("");
-  const [refreshingQueue, startQueueTransition] = useTransition();
-  const initialLoadDone = useRef(false);
 
-  /* ── Load detail and navigate to URL ── */
+  // ── Refs ─────────────────────────────────────────────────────────────────
+  const initialLoadDone = useRef(false);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  /** Guards against multiple simultaneous load-more requests. */
+  const loadMoreInFlight = useRef(false);
+
+  /* ── Navigate to consultation without remounting (preserves scroll) ── */
+  const pushUrl = useCallback(
+    (id: number) => {
+      window.history.replaceState(
+        null,
+        "",
+        `/v2/clinic/${clinicUid}/consultations/${id}`
+      );
+    },
+    [clinicUid]
+  );
+
+  /* ── Load detail ─────────────────────────────────────────────────────── */
   const loadDetail = useCallback(
     (item: QueueItem) => {
       const patient = buildPatientInfo(item);
       setSelectedId(item.id);
       setActivePatient(patient);
-      // Update URL without full navigation so the list stays visible
-      router.push(`/v2/clinic/${clinicUid}/consultations/${item.id}`, { scroll: false });
+      pushUrl(item.id);
       startDetailTransition(async () => {
         const result = await getPatientConsultationDetailAction({
           clinicUid,
@@ -116,18 +148,18 @@ export default function ClinicConsultationsClient({
         }
       });
     },
-    [clinicUid, router]
+    [clinicUid, pushUrl]
   );
 
   /* ── Auto-load first item on mount if no initial selection ── */
   useEffect(() => {
-    if (!initialLoadDone.current && !initialActiveId && initialQueue[0]) {
+    if (!initialLoadDone.current && !initialActiveId && initialItems[0]) {
       initialLoadDone.current = true;
-      loadDetail(initialQueue[0]);
+      loadDetail(initialItems[0]);
     }
-  }, [initialQueue, initialActiveId, loadDetail]);
+  }, [initialItems, initialActiveId, loadDetail]);
 
-  /* ── Refresh queue when filters change ── */
+  /* ── Refresh full queue when server-side filters change ── */
   useEffect(() => {
     startQueueTransition(async () => {
       const result = await getClinicConsultationQueueAction({
@@ -136,31 +168,97 @@ export default function ClinicConsultationsClient({
         hpOnly,
       });
       if (result.status && result.data) {
-        setQueue(result.data);
+        setItems(result.data.items);
+        setTotal(result.data.total);
+        setNextCursor(result.data.nextCursor);
       }
     });
+  // `search` is intentionally excluded — it's applied client-side (filteredItems),
+  // not as a server filter, so changing it must not re-fetch.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clinicUid, statusFilter, hpOnly]);
 
-  const refreshDetail = useCallback(() => {
-    if (selectedId) {
-      const item = queue.find((q) => q.id === selectedId);
-      if (item) loadDetail(item);
-    }
-  }, [selectedId, queue, loadDetail]);
+  /* ── Load next page ── */
+  const loadMore = useCallback(() => {
+    if (!nextCursor || loadMoreInFlight.current) return;
+    loadMoreInFlight.current = true;
+    startLoadMoreTransition(async () => {
+      try {
+        const result = await getClinicConsultationQueueAction({
+          clinicUid,
+          status: statusFilter === "all" ? undefined : statusFilter,
+          hpOnly,
+          cursor: nextCursor,
+        });
+        if (result.status && result.data) {
+          setItems((prev) => [...prev, ...result.data!.items]);
+          setNextCursor(result.data.nextCursor);
+        }
+      } finally {
+        loadMoreInFlight.current = false;
+      }
+    });
+  }, [clinicUid, statusFilter, hpOnly, nextCursor]);
 
-  /* ── Filter queue items by search ── */
-  const filteredQueue = queue.filter((item) => {
+  /* ── IntersectionObserver — load more when sentinel enters view ── */
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && nextCursor && !loadMoreInFlight.current) {
+          loadMore();
+        }
+      },
+      { threshold: 0.1 }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [nextCursor, loadMore]);
+
+  /* ── Refresh current detail (called by workspace after mutations) ── */
+  const refreshDetail = useCallback(() => {
+    if (!selectedId) return;
+    const found = items.find((q) => q.id === selectedId);
+    if (found) loadDetail(found);
+  }, [selectedId, items, loadDetail]);
+
+  /* ── Update queue item status after resolve ── */
+  const handleResolved = useCallback((id: number) => {
+    setItems((prev) =>
+      prev.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              ConsultationTicketAttribute: { status: "RESOLVED" },
+            }
+          : item
+      )
+    );
+    setActiveDetail((prev) =>
+      prev
+        ? {
+            ...prev,
+            ConsultationTicketAttribute: prev.ConsultationTicketAttribute
+              ? { ...prev.ConsultationTicketAttribute, status: "RESOLVED" }
+              : null,
+          }
+        : null
+    );
+  }, []);
+
+  /* ── Client-side search filter ── */
+  const filteredItems = items.filter((item) => {
     if (!search.trim()) return true;
     const q = search.toLowerCase();
-    const patientName = (() => {
-      const u = item.Appointment?.Requesters?.[0]?.User;
-      if (!u) return "";
-      return `${u.firstName ?? ""} ${u.lastName ?? ""}`.toLowerCase();
-    })();
+    const u = item.Appointment?.Requesters?.[0]?.User;
+    const patientName = u ? `${u.firstName ?? ""} ${u.lastName ?? ""}`.toLowerCase() : "";
     const subject = (item.subject ?? item.Appointment?.subject ?? "").toLowerCase();
     const caseNum = (item.caseNumber ?? "").toLowerCase();
     return patientName.includes(q) || subject.includes(q) || caseNum.includes(q);
   });
+
+  const shownCount = filteredItems.length;
 
   return (
     <div className="flex h-[calc(100dvh-11rem)] gap-0 overflow-hidden">
@@ -207,14 +305,29 @@ export default function ClinicConsultationsClient({
               Mine
             </button>
           </div>
+          {/* Showing X of Y */}
           <p className="text-[10px] text-muted-foreground">
-            {refreshingQueue ? "Loading…" : `${filteredQueue.length} consultation${filteredQueue.length !== 1 ? "s" : ""}`}
+            {refreshingQueue ? (
+              "Loading…"
+            ) : (
+              <>
+                Showing{" "}
+                <span className="font-semibold text-foreground/70">{shownCount}</span>
+                {!search.trim() && shownCount < total && (
+                  <> of <span className="font-semibold text-foreground/70">{total}</span></>
+                )}{" "}
+                consultation{total !== 1 ? "s" : ""}
+              </>
+            )}
           </p>
         </div>
 
-        {/* Queue list */}
-        <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full">
-          {filteredQueue.length === 0 ? (
+        {/* Scrollable list */}
+        <div
+          ref={listRef}
+          className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full"
+        >
+          {filteredItems.length === 0 && !refreshingQueue ? (
             <div className="flex flex-col items-center justify-center h-full gap-3 px-6 text-center">
               <div className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center">
                 <Stethoscope className="h-6 w-6 text-muted-foreground/50" />
@@ -222,14 +335,41 @@ export default function ClinicConsultationsClient({
               <p className="text-sm text-muted-foreground">No consultations found</p>
             </div>
           ) : (
-            filteredQueue.map((item) => (
-              <QueueListItem
-                key={item.id}
-                item={item}
-                isSelected={selectedId === item.id}
-                onClick={() => loadDetail(item)}
-              />
-            ))
+            <>
+              {filteredItems.map((item) => (
+                <QueueListItem
+                  key={item.id}
+                  item={item}
+                  isSelected={selectedId === item.id}
+                  onClick={() => loadDetail(item)}
+                />
+              ))}
+
+              {/* Sentinel for IntersectionObserver */}
+              <div ref={sentinelRef} className="h-1" />
+
+              {/* Load-more indicator */}
+              {loadingMore && (
+                <div className="flex items-center justify-center gap-2 py-3 text-xs text-muted-foreground">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  Loading more…
+                </div>
+              )}
+              {!loadingMore && nextCursor && !search.trim() && (
+                <button
+                  type="button"
+                  onClick={loadMore}
+                  className="w-full py-2.5 text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors"
+                >
+                  Load {Math.min(PAGE_SIZE, total - shownCount)} more
+                </button>
+              )}
+              {!nextCursor && items.length > 0 && !search.trim() && (
+                <p className="text-center text-[10px] text-muted-foreground/50 py-3">
+                  All {total} consultation{total !== 1 ? "s" : ""} loaded
+                </p>
+              )}
+            </>
           )}
         </div>
       </aside>
@@ -250,6 +390,7 @@ export default function ClinicConsultationsClient({
             consultation={activeDetail}
             myHPs={myHPs}
             onRefresh={refreshDetail}
+            onResolved={handleResolved}
           />
         ) : (
           <div className="flex flex-col items-center justify-center h-full gap-3 text-center px-6">
@@ -306,18 +447,20 @@ function QueueListItem({
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          {/* Patient name or walk-in indicator */}
           <div className="flex items-center gap-1 mb-0.5">
             <User className="h-3 w-3 text-muted-foreground/60 shrink-0" />
             <p className="text-xs font-semibold text-foreground truncate">
-              {patientName || <span className="text-muted-foreground italic">Walk-in / no patient linked</span>}
+              {patientName || (
+                <span className="text-muted-foreground italic">Walk-in / no patient linked</span>
+              )}
             </p>
           </div>
-          {/* Subject / complaint */}
           <p className="text-xs text-muted-foreground truncate">
-            {item.subject || item.Appointment?.subject || item.Appointment?.complaint || `Ticket #${item.id}`}
+            {item.subject ||
+              item.Appointment?.subject ||
+              item.Appointment?.complaint ||
+              `Ticket #${item.id}`}
           </p>
-          {/* Date + HP */}
           <div className="flex items-center gap-2 mt-1">
             {item.Appointment?.AppointmentAttribute?.date && (
               <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground/70">
@@ -350,11 +493,11 @@ function QueueListItem({
         </div>
       </div>
 
-      {/* Meta row */}
       <div className="flex items-center gap-3 mt-1.5">
         {(item.ConsultationNotes?.length ?? 0) > 0 && (
           <span className="text-[10px] text-muted-foreground">
-            {item.ConsultationNotes.length} note{item.ConsultationNotes.length !== 1 ? "s" : ""}
+            {item.ConsultationNotes.length} note
+            {item.ConsultationNotes.length !== 1 ? "s" : ""}
           </span>
         )}
         {docCount > 0 && (
@@ -371,5 +514,3 @@ function QueueListItem({
     </button>
   );
 }
-
-

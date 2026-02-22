@@ -87,18 +87,118 @@ import {
 import { setOrgMemberPermissionsAction } from "@/actions/organizations/organization-member-permission.action";
 import { createOrgOnboardingRequirementAction } from "@/actions/onboarding.action";
 
-import type { GetOrganization } from "@/actions/organizations/organization.action";
-import type { GetOrgSetting } from "@/actions/organizations/org-setting.action";
-import type { GetOrgMembers } from "@/actions/organizations/org-member.action";
-import type { GetOrganizationRoles } from "@/actions/organizations/organization-role.action";
-import type { GetPermissions } from "@/actions/permission.action";
-import type { GetOrgDepartments } from "@/actions/organizations/org-department.action";
-import type { GetOrgColleges } from "@/actions/organizations/org-college.action";
-import type { GetOrgPrograms } from "@/actions/organizations/org-program.action";
-import type { GetOrgOffices } from "@/actions/organizations/org-office.action";
-import type { GetOrganizationYearLevels } from "@/actions/organizations/org-year-level.action";
-import type { GetOrgClinics } from "@/actions/organizations/organization-clinics.action";
 import type { OrganizationMemberStatus } from "@/types";
+
+/* ─────────────────────────────────────────────────────────────────── */
+/*  Types (explicit — do not derive from action return types so that   */
+/*  Prisma-client inference issues don't cascade to "any")             */
+/* ─────────────────────────────────────────────────────────────────── */
+
+type OrgData = {
+  id: number;
+  orgUid: string;
+  name: string;
+  description: string | null;
+  logo: string | null;
+  email: string | null;
+  customUrl: string | null;
+  privacyPolicyUrl: string | null;
+  termsAndConditionsUrl: string | null;
+  isActive: boolean;
+  tenantId: number;
+  Tenant: { id: number; tenantUid: string };
+  OrganizationSetting: {
+    id: number;
+    orgId: number;
+    isPublic: boolean;
+    sendEmailNotification: boolean;
+    emailToOrgOnly: boolean;
+  } | null;
+};
+
+type OrgSettingData = {
+  id: number;
+  orgId: number;
+  isPublic: boolean;
+  sendEmailNotification: boolean;
+  emailToOrgOnly: boolean;
+};
+
+type RoleItem = {
+  id: number;
+  orgId: number;
+  name: string;
+  description: string | null;
+  requirements: string[];
+  UserDefaultOrganizationRoles: { id: number; roleId: number }[];
+};
+type RolesData = RoleItem[];
+
+type PermissionItem = { id: number; name: string; description: string | null };
+type PermissionsData = PermissionItem[];
+
+type MemberUser = {
+  id: number;
+  picture: string | null;
+  userId: string;
+  firstName: string;
+  lastName: string;
+  suffix: string | null;
+  gender: string | null;
+  dob: Date | null;
+  StudentRecords: {
+    studentId: string;
+    lrn: string | null;
+    Level: { name: string } | null;
+    OrganizationYearLevel: { name: string } | null;
+    Program: { name: string } | null;
+    Department: { name: string } | null;
+    College: { name: string } | null;
+  }[];
+  UserEmployments: {
+    employeeId: string;
+    position: string;
+    designation: string | null;
+    Office: { name: string } | null;
+    Department: { name: string } | null;
+    College: { name: string } | null;
+  }[];
+};
+
+type MemberItem = {
+  id: number;
+  status: string;
+  role: number;
+  createdAt: Date;
+  User: MemberUser;
+  OrganizationRole: {
+    id: number;
+    name: string;
+    description: string | null;
+    requirements: string[];
+  };
+  Organization: { name: string; orgUid: string; id: number };
+  AcceptedBy: {
+    id: number;
+    userId: string;
+    firstName: string;
+    lastName: string;
+  } | null;
+};
+type MembersData = MemberItem[];
+
+type StructureItem = { id: number; name: string; organizationId: number };
+type DepartmentsData = StructureItem[];
+type CollegesData = StructureItem[];
+type ProgramsData = StructureItem[];
+type OfficesData = StructureItem[];
+type YearLevelsData = StructureItem[];
+
+type ClinicItem = {
+  Clinic: { id: number; clinicUid: string; name: string; logo: string | null };
+};
+type ClinicsData = ClinicItem[];
+
 type OrgOnboardingRequirement = {
   id: number;
   organizationId: number;
@@ -108,22 +208,6 @@ type OrgOnboardingRequirement = {
   isRequired: boolean;
   isActive: boolean;
 };
-
-/* ─────────────────────────────────────────────────────────────────── */
-/*  Types                                                              */
-/* ─────────────────────────────────────────────────────────────────── */
-
-type OrgData = NonNullable<GetOrganization>;
-type OrgSettingData = NonNullable<GetOrgSetting["data"]>;
-type MembersData = NonNullable<NonNullable<GetOrgMembers["data"]>["data"]>;
-type RolesData = NonNullable<GetOrganizationRoles["data"]>;
-type PermissionsData = NonNullable<GetPermissions>;
-type DepartmentsData = GetOrgDepartments;
-type CollegesData = GetOrgColleges;
-type ProgramsData = GetOrgPrograms;
-type OfficesData = GetOrgOffices;
-type YearLevelsData = GetOrganizationYearLevels;
-type ClinicsData = GetOrgClinics;
 
 interface OrgSettingsClientProps {
   orgUid: string;
@@ -667,8 +751,6 @@ function RolesTab({
 /*  Tab: Members                                                       */
 /* ─────────────────────────────────────────────────────────────────── */
 
-type MemberItem = MembersData[number];
-
 const STATUS_BADGE_VARIANT: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
   ACTIVE: "default",
   PENDING: "secondary",
@@ -1015,16 +1097,17 @@ function OnboardingTab({
         isRequired: values.isRequired,
       });
       if (result.status && result.data) {
+        const saved = result.data;
         setRequirements((prev) => {
           const idx = prev.findIndex(
-            (r) => r.fieldName === result.data!.fieldName && r.entityType === result.data!.entityType
+            (r) => r.fieldName === saved.fieldName && r.entityType === saved.entityType
           );
           if (idx !== -1) {
             const updated = [...prev];
-            updated[idx] = result.data!;
+            updated[idx] = saved;
             return updated;
           }
-          return [...prev, result.data!];
+          return [...prev, saved];
         });
         toast.success("Onboarding requirement saved.");
         form.reset();

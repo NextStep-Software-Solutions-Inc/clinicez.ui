@@ -13,7 +13,7 @@ import {
   RefreshCw,
   Loader2,
   CalendarDays,
-  Download,
+  Eye,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -37,12 +37,15 @@ import { getHeartStationRequestsAction } from "@/actions/clinics/clinical-record
 import { getMedicalCertificatesAction } from "@/actions/clinics/clinical-record/medical-certificate.action";
 import { getReferralSlipsAction } from "@/actions/clinics/clinical-record/referral-slip.action";
 
-import DownloadPrescriptionAction from "@/components/clinic/clinical-records/prescription/DownloadPrescriptionAction";
-import DownloadLaboratoryRequestAction from "@/components/laboratory-requests/DownloadLaboratoryRequestAction";
-import DownloadImagingStudiesAction from "@/components/imaging-studies/DownloadImagingStudiesAction";
-import DownloadHeartStationRequestAction from "@/components/heart-station-requests/DownloadHeartStationRequestAction";
-import DownloadMedicalCertificateAction from "@/components/medical-certificate/DownloadMedicalCertificateAction";
-import DownloadReferralSlipAction from "@/components/referral-slip/DownloadReferralSlipAction";
+import {
+  buildPrescriptionHtml,
+  buildLabRequestHtml,
+  buildImagingStudyHtml,
+  buildHeartStationHtml,
+  buildMedicalCertificateHtml,
+  buildReferralSlipHtml,
+} from "@/lib/build-record-html";
+import { RecordPreviewDialog } from "./RecordPreviewDialog";
 
 type Prescriptions = NonNullable<GetPrescriptions["data"]>;
 type LabRequests = NonNullable<GetLaboratoryRequests["data"]>;
@@ -96,17 +99,18 @@ function getMedicineName(m: { name?: string | null; genericName?: string | null;
   return m.name || m.genericName || m.brandName || "—";
 }
 
-function DownloadIconButton() {
+function PreviewIconButton({ onClick }: { onClick: () => void }) {
   return (
     <Button
       variant="ghost"
       size="icon"
-      type="submit"
-      aria-label="Download / Print"
+      type="button"
+      aria-label="Preview document"
       className="h-8 w-8 text-muted-foreground hover:text-primary shrink-0"
-      title="Download / Print"
+      title="Preview"
+      onClick={onClick}
     >
-      <Download className="h-4 w-4" />
+      <Eye className="h-4 w-4" />
     </Button>
   );
 }
@@ -115,9 +119,11 @@ function DownloadIconButton() {
 function PrescriptionsTab({
   items,
   search,
+  onPreview,
 }: {
   items: Prescriptions;
   search: string;
+  onPreview: (id: number, title: string) => void;
 }) {
   const filtered = items.filter((rx) => {
     const q = search.toLowerCase();
@@ -183,9 +189,11 @@ function PrescriptionsTab({
                   <CalendarDays className="h-3.5 w-3.5" />
                   {dayjs(rx.createdAt).format("MMM D, YYYY")}
                 </div>
-                <DownloadPrescriptionAction prescription={{ id: rx.id }}>
-                  <DownloadIconButton />
-                </DownloadPrescriptionAction>
+                <PreviewIconButton
+                  onClick={() =>
+                    onPreview(rx.id, `Prescription – ${rx.name || rx.serialNumber || `#${rx.id}`}`)
+                  }
+                />
               </div>
             </div>
           </CardContent>
@@ -199,9 +207,11 @@ function PrescriptionsTab({
 function LabRequestsTab({
   items,
   search,
+  onPreview,
 }: {
   items: LabRequests;
   search: string;
+  onPreview: (id: number, title: string) => void;
 }) {
   const filtered = items.filter((req) => {
     const q = search.toLowerCase();
@@ -274,9 +284,11 @@ function LabRequestsTab({
                   <CalendarDays className="h-3.5 w-3.5" />
                   {dayjs(req.createdAt).format("MMM D, YYYY")}
                 </div>
-                <DownloadLaboratoryRequestAction request={{ id: req.id }}>
-                  <DownloadIconButton />
-                </DownloadLaboratoryRequestAction>
+                <PreviewIconButton
+                  onClick={() =>
+                    onPreview(req.id, `Lab Request – ${req.serialNumber || `#${req.id}`}`)
+                  }
+                />
               </div>
             </div>
           </CardContent>
@@ -290,9 +302,11 @@ function LabRequestsTab({
 function ImagingTab({
   items,
   search,
+  onPreview,
 }: {
   items: ImagingStudies;
   search: string;
+  onPreview: (id: number, title: string) => void;
 }) {
   const filtered = items.filter((study) => {
     const q = search.toLowerCase();
@@ -364,9 +378,11 @@ function ImagingTab({
                   <CalendarDays className="h-3.5 w-3.5" />
                   {dayjs(study.createdAt).format("MMM D, YYYY")}
                 </div>
-                <DownloadImagingStudiesAction study={{ id: study.id }}>
-                  <DownloadIconButton />
-                </DownloadImagingStudiesAction>
+                <PreviewIconButton
+                  onClick={() =>
+                    onPreview(study.id, `Imaging Request – ${study.serialNumber || `#${study.id}`}`)
+                  }
+                />
               </div>
             </div>
           </CardContent>
@@ -380,9 +396,11 @@ function ImagingTab({
 function HeartStationTab({
   items,
   search,
+  onPreview,
 }: {
   items: HeartStationRequests;
   search: string;
+  onPreview: (id: number, title: string) => void;
 }) {
   const filtered = items.filter((req) => {
     const q = search.toLowerCase();
@@ -454,9 +472,11 @@ function HeartStationTab({
                   <CalendarDays className="h-3.5 w-3.5" />
                   {dayjs(req.createdAt).format("MMM D, YYYY")}
                 </div>
-                <DownloadHeartStationRequestAction request={{ id: req.id }}>
-                  <DownloadIconButton />
-                </DownloadHeartStationRequestAction>
+                <PreviewIconButton
+                  onClick={() =>
+                    onPreview(req.id, `Heart Station – ${req.serialNumber || `#${req.id}`}`)
+                  }
+                />
               </div>
             </div>
           </CardContent>
@@ -470,9 +490,11 @@ function HeartStationTab({
 function MedicalCertsTab({
   items,
   search,
+  onPreview,
 }: {
   items: MedicalCertificates;
   search: string;
+  onPreview: (id: number, title: string) => void;
 }) {
   const filtered = items.filter((cert) => {
     const q = search.toLowerCase();
@@ -539,9 +561,11 @@ function MedicalCertsTab({
                   <CalendarDays className="h-3.5 w-3.5" />
                   {dayjs(cert.createdAt).format("MMM D, YYYY")}
                 </div>
-                <DownloadMedicalCertificateAction certificate={{ id: cert.id }}>
-                  <DownloadIconButton />
-                </DownloadMedicalCertificateAction>
+                <PreviewIconButton
+                  onClick={() =>
+                    onPreview(cert.id, `Medical Certificate – ${cert.serialNumber || `#${cert.id}`}`)
+                  }
+                />
               </div>
             </div>
           </CardContent>
@@ -555,9 +579,11 @@ function MedicalCertsTab({
 function ReferralSlipsTab({
   items,
   search,
+  onPreview,
 }: {
   items: ReferralSlips;
   search: string;
+  onPreview: (id: number, title: string) => void;
 }) {
   const filtered = items.filter((slip) => {
     const q = search.toLowerCase();
@@ -618,9 +644,11 @@ function ReferralSlipsTab({
                   <CalendarDays className="h-3.5 w-3.5" />
                   {dayjs(slip.createdAt).format("MMM D, YYYY")}
                 </div>
-                <DownloadReferralSlipAction referralSlip={{ id: slip.id }}>
-                  <DownloadIconButton />
-                </DownloadReferralSlipAction>
+                <PreviewIconButton
+                  onClick={() =>
+                    onPreview(slip.id, `Referral Slip – ${slip.serialNumber || `#${slip.id}`}`)
+                  }
+                />
               </div>
             </div>
           </CardContent>
@@ -668,6 +696,13 @@ export function ClinicRecordsClient({
   const [activeTab, setActiveTab] = useState<TabKey>("prescriptions");
   const [isPending, startTransition] = useTransition();
 
+  const [preview, setPreview] = useState<{
+    open: boolean;
+    html: string;
+    title: string;
+    loading: boolean;
+  }>({ open: false, html: "", title: "", loading: false });
+
   const counts: Record<TabKey, number> = {
     prescriptions: data.prescriptions.length,
     lab: data.labRequests.length,
@@ -676,6 +711,20 @@ export function ClinicRecordsClient({
     medcerts: data.medicalCertificates.length,
     referrals: data.referralSlips.length,
   };
+
+  const handlePreview = useCallback(
+    async (builder: (id: number) => Promise<string>, id: number, title: string) => {
+      setPreview({ open: true, html: "", title, loading: true });
+      try {
+        const html = await builder(id);
+        setPreview({ open: true, html, title, loading: false });
+      } catch {
+        toast.error("Failed to load preview");
+        setPreview({ open: false, html: "", title: "", loading: false });
+      }
+    },
+    []
+  );
 
   const handleRefresh = useCallback(() => {
     startTransition(async () => {
@@ -788,24 +837,57 @@ export function ClinicRecordsClient({
         </TabsList>
 
         <TabsContent value="prescriptions" className="mt-4">
-          <PrescriptionsTab items={data.prescriptions} search={search} />
+          <PrescriptionsTab
+            items={data.prescriptions}
+            search={search}
+            onPreview={(id, title) => handlePreview(buildPrescriptionHtml, id, title)}
+          />
         </TabsContent>
         <TabsContent value="lab" className="mt-4">
-          <LabRequestsTab items={data.labRequests} search={search} />
+          <LabRequestsTab
+            items={data.labRequests}
+            search={search}
+            onPreview={(id, title) => handlePreview(buildLabRequestHtml, id, title)}
+          />
         </TabsContent>
         <TabsContent value="imaging" className="mt-4">
-          <ImagingTab items={data.imagingStudies} search={search} />
+          <ImagingTab
+            items={data.imagingStudies}
+            search={search}
+            onPreview={(id, title) => handlePreview(buildImagingStudyHtml, id, title)}
+          />
         </TabsContent>
         <TabsContent value="heart" className="mt-4">
-          <HeartStationTab items={data.heartStationRequests} search={search} />
+          <HeartStationTab
+            items={data.heartStationRequests}
+            search={search}
+            onPreview={(id, title) => handlePreview(buildHeartStationHtml, id, title)}
+          />
         </TabsContent>
         <TabsContent value="medcerts" className="mt-4">
-          <MedicalCertsTab items={data.medicalCertificates} search={search} />
+          <MedicalCertsTab
+            items={data.medicalCertificates}
+            search={search}
+            onPreview={(id, title) => handlePreview(buildMedicalCertificateHtml, id, title)}
+          />
         </TabsContent>
         <TabsContent value="referrals" className="mt-4">
-          <ReferralSlipsTab items={data.referralSlips} search={search} />
+          <ReferralSlipsTab
+            items={data.referralSlips}
+            search={search}
+            onPreview={(id, title) => handlePreview(buildReferralSlipHtml, id, title)}
+          />
         </TabsContent>
       </Tabs>
+
+      {/* Preview dialog */}
+      <RecordPreviewDialog
+        open={preview.open}
+        onOpenChange={(open) => setPreview((prev) => ({ ...prev, open }))}
+        html={preview.html}
+        title={preview.title}
+        loading={preview.loading}
+      />
     </div>
   );
 }

@@ -431,6 +431,7 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
           userId: true,
           User: {
             select: {
+              id: true,
               userId: true,
               firstName: true,
               middleName: true,
@@ -1200,7 +1201,6 @@ export const getAppointmentCountsAction = withErrorHandling(cache(async (clinicU
         select: {
           User: {
             select: {
-              id: true,
               userId: true,
               firstName: true,
               middleName: true,

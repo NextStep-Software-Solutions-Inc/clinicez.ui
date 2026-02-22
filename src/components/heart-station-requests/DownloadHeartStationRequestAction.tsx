@@ -42,22 +42,21 @@ const DownloadHeartStationRequestAction = React.forwardRef<
         const gender = patient.gender ?? ""
         const address = formatPatientAddress(patient)
 
-        const proceduresHtml = data.HeartStationRequestProcedures
-          ?.map(
-            (item) =>
-              `<div class="procedure-item"><span class="procedure-checkbox">☑</span> ${item.HeartStationProcedure?.name ?? ""}</div>`
-          )
-          .join("") ?? ""
+        const diagnostics = data.HeartStationRequestProcedures
+          ?.map((item) => item.HeartStationProcedure?.name ?? "")
+          .filter(Boolean)
+          .join(", ") ?? ""
 
         const template = prepareHeartStationRequest({
           template: data.DocumentTemplate?.htmlContent ?? "",
           patient: { name: patientName, age, gender, address },
           doctor: { name: doctorName, licenseNo, ptrNo, eSignatureBase64 },
           request: {
-            procedures: proceduresHtml,
-            impression: data.impression || "",
-            others: data.history || "",
-            createdAt: data.createdAt || new Date(),
+            diagnostics,
+            impression: data.impression ?? "",
+            history: data.history ?? "",
+            requestFor: data.reason ?? "",
+            createdAt: data.createdAt,
           },
         })
 

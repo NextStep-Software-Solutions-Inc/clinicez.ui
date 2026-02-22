@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition, useCallback } from "react";
-import { Plus, FlaskConical, ImageIcon, Search, X, FileDown } from "lucide-react";
+import { Plus, FlaskConical, ImageIcon, Search, X, FileDown, RefreshCw, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,19 +10,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import dayjs from "@/lib/day-utils";
-import { createLaboratoryRequestAction } from "@/actions/clinics/clinical-record/laboratory-requests.action";
-import { createImagingStudyAction } from "@/actions/clinics/clinical-record/imaging-studies.action";
+import { createLaboratoryRequestAction, deleteLaboratoryRequestAction } from "@/actions/clinics/clinical-record/laboratory-requests.action";
+import { createImagingStudyAction, deleteImagingStudyAction } from "@/actions/clinics/clinical-record/imaging-studies.action";
+import { createHeartStationRequestAction, deleteHeartStationRequestAction } from "@/actions/clinics/clinical-record/heart-station.action";
 import {
   getClinicLabProceduresAction,
   getClinicImagingProceduresAction,
-} from "@/actions/consultation/patient-consultations.action";
-import {
+  getClinicHeartStationProceduresAction,
   getConsultationDiagnosticsForTicketAction,
 } from "@/actions/consultation/patient-consultations.action";
 import type {
   GetPatientConsultationDetail,
   GetClinicLabProcedures,
   GetClinicImagingProcedures,
+  GetClinicHeartStationProcedures,
 } from "@/actions/consultation/patient-consultations.action";
 import type { GetHPsType } from "@/actions/hp.actions";
 import DownloadLaboratoryRequestAction from "@/components/laboratory-requests/DownloadLaboratoryRequestAction";
@@ -31,6 +32,8 @@ import DownloadImagingStudiesAction from "@/components/imaging-studies/DownloadI
 type Detail = NonNullable<GetPatientConsultationDetail["data"]>;
 type LabProc = NonNullable<GetClinicLabProcedures["data"]>[number];
 type ImagingProc = NonNullable<GetClinicImagingProcedures["data"]>[number];
+type HeartStationProc = NonNullable<GetClinicHeartStationProcedures["data"]>[number];
+type HeartStationRequest = NonNullable<Detail["HeartStationRequests"]>[number];
 
 interface PatientInfo {
   id: number;
@@ -57,15 +60,46 @@ export default function ConsultationDiagnostics({
   const ticketHpIds = consultation.ConsultationTicketHPs.map((h) => h.HealthCareProvider.id);
   const myActiveHp = myHPs.find((hp) => ticketHpIds.includes(hp.id)) ?? myHPs[0] ?? null;
 
-  const [showLabForm, setShowLabForm] = useState(false);
-  const [showImagingForm, setShowImagingForm] = useState(false);
+  type ActiveForm = "lab" | "imaging" | "heartStation" | null;
+  const [activeForm, setActiveForm] = useState<ActiveForm>(null);
+  const [replacingLabId, setReplacingLabId] = useState<number | null>(null);
+  const [replacingImagingId, setReplacingImagingId] = useState<number | null>(null);
+  const [replacingHsId, setReplacingHsId] = useState<number | null>(null);
 
   const handleDiagnosticsCreated = async () => {
     const result = await getConsultationDiagnosticsForTicketAction({ ticketId: consultation.id });
     if (result.status && result.data) {
-      onPatchDetail({ LaboratoryRequests: result.data.labs, ImagingRequests: result.data.imaging });
+      onPatchDetail({
+        LaboratoryRequests: result.data.labs,
+        ImagingRequests: result.data.imaging,
+        HeartStationRequests: result.data.heartStation,
+      });
     }
   };
+
+  const openLabForm = (replacingId?: number) => {
+    setReplacingLabId(replacingId ?? null);
+    setActiveForm("lab");
+  };
+  const openImagingForm = (replacingId?: number) => {
+    setReplacingImagingId(replacingId ?? null);
+    setActiveForm("imaging");
+  };
+  const openHeartStationForm = (replacingId?: number) => {
+    setReplacingHsId(replacingId ?? null);
+    setActiveForm("heartStation");
+  };
+  const closeForm = () => {
+    setActiveForm(null);
+    setReplacingLabId(null);
+    setReplacingImagingId(null);
+    setReplacingHsId(null);
+  };
+
+  const totalCount =
+    (consultation.LaboratoryRequests?.length ?? 0) +
+    (consultation.ImagingRequests?.length ?? 0) +
+    (consultation.HeartStationRequests?.length ?? 0);
 
   return (
     <div className="space-y-4">
@@ -74,59 +108,71 @@ export default function ConsultationDiagnostics({
           <FlaskConical className="h-4 w-4 text-primary" />
           Diagnostic Requests
         </h3>
-        <div className="flex gap-2">
-          {!showLabForm && (
+        {activeForm === null && (
+          <div className="flex gap-2">
             <Button
-              size="sm"
-              variant="outline"
-              className="gap-1.5 h-7 text-xs"
-              onClick={() => { setShowLabForm(true); setShowImagingForm(false); }}
-              disabled={!myActiveHp}
+              size="sm" variant="outline" className="gap-1.5 h-7 text-xs"
+              onClick={() => openLabForm()} disabled={!myActiveHp}
             >
               <FlaskConical className="h-3.5 w-3.5" />
-              Lab Request
+              Lab
             </Button>
-          )}
-          {!showImagingForm && (
             <Button
-              size="sm"
-              variant="outline"
-              className="gap-1.5 h-7 text-xs"
-              onClick={() => { setShowImagingForm(true); setShowLabForm(false); }}
-              disabled={!myActiveHp}
+              size="sm" variant="outline" className="gap-1.5 h-7 text-xs"
+              onClick={() => openImagingForm()} disabled={!myActiveHp}
             >
               <ImageIcon className="h-3.5 w-3.5" />
               Imaging
             </Button>
-          )}
-        </div>
+            <Button
+              size="sm" variant="outline" className="gap-1.5 h-7 text-xs"
+              onClick={() => openHeartStationForm()} disabled={!myActiveHp}
+            >
+              <Heart className="h-3.5 w-3.5" />
+              Heart Station
+            </Button>
+          </div>
+        )}
       </div>
 
-      {showLabForm && myActiveHp && (
+      {activeForm === "lab" && myActiveHp && (
         <LabRequestForm
           clinicUid={clinicUid}
           patient={patient}
           consultation={consultation}
           hpId={myActiveHp.id}
-          onDone={() => { setShowLabForm(false); handleDiagnosticsCreated(); }}
-          onCancel={() => setShowLabForm(false)}
+          replacingId={replacingLabId}
+          onDone={() => { closeForm(); handleDiagnosticsCreated(); }}
+          onCancel={closeForm}
         />
       )}
 
-      {showImagingForm && myActiveHp && (
+      {activeForm === "imaging" && myActiveHp && (
         <ImagingRequestForm
           clinicUid={clinicUid}
           patient={patient}
           consultation={consultation}
           hpId={myActiveHp.id}
-          onDone={() => { setShowImagingForm(false); handleDiagnosticsCreated(); }}
-          onCancel={() => setShowImagingForm(false)}
+          replacingId={replacingImagingId}
+          onDone={() => { closeForm(); handleDiagnosticsCreated(); }}
+          onCancel={closeForm}
+        />
+      )}
+
+      {activeForm === "heartStation" && myActiveHp && (
+        <HeartStationRequestForm
+          clinicUid={clinicUid}
+          patient={patient}
+          consultation={consultation}
+          hpId={myActiveHp.id}
+          replacingId={replacingHsId}
+          onDone={() => { closeForm(); handleDiagnosticsCreated(); }}
+          onCancel={closeForm}
         />
       )}
 
       {/* Existing requests */}
-      {(consultation.LaboratoryRequests?.length ?? 0) === 0 &&
-       (consultation.ImagingRequests?.length ?? 0) === 0 ? (
+      {totalCount === 0 ? (
         <div className="text-center py-10 text-sm text-muted-foreground">
           No diagnostic requests issued yet.
         </div>
@@ -143,6 +189,7 @@ export default function ConsultationDiagnostics({
               procedures={req.LaboratoryRequestProcedures?.map(
                 (p) => p.LaboratoryProcedure?.name ?? ""
               ) ?? []}
+              onReplace={() => openLabForm(req.id)}
             />
           ))}
           {consultation.ImagingRequests?.map((req) => (
@@ -156,6 +203,21 @@ export default function ConsultationDiagnostics({
               procedures={req.ImagingRequestProcedures?.map(
                 (p) => p.ImagingProcedure?.name ?? ""
               ) ?? []}
+              onReplace={() => openImagingForm(req.id)}
+            />
+          ))}
+          {consultation.HeartStationRequests?.map((req) => (
+            <DiagnosticCard
+              key={`hs-${req.id}`}
+              id={req.id}
+              type="heartStation"
+              serialNumber={req.serialNumber}
+              impression={req.impression ?? undefined}
+              createdAt={req.createdAt}
+              procedures={req.HeartStationRequestProcedures?.map(
+                (p) => p.HeartStationProcedure?.name ?? ""
+              ) ?? []}
+              onReplace={() => openHeartStationForm(req.id)}
             />
           ))}
         </div>
@@ -170,6 +232,7 @@ function LabRequestForm({
   patient,
   consultation,
   hpId,
+  replacingId,
   onDone,
   onCancel,
 }: {
@@ -177,6 +240,7 @@ function LabRequestForm({
   patient: PatientInfo;
   consultation: Detail;
   hpId: number;
+  replacingId: number | null;
   onDone: () => void;
   onCancel: () => void;
 }) {
@@ -208,6 +272,13 @@ function LabRequestForm({
   const handleSubmit = () => {
     if (selected.length === 0) { toast.error("Select at least one test"); return; }
     startTransition(async () => {
+      if (replacingId !== null) {
+        const voidResult = await deleteLaboratoryRequestAction({ laboratoryRequestId: replacingId });
+        if (!voidResult.status) {
+          toast.error(voidResult.message ?? "Failed to void existing lab request");
+          return;
+        }
+      }
       const result = await createLaboratoryRequestAction({
         clinicUid,
         patientId: patient.clinicPatientId,
@@ -217,7 +288,7 @@ function LabRequestForm({
         impression: impression || undefined,
       });
       if (result.status) {
-        toast.success("Lab request created");
+        toast.success(replacingId ? "Lab request replaced" : "Lab request created");
         onDone();
       } else {
         toast.error(result.message ?? "Failed to create lab request");
@@ -229,7 +300,7 @@ function LabRequestForm({
     <div className="rounded-lg border border-border/50 bg-muted/20 p-4 space-y-3">
       <h4 className="text-xs font-semibold text-foreground/80 uppercase tracking-wide flex items-center gap-2">
         <FlaskConical className="h-3.5 w-3.5 text-primary" />
-        Laboratory Request
+        {replacingId ? "Replace Lab Request" : "Laboratory Request"}
       </h4>
 
       <div className="space-y-1">
@@ -299,7 +370,7 @@ function LabRequestForm({
       <div className="flex justify-end gap-2">
         <Button size="sm" variant="outline" className="h-7 text-xs" onClick={onCancel}>Cancel</Button>
         <Button size="sm" className="h-7 text-xs" disabled={isPending || selected.length === 0} onClick={handleSubmit}>
-          {isPending ? "Saving…" : "Create Lab Request"}
+          {isPending ? "Saving…" : replacingId ? "Replace Lab Request" : "Create Lab Request"}
         </Button>
       </div>
     </div>
@@ -312,6 +383,7 @@ function ImagingRequestForm({
   patient,
   consultation,
   hpId,
+  replacingId,
   onDone,
   onCancel,
 }: {
@@ -319,6 +391,7 @@ function ImagingRequestForm({
   patient: PatientInfo;
   consultation: Detail;
   hpId: number;
+  replacingId: number | null;
   onDone: () => void;
   onCancel: () => void;
 }) {
@@ -349,6 +422,13 @@ function ImagingRequestForm({
   const handleSubmit = () => {
     if (selected.length === 0) { toast.error("Select at least one procedure"); return; }
     startTransition(async () => {
+      if (replacingId !== null) {
+        const voidResult = await deleteImagingStudyAction({ imagingStudyId: replacingId });
+        if (!voidResult.status) {
+          toast.error(voidResult.message ?? "Failed to void existing imaging request");
+          return;
+        }
+      }
       const result = await createImagingStudyAction({
         clinicUid,
         patientId: patient.clinicPatientId,
@@ -360,7 +440,7 @@ function ImagingRequestForm({
         reason: reason || undefined,
       });
       if (result.status) {
-        toast.success("Imaging request created");
+        toast.success(replacingId ? "Imaging request replaced" : "Imaging request created");
         onDone();
       } else {
         toast.error(result.message ?? "Failed to create imaging request");
@@ -372,7 +452,7 @@ function ImagingRequestForm({
     <div className="rounded-lg border border-border/50 bg-muted/20 p-4 space-y-3">
       <h4 className="text-xs font-semibold text-foreground/80 uppercase tracking-wide flex items-center gap-2">
         <ImageIcon className="h-3.5 w-3.5 text-primary" />
-        Imaging Request
+        {replacingId ? "Replace Imaging Request" : "Imaging Request"}
       </h4>
 
       <div className="space-y-1">
@@ -446,7 +526,160 @@ function ImagingRequestForm({
       <div className="flex justify-end gap-2">
         <Button size="sm" variant="outline" className="h-7 text-xs" onClick={onCancel}>Cancel</Button>
         <Button size="sm" className="h-7 text-xs" disabled={isPending || selected.length === 0} onClick={handleSubmit}>
-          {isPending ? "Saving…" : "Create Imaging Request"}
+          {isPending ? "Saving…" : replacingId ? "Replace Imaging Request" : "Create Imaging Request"}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+/* ── Heart Station Request Form ── */
+function HeartStationRequestForm({
+  clinicUid,
+  patient,
+  consultation,
+  hpId,
+  replacingId,
+  onDone,
+  onCancel,
+}: {
+  clinicUid: string;
+  patient: PatientInfo;
+  consultation: Detail;
+  hpId: number;
+  replacingId: number | null;
+  onDone: () => void;
+  onCancel: () => void;
+}) {
+  const [search, setSearch] = useState("");
+  const [results, setResults] = useState<HeartStationProc[]>([]);
+  const [selected, setSelected] = useState<HeartStationProc[]>([]);
+  const [impression, setImpression] = useState("");
+  const [clinicalHistory, setClinicalHistory] = useState("");
+  const [reason, setReason] = useState("");
+  const [isPending, startTransition] = useTransition();
+
+  const doSearch = useCallback(
+    async (term: string) => {
+      const res = await getClinicHeartStationProceduresAction({ clinicUid, search: term });
+      if (res.status && res.data) setResults(res.data);
+    },
+    [clinicUid]
+  );
+
+  const toggle = (proc: HeartStationProc) => {
+    setSelected((prev) =>
+      prev.some((p) => p.id === proc.id)
+        ? prev.filter((p) => p.id !== proc.id)
+        : [...prev, proc]
+    );
+  };
+
+  const handleSubmit = () => {
+    if (selected.length === 0) { toast.error("Select at least one procedure"); return; }
+    startTransition(async () => {
+      if (replacingId !== null) {
+        const voidResult = await deleteHeartStationRequestAction({ id: replacingId, hpIds: [hpId] });
+        if (!voidResult.status) {
+          toast.error(voidResult.message ?? "Failed to void existing heart station request");
+          return;
+        }
+      }
+      const result = await createHeartStationRequestAction({
+        clinicUid,
+        patientId: patient.clinicPatientId,
+        hpIds: [hpId],
+        procedureIds: selected.map((p) => p.id),
+        consultationTicketId: consultation.id,
+        impression: impression || undefined,
+        history: clinicalHistory || undefined,
+        reason: reason || undefined,
+      });
+      if (result.status) {
+        toast.success(replacingId ? "Heart station request replaced" : "Heart station request created");
+        onDone();
+      } else {
+        toast.error(result.message ?? "Failed to create heart station request");
+      }
+    });
+  };
+
+  return (
+    <div className="rounded-lg border border-border/50 bg-muted/20 p-4 space-y-3">
+      <h4 className="text-xs font-semibold text-foreground/80 uppercase tracking-wide flex items-center gap-2">
+        <Heart className="h-3.5 w-3.5 text-primary" />
+        {replacingId ? "Replace Heart Station Request" : "Heart Station Request"}
+      </h4>
+
+      <div className="space-y-1">
+        <Label className="text-xs">Search Procedures</Label>
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <Input
+            placeholder="ECG, Echo…"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              doSearch(e.target.value);
+            }}
+            className="h-8 pl-8 text-xs"
+          />
+        </div>
+      </div>
+
+      {results.length > 0 && (
+        <div className="rounded-md border border-border/40 bg-background max-h-36 overflow-y-auto divide-y divide-border/30">
+          {results.map((proc) => (
+            <button
+              key={proc.id}
+              type="button"
+              onClick={() => toggle(proc)}
+              className={`w-full text-left px-3 py-2 text-xs hover:bg-muted/40 transition-colors ${
+                selected.some((p) => p.id === proc.id) ? "bg-primary/5 text-primary" : ""
+              }`}
+            >
+              {proc.name}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {selected.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {selected.map((p) => (
+            <Badge key={p.id} variant="secondary" className="text-xs gap-1 cursor-pointer" onClick={() => toggle(p)}>
+              {p.name}
+              <X className="h-2.5 w-2.5" />
+            </Badge>
+          ))}
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="space-y-1">
+          <Label className="text-xs">Clinical History</Label>
+          <Textarea
+            placeholder="Relevant history…"
+            value={clinicalHistory}
+            onChange={(e) => setClinicalHistory(e.target.value)}
+            className="min-h-14 text-xs resize-none"
+          />
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs">Reason / Impression</Label>
+          <Textarea
+            placeholder="Reason for request…"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            className="min-h-14 text-xs resize-none"
+          />
+        </div>
+      </div>
+
+      <div className="flex justify-end gap-2">
+        <Button size="sm" variant="outline" className="h-7 text-xs" onClick={onCancel}>Cancel</Button>
+        <Button size="sm" className="h-7 text-xs" disabled={isPending || selected.length === 0} onClick={handleSubmit}>
+          {isPending ? "Saving…" : replacingId ? "Replace Request" : "Create Request"}
         </Button>
       </div>
     </div>
@@ -461,16 +694,18 @@ function DiagnosticCard({
   impression,
   createdAt,
   procedures,
+  onReplace,
 }: {
   id: number;
-  type: "lab" | "imaging";
+  type: "lab" | "imaging" | "heartStation";
   serialNumber: string;
   impression?: string;
   createdAt: Date;
   procedures: string[];
+  onReplace: () => void;
 }) {
-  const Icon = type === "lab" ? FlaskConical : ImageIcon;
-  const label = type === "lab" ? "Laboratory Request" : "Imaging Request";
+  const Icon = type === "lab" ? FlaskConical : type === "imaging" ? ImageIcon : Heart;
+  const label = type === "lab" ? "Laboratory Request" : type === "imaging" ? "Imaging Request" : "Heart Station Request";
 
   return (
     <div className="rounded-lg border border-border/50 bg-background px-4 py-3">
@@ -497,19 +732,27 @@ function DiagnosticCard({
             <p className="text-xs text-muted-foreground mt-1 italic">{impression}</p>
           )}
         </div>
-        {type === "lab" ? (
-          <DownloadLaboratoryRequestAction request={{ id }}>
-            <Button size="sm" variant="ghost" className="h-7 w-7 p-0 shrink-0" title="Preview PDF">
-              <FileDown className="h-3.5 w-3.5" />
-            </Button>
-          </DownloadLaboratoryRequestAction>
-        ) : (
-          <DownloadImagingStudiesAction study={{ id }}>
-            <Button size="sm" variant="ghost" className="h-7 w-7 p-0 shrink-0" title="Preview PDF">
-              <FileDown className="h-3.5 w-3.5" />
-            </Button>
-          </DownloadImagingStudiesAction>
-        )}
+        <div className="flex items-center gap-1 shrink-0">
+          <Button
+            size="sm" variant="ghost" className="h-7 w-7 p-0" title="Void & Replace"
+            onClick={onReplace}
+          >
+            <RefreshCw className="h-3.5 w-3.5 text-amber-500" />
+          </Button>
+          {type === "lab" ? (
+            <DownloadLaboratoryRequestAction request={{ id }}>
+              <Button size="sm" variant="ghost" className="h-7 w-7 p-0" title="Preview PDF">
+                <FileDown className="h-3.5 w-3.5" />
+              </Button>
+            </DownloadLaboratoryRequestAction>
+          ) : type === "imaging" ? (
+            <DownloadImagingStudiesAction study={{ id }}>
+              <Button size="sm" variant="ghost" className="h-7 w-7 p-0" title="Preview PDF">
+                <FileDown className="h-3.5 w-3.5" />
+              </Button>
+            </DownloadImagingStudiesAction>
+          ) : null}
+        </div>
       </div>
     </div>
   );

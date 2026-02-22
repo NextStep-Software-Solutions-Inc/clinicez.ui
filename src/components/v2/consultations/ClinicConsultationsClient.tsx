@@ -233,12 +233,10 @@ export default function ClinicConsultationsClient({
     return () => observer.disconnect();
   }, [nextCursor, loadMore]);
 
-  /* ── Refresh current detail (called by workspace after mutations) ── */
-  const refreshDetail = useCallback(() => {
-    if (!selectedId) return;
-    const found = items.find((q) => q.id === selectedId);
-    if (found) loadDetail(found);
-  }, [selectedId, items, loadDetail]);
+  /* ── Patch a section of the active detail (called by workspace after mutations) ── */
+  const handlePatchDetail = useCallback((patch: Partial<ConsultationDetail>) => {
+    setActiveDetail((prev) => (prev ? { ...prev, ...patch } : prev));
+  }, []);
 
   /* ── Update queue item status after resolve ── */
   const handleResolved = useCallback((id: number) => {
@@ -413,24 +411,26 @@ export default function ClinicConsultationsClient({
 
         {/* ── Right Panel: Workspace ── */}
         <main
-          className={`flex-1 overflow-hidden`}
+          className={`flex-1 overflow-hidden ${
+            mobileView === "list" ? "hidden md:flex" : "flex"
+          }`}
         >
-          {loadingDetail ? (
+          {activeDetail ? (
+            <ConsultationWorkspace
+              clinicUid={clinicUid}
+              patient={activePatient}
+              consultation={activeDetail}
+              myHPs={myHPs}
+              onPatchDetail={handlePatchDetail}
+              onResolved={handleResolved}
+            />
+          ) : loadingDetail ? (
             <div className="flex items-center justify-center h-full w-full">
               <div className="flex flex-col items-center gap-3">
                 <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
                 <p className="text-sm text-muted-foreground">Loading consultation…</p>
               </div>
             </div>
-          ) : activeDetail ? (
-            <ConsultationWorkspace
-              clinicUid={clinicUid}
-              patient={activePatient}
-              consultation={activeDetail}
-              myHPs={myHPs}
-              onRefresh={refreshDetail}
-              onResolved={handleResolved}
-            />
           ) : (
             <div className="flex flex-col items-center justify-center h-full gap-3 text-center px-6 w-full">
               <div className="w-16 h-16 rounded-full bg-muted/40 flex items-center justify-center">

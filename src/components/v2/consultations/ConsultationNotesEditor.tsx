@@ -15,13 +15,13 @@ interface ConsultationNotesEditorProps {
   clinicUid: string;
   consultation: Detail;
   myHPs: NonNullable<GetHPsType>;
-  onRefresh: () => void;
+  onPatchDetail: (patch: Partial<Detail>) => void;
 }
 
 export default function ConsultationNotesEditor({
   consultation,
   myHPs,
-  onRefresh,
+  onPatchDetail,
 }: ConsultationNotesEditorProps) {
   const sections =
     consultation.ConsultationTicketAttribute?.NoteTemplate?.NoteSections ?? [];
@@ -58,9 +58,24 @@ export default function ConsultationNotesEditor({
       hpId: myActiveHp.id,
     });
     setSavingSection(null);
-    if (result.status) {
+    if (result.status && result.data) {
       toast.success(result.message ?? "Note saved");
-      onRefresh();
+      // Patch only the notes array — no full reload needed
+      const saved = result.data;
+      const existing = consultation.ConsultationNotes;
+      const idx = existing.findIndex((n) => n.section === saved.section && n.hpId === saved.hpId);
+      const patch = {
+        id: saved.id,
+        section: saved.section,
+        content: saved.content,
+        hpId: saved.hpId,
+        showOnPatient: saved.showOnPatient,
+      } satisfies (typeof existing)[number];
+      onPatchDetail({
+        ConsultationNotes: idx >= 0
+          ? existing.map((n, i) => (i === idx ? patch : n))
+          : [...existing, patch],
+      });
     } else {
       toast.error(result.message ?? "Failed to save note");
     }

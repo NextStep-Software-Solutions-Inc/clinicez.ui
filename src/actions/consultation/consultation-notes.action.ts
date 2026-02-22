@@ -2,7 +2,6 @@
 
 import prisma from "@lib/prisma"
 import { getCachedSession } from "@actions/session.action";
-import { getHPsAction } from "@actions/hp.actions";
 import { capitalize, hasCodeProperty } from "@lib/utils";
 
 type UpsertConsultationNotePayload = {
@@ -18,23 +17,28 @@ export const upsertConsultationNotesAction = async (data: UpsertConsultationNote
     if (!session) throw new Error("User not authenticated.")
 
     const { consultationTicketId, section, content, hpId } = data
+
+    // Authorize: verify the current user's HP is assigned to this consultation ticket
+    const ticket = await prisma.consultationTicket.findFirst({
+      where: {
+        id: consultationTicketId,
+        ConsultationTicketHPs: {
+          some: {
+            HealthCareProvider: {
+              User: { userId: session.user.sub }
+            }
+          }
+        }
+      }
+    })
+    if (!ticket) throw new Error("Consultation record not found or you do not have permission to update it")
+
     const updatedNotes = await prisma.consultationNote.upsert({
       where: {
         unique_consultation_section: {
           consultationTicketId,
           section,
           hpId
-        },
-        ConsultationTicket: {
-          ConsultationTicketHPs: {
-            some: {
-              HealthCareProvider: {
-                User: {
-                  userId: session.user.sub
-                }
-              }
-            }
-          }
         }
       },
       create: { consultationTicketId, section, content, hpId },
@@ -67,24 +71,29 @@ export const upsertConsultationNotesSettingsAction = async (data: FormData) => {
     const hpId = Number(data.get('hpId'))
     data.delete('consultationTicketId')
     data.delete('hpId')
+
+    // Authorize: verify the current user's HP is assigned to this consultation ticket
+    const ticket = await prisma.consultationTicket.findFirst({
+      where: {
+        id: consultationTicketId,
+        ConsultationTicketHPs: {
+          some: {
+            HealthCareProvider: {
+              User: { userId: session.user.sub }
+            }
+          }
+        }
+      }
+    })
+    if (!ticket) throw new Error("Consultation record not found or you do not have permission to update it")
+
     await prisma.$transaction(async (prisma) => {
       const notes = Object.fromEntries(data)
       for (const [section, showOnPatient] of Object.entries(notes)) {
         const show = showOnPatient === "true"
         await prisma.consultationNote.upsert({
           where: {
-            unique_consultation_section: { consultationTicketId, section, hpId },
-            ConsultationTicket: {
-              ConsultationTicketHPs: {
-                some: {
-                  HealthCareProvider: {
-                    User: {
-                      userId: session.user.sub
-                    }
-                  }
-                }
-              }
-            }
+            unique_consultation_section: { consultationTicketId, section, hpId }
           },
           create: {
             consultationTicketId,

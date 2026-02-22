@@ -220,6 +220,35 @@ export const getPatientConsultationDetailAction = withErrorHandling(
             },
           },
         },
+        HeartStationRequests: {
+          where: { isActive: true, deletedAt: null },
+          orderBy: { createdAt: "desc" },
+          select: {
+            id: true,
+            serialNumber: true,
+            impression: true,
+            history: true,
+            reason: true,
+            createdAt: true,
+            HeartStationRequestProcedures: {
+              select: { HeartStationProcedure: { select: { name: true } } },
+            },
+          },
+        },
+        ClinicReferralSlips: {
+          where: { isActive: true, deletedAt: null },
+          orderBy: { createdAt: "desc" },
+          select: {
+            id: true,
+            serialNumber: true,
+            referredTo: true,
+            reason: true,
+            history: true,
+            impression: true,
+            recommendation: true,
+            createdAt: true,
+          },
+        },
         Appointment: {
           select: {
             id: true,
@@ -249,6 +278,98 @@ export const getPatientConsultationDetailAction = withErrorHandling(
 
     if (!ticket) throw new Error("Consultation ticket not found");
     return { message: "Consultation detail fetched", data: ticket };
+  }
+);
+
+/** Fetch only the MedicalCertificates section for a ticket (same shape as detail). */
+export const getConsultationCertsForTicketAction = withErrorHandling(
+  async ({ ticketId }: { ticketId: number }) => {
+    const session = await getCachedSession();
+    if (!session) throw new Error("Unauthorized");
+    const data = await prisma.clinicMedicalCertificate.findMany({
+      where: { consultationTicketId: ticketId, isActive: true, deletedAt: null },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true, serialNumber: true, remarks: true, impression: true, createdAt: true,
+        Reason: { select: { name: true } },
+        Finding: { select: { name: true } },
+        Classification: { select: { name: true } },
+        HealthCareProvider: {
+          select: {
+            HPProfile: { select: { title: true, name: true } },
+            User: { select: { firstName: true, lastName: true } },
+          },
+        },
+      },
+    });
+    return { message: "Certificates fetched", data };
+  }
+);
+
+/** Fetch only the Prescriptions section for a ticket (same shape as detail). */
+export const getConsultationPrescriptionsForTicketAction = withErrorHandling(
+  async ({ ticketId }: { ticketId: number }) => {
+    const session = await getCachedSession();
+    if (!session) throw new Error("Unauthorized");
+    const data = await prisma.prescription.findMany({
+      where: { consultationTicketId: ticketId, isActive: true, isArchived: false },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true, serialNumber: true, name: true, remarks: true, createdAt: true,
+        HealthcareProvider: {
+          select: {
+            HPProfile: { select: { title: true, name: true } },
+            User: { select: { firstName: true, lastName: true } },
+          },
+        },
+        Medicines: {
+          where: { isActive: true },
+          select: { id: true, name: true, brandName: true, genericName: true, dosage: true, frequency: true, unit: true, duration: true, qty: true, notes: true },
+        },
+      },
+    });
+    return { message: "Prescriptions fetched", data };
+  }
+);
+
+/** Fetch only LaboratoryRequests + ImagingRequests + HeartStationRequests for a ticket (same shapes as detail). */
+export const getConsultationDiagnosticsForTicketAction = withErrorHandling(
+  async ({ ticketId }: { ticketId: number }) => {
+    const session = await getCachedSession();
+    if (!session) throw new Error("Unauthorized");
+    const [labs, imaging, heartStation] = await Promise.all([
+      prisma.clinicLaboratoryRequest.findMany({
+        where: { consultationTicketId: ticketId, isActive: true, deletedAt: null },
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true, serialNumber: true, impression: true, createdAt: true,
+          LaboratoryRequestProcedures: {
+            select: { LaboratoryProcedure: { select: { name: true } } },
+          },
+        },
+      }),
+      prisma.clinicImagingRequest.findMany({
+        where: { consultationTicketId: ticketId, isActive: true, deletedAt: null },
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true, serialNumber: true, impression: true, history: true, reason: true, createdAt: true,
+          ImagingRequestProcedures: {
+            select: { ImagingProcedure: { select: { name: true } } },
+          },
+        },
+      }),
+      prisma.clinicHeartStationRequest.findMany({
+        where: { consultationTicketId: ticketId, isActive: true, deletedAt: null },
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true, serialNumber: true, impression: true, history: true, reason: true, createdAt: true,
+          HeartStationRequestProcedures: {
+            select: { HeartStationProcedure: { select: { name: true } } },
+          },
+        },
+      }),
+    ]);
+    return { message: "Diagnostics fetched", data: { labs, imaging, heartStation } };
   }
 );
 
@@ -493,5 +614,55 @@ export const getClinicImagingProceduresAction = withErrorHandling(
       },
     });
     return { message: "Imaging procedures fetched", data: procedures };
+  }
+);
+
+export type GetClinicHeartStationProcedures = Awaited<ReturnType<typeof getClinicHeartStationProceduresAction>>;
+export const getClinicHeartStationProceduresAction = withErrorHandling(
+  async ({ clinicUid, search }: { clinicUid: string; search?: string }) => {
+    const session = await getCachedSession();
+    if (!session) throw new Error("Unauthorized");
+
+    const sanitizedSearch = search?.trim().slice(0, 100);
+    const clinic = await prisma.clinic.findUnique({ where: { clinicUid }, select: { id: true } });
+    if (!clinic) throw new Error("Clinic not found");
+
+    const procedures = await prisma.clinicHeartStationProcedure.findMany({
+      where: {
+        clinicId: clinic.id,
+        isActive: true,
+        ...(sanitizedSearch ? { name: { contains: sanitizedSearch, mode: "insensitive" } } : {}),
+      },
+      take: 50,
+      select: {
+        id: true,
+        name: true,
+        description: true,
+      },
+    });
+    return { message: "Heart station procedures fetched", data: procedures };
+  }
+);
+
+/** Fetch only ReferralSlips for a ticket. */
+export const getConsultationReferralsForTicketAction = withErrorHandling(
+  async ({ ticketId }: { ticketId: number }) => {
+    const session = await getCachedSession();
+    if (!session) throw new Error("Unauthorized");
+    const data = await prisma.clinicReferralSlip.findMany({
+      where: { consultationTicketId: ticketId, isActive: true, deletedAt: null },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        serialNumber: true,
+        referredTo: true,
+        reason: true,
+        history: true,
+        impression: true,
+        recommendation: true,
+        createdAt: true,
+      },
+    });
+    return { message: "Referral slips fetched", data };
   }
 );

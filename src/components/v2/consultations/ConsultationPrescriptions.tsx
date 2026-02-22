@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Plus, Pill, Trash2, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Pill, Trash2, ChevronDown, ChevronUp, FileDown, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,13 +10,18 @@ import { toast } from "sonner";
 import dayjs from "@/lib/day-utils";
 import {
   createPrescriptionAction,
+  deletePrescriptionAction,
 } from "@/actions/clinics/clinical-record/prescription.action";
 import {
   createMedicineAction,
   deleteMedicineAction,
 } from "@/actions/clinics/clinical-record/medicine.action";
+import {
+  getConsultationPrescriptionsForTicketAction,
+} from "@/actions/consultation/patient-consultations.action";
 import type { GetPatientConsultationDetail } from "@/actions/consultation/patient-consultations.action";
 import type { GetHPsType } from "@/actions/hp.actions";
+import DownloadPrescriptionAction from "@/components/clinic/clinical-records/prescription/DownloadPrescriptionAction";
 
 type Detail = NonNullable<GetPatientConsultationDetail["data"]>;
 type Prescription = NonNullable<Detail["Prescriptions"]>[number];
@@ -33,7 +38,7 @@ interface ConsultationPrescriptionsProps {
   patient: PatientInfo;
   consultation: Detail;
   myHPs: NonNullable<GetHPsType>;
-  onRefresh: () => void;
+  onPatchDetail: (patch: Partial<Detail>) => void;
 }
 
 interface NewMedicineForm {
@@ -67,12 +72,13 @@ export default function ConsultationPrescriptions({
   patient,
   consultation,
   myHPs,
-  onRefresh,
+  onPatchDetail,
 }: ConsultationPrescriptionsProps) {
   const ticketHpIds = consultation.ConsultationTicketHPs.map((h) => h.HealthCareProvider.id);
   const myActiveHp = myHPs.find((hp) => ticketHpIds.includes(hp.id)) ?? myHPs[0] ?? null;
 
   const [showForm, setShowForm] = useState(false);
+  const [replacingId, setReplacingId] = useState<number | null>(null);
   const [rxName, setRxName] = useState("");
   const [rxRemarks, setRxRemarks] = useState("");
   const [medicines, setMedicines] = useState<NewMedicineForm[]>([{ ...emptyMedicine }]);
@@ -89,6 +95,14 @@ export default function ConsultationPrescriptions({
     setMedicines((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const openReplaceForm = (rxId: number) => {
+    setReplacingId(rxId);
+    setRxName("");
+    setRxRemarks("");
+    setMedicines([{ ...emptyMedicine }]);
+    setShowForm(true);
+  };
+
   const handleCreate = () => {
     if (!myActiveHp) {
       toast.error("No HP profile found for this consultation");
@@ -99,6 +113,14 @@ export default function ConsultationPrescriptions({
       return;
     }
     startTransition(async () => {
+      // If replacing, void the old prescription first
+      if (replacingId !== null) {
+        const voidResult = await deletePrescriptionAction({ prescriptionId: replacingId });
+        if (!voidResult.status) {
+          toast.error(voidResult.message ?? "Failed to void existing prescription");
+          return;
+        }
+      }
       // 1. Create prescription
       const rxResult = await createPrescriptionAction({
         clinicUid,
@@ -130,12 +152,17 @@ export default function ConsultationPrescriptions({
           notes: med.notes || undefined,
         });
       }
-      toast.success("Prescription created");
+      toast.success(replacingId ? "Prescription replaced" : "Prescription created");
       setShowForm(false);
+      setReplacingId(null);
       setRxName("");
       setRxRemarks("");
       setMedicines([{ ...emptyMedicine }]);
-      onRefresh();
+      // Patch only the prescriptions section
+      const prescriptionsResult = await getConsultationPrescriptionsForTicketAction({ ticketId: consultation.id });
+      if (prescriptionsResult.status && prescriptionsResult.data) {
+        onPatchDetail({ Prescriptions: prescriptionsResult.data });
+      }
     });
   };
 
@@ -144,7 +171,13 @@ export default function ConsultationPrescriptions({
       const result = await deleteMedicineAction({ medicineId });
       if (result.status) {
         toast.success("Medicine removed");
-        onRefresh();
+        // Remove medicine in-place — no server re-fetch needed
+        onPatchDetail({
+          Prescriptions: consultation.Prescriptions.map((rx) => ({
+            ...rx,
+            Medicines: rx.Medicines?.filter((m) => m.id !== medicineId) ?? [],
+          })),
+        });
       } else {
         toast.error(result.message ?? "Failed to remove medicine");
       }
@@ -177,7 +210,7 @@ export default function ConsultationPrescriptions({
       {showForm && (
         <div className="rounded-lg border border-border/50 bg-muted/20 p-4 space-y-4">
           <h4 className="text-xs font-semibold text-foreground/80 uppercase tracking-wide">
-            New Prescription
+            {replacingId ? "Replace Prescription" : "New Prescription"}
           </h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
@@ -307,6 +340,7 @@ export default function ConsultationPrescriptions({
               className="h-7 text-xs"
               onClick={() => {
                 setShowForm(false);
+                setReplacingId(null);
                 setMedicines([{ ...emptyMedicine }]);
               }}
             >
@@ -318,7 +352,7 @@ export default function ConsultationPrescriptions({
               disabled={isPending}
               onClick={handleCreate}
             >
-              {isPending ? "Saving…" : "Save Prescription"}
+              {isPending ? "Saving…" : replacingId ? "Replace Prescription" : "Save Prescription"}
             </Button>
           </div>
         </div>
@@ -340,6 +374,7 @@ export default function ConsultationPrescriptions({
                 setExpandedRx((prev) => ({ ...prev, [rx.id]: !prev[rx.id] }))
               }
               onDeleteMedicine={handleDeleteMedicine}
+              onReplace={() => openReplaceForm(rx.id)}
             />
           ))}
         </div>
@@ -371,11 +406,13 @@ function PrescriptionCard({
   expanded,
   onToggle,
   onDeleteMedicine,
+  onReplace,
 }: {
   rx: Prescription;
   expanded: boolean;
   onToggle: () => void;
   onDeleteMedicine: (id: number) => void;
+  onReplace: () => void;
 }) {
   const hpName = rx.HealthcareProvider?.HPProfile?.name
     ? `${rx.HealthcareProvider.HPProfile.title ?? ""} ${rx.HealthcareProvider.HPProfile.name}`.trim()
@@ -383,33 +420,48 @@ function PrescriptionCard({
 
   return (
     <div className="rounded-lg border border-border/50 bg-background overflow-hidden">
-      <button
-        type="button"
-        onClick={onToggle}
-        className="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors text-left"
-      >
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <Pill className="h-3.5 w-3.5 text-primary shrink-0" />
-            <span className="text-sm font-medium text-foreground truncate">
-              {rx.name || `Prescription #${rx.id}`}
-            </span>
-            <Badge variant="outline" className="text-[10px] h-4 px-1.5">
-              {rx.Medicines?.length ?? 0} item{(rx.Medicines?.length ?? 0) !== 1 ? "s" : ""}
-            </Badge>
+      <div className="flex items-center">
+        <button
+          type="button"
+          onClick={onToggle}
+          className="flex-1 flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors text-left min-w-0"
+        >
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <Pill className="h-3.5 w-3.5 text-primary shrink-0" />
+              <span className="text-sm font-medium text-foreground truncate">
+                {rx.name || `Prescription #${rx.id}`}
+              </span>
+              <Badge variant="outline" className="text-[10px] h-4 px-1.5">
+                {rx.Medicines?.length ?? 0} item{(rx.Medicines?.length ?? 0) !== 1 ? "s" : ""}
+              </Badge>
+            </div>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {hpName && <span>{hpName} · </span>}
+              {dayjs(rx.createdAt).format("MMM D, YYYY")}
+              {rx.serialNumber && <span className="ml-1 font-mono text-[10px]">#{rx.serialNumber}</span>}
+            </p>
           </div>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            {hpName && <span>{hpName} · </span>}
-            {dayjs(rx.createdAt).format("MMM D, YYYY")}
-            {rx.serialNumber && <span className="ml-1 font-mono text-[10px]">#{rx.serialNumber}</span>}
-          </p>
+          {expanded ? (
+            <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0" />
+          ) : (
+            <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+          )}
+        </button>
+        <div className="shrink-0 pr-3 flex items-center gap-1">
+          <Button
+            size="sm" variant="ghost" className="h-7 w-7 p-0" title="Void & Replace"
+            onClick={(e) => { e.stopPropagation(); onReplace(); }}
+          >
+            <RefreshCw className="h-3.5 w-3.5 text-amber-500" />
+          </Button>
+          <DownloadPrescriptionAction prescription={{ id: rx.id }}>
+            <Button size="sm" variant="ghost" className="h-7 w-7 p-0" title="Preview PDF">
+              <FileDown className="h-3.5 w-3.5" />
+            </Button>
+          </DownloadPrescriptionAction>
         </div>
-        {expanded ? (
-          <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0" />
-        ) : (
-          <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
-        )}
-      </button>
+      </div>
 
       {expanded && (
         <div className="px-4 pb-4">

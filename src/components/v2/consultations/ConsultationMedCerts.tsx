@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition, useEffect } from "react";
-import { Plus, Award } from "lucide-react";
+import { Plus, Award, FileDown, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,9 +19,14 @@ import {
   getMedicalCertificateReasonsAction,
   getMedicalCertificateFindingsAction,
   getMedicalCertificateClassificationsAction,
+  deleteMedicalCertificateAction,
 } from "@/actions/clinics/clinical-record/medical-certificate.action";
+import {
+  getConsultationCertsForTicketAction,
+} from "@/actions/consultation/patient-consultations.action";
 import type { GetPatientConsultationDetail } from "@/actions/consultation/patient-consultations.action";
 import type { GetHPsType } from "@/actions/hp.actions";
+import DownloadMedicalCertificateAction from "@/components/medical-certificate/DownloadMedicalCertificateAction";
 
 type Detail = NonNullable<GetPatientConsultationDetail["data"]>;
 type MedCert = NonNullable<Detail["MedicalCertificates"]>[number];
@@ -38,7 +43,7 @@ interface ConsultationMedCertsProps {
   patient: PatientInfo;
   consultation: Detail;
   myHPs: NonNullable<GetHPsType>;
-  onRefresh: () => void;
+  onPatchDetail: (patch: Partial<Detail>) => void;
 }
 
 type Reason = { id: number; name: string; documentTemplateId: number };
@@ -50,12 +55,14 @@ export default function ConsultationMedCerts({
   patient,
   consultation,
   myHPs,
-  onRefresh,
+  onPatchDetail,
 }: ConsultationMedCertsProps) {
   const ticketHpIds = consultation.ConsultationTicketHPs.map((h) => h.HealthCareProvider.id);
   const myActiveHp = myHPs.find((hp) => ticketHpIds.includes(hp.id)) ?? myHPs[0] ?? null;
 
   const [showForm, setShowForm] = useState(false);
+  /** id of cert being replaced — void it before showing the form */
+  const [replacingId, setReplacingId] = useState<number | null>(null);
   const [reasons, setReasons] = useState<Reason[]>([]);
   const [findings, setFindings] = useState<Finding[]>([]);
   const [classifications, setClassifications] = useState<Classification[]>([]);
@@ -82,6 +89,16 @@ export default function ConsultationMedCerts({
     });
   }, [showForm]);
 
+  const openReplaceForm = (certId: number) => {
+    setReplacingId(certId);
+    setReasonId(null);
+    setFindingId(null);
+    setClassificationId(null);
+    setRemarks("");
+    setImpression("");
+    setShowForm(true);
+  };
+
   const handleCreate = () => {
     if (!myActiveHp) { toast.error("No HP profile found"); return; }
     if (!reasonId) { toast.error("Select a reason"); return; }
@@ -102,6 +119,14 @@ export default function ConsultationMedCerts({
     }
 
     startTransition(async () => {
+      // If replacing, void the old cert first
+      if (replacingId !== null) {
+        const voidResult = await deleteMedicalCertificateAction({ medicalCertificateId: replacingId });
+        if (!voidResult.status) {
+          toast.error(voidResult.message ?? "Failed to void existing certificate");
+          return;
+        }
+      }
       const result = await createMedicalCertificateAction({
         clinicUid,
         patientId: patient.clinicPatientId,
@@ -115,14 +140,19 @@ export default function ConsultationMedCerts({
         consultationTicketId: consultation.id,
       });
       if (result.status) {
-        toast.success(result.message ?? "Certificate created");
+        toast.success(result.message ?? (replacingId ? "Certificate replaced" : "Certificate created"));
         setShowForm(false);
+        setReplacingId(null);
         setReasonId(null);
         setFindingId(null);
         setClassificationId(null);
         setRemarks("");
         setImpression("");
-        onRefresh();
+        // Patch only the certs section
+        const certsResult = await getConsultationCertsForTicketAction({ ticketId: consultation.id });
+        if (certsResult.status && certsResult.data) {
+          onPatchDetail({ MedicalCertificates: certsResult.data });
+        }
       } else {
         toast.error(result.message ?? "Failed to create certificate");
       }
@@ -155,7 +185,7 @@ export default function ConsultationMedCerts({
       {showForm && (
         <div className="rounded-lg border border-border/50 bg-muted/20 p-4 space-y-3">
           <h4 className="text-xs font-semibold text-foreground/80 uppercase tracking-wide">
-            Issue Medical Certificate
+            {replacingId ? "Replace Medical Certificate" : "Issue Medical Certificate"}
           </h4>
 
           {loadingOptions ? (
@@ -237,7 +267,7 @@ export default function ConsultationMedCerts({
           )}
 
           <div className="flex justify-end gap-2">
-            <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setShowForm(false)}>
+            <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => { setShowForm(false); setReplacingId(null); }}>
               Cancel
             </Button>
             <Button
@@ -246,7 +276,7 @@ export default function ConsultationMedCerts({
               disabled={isPending || loadingOptions}
               onClick={handleCreate}
             >
-              {isPending ? "Issuing…" : "Issue Certificate"}
+              {isPending ? "Issuing…" : replacingId ? "Replace Certificate" : "Issue Certificate"}
             </Button>
           </div>
         </div>
@@ -260,7 +290,7 @@ export default function ConsultationMedCerts({
       ) : (
         <div className="space-y-2">
           {consultation.MedicalCertificates.map((cert) => (
-            <CertCard key={cert.id} cert={cert} />
+            <CertCard key={cert.id} cert={cert} onReplace={() => openReplaceForm(cert.id)} />
           ))}
         </div>
       )}
@@ -268,7 +298,7 @@ export default function ConsultationMedCerts({
   );
 }
 
-function CertCard({ cert }: { cert: MedCert }) {
+function CertCard({ cert, onReplace }: { cert: MedCert; onReplace: () => void }) {
   return (
     <div className="rounded-lg border border-border/50 bg-background px-4 py-3">
       <div className="flex items-start gap-3">
@@ -290,6 +320,19 @@ function CertCard({ cert }: { cert: MedCert }) {
           {cert.impression && (
             <p className="text-xs text-muted-foreground mt-1">{cert.impression}</p>
           )}
+        </div>
+        <div className="flex items-center gap-1 shrink-0">
+          <Button
+            size="sm" variant="ghost" className="h-7 w-7 p-0" title="Void & Replace"
+            onClick={onReplace}
+          >
+            <RefreshCw className="h-3.5 w-3.5 text-amber-500" />
+          </Button>
+          <DownloadMedicalCertificateAction certificate={{ id: cert.id }}>
+            <Button size="sm" variant="ghost" className="h-7 w-7 p-0" title="Preview PDF">
+              <FileDown className="h-3.5 w-3.5" />
+            </Button>
+          </DownloadMedicalCertificateAction>
         </div>
       </div>
     </div>

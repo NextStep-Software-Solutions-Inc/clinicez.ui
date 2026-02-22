@@ -103,9 +103,9 @@ export default function ConsultationsPageClient({
     [loadDetail]
   );
 
-  const refreshDetail = useCallback(() => {
-    if (selectedId) loadDetail(selectedId);
-  }, [selectedId, loadDetail]);
+  const handlePatchDetail = useCallback((patch: Partial<ConsultationDetail>) => {
+    setActiveDetail((prev) => (prev ? { ...prev, ...patch } : prev));
+  }, []);
 
   return (
     <div className="flex flex-col h-[calc(100dvh-16rem)] overflow-hidden">
@@ -186,21 +186,21 @@ export default function ConsultationsPageClient({
             mobileView === "list" ? "hidden md:flex" : "flex"
           }`}
         >
-          {loadingDetail ? (
+          {activeDetail ? (
+            <ConsultationWorkspace
+              clinicUid={clinicUid}
+              patient={patient}
+              consultation={activeDetail}
+              myHPs={myHPs}
+              onPatchDetail={handlePatchDetail}
+            />
+          ) : loadingDetail ? (
             <div className="flex items-center justify-center h-full w-full">
               <div className="flex flex-col items-center gap-3">
                 <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
                 <p className="text-sm text-muted-foreground">Loading consultation…</p>
               </div>
             </div>
-          ) : activeDetail ? (
-            <ConsultationWorkspace
-              clinicUid={clinicUid}
-              patient={patient}
-              consultation={activeDetail}
-              myHPs={myHPs}
-              onRefresh={refreshDetail}
-            />
           ) : (
             <div className="flex flex-col items-center justify-center h-full gap-3 text-center px-6 w-full">
               <div className="w-16 h-16 rounded-full bg-muted/40 flex items-center justify-center">

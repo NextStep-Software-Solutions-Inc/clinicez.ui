@@ -1,4 +1,4 @@
-import dayjs from "@/lib/day-utils";
+import dayjs from "@lib/day-utils";
 
 type PrepareHeartStationRequestPayload = {
   template: string;
@@ -7,20 +7,20 @@ type PrepareHeartStationRequestPayload = {
     age: string;
     gender: string;
     address: string;
-    birthdate: string;
+    birthdate?: string;
   };
   doctor: {
     name: string;
     licenseNo: string;
     ptrNo: string;
-    address: string;
+    address?: string;
     eSignatureBase64?: string;
   };
   request: {
     diagnostics: string;
-    history: string;
-    impression: string;
-    requestFor: string;
+    history?: string;
+    impression?: string;
+    requestFor?: string;
     createdAt: Date | string;
   };
 };
@@ -28,7 +28,7 @@ type PrepareHeartStationRequestPayload = {
 export const prepareHeartStationRequest = (payload: PrepareHeartStationRequestPayload): string => {
   const { template, patient, doctor, request } = payload;
   const { name, age, gender, address, birthdate } = patient;
-  const { name: doctorName, licenseNo, ptrNo, address: doctorAddress, eSignatureBase64 } = doctor;
+  const { name: doctorName, licenseNo, ptrNo, eSignatureBase64 } = doctor;
   const { diagnostics, history, impression, requestFor, createdAt } = request;
 
   const requestDate = dayjs(createdAt).format("MM/DD/YYYY");
@@ -39,24 +39,22 @@ export const prepareHeartStationRequest = (payload: PrepareHeartStationRequestPa
     "@{age}": age,
     "@{gender}": gender,
     "@{address}": address,
-    "@{birthdate}": birthdate,
+    "@{birthdate}": birthdate ?? "",
     "@{requestDate}": requestDate,
     "@{diagnostics}": diagnostics,
-    "@{history}": history || "No history provided.",
-    "@{impression}": impression || "No impression provided.",
-    "@{requestFor}": requestFor || "No request reason provided.",
+    "@{history}": history ?? "",
+    "@{impression}": impression ?? "",
+    "@{requestFor}": requestFor ?? "",
     "@{doctorName}": doctorName,
     "@{licenseNo}": licenseNo,
     "@{ptrNo}": ptrNo,
-    "@{doctorAddress}": doctorAddress,
+    "@{eSignatureUrl}": eSignatureBase64 ?? "",
     "@{createdDateTime}": createdDateTime,
-    "@{eSignatureUrl}": eSignatureBase64 || "",
   };
 
-  let outputTemplate = template;
+  let output = template;
   Object.entries(replacements).forEach(([placeholder, value]) => {
-    outputTemplate = outputTemplate.replaceAll(placeholder, value);
+    output = output.replaceAll(placeholder, value);
   });
-
-  return outputTemplate;
+  return output;
 };

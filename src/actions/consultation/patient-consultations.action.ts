@@ -252,6 +252,128 @@ export const getPatientConsultationDetailAction = withErrorHandling(
   }
 );
 
+/**
+ * Clinic-wide consultation queue — returns all consultation tickets the
+ * current user is allowed to see, enriched with patient identity so the
+ * split-panel workspace can be rendered without a separate patient lookup.
+ */
+export type GetClinicConsultationQueue = Awaited<ReturnType<typeof getClinicConsultationQueueAction>>;
+export const getClinicConsultationQueueAction = withErrorHandling(
+  async ({
+    clinicUid,
+    status,
+    hpOnly,
+  }: {
+    clinicUid: string;
+    /** Filter by ticket status (e.g. "PROCESSING" | "RESOLVED"). Omit for all. */
+    status?: string;
+    /** When true, only returns tickets where the current user is a consulting HP. */
+    hpOnly?: boolean;
+  }) => {
+    const session = await getCachedSession();
+    if (!session) throw new Error("Unauthorized");
+
+    const tickets = await prisma.consultationTicket.findMany({
+      where: {
+        isActive: true,
+        isArchived: false,
+        Clinic: { clinicUid },
+        ...(status ? { ConsultationTicketAttribute: { status } } : {}),
+        ...(hpOnly
+          ? {
+              ConsultationTicketHPs: {
+                some: {
+                  HealthCareProvider: {
+                    User: { userId: session.user.sub },
+                  },
+                },
+              },
+            }
+          : {}),
+      },
+      orderBy: { createdAt: "desc" },
+      take: 200,
+      select: {
+        id: true,
+        subject: true,
+        caseNumber: true,
+        createdAt: true,
+        updatedAt: true,
+        isArchived: true,
+        ConsultationTicketAttribute: {
+          select: { status: true },
+        },
+        ConsultationTicketHPs: {
+          select: {
+            HealthCareProvider: {
+              select: {
+                id: true,
+                HPProfile: { select: { title: true, name: true, suffix: true } },
+                User: { select: { firstName: true, lastName: true } },
+                HPType: { select: { name: true } },
+              },
+            },
+          },
+        },
+        ConsultationNotes: { select: { id: true, section: true } },
+        Prescriptions: { where: { isActive: true }, select: { id: true } },
+        MedicalCertificates: {
+          where: { isActive: true, deletedAt: null },
+          select: { id: true },
+        },
+        LaboratoryRequests: {
+          where: { isActive: true, deletedAt: null },
+          select: { id: true },
+        },
+        ImagingRequests: {
+          where: { isActive: true, deletedAt: null },
+          select: { id: true },
+        },
+        Appointment: {
+          select: {
+            id: true,
+            subject: true,
+            complaint: true,
+            AppointmentAttribute: {
+              select: {
+                status: true,
+                date: true,
+                timeStart: true,
+                AppointmentType: { select: { name: true } },
+                Service: { select: { name: true } },
+              },
+            },
+            Requesters: {
+              take: 1,
+              select: {
+                User: {
+                  select: {
+                    id: true,
+                    userId: true,
+                    firstName: true,
+                    middleName: true,
+                    lastName: true,
+                    suffix: true,
+                    dob: true,
+                    gender: true,
+                    ClinicPatients: {
+                      where: { Clinic: { clinicUid }, isActive: true, deletedAt: null },
+                      take: 1,
+                      select: { id: true },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return { message: "Clinic consultation queue fetched", data: tickets };
+  }
+);
+
 export type GetClinicSystemsForPatient = Awaited<ReturnType<typeof getClinicSystemsAction>>;
 export const getClinicSystemsAction = withErrorHandling(async (clinicUid: string) => {
   const session = await getCachedSession();

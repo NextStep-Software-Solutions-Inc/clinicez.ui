@@ -50,6 +50,7 @@ import {
 } from "@/actions/appointments/pre-assessment-note.action";
 import { STATUS_CONFIG } from "./AppointmentCard";
 import { isWalkInAppointment, getAppointmentPatientName, getAppointmentInitials } from "./appointment-utils";
+import { MarkdownRenderer } from "@/components/markdown/MarkdownRenderer";
 
 type Appointment = NonNullable<GetAppointments["data"]>[number];
 type SubPanel = "confirm" | "assign" | "preAssessment" | "tag";
@@ -376,18 +377,18 @@ export function AppointmentDetailSheet({
                           </div>
                           <div>
                             <p className="text-xs text-muted-foreground">Assessment</p>
-                            <p className="text-sm whitespace-pre-wrap">{note.assessment}</p>
+                            <MarkdownRenderer content={note.assessment} className="text-sm" />
                           </div>
                           {note.homeInstructions && (
                             <div>
                               <p className="text-xs text-muted-foreground">Home Instructions</p>
-                              <p className="text-sm whitespace-pre-wrap">{note.homeInstructions}</p>
+                              <MarkdownRenderer content={note.homeInstructions} className="text-sm" />
                             </div>
                           )}
                           {note.remarks && (
                             <div>
                               <p className="text-xs text-muted-foreground">Remarks</p>
-                              <p className="text-sm whitespace-pre-wrap">{note.remarks}</p>
+                              <MarkdownRenderer content={note.remarks} className="text-sm" />
                             </div>
                           )}
                         </div>

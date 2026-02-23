@@ -445,6 +445,47 @@ export const setMembershipRequestStatusAction = withErrorHandling(
   }
 );
 
+export const updateOrgMemberRoleAction = withErrorHandling(
+  async (id: number, orgRoleId: number) => {
+    const session = await getCachedSession();
+    if (!session) throw new Error("User not authenticated.");
+
+    const userId = session.user.sub as string;
+
+    const membership = await prisma.organizationMember.findUnique({
+      where: { id },
+      select: { Organization: { select: { orgUid: true } } }
+    });
+
+    if (!membership) throw new Error("Membership not found");
+
+    const [isSuperAdmin, hasPermission] = await Promise.all([
+      isSuperAdminAction(),
+      hasOrgPermissionAction({
+        userId,
+        orgUid: membership.Organization.orgUid,
+        permissionName: PERMISSIONS.ORGANIZATION["UPDATE:ORG:MEMBERS"].name
+      })
+    ]);
+
+    if (!isSuperAdmin && !hasPermission)
+      throw new Error("You do not have permission to update member roles");
+
+    await prisma.organizationMember.update({
+      where: { id },
+      data: { OrganizationRole: { connect: { id: orgRoleId } } }
+    });
+
+    return { status: true, message: "Member role updated successfully", data: null };
+  },
+  async (error) => {
+    if (error instanceof Error && "code" in error && (error as { code: string }).code === "P2002")
+      return "Member already has a membership with the selected role in this organization";
+    if (error instanceof Error) return error.message;
+    return "Error updating member role";
+  }
+);
+
 export const deleteMembershipAction = async (id: number) => {
   try {
     const session = await getCachedSession();

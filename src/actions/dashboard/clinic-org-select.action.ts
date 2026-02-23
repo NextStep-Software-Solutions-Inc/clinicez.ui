@@ -6,11 +6,13 @@ import { getCachedSession } from "@actions/session.action";
 export interface ClinicOption {
   clinicUid: string;
   name: string;
+  canAccessDashboard: boolean;
 }
 
 export interface OrganizationOption {
   orgUid: string;
   name: string;
+  canAccessDashboard: boolean;
 }
 
 /**
@@ -33,6 +35,9 @@ export async function getClinicSelectOptionsAction(): Promise<ClinicOption[]> {
       Clinic: {
         select: { clinicUid: true, name: true },
       },
+      Role: {
+        select: { canAccessDashboard: true },
+      },
     },
     orderBy: {
       Clinic: {
@@ -44,6 +49,7 @@ export async function getClinicSelectOptionsAction(): Promise<ClinicOption[]> {
   return clinicMemberships.map((m) => ({
     clinicUid: m.Clinic.clinicUid,
     name: m.Clinic.name,
+    canAccessDashboard: m.Role.canAccessDashboard,
   }));
 }
 
@@ -93,6 +99,8 @@ export async function getOrgAssociatedClinicOptionsAction(): Promise<ClinicOptio
         clinics.push({
           clinicUid: clinicOrg.Clinic.clinicUid,
           name: clinicOrg.Clinic.name,
+          // This action is for appointment booking; dashboard access is not relevant here
+          canAccessDashboard: true,
         });
       }
     }
@@ -119,6 +127,9 @@ export async function getOrgSelectOptionsAction(): Promise<OrganizationOption[]>
       Organization: {
         select: { orgUid: true, name: true },
       },
+      OrganizationRole: {
+        select: { canAccessDashboard: true },
+      },
     },
     orderBy: {
       Organization: {
@@ -130,5 +141,6 @@ export async function getOrgSelectOptionsAction(): Promise<OrganizationOption[]>
   return orgMemberships.map((m) => ({
     orgUid: m.Organization.orgUid,
     name: m.Organization.name,
+    canAccessDashboard: m.OrganizationRole.canAccessDashboard,
   }));
 }

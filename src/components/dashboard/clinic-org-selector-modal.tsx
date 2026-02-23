@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Building2, Stethoscope, Loader2, ArrowRight, CheckCircle2 } from "lucide-react";
+import { Building2, Stethoscope, Loader2, ArrowRight, Lock } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -106,63 +106,87 @@ export function ClinicOrgSelectorModal({
             </div>
           ) : (
             <>
-              {options.map((option, index) => (
-                <button
-                  key={
-                    "clinicUid" in option ? option.clinicUid : option.orgUid
-                  }
-                  onClick={() =>
-                    handleSelect(
-                      "clinicUid" in option
-                        ? option.clinicUid
-                        : option.orgUid
-                    )
-                  }
-                  className="w-full group relative overflow-hidden rounded-xl border border-gray-200 bg-gradient-to-br from-white via-gray-50 to-white p-4 text-left transition-all duration-300 hover:border-blue-300 hover:shadow-lg hover:shadow-blue-100 active:scale-95"
-                  style={{
-                    animation: `slideIn 0.4s ease-out ${index * 50}ms backwards`,
-                  }}
-                >
-                  {/* Animated gradient background on hover */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-blue-50/50 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                  
-                  {/* Animated border effect */}
-                  <div className="absolute inset-0 rounded-xl opacity-0 transition-opacity duration-300 group-hover:opacity-100" style={{
-                    background: 'linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%)',
-                    WebkitMask: 'linear-gradient(transparent, transparent)',
-                  }} />
+              {options.map((option, index) => {
+                const uid = "clinicUid" in option ? option.clinicUid : option.orgUid;
+                const isDisabled = !option.canAccessDashboard;
 
-                  {/* Content */}
-                  <div className="relative flex items-center justify-between">
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      {/* Icon with animated background */}
-                      <div className="relative flex-shrink-0">
-                        <div className="absolute inset-0 bg-blue-200 rounded-lg blur-md opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                        <div className="relative p-2.5 rounded-lg bg-gradient-to-br from-blue-100 to-blue-50 text-blue-600 transition-all duration-300 group-hover:from-blue-200 group-hover:to-blue-100 group-hover:scale-110 group-hover:shadow-md">
-                          {icon}
+                return isDisabled ? (
+                  <div
+                    key={uid}
+                    className="w-full relative overflow-hidden rounded-xl border border-gray-200 bg-gray-50 p-4 opacity-60 cursor-not-allowed"
+                    style={{
+                      animation: `slideIn 0.4s ease-out ${index * 50}ms backwards`,
+                    }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <div className="relative flex-shrink-0">
+                          <div className="relative p-2.5 rounded-lg bg-gradient-to-br from-gray-100 to-gray-50 text-gray-400">
+                            {icon}
+                          </div>
                         </div>
-                      </div>
-                      
-                      {/* Text content */}
-                      <div className="min-w-0 flex-1">
-                        <p className="font-semibold text-gray-900 truncate group-hover:text-blue-600 transition-colors duration-300">
-                          {option.name}
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1 group-hover:text-gray-600 transition-colors duration-300">
-                          {type === "clinic" ? "Clinic" : "Organization"}
-                        </p>
-                      </div>
-                    </div>
-                    
-                    {/* Arrow indicator with animation */}
-                    <div className="ml-3 flex-shrink-0">
-                      <div className="relative w-5 h-5 text-gray-400 transition-all duration-300 group-hover:text-blue-600 group-hover:translate-x-1">
-                        <ArrowRight className="w-5 h-5" />
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold text-gray-500 truncate">
+                            {option.name}
+                          </p>
+                          <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
+                            <Lock className="w-3 h-3" />
+                            Dashboard access not enabled for your role
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </button>
-              ))}
+                ) : (
+                  <button
+                    key={uid}
+                    onClick={() => handleSelect(uid)}
+                    className="w-full group relative overflow-hidden rounded-xl border border-gray-200 bg-gradient-to-br from-white via-gray-50 to-white p-4 text-left transition-all duration-300 hover:border-blue-300 hover:shadow-lg hover:shadow-blue-100 active:scale-95"
+                    style={{
+                      animation: `slideIn 0.4s ease-out ${index * 50}ms backwards`,
+                    }}
+                  >
+                    {/* Animated gradient background on hover */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-50/50 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                    
+                    {/* Animated border effect */}
+                    <div className="absolute inset-0 rounded-xl opacity-0 transition-opacity duration-300 group-hover:opacity-100" style={{
+                      background: 'linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%)',
+                      WebkitMask: 'linear-gradient(transparent, transparent)',
+                    }} />
+
+                    {/* Content */}
+                    <div className="relative flex items-center justify-between">
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        {/* Icon with animated background */}
+                        <div className="relative flex-shrink-0">
+                          <div className="absolute inset-0 bg-blue-200 rounded-lg blur-md opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                          <div className="relative p-2.5 rounded-lg bg-gradient-to-br from-blue-100 to-blue-50 text-blue-600 transition-all duration-300 group-hover:from-blue-200 group-hover:to-blue-100 group-hover:scale-110 group-hover:shadow-md">
+                            {icon}
+                          </div>
+                        </div>
+                        
+                        {/* Text content */}
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold text-gray-900 truncate group-hover:text-blue-600 transition-colors duration-300">
+                            {option.name}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1 group-hover:text-gray-600 transition-colors duration-300">
+                            {type === "clinic" ? "Clinic" : "Organization"}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {/* Arrow indicator with animation */}
+                      <div className="ml-3 flex-shrink-0">
+                        <div className="relative w-5 h-5 text-gray-400 transition-all duration-300 group-hover:text-blue-600 group-hover:translate-x-1">
+                          <ArrowRight className="w-5 h-5" />
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
             </>
           )}
           </div>

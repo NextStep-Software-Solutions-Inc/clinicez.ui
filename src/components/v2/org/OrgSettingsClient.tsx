@@ -811,7 +811,7 @@ function RolesTab({
     });
   }
 
-  function openReqDialog(role: RolesData[number]) {
+  function openReqDialog(role: RolesWithPermissionsData[number]) {
     setReqRole(role);
     setLocalReqs([...role.requirements]);
     setNewReq("");

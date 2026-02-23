@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition, useRef } from "react";
+import { useRouter } from "next/navigation";
 import {
   Folder,
   FolderOpen,
@@ -44,6 +45,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { FilePrivacy } from "@prisma/client";
+import { ThemeToggle } from "@/components/patient-dashboard-v2/ThemeToggle";
 import type {
   GetPatientFolders,
   PatientFolder,
@@ -100,6 +102,7 @@ export function PatientFilesClient({
   clinics,
   fileTypes,
 }: PatientFilesClientProps) {
+  const router = useRouter();
   const [folders, setFolders] = useState(initialFolders);
   const [selectedFolder, setSelectedFolder] = useState<PatientFolder | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -338,62 +341,70 @@ export function PatientFilesClient({
 
   return (
     <div className="w-full space-y-6">
-      {/* Glassmorphic Page Header */}
-      <div className="glassmorphic-card p-5 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          {currentFolder && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setSelectedFolder(null)}
-              className="h-8 w-8"
-            >
-              <ArrowLeft className="w-4 h-4" />
-            </Button>
-          )}
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+      {/* Sticky Glassmorphic Header */}
+      <div className="sticky top-0 z-50 glassmorphic-card px-4 py-3 md:px-6 md:py-4 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 min-w-0">
+          {/* Back button — goes to previous page when at root, or back to folder list when inside a folder */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              if (currentFolder) {
+                setSelectedFolder(null);
+              } else {
+                router.back();
+              }
+            }}
+            className="h-8 w-8 shrink-0"
+            aria-label="Go back"
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </Button>
+
+          <div className="min-w-0">
+            <h1 className="text-lg md:text-2xl font-bold text-slate-900 dark:text-white leading-tight truncate">
               {currentFolder ? currentFolder.name : "My Files"}
             </h1>
             {currentFolder && (
-              <div className="flex items-center gap-1 text-sm text-slate-500 dark:text-slate-400">
-                <span
-                  className="cursor-pointer hover:underline"
+              <div className="flex items-center gap-1 text-xs md:text-sm text-slate-500 dark:text-slate-400">
+                <button
+                  className="hover:underline truncate max-w-[80px] md:max-w-none"
                   onClick={() => setSelectedFolder(null)}
                 >
                   My Files
-                </span>
-                <ChevronRight className="w-3 h-3" />
-                <span>{currentFolder.name}</span>
+                </button>
+                <ChevronRight className="w-3 h-3 shrink-0" />
+                <span className="truncate">{currentFolder.name}</span>
               </div>
             )}
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           {currentFolder ? (
             <Button
               size="sm"
-              onClick={() => {
-                setShowUpload(true);
-              }}
+              onClick={() => setShowUpload(true)}
               disabled={isPending}
-              className="bg-gradient-to-r from-blue-600 to-blue-500 text-white hover:from-blue-700 hover:to-blue-600 border-0"
+              className="bg-gradient-to-r from-blue-600 to-blue-500 text-white hover:from-blue-700 hover:to-blue-600 border-0 text-xs md:text-sm px-3 md:px-4"
             >
-              <Upload className="w-4 h-4 mr-2" />
-              Upload File
+              <Upload className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
+              <span className="hidden sm:inline">Upload File</span>
+              <span className="sm:hidden">Upload</span>
             </Button>
           ) : (
             <Button
               size="sm"
               onClick={() => setShowCreateFolder(true)}
               disabled={isPending}
-              className="bg-gradient-to-r from-yellow-500 to-amber-500 text-white hover:from-yellow-600 hover:to-amber-600 border-0"
+              className="bg-gradient-to-r from-yellow-500 to-amber-500 text-white hover:from-yellow-600 hover:to-amber-600 border-0 text-xs md:text-sm px-3 md:px-4"
             >
-              <Plus className="w-4 h-4 mr-2" />
-              New Folder
+              <Plus className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
+              <span className="hidden sm:inline">New Folder</span>
+              <span className="sm:hidden">New</span>
             </Button>
           )}
+          <ThemeToggle />
         </div>
       </div>
 

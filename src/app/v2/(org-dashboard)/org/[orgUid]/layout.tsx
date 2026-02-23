@@ -17,11 +17,11 @@ export default async function OrgLayout({ children, params }: OrgLayoutProps) {
   if (!org) notFound();
 
   const navItems: NavItem[] = [
-    { name: "Dashboard", href: `/v2/orgs/${orgUid}`, icon: "home", exact: true },
-    { name: "Members", href: `/v2/orgs/${orgUid}/members`, icon: "users" },
-    { name: "Clinics", href: `/v2/orgs/${orgUid}/clinics`, icon: "building" },
-    { name: "Reports", href: `/v2/orgs/${orgUid}/reports`, icon: "bar-chart" },
-    { name: "Settings", href: `/v2/orgs/${orgUid}/settings`, icon: "settings" },
+    { name: "Dashboard", href: `/v2/org/${orgUid}`, icon: "home", exact: true },
+    { name: "Members", href: `/v2/org/${orgUid}/members`, icon: "users" },
+    { name: "Clinics", href: `/v2/org/${orgUid}/clinics`, icon: "building" },
+    { name: "Reports", href: `/v2/org/${orgUid}/reports`, icon: "bar-chart" },
+    { name: "Settings", href: `/v2/org/${orgUid}/settings`, icon: "settings" },
   ];
 
   return (

@@ -53,7 +53,7 @@ export default function OrgSettingsError({ error, reset }: ErrorProps) {
               Try again
             </Button>
             <Button asChild variant="outline" className="flex-1 gap-1.5">
-              <Link href={`/v2/orgs/${params?.orgUid ?? ""}`}>
+              <Link href={`/v2/org/${params?.orgUid ?? ""}`}>
                 <ArrowLeft className="h-4 w-4" />
                 Dashboard
               </Link>

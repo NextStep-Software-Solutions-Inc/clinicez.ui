@@ -4,21 +4,23 @@ import type { NavItem } from "@/components/v2/dashboard";
 import { getOrganizationAction } from "@/actions/organizations/organization.action";
 import { notFound } from "next/navigation";
 
-interface OrgDashboardLayoutProps {
+interface OrgUidLayoutProps {
   children: React.ReactNode;
   params: Promise<{ orgUid: string }>;
 }
 
-export default async function OrgUidLayout(props: OrgDashboardLayoutProps) {
-  const params = await props.params;
-  const { orgUid } = params;
+export default async function OrgUidLayout(props: OrgUidLayoutProps) {
+  const { orgUid } = await props.params;
 
-  const org = await getOrganizationAction(orgUid);
-  if (!org) notFound();
+  const organization = await getOrganizationAction(orgUid);
+
+  if (!organization) {
+    notFound();
+  }
 
   const navItems: NavItem[] = [
     {
-      name: "Dashboard",
+      name: "Overview",
       href: `/v2/orgs/${orgUid}`,
       icon: "home",
       exact: true,
@@ -34,6 +36,16 @@ export default async function OrgUidLayout(props: OrgDashboardLayoutProps) {
       icon: "building",
     },
     {
+      name: "Roles",
+      href: `/v2/orgs/${orgUid}/roles`,
+      icon: "clipboard",
+    },
+    {
+      name: "Activity",
+      href: `/v2/orgs/${orgUid}/activity`,
+      icon: "activity",
+    },
+    {
       name: "Reports",
       href: `/v2/orgs/${orgUid}/reports`,
       icon: "bar-chart",
@@ -47,6 +59,7 @@ export default async function OrgUidLayout(props: OrgDashboardLayoutProps) {
 
   return (
     <div className="relative min-h-screen overflow-hidden">
+      {/* Fixed mesh grid background */}
       <div
         className="fixed inset-0 pointer-events-none"
         style={{
@@ -59,13 +72,13 @@ export default async function OrgUidLayout(props: OrgDashboardLayoutProps) {
           zIndex: 0,
         }}
       />
+
       <div className="relative z-10">
         <DashboardShell
           dashboardType="organization"
-          title={org.name}
-          subtitle="Organization Dashboard"
-          headerActions={null}
+          title={organization.name}
           navItems={navItems}
+          headerActions={null}
         >
           {props.children}
         </DashboardShell>

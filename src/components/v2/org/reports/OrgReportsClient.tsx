@@ -11,7 +11,7 @@ import {
   Printer,
   UserCheck,
   UserX,
-  UserClock,
+  Clock,
   GraduationCap,
   Briefcase,
 } from "lucide-react";
@@ -481,7 +481,7 @@ export function OrgReportsClient({
               colorClass="bg-sky-500/10"
             />
             <KPICard
-              icon={<UserClock className="h-4 w-4 text-amber-600" />}
+              icon={<Clock className="h-4 w-4 text-amber-600" />}
               label="Pending Requests"
               value={members.pending}
               colorClass="bg-amber-500/10"

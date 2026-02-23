@@ -58,7 +58,7 @@ export function ClinicOrgSelectorModal({
     const path =
       type === "clinic"
         ? `/v2/clinic/${uid}`
-        : `/v2/org/${uid}/dashboard`;
+        : `/v2/org/${uid}`;
 
     onClose();
     router.push(path);

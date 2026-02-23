@@ -19,6 +19,7 @@ import {
   ClipboardList,
   Heart,
   Stethoscope,
+  Folder,
   type LucideIcon,
 } from "lucide-react";
 import { Input } from "@components/ui/input";
@@ -45,6 +46,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   clipboard: ClipboardList,
   heart: Heart,
   stethoscope: Stethoscope,
+  folder: Folder,
 };
 
 function resolveIcon(name: string): LucideIcon {

@@ -33,17 +33,12 @@ export default async function OrgUidLayout(props: OrgUidLayoutProps) {
     },
     {
       name: "Clinics",
-      href: `/v2/orgs/${orgUid}/clinics`,
+      href: `/v2/org/${orgUid}/clinics`,
       icon: "building",
     },
     {
-      name: "Roles",
-      href: `/v2/orgs/${orgUid}/roles`,
-      icon: "clipboard",
-    },
-    {
-      name: "Activity",
-      href: `/v2/orgs/${orgUid}/activity`,
+      name: "Activities",
+      href: `/v2/org/${orgUid}/activities`,
       icon: "activity",
     },
     {

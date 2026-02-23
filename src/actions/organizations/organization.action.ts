@@ -256,6 +256,8 @@ type UpdateOrganizationPayload = {
   logo: string;
   customUrl?: string;
   email: string;
+  privacyPolicyUrl?: string;
+  termsAndConditionsUrl?: string;
   isPublic: boolean;
   sendEmailNotification: boolean;
   emailToOrgOnly: boolean;

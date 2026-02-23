@@ -186,11 +186,11 @@ export function ClinicAnalyticsClient({ data }: ClinicAnalyticsClientProps) {
   const topTypeTotal = appointmentBreakdown.byType.reduce((sum, t) => sum + t.count, 0);
 
   return (
-    <div className="space-y-6 pb-10">
+    <div className="space-y-6 pb-10 px-4 md:px-6">
       {/* ── Page header ─────────────────────────────────────────────── */}
       <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-bold text-foreground">Clinic Analytics</h1>
-        <p className="text-sm text-muted-foreground">
+        <h1 className="text-xl font-bold tracking-tight">Clinic Analytics</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">
           Comprehensive overview of{" "}
           <span className="font-medium text-foreground">{data.clinic.name}</span> — all-time
           statistics and trends.

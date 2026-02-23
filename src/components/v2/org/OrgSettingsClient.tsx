@@ -1182,10 +1182,10 @@ export function OrgSettingsClient({
   allPermissions,
 }: OrgSettingsClientProps) {
   return (
-    <div className="space-y-6 pb-10">
+    <div className="space-y-6 px-4 md:px-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Organization Settings</h1>
-        <p className="text-muted-foreground text-sm mt-1">
+        <h1 className="text-xl font-bold tracking-tight">Organization Settings</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">
           Manage your organization&apos;s configuration, structure, and preferences.
         </p>
       </div>

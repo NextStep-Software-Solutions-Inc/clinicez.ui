@@ -2596,16 +2596,14 @@ export function ClinicSettingsClient({
   const [activeTab, setActiveTab] = useState("general");
 
   return (
-    <div className="space-y-6 pb-10">
+    <div className="space-y-6 px-4 md:px-6">
       {/* Page header */}
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Clinic Settings</h1>
-        <p className="text-sm text-muted-foreground mt-1">
+        <h1 className="text-xl font-semibold tracking-tight">Clinic Settings</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">
           Configure every aspect of <span className="font-medium text-foreground">{clinic.name}</span>.
         </p>
       </div>
-
-      <Separator />
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         {/* Horizontally scrollable, no wrapping */}

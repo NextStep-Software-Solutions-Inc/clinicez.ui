@@ -360,7 +360,7 @@ export function OrgActivitiesClient({
   const todayStr = toInputDate(new Date());
 
   return (
-    <div className="space-y-5 p-4 md:p-6">
+    <div className="space-y-6 px-4 md:px-6">
       {/* ── Header ── */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div>

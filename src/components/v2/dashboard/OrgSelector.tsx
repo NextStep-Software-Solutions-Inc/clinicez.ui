@@ -28,7 +28,7 @@ export function OrgSelector({ activeOrg, orgs = [] }: OrgSelectorProps) {
 
   const handleOrgSelect = (org: Org) => {
     setIsOpen(false);
-    router.push(`/v2/orgs/${org.orgUid}`);
+    router.push(`/v2/org/${org.orgUid}`);
   };
 
   return (

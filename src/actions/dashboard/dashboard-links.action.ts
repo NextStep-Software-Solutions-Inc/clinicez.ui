@@ -91,7 +91,7 @@ export async function getDashboardLinksAction(): Promise<DashboardLink[]> {
   for (const membership of orgMemberships) {
     links.push({
       label: `${membership.Organization.name}`,
-      href: `/v2/org/${membership.Organization.orgUid}/dashboard`,
+      href: `/v2/org/${membership.Organization.orgUid}`,
       type: "organization",
     });
   }

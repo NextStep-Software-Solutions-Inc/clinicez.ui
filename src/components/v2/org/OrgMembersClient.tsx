@@ -21,6 +21,11 @@ import {
   UserPlus,
   Loader2,
   ClipboardList,
+  Eye,
+  CheckCircle2,
+  AlertCircle,
+  GraduationCap,
+  Briefcase,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -28,7 +33,10 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -120,6 +128,245 @@ function getFullName(
 ): string {
   const parts = [firstName, lastName].filter(Boolean).join(" ");
   return suffix ? `${parts} ${suffix}` : parts || "Unknown User";
+}
+
+/* ─────────────────────────────────────────────────────────── */
+/*  Requirement constants + helpers                             */
+/* ─────────────────────────────────────────────────────────── */
+
+const REQUIREMENT_STUDENT_RECORD = "student_record";
+const REQUIREMENT_EMPLOYEE_RECORD = "employee_record";
+
+/** Human-readable labels for known requirement keys */
+const REQUIREMENT_LABEL_MAP: Record<string, string> = {
+  [REQUIREMENT_STUDENT_RECORD]: "Student Record",
+  [REQUIREMENT_EMPLOYEE_RECORD]: "Employee Record",
+};
+
+function formatRequirementLabel(req: string): string {
+  return (
+    REQUIREMENT_LABEL_MAP[req] ??
+    req.split("_").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")
+  );
+}
+
+/* ─────────────────────────────────────────────────────────── */
+/*  Member Application Sheet (view filled requirements)        */
+/* ─────────────────────────────────────────────────────────── */
+
+interface MemberApplicationSheetProps {
+  member: OrgMember | null;
+  onClose: () => void;
+}
+
+function MemberApplicationSheet({ member, onClose }: MemberApplicationSheetProps) {
+  if (!member) return null;
+
+  const requirements: string[] = member.OrganizationRole.requirements ?? [];
+  const studentRecord = member.User.StudentRecords?.[0];
+  const employment = member.User.UserEmployments?.[0];
+  const fullName = getFullName(member.User.firstName, member.User.lastName, member.User.suffix);
+  const initials = getInitials(member.User.firstName, member.User.lastName);
+
+  /** Returns whether a requirement key has been fulfilled */
+  function isFulfilled(req: string): boolean {
+    if (req === REQUIREMENT_STUDENT_RECORD) return (member.User.StudentRecords?.length ?? 0) > 0;
+    if (req === REQUIREMENT_EMPLOYEE_RECORD) return (member.User.UserEmployments?.length ?? 0) > 0;
+    return false;
+  }
+
+  return (
+    <Sheet open={!!member} onOpenChange={(o) => !o && onClose()}>
+      <SheetContent className="w-full sm:max-w-lg flex flex-col gap-0 p-0 overflow-y-auto">
+        <SheetHeader className="p-6 pb-4 border-b">
+          <SheetTitle className="flex items-center gap-2">
+            <ClipboardList className="h-5 w-5 text-primary" />
+            Membership Application
+          </SheetTitle>
+          <SheetDescription>
+            Requirements review for <span className="font-medium text-foreground">{fullName}</span>
+          </SheetDescription>
+        </SheetHeader>
+
+        <div className="flex-1 p-6 space-y-6">
+          {/* Applicant overview */}
+          <div className="flex items-center gap-3">
+            <Avatar className="h-12 w-12 flex-shrink-0">
+              <AvatarImage src={member.User.picture ?? undefined} alt={fullName} />
+              <AvatarFallback className="text-sm font-semibold">{initials}</AvatarFallback>
+            </Avatar>
+            <div>
+              <p className="font-medium">{fullName}</p>
+              <p className="text-sm text-muted-foreground">{member.OrganizationRole.name}</p>
+              <p className="text-xs text-muted-foreground">
+                Applied {format(new Date(member.createdAt), "MMM d, yyyy")}
+              </p>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Role description */}
+          {member.OrganizationRole.description && (
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Role Description</p>
+              <p className="text-sm text-muted-foreground">{member.OrganizationRole.description}</p>
+            </div>
+          )}
+
+          {/* Requirements checklist */}
+          <div className="space-y-3">
+            <p className="text-sm font-medium flex items-center gap-2">
+              <ClipboardList className="h-4 w-4 text-primary" />
+              Joining Requirements
+            </p>
+
+            {requirements.length === 0 ? (
+              <div className="rounded-lg border border-dashed p-4 text-center">
+                <p className="text-sm text-muted-foreground">
+                  No requirements for this role.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {requirements.map((req) => {
+                  const fulfilled = isFulfilled(req);
+                  return (
+                    <div
+                      key={req}
+                      className={`flex items-start gap-3 rounded-lg border p-3 ${
+                        fulfilled
+                          ? "border-green-200 bg-green-50 dark:border-green-900/40 dark:bg-green-950/20"
+                          : "border-amber-200 bg-amber-50 dark:border-amber-900/40 dark:bg-amber-950/20"
+                      }`}
+                    >
+                      {fulfilled ? (
+                        <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-500 mt-0.5 flex-shrink-0" />
+                      ) : (
+                        <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-500 mt-0.5 flex-shrink-0" />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium">{formatRequirementLabel(req)}</p>
+                        <p className={`text-xs mt-0.5 ${fulfilled ? "text-green-700 dark:text-green-400" : "text-amber-700 dark:text-amber-400"}`}>
+                          {fulfilled ? "Submitted" : "Not yet submitted"}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Student record details */}
+          {studentRecord && (
+            <Card>
+              <CardHeader className="pb-2 pt-4 px-4">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <GraduationCap className="h-4 w-4 text-primary" />
+                  Student Record
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4 space-y-1.5">
+                {studentRecord.studentId && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Student ID</span>
+                    <span className="font-medium">{studentRecord.studentId}</span>
+                  </div>
+                )}
+                {studentRecord.lrn && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">LRN</span>
+                    <span className="font-medium">{studentRecord.lrn}</span>
+                  </div>
+                )}
+                {studentRecord.Level && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Level</span>
+                    <span className="font-medium">{studentRecord.Level.name}</span>
+                  </div>
+                )}
+                {studentRecord.OrganizationYearLevel && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Year Level</span>
+                    <span className="font-medium">{studentRecord.OrganizationYearLevel.name}</span>
+                  </div>
+                )}
+                {studentRecord.Program && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Program</span>
+                    <span className="font-medium">{studentRecord.Program.name}</span>
+                  </div>
+                )}
+                {studentRecord.Department && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Department</span>
+                    <span className="font-medium">{studentRecord.Department.name}</span>
+                  </div>
+                )}
+                {studentRecord.College && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">College</span>
+                    <span className="font-medium">{studentRecord.College.name}</span>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Employment record details */}
+          {employment && (
+            <Card>
+              <CardHeader className="pb-2 pt-4 px-4">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Briefcase className="h-4 w-4 text-primary" />
+                  Employment Record
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4 space-y-1.5">
+                {employment.employeeId && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Employee ID</span>
+                    <span className="font-medium">{employment.employeeId}</span>
+                  </div>
+                )}
+                {employment.position && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Position</span>
+                    <span className="font-medium">{employment.position}</span>
+                  </div>
+                )}
+                {employment.designation && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Designation</span>
+                    <span className="font-medium">{employment.designation}</span>
+                  </div>
+                )}
+                {employment.Office && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Office</span>
+                    <span className="font-medium">{employment.Office.name}</span>
+                  </div>
+                )}
+                {employment.Department && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Department</span>
+                    <span className="font-medium">{employment.Department.name}</span>
+                  </div>
+                )}
+                {employment.College && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">College</span>
+                    <span className="font-medium">{employment.College.name}</span>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
 }
 
 /* ─────────────────────────────────────────────────────────── */
@@ -373,6 +620,7 @@ export function OrgMembersClient({
 
   // ── Sheet state ─────────────────────────────────────────────────────
   const [addSheetOpen, setAddSheetOpen] = useState(false);
+  const [applicationMember, setApplicationMember] = useState<OrgMember | null>(null);
 
   // ── Refs for scroll-based load more (always current values) ────────
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -671,6 +919,14 @@ export function OrgMembersClient({
                         {status === "PENDING" && (
                           <>
                             <DropdownMenuItem
+                              onClick={() => setApplicationMember(member)}
+                              className="gap-2"
+                            >
+                              <Eye className="h-4 w-4" />
+                              View Application
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
                               onClick={() => handleStatusUpdate(member.id, "ACTIVE")}
                               className="gap-2 text-green-600 focus:text-green-600"
                             >
@@ -751,6 +1007,12 @@ export function OrgMembersClient({
         roles={roles}
         onClose={() => setAddSheetOpen(false)}
         onSuccess={handleAddSuccess}
+      />
+
+      {/* ── Member Application Sheet ─────────────────────────── */}
+      <MemberApplicationSheet
+        member={applicationMember}
+        onClose={() => setApplicationMember(null)}
       />
     </div>
   );

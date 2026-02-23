@@ -511,12 +511,7 @@ export default function PatientAppointmentsConsultationsClient({
                       type="button"
                       onClick={() => handleSelect(key)}
                       className={`w-full text-left px-4 py-3 border-b border-border/30 transition-colors hover:bg-muted/40 ${
-                        isSelected ? "bg-primary/8 border-l-2 border-l-primary" : ""
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-2 mb-1">
-                        <p className="text-sm font-medium text-foreground line-clamp-1">
-                          {ticket.subject ?? "Consultation"}
+                        isSelected ? "bg-primary/10 border-l-2 border-l-primary" : ""
                         </p>
                         <Badge
                           variant={getConsultationStatusVariant(status)}
@@ -558,12 +553,7 @@ export default function PatientAppointmentsConsultationsClient({
                     type="button"
                     onClick={() => handleSelect(key)}
                     className={`w-full text-left px-4 py-3 border-b border-border/30 transition-colors hover:bg-muted/40 ${
-                      isSelected ? "bg-primary/8 border-l-2 border-l-primary" : ""
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-2 mb-1">
-                      <p className="text-sm font-medium text-foreground line-clamp-1">
-                        {appt.subject ?? appt.complaint ?? "Appointment"}
+                      isSelected ? "bg-primary/10 border-l-2 border-l-primary" : ""
                       </p>
                       {aptStatus && (
                         <Badge

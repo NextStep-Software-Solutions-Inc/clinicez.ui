@@ -18,7 +18,6 @@ import {
 } from '@/components/patient-dashboard-v2';
 import { ThemeToggle } from '@/components/patient-dashboard-v2/ThemeToggle';
 import { getPatientDashboardData } from '@/actions/patient-dashboard';
-import BookAppointmentSheet from '@/components/appointment/BookAppointmentSheet';
 import { bookAppointmentAtom } from '@/state/book-appointment';
 import { checkIsClinicPatientAction } from '@/actions/clinics/clinic-patient.action';
 
@@ -101,7 +100,7 @@ function PatientDashboardContent() {
 
     const isAlreadyPatient = await checkIsClinicPatientAction(clinicUid);
     if (isAlreadyPatient) {
-      router.push(`?book-appointment=true`);
+      router.push(`/v2/book-appointment?clinic=${clinicUid}`);
     } else {
       setPendingClinic({ clinicUid, clinicName });
       setShowJoinDialog(true);
@@ -109,9 +108,10 @@ function PatientDashboardContent() {
   };
 
   const handleJoinSuccess = () => {
-    setShowJoinDialog(false);
-    setPendingClinic(null);
-    router.push(`?book-appointment=true`);
+    const clinicUid = pendingClinic?.clinicUid
+    setShowJoinDialog(false)
+    setPendingClinic(null)
+    router.push(`/v2/book-appointment?clinic=${clinicUid ?? ''}`)
   };
 
   const handleViewTestRequests = () => {
@@ -277,9 +277,6 @@ function PatientDashboardContent() {
           onSuccess={handleJoinSuccess}
         />
       )}
-
-      {/* Book Appointment Sheet (v1) */}
-      <BookAppointmentSheet />
     </div>
   );
 }

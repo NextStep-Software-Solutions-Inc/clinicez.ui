@@ -42,7 +42,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
 import { FilePrivacy } from "@prisma/client";
 import type {
@@ -85,9 +84,9 @@ const PRIVACY_LABELS: Record<FilePrivacy, string> = {
 };
 
 const PRIVACY_COLORS: Record<FilePrivacy, string> = {
-  PRIVATE: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
-  CLINIC: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300",
-  PUBLIC: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
+  PRIVATE: "bg-slate-100/70 text-slate-700 dark:bg-slate-800/70 dark:text-slate-300",
+  CLINIC: "bg-blue-100/70 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300",
+  PUBLIC: "bg-green-100/70 text-green-700 dark:bg-green-900/50 dark:text-green-300",
 };
 
 function formatBytes(bytes: number): string {
@@ -339,8 +338,8 @@ export function PatientFilesClient({
 
   return (
     <div className="w-full space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+      {/* Glassmorphic Page Header */}
+      <div className="glassmorphic-card p-5 flex items-center justify-between">
         <div className="flex items-center gap-3">
           {currentFolder && (
             <Button
@@ -379,6 +378,7 @@ export function PatientFilesClient({
                 setShowUpload(true);
               }}
               disabled={isPending}
+              className="bg-gradient-to-r from-blue-600 to-blue-500 text-white hover:from-blue-700 hover:to-blue-600 border-0"
             >
               <Upload className="w-4 h-4 mr-2" />
               Upload File
@@ -388,6 +388,7 @@ export function PatientFilesClient({
               size="sm"
               onClick={() => setShowCreateFolder(true)}
               disabled={isPending}
+              className="bg-gradient-to-r from-yellow-500 to-amber-500 text-white hover:from-yellow-600 hover:to-amber-600 border-0"
             >
               <Plus className="w-4 h-4 mr-2" />
               New Folder
@@ -400,132 +401,133 @@ export function PatientFilesClient({
       {!currentFolder ? (
         <div>
           {folders.length === 0 ? (
-            <Card className="border-dashed">
-              <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-                <Folder className="w-16 h-16 text-slate-300 dark:text-slate-600 mb-4" />
-                <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                  No folders yet
-                </h3>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mb-6 max-w-sm">
-                  Create folders to organize your medical records, lab results,
-                  and other health documents.
-                </p>
-                <Button onClick={() => setShowCreateFolder(true)} size="sm">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create your first folder
-                </Button>
-              </CardContent>
-            </Card>
+            <div className="glassmorphic-card p-16 flex flex-col items-center justify-center text-center border-dashed">
+              <Folder className="w-16 h-16 text-slate-300 dark:text-slate-500 mb-4" />
+              <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                No folders yet
+              </h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mb-6 max-w-sm">
+                Create folders to organize your medical records, lab results,
+                and other health documents.
+              </p>
+              <Button
+                onClick={() => setShowCreateFolder(true)}
+                size="sm"
+                className="bg-gradient-to-r from-yellow-500 to-amber-500 text-white border-0"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Create your first folder
+              </Button>
+            </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {folders.map((folder) => {
                 const privacy = folder.FolderSetting?.privacy ?? "PRIVATE";
                 const fileCount = folder.Files.length;
                 return (
-                  <Card
+                  <div
                     key={folder.id}
-                    className="group cursor-pointer hover:shadow-md transition-all border hover:border-blue-300 dark:hover:border-blue-700"
+                    role="button"
+                    tabIndex={0}
+                    className="glassmorphic-card group cursor-pointer hover:scale-[1.02] transition-all duration-200"
                     onClick={() => setSelectedFolder(folder)}
+                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelectedFolder(folder); } }}
                   >
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <FolderOpen className="w-8 h-8 text-yellow-500 flex-shrink-0" />
-                        </div>
-                        <div
-                          className="flex items-center gap-1"
-                          onClick={(e) => e.stopPropagation()}
+                    <div className="flex items-start justify-between mb-3">
+                      <FolderOpen className="w-8 h-8 text-yellow-500 flex-shrink-0" />
+                      <div
+                        className="flex items-center gap-1"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <span
+                          className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${PRIVACY_COLORS[privacy]}`}
                         >
-                          <span
-                            className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${PRIVACY_COLORS[privacy]}`}
-                          >
-                            {PRIVACY_ICONS[privacy]}
-                            {PRIVACY_LABELS[privacy]}
-                          </span>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-6 w-6 opacity-0 group-hover:opacity-100"
-                              >
-                                <MoreVertical className="w-3 h-3" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
+                          {PRIVACY_ICONS[privacy]}
+                          {PRIVACY_LABELS[privacy]}
+                        </span>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 opacity-0 group-hover:opacity-100"
+                            >
+                              <MoreVertical className="w-3 h-3" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setRenameFolderTarget(folder);
+                                setRenameFolderName(folder.name);
+                                setShowRenameFolder(true);
+                              }}
+                            >
+                              <Edit className="w-4 h-4 mr-2" /> Rename
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() =>
+                                handleFolderPrivacy(folder, "PRIVATE")
+                              }
+                              disabled={privacy === "PRIVATE"}
+                            >
+                              <Lock className="w-4 h-4 mr-2" /> Set Private
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() =>
+                                handleFolderPrivacy(folder, "PUBLIC")
+                              }
+                              disabled={privacy === "PUBLIC"}
+                            >
+                              <Globe className="w-4 h-4 mr-2" /> Set Public
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            {clinics.length > 0 && (
                               <DropdownMenuItem
                                 onClick={() => {
-                                  setRenameFolderTarget(folder);
-                                  setRenameFolderName(folder.name);
-                                  setShowRenameFolder(true);
+                                  setShareFolderTarget(folder);
+                                  setShowShareFolder(true);
                                 }}
                               >
-                                <Edit className="w-4 h-4 mr-2" /> Rename
+                                <Share2 className="w-4 h-4 mr-2" /> Share
+                                with Clinic
                               </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                onClick={() =>
-                                  handleFolderPrivacy(folder, "PRIVATE")
-                                }
-                                disabled={privacy === "PRIVATE"}
-                              >
-                                <Lock className="w-4 h-4 mr-2" /> Set Private
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() =>
-                                  handleFolderPrivacy(folder, "PUBLIC")
-                                }
-                                disabled={privacy === "PUBLIC"}
-                              >
-                                <Globe className="w-4 h-4 mr-2" /> Set Public
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              {clinics.length > 0 && (
-                                <DropdownMenuItem
-                                  onClick={() => {
-                                    setShareFolderTarget(folder);
-                                    setShowShareFolder(true);
-                                  }}
-                                >
-                                  <Share2 className="w-4 h-4 mr-2" /> Share
-                                  with Clinic
-                                </DropdownMenuItem>
-                              )}
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                className="text-red-600 dark:text-red-400"
-                                onClick={() => handleDeleteFolder(folder)}
-                              >
-                                <Trash2 className="w-4 h-4 mr-2" /> Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      </div>
-                      <p className="font-medium text-slate-900 dark:text-white truncate mb-1">
-                        {folder.name}
-                      </p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">
-                        {fileCount} file{fileCount !== 1 ? "s" : ""}
-                      </p>
-                      {folder.FolderSetting?.FolderClinicShares &&
-                        folder.FolderSetting.FolderClinicShares.length > 0 && (
-                          <div className="mt-2 flex flex-wrap gap-1">
-                            {folder.FolderSetting.FolderClinicShares.map(
-                              (share) => (
-                                <Badge
-                                  key={share.id}
-                                  variant="secondary"
-                                  className="text-xs"
-                                >
-                                  {share.Clinic.name}
-                                </Badge>
-                              )
                             )}
-                          </div>
-                        )}
-                    </CardContent>
-                  </Card>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-red-600 dark:text-red-400"
+                              onClick={() => handleDeleteFolder(folder)}
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" /> Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </div>
+                    <p className="font-medium text-slate-900 dark:text-white truncate mb-1">
+                      {folder.name}
+                    </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      {fileCount} file{fileCount !== 1 ? "s" : ""}
+                    </p>
+                    {folder.FolderSetting?.FolderClinicShares &&
+                      folder.FolderSetting.FolderClinicShares.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          {folder.FolderSetting.FolderClinicShares.map(
+                            (share) => (
+                              <Badge
+                                key={share.id}
+                                variant="secondary"
+                                className="text-xs bg-blue-100/70 dark:bg-blue-900/50"
+                              >
+                                {share.Clinic.name}
+                              </Badge>
+                            )
+                          )}
+                        </div>
+                      )}
+                  </div>
                 );
               })}
             </div>
@@ -535,123 +537,123 @@ export function PatientFilesClient({
         /* File View */
         <div>
           {currentFolder.Files.length === 0 ? (
-            <Card className="border-dashed">
-              <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-                <File className="w-16 h-16 text-slate-300 dark:text-slate-600 mb-4" />
-                <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                  No files in this folder
-                </h3>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mb-6 max-w-sm">
-                  Upload your medical documents, lab results, or any
-                  health-related files.
-                </p>
-                <Button onClick={() => setShowUpload(true)} size="sm">
-                  <Upload className="w-4 h-4 mr-2" />
-                  Upload a file
-                </Button>
-              </CardContent>
-            </Card>
+            <div className="glassmorphic-card p-16 flex flex-col items-center justify-center text-center border-dashed">
+              <File className="w-16 h-16 text-slate-300 dark:text-slate-500 mb-4" />
+              <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                No files in this folder
+              </h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mb-6 max-w-sm">
+                Upload your medical documents, lab results, or any
+                health-related files.
+              </p>
+              <Button
+                onClick={() => setShowUpload(true)}
+                size="sm"
+                className="bg-gradient-to-r from-blue-600 to-blue-500 text-white border-0"
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                Upload a file
+              </Button>
+            </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {currentFolder.Files.map((file) => {
                 const privacy = file.FileSetting?.privacy ?? "PRIVATE";
                 return (
-                  <Card
+                  <div
                     key={file.id}
-                    className="group hover:shadow-md transition-all border hover:border-blue-300 dark:hover:border-blue-700"
+                    className="glassmorphic-card group hover:scale-[1.02] transition-all duration-200"
                   >
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between mb-3">
-                        <File className="w-8 h-8 text-blue-500 flex-shrink-0" />
-                        <div className="flex items-center gap-1">
-                          <span
-                            className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${PRIVACY_COLORS[privacy]}`}
-                          >
-                            {PRIVACY_ICONS[privacy]}
-                            {PRIVACY_LABELS[privacy]}
-                          </span>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-6 w-6 opacity-0 group-hover:opacity-100"
+                    <div className="flex items-start justify-between mb-3">
+                      <File className="w-8 h-8 text-blue-500 flex-shrink-0" />
+                      <div className="flex items-center gap-1">
+                        <span
+                          className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${PRIVACY_COLORS[privacy]}`}
+                        >
+                          {PRIVACY_ICONS[privacy]}
+                          {PRIVACY_LABELS[privacy]}
+                        </span>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 opacity-0 group-hover:opacity-100"
+                            >
+                              <MoreVertical className="w-3 h-3" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem asChild>
+                              <a
+                                href={`/api/patient/files/${file.id}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
                               >
-                                <MoreVertical className="w-3 h-3" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem asChild>
-                                <a
-                                  href={`/api/patient/files/${file.id}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                >
-                                  View File
-                                </a>
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
+                                View File
+                              </a>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() =>
+                                handleFilePrivacy(file, "PRIVATE")
+                              }
+                              disabled={privacy === "PRIVATE"}
+                            >
+                              <Lock className="w-4 h-4 mr-2" /> Set Private
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() =>
+                                handleFilePrivacy(file, "PUBLIC")
+                              }
+                              disabled={privacy === "PUBLIC"}
+                            >
+                              <Globe className="w-4 h-4 mr-2" /> Set Public
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            {clinics.length > 0 && (
                               <DropdownMenuItem
-                                onClick={() =>
-                                  handleFilePrivacy(file, "PRIVATE")
-                                }
-                                disabled={privacy === "PRIVATE"}
+                                onClick={() => {
+                                  setShareFileTarget(file);
+                                  setShowShareFile(true);
+                                }}
                               >
-                                <Lock className="w-4 h-4 mr-2" /> Set Private
+                                <Share2 className="w-4 h-4 mr-2" /> Share
+                                with Clinic
                               </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() =>
-                                  handleFilePrivacy(file, "PUBLIC")
-                                }
-                                disabled={privacy === "PUBLIC"}
-                              >
-                                <Globe className="w-4 h-4 mr-2" /> Set Public
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              {clinics.length > 0 && (
-                                <DropdownMenuItem
-                                  onClick={() => {
-                                    setShareFileTarget(file);
-                                    setShowShareFile(true);
-                                  }}
-                                >
-                                  <Share2 className="w-4 h-4 mr-2" /> Share
-                                  with Clinic
-                                </DropdownMenuItem>
-                              )}
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                className="text-red-600 dark:text-red-400"
-                                onClick={() => handleDeleteFile(file)}
-                              >
-                                <Trash2 className="w-4 h-4 mr-2" /> Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
+                            )}
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-red-600 dark:text-red-400"
+                              onClick={() => handleDeleteFile(file)}
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" /> Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
-                      <p className="font-medium text-slate-900 dark:text-white truncate mb-1">
-                        {file.name}
-                      </p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">
-                        {file.FileType.name} · {formatBytes(file.size)}
-                      </p>
-                      {file.FileSetting?.FileClinicShares &&
-                        file.FileSetting.FileClinicShares.length > 0 && (
-                          <div className="mt-2 flex flex-wrap gap-1">
-                            {file.FileSetting.FileClinicShares.map((share) => (
-                              <Badge
-                                key={share.id}
-                                variant="secondary"
-                                className="text-xs"
-                              >
-                                {share.Clinic.name}
-                              </Badge>
-                            ))}
-                          </div>
-                        )}
-                    </CardContent>
-                  </Card>
+                    </div>
+                    <p className="font-medium text-slate-900 dark:text-white truncate mb-1">
+                      {file.name}
+                    </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">
+                      {file.FileType.name} · {formatBytes(file.size)}
+                    </p>
+                    {file.FileSetting?.FileClinicShares &&
+                      file.FileSetting.FileClinicShares.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          {file.FileSetting.FileClinicShares.map((share) => (
+                            <Badge
+                              key={share.id}
+                              variant="secondary"
+                              className="text-xs bg-blue-100/70 dark:bg-blue-900/50"
+                            >
+                              {share.Clinic.name}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                  </div>
                 );
               })}
             </div>

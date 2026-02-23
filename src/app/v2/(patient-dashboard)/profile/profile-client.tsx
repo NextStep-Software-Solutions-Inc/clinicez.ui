@@ -8,6 +8,7 @@ import {
   Edit2,
   BarChart3,
   List,
+  FolderOpen,
 } from 'lucide-react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import { ThemeToggle } from '@/components/patient-dashboard-v2/ThemeToggle'
@@ -1795,7 +1796,14 @@ export default function ProfileClient({ patient, headerSlot, editProfileHref }: 
 
       {/* Edit Profile Button - Floating */}
       {editProfileHref !== null && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3">
+          <button
+            onClick={() => router.push('/v2/patient/files')}
+            className="flex items-center gap-2 px-5 py-3 rounded-lg bg-gradient-to-br from-yellow-500 to-amber-500 text-white font-semibold hover:shadow-lg transition-all duration-300 hover:scale-105 shadow-lg"
+          >
+            <FolderOpen className="w-4 h-4" />
+            My Files
+          </button>
           <button
             onClick={() => router.push(editProfileHref ?? '/v2/profile/edit')}
             className="flex items-center gap-2 px-6 py-3 rounded-lg bg-gradient-to-br from-blue-600 to-blue-500 text-white font-semibold hover:shadow-lg transition-all duration-300 hover:scale-105 shadow-lg"

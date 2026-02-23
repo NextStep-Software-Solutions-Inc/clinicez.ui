@@ -125,6 +125,10 @@ function PatientDashboardContent() {
     router.push('/v2/profile');
   };
 
+  const handleViewFiles = () => {
+    router.push('/v2/patient/files');
+  };
+
   return (
     <div className="w-full">
       {/* Header with greeting and theme toggle */}
@@ -241,6 +245,7 @@ function PatientDashboardContent() {
         onViewTestRequests={handleViewTestRequests}
         onViewPrescriptions={handleViewPrescriptions}
         onViewProfile={handleViewProfile}
+        onViewFiles={handleViewFiles}
       />
 
       {/* Select Clinic Dialog */}

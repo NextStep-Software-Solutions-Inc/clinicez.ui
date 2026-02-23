@@ -261,8 +261,6 @@ type UpdateOrganizationPayload = {
   isPublic: boolean;
   sendEmailNotification: boolean;
   emailToOrgOnly: boolean;
-  privacyPolicyUrl?: string;
-  termsAndConditionsUrl?: string;
 }
 export const updateOrganizationAction = async (orgUid: string, data: UpdateOrganizationPayload) => {
 

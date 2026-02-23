@@ -141,8 +141,8 @@ type MemberUser = {
   id: number;
   picture: string | null;
   userId: string;
-  firstName: string;
-  lastName: string;
+  firstName: string | null;
+  lastName: string | null;
   suffix: string | null;
   gender: string | null;
   dob: Date | null;
@@ -181,8 +181,8 @@ type MemberItem = {
   AcceptedBy: {
     id: number;
     userId: string;
-    firstName: string;
-    lastName: string;
+    firstName: string | null;
+    lastName: string | null;
   } | null;
 };
 type MembersData = MemberItem[];

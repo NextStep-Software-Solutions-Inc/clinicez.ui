@@ -40,6 +40,8 @@ export default async function OrgMembersPage({ params }: OrgMembersPageProps) {
         orgUid={orgUid}
         initialMembers={membersResult.data?.data ?? []}
         initialTotal={membersResult.data?.total ?? 0}
+        initialNextCursor={membersResult.data?.nextCursor ?? null}
+        initialHasMore={membersResult.data?.hasMore ?? false}
         roles={rolesResult.data ?? []}
         pageSize={PAGE_SIZE}
       />

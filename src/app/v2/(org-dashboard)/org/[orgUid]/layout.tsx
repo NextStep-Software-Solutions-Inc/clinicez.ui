@@ -2,6 +2,8 @@ import React from "react";
 import "@styles/v2-dashboard.css";
 import { DashboardShell } from "@/components/v2/dashboard";
 import type { NavItem } from "@/components/v2/dashboard";
+import { getOrganizationAction, getUserOrgsWithRolesAction } from "@/actions/organizations/organization.action";
+import { notFound } from "next/navigation";
 
 interface OrgLayoutProps {
   children: React.ReactNode;
@@ -11,6 +13,17 @@ interface OrgLayoutProps {
 export default async function OrgLayout(props: OrgLayoutProps) {
   const params = await props.params;
   const { orgUid } = params;
+
+  const [organization, userOrgsResult] = await Promise.all([
+    getOrganizationAction(orgUid),
+    getUserOrgsWithRolesAction(),
+  ]);
+
+  if (!organization) {
+    notFound();
+  }
+
+  const userOrgs = userOrgsResult.data ?? [];
 
   const navItems: NavItem[] = [
     { name: "Overview", href: `/v2/org/${orgUid}`, icon: "home", exact: true },
@@ -41,11 +54,26 @@ export default async function OrgLayout(props: OrgLayoutProps) {
     },
   ];
 
+  // Find the current user's role in this org from their memberships
+  const currentOrgMembership = userOrgs.find((o) => o.orgUid === orgUid);
+
   return (
     <DashboardShell
       dashboardType="organization"
-      title="Organization Hub"
+      title={organization.name}
       navItems={navItems}
+      activeOrg={{
+        id: organization.id,
+        name: organization.name,
+        orgUid: organization.orgUid,
+        role: currentOrgMembership?.role,
+      }}
+      orgs={userOrgs.map((o) => ({
+        id: o.id,
+        name: o.name,
+        orgUid: o.orgUid,
+        role: o.role,
+      }))}
     >
       {props.children}
     </DashboardShell>

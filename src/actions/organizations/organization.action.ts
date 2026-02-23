@@ -250,6 +250,67 @@ export const setMyDefaultOrganizationAction = withErrorHandling(async (id: numbe
   return { message: "Default organization updated successfully", data: org };
 })
 
+export type GetUserOrgsWithRoles = Awaited<ReturnType<typeof getUserOrgsWithRolesAction>>;
+export const getUserOrgsWithRolesAction = withErrorHandling(cache(async () => {
+  const session = await getCachedSession();
+  if (!session) throw new Error("User not authenticated");
+
+  const memberships = await prisma.organizationMember.findMany({
+    where: {
+      User: {
+        userId: session.user.sub,
+      },
+      status: "ACTIVE",
+      Organization: {
+        isActive: true,
+      },
+    },
+    select: {
+      Organization: {
+        select: {
+          id: true,
+          orgUid: true,
+          name: true,
+          logo: true,
+        },
+      },
+      OrganizationRole: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    },
+    orderBy: {
+      Organization: {
+        name: "asc",
+      },
+    },
+  });
+
+  // Deduplicate by organizationId, keeping the first matching membership
+  const seen = new Set<number>();
+  const uniqueMemberships = (memberships as Array<{
+    Organization: { id: number; orgUid: string; name: string; logo: string | null };
+    OrganizationRole: { id: number; name: string };
+  }>).filter((m) => {
+    if (seen.has(m.Organization.id)) return false;
+    seen.add(m.Organization.id);
+    return true;
+  });
+
+  return {
+    message: "User organizations with roles retrieved successfully",
+    data: uniqueMemberships.map((m) => ({
+      id: m.Organization.id,
+      orgUid: m.Organization.orgUid,
+      name: m.Organization.name,
+      logo: m.Organization.logo,
+      role: m.OrganizationRole.name,
+    })),
+  };
+}));
+
 type UpdateOrganizationPayload = {
   name: string;
   description?: string;

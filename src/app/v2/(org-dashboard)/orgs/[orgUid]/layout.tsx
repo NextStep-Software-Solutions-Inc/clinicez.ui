@@ -1,7 +1,7 @@
 import React from "react";
 import { DashboardShell } from "@/components/v2/dashboard";
 import type { NavItem } from "@/components/v2/dashboard";
-import { getOrganizationAction } from "@/actions/organizations/organization.action";
+import { getOrganizationAction, getUserOrgsWithRolesAction } from "@/actions/organizations/organization.action";
 import { notFound } from "next/navigation";
 
 interface OrgUidLayoutProps {
@@ -12,45 +12,53 @@ interface OrgUidLayoutProps {
 export default async function OrgUidLayout(props: OrgUidLayoutProps) {
   const { orgUid } = await props.params;
 
-  const organization = await getOrganizationAction(orgUid);
+  const [organization, userOrgsResult] = await Promise.all([
+    getOrganizationAction(orgUid),
+    getUserOrgsWithRolesAction(),
+  ]);
 
   if (!organization) {
     notFound();
   }
 
+  const userOrgs = userOrgsResult.data ?? [];
+
   const navItems: NavItem[] = [
     {
       name: "Overview",
-      href: `/v2/org/${orgUid}`,
+      href: `/v2/orgs/${orgUid}`,
       icon: "home",
       exact: true,
     },
     {
       name: "Members",
-      href: `/v2/org/${orgUid}/members`,
+      href: `/v2/orgs/${orgUid}/members`,
       icon: "users",
     },
     {
       name: "Clinics",
-      href: `/v2/org/${orgUid}/clinics`,
+      href: `/v2/orgs/${orgUid}/clinics`,
       icon: "building",
     },
     {
       name: "Activities",
-      href: `/v2/org/${orgUid}/activities`,
+      href: `/v2/orgs/${orgUid}/activities`,
       icon: "activity",
     },
     {
       name: "Reports",
-      href: `/v2/org/${orgUid}/reports`,
+      href: `/v2/orgs/${orgUid}/reports`,
       icon: "bar-chart",
     },
     {
       name: "Settings",
-      href: `/v2/org/${orgUid}/settings`,
+      href: `/v2/orgs/${orgUid}/settings`,
       icon: "settings",
     },
   ];
+
+  // Find the current user's role in this org from their memberships
+  const currentOrgMembership = userOrgs.find((o) => o.orgUid === orgUid);
 
   return (
     <div className="relative min-h-screen overflow-hidden">
@@ -73,6 +81,18 @@ export default async function OrgUidLayout(props: OrgUidLayoutProps) {
           dashboardType="organization"
           title={organization.name}
           navItems={navItems}
+          activeOrg={{
+            id: organization.id,
+            name: organization.name,
+            orgUid: organization.orgUid,
+            role: currentOrgMembership?.role,
+          }}
+          orgs={userOrgs.map((o) => ({
+            id: o.id,
+            name: o.name,
+            orgUid: o.orgUid,
+            role: o.role,
+          }))}
           headerActions={null}
         >
           {props.children}

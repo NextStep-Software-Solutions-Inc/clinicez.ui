@@ -25,6 +25,7 @@ import { Input } from "@components/ui/input";
 import { Button } from "@components/ui/button";
 import { ThemeToggle } from "@/components/patient-dashboard-v2";
 import { ClinicSelector } from "./ClinicSelector";
+import { OrgSelector } from "./OrgSelector";
 
 /* ------------------------------------------------------------------ */
 /*  Icon mapping                                                       */
@@ -77,6 +78,20 @@ export interface DashboardShellProps {
   }>;
   /** Callback when clinic is changed */
   onClinicChange?: (clinic: { id: string; name: string; uid: string; role?: string }) => void;
+  /** Organization data for selector (optional) */
+  activeOrg?: {
+    id: number;
+    name: string;
+    orgUid: string;
+    role?: string;
+  };
+  /** List of organizations for switching (optional) */
+  orgs?: Array<{
+    id: number;
+    name: string;
+    orgUid: string;
+    role?: string;
+  }>;
   /** Right-side header actions (user button, notifications, etc.) */
   headerActions?: React.ReactNode;
   /** Breadcrumb or navigation context */
@@ -100,6 +115,8 @@ export default function DashboardShell({
   activeClinic,
   clinics = [],
   onClinicChange,
+  activeOrg,
+  orgs = [],
   headerActions,
   breadcrumb,
   banner,
@@ -129,6 +146,11 @@ export default function DashboardShell({
                 activeClinic={activeClinic}
                 clinics={clinics}
                 onClinicChange={onClinicChange}
+              />
+            ) : activeOrg ? (
+              <OrgSelector
+                activeOrg={activeOrg}
+                orgs={orgs}
               />
             ) : (
               <>
@@ -182,6 +204,11 @@ export default function DashboardShell({
                 activeClinic={activeClinic}
                 clinics={clinics}
                 onClinicChange={onClinicChange}
+              />
+            ) : activeOrg ? (
+              <OrgSelector
+                activeOrg={activeOrg}
+                orgs={orgs}
               />
             ) : (
               <h1 className="text-lg font-bold text-foreground/90 truncate">

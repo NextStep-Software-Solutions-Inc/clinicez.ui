@@ -2,6 +2,7 @@
 
 import "server-only";
 import prisma from "@lib/prisma";
+import { isSuperAdminAction } from "./admin-check.action";
 
 export type GetOrganizationById = Awaited<ReturnType<typeof getOrganizationByIdAction>>;
 export async function getOrganizationByIdAction({
@@ -157,6 +158,11 @@ export async function getOrgMembersForAdminAction({
   pageSize?: number;
   pageNumber?: number;
 }) {
+  const isSuperAdmin = await isSuperAdminAction();
+  if (!isSuperAdmin) {
+    throw new Error("Unauthorized: Only super admins can access this resource");
+  }
+
   const where = {
     organizationId: orgId,
     ...(search
@@ -217,6 +223,11 @@ export async function getOrgMembersForAdminAction({
 }
 
 export async function getOrgMemberPermissionsForAdminAction(orgMemberId: number) {
+  const isSuperAdmin = await isSuperAdminAction();
+  if (!isSuperAdmin) {
+    throw new Error("Unauthorized: Only super admins can access this resource");
+  }
+
   const permissions = await prisma.orgMemberPermission.findMany({
     where: { orgMemberId },
     select: { permissionId: true },
@@ -232,6 +243,11 @@ export async function setOrgMemberPermissionsForAdminAction({
   permissionIds: number[];
 }) {
   try {
+    const isSuperAdmin = await isSuperAdminAction();
+    if (!isSuperAdmin) {
+      return { success: false, error: "Unauthorized: Only super admins can update permissions" };
+    }
+
     await prisma.$transaction(async (tx) => {
       await tx.orgMemberPermission.deleteMany({ where: { orgMemberId } });
       if (permissionIds.length > 0) {

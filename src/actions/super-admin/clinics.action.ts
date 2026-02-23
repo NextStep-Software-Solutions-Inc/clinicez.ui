@@ -2,6 +2,7 @@
 
 import "server-only";
 import prisma from "@lib/prisma";
+import { isSuperAdminAction } from "./admin-check.action";
 
 export type GetClinicById = Awaited<ReturnType<typeof getClinicByIdAction>>;
 export async function getClinicByIdAction({
@@ -198,6 +199,11 @@ export async function getClinicMembersForAdminAction({
   pageSize?: number;
   pageNumber?: number;
 }) {
+  const isSuperAdmin = await isSuperAdminAction();
+  if (!isSuperAdmin) {
+    throw new Error("Unauthorized: Only super admins can access this resource");
+  }
+
   const where = {
     clinicId,
     deletedAt: null,
@@ -259,6 +265,11 @@ export async function getClinicMembersForAdminAction({
 }
 
 export async function getClinicMemberPermissionsForAdminAction(clinicMemberId: number) {
+  const isSuperAdmin = await isSuperAdminAction();
+  if (!isSuperAdmin) {
+    throw new Error("Unauthorized: Only super admins can access this resource");
+  }
+
   const permissions = await prisma.clinicMemberPermission.findMany({
     where: { clinicMemberId },
     select: { permissionId: true },
@@ -274,6 +285,11 @@ export async function setClinicMemberPermissionsForAdminAction({
   permissionIds: number[];
 }) {
   try {
+    const isSuperAdmin = await isSuperAdminAction();
+    if (!isSuperAdmin) {
+      return { success: false, error: "Unauthorized: Only super admins can update permissions" };
+    }
+
     await prisma.$transaction(async (tx) => {
       await tx.clinicMemberPermission.deleteMany({ where: { clinicMemberId } });
       if (permissionIds.length > 0) {

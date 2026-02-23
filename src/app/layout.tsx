@@ -41,7 +41,7 @@ export default function RootLayout({ children }: Props) {
   const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
   return (
-    <ClerkProvider publishableKey={publishableKey}>
+    <ClerkProvider publishableKey={publishableKey} signInFallbackRedirectUrl="/v2/select-dashboard">
       <html lang="en" suppressHydrationWarning>
         <head />
         <body>

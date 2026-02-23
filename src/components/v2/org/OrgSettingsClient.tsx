@@ -457,9 +457,10 @@ function SimpleCrudTab({
       const result = await onCreate(newName.trim());
       if (result.status && result.data) {
         toast.success(result.message);
+        const createdItem = result.data;
         setLocalItems((prev) => [
           ...prev,
-          { id: result.data.id, name: result.data.name },
+          { id: createdItem.id, name: createdItem.name },
         ]);
         setNewName("");
       } else if (result.status) {
@@ -661,14 +662,15 @@ function RolesTab({ orgUid, roles }: { orgUid: string; roles: RolesData }) {
       if (result.status) {
         toast.success(result.message);
         if (result.data) {
+          const createdRole = result.data;
           setLocalRoles((prev) => [
             ...prev,
             {
-              id: result.data.id,
-              orgId: result.data.orgId,
-              name: result.data.name,
-              description: result.data.description,
-              requirements: result.data.requirements,
+              id: createdRole.id,
+              orgId: createdRole.orgId,
+              name: createdRole.name,
+              description: createdRole.description,
+              requirements: createdRole.requirements,
               UserDefaultOrganizationRoles: [],
             },
           ]);

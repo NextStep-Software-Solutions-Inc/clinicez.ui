@@ -108,7 +108,12 @@ export function ClinicOrgSelectorModal({
             <>
               {options.map((option, index) => {
                 const uid = "clinicUid" in option ? option.clinicUid : option.orgUid;
-                const isDisabled = !option.canAccessDashboard;
+                const roleLower = option.role.toLowerCase();
+                const isPrivileged =
+                  type === "organization"
+                    ? roleLower === "owner" || roleLower === "admin"
+                    : roleLower === "owner";
+                const isDisabled = !option.canAccessDashboard && !isPrivileged;
 
                 return isDisabled ? (
                   <div

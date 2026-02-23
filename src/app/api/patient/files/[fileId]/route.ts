@@ -103,9 +103,15 @@ export const GET = withClerkAuth<{ fileId: string }>(
         );
       }
 
+      // Sanitize filename for Content-Disposition: only allow safe ASCII chars,
+      // percent-encode the rest to prevent header injection attacks
+      const safeFilename = file.name
+        .replace(/[\x00-\x1f\x7f"\\]/g, "_")
+        .replace(/[^\x20-\x7e]/g, (c) => encodeURIComponent(c));
+
       return new NextResponse(buffer, {
         headers: {
-          "Content-Disposition": `inline; filename="${file.name.replace(/["\\\r\n]/g, "_")}"`,
+          "Content-Disposition": `inline; filename="${safeFilename}"`,
           "Content-Length": buffer.length.toString(),
           "Cache-Control": "private, no-cache",
         },

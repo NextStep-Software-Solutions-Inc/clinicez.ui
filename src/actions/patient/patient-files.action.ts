@@ -256,7 +256,8 @@ export const uploadPatientFileAction = withErrorHandling(
     if (!folder) throw new Error("Folder not found");
 
     // Upload to Azure Blob - sanitize filename to prevent path traversal
-    const sanitizedName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+    // Dots are excluded from allowed chars to block sequences like "../"
+    const sanitizedName = file.name.replace(/[^a-zA-Z0-9_-]/g, "_");
     const filepath = `patient-files/${user.id}/${folderId}/${Date.now()}-${sanitizedName}`;
     const buffer = await file.arrayBuffer();
     const { url } = await uploadFile(filepath, buffer, file.type);

@@ -20,6 +20,7 @@ import { ThemeToggle } from '@/components/patient-dashboard-v2/ThemeToggle';
 import { getPatientDashboardData } from '@/actions/patient-dashboard';
 import { bookAppointmentAtom } from '@/state/book-appointment';
 import { checkIsClinicPatientAction } from '@/actions/clinics/clinic-patient.action';
+import BookAppointmentSheet from '@/components/appointment/BookAppointmentSheet';
 
 // Loading skeleton for initial page load
 function DashboardLoadingSkeleton() {
@@ -277,6 +278,9 @@ function PatientDashboardContent() {
           onSuccess={handleJoinSuccess}
         />
       )}
+
+      {/* BookAppointmentSheet: kept for V1 backward compatibility (?book-appointment=true query param) */}
+      <BookAppointmentSheet />
     </div>
   );
 }

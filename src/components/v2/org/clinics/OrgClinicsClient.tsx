@@ -34,49 +34,15 @@ import type { GetOrgClinicsData } from "@/actions/organizations/org-clinics.acti
 /*  Types                                                              */
 /* ─────────────────────────────────────────────────────────────────── */
 
-type OrgClinicSummary = NonNullable<NonNullable<GetOrgClinicsData["data"]>["summary"]>;
 type OrgClinicItem = NonNullable<NonNullable<GetOrgClinicsData["data"]>["clinics"]>[number];
 
 interface OrgClinicsClientProps {
   clinics: OrgClinicItem[];
-  summary: OrgClinicSummary;
 }
 
 /* ─────────────────────────────────────────────────────────────────── */
 /*  Helper sub-components                                              */
 /* ─────────────────────────────────────────────────────────────────── */
-
-function StatCard({
-  icon: Icon,
-  label,
-  value,
-  colorVar,
-}: {
-  icon: React.ElementType;
-  label: string;
-  value: number;
-  colorVar: string;
-}) {
-  return (
-    <Card
-      className="border"
-      style={{ borderColor: "hsl(var(--color-border-light))" }}
-    >
-      <CardContent className="p-5 flex items-center gap-4">
-        <div
-          className="h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0"
-          style={{ background: `hsl(var(${colorVar}) / 0.15)` }}
-        >
-          <Icon className="h-5 w-5" style={{ color: `hsl(var(${colorVar}))` }} />
-        </div>
-        <div>
-          <p className="text-xs text-muted-foreground font-medium">{label}</p>
-          <p className="text-2xl font-bold text-foreground">{value}</p>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
 
 function StatusBadge({ isActive }: { isActive: boolean }) {
   return isActive ? (
@@ -247,7 +213,7 @@ function ClinicCard({ clinic }: { clinic: OrgClinicItem }) {
 /*  Main component                                                     */
 /* ─────────────────────────────────────────────────────────────────── */
 
-export function OrgClinicsClient({ clinics, summary }: OrgClinicsClientProps) {
+export function OrgClinicsClient({ clinics }: OrgClinicsClientProps) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
 
@@ -270,19 +236,7 @@ export function OrgClinicsClient({ clinics, summary }: OrgClinicsClientProps) {
 
   return (
     <div className="space-y-6 pb-10">
-      {/* ── 1. Summary KPI strip ──────────────────────────────────── */}
-      <section aria-label="Clinic summary">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-          <StatCard icon={Building2} label="Total Clinics" value={summary.totalClinics} colorVar="--chart-2" />
-          <StatCard icon={CheckCircle2} label="Active" value={summary.activeClinics} colorVar="--chart-1" />
-          <StatCard icon={XCircle} label="Inactive" value={summary.inactiveClinics} colorVar="--destructive" />
-          <StatCard icon={Users} label="Total Staff" value={summary.totalMembers} colorVar="--primary" />
-          <StatCard icon={UserRound} label="Total Patients" value={summary.totalPatients} colorVar="--chart-3" />
-          <StatCard icon={CalendarClock} label="Appointments" value={summary.totalAppointments} colorVar="--chart-4" />
-        </div>
-      </section>
-
-      {/* ── 2. Filters ────────────────────────────────────────────── */}
+      {/* ── Filter bar ────────────────────────────────────────────── */}
       <section aria-label="Clinic filters">
         <Card style={{ borderColor: "hsl(var(--color-border-light))" }}>
           <CardHeader className="px-5 py-4 border-b" style={{ borderColor: "hsl(var(--color-border-light))" }}>
@@ -328,7 +282,7 @@ export function OrgClinicsClient({ clinics, summary }: OrgClinicsClientProps) {
         </Card>
       </section>
 
-      {/* ── 3. Clinic grid ────────────────────────────────────────── */}
+      {/* ── Clinic grid ───────────────────────────────────────────── */}
       <section aria-label="Clinic list">
         {filtered.length > 0 ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

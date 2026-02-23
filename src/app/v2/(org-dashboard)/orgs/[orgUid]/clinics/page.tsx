@@ -26,7 +26,6 @@ export default async function OrgClinicsPage({ params }: OrgClinicsPageProps) {
   return (
     <OrgClinicsClient
       clinics={result.data.clinics}
-      summary={result.data.summary}
     />
   );
 }

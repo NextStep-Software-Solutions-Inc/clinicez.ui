@@ -127,6 +127,7 @@ import {
   createClinicRoleAction,
   updateClinicRoleAction,
   deleteClinicRoleAction,
+  setClinicRoleDashboardAccessAction,
 } from "@/actions/clinics/clinic-role.action";
 import { setClinicRoleInitialPermissionsAction } from "@/actions/clinic-role-initial-permission.action";
 import {
@@ -2254,6 +2255,7 @@ function RolesTab({
           {
             id: result.data!.id,
             name: result.data!.name,
+            canAccessDashboard: result.data!.canAccessDashboard,
             ClinicMembers: [],
             ClinicRoleInitialPermissions: [],
             ClinicRoleAppointmentTabs: [],
@@ -2295,6 +2297,20 @@ function RolesTab({
         toast.error(result.message ?? "Failed to delete role.");
       }
       setDeletingId(null);
+    });
+  };
+
+  const handleToggleDashboardAccess = (roleId: number, canAccessDashboard: boolean) => {
+    startTransition(async () => {
+      const result = await setClinicRoleDashboardAccessAction(roleId, canAccessDashboard);
+      if (result.status) {
+        toast.success(result.message);
+        setRoles((prev) =>
+          prev.map((r) => (r.id === roleId ? { ...r, canAccessDashboard } : r))
+        );
+      } else {
+        toast.error(result.message ?? "Failed to update dashboard access.");
+      }
     });
   };
 
@@ -2381,6 +2397,24 @@ function RolesTab({
                       {role.ClinicRoleInitialPermissions.length} perms
                     </Badge>
                   </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <div className="flex items-center gap-1.5">
+                      <Switch
+                        id={`clinic-dashboard-access-${role.id}`}
+                        checked={role.canAccessDashboard}
+                        disabled={isPending}
+                        onCheckedChange={(checked) =>
+                          handleToggleDashboardAccess(role.id, checked)
+                        }
+                        className="scale-75 origin-right"
+                      />
+                      <label
+                        htmlFor={`clinic-dashboard-access-${role.id}`}
+                        className="text-xs text-muted-foreground cursor-pointer select-none whitespace-nowrap"
+                      >
+                        Dashboard access
+                      </label>
+                    </div>
                   {!owner && editingId !== role.id && (
                     <div className="flex gap-1">
                       <Button
@@ -2409,6 +2443,7 @@ function RolesTab({
                       </Button>
                     </div>
                   )}
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="pt-0">

@@ -63,6 +63,7 @@ import {
   updateOrganizationRoleAction,
   deleteOrganizationRoleAction,
   setOrganizationRoleRequirementsAction,
+  setOrgRoleDashboardAccessAction,
 } from "@/actions/organizations/organization-role.action";
 import {
   createOrgCollegeAction,
@@ -763,6 +764,7 @@ function RolesTab({
               name: createdRole.name,
               description: createdRole.description,
               requirements: createdRole.requirements,
+              canAccessDashboard: createdRole.canAccessDashboard,
               OrgRoleInitialPermissions: [],
             },
           ]);
@@ -833,6 +835,20 @@ function RolesTab({
     });
   }
 
+  function handleToggleDashboardAccess(roleId: number, canAccessDashboard: boolean) {
+    startTransition(async () => {
+      const result = await setOrgRoleDashboardAccessAction(roleId, canAccessDashboard);
+      if (result.status) {
+        toast.success(result.message);
+        setLocalRoles((prev) =>
+          prev.map((r) => (r.id === roleId ? { ...r, canAccessDashboard } : r))
+        );
+      } else {
+        toast.error(result.message);
+      }
+    });
+  }
+
   return (
     <div className="space-y-5">
       <Card>
@@ -879,6 +895,23 @@ function RolesTab({
                         ))}
                       </div>
                     )}
+                    <div className="flex items-center gap-2 pt-1">
+                      <Switch
+                        id={`dashboard-access-${role.id}`}
+                        checked={role.canAccessDashboard}
+                        disabled={isPending}
+                        onCheckedChange={(checked) =>
+                          handleToggleDashboardAccess(role.id, checked)
+                        }
+                        className="scale-75 origin-left"
+                      />
+                      <label
+                        htmlFor={`dashboard-access-${role.id}`}
+                        className="text-xs text-muted-foreground cursor-pointer select-none"
+                      >
+                        Dashboard access
+                      </label>
+                    </div>
                   </div>
                   <div className="flex gap-1 ml-2 flex-shrink-0">
                     <Button

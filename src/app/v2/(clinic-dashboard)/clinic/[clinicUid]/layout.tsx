@@ -4,6 +4,7 @@ import type { NavItem } from "@/components/v2/dashboard";
 import { getClinicWithUserRoleAction, getUserClinicsWithRolesAction } from "@/actions/clinics/clinic.action";
 import { getAppointmentCountsAction } from "@/actions/appointments/appointments.action";
 import { notFound } from "next/navigation";
+import UnauthorizedWarning from "@/components/UnauthorizedWarning";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +29,14 @@ export default async function ClinicUidLayout(
 
   const clinic = clinicWithRoleResult.data.clinic;
   const userRole = clinicWithRoleResult.data.userRole;
+  const isTenantOwner = clinicWithRoleResult.data.isTenantOwner;
+
+  // Only clinic members and the tenant owner are allowed to access this dashboard
+  // Members must also have a role with canAccessDashboard enabled OR be the clinic owner
+  const isClinicOwnerRole = userRole?.name?.toLowerCase() === "owner";
+  if (!isTenantOwner && (!userRole || (!userRole.canAccessDashboard && !isClinicOwnerRole))) {
+    return <UnauthorizedWarning />;
+  }
 
   // Load all user's clinics with their roles for the selector
   const userClinicsResult = await getUserClinicsWithRolesAction();

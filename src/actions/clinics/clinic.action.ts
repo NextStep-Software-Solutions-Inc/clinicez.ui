@@ -356,7 +356,7 @@ export const getClinicWithUserRoleAction = withErrorHandling(cache(async (clinic
   const session = await getCachedSession();
   if (!session) throw new Error("User not authenticated");
 
-  // Fetch the clinic
+  // Fetch the clinic along with the tenant owner info
   const clinic = await prisma.clinic.findFirst({
     where: {
       isActive: true,
@@ -369,7 +369,16 @@ export const getClinicWithUserRoleAction = withErrorHandling(cache(async (clinic
       description: true,
       customUrl: true,
       logo: true,
-      email: true
+      email: true,
+      Tenant: {
+        select: {
+          Owner: {
+            select: {
+              userId: true
+            }
+          }
+        }
+      }
     }
   });
 
@@ -394,17 +403,29 @@ export const getClinicWithUserRoleAction = withErrorHandling(cache(async (clinic
       Role: {
         select: {
           id: true,
-          name: true
+          name: true,
+          canAccessDashboard: true
         }
       }
     }
   });
 
+  const isTenantOwner = clinic.Tenant?.Owner?.userId === session.user.sub;
+
   return {
     message: "Clinic with user role retrieved successfully",
     data: {
-      clinic,
-      userRole: clinicMember?.Role || null
+      clinic: {
+        id: clinic.id,
+        clinicUid: clinic.clinicUid,
+        name: clinic.name,
+        description: clinic.description,
+        customUrl: clinic.customUrl,
+        logo: clinic.logo,
+        email: clinic.email,
+      },
+      userRole: clinicMember?.Role || null,
+      isTenantOwner
     }
   };
 }));
@@ -439,7 +460,8 @@ export const getUserClinicsWithRolesAction = withErrorHandling(cache(async () =>
       Role: {
         select: {
           id: true,
-          name: true
+          name: true,
+          canAccessDashboard: true
         }
       }
     },
@@ -455,7 +477,8 @@ export const getUserClinicsWithRolesAction = withErrorHandling(cache(async () =>
     clinicUid: membership.Clinic.clinicUid,
     name: membership.Clinic.name,
     logo: membership.Clinic.logo,
-    role: membership.Role.name
+    role: membership.Role.name,
+    canAccessDashboard: membership.Role.canAccessDashboard
   }));
 
   return {

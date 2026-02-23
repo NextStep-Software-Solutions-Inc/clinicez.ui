@@ -53,7 +53,7 @@ export async function getDashboardLinksAction(): Promise<DashboardLink[]> {
           select: { clinicUid: true, name: true },
         },
         Role: {
-          select: { canAccessDashboard: true },
+          select: { canAccessDashboard: true, name: true },
         },
       },
       take: 5,
@@ -68,7 +68,7 @@ export async function getDashboardLinksAction(): Promise<DashboardLink[]> {
           select: { orgUid: true, name: true },
         },
         OrganizationRole: {
-          select: { canAccessDashboard: true },
+          select: { canAccessDashboard: true, name: true },
         },
       },
       take: 5,
@@ -84,9 +84,10 @@ export async function getDashboardLinksAction(): Promise<DashboardLink[]> {
     });
   }
 
-  // Clinic dashboards — only include memberships where role has dashboard access
+  // Clinic dashboards — only include memberships where role has dashboard access or is clinic owner
   for (const membership of clinicMemberships) {
-    if (!membership.Role.canAccessDashboard) continue;
+    const isClinicOwner = membership.Role.name?.toLowerCase() === "owner";
+    if (!membership.Role.canAccessDashboard && !isClinicOwner) continue;
     links.push({
       label: `${membership.Clinic.name}`,
       href: `/v2/clinic/${membership.Clinic.clinicUid}/dashboard`,
@@ -94,9 +95,11 @@ export async function getDashboardLinksAction(): Promise<DashboardLink[]> {
     });
   }
 
-  // Organization dashboards — only include memberships where role has dashboard access
+  // Organization dashboards — only include memberships where role has dashboard access or is org owner/admin
   for (const membership of orgMemberships) {
-    if (!membership.OrganizationRole.canAccessDashboard) continue;
+    const orgRoleName = membership.OrganizationRole.name?.toLowerCase();
+    const isOrgOwnerOrAdmin = orgRoleName === "owner" || orgRoleName === "admin";
+    if (!membership.OrganizationRole.canAccessDashboard && !isOrgOwnerOrAdmin) continue;
     links.push({
       label: `${membership.Organization.name}`,
       href: `/v2/org/${membership.Organization.orgUid}`,

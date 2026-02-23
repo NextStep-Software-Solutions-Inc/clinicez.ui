@@ -62,7 +62,10 @@ export default async function OrgLayout(props: OrgLayoutProps) {
   const currentOrgMembership = userOrgs.find((o) => o.orgUid === orgUid);
 
   // Only org members whose role is permitted to access the dashboard are allowed in
-  if (!currentOrgMembership || !currentOrgMembership.canAccessDashboard) {
+  // Org owners and admins always have access regardless of canAccessDashboard
+  const orgRoleName = currentOrgMembership?.role?.toLowerCase();
+  const isOrgOwnerOrAdmin = orgRoleName === "owner" || orgRoleName === "admin";
+  if (!currentOrgMembership || (!currentOrgMembership.canAccessDashboard && !isOrgOwnerOrAdmin)) {
     return <UnauthorizedWarning />;
   }
 

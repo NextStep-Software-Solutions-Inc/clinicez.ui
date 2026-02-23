@@ -32,8 +32,9 @@ export default async function ClinicUidLayout(
   const isTenantOwner = clinicWithRoleResult.data.isTenantOwner;
 
   // Only clinic members and the tenant owner are allowed to access this dashboard
-  // Members must also have a role with canAccessDashboard enabled
-  if (!isTenantOwner && (!userRole || !userRole.canAccessDashboard)) {
+  // Members must also have a role with canAccessDashboard enabled OR be the clinic owner
+  const isClinicOwnerRole = userRole?.name?.toLowerCase() === "owner";
+  if (!isTenantOwner && (!userRole || (!userRole.canAccessDashboard && !isClinicOwnerRole))) {
     return <UnauthorizedWarning />;
   }
 

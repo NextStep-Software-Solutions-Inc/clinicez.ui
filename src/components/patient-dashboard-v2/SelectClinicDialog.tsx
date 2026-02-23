@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { getClinicSelectOptionsAction, type ClinicOption } from '@/actions/dashboard/clinic-org-select.action';
+import { getOrgAssociatedClinicOptionsAction, type ClinicOption } from '@/actions/dashboard/clinic-org-select.action';
 import { bookAppointmentAtom } from '@/state/book-appointment';
 
 interface SelectClinicDialogProps {
@@ -36,7 +36,7 @@ export function SelectClinicDialog({ isOpen, onClose, onClinicSelected }: Select
     const fetchClinics = async () => {
       setIsLoading(true);
       try {
-        const clinicOptions = await getClinicSelectOptionsAction();
+        const clinicOptions = await getOrgAssociatedClinicOptionsAction();
         setClinics(clinicOptions);
       } catch (error) {
         console.error('Error fetching clinics:', error);

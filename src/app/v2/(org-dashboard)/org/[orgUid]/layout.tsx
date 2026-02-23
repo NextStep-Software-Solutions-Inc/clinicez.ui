@@ -12,12 +12,6 @@ interface OrgLayoutProps {
 export default async function OrgLayout(props: OrgLayoutProps) {
   const { orgUid } = await props.params;
 
-  const organization = await getOrganizationAction(orgUid);
-
-  if (!organization) {
-    notFound();
-  }
-
   const [organization, userOrgsResult] = await Promise.all([
     getOrganizationAction(orgUid),
     getUserOrgsWithRolesAction(),

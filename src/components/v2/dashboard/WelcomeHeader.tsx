@@ -140,7 +140,7 @@ export default function WelcomeHeader({
               <span className="relative inline-flex rounded-full h-2 w-2 bg-green-400" />
             </span>
             <Activity className="h-3.5 w-3.5 text-white/80" />
-            <span className="text-xs font-semibold text-white/90">Clinic Online</span>
+            <span className="text-xs font-semibold text-white/90 capitalize">{dashboardType} Online</span>
           </div>
 
           {/* Optional action buttons */}

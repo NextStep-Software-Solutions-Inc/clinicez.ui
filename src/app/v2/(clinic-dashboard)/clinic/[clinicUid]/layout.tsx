@@ -40,7 +40,7 @@ export default async function ClinicUidLayout(
   // Navigation items for clinic dashboard
   const navItems: NavItem[] = [
     {
-      name: "Dashboard",
+      name: "Overview",
       href: `/v2/clinic/${clinicUid}`,
       icon: "home",
       badgeCount: undefined,

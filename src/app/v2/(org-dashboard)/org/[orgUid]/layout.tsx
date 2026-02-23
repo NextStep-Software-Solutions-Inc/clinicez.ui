@@ -21,7 +21,7 @@ export default async function OrgLayout(props: OrgLayoutProps) {
   const navItems: NavItem[] = [
     {
       name: "Overview",
-      href: `/v2/org/${orgUid}/dashboard`,
+      href: `/v2/org/${orgUid}`,
       icon: "home",
       exact: true,
     },
@@ -36,8 +36,8 @@ export default async function OrgLayout(props: OrgLayoutProps) {
       icon: "building",
     },
     {
-      name: "Activity",
-      href: `/v2/org/${orgUid}/activity`,
+      name: "Activities",
+      href: `/v2/org/${orgUid}/activities`,
       icon: "activity",
     },
     {
@@ -54,6 +54,7 @@ export default async function OrgLayout(props: OrgLayoutProps) {
 
   return (
     <div className="relative min-h-screen overflow-hidden">
+      {/* Fixed mesh grid background */}
       <div
         className="fixed inset-0 pointer-events-none"
         style={{
@@ -66,6 +67,7 @@ export default async function OrgLayout(props: OrgLayoutProps) {
           zIndex: 0,
         }}
       />
+
       <div className="relative z-10">
         <DashboardShell
           dashboardType="organization"

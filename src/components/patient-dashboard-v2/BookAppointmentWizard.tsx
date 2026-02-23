@@ -633,7 +633,11 @@ function Step5Review({
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    if (!form.clinicUid || !form.modeId || !form.appointmentTypeId || !form.serviceId || !form.subject) {
+
+    // Extract required values into typed local consts so TypeScript can narrow correctly
+    const { clinicUid, modeId, appointmentTypeId, serviceId, subject, chiefComplaint, hpId, selectedTimeSlot, preferredDate, attachments } = form
+
+    if (!clinicUid || !modeId || !appointmentTypeId || !serviceId || !subject) {
       toast.error('Please complete all required fields before submitting.')
       return
     }
@@ -648,7 +652,7 @@ function Step5Review({
     try {
       // Upload attachments
       const attachmentUrls: string[] = []
-      for (const file of form.attachments ?? []) {
+      for (const file of attachments ?? []) {
         if (file.size > 4 * 1024 * 1024) {
           toast.error(`${file.name} is too large (max 4 MB)`)
           setIsSubmitting(false)
@@ -671,30 +675,30 @@ function Step5Review({
       }
 
       const result = await createAppointmentAction({
-        clinicUid: form.clinicUid,
-        subject: form.subject,
-        complaint: form.chiefComplaint,
-        modeId: form.modeId,
-        typeId: form.appointmentTypeId,
-        serviceId: form.serviceId,
+        clinicUid,
+        subject,
+        complaint: chiefComplaint,
+        modeId,
+        typeId: appointmentTypeId,
+        serviceId,
         requesters: [requesterId],
         attachments: attachmentUrls,
-        hpId: form.hpId,
+        hpId,
         schedule: {
-          timeStart: form.selectedTimeSlot?.start
-            ? dayjs(form.selectedTimeSlot.start).format('HH:mm:ss')
+          timeStart: selectedTimeSlot?.start
+            ? dayjs(selectedTimeSlot.start).format('HH:mm:ss')
             : undefined,
-          timeEnd: form.selectedTimeSlot?.end
-            ? dayjs(form.selectedTimeSlot.end).format('HH:mm:ss')
+          timeEnd: selectedTimeSlot?.end
+            ? dayjs(selectedTimeSlot.end).format('HH:mm:ss')
             : undefined,
-          date: form.preferredDate ? dayjs(form.preferredDate).endOf('day').toDate() : undefined,
+          date: preferredDate ? dayjs(preferredDate).endOf('day').toDate() : undefined,
         },
       })
 
       if (result.status) {
         playSuccess()
         mutate(
-          (key) => typeof key === 'string' && key.startsWith(`/api/clinics/${form.clinicUid}/appointments`),
+          (key) => typeof key === 'string' && key.startsWith(`/api/clinics/${clinicUid}/appointments`),
           undefined,
           { revalidate: true }
         )

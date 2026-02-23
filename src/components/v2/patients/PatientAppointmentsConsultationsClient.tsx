@@ -512,6 +512,11 @@ export default function PatientAppointmentsConsultationsClient({
                       onClick={() => handleSelect(key)}
                       className={`w-full text-left px-4 py-3 border-b border-border/30 transition-colors hover:bg-muted/40 ${
                         isSelected ? "bg-primary/10 border-l-2 border-l-primary" : ""
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2 mb-1">
+                        <p className="text-sm font-medium text-foreground truncate">
+                          {ticket.subject ?? "Consultation"}
                         </p>
                         <Badge
                           variant={getConsultationStatusVariant(status)}
@@ -554,6 +559,11 @@ export default function PatientAppointmentsConsultationsClient({
                     onClick={() => handleSelect(key)}
                     className={`w-full text-left px-4 py-3 border-b border-border/30 transition-colors hover:bg-muted/40 ${
                       isSelected ? "bg-primary/10 border-l-2 border-l-primary" : ""
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2 mb-1">
+                      <p className="text-sm font-medium text-foreground truncate">
+                        {appt.subject ?? appt.complaint ?? "Appointment"}
                       </p>
                       {aptStatus && (
                         <Badge

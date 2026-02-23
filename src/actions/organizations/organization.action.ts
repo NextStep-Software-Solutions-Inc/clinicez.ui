@@ -278,6 +278,7 @@ export const getUserOrgsWithRolesAction = withErrorHandling(cache(async () => {
         select: {
           id: true,
           name: true,
+          canAccessDashboard: true,
         },
       },
     },
@@ -292,7 +293,7 @@ export const getUserOrgsWithRolesAction = withErrorHandling(cache(async () => {
   const seen = new Set<number>();
   const uniqueMemberships = (memberships as Array<{
     Organization: { id: number; orgUid: string; name: string; logo: string | null };
-    OrganizationRole: { id: number; name: string };
+    OrganizationRole: { id: number; name: string; canAccessDashboard: boolean };
   }>).filter((m) => {
     if (seen.has(m.Organization.id)) return false;
     seen.add(m.Organization.id);
@@ -307,6 +308,7 @@ export const getUserOrgsWithRolesAction = withErrorHandling(cache(async () => {
       name: m.Organization.name,
       logo: m.Organization.logo,
       role: m.OrganizationRole.name,
+      canAccessDashboard: m.OrganizationRole.canAccessDashboard,
     })),
   };
 }));

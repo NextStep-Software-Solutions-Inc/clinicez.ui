@@ -61,8 +61,8 @@ export default async function OrgLayout(props: OrgLayoutProps) {
   // Find the current user's role in this org from their memberships
   const currentOrgMembership = userOrgs.find((o) => o.orgUid === orgUid);
 
-  // Only org members are allowed to access this dashboard
-  if (!currentOrgMembership) {
+  // Only org members whose role is permitted to access the dashboard are allowed in
+  if (!currentOrgMembership || !currentOrgMembership.canAccessDashboard) {
     return <UnauthorizedWarning />;
   }
 

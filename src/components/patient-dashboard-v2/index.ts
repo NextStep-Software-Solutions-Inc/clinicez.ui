@@ -7,3 +7,4 @@ export { PendingLabWork } from './PendingLabWork';
 export { FloatingActionMenu } from './FloatingActionMenu';
 export { ThemeToggle } from './ThemeToggle';
 export { SelectClinicDialog } from './SelectClinicDialog';
+export { JoinAsPatientDialogV2 } from './JoinAsPatientDialogV2';

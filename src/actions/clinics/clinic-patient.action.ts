@@ -542,3 +542,99 @@ export const createAndAddClinicPatientAction = withErrorHandling(async (
   }
   return { message: "Patient created and added to clinic successfully", data: null };
 });
+
+// ── Self-enrollment helpers (patient-facing, V2 dashboard) ────────────────────
+
+/**
+ * Checks whether the currently authenticated user is already a patient at a
+ * given clinic.  Lightweight – returns a boolean so callers can decide
+ * whether to show the consent dialog before booking.
+ */
+export async function checkIsClinicPatientAction(clinicUid: string): Promise<boolean> {
+  const session = await getCachedSession();
+  if (!session) return false;
+
+  const record = await prismaClient.clinicPatient.findFirst({
+    where: {
+      Clinic: { clinicUid },
+      Patient: { userId: session.user.sub },
+    },
+    select: { id: true },
+  });
+
+  return record !== null;
+}
+
+/**
+ * Allows the currently authenticated user to self-enroll as a patient at a
+ * clinic, provided they are an active member of an organization that is
+ * linked to that clinic.  Does NOT require the staff-level
+ * CREATE:CLINIC:PATIENT permission – org membership is the gate instead.
+ */
+export const selfEnrollAsClinicPatientAction = withErrorHandling(
+  async ({ clinicUid }: { clinicUid: string }) => {
+    const session = await getCachedSession();
+    if (!session) throw new Error("Unauthorized");
+
+    const userId = session.user.sub;
+
+    // Verify the user is an active org member of an org linked to this clinic
+    const linkedMembership = await prismaClient.organizationMember.findFirst({
+      where: {
+        User: { userId },
+        status: "ACTIVE",
+        Organization: {
+          ClinicOrganizations: {
+            some: {
+              isActive: true,
+              deletedAt: null,
+              Clinic: { clinicUid },
+            },
+          },
+        },
+      },
+      select: { id: true },
+    });
+
+    if (!linkedMembership) {
+      throw new Error(
+        "You must be an active member of an organization linked to this clinic to enroll as a patient."
+      );
+    }
+
+    try {
+      await prismaClient.$transaction(async (prisma) => {
+        const patientRole = await prisma.clinicRole.findFirstOrThrow({
+          where: { name: { equals: "Patient", mode: "insensitive" } },
+        });
+
+        const rolePermissions = await prisma.clinicRoleInitialPermission.findMany({
+          where: {
+            Clinic: { clinicUid },
+            clinicRoleId: patientRole.id,
+          },
+        });
+
+        await prisma.clinicPatient.create({
+          data: {
+            Clinic: { connect: { clinicUid } },
+            Patient: { connect: { userId } },
+            ClinicPatientPermissions: {
+              createMany: {
+                data: rolePermissions.map((p) => ({ permissionId: p.permissionId })),
+              },
+            },
+          },
+        });
+      });
+    } catch (error) {
+      if (hasCodeProperty(error) && error.code === "P2002") {
+        // Already a patient – treat as success so the booking can proceed
+        return { message: "Already enrolled as a clinic patient", data: null };
+      }
+      throw new Error("An error occurred while enrolling you as a clinic patient.");
+    }
+
+    return { message: "Successfully enrolled as a clinic patient", data: null };
+  }
+);

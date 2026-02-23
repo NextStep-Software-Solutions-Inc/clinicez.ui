@@ -13,11 +13,13 @@ import {
   PendingLabWork,
   FloatingActionMenu,
   SelectClinicDialog,
+  JoinAsPatientDialogV2,
 } from '@/components/patient-dashboard-v2';
 import { ThemeToggle } from '@/components/patient-dashboard-v2/ThemeToggle';
 import { getPatientDashboardData } from '@/actions/patient-dashboard';
 import BookAppointmentSheet from '@/components/appointment/BookAppointmentSheet';
 import { bookAppointmentAtom } from '@/state/book-appointment';
+import { checkIsClinicPatientAction } from '@/actions/clinics/clinic-patient.action';
 
 // Loading skeleton for initial page load
 function DashboardLoadingSkeleton() {
@@ -51,6 +53,8 @@ function PatientDashboardContent() {
   const router = useRouter();
   const setBookAppointmentForm = useSetAtom(bookAppointmentAtom);
   const [showClinicDialog, setShowClinicDialog] = useState(false);
+  const [pendingClinic, setPendingClinic] = useState<{ clinicUid: string; clinicName: string } | null>(null);
+  const [showJoinDialog, setShowJoinDialog] = useState(false);
   const diagnosticRequestsRef = useRef<HTMLDivElement>(null);
   const prescriptionsRef = useRef<HTMLDivElement>(null);
   const appointmentRef = useRef<HTMLDivElement>(null);
@@ -90,9 +94,22 @@ function PatientDashboardContent() {
     setShowClinicDialog(true);
   };
 
-  const handleClinicSelected = (clinicUid: string) => {
+  const handleClinicSelected = async (clinicUid: string, clinicName: string) => {
     setShowClinicDialog(false);
     setBookAppointmentForm((prev) => ({ ...prev, clinicUid }));
+
+    const isAlreadyPatient = await checkIsClinicPatientAction(clinicUid);
+    if (isAlreadyPatient) {
+      router.push(`?book-appointment=true`);
+    } else {
+      setPendingClinic({ clinicUid, clinicName });
+      setShowJoinDialog(true);
+    }
+  };
+
+  const handleJoinSuccess = () => {
+    setShowJoinDialog(false);
+    setPendingClinic(null);
     router.push(`?book-appointment=true`);
   };
 
@@ -232,6 +249,20 @@ function PatientDashboardContent() {
         onClose={() => setShowClinicDialog(false)}
         onClinicSelected={handleClinicSelected}
       />
+
+      {/* Join as Patient consent dialog (shown when user is not yet a clinic patient) */}
+      {pendingClinic && (
+        <JoinAsPatientDialogV2
+          clinicUid={pendingClinic.clinicUid}
+          clinicName={pendingClinic.clinicName}
+          isOpen={showJoinDialog}
+          onClose={() => {
+            setShowJoinDialog(false);
+            setPendingClinic(null);
+          }}
+          onSuccess={handleJoinSuccess}
+        />
+      )}
 
       {/* Book Appointment Sheet (v1) */}
       <BookAppointmentSheet />

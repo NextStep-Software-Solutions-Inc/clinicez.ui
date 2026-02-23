@@ -18,7 +18,7 @@ import { bookAppointmentAtom } from '@/state/book-appointment';
 interface SelectClinicDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onClinicSelected: (clinicUid: string) => void;
+  onClinicSelected: (clinicUid: string, clinicName: string) => void;
 }
 
 export function SelectClinicDialog({ isOpen, onClose, onClinicSelected }: SelectClinicDialogProps) {
@@ -50,11 +50,12 @@ export function SelectClinicDialog({ isOpen, onClose, onClinicSelected }: Select
 
   const handleSelectClinic = () => {
     if (selectedClinic) {
+      const clinic = clinics.find((c) => c.clinicUid === selectedClinic);
       setBookAppointmentForm({
         ...bookAppointmentForm,
         clinicUid: selectedClinic,
       });
-      onClinicSelected(selectedClinic);
+      onClinicSelected(selectedClinic, clinic?.name ?? '');
       onClose();
     }
   };

@@ -79,7 +79,7 @@ export default function UserOnboardingPage({
         const result = await completeBasicOnboardingAction(values);
         if (result.status) {
           toast.success("Welcome to Clinic EZ! Your profile is all set.");
-          router.push("/?onboarding=complete");
+          router.push("/v2/select-dashboard");
           router.refresh();
         } else {
           toast.error(result.message);

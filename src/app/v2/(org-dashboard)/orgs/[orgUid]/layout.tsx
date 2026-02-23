@@ -21,13 +21,13 @@ export default async function OrgUidLayout(props: OrgUidLayoutProps) {
   const navItems: NavItem[] = [
     {
       name: "Overview",
-      href: `/v2/org/${orgUid}`,
+      href: `/v2/orgs/${orgUid}`,
       icon: "home",
       exact: true,
     },
     {
       name: "Members",
-      href: `/v2/org/${orgUid}/members`,
+      href: `/v2/orgs/${orgUid}/members`,
       icon: "users",
     },
     {
@@ -42,12 +42,12 @@ export default async function OrgUidLayout(props: OrgUidLayoutProps) {
     },
     {
       name: "Reports",
-      href: `/v2/org/${orgUid}/reports`,
+      href: `/v2/orgs/${orgUid}/reports`,
       icon: "bar-chart",
     },
     {
       name: "Settings",
-      href: `/v2/org/${orgUid}/settings`,
+      href: `/v2/orgs/${orgUid}/settings`,
       icon: "settings",
     },
   ];

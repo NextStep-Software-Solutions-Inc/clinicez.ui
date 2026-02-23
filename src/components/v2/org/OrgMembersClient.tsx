@@ -170,8 +170,8 @@ function MemberApplicationSheet({ member, onClose }: MemberApplicationSheetProps
 
   /** Returns whether a requirement key has been fulfilled */
   function isFulfilled(req: string): boolean {
-    if (req === REQUIREMENT_STUDENT_RECORD) return (member.User.StudentRecords?.length ?? 0) > 0;
-    if (req === REQUIREMENT_EMPLOYEE_RECORD) return (member.User.UserEmployments?.length ?? 0) > 0;
+    if (req === REQUIREMENT_STUDENT_RECORD) return studentRecord !== undefined;
+    if (req === REQUIREMENT_EMPLOYEE_RECORD) return employment !== undefined;
     return false;
   }
 

@@ -19,6 +19,8 @@ import {
   Trash2,
   UserCircle,
   UserPlus,
+  UserCog,
+  PowerOff,
   Loader2,
   ClipboardList,
   Eye,
@@ -65,6 +67,7 @@ import {
   setMembershipRequestStatusAction,
   deleteMembershipAction,
   searchUsersForOrgAction,
+  updateOrgMemberRoleAction,
   type GetOrgMembers,
   type SearchUsersForOrg,
 } from "@/actions/organizations/org-member.action";
@@ -584,6 +587,148 @@ function AddMemberSheet({ open, orgUid, roles, onClose, onSuccess }: AddMemberSh
 }
 
 /* ─────────────────────────────────────────────────────────── */
+/*  Change Role Sheet                                           */
+/* ─────────────────────────────────────────────────────────── */
+
+interface ChangeRoleSheetProps {
+  member: OrgMember | null;
+  roles: OrgRole[];
+  onClose: () => void;
+  onSuccess: (memberId: number, newRole: OrgRole) => void;
+}
+
+function ChangeRoleSheet({ member, roles, onClose, onSuccess }: ChangeRoleSheetProps) {
+  const [selectedRoleId, setSelectedRoleId] = useState<number | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const handleClose = () => {
+    setSelectedRoleId(null);
+    onClose();
+  };
+
+  const handleUpdate = async () => {
+    if (!member || !selectedRoleId) { toast.error("Please select a role."); return; }
+    setIsUpdating(true);
+    const result = await updateOrgMemberRoleAction(member.id, selectedRoleId);
+    setIsUpdating(false);
+    if (result.status) {
+      const newRole = roles.find((r) => r.id === selectedRoleId);
+      if (newRole) onSuccess(member.id, newRole);
+      toast.success("Member role updated.");
+      handleClose();
+    } else {
+      toast.error(result.message ?? "Failed to update role.");
+    }
+  };
+
+  if (!member) return null;
+  const fullName = getFullName(member.User.firstName, member.User.lastName, member.User.suffix);
+
+  return (
+    <Sheet open={!!member} onOpenChange={(o) => !o && handleClose()}>
+      <SheetContent className="w-full sm:max-w-md flex flex-col gap-0 p-0">
+        <SheetHeader className="p-6 pb-4 border-b">
+          <SheetTitle className="flex items-center gap-2">
+            <UserCog className="h-5 w-5 text-primary" />
+            Change Role
+          </SheetTitle>
+          <SheetDescription>
+            Update the role for <span className="font-medium text-foreground">{fullName}</span>.
+          </SheetDescription>
+        </SheetHeader>
+
+        <div className="flex-1 p-6 space-y-4">
+          <div className="flex items-center gap-3">
+            <Avatar className="h-10 w-10 flex-shrink-0">
+              <AvatarImage src={member.User.picture ?? undefined} alt={fullName} />
+              <AvatarFallback className="text-xs font-semibold">
+                {getInitials(member.User.firstName, member.User.lastName)}
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <p className="text-sm font-medium">{fullName}</p>
+              <p className="text-xs text-muted-foreground">
+                Current role: <span className="font-medium">{member.OrganizationRole.name}</span>
+              </p>
+            </div>
+          </div>
+
+          <Separator />
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">New Role</label>
+            <Select
+              value={selectedRoleId?.toString() ?? ""}
+              onValueChange={(v) => setSelectedRoleId(Number(v))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select a role…" />
+              </SelectTrigger>
+              <SelectContent>
+                {roles
+                  .filter((r) => r.id !== member.OrganizationRole.id)
+                  .map((r) => (
+                    <SelectItem key={r.id} value={r.id.toString()}>
+                      {r.name}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {selectedRoleId && (() => {
+            const newRole = roles.find((r) => r.id === selectedRoleId);
+            if (!newRole) return null;
+            const reqs: string[] = newRole.requirements ?? [];
+            return (
+              <div className="rounded-lg border bg-muted/30 p-4 space-y-2">
+                <p className="text-sm font-medium flex items-center gap-2">
+                  <ClipboardList className="h-4 w-4 text-primary" />
+                  Requirements for <span className="text-primary">{newRole.name}</span>
+                </p>
+                {reqs.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No additional requirements.</p>
+                ) : (
+                  <ul className="space-y-1">
+                    {reqs.map((req) => (
+                      <li key={req} className="flex items-start gap-2 text-sm">
+                        <span className="text-primary mt-0.5">•</span>
+                        <span className="capitalize">{req.replaceAll("_", " ")}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {newRole.description && (
+                  <p className="text-xs text-muted-foreground border-t pt-2">
+                    {newRole.description}
+                  </p>
+                )}
+              </div>
+            );
+          })()}
+        </div>
+
+        <div className="p-6 border-t">
+          <div className="flex gap-3">
+            <Button variant="outline" className="flex-1" onClick={handleClose} disabled={isUpdating}>
+              Cancel
+            </Button>
+            <Button
+              className="flex-1 gap-1.5"
+              onClick={handleUpdate}
+              disabled={isUpdating || !selectedRoleId}
+            >
+              {isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserCog className="h-4 w-4" />}
+              Update Role
+            </Button>
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────── */
 /*  Main Component                                             */
 /* ─────────────────────────────────────────────────────────── */
 
@@ -621,6 +766,7 @@ export function OrgMembersClient({
   // ── Sheet state ─────────────────────────────────────────────────────
   const [addSheetOpen, setAddSheetOpen] = useState(false);
   const [applicationMember, setApplicationMember] = useState<OrgMember | null>(null);
+  const [changeRoleMember, setChangeRoleMember] = useState<OrgMember | null>(null);
 
   // ── Refs for scroll-based load more (always current values) ────────
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -767,6 +913,14 @@ export function OrgMembersClient({
   const handleAddSuccess = useCallback(() => {
     fetchFresh(search, statusFilter, roleFilter);
   }, [fetchFresh, search, statusFilter, roleFilter]);
+
+  const handleChangeRoleSuccess = useCallback((memberId: number, newRole: OrgRole) => {
+    setMembers((prev) =>
+      prev.map((m) =>
+        m.id === memberId ? { ...m, OrganizationRole: newRole } : m
+      )
+    );
+  }, []);
 
   /* ── Render ──────────────────────────────────────────────────────── */
   return (
@@ -943,13 +1097,22 @@ export function OrgMembersClient({
                           </>
                         )}
                         {status === "ACTIVE" && (
-                          <DropdownMenuItem
-                            onClick={() => handleStatusUpdate(member.id, "SUSPENDED")}
-                            className="gap-2"
-                          >
-                            <Pause className="h-4 w-4" />
-                            Suspend
-                          </DropdownMenuItem>
+                          <>
+                            <DropdownMenuItem
+                              onClick={() => handleStatusUpdate(member.id, "SUSPENDED")}
+                              className="gap-2"
+                            >
+                              <Pause className="h-4 w-4" />
+                              Suspend
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleStatusUpdate(member.id, "INACTIVE")}
+                              className="gap-2 text-destructive focus:text-destructive"
+                            >
+                              <PowerOff className="h-4 w-4" />
+                              Deactivate
+                            </DropdownMenuItem>
+                          </>
                         )}
                         {status === "SUSPENDED" && (
                           <DropdownMenuItem
@@ -969,6 +1132,14 @@ export function OrgMembersClient({
                             Re-activate
                           </DropdownMenuItem>
                         )}
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={() => setChangeRoleMember(member)}
+                          className="gap-2"
+                        >
+                          <UserCog className="h-4 w-4" />
+                          Change Role
+                        </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                           onClick={() => handleRemove(member.id)}
@@ -1013,6 +1184,14 @@ export function OrgMembersClient({
       <MemberApplicationSheet
         member={applicationMember}
         onClose={() => setApplicationMember(null)}
+      />
+
+      {/* ── Change Role Sheet ─────────────────────────────────── */}
+      <ChangeRoleSheet
+        member={changeRoleMember}
+        roles={roles}
+        onClose={() => setChangeRoleMember(null)}
+        onSuccess={handleChangeRoleSuccess}
       />
     </div>
   );

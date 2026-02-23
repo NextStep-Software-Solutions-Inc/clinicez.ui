@@ -144,3 +144,106 @@ export async function deleteOrganizationRoleAction(id: number) {
 
   return { success: true };
 }
+
+export type GetOrgMembersForAdmin = Awaited<ReturnType<typeof getOrgMembersForAdminAction>>;
+export async function getOrgMembersForAdminAction({
+  orgId,
+  search,
+  pageSize = 10,
+  pageNumber = 1,
+}: {
+  orgId: number;
+  search?: string;
+  pageSize?: number;
+  pageNumber?: number;
+}) {
+  const where = {
+    organizationId: orgId,
+    ...(search
+      ? {
+        User: {
+          OR: [
+            { firstName: { contains: search, mode: "insensitive" as const } },
+            { lastName: { contains: search, mode: "insensitive" as const } },
+            { email: { contains: search, mode: "insensitive" as const } },
+          ],
+        },
+      }
+      : {}),
+  };
+
+  const [members, total] = await Promise.all([
+    prisma.organizationMember.findMany({
+      where,
+      select: {
+        id: true,
+        status: true,
+        createdAt: true,
+        User: {
+          select: {
+            id: true,
+            userId: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+        OrganizationRole: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        OrgMemberPermissions: {
+          select: {
+            permissionId: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      skip: (pageNumber - 1) * pageSize,
+      take: pageSize,
+    }),
+    prisma.organizationMember.count({ where }),
+  ]);
+
+  return {
+    data: members,
+    total,
+    pageSize,
+    pageNumber,
+    totalPages: Math.ceil(total / pageSize),
+  };
+}
+
+export async function getOrgMemberPermissionsForAdminAction(orgMemberId: number) {
+  const permissions = await prisma.orgMemberPermission.findMany({
+    where: { orgMemberId },
+    select: { permissionId: true },
+  });
+  return { data: permissions };
+}
+
+export async function setOrgMemberPermissionsForAdminAction({
+  orgMemberId,
+  permissionIds,
+}: {
+  orgMemberId: number;
+  permissionIds: number[];
+}) {
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.orgMemberPermission.deleteMany({ where: { orgMemberId } });
+      if (permissionIds.length > 0) {
+        await tx.orgMemberPermission.createMany({
+          skipDuplicates: true,
+          data: permissionIds.map((permissionId) => ({ orgMemberId, permissionId })),
+        });
+      }
+    });
+    return { success: true, message: "Permissions updated successfully" };
+  } catch (error) {
+    console.error("[SET_ORG_MEMBER_PERMISSIONS_ERROR]", error);
+    return { success: false, error: "Failed to update permissions" };
+  }
+}

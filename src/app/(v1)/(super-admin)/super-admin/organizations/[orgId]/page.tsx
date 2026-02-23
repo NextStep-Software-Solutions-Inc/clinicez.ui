@@ -1,10 +1,12 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@components/ui/card";
-import { getOrganizationByIdAction, getOrganizationRolesAction } from "@actions/super-admin/organizations.action";
+import { getOrganizationByIdAction, getOrganizationRolesAction, getOrgMembersForAdminAction } from "@actions/super-admin/organizations.action";
 import { notFound } from "next/navigation";
 import { Badge } from "@components/ui/badge";
 import { Building2, Users } from "lucide-react";
 import OrganizationRolesTable from "@components/super-admin/OrganizationRolesTable";
+import OrgMembersTable from "@components/super-admin/OrgMembersTable";
 import Link from "next/link";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@components/ui/tabs";
 
 interface OrganizationDetailPageProps {
   params: Promise<{
@@ -20,9 +22,10 @@ export default async function OrganizationDetailPage({ params }: OrganizationDet
     notFound();
   }
 
-  const [organization, initialRoles] = await Promise.all([
+  const [organization, initialRoles, initialMembers] = await Promise.all([
     getOrganizationByIdAction({ orgId }),
     getOrganizationRolesAction({ orgId, pageSize: 10, pageNumber: 1 }),
+    getOrgMembersForAdminAction({ orgId, pageSize: 10, pageNumber: 1 }),
   ]);
   
   if (!organization) {
@@ -90,18 +93,46 @@ export default async function OrganizationDetailPage({ params }: OrganizationDet
           </CardContent>
         </Card>
       </div>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle>Organization Roles</CardTitle>
-          <CardDescription>
-            Manage roles that can be assigned to members within this organization.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <OrganizationRolesTable initialData={initialRoles} orgId={orgId} />
-        </CardContent>
-      </Card>
+
+      <Tabs defaultValue="roles" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="roles">Organization Roles</TabsTrigger>
+          <TabsTrigger value="members">
+            Member Permissions
+            <Badge variant="secondary" className="ml-2 text-xs">
+              {organization._count.OrganizationMembers}
+            </Badge>
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="roles" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Organization Roles</CardTitle>
+              <CardDescription>
+                Manage roles that can be assigned to members within this organization.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <OrganizationRolesTable initialData={initialRoles} orgId={orgId} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="members" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Organization User Management</CardTitle>
+              <CardDescription>
+                Manage individual member permissions within this organization. Each member has a role with default permissions, but you can customize their permissions here.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <OrgMembersTable initialData={initialMembers} orgId={orgId} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

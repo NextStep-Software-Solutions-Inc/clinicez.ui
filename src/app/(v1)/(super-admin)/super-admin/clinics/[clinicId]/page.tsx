@@ -1,11 +1,12 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@components/ui/card";
-import { getClinicByIdAction, getClinicRolesAction, getClinicAppointmentTabsAction } from "@actions/super-admin/clinics.action";
+import { getClinicByIdAction, getClinicRolesAction, getClinicAppointmentTabsAction, getClinicMembersForAdminAction } from "@actions/super-admin/clinics.action";
 import { notFound } from "next/navigation";
 import { Badge } from "@components/ui/badge";
 import { Hospital, Users, Calendar } from "lucide-react";
 import Link from "next/link";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@components/ui/tabs";
 import ClinicRolesTable from "@components/super-admin/ClinicRolesTable";
+import ClinicMembersTable from "@components/super-admin/ClinicMembersTable";
 import ClinicAppointmentTabsManager from "@components/super-admin/ClinicAppointmentTabsManager";
 import { ClinicProceduresManager } from "@components/super-admin/ClinicProceduresManager";
 import DocumentTemplateTypeManager from "@components/super-admin/DocumentTemplateTypeManager";
@@ -26,10 +27,11 @@ export default async function ClinicDetailPage({ params }: ClinicDetailPageProps
     notFound();
   }
 
-  const [clinic, initialRoles, appointmentTabsData] = await Promise.all([
+  const [clinic, initialRoles, appointmentTabsData, initialMembers] = await Promise.all([
     getClinicByIdAction({ clinicId }),
     getClinicRolesAction({ pageSize: 10, pageNumber: 1 }),
     getClinicAppointmentTabsAction({ clinicId }),
+    getClinicMembersForAdminAction({ clinicId, pageSize: 10, pageNumber: 1 }),
   ]);
   
   if (!clinic) {
@@ -128,8 +130,14 @@ export default async function ClinicDetailPage({ params }: ClinicDetailPageProps
       </Card>
 
       <Tabs defaultValue="roles" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="roles">Clinic Roles</TabsTrigger>
+          <TabsTrigger value="members">
+            Member Permissions
+            <Badge variant="secondary" className="ml-2 text-xs">
+              {clinic._count.ClinicMembers}
+            </Badge>
+          </TabsTrigger>
           <TabsTrigger value="appointment-tabs">Appointment Tabs</TabsTrigger>
           <TabsTrigger value="procedures">Procedures</TabsTrigger>
           <TabsTrigger value="documents">Documents</TabsTrigger>
@@ -146,6 +154,20 @@ export default async function ClinicDetailPage({ params }: ClinicDetailPageProps
             </CardHeader>
             <CardContent>
               <ClinicRolesTable initialData={initialRoles} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="members" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Clinic User Management</CardTitle>
+              <CardDescription>
+                Manage individual member permissions within this clinic. Each member has a role with default permissions, but you can customize their permissions here.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ClinicMembersTable initialData={initialMembers} clinicId={clinicId} />
             </CardContent>
           </Card>
         </TabsContent>

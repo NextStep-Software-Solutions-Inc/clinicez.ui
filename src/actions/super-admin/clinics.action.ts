@@ -185,3 +185,107 @@ export async function updateClinicAppointmentTabsAction({
 
   return { success: true };
 }
+
+export type GetClinicMembersForAdmin = Awaited<ReturnType<typeof getClinicMembersForAdminAction>>;
+export async function getClinicMembersForAdminAction({
+  clinicId,
+  search,
+  pageSize = 10,
+  pageNumber = 1,
+}: {
+  clinicId: number;
+  search?: string;
+  pageSize?: number;
+  pageNumber?: number;
+}) {
+  const where = {
+    clinicId,
+    deletedAt: null,
+    ...(search
+      ? {
+        User: {
+          OR: [
+            { firstName: { contains: search, mode: "insensitive" as const } },
+            { lastName: { contains: search, mode: "insensitive" as const } },
+            { email: { contains: search, mode: "insensitive" as const } },
+          ],
+        },
+      }
+      : {}),
+  };
+
+  const [members, total] = await Promise.all([
+    prisma.clinicMember.findMany({
+      where,
+      select: {
+        id: true,
+        status: true,
+        createdAt: true,
+        User: {
+          select: {
+            id: true,
+            userId: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+        Role: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        ClinicMemberPermissions: {
+          select: {
+            permissionId: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      skip: (pageNumber - 1) * pageSize,
+      take: pageSize,
+    }),
+    prisma.clinicMember.count({ where }),
+  ]);
+
+  return {
+    data: members,
+    total,
+    pageSize,
+    pageNumber,
+    totalPages: Math.ceil(total / pageSize),
+  };
+}
+
+export async function getClinicMemberPermissionsForAdminAction(clinicMemberId: number) {
+  const permissions = await prisma.clinicMemberPermission.findMany({
+    where: { clinicMemberId },
+    select: { permissionId: true },
+  });
+  return { data: permissions };
+}
+
+export async function setClinicMemberPermissionsForAdminAction({
+  clinicMemberId,
+  permissionIds,
+}: {
+  clinicMemberId: number;
+  permissionIds: number[];
+}) {
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.clinicMemberPermission.deleteMany({ where: { clinicMemberId } });
+      if (permissionIds.length > 0) {
+        await tx.clinicMemberPermission.createMany({
+          skipDuplicates: true,
+          data: permissionIds.map((permissionId) => ({ clinicMemberId, permissionId })),
+        });
+      }
+    });
+    return { success: true, message: "Permissions updated successfully" };
+  } catch (error) {
+    console.error("[SET_CLINIC_MEMBER_PERMISSIONS_ERROR]", error);
+    return { success: false, error: "Failed to update permissions" };
+  }
+}

@@ -36,8 +36,8 @@ export default async function OrgLayout(props: OrgLayoutProps) {
       icon: "building",
     },
     {
-      name: "Activity",
-      href: `/v2/org/${orgUid}/activity`,
+      name: "Activities",
+      href: `/v2/org/${orgUid}/activities`,
       icon: "activity",
     },
     {

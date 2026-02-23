@@ -15,30 +15,30 @@ export default async function OrgDashboardLayout(
   const { orgUid } = params;
 
   const navItems: NavItem[] = [
-    { name: "Dashboard", href: `/org/${orgUid}/dashboard`, icon: "home" },
+    { name: "Dashboard", href: `/v2/org/${orgUid}/dashboard`, icon: "home" },
     {
       name: "Members",
-      href: `/org/${orgUid}/dashboard/members`,
+      href: `/v2/org/${orgUid}/members`,
       icon: "users",
     },
     {
       name: "Clinics",
-      href: `/org/${orgUid}/dashboard/clinics`,
+      href: `/v2/org/${orgUid}/dashboard/clinics`,
       icon: "building",
     },
     {
       name: "Activity",
-      href: `/org/${orgUid}/dashboard/activity`,
+      href: `/v2/org/${orgUid}/dashboard/activity`,
       icon: "activity",
     },
     {
       name: "Reports",
-      href: `/org/${orgUid}/dashboard/reports`,
+      href: `/v2/org/${orgUid}/dashboard/reports`,
       icon: "bar-chart",
     },
     {
       name: "Settings",
-      href: `/org/${orgUid}/dashboard/settings`,
+      href: `/v2/org/${orgUid}/dashboard/settings`,
       icon: "settings",
     },
   ];

@@ -7,7 +7,7 @@ import { getDateRangeFromParams } from "@/lib/report-period-utils";
 export const metadata: Metadata = {
   title: "Reports",
   description:
-    "Organization reporting — appointments, consultations, patients, clinics, diagnostics",
+    "Organization reporting — members, registrations, roles, structure",
 };
 
 export const dynamic = "force-dynamic";

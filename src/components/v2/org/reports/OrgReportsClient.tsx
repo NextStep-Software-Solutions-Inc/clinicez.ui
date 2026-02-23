@@ -3,27 +3,20 @@
 import React, { useState, useTransition, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Calendar,
   Users,
-  Stethoscope,
-  ClipboardList,
-  FlaskConical,
-  Microscope,
-  Heart,
-  Share2,
-  FileText,
-  Activity,
   TrendingUp,
   BarChart3,
   Loader2,
   RefreshCw,
   Printer,
-  Building2,
-  Pill,
+  UserCheck,
+  UserX,
+  UserClock,
+  GraduationCap,
+  Briefcase,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -80,29 +73,23 @@ function toInputDate(d: Date) {
 /* ──────────────────────────────────────── */
 type PrintSections = {
   overview: boolean;
-  clinics: boolean;
-  appointments: boolean;
-  consultations: boolean;
-  members: boolean;
-  diagnostics: boolean;
+  memberInsights: boolean;
+  students: boolean;
+  staff: boolean;
 };
 
 const ALL_PRINT_SECTIONS: PrintSections = {
   overview: true,
-  clinics: true,
-  appointments: true,
-  consultations: true,
-  members: true,
-  diagnostics: true,
+  memberInsights: true,
+  students: true,
+  staff: true,
 };
 
 const PRINT_SECTION_LABELS: Record<keyof PrintSections, string> = {
   overview: "Overview (KPI summary)",
-  clinics: "Clinics Breakdown",
-  appointments: "Appointments",
-  consultations: "Consultations",
-  members: "Members",
-  diagnostics: "Diagnostics & Documents",
+  memberInsights: "Member Insights",
+  students: "Students",
+  staff: "Staff",
 };
 
 /* ──────────────────────────────────────── */
@@ -113,8 +100,7 @@ function buildReportHtml(
   periodLabel: string,
   sections: PrintSections
 ): string {
-  const { org, period, appointments, consultations, patients, diagnostics, clinics, members } =
-    data;
+  const { org, period, members, students, staff } = data;
   const fromLabel = formatDate(period.from);
   const toLabel = formatDate(period.to);
   const generatedAt = new Date().toLocaleString("en-PH", {
@@ -134,85 +120,52 @@ function buildReportHtml(
   const overviewSection = sections.overview
     ? `<h2>Overview</h2>
        <div class="kpi-grid">
-         <div class="kpi-box"><div class="kpi-label">Total Clinics</div><div class="kpi-value">${clinics.total}</div></div>
-         <div class="kpi-box"><div class="kpi-label">Total Members</div><div class="kpi-value">${members.total}</div></div>
-         <div class="kpi-box"><div class="kpi-label">Appointments</div><div class="kpi-value">${appointments.total}</div></div>
-         <div class="kpi-box"><div class="kpi-label">Consultations</div><div class="kpi-value">${consultations.total}</div></div>
-         <div class="kpi-box"><div class="kpi-label">New Patients</div><div class="kpi-value">${patients.newInPeriod}</div></div>
-         <div class="kpi-box"><div class="kpi-label">Diagnostics</div><div class="kpi-value">${diagnostics.total}</div></div>
+         <div class="kpi-box"><div class="kpi-label">Active Members</div><div class="kpi-value">${members.totalActive}</div></div>
+         <div class="kpi-box"><div class="kpi-label">New in Period</div><div class="kpi-value">${members.newInPeriod}</div></div>
+         <div class="kpi-box"><div class="kpi-label">Pending Requests</div><div class="kpi-value">${members.pending}</div></div>
+         <div class="kpi-box"><div class="kpi-label">Suspended</div><div class="kpi-value">${members.suspended}</div></div>
        </div>`
     : "";
 
-  const clinicsSection = sections.clinics
-    ? `<h2>Clinics Breakdown</h2>
+  const memberSection = sections.memberInsights
+    ? `<h2>Member Insights</h2>
+       ${sectionTable("By Role", members.byRole.map((r) => row(r.role, r.count)).join(""))}
        ${sectionTable(
-         "Per-Clinic Activity",
-         clinics.breakdown
-           .map(
-             (c) =>
-               `<tr>
-                <td style="padding:4px 8px;border:1px solid #e5e7eb;font-weight:600">${c.name}</td>
-                <td style="padding:4px 8px;border:1px solid #e5e7eb;text-align:right">${c.appointments} appts</td>
-                <td style="padding:4px 8px;border:1px solid #e5e7eb;text-align:right">${c.consultations} consults</td>
-                <td style="padding:4px 8px;border:1px solid #e5e7eb;text-align:right">${c.patients} patients</td>
-              </tr>`
-           )
-           .join("")
-       )}`
-    : "";
-
-  const apptSection = sections.appointments
-    ? `<h2>Appointments</h2>
-       ${sectionTable(
-         "By Status",
-         appointments.byStatus
-           .map((s) =>
+         "By Gender",
+         members.byGender
+           .map((g) =>
              row(
-               s.status,
-               `${s.count} (${appointments.total > 0 ? Math.round((s.count / appointments.total) * 100) : 0}%)`
+               g.gender,
+               `${g.count} (${members.totalActive > 0 ? Math.round((g.count / members.totalActive) * 100) : 0}%)`
              )
            )
            .join("")
        )}
-       ${sectionTable("By Mode", appointments.byMode.map((m) => row(m.mode, m.count)).join(""))}
-       ${sectionTable("By Type", appointments.byType.map((t) => row(t.type, t.count)).join(""))}`
-    : "";
-
-  const consultSection = sections.consultations
-    ? `<h2>Consultations</h2>
        ${sectionTable(
-         "By Status",
-         consultations.byStatus
-           .map((s) =>
-             row(
-               s.status,
-               `${s.count} (${consultations.total > 0 ? Math.round((s.count / consultations.total) * 100) : 0}%)`
-             )
-           )
+         "By Age Group",
+         members.byAgeGroup
+           .map((a) => row(a.group === "Unknown" ? "Age unknown" : `${a.group} yrs`, a.count))
            .join("")
-       )}
-       ${sectionTable("Top Healthcare Providers", consultations.byHP.map((h) => row(h.hp, h.count)).join(""))}`
-    : "";
-
-  const membersSection = sections.members
-    ? `<h2>Members</h2>
-       ${sectionTable("By Role", members.byRole.map((r) => row(r.role, r.count)).join(""))}`
-    : "";
-
-  const diagSection = sections.diagnostics
-    ? `<h2>Diagnostics &amp; Documents</h2>
-       ${sectionTable(
-         "Summary",
-         [
-           row("Prescriptions", diagnostics.prescriptions),
-           row("Lab Requests", diagnostics.labRequests),
-           row("Imaging Requests", diagnostics.imagingRequests),
-           row("Heart Station Requests", diagnostics.heartRequests),
-           row("Medical Certificates", diagnostics.medicalCertificates),
-           row("Referral Slips", diagnostics.referralSlips),
-           row("Total Documents", diagnostics.total),
-         ].join("")
        )}`
+    : "";
+
+  const studentsSection = sections.students
+    ? `<h2>Students</h2>
+       ${sectionTable("By College", students.byCollege.map((c) => row(c.college, c.count)).join(""))}
+       ${sectionTable("By Program", students.byProgram.map((p) => row(p.program, p.count)).join(""))}
+       ${sectionTable(
+         "By Year Level",
+         students.byYearLevel.map((y) => row(y.yearLevel, y.count)).join("")
+       )}`
+    : "";
+
+  const staffSection = sections.staff
+    ? `<h2>Staff</h2>
+       ${sectionTable(
+         "By Department",
+         staff.byDepartment.map((d) => row(d.department, d.count)).join("")
+       )}
+       ${sectionTable("By Office", staff.byOffice.map((o) => row(o.office, o.count)).join(""))}`
     : "";
 
   return `<!DOCTYPE html>
@@ -227,7 +180,7 @@ function buildReportHtml(
     h2 { font-size: 15px; font-weight: 700; margin: 24px 0 10px; padding-bottom: 4px; border-bottom: 2px solid #e5e7eb; text-transform: uppercase; letter-spacing: .05em; color: #1f2937; }
     .header { margin-bottom: 28px; }
     .meta { font-size: 11px; color: #6b7280; margin-top: 2px; }
-    .kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
     .kpi-box { border: 1px solid #e5e7eb; border-radius: 6px; padding: 10px 14px; }
     .kpi-label { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: #6b7280; }
     .kpi-value { font-size: 22px; font-weight: 700; margin-top: 4px; }
@@ -242,11 +195,9 @@ function buildReportHtml(
   </div>
 
   ${overviewSection}
-  ${clinicsSection}
-  ${apptSection}
-  ${consultSection}
-  ${membersSection}
-  ${diagSection}
+  ${memberSection}
+  ${studentsSection}
+  ${staffSection}
 
   <div class="footer">This report was generated by ClinicEZ. Confidential — for authorized use only.</div>
 </body>
@@ -287,24 +238,17 @@ function BreakdownRow({
   label,
   count,
   total,
-  badge,
 }: {
   label: string;
   count: number;
   total: number;
-  badge?: string;
 }) {
   const pct = total > 0 ? Math.round((count / total) * 100) : 0;
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between text-sm">
-        <span className="text-muted-foreground truncate max-w-[60%]">{label}</span>
+        <span className="text-muted-foreground truncate max-w-[65%]">{label}</span>
         <div className="flex items-center gap-2">
-          {badge && (
-            <Badge variant="secondary" className="text-xs px-1.5 py-0">
-              {badge}
-            </Badge>
-          )}
           <span className="font-semibold tabular-nums">{count}</span>
           <span className="text-muted-foreground text-xs w-8 text-right">{pct}%</span>
         </div>
@@ -323,7 +267,7 @@ function DailyTrendChart({ trend }: { trend: { date: string; count: number }[] }
   if (!trend.length) {
     return (
       <div className="flex items-center justify-center h-16 text-muted-foreground text-sm">
-        No data for this period
+        No registrations in this period
       </div>
     );
   }
@@ -341,16 +285,6 @@ function DailyTrendChart({ trend }: { trend: { date: string; count: number }[] }
     </div>
   );
 }
-
-const STATUS_COLORS: Record<string, string> = {
-  COMPLETED: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
-  PENDING: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
-  CONFIRMED: "bg-sky-500/15 text-sky-700 dark:text-sky-400",
-  CANCELLED: "bg-rose-500/15 text-rose-700 dark:text-rose-400",
-  PROCESSING: "bg-violet-500/15 text-violet-700 dark:text-violet-400",
-  DONE: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
-  UNKNOWN: "bg-muted text-muted-foreground",
-};
 
 /* ──────────────────────────────────────── */
 /*  Main Client Component                   */
@@ -433,7 +367,7 @@ export function OrgReportsClient({
     setPrintSections((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const { org, clinics, members, appointments, consultations, patients, diagnostics } = data;
+  const { org, members, students, staff } = data;
 
   return (
     <div className="space-y-6 p-4 md:p-6">
@@ -517,231 +451,140 @@ export function OrgReportsClient({
             <BarChart3 className="h-4 w-4" />
             Overview
           </TabsTrigger>
-          <TabsTrigger value="clinics" className="gap-1.5 whitespace-nowrap">
-            <Building2 className="h-4 w-4" />
-            Clinics
-          </TabsTrigger>
-          <TabsTrigger value="appointments" className="gap-1.5 whitespace-nowrap">
-            <Calendar className="h-4 w-4" />
-            Appointments
-          </TabsTrigger>
-          <TabsTrigger value="consultations" className="gap-1.5 whitespace-nowrap">
-            <Stethoscope className="h-4 w-4" />
-            Consultations
-          </TabsTrigger>
-          <TabsTrigger value="members" className="gap-1.5 whitespace-nowrap">
+          <TabsTrigger value="memberInsights" className="gap-1.5 whitespace-nowrap">
             <Users className="h-4 w-4" />
-            Members
+            Member Insights
           </TabsTrigger>
-          <TabsTrigger value="diagnostics" className="gap-1.5 whitespace-nowrap">
-            <Activity className="h-4 w-4" />
-            Diagnostics
+          <TabsTrigger value="students" className="gap-1.5 whitespace-nowrap">
+            <GraduationCap className="h-4 w-4" />
+            Students
+          </TabsTrigger>
+          <TabsTrigger value="staff" className="gap-1.5 whitespace-nowrap">
+            <Briefcase className="h-4 w-4" />
+            Staff
           </TabsTrigger>
         </TabsList>
 
         {/* ── OVERVIEW TAB ── */}
         <TabsContent value="overview" className="space-y-6">
-          {/* KPI cards */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <KPICard
-              icon={<Building2 className="h-4 w-4 text-sky-600" />}
-              label="Clinics"
-              value={clinics.total}
-              colorClass="bg-sky-500/10"
-            />
-            <KPICard
-              icon={<Users className="h-4 w-4 text-violet-600" />}
-              label="Members"
-              value={members.total}
-              colorClass="bg-violet-500/10"
-            />
-            <KPICard
-              icon={<Calendar className="h-4 w-4 text-amber-600" />}
-              label="Appointments"
-              value={appointments.total}
-              sub={`${appointments.walkIn} walk-in · ${appointments.scheduled} scheduled`}
-              colorClass="bg-amber-500/10"
-            />
-            <KPICard
-              icon={<Stethoscope className="h-4 w-4 text-emerald-600" />}
-              label="Consultations"
-              value={consultations.total}
+              icon={<UserCheck className="h-4 w-4 text-emerald-600" />}
+              label="Active Members"
+              value={members.totalActive}
               colorClass="bg-emerald-500/10"
             />
             <KPICard
-              icon={<Users className="h-4 w-4 text-rose-600" />}
-              label="New Patients"
-              value={patients.newInPeriod}
-              sub={`${patients.totalActive} total active`}
-              colorClass="bg-rose-500/10"
+              icon={<TrendingUp className="h-4 w-4 text-sky-600" />}
+              label="New in Period"
+              value={members.newInPeriod}
+              colorClass="bg-sky-500/10"
             />
             <KPICard
-              icon={<Activity className="h-4 w-4 text-indigo-600" />}
-              label="Diagnostics"
-              value={diagnostics.total}
-              colorClass="bg-indigo-500/10"
+              icon={<UserClock className="h-4 w-4 text-amber-600" />}
+              label="Pending Requests"
+              value={members.pending}
+              colorClass="bg-amber-500/10"
+            />
+            <KPICard
+              icon={<UserX className="h-4 w-4 text-rose-600" />}
+              label="Suspended"
+              value={members.suspended}
+              colorClass="bg-rose-500/10"
             />
           </div>
 
-          {/* Appointment + Consultation trends */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4 text-amber-500" />
-                  Appointment Daily Trend
+                  <Users className="h-4 w-4 text-violet-500" />
+                  Members by Role
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <DailyTrendChart trend={appointments.dailyTrend} />
+              <CardContent className="space-y-3">
+                {members.byRole.map((r) => (
+                  <BreakdownRow
+                    key={r.role}
+                    label={r.role}
+                    count={r.count}
+                    total={members.totalActive}
+                  />
+                ))}
+                {members.byRole.length === 0 && (
+                  <p className="text-sm text-muted-foreground">No active members</p>
+                )}
               </CardContent>
             </Card>
+
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4 text-emerald-500" />
-                  Consultation Daily Trend
+                  <Users className="h-4 w-4 text-pink-500" />
+                  Members by Gender
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <DailyTrendChart trend={consultations.dailyTrend} />
+              <CardContent className="space-y-3">
+                {members.byGender.map((g) => (
+                  <BreakdownRow
+                    key={g.gender}
+                    label={g.gender}
+                    count={g.count}
+                    total={members.totalActive}
+                  />
+                ))}
+                {members.byGender.length === 0 && (
+                  <p className="text-sm text-muted-foreground">No data</p>
+                )}
               </CardContent>
             </Card>
           </div>
 
-          {/* Diagnostics summary */}
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <Activity className="h-4 w-4 text-indigo-500" />
-                Diagnostics &amp; Documents
+                <TrendingUp className="h-4 w-4 text-sky-500" />
+                New Registrations — Daily Trend
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-                {[
-                  { label: "Prescriptions", value: diagnostics.prescriptions, icon: <Pill className="h-3.5 w-3.5" /> },
-                  { label: "Lab Requests", value: diagnostics.labRequests, icon: <FlaskConical className="h-3.5 w-3.5" /> },
-                  { label: "Imaging", value: diagnostics.imagingRequests, icon: <Microscope className="h-3.5 w-3.5" /> },
-                  { label: "Heart Station", value: diagnostics.heartRequests, icon: <Heart className="h-3.5 w-3.5" /> },
-                  { label: "Med Certs", value: diagnostics.medicalCertificates, icon: <FileText className="h-3.5 w-3.5" /> },
-                  { label: "Referrals", value: diagnostics.referralSlips, icon: <Share2 className="h-3.5 w-3.5" /> },
-                ].map((d) => (
-                  <div key={d.label} className="rounded-lg border p-3 space-y-1.5">
-                    <div className="flex items-center gap-1.5 text-muted-foreground">
-                      {d.icon}
-                      <span className="text-xs">{d.label}</span>
-                    </div>
-                    <div className="text-xl font-bold">{d.value}</div>
-                  </div>
-                ))}
-              </div>
+              <DailyTrendChart trend={members.registrationTrend} />
             </CardContent>
           </Card>
         </TabsContent>
 
-        {/* ── CLINICS TAB ── */}
-        <TabsContent value="clinics" className="space-y-4">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <Building2 className="h-4 w-4 text-sky-500" />
-                Clinic Performance ({clinics.total} clinics)
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {clinics.breakdown.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No clinics linked to this organization.</p>
-              ) : (
-                clinics.breakdown.map((c) => (
-                  <div
-                    key={c.clinicUid}
-                    className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/30 transition-colors"
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="flex-shrink-0 h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                        <Building2 className="h-4 w-4 text-primary" />
-                      </div>
-                      <span className="font-medium text-sm truncate">{c.name}</span>
-                    </div>
-                    <div className="flex items-center gap-4 flex-shrink-0 text-xs text-muted-foreground">
-                      <span>
-                        <span className="font-semibold text-foreground">{c.appointments}</span> appts
-                      </span>
-                      <span>
-                        <span className="font-semibold text-foreground">{c.consultations}</span> consults
-                      </span>
-                      <span>
-                        <span className="font-semibold text-foreground">{c.patients}</span> patients
-                      </span>
-                    </div>
-                  </div>
-                ))
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* ── APPOINTMENTS TAB ── */}
-        <TabsContent value="appointments" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* ── MEMBER INSIGHTS TAB ── */}
+        <TabsContent value="memberInsights" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <KPICard
-              icon={<Calendar className="h-4 w-4 text-amber-600" />}
-              label="Total Appointments"
-              value={appointments.total}
-              colorClass="bg-amber-500/10"
+              icon={<UserCheck className="h-4 w-4 text-emerald-600" />}
+              label="Active Members"
+              value={members.totalActive}
+              colorClass="bg-emerald-500/10"
             />
             <KPICard
-              icon={<ClipboardList className="h-4 w-4 text-sky-600" />}
-              label="Walk-in"
-              value={appointments.walkIn}
+              icon={<TrendingUp className="h-4 w-4 text-sky-600" />}
+              label="New in Period"
+              value={members.newInPeriod}
               colorClass="bg-sky-500/10"
-            />
-            <KPICard
-              icon={<Calendar className="h-4 w-4 text-violet-600" />}
-              label="Scheduled"
-              value={appointments.scheduled}
-              colorClass="bg-violet-500/10"
             />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold">By Status</CardTitle>
+                <CardTitle className="text-sm font-semibold">By Role</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {appointments.byStatus.map((s) => (
-                  <div key={s.status} className="flex items-center justify-between text-sm">
-                    <Badge
-                      className={`text-xs ${STATUS_COLORS[s.status] ?? STATUS_COLORS.UNKNOWN}`}
-                      variant="secondary"
-                    >
-                      {s.status}
-                    </Badge>
-                    <span className="font-semibold">{s.count}</span>
-                  </div>
-                ))}
-                {appointments.byStatus.length === 0 && (
-                  <p className="text-sm text-muted-foreground">No data</p>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold">By Mode</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {appointments.byMode.map((m) => (
+                {members.byRole.map((r) => (
                   <BreakdownRow
-                    key={m.mode}
-                    label={m.mode}
-                    count={m.count}
-                    total={appointments.total}
+                    key={r.role}
+                    label={r.role}
+                    count={r.count}
+                    total={members.totalActive}
                   />
                 ))}
-                {appointments.byMode.length === 0 && (
+                {members.byRole.length === 0 && (
                   <p className="text-sm text-muted-foreground">No data</p>
                 )}
               </CardContent>
@@ -749,114 +592,18 @@ export function OrgReportsClient({
 
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold">By Type</CardTitle>
+                <CardTitle className="text-sm font-semibold">By Gender</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {appointments.byType.map((t) => (
-                  <BreakdownRow
-                    key={t.type}
-                    label={t.type}
-                    count={t.count}
-                    total={appointments.total}
-                  />
-                ))}
-                {appointments.byType.length === 0 && (
-                  <p className="text-sm text-muted-foreground">No data</p>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-amber-500" />
-                Daily Trend
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <DailyTrendChart trend={appointments.dailyTrend} />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* ── CONSULTATIONS TAB ── */}
-        <TabsContent value="consultations" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <KPICard
-              icon={<Stethoscope className="h-4 w-4 text-emerald-600" />}
-              label="Total Consultations"
-              value={consultations.total}
-              colorClass="bg-emerald-500/10"
-            />
-            <KPICard
-              icon={<Users className="h-4 w-4 text-rose-600" />}
-              label="New Patients (Period)"
-              value={patients.newInPeriod}
-              sub={`${patients.totalActive} total active`}
-              colorClass="bg-rose-500/10"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold">By Status</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {consultations.byStatus.map((s) => (
-                  <div key={s.status} className="flex items-center justify-between text-sm">
-                    <Badge
-                      className={`text-xs ${STATUS_COLORS[s.status] ?? STATUS_COLORS.UNKNOWN}`}
-                      variant="secondary"
-                    >
-                      {s.status}
-                    </Badge>
-                    <span className="font-semibold">{s.count}</span>
-                  </div>
-                ))}
-                {consultations.byStatus.length === 0 && (
-                  <p className="text-sm text-muted-foreground">No data</p>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold">Top Healthcare Providers</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {consultations.byHP.map((h) => (
-                  <BreakdownRow
-                    key={h.hp}
-                    label={h.hp}
-                    count={h.count}
-                    total={consultations.total}
-                  />
-                ))}
-                {consultations.byHP.length === 0 && (
-                  <p className="text-sm text-muted-foreground">No data</p>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Patient gender breakdown */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold">Patient Gender Distribution</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {patients.byGender.map((g) => (
+                {members.byGender.map((g) => (
                   <BreakdownRow
                     key={g.gender}
                     label={g.gender}
                     count={g.count}
-                    total={patients.totalActive}
+                    total={members.totalActive}
                   />
                 ))}
-                {patients.byGender.length === 0 && (
+                {members.byGender.length === 0 && (
                   <p className="text-sm text-muted-foreground">No data</p>
                 )}
               </CardContent>
@@ -864,18 +611,18 @@ export function OrgReportsClient({
 
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold">Patient Age Groups</CardTitle>
+                <CardTitle className="text-sm font-semibold">By Age Group</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {patients.byAgeGroup.map((a) => (
+                {members.byAgeGroup.map((a) => (
                   <BreakdownRow
                     key={a.group}
                     label={a.group === "Unknown" ? "Age unknown" : `${a.group} yrs`}
                     count={a.count}
-                    total={patients.totalActive}
+                    total={members.totalActive}
                   />
                 ))}
-                {patients.byAgeGroup.length === 0 && (
+                {members.byAgeGroup.length === 0 && (
                   <p className="text-sm text-muted-foreground">No data</p>
                 )}
               </CardContent>
@@ -884,70 +631,154 @@ export function OrgReportsClient({
 
           <Card>
             <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-semibold">Membership Status</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {[
+                  { label: "Active", value: members.totalActive, colorClass: "text-emerald-600", bg: "bg-emerald-500/10" },
+                  { label: "New (period)", value: members.newInPeriod, colorClass: "text-sky-600", bg: "bg-sky-500/10" },
+                  { label: "Pending", value: members.pending, colorClass: "text-amber-600", bg: "bg-amber-500/10" },
+                  { label: "Suspended", value: members.suspended, colorClass: "text-rose-600", bg: "bg-rose-500/10" },
+                ].map((s) => (
+                  <div key={s.label} className={`rounded-lg border p-3 ${s.bg}`}>
+                    <p className="text-xs text-muted-foreground">{s.label}</p>
+                    <p className={`text-2xl font-bold mt-1 ${s.colorClass}`}>{s.value}</p>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-emerald-500" />
-                Daily Trend
+                <TrendingUp className="h-4 w-4 text-sky-500" />
+                New Registrations — Daily Trend
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <DailyTrendChart trend={consultations.dailyTrend} />
+              <DailyTrendChart trend={members.registrationTrend} />
             </CardContent>
           </Card>
         </TabsContent>
 
-        {/* ── MEMBERS TAB ── */}
-        <TabsContent value="members" className="space-y-4">
+        {/* ── STUDENTS TAB ── */}
+        <TabsContent value="students" className="space-y-4">
           <KPICard
-            icon={<Users className="h-4 w-4 text-violet-600" />}
-            label="Active Members"
-            value={members.total}
-            colorClass="bg-violet-500/10"
-          />
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold">Members by Role</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {members.byRole.map((r) => (
-                <BreakdownRow
-                  key={r.role}
-                  label={r.role}
-                  count={r.count}
-                  total={members.total}
-                />
-              ))}
-              {members.byRole.length === 0 && (
-                <p className="text-sm text-muted-foreground">No active members found.</p>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* ── DIAGNOSTICS TAB ── */}
-        <TabsContent value="diagnostics" className="space-y-4">
-          <KPICard
-            icon={<Activity className="h-4 w-4 text-indigo-600" />}
-            label="Total Documents"
-            value={diagnostics.total}
+            icon={<GraduationCap className="h-4 w-4 text-indigo-600" />}
+            label="Student Records"
+            value={students.total}
             colorClass="bg-indigo-500/10"
           />
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            {[
-              { label: "Prescriptions", value: diagnostics.prescriptions, icon: <Pill className="h-4 w-4 text-violet-600" />, color: "bg-violet-500/10" },
-              { label: "Lab Requests", value: diagnostics.labRequests, icon: <FlaskConical className="h-4 w-4 text-sky-600" />, color: "bg-sky-500/10" },
-              { label: "Imaging Requests", value: diagnostics.imagingRequests, icon: <Microscope className="h-4 w-4 text-teal-600" />, color: "bg-teal-500/10" },
-              { label: "Heart Station", value: diagnostics.heartRequests, icon: <Heart className="h-4 w-4 text-rose-600" />, color: "bg-rose-500/10" },
-              { label: "Medical Certificates", value: diagnostics.medicalCertificates, icon: <FileText className="h-4 w-4 text-amber-600" />, color: "bg-amber-500/10" },
-              { label: "Referral Slips", value: diagnostics.referralSlips, icon: <Share2 className="h-4 w-4 text-emerald-600" />, color: "bg-emerald-500/10" },
-            ].map((d) => (
-              <KPICard
-                key={d.label}
-                icon={d.icon}
-                label={d.label}
-                value={d.value}
-                colorClass={d.color}
-              />
-            ))}
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-semibold">By College</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {students.byCollege.map((c) => (
+                  <BreakdownRow
+                    key={c.college}
+                    label={c.college}
+                    count={c.count}
+                    total={students.total}
+                  />
+                ))}
+                {students.byCollege.length === 0 && (
+                  <p className="text-sm text-muted-foreground">No student records</p>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-semibold">By Program</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {students.byProgram.map((p) => (
+                  <BreakdownRow
+                    key={p.program}
+                    label={p.program}
+                    count={p.count}
+                    total={students.total}
+                  />
+                ))}
+                {students.byProgram.length === 0 && (
+                  <p className="text-sm text-muted-foreground">No data</p>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-semibold">By Year Level</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {students.byYearLevel.map((y) => (
+                  <BreakdownRow
+                    key={y.yearLevel}
+                    label={y.yearLevel}
+                    count={y.count}
+                    total={students.total}
+                  />
+                ))}
+                {students.byYearLevel.length === 0 && (
+                  <p className="text-sm text-muted-foreground">No data</p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* ── STAFF TAB ── */}
+        <TabsContent value="staff" className="space-y-4">
+          <KPICard
+            icon={<Briefcase className="h-4 w-4 text-teal-600" />}
+            label="Employment Records"
+            value={staff.total}
+            colorClass="bg-teal-500/10"
+          />
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-semibold">By Department</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {staff.byDepartment.map((d) => (
+                  <BreakdownRow
+                    key={d.department}
+                    label={d.department}
+                    count={d.count}
+                    total={staff.total}
+                  />
+                ))}
+                {staff.byDepartment.length === 0 && (
+                  <p className="text-sm text-muted-foreground">No employment records</p>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-semibold">By Office</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {staff.byOffice.map((o) => (
+                  <BreakdownRow
+                    key={o.office}
+                    label={o.office}
+                    count={o.count}
+                    total={staff.total}
+                  />
+                ))}
+                {staff.byOffice.length === 0 && (
+                  <p className="text-sm text-muted-foreground">No data</p>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
       </Tabs>

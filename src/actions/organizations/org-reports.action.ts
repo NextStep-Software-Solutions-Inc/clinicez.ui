@@ -25,254 +25,128 @@ export const getOrgReportsAction = withErrorHandling(
 
     const dateFilter = { gte: from, lte: to };
 
-    // Fetch all clinic IDs linked to this org
-    const clinicOrgs = await prisma.clinicOrganization.findMany({
-      where: { organizationId: org.id, isActive: true },
-      select: {
-        Clinic: {
-          select: {
-            id: true,
-            clinicUid: true,
-            name: true,
-            logo: true,
-            isActive: true,
-          },
-        },
-      },
-    });
-
-    const clinicIds = clinicOrgs
-      .filter((co) => co.Clinic.isActive)
-      .map((co) => co.Clinic.id);
-
     const [
-      // Org members by role
-      orgMembers,
-      // Appointments across all org clinics
-      appointments,
-      // Consultations across all org clinics
-      consultations,
-      // New patients registered in period (across org clinics)
-      newPatients,
-      // Total active patients across org clinics
-      totalPatients,
-      // Patient demographics (all active across org clinics)
-      patientDemographics,
-      // Diagnostics across org clinics
-      prescriptions,
-      labRequests,
-      imagingRequests,
-      heartRequests,
-      medicalCertificates,
-      referralSlips,
-      // Per-clinic appointment counts
-      apptPerClinic,
-      // Per-clinic consultation counts
-      consultPerClinic,
-      // Per-clinic patient counts
-      patientPerClinic,
+      // All active members with user + role details
+      allMembers,
+      // New members who joined in the selected period
+      newMembersInPeriod,
+      // Pending membership requests
+      pendingCount,
+      // Suspended members
+      suspendedCount,
+      // Member gender distribution (via User)
+      memberGenders,
+      // Member age data (via User dob)
+      memberAges,
+      // Student records breakdown by college / program / year level
+      studentRecords,
+      // Employment records breakdown by department / office
+      employmentRecords,
     ] = await Promise.all([
-      // ── Org members by role ──────────────────────────────────────────────
+      // ── All active members ───────────────────────────────────────────────
       prisma.organizationMember.findMany({
         where: { organizationId: org.id, status: "ACTIVE" },
         select: {
+          id: true,
+          createdAt: true,
           OrganizationRole: { select: { name: true } },
-          User: { select: { firstName: true, lastName: true } },
-          createdAt: true,
-        },
-      }),
-
-      // ── Appointments ─────────────────────────────────────────────────────
-      prisma.appointment.findMany({
-        where: {
-          clinicId: { in: clinicIds },
-          isActive: true,
-          deletedAt: null,
-          createdAt: dateFilter,
-        },
-        select: {
-          id: true,
-          subject: true,
-          clinicId: true,
-          createdAt: true,
-          AppointmentAttribute: {
-            select: {
-              status: true,
-              date: true,
-              AppointmentMode: { select: { name: true } },
-              AppointmentType: { select: { name: true } },
-              Service: {
-                select: {
-                  name: true,
-                  ServiceCategory: { select: { name: true } },
-                },
-              },
-            },
-          },
-        },
-      }),
-
-      // ── Consultations ─────────────────────────────────────────────────────
-      prisma.consultationTicket.findMany({
-        where: {
-          clinicId: { in: clinicIds },
-          isActive: true,
-          createdAt: dateFilter,
-        },
-        select: {
-          id: true,
-          clinicId: true,
-          createdAt: true,
-          ConsultationTicketAttribute: { select: { status: true } },
-          ConsultationTicketHPs: {
-            select: {
-              HealthCareProvider: {
-                select: {
-                  id: true,
-                  HPProfile: { select: { name: true } },
-                  User: { select: { firstName: true, lastName: true } },
-                },
-              },
-            },
-          },
-        },
-      }),
-
-      // ── New patients registered in period ────────────────────────────────
-      prisma.clinicPatient.count({
-        where: { clinicId: { in: clinicIds }, createdAt: dateFilter },
-      }),
-
-      // ── Total active patients across org clinics ──────────────────────────
-      prisma.clinicPatient.count({
-        where: { clinicId: { in: clinicIds }, isActive: true },
-      }),
-
-      // ── Patient demographics ──────────────────────────────────────────────
-      prisma.clinicPatient.findMany({
-        where: { clinicId: { in: clinicIds }, isActive: true },
-        select: {
-          createdAt: true,
-          Patient: {
+          User: {
             select: {
               gender: true,
               dob: true,
-              civilStatus: true,
-              bloodType: true,
             },
           },
         },
       }),
 
-      // ── Diagnostics counts ────────────────────────────────────────────────
-      prisma.prescription.count({
-        where: { clinicId: { in: clinicIds }, isActive: true, createdAt: dateFilter },
-      }),
-      prisma.clinicLaboratoryRequest.count({
-        where: { clinicId: { in: clinicIds }, isActive: true, createdAt: dateFilter },
-      }),
-      prisma.clinicImagingRequest.count({
-        where: { clinicId: { in: clinicIds }, isActive: true, createdAt: dateFilter },
-      }),
-      prisma.clinicHeartStationRequest.count({
-        where: { clinicId: { in: clinicIds }, isActive: true, createdAt: dateFilter },
-      }),
-      prisma.clinicMedicalCertificate.count({
-        where: { clinicId: { in: clinicIds }, isActive: true, createdAt: dateFilter },
-      }),
-      prisma.clinicReferralSlip.count({
-        where: { clinicId: { in: clinicIds }, isActive: true, createdAt: dateFilter },
+      // ── New members in period ────────────────────────────────────────────
+      prisma.organizationMember.count({
+        where: {
+          organizationId: org.id,
+          status: "ACTIVE",
+          createdAt: dateFilter,
+        },
       }),
 
-      // ── Per-clinic appointment counts (in period) ─────────────────────────
-      prisma.appointment.groupBy({
-        by: ["clinicId"],
+      // ── Pending membership requests ──────────────────────────────────────
+      prisma.organizationMember.count({
+        where: { organizationId: org.id, status: "PENDING" },
+      }),
+
+      // ── Suspended members ────────────────────────────────────────────────
+      prisma.organizationMember.count({
+        where: { organizationId: org.id, status: "SUSPENDED" },
+      }),
+
+      // ── Member gender distribution ───────────────────────────────────────
+      prisma.organizationMember.findMany({
+        where: { organizationId: org.id, status: "ACTIVE" },
+        select: {
+          User: { select: { gender: true } },
+        },
+      }),
+
+      // ── Member age data ──────────────────────────────────────────────────
+      prisma.organizationMember.findMany({
+        where: { organizationId: org.id, status: "ACTIVE" },
+        select: {
+          User: { select: { dob: true } },
+        },
+      }),
+
+      // ── Student records breakdown ────────────────────────────────────────
+      prisma.userStudentRecord.findMany({
         where: {
-          clinicId: { in: clinicIds },
+          organizationId: org.id,
           isActive: true,
           deletedAt: null,
-          createdAt: dateFilter,
         },
-        _count: { id: true },
+        select: {
+          College: { select: { name: true } },
+          Program: { select: { name: true } },
+          OrganizationYearLevel: { select: { name: true } },
+        },
       }),
 
-      // ── Per-clinic consultation counts (in period) ────────────────────────
-      prisma.consultationTicket.groupBy({
-        by: ["clinicId"],
+      // ── Employment records breakdown ─────────────────────────────────────
+      prisma.userEmploymentRecord.findMany({
         where: {
-          clinicId: { in: clinicIds },
+          organizationId: org.id,
           isActive: true,
-          createdAt: dateFilter,
+          deletedAt: null,
         },
-        _count: { id: true },
-      }),
-
-      // ── Per-clinic patient counts (all active) ────────────────────────────
-      prisma.clinicPatient.groupBy({
-        by: ["clinicId"],
-        where: { clinicId: { in: clinicIds }, isActive: true },
-        _count: { id: true },
+        select: {
+          Department: { select: { name: true } },
+          Office: { select: { name: true } },
+        },
       }),
     ]);
 
-    // ── Process member stats ──────────────────────────────────────────────────
+    // ── Process member role counts ────────────────────────────────────────────
     const membersByRole: Record<string, number> = {};
-    for (const m of orgMembers) {
+    for (const m of allMembers) {
       const role = m.OrganizationRole.name;
       membersByRole[role] = (membersByRole[role] ?? 0) + 1;
     }
 
-    // ── Process appointment stats ─────────────────────────────────────────────
-    const appointmentStatusCounts: Record<string, number> = {};
-    const appointmentModeCounts: Record<string, number> = {};
-    const appointmentTypeCounts: Record<string, number> = {};
-    const appointmentsByDay: Record<string, number> = {};
-    let walkInCount = 0;
-    let scheduledCount = 0;
-
-    for (const apt of appointments) {
-      const status = apt.AppointmentAttribute?.status ?? "UNKNOWN";
-      appointmentStatusCounts[status] = (appointmentStatusCounts[status] ?? 0) + 1;
-
-      const mode = apt.AppointmentAttribute?.AppointmentMode?.name ?? "Unknown";
-      appointmentModeCounts[mode] = (appointmentModeCounts[mode] ?? 0) + 1;
-
-      const type = apt.AppointmentAttribute?.AppointmentType?.name ?? "Unknown";
-      appointmentTypeCounts[type] = (appointmentTypeCounts[type] ?? 0) + 1;
-
-      const day = apt.createdAt.toISOString().slice(0, 10);
-      appointmentsByDay[day] = (appointmentsByDay[day] ?? 0) + 1;
-
-      if (apt.subject.startsWith("Walk-in:")) {
-        walkInCount++;
-      } else {
-        scheduledCount++;
+    // ── Process daily registration trend (in period) ──────────────────────────
+    const registrationsByDay: Record<string, number> = {};
+    for (const m of allMembers) {
+      const day = m.createdAt.toISOString().slice(0, 10);
+      // Only include days within the selected period
+      if (m.createdAt >= from && m.createdAt <= to) {
+        registrationsByDay[day] = (registrationsByDay[day] ?? 0) + 1;
       }
     }
 
-    // ── Process consultation stats ────────────────────────────────────────────
-    const consultationStatusCounts: Record<string, number> = {};
-    const consultationsByDay: Record<string, number> = {};
-    const hpConsultationCounts: Record<string, number> = {};
-
-    for (const ct of consultations) {
-      const status = ct.ConsultationTicketAttribute?.status ?? "UNKNOWN";
-      consultationStatusCounts[status] = (consultationStatusCounts[status] ?? 0) + 1;
-
-      const day = ct.createdAt.toISOString().slice(0, 10);
-      consultationsByDay[day] = (consultationsByDay[day] ?? 0) + 1;
-
-      for (const ctHp of ct.ConsultationTicketHPs) {
-        const hp = ctHp.HealthCareProvider;
-        const hpName =
-          hp.HPProfile?.name ??
-          (`${hp.User.firstName ?? ""} ${hp.User.lastName ?? ""}`.trim() || "Unknown");
-        hpConsultationCounts[hpName] = (hpConsultationCounts[hpName] ?? 0) + 1;
-      }
-    }
-
-    // ── Process patient demographics ──────────────────────────────────────────
+    // ── Process gender distribution ───────────────────────────────────────────
     const genderCounts: Record<string, number> = {};
+    for (const m of memberGenders) {
+      const g = m.User.gender ?? "Unknown";
+      genderCounts[g] = (genderCounts[g] ?? 0) + 1;
+    }
+
+    // ── Process age group distribution ────────────────────────────────────────
     const ageGroupCounts: Record<string, number> = {
       "0-12": 0,
       "13-17": 0,
@@ -281,18 +155,14 @@ export const getOrgReportsAction = withErrorHandling(
       "36-45": 0,
       "46-59": 0,
       "60+": 0,
-      "Unknown": 0,
+      Unknown: 0,
     };
-
     const now = new Date();
-    for (const cp of patientDemographics) {
-      const p = cp.Patient;
-      const g = p.gender ?? "Unknown";
-      genderCounts[g] = (genderCounts[g] ?? 0) + 1;
-
-      if (p.dob) {
+    for (const m of memberAges) {
+      const dob = m.User.dob;
+      if (dob) {
         const ageYears = Math.floor(
-          (now.getTime() - new Date(p.dob).getTime()) / (1000 * 60 * 60 * 24 * 365.25)
+          (now.getTime() - new Date(dob).getTime()) / (1000 * 60 * 60 * 24 * 365.25)
         );
         if (ageYears <= 12) ageGroupCounts["0-12"]++;
         else if (ageYears <= 17) ageGroupCounts["13-17"]++;
@@ -306,92 +176,75 @@ export const getOrgReportsAction = withErrorHandling(
       }
     }
 
-    // ── Build per-clinic breakdown ─────────────────────────────────────────────
-    const apptByClinicMap = new Map(apptPerClinic.map((r) => [r.clinicId, r._count.id]));
-    const consultByClinicMap = new Map(consultPerClinic.map((r) => [r.clinicId, r._count.id]));
-    const patientByClinicMap = new Map(patientPerClinic.map((r) => [r.clinicId, r._count.id]));
+    // ── Process student record breakdowns ─────────────────────────────────────
+    const byCollege: Record<string, number> = {};
+    const byProgram: Record<string, number> = {};
+    const byYearLevel: Record<string, number> = {};
+    for (const sr of studentRecords) {
+      const college = sr.College?.name ?? "Unknown";
+      byCollege[college] = (byCollege[college] ?? 0) + 1;
 
-    const clinicsBreakdown = clinicOrgs
-      .filter((co) => co.Clinic.isActive)
-      .map((co) => ({
-        clinicUid: co.Clinic.clinicUid,
-        name: co.Clinic.name,
-        logo: co.Clinic.logo,
-        appointments: apptByClinicMap.get(co.Clinic.id) ?? 0,
-        consultations: consultByClinicMap.get(co.Clinic.id) ?? 0,
-        patients: patientByClinicMap.get(co.Clinic.id) ?? 0,
-      }))
-      .sort((a, b) => b.appointments - a.appointments);
+      const program = sr.Program?.name ?? "Unknown";
+      byProgram[program] = (byProgram[program] ?? 0) + 1;
+
+      const yearLevel = sr.OrganizationYearLevel?.name ?? "Unknown";
+      byYearLevel[yearLevel] = (byYearLevel[yearLevel] ?? 0) + 1;
+    }
+
+    // ── Process employment record breakdowns ──────────────────────────────────
+    const byDepartment: Record<string, number> = {};
+    const byOffice: Record<string, number> = {};
+    for (const er of employmentRecords) {
+      const dept = er.Department?.name ?? "Unknown";
+      byDepartment[dept] = (byDepartment[dept] ?? 0) + 1;
+
+      const office = er.Office?.name ?? "Unknown";
+      byOffice[office] = (byOffice[office] ?? 0) + 1;
+    }
 
     return {
       message: "Organization reports retrieved successfully",
       data: {
         org,
         period: { from: from.toISOString(), to: to.toISOString() },
-        clinics: {
-          total: clinicsBreakdown.length,
-          breakdown: clinicsBreakdown,
-        },
         members: {
-          total: orgMembers.length,
+          totalActive: allMembers.length,
+          newInPeriod: newMembersInPeriod,
+          pending: pendingCount,
+          suspended: suspendedCount,
           byRole: Object.entries(membersByRole)
             .map(([role, count]) => ({ role, count }))
             .sort((a, b) => b.count - a.count),
-        },
-        appointments: {
-          total: appointments.length,
-          walkIn: walkInCount,
-          scheduled: scheduledCount,
-          byStatus: Object.entries(appointmentStatusCounts)
-            .map(([status, count]) => ({ status, count }))
-            .sort((a, b) => b.count - a.count),
-          byMode: Object.entries(appointmentModeCounts)
-            .map(([mode, count]) => ({ mode, count }))
-            .sort((a, b) => b.count - a.count),
-          byType: Object.entries(appointmentTypeCounts)
-            .map(([type, count]) => ({ type, count }))
-            .sort((a, b) => b.count - a.count),
-          dailyTrend: Object.entries(appointmentsByDay)
-            .map(([date, count]) => ({ date, count }))
-            .sort((a, b) => a.date.localeCompare(b.date)),
-        },
-        consultations: {
-          total: consultations.length,
-          byStatus: Object.entries(consultationStatusCounts)
-            .map(([status, count]) => ({ status, count }))
-            .sort((a, b) => b.count - a.count),
-          byHP: Object.entries(hpConsultationCounts)
-            .map(([hp, count]) => ({ hp, count }))
-            .sort((a, b) => b.count - a.count)
-            .slice(0, 10),
-          dailyTrend: Object.entries(consultationsByDay)
-            .map(([date, count]) => ({ date, count }))
-            .sort((a, b) => a.date.localeCompare(b.date)),
-        },
-        patients: {
-          newInPeriod: newPatients,
-          totalActive: totalPatients,
           byGender: Object.entries(genderCounts)
             .map(([gender, count]) => ({ gender, count }))
             .sort((a, b) => b.count - a.count),
           byAgeGroup: Object.entries(ageGroupCounts)
             .filter(([, c]) => c > 0)
             .map(([group, count]) => ({ group, count })),
+          registrationTrend: Object.entries(registrationsByDay)
+            .map(([date, count]) => ({ date, count }))
+            .sort((a, b) => a.date.localeCompare(b.date)),
         },
-        diagnostics: {
-          prescriptions,
-          labRequests,
-          imagingRequests,
-          heartRequests,
-          medicalCertificates,
-          referralSlips,
-          total:
-            prescriptions +
-            labRequests +
-            imagingRequests +
-            heartRequests +
-            medicalCertificates +
-            referralSlips,
+        students: {
+          total: studentRecords.length,
+          byCollege: Object.entries(byCollege)
+            .map(([college, count]) => ({ college, count }))
+            .sort((a, b) => b.count - a.count),
+          byProgram: Object.entries(byProgram)
+            .map(([program, count]) => ({ program, count }))
+            .sort((a, b) => b.count - a.count),
+          byYearLevel: Object.entries(byYearLevel)
+            .map(([yearLevel, count]) => ({ yearLevel, count }))
+            .sort((a, b) => b.count - a.count),
+        },
+        staff: {
+          total: employmentRecords.length,
+          byDepartment: Object.entries(byDepartment)
+            .map(([department, count]) => ({ department, count }))
+            .sort((a, b) => b.count - a.count),
+          byOffice: Object.entries(byOffice)
+            .map(([office, count]) => ({ office, count }))
+            .sort((a, b) => b.count - a.count),
         },
       },
     };

@@ -26,6 +26,8 @@ import {
 import {
   getClinicMemberPermissionsForAdminAction,
   setClinicMemberPermissionsForAdminAction,
+  getClinicPatientPermissionsForAdminAction,
+  setClinicPatientPermissionsForAdminAction,
 } from '@/actions/super-admin/clinics.action'
 
 interface Permission {
@@ -41,7 +43,7 @@ interface MemberPermissionsDialogProps {
   memberId: number
   memberName: string
   memberRole: string
-  permissionType: 'ORGANIZATION' | 'CLINIC'
+  permissionType: 'ORGANIZATION' | 'CLINIC' | 'CLINIC_PATIENT'
 }
 
 export function MemberPermissionsDialog({
@@ -73,11 +75,15 @@ export function MemberPermissionsDialog({
         getAllAvailablePermissionsAction(),
         permissionType === 'ORGANIZATION'
           ? getOrgMemberPermissionsForAdminAction(memberId)
+          : permissionType === 'CLINIC_PATIENT'
+          ? getClinicPatientPermissionsForAdminAction(memberId)
           : getClinicMemberPermissionsForAdminAction(memberId),
       ])
 
       if (permResult.success && permResult.data) {
-        setPermissions(permResult.data.filter((p: Permission) => p.type === permissionType))
+        // Patients use CLINIC-type permissions; org members use ORGANIZATION type
+        const filterType = permissionType === 'ORGANIZATION' ? 'ORGANIZATION' : 'CLINIC'
+        setPermissions(permResult.data.filter((p: Permission) => p.type === filterType))
       }
 
       if (memberPermResult.data) {
@@ -111,6 +117,11 @@ export function MemberPermissionsDialog({
         permissionType === 'ORGANIZATION'
           ? await setOrgMemberPermissionsForAdminAction({
             orgMemberId: memberId,
+            permissionIds: Array.from(selectedPermissions),
+          })
+          : permissionType === 'CLINIC_PATIENT'
+          ? await setClinicPatientPermissionsForAdminAction({
+            clinicPatientId: memberId,
             permissionIds: Array.from(selectedPermissions),
           })
           : await setClinicMemberPermissionsForAdminAction({
@@ -151,12 +162,16 @@ export function MemberPermissionsDialog({
     Array.from(memberPermissionIds).sort().toString()
 
   const label = permissionType === 'ORGANIZATION' ? 'Organization' : 'Clinic'
+  const dialogTitle =
+    permissionType === 'CLINIC_PATIENT'
+      ? 'Manage Patient Permissions'
+      : `Manage ${label} Permissions`
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Manage {label} Permissions</DialogTitle>
+          <DialogTitle>{dialogTitle}</DialogTitle>
           <DialogDescription>
             <span className="font-medium">{memberName}</span> •{' '}
             <Badge variant="outline" className="text-xs">

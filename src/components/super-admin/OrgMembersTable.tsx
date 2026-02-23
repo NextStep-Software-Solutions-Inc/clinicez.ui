@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@components/ui/button'
 import { Input } from '@components/ui/input'
 import { Badge } from '@components/ui/badge'
-import { Search, Lock } from 'lucide-react'
+import { Search, Lock, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { formatDistance } from 'date-fns'
 import { MemberPermissionsDialog } from './MemberPermissionsDialog'
@@ -28,22 +28,29 @@ interface SelectedMember {
 }
 
 export default function OrgMembersTable({ initialData, orgId }: OrgMembersTableProps) {
-  const [data, setData] = useState(initialData)
+  const [rows, setRows] = useState<OrgMember[]>(initialData.data)
+  const [hasMore, setHasMore] = useState(initialData.hasMore)
+  const [nextCursor, setNextCursor] = useState<number | null>(initialData.nextCursor)
   const [search, setSearch] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [selectedMember, setSelectedMember] = useState<SelectedMember | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
 
-  const loadData = async (page = 1, searchTerm = search) => {
+  const fetchPage = async (cursor: number | undefined, searchTerm: string, append: boolean) => {
     setIsLoading(true)
     try {
       const result = await getOrgMembersForAdminAction({
         orgId,
         search: searchTerm || undefined,
-        pageNumber: page,
-        pageSize: data.pageSize,
+        cursor,
       })
-      setData(result)
+      if (append) {
+        setRows((prev) => [...prev, ...result.data])
+      } else {
+        setRows(result.data)
+      }
+      setHasMore(result.hasMore)
+      setNextCursor(result.nextCursor)
     } catch {
       toast.error('Failed to load members')
     } finally {
@@ -52,7 +59,13 @@ export default function OrgMembersTable({ initialData, orgId }: OrgMembersTableP
   }
 
   const handleSearch = () => {
-    loadData(1, search)
+    fetchPage(undefined, search, false)
+  }
+
+  const handleLoadMore = () => {
+    if (nextCursor) {
+      fetchPage(nextCursor, search, true)
+    }
   }
 
   const handleManagePermissions = (member: OrgMember) => {
@@ -76,7 +89,7 @@ export default function OrgMembersTable({ initialData, orgId }: OrgMembersTableP
           onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
           className="max-w-sm"
         />
-        <Button onClick={handleSearch} size="icon" variant="outline">
+        <Button onClick={handleSearch} size="icon" variant="outline" disabled={isLoading}>
           <Search className="h-4 w-4" />
         </Button>
       </div>
@@ -95,14 +108,14 @@ export default function OrgMembersTable({ initialData, orgId }: OrgMembersTableP
             </TableRow>
           </TableHeader>
           <TableBody>
-            {data.data.length === 0 ? (
+            {rows.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="text-center text-muted-foreground">
                   No members found
                 </TableCell>
               </TableRow>
             ) : (
-              data.data.map((member) => (
+              rows.map((member) => (
                 <TableRow key={member.id}>
                   <TableCell>
                     <div>
@@ -117,9 +130,7 @@ export default function OrgMembersTable({ initialData, orgId }: OrgMembersTableP
                     <Badge variant="outline">{member.OrganizationRole.name}</Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge
-                      variant={member.status === 'ACTIVE' ? 'default' : 'secondary'}
-                    >
+                    <Badge variant={member.status === 'ACTIVE' ? 'default' : 'secondary'}>
                       {member.status}
                     </Badge>
                   </TableCell>
@@ -146,30 +157,18 @@ export default function OrgMembersTable({ initialData, orgId }: OrgMembersTableP
         </Table>
       </div>
 
-      {data.totalPages > 1 && (
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
-            Showing {(data.pageNumber - 1) * data.pageSize + 1} to{' '}
-            {Math.min(data.pageNumber * data.pageSize, data.total)} of {data.total} members
-          </p>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => loadData(data.pageNumber - 1)}
-              disabled={data.pageNumber === 1 || isLoading}
-            >
-              Previous
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => loadData(data.pageNumber + 1)}
-              disabled={data.pageNumber >= data.totalPages || isLoading}
-            >
-              Next
-            </Button>
-          </div>
+      {hasMore && (
+        <div className="flex justify-center">
+          <Button variant="outline" onClick={handleLoadMore} disabled={isLoading}>
+            {isLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                Loading...
+              </>
+            ) : (
+              'Load More'
+            )}
+          </Button>
         </div>
       )}
 

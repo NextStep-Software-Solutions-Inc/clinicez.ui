@@ -150,13 +150,13 @@ export type GetOrgMembersForAdmin = Awaited<ReturnType<typeof getOrgMembersForAd
 export async function getOrgMembersForAdminAction({
   orgId,
   search,
-  pageSize = 10,
-  pageNumber = 1,
+  cursor,
+  take = 20,
 }: {
   orgId: number;
   search?: string;
-  pageSize?: number;
-  pageNumber?: number;
+  cursor?: number;
+  take?: number;
 }) {
   const isSuperAdmin = await isSuperAdminAction();
   if (!isSuperAdmin) {
@@ -178,48 +178,43 @@ export async function getOrgMembersForAdminAction({
       : {}),
   };
 
-  const [members, total] = await Promise.all([
-    prisma.organizationMember.findMany({
-      where,
-      select: {
-        id: true,
-        status: true,
-        createdAt: true,
-        User: {
-          select: {
-            id: true,
-            userId: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-          },
-        },
-        OrganizationRole: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-        OrgMemberPermissions: {
-          select: {
-            permissionId: true,
-          },
+  const members = await prisma.organizationMember.findMany({
+    take: take + 1,
+    ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
+    where,
+    select: {
+      id: true,
+      status: true,
+      createdAt: true,
+      User: {
+        select: {
+          id: true,
+          userId: true,
+          firstName: true,
+          lastName: true,
+          email: true,
         },
       },
-      orderBy: { createdAt: "desc" },
-      skip: (pageNumber - 1) * pageSize,
-      take: pageSize,
-    }),
-    prisma.organizationMember.count({ where }),
-  ]);
+      OrganizationRole: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      OrgMemberPermissions: {
+        select: {
+          permissionId: true,
+        },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
 
-  return {
-    data: members,
-    total,
-    pageSize,
-    pageNumber,
-    totalPages: Math.ceil(total / pageSize),
-  };
+  const hasMore = members.length > take;
+  const data = hasMore ? members.slice(0, take) : members;
+  const nextCursor = hasMore ? data[data.length - 1].id : null;
+
+  return { data, hasMore, nextCursor };
 }
 
 export async function getOrgMemberPermissionsForAdminAction(orgMemberId: number) {

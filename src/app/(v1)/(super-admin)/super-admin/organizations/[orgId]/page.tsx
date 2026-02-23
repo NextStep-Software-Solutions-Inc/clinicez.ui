@@ -25,7 +25,7 @@ export default async function OrganizationDetailPage({ params }: OrganizationDet
   const [organization, initialRoles, initialMembers] = await Promise.all([
     getOrganizationByIdAction({ orgId }),
     getOrganizationRolesAction({ orgId, pageSize: 10, pageNumber: 1 }),
-    getOrgMembersForAdminAction({ orgId, pageSize: 10, pageNumber: 1 }),
+    getOrgMembersForAdminAction({ orgId }),
   ]);
   
   if (!organization) {

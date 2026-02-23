@@ -130,6 +130,7 @@ export const getClinicRolesWithPermissionsAction = async (clinicUid: string) => 
     select: {
       id: true,
       name: true,
+      canAccessDashboard: true,
       ClinicMembers: {
         where: { isActive: true, Clinic: { clinicUid } },
         select: { id: true },
@@ -156,6 +157,24 @@ export const getClinicRolesWithPermissionsAction = async (clinicUid: string) => 
     },
   });
   return roles;
+};
+
+export const setClinicRoleDashboardAccessAction = async (clinicRoleId: number, canAccessDashboard: boolean) => {
+  let message = "Role dashboard access updated successfully";
+  try {
+    const session = await getCachedSession();
+    if (!session) throw new Error("Session not found");
+    await prisma.clinicRole.update({
+      where: { isActive: true, id: clinicRoleId },
+      data: { canAccessDashboard }
+    });
+    return { status: true, message, data: null };
+  } catch (error) {
+    console.error(`Error while updating clinic role dashboard access: ${error}`);
+    message = "Error while updating role dashboard access";
+    if (error instanceof Error) message = error.message;
+    return { status: false, message, data: null };
+  }
 };
 
 export const deleteClinicRoleAction = async (clinicRoleId: number) => {

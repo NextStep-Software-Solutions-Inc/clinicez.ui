@@ -403,7 +403,8 @@ export const getClinicWithUserRoleAction = withErrorHandling(cache(async (clinic
       Role: {
         select: {
           id: true,
-          name: true
+          name: true,
+          canAccessDashboard: true
         }
       }
     }
@@ -459,7 +460,8 @@ export const getUserClinicsWithRolesAction = withErrorHandling(cache(async () =>
       Role: {
         select: {
           id: true,
-          name: true
+          name: true,
+          canAccessDashboard: true
         }
       }
     },
@@ -475,7 +477,8 @@ export const getUserClinicsWithRolesAction = withErrorHandling(cache(async () =>
     clinicUid: membership.Clinic.clinicUid,
     name: membership.Clinic.name,
     logo: membership.Clinic.logo,
-    role: membership.Role.name
+    role: membership.Role.name,
+    canAccessDashboard: membership.Role.canAccessDashboard
   }));
 
   return {

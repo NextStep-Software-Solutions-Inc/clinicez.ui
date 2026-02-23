@@ -1,6 +1,7 @@
 'use client';
 
 import { Suspense, useRef, useState } from 'react';
+import Link from 'next/link';
 import useSWR from 'swr';
 import { useRouter } from 'next/navigation';
 import { useSetAtom } from 'jotai';
@@ -125,6 +126,10 @@ function PatientDashboardContent() {
     router.push('/v2/profile');
   };
 
+  const handleViewHistory = () => {
+    router.push('/v2/appointments-consultations');
+  };
+
   return (
     <div className="w-full">
       {/* Header with greeting and theme toggle */}
@@ -210,10 +215,18 @@ function PatientDashboardContent() {
 
         {/* Full Width: Consultation Notes */}
         <div>
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-            <span className="w-1 h-6 bg-purple-500 rounded-full"></span>
-            Recent Consultations
-          </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <span className="w-1 h-6 bg-purple-500 rounded-full"></span>
+              Recent Consultations
+            </h2>
+            <Link
+              href="/v2/appointments-consultations"
+              className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              View All
+            </Link>
+          </div>
           <ConsultationNotes
             consultations={
               dashboardData?.recentConsultations?.consultations
@@ -241,6 +254,7 @@ function PatientDashboardContent() {
         onViewTestRequests={handleViewTestRequests}
         onViewPrescriptions={handleViewPrescriptions}
         onViewProfile={handleViewProfile}
+        onViewHistory={handleViewHistory}
       />
 
       {/* Select Clinic Dialog */}

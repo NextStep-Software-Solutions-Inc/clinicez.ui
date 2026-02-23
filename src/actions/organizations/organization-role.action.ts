@@ -188,3 +188,68 @@ export const deleteOrganizationRoleAction = withErrorHandling(async (orgRoleId: 
   return { message: "Role deleted successfully", data: null }
 
 })
+
+export const updateOrganizationRoleAction = withErrorHandling(async (orgRoleId: number, payload: { name: string; description?: string }) => {
+
+  const session = await sessionCheck();
+  const userId = session.user.sub as string;
+
+  const role = await prisma.organizationRole.findUnique({
+    where: { id: orgRoleId },
+    select: { Organization: { select: { orgUid: true } } }
+  });
+
+  if (!role) throw new Error("Role not found");
+
+  const [isSuperAdmin, hasPermission] = await Promise.all([
+    isSuperAdminAction(),
+    hasOrgPermissionAction({
+      userId,
+      orgUid: role.Organization.orgUid,
+      permissionName: PERMISSIONS.ORGANIZATION["UPDATE:ORG:MEMBERS"].name
+    })
+  ]);
+
+  if (!isSuperAdmin && !hasPermission) {
+    throw new Error("You do not have permission to update organization roles");
+  }
+
+  await prisma.organizationRole.update({
+    where: { isActive: true, id: orgRoleId },
+    data: { name: payload.name, description: payload.description }
+  });
+  return { message: "Role updated successfully", data: null }
+
+}, async error => {
+  if (hasCodeProperty(error) && error.code === "P2002") {
+    return "Role with the same name already exists"
+  }
+  return "An error occurred while updating the organization role"
+})
+
+/* ──────────────────────────────────────────────────────────────────── */
+/*  Get org roles with their initial permission assignments             */
+/* ──────────────────────────────────────────────────────────────────── */
+
+export type GetOrganizationRolesWithPermissions = Awaited<ReturnType<typeof getOrganizationRolesWithPermissionsAction>>;
+export async function getOrganizationRolesWithPermissionsAction(orgUid: string) {
+  const roles = await prisma.organizationRole.findMany({
+    where: { isActive: true, Organization: { orgUid } },
+    orderBy: { name: "asc" },
+    select: {
+      id: true,
+      orgId: true,
+      name: true,
+      description: true,
+      requirements: true,
+      OrgRoleInitialPermissions: {
+        where: { Organization: { orgUid } },
+        select: {
+          id: true,
+          Permission: { select: { id: true, name: true, description: true } },
+        },
+      },
+    },
+  });
+  return roles;
+}

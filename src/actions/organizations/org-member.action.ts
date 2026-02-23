@@ -40,6 +40,8 @@ export type GetOrgMembersFilters = {
   distinct?: boolean;
   clinicUid?: string;
   searchKey?: string;
+  /** Cursor-based pagination: last seen record id */
+  cursor?: number;
 };
 
 export type GetOrgMembers = Awaited<ReturnType<typeof getOrgMembersAction>>;
@@ -56,6 +58,8 @@ export const getOrgMembersAction = withErrorHandling(
 
     const pageSize = filter?.pageSize ? castToNumber(filter.pageSize) : undefined;
     const pageNumber = filter?.pageNumber ? castToNumber(filter.pageNumber) : undefined;
+    const cursor = filter?.cursor ? castToNumber(filter.cursor) : undefined;
+    const take = pageSize ?? 20;
     const normalizeToArray = <T>(val: T | T[] | undefined): T[] => {
       if (val === undefined) return [];
       return Array.isArray(val) ? val : [val];
@@ -67,10 +71,13 @@ export const getOrgMembersAction = withErrorHandling(
     );
     const paginatedData = await prisma.$transaction(
       async (prisma) => {
+        // Fetch one extra record to determine if there are more pages
         const userOrganizations = await prisma.organizationMember.findMany({
-          ...(pageSize ? { take: pageSize } : {}),
+          take: take + 1,
           ...(distinct ? { distinct: ["organizationId"] } : {}),
-          skip: pageNumber ? (pageNumber - 1) * (pageSize || 10) : 0,
+          ...(cursor
+            ? { skip: 1, cursor: { id: cursor } }
+            : { skip: pageNumber ? (pageNumber - 1) * take : 0 }),
           orderBy: {
             createdAt: "desc"
           },
@@ -308,10 +315,19 @@ export const getOrgMembersAction = withErrorHandling(
       }
     );
 
+    const hasMore = paginatedData.data.length > take;
+    const data = hasMore ? paginatedData.data.slice(0, take) : paginatedData.data;
+    const nextCursor = hasMore ? (data[data.length - 1]?.id ?? null) : null;
+
     return {
       message: "User organizations fetched successfully",
       status: true,
-      data: paginatedData
+      data: {
+        data,
+        total: paginatedData.total,
+        nextCursor,
+        hasMore,
+      }
     };
   })
 );
@@ -567,6 +583,47 @@ export const requestMembershipAdditionalInfo = withErrorHandling(
       orgMail: userOrganization.Organization.email ?? ""
     });
     return { message: "Additional information request sent", data: null };
+  }
+);
+
+export type SearchUsersForOrg = Awaited<ReturnType<typeof searchUsersForOrgAction>>;
+export const searchUsersForOrgAction = withErrorHandling(
+  async (orgUid: string, query: string) => {
+    const session = await getCachedSession();
+    if (!session) throw new Error("User not authenticated.");
+
+    if (!query || query.trim().length < 2) {
+      return { message: "Query too short", data: [] };
+    }
+
+    const users = await prisma.user.findMany({
+      take: 10,
+      orderBy: { lastName: "asc" },
+      where: {
+        isActive: true,
+        OR: [
+          { firstName: { contains: query, mode: "insensitive" } },
+          { lastName: { contains: query, mode: "insensitive" } },
+          { email: { contains: query, mode: "insensitive" } },
+        ],
+        NOT: {
+          OrganizationMembers: {
+            some: {
+              Organization: { orgUid },
+            },
+          },
+        },
+      },
+      select: {
+        userId: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        picture: true,
+      },
+    });
+
+    return { message: "Users found", data: users };
   }
 );
 

@@ -1,5 +1,4 @@
 import React from "react";
-import "@styles/v2-dashboard.css";
 import { DashboardShell } from "@/components/v2/dashboard";
 import type { NavItem } from "@/components/v2/dashboard";
 import { getOrganizationAction, getUserOrgsWithRolesAction } from "@/actions/organizations/organization.action";
@@ -11,8 +10,13 @@ interface OrgLayoutProps {
 }
 
 export default async function OrgLayout(props: OrgLayoutProps) {
-  const params = await props.params;
-  const { orgUid } = params;
+  const { orgUid } = await props.params;
+
+  const organization = await getOrganizationAction(orgUid);
+
+  if (!organization) {
+    notFound();
+  }
 
   const [organization, userOrgsResult] = await Promise.all([
     getOrganizationAction(orgUid),
@@ -26,7 +30,12 @@ export default async function OrgLayout(props: OrgLayoutProps) {
   const userOrgs = userOrgsResult.data ?? [];
 
   const navItems: NavItem[] = [
-    { name: "Overview", href: `/v2/org/${orgUid}`, icon: "home", exact: true },
+    {
+      name: "Overview",
+      href: `/v2/org/${orgUid}`,
+      icon: "home",
+      exact: true,
+    },
     {
       name: "Members",
       href: `/v2/org/${orgUid}/members`,

@@ -54,6 +54,7 @@ export const getPatientFoldersAction = withErrorHandling(async () => {
           name: true,
           size: true,
           url: true,
+          mimeType: true,
           dateTaken: true,
           createdAt: true,
           updatedAt: true,
@@ -130,6 +131,7 @@ export const createPatientFolderAction = withErrorHandling(
               name: true,
               size: true,
               url: true,
+              mimeType: true,
               dateTaken: true,
               createdAt: true,
               updatedAt: true,
@@ -222,10 +224,18 @@ export const deletePatientFolderAction = withErrorHandling(
     });
     if (!folder) throw new Error("Folder not found");
 
-    await prismaClient.folder.update({
-      where: { id: folderId },
-      data: { isActive: false, deletedAt: new Date() },
-    });
+    await prismaClient.$transaction([
+      // Soft-delete all active files inside the folder
+      prismaClient.file.updateMany({
+        where: { folderId, isActive: true },
+        data: { isActive: false, deletedAt: new Date() },
+      }),
+      // Soft-delete the folder itself
+      prismaClient.folder.update({
+        where: { id: folderId },
+        data: { isActive: false, deletedAt: new Date() },
+      }),
+    ]);
 
     return { message: "Folder deleted successfully", data: { folderId } };
   }
@@ -271,6 +281,7 @@ export const uploadPatientFileAction = withErrorHandling(
           name: file.name,
           size: file.size,
           url,
+          mimeType: file.type || null,
           dateTaken: dateTakenRaw ? new Date(dateTakenRaw) : null,
           FileSetting: {
             create: {
@@ -284,6 +295,7 @@ export const uploadPatientFileAction = withErrorHandling(
           name: true,
           size: true,
           url: true,
+          mimeType: true,
           dateTaken: true,
           createdAt: true,
           updatedAt: true,

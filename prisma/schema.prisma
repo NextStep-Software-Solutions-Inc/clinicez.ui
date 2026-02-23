@@ -675,6 +675,7 @@ model File {
   name        String
   size        Int
   url         String
+  mimeType    String?
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   deletedAt   DateTime?

@@ -20,6 +20,7 @@ export const GET = withClerkAuth<{ fileId: string }>(
         name: true,
         url: true,
         size: true,
+        mimeType: true,
         Folder: {
           select: {
             userId: true,
@@ -111,9 +112,12 @@ export const GET = withClerkAuth<{ fileId: string }>(
 
       return new NextResponse(buffer, {
         headers: {
+          "Content-Type": file.mimeType || "application/octet-stream",
           "Content-Disposition": `inline; filename="${safeFilename}"`,
           "Content-Length": buffer.length.toString(),
           "Cache-Control": "private, no-cache",
+          // Prevent MIME-sniffing attacks
+          "X-Content-Type-Options": "nosniff",
         },
       });
     } catch {

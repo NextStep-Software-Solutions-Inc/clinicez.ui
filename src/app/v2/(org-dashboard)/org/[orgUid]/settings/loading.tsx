@@ -14,8 +14,8 @@ export default function OrgSettingsLoading() {
       </div>
 
       {/* Tab bar skeleton */}
-      <div className="flex gap-1 border-b pb-0 overflow-x-auto">
-        {Array.from({ length: 8 }).map((_, i) => (
+      <div className="flex gap-1 border-b pb-0 overflow-x-auto [&::-webkit-scrollbar]:hidden">
+        {Array.from({ length: 7 }).map((_, i) => (
           <Skeleton key={i} className="h-9 w-24 rounded-t-md rounded-b-none flex-shrink-0" />
         ))}
       </div>

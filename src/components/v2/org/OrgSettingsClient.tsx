@@ -9,12 +9,10 @@ import { toast } from "sonner";
 import {
   Building2,
   Bell,
-  Users,
   Save,
   Loader2,
   Globe,
   XCircle,
-  UserPlus,
   Trash2,
   Pencil,
   Plus,
@@ -55,7 +53,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
 
@@ -91,39 +89,40 @@ import {
   updateOrgOfficeAction,
   deleteOrgOfficeAction,
 } from "@/actions/organizations/org-office.action";
+import { setOrgRoleInitialPermissionsAction } from "@/actions/org-role-initial-permission.action";
 
 import type { GetOrganization } from "@/actions/organizations/organization.action";
-import type { GetOrganizationRoles } from "@/actions/organizations/organization-role.action";
+import type { GetOrganizationRolesWithPermissions } from "@/actions/organizations/organization-role.action";
 import type { GetOrgColleges } from "@/actions/organizations/org-college.action";
 import type { GetOrgDepartments } from "@/actions/organizations/org-department.action";
 import type { GetOrgPrograms } from "@/actions/organizations/org-program.action";
 import type { GetOrganizationYearLevels } from "@/actions/organizations/org-year-level.action";
 import type { GetOrgOffices } from "@/actions/organizations/org-office.action";
-import type { GetOrgMembers } from "@/actions/organizations/org-member.action";
+import type { GetPermissions } from "@/actions/permission.action";
 
 /* ─────────────────────────────────────────────────────────────────── */
 /*  Types                                                              */
 /* ─────────────────────────────────────────────────────────────────── */
 
 type OrgData = NonNullable<GetOrganization>;
-type RolesData = NonNullable<GetOrganizationRoles["data"]>;
+type RolesWithPermissionsData = NonNullable<GetOrganizationRolesWithPermissions>;
 type CollegesData = NonNullable<GetOrgColleges>;
 type DepartmentsData = NonNullable<GetOrgDepartments>;
 type ProgramsData = NonNullable<GetOrgPrograms>;
 type YearLevelsData = NonNullable<GetOrganizationYearLevels>;
 type OfficesData = NonNullable<GetOrgOffices>;
-type MembersData = NonNullable<GetOrgMembers["data"]>["data"];
+type PermissionsData = NonNullable<GetPermissions>;
 
 export interface OrgSettingsClientProps {
   orgUid: string;
   org: OrgData;
-  roles: RolesData;
+  rolesWithPermissions: RolesWithPermissionsData;
   colleges: CollegesData;
   departments: DepartmentsData;
   programs: ProgramsData;
   yearLevels: YearLevelsData;
   offices: OfficesData;
-  members: MembersData;
+  allPermissions: PermissionsData;
 }
 
 /* ─────────────────────────────────────────────────────────────────── */
@@ -635,12 +634,105 @@ function SimpleCrudTab({
 /*  Tab: Roles                                                         */
 /* ─────────────────────────────────────────────────────────────────── */
 
-function RolesTab({ orgUid, roles }: { orgUid: string; roles: RolesData }) {
+type RoleWithPerms = RolesWithPermissionsData[number];
+
+/* ── Role default permissions sub-section ── */
+function RolePermissionsSection({
+  role,
+  orgUid,
+  allPermissions,
+}: {
+  role: RoleWithPerms;
+  orgUid: string;
+  allPermissions: PermissionsData;
+}) {
+  const [isPending, startTransition] = useTransition();
+  const [selected, setSelected] = useState<number[]>(
+    role.OrgRoleInitialPermissions.map((rp) => rp.Permission.id),
+  );
+
+  const isDirty =
+    JSON.stringify([...selected].sort()) !==
+    JSON.stringify(role.OrgRoleInitialPermissions.map((rp) => rp.Permission.id).sort());
+
+  const toggle = (id: number, checked: boolean) =>
+    setSelected((prev) => (checked ? [...prev, id] : prev.filter((x) => x !== id)));
+
+  const handleSave = () => {
+    startTransition(async () => {
+      const result = await setOrgRoleInitialPermissionsAction({
+        orgRoleId: role.id,
+        orgUid,
+        permissionIds: selected,
+      });
+      if (result.status) {
+        toast.success("Default permissions saved.");
+      } else {
+        toast.error(result.message ?? "Failed to save permissions.");
+      }
+    });
+  };
+
+  if (allPermissions.length === 0) {
+    return (
+      <p className="text-xs text-muted-foreground">No permissions available.</p>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <p className="text-xs text-muted-foreground">
+        These permissions are automatically granted when a member is assigned this role.
+      </p>
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        {allPermissions.map((perm) => (
+          <label
+            key={perm.id}
+            className="flex items-start gap-2 cursor-pointer rounded-md border p-2 hover:bg-muted/50 transition-colors"
+          >
+            <Checkbox
+              checked={selected.includes(perm.id)}
+              onCheckedChange={(v) => toggle(perm.id, !!v)}
+              className="mt-0.5"
+            />
+            <div className="min-w-0">
+              <p className="text-xs font-medium leading-snug truncate">
+                {perm.description ?? perm.name}
+              </p>
+              <p className="text-[10px] text-muted-foreground italic truncate">{perm.name}</p>
+            </div>
+          </label>
+        ))}
+      </div>
+      {isDirty && (
+        <Button size="sm" onClick={handleSave} disabled={isPending} className="gap-1.5 mt-1">
+          {isPending ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Save className="h-3.5 w-3.5" />
+          )}
+          Save Permissions
+        </Button>
+      )}
+    </div>
+  );
+}
+
+function RolesTab({
+  orgUid,
+  roles,
+  allPermissions,
+}: {
+  orgUid: string;
+  roles: RolesWithPermissionsData;
+  allPermissions: PermissionsData;
+}) {
   const [localRoles, setLocalRoles] = useState(roles);
   const [showCreate, setShowCreate] = useState(false);
-  const [editRole, setEditRole] = useState<RolesData[number] | null>(null);
+  const [editRole, setEditRole] = useState<RoleWithPerms | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
-  const [reqRole, setReqRole] = useState<RolesData[number] | null>(null);
+  const [reqRole, setReqRole] = useState<RoleWithPerms | null>(null);
+  const [permRole, setPermRole] = useState<RoleWithPerms | null>(null);
   const [newReq, setNewReq] = useState("");
   const [localReqs, setLocalReqs] = useState<string[]>([]);
   const [isPending, startTransition] = useTransition();
@@ -671,7 +763,7 @@ function RolesTab({ orgUid, roles }: { orgUid: string; roles: RolesData }) {
               name: createdRole.name,
               description: createdRole.description,
               requirements: createdRole.requirements,
-              UserDefaultOrganizationRoles: [],
+              OrgRoleInitialPermissions: [],
             },
           ]);
         }
@@ -789,6 +881,15 @@ function RolesTab({ orgUid, roles }: { orgUid: string; roles: RolesData }) {
                     )}
                   </div>
                   <div className="flex gap-1 ml-2 flex-shrink-0">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2 text-xs gap-1"
+                      onClick={() => setPermRole(role)}
+                    >
+                      <ShieldCheck className="h-3.5 w-3.5" />
+                      Perms
+                    </Button>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -1002,78 +1103,33 @@ function RolesTab({ orgUid, roles }: { orgUid: string; roles: RolesData }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
-  );
-}
 
-/* ─────────────────────────────────────────────────────────────────── */
-/*  Tab: Members (read-only overview)                                  */
-/* ─────────────────────────────────────────────────────────────────── */
-
-function MembersTab({ members }: { members: MembersData }) {
-  const statusColor: Record<string, string> = {
-    ACTIVE: "bg-green-500",
-    PENDING: "bg-yellow-500",
-    SUSPENDED: "bg-red-500",
-    INACTIVE: "bg-gray-400",
-  };
-
-  return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base flex items-center gap-2">
-          <Users className="h-4 w-4" />
-          Members
-        </CardTitle>
-        <CardDescription>
-          Overview of all organization members. Manage members from the Members page.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {members.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-6">
-            No members found.
-          </p>
-        ) : (
-          <div className="space-y-2">
-            {members.map((member) => {
-              const firstName = member.User.firstName ?? "";
-              const lastName = member.User.lastName ?? "";
-              const fullName = `${firstName} ${lastName}${member.User.suffix ? ` ${member.User.suffix}` : ""}`.trim();
-              const initials = `${firstName[0] ?? ""}${lastName[0] ?? ""}`.toUpperCase();
-              return (
-                <div
-                  key={member.id}
-                  className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30"
-                >
-                  <Avatar className="h-8 w-8 flex-shrink-0">
-                    <AvatarImage src={member.User.picture ?? undefined} />
-                    <AvatarFallback className="text-xs">{initials}</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{fullName}</p>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {member.OrganizationRole.name}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-1.5 flex-shrink-0">
-                    <span
-                      className={`h-2 w-2 rounded-full ${statusColor[member.status] ?? "bg-gray-400"}`}
-                    />
-                    <span className="text-xs text-muted-foreground">{member.status}</span>
-                  </div>
-                  {member.Organization.orgUid && (
-                    <Badge variant="outline" className="text-xs flex-shrink-0">
-                      {member.Organization.name}
-                    </Badge>
-                  )}
-                </div>
-              );
-            })}
+      {/* Default Permissions Dialog */}
+      <Dialog open={!!permRole} onOpenChange={(open) => !open && setPermRole(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Default Permissions — {permRole?.name}</DialogTitle>
+            <DialogDescription>
+              Permissions automatically granted when a member is assigned this role.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-2">
+            {permRole && (
+              <RolePermissionsSection
+                role={permRole}
+                orgUid={orgUid}
+                allPermissions={allPermissions}
+              />
+            )}
           </div>
-        )}
-      </CardContent>
-    </Card>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPermRole(null)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }
 
@@ -1084,25 +1140,25 @@ function MembersTab({ members }: { members: MembersData }) {
 export function OrgSettingsClient({
   orgUid,
   org,
-  roles,
+  rolesWithPermissions,
   colleges,
   departments,
   programs,
   yearLevels,
   offices,
-  members,
+  allPermissions,
 }: OrgSettingsClientProps) {
   return (
     <div className="space-y-6 pb-10">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Organization Settings</h1>
         <p className="text-muted-foreground text-sm mt-1">
-          Manage your organization&apos;s configuration, structure, and members.
+          Manage your organization&apos;s configuration, structure, and preferences.
         </p>
       </div>
 
       <Tabs defaultValue="general" className="space-y-5">
-        <TabsList className="flex overflow-x-auto [&::-webkit-scrollbar]:hidden w-full justify-start h-auto flex-wrap gap-1 bg-muted/50 p-1 rounded-lg">
+        <TabsList className="flex overflow-x-auto [&::-webkit-scrollbar]:hidden w-full justify-start h-auto flex-nowrap gap-1 bg-muted/50 p-1 rounded-lg">
           <TabsTrigger value="general" className="gap-1.5 flex-shrink-0">
             <Building2 className="h-3.5 w-3.5" />
             General
@@ -1131,10 +1187,6 @@ export function OrgSettingsClient({
             <Briefcase className="h-3.5 w-3.5" />
             Offices
           </TabsTrigger>
-          <TabsTrigger value="members" className="gap-1.5 flex-shrink-0">
-            <UserPlus className="h-3.5 w-3.5" />
-            Members
-          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="general">
@@ -1142,7 +1194,7 @@ export function OrgSettingsClient({
         </TabsContent>
 
         <TabsContent value="roles">
-          <RolesTab orgUid={orgUid} roles={roles} />
+          <RolesTab orgUid={orgUid} roles={rolesWithPermissions} allPermissions={allPermissions} />
         </TabsContent>
 
         <TabsContent value="colleges">
@@ -1208,10 +1260,6 @@ export function OrgSettingsClient({
             onDelete={deleteOrgOfficeAction}
             namePlaceholder="Office name"
           />
-        </TabsContent>
-
-        <TabsContent value="members">
-          <MembersTab members={members} />
         </TabsContent>
       </Tabs>
     </div>

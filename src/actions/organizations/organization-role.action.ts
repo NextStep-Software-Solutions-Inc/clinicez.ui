@@ -226,3 +226,30 @@ export const updateOrganizationRoleAction = withErrorHandling(async (orgRoleId: 
   }
   return "An error occurred while updating the organization role"
 })
+
+/* ──────────────────────────────────────────────────────────────────── */
+/*  Get org roles with their initial permission assignments             */
+/* ──────────────────────────────────────────────────────────────────── */
+
+export type GetOrganizationRolesWithPermissions = Awaited<ReturnType<typeof getOrganizationRolesWithPermissionsAction>>;
+export async function getOrganizationRolesWithPermissionsAction(orgUid: string) {
+  const roles = await prisma.organizationRole.findMany({
+    where: { isActive: true, Organization: { orgUid } },
+    orderBy: { name: "asc" },
+    select: {
+      id: true,
+      orgId: true,
+      name: true,
+      description: true,
+      requirements: true,
+      OrgRoleInitialPermissions: {
+        where: { Organization: { orgUid } },
+        select: {
+          id: true,
+          Permission: { select: { id: true, name: true, description: true } },
+        },
+      },
+    },
+  });
+  return roles;
+}

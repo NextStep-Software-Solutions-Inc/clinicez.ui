@@ -3,6 +3,7 @@ import { DashboardShell } from "@/components/v2/dashboard";
 import type { NavItem } from "@/components/v2/dashboard";
 import { getOrganizationAction, getUserOrgsWithRolesAction } from "@/actions/organizations/organization.action";
 import { notFound } from "next/navigation";
+import UnauthorizedWarning from "@/components/UnauthorizedWarning";
 
 interface OrgLayoutProps {
   children: React.ReactNode;
@@ -59,6 +60,11 @@ export default async function OrgLayout(props: OrgLayoutProps) {
 
   // Find the current user's role in this org from their memberships
   const currentOrgMembership = userOrgs.find((o) => o.orgUid === orgUid);
+
+  // Only org members are allowed to access this dashboard
+  if (!currentOrgMembership) {
+    return <UnauthorizedWarning />;
+  }
 
   return (
     <DashboardShell

@@ -110,17 +110,27 @@ function ConsultationTimelineEntry({
   const hps = ticket.ConsultationTicketHPs.map((h) => h.HealthCareProvider);
   const appointment = ticket.Appointment;
 
-  // Build a lookup map from section name → human-readable label
-  const sectionLabelMap = new Map<string, string>(
-    (ticket.ConsultationTicketAttribute?.NoteTemplate?.NoteSections ?? []).map(
-      (s) => [s.name, s.label || s.name]
-    )
+  // Build lookup maps: by section name AND by numeric ID (section field stores either)
+  const sections = ticket.ConsultationTicketAttribute?.NoteTemplate?.NoteSections ?? [];
+  const sectionLabelByName = new Map<string, string>(
+    sections.map((s) => [s.name, s.label || s.name])
   );
-  const getSectionLabel = (sectionName: string) =>
-    sectionLabelMap.get(sectionName) ||
-    sectionName
-      .replace(/[_-]/g, " ")
-      .replace(/\b\w/g, (c) => c.toUpperCase());
+  const sectionLabelById = new Map<number, string>(
+    sections.map((s) => [s.id, s.label || s.name])
+  );
+  const getSectionLabel = (sectionValue: string) => {
+    // Try lookup by name first
+    const byName = sectionLabelByName.get(sectionValue);
+    if (byName) return byName;
+    // Try lookup by numeric ID (some older records store the NoteSection.id as a string)
+    const numericId = parseInt(sectionValue, 10);
+    if (!isNaN(numericId)) {
+      const byId = sectionLabelById.get(numericId);
+      if (byId) return byId;
+    }
+    // Fallback: capitalize and de-slugify
+    return sectionValue.replace(/[_-]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  };
 
   return (
     <div className="relative flex gap-4">

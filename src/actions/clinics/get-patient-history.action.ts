@@ -178,7 +178,7 @@ export const getPatientHistoryAction = withErrorHandling(
               select: {
                 NoteSections: {
                   where: { isActive: true },
-                  select: { name: true, label: true },
+                  select: { id: true, name: true, label: true },
                 },
               },
             },

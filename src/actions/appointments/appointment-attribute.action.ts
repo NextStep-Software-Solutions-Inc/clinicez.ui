@@ -228,6 +228,12 @@ export const rejectAppointmentAction = withErrorHandling(async (formData: FormDa
   return { message: 'Appointment rejected', data: undefined };
 
 }, async error => {
-  if (error instanceof Error) return error.message;
+  if (error instanceof Error) {
+    // Translate the Prisma "record not found" error into a user-friendly message
+    if (error.message.includes("No record was found") || error.message.includes("depends on one or more records")) {
+      return "This appointment has already been rejected or no longer exists.";
+    }
+    return error.message;
+  }
   return "An error occurred while rejecting appointment."
 })

@@ -526,6 +526,11 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
                 }
               }
             }
+          },
+          RoutedBy: {
+            select: {
+              userId: true
+            }
           }
         }
       },
@@ -558,6 +563,7 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
           },
           ReceivedBy: {
             select: {
+              userId: true,
               firstName: true,
               lastName: true,
             }

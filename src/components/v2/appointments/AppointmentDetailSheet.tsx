@@ -146,10 +146,17 @@ export function AppointmentDetailSheet({
   // Accept/Decline guard: only the assigned HP, and only when routing is PENDING
   const isAssignedToCurrentUser =
     !!pendingRouting && currentUserHpIds.includes(pendingRouting.RoutedTo.id);
-  // True if current user is the catering HP (pending or accepted routing)
-  const isCurrentUserTheCateringHP =
-    isAssignedToCurrentUser ||
-    (!!acceptedRouting && currentUserHpIds.includes(acceptedRouting.RoutedTo.id));
+  // True if current user is the accepted catering HP (routing must be ACCEPTED)
+  const isAcceptedCateringHP =
+    !!acceptedRouting && currentUserHpIds.includes(acceptedRouting.RoutedTo.id);
+  // True if current user is the receiver
+  const isReceiver =
+    !!currentUserSub && appointment.AppointmentAttribute?.ReceivedBy?.userId === currentUserSub;
+  // True if current user is any assigner (RoutedBy) across all routings
+  const isAssigner =
+    !!currentUserSub && routings.some((r) => r.RoutedBy?.userId === currentUserSub);
+  // Mark Complete on ROUTED: accepted HP, receiver, or assigner
+  const canCompleteRouted = isAcceptedCateringHP || isReceiver || isAssigner;
 
   // ── Action handlers ────────────────────────────────────────────────────────
 
@@ -667,15 +674,17 @@ export function AppointmentDetailSheet({
                       Only the assigned provider can accept or decline this assignment.
                     </p>
                   ))}
-                  <Button
-                    size="sm"
-                    className="gap-1.5 bg-green-600 hover:bg-green-700 text-white"
-                    disabled={isPending}
-                    onClick={handleComplete}
-                  >
-                    <CheckCircle className="h-4 w-4" />
-                    Mark Complete
-                  </Button>
+                  {canCompleteRouted && (
+                    <Button
+                      size="sm"
+                      className="gap-1.5 bg-green-600 hover:bg-green-700 text-white"
+                      disabled={isPending}
+                      onClick={handleComplete}
+                    >
+                      <CheckCircle className="h-4 w-4" />
+                      Mark Complete
+                    </Button>
+                  )}
                   <Button
                     size="sm"
                     variant="outline"

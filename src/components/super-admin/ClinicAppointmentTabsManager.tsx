@@ -103,7 +103,7 @@ export default function ClinicAppointmentTabsManager({
   return (
     <div className="space-y-6">
       {hasChanges() && (
-        <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+        <div className="flex flex-col gap-3 p-4 bg-muted rounded-lg sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-muted-foreground">
             You have unsaved changes
           </p>

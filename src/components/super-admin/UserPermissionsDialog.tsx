@@ -177,7 +177,7 @@ export function UserPermissionsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Manage User Permissions</DialogTitle>
           <DialogDescription>
@@ -280,11 +280,12 @@ export function UserPermissionsDialog({
           </div>
         </div>
 
-        <DialogFooter className="flex gap-2">
+        <DialogFooter className="flex flex-col gap-2 sm:flex-row">
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
             disabled={saving}
+            className="w-full sm:w-auto"
           >
             Cancel
           </Button>
@@ -294,6 +295,7 @@ export function UserPermissionsDialog({
                 variant="secondary"
                 onClick={handleAssignAll}
                 disabled={saving || selectedPermissions.size === permissions.length}
+                className="w-full sm:w-auto"
               >
                 {saving ? (
                   <>
@@ -307,6 +309,7 @@ export function UserPermissionsDialog({
               <Button
                 onClick={handleSaveChanges}
                 disabled={!hasChanges || saving}
+                className="w-full sm:w-auto"
               >
                 {saving ? (
                   <>

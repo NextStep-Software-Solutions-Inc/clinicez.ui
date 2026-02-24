@@ -169,7 +169,7 @@ export function MemberPermissionsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{dialogTitle}</DialogTitle>
           <DialogDescription>
@@ -260,8 +260,8 @@ export function MemberPermissionsDialog({
           </div>
         </div>
 
-        <DialogFooter className="flex gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
+        <DialogFooter className="flex flex-col gap-2 sm:flex-row">
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving} className="w-full sm:w-auto">
             Cancel
           </Button>
           {!loading && (
@@ -270,6 +270,7 @@ export function MemberPermissionsDialog({
                 variant="secondary"
                 onClick={handleClearAll}
                 disabled={saving || selectedPermissions.size === 0}
+                className="w-full sm:w-auto"
               >
                 Clear All
               </Button>
@@ -277,10 +278,11 @@ export function MemberPermissionsDialog({
                 variant="secondary"
                 onClick={handleSelectAll}
                 disabled={saving || selectedPermissions.size === permissions.length}
+                className="w-full sm:w-auto"
               >
                 Select All
               </Button>
-              <Button onClick={handleSaveChanges} disabled={!hasChanges || saving}>
+              <Button onClick={handleSaveChanges} disabled={!hasChanges || saving} className="w-full sm:w-auto">
                 {saving ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin mr-2" />

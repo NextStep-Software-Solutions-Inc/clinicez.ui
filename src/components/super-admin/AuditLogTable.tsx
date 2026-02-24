@@ -100,9 +100,9 @@ export default function AuditLogTable({ initialData }: AuditLogTableProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:flex-wrap">
         <Select value={entityType} onValueChange={setEntityType}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-full sm:w-[180px]">
             <SelectValue placeholder="Entity Type" />
           </SelectTrigger>
           <SelectContent>
@@ -115,7 +115,7 @@ export default function AuditLogTable({ initialData }: AuditLogTableProps) {
         </Select>
 
         <Select value={actionType} onValueChange={setActionType}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-full sm:w-[180px]">
             <SelectValue placeholder="Action" />
           </SelectTrigger>
           <SelectContent>
@@ -132,7 +132,7 @@ export default function AuditLogTable({ initialData }: AuditLogTableProps) {
           value={fieldName}
           onChange={(e) => setFieldName(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-          className="max-w-[200px]"
+          className="w-full sm:max-w-[200px]"
         />
 
         <Button onClick={handleSearch} size="icon" variant="outline" disabled={isLoading}>

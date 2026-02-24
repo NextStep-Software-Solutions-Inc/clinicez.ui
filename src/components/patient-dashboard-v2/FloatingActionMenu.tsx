@@ -1,13 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, Calendar, Beaker, Pill, Stethoscope, X, ClipboardList } from 'lucide-react';
+import { Plus, Calendar, Beaker, Pill, Stethoscope, X, FolderOpen, ClipboardList } from 'lucide-react';
 
 interface FloatingActionMenuProps {
   onScheduleAppointment?: () => void;
   onViewTestRequests?: () => void;
   onViewPrescriptions?: () => void;
   onViewProfile?: () => void;
+  onViewFiles?: () => void;
   onViewHistory?: () => void;
 }
 
@@ -16,6 +17,7 @@ export function FloatingActionMenu({
   onViewTestRequests,
   onViewPrescriptions,
   onViewProfile,
+  onViewFiles,
   onViewHistory,
 }: FloatingActionMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -68,6 +70,16 @@ export function FloatingActionMenu({
       color: 'from-cyan-600 to-cyan-500',
       onClick: () => {
         onViewProfile?.();
+        setIsOpen(false);
+      },
+    },
+    {
+      icon: <FolderOpen className="w-5 h-5" />,
+      label: 'My Files',
+      description: 'Manage your health documents',
+      color: 'from-yellow-500 to-amber-500',
+      onClick: () => {
+        onViewFiles?.();
         setIsOpen(false);
       },
     },

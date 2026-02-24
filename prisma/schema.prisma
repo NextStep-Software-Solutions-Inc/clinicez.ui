@@ -659,12 +659,14 @@ model Folder {
 }
 
 model FolderSetting {
-  id            Int     @id @default(autoincrement())
-  folderId      Int     @unique
-  scopeClinicId Int?
-  isPublic      Boolean @default(false)
-  Folder        Folder  @relation(fields: [folderId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  Clinic        Clinic? @relation(fields: [scopeClinicId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id                 Int                  @id @default(autoincrement())
+  folderId           Int                  @unique
+  scopeClinicId      Int?
+  isPublic           Boolean              @default(false)
+  privacy            FilePrivacy          @default(PRIVATE)
+  Folder             Folder               @relation(fields: [folderId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Clinic             Clinic?              @relation(fields: [scopeClinicId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  FolderClinicShares FolderClinicShare[]
 }
 
 model File {
@@ -674,6 +676,7 @@ model File {
   name        String
   size        Int
   url         String
+  mimeType    String?
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   deletedAt   DateTime?
@@ -687,10 +690,34 @@ model File {
 }
 
 model FileSetting {
-  id       Int     @id @default(autoincrement())
-  fileId   Int     @unique
-  isPublic Boolean @default(false)
-  File     File    @relation(fields: [fileId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id               Int               @id @default(autoincrement())
+  fileId           Int               @unique
+  isPublic         Boolean           @default(false)
+  privacy          FilePrivacy       @default(PRIVATE)
+  File             File              @relation(fields: [fileId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  FileClinicShares FileClinicShare[]
+}
+
+model FolderClinicShare {
+  id              Int           @id @default(autoincrement())
+  folderSettingId Int
+  clinicId        Int
+  createdAt       DateTime      @default(now())
+  FolderSetting   FolderSetting @relation(fields: [folderSettingId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  Clinic          Clinic        @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([folderSettingId, clinicId], name: "unique_folder_clinic_share")
+}
+
+model FileClinicShare {
+  id            Int         @id @default(autoincrement())
+  fileSettingId Int
+  clinicId      Int
+  createdAt     DateTime    @default(now())
+  FileSetting   FileSetting @relation(fields: [fileSettingId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  Clinic        Clinic      @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([fileSettingId, clinicId], name: "unique_file_clinic_share")
 }
 
 model FileType {
@@ -1211,6 +1238,8 @@ model Clinic {
   ConsultationTickets             ConsultationTicket[]
   DocumentTemplates               DocumentTemplate[]
   FolderSettings                  FolderSetting[]
+  FolderClinicShares              FolderClinicShare[]
+  FileClinicShares                FileClinicShare[]
   Interventions                   Intervention[]
   Medications                     Medication[]
   PreAssessmentNotes              PreAssessmentNote[]
@@ -2574,4 +2603,10 @@ enum AuditEntityType {
   ORG_MEMBER
   PROVIDER
   ONBOARDING
+}
+
+enum FilePrivacy {
+  PRIVATE
+  CLINIC
+  PUBLIC
 }

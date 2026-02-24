@@ -127,6 +127,10 @@ function PatientDashboardContent() {
     router.push('/v2/profile');
   };
 
+  const handleViewFiles = () => {
+    router.push('/v2/patient/files');
+  };
+
   const handleViewHistory = () => {
     router.push('/v2/appointments-consultations');
   };
@@ -255,6 +259,7 @@ function PatientDashboardContent() {
         onViewTestRequests={handleViewTestRequests}
         onViewPrescriptions={handleViewPrescriptions}
         onViewProfile={handleViewProfile}
+        onViewFiles={handleViewFiles}
         onViewHistory={handleViewHistory}
       />
 

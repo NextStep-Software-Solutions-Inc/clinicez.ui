@@ -315,7 +315,7 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
   //   'top-12' when headerSlot=null (just below DashboardShell horizontal nav)
   //   'top-24' when a custom headerSlot is provided (below nav + breadcrumb)
   const makeSectionNav = (topClass: string) => (
-    <div className={`sticky ${topClass} z-40 backdrop-blur-sm bg-white/20 dark:bg-slate-950/20 border-b border-slate-200/20 dark:border-slate-800/20 mb-8 -mx-8 px-8 py-3`}>
+    <div className={`sticky ${topClass} z-40 backdrop-blur-sm bg-white/20 dark:bg-slate-950/20 border-b border-slate-200/20 dark:border-slate-800/20 mb-6 md:mb-8 -mx-4 md:-mx-8 px-4 md:px-8 py-2 md:py-3`}>
       <div className="max-w-6xl mx-auto">
         <div className="relative">
           <div className="flex gap-2 overflow-x-auto scroll-smooth pb-1" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(100,116,139,0.4) transparent' }}>
@@ -323,18 +323,18 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
               <button
                 key={section.id}
                 onClick={() => scrollToSection(section.id)}
-                className={`whitespace-nowrap px-4 py-2 rounded-lg font-medium text-sm transition-all ${
+                className={`whitespace-nowrap px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-medium text-xs md:text-sm transition-all ${
                   activeSection === section.id
                     ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg shadow-blue-500/30'
                     : 'bg-white/40 dark:bg-slate-800/40 text-slate-700 dark:text-slate-300 hover:bg-white/60 dark:hover:bg-slate-800/60 backdrop-blur-sm border border-white/20 dark:border-slate-700/20'
                 }`}
               >
-                <span className="mr-2">{section.icon}</span>
+                <span className="mr-1 md:mr-2">{section.icon}</span>
                 {section.label}
               </button>
             ))}
           </div>
-          <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-white/30 dark:from-slate-950/30 to-transparent pointer-events-none rounded-r-lg"></div>
+          <div className="absolute right-0 top-0 bottom-0 w-8 md:w-12 bg-gradient-to-l from-white/30 dark:from-slate-950/30 to-transparent pointer-events-none rounded-r-lg"></div>
         </div>
       </div>
     </div>
@@ -351,44 +351,44 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
   }
 
   const defaultHeader = (
-    <div className="sticky top-0 z-50 backdrop-blur-sm bg-white/20 dark:bg-slate-950/20 border-b border-slate-200/20 dark:border-slate-800/20 mb-8 -mx-8 px-8 py-4 rounded-b-3xl">
+    <div className="sticky top-0 z-50 backdrop-blur-sm bg-white/20 dark:bg-slate-950/20 border-b border-slate-200/20 dark:border-slate-800/20 mb-6 md:mb-8 -mx-4 md:-mx-8 px-4 md:px-8 py-3 md:py-4 rounded-b-3xl">
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 md:gap-3 min-w-0">
             <button
               onClick={() => router.back()}
-              className="p-2 hover:bg-white/50 dark:hover:bg-slate-800/50 rounded-lg transition-colors backdrop-blur-sm border border-white/20 dark:border-slate-700/20"
+              className="p-1.5 md:p-2 hover:bg-white/50 dark:hover:bg-slate-800/50 rounded-lg transition-colors backdrop-blur-sm border border-white/20 dark:border-slate-700/20 shrink-0"
             >
-              <ArrowLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+              <ArrowLeft className="w-4 h-4 md:w-5 md:h-5 text-slate-600 dark:text-slate-400" />
             </button>
-            <div>
-              <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Edit Profile</h1>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Update your health information</p>
+            <div className="min-w-0">
+              <h1 className="text-lg md:text-2xl font-bold text-slate-900 dark:text-white truncate">Edit Profile</h1>
+              <p className="text-xs text-slate-500 dark:text-slate-400 hidden sm:block">Update your health information</p>
             </div>
           </div>
           <ThemeToggle />
         </div>
 
         {/* Horizontal Section Navigation */}
-        <div className="relative mt-4">
-          <div className="flex gap-2 overflow-x-auto scroll-smooth pb-3 -mx-4 md:-mx-8 px-4 md:px-8 mt-4" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(100,116,139,0.4) transparent' }}>
+        <div className="relative mt-3 md:mt-4">
+          <div className="flex gap-2 overflow-x-auto scroll-smooth pb-2 md:pb-3 -mx-4 md:-mx-8 px-4 md:px-8 mt-2 md:mt-4" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(100,116,139,0.4) transparent' }}>
             {sections.map((section) => (
               <button
                 key={section.id}
                 onClick={() => scrollToSection(section.id)}
-                className={`whitespace-nowrap px-4 py-2 rounded-lg font-medium text-sm transition-all ${
+                className={`whitespace-nowrap px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-medium text-xs md:text-sm transition-all ${
                   activeSection === section.id
                     ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg shadow-blue-500/30'
                     : 'bg-white/40 dark:bg-slate-800/40 text-slate-700 dark:text-slate-300 hover:bg-white/60 dark:hover:bg-slate-800/60 backdrop-blur-sm border border-white/20 dark:border-slate-700/20'
                 }`}
               >
-                <span className="mr-2">{section.icon}</span>
+                <span className="mr-1 md:mr-2">{section.icon}</span>
                 {section.label}
               </button>
             ))}
           </div>
           {/* Scroll indicator gradient (right side) */}
-          <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-white/30 dark:from-slate-950/30 to-transparent pointer-events-none rounded-r-lg"></div>
+          <div className="absolute right-0 top-0 bottom-0 w-8 md:w-12 bg-gradient-to-l from-white/30 dark:from-slate-950/30 to-transparent pointer-events-none rounded-r-lg"></div>
         </div>
       </div>
     </div>
@@ -412,7 +412,7 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
               <div className="mb-6 flex items-center gap-3">
                 <div className="w-1.5 h-8 bg-gradient-to-b from-blue-500 to-cyan-500 rounded-full"></div>
                 <div>
-                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Personal Information</h2>
+                  <h2 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">Personal Information</h2>
                   <p className="text-sm text-slate-600 dark:text-slate-400">Update your basic demographic details</p>
                 </div>
               </div>
@@ -436,7 +436,7 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
               <div className="mb-6 flex items-center gap-3">
                 <div className="w-1.5 h-8 bg-gradient-to-b from-red-500 to-orange-500 rounded-full"></div>
                 <div>
-                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Allergies</h2>
+                  <h2 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">Allergies</h2>
                   <p className="text-sm text-slate-600 dark:text-slate-400">Manage your known allergies</p>
                 </div>
               </div>
@@ -464,7 +464,7 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
               <div className="mb-6 flex items-center gap-3">
                 <div className="w-1.5 h-8 bg-gradient-to-b from-blue-500 to-cyan-500 rounded-full"></div>
                 <div>
-                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Emergency Contacts</h2>
+                  <h2 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">Emergency Contacts</h2>
                   <p className="text-sm text-slate-600 dark:text-slate-400">Add people to contact in case of emergency</p>
                 </div>
               </div>
@@ -487,7 +487,7 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
               <div className="mb-6 flex items-center gap-3">
                 <div className="w-1.5 h-8 bg-gradient-to-b from-green-500 to-emerald-500 rounded-full"></div>
                 <div>
-                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Addresses</h2>
+                  <h2 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">Addresses</h2>
                   <p className="text-sm text-slate-600 dark:text-slate-400">Manage your residential addresses</p>
                 </div>
               </div>
@@ -509,7 +509,7 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
               <div className="mb-6 flex items-center gap-3">
                 <div className="w-1.5 h-8 bg-gradient-to-b from-blue-500 to-cyan-500 rounded-full"></div>
                 <div>
-                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Vaccination & Immunization</h2>
+                  <h2 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">Vaccination & Immunization</h2>
                   <p className="text-sm text-slate-600 dark:text-slate-400">Track your vaccination history</p>
                 </div>
               </div>
@@ -532,7 +532,7 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
               <div className="mb-6 flex items-center gap-3">
                 <div className="w-1.5 h-8 bg-gradient-to-b from-purple-500 to-pink-500 rounded-full"></div>
                 <div>
-                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Disabilities & Illnesses</h2>
+                  <h2 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">Disabilities & Illnesses</h2>
                   <p className="text-sm text-slate-600 dark:text-slate-400">Document disabilities and chronic conditions</p>
                 </div>
               </div>
@@ -555,7 +555,7 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
               <div className="mb-6 flex items-center gap-3">
                 <div className="w-1.5 h-8 bg-gradient-to-b from-red-500 to-pink-500 rounded-full"></div>
                 <div>
-                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Vital Signs</h2>
+                  <h2 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">Vital Signs</h2>
                   <p className="text-sm text-slate-600 dark:text-slate-400">Record your latest vital measurements</p>
                 </div>
               </div>
@@ -579,7 +579,7 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
               <div className="mb-6 flex items-center gap-3">
                 <div className="w-1.5 h-8 bg-gradient-to-b from-amber-500 to-orange-500 rounded-full"></div>
                 <div>
-                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Personal History</h2>
+                  <h2 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">Personal History</h2>
                   <p className="text-sm text-slate-600 dark:text-slate-400">Information about your lifestyle and habits</p>
                 </div>
               </div>
@@ -602,7 +602,7 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
               <div className="mb-6 flex items-center gap-3">
                 <div className="w-1.5 h-8 bg-gradient-to-b from-rose-500 to-pink-500 rounded-full"></div>
                 <div>
-                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white">OB/GYN History</h2>
+                  <h2 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">OB/GYN History</h2>
                   <p className="text-sm text-slate-600 dark:text-slate-400">Reproductive and menstrual history information</p>
                 </div>
               </div>
@@ -628,7 +628,7 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
               <div className="mb-6 flex items-center gap-3">
                 <div className="w-1.5 h-8 bg-gradient-to-b from-purple-500 to-indigo-500 rounded-full"></div>
                 <div>
-                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Pediatric Measurements</h2>
+                  <h2 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">Pediatric Measurements</h2>
                   <p className="text-sm text-slate-600 dark:text-slate-400">Physical measurements for pediatric patients</p>
                 </div>
               </div>
@@ -651,7 +651,7 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
               <div className="mb-6 flex items-center gap-3">
                 <div className="w-1.5 h-8 bg-gradient-to-b from-green-500 to-emerald-500 rounded-full"></div>
                 <div>
-                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Medical Conditions</h2>
+                  <h2 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">Medical Conditions</h2>
                   <p className="text-sm text-slate-600 dark:text-slate-400">Manage your current health conditions</p>
                 </div>
               </div>
@@ -677,7 +677,7 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
               <div className="mb-6 flex items-center gap-3">
                 <div className="w-1.5 h-8 bg-gradient-to-b from-orange-500 to-amber-500 rounded-full"></div>
                 <div>
-                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Surgical History</h2>
+                  <h2 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">Surgical History</h2>
                   <p className="text-sm text-slate-600 dark:text-slate-400">Track your surgical procedures</p>
                 </div>
               </div>
@@ -700,7 +700,7 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
               <div className="mb-6 flex items-center gap-3">
                 <div className="w-1.5 h-8 bg-gradient-to-b from-teal-500 to-cyan-500 rounded-full"></div>
                 <div>
-                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Family History</h2>
+                  <h2 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">Family History</h2>
                   <p className="text-sm text-slate-600 dark:text-slate-400">Family medical history information</p>
                 </div>
               </div>
@@ -726,7 +726,7 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
               <div className="mb-6 flex items-center gap-3">
                 <div className="w-1.5 h-8 bg-gradient-to-b from-indigo-500 to-blue-500 rounded-full"></div>
                 <div>
-                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Physical Examination</h2>
+                  <h2 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">Physical Examination</h2>
                   <p className="text-sm text-slate-600 dark:text-slate-400">Physical examination findings</p>
                 </div>
               </div>
@@ -749,7 +749,7 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
               <div className="mb-6 flex items-center gap-3">
                 <div className="w-1.5 h-8 bg-gradient-to-b from-blue-600 to-blue-500 rounded-full"></div>
                 <div>
-                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white">PhilHealth Information</h2>
+                  <h2 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">PhilHealth Information</h2>
                   <p className="text-sm text-slate-600 dark:text-slate-400">Update your health insurance details</p>
                 </div>
               </div>

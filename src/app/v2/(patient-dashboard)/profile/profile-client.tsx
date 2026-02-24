@@ -33,6 +33,8 @@ interface ProfileClientProps {
   appointmentsHref?: string | null
   /** URL for the PHR print page. Defaults to '/v2/patient/phr/print' */
   downloadPHRHref?: string
+  /** URL for the PHR PDF download API. Defaults to '/api/phr/download' */
+  downloadPHRApiHref?: string
 }
 
 const PROFILE_TABS = [
@@ -51,7 +53,7 @@ const PROFILE_TABS = [
   { id: 'insurance', label: 'Insurance & Docs', icon: '📄' },
 ]
 
-export default function ProfileClient({ patient, headerSlot, editProfileHref, filesHref, filesButtonLabel = 'My Files', appointmentsHref, downloadPHRHref = '/v2/patient/phr/print' }: ProfileClientProps) {
+export default function ProfileClient({ patient, headerSlot, editProfileHref, filesHref, filesButtonLabel = 'My Files', appointmentsHref, downloadPHRHref = '/v2/patient/phr/print', downloadPHRApiHref = '/api/phr/download' }: ProfileClientProps) {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState('overview')
   const [vitalsViewMode, setVitalsViewMode] = useState<'list' | 'chart'>('list')
@@ -1825,7 +1827,7 @@ export default function ProfileClient({ patient, headerSlot, editProfileHref, fi
             <span className="hidden sm:inline">{filesButtonLabel}</span>
           </button>
           )}
-          <DownloadPHRButton printHref={downloadPHRHref} />
+          <DownloadPHRButton printHref={downloadPHRHref} downloadApiHref={downloadPHRApiHref} />
           <button
             onClick={() => router.push(editProfileHref ?? '/v2/profile/edit')}
             className="flex items-center gap-1.5 md:gap-2 px-4 md:px-6 py-2.5 md:py-3 rounded-lg bg-gradient-to-br from-blue-600 to-blue-500 text-white text-sm font-semibold hover:shadow-lg transition-all duration-300 hover:scale-105 shadow-lg"

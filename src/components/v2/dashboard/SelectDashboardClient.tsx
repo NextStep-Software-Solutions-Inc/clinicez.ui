@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   HeartPulse,
@@ -11,10 +10,16 @@ import {
   ArrowRight,
   Lock,
   LogOut,
+  ChevronDown,
 } from "lucide-react";
 import { Button } from "@components/ui/button";
 import { useClerk } from "@clerk/nextjs";
-import { ClinicOrgSelectorModal } from "@/components/dashboard/clinic-org-selector-modal";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@components/ui/accordion";
 import type { DashboardOptions } from "@actions/dashboard/dashboard-links.action";
 
 interface SelectDashboardClientProps {
@@ -39,9 +44,6 @@ export default function SelectDashboardClient({
 }: SelectDashboardClientProps) {
   const router = useRouter();
   const { signOut } = useClerk();
-  const [selectorModalType, setSelectorModalType] = useState<
-    "clinic" | "organization" | null
-  >(null);
 
   const clinicHasAccess = (canAccessDashboard: boolean, role: string) =>
     canAccessDashboard || role.toLowerCase() === "owner";
@@ -51,6 +53,7 @@ export default function SelectDashboardClient({
     return canAccessDashboard || r === "owner" || r === "admin";
   };
 
+  /** Build the top-level cards (no clinic/org expansion needed here) */
   const buildCards = (): DashboardCard[] => {
     const cards: DashboardCard[] = [];
 
@@ -89,7 +92,7 @@ export default function SelectDashboardClient({
       });
     }
 
-    // Clinics: single → direct card; multiple → aggregated "My Clinics" + modal
+    // Single clinic → direct card
     if (options.clinics.length === 1) {
       const clinic = options.clinics[0];
       const hasAccess = clinicHasAccess(clinic.canAccessDashboard, clinic.role);
@@ -107,21 +110,9 @@ export default function SelectDashboardClient({
           if (hasAccess) router.push(clinic.href);
         },
       });
-    } else if (options.clinics.length > 1) {
-      const accessibleCount = options.clinics.filter((c) =>
-        clinicHasAccess(c.canAccessDashboard, c.role)
-      ).length;
-      cards.push({
-        key: "clinics",
-        icon: <Building2 className="h-6 w-6" />,
-        title: "My Clinics",
-        description: `You are a member of ${options.clinics.length} clinics. Select the clinic you want to access.`,
-        badge: `${accessibleCount} accessible`,
-        onClick: () => setSelectorModalType("clinic"),
-      });
     }
 
-    // Organizations: single → direct card; multiple → aggregated "My Organizations" + modal
+    // Single org → direct card
     if (options.organizations.length === 1) {
       const org = options.organizations[0];
       const hasAccess = orgHasAccess(org.canAccessDashboard, org.role);
@@ -139,140 +130,189 @@ export default function SelectDashboardClient({
           if (hasAccess) router.push(org.href);
         },
       });
-    } else if (options.organizations.length > 1) {
-      const accessibleCount = options.organizations.filter((o) =>
-        orgHasAccess(o.canAccessDashboard, o.role)
-      ).length;
-      cards.push({
-        key: "organizations",
-        icon: <Network className="h-6 w-6" />,
-        title: "My Organizations",
-        description: `You are a member of ${options.organizations.length} organizations. Select the organization you want to access.`,
-        badge: `${accessibleCount} accessible`,
-        onClick: () => setSelectorModalType("organization"),
-      });
     }
 
     return cards;
   };
 
   const cards = buildCards();
+  const hasMultipleClinics = options.clinics.length > 1;
+  const hasMultipleOrgs = options.organizations.length > 1;
 
   return (
-    <>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-teal-50/30 flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-white/80 backdrop-blur-sm">
-          <div className="flex items-center gap-2">
-            <HeartPulse className="h-6 w-6 text-primary" />
-            <span className="font-bold text-lg text-slate-800">ClinicEZ</span>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-slate-500 hover:text-slate-700 gap-2"
-            onClick={() => signOut({ redirectUrl: "/" })}
-          >
-            <LogOut className="h-4 w-4" />
-            Sign out
-          </Button>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-teal-50/30 flex flex-col">
+      {/* Header */}
+      <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-white/80 backdrop-blur-sm">
+        <div className="flex items-center gap-2">
+          <HeartPulse className="h-6 w-6 text-primary" />
+          <span className="font-bold text-lg text-slate-800">ClinicEZ</span>
         </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-slate-500 hover:text-slate-700 gap-2"
+          onClick={() => signOut({ redirectUrl: "/" })}
+        >
+          <LogOut className="h-4 w-4" />
+          Sign out
+        </Button>
+      </div>
 
-        {/* Main content */}
-        <div className="flex-1 flex flex-col items-center justify-center px-4 py-12">
-          <div className="w-full max-w-3xl space-y-8">
-            {/* Welcome heading */}
-            <div className="text-center space-y-2">
-              <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-                Welcome back{userName ? `, ${userName}` : ""}!
-              </h1>
-              <p className="text-slate-500 text-base">
-                Select the role you want to access today.
-              </p>
-            </div>
+      {/* Main content */}
+      <div className="flex-1 flex flex-col items-center justify-center px-4 py-12">
+        <div className="w-full max-w-3xl space-y-8">
+          {/* Welcome heading */}
+          <div className="text-center space-y-2">
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+              Welcome back{userName ? `, ${userName}` : ""}!
+            </h1>
+            <p className="text-slate-500 text-base">
+              Select the role you want to access today.
+            </p>
+          </div>
 
-            {/* Cards grid */}
-            <div className="grid gap-4 sm:grid-cols-2">
-              {cards.map((card, index) =>
-                card.disabled ? (
-                  <div
-                    key={card.key}
-                    className="relative overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-5 opacity-60 cursor-not-allowed"
-                    style={{
-                      animation: `fadeSlideIn 0.4s ease-out ${index * 60}ms backwards`,
-                    }}
-                  >
-                    {card.badge && (
-                      <span className="inline-block mb-3 px-2 py-0.5 text-xs font-medium rounded-full bg-slate-200 text-slate-500">
-                        {card.badge}
-                      </span>
-                    )}
-                    <div className="flex items-start gap-4">
-                      <div className="p-2.5 rounded-lg bg-slate-200 text-slate-400 flex-shrink-0">
-                        {card.icon}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-semibold text-slate-500 truncate">
-                          {card.title}
-                        </p>
-                        <p className="text-xs text-slate-400 mt-1 flex items-center gap-1">
-                          <Lock className="h-3 w-3 flex-shrink-0" />
-                          {card.disabledReason}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <button
-                    key={card.key}
-                    onClick={card.onClick}
-                    className="group relative overflow-hidden rounded-xl border border-slate-200 bg-white p-5 text-left transition-all duration-300 hover:border-teal-300 hover:shadow-lg hover:shadow-teal-100/50 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
-                    style={{
-                      animation: `fadeSlideIn 0.4s ease-out ${index * 60}ms backwards`,
-                    }}
-                  >
-                    {/* Hover gradient overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-teal-50/60 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+          {/* Cards grid */}
+          <div className="grid gap-4 sm:grid-cols-2">
+            {cards.map((card, index) =>
+              card.disabled ? (
+                <DisabledCard key={card.key} card={card} index={index} />
+              ) : (
+                <ActiveCard key={card.key} card={card} index={index} />
+              )
+            )}
 
-                    <div className="relative space-y-3">
-                      {card.badge && (
-                        <span className="inline-block px-2 py-0.5 text-xs font-medium rounded-full bg-teal-100 text-teal-700">
-                          {card.badge}
-                        </span>
-                      )}
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-start gap-3 flex-1 min-w-0">
-                          <div className="p-2.5 rounded-lg bg-gradient-to-br from-teal-100 to-teal-50 text-teal-600 flex-shrink-0 transition-all duration-300 group-hover:from-teal-200 group-hover:to-teal-100 group-hover:scale-110 group-hover:shadow-md">
-                            {card.icon}
+            {/* Multi-clinic accordion — spans full width */}
+            {hasMultipleClinics && (
+              <div
+                className="sm:col-span-2"
+                style={{
+                  animation: `fadeSlideIn 0.4s ease-out ${cards.length * 60}ms backwards`,
+                }}
+              >
+                <ExpandableGroupCard
+                  icon={<Building2 className="h-6 w-6" />}
+                  title="My Clinics"
+                  count={options.clinics.length}
+                  accordionValue="clinics"
+                >
+                  {options.clinics.map((clinic) => {
+                    const hasAccess = clinicHasAccess(
+                      clinic.canAccessDashboard,
+                      clinic.role
+                    );
+                    return hasAccess ? (
+                      <button
+                        key={clinic.clinicUid}
+                        onClick={() => router.push(clinic.href)}
+                        className="group w-full flex items-center justify-between rounded-lg border border-slate-200 bg-white px-4 py-3 text-left transition-all duration-200 hover:border-teal-300 hover:bg-teal-50/40 hover:shadow-sm active:scale-[0.99]"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="p-1.5 rounded-md bg-teal-100 text-teal-600 flex-shrink-0">
+                            <Building2 className="h-4 w-4" />
                           </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="font-semibold text-slate-800 group-hover:text-teal-700 transition-colors duration-300 truncate">
-                              {card.title}
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-slate-800 group-hover:text-teal-700 truncate">
+                              {clinic.name}
                             </p>
-                            <p className="text-xs text-slate-500 mt-1 line-clamp-2 group-hover:text-slate-600 transition-colors duration-300">
-                              {card.description}
+                            <p className="text-xs text-slate-500">{clinic.role}</p>
+                          </div>
+                        </div>
+                        <ArrowRight className="h-4 w-4 text-slate-300 group-hover:text-teal-500 group-hover:translate-x-0.5 transition-all duration-200 flex-shrink-0" />
+                      </button>
+                    ) : (
+                      <div
+                        key={clinic.clinicUid}
+                        className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 opacity-60 cursor-not-allowed"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="p-1.5 rounded-md bg-slate-200 text-slate-400 flex-shrink-0">
+                            <Building2 className="h-4 w-4" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-slate-500 truncate">
+                              {clinic.name}
+                            </p>
+                            <p className="text-xs text-slate-400 flex items-center gap-1">
+                              <Lock className="h-3 w-3" />
+                              {clinic.role} — no dashboard access
                             </p>
                           </div>
                         </div>
-                        <div className="flex-shrink-0 mt-0.5 text-slate-300 group-hover:text-teal-500 group-hover:translate-x-1 transition-all duration-300">
-                          <ArrowRight className="h-5 w-5" />
+                      </div>
+                    );
+                  })}
+                </ExpandableGroupCard>
+              </div>
+            )}
+
+            {/* Multi-org accordion — spans full width */}
+            {hasMultipleOrgs && (
+              <div
+                className="sm:col-span-2"
+                style={{
+                  animation: `fadeSlideIn 0.4s ease-out ${
+                    (cards.length + (hasMultipleClinics ? 1 : 0)) * 60
+                  }ms backwards`,
+                }}
+              >
+                <ExpandableGroupCard
+                  icon={<Network className="h-6 w-6" />}
+                  title="My Organizations"
+                  count={options.organizations.length}
+                  accordionValue="organizations"
+                >
+                  {options.organizations.map((org) => {
+                    const hasAccess = orgHasAccess(
+                      org.canAccessDashboard,
+                      org.role
+                    );
+                    return hasAccess ? (
+                      <button
+                        key={org.orgUid}
+                        onClick={() => router.push(org.href)}
+                        className="group w-full flex items-center justify-between rounded-lg border border-slate-200 bg-white px-4 py-3 text-left transition-all duration-200 hover:border-teal-300 hover:bg-teal-50/40 hover:shadow-sm active:scale-[0.99]"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="p-1.5 rounded-md bg-teal-100 text-teal-600 flex-shrink-0">
+                            <Network className="h-4 w-4" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-slate-800 group-hover:text-teal-700 truncate">
+                              {org.name}
+                            </p>
+                            <p className="text-xs text-slate-500">{org.role}</p>
+                          </div>
+                        </div>
+                        <ArrowRight className="h-4 w-4 text-slate-300 group-hover:text-teal-500 group-hover:translate-x-0.5 transition-all duration-200 flex-shrink-0" />
+                      </button>
+                    ) : (
+                      <div
+                        key={org.orgUid}
+                        className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 opacity-60 cursor-not-allowed"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="p-1.5 rounded-md bg-slate-200 text-slate-400 flex-shrink-0">
+                            <Network className="h-4 w-4" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-slate-500 truncate">
+                              {org.name}
+                            </p>
+                            <p className="text-xs text-slate-400 flex items-center gap-1">
+                              <Lock className="h-3 w-3" />
+                              {org.role} — no dashboard access
+                            </p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </button>
-                )
-              )}
-            </div>
+                    );
+                  })}
+                </ExpandableGroupCard>
+              </div>
+            )}
           </div>
         </div>
       </div>
-
-      {/* Clinic / Organization selector modal */}
-      <ClinicOrgSelectorModal
-        isOpen={selectorModalType !== null}
-        onClose={() => setSelectorModalType(null)}
-        type={selectorModalType ?? "clinic"}
-      />
 
       <style jsx>{`
         @keyframes fadeSlideIn {
@@ -286,7 +326,131 @@ export default function SelectDashboardClient({
           }
         }
       `}</style>
-    </>
+    </div>
   );
 }
+
+/* ── Helper sub-components ───────────────────────────────────────── */
+
+function DisabledCard({
+  card,
+  index,
+}: {
+  card: DashboardCard;
+  index: number;
+}) {
+  return (
+    <div
+      className="relative overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-5 opacity-60 cursor-not-allowed"
+      style={{ animation: `fadeSlideIn 0.4s ease-out ${index * 60}ms backwards` }}
+    >
+      {card.badge && (
+        <span className="inline-block mb-3 px-2 py-0.5 text-xs font-medium rounded-full bg-slate-200 text-slate-500">
+          {card.badge}
+        </span>
+      )}
+      <div className="flex items-start gap-4">
+        <div className="p-2.5 rounded-lg bg-slate-200 text-slate-400 flex-shrink-0">
+          {card.icon}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="font-semibold text-slate-500 truncate">{card.title}</p>
+          <p className="text-xs text-slate-400 mt-1 flex items-center gap-1">
+            <Lock className="h-3 w-3 flex-shrink-0" />
+            {card.disabledReason}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ActiveCard({
+  card,
+  index,
+}: {
+  card: DashboardCard;
+  index: number;
+}) {
+  return (
+    <button
+      onClick={card.onClick}
+      className="group relative overflow-hidden rounded-xl border border-slate-200 bg-white p-5 text-left transition-all duration-300 hover:border-teal-300 hover:shadow-lg hover:shadow-teal-100/50 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+      style={{ animation: `fadeSlideIn 0.4s ease-out ${index * 60}ms backwards` }}
+    >
+      <div className="absolute inset-0 bg-gradient-to-br from-teal-50/60 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+      <div className="relative space-y-3">
+        {card.badge && (
+          <span className="inline-block px-2 py-0.5 text-xs font-medium rounded-full bg-teal-100 text-teal-700">
+            {card.badge}
+          </span>
+        )}
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start gap-3 flex-1 min-w-0">
+            <div className="p-2.5 rounded-lg bg-gradient-to-br from-teal-100 to-teal-50 text-teal-600 flex-shrink-0 transition-all duration-300 group-hover:from-teal-200 group-hover:to-teal-100 group-hover:scale-110 group-hover:shadow-md">
+              {card.icon}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold text-slate-800 group-hover:text-teal-700 transition-colors duration-300 truncate">
+                {card.title}
+              </p>
+              <p className="text-xs text-slate-500 mt-1 line-clamp-2 group-hover:text-slate-600 transition-colors duration-300">
+                {card.description}
+              </p>
+            </div>
+          </div>
+          <div className="flex-shrink-0 mt-0.5 text-slate-300 group-hover:text-teal-500 group-hover:translate-x-1 transition-all duration-300">
+            <ArrowRight className="h-5 w-5" />
+          </div>
+        </div>
+      </div>
+    </button>
+  );
+}
+
+function ExpandableGroupCard({
+  icon,
+  title,
+  count,
+  accordionValue,
+  children,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  count: number;
+  accordionValue: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Accordion type="single" collapsible className="w-full">
+      <AccordionItem
+        value={accordionValue}
+        className="rounded-xl border border-slate-200 bg-white overflow-hidden data-[state=open]:shadow-lg data-[state=open]:border-teal-300 transition-all duration-300"
+      >
+        <AccordionTrigger className="px-5 py-4 hover:no-underline group [&[data-state=open]>svg]:rotate-180">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <div className="p-2.5 rounded-lg bg-gradient-to-br from-teal-100 to-teal-50 text-teal-600 flex-shrink-0 transition-all duration-300 group-hover:from-teal-200 group-hover:to-teal-100">
+              {icon}
+            </div>
+            <div className="min-w-0 text-left">
+              <p className="font-semibold text-slate-800 group-hover:text-teal-700 transition-colors duration-300">
+                {title}
+              </p>
+              <p className="text-xs text-slate-500 mt-0.5">
+                {count} memberships — click to expand
+              </p>
+            </div>
+          </div>
+          <ChevronDown className="h-5 w-5 text-slate-400 group-hover:text-teal-500 transition-all duration-200 shrink-0 mr-1" />
+        </AccordionTrigger>
+        <AccordionContent className="px-5 pb-4 pt-0">
+          <div className="space-y-2 pt-2 border-t border-slate-100">
+            {children}
+          </div>
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>
+  );
+}
+
 

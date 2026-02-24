@@ -56,12 +56,15 @@ export const getPatientContextAction = withErrorHandling(async () => {
     .filter(Boolean)
     .join(" ") || "Patient";
   return {
-    name: fullName,
-    picture: user.picture ?? null,
-    bloodType: (user.bloodType as string | null),
-    gender: (user.gender as string | null),
-    age,
-    caseNumber: user.caseNumber ?? null,
+    message: "Patient context retrieved",
+    data: {
+      name: fullName,
+      picture: user.picture ?? null,
+      bloodType: (user.bloodType as string | null),
+      gender: (user.gender as string | null),
+      age,
+      caseNumber: user.caseNumber ?? null,
+    },
   };
 });
 

@@ -26,7 +26,7 @@ export default async function TenantDetailPage({ params }: TenantDetailPageProps
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">{tenant.name}</h1>
+        <h1 className="text-2xl font-bold sm:text-3xl">{tenant.name}</h1>
         <p className="text-muted-foreground">{tenant.description || "No description"}</p>
       </div>
       

@@ -68,7 +68,7 @@ export default function AppointmentTabsTable({ initialData }: AppointmentTabsTab
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2 flex-1">
           <Input
             placeholder="Search appointment tabs..."
@@ -83,9 +83,10 @@ export default function AppointmentTabsTable({ initialData }: AppointmentTabsTab
         </div>
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button className="w-full sm:w-auto" aria-label="Add Appointment Tab">
               <Plus className="h-4 w-4 mr-2" />
-              Add Appointment Tab
+              <span className="hidden sm:inline">Add Appointment Tab</span>
+              <span className="sm:hidden">Add Tab</span>
             </Button>
           </DialogTrigger>
           <DialogContent>
@@ -123,7 +124,7 @@ export default function AppointmentTabsTable({ initialData }: AppointmentTabsTab
         </Dialog>
       </div>
 
-      <div className="border rounded-md">
+      <div className="border rounded-md overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -168,7 +169,7 @@ export default function AppointmentTabsTable({ initialData }: AppointmentTabsTab
       </div>
 
       {data.totalPages > 1 && (
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-muted-foreground">
             Showing {(data.pageNumber - 1) * data.pageSize + 1} to{" "}
             {Math.min(data.pageNumber * data.pageSize, data.total)} of {data.total} tabs

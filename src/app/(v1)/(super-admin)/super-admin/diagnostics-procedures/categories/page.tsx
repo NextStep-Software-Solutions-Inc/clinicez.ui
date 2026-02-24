@@ -9,7 +9,7 @@ export default function CategoriesPage() {
   return (
     <div className="space-y-6">
       <div className="border-b pb-4">
-        <h1 className="text-3xl font-bold tracking-tight">Manage Procedure Categories</h1>
+        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Manage Procedure Categories</h1>
         <p className="text-muted-foreground mt-2">
           Categories are shared across master procedures. Add or remove categories per procedure type.
         </p>

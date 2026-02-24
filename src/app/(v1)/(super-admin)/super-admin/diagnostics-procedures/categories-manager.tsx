@@ -162,11 +162,13 @@ export function CategoriesManager() {
         </CardHeader>
         <CardContent>
           <Tabs value={activeType} onValueChange={(value) => setActiveType(value as any)}>
-            <TabsList className="grid w-full max-w-2xl grid-cols-3">
-              <TabsTrigger value="imaging">Imaging</TabsTrigger>
-              <TabsTrigger value="laboratory">Laboratory</TabsTrigger>
-              <TabsTrigger value="heart_station">Heart Station</TabsTrigger>
-            </TabsList>
+            <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+              <TabsList className="inline-flex w-auto min-w-full sm:grid sm:w-full sm:max-w-2xl sm:grid-cols-3">
+                <TabsTrigger value="imaging">Imaging</TabsTrigger>
+                <TabsTrigger value="laboratory">Laboratory</TabsTrigger>
+                <TabsTrigger value="heart_station">Heart Station</TabsTrigger>
+              </TabsList>
+            </div>
 
             {(["imaging", "laboratory", "heart_station"] as const).map((type) => (
               <TabsContent key={type} value={type} className="space-y-4 mt-6">
@@ -222,7 +224,7 @@ export function CategoriesManager() {
       {hasChanges && (
         <Card className="border-amber-200 bg-amber-50">
           <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm text-amber-800">You have unsaved changes</p>
               <div className="flex gap-2">
                 <Button variant="outline" onClick={handleReset}>

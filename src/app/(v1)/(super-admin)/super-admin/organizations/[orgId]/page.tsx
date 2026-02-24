@@ -35,7 +35,7 @@ export default async function OrganizationDetailPage({ params }: OrganizationDet
   return (
     <div className="space-y-6">
       <div>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2 flex-wrap">
           <Link href="/super-admin/tenants" className="hover:underline">
             Tenants
           </Link>
@@ -46,11 +46,11 @@ export default async function OrganizationDetailPage({ params }: OrganizationDet
           <span>/</span>
           <span>Organization</span>
         </div>
-        <h1 className="text-3xl font-bold">{organization.name}</h1>
+        <h1 className="text-2xl font-bold sm:text-3xl">{organization.name}</h1>
         <p className="text-muted-foreground">{organization.description || "No description"}</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
         <Card>
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
@@ -97,9 +97,9 @@ export default async function OrganizationDetailPage({ params }: OrganizationDet
       <Tabs defaultValue="roles" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="roles">Organization Roles</TabsTrigger>
-          <TabsTrigger value="members">
-            Member Permissions
-            <Badge variant="secondary" className="ml-2 text-xs">
+          <TabsTrigger value="members" className="gap-1">
+            Members
+            <Badge variant="secondary" className="text-xs hidden sm:inline-flex">
               {organization._count.OrganizationMembers}
             </Badge>
           </TabsTrigger>

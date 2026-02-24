@@ -225,13 +225,14 @@ function Step1Complaint({
   onNext: () => void
 }) {
   const [form, setForm] = useAtom(bookAppointmentAtom)
-  const [subject, setSubject] = useState(form.subject ?? '')
-  const [complaint, setComplaint] = useState(form.chiefComplaint ?? '')
   const [files, setFiles] = useState<File[]>(form.attachments ?? [])
 
   const { data: serviceCategories } = useClinicServiceCategories(clinicUid)
   const { data: appointmentTypes } = useClinicAppointmentTypes(clinicUid)
   const { data: appointmentModes } = useClinicAppointmentModes(clinicUid)
+
+  const subject = form.subject ?? ''
+  const complaint = form.chiefComplaint ?? ''
 
   const canProceed =
     subject.trim().length >= 3 &&
@@ -269,7 +270,7 @@ function Step1Complaint({
         <TextInput
           type="text"
           value={subject}
-          onChange={(e) => { setSubject(e.target.value); setForm((p) => ({ ...p, subject: e.target.value })) }}
+          onChange={(e) => setForm((p) => ({ ...p, subject: e.target.value })}
           placeholder="e.g. Persistent headache for 3 days"
         />
         {subject.trim().length > 0 && subject.trim().length < 3 && (
@@ -283,7 +284,7 @@ function Step1Complaint({
         <TextArea
           rows={4}
           value={complaint}
-          onChange={(e) => { setComplaint(e.target.value); setForm((p) => ({ ...p, chiefComplaint: e.target.value })) }}
+          onChange={(e) => setForm((p) => ({ ...p, chiefComplaint: e.target.value })}
           placeholder="Describe your symptoms, when they started, what makes them better or worse…"
         />
       </div>

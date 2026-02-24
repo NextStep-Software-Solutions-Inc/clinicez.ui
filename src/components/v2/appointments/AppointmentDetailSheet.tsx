@@ -541,7 +541,7 @@ export function AppointmentDetailSheet({
             </h3>
             <div className="flex flex-wrap gap-2">
 
-              {/* PENDING: Receive (lock) + Tag + Reject */}
+              {/* PENDING: Receive (lock) + Reject (no tagging while pending) */}
               {status === "PENDING" && (
                 <>
                   <Button
@@ -552,16 +552,6 @@ export function AppointmentDetailSheet({
                   >
                     <Lock className="h-4 w-4" />
                     Receive &amp; Lock
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="gap-1.5 border-blue-400/40 text-blue-600 hover:bg-blue-600 hover:text-white"
-                    disabled={isPending}
-                    onClick={() => onOpenSubPanel("tag")}
-                  >
-                    <Tags className="h-4 w-4" />
-                    Tag Providers
                   </Button>
                   {!showRejectForm && (
                     <Button
@@ -725,6 +715,20 @@ export function AppointmentDetailSheet({
                     Tag Providers
                   </Button>
                 </>
+              )}
+
+              {/* COMPLETED: Tag Providers (read-only management) */}
+              {status === "COMPLETED" && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-1.5 border-blue-400/40 text-blue-600 hover:bg-blue-600 hover:text-white"
+                  disabled={isPending}
+                  onClick={() => onOpenSubPanel("tag")}
+                >
+                  <Tags className="h-4 w-4" />
+                  Tag Providers
+                </Button>
               )}
             </div>
 

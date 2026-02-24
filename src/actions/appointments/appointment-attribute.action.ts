@@ -6,7 +6,7 @@ import { getPermissionsAction } from '@actions/permission.action';
 import { PERMISSIONS } from '@lib/permissions';
 import { withErrorHandling } from '@/lib/with-error-handling';
 import { hasCodeProperty } from '@lib/utils';
-import { createNotification } from '@/actions/notifications/notification.action';
+import { createNotifications } from '@/actions/notifications/notification.action';
 
 export const receiveAppointmentAction = withErrorHandling(async (formData: FormData) => {
   const session = await getCachedSession();
@@ -95,15 +95,13 @@ export const receiveAppointmentAction = withErrorHandling(async (formData: FormD
       },
     });
     if (appointment) {
-      await Promise.all(
-        appointment.Requesters.map((r) =>
-          createNotification({
-            userId: r.User.id,
-            type: "APPOINTMENT_RECEIVED",
-            title: "Appointment Received",
-            message: `Your appointment "${appointment.subject}" is now being processed by our staff.`,
-          }),
-        ),
+      await createNotifications(
+        appointment.Requesters.map((r) => ({
+          userId: r.User.id,
+          type: "APPOINTMENT_RECEIVED" as const,
+          title: "Appointment Received",
+          message: `Your appointment "${appointment.subject}" is now being processed by our staff.`,
+        })),
       );
     }
   } catch {
@@ -158,15 +156,13 @@ export const completeAppointmentAction = withErrorHandling(async (formData: Form
       },
     });
     if (appointment) {
-      await Promise.all(
-        appointment.Requesters.map((r) =>
-          createNotification({
-            userId: r.User.id,
-            type: "APPOINTMENT_COMPLETED",
-            title: "Appointment Completed",
-            message: `Your appointment "${appointment.subject}" has been completed.`,
-          }),
-        ),
+      await createNotifications(
+        appointment.Requesters.map((r) => ({
+          userId: r.User.id,
+          type: "APPOINTMENT_COMPLETED" as const,
+          title: "Appointment Completed",
+          message: `Your appointment "${appointment.subject}" has been completed.`,
+        })),
       );
     }
   } catch {
@@ -244,15 +240,13 @@ export const confirmAppointmentBookingAction = withErrorHandling(async (payload:
       },
     });
     if (appointment) {
-      await Promise.all(
-        appointment.Requesters.map((r) =>
-          createNotification({
-            userId: r.User.id,
-            type: "APPOINTMENT_CONFIRMED",
-            title: "Appointment Confirmed",
-            message: `Your appointment "${appointment.subject}" has been confirmed.`,
-          }),
-        ),
+      await createNotifications(
+        appointment.Requesters.map((r) => ({
+          userId: r.User.id,
+          type: "APPOINTMENT_CONFIRMED" as const,
+          title: "Appointment Confirmed",
+          message: `Your appointment "${appointment.subject}" has been confirmed.`,
+        })),
       );
     }
   } catch {
@@ -307,15 +301,13 @@ export const rejectAppointmentAction = withErrorHandling(async (formData: FormDa
       },
     });
     if (appointment) {
-      await Promise.all(
-        appointment.Requesters.map((r) =>
-          createNotification({
-            userId: r.User.id,
-            type: "APPOINTMENT_REJECTED",
-            title: "Appointment Rejected",
-            message: `Your appointment "${appointment.subject}" has been rejected.${reason ? ` Reason: ${reason}` : ""}`,
-          }),
-        ),
+      await createNotifications(
+        appointment.Requesters.map((r) => ({
+          userId: r.User.id,
+          type: "APPOINTMENT_REJECTED" as const,
+          title: "Appointment Rejected",
+          message: `Your appointment "${appointment.subject}" has been rejected.${reason ? ` Reason: ${reason}` : ""}`,
+        })),
       );
     }
   } catch {

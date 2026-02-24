@@ -42,6 +42,11 @@ export default async function ClinicPatientFilesPage({ params }: Props) {
       clinicUid={clinicUid}
       patientId={numericPatientId}
       patientName={patient.fullName}
+      patientPicture={patient.picture ?? null}
+      patientAge={patient.age ?? null}
+      patientGender={patient.gender ?? null}
+      patientBloodType={patient.bloodType ?? null}
+      patientCaseNumber={patient.caseNumber ?? null}
       initialFolders={foldersResult.data ?? []}
       fileTypes={fileTypesResult ?? []}
     />

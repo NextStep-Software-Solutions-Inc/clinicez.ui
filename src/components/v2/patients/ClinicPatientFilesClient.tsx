@@ -54,6 +54,11 @@ interface ClinicPatientFilesClientProps {
   clinicUid: string;
   patientId: number;
   patientName: string;
+  patientPicture?: string | null;
+  patientAge?: number | null;
+  patientGender?: string | null;
+  patientBloodType?: string | null;
+  patientCaseNumber?: string | null;
   initialFolders: NonNullable<GetPatientFolders["data"]>;
   fileTypes: FileType[];
 }
@@ -82,10 +87,23 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+function formatBloodType(bt: string): string {
+  return bt.replace("_POSITIVE", "+").replace("_NEGATIVE", "-").replace(/_/g, "");
+}
+
+function formatGender(g: string): string {
+  return g.charAt(0) + g.slice(1).toLowerCase();
+}
+
 export function ClinicPatientFilesClient({
   clinicUid,
   patientId,
   patientName,
+  patientPicture,
+  patientAge,
+  patientGender,
+  patientBloodType,
+  patientCaseNumber,
   initialFolders,
   fileTypes,
 }: ClinicPatientFilesClientProps) {
@@ -102,6 +120,7 @@ export function ClinicPatientFilesClient({
   const [showUpload, setShowUpload] = useState(false);
   const [uploadFileTypeId, setUploadFileTypeId] = useState<string>("");
   const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const refreshFolders = () => {
@@ -221,6 +240,47 @@ export function ClinicPatientFilesClient({
               </Button>
             )}
             <ThemeToggle />
+          </div>
+        </div>
+      </div>
+
+      {/* Patient Context Card */}
+      <div className="max-w-5xl mx-auto px-4 md:px-6 pt-4">
+        <div className="glassmorphic-card px-4 py-3 flex items-center gap-4">
+          <div className="w-11 h-11 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-base shrink-0 overflow-hidden">
+            {patientPicture ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={patientPicture} alt={patientName} className="w-full h-full object-cover" />
+            ) : (
+              patientName.charAt(0).toUpperCase()
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-semibold text-slate-900 dark:text-white truncate">{patientName}</span>
+              {patientCaseNumber && (
+                <span className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-2 py-0.5 rounded-full font-mono">
+                  #{patientCaseNumber}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+              {patientAge != null && (
+                <span className="text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">
+                  {patientAge} yrs
+                </span>
+              )}
+              {patientGender && (
+                <span className="text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">
+                  {formatGender(patientGender)}
+                </span>
+              )}
+              {patientBloodType && (
+                <span className="text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 px-2 py-0.5 rounded-full font-medium">
+                  {formatBloodType(patientBloodType)}
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -420,36 +480,54 @@ export function ClinicPatientFilesClient({
               </Select>
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">File</label>
+              <label className="text-sm font-medium mb-2 block">File</label>
               <div
-                className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:border-blue-400 transition-colors"
+                className={`rounded-xl border-2 border-dashed transition-all cursor-pointer ${
+                  isDragOver
+                    ? "border-blue-400 bg-blue-50 dark:bg-blue-950/30 scale-[1.01]"
+                    : uploadFile
+                    ? "border-blue-300 bg-blue-50/50 dark:bg-blue-950/20"
+                    : "border-slate-300 dark:border-slate-600 hover:border-blue-400 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                }`}
                 onClick={() => fileInputRef.current?.click()}
+                onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+                onDragLeave={() => setIsDragOver(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setIsDragOver(false);
+                  const dropped = e.dataTransfer.files[0];
+                  if (dropped) setUploadFile(dropped);
+                }}
               >
                 {uploadFile ? (
-                  <div className="flex items-center gap-2 justify-center min-w-0">
-                    <File className="w-5 h-5 text-blue-500 shrink-0" />
-                    <span className="text-sm font-medium truncate max-w-[180px]">{uploadFile.name}</span>
-                    <span className="text-xs text-slate-500 shrink-0">
-                      ({formatBytes(uploadFile.size)})
-                    </span>
+                  <div className="flex items-center gap-3 p-4">
+                    <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center shrink-0">
+                      <File className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm text-slate-900 dark:text-white truncate">{uploadFile.name}</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{formatBytes(uploadFile.size)}</p>
+                    </div>
                     <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setUploadFile(null);
-                      }}
-                      className="text-slate-400 hover:text-red-500 shrink-0"
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setUploadFile(null); }}
+                      className="shrink-0 p-1.5 rounded-md text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
                     >
                       <X className="w-4 h-4" />
                     </button>
                   </div>
                 ) : (
-                  <>
-                    <Upload className="w-8 h-8 text-slate-400 mx-auto mb-2" />
-                    <p className="text-sm text-slate-600 dark:text-slate-400">
-                      Click to select a file
-                    </p>
-                    <p className="text-xs text-slate-400 mt-1">Max 25MB</p>
-                  </>
+                  <div className="flex flex-col items-center justify-center py-8 px-4 gap-3">
+                    <div className="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                      <Upload className="w-7 h-7 text-slate-400" />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                        Click or drag &amp; drop a file here
+                      </p>
+                      <p className="text-xs text-slate-400 mt-1">Max 25 MB · Any file type</p>
+                    </div>
+                  </div>
                 )}
               </div>
               <input

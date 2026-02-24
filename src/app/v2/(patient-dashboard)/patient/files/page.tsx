@@ -3,6 +3,7 @@ import { getCachedSession } from "@/actions/session.action";
 import {
   getPatientFoldersAction,
   getPatientClinicsAction,
+  getPatientContextAction,
 } from "@/actions/patient/patient-files.action";
 import { getFileTypesAction } from "@/actions/file-type.action";
 import { PatientFilesClient } from "@/components/v2/patient-dashboard/PatientFilesClient";
@@ -19,10 +20,11 @@ export default async function PatientFilesPage() {
   const session = await getCachedSession();
   if (!session?.user?.sub) return <UnauthorizedWarning />;
 
-  const [foldersResult, clinicsResult, fileTypesResult] = await Promise.all([
+  const [foldersResult, clinicsResult, fileTypesResult, contextResult] = await Promise.all([
     getPatientFoldersAction(),
     getPatientClinicsAction(),
     getFileTypesAction(),
+    getPatientContextAction(),
   ]);
 
   return (
@@ -33,6 +35,7 @@ export default async function PatientFilesPage() {
         logo: c.logo ?? null,
       }))}
       fileTypes={fileTypesResult ?? []}
+      patientInfo={contextResult.data ?? undefined}
     />
   );
 }

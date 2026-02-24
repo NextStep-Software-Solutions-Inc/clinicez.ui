@@ -19,6 +19,54 @@ async function getAuthenticatedUser() {
   return user;
 }
 
+// Helper: generate a unique display name to avoid overwriting existing files
+// e.g. "report.pdf" → "report_20260224_153045.pdf"
+function generateUniqueDisplayName(originalName: string): string {
+  const lastDot = originalName.lastIndexOf(".");
+  const ext = lastDot !== -1 ? originalName.slice(lastDot) : "";
+  const base = lastDot !== -1 ? originalName.slice(0, lastDot) : originalName;
+  const now = new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const ts = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+  return `${base}_${ts}${ext}`;
+}
+
+// Get brief context info about the current patient (for the files page header)
+export const getPatientContextAction = withErrorHandling(async () => {
+  const session = await getCachedSession();
+  if (!session?.user?.sub) throw new Error("Unauthorized");
+  const user = await prismaClient.user.findUnique({
+    where: { userId: session.user.sub, isActive: true },
+    select: {
+      firstName: true,
+      lastName: true,
+      middleName: true,
+      picture: true,
+      bloodType: true,
+      gender: true,
+      dob: true,
+      caseNumber: true,
+    },
+  });
+  if (!user) throw new Error("Unauthorized");
+  const age = user.dob
+    ? Math.floor((Date.now() - new Date(user.dob).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+    : null;
+  const fullName = [user.firstName, user.middleName, user.lastName]
+    .filter(Boolean)
+    .join(" ") || "Patient";
+  return {
+    name: fullName,
+    picture: user.picture ?? null,
+    bloodType: (user.bloodType as string | null),
+    gender: (user.gender as string | null),
+    age,
+    caseNumber: user.caseNumber ?? null,
+  };
+});
+
+export type PatientContext = NonNullable<Awaited<ReturnType<typeof getPatientContextAction>>["data"]>;
+
 // Get all folders for the current user (with files, settings, and clinic shares)
 export const getPatientFoldersAction = withErrorHandling(async () => {
   const user = await getAuthenticatedUser();
@@ -271,6 +319,7 @@ export const uploadPatientFileAction = withErrorHandling(
     const filepath = `patient-files/${user.id}/${folderId}/${Date.now()}-${sanitizedName}`;
     const buffer = await file.arrayBuffer();
     const { url } = await uploadFile(filepath, buffer, file.type);
+    const uniqueDisplayName = generateUniqueDisplayName(file.name);
 
     // Create file record
     const newFile = await prismaClient.$transaction(async (tx) => {
@@ -278,7 +327,7 @@ export const uploadPatientFileAction = withErrorHandling(
         data: {
           folderId,
           fileTypeId,
-          name: file.name,
+          name: uniqueDisplayName,
           size: file.size,
           url,
           mimeType: file.type || null,
@@ -857,13 +906,14 @@ export const uploadFileForPatientAction = withErrorHandling(
     const filepath = `patient-files/${patientId}/${folderId}/${Date.now()}-${sanitizedName}`;
     const buffer = await file.arrayBuffer();
     const { url } = await uploadFile(filepath, buffer, file.type);
+    const uniqueDisplayName = generateUniqueDisplayName(file.name);
 
     const newFile = await prismaClient.$transaction(async (tx) => {
       const created = await tx.file.create({
         data: {
           folderId,
           fileTypeId,
-          name: file.name,
+          name: uniqueDisplayName,
           size: file.size,
           url,
           mimeType: file.type || null,

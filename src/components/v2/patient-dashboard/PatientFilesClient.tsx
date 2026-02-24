@@ -43,6 +43,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { FilePrivacy } from "@prisma/client";
 import { ThemeToggle } from "@/components/patient-dashboard-v2/ThemeToggle";
@@ -118,10 +119,14 @@ export function PatientFilesClient({
 
   const [showShareFolder, setShowShareFolder] = useState(false);
   const [shareFolderTarget, setShareFolderTarget] = useState<PatientFolder | null>(null);
+  const [sharedFolderClinicIds, setSharedFolderClinicIds] = useState<Set<number>>(new Set());
+  const [pendingFolderClinicIds, setPendingFolderClinicIds] = useState<Set<number>>(new Set());
 
   const [showShareFile, setShowShareFile] = useState(false);
   const [shareFileTarget, setShareFileTarget] =
     useState<PatientFolder["Files"][number] | null>(null);
+  const [sharedFileClinicIds, setSharedFileClinicIds] = useState<Set<number>>(new Set());
+  const [pendingFileClinicIds, setPendingFileClinicIds] = useState<Set<number>>(new Set());
 
   const [showUpload, setShowUpload] = useState(false);
   const [uploadFileTypeId, setUploadFileTypeId] = useState<string>("");
@@ -267,71 +272,61 @@ export function PatientFilesClient({
     });
   };
 
-  // Share folder with clinic
-  const handleShareFolderWithClinic = (clinicId: number) => {
-    if (!shareFolderTarget) return;
+  // Toggle folder share for a clinic (optimistic)
+  const handleToggleFolderShare = (clinicId: number) => {
+    if (!shareFolderTarget || pendingFolderClinicIds.has(clinicId)) return;
+    const wasShared = sharedFolderClinicIds.has(clinicId);
+    // Optimistic update
+    setSharedFolderClinicIds((prev) => {
+      const next = new Set(prev);
+      if (wasShared) next.delete(clinicId); else next.add(clinicId);
+      return next;
+    });
+    setPendingFolderClinicIds((prev) => new Set(prev).add(clinicId));
     startTransition(async () => {
-      const result = await sharePatientFolderWithClinicAction({
-        folderId: shareFolderTarget.id,
-        clinicId,
-      });
+      const action = wasShared ? unsharePatientFolderFromClinicAction : sharePatientFolderWithClinicAction;
+      const result = await action({ folderId: shareFolderTarget.id, clinicId });
       if (result.status) {
         refreshFolders();
-        toast.success("Folder shared with clinic");
+        toast.success(wasShared ? "Folder unshared" : "Folder shared with clinic");
       } else {
-        toast.error(result.message || "Failed to share folder");
+        // Revert optimistic update
+        setSharedFolderClinicIds((prev) => {
+          const next = new Set(prev);
+          if (wasShared) next.add(clinicId); else next.delete(clinicId);
+          return next;
+        });
+        toast.error(result.message || "Failed to update sharing");
       }
+      setPendingFolderClinicIds((prev) => { const next = new Set(prev); next.delete(clinicId); return next; });
     });
   };
 
-  // Unshare folder from clinic
-  const handleUnshareFolder = (clinicId: number) => {
-    if (!shareFolderTarget) return;
-    startTransition(async () => {
-      const result = await unsharePatientFolderFromClinicAction({
-        folderId: shareFolderTarget.id,
-        clinicId,
-      });
-      if (result.status) {
-        refreshFolders();
-        toast.success("Folder unshared");
-      } else {
-        toast.error(result.message || "Failed to unshare folder");
-      }
+  // Toggle file share for a clinic (optimistic)
+  const handleToggleFileShare = (clinicId: number) => {
+    if (!shareFileTarget || pendingFileClinicIds.has(clinicId)) return;
+    const wasShared = sharedFileClinicIds.has(clinicId);
+    setSharedFileClinicIds((prev) => {
+      const next = new Set(prev);
+      if (wasShared) next.delete(clinicId); else next.add(clinicId);
+      return next;
     });
-  };
-
-  // Share file with clinic
-  const handleShareFileWithClinic = (clinicId: number) => {
-    if (!shareFileTarget) return;
+    setPendingFileClinicIds((prev) => new Set(prev).add(clinicId));
     startTransition(async () => {
-      const result = await sharePatientFileWithClinicAction({
-        fileId: shareFileTarget.id,
-        clinicId,
-      });
+      const action = wasShared ? unsharePatientFileFromClinicAction : sharePatientFileWithClinicAction;
+      const result = await action({ fileId: shareFileTarget.id, clinicId });
       if (result.status) {
         refreshFolders();
-        toast.success("File shared with clinic");
+        toast.success(wasShared ? "File unshared" : "File shared with clinic");
       } else {
-        toast.error(result.message || "Failed to share file");
+        setSharedFileClinicIds((prev) => {
+          const next = new Set(prev);
+          if (wasShared) next.add(clinicId); else next.delete(clinicId);
+          return next;
+        });
+        toast.error(result.message || "Failed to update sharing");
       }
-    });
-  };
-
-  // Unshare file from clinic
-  const handleUnshareFile = (clinicId: number) => {
-    if (!shareFileTarget) return;
-    startTransition(async () => {
-      const result = await unsharePatientFileFromClinicAction({
-        fileId: shareFileTarget.id,
-        clinicId,
-      });
-      if (result.status) {
-        refreshFolders();
-        toast.success("File unshared");
-      } else {
-        toast.error(result.message || "Failed to unshare file");
-      }
+      setPendingFileClinicIds((prev) => { const next = new Set(prev); next.delete(clinicId); return next; });
     });
   };
 
@@ -498,6 +493,10 @@ export function PatientFilesClient({
                               <DropdownMenuItem
                                 onClick={() => {
                                   setShareFolderTarget(folder);
+                                  setSharedFolderClinicIds(new Set(
+                                    folder.FolderSetting?.FolderClinicShares.map((s) => s.clinicId) ?? []
+                                  ));
+                                  setPendingFolderClinicIds(new Set());
                                   setShowShareFolder(true);
                                 }}
                               >
@@ -529,8 +528,7 @@ export function PatientFilesClient({
                             (share) => (
                               <Badge
                                 key={share.id}
-                                variant="secondary"
-                                className="text-xs bg-blue-100/70 dark:bg-blue-900/50"
+                                className="text-xs bg-blue-600 text-white hover:bg-blue-600"
                               >
                                 {share.Clinic.name}
                               </Badge>
@@ -626,6 +624,10 @@ export function PatientFilesClient({
                               <DropdownMenuItem
                                 onClick={() => {
                                   setShareFileTarget(file);
+                                  setSharedFileClinicIds(new Set(
+                                    file.FileSetting?.FileClinicShares.map((s) => s.clinicId) ?? []
+                                  ));
+                                  setPendingFileClinicIds(new Set());
                                   setShowShareFile(true);
                                 }}
                               >
@@ -656,8 +658,7 @@ export function PatientFilesClient({
                           {file.FileSetting.FileClinicShares.map((share) => (
                             <Badge
                               key={share.id}
-                              variant="secondary"
-                              className="text-xs bg-blue-100/70 dark:bg-blue-900/50"
+                              className="text-xs bg-blue-600 text-white hover:bg-blue-600"
                             >
                               {share.Clinic.name}
                             </Badge>
@@ -783,11 +784,11 @@ export function PatientFilesClient({
           setShowUpload(open);
         }}
       >
-        <DialogContent>
+        <DialogContent className="max-w-md overflow-hidden">
           <DialogHeader>
             <DialogTitle>Upload File</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-2">
+          <div className="space-y-4 py-2 overflow-y-auto max-h-[60vh]">
             <div>
               <label className="text-sm font-medium mb-1 block">
                 File Type
@@ -815,10 +816,10 @@ export function PatientFilesClient({
                 onClick={() => fileInputRef.current?.click()}
               >
                 {uploadFile ? (
-                  <div className="flex items-center justify-center gap-2">
-                    <File className="w-5 h-5 text-blue-500" />
-                    <span className="text-sm font-medium">{uploadFile.name}</span>
-                    <span className="text-xs text-slate-500">
+                  <div className="flex items-center gap-2 justify-center min-w-0">
+                    <File className="w-5 h-5 text-blue-500 shrink-0" />
+                    <span className="text-sm font-medium truncate max-w-[180px]">{uploadFile.name}</span>
+                    <span className="text-xs text-slate-500 shrink-0">
                       ({formatBytes(uploadFile.size)})
                     </span>
                     <button
@@ -826,7 +827,7 @@ export function PatientFilesClient({
                         e.stopPropagation();
                         setUploadFile(null);
                       }}
-                      className="text-slate-400 hover:text-red-500"
+                      className="text-slate-400 hover:text-red-500 shrink-0"
                     >
                       <X className="w-4 h-4" />
                     </button>
@@ -865,39 +866,38 @@ export function PatientFilesClient({
 
       {/* Share Folder with Clinic Dialog */}
       <Dialog open={showShareFolder} onOpenChange={setShowShareFolder}>
-        <DialogContent>
+        <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle>Share Folder with Clinic</DialogTitle>
+            <p className="text-xs text-slate-500 dark:text-slate-400 pt-1">
+              Toggle to share or unshare &quot;{shareFolderTarget?.name}&quot; with each clinic
+            </p>
           </DialogHeader>
-          <div className="space-y-2 py-2">
+          <div className="space-y-2 py-2 max-h-72 overflow-y-auto">
             {clinics.length === 0 ? (
               <p className="text-sm text-slate-500">
                 You are not registered as a patient at any clinic.
               </p>
             ) : (
               clinics.map((clinic) => {
-                const alreadyShared =
-                  shareFolderTarget?.FolderSetting?.FolderClinicShares.some(
-                    (s) => s.clinicId === clinic.id
-                  );
+                const isShared = sharedFolderClinicIds.has(clinic.id);
+                const isPendingThis = pendingFolderClinicIds.has(clinic.id);
                 return (
                   <div
                     key={clinic.id}
-                    className="flex items-center justify-between p-3 rounded-lg border"
+                    className="flex items-center justify-between p-3 rounded-lg border border-slate-200 dark:border-slate-700"
                   >
-                    <span className="font-medium">{clinic.name}</span>
-                    <Button
-                      size="sm"
-                      variant={alreadyShared ? "destructive" : "default"}
-                      disabled={isPending}
-                      onClick={() =>
-                        alreadyShared
-                          ? handleUnshareFolder(clinic.id)
-                          : handleShareFolderWithClinic(clinic.id)
-                      }
-                    >
-                      {alreadyShared ? "Unshare" : "Share"}
-                    </Button>
+                    <div className="flex flex-col min-w-0 mr-3">
+                      <span className="font-medium text-sm truncate">{clinic.name}</span>
+                      <span className={`text-xs ${isShared ? "text-blue-600 dark:text-blue-400" : "text-slate-400"}`}>
+                        {isShared ? "Shared" : "Not shared"}
+                      </span>
+                    </div>
+                    <Switch
+                      checked={isShared}
+                      disabled={isPendingThis}
+                      onCheckedChange={() => handleToggleFolderShare(clinic.id)}
+                    />
                   </div>
                 );
               })
@@ -908,7 +908,7 @@ export function PatientFilesClient({
               variant="outline"
               onClick={() => setShowShareFolder(false)}
             >
-              Close
+              Done
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -916,39 +916,38 @@ export function PatientFilesClient({
 
       {/* Share File with Clinic Dialog */}
       <Dialog open={showShareFile} onOpenChange={setShowShareFile}>
-        <DialogContent>
+        <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle>Share File with Clinic</DialogTitle>
+            <p className="text-xs text-slate-500 dark:text-slate-400 pt-1">
+              Toggle to share or unshare &quot;{shareFileTarget?.name}&quot; with each clinic
+            </p>
           </DialogHeader>
-          <div className="space-y-2 py-2">
+          <div className="space-y-2 py-2 max-h-72 overflow-y-auto">
             {clinics.length === 0 ? (
               <p className="text-sm text-slate-500">
                 You are not registered as a patient at any clinic.
               </p>
             ) : (
               clinics.map((clinic) => {
-                const alreadyShared =
-                  shareFileTarget?.FileSetting?.FileClinicShares.some(
-                    (s) => s.clinicId === clinic.id
-                  );
+                const isShared = sharedFileClinicIds.has(clinic.id);
+                const isPendingThis = pendingFileClinicIds.has(clinic.id);
                 return (
                   <div
                     key={clinic.id}
-                    className="flex items-center justify-between p-3 rounded-lg border"
+                    className="flex items-center justify-between p-3 rounded-lg border border-slate-200 dark:border-slate-700"
                   >
-                    <span className="font-medium">{clinic.name}</span>
-                    <Button
-                      size="sm"
-                      variant={alreadyShared ? "destructive" : "default"}
-                      disabled={isPending}
-                      onClick={() =>
-                        alreadyShared
-                          ? handleUnshareFile(clinic.id)
-                          : handleShareFileWithClinic(clinic.id)
-                      }
-                    >
-                      {alreadyShared ? "Unshare" : "Share"}
-                    </Button>
+                    <div className="flex flex-col min-w-0 mr-3">
+                      <span className="font-medium text-sm truncate">{clinic.name}</span>
+                      <span className={`text-xs ${isShared ? "text-blue-600 dark:text-blue-400" : "text-slate-400"}`}>
+                        {isShared ? "Shared" : "Not shared"}
+                      </span>
+                    </div>
+                    <Switch
+                      checked={isShared}
+                      disabled={isPendingThis}
+                      onCheckedChange={() => handleToggleFileShare(clinic.id)}
+                    />
                   </div>
                 );
               })
@@ -956,7 +955,7 @@ export function PatientFilesClient({
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowShareFile(false)}>
-              Close
+              Done
             </Button>
           </DialogFooter>
         </DialogContent>

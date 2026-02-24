@@ -269,7 +269,7 @@ function Step1Complaint({
         <TextInput
           type="text"
           value={subject}
-          onChange={(e) => setSubject(e.target.value)}
+          onChange={(e) => { setSubject(e.target.value); setForm((p) => ({ ...p, subject: e.target.value })) }}
           placeholder="e.g. Persistent headache for 3 days"
         />
         {subject.trim().length > 0 && subject.trim().length < 3 && (
@@ -283,7 +283,7 @@ function Step1Complaint({
         <TextArea
           rows={4}
           value={complaint}
-          onChange={(e) => setComplaint(e.target.value)}
+          onChange={(e) => { setComplaint(e.target.value); setForm((p) => ({ ...p, chiefComplaint: e.target.value })) }}
           placeholder="Describe your symptoms, when they started, what makes them better or worse…"
         />
       </div>

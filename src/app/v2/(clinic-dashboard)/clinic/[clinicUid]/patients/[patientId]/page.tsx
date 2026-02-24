@@ -55,6 +55,7 @@ export default async function ClinicPatientProfilePage({
         />
       }
       editProfileHref={`/v2/clinic/${clinicUid}/patients/${patientId}/edit`}
+      filesHref={`/v2/clinic/${clinicUid}/patients/${patientId}/files`}
     />
   );
 }

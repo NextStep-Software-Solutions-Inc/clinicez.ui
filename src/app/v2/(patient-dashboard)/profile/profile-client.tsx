@@ -8,6 +8,7 @@ import {
   Edit2,
   BarChart3,
   List,
+  FolderOpen,
 } from 'lucide-react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import { ThemeToggle } from '@/components/patient-dashboard-v2/ThemeToggle'
@@ -22,6 +23,8 @@ interface ProfileClientProps {
   headerSlot?: React.ReactNode
   /** undefined = use default '/v2/profile/edit'; null = hide edit button; string = navigate to that URL */
   editProfileHref?: string | null
+  /** undefined = use default '/v2/patient/files'; null = hide My Files button; string = navigate to that URL */
+  filesHref?: string | null
 }
 
 const PROFILE_TABS = [
@@ -40,7 +43,7 @@ const PROFILE_TABS = [
   { id: 'insurance', label: 'Insurance & Docs', icon: '📄' },
 ]
 
-export default function ProfileClient({ patient, headerSlot, editProfileHref }: ProfileClientProps) {
+export default function ProfileClient({ patient, headerSlot, editProfileHref, filesHref }: ProfileClientProps) {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState('overview')
   const [vitalsViewMode, setVitalsViewMode] = useState<'list' | 'chart'>('list')
@@ -145,17 +148,17 @@ export default function ProfileClient({ patient, headerSlot, editProfileHref }: 
   const tabBadges = useMemo(() => Object.fromEntries(PROFILE_TABS.map(t => [t.id, getTabBadge(t.id)])) as Record<string, { status: string; count: number } | null>, [patient])
 
   const defaultHeader = (
-    <div className="sticky top-0 z-50 bg-gradient-to-b from-slate-50/20 via-blue-50/20 to-transparent dark:from-slate-950/20 dark:via-blue-950/20 dark:to-transparent backdrop-blur-sm mb-8 px-8 pt-4 pb-6 rounded-xl">
+    <div className="sticky top-0 z-50 bg-gradient-to-b from-slate-50/20 via-blue-50/20 to-transparent dark:from-slate-950/20 dark:via-blue-950/20 dark:to-transparent backdrop-blur-sm mb-6 md:mb-8 px-4 md:px-8 pt-3 pb-4 md:pt-4 md:pb-6 rounded-xl">
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 md:gap-3 min-w-0">
             <button
               onClick={() => router.back()}
-              className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+              className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors shrink-0"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+            <h1 className="text-lg md:text-2xl font-bold text-slate-900 dark:text-white truncate">
               Comprehensive Health Records
             </h1>
           </div>
@@ -172,51 +175,51 @@ export default function ProfileClient({ patient, headerSlot, editProfileHref }: 
       {/* Containerized Main Content */}
       <div className="max-w-6xl mx-auto pb-32">
         {/* Profile Card - Redesigned without banner */}
-        <div className="glassmorphic-card mb-8">
-          <div className="p-8">
-            <div className="flex flex-col md:flex-row gap-8 items-start">
+        <div className="glassmorphic-card mb-6 md:mb-8">
+          <div className="p-4 md:p-8">
+            <div className="flex flex-col md:flex-row gap-4 md:gap-8 items-start">
               {/* Profile Picture Section */}
-              <div className="flex-shrink-0">
+              <div className="flex-shrink-0 self-center md:self-start">
                 {patient.picture ? (
                   <img 
                     src={patient.picture} 
                     alt={patient.fullName}
-                    className="w-32 h-32 rounded-xl object-cover shadow-lg border-2 border-slate-200 dark:border-slate-700"
+                    className="w-20 h-20 md:w-32 md:h-32 rounded-xl object-cover shadow-lg border-2 border-slate-200 dark:border-slate-700"
                   />
                 ) : (
-                  <div className="w-32 h-32 rounded-xl bg-gradient-to-br from-blue-400 to-cyan-400 flex items-center justify-center text-white text-4xl font-bold shadow-lg border-2 border-slate-200 dark:border-slate-700">
+                  <div className="w-20 h-20 md:w-32 md:h-32 rounded-xl bg-gradient-to-br from-blue-400 to-cyan-400 flex items-center justify-center text-white text-2xl md:text-4xl font-bold shadow-lg border-2 border-slate-200 dark:border-slate-700">
                     {patient.firstName?.[0]}{patient.lastName?.[0]}
                   </div>
                 )}
               </div>
 
               {/* Patient Info Section */}
-              <div className="flex-grow">
+              <div className="flex-grow w-full">
                 <div className="mb-2">
-                  <h2 className="text-3xl font-bold text-slate-900 dark:text-white">
+                  <h2 className="text-xl md:text-3xl font-bold text-slate-900 dark:text-white leading-tight">
                     {patient.fullName}{patient.suffix ? ` ${patient.suffix}` : ''}
                   </h2>
                   {patient.nickname && (
                     <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">"{patient.nickname}"</p>
                   )}
                   {patient.caseNumber && (
-                    <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">Patient ID: {patient.caseNumber}</p>
+                    <p className="text-xs md:text-sm text-slate-600 dark:text-slate-400 mt-1">Patient ID: {patient.caseNumber}</p>
                   )}
                 </div>
 
                 {/* Quick Info Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mt-6">
-                  <div className="flex flex-col gap-1">
+                <div className="grid grid-cols-3 gap-3 md:gap-6 mt-4 md:mt-6">
+                  <div className="flex flex-col gap-0.5 md:gap-1">
                     <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Age</p>
-                    <p className="text-xl font-semibold text-slate-900 dark:text-white">{patient.age} years</p>
+                    <p className="text-base md:text-xl font-semibold text-slate-900 dark:text-white">{patient.age} <span className="text-xs md:text-sm font-normal">yrs</span></p>
                   </div>
-                  <div className="flex flex-col gap-1">
+                  <div className="flex flex-col gap-0.5 md:gap-1">
                     <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Blood Type</p>
-                    <p className="text-2xl font-bold text-red-500">{formatBloodType(patient.bloodType) || 'N/A'}</p>
+                    <p className="text-lg md:text-2xl font-bold text-red-500">{formatBloodType(patient.bloodType) || 'N/A'}</p>
                   </div>
-                  <div className="flex flex-col gap-1 col-span-2 md:col-span-1">
-                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Primary Clinic</p>
-                    <p className="text-sm font-semibold text-slate-900 dark:text-white">{patient.clinic?.name || 'N/A'}</p>
+                  <div className="flex flex-col gap-0.5 md:gap-1">
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Clinic</p>
+                    <p className="text-xs md:text-sm font-semibold text-slate-900 dark:text-white leading-snug">{patient.clinic?.name || 'N/A'}</p>
                   </div>
                 </div>
               </div>
@@ -225,28 +228,28 @@ export default function ProfileClient({ patient, headerSlot, editProfileHref }: 
         </div>
 
       {/* Tab Navigation */}
-      <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+      <div className="flex gap-1.5 md:gap-2 mb-4 md:mb-6 overflow-x-auto pb-2">
         {PROFILE_TABS.map(tab => {
           const badge = tabBadges[tab.id]
           return (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-2 rounded-lg font-semibold transition-all whitespace-nowrap flex items-center gap-2 ${
+              className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-sm font-semibold transition-all whitespace-nowrap flex items-center gap-1.5 ${
                 activeTab === tab.id
                   ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg'
                   : 'dark:bg-white/10 dark:text-slate-300 bg-slate-100 text-slate-700 hover:dark:bg-white/20 hover:bg-slate-200'
               }`}
             >
-              <span>{tab.icon}</span>
-              {tab.label}
+              <span className="text-base">{tab.icon}</span>
+              <span className="hidden sm:inline">{tab.label}</span>
               {badge && (
-                <span className={`text-xs font-bold px-2 py-1 rounded-full ${
+                <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${
                   activeTab === tab.id
                     ? 'bg-white/20 text-white'
                     : 'bg-amber-500/20 text-amber-700 dark:bg-amber-500/30 dark:text-amber-200'
                 }`}>
-                  {badge.status} ({badge.count})
+                  {badge.count}
                 </span>
               )}
             </button>
@@ -1795,13 +1798,22 @@ export default function ProfileClient({ patient, headerSlot, editProfileHref }: 
 
       {/* Edit Profile Button - Floating */}
       {editProfileHref !== null && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40">
+        <div className="fixed bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 md:gap-3">
+          {filesHref !== null && (
+          <button
+            onClick={() => router.push(filesHref ?? '/v2/patient/files')}
+            className="flex items-center gap-1.5 md:gap-2 px-4 md:px-5 py-2.5 md:py-3 rounded-lg bg-gradient-to-br from-yellow-500 to-amber-500 text-white text-sm font-semibold hover:shadow-lg transition-all duration-300 hover:scale-105 shadow-lg"
+          >
+            <FolderOpen className="w-4 h-4" />
+            <span className="hidden sm:inline">My Files</span>
+          </button>
+          )}
           <button
             onClick={() => router.push(editProfileHref ?? '/v2/profile/edit')}
-            className="flex items-center gap-2 px-6 py-3 rounded-lg bg-gradient-to-br from-blue-600 to-blue-500 text-white font-semibold hover:shadow-lg transition-all duration-300 hover:scale-105 shadow-lg"
+            className="flex items-center gap-1.5 md:gap-2 px-4 md:px-6 py-2.5 md:py-3 rounded-lg bg-gradient-to-br from-blue-600 to-blue-500 text-white text-sm font-semibold hover:shadow-lg transition-all duration-300 hover:scale-105 shadow-lg"
           >
             <Edit2 className="w-4 h-4" />
-            Edit Profile
+            <span>Edit Profile</span>
           </button>
         </div>
       )}

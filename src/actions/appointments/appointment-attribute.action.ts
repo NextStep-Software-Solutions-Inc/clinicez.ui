@@ -237,3 +237,38 @@ export const rejectAppointmentAction = withErrorHandling(async (formData: FormDa
   }
   return "An error occurred while rejecting appointment."
 })
+
+type RescheduleAppointmentPayload = {
+  appointmentId: number;
+  date: Date;
+  timeStart?: string;
+  timeEnd?: string;
+};
+
+export const rescheduleAppointmentAction = withErrorHandling(async (payload: RescheduleAppointmentPayload) => {
+  const session = await getCachedSession();
+  if (!session) throw new Error("User not authenticated.");
+
+  const myPermissions = await getPermissionsAction({ userId: session.user.sub });
+  const requiredPermissions = [PERMISSIONS.CLINIC["RECEIVE:CLINIC:APPOINTMENT"].name];
+  const myPermissionArray = myPermissions.map(permission => permission.name);
+  const canReschedule = requiredPermissions.some(permission => myPermissionArray.includes(permission));
+
+  if (!canReschedule) throw new Error("You do not have permission to reschedule this appointment.");
+
+  const { appointmentId, date, timeStart, timeEnd } = payload;
+
+  await prismaClient.appointmentAttribute.update({
+    where: { appointmentId },
+    data: {
+      date,
+      ...(timeStart ? { timeStart } : {}),
+      ...(timeEnd ? { timeEnd } : {}),
+    },
+  });
+
+  return { message: "Appointment rescheduled", data: undefined };
+}, async (error) => {
+  if (error instanceof Error) return error.message;
+  return "An error occurred while rescheduling the appointment.";
+});

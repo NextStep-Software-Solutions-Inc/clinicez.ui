@@ -21,6 +21,7 @@ import { ConfirmBookingSheet } from "./ConfirmBookingSheet";
 import { AssignDoctorDialog } from "./AssignDoctorDialog";
 import { PreAssessmentNoteDialog } from "./PreAssessmentNoteDialog";
 import { TagHPDialog } from "./TagHPDialog";
+import { RescheduleDialog } from "./RescheduleDialog";
 import { cn } from "@/lib/utils";
 
 type Appointment = NonNullable<GetAppointments["data"]>[number];
@@ -42,7 +43,8 @@ type ActivePanel =
   | "confirm"
   | "assign"
   | "preAssessment"
-  | "tag";
+  | "tag"
+  | "reschedule";
 
 const STATUS_TABS = [
   { key: "ALL", label: "All" },
@@ -545,6 +547,19 @@ export function AppointmentsClient({
           appointmentId={selectedAppointment.id}
           hps={hps}
           taggedHpIds={(selectedAppointment.AppointmentTag ?? []).map((t) => t.HealthcareProvider.id)}
+          onClose={backToDetail}
+          onSuccess={() => {
+            refresh();
+            backToDetail();
+          }}
+        />
+      )}
+
+      {/* Reschedule — replaces detail sheet */}
+      {selectedAppointment && (
+        <RescheduleDialog
+          open={activePanel === "reschedule"}
+          appointment={selectedAppointment}
           onClose={backToDetail}
           onSuccess={() => {
             refresh();

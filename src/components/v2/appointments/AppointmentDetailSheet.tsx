@@ -21,6 +21,7 @@ import {
   FileText,
   ExternalLink,
   Pencil,
+  CalendarClock,
 } from "lucide-react";
 import {
   Sheet,
@@ -55,7 +56,7 @@ import { isWalkInAppointment, getAppointmentPatientName, getAppointmentInitials 
 import { MarkdownRenderer } from "@/components/markdown/MarkdownRenderer";
 
 type Appointment = NonNullable<GetAppointments["data"]>[number];
-type SubPanel = "confirm" | "assign" | "preAssessment" | "tag";
+type SubPanel = "confirm" | "assign" | "preAssessment" | "tag" | "reschedule";
 type PreAssessmentNote = NonNullable<NonNullable<GetPreAssessmentNotes["data"]>[number]>;
 
 interface AppointmentDetailSheetProps {
@@ -540,7 +541,7 @@ export function AppointmentDetailSheet({
             </h3>
             <div className="flex flex-wrap gap-2">
 
-              {/* PENDING: Receive (lock) + Reject */}
+              {/* PENDING: Receive (lock) + Tag + Reject */}
               {status === "PENDING" && (
                 <>
                   <Button
@@ -551,6 +552,16 @@ export function AppointmentDetailSheet({
                   >
                     <Lock className="h-4 w-4" />
                     Receive &amp; Lock
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1.5 border-blue-400/40 text-blue-600 hover:bg-blue-600 hover:text-white"
+                    disabled={isPending}
+                    onClick={() => onOpenSubPanel("tag")}
+                  >
+                    <Tags className="h-4 w-4" />
+                    Tag Providers
                   </Button>
                   {!showRejectForm && (
                     <Button
@@ -567,7 +578,7 @@ export function AppointmentDetailSheet({
                 </>
               )}
 
-              {/* RECEIVED: Assign Doctor (first), Confirm Booking, Tag HPs, Complete, Reject */}
+              {/* RECEIVED: Assign Doctor (first), Confirm Booking, Tag HPs, Reschedule, Complete, Reject */}
               {status === "RECEIVED" && (
                 <>
                   <Button
@@ -601,6 +612,16 @@ export function AppointmentDetailSheet({
                   </Button>
                   <Button
                     size="sm"
+                    variant="outline"
+                    className="gap-1.5 border-amber-400/40 text-amber-600 hover:bg-amber-600 hover:text-white"
+                    disabled={isPending}
+                    onClick={() => onOpenSubPanel("reschedule")}
+                  >
+                    <CalendarClock className="h-4 w-4" />
+                    Reschedule
+                  </Button>
+                  <Button
+                    size="sm"
                     className="gap-1.5 bg-green-600 hover:bg-green-700 text-white"
                     disabled={isPending}
                     onClick={handleComplete}
@@ -623,7 +644,7 @@ export function AppointmentDetailSheet({
                 </>
               )}
 
-              {/* ROUTED: Accept/Decline (PENDING routing + assigned user only) + Reassign + Tag */}
+              {/* ROUTED: Accept/Decline (PENDING routing + assigned user only) + Reassign + Tag + Reschedule */}
               {status === "ROUTED" && pendingRouting && (
                 <>
                   {isAssignedToCurrentUser ? (
@@ -678,10 +699,20 @@ export function AppointmentDetailSheet({
                     <Tags className="h-4 w-4" />
                     Tag Providers
                   </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1.5 border-amber-400/40 text-amber-600 hover:bg-amber-600 hover:text-white"
+                    disabled={isPending}
+                    onClick={() => onOpenSubPanel("reschedule")}
+                  >
+                    <CalendarClock className="h-4 w-4" />
+                    Reschedule
+                  </Button>
                 </>
               )}
 
-              {/* ACCEPTED: Complete + Tag */}
+              {/* ACCEPTED: Complete + Tag + Reschedule */}
               {status === "ACCEPTED" && (
                 <>
                   <Button
@@ -702,6 +733,16 @@ export function AppointmentDetailSheet({
                   >
                     <Tags className="h-4 w-4" />
                     Tag Providers
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1.5 border-amber-400/40 text-amber-600 hover:bg-amber-600 hover:text-white"
+                    disabled={isPending}
+                    onClick={() => onOpenSubPanel("reschedule")}
+                  >
+                    <CalendarClock className="h-4 w-4" />
+                    Reschedule
                   </Button>
                 </>
               )}

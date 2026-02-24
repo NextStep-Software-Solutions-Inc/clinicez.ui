@@ -245,20 +245,6 @@ export default function NewConsultationDialog({
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="subject"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Chief Complaint / Subject</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g. Routine check-up, Headache…" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
             {/* Link to appointment toggle */}
             <div className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5">
               <Label htmlFor="link-appointment-toggle" className="text-sm font-medium cursor-pointer">
@@ -279,7 +265,19 @@ export default function NewConsultationDialog({
                   <FormItem>
                     <FormLabel>Select appointment</FormLabel>
                     <Select
-                      onValueChange={field.onChange}
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        // Prefill the subject field with the selected appointment's complaint
+                        const selected = confirmedAppointments.find(
+                          (a) => a.id.toString() === value
+                        );
+                        if (selected) {
+                          form.setValue(
+                            "subject",
+                            selected.complaint ?? selected.subject ?? ""
+                          );
+                        }
+                      }}
                       value={field.value?.toString()}
                     >
                       <FormControl>
@@ -320,6 +318,20 @@ export default function NewConsultationDialog({
                 )}
               />
             )}
+
+            <FormField
+              control={form.control}
+              name="subject"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Chief Complaint / Subject</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. Routine check-up, Headache…" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>

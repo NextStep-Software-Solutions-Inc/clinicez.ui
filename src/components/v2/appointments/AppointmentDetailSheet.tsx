@@ -391,7 +391,7 @@ export function AppointmentDetailSheet({
                   {preAssessmentNotes.length === 0 ? (
                     <p className="text-xs text-muted-foreground italic">No pre-assessment notes yet.</p>
                   ) : (
-                    {preAssessmentNotes.map((note) => {
+                    <>{preAssessmentNotes.map((note) => {
                       const author = `${note.CreatedBy?.firstName ?? ""} ${note.CreatedBy?.lastName ?? ""}`.trim() || "Staff";
                       const isMyNote = currentUserSub && note.CreatedBy?.userId === currentUserSub;
                       return (
@@ -436,7 +436,7 @@ export function AppointmentDetailSheet({
                           )}
                         </div>
                       );
-                    })}
+                    })}</>
                   )}
                   {status !== "COMPLETED" && status !== "REJECTED" && (
                     <Button

@@ -20,6 +20,9 @@ import {
   ChevronUp,
   FileText,
   ExternalLink,
+  Pencil,
+  CalendarClock,
+  Undo2,
 } from "lucide-react";
 import {
   Sheet,
@@ -31,7 +34,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
@@ -40,10 +43,13 @@ import {
   receiveAppointmentAction,
   completeAppointmentAction,
   rejectAppointmentAction,
+  cancelAppointmentAction,
+  returnAppointmentAction,
 } from "@/actions/appointments/appointment-attribute.action";
 import {
   acceptAppointmentAction,
   declineAppointmentAction,
+  cancelAppointmentRoutingAction,
 } from "@/actions/appointments/appointment-routing.action";
 import {
   getPreAssessmentNotesAction,
@@ -54,25 +60,29 @@ import { isWalkInAppointment, getAppointmentPatientName, getAppointmentInitials 
 import { MarkdownRenderer } from "@/components/markdown/MarkdownRenderer";
 
 type Appointment = NonNullable<GetAppointments["data"]>[number];
-type SubPanel = "confirm" | "assign" | "preAssessment" | "tag";
+type SubPanel = "confirm" | "assign" | "preAssessment" | "tag" | "reschedule";
 type PreAssessmentNote = NonNullable<NonNullable<GetPreAssessmentNotes["data"]>[number]>;
 
 interface AppointmentDetailSheetProps {
   appointment: Appointment | null;
   clinicUid: string;
   currentUserHpIds: number[];
+  currentUserSub?: string;
   onClose: () => void;
   onRefresh: () => void;
   onOpenSubPanel: (panel: SubPanel) => void;
+  onEditPreAssessmentNote?: (note: { assessment: string; homeInstructions?: string | null; remarks: string }) => void;
 }
 
 export function AppointmentDetailSheet({
   appointment,
   clinicUid,
   currentUserHpIds,
+  currentUserSub,
   onClose,
   onRefresh,
   onOpenSubPanel,
+  onEditPreAssessmentNote,
 }: AppointmentDetailSheetProps) {
   const [isPending, setIsPending] = useState(false);
 
@@ -84,6 +94,14 @@ export function AppointmentDetailSheet({
   const [showDeclineForm, setShowDeclineForm] = useState(false);
   const [declineReason, setDeclineReason] = useState("");
   const [decliningRoutingCode, setDecliningRoutingCode] = useState<string | null>(null);
+
+  // Inline cancel routing reason state (assigner cancels individual assignment)
+  const [cancellingRoutingId, setCancellingRoutingId] = useState<number | null>(null);
+  const [cancelRoutingReason, setCancelRoutingReason] = useState("");
+
+  // Inline return-to-queue form state
+  const [showReturnForm, setShowReturnForm] = useState(false);
+  const [returnReason, setReturnReason] = useState("");
 
   // Pre-assessment notes state
   const [preAssessmentNotes, setPreAssessmentNotes] = useState<PreAssessmentNote[]>([]);
@@ -111,6 +129,10 @@ export function AppointmentDetailSheet({
     setShowDeclineForm(false);
     setDeclineReason("");
     setDecliningRoutingCode(null);
+    setCancellingRoutingId(null);
+    setCancelRoutingReason("");
+    setShowReturnForm(false);
+    setReturnReason("");
   }, [appointment]);
 
   if (!appointment) return null;
@@ -128,6 +150,8 @@ export function AppointmentDetailSheet({
   const routings = appointment.AppointmentRouting ?? [];
   // Pending routing for accept/decline (only PENDING — not ACCEPTED)
   const pendingRouting = routings.find((r) => r.status === "PENDING");
+  // Accepted routing (HP already accepted the assignment)
+  const acceptedRouting = routings.find((r) => r.status === "ACCEPTED");
 
   const receivedBy = appointment.AppointmentAttribute?.ReceivedBy;
   const receivedByName = receivedBy
@@ -137,6 +161,17 @@ export function AppointmentDetailSheet({
   // Accept/Decline guard: only the assigned HP, and only when routing is PENDING
   const isAssignedToCurrentUser =
     !!pendingRouting && currentUserHpIds.includes(pendingRouting.RoutedTo.id);
+  // True if current user is the accepted catering HP (routing must be ACCEPTED)
+  const isAcceptedCateringHP =
+    !!acceptedRouting && currentUserHpIds.includes(acceptedRouting.RoutedTo.id);
+  // True if current user is the receiver
+  const isReceiver =
+    !!currentUserSub && appointment.AppointmentAttribute?.ReceivedBy?.userId === currentUserSub;
+  // True if current user is any assigner (RoutedBy) across all routings
+  const isAssigner =
+    !!currentUserSub && routings.some((r) => r.RoutedBy?.userId === currentUserSub);
+  // Mark Complete on ROUTED: accepted HP, receiver, or assigner
+  const canCompleteRouted = isAcceptedCateringHP || isReceiver || isAssigner;
 
   // ── Action handlers ────────────────────────────────────────────────────────
 
@@ -172,14 +207,36 @@ export function AppointmentDetailSheet({
 
   const handleRejectSubmit = async () => {
     if (!rejectReason.trim()) {
-      toast.error("A reason is required to reject this appointment.");
+      toast.error(status === "PENDING" ? "A reason is required to reject this appointment." : "A reason is required to cancel this appointment.");
       return;
     }
     setIsPending(true);
     const fd = new FormData();
     fd.append("appointmentId", String(appointment.id));
     fd.append("reason", rejectReason.trim());
-    const result = await rejectAppointmentAction(fd);
+    const result = status === "PENDING"
+      ? await rejectAppointmentAction(fd)
+      : await cancelAppointmentAction(fd);
+    setIsPending(false);
+    if (result.status) {
+      toast.success(result.message);
+      onRefresh();
+      onClose();
+    } else {
+      toast.error(result.message);
+    }
+  };
+
+  const handleReturnSubmit = async () => {
+    if (!returnReason.trim()) {
+      toast.error("A reason is required to return this appointment.");
+      return;
+    }
+    setIsPending(true);
+    const fd = new FormData();
+    fd.append("appointmentId", String(appointment.id));
+    fd.append("reason", returnReason.trim());
+    const result = await returnAppointmentAction(fd);
     setIsPending(false);
     if (result.status) {
       toast.success(result.message);
@@ -221,6 +278,25 @@ export function AppointmentDetailSheet({
       setShowDeclineForm(false);
       setDeclineReason("");
       setDecliningRoutingCode(null);
+      onRefresh();
+    } else {
+      toast.error(result.message);
+    }
+  };
+
+  const handleCancelRoutingSubmit = async () => {
+    if (!cancelRoutingReason.trim()) {
+      toast.error("A reason is required to cancel this assignment.");
+      return;
+    }
+    if (!cancellingRoutingId) return;
+    setIsPending(true);
+    const result = await cancelAppointmentRoutingAction({ appointmentRoutingId: cancellingRoutingId, reason: cancelRoutingReason.trim() });
+    setIsPending(false);
+    if (result.status) {
+      toast.success("Assignment cancelled.");
+      setCancellingRoutingId(null);
+      setCancelRoutingReason("");
       onRefresh();
     } else {
       toast.error(result.message);
@@ -270,6 +346,9 @@ export function AppointmentDetailSheet({
             </h3>
             <div className="flex items-center gap-3">
               <Avatar className="h-12 w-12 rounded-full border border-border/50">
+                {requester?.picture && (
+                  <AvatarImage src={requester.picture} alt={fullName} className="object-cover" />
+                )}
                 <AvatarFallback className="text-sm font-semibold bg-primary/10 text-primary">
                   {initials || <User className="h-4 w-4" />}
                 </AvatarFallback>
@@ -379,15 +458,32 @@ export function AppointmentDetailSheet({
                   {preAssessmentNotes.length === 0 ? (
                     <p className="text-xs text-muted-foreground italic">No pre-assessment notes yet.</p>
                   ) : (
-                    preAssessmentNotes.map((note) => {
+                    <>{preAssessmentNotes.map((note) => {
                       const author = `${note.CreatedBy?.firstName ?? ""} ${note.CreatedBy?.lastName ?? ""}`.trim() || "Staff";
+                      const isMyNote = currentUserSub && note.CreatedBy?.userId === currentUserSub;
                       return (
                         <div key={note.id} className="rounded-lg bg-background/60 p-3 space-y-1.5 border border-border/30">
                           <div className="flex items-center justify-between">
                             <span className="text-xs font-medium text-primary">{author}</span>
-                            <span className="text-xs text-muted-foreground">
-                              {format(new Date(note.createdAt), "MMM d, yyyy h:mm a")}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-muted-foreground">
+                                {format(new Date(note.createdAt), "MMM d, yyyy h:mm a")}
+                              </span>
+                              {isMyNote && status !== "COMPLETED" && status !== "REJECTED" && onEditPreAssessmentNote && (
+                                <button
+                                  type="button"
+                                  onClick={() => onEditPreAssessmentNote({
+                                    assessment: note.assessment,
+                                    homeInstructions: note.homeInstructions,
+                                    remarks: note.remarks ?? "",
+                                  })}
+                                  className="text-muted-foreground hover:text-primary transition-colors"
+                                  title="Edit your note"
+                                >
+                                  <Pencil className="h-3 w-3" />
+                                </button>
+                              )}
+                            </div>
                           </div>
                           <div>
                             <p className="text-xs text-muted-foreground">Assessment</p>
@@ -407,7 +503,7 @@ export function AppointmentDetailSheet({
                           )}
                         </div>
                       );
-                    })
+                    })}</>
                   )}
                   {status !== "COMPLETED" && status !== "REJECTED" && (
                     <Button
@@ -476,29 +572,82 @@ export function AppointmentDetailSheet({
                   const routingDoctorName =
                     routing.RoutedTo.HPProfile?.name ??
                     `${routing.RoutedTo.User.firstName ?? ""} ${routing.RoutedTo.User.lastName ?? ""}`.trim();
+                  const isMyPendingRouting =
+                    routing.status === "PENDING" &&
+                    !!currentUserSub &&
+                    routing.RoutedBy?.userId === currentUserSub;
+                  const isCancellingThis = cancellingRoutingId === routing.id;
                   return (
-                    <div
-                      key={routing.id}
-                      className="flex items-center justify-between text-sm rounded-lg bg-background/50 p-2"
-                    >
-                      <div className="flex items-center gap-2">
-                        <Stethoscope className="h-3.5 w-3.5 text-muted-foreground" />
-                        <span className="font-medium text-xs">{routingDoctorName}</span>
+                    <div key={routing.id} className="rounded-lg bg-background/50 p-2 space-y-1">
+                      <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2">
+                          <Stethoscope className="h-3.5 w-3.5 text-muted-foreground" />
+                          <span className="font-medium text-xs">{routingDoctorName}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <Badge
+                            variant="outline"
+                            className={`text-xs border-0 ${
+                              routing.status === "ACCEPTED"
+                                ? "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400"
+                                : routing.status === "PENDING"
+                                ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+                                : routing.status === "DECLINED"
+                                ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                                : "bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400"
+                            }`}
+                          >
+                            {routing.status}
+                          </Badge>
+                          {isMyPendingRouting && !isCancellingThis && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-5 px-1.5 text-xs text-destructive hover:bg-destructive/10"
+                              disabled={isPending}
+                              onClick={() => { setCancellingRoutingId(routing.id); setCancelRoutingReason(""); }}
+                            >
+                              Cancel
+                            </Button>
+                          )}
+                        </div>
                       </div>
-                      <Badge
-                        variant="outline"
-                        className={`text-xs border-0 ${
-                          routing.status === "ACCEPTED"
-                            ? "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400"
-                            : routing.status === "PENDING"
-                            ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
-                            : routing.status === "DECLINED"
-                            ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-                            : "bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400"
-                        }`}
-                      >
-                        {routing.status}
-                      </Badge>
+                      {/* Show cancellation/decline reason */}
+                      {routing.amendment && (
+                        <p className="text-xs text-muted-foreground pl-5 italic">{routing.amendment}</p>
+                      )}
+                      {/* Inline cancel reason form */}
+                      {isCancellingThis && (
+                        <div className="pt-1 space-y-2">
+                          <Textarea
+                            placeholder="Reason for cancelling this assignment…"
+                            value={cancelRoutingReason}
+                            onChange={(e) => setCancelRoutingReason(e.target.value)}
+                            className="min-h-[60px] text-xs"
+                            disabled={isPending}
+                          />
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              className="text-xs h-7"
+                              disabled={isPending || !cancelRoutingReason.trim()}
+                              onClick={handleCancelRoutingSubmit}
+                            >
+                              {isPending ? "Cancelling…" : "Confirm Cancel"}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-xs h-7"
+                              disabled={isPending}
+                              onClick={() => { setCancellingRoutingId(null); setCancelRoutingReason(""); }}
+                            >
+                              Back
+                            </Button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -515,7 +664,7 @@ export function AppointmentDetailSheet({
             </h3>
             <div className="flex flex-wrap gap-2">
 
-              {/* PENDING: Receive (lock) + Reject */}
+              {/* PENDING: Receive (lock) + Reject (no tagging while pending) */}
               {status === "PENDING" && (
                 <>
                   <Button
@@ -542,7 +691,7 @@ export function AppointmentDetailSheet({
                 </>
               )}
 
-              {/* RECEIVED: Assign Doctor (first), Confirm Booking, Tag HPs, Complete, Reject */}
+              {/* RECEIVED: Assign Doctor (first), Confirm Booking, Tag HPs, Complete, Cancel */}
               {status === "RECEIVED" && (
                 <>
                   <Button
@@ -583,7 +732,7 @@ export function AppointmentDetailSheet({
                     <CheckCircle className="h-4 w-4" />
                     Complete
                   </Button>
-                  {!showRejectForm && (
+                  {!showRejectForm && !showReturnForm && (
                     <Button
                       size="sm"
                       variant="destructive"
@@ -592,16 +741,27 @@ export function AppointmentDetailSheet({
                       onClick={() => setShowRejectForm(true)}
                     >
                       <AlertTriangle className="h-4 w-4" />
-                      Reject
+                      Cancel
+                    </Button>
+                  )}
+                  {!showRejectForm && !showReturnForm && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="gap-1.5 border-orange-400/40 text-orange-600 hover:bg-orange-600 hover:text-white"
+                      disabled={isPending}
+                      onClick={() => setShowReturnForm(true)}
+                    >
+                      <Undo2 className="h-4 w-4" />
+                      Return
                     </Button>
                   )}
                 </>
               )}
 
-              {/* ROUTED: Accept/Decline (PENDING routing + assigned user only) + Reassign */}
-              {status === "ROUTED" && pendingRouting && (
+              {status === "ROUTED" && (
                 <>
-                  {isAssignedToCurrentUser ? (
+                  {(pendingRouting ?? acceptedRouting) && pendingRouting && (isAssignedToCurrentUser ? (
                     <>
                       <Button
                         size="sm"
@@ -632,6 +792,17 @@ export function AppointmentDetailSheet({
                     <p className="text-xs text-muted-foreground italic">
                       Only the assigned provider can accept or decline this assignment.
                     </p>
+                  ))}
+                  {canCompleteRouted && (
+                    <Button
+                      size="sm"
+                      className="gap-1.5 bg-green-600 hover:bg-green-700 text-white"
+                      disabled={isPending}
+                      onClick={handleComplete}
+                    >
+                      <CheckCircle className="h-4 w-4" />
+                      Mark Complete
+                    </Button>
                   )}
                   <Button
                     size="sm"
@@ -643,28 +814,74 @@ export function AppointmentDetailSheet({
                     <Stethoscope className="h-4 w-4" />
                     Reassign Doctor
                   </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1.5 border-blue-400/40 text-blue-600 hover:bg-blue-600 hover:text-white"
+                    disabled={isPending}
+                    onClick={() => onOpenSubPanel("tag")}
+                  >
+                    <Tags className="h-4 w-4" />
+                    Tag Providers
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1.5 border-amber-400/40 text-amber-600 hover:bg-amber-600 hover:text-white"
+                    disabled={isPending}
+                    onClick={() => onOpenSubPanel("reschedule")}
+                  >
+                    <CalendarClock className="h-4 w-4" />
+                    Reschedule
+                  </Button>
                 </>
               )}
 
-              {/* ACCEPTED: Complete */}
+              {/* ACCEPTED: Complete + Tag */}
               {status === "ACCEPTED" && (
+                <>
+                  <Button
+                    size="sm"
+                    className="gap-1.5 bg-green-600 hover:bg-green-700 text-white"
+                    disabled={isPending}
+                    onClick={handleComplete}
+                  >
+                    <CheckCircle className="h-4 w-4" />
+                    Mark Complete
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1.5 border-blue-400/40 text-blue-600 hover:bg-blue-600 hover:text-white"
+                    disabled={isPending}
+                    onClick={() => onOpenSubPanel("tag")}
+                  >
+                    <Tags className="h-4 w-4" />
+                    Tag Providers
+                  </Button>
+                </>
+              )}
+
+              {/* COMPLETED: Tag Providers (read-only management) */}
+              {status === "COMPLETED" && (
                 <Button
                   size="sm"
-                  className="gap-1.5 bg-green-600 hover:bg-green-700 text-white"
+                  variant="outline"
+                  className="gap-1.5 border-blue-400/40 text-blue-600 hover:bg-blue-600 hover:text-white"
                   disabled={isPending}
-                  onClick={handleComplete}
+                  onClick={() => onOpenSubPanel("tag")}
                 >
-                  <CheckCircle className="h-4 w-4" />
-                  Mark Complete
+                  <Tags className="h-4 w-4" />
+                  Tag Providers
                 </Button>
               )}
             </div>
 
-            {/* Inline reject form */}
+            {/* Inline reject/cancel form */}
             {showRejectForm && (
               <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 space-y-3">
                 <h4 className="text-xs font-semibold text-destructive uppercase tracking-wide">
-                  Reject Appointment
+                  {status === "PENDING" ? "Reject Appointment" : "Cancel Appointment"}
                 </h4>
                 <div className="space-y-1.5">
                   <Label className="text-xs">
@@ -673,7 +890,11 @@ export function AppointmentDetailSheet({
                   <Textarea
                     value={rejectReason}
                     onChange={(e) => setRejectReason(e.target.value)}
-                    placeholder="Please provide a reason for rejection..."
+                    placeholder={
+                      status === "PENDING"
+                        ? "Please provide a reason for rejection..."
+                        : "Please provide a reason for cancelling this appointment..."
+                    }
                     rows={3}
                     className="resize-none text-sm"
                     disabled={isPending}
@@ -697,7 +918,10 @@ export function AppointmentDetailSheet({
                     onClick={handleRejectSubmit}
                   >
                     <AlertTriangle className="h-4 w-4" />
-                    {isPending ? "Rejecting..." : "Confirm Reject"}
+                    {isPending
+                      ? (status === "PENDING" ? "Rejecting..." : "Cancelling...")
+                      : (status === "PENDING" ? "Confirm Reject" : "Confirm Cancel")
+                    }
                   </Button>
                 </div>
               </div>
@@ -741,6 +965,51 @@ export function AppointmentDetailSheet({
                   >
                     <XCircle className="h-4 w-4" />
                     {isPending ? "Declining..." : "Confirm Decline"}
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Inline return-to-queue form */}
+            {showReturnForm && (
+              <div className="rounded-xl border border-orange-400/30 bg-orange-50/50 dark:bg-orange-950/20 p-4 space-y-3">
+                <h4 className="text-xs font-semibold text-orange-700 uppercase tracking-wide">
+                  Return Appointment to Queue
+                </h4>
+                <p className="text-xs text-muted-foreground">
+                  This will reset the appointment to PENDING so another clinic member can receive it.
+                </p>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">
+                    Reason <span className="text-destructive">*</span>
+                  </Label>
+                  <Textarea
+                    value={returnReason}
+                    onChange={(e) => setReturnReason(e.target.value)}
+                    placeholder="Please provide a reason for returning this appointment..."
+                    rows={3}
+                    className="resize-none text-sm"
+                    disabled={isPending}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="flex-1"
+                    disabled={isPending}
+                    onClick={() => { setShowReturnForm(false); setReturnReason(""); }}
+                  >
+                    Back
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="flex-1 gap-1.5 bg-orange-600 hover:bg-orange-700 text-white"
+                    disabled={isPending || !returnReason.trim()}
+                    onClick={handleReturnSubmit}
+                  >
+                    <Undo2 className="h-4 w-4" />
+                    {isPending ? "Returning..." : "Confirm Return"}
                   </Button>
                 </div>
               </div>

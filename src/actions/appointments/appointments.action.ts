@@ -439,6 +439,7 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
               suffix: true,
               mobile: true,
               email: true,
+              picture: true,
               StudentRecords: {
                 select: {
                   organizationId: true,
@@ -506,6 +507,7 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
           id: true,
           routingCode: true,
           status: true,
+          amendment: true,
           RoutedTo: {
             select: {
               id: true,
@@ -525,6 +527,11 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
                 }
               }
             }
+          },
+          RoutedBy: {
+            select: {
+              userId: true
+            }
           }
         }
       },
@@ -532,6 +539,7 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
         select: {
           date: true,
           timeStart: true,
+          timeEnd: true,
           completedAt: true,
           receivedAt: true,
           receivedBy: true,
@@ -556,6 +564,7 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
           },
           ReceivedBy: {
             select: {
+              userId: true,
               firstName: true,
               lastName: true,
             }

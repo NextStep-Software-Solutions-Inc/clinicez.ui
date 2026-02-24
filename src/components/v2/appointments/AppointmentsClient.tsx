@@ -21,6 +21,7 @@ import { ConfirmBookingSheet } from "./ConfirmBookingSheet";
 import { AssignDoctorDialog } from "./AssignDoctorDialog";
 import { PreAssessmentNoteDialog } from "./PreAssessmentNoteDialog";
 import { TagHPDialog } from "./TagHPDialog";
+import { RescheduleDialog } from "./RescheduleDialog";
 import { cn } from "@/lib/utils";
 
 type Appointment = NonNullable<GetAppointments["data"]>[number];
@@ -42,7 +43,8 @@ type ActivePanel =
   | "confirm"
   | "assign"
   | "preAssessment"
-  | "tag";
+  | "tag"
+  | "reschedule";
 
 const STATUS_TABS = [
   { key: "ALL", label: "All" },
@@ -65,6 +67,7 @@ interface AppointmentsClientProps {
   services: GetClinicServices;
   hps: GetHPsType;
   currentUserHpIds: number[];
+  currentUserSub: string;
   /** Tab names (uppercased) visible to the current user's role. null = show all. */
   visibleTabNames: string[] | null;
 }
@@ -78,6 +81,7 @@ export function AppointmentsClient({
   services,
   hps,
   currentUserHpIds,
+  currentUserSub,
   visibleTabNames,
 }: AppointmentsClientProps) {
   const router = useRouter();
@@ -127,6 +131,25 @@ export function AppointmentsClient({
   const backToDetail = useCallback(() => {
     setActivePanel("detail");
   }, []);
+
+  // Pre-assessment note edit state (populated when user clicks "Edit" on an existing note)
+  const [preAssessmentEditData, setPreAssessmentEditData] = useState<{
+    assessment: string;
+    homeInstructions: string;
+    remarks: string;
+  } | null>(null);
+
+  const handleOpenPreAssessmentEdit = useCallback(
+    (note: { assessment: string; homeInstructions?: string | null; remarks: string }) => {
+      setPreAssessmentEditData({
+        assessment: note.assessment,
+        homeInstructions: note.homeInstructions ?? "",
+        remarks: note.remarks,
+      });
+      setActivePanel("preAssessment");
+    },
+    []
+  );
 
   // ── Server-side filter reload ───────────────────────────────────────────────
 
@@ -191,6 +214,18 @@ export function AppointmentsClient({
     setAppointments(initialAppointments);
     setHasMore(initialAppointments.length >= PAGE_SIZE);
   }, [initialAppointments]);
+
+  // Auto-sync the detail sheet: when the appointments list updates (after refresh),
+  // update selectedAppointment so the detail sheet shows the latest data.
+  useEffect(() => {
+    if (selectedAppointment) {
+      const updated = appointments.find((a) => a.id === selectedAppointment.id);
+      if (updated) {
+        setSelectedAppointment(updated);
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appointments]);
 
   // ── Load more ─────────────────────────────────────────────────────────────
 
@@ -434,9 +469,11 @@ export function AppointmentsClient({
         appointment={activePanel === "detail" ? selectedAppointment : null}
         clinicUid={clinicUid}
         currentUserHpIds={currentUserHpIds}
+        currentUserSub={currentUserSub}
         onClose={closeAll}
         onRefresh={refresh}
         onOpenSubPanel={openSubPanel}
+        onEditPreAssessmentNote={handleOpenPreAssessmentEdit}
       />
 
       {/* Walk-in creation */}
@@ -491,8 +528,12 @@ export function AppointmentsClient({
           open={activePanel === "preAssessment"}
           appointmentId={selectedAppointment.id}
           clinicUid={clinicUid}
-          onClose={backToDetail}
+          initialAssessment={preAssessmentEditData?.assessment}
+          initialHomeInstructions={preAssessmentEditData?.homeInstructions}
+          initialRemarks={preAssessmentEditData?.remarks}
+          onClose={() => { setPreAssessmentEditData(null); backToDetail(); }}
           onSuccess={() => {
+            setPreAssessmentEditData(null);
             refresh();
             backToDetail();
           }}
@@ -506,6 +547,20 @@ export function AppointmentsClient({
           appointmentId={selectedAppointment.id}
           hps={hps}
           taggedHpIds={(selectedAppointment.AppointmentTag ?? []).map((t) => t.HealthcareProvider.id)}
+          onClose={backToDetail}
+          onSuccess={() => {
+            refresh();
+            backToDetail();
+          }}
+        />
+      )}
+
+      {/* Reschedule — replaces detail sheet */}
+      {selectedAppointment && (
+        <RescheduleDialog
+          open={activePanel === "reschedule"}
+          appointment={selectedAppointment}
+          hps={hps}
           onClose={backToDetail}
           onSuccess={() => {
             refresh();

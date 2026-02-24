@@ -151,20 +151,29 @@ export const getClinicPatientsAction = async (filters: GetClinicPatientFilters):
       Patient: {
         ...userId ? { userId } : {},
         ...(gender && gender !== 'all') ? { gender: gender as 'MALE' | 'FEMALE' } : {},
-        ...(minAge !== undefined || maxAge !== undefined) ? {
-          dob: {
-            ...(minBirthDate && { lte: minBirthDate }),
-            ...(maxBirthDate && { gte: maxBirthDate }),
-          }
-        } : {},
-        ...!!search ? {
-          OR: [
-            { firstName: { contains: search, mode: "insensitive" } },
-            { middleName: { contains: search, mode: "insensitive" } },
-            { lastName: { contains: search, mode: "insensitive" } },
-            { email: { contains: search, mode: "insensitive" } },
-          ]
-        } : {},
+        AND: [
+          // Include patients with no DOB (treated as age 0) OR within the age range
+          ...(minAge !== undefined || maxAge !== undefined) ? [{
+            OR: [
+              { dob: null },
+              {
+                dob: {
+                  ...(minBirthDate && { lte: minBirthDate }),
+                  ...(maxBirthDate && { gte: maxBirthDate }),
+                }
+              }
+            ]
+          }] : [],
+          // Search filter
+          ...(search ? [{
+            OR: [
+              { firstName: { contains: search, mode: "insensitive" as const } },
+              { middleName: { contains: search, mode: "insensitive" as const } },
+              { lastName: { contains: search, mode: "insensitive" as const } },
+              { email: { contains: search, mode: "insensitive" as const } },
+            ]
+          }] : []),
+        ],
       }
     },
     select: {
@@ -274,20 +283,29 @@ export const getClinicPatientsAction = async (filters: GetClinicPatientFilters):
       Patient: {
         ...userId ? { userId } : {},
         ...(gender && gender !== 'all') ? { gender: gender as 'MALE' | 'FEMALE' } : {},
-        ...(minAge !== undefined || maxAge !== undefined) ? {
-          dob: {
-            ...(minBirthDate && { lte: minBirthDate }),
-            ...(maxBirthDate && { gte: maxBirthDate }),
-          }
-        } : {},
-        ...!!search ? {
-          OR: [
-            { firstName: { contains: search, mode: "insensitive" } },
-            { middleName: { contains: search, mode: "insensitive" } },
-            { lastName: { contains: search, mode: "insensitive" } },
-            { email: { contains: search, mode: "insensitive" } },
-          ]
-        } : {},
+        AND: [
+          // Include patients with no DOB (treated as age 0) OR within the age range
+          ...(minAge !== undefined || maxAge !== undefined) ? [{
+            OR: [
+              { dob: null },
+              {
+                dob: {
+                  ...(minBirthDate && { lte: minBirthDate }),
+                  ...(maxBirthDate && { gte: maxBirthDate }),
+                }
+              }
+            ]
+          }] : [],
+          // Search filter
+          ...(search ? [{
+            OR: [
+              { firstName: { contains: search, mode: "insensitive" as const } },
+              { middleName: { contains: search, mode: "insensitive" as const } },
+              { lastName: { contains: search, mode: "insensitive" as const } },
+              { email: { contains: search, mode: "insensitive" as const } },
+            ]
+          }] : []),
+        ],
       }
     }
   });

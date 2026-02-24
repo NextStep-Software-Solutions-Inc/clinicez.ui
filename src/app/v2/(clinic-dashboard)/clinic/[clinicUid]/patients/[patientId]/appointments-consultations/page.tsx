@@ -81,6 +81,8 @@ export default async function PatientAppointmentsConsultationsPage({
         mode="appointments-consultations"
       />
       <PatientAppointmentsConsultationsClient
+        clinicUid={clinicUid}
+        patientId={numericPatientId}
         patientName={patient.fullName}
         appointments={appointments}
         consultationTickets={consultationTickets}

@@ -12,12 +12,13 @@ import { getHPsAction, GetHPsType } from '@actions/hp.actions';
 type CreateConsultationTicketPayload = {
   systemId: number;
   appointmentId?: number;
+  clinicPatientId?: number;
   subject?: string;
   clinicUid: string;
   hpIds: number[]
 }
 
-export const createConsultationTicketAction = withErrorHandling(async ({ systemId, appointmentId, clinicUid, subject, hpIds }: CreateConsultationTicketPayload) => {
+export const createConsultationTicketAction = withErrorHandling(async ({ systemId, appointmentId, clinicPatientId, clinicUid, subject, hpIds }: CreateConsultationTicketPayload) => {
 
   const session = await getCachedSession()
   if (!session) throw new Error("Unauthorized")
@@ -49,6 +50,11 @@ export const createConsultationTicketAction = withErrorHandling(async ({ systemI
         ...(appointmentId ? {
           Appointment: {
             connect: { id: appointmentId }
+          }
+        } : {}),
+        ...(clinicPatientId ? {
+          ClinicPatient: {
+            connect: { id: clinicPatientId }
           }
         } : {}),
         Clinic: {

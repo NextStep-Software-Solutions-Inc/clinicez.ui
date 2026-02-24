@@ -22,6 +22,11 @@ export const getPatientConsultationsAction = withErrorHandling(
               },
             },
           },
+          {
+            ClinicPatient: {
+              Patient: { userId: patientUserId },
+            },
+          },
         ],
       },
       orderBy: { createdAt: "desc" },

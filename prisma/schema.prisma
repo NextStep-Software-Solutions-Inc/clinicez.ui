@@ -232,6 +232,7 @@ model ClinicPatient {
   ClinicReferralSlips      ClinicReferralSlip[]
   Prescriptions            Prescription[]
   ProcedureUsageHistory    ProcedureUsageHistory[]
+  ConsultationTickets      ConsultationTicket[]
 
   @@unique([clinicId, patientId], name: "unique_clinic_patient")
 }
@@ -1575,6 +1576,7 @@ model ConsultationTicket {
   id                          Int                          @id @default(autoincrement())
   systemId                    Int
   appointmentId               Int?
+  clinicPatientId             Int?
   clinicId                    Int
   subject                     String?                      @default("")
   createdAt                   DateTime                     @default(now())
@@ -1593,6 +1595,7 @@ model ConsultationTicket {
   ClinicReferralSlips         ClinicReferralSlip[]
   ConsultationNotes           ConsultationNote[]
   Appointment                 Appointment?                 @relation(fields: [appointmentId], references: [id], onUpdate: NoAction)
+  ClinicPatient               ClinicPatient?               @relation(fields: [clinicPatientId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   Clinic                      Clinic                       @relation(fields: [clinicId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   System                      System                       @relation(fields: [systemId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   ConsultationTicketAttribute ConsultationTicketAttribute?
@@ -1603,6 +1606,7 @@ model ConsultationTicket {
 
   @@index([caseNumber])
   @@index([ekasTransactionNumber])
+  @@index([clinicPatientId])
 }
 
 model ConsultationTicketHP {

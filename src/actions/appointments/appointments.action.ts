@@ -507,6 +507,7 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
           id: true,
           routingCode: true,
           status: true,
+          amendment: true,
           RoutedTo: {
             select: {
               id: true,

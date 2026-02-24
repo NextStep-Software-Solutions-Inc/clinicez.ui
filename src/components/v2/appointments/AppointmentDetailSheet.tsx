@@ -47,6 +47,7 @@ import {
 import {
   acceptAppointmentAction,
   declineAppointmentAction,
+  cancelAppointmentRoutingAction,
 } from "@/actions/appointments/appointment-routing.action";
 import {
   getPreAssessmentNotesAction,
@@ -92,6 +93,10 @@ export function AppointmentDetailSheet({
   const [declineReason, setDeclineReason] = useState("");
   const [decliningRoutingCode, setDecliningRoutingCode] = useState<string | null>(null);
 
+  // Inline cancel routing reason state (assigner cancels individual assignment)
+  const [cancellingRoutingId, setCancellingRoutingId] = useState<number | null>(null);
+  const [cancelRoutingReason, setCancelRoutingReason] = useState("");
+
   // Pre-assessment notes state
   const [preAssessmentNotes, setPreAssessmentNotes] = useState<PreAssessmentNote[]>([]);
   const [notesExpanded, setNotesExpanded] = useState(false);
@@ -118,6 +123,8 @@ export function AppointmentDetailSheet({
     setShowDeclineForm(false);
     setDeclineReason("");
     setDecliningRoutingCode(null);
+    setCancellingRoutingId(null);
+    setCancelRoutingReason("");
   }, [appointment]);
 
   if (!appointment) return null;
@@ -243,6 +250,25 @@ export function AppointmentDetailSheet({
       setShowDeclineForm(false);
       setDeclineReason("");
       setDecliningRoutingCode(null);
+      onRefresh();
+    } else {
+      toast.error(result.message);
+    }
+  };
+
+  const handleCancelRoutingSubmit = async () => {
+    if (!cancelRoutingReason.trim()) {
+      toast.error("A reason is required to cancel this assignment.");
+      return;
+    }
+    if (!cancellingRoutingId) return;
+    setIsPending(true);
+    const result = await cancelAppointmentRoutingAction({ appointmentRoutingId: cancellingRoutingId, reason: cancelRoutingReason.trim() });
+    setIsPending(false);
+    if (result.status) {
+      toast.success("Assignment cancelled.");
+      setCancellingRoutingId(null);
+      setCancelRoutingReason("");
       onRefresh();
     } else {
       toast.error(result.message);
@@ -518,29 +544,82 @@ export function AppointmentDetailSheet({
                   const routingDoctorName =
                     routing.RoutedTo.HPProfile?.name ??
                     `${routing.RoutedTo.User.firstName ?? ""} ${routing.RoutedTo.User.lastName ?? ""}`.trim();
+                  const isMyPendingRouting =
+                    routing.status === "PENDING" &&
+                    !!currentUserSub &&
+                    routing.RoutedBy?.userId === currentUserSub;
+                  const isCancellingThis = cancellingRoutingId === routing.id;
                   return (
-                    <div
-                      key={routing.id}
-                      className="flex items-center justify-between text-sm rounded-lg bg-background/50 p-2"
-                    >
-                      <div className="flex items-center gap-2">
-                        <Stethoscope className="h-3.5 w-3.5 text-muted-foreground" />
-                        <span className="font-medium text-xs">{routingDoctorName}</span>
+                    <div key={routing.id} className="rounded-lg bg-background/50 p-2 space-y-1">
+                      <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2">
+                          <Stethoscope className="h-3.5 w-3.5 text-muted-foreground" />
+                          <span className="font-medium text-xs">{routingDoctorName}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <Badge
+                            variant="outline"
+                            className={`text-xs border-0 ${
+                              routing.status === "ACCEPTED"
+                                ? "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400"
+                                : routing.status === "PENDING"
+                                ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+                                : routing.status === "DECLINED"
+                                ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                                : "bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400"
+                            }`}
+                          >
+                            {routing.status}
+                          </Badge>
+                          {isMyPendingRouting && !isCancellingThis && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-5 px-1.5 text-xs text-destructive hover:bg-destructive/10"
+                              disabled={isPending}
+                              onClick={() => { setCancellingRoutingId(routing.id); setCancelRoutingReason(""); }}
+                            >
+                              Cancel
+                            </Button>
+                          )}
+                        </div>
                       </div>
-                      <Badge
-                        variant="outline"
-                        className={`text-xs border-0 ${
-                          routing.status === "ACCEPTED"
-                            ? "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400"
-                            : routing.status === "PENDING"
-                            ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
-                            : routing.status === "DECLINED"
-                            ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-                            : "bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400"
-                        }`}
-                      >
-                        {routing.status}
-                      </Badge>
+                      {/* Show cancellation/decline reason */}
+                      {routing.amendment && (
+                        <p className="text-xs text-muted-foreground pl-5 italic">{routing.amendment}</p>
+                      )}
+                      {/* Inline cancel reason form */}
+                      {isCancellingThis && (
+                        <div className="pt-1 space-y-2">
+                          <Textarea
+                            placeholder="Reason for cancelling this assignment…"
+                            value={cancelRoutingReason}
+                            onChange={(e) => setCancelRoutingReason(e.target.value)}
+                            className="min-h-[60px] text-xs"
+                            disabled={isPending}
+                          />
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              className="text-xs h-7"
+                              disabled={isPending || !cancelRoutingReason.trim()}
+                              onClick={handleCancelRoutingSubmit}
+                            >
+                              {isPending ? "Cancelling…" : "Confirm Cancel"}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-xs h-7"
+                              disabled={isPending}
+                              onClick={() => { setCancellingRoutingId(null); setCancelRoutingReason(""); }}
+                            >
+                              Back
+                            </Button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })}

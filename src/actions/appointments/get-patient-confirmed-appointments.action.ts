@@ -1,6 +1,7 @@
 "use server";
 
 import prisma from "@/lib/prisma";
+import { getCachedSession } from "@/actions/session.action";
 import { withErrorHandling } from "@/lib/with-error-handling";
 
 export type GetPatientConfirmedAppointments = Awaited<
@@ -19,6 +20,9 @@ export const getPatientConfirmedAppointmentsAction = withErrorHandling(
     clinicUid: string;
     patientUserId: string;
   }) => {
+    const session = await getCachedSession();
+    if (!session) throw new Error("Unauthorized");
+
     const appointments = await prisma.appointment.findMany({
       where: {
         isActive: true,
@@ -48,6 +52,6 @@ export const getPatientConfirmedAppointmentsAction = withErrorHandling(
       },
     });
 
-    return appointments;
+    return { message: "Patient confirmed appointments fetched", data: appointments };
   }
 );

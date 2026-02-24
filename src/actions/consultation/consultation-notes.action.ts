@@ -8,7 +8,8 @@ type UpsertConsultationNotePayload = {
   consultationTicketId: number;
   section: string;
   content: string;
-  hpId: number
+  hpId: number;
+  showOnPatient?: boolean;
 }
 export const upsertConsultationNotesAction = async (data: UpsertConsultationNotePayload) => {
   let message = "Consultation notes updated successfully"
@@ -16,7 +17,7 @@ export const upsertConsultationNotesAction = async (data: UpsertConsultationNote
     const session = await getCachedSession()
     if (!session) throw new Error("User not authenticated.")
 
-    const { consultationTicketId, section, content, hpId } = data
+    const { consultationTicketId, section, content, hpId, showOnPatient } = data
 
     // Authorize: verify the current user's HP is assigned to this consultation ticket
     const ticket = await prisma.consultationTicket.findFirst({
@@ -41,8 +42,17 @@ export const upsertConsultationNotesAction = async (data: UpsertConsultationNote
           hpId
         }
       },
-      create: { consultationTicketId, section, content, hpId },
-      update: { content }
+      create: {
+        consultationTicketId,
+        section,
+        content,
+        hpId,
+        ...(showOnPatient !== undefined ? { showOnPatient } : {}),
+      },
+      update: {
+        content,
+        ...(showOnPatient !== undefined ? { showOnPatient } : {}),
+      },
     })
     return { status: true, message: `${capitalize(section)} content updated successfully`, data: updatedNotes }
   } catch (error) {

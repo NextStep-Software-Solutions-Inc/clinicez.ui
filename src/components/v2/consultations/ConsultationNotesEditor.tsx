@@ -70,6 +70,7 @@ export default function ConsultationNotesEditor({
       section: sectionName,
       content: noteValues[sectionName] ?? "",
       hpId: myActiveHp.id,
+      showOnPatient: showOnPatient[sectionName] ?? false,
     });
     setSavingSection(null);
     if (result.status && result.data) {
@@ -102,6 +103,14 @@ export default function ConsultationNotesEditor({
     }
     const next = !showOnPatient[sectionName];
     setShowOnPatient((prev) => ({ ...prev, [sectionName]: next }));
+
+    // If the note hasn't been saved yet, just update local state.
+    // The privacy setting will be persisted together with the content when the user saves.
+    const noteExists = consultation.ConsultationNotes.some(
+      (n) => n.section === sectionName && n.hpId === myActiveHp.id
+    );
+    if (!noteExists) return;
+
     startToggleTransition(async () => {
       const fd = new FormData();
       fd.append("consultationTicketId", String(consultation.id));

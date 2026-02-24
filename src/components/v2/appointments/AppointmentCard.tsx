@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import type { GetAppointments } from "@/actions/appointments/appointments.action";
 import {
@@ -74,6 +74,7 @@ export function AppointmentCard({
   const fullName = getAppointmentPatientName(appointment);
   const displaySubject = isWalkIn ? appointment.complaint ?? "" : appointment.subject;
   const initials = getAppointmentInitials(appointment);
+  const patientPicture = appointment.Requesters?.[0]?.User?.picture ?? null;
 
   const scheduledDate = appointment.AppointmentAttribute?.date;
   const timeStart = appointment.AppointmentAttribute?.timeStart;
@@ -148,6 +149,9 @@ export function AppointmentCard({
         onClick={() => onSelect(appointment)}
       >
         <Avatar className="h-10 w-10 rounded-full border border-white/50 dark:border-slate-600/50 flex-shrink-0 mt-0.5">
+          {patientPicture && (
+            <AvatarImage src={patientPicture} alt={fullName} className="object-cover" />
+          )}
           <AvatarFallback className="text-xs font-semibold bg-primary/10 text-primary">
             {initials || <User className="h-4 w-4" />}
           </AvatarFallback>

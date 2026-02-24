@@ -23,8 +23,10 @@ export default async function PatientPHRPrintPage({ searchParams }: PrintPagePro
   if (!patient) notFound()
 
   const allSectionIds = PHR_SECTIONS.map(s => s.id)
-  const sections: PHRSectionId[] = sectionsParam && sectionsParam !== 'all'
-    ? (sectionsParam.split(',').filter(s => allSectionIds.includes(s as PHRSectionId)) as PHRSectionId[])
+  // Sanitize the sections param: limit length, allow only alphanumeric and commas
+  const sanitized = sectionsParam?.slice(0, 256).replace(/[^a-z,]/g, '')
+  const sections: PHRSectionId[] = sanitized && sanitized !== 'all'
+    ? (sanitized.split(',').filter(s => allSectionIds.includes(s as PHRSectionId)) as PHRSectionId[])
     : allSectionIds
 
   const generatedAt = new Date().toLocaleString('en-US', {

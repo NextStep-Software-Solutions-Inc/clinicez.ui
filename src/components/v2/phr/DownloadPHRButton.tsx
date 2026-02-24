@@ -20,6 +20,9 @@ interface DownloadPHRButtonProps {
   className?: string
 }
 
+const DEFAULT_BUTTON_CLASS =
+  'flex items-center gap-1.5 md:gap-2 px-4 md:px-5 py-2.5 md:py-3 rounded-lg bg-gradient-to-br from-teal-600 to-cyan-500 text-white text-sm font-semibold hover:shadow-lg transition-all duration-300 hover:scale-105 shadow-lg'
+
 export function DownloadPHRButton({ printHref, label = 'Download PHR', className }: DownloadPHRButtonProps) {
   const [open, setOpen] = useState(false)
   const [selected, setSelected] = useState<Set<PHRSectionId>>(
@@ -63,7 +66,7 @@ export function DownloadPHRButton({ printHref, label = 'Download PHR', className
     <>
       <button
         onClick={() => setOpen(true)}
-        className={className ?? 'flex items-center gap-1.5 md:gap-2 px-4 md:px-5 py-2.5 md:py-3 rounded-lg bg-gradient-to-br from-teal-600 to-cyan-500 text-white text-sm font-semibold hover:shadow-lg transition-all duration-300 hover:scale-105 shadow-lg'}
+        className={className ?? DEFAULT_BUTTON_CLASS}
       >
         <Download className="w-4 h-4" />
         <span className="hidden sm:inline">{label}</span>

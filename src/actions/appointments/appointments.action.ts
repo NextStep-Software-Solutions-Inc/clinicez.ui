@@ -533,6 +533,7 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
         select: {
           date: true,
           timeStart: true,
+          timeEnd: true,
           completedAt: true,
           receivedAt: true,
           receivedBy: true,

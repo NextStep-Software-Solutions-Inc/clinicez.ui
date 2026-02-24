@@ -81,18 +81,20 @@ export default function TenantDetailTabs({ tenant }: TenantDetailTabsProps) {
 
   return (
     <Tabs defaultValue="overview" className="w-full">
-      <TabsList className="grid w-full grid-cols-4">
-        <TabsTrigger value="overview">Overview</TabsTrigger>
-        <TabsTrigger value="organizations" onClick={loadOrganizations}>
-          Organizations
-        </TabsTrigger>
-        <TabsTrigger value="clinics" onClick={loadClinics}>
-          Clinics
-        </TabsTrigger>
-        <TabsTrigger value="ai-limits">
-          AI Limits
-        </TabsTrigger>
-      </TabsList>
+      <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+        <TabsList className="inline-flex w-auto min-w-full sm:grid sm:w-full sm:grid-cols-4">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="organizations" onClick={loadOrganizations}>
+            Organizations
+          </TabsTrigger>
+          <TabsTrigger value="clinics" onClick={loadClinics}>
+            Clinics
+          </TabsTrigger>
+          <TabsTrigger value="ai-limits">
+            AI Limits
+          </TabsTrigger>
+        </TabsList>
+      </div>
 
       <TabsContent value="overview" className="space-y-4">
         <div className="grid gap-4 md:grid-cols-2">
@@ -132,9 +134,9 @@ export default function TenantDetailTabs({ tenant }: TenantDetailTabsProps) {
             <CardTitle className="text-base">Tenant Information</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               <div className="text-sm text-muted-foreground">Tenant UID:</div>
-              <div className="text-sm font-medium">{tenant.tenantUid}</div>
+              <div className="text-sm font-medium break-all">{tenant.tenantUid}</div>
               
               <div className="text-sm text-muted-foreground">Owner:</div>
               <div className="text-sm font-medium">
@@ -177,10 +179,10 @@ export default function TenantDetailTabs({ tenant }: TenantDetailTabsProps) {
                 {organizations.map((org) => (
                   <Card key={org.id}>
                     <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex-1 min-w-0">
                           <CardTitle className="text-lg">{org.name}</CardTitle>
-                          <CardDescription>{org.orgUid}</CardDescription>
+                          <CardDescription className="break-all">{org.orgUid}</CardDescription>
                         </div>
                         <div className="flex items-center gap-2">
                           <Badge variant="outline">
@@ -232,12 +234,12 @@ export default function TenantDetailTabs({ tenant }: TenantDetailTabsProps) {
                 {clinics.map((clinic) => (
                   <Card key={clinic.id}>
                     <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex-1 min-w-0">
                           <CardTitle className="text-lg">{clinic.name}</CardTitle>
-                          <CardDescription>{clinic.clinicUid}</CardDescription>
+                          <CardDescription className="break-all">{clinic.clinicUid}</CardDescription>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <Badge variant="outline">
                             <Users className="h-3 w-3 mr-1" />
                             {clinic._count.ClinicMembers} members

@@ -144,7 +144,7 @@ export default function AuditLogTable({ initialData }: AuditLogTableProps) {
         </Button>
       </div>
 
-      <div className="border rounded-md">
+      <div className="border rounded-md overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -202,7 +202,7 @@ export default function AuditLogTable({ initialData }: AuditLogTableProps) {
       </div>
 
       {pagination.totalPages > 1 && (
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-muted-foreground">
             Showing {(pagination.page - 1) * pagination.pageSize + 1} to{" "}
             {Math.min(pagination.page * pagination.pageSize, pagination.total)} of{" "}

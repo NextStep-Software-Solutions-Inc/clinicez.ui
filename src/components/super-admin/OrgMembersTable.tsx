@@ -94,7 +94,7 @@ export default function OrgMembersTable({ initialData, orgId }: OrgMembersTableP
         </Button>
       </div>
 
-      <div className="border rounded-md">
+      <div className="border rounded-md overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>

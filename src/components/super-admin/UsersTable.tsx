@@ -67,7 +67,7 @@ export default function UsersTable({ initialData }: UsersTableProps) {
         </Button>
       </div>
 
-      <div className="border rounded-md">
+      <div className="border rounded-md overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -129,7 +129,7 @@ export default function UsersTable({ initialData }: UsersTableProps) {
       </div>
 
       {data.totalPages > 1 && (
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-muted-foreground">
             Showing {(data.pageNumber - 1) * data.pageSize + 1} to{" "}
             {Math.min(data.pageNumber * data.pageSize, data.total)} of {data.total} users

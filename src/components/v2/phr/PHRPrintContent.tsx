@@ -325,23 +325,27 @@ export function PHRPrintContent({ patient, sections, generatedAt }: PHRPrintCont
     <div style={styles.page}>
       {/* ── PRINT STYLE OVERRIDES ── */}
       <style>{`
-        @page { size: A4; margin: 10mm; }
+        @page { size: A4; margin: 15mm 10mm 22mm 10mm; }
         @media print {
           body { margin: 0; }
           .no-print { display: none !important; }
           .phr-root { max-width: 100%; padding: 0; }
+          .phr-footer { position: fixed; bottom: 0; left: 0; right: 0; }
         }
       `}</style>
 
       {/* ── HEADER ── */}
       <div style={styles.header}>
         <div style={styles.logoArea}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/assets/clinic-ez_logo.svg"
-            alt="ClinicEZ Logo"
-            style={{ height: '36px', filter: 'brightness(0) invert(1)' }}
-          />
+          {/* White pill so the logo renders in its native teal-on-white colours */}
+          <div style={{ background: '#ffffff', borderRadius: '8px', padding: '5px 14px', display: 'inline-flex', alignItems: 'center' }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/assets/clinic-ez_logo.svg"
+              alt="ClinicEZ Logo"
+              style={{ height: '30px', display: 'block' }}
+            />
+          </div>
         </div>
         <div style={styles.headerRight}>
           <div style={styles.docTitle}>Personal Health Record</div>
@@ -768,26 +772,38 @@ export function PHRPrintContent({ patient, sections, generatedAt }: PHRPrintCont
               {patient.userAddresses.length === 0 ? (
                 <EmptyRecord message="No addresses recorded." />
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {patient.userAddresses.map((a, i) => (
-                    <div key={a.id} style={{ background: i % 2 === 0 ? '#ffffff' : BG_SECTION, border: `1px solid ${BORDER}`, borderRadius: '3px', padding: '8px 12px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                        {a.isPrimary && (
-                          <span style={{ ...styles.badge, background: '#dbeafe', color: '#1d4ed8' }}>Primary</span>
-                        )}
-                      </div>
-                      <div style={styles.grid2}>
-                        <Field label="Address" value={a.address} />
-                        <Field label="City" value={a.city} />
-                        <Field label="State / Province" value={a.state} />
-                        <Field label="Country" value={a.country} />
-                        <Field label="Zip Code" value={a.zipCode} />
-                        {a.barangay && <Field label="Barangay" value={a.barangay} />}
-                        {a.region && <Field label="Region" value={a.region} />}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <table style={styles.table}>
+                  <thead>
+                    <tr>
+                      <th style={styles.th}>Type</th>
+                      <th style={styles.th}>Street / Address Line</th>
+                      <th style={styles.th}>Barangay</th>
+                      <th style={styles.th}>City</th>
+                      <th style={styles.th}>State / Province</th>
+                      <th style={styles.th}>Region</th>
+                      <th style={styles.th}>Zip</th>
+                      <th style={styles.th}>Country</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {patient.userAddresses.map((a, i) => (
+                      <tr key={a.id}>
+                        <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>
+                          {a.isPrimary
+                            ? <span style={{ ...styles.badge, background: '#dbeafe', color: '#1d4ed8' }}>Primary</span>
+                            : <span style={{ ...styles.badge, background: '#f1f5f9', color: TEXT_MUTED }}>Other</span>}
+                        </td>
+                        <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{a.address}</td>
+                        <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{val(a.barangay)}</td>
+                        <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{a.city}</td>
+                        <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{a.state}</td>
+                        <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{val(a.region)}</td>
+                        <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{a.zipCode}</td>
+                        <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{a.country}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               )}
             </div>
           </div>
@@ -953,34 +969,6 @@ export function PHRPrintContent({ patient, sections, generatedAt }: PHRPrintCont
                 </table>
               )}
 
-              {patient.medicalCertificates.length > 0 && (
-                <>
-                  <p style={{ ...styles.fieldLabel, marginTop: '12px', marginBottom: '6px' }}>Medical Certificates</p>
-                  <table style={styles.table}>
-                    <thead>
-                      <tr>
-                        <th style={styles.th}>Serial #</th>
-                        <th style={styles.th}>Transaction #</th>
-                        <th style={styles.th}>Clinic</th>
-                        <th style={styles.th}>Created By</th>
-                        <th style={styles.th}>Date</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {patient.medicalCertificates.map((c, i) => (
-                        <tr key={c.id}>
-                          <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{c.serialNumber}</td>
-                          <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{val(c.transactionNumber)}</td>
-                          <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{val(c.clinic)}</td>
-                          <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{c.createdBy}</td>
-                          <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{formatDate(c.createdAt)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </>
-              )}
-
               {patient.referralSlips.length > 0 && (
                 <>
                   <p style={{ ...styles.fieldLabel, marginTop: '12px', marginBottom: '6px' }}>Referral Slips</p>
@@ -1015,7 +1003,7 @@ export function PHRPrintContent({ patient, sections, generatedAt }: PHRPrintCont
       </div>
 
       {/* ── FOOTER ── */}
-      <div style={styles.footer}>
+      <div className="phr-footer" style={styles.footer}>
         <div>
           <div style={{ fontWeight: '600', color: TEAL_DARK }}>ClinicEZ — Personal Health Record</div>
           <div>This document is confidential and intended solely for the named patient or authorized healthcare provider.</div>

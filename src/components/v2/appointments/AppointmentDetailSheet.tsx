@@ -633,9 +633,9 @@ export function AppointmentDetailSheet({
                 </>
               )}
 
-              {status === "ROUTED" && (pendingRouting ?? acceptedRouting) && (
+              {status === "ROUTED" && (
                 <>
-                  {pendingRouting && (isAssignedToCurrentUser ? (
+                  {(pendingRouting ?? acceptedRouting) && pendingRouting && (isAssignedToCurrentUser ? (
                     <>
                       <Button
                         size="sm"
@@ -667,17 +667,15 @@ export function AppointmentDetailSheet({
                       Only the assigned provider can accept or decline this assignment.
                     </p>
                   ))}
-                  {isCurrentUserTheCateringHP && (
-                    <Button
-                      size="sm"
-                      className="gap-1.5 bg-green-600 hover:bg-green-700 text-white"
-                      disabled={isPending}
-                      onClick={handleComplete}
-                    >
-                      <CheckCircle className="h-4 w-4" />
-                      Mark Complete
-                    </Button>
-                  )}
+                  <Button
+                    size="sm"
+                    className="gap-1.5 bg-green-600 hover:bg-green-700 text-white"
+                    disabled={isPending}
+                    onClick={handleComplete}
+                  >
+                    <CheckCircle className="h-4 w-4" />
+                    Mark Complete
+                  </Button>
                   <Button
                     size="sm"
                     variant="outline"

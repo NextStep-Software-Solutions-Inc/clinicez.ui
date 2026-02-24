@@ -15,3 +15,6 @@ export const PHR_SECTIONS = [
 ] as const
 
 export type PHRSectionId = (typeof PHR_SECTIONS)[number]['id']
+
+/** 'colorful' = full ClinicEZ teal branding; 'minimal' = monochrome / low-ink professional */
+export type PHRTheme = 'colorful' | 'minimal'

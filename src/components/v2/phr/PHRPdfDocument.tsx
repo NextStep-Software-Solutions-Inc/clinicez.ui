@@ -5,14 +5,14 @@
  * Mirrors the structure of PHRPrintContent.tsx but outputs a proper PDF file
  * without relying on the browser's print dialog.
  */
-import { Document, Page, View, Text, Image, StyleSheet, Font } from '@react-pdf/renderer'
+import { Document, Page, View, Text, Image, StyleSheet } from '@react-pdf/renderer'
 import type { SerializedPatientHealthRecordsResponse } from '@/types/patient-profile'
-import { PHR_SECTIONS, type PHRSectionId } from './phr-sections'
+import { PHR_SECTIONS, type PHRSectionId, type PHRTheme } from './phr-sections'
 
 // ─── re-export so callers can still import from here ─────────────────────────
-export { PHR_SECTIONS, type PHRSectionId }
+export { PHR_SECTIONS, type PHRSectionId, type PHRTheme }
 
-// ─── Colour palette (matches PHRPrintContent) ────────────────────────────────
+// ─── Shared colour constants ──────────────────────────────────────────────────
 const TEAL = '#10a8a1'
 const TEAL_DARK = '#0a7a75'
 const TEAL_LIGHT = '#e6f7f7'
@@ -22,7 +22,62 @@ const TEXT_MUTED = '#64748b'
 const BG_ALT = '#f8fafc'
 const WHITE = '#ffffff'
 
-// ─── StyleSheet ───────────────────────────────────────────────────────────────
+// ─── Per-theme colour palettes ────────────────────────────────────────────────
+interface ThemePalette {
+  headerBg: string
+  headerBorder: string
+  patientBarBg: string
+  patientBarText: string
+  patientBarBorderLeft: string
+  sectionHeaderBg: string
+  sectionHeaderText: string
+  sectionBodyBorder: string
+  tableHeadBg: string
+  thColor: string
+  vitalCardBg: string
+  vitalCardBorder: string
+  vitalValueColor: string
+  footerBorder: string
+  footerBrandColor: string
+}
+
+const COLORFUL: ThemePalette = {
+  headerBg: TEAL,
+  headerBorder: TEAL,
+  patientBarBg: TEAL_DARK,
+  patientBarText: WHITE,
+  patientBarBorderLeft: 'rgba(255,255,255,0.3)',
+  sectionHeaderBg: TEAL,
+  sectionHeaderText: WHITE,
+  sectionBodyBorder: TEAL,
+  tableHeadBg: TEAL_LIGHT,
+  thColor: TEAL_DARK,
+  vitalCardBg: TEAL_LIGHT,
+  vitalCardBorder: '#a7d7d5',
+  vitalValueColor: TEAL_DARK,
+  footerBorder: TEAL,
+  footerBrandColor: TEAL_DARK,
+}
+
+const MINIMAL: ThemePalette = {
+  headerBg: '#1e293b',
+  headerBorder: '#1e293b',
+  patientBarBg: '#f1f5f9',
+  patientBarText: '#1e293b',
+  patientBarBorderLeft: '#cbd5e1',
+  sectionHeaderBg: '#e2e8f0',
+  sectionHeaderText: '#1e293b',
+  sectionBodyBorder: '#cbd5e1',
+  tableHeadBg: '#f1f5f9',
+  thColor: '#475569',
+  vitalCardBg: '#f8fafc',
+  vitalCardBorder: '#cbd5e1',
+  vitalValueColor: '#1e293b',
+  footerBorder: '#94a3b8',
+  footerBrandColor: '#334155',
+}
+
+// ─── StyleSheet (layout only — colours are injected inline per theme) ─────────
 const s = StyleSheet.create({
   page: {
     fontFamily: 'Helvetica',
@@ -35,7 +90,6 @@ const s = StyleSheet.create({
   },
   // ── Header ──
   header: {
-    backgroundColor: TEAL,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -55,7 +109,6 @@ const s = StyleSheet.create({
   headerMeta: { fontSize: 7, color: WHITE, opacity: 0.9, marginTop: 2 },
   // ── Patient bar ──
   patientBar: {
-    backgroundColor: TEAL_DARK,
     flexDirection: 'row',
     alignItems: 'center',
     padding: 10,
@@ -85,21 +138,19 @@ const s = StyleSheet.create({
   // ── Sections ──
   section: { marginBottom: 14 },
   sectionHeader: {
-    backgroundColor: TEAL,
     flexDirection: 'row',
     alignItems: 'center',
     padding: '5 8',
     borderRadius: '3 3 0 0',
   },
-  sectionTitle: { fontSize: 8, fontFamily: 'Helvetica-Bold', color: WHITE, letterSpacing: 0.5 },
+  sectionTitle: { fontSize: 8, fontFamily: 'Helvetica-Bold', letterSpacing: 0.5 },
   sectionBody: {
-    borderWidth: 1,
-    borderColor: TEAL,
     borderTopWidth: 0,
     borderBottomLeftRadius: 3,
     borderBottomRightRadius: 3,
     padding: 8,
     backgroundColor: WHITE,
+    borderWidth: 1,
   },
   // ── Field grid ──
   fieldGrid3: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
@@ -108,15 +159,15 @@ const s = StyleSheet.create({
   fieldValue: { fontSize: 8, color: TEXT },
   // ── Table ──
   table: { width: '100%' },
-  tableHead: { flexDirection: 'row', backgroundColor: TEAL_LIGHT },
+  tableHead: { flexDirection: 'row' },
   tableRow: { flexDirection: 'row', borderBottomWidth: 0.5, borderBottomColor: BORDER },
   tableRowAlt: { flexDirection: 'row', borderBottomWidth: 0.5, borderBottomColor: BORDER, backgroundColor: BG_ALT },
-  th: { fontSize: 6.5, fontFamily: 'Helvetica-Bold', color: TEAL_DARK, padding: '4 5', borderRightWidth: 0.5, borderRightColor: BORDER, textTransform: 'uppercase', letterSpacing: 0.3 },
+  th: { fontSize: 6.5, fontFamily: 'Helvetica-Bold', padding: '4 5', borderRightWidth: 0.5, borderRightColor: BORDER, textTransform: 'uppercase', letterSpacing: 0.3 },
   td: { fontSize: 7.5, color: TEXT, padding: '3 5', borderRightWidth: 0.5, borderRightColor: BORDER },
   // ── Vital cards ──
   vitalRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 6 },
-  vitalCard: { backgroundColor: TEAL_LIGHT, borderWidth: 0.5, borderColor: '#a7d7d5', borderRadius: 3, padding: '6 10', alignItems: 'center', minWidth: 70 },
-  vitalValue: { fontSize: 14, fontFamily: 'Helvetica-Bold', color: TEAL_DARK },
+  vitalCard: { borderWidth: 0.5, borderRadius: 3, padding: '6 10', alignItems: 'center', minWidth: 70 },
+  vitalValue: { fontSize: 14, fontFamily: 'Helvetica-Bold' },
   vitalLabel: { fontSize: 6, color: TEXT_MUTED, textTransform: 'uppercase', marginTop: 1 },
   // ── Badges ──
   badgePrimary: { backgroundColor: '#dbeafe', color: '#1d4ed8', fontSize: 6.5, fontFamily: 'Helvetica-Bold', paddingHorizontal: 4, paddingVertical: 1, borderRadius: 2 },
@@ -136,11 +187,10 @@ const s = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     borderTopWidth: 1,
-    borderTopColor: TEAL,
     paddingTop: 5,
   },
   footerLeft: { fontSize: 6.5, color: TEXT_MUTED },
-  footerBrand: { fontSize: 7, fontFamily: 'Helvetica-Bold', color: TEAL_DARK, marginBottom: 2 },
+  footerBrand: { fontSize: 7, fontFamily: 'Helvetica-Bold', marginBottom: 2 },
   confidential: {
     backgroundColor: '#fef2f2',
     borderWidth: 0.5,
@@ -189,10 +239,10 @@ function fmtBloodType(bt: string | null | undefined): string {
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
-function SecHeader({ icon, title }: { icon: string; title: string }) {
+function SecHeader({ icon, title, tc }: { icon: string; title: string; tc: ThemePalette }) {
   return (
-    <View style={s.sectionHeader}>
-      <Text style={s.sectionTitle}>{icon}  {title.toUpperCase()}</Text>
+    <View style={[s.sectionHeader, { backgroundColor: tc.sectionHeaderBg }]}>
+      <Text style={[s.sectionTitle, { color: tc.sectionHeaderText }]}>{icon}  {title.toUpperCase()}</Text>
     </View>
   )
 }
@@ -211,19 +261,19 @@ function Field({ label, value }: { label: string; value: string | null | undefin
 }
 
 // ─── Column-width helpers (must sum to 1) ────────────────────────────────────
-function Th({ children, flex }: { children: string; flex: number }) {
-  return <Text style={[s.th, { flex }]}>{children}</Text>
+function Th({ children, flex, tc }: { children: string; flex: number; tc: ThemePalette }) {
+  return <Text style={[s.th, { flex, color: tc.thColor }]}>{children}</Text>
 }
 function Td({ children, flex, alt }: { children: React.ReactNode; flex: number; alt: boolean }) {
   return <Text style={[s.td, { flex }, alt ? { backgroundColor: BG_ALT } : {}]}>{children}</Text>
 }
 
 // ─── Footer ──────────────────────────────────────────────────────────────────
-function Footer({ generatedAt, clinicName }: { generatedAt: string; clinicName?: string }) {
+function Footer({ generatedAt, clinicName, tc }: { generatedAt: string; clinicName?: string; tc: ThemePalette }) {
   return (
-    <View style={s.footer} fixed>
+    <View style={[s.footer, { borderTopColor: tc.footerBorder }]} fixed>
       <View>
-        <Text style={s.footerBrand}>ClinicEZ — Personal Health Record</Text>
+        <Text style={[s.footerBrand, { color: tc.footerBrandColor }]}>ClinicEZ — Personal Health Record</Text>
         <Text style={s.footerLeft}>Confidential — for the named patient or authorised healthcare provider only.</Text>
       </View>
       <Text style={s.confidential}>CONFIDENTIAL</Text>
@@ -241,11 +291,13 @@ interface PHRPdfDocumentProps {
   patient: SerializedPatientHealthRecordsResponse
   sections: PHRSectionId[]
   generatedAt: string
+  theme?: PHRTheme
 }
 
-export function PHRPdfDocument({ patient, sections, generatedAt }: PHRPdfDocumentProps) {
+export function PHRPdfDocument({ patient, sections, generatedAt, theme = 'colorful' }: PHRPdfDocumentProps) {
   const sectionSet = new Set(sections)
   const has = (id: PHRSectionId) => sectionSet.has(id)
+  const tc = theme === 'minimal' ? MINIMAL : COLORFUL
 
   const lv = patient.latestVitals
   const displayBMI = lv?.bmi ?? (lv ? calcBmi(lv.weight, lv.height) : null)
@@ -255,7 +307,7 @@ export function PHRPdfDocument({ patient, sections, generatedAt }: PHRPdfDocumen
     <Document title={`PHR — ${patient.fullName}`} author="ClinicEZ" creator="ClinicEZ PHR System">
       <Page size="A4" style={s.page}>
         {/* ── Header ── */}
-        <View style={s.header}>
+        <View style={[s.header, { backgroundColor: tc.headerBg }]}>
           <View style={s.logoPill}>
             <Image style={s.logoImg} src="/assets/clinic-ez_logo.svg" />
           </View>
@@ -267,43 +319,43 @@ export function PHRPdfDocument({ patient, sections, generatedAt }: PHRPdfDocumen
         </View>
 
         {/* ── Patient bar ── */}
-        <View style={s.patientBar}>
-          <View style={s.avatar}>
+        <View style={[s.patientBar, { backgroundColor: tc.patientBarBg }]}>
+          <View style={[s.avatar, { backgroundColor: theme === 'minimal' ? '#e2e8f0' : 'rgba(255,255,255,0.25)' }]}>
             {patient.picture
               ? <Image style={s.avatarImg} src={patient.picture} />
-              : <Text style={s.avatarText}>{initials}</Text>}
+              : <Text style={[s.avatarText, { color: tc.patientBarText }]}>{initials}</Text>}
           </View>
           <View style={s.patientInfo}>
-            <Text style={s.patientName}>{patient.fullName}{patient.suffix ? ` ${patient.suffix}` : ''}</Text>
+            <Text style={[s.patientName, { color: tc.patientBarText }]}>{patient.fullName}{patient.suffix ? ` ${patient.suffix}` : ''}</Text>
             <View style={s.patientMeta}>
-              {patient.caseNumber ? <Text style={s.patientMetaItem}>ID: {patient.caseNumber}</Text> : null}
-              {patient.dob ? <Text style={s.patientMetaItem}>DOB: {fmtDate(patient.dob)}</Text> : null}
-              {patient.age ? <Text style={s.patientMetaItem}>Age: {patient.age} yrs</Text> : null}
-              {patient.gender ? <Text style={s.patientMetaItem}>Gender: {cap(patient.gender)}</Text> : null}
-              {patient.clinic?.name ? <Text style={s.patientMetaItem}>Clinic: {patient.clinic.name}</Text> : null}
+              {patient.caseNumber ? <Text style={[s.patientMetaItem, { color: tc.patientBarText }]}>ID: {patient.caseNumber}</Text> : null}
+              {patient.dob ? <Text style={[s.patientMetaItem, { color: tc.patientBarText }]}>DOB: {fmtDate(patient.dob)}</Text> : null}
+              {patient.age ? <Text style={[s.patientMetaItem, { color: tc.patientBarText }]}>Age: {patient.age} yrs</Text> : null}
+              {patient.gender ? <Text style={[s.patientMetaItem, { color: tc.patientBarText }]}>Gender: {cap(patient.gender)}</Text> : null}
+              {patient.clinic?.name ? <Text style={[s.patientMetaItem, { color: tc.patientBarText }]}>Clinic: {patient.clinic.name}</Text> : null}
             </View>
           </View>
-          <View style={s.statsRow}>
+          <View style={[s.statsRow, { borderLeftColor: tc.patientBarBorderLeft }]}>
             <View style={s.statBox}>
-              <Text style={[s.statValue, { color: '#fca5a5' }]}>{fmtBloodType(patient.bloodType)}</Text>
-              <Text style={s.statLabel}>Blood Type</Text>
+              <Text style={[s.statValue, { color: theme === 'minimal' ? '#ef4444' : '#fca5a5' }]}>{fmtBloodType(patient.bloodType)}</Text>
+              <Text style={[s.statLabel, { color: tc.patientBarText }]}>Blood Type</Text>
             </View>
             {lv?.bpSystolic ? (
               <View style={s.statBox}>
-                <Text style={s.statValue}>{lv.bpSystolic}/{lv.bpDiastolic}</Text>
-                <Text style={s.statLabel}>BP mmHg</Text>
+                <Text style={[s.statValue, { color: tc.patientBarText }]}>{lv.bpSystolic}/{lv.bpDiastolic}</Text>
+                <Text style={[s.statLabel, { color: tc.patientBarText }]}>BP mmHg</Text>
               </View>
             ) : null}
             {lv?.weight ? (
               <View style={s.statBox}>
-                <Text style={s.statValue}>{lv.weight}</Text>
-                <Text style={s.statLabel}>Weight kg</Text>
+                <Text style={[s.statValue, { color: tc.patientBarText }]}>{lv.weight}</Text>
+                <Text style={[s.statLabel, { color: tc.patientBarText }]}>Weight kg</Text>
               </View>
             ) : null}
             {lv?.height ? (
               <View style={s.statBox}>
-                <Text style={s.statValue}>{lv.height}</Text>
-                <Text style={s.statLabel}>Height cm</Text>
+                <Text style={[s.statValue, { color: tc.patientBarText }]}>{lv.height}</Text>
+                <Text style={[s.statLabel, { color: tc.patientBarText }]}>Height cm</Text>
               </View>
             ) : null}
           </View>
@@ -312,8 +364,8 @@ export function PHRPdfDocument({ patient, sections, generatedAt }: PHRPdfDocumen
         {/* ─────────── DEMOGRAPHICS ─────────── */}
         {has('demographics') && (
           <View style={s.section}>
-            <SecHeader icon="📋" title="Demographics" />
-            <View style={s.sectionBody}>
+            <SecHeader icon="📋" title="Demographics" tc={tc} />
+            <View style={[s.sectionBody, { borderColor: tc.sectionBodyBorder }]}>
               <View style={s.fieldGrid3}>
                 <Field label="Full Name" value={`${patient.fullName}${patient.suffix ? ` ${patient.suffix}` : ''}`} />
                 <Field label="Nickname" value={patient.nickname} />
@@ -338,20 +390,20 @@ export function PHRPdfDocument({ patient, sections, generatedAt }: PHRPdfDocumen
         {/* ─────────── VITAL SIGNS ─────────── */}
         {has('vitals') && (
           <View style={s.section}>
-            <SecHeader icon="❤️" title="Vital Signs" />
-            <View style={s.sectionBody}>
+            <SecHeader icon="❤️" title="Vital Signs" tc={tc} />
+            <View style={[s.sectionBody, { borderColor: tc.sectionBodyBorder }]}>
               {lv ? (
                 <>
                   <Text style={[s.subLabel, { marginBottom: 6 }]}>Latest Reading — {fmtDateTime(lv.dateTaken)}</Text>
                   <View style={s.vitalRow}>
-                    {lv.bpSystolic ? (<View style={s.vitalCard}><Text style={s.vitalValue}>{lv.bpSystolic}/{lv.bpDiastolic}</Text><Text style={s.vitalLabel}>BP (mmHg)</Text></View>) : null}
-                    {lv.pulseRate ? (<View style={s.vitalCard}><Text style={s.vitalValue}>{lv.pulseRate}</Text><Text style={s.vitalLabel}>HR (bpm)</Text></View>) : null}
-                    {lv.temp ? (<View style={s.vitalCard}><Text style={s.vitalValue}>{lv.temp}</Text><Text style={s.vitalLabel}>Temp (°C)</Text></View>) : null}
-                    {lv.spo2 ? (<View style={s.vitalCard}><Text style={s.vitalValue}>{lv.spo2}%</Text><Text style={s.vitalLabel}>SpO2</Text></View>) : null}
-                    {lv.respRate ? (<View style={s.vitalCard}><Text style={s.vitalValue}>{lv.respRate}</Text><Text style={s.vitalLabel}>RR (/min)</Text></View>) : null}
-                    {displayBMI ? (<View style={s.vitalCard}><Text style={s.vitalValue}>{displayBMI}</Text><Text style={s.vitalLabel}>BMI</Text></View>) : null}
-                    {lv.height ? (<View style={s.vitalCard}><Text style={s.vitalValue}>{lv.height}</Text><Text style={s.vitalLabel}>Height (cm)</Text></View>) : null}
-                    {lv.weight ? (<View style={s.vitalCard}><Text style={s.vitalValue}>{lv.weight}</Text><Text style={s.vitalLabel}>Weight (kg)</Text></View>) : null}
+                    {lv.bpSystolic ? (<View style={[s.vitalCard, { backgroundColor: tc.vitalCardBg, borderColor: tc.vitalCardBorder }]}><Text style={[s.vitalValue, { color: tc.vitalValueColor }]}>{lv.bpSystolic}/{lv.bpDiastolic}</Text><Text style={s.vitalLabel}>BP (mmHg)</Text></View>) : null}
+                    {lv.pulseRate ? (<View style={[s.vitalCard, { backgroundColor: tc.vitalCardBg, borderColor: tc.vitalCardBorder }]}><Text style={[s.vitalValue, { color: tc.vitalValueColor }]}>{lv.pulseRate}</Text><Text style={s.vitalLabel}>HR (bpm)</Text></View>) : null}
+                    {lv.temp ? (<View style={[s.vitalCard, { backgroundColor: tc.vitalCardBg, borderColor: tc.vitalCardBorder }]}><Text style={[s.vitalValue, { color: tc.vitalValueColor }]}>{lv.temp}</Text><Text style={s.vitalLabel}>Temp (°C)</Text></View>) : null}
+                    {lv.spo2 ? (<View style={[s.vitalCard, { backgroundColor: tc.vitalCardBg, borderColor: tc.vitalCardBorder }]}><Text style={[s.vitalValue, { color: tc.vitalValueColor }]}>{lv.spo2}%</Text><Text style={s.vitalLabel}>SpO2</Text></View>) : null}
+                    {lv.respRate ? (<View style={[s.vitalCard, { backgroundColor: tc.vitalCardBg, borderColor: tc.vitalCardBorder }]}><Text style={[s.vitalValue, { color: tc.vitalValueColor }]}>{lv.respRate}</Text><Text style={s.vitalLabel}>RR (/min)</Text></View>) : null}
+                    {displayBMI ? (<View style={[s.vitalCard, { backgroundColor: tc.vitalCardBg, borderColor: tc.vitalCardBorder }]}><Text style={[s.vitalValue, { color: tc.vitalValueColor }]}>{displayBMI}</Text><Text style={s.vitalLabel}>BMI</Text></View>) : null}
+                    {lv.height ? (<View style={[s.vitalCard, { backgroundColor: tc.vitalCardBg, borderColor: tc.vitalCardBorder }]}><Text style={[s.vitalValue, { color: tc.vitalValueColor }]}>{lv.height}</Text><Text style={s.vitalLabel}>Height (cm)</Text></View>) : null}
+                    {lv.weight ? (<View style={[s.vitalCard, { backgroundColor: tc.vitalCardBg, borderColor: tc.vitalCardBorder }]}><Text style={[s.vitalValue, { color: tc.vitalValueColor }]}>{lv.weight}</Text><Text style={s.vitalLabel}>Weight (kg)</Text></View>) : null}
                   </View>
                 </>
               ) : <Empty msg="No vital signs recorded." />}
@@ -360,15 +412,15 @@ export function PHRPdfDocument({ patient, sections, generatedAt }: PHRPdfDocumen
                 <>
                   <Text style={[s.subLabel, { marginTop: 8, marginBottom: 4 }]}>Vital Signs History</Text>
                   <View style={s.table}>
-                    <View style={s.tableHead}>
-                      <Th flex={1.2}>Date</Th>
-                      <Th flex={1}>BP</Th>
-                      <Th flex={0.8}>HR</Th>
-                      <Th flex={0.8}>Temp</Th>
-                      <Th flex={0.8}>SpO2</Th>
-                      <Th flex={0.8}>Wt (kg)</Th>
-                      <Th flex={0.8}>Ht (cm)</Th>
-                      <Th flex={0.8}>BMI</Th>
+                    <View style={[s.tableHead, { backgroundColor: tc.tableHeadBg }]}>
+                      <Th flex={1.2} tc={tc}>Date</Th>
+                      <Th flex={1} tc={tc}>BP</Th>
+                      <Th flex={0.8} tc={tc}>HR</Th>
+                      <Th flex={0.8} tc={tc}>Temp</Th>
+                      <Th flex={0.8} tc={tc}>SpO2</Th>
+                      <Th flex={0.8} tc={tc}>Wt (kg)</Th>
+                      <Th flex={0.8} tc={tc}>Ht (cm)</Th>
+                      <Th flex={0.8} tc={tc}>BMI</Th>
                     </View>
                     {patient.vitalSigns.map((vs, i) => (
                       <View key={vs.id} style={i % 2 === 0 ? s.tableRow : s.tableRowAlt}>
@@ -392,12 +444,12 @@ export function PHRPdfDocument({ patient, sections, generatedAt }: PHRPdfDocumen
         {/* ─────────── MEDICAL HISTORY ─────────── */}
         {has('medical') && (
           <View style={s.section}>
-            <SecHeader icon="🏥" title="Medical History" />
-            <View style={s.sectionBody}>
+            <SecHeader icon="🏥" title="Medical History" tc={tc} />
+            <View style={[s.sectionBody, { borderColor: tc.sectionBodyBorder }]}>
               <Text style={s.subLabel}>Personal Medical Conditions</Text>
               {patient.medicalHistories.length === 0 ? <Empty msg="No personal medical conditions recorded." /> : (
                 <View style={s.table}>
-                  <View style={s.tableHead}><Th flex={1}>Condition</Th><Th flex={2}>Details</Th></View>
+                  <View style={[s.tableHead, { backgroundColor: tc.tableHeadBg }]}><Th flex={1} tc={tc}>Condition</Th><Th flex={2} tc={tc}>Details</Th></View>
                   {patient.medicalHistories.map((m, i) => (
                     <View key={m.id} style={i % 2 === 0 ? s.tableRow : s.tableRowAlt}>
                       <Td flex={1} alt={i % 2 !== 0}>{m.condition}</Td>
@@ -409,7 +461,7 @@ export function PHRPdfDocument({ patient, sections, generatedAt }: PHRPdfDocumen
               <Text style={[s.subLabel, { marginTop: 8 }]}>Family Medical History</Text>
               {patient.familyMedicalHistories.length === 0 ? <Empty msg="No family medical history recorded." /> : (
                 <View style={s.table}>
-                  <View style={s.tableHead}><Th flex={1}>Condition</Th><Th flex={2}>Details</Th></View>
+                  <View style={[s.tableHead, { backgroundColor: tc.tableHeadBg }]}><Th flex={1} tc={tc}>Condition</Th><Th flex={2} tc={tc}>Details</Th></View>
                   {patient.familyMedicalHistories.map((m, i) => (
                     <View key={m.id} style={i % 2 === 0 ? s.tableRow : s.tableRowAlt}>
                       <Td flex={1} alt={i % 2 !== 0}>{m.condition}</Td>
@@ -421,7 +473,7 @@ export function PHRPdfDocument({ patient, sections, generatedAt }: PHRPdfDocumen
               <Text style={[s.subLabel, { marginTop: 8 }]}>Surgical History</Text>
               {patient.surgicalHistories.length === 0 ? <Empty msg="No surgical history recorded." /> : (
                 <View style={s.table}>
-                  <View style={s.tableHead}><Th flex={2}>Operation</Th><Th flex={1}>Date</Th><Th flex={2}>Notes</Th></View>
+                  <View style={[s.tableHead, { backgroundColor: tc.tableHeadBg }]}><Th flex={2} tc={tc}>Operation</Th><Th flex={1} tc={tc}>Date</Th><Th flex={2} tc={tc}>Notes</Th></View>
                   {patient.surgicalHistories.map((sr, i) => (
                     <View key={sr.id} style={i % 2 === 0 ? s.tableRow : s.tableRowAlt}>
                       <Td flex={2} alt={i % 2 !== 0}>{sr.operationName}</Td>
@@ -438,11 +490,11 @@ export function PHRPdfDocument({ patient, sections, generatedAt }: PHRPdfDocumen
         {/* ─────────── ALLERGIES ─────────── */}
         {has('allergies') && (
           <View style={s.section}>
-            <SecHeader icon="⚠️" title="Allergies" />
-            <View style={s.sectionBody}>
+            <SecHeader icon="⚠️" title="Allergies" tc={tc} />
+            <View style={[s.sectionBody, { borderColor: tc.sectionBodyBorder }]}>
               {patient.userAllergies.length === 0 ? <Empty msg="No known allergies recorded." /> : (
                 <View style={s.table}>
-                  <View style={s.tableHead}><Th flex={1}>Allergen</Th><Th flex={1}>Reaction</Th><Th flex={2}>Notes</Th></View>
+                  <View style={[s.tableHead, { backgroundColor: tc.tableHeadBg }]}><Th flex={1} tc={tc}>Allergen</Th><Th flex={1} tc={tc}>Reaction</Th><Th flex={2} tc={tc}>Notes</Th></View>
                   {patient.userAllergies.map((a, i) => (
                     <View key={a.id} style={i % 2 === 0 ? s.tableRow : s.tableRowAlt}>
                       <Td flex={1} alt={i % 2 !== 0}>{a.allergen}</Td>
@@ -459,11 +511,11 @@ export function PHRPdfDocument({ patient, sections, generatedAt }: PHRPdfDocumen
         {/* ─────────── VACCINATIONS ─────────── */}
         {has('vaccinations') && (
           <View style={s.section}>
-            <SecHeader icon="💉" title="Vaccinations" />
-            <View style={s.sectionBody}>
+            <SecHeader icon="💉" title="Vaccinations" tc={tc} />
+            <View style={[s.sectionBody, { borderColor: tc.sectionBodyBorder }]}>
               {patient.userVaccinations.length === 0 ? <Empty msg="No vaccinations recorded." /> : (
                 <View style={s.table}>
-                  <View style={s.tableHead}><Th flex={1.5}>Vaccine</Th><Th flex={0.8}>Dose</Th><Th flex={0.8}>Route</Th><Th flex={1}>Date</Th><Th flex={1.5}>Administered By</Th><Th flex={1.5}>Notes</Th></View>
+                  <View style={[s.tableHead, { backgroundColor: tc.tableHeadBg }]}><Th flex={1.5} tc={tc}>Vaccine</Th><Th flex={0.8} tc={tc}>Dose</Th><Th flex={0.8} tc={tc}>Route</Th><Th flex={1} tc={tc}>Date</Th><Th flex={1.5} tc={tc}>Administered By</Th><Th flex={1.5} tc={tc}>Notes</Th></View>
                   {patient.userVaccinations.map((vac, i) => (
                     <View key={vac.id} style={i % 2 === 0 ? s.tableRow : s.tableRowAlt}>
                       <Td flex={1.5} alt={i % 2 !== 0}>{vac.vaccine}</Td>
@@ -483,11 +535,11 @@ export function PHRPdfDocument({ patient, sections, generatedAt }: PHRPdfDocumen
         {/* ─────────── DISABILITIES ─────────── */}
         {has('disabilities') && (
           <View style={s.section}>
-            <SecHeader icon="♿" title="Disabilities & Chronic Conditions" />
-            <View style={s.sectionBody}>
+            <SecHeader icon="♿" title="Disabilities & Chronic Conditions" tc={tc} />
+            <View style={[s.sectionBody, { borderColor: tc.sectionBodyBorder }]}>
               {patient.userDisabilities.length === 0 ? <Empty msg="No disabilities or chronic conditions recorded." /> : (
                 <View style={s.table}>
-                  <View style={s.tableHead}><Th flex={1.5}>Condition</Th><Th flex={1}>Date Diagnosed</Th><Th flex={0.8}>Severity</Th><Th flex={0.7}>Managed</Th><Th flex={1.2}>Diagnosed By</Th><Th flex={1.5}>Notes</Th></View>
+                  <View style={[s.tableHead, { backgroundColor: tc.tableHeadBg }]}><Th flex={1.5} tc={tc}>Condition</Th><Th flex={1} tc={tc}>Date Diagnosed</Th><Th flex={0.8} tc={tc}>Severity</Th><Th flex={0.7} tc={tc}>Managed</Th><Th flex={1.2} tc={tc}>Diagnosed By</Th><Th flex={1.5} tc={tc}>Notes</Th></View>
                   {patient.userDisabilities.map((d, i) => (
                     <View key={d.id} style={i % 2 === 0 ? s.tableRow : s.tableRowAlt}>
                       <Td flex={1.5} alt={i % 2 !== 0}>{d.disability}</Td>
@@ -507,11 +559,11 @@ export function PHRPdfDocument({ patient, sections, generatedAt }: PHRPdfDocumen
         {/* ─────────── EMERGENCY CONTACTS ─────────── */}
         {has('contacts') && (
           <View style={s.section}>
-            <SecHeader icon="🆘" title="Emergency Contacts" />
-            <View style={s.sectionBody}>
+            <SecHeader icon="🆘" title="Emergency Contacts" tc={tc} />
+            <View style={[s.sectionBody, { borderColor: tc.sectionBodyBorder }]}>
               {patient.userEmergencyContacts.length === 0 ? <Empty msg="No emergency contacts recorded." /> : (
                 <View style={s.table}>
-                  <View style={s.tableHead}><Th flex={1.5}>Name</Th><Th flex={1}>Relationship</Th><Th flex={1}>Phone</Th><Th flex={0.8}>Primary</Th><Th flex={2}>Address</Th></View>
+                  <View style={[s.tableHead, { backgroundColor: tc.tableHeadBg }]}><Th flex={1.5} tc={tc}>Name</Th><Th flex={1} tc={tc}>Relationship</Th><Th flex={1} tc={tc}>Phone</Th><Th flex={0.8} tc={tc}>Primary</Th><Th flex={2} tc={tc}>Address</Th></View>
                   {patient.userEmergencyContacts.map((c, i) => (
                     <View key={c.id} style={i % 2 === 0 ? s.tableRow : s.tableRowAlt}>
                       <Td flex={1.5} alt={i % 2 !== 0}>{c.name}</Td>
@@ -530,11 +582,11 @@ export function PHRPdfDocument({ patient, sections, generatedAt }: PHRPdfDocumen
         {/* ─────────── ADDRESSES ─────────── */}
         {has('addresses') && (
           <View style={s.section}>
-            <SecHeader icon="📍" title="Addresses" />
-            <View style={s.sectionBody}>
+            <SecHeader icon="📍" title="Addresses" tc={tc} />
+            <View style={[s.sectionBody, { borderColor: tc.sectionBodyBorder }]}>
               {patient.userAddresses.length === 0 ? <Empty msg="No addresses recorded." /> : (
                 <View style={s.table}>
-                  <View style={s.tableHead}><Th flex={0.7}>Type</Th><Th flex={2}>Street / Address Line</Th><Th flex={1}>Barangay</Th><Th flex={1}>City</Th><Th flex={1}>State/Province</Th><Th flex={0.7}>Zip</Th><Th flex={1}>Country</Th></View>
+                  <View style={[s.tableHead, { backgroundColor: tc.tableHeadBg }]}><Th flex={0.7} tc={tc}>Type</Th><Th flex={2} tc={tc}>Street / Address Line</Th><Th flex={1} tc={tc}>Barangay</Th><Th flex={1} tc={tc}>City</Th><Th flex={1} tc={tc}>State/Province</Th><Th flex={0.7} tc={tc}>Zip</Th><Th flex={1} tc={tc}>Country</Th></View>
                   {patient.userAddresses.map((a, i) => (
                     <View key={a.id} style={i % 2 === 0 ? s.tableRow : s.tableRowAlt}>
                       <Td flex={0.7} alt={i % 2 !== 0}>{a.isPrimary ? 'Primary' : 'Other'}</Td>
@@ -555,8 +607,8 @@ export function PHRPdfDocument({ patient, sections, generatedAt }: PHRPdfDocumen
         {/* ─────────── LIFESTYLE ─────────── */}
         {has('lifestyle') && (
           <View style={s.section}>
-            <SecHeader icon="👤" title="Lifestyle & Social History" />
-            <View style={s.sectionBody}>
+            <SecHeader icon="👤" title="Lifestyle & Social History" tc={tc} />
+            <View style={[s.sectionBody, { borderColor: tc.sectionBodyBorder }]}>
               {!patient.personalHistory ? <Empty msg="No lifestyle / social history recorded." /> : (
                 <View style={s.fieldGrid3}>
                   <Field label="Smoking Status" value={cap(patient.personalHistory.smokingStatus)} />
@@ -574,8 +626,8 @@ export function PHRPdfDocument({ patient, sections, generatedAt }: PHRPdfDocumen
         {/* ─────────── OB/GYN ─────────── */}
         {has('obgyn') && (
           <View style={s.section}>
-            <SecHeader icon="👶" title="OB/GYN History" />
-            <View style={s.sectionBody}>
+            <SecHeader icon="👶" title="OB/GYN History" tc={tc} />
+            <View style={[s.sectionBody, { borderColor: tc.sectionBodyBorder }]}>
               {!patient.obGyneHistory ? <Empty msg="No OB/GYN history recorded." /> : (
                 <View style={s.fieldGrid3}>
                   {patient.obGyneHistory.menarche != null && <Field label="Menarche (age)" value={String(patient.obGyneHistory.menarche)} />}
@@ -602,11 +654,11 @@ export function PHRPdfDocument({ patient, sections, generatedAt }: PHRPdfDocumen
         {/* ─────────── PEDIATRIC ─────────── */}
         {has('pediatric') && (
           <View style={s.section}>
-            <SecHeader icon="📏" title="Pediatric Measurements" />
-            <View style={s.sectionBody}>
+            <SecHeader icon="📏" title="Pediatric Measurements" tc={tc} />
+            <View style={[s.sectionBody, { borderColor: tc.sectionBodyBorder }]}>
               {patient.pediatricMeasurements.length === 0 ? <Empty msg="No pediatric measurements recorded." /> : (
                 <View style={s.table}>
-                  <View style={s.tableHead}><Th flex={1}>Date</Th><Th flex={0.8}>Length</Th><Th flex={0.8}>Head Circ.</Th><Th flex={0.8}>Waist</Th><Th flex={0.8}>Hip</Th><Th flex={0.8}>MUAC</Th><Th flex={1.5}>Remarks</Th></View>
+                  <View style={[s.tableHead, { backgroundColor: tc.tableHeadBg }]}><Th flex={1} tc={tc}>Date</Th><Th flex={0.8} tc={tc}>Length</Th><Th flex={0.8} tc={tc}>Head Circ.</Th><Th flex={0.8} tc={tc}>Waist</Th><Th flex={0.8} tc={tc}>Hip</Th><Th flex={0.8} tc={tc}>MUAC</Th><Th flex={1.5} tc={tc}>Remarks</Th></View>
                   {patient.pediatricMeasurements.map((pm, i) => (
                     <View key={pm.id} style={i % 2 === 0 ? s.tableRow : s.tableRowAlt}>
                       <Td flex={1} alt={i % 2 !== 0}>{fmtDate(pm.dateTaken)}</Td>
@@ -627,11 +679,11 @@ export function PHRPdfDocument({ patient, sections, generatedAt }: PHRPdfDocumen
         {/* ─────────── PHYSICAL EXAMS ─────────── */}
         {has('exams') && (
           <View style={s.section}>
-            <SecHeader icon="🔍" title="Physical Examinations" />
-            <View style={s.sectionBody}>
+            <SecHeader icon="🔍" title="Physical Examinations" tc={tc} />
+            <View style={[s.sectionBody, { borderColor: tc.sectionBodyBorder }]}>
               {patient.physicalExaminations.length === 0 ? <Empty msg="No physical examinations recorded." /> : (
                 <View style={s.table}>
-                  <View style={s.tableHead}><Th flex={1}>Date</Th><Th flex={1}>Visual Acuity — Left</Th><Th flex={1}>Visual Acuity — Right</Th><Th flex={2}>Status / Notes</Th></View>
+                  <View style={[s.tableHead, { backgroundColor: tc.tableHeadBg }]}><Th flex={1} tc={tc}>Date</Th><Th flex={1} tc={tc}>Visual Acuity — Left</Th><Th flex={1} tc={tc}>Visual Acuity — Right</Th><Th flex={2} tc={tc}>Status / Notes</Th></View>
                   {patient.physicalExaminations.map((e, i) => (
                     <View key={e.id} style={i % 2 === 0 ? s.tableRow : s.tableRowAlt}>
                       <Td flex={1} alt={i % 2 !== 0}>{fmtDate(e.createdAt)}</Td>
@@ -649,12 +701,12 @@ export function PHRPdfDocument({ patient, sections, generatedAt }: PHRPdfDocumen
         {/* ─────────── INSURANCE ─────────── */}
         {has('insurance') && (
           <View style={s.section}>
-            <SecHeader icon="📄" title="Insurance & Documents" />
-            <View style={s.sectionBody}>
+            <SecHeader icon="📄" title="Insurance & Documents" tc={tc} />
+            <View style={[s.sectionBody, { borderColor: tc.sectionBodyBorder }]}>
               <Text style={s.subLabel}>PhilHealth Records</Text>
               {patient.philHealthRecords.length === 0 ? <Empty msg="No PhilHealth records." /> : (
                 <View style={s.table}>
-                  <View style={s.tableHead}><Th flex={1.5}>PIN</Th><Th flex={1.5}>Member Type</Th><Th flex={0.6}>Active</Th><Th flex={1}>Date Added</Th></View>
+                  <View style={[s.tableHead, { backgroundColor: tc.tableHeadBg }]}><Th flex={1.5} tc={tc}>PIN</Th><Th flex={1.5} tc={tc}>Member Type</Th><Th flex={0.6} tc={tc}>Active</Th><Th flex={1} tc={tc}>Date Added</Th></View>
                   {patient.philHealthRecords.map((r, i) => (
                     <View key={r.id} style={i % 2 === 0 ? s.tableRow : s.tableRowAlt}>
                       <Td flex={1.5} alt={i % 2 !== 0}>{v(r.pin)}</Td>
@@ -670,7 +722,7 @@ export function PHRPdfDocument({ patient, sections, generatedAt }: PHRPdfDocumen
                 <>
                   <Text style={[s.subLabel, { marginTop: 8 }]}>Referral Slips</Text>
                   <View style={s.table}>
-                    <View style={s.tableHead}><Th flex={0.8}>Serial #</Th><Th flex={1.5}>Referred To</Th><Th flex={2}>Reason</Th><Th flex={1.5}>Clinic</Th><Th flex={1}>Date</Th></View>
+                    <View style={[s.tableHead, { backgroundColor: tc.tableHeadBg }]}><Th flex={0.8} tc={tc}>Serial #</Th><Th flex={1.5} tc={tc}>Referred To</Th><Th flex={2} tc={tc}>Reason</Th><Th flex={1.5} tc={tc}>Clinic</Th><Th flex={1} tc={tc}>Date</Th></View>
                     {patient.referralSlips.map((rs, i) => (
                       <View key={rs.id} style={i % 2 === 0 ? s.tableRow : s.tableRowAlt}>
                         <Td flex={0.8} alt={i % 2 !== 0}>{rs.serialNumber}</Td>
@@ -687,7 +739,7 @@ export function PHRPdfDocument({ patient, sections, generatedAt }: PHRPdfDocumen
           </View>
         )}
 
-        <Footer generatedAt={generatedAt} clinicName={patient.clinic?.name} />
+        <Footer generatedAt={generatedAt} clinicName={patient.clinic?.name} tc={tc} />
       </Page>
     </Document>
   )

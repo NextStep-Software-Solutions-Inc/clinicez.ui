@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { getPatientHealthRecords } from '@/actions/patient-profile/get-patient-health-records'
-import { PHRPrintContent, PHR_SECTIONS, type PHRSectionId } from '@/components/v2/phr/PHRPrintContent'
+import { PHRPrintContent, PHR_SECTIONS, type PHRSectionId, type PHRTheme } from '@/components/v2/phr/PHRPrintContent'
 import { PHRAutoPrint } from '@/components/v2/phr/PHRAutoPrint'
 import type { SerializedPatientHealthRecordsResponse } from '@/types/patient-profile'
 
@@ -13,11 +13,11 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic'
 
 interface PrintPageProps {
-  searchParams: Promise<{ sections?: string; preview?: string }>
+  searchParams: Promise<{ sections?: string; preview?: string; theme?: string }>
 }
 
 export default async function PatientPHRPrintPage({ searchParams }: PrintPageProps) {
-  const { sections: sectionsParam, preview } = await searchParams
+  const { sections: sectionsParam, preview, theme: themeParam } = await searchParams
 
   const patient = await getPatientHealthRecords()
   if (!patient) notFound()
@@ -28,6 +28,8 @@ export default async function PatientPHRPrintPage({ searchParams }: PrintPagePro
   const sections: PHRSectionId[] = sanitized && sanitized !== 'all'
     ? (sanitized.split(',').filter(s => allSectionIds.includes(s as PHRSectionId)) as PHRSectionId[])
     : allSectionIds
+
+  const theme: PHRTheme = themeParam === 'minimal' ? 'minimal' : 'colorful'
 
   const generatedAt = new Date().toLocaleString('en-US', {
     year: 'numeric', month: 'long', day: 'numeric',
@@ -42,6 +44,7 @@ export default async function PatientPHRPrintPage({ searchParams }: PrintPagePro
         patient={patient as SerializedPatientHealthRecordsResponse}
         sections={sections}
         generatedAt={generatedAt}
+        theme={theme}
       />
     </>
   )

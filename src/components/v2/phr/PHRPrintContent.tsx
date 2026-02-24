@@ -1,7 +1,7 @@
 import type { SerializedPatientHealthRecordsResponse } from '@/types/patient-profile'
-import { PHR_SECTIONS, type PHRSectionId } from './phr-sections'
+import { PHR_SECTIONS, type PHRSectionId, type PHRTheme } from './phr-sections'
 
-export { PHR_SECTIONS, type PHRSectionId }
+export { PHR_SECTIONS, type PHRSectionId, type PHRTheme }
 
 function formatBloodType(bt: string | null | undefined): string {
   if (!bt) return 'N/A'
@@ -287,11 +287,12 @@ interface PHRPrintContentProps {
   patient: SerializedPatientHealthRecordsResponse
   sections: PHRSectionId[]
   generatedAt: string
+  theme?: PHRTheme
 }
 
-function SectionHeader({ icon, title }: { icon: string; title: string }) {
+function SectionHeader({ icon, title, sectionHeaderBg, sectionHeaderText }: { icon: string; title: string; sectionHeaderBg: string; sectionHeaderText: string }) {
   return (
-    <div style={styles.sectionHeader}>
+    <div style={{ ...styles.sectionHeader, background: sectionHeaderBg, color: sectionHeaderText }}>
       <span style={styles.sectionIcon}>{icon}</span>
       {title}
     </div>
@@ -311,7 +312,7 @@ function Field({ label, value }: { label: string; value: string | null | undefin
   )
 }
 
-export function PHRPrintContent({ patient, sections, generatedAt }: PHRPrintContentProps) {
+export function PHRPrintContent({ patient, sections, generatedAt, theme = 'colorful' }: PHRPrintContentProps) {
   const sectionSet = new Set(sections)
   const has = (id: PHRSectionId) => sectionSet.has(id)
 
@@ -320,6 +321,25 @@ export function PHRPrintContent({ patient, sections, generatedAt }: PHRPrintCont
   // Latest vitals
   const lv = patient.latestVitals
   const displayBMI = lv?.bmi ?? (lv ? bmi(lv.weight, lv.height) : null)
+
+  // ── Minimal-theme colour overrides ──────────────────────────────────────────
+  const isMinimal = theme === 'minimal'
+  const t = {
+    headerBg: isMinimal ? '#1e293b' : TEAL,
+    patientBarBg: isMinimal ? '#f1f5f9' : TEAL_DARK,
+    patientBarText: isMinimal ? TEXT : '#ffffff',
+    patientBarBorder: isMinimal ? '#cbd5e1' : 'rgba(255,255,255,0.3)',
+    sectionHeaderBg: isMinimal ? '#e2e8f0' : TEAL,
+    sectionHeaderText: isMinimal ? TEXT : '#ffffff',
+    sectionBodyBorder: isMinimal ? '#cbd5e1' : TEAL,
+    thBg: isMinimal ? '#f1f5f9' : TEAL_LIGHT,
+    thColor: isMinimal ? '#475569' : TEAL_DARK,
+    vitalCardBg: isMinimal ? '#f8fafc' : TEAL_LIGHT,
+    vitalCardBorder: isMinimal ? '#cbd5e1' : '#a7d7d5',
+    vitalValueColor: isMinimal ? TEXT : TEAL_DARK,
+    footerBorder: isMinimal ? '#94a3b8' : TEAL,
+    footerBrandColor: isMinimal ? '#334155' : TEAL_DARK,
+  }
 
   return (
     <div style={styles.page}>
@@ -335,7 +355,7 @@ export function PHRPrintContent({ patient, sections, generatedAt }: PHRPrintCont
       `}</style>
 
       {/* ── HEADER ── */}
-      <div style={styles.header}>
+      <div style={{ ...styles.header, background: t.headerBg }}>
         <div style={styles.logoArea}>
           {/* White pill so the logo renders in its native teal-on-white colours */}
           <div style={{ background: '#ffffff', borderRadius: '8px', padding: '5px 14px', display: 'inline-flex', alignItems: 'center' }}>
@@ -355,7 +375,7 @@ export function PHRPrintContent({ patient, sections, generatedAt }: PHRPrintCont
       </div>
 
       {/* ── PATIENT BAR ── */}
-      <div style={styles.patientBar}>
+      <div style={{ ...styles.patientBar, background: t.patientBarBg, color: t.patientBarText }}>
         {patient.picture ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -378,7 +398,7 @@ export function PHRPrintContent({ patient, sections, generatedAt }: PHRPrintCont
             {patient.clinic?.name && <span>Clinic: {patient.clinic.name}</span>}
           </div>
         </div>
-        <div style={styles.patientKeyStats}>
+        <div style={{ ...styles.patientKeyStats, borderLeft: `1px solid ${t.patientBarBorder}` }}>
           <div style={styles.statItem}>
             <div style={{ ...styles.statValue, color: '#fca5a5' }}>
               {formatBloodType(patient.bloodType)}
@@ -414,8 +434,8 @@ export function PHRPrintContent({ patient, sections, generatedAt }: PHRPrintCont
         {/* DEMOGRAPHICS */}
         {has('demographics') && (
           <div style={styles.section}>
-            <SectionHeader icon="📋" title="Demographics" />
-            <div style={styles.sectionBody}>
+            <SectionHeader icon="📋" title="Demographics" sectionHeaderBg={t.sectionHeaderBg} sectionHeaderText={t.sectionHeaderText} />
+            <div style={{ ...styles.sectionBody, border: `1px solid ${t.sectionBodyBorder}`, borderTop: 'none' }}>
               <div style={styles.grid3}>
                 <Field label="Full Name" value={`${patient.fullName}${patient.suffix ? ` ${patient.suffix}` : ''}`} />
                 <Field label="Nickname" value={patient.nickname} />
@@ -440,8 +460,8 @@ export function PHRPrintContent({ patient, sections, generatedAt }: PHRPrintCont
         {/* VITAL SIGNS */}
         {has('vitals') && (
           <div style={styles.section}>
-            <SectionHeader icon="❤️" title="Vital Signs" />
-            <div style={styles.sectionBody}>
+            <SectionHeader icon="❤️" title="Vital Signs" sectionHeaderBg={t.sectionHeaderBg} sectionHeaderText={t.sectionHeaderText} />
+            <div style={{ ...styles.sectionBody, border: `1px solid ${t.sectionBodyBorder}`, borderTop: 'none' }}>
               {lv ? (
                 <>
                   <p style={{ ...styles.fieldLabel, marginBottom: '8px' }}>
@@ -449,37 +469,37 @@ export function PHRPrintContent({ patient, sections, generatedAt }: PHRPrintCont
                   </p>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '8px', marginBottom: '12px' }}>
                     {lv.bpSystolic && (
-                      <div style={styles.vitalCard}>
+                      <div style={{ ...styles.vitalCard, background: t.vitalCardBg, border: `1px solid ${t.vitalCardBorder}` }}>
                         <div style={styles.vitalValue}>{lv.bpSystolic}/{lv.bpDiastolic}</div>
                         <div style={styles.vitalLabel}>BP (mmHg)</div>
                       </div>
                     )}
                     {lv.pulseRate && (
-                      <div style={styles.vitalCard}>
+                      <div style={{ ...styles.vitalCard, background: t.vitalCardBg, border: `1px solid ${t.vitalCardBorder}` }}>
                         <div style={styles.vitalValue}>{lv.pulseRate}</div>
                         <div style={styles.vitalLabel}>HR (bpm)</div>
                       </div>
                     )}
                     {lv.temp && (
-                      <div style={styles.vitalCard}>
+                      <div style={{ ...styles.vitalCard, background: t.vitalCardBg, border: `1px solid ${t.vitalCardBorder}` }}>
                         <div style={styles.vitalValue}>{lv.temp}</div>
                         <div style={styles.vitalLabel}>Temp (°C)</div>
                       </div>
                     )}
                     {lv.spo2 && (
-                      <div style={styles.vitalCard}>
+                      <div style={{ ...styles.vitalCard, background: t.vitalCardBg, border: `1px solid ${t.vitalCardBorder}` }}>
                         <div style={styles.vitalValue}>{lv.spo2}%</div>
                         <div style={styles.vitalLabel}>SpO2</div>
                       </div>
                     )}
                     {lv.respRate && (
-                      <div style={styles.vitalCard}>
+                      <div style={{ ...styles.vitalCard, background: t.vitalCardBg, border: `1px solid ${t.vitalCardBorder}` }}>
                         <div style={styles.vitalValue}>{lv.respRate}</div>
                         <div style={styles.vitalLabel}>RR (/min)</div>
                       </div>
                     )}
                     {displayBMI && (
-                      <div style={styles.vitalCard}>
+                      <div style={{ ...styles.vitalCard, background: t.vitalCardBg, border: `1px solid ${t.vitalCardBorder}` }}>
                         <div style={styles.vitalValue}>{displayBMI}</div>
                         <div style={styles.vitalLabel}>BMI</div>
                       </div>
@@ -487,12 +507,12 @@ export function PHRPrintContent({ patient, sections, generatedAt }: PHRPrintCont
                   </div>
                   {lv.height && (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '8px' }}>
-                      <div style={styles.vitalCard}>
+                      <div style={{ ...styles.vitalCard, background: t.vitalCardBg, border: `1px solid ${t.vitalCardBorder}` }}>
                         <div style={styles.vitalValue}>{lv.height}</div>
                         <div style={styles.vitalLabel}>Height (cm)</div>
                       </div>
                       {lv.weight && (
-                        <div style={styles.vitalCard}>
+                        <div style={{ ...styles.vitalCard, background: t.vitalCardBg, border: `1px solid ${t.vitalCardBorder}` }}>
                           <div style={styles.vitalValue}>{lv.weight}</div>
                           <div style={styles.vitalLabel}>Weight (kg)</div>
                         </div>
@@ -510,14 +530,14 @@ export function PHRPrintContent({ patient, sections, generatedAt }: PHRPrintCont
                   <table style={styles.table}>
                     <thead>
                       <tr>
-                        <th style={styles.th}>Date</th>
-                        <th style={styles.th}>BP (mmHg)</th>
-                        <th style={styles.th}>HR (bpm)</th>
-                        <th style={styles.th}>Temp (°C)</th>
-                        <th style={styles.th}>SpO2</th>
-                        <th style={styles.th}>Weight (kg)</th>
-                        <th style={styles.th}>Height (cm)</th>
-                        <th style={styles.th}>BMI</th>
+                        <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Date</th>
+                        <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>BP (mmHg)</th>
+                        <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>HR (bpm)</th>
+                        <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Temp (°C)</th>
+                        <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>SpO2</th>
+                        <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Weight (kg)</th>
+                        <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Height (cm)</th>
+                        <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>BMI</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -547,8 +567,8 @@ export function PHRPrintContent({ patient, sections, generatedAt }: PHRPrintCont
         {/* MEDICAL HISTORY */}
         {has('medical') && (
           <div style={styles.section}>
-            <SectionHeader icon="🏥" title="Medical History" />
-            <div style={styles.sectionBody}>
+            <SectionHeader icon="🏥" title="Medical History" sectionHeaderBg={t.sectionHeaderBg} sectionHeaderText={t.sectionHeaderText} />
+            <div style={{ ...styles.sectionBody, border: `1px solid ${t.sectionBodyBorder}`, borderTop: 'none' }}>
               <p style={{ ...styles.fieldLabel, marginBottom: '6px' }}>Personal Medical Conditions</p>
               {patient.medicalHistories.length === 0 ? (
                 <EmptyRecord message="No personal medical conditions recorded." />
@@ -556,8 +576,8 @@ export function PHRPrintContent({ patient, sections, generatedAt }: PHRPrintCont
                 <table style={styles.table}>
                   <thead>
                     <tr>
-                      <th style={styles.th}>Condition</th>
-                      <th style={styles.th}>Details</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Condition</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Details</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -578,8 +598,8 @@ export function PHRPrintContent({ patient, sections, generatedAt }: PHRPrintCont
                 <table style={styles.table}>
                   <thead>
                     <tr>
-                      <th style={styles.th}>Condition</th>
-                      <th style={styles.th}>Details</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Condition</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Details</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -600,9 +620,9 @@ export function PHRPrintContent({ patient, sections, generatedAt }: PHRPrintCont
                 <table style={styles.table}>
                   <thead>
                     <tr>
-                      <th style={styles.th}>Operation</th>
-                      <th style={styles.th}>Date</th>
-                      <th style={styles.th}>Notes</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Operation</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Date</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Notes</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -623,17 +643,17 @@ export function PHRPrintContent({ patient, sections, generatedAt }: PHRPrintCont
         {/* ALLERGIES */}
         {has('allergies') && (
           <div style={styles.section}>
-            <SectionHeader icon="⚠️" title="Allergies" />
-            <div style={styles.sectionBody}>
+            <SectionHeader icon="⚠️" title="Allergies" sectionHeaderBg={t.sectionHeaderBg} sectionHeaderText={t.sectionHeaderText} />
+            <div style={{ ...styles.sectionBody, border: `1px solid ${t.sectionBodyBorder}`, borderTop: 'none' }}>
               {patient.userAllergies.length === 0 ? (
                 <EmptyRecord message="No known allergies recorded." />
               ) : (
                 <table style={styles.table}>
                   <thead>
                     <tr>
-                      <th style={styles.th}>Allergen</th>
-                      <th style={styles.th}>Reaction</th>
-                      <th style={styles.th}>Notes</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Allergen</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Reaction</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Notes</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -654,20 +674,20 @@ export function PHRPrintContent({ patient, sections, generatedAt }: PHRPrintCont
         {/* VACCINATIONS */}
         {has('vaccinations') && (
           <div style={styles.section}>
-            <SectionHeader icon="💉" title="Vaccinations" />
-            <div style={styles.sectionBody}>
+            <SectionHeader icon="💉" title="Vaccinations" sectionHeaderBg={t.sectionHeaderBg} sectionHeaderText={t.sectionHeaderText} />
+            <div style={{ ...styles.sectionBody, border: `1px solid ${t.sectionBodyBorder}`, borderTop: 'none' }}>
               {patient.userVaccinations.length === 0 ? (
                 <EmptyRecord message="No vaccinations recorded." />
               ) : (
                 <table style={styles.table}>
                   <thead>
                     <tr>
-                      <th style={styles.th}>Vaccine</th>
-                      <th style={styles.th}>Dose</th>
-                      <th style={styles.th}>Route</th>
-                      <th style={styles.th}>Date Given</th>
-                      <th style={styles.th}>Administered By</th>
-                      <th style={styles.th}>Notes</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Vaccine</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Dose</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Route</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Date Given</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Administered By</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Notes</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -691,20 +711,20 @@ export function PHRPrintContent({ patient, sections, generatedAt }: PHRPrintCont
         {/* DISABILITIES */}
         {has('disabilities') && (
           <div style={styles.section}>
-            <SectionHeader icon="♿" title="Disabilities & Chronic Conditions" />
-            <div style={styles.sectionBody}>
+            <SectionHeader icon="♿" title="Disabilities & Chronic Conditions" sectionHeaderBg={t.sectionHeaderBg} sectionHeaderText={t.sectionHeaderText} />
+            <div style={{ ...styles.sectionBody, border: `1px solid ${t.sectionBodyBorder}`, borderTop: 'none' }}>
               {patient.userDisabilities.length === 0 ? (
                 <EmptyRecord message="No disabilities or chronic conditions recorded." />
               ) : (
                 <table style={styles.table}>
                   <thead>
                     <tr>
-                      <th style={styles.th}>Condition</th>
-                      <th style={styles.th}>Date Diagnosed</th>
-                      <th style={styles.th}>Severity</th>
-                      <th style={styles.th}>Managed</th>
-                      <th style={styles.th}>Diagnosed By</th>
-                      <th style={styles.th}>Notes</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Condition</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Date Diagnosed</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Severity</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Managed</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Diagnosed By</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Notes</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -728,19 +748,19 @@ export function PHRPrintContent({ patient, sections, generatedAt }: PHRPrintCont
         {/* EMERGENCY CONTACTS */}
         {has('contacts') && (
           <div style={styles.section}>
-            <SectionHeader icon="🆘" title="Emergency Contacts" />
-            <div style={styles.sectionBody}>
+            <SectionHeader icon="🆘" title="Emergency Contacts" sectionHeaderBg={t.sectionHeaderBg} sectionHeaderText={t.sectionHeaderText} />
+            <div style={{ ...styles.sectionBody, border: `1px solid ${t.sectionBodyBorder}`, borderTop: 'none' }}>
               {patient.userEmergencyContacts.length === 0 ? (
                 <EmptyRecord message="No emergency contacts recorded." />
               ) : (
                 <table style={styles.table}>
                   <thead>
                     <tr>
-                      <th style={styles.th}>Name</th>
-                      <th style={styles.th}>Relationship</th>
-                      <th style={styles.th}>Phone</th>
-                      <th style={styles.th}>Primary</th>
-                      <th style={styles.th}>Address</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Name</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Relationship</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Phone</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Primary</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Address</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -767,22 +787,22 @@ export function PHRPrintContent({ patient, sections, generatedAt }: PHRPrintCont
         {/* ADDRESSES */}
         {has('addresses') && (
           <div style={styles.section}>
-            <SectionHeader icon="📍" title="Addresses" />
-            <div style={styles.sectionBody}>
+            <SectionHeader icon="📍" title="Addresses" sectionHeaderBg={t.sectionHeaderBg} sectionHeaderText={t.sectionHeaderText} />
+            <div style={{ ...styles.sectionBody, border: `1px solid ${t.sectionBodyBorder}`, borderTop: 'none' }}>
               {patient.userAddresses.length === 0 ? (
                 <EmptyRecord message="No addresses recorded." />
               ) : (
                 <table style={styles.table}>
                   <thead>
                     <tr>
-                      <th style={styles.th}>Type</th>
-                      <th style={styles.th}>Street / Address Line</th>
-                      <th style={styles.th}>Barangay</th>
-                      <th style={styles.th}>City</th>
-                      <th style={styles.th}>State / Province</th>
-                      <th style={styles.th}>Region</th>
-                      <th style={styles.th}>Zip</th>
-                      <th style={styles.th}>Country</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Type</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Street / Address Line</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Barangay</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>City</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>State / Province</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Region</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Zip</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Country</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -812,8 +832,8 @@ export function PHRPrintContent({ patient, sections, generatedAt }: PHRPrintCont
         {/* LIFESTYLE */}
         {has('lifestyle') && (
           <div style={styles.section}>
-            <SectionHeader icon="👤" title="Lifestyle & Social History" />
-            <div style={styles.sectionBody}>
+            <SectionHeader icon="👤" title="Lifestyle & Social History" sectionHeaderBg={t.sectionHeaderBg} sectionHeaderText={t.sectionHeaderText} />
+            <div style={{ ...styles.sectionBody, border: `1px solid ${t.sectionBodyBorder}`, borderTop: 'none' }}>
               {!patient.personalHistory ? (
                 <EmptyRecord message="No lifestyle / social history recorded." />
               ) : (
@@ -837,8 +857,8 @@ export function PHRPrintContent({ patient, sections, generatedAt }: PHRPrintCont
         {/* OB/GYN */}
         {has('obgyn') && (
           <div style={styles.section}>
-            <SectionHeader icon="👶" title="OB/GYN History" />
-            <div style={styles.sectionBody}>
+            <SectionHeader icon="👶" title="OB/GYN History" sectionHeaderBg={t.sectionHeaderBg} sectionHeaderText={t.sectionHeaderText} />
+            <div style={{ ...styles.sectionBody, border: `1px solid ${t.sectionBodyBorder}`, borderTop: 'none' }}>
               {!patient.obGyneHistory ? (
                 <EmptyRecord message="No OB/GYN history recorded." />
               ) : (
@@ -869,21 +889,21 @@ export function PHRPrintContent({ patient, sections, generatedAt }: PHRPrintCont
         {/* PEDIATRIC */}
         {has('pediatric') && (
           <div style={styles.section}>
-            <SectionHeader icon="📏" title="Pediatric Measurements" />
-            <div style={styles.sectionBody}>
+            <SectionHeader icon="📏" title="Pediatric Measurements" sectionHeaderBg={t.sectionHeaderBg} sectionHeaderText={t.sectionHeaderText} />
+            <div style={{ ...styles.sectionBody, border: `1px solid ${t.sectionBodyBorder}`, borderTop: 'none' }}>
               {patient.pediatricMeasurements.length === 0 ? (
                 <EmptyRecord message="No pediatric measurements recorded." />
               ) : (
                 <table style={styles.table}>
                   <thead>
                     <tr>
-                      <th style={styles.th}>Date</th>
-                      <th style={styles.th}>Length (cm)</th>
-                      <th style={styles.th}>Head Circ. (cm)</th>
-                      <th style={styles.th}>Waist Circ. (cm)</th>
-                      <th style={styles.th}>Hip Circ. (cm)</th>
-                      <th style={styles.th}>MUAC (cm)</th>
-                      <th style={styles.th}>Remarks</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Date</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Length (cm)</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Head Circ. (cm)</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Waist Circ. (cm)</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Hip Circ. (cm)</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>MUAC (cm)</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Remarks</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -908,18 +928,18 @@ export function PHRPrintContent({ patient, sections, generatedAt }: PHRPrintCont
         {/* PHYSICAL EXAMINATIONS */}
         {has('exams') && (
           <div style={styles.section}>
-            <SectionHeader icon="🔍" title="Physical Examinations" />
-            <div style={styles.sectionBody}>
+            <SectionHeader icon="🔍" title="Physical Examinations" sectionHeaderBg={t.sectionHeaderBg} sectionHeaderText={t.sectionHeaderText} />
+            <div style={{ ...styles.sectionBody, border: `1px solid ${t.sectionBodyBorder}`, borderTop: 'none' }}>
               {patient.physicalExaminations.length === 0 ? (
                 <EmptyRecord message="No physical examinations recorded." />
               ) : (
                 <table style={styles.table}>
                   <thead>
                     <tr>
-                      <th style={styles.th}>Date</th>
-                      <th style={styles.th}>Visual Acuity — Left</th>
-                      <th style={styles.th}>Visual Acuity — Right</th>
-                      <th style={styles.th}>Status / Notes</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Date</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Visual Acuity — Left</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Visual Acuity — Right</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Status / Notes</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -941,8 +961,8 @@ export function PHRPrintContent({ patient, sections, generatedAt }: PHRPrintCont
         {/* INSURANCE */}
         {has('insurance') && (
           <div style={styles.section}>
-            <SectionHeader icon="📄" title="Insurance & Documents" />
-            <div style={styles.sectionBody}>
+            <SectionHeader icon="📄" title="Insurance & Documents" sectionHeaderBg={t.sectionHeaderBg} sectionHeaderText={t.sectionHeaderText} />
+            <div style={{ ...styles.sectionBody, border: `1px solid ${t.sectionBodyBorder}`, borderTop: 'none' }}>
               <p style={{ ...styles.fieldLabel, marginBottom: '6px' }}>PhilHealth Records</p>
               {patient.philHealthRecords.length === 0 ? (
                 <EmptyRecord message="No PhilHealth records." />
@@ -950,10 +970,10 @@ export function PHRPrintContent({ patient, sections, generatedAt }: PHRPrintCont
                 <table style={styles.table}>
                   <thead>
                     <tr>
-                      <th style={styles.th}>PIN</th>
-                      <th style={styles.th}>Member Type</th>
-                      <th style={styles.th}>Active</th>
-                      <th style={styles.th}>Date Added</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>PIN</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Member Type</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Active</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Date Added</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -975,11 +995,11 @@ export function PHRPrintContent({ patient, sections, generatedAt }: PHRPrintCont
                   <table style={styles.table}>
                     <thead>
                       <tr>
-                        <th style={styles.th}>Serial #</th>
-                        <th style={styles.th}>Referred To</th>
-                        <th style={styles.th}>Reason</th>
-                        <th style={styles.th}>Clinic</th>
-                        <th style={styles.th}>Date</th>
+                        <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Serial #</th>
+                        <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Referred To</th>
+                        <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Reason</th>
+                        <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Clinic</th>
+                        <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Date</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1003,9 +1023,9 @@ export function PHRPrintContent({ patient, sections, generatedAt }: PHRPrintCont
       </div>
 
       {/* ── FOOTER ── */}
-      <div className="phr-footer" style={styles.footer}>
+      <div className="phr-footer" style={{ ...styles.footer, borderTop: `2px solid ${t.footerBorder}` }}>
         <div>
-          <div style={{ fontWeight: '600', color: TEAL_DARK }}>ClinicEZ — Personal Health Record</div>
+          <div style={{ fontWeight: '600', color: t.footerBrandColor }}>ClinicEZ — Personal Health Record</div>
           <div>This document is confidential and intended solely for the named patient or authorized healthcare provider.</div>
         </div>
         <div style={styles.confidential}>CONFIDENTIAL</div>

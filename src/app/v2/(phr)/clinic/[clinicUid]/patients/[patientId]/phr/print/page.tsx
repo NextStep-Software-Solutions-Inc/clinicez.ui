@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { getClinicPatientProfileAction } from '@/actions/clinics/get-clinic-patient-profile.action'
 import { getCachedSession } from '@/actions/session.action'
-import { PHRPrintContent, PHR_SECTIONS, type PHRSectionId } from '@/components/v2/phr/PHRPrintContent'
+import { PHRPrintContent, PHR_SECTIONS, type PHRSectionId, type PHRTheme } from '@/components/v2/phr/PHRPrintContent'
 import { PHRAutoPrint } from '@/components/v2/phr/PHRAutoPrint'
 import type { SerializedPatientHealthRecordsResponse } from '@/types/patient-profile'
 
@@ -16,12 +16,12 @@ export const maxDuration = 30
 
 interface ClinicPHRPrintPageProps {
   params: Promise<{ clinicUid: string; patientId: string }>
-  searchParams: Promise<{ sections?: string; preview?: string }>
+  searchParams: Promise<{ sections?: string; preview?: string; theme?: string }>
 }
 
 export default async function ClinicPatientPHRPrintPage({ params, searchParams }: ClinicPHRPrintPageProps) {
   const { clinicUid, patientId } = await params
-  const { sections: sectionsParam, preview } = await searchParams
+  const { sections: sectionsParam, preview, theme: themeParam } = await searchParams
 
   const session = await getCachedSession()
   if (!session?.user?.sub) notFound()
@@ -39,6 +39,8 @@ export default async function ClinicPatientPHRPrintPage({ params, searchParams }
     ? (sanitized.split(',').filter(s => allSectionIds.includes(s as PHRSectionId)) as PHRSectionId[])
     : allSectionIds
 
+  const theme: PHRTheme = themeParam === 'minimal' ? 'minimal' : 'colorful'
+
   const generatedAt = new Date().toLocaleString('en-US', {
     year: 'numeric', month: 'long', day: 'numeric',
     hour: '2-digit', minute: '2-digit',
@@ -52,6 +54,7 @@ export default async function ClinicPatientPHRPrintPage({ params, searchParams }
         patient={patient as SerializedPatientHealthRecordsResponse}
         sections={sections}
         generatedAt={generatedAt}
+        theme={theme}
       />
     </>
   )

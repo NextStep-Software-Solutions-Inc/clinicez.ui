@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { renderToBuffer } from '@react-pdf/renderer'
 import React from 'react'
 import { getPatientHealthRecords } from '@/actions/patient-profile/get-patient-health-records'
-import { PHRPdfDocument, PHR_SECTIONS, type PHRSectionId } from '@/components/v2/phr/PHRPdfDocument'
+import { PHRPdfDocument, PHR_SECTIONS, type PHRSectionId, type PHRTheme } from '@/components/v2/phr/PHRPdfDocument'
 import type { SerializedPatientHealthRecordsResponse } from '@/types/patient-profile'
 
 export const dynamic = 'force-dynamic'
@@ -16,12 +16,15 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = request.nextUrl
   const rawSections = searchParams.get('sections') ?? 'all'
+  const rawTheme = searchParams.get('theme')
 
   const allSectionIds = PHR_SECTIONS.map(s => s.id)
   const sanitized = rawSections.slice(0, 256).replace(/[^a-z,]/g, '')
   const sections: PHRSectionId[] = sanitized && sanitized !== 'all'
     ? (sanitized.split(',').filter(s => allSectionIds.includes(s as PHRSectionId)) as PHRSectionId[])
     : allSectionIds
+
+  const theme: PHRTheme = rawTheme === 'minimal' ? 'minimal' : 'colorful'
 
   const generatedAt = new Date().toLocaleString('en-US', {
     year: 'numeric', month: 'long', day: 'numeric',
@@ -33,6 +36,7 @@ export async function GET(request: NextRequest) {
       patient: patient as SerializedPatientHealthRecordsResponse,
       sections,
       generatedAt,
+      theme,
     })
   )
 

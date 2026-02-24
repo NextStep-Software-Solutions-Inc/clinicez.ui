@@ -40,6 +40,7 @@ export default async function AppointmentsPage({ params }: AppointmentsPageProps
   ]);
 
   const currentUserHpIds = myHps.map((hp) => hp.id);
+  const currentUserSub = session?.user?.sub ?? "";
 
   return (
     <div className="pb-10">
@@ -60,6 +61,7 @@ export default async function AppointmentsPage({ params }: AppointmentsPageProps
           services={services}
           hps={hps}
           currentUserHpIds={currentUserHpIds}
+          currentUserSub={currentUserSub}
           visibleTabNames={visibleTabNames}
         />
       </Suspense>

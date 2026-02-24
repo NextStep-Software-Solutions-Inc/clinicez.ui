@@ -20,6 +20,7 @@ import {
   ChevronUp,
   FileText,
   ExternalLink,
+  Pencil,
 } from "lucide-react";
 import {
   Sheet,
@@ -61,18 +62,22 @@ interface AppointmentDetailSheetProps {
   appointment: Appointment | null;
   clinicUid: string;
   currentUserHpIds: number[];
+  currentUserSub?: string;
   onClose: () => void;
   onRefresh: () => void;
   onOpenSubPanel: (panel: SubPanel) => void;
+  onEditPreAssessmentNote?: (note: { assessment: string; homeInstructions?: string | null; remarks: string }) => void;
 }
 
 export function AppointmentDetailSheet({
   appointment,
   clinicUid,
   currentUserHpIds,
+  currentUserSub,
   onClose,
   onRefresh,
   onOpenSubPanel,
+  onEditPreAssessmentNote,
 }: AppointmentDetailSheetProps) {
   const [isPending, setIsPending] = useState(false);
 
@@ -382,15 +387,32 @@ export function AppointmentDetailSheet({
                   {preAssessmentNotes.length === 0 ? (
                     <p className="text-xs text-muted-foreground italic">No pre-assessment notes yet.</p>
                   ) : (
-                    preAssessmentNotes.map((note) => {
+                    {preAssessmentNotes.map((note) => {
                       const author = `${note.CreatedBy?.firstName ?? ""} ${note.CreatedBy?.lastName ?? ""}`.trim() || "Staff";
+                      const isMyNote = currentUserSub && note.CreatedBy?.userId === currentUserSub;
                       return (
                         <div key={note.id} className="rounded-lg bg-background/60 p-3 space-y-1.5 border border-border/30">
                           <div className="flex items-center justify-between">
                             <span className="text-xs font-medium text-primary">{author}</span>
-                            <span className="text-xs text-muted-foreground">
-                              {format(new Date(note.createdAt), "MMM d, yyyy h:mm a")}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-muted-foreground">
+                                {format(new Date(note.createdAt), "MMM d, yyyy h:mm a")}
+                              </span>
+                              {isMyNote && status !== "COMPLETED" && status !== "REJECTED" && onEditPreAssessmentNote && (
+                                <button
+                                  type="button"
+                                  onClick={() => onEditPreAssessmentNote({
+                                    assessment: note.assessment,
+                                    homeInstructions: note.homeInstructions,
+                                    remarks: note.remarks ?? "",
+                                  })}
+                                  className="text-muted-foreground hover:text-primary transition-colors"
+                                  title="Edit your note"
+                                >
+                                  <Pencil className="h-3 w-3" />
+                                </button>
+                              )}
+                            </div>
                           </div>
                           <div>
                             <p className="text-xs text-muted-foreground">Assessment</p>
@@ -410,7 +432,7 @@ export function AppointmentDetailSheet({
                           )}
                         </div>
                       );
-                    })
+                    })}
                   )}
                   {status !== "COMPLETED" && status !== "REJECTED" && (
                     <Button
@@ -601,7 +623,7 @@ export function AppointmentDetailSheet({
                 </>
               )}
 
-              {/* ROUTED: Accept/Decline (PENDING routing + assigned user only) + Reassign */}
+              {/* ROUTED: Accept/Decline (PENDING routing + assigned user only) + Reassign + Tag */}
               {status === "ROUTED" && pendingRouting && (
                 <>
                   {isAssignedToCurrentUser ? (
@@ -646,20 +668,42 @@ export function AppointmentDetailSheet({
                     <Stethoscope className="h-4 w-4" />
                     Reassign Doctor
                   </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1.5 border-blue-400/40 text-blue-600 hover:bg-blue-600 hover:text-white"
+                    disabled={isPending}
+                    onClick={() => onOpenSubPanel("tag")}
+                  >
+                    <Tags className="h-4 w-4" />
+                    Tag Providers
+                  </Button>
                 </>
               )}
 
-              {/* ACCEPTED: Complete */}
+              {/* ACCEPTED: Complete + Tag */}
               {status === "ACCEPTED" && (
-                <Button
-                  size="sm"
-                  className="gap-1.5 bg-green-600 hover:bg-green-700 text-white"
-                  disabled={isPending}
-                  onClick={handleComplete}
-                >
-                  <CheckCircle className="h-4 w-4" />
-                  Mark Complete
-                </Button>
+                <>
+                  <Button
+                    size="sm"
+                    className="gap-1.5 bg-green-600 hover:bg-green-700 text-white"
+                    disabled={isPending}
+                    onClick={handleComplete}
+                  >
+                    <CheckCircle className="h-4 w-4" />
+                    Mark Complete
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1.5 border-blue-400/40 text-blue-600 hover:bg-blue-600 hover:text-white"
+                    disabled={isPending}
+                    onClick={() => onOpenSubPanel("tag")}
+                  >
+                    <Tags className="h-4 w-4" />
+                    Tag Providers
+                  </Button>
+                </>
               )}
             </div>
 

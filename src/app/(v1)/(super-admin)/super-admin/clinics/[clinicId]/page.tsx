@@ -1,11 +1,13 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@components/ui/card";
-import { getClinicByIdAction, getClinicRolesAction, getClinicAppointmentTabsAction } from "@actions/super-admin/clinics.action";
+import { getClinicByIdAction, getClinicRolesAction, getClinicAppointmentTabsAction, getClinicMembersForAdminAction, getClinicPatientsForAdminAction } from "@actions/super-admin/clinics.action";
 import { notFound } from "next/navigation";
 import { Badge } from "@components/ui/badge";
 import { Hospital, Users, Calendar } from "lucide-react";
 import Link from "next/link";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@components/ui/tabs";
 import ClinicRolesTable from "@components/super-admin/ClinicRolesTable";
+import ClinicMembersTable from "@components/super-admin/ClinicMembersTable";
+import ClinicPatientsTable from "@components/super-admin/ClinicPatientsTable";
 import ClinicAppointmentTabsManager from "@components/super-admin/ClinicAppointmentTabsManager";
 import { ClinicProceduresManager } from "@components/super-admin/ClinicProceduresManager";
 import DocumentTemplateTypeManager from "@components/super-admin/DocumentTemplateTypeManager";
@@ -26,10 +28,12 @@ export default async function ClinicDetailPage({ params }: ClinicDetailPageProps
     notFound();
   }
 
-  const [clinic, initialRoles, appointmentTabsData] = await Promise.all([
+  const [clinic, initialRoles, appointmentTabsData, initialMembers, initialPatients] = await Promise.all([
     getClinicByIdAction({ clinicId }),
     getClinicRolesAction({ pageSize: 10, pageNumber: 1 }),
     getClinicAppointmentTabsAction({ clinicId }),
+    getClinicMembersForAdminAction({ clinicId }),
+    getClinicPatientsForAdminAction({ clinicId }),
   ]);
   
   if (!clinic) {
@@ -39,7 +43,7 @@ export default async function ClinicDetailPage({ params }: ClinicDetailPageProps
   return (
     <div className="space-y-6">
       <div>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2 flex-wrap">
           <Link href="/super-admin/tenants" className="hover:underline">
             Tenants
           </Link>
@@ -50,11 +54,11 @@ export default async function ClinicDetailPage({ params }: ClinicDetailPageProps
           <span>/</span>
           <span>Clinic</span>
         </div>
-        <h1 className="text-3xl font-bold">{clinic.name}</h1>
+        <h1 className="text-2xl font-bold sm:text-3xl">{clinic.name}</h1>
         <p className="text-muted-foreground">{clinic.description || "No description"}</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
         <Card>
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
@@ -106,9 +110,9 @@ export default async function ClinicDetailPage({ params }: ClinicDetailPageProps
           <CardTitle className="text-base">Clinic Information</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             <div className="text-sm text-muted-foreground">Clinic UID:</div>
-            <div className="text-sm font-medium">{clinic.clinicUid}</div>
+            <div className="text-sm font-medium break-all">{clinic.clinicUid}</div>
             
             {clinic.email && (
               <>
@@ -128,13 +132,27 @@ export default async function ClinicDetailPage({ params }: ClinicDetailPageProps
       </Card>
 
       <Tabs defaultValue="roles" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="roles">Clinic Roles</TabsTrigger>
-          <TabsTrigger value="appointment-tabs">Appointment Tabs</TabsTrigger>
-          <TabsTrigger value="procedures">Procedures</TabsTrigger>
-          <TabsTrigger value="documents">Documents</TabsTrigger>
-          <TabsTrigger value="ai-limits">AI Limits</TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+          <TabsList className="inline-flex w-auto min-w-full sm:grid sm:w-full sm:grid-cols-4 lg:grid-cols-7">
+            <TabsTrigger value="roles">Clinic Roles</TabsTrigger>
+            <TabsTrigger value="members">
+              Members
+              <Badge variant="secondary" className="ml-1 text-xs hidden sm:inline-flex">
+                {clinic._count.ClinicMembers}
+              </Badge>
+            </TabsTrigger>
+            <TabsTrigger value="patients">
+              Patients
+              <Badge variant="secondary" className="ml-1 text-xs hidden sm:inline-flex">
+                {clinic._count.ClinicPatients}
+              </Badge>
+            </TabsTrigger>
+            <TabsTrigger value="appointment-tabs">Appt Tabs</TabsTrigger>
+            <TabsTrigger value="procedures">Procedures</TabsTrigger>
+            <TabsTrigger value="documents">Documents</TabsTrigger>
+            <TabsTrigger value="ai-limits">AI Limits</TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="roles" className="space-y-4">
           <Card>
@@ -146,6 +164,34 @@ export default async function ClinicDetailPage({ params }: ClinicDetailPageProps
             </CardHeader>
             <CardContent>
               <ClinicRolesTable initialData={initialRoles} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="members" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Clinic User Management</CardTitle>
+              <CardDescription>
+                Manage individual member permissions within this clinic. Each member has a role with default permissions, but you can customize their permissions here.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ClinicMembersTable initialData={initialMembers} clinicId={clinicId} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="patients" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Clinic Patient Management</CardTitle>
+              <CardDescription>
+                Manage individual patient permissions within this clinic. Patients have clinic-level permissions that control what they can access.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ClinicPatientsTable initialData={initialPatients} clinicId={clinicId} />
             </CardContent>
           </Card>
         </TabsContent>

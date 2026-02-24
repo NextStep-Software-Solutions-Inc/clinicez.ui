@@ -11,11 +11,13 @@ export function MasterProceduresTab() {
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab}>
-      <TabsList className="grid w-full max-w-2xl grid-cols-3">
-        <TabsTrigger value="imaging">Imaging Procedures</TabsTrigger>
-        <TabsTrigger value="laboratory">Laboratory Procedures</TabsTrigger>
-        <TabsTrigger value="heart-station">Heart Station</TabsTrigger>
-      </TabsList>
+      <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+        <TabsList className="inline-flex w-auto min-w-full sm:grid sm:w-full sm:max-w-2xl sm:grid-cols-3">
+          <TabsTrigger value="imaging">Imaging</TabsTrigger>
+          <TabsTrigger value="laboratory">Laboratory</TabsTrigger>
+          <TabsTrigger value="heart-station">Heart Station</TabsTrigger>
+        </TabsList>
+      </div>
 
       <TabsContent value="imaging" className="space-y-4">
         <MasterImagingProceduresTable />

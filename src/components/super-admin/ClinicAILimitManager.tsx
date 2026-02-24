@@ -173,7 +173,7 @@ export function ClinicAILimitManager({ clinicId, clinicName }: ClinicAILimitMana
             </AlertDescription>
           </Alert>
 
-          <div className="flex items-center justify-between p-4 border rounded-lg">
+          <div className="flex flex-col gap-3 p-4 border rounded-lg sm:flex-row sm:items-center sm:justify-between">
             <div className="space-y-0.5">
               <Label className="text-base">Use Custom Limits</Label>
               <p className="text-sm text-muted-foreground">
@@ -310,7 +310,7 @@ export function ClinicAILimitManager({ clinicId, clinicName }: ClinicAILimitMana
               </div>
             </div>
 
-            <div className="flex items-center justify-between p-4 border rounded-lg">
+            <div className="flex flex-col gap-3 p-4 border rounded-lg sm:flex-row sm:items-center sm:justify-between">
               <div className="space-y-0.5">
                 <Label className="text-base">Active</Label>
                 <p className="text-sm text-muted-foreground">

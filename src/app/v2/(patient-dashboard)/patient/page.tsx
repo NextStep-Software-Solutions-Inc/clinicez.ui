@@ -1,6 +1,7 @@
 'use client';
 
 import { Suspense, useRef, useState } from 'react';
+import Link from 'next/link';
 import useSWR from 'swr';
 import { useRouter } from 'next/navigation';
 import { useSetAtom } from 'jotai';
@@ -17,9 +18,9 @@ import {
 } from '@/components/patient-dashboard-v2';
 import { ThemeToggle } from '@/components/patient-dashboard-v2/ThemeToggle';
 import { getPatientDashboardData } from '@/actions/patient-dashboard';
-import BookAppointmentSheet from '@/components/appointment/BookAppointmentSheet';
 import { bookAppointmentAtom } from '@/state/book-appointment';
 import { checkIsClinicPatientAction } from '@/actions/clinics/clinic-patient.action';
+import BookAppointmentSheet from '@/components/appointment/BookAppointmentSheet';
 
 // Loading skeleton for initial page load
 function DashboardLoadingSkeleton() {
@@ -100,7 +101,7 @@ function PatientDashboardContent() {
 
     const isAlreadyPatient = await checkIsClinicPatientAction(clinicUid);
     if (isAlreadyPatient) {
-      router.push(`?book-appointment=true`);
+      router.push(`/v2/book-appointment?clinic=${clinicUid}`);
     } else {
       setPendingClinic({ clinicUid, clinicName });
       setShowJoinDialog(true);
@@ -108,9 +109,10 @@ function PatientDashboardContent() {
   };
 
   const handleJoinSuccess = () => {
-    setShowJoinDialog(false);
-    setPendingClinic(null);
-    router.push(`?book-appointment=true`);
+    const clinicUid = pendingClinic?.clinicUid
+    setShowJoinDialog(false)
+    setPendingClinic(null)
+    router.push(`/v2/book-appointment?clinic=${clinicUid ?? ''}`)
   };
 
   const handleViewTestRequests = () => {
@@ -127,6 +129,10 @@ function PatientDashboardContent() {
 
   const handleViewFiles = () => {
     router.push('/v2/patient/files');
+  };
+
+  const handleViewHistory = () => {
+    router.push('/v2/appointments-consultations');
   };
 
   return (
@@ -214,10 +220,18 @@ function PatientDashboardContent() {
 
         {/* Full Width: Consultation Notes */}
         <div>
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-            <span className="w-1 h-6 bg-purple-500 rounded-full"></span>
-            Recent Consultations
-          </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <span className="w-1 h-6 bg-purple-500 rounded-full"></span>
+              Recent Consultations
+            </h2>
+            <Link
+              href="/v2/appointments-consultations"
+              className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              View All
+            </Link>
+          </div>
           <ConsultationNotes
             consultations={
               dashboardData?.recentConsultations?.consultations
@@ -246,6 +260,7 @@ function PatientDashboardContent() {
         onViewPrescriptions={handleViewPrescriptions}
         onViewProfile={handleViewProfile}
         onViewFiles={handleViewFiles}
+        onViewHistory={handleViewHistory}
       />
 
       {/* Select Clinic Dialog */}
@@ -269,7 +284,7 @@ function PatientDashboardContent() {
         />
       )}
 
-      {/* Book Appointment Sheet (v1) */}
+      {/* BookAppointmentSheet: kept for V1 backward compatibility (?book-appointment=true query param) */}
       <BookAppointmentSheet />
     </div>
   );

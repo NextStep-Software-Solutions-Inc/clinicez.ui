@@ -12,7 +12,7 @@ export default function AILimitsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold flex items-center">
+        <h1 className="text-2xl font-bold flex items-center sm:text-3xl">
           <Brain className="mr-3 h-8 w-8" />
           AI Limits Management
         </h1>
@@ -22,11 +22,13 @@ export default function AILimitsPage() {
       </div>
 
       <Tabs defaultValue="global" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="global">Global Defaults</TabsTrigger>
-          <TabsTrigger value="tenants">Tenant Limits</TabsTrigger>
-          <TabsTrigger value="overview">Usage Overview</TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+          <TabsList className="inline-flex w-auto min-w-full sm:grid sm:w-full sm:grid-cols-3">
+            <TabsTrigger value="global">Global Defaults</TabsTrigger>
+            <TabsTrigger value="tenants">Tenant Limits</TabsTrigger>
+            <TabsTrigger value="overview">Usage Overview</TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="global" className="space-y-4">
           <GlobalAIDefaultsManager />

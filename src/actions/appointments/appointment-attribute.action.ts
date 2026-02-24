@@ -238,6 +238,51 @@ export const rejectAppointmentAction = withErrorHandling(async (formData: FormDa
   return "An error occurred while rejecting appointment."
 })
 
+export const cancelAppointmentAction = withErrorHandling(async (formData: FormData) => {
+
+  const session = await getCachedSession();
+  if (!session) throw new Error("User not authenticated.");
+
+  const myPermissions = await getPermissionsAction({ userId: session.user.sub });
+  const rejectAppointmentPermissions = [PERMISSIONS.CLINIC["REJECT:CLINIC:APPOINTMENT"].name];
+  const myPermissionArray = myPermissions.map(permission => permission.name);
+  const canCancel = rejectAppointmentPermissions.some(permission => myPermissionArray.includes(permission));
+
+  if (!canCancel) throw new Error("You do not have permission to cancel this appointment.");
+
+  const appointmentId = parseInt(formData.get('appointmentId') as string);
+  const reason = formData.get('reason') as string;
+
+  await prismaClient.appointmentAttribute.update({
+    where: {
+      appointmentId,
+      status: {
+        notIn: ["REJECTED", "CANCELLED", "COMPLETED"]
+      }
+    },
+    data: {
+      status: "CANCELLED",
+      rejectedReason: reason,
+      rejectedAt: new Date(),
+      RejectedBy: {
+        connect: {
+          userId: session.user.sub
+        }
+      }
+    }
+  });
+  return { message: 'Appointment cancelled', data: undefined };
+
+}, async error => {
+  if (error instanceof Error) {
+    if (error.message.includes("No record was found") || error.message.includes("depends on one or more records")) {
+      return "This appointment has already been cancelled or no longer exists.";
+    }
+    return error.message;
+  }
+  return "An error occurred while cancelling the appointment.";
+})
+
 type RescheduleAppointmentPayload = {
   appointmentId: number;
   date: Date;

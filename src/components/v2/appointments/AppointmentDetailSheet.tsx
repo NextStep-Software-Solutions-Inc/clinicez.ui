@@ -42,6 +42,7 @@ import {
   receiveAppointmentAction,
   completeAppointmentAction,
   rejectAppointmentAction,
+  cancelAppointmentAction,
 } from "@/actions/appointments/appointment-attribute.action";
 import {
   acceptAppointmentAction,
@@ -178,14 +179,16 @@ export function AppointmentDetailSheet({
 
   const handleRejectSubmit = async () => {
     if (!rejectReason.trim()) {
-      toast.error("A reason is required to reject this appointment.");
+      toast.error(status === "PENDING" ? "A reason is required to reject this appointment." : "A reason is required to cancel this appointment.");
       return;
     }
     setIsPending(true);
     const fd = new FormData();
     fd.append("appointmentId", String(appointment.id));
     fd.append("reason", rejectReason.trim());
-    const result = await rejectAppointmentAction(fd);
+    const result = status === "PENDING"
+      ? await rejectAppointmentAction(fd)
+      : await cancelAppointmentAction(fd);
     setIsPending(false);
     if (result.status) {
       toast.success(result.message);
@@ -568,7 +571,7 @@ export function AppointmentDetailSheet({
                 </>
               )}
 
-              {/* RECEIVED: Assign Doctor (first), Confirm Booking, Tag HPs, Complete, Drop */}
+              {/* RECEIVED: Assign Doctor (first), Confirm Booking, Tag HPs, Complete, Cancel */}
               {status === "RECEIVED" && (
                 <>
                   <Button
@@ -618,13 +621,12 @@ export function AppointmentDetailSheet({
                       onClick={() => setShowRejectForm(true)}
                     >
                       <AlertTriangle className="h-4 w-4" />
-                      Drop
+                      Cancel
                     </Button>
                   )}
                 </>
               )}
 
-              {/* ROUTED: Accept/Decline (PENDING routing + assigned user only) + Reassign + Tag + Reschedule */}
               {status === "ROUTED" && pendingRouting && (
                 <>
                   {isAssignedToCurrentUser ? (
@@ -732,11 +734,11 @@ export function AppointmentDetailSheet({
               )}
             </div>
 
-            {/* Inline reject/drop form */}
+            {/* Inline reject/cancel form */}
             {showRejectForm && (
               <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 space-y-3">
                 <h4 className="text-xs font-semibold text-destructive uppercase tracking-wide">
-                  {status === "PENDING" ? "Reject Appointment" : "Drop Appointment"}
+                  {status === "PENDING" ? "Reject Appointment" : "Cancel Appointment"}
                 </h4>
                 <div className="space-y-1.5">
                   <Label className="text-xs">
@@ -748,7 +750,7 @@ export function AppointmentDetailSheet({
                     placeholder={
                       status === "PENDING"
                         ? "Please provide a reason for rejection..."
-                        : "Please provide a reason for dropping this appointment..."
+                        : "Please provide a reason for cancelling this appointment..."
                     }
                     rows={3}
                     className="resize-none text-sm"
@@ -774,8 +776,8 @@ export function AppointmentDetailSheet({
                   >
                     <AlertTriangle className="h-4 w-4" />
                     {isPending
-                      ? (status === "PENDING" ? "Rejecting..." : "Dropping...")
-                      : (status === "PENDING" ? "Confirm Reject" : "Confirm Drop")
+                      ? (status === "PENDING" ? "Rejecting..." : "Cancelling...")
+                      : (status === "PENDING" ? "Confirm Reject" : "Confirm Cancel")
                     }
                   </Button>
                 </div>

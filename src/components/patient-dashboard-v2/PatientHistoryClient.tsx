@@ -797,7 +797,7 @@ export default function PatientHistoryClient({
           </Link>
           <div className="min-w-0">
             <h1 className="text-xl md:text-2xl font-bold dark:text-white text-slate-900 truncate">
-              My Health Records
+              My Appointments & Consultations
             </h1>
             <p className="text-xs dark:text-slate-400 text-slate-500 mt-0.5">
               {patientName} · {allItems.length} record{allItems.length !== 1 ? 's' : ''}

@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import Link from "next/link";
 import {
   Calendar,
   Stethoscope,
   Clock,
   CheckCircle2,
   Archive,
-  ChevronLeft,
+  ChevronRight,
   ClipboardList,
   FileText,
   Pill,
@@ -15,8 +15,10 @@ import {
   Scan,
   FileCheck,
   AlertCircle,
+  Clipboard,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import dayjs from "@/lib/day-utils";
 import type { GetPatientHistoryResult } from "@/actions/clinics/get-patient-history.action";
 import type { PatientHistoryAccess } from "@/actions/clinics/get-patient-history.action";
@@ -26,6 +28,8 @@ type Appointment = HistoryData["appointments"][number];
 type ConsultationTicket = HistoryData["consultationTickets"][number];
 
 interface PatientAppointmentsConsultationsClientProps {
+  clinicUid: string;
+  patientId: number;
   patientName: string;
   appointments: HistoryData["appointments"];
   consultationTickets: HistoryData["consultationTickets"];
@@ -90,64 +94,82 @@ type ListItem =
   | { kind: "appointment"; data: Appointment; date: Date };
 
 // ---------------------------------------------------------------------------
-// Sub-components
+// Timeline entry components
 // ---------------------------------------------------------------------------
 
-function ConsultationDetail({
+function ConsultationTimelineEntry({
   ticket,
   access,
+  isLast,
 }: {
   ticket: ConsultationTicket;
   access: PatientHistoryAccess;
+  isLast: boolean;
 }) {
-  const appointment = ticket.Appointment;
+  const status = ticket.ConsultationTicketAttribute?.status;
   const hps = ticket.ConsultationTicketHPs.map((h) => h.HealthCareProvider);
+  const appointment = ticket.Appointment;
 
   return (
-    <div className="flex flex-col gap-6 p-6 overflow-y-auto h-full">
-      {/* Header */}
-      <div>
-        <div className="flex items-center gap-2 mb-1">
-          <Badge
-            variant={getConsultationStatusVariant(
-              ticket.ConsultationTicketAttribute?.status
-            )}
-            className="gap-1 text-xs"
-          >
-            {getConsultationStatusIcon(ticket.ConsultationTicketAttribute?.status)}
-            {ticket.ConsultationTicketAttribute?.status ?? "Open"}
-          </Badge>
-          {ticket.isArchived && (
-            <Badge variant="outline" className="gap-1 text-xs">
-              <Archive className="h-3.5 w-3.5" />
-              Archived
-            </Badge>
-          )}
-          {ticket.caseNumber && (
-            <span className="text-xs text-muted-foreground">
-              Case #{ticket.caseNumber}
-            </span>
-          )}
-        </div>
-        <h2 className="text-lg font-semibold text-foreground mt-2">
-          {ticket.subject ?? "Consultation"}
-        </h2>
-        <p className="text-xs text-muted-foreground mt-0.5">
-          {dayjs(ticket.createdAt).format("MMMM D, YYYY [at] h:mm A")}
-        </p>
+    <div className="relative flex gap-4">
+      {/* Timeline connector */}
+      <div className="relative flex flex-col items-center shrink-0 w-6">
+        <div className="w-3 h-3 rounded-full bg-primary ring-2 ring-background mt-1.5 shrink-0 z-10" />
+        {!isLast && (
+          <div className="w-0.5 bg-border/50 flex-1 mt-1" />
+        )}
       </div>
 
-      {/* Healthcare Providers */}
-      {hps.length > 0 && (
-        <div>
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-            Consulting Providers
-          </p>
-          <div className="flex flex-col gap-1.5">
-            {hps.map((hp) => (
-              <div key={hp.id} className="flex items-center gap-2 text-sm">
-                <Stethoscope className="h-4 w-4 text-muted-foreground shrink-0" />
-                <span className="text-foreground">
+      {/* Card */}
+      <div className="flex-1 pb-6">
+        <div className="rounded-lg border border-border/60 bg-card shadow-sm p-4">
+          {/* Header row */}
+          <div className="flex items-start justify-between gap-3 mb-3">
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 mb-1">
+                <Stethoscope className="h-3.5 w-3.5 text-primary shrink-0" />
+                <span className="text-xs font-semibold text-primary uppercase tracking-wide">
+                  Consultation
+                </span>
+                {ticket.caseNumber && (
+                  <span className="text-xs text-muted-foreground">
+                    · Case #{ticket.caseNumber}
+                  </span>
+                )}
+              </div>
+              <h3 className="text-sm font-semibold text-foreground truncate">
+                {ticket.subject ?? "Consultation"}
+              </h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {dayjs(ticket.createdAt).format("MMMM D, YYYY [at] h:mm A")}
+              </p>
+            </div>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <Badge
+                variant={getConsultationStatusVariant(status)}
+                className="gap-1 text-xs"
+              >
+                {getConsultationStatusIcon(status)}
+                {status ?? "Open"}
+              </Badge>
+              {ticket.isArchived && (
+                <Badge variant="outline" className="gap-1 text-xs">
+                  <Archive className="h-3 w-3" />
+                  Archived
+                </Badge>
+              )}
+            </div>
+          </div>
+
+          {/* Healthcare providers */}
+          {hps.length > 0 && (
+            <div className="flex flex-wrap gap-3 mb-3">
+              {hps.map((hp) => (
+                <span
+                  key={hp.id}
+                  className="flex items-center gap-1.5 text-xs text-muted-foreground"
+                >
+                  <Stethoscope className="h-3 w-3 shrink-0" />
                   {[
                     hp.HPProfile?.title,
                     hp.HPProfile?.name ||
@@ -157,212 +179,175 @@ function ConsultationDetail({
                     .filter(Boolean)
                     .join(" ")}
                   {hp.HPType?.name && (
-                    <span className="text-muted-foreground ml-1.5">
+                    <span className="text-muted-foreground/60">
                       · {hp.HPType.name}
                     </span>
                   )}
                 </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+              ))}
+            </div>
+          )}
 
-      {/* Linked Appointment */}
-      {appointment && (
-        <div className="rounded-lg border border-border/60 bg-muted/30 p-4">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-            Linked Appointment
-          </p>
-          <p className="text-sm font-medium text-foreground">
-            {appointment.subject ?? appointment.complaint ?? "Appointment"}
-          </p>
-          {appointment.AppointmentAttribute && (
-            <div className="flex flex-wrap gap-2 mt-2">
-              {appointment.AppointmentAttribute.date && (
-                <span className="text-xs text-muted-foreground flex items-center gap-1">
-                  <Calendar className="h-3.5 w-3.5" />
-                  {dayjs(appointment.AppointmentAttribute.date).format("MMM D, YYYY")}
+          {/* Linked appointment chip */}
+          {appointment && (
+            <div className="flex items-center gap-1.5 mb-3 text-xs text-muted-foreground bg-muted/50 rounded-md px-2.5 py-1.5 w-fit">
+              <Calendar className="h-3.5 w-3.5 shrink-0" />
+              <span>
+                Linked: {appointment.subject ?? appointment.complaint ?? "Appointment"}
+              </span>
+              {appointment.AppointmentAttribute?.date && (
+                <span className="text-muted-foreground/70">
+                  · {dayjs(appointment.AppointmentAttribute.date).format("MMM D, YYYY")}
                 </span>
               )}
-              {appointment.AppointmentAttribute.AppointmentType?.name && (
-                <Badge variant="outline" className="text-xs">
-                  {appointment.AppointmentAttribute.AppointmentType.name}
-                </Badge>
+            </div>
+          )}
+
+          {/* Consultation notes */}
+          {ticket.ConsultationNotes.length > 0 ? (
+            <div className="space-y-2 mb-3">
+              {ticket.ConsultationNotes.map((note) => (
+                <div
+                  key={note.id}
+                  className="rounded-md bg-muted/40 border border-border/40 p-3"
+                >
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
+                    {note.section}
+                  </p>
+                  <p className="text-xs text-foreground/80 whitespace-pre-wrap line-clamp-4">
+                    {note.content}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex items-center gap-1.5 mb-3 text-xs text-muted-foreground/60">
+              <FileText className="h-3.5 w-3.5 shrink-0" />
+              <span>
+                {access === "owner"
+                  ? "No notes shared with you."
+                  : "No consultation notes recorded."}
+              </span>
+            </div>
+          )}
+
+          {/* Attachments summary */}
+          {(ticket.Prescriptions.length > 0 ||
+            ticket.MedicalCertificates.length > 0 ||
+            ticket.LaboratoryRequests.length > 0 ||
+            ticket.ImagingRequests.length > 0) && (
+            <div className="flex flex-wrap gap-1.5 pt-1 border-t border-border/40">
+              {ticket.Prescriptions.length > 0 && (
+                <span className="flex items-center gap-1 text-xs bg-muted rounded-md px-2 py-0.5">
+                  <Pill className="h-3 w-3 text-emerald-500" />
+                  {ticket.Prescriptions.length} Rx
+                </span>
               )}
-              {appointment.AppointmentAttribute.AppointmentMode?.name && (
-                <Badge variant="outline" className="text-xs">
-                  {appointment.AppointmentAttribute.AppointmentMode.name}
-                </Badge>
+              {ticket.MedicalCertificates.length > 0 && (
+                <span className="flex items-center gap-1 text-xs bg-muted rounded-md px-2 py-0.5">
+                  <FileCheck className="h-3 w-3 text-blue-500" />
+                  {ticket.MedicalCertificates.length} Cert
+                </span>
               )}
-              {appointment.AppointmentAttribute.Service?.name && (
-                <Badge variant="outline" className="text-xs">
-                  {appointment.AppointmentAttribute.Service.name}
-                </Badge>
+              {ticket.LaboratoryRequests.length > 0 && (
+                <span className="flex items-center gap-1 text-xs bg-muted rounded-md px-2 py-0.5">
+                  <TestTube className="h-3 w-3 text-purple-500" />
+                  {ticket.LaboratoryRequests.length} Lab
+                </span>
               )}
-              <Badge
-                variant={getAppointmentStatusVariant(
-                  appointment.AppointmentAttribute.status
-                )}
-                className="text-xs"
-              >
-                {appointment.AppointmentAttribute.status}
-              </Badge>
+              {ticket.ImagingRequests.length > 0 && (
+                <span className="flex items-center gap-1 text-xs bg-muted rounded-md px-2 py-0.5">
+                  <Scan className="h-3 w-3 text-orange-500" />
+                  {ticket.ImagingRequests.length} Imaging
+                </span>
+              )}
             </div>
           )}
         </div>
-      )}
-
-      {/* Consultation Notes */}
-      {ticket.ConsultationNotes.length > 0 ? (
-        <div>
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
-            Consultation Notes
-          </p>
-          <div className="flex flex-col gap-3">
-            {ticket.ConsultationNotes.map((note) => (
-              <div
-                key={note.id}
-                className="rounded-lg border border-border/60 bg-background p-4"
-              >
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
-                  {note.section}
-                </p>
-                <p className="text-sm text-foreground whitespace-pre-wrap">
-                  {note.content}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : (
-        <div className="flex flex-col items-center gap-2 py-8 text-center">
-          <FileText className="h-8 w-8 text-muted-foreground/40" />
-          <p className="text-sm text-muted-foreground">
-            {access === "owner"
-              ? "No notes have been shared with you for this consultation."
-              : "No consultation notes recorded."}
-          </p>
-        </div>
-      )}
-
-      {/* Attachments summary (counts only) */}
-      {(ticket.Prescriptions.length > 0 ||
-        ticket.MedicalCertificates.length > 0 ||
-        ticket.LaboratoryRequests.length > 0 ||
-        ticket.ImagingRequests.length > 0) && (
-        <div>
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-            Attachments
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {ticket.Prescriptions.length > 0 && (
-              <span className="flex items-center gap-1 text-xs bg-muted rounded-md px-2.5 py-1">
-                <Pill className="h-3.5 w-3.5 text-emerald-500" />
-                {ticket.Prescriptions.length} Prescription
-                {ticket.Prescriptions.length !== 1 ? "s" : ""}
-              </span>
-            )}
-            {ticket.MedicalCertificates.length > 0 && (
-              <span className="flex items-center gap-1 text-xs bg-muted rounded-md px-2.5 py-1">
-                <FileCheck className="h-3.5 w-3.5 text-blue-500" />
-                {ticket.MedicalCertificates.length} Certificate
-                {ticket.MedicalCertificates.length !== 1 ? "s" : ""}
-              </span>
-            )}
-            {ticket.LaboratoryRequests.length > 0 && (
-              <span className="flex items-center gap-1 text-xs bg-muted rounded-md px-2.5 py-1">
-                <TestTube className="h-3.5 w-3.5 text-purple-500" />
-                {ticket.LaboratoryRequests.length} Lab Request
-                {ticket.LaboratoryRequests.length !== 1 ? "s" : ""}
-              </span>
-            )}
-            {ticket.ImagingRequests.length > 0 && (
-              <span className="flex items-center gap-1 text-xs bg-muted rounded-md px-2.5 py-1">
-                <Scan className="h-3.5 w-3.5 text-orange-500" />
-                {ticket.ImagingRequests.length} Imaging Request
-                {ticket.ImagingRequests.length !== 1 ? "s" : ""}
-              </span>
-            )}
-          </div>
-        </div>
-      )}
+      </div>
     </div>
   );
 }
 
-function AppointmentDetail({ appointment }: { appointment: Appointment }) {
+function AppointmentTimelineEntry({
+  appointment,
+  isLast,
+}: {
+  appointment: Appointment;
+  isLast: boolean;
+}) {
   const attr = appointment.AppointmentAttribute;
   const hp = appointment.AppointmentRouting[0]?.RoutedTo;
 
   return (
-    <div className="flex flex-col gap-6 p-6 overflow-y-auto h-full">
-      {/* Header */}
-      <div>
-        {attr && (
-          <Badge
-            variant={getAppointmentStatusVariant(attr.status)}
-            className="text-xs mb-1"
-          >
-            {attr.status}
-          </Badge>
+    <div className="relative flex gap-4">
+      {/* Timeline connector */}
+      <div className="relative flex flex-col items-center shrink-0 w-6">
+        <div className="w-3 h-3 rounded-full bg-background border-2 border-muted-foreground/40 mt-1.5 shrink-0 z-10" />
+        {!isLast && (
+          <div className="w-0.5 bg-border/50 flex-1 mt-1" />
         )}
-        <h2 className="text-lg font-semibold text-foreground mt-2">
-          {appointment.subject ?? appointment.complaint ?? "Appointment"}
-        </h2>
-        <p className="text-xs text-muted-foreground mt-0.5">
-          {dayjs(appointment.createdAt).format("MMMM D, YYYY [at] h:mm A")}
-        </p>
       </div>
 
-      {/* Appointment Details */}
-      {attr && (
-        <div className="rounded-lg border border-border/60 bg-muted/30 p-4">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
-            Details
-          </p>
-          <div className="flex flex-col gap-2.5">
-            {attr.date && (
-              <div className="flex items-center gap-2 text-sm">
-                <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
-                <span>
-                  {dayjs(attr.date).format("MMMM D, YYYY")}
-                  {attr.timeStart && ` · ${attr.timeStart}`}
-                  {attr.timeEnd && ` – ${attr.timeEnd}`}
+      {/* Card */}
+      <div className="flex-1 pb-6">
+        <div className="rounded-lg border border-border/60 bg-card shadow-sm p-4">
+          {/* Header row */}
+          <div className="flex items-start justify-between gap-3 mb-3">
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 mb-1">
+                <Calendar className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  Appointment
                 </span>
               </div>
-            )}
-            {attr.AppointmentType?.name && (
-              <div className="flex items-center gap-2 text-sm">
-                <ClipboardList className="h-4 w-4 text-muted-foreground shrink-0" />
-                <span>{attr.AppointmentType.name}</span>
-              </div>
-            )}
-            {attr.AppointmentMode?.name && (
-              <div className="flex items-center gap-2 text-sm">
-                <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
-                <span>{attr.AppointmentMode.name}</span>
-              </div>
-            )}
-            {attr.Service?.name && (
-              <div className="flex items-center gap-2 text-sm">
-                <Stethoscope className="h-4 w-4 text-muted-foreground shrink-0" />
-                <span>{attr.Service.name}</span>
-              </div>
+              <h3 className="text-sm font-semibold text-foreground truncate">
+                {appointment.subject ?? appointment.complaint ?? "Appointment"}
+              </h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {attr?.date
+                  ? dayjs(attr.date).format("MMMM D, YYYY") +
+                    (attr.timeStart ? ` at ${attr.timeStart}` : "") +
+                    (attr.timeEnd ? ` – ${attr.timeEnd}` : "")
+                  : dayjs(appointment.createdAt).format("MMMM D, YYYY [at] h:mm A")}
+              </p>
+            </div>
+            {attr?.status && (
+              <Badge
+                variant={getAppointmentStatusVariant(attr.status)}
+                className="text-xs shrink-0"
+              >
+                {attr.status}
+              </Badge>
             )}
           </div>
-        </div>
-      )}
 
-      {/* Assigned Provider */}
-      {hp && (
-        <div>
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-            Assigned Provider
-          </p>
-          <div className="flex items-center gap-2 text-sm">
-            <Stethoscope className="h-4 w-4 text-muted-foreground shrink-0" />
-            <span>
+          {/* Type / Mode / Service badges */}
+          {attr && (
+            <div className="flex flex-wrap gap-1.5 mb-3">
+              {attr.AppointmentType?.name && (
+                <Badge variant="outline" className="text-xs gap-1">
+                  <ClipboardList className="h-3 w-3" />
+                  {attr.AppointmentType.name}
+                </Badge>
+              )}
+              {attr.AppointmentMode?.name && (
+                <Badge variant="outline" className="text-xs">
+                  {attr.AppointmentMode.name}
+                </Badge>
+              )}
+              {attr.Service?.name && (
+                <Badge variant="outline" className="text-xs">
+                  {attr.Service.name}
+                </Badge>
+              )}
+            </div>
+          )}
+
+          {/* Assigned provider */}
+          {hp && (
+            <p className="flex items-center gap-1.5 text-xs text-muted-foreground mb-3">
+              <Stethoscope className="h-3.5 w-3.5 shrink-0" />
               {[
                 hp.HPProfile?.title,
                 hp.HPProfile?.name ||
@@ -371,30 +356,20 @@ function AppointmentDetail({ appointment }: { appointment: Appointment }) {
               ]
                 .filter(Boolean)
                 .join(" ")}
-            </span>
-          </div>
-        </div>
-      )}
+            </p>
+          )}
 
-      {/* Complaint */}
-      {appointment.complaint && (
-        <div>
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
-            Chief Complaint
-          </p>
-          <p className="text-sm text-foreground">{appointment.complaint}</p>
+          {/* Chief complaint */}
+          {appointment.complaint && (
+            <div className="rounded-md bg-muted/40 border border-border/40 p-3">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
+                Chief Complaint
+              </p>
+              <p className="text-xs text-foreground/80">{appointment.complaint}</p>
+            </div>
+          )}
         </div>
-      )}
-
-      {/* No consultation note yet */}
-      {appointment.ConsultationTickets.length === 0 && (
-        <div className="flex flex-col items-center gap-2 py-8 text-center rounded-lg border border-dashed border-border/60">
-          <Stethoscope className="h-8 w-8 text-muted-foreground/40" />
-          <p className="text-sm text-muted-foreground">
-            No consultation notes have been recorded for this appointment.
-          </p>
-        </div>
-      )}
+      </div>
     </div>
   );
 }
@@ -404,6 +379,8 @@ function AppointmentDetail({ appointment }: { appointment: Appointment }) {
 // ---------------------------------------------------------------------------
 
 export default function PatientAppointmentsConsultationsClient({
+  clinicUid,
+  patientId,
   patientName,
   appointments,
   consultationTickets,
@@ -432,194 +409,63 @@ export default function PatientAppointmentsConsultationsClient({
       ),
   ].sort((a, b) => b.date.getTime() - a.date.getTime());
 
-  const [selectedKey, setSelectedKey] = useState<string | null>(
-    listItems[0] ? `${listItems[0].kind}-${listItems[0].data.id}` : null
-  );
-  const [mobileView, setMobileView] = useState<"list" | "detail">("list");
-
-  const selectedItem = listItems.find(
-    (item) => `${item.kind}-${item.data.id}` === selectedKey
-  );
-
-  const handleSelect = useCallback((key: string) => {
-    setSelectedKey(key);
-    setMobileView("detail");
-  }, []);
-
   return (
-    <div className="flex flex-col h-[calc(100dvh-16rem)] overflow-hidden">
-      {/* Mobile: back button when viewing detail */}
-      {mobileView === "detail" && (
-        <div className="md:hidden shrink-0 flex items-center gap-2 px-4 py-2.5 border-b border-border/50 bg-background/80 backdrop-blur">
-          <button
-            type="button"
-            onClick={() => setMobileView("list")}
-            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ChevronLeft className="h-4 w-4" />
-            Back
-          </button>
-        </div>
-      )}
-
-      {/* Split panel */}
-      <div className="flex flex-1 overflow-hidden min-h-0">
-        {/* Left: List */}
-        <aside
-          className={`shrink-0 flex-col border-r border-border/50 bg-background/60 overflow-hidden w-full md:w-80 ${
-            mobileView === "detail" ? "hidden md:flex" : "flex"
-          }`}
+    <div className="max-w-3xl mx-auto px-0 sm:px-2 py-4">
+      {/* Sub-header: summary + navigation button */}
+      <div className="flex items-center justify-between mb-6 gap-3">
+        <p className="text-xs text-muted-foreground">
+          {patientName} · {consultationTickets.length} consultation
+          {consultationTickets.length !== 1 ? "s" : ""} ·{" "}
+          {appointments.length} appointment
+          {appointments.length !== 1 ? "s" : ""}
+        </p>
+        <Link
+          href={`/v2/clinic/${clinicUid}/patients/${patientId}/consultations`}
         >
-          {/* Panel header */}
-          <div className="px-4 py-3 border-b border-border/50 shrink-0">
-            <p className="text-sm font-semibold text-foreground">{patientName}</p>
-            <p className="text-xs text-muted-foreground">
-              {consultationTickets.length} consultation
-              {consultationTickets.length !== 1 ? "s" : ""} ·{" "}
-              {appointments.length} appointment
-              {appointments.length !== 1 ? "s" : ""}
+          <Button variant="outline" size="sm" className="gap-1.5 shrink-0">
+            <Clipboard className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Consultations Workspace</span>
+            <span className="sm:hidden">Workspace</span>
+            <ChevronRight className="h-3.5 w-3.5" />
+          </Button>
+        </Link>
+      </div>
+
+      {/* Timeline */}
+      {listItems.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
+          <div className="w-14 h-14 rounded-full bg-muted/50 flex items-center justify-center">
+            <AlertCircle className="h-7 w-7 text-muted-foreground/40" />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-foreground/70">
+              No history yet
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Appointments and consultation notes will appear here.
             </p>
           </div>
-
-          {/* List body */}
-          <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full">
-            {listItems.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full gap-3 px-6 text-center">
-                <div className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center">
-                  <Calendar className="h-6 w-6 text-muted-foreground/50" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-foreground/70">
-                    No history yet
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Appointments and consultation notes will appear here.
-                  </p>
-                </div>
-              </div>
-            ) : (
-              listItems.map((item) => {
-                const key = `${item.kind}-${item.data.id}`;
-                const isSelected = selectedKey === key;
-
-                if (item.kind === "consultation") {
-                  const ticket = item.data as ConsultationTicket;
-                  const status = ticket.ConsultationTicketAttribute?.status;
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => handleSelect(key)}
-                      className={`w-full text-left px-4 py-3 border-b border-border/30 transition-colors hover:bg-muted/40 ${
-                        isSelected ? "bg-primary/10 border-l-2 border-l-primary" : ""
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-2 mb-1">
-                        <p className="text-sm font-medium text-foreground truncate">
-                          {ticket.subject ?? "Consultation"}
-                        </p>
-                        <Badge
-                          variant={getConsultationStatusVariant(status)}
-                          className="text-xs shrink-0 gap-1"
-                        >
-                          {getConsultationStatusIcon(status)}
-                          {status ?? "Open"}
-                        </Badge>
-                      </div>
-                      {ticket.caseNumber && (
-                        <p className="text-xs text-muted-foreground">
-                          Case #{ticket.caseNumber}
-                        </p>
-                      )}
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {dayjs(ticket.createdAt).format("MMM D, YYYY")}
-                      </p>
-                      <div className="flex items-center gap-2 mt-1.5">
-                        <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <FileText className="h-3 w-3" />
-                          {ticket.ConsultationNotes.length}
-                        </span>
-                        {ticket.Prescriptions.length > 0 && (
-                          <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <Pill className="h-3 w-3" />
-                            {ticket.Prescriptions.length}
-                          </span>
-                        )}
-                      </div>
-                    </button>
-                  );
-                }
-
-                const appt = item.data as Appointment;
-                const aptStatus = appt.AppointmentAttribute?.status;
-                return (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => handleSelect(key)}
-                    className={`w-full text-left px-4 py-3 border-b border-border/30 transition-colors hover:bg-muted/40 ${
-                      isSelected ? "bg-primary/10 border-l-2 border-l-primary" : ""
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-2 mb-1">
-                      <p className="text-sm font-medium text-foreground truncate">
-                        {appt.subject ?? appt.complaint ?? "Appointment"}
-                      </p>
-                      {aptStatus && (
-                        <Badge
-                          variant={getAppointmentStatusVariant(aptStatus)}
-                          className="text-xs shrink-0"
-                        >
-                          {aptStatus}
-                        </Badge>
-                      )}
-                    </div>
-                    {appt.AppointmentAttribute?.date && (
-                      <p className="text-xs text-muted-foreground">
-                        <Calendar className="h-3 w-3 inline mr-1" />
-                        {dayjs(appt.AppointmentAttribute.date).format(
-                          "MMM D, YYYY"
-                        )}
-                      </p>
-                    )}
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {appt.AppointmentAttribute?.AppointmentType?.name ??
-                        "Appointment"}
-                    </p>
-                  </button>
-                );
-              })
-            )}
-          </div>
-        </aside>
-
-        {/* Right: Detail */}
-        <main
-          className={`flex-1 overflow-hidden ${
-            mobileView === "list" ? "hidden md:flex" : "flex"
-          }`}
-        >
-          {selectedItem ? (
-            selectedItem.kind === "consultation" ? (
-              <ConsultationDetail
-                ticket={selectedItem.data as ConsultationTicket}
+        </div>
+      ) : (
+        <div>
+          {listItems.map((item, index) =>
+            item.kind === "consultation" ? (
+              <ConsultationTimelineEntry
+                key={`consultation-${item.data.id}`}
+                ticket={item.data as ConsultationTicket}
                 access={access}
+                isLast={index === listItems.length - 1}
               />
             ) : (
-              <AppointmentDetail appointment={selectedItem.data as Appointment} />
+              <AppointmentTimelineEntry
+                key={`appointment-${item.data.id}`}
+                appointment={item.data as Appointment}
+                isLast={index === listItems.length - 1}
+              />
             )
-          ) : (
-            <div className="flex flex-col items-center justify-center h-full w-full gap-3 text-center px-6">
-              <div className="w-14 h-14 rounded-full bg-muted/50 flex items-center justify-center">
-                <AlertCircle className="h-7 w-7 text-muted-foreground/40" />
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Select an item from the list to view details.
-              </p>
-            </div>
           )}
-        </main>
-      </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -30,17 +30,27 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Calendar } from "lucide-react";
 import { createConsultationTicketAction } from "@/actions/consultation/consultation-ticket.action";
+import { getPatientConfirmedAppointmentsAction } from "@/actions/appointments/get-patient-confirmed-appointments.action";
 import type { GetPatientConsultations } from "@/actions/consultation/patient-consultations.action";
 import type { GetHPsType } from "@/actions/hp.actions";
 import type { GetSystems } from "@/actions/system.action";
+import type { GetPatientConfirmedAppointments } from "@/actions/appointments/get-patient-confirmed-appointments.action";
+import dayjs from "@/lib/day-utils";
 
 type Consultation = NonNullable<GetPatientConsultations["data"]>[number];
+type ConfirmedAppointment = NonNullable<
+  GetPatientConfirmedAppointments["data"]
+>[number];
 
 const schema = z.object({
   subject: z.string().optional(),
   systemId: z.coerce.number().min(1, "Please select a system"),
   hpId: z.coerce.number().min(1, "Please select your HP profile"),
+  appointmentId: z.coerce.number().optional(),
 });
 type FormValues = z.infer<typeof schema>;
 
@@ -63,6 +73,9 @@ export default function NewConsultationDialog({
 }: NewConsultationDialogProps) {
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [linkToAppointment, setLinkToAppointment] = useState(false);
+  const [confirmedAppointments, setConfirmedAppointments] = useState<ConfirmedAppointment[]>([]);
+  const [loadingAppointments, setLoadingAppointments] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -70,8 +83,41 @@ export default function NewConsultationDialog({
       subject: "",
       systemId: systems[0]?.id,
       hpId: myHPs[0]?.id,
+      appointmentId: undefined,
     },
   });
+
+  const handleLinkToggle = (checked: boolean) => {
+    setLinkToAppointment(checked);
+    if (checked && confirmedAppointments.length === 0) {
+      setLoadingAppointments(true);
+      getPatientConfirmedAppointmentsAction({
+        clinicUid,
+        patientUserId: patient.userId,
+      })
+        .then((result) => {
+          setConfirmedAppointments(result.data ?? []);
+        })
+        .catch(() => {
+          toast.error("Failed to load confirmed appointments");
+        })
+        .finally(() => {
+          setLoadingAppointments(false);
+        });
+    }
+    if (!checked) {
+      form.setValue("appointmentId", undefined);
+    }
+  };
+
+  const handleOpenChange = (next: boolean) => {
+    setOpen(next);
+    if (!next) {
+      form.reset();
+      setLinkToAppointment(false);
+      setConfirmedAppointments([]);
+    }
+  };
 
   const onSubmit = (values: FormValues) => {
     startTransition(async () => {
@@ -80,12 +126,13 @@ export default function NewConsultationDialog({
         systemId: values.systemId,
         hpIds: [values.hpId],
         subject: values.subject || undefined,
+        appointmentId: linkToAppointment ? values.appointmentId : undefined,
       });
 
       if (result.status && result.data) {
         toast.success(result.message ?? "Consultation created");
-        setOpen(false);
-        form.reset();
+        handleOpenChange(false);
+
         // Build a minimal consultation object for the list
         const hp = myHPs.find((h) => h.id === values.hpId);
         const newConsultation: Consultation = {
@@ -126,7 +173,7 @@ export default function NewConsultationDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <div onClick={() => setOpen(true)} role="button" tabIndex={0} onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && setOpen(true)}>
         {children}
       </div>
@@ -212,8 +259,70 @@ export default function NewConsultationDialog({
               )}
             />
 
+            {/* Link to appointment toggle */}
+            <div className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5">
+              <Label htmlFor="link-appointment-toggle" className="text-sm font-medium cursor-pointer">
+                Link to a confirmed appointment?
+              </Label>
+              <Switch
+                id="link-appointment-toggle"
+                checked={linkToAppointment}
+                onCheckedChange={handleLinkToggle}
+              />
+            </div>
+
+            {linkToAppointment && (
+              <FormField
+                control={form.control}
+                name="appointmentId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Select appointment</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value?.toString()}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue
+                            placeholder={
+                              loadingAppointments
+                                ? "Loading…"
+                                : "Select a confirmed appointment"
+                            }
+                          />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {confirmedAppointments.length === 0 && !loadingAppointments ? (
+                          <SelectItem value="none" disabled>
+                            No confirmed appointments found
+                          </SelectItem>
+                        ) : (
+                          confirmedAppointments.map((appt) => (
+                            <SelectItem key={appt.id} value={appt.id.toString()}>
+                              <span className="flex items-center gap-2">
+                                <Calendar className="h-3.5 w-3.5 text-muted-foreground shrink-0" aria-hidden="true" />
+                                <span>
+                                  {appt.subject ?? appt.complaint ?? "Appointment"}
+                                  {appt.AppointmentAttribute?.date
+                                    ? ` · ${dayjs(appt.AppointmentAttribute.date).format("MMM D, YYYY")}`
+                                    : ""}
+                                </span>
+                              </span>
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
                 Cancel
               </Button>
               <Button type="submit" disabled={isPending}>

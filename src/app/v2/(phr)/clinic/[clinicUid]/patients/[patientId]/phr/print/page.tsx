@@ -16,12 +16,12 @@ export const maxDuration = 30
 
 interface ClinicPHRPrintPageProps {
   params: Promise<{ clinicUid: string; patientId: string }>
-  searchParams: Promise<{ sections?: string }>
+  searchParams: Promise<{ sections?: string; preview?: string }>
 }
 
 export default async function ClinicPatientPHRPrintPage({ params, searchParams }: ClinicPHRPrintPageProps) {
   const { clinicUid, patientId } = await params
-  const { sections: sectionsParam } = await searchParams
+  const { sections: sectionsParam, preview } = await searchParams
 
   const session = await getCachedSession()
   if (!session?.user?.sub) notFound()
@@ -46,7 +46,8 @@ export default async function ClinicPatientPHRPrintPage({ params, searchParams }
 
   return (
     <>
-      <PHRAutoPrint />
+      {/* Suppress auto-print in preview mode so iframe renders without a print dialog */}
+      {preview !== '1' && <PHRAutoPrint />}
       <PHRPrintContent
         patient={patient as SerializedPatientHealthRecordsResponse}
         sections={sections}

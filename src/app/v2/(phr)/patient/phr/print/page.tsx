@@ -13,11 +13,11 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic'
 
 interface PrintPageProps {
-  searchParams: Promise<{ sections?: string }>
+  searchParams: Promise<{ sections?: string; preview?: string }>
 }
 
 export default async function PatientPHRPrintPage({ searchParams }: PrintPageProps) {
-  const { sections: sectionsParam } = await searchParams
+  const { sections: sectionsParam, preview } = await searchParams
 
   const patient = await getPatientHealthRecords()
   if (!patient) notFound()
@@ -36,7 +36,8 @@ export default async function PatientPHRPrintPage({ searchParams }: PrintPagePro
 
   return (
     <>
-      <PHRAutoPrint />
+      {/* Suppress auto-print in preview mode so iframe renders without a print dialog */}
+      {preview !== '1' && <PHRAutoPrint />}
       <PHRPrintContent
         patient={patient as SerializedPatientHealthRecordsResponse}
         sections={sections}

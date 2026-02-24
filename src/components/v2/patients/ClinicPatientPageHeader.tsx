@@ -1,14 +1,13 @@
 'use client'
 
 import Link from 'next/link'
-import { ArrowLeft, ChevronRight, ClipboardList } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { ArrowLeft, ChevronRight } from 'lucide-react'
 
 interface ClinicPatientPageHeaderProps {
   clinicUid: string
   patientId: number
   patientName: string
-  /** 'view' shows: Patients > Patient Name (with prominent Appointments & Consultations button)
+  /** 'view' shows: Patients > Patient Name
    *  'edit' shows:  Patients > Patient Name > Edit Profile
    *  'consultations' shows: Patients > Patient Name > Consultations
    *  'appointments-consultations' shows: Patients > Patient Name > Appointments & Consultations */
@@ -72,16 +71,6 @@ export function ClinicPatientPageHeader({
             <span className="text-foreground font-semibold truncate">{patientName}</span>
           )}
         </nav>
-
-        {/* Action button – shown on the profile view page */}
-        {mode === 'view' && (
-          <Link href={`/v2/clinic/${clinicUid}/patients/${patientId}/appointments-consultations`}>
-            <Button size="sm" className="gap-2 h-9 px-4 text-sm shrink-0">
-              <ClipboardList className="h-4 w-4" />
-              Appointments &amp; Consultations
-            </Button>
-          </Link>
-        )}
       </div>
     </div>
   )

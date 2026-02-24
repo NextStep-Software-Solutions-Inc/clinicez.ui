@@ -1,57 +1,52 @@
 export default function BookAppointmentLoading() {
   return (
-    <div className="w-full max-w-2xl mx-auto">
-      {/* Header skeleton */}
-      <div className="mb-8 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg dark:bg-slate-700/50 bg-slate-200/60 animate-pulse" />
-          <div>
-            <div className="h-7 w-52 dark:bg-slate-700/50 bg-slate-200/60 rounded-lg animate-pulse mb-1.5" />
-            <div className="h-4 w-32 dark:bg-slate-700/40 bg-slate-200/40 rounded animate-pulse" />
+    /* Mirrors BookAppointmentWizard shell: sticky progress header + scrollable body + bottom bar */
+    <div className="-mx-4 sm:-mx-0">
+      {/* Progress header skeleton */}
+      <div className="sticky top-0 z-20 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200/60 dark:border-white/10 -mx-4 sm:-mx-0 px-4 pb-0">
+        {/* Thin progress strip */}
+        <div className="h-1 w-full bg-slate-200 dark:bg-slate-700/60 mb-3">
+          <div className="h-full w-[20%] bg-teal-400/40 animate-pulse rounded-full" />
+        </div>
+        <div className="flex items-center gap-3 pb-3">
+          <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700/50 animate-pulse shrink-0" />
+          <div className="flex-1">
+            <div className="h-4 w-48 bg-slate-200 dark:bg-slate-700/50 rounded animate-pulse mb-1.5" />
+            <div className="h-3 w-32 bg-slate-200/60 dark:bg-slate-700/40 rounded animate-pulse" />
           </div>
         </div>
-        <div className="w-10 h-10 rounded-lg dark:bg-slate-700/50 bg-slate-200/60 animate-pulse" />
       </div>
 
-      {/* Step indicator skeleton */}
-      <div className="flex items-center mb-8">
-        {[1, 2, 3, 4, 5].map((n, i) => (
-          <div key={n} className="contents">
-            <div className="flex flex-col items-center gap-1.5">
-              <div className="w-9 h-9 rounded-full dark:bg-slate-700/50 bg-slate-200/60 animate-pulse" />
-              <div className="h-3 w-12 dark:bg-slate-700/40 bg-slate-200/40 rounded animate-pulse hidden sm:block" />
-            </div>
-            {i < 4 && (
-              <div className="flex-1 h-0.5 mt-4 dark:bg-slate-700/40 bg-slate-200/40 animate-pulse" />
-            )}
-          </div>
-        ))}
-      </div>
-
-      {/* Card skeleton */}
-      <div className="dark:bg-slate-800/30 bg-white/40 rounded-2xl dark:border-white/10 border-slate-200/60 border shadow-lg p-6 md:p-8 space-y-6">
+      {/* Step content skeleton */}
+      <div className="px-4 sm:px-0 max-w-lg mx-auto pt-5 pb-28 space-y-5">
+        {/* Heading */}
         <div>
-          <div className="h-6 w-48 dark:bg-slate-700/50 bg-slate-200/60 rounded-lg animate-pulse mb-1.5" />
-          <div className="h-4 w-72 dark:bg-slate-700/40 bg-slate-200/40 rounded animate-pulse" />
+          <div className="h-7 w-52 bg-slate-200 dark:bg-slate-700/50 rounded-xl animate-pulse mb-2" />
+          <div className="h-4 w-72 bg-slate-200/60 dark:bg-slate-700/40 rounded animate-pulse" />
+        </div>
+        {/* Input fields */}
+        <div className="space-y-2">
+          <div className="h-3.5 w-20 bg-slate-200/60 dark:bg-slate-700/40 rounded animate-pulse" />
+          <div className="h-12 bg-slate-200 dark:bg-slate-700/50 rounded-2xl animate-pulse" />
         </div>
         <div className="space-y-2">
-          <div className="h-3 w-20 dark:bg-slate-700/40 bg-slate-200/40 rounded animate-pulse" />
-          <div className="h-10 dark:bg-slate-700/50 bg-slate-200/60 rounded-xl animate-pulse" />
+          <div className="h-3.5 w-36 bg-slate-200/60 dark:bg-slate-700/40 rounded animate-pulse" />
+          <div className="h-24 bg-slate-200 dark:bg-slate-700/50 rounded-2xl animate-pulse" />
         </div>
-        <div className="space-y-2">
-          <div className="h-3 w-28 dark:bg-slate-700/40 bg-slate-200/40 rounded animate-pulse" />
-          <div className="h-24 dark:bg-slate-700/50 bg-slate-200/60 rounded-xl animate-pulse" />
-        </div>
-        <div className="grid grid-cols-3 gap-4">
+        <div className="space-y-4">
           {[1, 2, 3].map((n) => (
             <div key={n} className="space-y-2">
-              <div className="h-3 w-20 dark:bg-slate-700/40 bg-slate-200/40 rounded animate-pulse" />
-              <div className="h-10 dark:bg-slate-700/50 bg-slate-200/60 rounded-xl animate-pulse" />
+              <div className="h-3.5 w-28 bg-slate-200/60 dark:bg-slate-700/40 rounded animate-pulse" />
+              <div className="h-12 bg-slate-200 dark:bg-slate-700/50 rounded-2xl animate-pulse" />
             </div>
           ))}
         </div>
-        <div className="flex justify-end">
-          <div className="h-10 w-28 dark:bg-slate-700/50 bg-slate-200/60 rounded-xl animate-pulse" />
+      </div>
+
+      {/* Bottom action bar skeleton */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-t border-slate-200/80 dark:border-white/10 px-4 pt-3 pb-4">
+        <div className="max-w-lg mx-auto">
+          <div className="h-14 bg-teal-200/60 dark:bg-teal-900/30 rounded-2xl animate-pulse" />
         </div>
       </div>
     </div>

@@ -1,5 +1,11 @@
 'use client'
 
+/**
+ * BookAppointmentWizard – v2 patient dashboard
+ * Mobile-first 5-step appointment booking flow.
+ * Visually distinct from the v1 BookAppointmentSheet (which is a top-slide drawer).
+ */
+
 import { useState, useCallback, useMemo, useEffect, FormEvent } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -17,15 +23,46 @@ import { useTimeSlots } from '@/hooks/useTimeSlots'
 import { useClinicServiceCategories } from '@/hooks/useClinicServiceCategory'
 import { useClinicAppointmentTypes } from '@/hooks/useOrgAppointmentType'
 import { useClinicAppointmentModes } from '@/hooks/useOrgAppointmentMode'
-import { ThemeToggle } from '@/components/patient-dashboard-v2/ThemeToggle'
-import { ArrowLeft, ArrowRight, Check, Calendar, Paperclip, Stethoscope, FileCheck, X, CheckCircle2, Loader2 } from 'lucide-react'
 import AppointmentCalendar from '@/components/appointment/AppointmentCalendar'
 import VacantTimeSlot from '@/components/appointment/VacantTimeSlot'
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { FileInput, FileUploader, FileUploaderContent, FileUploaderItem } from '@/components/extention/file-upload'
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  FileInput,
+  FileUploader,
+  FileUploaderContent,
+  FileUploaderItem,
+} from '@/components/extention/file-upload'
+import {
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  Calendar,
+  Paperclip,
+  Stethoscope,
+  FileCheck,
+  X,
+  CheckCircle2,
+  Loader2,
+  MessageSquarePlus,
+  UserRound,
+  Clock,
+  ShieldCheck,
+  ClipboardList,
+  Building2,
+  TriangleAlert,
+  ChevronLeft,
+} from 'lucide-react'
 
 // ---------------------------------------------------------------------------
-// Types
+// Constants
 // ---------------------------------------------------------------------------
 
 interface BookAppointmentWizardProps {
@@ -41,49 +78,128 @@ const DEFAULT_PRIVACY_URL =
   'https://www.healthcare.gov.au/sites/default/files/2021-04/Privacy%20Policy%20for%20Healthcare%20Providers%20and%20Healthcare%20Organisations.pdf'
 
 const STEPS = [
-  { id: 1, label: 'Complaint' },
-  { id: 2, label: 'Doctor' },
-  { id: 3, label: 'Schedule' },
-  { id: 4, label: 'Consent' },
-  { id: 5, label: 'Review' },
+  { id: 1, label: 'Complaint',  icon: MessageSquarePlus },
+  { id: 2, label: 'Doctor',     icon: UserRound },
+  { id: 3, label: 'Schedule',   icon: Clock },
+  { id: 4, label: 'Consent',    icon: ShieldCheck },
+  { id: 5, label: 'Review',     icon: ClipboardList },
 ] as const
 
+// Teal/emerald accent — completely different from the v1 blue
+const ACCENT = {
+  bar:    'bg-teal-500',
+  ring:   'ring-teal-500',
+  text:   'text-teal-600 dark:text-teal-400',
+  border: 'border-teal-500',
+  bg:     'bg-teal-50 dark:bg-teal-950/30',
+  pill:   'bg-teal-500/15 text-teal-700 dark:text-teal-300',
+  btn:    'bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white',
+  check:  'bg-teal-600 border-teal-600',
+}
+
 // ---------------------------------------------------------------------------
-// Helpers
+// Shared UI primitives
 // ---------------------------------------------------------------------------
 
-function StepIndicator({ step, label, state }: { step: number; label: string; state: 'done' | 'active' | 'pending' }) {
+/** Full-width label above a form field */
+function FieldLabel({ children, required }: { children: React.ReactNode; required?: boolean }) {
   return (
-    <div className="flex flex-col items-center gap-1.5 min-w-0">
-      <div
-        className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold border-2 transition-all ${
-          state === 'done'
-            ? 'bg-blue-600 border-blue-600 text-white'
-            : state === 'active'
-            ? 'bg-white dark:bg-slate-800 border-blue-600 text-blue-600 dark:text-blue-400'
-            : 'bg-white/30 dark:bg-slate-800/30 border-slate-300 dark:border-slate-600 text-slate-400 dark:text-slate-500'
-        }`}
-      >
-        {state === 'done' ? <Check className="w-4 h-4" /> : step}
+    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+      {children}
+      {required && <span className="ml-1 text-red-500">*</span>}
+    </label>
+  )
+}
+
+/** Mobile-height text input */
+function TextInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <input
+      {...props}
+      className={`w-full h-12 px-4 rounded-2xl border border-slate-200 dark:border-white/10 bg-white/70 dark:bg-slate-800/60 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500/50 transition-all text-base ${props.className ?? ''}`}
+    />
+  )
+}
+
+/** Mobile-height textarea */
+function TextArea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  return (
+    <textarea
+      {...props}
+      className={`w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-white/10 bg-white/70 dark:bg-slate-800/60 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500/50 transition-all resize-none text-base ${props.className ?? ''}`}
+    />
+  )
+}
+
+/** Sticky bottom action bar — mobile-app navigation pattern */
+function BottomBar({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="fixed bottom-0 left-0 right-0 z-30 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-t border-slate-200/80 dark:border-white/10 px-4 pb-[env(safe-area-inset-bottom)] pt-3 pb-4">
+      <div className="max-w-lg mx-auto flex gap-3">
+        {children}
       </div>
-      <span
-        className={`text-xs font-medium hidden sm:block ${
-          state === 'active'
-            ? 'text-blue-600 dark:text-blue-400'
-            : state === 'done'
-            ? 'dark:text-slate-300 text-slate-600'
-            : 'text-slate-400 dark:text-slate-500'
-        }`}
-      >
-        {label}
-      </span>
     </div>
   )
 }
 
-function StepConnector({ done }: { done: boolean }) {
+// ---------------------------------------------------------------------------
+// Progress header
+// ---------------------------------------------------------------------------
+
+function ProgressHeader({
+  step,
+  total,
+  label,
+  clinicName,
+  onBack,
+}: {
+  step: number
+  total: number
+  label: string
+  clinicName: string
+  onBack: () => void
+}) {
+  const pct = Math.round(((step - 1) / total) * 100)
+  const StepIcon = STEPS[step - 1]?.icon
+
   return (
-    <div className={`flex-1 h-0.5 mt-4 transition-colors ${done ? 'bg-blue-600' : 'bg-slate-200 dark:bg-slate-700'}`} />
+    <div className="sticky top-0 z-20 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200/60 dark:border-white/10 -mx-4 sm:-mx-6 md:-mx-8 px-4 sm:px-6 md:px-8 pb-0">
+      {/* Thin progress strip */}
+      <div className="h-1 w-full bg-slate-200 dark:bg-slate-700/60 mb-3">
+        <div
+          className={`h-full ${ACCENT.bar} transition-all duration-500 rounded-full`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+
+      <div className="flex items-center gap-3 pb-3">
+        <button
+          type="button"
+          aria-label="Go back"
+          onClick={onBack}
+          className="shrink-0 w-10 h-10 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 active:scale-95 transition-all"
+        >
+          <ChevronLeft className="w-5 h-5" />
+        </button>
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            {StepIcon && (
+              <span className={`inline-flex items-center justify-center w-6 h-6 rounded-lg ${ACCENT.pill}`}>
+                <StepIcon className="w-3.5 h-3.5" />
+              </span>
+            )}
+            <span className={`text-xs font-bold uppercase tracking-widest ${ACCENT.text}`}>
+              Step {step} of {total} — {label}
+            </span>
+          </div>
+          <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
+            <Building2 className="inline w-3 h-3 mr-1 -mt-px" />
+            {clinicName}
+          </p>
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -107,64 +223,70 @@ function Step1Complaint({
   const { data: appointmentTypes } = useClinicAppointmentTypes(clinicUid)
   const { data: appointmentModes } = useClinicAppointmentModes(clinicUid)
 
-  const canProceed = subject.trim().length >= 3 && !!form.modeId && !!form.appointmentTypeId && !!form.serviceId
+  const canProceed =
+    subject.trim().length >= 3 &&
+    !!form.modeId &&
+    !!form.appointmentTypeId &&
+    !!form.serviceId
 
   const handleNext = () => {
-    setForm((prev) => ({ ...prev, subject: subject.trim(), chiefComplaint: complaint.trim(), attachments: files }))
+    setForm((p) => ({
+      ...p,
+      subject: subject.trim(),
+      chiefComplaint: complaint.trim(),
+      attachments: files,
+    }))
     onNext()
   }
 
   const dropZoneConfig = { maxFiles: 5, maxSize: 1024 * 1024 * 4, multiple: true }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-bold dark:text-white text-slate-900 mb-1">What brings you in?</h2>
-        <p className="text-sm dark:text-slate-400 text-slate-500">Tell us about your concern so we can prepare for your visit.</p>
+    <div className="space-y-5 pb-28">
+      {/* Section heading */}
+      <div className="pt-4">
+        <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white leading-tight">
+          What brings you in?
+        </h2>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+          Tell us about your concern so the clinic can prepare for your visit.
+        </p>
       </div>
 
       {/* Subject */}
       <div>
-        <label className="block text-sm font-semibold dark:text-slate-300 text-slate-700 mb-1.5">
-          Subject <span className="text-red-500">*</span>
-        </label>
-        <input
+        <FieldLabel required>Subject</FieldLabel>
+        <TextInput
           type="text"
           value={subject}
           onChange={(e) => setSubject(e.target.value)}
           placeholder="e.g. Persistent headache for 3 days"
-          className="w-full px-4 py-2.5 rounded-xl dark:bg-slate-800/60 bg-white/60 dark:border-white/10 border-slate-200 border text-sm dark:text-white text-slate-900 dark:placeholder:text-slate-500 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
         />
         {subject.trim().length > 0 && subject.trim().length < 3 && (
-          <p className="mt-1 text-xs text-red-500">Subject must be at least 3 characters.</p>
+          <p className="mt-1.5 text-xs text-red-500">Subject must be at least 3 characters.</p>
         )}
       </div>
 
       {/* Chief Complaint */}
       <div>
-        <label className="block text-sm font-semibold dark:text-slate-300 text-slate-700 mb-1.5">
-          Chief Complaint / Message
-        </label>
-        <textarea
+        <FieldLabel>Chief Complaint / Message</FieldLabel>
+        <TextArea
           rows={4}
           value={complaint}
           onChange={(e) => setComplaint(e.target.value)}
           placeholder="Describe your symptoms, when they started, what makes them better or worse…"
-          className="w-full px-4 py-2.5 rounded-xl dark:bg-slate-800/60 bg-white/60 dark:border-white/10 border-slate-200 border text-sm dark:text-white text-slate-900 dark:placeholder:text-slate-500 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all resize-none"
         />
       </div>
 
-      {/* Service / Mode / Type */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      {/* Service / Mode / Type — stacked for mobile */}
+      <div className="space-y-4">
         <div>
-          <label className="block text-sm font-semibold dark:text-slate-300 text-slate-700 mb-1.5">
-            Appointment Type <span className="text-red-500">*</span>
-          </label>
+          <FieldLabel required>Appointment Type</FieldLabel>
           <Select
             value={form.modeId?.toString()}
             onValueChange={(v) => setForm((p) => ({ ...p, modeId: parseInt(v, 10) }))}
           >
-            <SelectTrigger className="dark:bg-slate-800/60 bg-white/60 dark:border-white/10 border-slate-200">
+            <SelectTrigger className="h-12 rounded-2xl bg-white/70 dark:bg-slate-800/60 border-slate-200 dark:border-white/10 text-base">
               <SelectValue placeholder="Select type" />
             </SelectTrigger>
             <SelectContent>
@@ -174,15 +296,14 @@ function Step1Complaint({
             </SelectContent>
           </Select>
         </div>
+
         <div>
-          <label className="block text-sm font-semibold dark:text-slate-300 text-slate-700 mb-1.5">
-            Consultation Type <span className="text-red-500">*</span>
-          </label>
+          <FieldLabel required>Consultation Type</FieldLabel>
           <Select
             value={form.appointmentTypeId?.toString()}
             onValueChange={(v) => setForm((p) => ({ ...p, appointmentTypeId: parseInt(v, 10) }))}
           >
-            <SelectTrigger className="dark:bg-slate-800/60 bg-white/60 dark:border-white/10 border-slate-200">
+            <SelectTrigger className="h-12 rounded-2xl bg-white/70 dark:bg-slate-800/60 border-slate-200 dark:border-white/10 text-base">
               <SelectValue placeholder="Select type" />
             </SelectTrigger>
             <SelectContent>
@@ -192,15 +313,14 @@ function Step1Complaint({
             </SelectContent>
           </Select>
         </div>
+
         <div>
-          <label className="block text-sm font-semibold dark:text-slate-300 text-slate-700 mb-1.5">
-            Service <span className="text-red-500">*</span>
-          </label>
+          <FieldLabel required>Service</FieldLabel>
           <Select
             value={form.serviceId?.toString()}
             onValueChange={(v) => setForm((p) => ({ ...p, serviceId: parseInt(v, 10) }))}
           >
-            <SelectTrigger className="dark:bg-slate-800/60 bg-white/60 dark:border-white/10 border-slate-200">
+            <SelectTrigger className="h-12 rounded-2xl bg-white/70 dark:bg-slate-800/60 border-slate-200 dark:border-white/10 text-base">
               <SelectValue placeholder="Select service" />
             </SelectTrigger>
             <SelectContent>
@@ -219,28 +339,31 @@ function Step1Complaint({
 
       {/* Attachments */}
       <div>
-        <label className="block text-sm font-semibold dark:text-slate-300 text-slate-700 mb-1.5">
-          Attachments <span className="text-xs font-normal dark:text-slate-500 text-slate-400">(optional, up to 5 files, max 4 MB each)</span>
-        </label>
+        <FieldLabel>
+          Attachments{' '}
+          <span className="font-normal text-slate-400 dark:text-slate-500">(optional · max 4 MB each)</span>
+        </FieldLabel>
         <FileUploader
           value={files}
           onValueChange={(f) => setFiles(f ?? [])}
           dropzoneOptions={dropZoneConfig}
-          className="relative dark:bg-slate-800/60 bg-white/60 dark:border-white/10 border-slate-200 border rounded-xl"
+          className="relative bg-white/70 dark:bg-slate-800/60 border border-dashed border-slate-300 dark:border-white/10 rounded-2xl"
         >
-          <FileInput className="outline-dashed outline-1 dark:outline-white/20 outline-slate-300 rounded-lg m-2">
-            <div className="flex flex-col items-center justify-center py-6 gap-2">
-              <Paperclip className="w-7 h-7 dark:text-slate-400 text-slate-400" />
-              <p className="text-sm dark:text-slate-400 text-slate-500">
-                <span className="font-medium">Click to upload</span> or drag & drop
+          <FileInput className="outline-none rounded-2xl">
+            <div className="flex flex-col items-center justify-center py-7 gap-2 px-4 text-center">
+              <div className="w-12 h-12 rounded-full bg-teal-50 dark:bg-teal-900/20 flex items-center justify-center">
+                <Paperclip className="w-6 h-6 text-teal-600 dark:text-teal-400" />
+              </div>
+              <p className="text-sm text-slate-600 dark:text-slate-300">
+                <span className="font-semibold">Tap to upload</span> or drag & drop
               </p>
-              <p className="text-xs dark:text-slate-500 text-slate-400">SVG, PNG, JPG or GIF (max 4 MB each)</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500">PNG, JPG, GIF or PDF (max 4 MB)</p>
             </div>
           </FileInput>
-          <FileUploaderContent>
+          <FileUploaderContent className="px-3 pb-3">
             {files.map((file, i) => (
-              <FileUploaderItem key={i} index={i}>
-                <Paperclip className="h-4 w-4 stroke-current shrink-0" />
+              <FileUploaderItem key={i} index={i} className="rounded-xl">
+                <Paperclip className="h-4 w-4 shrink-0 text-teal-600 dark:text-teal-400" />
                 <span className="text-sm truncate">{file.name}</span>
               </FileUploaderItem>
             ))}
@@ -248,26 +371,32 @@ function Step1Complaint({
         </FileUploader>
       </div>
 
-      <div className="flex justify-end pt-2">
+      <BottomBar>
         <button
           type="button"
           disabled={!canProceed}
           onClick={handleNext}
-          className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className={`flex-1 h-14 flex items-center justify-center gap-2 rounded-2xl font-bold text-base transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed ${ACCENT.btn}`}
         >
-          Next
-          <ArrowRight className="w-4 h-4" />
+          Continue
+          <ArrowRight className="w-5 h-5" />
         </button>
-      </div>
+      </BottomBar>
     </div>
   )
 }
 
 // ---------------------------------------------------------------------------
-// Step 2 – Healthcare Provider (optional)
+// Step 2 – Healthcare Provider
 // ---------------------------------------------------------------------------
 
-function Step2Provider({ clinicUid, onNext, onBack }: { clinicUid: string; onNext: () => void; onBack: () => void }) {
+function Step2Provider({
+  clinicUid,
+  onNext,
+}: {
+  clinicUid: string
+  onNext: () => void
+}) {
   const [form, setForm] = useAtom(bookAppointmentAtom)
   const { data: hps } = useHPs({ clinicUid })
 
@@ -284,97 +413,128 @@ function Step2Provider({ clinicUid, onNext, onBack }: { clinicUid: string; onNex
   }, [hps])
 
   const getHpLabel = (hp: NonNullable<typeof hps>[number]) =>
-    [hp.HPProfile?.title, hp.HPProfile?.name || `${hp.User?.firstName ?? ''} ${hp.User?.lastName ?? ''}`.trim(), hp.HPProfile?.suffix]
+    [
+      hp.HPProfile?.title,
+      hp.HPProfile?.name || `${hp.User?.firstName ?? ''} ${hp.User?.lastName ?? ''}`.trim(),
+      hp.HPProfile?.suffix,
+    ]
       .filter(Boolean)
       .join(' ')
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-bold dark:text-white text-slate-900 mb-1">Choose Your Doctor</h2>
-        <p className="text-sm dark:text-slate-400 text-slate-500">
-          Select a preferred healthcare provider, or skip to let the clinic assign one.
+    <div className="space-y-4 pb-28">
+      <div className="pt-4">
+        <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white leading-tight">
+          Choose Your Doctor
+        </h2>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+          Select a preferred provider, or skip to let the clinic assign one.
         </p>
       </div>
 
-      {hps && hps.length > 0 ? (
-        <div className="flex flex-col gap-3 max-h-[50vh] overflow-y-auto pr-1">
-          {/* No preference option */}
-          <button
-            type="button"
-            onClick={() => setForm((p) => ({ ...p, hpId: undefined, hpUserId: undefined }))}
-            className={`w-full flex items-center gap-3 p-4 rounded-xl border-2 text-left transition-all ${
-              !form.hpId
-                ? 'border-blue-500 dark:bg-blue-950/30 bg-blue-50'
-                : 'dark:border-white/10 border-slate-200 dark:bg-slate-800/40 bg-white/40 dark:hover:bg-slate-800/60 hover:bg-white/60'
-            }`}
-          >
-            <div className="w-10 h-10 rounded-full dark:bg-slate-700/60 bg-slate-100 flex items-center justify-center shrink-0">
-              <Stethoscope className="w-5 h-5 dark:text-slate-400 text-slate-500" />
-            </div>
-            <div>
-              <p className="font-semibold dark:text-white text-slate-900 text-sm">No preference</p>
-              <p className="text-xs dark:text-slate-400 text-slate-500">Let the clinic assign a doctor</p>
-            </div>
-            {!form.hpId && <Check className="w-5 h-5 text-blue-600 ml-auto shrink-0" />}
-          </button>
+      {hps === undefined ? (
+        <div className="flex items-center justify-center py-16 gap-3 text-slate-400 dark:text-slate-500">
+          <Loader2 className="w-5 h-5 animate-spin" />
+          <span className="text-sm">Loading providers…</span>
+        </div>
+      ) : hps.length === 0 ? (
+        <div className="rounded-2xl bg-slate-100/60 dark:bg-slate-800/40 border border-slate-200 dark:border-white/10 p-6 text-center">
+          <Stethoscope className="w-10 h-10 mx-auto text-slate-400 mb-2" />
+          <p className="text-sm text-slate-500 dark:text-slate-400">No providers available right now.</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">The clinic will assign a doctor when they confirm your booking.</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {/* No preference */}
+          <ProviderCard
+            label="No preference"
+            sublabel="Let the clinic assign a doctor"
+            isSelected={!form.hpId}
+            onSelect={() => setForm((p) => ({ ...p, hpId: undefined, hpUserId: undefined }))}
+            icon={<Stethoscope className="w-5 h-5 text-slate-500 dark:text-slate-400" />}
+            iconBg="bg-slate-100 dark:bg-slate-700/60"
+          />
 
           {groupedHps.map((group) => (
             <div key={group.hpTypeName}>
-              <p className="text-xs font-semibold uppercase tracking-wide dark:text-slate-500 text-slate-400 mb-2 px-1">{group.hpTypeName}</p>
-              {group.hps.map((hp) => {
-                const isSelected = form.hpId === hp.id
-                return (
-                  <button
-                    key={hp.id}
-                    type="button"
-                    onClick={() => setForm((p) => ({ ...p, hpId: hp.id, hpUserId: hp.User?.userId }))}
-                    className={`w-full flex items-center gap-3 p-4 rounded-xl border-2 text-left transition-all mb-2 ${
-                      isSelected
-                        ? 'border-blue-500 dark:bg-blue-950/30 bg-blue-50'
-                        : 'dark:border-white/10 border-slate-200 dark:bg-slate-800/40 bg-white/40 dark:hover:bg-slate-800/60 hover:bg-white/60'
-                    }`}
-                  >
-                    <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center shrink-0">
-                      <Stethoscope className="w-5 h-5 text-blue-500" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="font-semibold dark:text-white text-slate-900 text-sm truncate">{getHpLabel(hp)}</p>
-                      <p className="text-xs dark:text-slate-400 text-slate-500">{group.hpTypeName}</p>
-                    </div>
-                    {isSelected && <Check className="w-5 h-5 text-blue-600 ml-auto shrink-0" />}
-                  </button>
-                )
-              })}
+              <p className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-2 px-1 mt-4">
+                {group.hpTypeName}
+              </p>
+              {group.hps.map((hp) => (
+                <ProviderCard
+                  key={hp.id}
+                  label={getHpLabel(hp)}
+                  sublabel={group.hpTypeName}
+                  isSelected={form.hpId === hp.id}
+                  onSelect={() => setForm((p) => ({ ...p, hpId: hp.id, hpUserId: hp.User?.userId }))}
+                  icon={<Stethoscope className="w-5 h-5 text-teal-600 dark:text-teal-400" />}
+                  iconBg="bg-teal-50 dark:bg-teal-900/20"
+                />
+              ))}
             </div>
           ))}
         </div>
-      ) : (
-        <div className="py-8 text-center dark:bg-slate-800/40 bg-slate-100/60 rounded-xl">
-          <Stethoscope className="w-10 h-10 mx-auto dark:text-slate-500 text-slate-400 mb-2" />
-          <p className="text-sm dark:text-slate-400 text-slate-500">No healthcare providers are available for this clinic.</p>
-          <p className="text-xs dark:text-slate-500 text-slate-400 mt-1">You can proceed and the clinic will assign a doctor.</p>
-        </div>
       )}
 
-      <div className="flex items-center justify-between pt-2">
-        <button type="button" onClick={onBack} className="flex items-center gap-2 px-5 py-2.5 rounded-xl dark:bg-slate-700/60 bg-slate-100 dark:text-white text-slate-900 font-semibold text-sm dark:hover:bg-slate-700 hover:bg-slate-200 transition-colors">
-          <ArrowLeft className="w-4 h-4" /> Back
+      <BottomBar>
+        <button
+          type="button"
+          onClick={onNext}
+          className={`flex-1 h-14 flex items-center justify-center gap-2 rounded-2xl font-bold text-base transition-all active:scale-[0.98] ${ACCENT.btn}`}
+        >
+          {form.hpId ? 'Continue' : 'Skip'}
+          <ArrowRight className="w-5 h-5" />
         </button>
-        <button type="button" onClick={onNext} className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 transition-colors">
-          {form.hpId ? 'Next' : 'Skip'}
-          <ArrowRight className="w-4 h-4" />
-        </button>
-      </div>
+      </BottomBar>
     </div>
   )
 }
 
+function ProviderCard({
+  label,
+  sublabel,
+  isSelected,
+  onSelect,
+  icon,
+  iconBg,
+}: {
+  label: string
+  sublabel: string
+  isSelected: boolean
+  onSelect: () => void
+  icon: React.ReactNode
+  iconBg: string
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      aria-label={`Select ${label}, ${sublabel}`}
+      className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 text-left transition-all active:scale-[0.99] mb-2 last:mb-0 ${
+        isSelected
+          ? `${ACCENT.border} ${ACCENT.bg}`
+          : 'border-slate-200 dark:border-white/10 bg-white/60 dark:bg-slate-800/40 hover:border-teal-300 dark:hover:border-teal-700'
+      }`}
+    >
+      <div className={`w-12 h-12 rounded-full ${iconBg} flex items-center justify-center shrink-0`}>
+        {icon}
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="font-semibold text-slate-900 dark:text-white text-sm leading-tight truncate">{label}</p>
+        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{sublabel}</p>
+      </div>
+      <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${isSelected ? ACCENT.check : 'border-slate-300 dark:border-slate-600'}`}>
+        {isSelected && <Check className="w-3.5 h-3.5 text-white" />}
+      </div>
+    </button>
+  )
+}
+
 // ---------------------------------------------------------------------------
-// Step 3 – Time Slot (optional)
+// Step 3 – Schedule
 // ---------------------------------------------------------------------------
 
-function Step3Schedule({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
+function Step3Schedule({ onNext }: { onNext: () => void }) {
   const [form, setForm] = useAtom(bookAppointmentAtom)
   const { appointmentTypeId, serviceId, hpUserId, hpId } = form
 
@@ -387,7 +547,9 @@ function Step3Schedule({ onNext, onBack }: { onNext: () => void; onBack: () => v
 
   const availableDates = useMemo(
     () =>
-      isValidating ? [] : (timeSlots?.data?.filter((a) => a.status).map((a) => dayjs(a.date).startOf('day').toDate()) ?? []),
+      isValidating
+        ? []
+        : (timeSlots?.data?.filter((a) => a.status).map((a) => dayjs(a.date).startOf('day').toDate()) ?? []),
     [isValidating, timeSlots?.data]
   )
 
@@ -404,33 +566,40 @@ function Step3Schedule({ onNext, onBack }: { onNext: () => void; onBack: () => v
   const noHpSelected = !form.hpUserId || !form.hpId
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-bold dark:text-white text-slate-900 mb-1">Pick a Schedule</h2>
-        <p className="text-sm dark:text-slate-400 text-slate-500">
-          Choose a date and time that works for you, or skip to let the clinic decide.
+    <div className="space-y-5 pb-28">
+      <div className="pt-4">
+        <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white leading-tight">
+          Pick a Schedule
+        </h2>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+          Choose a date and time, or skip to let the clinic decide.
         </p>
       </div>
 
       {noHpSelected ? (
-        <div className="rounded-xl dark:bg-amber-900/20 bg-amber-50 dark:border-amber-700/30 border-amber-300 border p-4 flex items-start gap-3">
-          <Calendar className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+        <div className="rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 p-4 flex items-start gap-3">
+          <TriangleAlert className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
           <div>
             <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">No doctor selected</p>
-            <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">Go back to select a doctor to view available time slots, or skip this step.</p>
+            <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">
+              Go back and select a doctor to view their available slots, or skip this step.
+            </p>
           </div>
         </div>
       ) : isValidating ? (
-        <div className="flex items-center justify-center py-12 gap-3 dark:text-slate-400 text-slate-500">
-          <Loader2 className="w-5 h-5 animate-spin" />
+        <div className="flex flex-col items-center justify-center py-16 gap-3 text-slate-400 dark:text-slate-500">
+          <Loader2 className="w-7 h-7 animate-spin text-teal-500" />
           <span className="text-sm">Loading available slots…</span>
         </div>
       ) : (
-        <div className="flex flex-col md:flex-row gap-6 items-start justify-center">
+        /* Calendar stacked above time slots — optimised for mobile */
+        <div className="flex flex-col gap-6">
           <AppointmentCalendar
             availableDates={availableDates}
             preferredDate={form.preferredDate}
-            onSelect={(date) => setForm((p) => ({ ...p, preferredDate: date, selectedTimeSlot: undefined }))}
+            onSelect={(date) =>
+              setForm((p) => ({ ...p, preferredDate: date, selectedTimeSlot: undefined }))
+            }
           />
           <VacantTimeSlot
             timeSlots={availableTimeSlots}
@@ -441,49 +610,49 @@ function Step3Schedule({ onNext, onBack }: { onNext: () => void; onBack: () => v
       )}
 
       {form.selectedTimeSlot && (
-        <div className="flex items-center gap-2 dark:bg-blue-900/20 bg-blue-50 dark:border-blue-700/30 border-blue-300 border rounded-xl px-4 py-3">
-          <Calendar className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
-          <p className="text-sm dark:text-blue-200 text-blue-800 font-medium">
-            {form.preferredDate && dayjs(form.preferredDate).format('ddd, MMM D, YYYY')} ·{' '}
-            {dayjs(form.selectedTimeSlot.start).format('LT')} – {dayjs(form.selectedTimeSlot.end).format('LT')}
+        <div className="flex items-center gap-3 bg-teal-50 dark:bg-teal-950/30 border border-teal-200 dark:border-teal-800/40 rounded-2xl px-4 py-3">
+          <Calendar className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
+          <p className="text-sm text-teal-800 dark:text-teal-200 font-medium flex-1 min-w-0 truncate">
+            {form.preferredDate && dayjs(form.preferredDate).format('ddd, MMM D, YYYY')}
+            {' · '}
+            {dayjs(form.selectedTimeSlot.start).format('LT')}–{dayjs(form.selectedTimeSlot.end).format('LT')}
           </p>
           <button
             type="button"
             onClick={() => setForm((p) => ({ ...p, selectedTimeSlot: undefined, preferredDate: undefined }))}
-            className="ml-auto dark:text-slate-400 text-slate-500 hover:text-red-500 transition-colors"
+            className="shrink-0 text-slate-400 hover:text-red-500 transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
       )}
 
-      <div className="flex items-center justify-between pt-2">
-        <button type="button" onClick={onBack} className="flex items-center gap-2 px-5 py-2.5 rounded-xl dark:bg-slate-700/60 bg-slate-100 dark:text-white text-slate-900 font-semibold text-sm dark:hover:bg-slate-700 hover:bg-slate-200 transition-colors">
-          <ArrowLeft className="w-4 h-4" /> Back
+      <BottomBar>
+        <button
+          type="button"
+          onClick={onNext}
+          className={`flex-1 h-14 flex items-center justify-center gap-2 rounded-2xl font-bold text-base transition-all active:scale-[0.98] ${ACCENT.btn}`}
+        >
+          {form.selectedTimeSlot ? 'Continue' : 'Skip'}
+          <ArrowRight className="w-5 h-5" />
         </button>
-        <button type="button" onClick={onNext} className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 transition-colors">
-          {form.selectedTimeSlot ? 'Next' : 'Skip'}
-          <ArrowRight className="w-4 h-4" />
-        </button>
-      </div>
+      </BottomBar>
     </div>
   )
 }
 
 // ---------------------------------------------------------------------------
-// Step 4 – Consent / Terms
+// Step 4 – Consent
 // ---------------------------------------------------------------------------
 
 function Step4Consent({
   termsUrl,
   privacyUrl,
   onNext,
-  onBack,
 }: {
   termsUrl: string | null
   privacyUrl: string | null
   onNext: () => void
-  onBack: () => void
 }) {
   const [form, setForm] = useAtom(bookAppointmentAtom)
   const [certify, setCertify] = useState(form.certify ?? false)
@@ -513,8 +682,9 @@ function Step4Consent({
       id: 'certify',
       checked: certify,
       onChange: setCertify,
-      label: 'Certify that all information is accurate',
-      description: 'I hereby certify that all information provided is true and accurate to the best of my knowledge.',
+      label: 'I certify this information is accurate',
+      description:
+        'All information provided is true and accurate to the best of my knowledge.',
       linkText: null,
       linkHref: null,
     },
@@ -523,7 +693,7 @@ function Step4Consent({
       checked: agreeTerms,
       onChange: setAgreeTerms,
       label: 'Terms and Conditions',
-      description: 'I agree to the Terms and Conditions for Healthcare Providers and Healthcare Organizations.',
+      description: 'I agree to the Terms and Conditions for Healthcare Providers and Organizations.',
       linkText: 'Terms and Conditions',
       linkHref: resolvedTermsUrl,
     },
@@ -532,46 +702,58 @@ function Step4Consent({
       checked: agreePrivacy,
       onChange: setAgreePrivacy,
       label: 'Privacy Policy',
-      description: 'I agree to the Privacy Policy for Healthcare Providers and Healthcare Organizations.',
+      description: 'I agree to the Privacy Policy for Healthcare Providers and Organizations.',
       linkText: 'Privacy Policy',
       linkHref: resolvedPrivacyUrl,
     },
   ]
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-bold dark:text-white text-slate-900 mb-1">Terms & Consent</h2>
-        <p className="text-sm dark:text-slate-400 text-slate-500">Please review and accept the following to continue.</p>
+    <div className="space-y-4 pb-28">
+      <div className="pt-4">
+        <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white leading-tight">
+          Your Consent
+        </h2>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+          Please review and accept all items below to proceed.
+        </p>
       </div>
 
-      <div className="flex flex-col gap-3">
+      <div className="space-y-3">
         {consents.map((c) => (
           <button
             key={c.id}
             type="button"
             onClick={() => c.onChange(!c.checked)}
-            className={`w-full flex items-start gap-3 p-4 rounded-xl border-2 text-left transition-all ${
+            className={`w-full flex items-start gap-4 p-4 rounded-2xl border-2 text-left transition-all active:scale-[0.99] ${
               c.checked
-                ? 'border-blue-500 dark:bg-blue-950/20 bg-blue-50'
-                : 'dark:border-white/10 border-slate-200 dark:bg-slate-800/40 bg-white/40'
+                ? `${ACCENT.border} ${ACCENT.bg}`
+                : 'border-slate-200 dark:border-white/10 bg-white/60 dark:bg-slate-800/40'
             }`}
           >
-            <div className={`w-5 h-5 mt-0.5 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${c.checked ? 'bg-blue-600 border-blue-600' : 'dark:border-slate-500 border-slate-300'}`}>
-              {c.checked && <Check className="w-3 h-3 text-white" />}
+            <div
+              className={`w-6 h-6 mt-0.5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
+                c.checked ? ACCENT.check : 'border-slate-300 dark:border-slate-600'
+              }`}
+            >
+              {c.checked && <Check className="w-3.5 h-3.5 text-white" />}
             </div>
-            <div className="min-w-0">
-              <p className="font-semibold dark:text-white text-slate-900 text-sm">{c.label}</p>
-              <p className="text-xs dark:text-slate-400 text-slate-500 mt-0.5">{c.description}</p>
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold text-slate-900 dark:text-white text-sm leading-snug">
+                {c.label}
+              </p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                {c.description}
+              </p>
               {c.linkHref && c.linkText && (
                 <Link
                   href={c.linkHref}
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={(e) => e.stopPropagation()}
-                  className="text-xs text-blue-600 dark:text-blue-400 hover:underline mt-1 inline-block"
+                  className={`inline-block mt-2 text-xs font-semibold ${ACCENT.text} hover:underline`}
                 >
-                  Read {c.linkText} →
+                  Read {c.linkText} ↗
                 </Link>
               )}
             </div>
@@ -579,19 +761,17 @@ function Step4Consent({
         ))}
       </div>
 
-      <div className="flex items-center justify-between pt-2">
-        <button type="button" onClick={onBack} className="flex items-center gap-2 px-5 py-2.5 rounded-xl dark:bg-slate-700/60 bg-slate-100 dark:text-white text-slate-900 font-semibold text-sm dark:hover:bg-slate-700 hover:bg-slate-200 transition-colors">
-          <ArrowLeft className="w-4 h-4" /> Back
-        </button>
+      <BottomBar>
         <button
           type="button"
           disabled={!canProceed}
           onClick={handleNext}
-          className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className={`flex-1 h-14 flex items-center justify-center gap-2 rounded-2xl font-bold text-base transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed ${ACCENT.btn}`}
         >
-          Review <ArrowRight className="w-4 h-4" />
+          Review Booking
+          <ArrowRight className="w-5 h-5" />
         </button>
-      </div>
+      </BottomBar>
     </div>
   )
 }
@@ -602,16 +782,15 @@ function Step4Consent({
 
 function Step5Review({
   clinicName,
-  onBack,
   onSuccess,
 }: {
   clinicName: string
-  onBack: () => void
   onSuccess: () => void
 }) {
   const [form] = useAtom(bookAppointmentAtom)
   const { user } = useUser()
   const [isSubmitting, setIsSubmitting] = useState(false)
+
   const { data: appointmentModes } = useClinicAppointmentModes(form.clinicUid ?? '')
   const { data: appointmentTypes } = useClinicAppointmentTypes(form.clinicUid ?? '')
   const { data: serviceCategories } = useClinicServiceCategories(form.clinicUid ?? '')
@@ -626,7 +805,11 @@ function Step5Review({
 
   const hp = hps?.find((h) => h.id === form.hpId)
   const hpName = hp
-    ? [hp.HPProfile?.title, hp.HPProfile?.name || `${hp.User?.firstName ?? ''} ${hp.User?.lastName ?? ''}`.trim(), hp.HPProfile?.suffix]
+    ? [
+        hp.HPProfile?.title,
+        hp.HPProfile?.name || `${hp.User?.firstName ?? ''} ${hp.User?.lastName ?? ''}`.trim(),
+        hp.HPProfile?.suffix,
+      ]
         .filter(Boolean)
         .join(' ')
     : 'No preference'
@@ -634,13 +817,24 @@ function Step5Review({
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
 
-    // Extract required values into typed local consts so TypeScript can narrow correctly
-    const { clinicUid, modeId, appointmentTypeId, serviceId, subject, chiefComplaint, hpId, selectedTimeSlot, preferredDate, attachments } = form
+    const {
+      clinicUid,
+      modeId,
+      appointmentTypeId,
+      serviceId,
+      subject,
+      chiefComplaint,
+      hpId,
+      selectedTimeSlot,
+      preferredDate,
+      attachments,
+    } = form
 
     if (!clinicUid || !modeId || !appointmentTypeId || !serviceId || !subject) {
       toast.error('Please complete all required fields before submitting.')
       return
     }
+
     const requesterId = user?.id
     if (!requesterId) {
       toast.error('Unable to identify your account. Please sign in again.')
@@ -650,27 +844,26 @@ function Step5Review({
     setIsSubmitting(true)
 
     try {
-      // Upload attachments
       const attachmentUrls: string[] = []
       for (const file of attachments ?? []) {
         if (file.size > 4 * 1024 * 1024) {
-          toast.error(`${file.name} is too large (max 4 MB)`)
+          toast.error(`${file.name} exceeds the 4 MB limit.`)
           setIsSubmitting(false)
           return
         }
         const fd = new FormData()
         fd.append('media', file)
         fd.append('directory', `${requesterId}/appointment/attachments`)
-        const loadingToastId = toast.loading(`Uploading ${file.name}…`)
+        const loadingId = toast.loading(`Uploading ${file.name}…`)
         try {
-          const uploadResult = await uploadMediaAction(fd)
-          attachmentUrls.push(uploadResult.url)
+          const result = await uploadMediaAction(fd)
+          attachmentUrls.push(result.url)
         } catch {
           toast.error(`Failed to upload ${file.name}. Please try again.`)
           setIsSubmitting(false)
           return
         } finally {
-          toast.dismiss(loadingToastId)
+          toast.dismiss(loadingId)
         }
       }
 
@@ -698,13 +891,15 @@ function Step5Review({
       if (result.status) {
         playSuccess()
         mutate(
-          (key) => typeof key === 'string' && key.startsWith(`/api/clinics/${clinicUid}/appointments`),
+          (key) =>
+            typeof key === 'string' &&
+            key.startsWith(`/api/clinics/${clinicUid}/appointments`),
           undefined,
           { revalidate: true }
         )
         onSuccess()
       } else {
-        toast.error(result.message || 'Failed to book appointment')
+        toast.error(result.message || 'Failed to book appointment.')
       }
     } catch {
       toast.error('An unexpected error occurred. Please try again.')
@@ -713,85 +908,87 @@ function Step5Review({
     }
   }
 
-  const detailRows = [
+  const summaryRows = [
     { label: 'Clinic', value: clinicName },
     { label: 'Subject', value: form.subject ?? '—' },
-    { label: 'Chief Complaint', value: form.chiefComplaint || 'Not provided' },
-    { label: 'Appointment Type', value: modeName },
-    { label: 'Consultation Type', value: typeName },
+    { label: 'Complaint', value: form.chiefComplaint || 'Not provided' },
+    { label: 'Appt. Type', value: modeName },
+    { label: 'Consult. Type', value: typeName },
     { label: 'Service', value: serviceName },
-    { label: 'Preferred Doctor', value: hpName },
+    { label: 'Doctor', value: hpName },
     {
       label: 'Date',
-      value: form.preferredDate ? dayjs(form.preferredDate).format('ddd, MMM D, YYYY') : 'Not specified',
+      value: form.preferredDate
+        ? dayjs(form.preferredDate).format('ddd, MMM D, YYYY')
+        : 'Not specified',
     },
     {
-      label: 'Time Slot',
-      value:
-        form.selectedTimeSlot
-          ? `${dayjs(form.selectedTimeSlot.start).format('LT')} – ${dayjs(form.selectedTimeSlot.end).format('LT')}`
-          : 'Not specified',
+      label: 'Time',
+      value: form.selectedTimeSlot
+        ? `${dayjs(form.selectedTimeSlot.start).format('LT')} – ${dayjs(form.selectedTimeSlot.end).format('LT')}`
+        : 'Not specified',
     },
     {
       label: 'Attachments',
       value: (() => {
-        const count = form.attachments?.length ?? 0
-        return count > 0 ? `${count} file${count > 1 ? 's' : ''}` : 'None'
+        const n = form.attachments?.length ?? 0
+        return n > 0 ? `${n} file${n > 1 ? 's' : ''}` : 'None'
       })(),
     },
   ]
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div>
-        <h2 className="text-xl font-bold dark:text-white text-slate-900 mb-1">Review Your Booking</h2>
-        <p className="text-sm dark:text-slate-400 text-slate-500">
-          Please confirm the details below before submitting your appointment request.
+    <form onSubmit={handleSubmit} className="space-y-5 pb-28">
+      <div className="pt-4">
+        <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white leading-tight">
+          Review Your Booking
+        </h2>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+          Confirm these details before submitting your request.
         </p>
       </div>
 
-      <div className="dark:bg-slate-800/40 bg-white/60 rounded-xl dark:border-white/10 border-slate-200 border divide-y dark:divide-white/5 divide-slate-100">
-        {detailRows.map((row) => (
-          <div key={row.label} className="flex items-start px-4 py-3 gap-4">
-            <span className="text-xs font-semibold dark:text-slate-400 text-slate-500 uppercase tracking-wide shrink-0 w-36">{row.label}</span>
-            <span className="text-sm dark:text-white text-slate-900 break-words min-w-0">{row.value}</span>
+      {/* Summary card */}
+      <div className="rounded-2xl overflow-hidden border border-slate-200 dark:border-white/10 divide-y divide-slate-100 dark:divide-white/5 bg-white/70 dark:bg-slate-800/50">
+        {summaryRows.map((row) => (
+          <div key={row.label} className="flex items-start px-4 py-3 gap-3">
+            <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide shrink-0 w-24 pt-0.5">
+              {row.label}
+            </span>
+            <span className="text-sm text-slate-900 dark:text-white break-words min-w-0 flex-1">
+              {row.value}
+            </span>
           </div>
         ))}
       </div>
 
-      {/* Consent summary */}
-      <div className="flex items-center gap-2 dark:bg-green-900/20 bg-green-50 dark:border-green-700/30 border-green-200 border rounded-xl px-4 py-3">
-        <FileCheck className="w-4 h-4 text-green-600 dark:text-green-400 shrink-0" />
-        <p className="text-sm dark:text-green-300 text-green-700 font-medium">You have agreed to the Terms & Conditions and Privacy Policy.</p>
+      {/* Consent badge */}
+      <div className="flex items-center gap-3 bg-teal-50 dark:bg-teal-950/30 border border-teal-200 dark:border-teal-800/40 rounded-2xl px-4 py-3">
+        <FileCheck className="w-5 h-5 text-teal-600 dark:text-teal-400 shrink-0" />
+        <p className="text-sm text-teal-800 dark:text-teal-200 font-medium">
+          You have agreed to the Terms & Conditions and Privacy Policy.
+        </p>
       </div>
 
-      <div className="flex items-center justify-between pt-2">
-        <button
-          type="button"
-          disabled={isSubmitting}
-          onClick={onBack}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl dark:bg-slate-700/60 bg-slate-100 dark:text-white text-slate-900 font-semibold text-sm dark:hover:bg-slate-700 hover:bg-slate-200 transition-colors disabled:opacity-50"
-        >
-          <ArrowLeft className="w-4 h-4" /> Back
-        </button>
+      <BottomBar>
         <button
           type="submit"
           disabled={isSubmitting}
-          className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className={`flex-1 h-14 flex items-center justify-center gap-2 rounded-2xl font-bold text-base transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed ${ACCENT.btn}`}
         >
           {isSubmitting ? (
             <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Booking…
+              <Loader2 className="w-5 h-5 animate-spin" />
+              Sending…
             </>
           ) : (
             <>
-              Book Appointment
-              <Calendar className="w-4 h-4" />
+              Confirm Booking
+              <Calendar className="w-5 h-5" />
             </>
           )}
         </button>
-      </div>
+      </BottomBar>
     </form>
   )
 }
@@ -800,35 +997,46 @@ function Step5Review({
 // Success screen
 // ---------------------------------------------------------------------------
 
-function SuccessScreen({ clinicName, onBookAnother }: { clinicName: string; onBookAnother: () => void }) {
+function SuccessScreen({
+  clinicName,
+  onBookAnother,
+}: {
+  clinicName: string
+  onBookAnother: () => void
+}) {
   return (
-    <div className="text-center py-12 px-4 space-y-6">
-      <div className="flex justify-center">
-        <div className="w-20 h-20 rounded-full bg-green-500/20 flex items-center justify-center">
-          <CheckCircle2 className="w-12 h-12 text-green-500" />
+    <div className="flex flex-col items-center text-center py-10 px-4 gap-6">
+      {/* Animated check mark */}
+      <div className="relative">
+        <div className="w-24 h-24 rounded-full bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center">
+          <CheckCircle2 className="w-14 h-14 text-teal-500 dark:text-teal-400" />
         </div>
+        {/* Ripple rings */}
+        <span className="absolute inset-0 rounded-full border-4 border-teal-400/40 animate-ping" />
       </div>
-      <div>
-        <h2 className="text-2xl font-bold dark:text-white text-slate-900 mb-2">
-          Appointment Requested! 🎉
+
+      <div className="space-y-2">
+        <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white">
+          Booking Sent! 🎉
         </h2>
-        <p className="dark:text-slate-400 text-slate-600 text-sm max-w-md mx-auto">
-          Your appointment request has been sent to <strong>{clinicName}</strong>. Please keep your notifications on — you will hear back once the clinic reviews your booking.
+        <p className="text-sm text-slate-500 dark:text-slate-400 max-w-xs mx-auto leading-relaxed">
+          Your request has been sent to <strong className="text-slate-700 dark:text-slate-200">{clinicName}</strong>. Keep notifications on — the clinic will confirm your appointment soon.
         </p>
       </div>
-      <div className="flex flex-col sm:flex-row gap-3 justify-center">
+
+      <div className="w-full max-w-xs flex flex-col gap-3 mt-2">
         <button
           type="button"
           onClick={onBookAnother}
-          className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 transition-colors"
+          className={`w-full h-14 flex items-center justify-center gap-2 rounded-2xl font-bold text-base ${ACCENT.btn}`}
         >
           Book Another
         </button>
         <Link
           href="/v2/patient"
-          className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl dark:bg-slate-700/60 bg-slate-100 dark:text-white text-slate-900 font-semibold text-sm dark:hover:bg-slate-700 hover:bg-slate-200 transition-colors"
+          className="w-full h-14 flex items-center justify-center gap-2 rounded-2xl font-bold text-base bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
         >
-          <ArrowLeft className="w-4 h-4" />
+          <ArrowLeft className="w-5 h-5" />
           Back to Dashboard
         </Link>
       </div>
@@ -837,7 +1045,7 @@ function SuccessScreen({ clinicName, onBookAnother }: { clinicName: string; onBo
 }
 
 // ---------------------------------------------------------------------------
-// Main Wizard
+// Main Wizard shell
 // ---------------------------------------------------------------------------
 
 export default function BookAppointmentWizard({
@@ -851,12 +1059,12 @@ export default function BookAppointmentWizard({
   const [currentStep, setCurrentStep] = useState(1)
   const [isComplete, setIsComplete] = useState(false)
 
-  // Seed clinicUid into global atom once on mount
   useEffect(() => {
     setForm((prev) => ({ ...prev, clinicUid }))
   }, [clinicUid, setForm])
 
   const goNext = useCallback(() => setCurrentStep((s) => Math.min(s + 1, 5)), [])
+
   const goBack = useCallback(() => {
     if (currentStep === 1) {
       router.push('/v2/patient')
@@ -865,9 +1073,7 @@ export default function BookAppointmentWizard({
     }
   }, [currentStep, router])
 
-  const handleSuccess = useCallback(() => {
-    setIsComplete(true)
-  }, [])
+  const handleSuccess = useCallback(() => setIsComplete(true), [])
 
   const handleBookAnother = useCallback(() => {
     setForm({ clinicUid })
@@ -875,56 +1081,34 @@ export default function BookAppointmentWizard({
     setIsComplete(false)
   }, [clinicUid, setForm])
 
-  return (
-    <div className="w-full max-w-2xl mx-auto">
-      {/* Header */}
-      <div className="mb-8 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => router.push('/v2/patient')}
-            className="p-2 rounded-lg dark:text-slate-400 text-slate-600 dark:hover:text-white hover:text-slate-900 dark:hover:bg-slate-700/50 hover:bg-slate-100 transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div>
-            <h1 className="text-2xl font-bold dark:text-white text-slate-900">Book an Appointment</h1>
-            <p className="text-sm dark:text-slate-400 text-slate-600">{clinicName}</p>
-          </div>
-        </div>
-        <ThemeToggle />
-      </div>
+  const currentStepMeta = STEPS[currentStep - 1]
 
-      {/* Step indicator */}
+  return (
+    /* Break out of parent horizontal padding on mobile for full-bleed header */
+    <div className="-mx-4 sm:-mx-0">
       {!isComplete && (
-        <div className="flex items-center mb-8">
-          {STEPS.map((step, i) => (
-            <div key={step.id} className="contents">
-              <StepIndicator
-                step={step.id}
-                label={step.label}
-                state={currentStep > step.id ? 'done' : currentStep === step.id ? 'active' : 'pending'}
-              />
-              {i < STEPS.length - 1 && <StepConnector done={currentStep > step.id} />}
-            </div>
-          ))}
-        </div>
+        <ProgressHeader
+          step={currentStep}
+          total={STEPS.length}
+          label={currentStepMeta?.label ?? ''}
+          clinicName={clinicName}
+          onBack={goBack}
+        />
       )}
 
-      {/* Step content */}
-      <div className="dark:bg-slate-800/30 bg-white/40 backdrop-blur-xl rounded-2xl dark:border-white/10 border-slate-200/60 border shadow-lg dark:shadow-slate-900/30 p-6 md:p-8">
+      <div className="px-4 sm:px-0 max-w-lg mx-auto">
         {isComplete ? (
           <SuccessScreen clinicName={clinicName} onBookAnother={handleBookAnother} />
         ) : currentStep === 1 ? (
           <Step1Complaint clinicUid={clinicUid} onNext={goNext} />
         ) : currentStep === 2 ? (
-          <Step2Provider clinicUid={clinicUid} onNext={goNext} onBack={goBack} />
+          <Step2Provider clinicUid={clinicUid} onNext={goNext} />
         ) : currentStep === 3 ? (
-          <Step3Schedule onNext={goNext} onBack={goBack} />
+          <Step3Schedule onNext={goNext} />
         ) : currentStep === 4 ? (
-          <Step4Consent termsUrl={termsUrl} privacyUrl={privacyUrl} onNext={goNext} onBack={goBack} />
+          <Step4Consent termsUrl={termsUrl} privacyUrl={privacyUrl} onNext={goNext} />
         ) : (
-          <Step5Review clinicName={clinicName} onBack={goBack} onSuccess={handleSuccess} />
+          <Step5Review clinicName={clinicName} onSuccess={handleSuccess} />
         )}
       </div>
     </div>

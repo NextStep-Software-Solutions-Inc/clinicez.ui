@@ -83,7 +83,7 @@ export default function AppointmentTabsTable({ initialData }: AppointmentTabsTab
         </div>
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="w-full sm:w-auto">
+            <Button className="w-full sm:w-auto" aria-label="Add Appointment Tab">
               <Plus className="h-4 w-4 mr-2" />
               <span className="hidden sm:inline">Add Appointment Tab</span>
               <span className="sm:hidden">Add Tab</span>

@@ -246,15 +246,20 @@ export default function NewConsultationDialog({
             />
 
             {/* Link to appointment toggle */}
-            <div className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5">
-              <Label htmlFor="link-appointment-toggle" className="text-sm font-medium cursor-pointer">
-                Link to a confirmed appointment?
-              </Label>
-              <Switch
-                id="link-appointment-toggle"
-                checked={linkToAppointment}
-                onCheckedChange={handleLinkToggle}
-              />
+            <div className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="link-appointment-toggle" className="text-sm font-medium cursor-pointer">
+                  Link to a confirmed appointment?
+                </Label>
+                <Switch
+                  id="link-appointment-toggle"
+                  checked={linkToAppointment}
+                  onCheckedChange={handleLinkToggle}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Optional — skip this if the consultation is not tied to a scheduled appointment.
+              </p>
             </div>
 
             {linkToAppointment && (

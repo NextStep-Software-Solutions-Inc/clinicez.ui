@@ -84,7 +84,7 @@ const s = StyleSheet.create({
     fontSize: 9,
     color: TEXT,
     backgroundColor: WHITE,
-    paddingTop: 40,
+    paddingTop: 60,
     paddingBottom: 50,
     paddingHorizontal: 30,
   },
@@ -96,12 +96,6 @@ const s = StyleSheet.create({
     padding: 14,
     marginBottom: 0,
     borderRadius: 4,
-  },
-  logoPill: {
-    backgroundColor: WHITE,
-    borderRadius: 5,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
   },
   logoImg: { height: 22, width: 90 },
   headerRight: { textAlign: 'right' },
@@ -269,7 +263,7 @@ function Td({ children, flex, alt }: { children: React.ReactNode; flex: number; 
 }
 
 // ─── Footer ──────────────────────────────────────────────────────────────────
-function Footer({ generatedAt, clinicName, tc }: { generatedAt: string; clinicName?: string; tc: ThemePalette }) {
+function Footer({ generatedAt, clinicName, showClinicName, tc }: { generatedAt: string; clinicName?: string; showClinicName?: boolean; tc: ThemePalette }) {
   return (
     <View style={[s.footer, { borderTopColor: tc.footerBorder }]} fixed>
       <View>
@@ -279,7 +273,7 @@ function Footer({ generatedAt, clinicName, tc }: { generatedAt: string; clinicNa
       <Text style={s.confidential}>CONFIDENTIAL</Text>
       <View>
         <Text style={s.footerRight}>Generated: {generatedAt}</Text>
-        {clinicName ? <Text style={s.footerRight}>Clinic: {clinicName}</Text> : null}
+        {showClinicName && clinicName ? <Text style={s.footerRight}>Clinic: {clinicName}</Text> : null}
         <Text style={s.footerRight} render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`} />
       </View>
     </View>
@@ -292,9 +286,10 @@ interface PHRPdfDocumentProps {
   sections: PHRSectionId[]
   generatedAt: string
   theme?: PHRTheme
+  showClinicName?: boolean
 }
 
-export function PHRPdfDocument({ patient, sections, generatedAt, theme = 'colorful' }: PHRPdfDocumentProps) {
+export function PHRPdfDocument({ patient, sections, generatedAt, theme = 'colorful', showClinicName = false }: PHRPdfDocumentProps) {
   const sectionSet = new Set(sections)
   const has = (id: PHRSectionId) => sectionSet.has(id)
   const tc = theme === 'minimal' ? MINIMAL : COLORFUL
@@ -308,9 +303,8 @@ export function PHRPdfDocument({ patient, sections, generatedAt, theme = 'colorf
       <Page size="A4" style={s.page}>
         {/* ── Header ── */}
         <View style={[s.header, { backgroundColor: tc.headerBg }]}>
-          <View style={s.logoPill}>
-            <Image style={s.logoImg} src="/assets/clinic-ez_logo.svg" />
-          </View>
+          <Image style={s.logoImg} src="/assets/clinic-ez_logo.svg" />
+
           <View style={s.headerRight}>
             <Text style={s.docTitle}>Personal Health Record</Text>
             <Text style={s.headerMeta}>Generated: {generatedAt}</Text>
@@ -332,7 +326,7 @@ export function PHRPdfDocument({ patient, sections, generatedAt, theme = 'colorf
               {patient.dob ? <Text style={[s.patientMetaItem, { color: tc.patientBarText }]}>DOB: {fmtDate(patient.dob)}</Text> : null}
               {patient.age ? <Text style={[s.patientMetaItem, { color: tc.patientBarText }]}>Age: {patient.age} yrs</Text> : null}
               {patient.gender ? <Text style={[s.patientMetaItem, { color: tc.patientBarText }]}>Gender: {cap(patient.gender)}</Text> : null}
-              {patient.clinic?.name ? <Text style={[s.patientMetaItem, { color: tc.patientBarText }]}>Clinic: {patient.clinic.name}</Text> : null}
+              {showClinicName && patient.clinic?.name ? <Text style={[s.patientMetaItem, { color: tc.patientBarText }]}>Clinic: {patient.clinic.name}</Text> : null}
             </View>
           </View>
           <View style={[s.statsRow, { borderLeftColor: tc.patientBarBorderLeft }]}>
@@ -739,7 +733,7 @@ export function PHRPdfDocument({ patient, sections, generatedAt, theme = 'colorf
           </View>
         )}
 
-        <Footer generatedAt={generatedAt} clinicName={patient.clinic?.name} tc={tc} />
+        <Footer generatedAt={generatedAt} clinicName={patient.clinic?.name} showClinicName={showClinicName} tc={tc} />
       </Page>
     </Document>
   )

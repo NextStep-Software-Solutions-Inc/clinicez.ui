@@ -55,6 +55,7 @@ export default async function ClinicPatientPHRPrintPage({ params, searchParams }
         sections={sections}
         generatedAt={generatedAt}
         theme={theme}
+        showClinicName={true}
       />
     </>
   )

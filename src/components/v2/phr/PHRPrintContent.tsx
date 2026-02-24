@@ -288,6 +288,7 @@ interface PHRPrintContentProps {
   sections: PHRSectionId[]
   generatedAt: string
   theme?: PHRTheme
+  showClinicName?: boolean
 }
 
 function SectionHeader({ icon, title, sectionHeaderBg, sectionHeaderText }: { icon: string; title: string; sectionHeaderBg: string; sectionHeaderText: string }) {
@@ -312,7 +313,7 @@ function Field({ label, value }: { label: string; value: string | null | undefin
   )
 }
 
-export function PHRPrintContent({ patient, sections, generatedAt, theme = 'colorful' }: PHRPrintContentProps) {
+export function PHRPrintContent({ patient, sections, generatedAt, theme = 'colorful', showClinicName = false }: PHRPrintContentProps) {
   const sectionSet = new Set(sections)
   const has = (id: PHRSectionId) => sectionSet.has(id)
 
@@ -345,7 +346,7 @@ export function PHRPrintContent({ patient, sections, generatedAt, theme = 'color
     <div style={styles.page}>
       {/* ── PRINT STYLE OVERRIDES ── */}
       <style>{`
-        @page { size: A4; margin: 15mm 10mm 22mm 10mm; }
+        @page { size: A4; margin: 20mm 10mm 22mm 10mm; }
         @media print {
           body { margin: 0; }
           .no-print { display: none !important; }
@@ -357,15 +358,12 @@ export function PHRPrintContent({ patient, sections, generatedAt, theme = 'color
       {/* ── HEADER ── */}
       <div style={{ ...styles.header, background: t.headerBg }}>
         <div style={styles.logoArea}>
-          {/* White pill so the logo renders in its native teal-on-white colours */}
-          <div style={{ background: '#ffffff', borderRadius: '8px', padding: '5px 14px', display: 'inline-flex', alignItems: 'center' }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/assets/clinic-ez_logo.svg"
-              alt="ClinicEZ Logo"
-              style={{ height: '30px', display: 'block' }}
-            />
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/assets/clinic-ez_logo.svg"
+            alt="ClinicEZ Logo"
+            style={{ height: '30px', display: 'block', filter: 'brightness(0) invert(1)' }}
+          />
         </div>
         <div style={styles.headerRight}>
           <div style={styles.docTitle}>Personal Health Record</div>
@@ -395,7 +393,7 @@ export function PHRPrintContent({ patient, sections, generatedAt, theme = 'color
             {patient.dob && <span>DOB: {formatDate(patient.dob)}</span>}
             {patient.age && <span>Age: {patient.age} yrs</span>}
             {patient.gender && <span>Gender: {capitalize(patient.gender)}</span>}
-            {patient.clinic?.name && <span>Clinic: {patient.clinic.name}</span>}
+            {showClinicName && patient.clinic?.name && <span>Clinic: {patient.clinic.name}</span>}
           </div>
         </div>
         <div style={{ ...styles.patientKeyStats, borderLeft: `1px solid ${t.patientBarBorder}` }}>
@@ -1031,7 +1029,7 @@ export function PHRPrintContent({ patient, sections, generatedAt, theme = 'color
         <div style={styles.confidential}>CONFIDENTIAL</div>
         <div style={{ textAlign: 'right' }}>
           <div>Generated: {generatedAt}</div>
-          {patient.clinic?.name && <div>Clinic: {patient.clinic.name}</div>}
+          {showClinicName && patient.clinic?.name && <div>Clinic: {patient.clinic.name}</div>}
         </div>
       </div>
     </div>

@@ -53,6 +53,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       sections,
       generatedAt,
       theme,
+      showClinicName: true,
     })
   )
 

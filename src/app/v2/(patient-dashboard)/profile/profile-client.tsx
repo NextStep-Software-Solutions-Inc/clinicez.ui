@@ -9,6 +9,7 @@ import {
   BarChart3,
   List,
   FolderOpen,
+  ClipboardList,
 } from 'lucide-react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import { ThemeToggle } from '@/components/patient-dashboard-v2/ThemeToggle'
@@ -23,8 +24,12 @@ interface ProfileClientProps {
   headerSlot?: React.ReactNode
   /** undefined = use default '/v2/profile/edit'; null = hide edit button; string = navigate to that URL */
   editProfileHref?: string | null
-  /** undefined = use default '/v2/patient/files'; null = hide My Files button; string = navigate to that URL */
+  /** undefined = use default '/v2/patient/files'; null = hide files button; string = navigate to that URL */
   filesHref?: string | null
+  /** Label for the files button. Defaults to "My Files" */
+  filesButtonLabel?: string
+  /** undefined = hide appointments button; string = navigate to that URL */
+  appointmentsHref?: string | null
 }
 
 const PROFILE_TABS = [
@@ -43,7 +48,7 @@ const PROFILE_TABS = [
   { id: 'insurance', label: 'Insurance & Docs', icon: '📄' },
 ]
 
-export default function ProfileClient({ patient, headerSlot, editProfileHref, filesHref }: ProfileClientProps) {
+export default function ProfileClient({ patient, headerSlot, editProfileHref, filesHref, filesButtonLabel = 'My Files', appointmentsHref }: ProfileClientProps) {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState('overview')
   const [vitalsViewMode, setVitalsViewMode] = useState<'list' | 'chart'>('list')
@@ -1799,13 +1804,22 @@ export default function ProfileClient({ patient, headerSlot, editProfileHref, fi
       {/* Edit Profile Button - Floating */}
       {editProfileHref !== null && (
         <div className="fixed bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 md:gap-3">
+          {appointmentsHref && (
+          <button
+            onClick={() => router.push(appointmentsHref)}
+            className="flex items-center gap-1.5 md:gap-2 px-4 md:px-5 py-2.5 md:py-3 rounded-lg bg-gradient-to-br from-green-600 to-teal-500 text-white text-sm font-semibold hover:shadow-lg transition-all duration-300 hover:scale-105 shadow-lg"
+          >
+            <ClipboardList className="w-4 h-4" />
+            <span className="hidden sm:inline">Appointments &amp; Consultations</span>
+          </button>
+          )}
           {filesHref !== null && (
           <button
             onClick={() => router.push(filesHref ?? '/v2/patient/files')}
             className="flex items-center gap-1.5 md:gap-2 px-4 md:px-5 py-2.5 md:py-3 rounded-lg bg-gradient-to-br from-yellow-500 to-amber-500 text-white text-sm font-semibold hover:shadow-lg transition-all duration-300 hover:scale-105 shadow-lg"
           >
             <FolderOpen className="w-4 h-4" />
-            <span className="hidden sm:inline">My Files</span>
+            <span className="hidden sm:inline">{filesButtonLabel}</span>
           </button>
           )}
           <button

@@ -1,0 +1,45 @@
+import type { Metadata } from 'next'
+import { notFound } from 'next/navigation'
+import { getPatientHealthRecords } from '@/actions/patient-profile/get-patient-health-records'
+import { PHRPrintContent, PHR_SECTIONS, type PHRSectionId } from '@/components/v2/phr/PHRPrintContent'
+import { PHRAutoPrint } from '@/components/v2/phr/PHRAutoPrint'
+import type { SerializedPatientHealthRecordsResponse } from '@/types/patient-profile'
+
+export const metadata: Metadata = {
+  title: 'Personal Health Record — ClinicEZ',
+  description: 'Comprehensive Personal Health Record',
+}
+
+export const dynamic = 'force-dynamic'
+
+interface PrintPageProps {
+  searchParams: Promise<{ sections?: string }>
+}
+
+export default async function PatientPHRPrintPage({ searchParams }: PrintPageProps) {
+  const { sections: sectionsParam } = await searchParams
+
+  const patient = await getPatientHealthRecords()
+  if (!patient) notFound()
+
+  const allSectionIds = PHR_SECTIONS.map(s => s.id)
+  const sections: PHRSectionId[] = sectionsParam && sectionsParam !== 'all'
+    ? (sectionsParam.split(',').filter(s => allSectionIds.includes(s as PHRSectionId)) as PHRSectionId[])
+    : allSectionIds
+
+  const generatedAt = new Date().toLocaleString('en-US', {
+    year: 'numeric', month: 'long', day: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  })
+
+  return (
+    <>
+      <PHRAutoPrint />
+      <PHRPrintContent
+        patient={patient as SerializedPatientHealthRecordsResponse}
+        sections={sections}
+        generatedAt={generatedAt}
+      />
+    </>
+  )
+}

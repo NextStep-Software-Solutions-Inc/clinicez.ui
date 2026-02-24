@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import {
   Calendar,
@@ -14,9 +14,15 @@ import {
   TestTube,
   Scan,
   FileCheck,
-  AlertCircle,
   ClipboardList,
   ArrowLeft,
+  XCircle,
+  AlertCircle,
+  RefreshCw,
+  Send,
+  Mail,
+  CalendarCheck,
+  ActivitySquare,
 } from 'lucide-react'
 import type { GetPatientSelfHistory } from '@/actions/patient-dashboard/get-self-history'
 import { ThemeToggle } from '@/components/patient-dashboard-v2/ThemeToggle'
@@ -25,6 +31,8 @@ type HistoryData = NonNullable<GetPatientSelfHistory['data']>
 type Appointment = HistoryData['appointments'][number]
 type ConsultationTicket = HistoryData['consultationTickets'][number]
 
+type TabFilter = 'all' | 'appointments' | 'consultations'
+
 interface PatientHistoryClientProps {
   patientName: string
   appointments: HistoryData['appointments']
@@ -32,32 +40,156 @@ interface PatientHistoryClientProps {
 }
 
 // ---------------------------------------------------------------------------
-// Status helpers
+// Status config — single source of truth for colors, labels, and icons
 // ---------------------------------------------------------------------------
 
-function getConsultationStatusColor(status?: string | null): string {
+interface StatusConfig {
+  label: string
+  /** Tailwind classes for the badge pill */
+  badge: string
+  /** Tailwind classes for the left selection accent strip */
+  accent: string
+  /** Tailwind classes for the selected row highlight */
+  selectedBg: string
+  Icon: React.ElementType
+}
+
+function getAppointmentStatusConfig(status?: string | null): StatusConfig {
   switch (status) {
-    case 'RESOLVED':
-      return 'bg-green-500/20 text-green-700 dark:text-green-300 border-green-400/30'
-    case 'PROCESSING':
-      return 'bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-400/30'
+    case 'PENDING':
+      return {
+        label: 'Pending',
+        badge: 'bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-400/30',
+        accent: 'border-l-amber-400',
+        selectedBg: 'dark:bg-amber-500/10 bg-amber-50/60',
+        Icon: AlertCircle,
+      }
+    case 'CONFIRMED':
+      return {
+        label: 'Confirmed',
+        badge: 'bg-sky-500/20 text-sky-700 dark:text-sky-300 border-sky-400/30',
+        accent: 'border-l-sky-400',
+        selectedBg: 'dark:bg-sky-500/10 bg-sky-50/60',
+        Icon: CalendarCheck,
+      }
+    case 'RECEIVED':
+      return {
+        label: 'Received',
+        badge: 'bg-teal-500/20 text-teal-700 dark:text-teal-300 border-teal-400/30',
+        accent: 'border-l-teal-400',
+        selectedBg: 'dark:bg-teal-500/10 bg-teal-50/60',
+        Icon: Mail,
+      }
+    case 'ROUTED':
+      return {
+        label: 'Routed',
+        badge: 'bg-violet-500/20 text-violet-700 dark:text-violet-300 border-violet-400/30',
+        accent: 'border-l-violet-400',
+        selectedBg: 'dark:bg-violet-500/10 bg-violet-50/60',
+        Icon: Send,
+      }
+    case 'COMPLETED':
+      return {
+        label: 'Completed',
+        badge: 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-400/30',
+        accent: 'border-l-emerald-400',
+        selectedBg: 'dark:bg-emerald-500/10 bg-emerald-50/60',
+        Icon: CheckCircle2,
+      }
+    case 'CANCELLED':
+      return {
+        label: 'Cancelled',
+        badge: 'bg-rose-500/20 text-rose-700 dark:text-rose-300 border-rose-400/30',
+        accent: 'border-l-rose-400',
+        selectedBg: 'dark:bg-rose-500/10 bg-rose-50/60',
+        Icon: XCircle,
+      }
+    case 'DECLINED':
+      return {
+        label: 'Declined',
+        badge: 'bg-rose-500/20 text-rose-700 dark:text-rose-300 border-rose-400/30',
+        accent: 'border-l-rose-400',
+        selectedBg: 'dark:bg-rose-500/10 bg-rose-50/60',
+        Icon: XCircle,
+      }
+    case 'REJECTED':
+      return {
+        label: 'Rejected',
+        badge: 'bg-rose-500/20 text-rose-700 dark:text-rose-300 border-rose-400/30',
+        accent: 'border-l-rose-400',
+        selectedBg: 'dark:bg-rose-500/10 bg-rose-50/60',
+        Icon: XCircle,
+      }
+    case 'RESCHEDULED':
+      return {
+        label: 'Rescheduled',
+        badge: 'bg-purple-500/20 text-purple-700 dark:text-purple-300 border-purple-400/30',
+        accent: 'border-l-purple-400',
+        selectedBg: 'dark:bg-purple-500/10 bg-purple-50/60',
+        Icon: RefreshCw,
+      }
+    case 'NO_SHOW':
+      return {
+        label: 'No Show',
+        badge: 'bg-orange-500/20 text-orange-700 dark:text-orange-300 border-orange-400/30',
+        accent: 'border-l-orange-400',
+        selectedBg: 'dark:bg-orange-500/10 bg-orange-50/60',
+        Icon: AlertCircle,
+      }
     default:
-      return 'bg-slate-500/20 text-slate-700 dark:text-slate-300 border-slate-400/30'
+      return {
+        label: status ?? 'Unknown',
+        badge: 'bg-slate-500/20 text-slate-600 dark:text-slate-300 border-slate-400/30',
+        accent: 'border-l-slate-400',
+        selectedBg: 'dark:bg-slate-500/10 bg-slate-50/60',
+        Icon: Calendar,
+      }
   }
 }
 
-function getAppointmentStatusColor(status?: string | null): string {
+function getConsultationStatusConfig(status?: string | null, isArchived?: boolean): StatusConfig {
+  if (isArchived) {
+    return {
+      label: 'Archived',
+      badge: 'bg-slate-500/20 text-slate-600 dark:text-slate-300 border-slate-400/30',
+      accent: 'border-l-slate-400',
+      selectedBg: 'dark:bg-slate-500/10 bg-slate-50/60',
+      Icon: Archive,
+    }
+  }
   switch (status) {
-    case 'CONFIRMED':
-    case 'COMPLETED':
-      return 'bg-green-500/20 text-green-700 dark:text-green-300 border-green-400/30'
-    case 'CANCELLED':
-    case 'DECLINED':
-      return 'bg-red-500/20 text-red-700 dark:text-red-300 border-red-400/30'
-    case 'RESCHEDULED':
-      return 'bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-400/30'
+    case 'PROCESSING':
+      return {
+        label: 'In Progress',
+        badge: 'bg-sky-500/20 text-sky-700 dark:text-sky-300 border-sky-400/30',
+        accent: 'border-l-sky-400',
+        selectedBg: 'dark:bg-sky-500/10 bg-sky-50/60',
+        Icon: ActivitySquare,
+      }
+    case 'RESOLVED':
+      return {
+        label: 'Resolved',
+        badge: 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-400/30',
+        accent: 'border-l-emerald-400',
+        selectedBg: 'dark:bg-emerald-500/10 bg-emerald-50/60',
+        Icon: CheckCircle2,
+      }
+    case 'UNRESOLVED':
+      return {
+        label: 'Unresolved',
+        badge: 'bg-rose-500/20 text-rose-700 dark:text-rose-300 border-rose-400/30',
+        accent: 'border-l-rose-400',
+        selectedBg: 'dark:bg-rose-500/10 bg-rose-50/60',
+        Icon: AlertCircle,
+      }
     default:
-      return 'bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-400/30'
+      return {
+        label: status ?? 'Open',
+        badge: 'bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-400/30',
+        accent: 'border-l-amber-400',
+        selectedBg: 'dark:bg-amber-500/10 bg-amber-50/60',
+        Icon: Clock,
+      }
   }
 }
 
@@ -73,337 +205,523 @@ type ListItem =
 // Detail panels
 // ---------------------------------------------------------------------------
 
-function ConsultationDetailPanel({ ticket }: { ticket: ConsultationTicket }) {
+function StatusBadge({ config }: { config: StatusConfig }) {
+  const { Icon, label, badge } = config
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${badge}`}
+    >
+      <Icon className="h-3.5 w-3.5" />
+      {label}
+    </span>
+  )
+}
+
+function ConsultationDetailPanel({ ticket, onBack }: { ticket: ConsultationTicket; onBack: () => void }) {
   const hps = ticket.ConsultationTicketHPs.map((h) => h.HealthCareProvider)
   const appointment = ticket.Appointment
+  const statusConfig = getConsultationStatusConfig(
+    ticket.ConsultationTicketAttribute?.status,
+    ticket.isArchived
+  )
 
   return (
-    <div className="flex flex-col gap-6 p-6 overflow-y-auto h-full">
-      {/* Header */}
-      <div>
-        <div className="flex items-center gap-2 mb-2">
-          <span
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${getConsultationStatusColor(
-              ticket.ConsultationTicketAttribute?.status
-            )}`}
-          >
-            {ticket.ConsultationTicketAttribute?.status === 'RESOLVED' ? (
-              <CheckCircle2 className="h-3.5 w-3.5" />
-            ) : ticket.isArchived ? (
-              <Archive className="h-3.5 w-3.5" />
-            ) : (
-              <Clock className="h-3.5 w-3.5" />
-            )}
-            {ticket.isArchived
-              ? 'Archived'
-              : (ticket.ConsultationTicketAttribute?.status ?? 'Open')}
-          </span>
-          {ticket.caseNumber && (
-            <span className="text-xs dark:text-slate-400 text-slate-500">
-              Case #{ticket.caseNumber}
-            </span>
-          )}
+    <div className="flex flex-col h-full overflow-hidden">
+      {/* Detail header */}
+      <div className="px-5 pt-5 pb-4 shrink-0 dark:border-b dark:border-white/10 border-b border-slate-200/60">
+        <button
+          type="button"
+          onClick={onBack}
+          className="md:hidden flex items-center gap-1 text-xs dark:text-slate-400 text-slate-500 mb-3 dark:hover:text-white hover:text-slate-900 transition-colors"
+        >
+          <ChevronLeft className="h-3.5 w-3.5" />
+          All Records
+        </button>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap mb-1.5">
+              <StatusBadge config={statusConfig} />
+              <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full dark:bg-slate-700/60 bg-slate-200/60 dark:text-slate-300 text-slate-600 border dark:border-white/10 border-slate-200/60">
+                <Stethoscope className="h-3 w-3" />
+                Consultation
+              </span>
+            </div>
+            <h2 className="text-lg font-bold dark:text-white text-slate-900 leading-snug">
+              {ticket.subject ?? 'Consultation'}
+            </h2>
+            <div className="flex items-center gap-3 mt-1 flex-wrap">
+              {ticket.Clinic && (
+                <span className="text-sm dark:text-slate-400 text-slate-500">{ticket.Clinic.name}</span>
+              )}
+              {ticket.caseNumber && (
+                <span className="text-xs dark:text-slate-500 text-slate-400 font-mono">
+                  #{ticket.caseNumber}
+                </span>
+              )}
+              <span className="text-xs dark:text-slate-500 text-slate-400">
+                {new Date(ticket.createdAt).toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                })}
+              </span>
+            </div>
+          </div>
         </div>
-        <h2 className="text-xl font-bold dark:text-white text-slate-900">
-          {ticket.subject ?? 'Consultation'}
-        </h2>
-        {ticket.Clinic && (
-          <p className="text-sm dark:text-slate-400 text-slate-500 mt-0.5">
-            {ticket.Clinic.name}
-          </p>
-        )}
-        <p className="text-xs dark:text-slate-500 text-slate-400 mt-1">
-          {new Date(ticket.createdAt).toLocaleDateString('en-US', {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-          })}
-        </p>
       </div>
 
-      {/* Healthcare Providers */}
-      {hps.length > 0 && (
-        <div className="dark:bg-slate-800/40 bg-slate-100/60 rounded-xl p-4">
-          <p className="text-xs font-semibold dark:text-slate-400 text-slate-500 uppercase tracking-wide mb-3">
-            Your Doctors
-          </p>
-          <div className="flex flex-col gap-2">
-            {hps.map((hp) => (
-              <div key={hp.id} className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center shrink-0">
-                  <Stethoscope className="h-4 w-4 text-purple-500" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium dark:text-white text-slate-900">
-                    {[
-                      hp.HPProfile?.title,
-                      hp.HPProfile?.name ||
-                        `${hp.User?.firstName ?? ''} ${hp.User?.lastName ?? ''}`.trim(),
-                      hp.HPProfile?.suffix,
-                    ]
-                      .filter(Boolean)
-                      .join(' ')}
-                  </p>
-                  {hp.HPType?.name && (
-                    <p className="text-xs dark:text-slate-400 text-slate-500">
-                      {hp.HPType.name}
+      <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:dark:bg-white/10 [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full">
+        {/* Healthcare Providers */}
+        {hps.length > 0 && (
+          <section>
+            <p className="text-xs font-semibold dark:text-slate-400 text-slate-500 uppercase tracking-widest mb-2.5">
+              Your Doctors
+            </p>
+            <div className="flex flex-col gap-2">
+              {hps.map((hp) => (
+                <div
+                  key={hp.id}
+                  className="flex items-center gap-3 dark:bg-slate-800/40 bg-slate-100/60 rounded-xl px-3.5 py-2.5"
+                >
+                  <div className="w-9 h-9 rounded-full bg-violet-500/20 flex items-center justify-center shrink-0">
+                    <Stethoscope className="h-4.5 w-4.5 text-violet-500" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium dark:text-white text-slate-900 truncate">
+                      {[
+                        hp.HPProfile?.title,
+                        hp.HPProfile?.name ||
+                          `${hp.User?.firstName ?? ''} ${hp.User?.lastName ?? ''}`.trim(),
+                        hp.HPProfile?.suffix,
+                      ]
+                        .filter(Boolean)
+                        .join(' ')}
                     </p>
+                    {hp.HPType?.name && (
+                      <p className="text-xs dark:text-slate-400 text-slate-500">{hp.HPType.name}</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Linked Appointment */}
+        {appointment && (
+          <section>
+            <p className="text-xs font-semibold dark:text-slate-400 text-slate-500 uppercase tracking-widest mb-2.5">
+              Linked Appointment
+            </p>
+            <div className="dark:bg-slate-800/40 bg-slate-100/60 rounded-xl p-3.5">
+              <p className="text-sm font-medium dark:text-white text-slate-900 mb-2">
+                {appointment.subject ?? appointment.complaint ?? 'Appointment'}
+              </p>
+              {appointment.AppointmentAttribute && (
+                <div className="flex flex-wrap gap-1.5">
+                  {appointment.AppointmentAttribute.date && (
+                    <span className="inline-flex items-center gap-1 text-xs dark:text-slate-400 text-slate-500">
+                      <Calendar className="h-3 w-3" />
+                      {new Date(appointment.AppointmentAttribute.date).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })}
+                    </span>
+                  )}
+                  {appointment.AppointmentAttribute.AppointmentType?.name && (
+                    <span className="text-xs px-2 py-0.5 rounded-full dark:bg-slate-700/60 bg-slate-200/60 dark:text-slate-300 text-slate-600 border dark:border-white/10 border-slate-200/60">
+                      {appointment.AppointmentAttribute.AppointmentType.name}
+                    </span>
+                  )}
+                  {appointment.AppointmentAttribute.Service?.name && (
+                    <span className="text-xs px-2 py-0.5 rounded-full dark:bg-slate-700/60 bg-slate-200/60 dark:text-slate-300 text-slate-600 border dark:border-white/10 border-slate-200/60">
+                      {appointment.AppointmentAttribute.Service.name}
+                    </span>
                   )}
                 </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Linked Appointment */}
-      {appointment && (
-        <div className="dark:bg-slate-800/40 bg-slate-100/60 rounded-xl p-4">
-          <p className="text-xs font-semibold dark:text-slate-400 text-slate-500 uppercase tracking-wide mb-3">
-            Linked Appointment
-          </p>
-          <p className="text-sm font-medium dark:text-white text-slate-900">
-            {appointment.subject ?? appointment.complaint ?? 'Appointment'}
-          </p>
-          {appointment.AppointmentAttribute && (
-            <div className="flex flex-wrap gap-2 mt-2">
-              {appointment.AppointmentAttribute.date && (
-                <span className="flex items-center gap-1 text-xs dark:text-slate-400 text-slate-500">
-                  <Calendar className="h-3.5 w-3.5" />
-                  {new Date(appointment.AppointmentAttribute.date).toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric',
-                  })}
-                </span>
-              )}
-              {appointment.AppointmentAttribute.AppointmentType?.name && (
-                <span className="text-xs px-2 py-0.5 rounded-full dark:bg-slate-700/60 bg-slate-200/60 dark:text-slate-300 text-slate-600">
-                  {appointment.AppointmentAttribute.AppointmentType.name}
-                </span>
-              )}
-              {appointment.AppointmentAttribute.Service?.name && (
-                <span className="text-xs px-2 py-0.5 rounded-full dark:bg-slate-700/60 bg-slate-200/60 dark:text-slate-300 text-slate-600">
-                  {appointment.AppointmentAttribute.Service.name}
-                </span>
               )}
             </div>
-          )}
-        </div>
-      )}
+          </section>
+        )}
 
-      {/* Consultation Notes */}
-      {ticket.ConsultationNotes.length > 0 ? (
-        <div>
-          <p className="text-xs font-semibold dark:text-slate-400 text-slate-500 uppercase tracking-wide mb-3">
+        {/* Consultation Notes */}
+        <section>
+          <p className="text-xs font-semibold dark:text-slate-400 text-slate-500 uppercase tracking-widest mb-2.5">
             Doctor&apos;s Notes
           </p>
-          <div className="flex flex-col gap-3">
-            {ticket.ConsultationNotes.map((note) => (
-              <div
-                key={note.id}
-                className="dark:bg-gradient-to-br dark:from-slate-900/50 dark:to-slate-800/50 bg-gradient-to-br from-slate-100/60 to-white/40 rounded-lg p-4 dark:border-white/10 border-slate-200/60 border"
-              >
-                <p className="text-xs font-semibold dark:text-purple-400 text-purple-600 uppercase tracking-wide mb-1.5">
-                  {note.section}
-                </p>
-                <p className="text-sm dark:text-slate-200 text-slate-800 whitespace-pre-wrap">
-                  {note.content}
-                </p>
-                <div className="mt-3 flex justify-end">
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium dark:bg-green-500/20 dark:text-green-300 dark:border-green-400/30 bg-green-100/60 text-green-700 border-green-300/50 border">
-                    Visible to you
-                  </span>
+          {ticket.ConsultationNotes.length > 0 ? (
+            <div className="flex flex-col gap-3">
+              {ticket.ConsultationNotes.map((note) => (
+                <div
+                  key={note.id}
+                  className="dark:bg-gradient-to-br dark:from-slate-900/60 dark:to-slate-800/40 bg-white/80 rounded-xl p-4 dark:border-white/10 border-slate-200/70 border shadow-sm"
+                >
+                  <p className="text-xs font-bold dark:text-violet-400 text-violet-600 uppercase tracking-widest mb-2">
+                    {note.section}
+                  </p>
+                  <p className="text-sm dark:text-slate-200 text-slate-800 whitespace-pre-wrap leading-relaxed">
+                    {note.content}
+                  </p>
+                  <div className="mt-3 pt-2.5 border-t dark:border-white/10 border-slate-200/60 flex justify-end">
+                    <span className="inline-flex items-center gap-1 text-xs dark:text-emerald-400 text-emerald-600 font-medium">
+                      <CheckCircle2 className="h-3 w-3" />
+                      Shared with you
+                    </span>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : (
-        <div className="dark:bg-slate-800/40 bg-slate-100/60 rounded-xl p-8 text-center">
-          <FileText className="h-10 w-10 mx-auto dark:text-slate-500 text-slate-400 mb-3" />
-          <p className="text-sm dark:text-slate-400 text-slate-500">
-            No notes have been shared with you for this consultation.
-          </p>
-        </div>
-      )}
+              ))}
+            </div>
+          ) : (
+            <div className="dark:bg-slate-800/30 bg-slate-100/60 rounded-xl p-8 text-center">
+              <FileText className="h-9 w-9 mx-auto dark:text-slate-600 text-slate-400 mb-2.5" />
+              <p className="text-sm dark:text-slate-400 text-slate-500">
+                No notes have been shared with you yet.
+              </p>
+            </div>
+          )}
+        </section>
 
-      {/* Attachments summary */}
-      {(ticket.Prescriptions.length > 0 ||
-        ticket.MedicalCertificates.length > 0 ||
-        ticket.LaboratoryRequests.length > 0 ||
-        ticket.ImagingRequests.length > 0) && (
-        <div>
-          <p className="text-xs font-semibold dark:text-slate-400 text-slate-500 uppercase tracking-wide mb-2">
-            From This Visit
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {ticket.Prescriptions.length > 0 && (
-              <span className="flex items-center gap-1.5 text-xs dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-400/30 bg-emerald-100/60 text-emerald-700 border-emerald-300/50 border rounded-full px-3 py-1">
-                <Pill className="h-3.5 w-3.5" />
-                {ticket.Prescriptions.length} Prescription
-                {ticket.Prescriptions.length !== 1 ? 's' : ''}
-              </span>
-            )}
-            {ticket.MedicalCertificates.length > 0 && (
-              <span className="flex items-center gap-1.5 text-xs dark:bg-blue-500/20 dark:text-blue-300 dark:border-blue-400/30 bg-blue-100/60 text-blue-700 border-blue-300/50 border rounded-full px-3 py-1">
-                <FileCheck className="h-3.5 w-3.5" />
-                {ticket.MedicalCertificates.length} Certificate
-                {ticket.MedicalCertificates.length !== 1 ? 's' : ''}
-              </span>
-            )}
-            {ticket.LaboratoryRequests.length > 0 && (
-              <span className="flex items-center gap-1.5 text-xs dark:bg-purple-500/20 dark:text-purple-300 dark:border-purple-400/30 bg-purple-100/60 text-purple-700 border-purple-300/50 border rounded-full px-3 py-1">
-                <TestTube className="h-3.5 w-3.5" />
-                {ticket.LaboratoryRequests.length} Lab Request
-                {ticket.LaboratoryRequests.length !== 1 ? 's' : ''}
-              </span>
-            )}
-            {ticket.ImagingRequests.length > 0 && (
-              <span className="flex items-center gap-1.5 text-xs dark:bg-orange-500/20 dark:text-orange-300 dark:border-orange-400/30 bg-orange-100/60 text-orange-700 border-orange-300/50 border rounded-full px-3 py-1">
-                <Scan className="h-3.5 w-3.5" />
-                {ticket.ImagingRequests.length} Imaging
-              </span>
-            )}
-          </div>
-        </div>
-      )}
+        {/* Attachments summary */}
+        {(ticket.Prescriptions.length > 0 ||
+          ticket.MedicalCertificates.length > 0 ||
+          ticket.LaboratoryRequests.length > 0 ||
+          ticket.ImagingRequests.length > 0) && (
+          <section>
+            <p className="text-xs font-semibold dark:text-slate-400 text-slate-500 uppercase tracking-widest mb-2.5">
+              From This Visit
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              {ticket.Prescriptions.length > 0 && (
+                <div className="flex items-center gap-2 dark:bg-emerald-500/10 bg-emerald-50 rounded-xl px-3 py-2.5 border dark:border-emerald-400/20 border-emerald-200/60">
+                  <Pill className="h-4 w-4 dark:text-emerald-400 text-emerald-600 shrink-0" />
+                  <div>
+                    <p className="text-xs font-semibold dark:text-emerald-300 text-emerald-700">
+                      {ticket.Prescriptions.length} Rx
+                    </p>
+                    <p className="text-xs dark:text-emerald-400/70 text-emerald-600/70">Prescriptions</p>
+                  </div>
+                </div>
+              )}
+              {ticket.MedicalCertificates.length > 0 && (
+                <div className="flex items-center gap-2 dark:bg-sky-500/10 bg-sky-50 rounded-xl px-3 py-2.5 border dark:border-sky-400/20 border-sky-200/60">
+                  <FileCheck className="h-4 w-4 dark:text-sky-400 text-sky-600 shrink-0" />
+                  <div>
+                    <p className="text-xs font-semibold dark:text-sky-300 text-sky-700">
+                      {ticket.MedicalCertificates.length}
+                    </p>
+                    <p className="text-xs dark:text-sky-400/70 text-sky-600/70">Certificates</p>
+                  </div>
+                </div>
+              )}
+              {ticket.LaboratoryRequests.length > 0 && (
+                <div className="flex items-center gap-2 dark:bg-purple-500/10 bg-purple-50 rounded-xl px-3 py-2.5 border dark:border-purple-400/20 border-purple-200/60">
+                  <TestTube className="h-4 w-4 dark:text-purple-400 text-purple-600 shrink-0" />
+                  <div>
+                    <p className="text-xs font-semibold dark:text-purple-300 text-purple-700">
+                      {ticket.LaboratoryRequests.length}
+                    </p>
+                    <p className="text-xs dark:text-purple-400/70 text-purple-600/70">Lab Requests</p>
+                  </div>
+                </div>
+              )}
+              {ticket.ImagingRequests.length > 0 && (
+                <div className="flex items-center gap-2 dark:bg-orange-500/10 bg-orange-50 rounded-xl px-3 py-2.5 border dark:border-orange-400/20 border-orange-200/60">
+                  <Scan className="h-4 w-4 dark:text-orange-400 text-orange-600 shrink-0" />
+                  <div>
+                    <p className="text-xs font-semibold dark:text-orange-300 text-orange-700">
+                      {ticket.ImagingRequests.length}
+                    </p>
+                    <p className="text-xs dark:text-orange-400/70 text-orange-600/70">Imaging</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+      </div>
     </div>
   )
 }
 
-function AppointmentDetailPanel({ appointment }: { appointment: Appointment }) {
+function AppointmentDetailPanel({ appointment, onBack }: { appointment: Appointment; onBack: () => void }) {
   const attr = appointment.AppointmentAttribute
   const hp = appointment.AppointmentRouting[0]?.RoutedTo
+  const statusConfig = getAppointmentStatusConfig(attr?.status)
 
   return (
-    <div className="flex flex-col gap-6 p-6 overflow-y-auto h-full">
-      {/* Header */}
-      <div>
-        {attr && (
-          <span
-            className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border mb-2 ${getAppointmentStatusColor(
-              attr.status
-            )}`}
-          >
-            {attr.status}
-          </span>
-        )}
-        <h2 className="text-xl font-bold dark:text-white text-slate-900">
-          {appointment.subject ?? appointment.complaint ?? 'Appointment'}
-        </h2>
-        {appointment.Clinic && (
-          <p className="text-sm dark:text-slate-400 text-slate-500 mt-0.5">
-            {appointment.Clinic.name}
-          </p>
-        )}
-        <p className="text-xs dark:text-slate-500 text-slate-400 mt-1">
-          {new Date(appointment.createdAt).toLocaleDateString('en-US', {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-          })}
-        </p>
+    <div className="flex flex-col h-full overflow-hidden">
+      {/* Detail header */}
+      <div className="px-5 pt-5 pb-4 shrink-0 dark:border-b dark:border-white/10 border-b border-slate-200/60">
+        <button
+          type="button"
+          onClick={onBack}
+          className="md:hidden flex items-center gap-1 text-xs dark:text-slate-400 text-slate-500 mb-3 dark:hover:text-white hover:text-slate-900 transition-colors"
+        >
+          <ChevronLeft className="h-3.5 w-3.5" />
+          All Records
+        </button>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap mb-1.5">
+              {attr && <StatusBadge config={statusConfig} />}
+              <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full dark:bg-slate-700/60 bg-slate-200/60 dark:text-slate-300 text-slate-600 border dark:border-white/10 border-slate-200/60">
+                <Calendar className="h-3 w-3" />
+                Appointment
+              </span>
+            </div>
+            <h2 className="text-lg font-bold dark:text-white text-slate-900 leading-snug">
+              {appointment.subject ?? appointment.complaint ?? 'Appointment'}
+            </h2>
+            <div className="flex items-center gap-3 mt-1 flex-wrap">
+              {appointment.Clinic && (
+                <span className="text-sm dark:text-slate-400 text-slate-500">{appointment.Clinic.name}</span>
+              )}
+              <span className="text-xs dark:text-slate-500 text-slate-400">
+                {new Date(appointment.createdAt).toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                })}
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Appointment Details */}
-      {attr && (
-        <div className="dark:bg-slate-800/40 bg-slate-100/60 rounded-xl p-4">
-          <p className="text-xs font-semibold dark:text-slate-400 text-slate-500 uppercase tracking-wide mb-3">
-            Appointment Details
-          </p>
-          <div className="flex flex-col gap-2.5">
-            {attr.date && (
-              <div className="flex items-center gap-2.5 text-sm">
-                <Calendar className="h-4 w-4 dark:text-slate-400 text-slate-500 shrink-0" />
-                <span className="dark:text-white text-slate-900">
-                  {new Date(attr.date).toLocaleDateString('en-US', {
-                    weekday: 'short',
-                    month: 'long',
-                    day: 'numeric',
-                    year: 'numeric',
-                  })}
-                  {attr.timeStart && ` · ${attr.timeStart}`}
-                  {attr.timeEnd && ` – ${attr.timeEnd}`}
-                </span>
-              </div>
-            )}
-            {attr.AppointmentType?.name && (
-              <div className="flex items-center gap-2.5 text-sm">
-                <ClipboardList className="h-4 w-4 dark:text-slate-400 text-slate-500 shrink-0" />
-                <span className="dark:text-white text-slate-900">
-                  {attr.AppointmentType.name}
-                </span>
-              </div>
-            )}
-            {attr.AppointmentMode?.name && (
-              <div className="flex items-center gap-2.5 text-sm">
-                <Calendar className="h-4 w-4 dark:text-slate-400 text-slate-500 shrink-0" />
-                <span className="dark:text-white text-slate-900">
-                  {attr.AppointmentMode.name}
-                </span>
-              </div>
-            )}
-            {attr.Service?.name && (
-              <div className="flex items-center gap-2.5 text-sm">
-                <Stethoscope className="h-4 w-4 dark:text-slate-400 text-slate-500 shrink-0" />
-                <span className="dark:text-white text-slate-900">
-                  {attr.Service.name}
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Assigned Provider */}
-      {hp && (
-        <div className="dark:bg-slate-800/40 bg-slate-100/60 rounded-xl p-4">
-          <p className="text-xs font-semibold dark:text-slate-400 text-slate-500 uppercase tracking-wide mb-2">
-            Healthcare Provider
-          </p>
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center shrink-0">
-              <Stethoscope className="h-4 w-4 text-blue-500" />
+      <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:dark:bg-white/10 [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full">
+        {/* Appointment Details */}
+        {attr && (
+          <section>
+            <p className="text-xs font-semibold dark:text-slate-400 text-slate-500 uppercase tracking-widest mb-2.5">
+              Appointment Details
+            </p>
+            <div className="dark:bg-slate-800/40 bg-slate-100/60 rounded-xl divide-y dark:divide-white/5 divide-slate-200/60 overflow-hidden">
+              {attr.date && (
+                <div className="flex items-center gap-3 px-4 py-3">
+                  <Calendar className="h-4 w-4 dark:text-sky-400 text-sky-500 shrink-0" />
+                  <div>
+                    <p className="text-xs dark:text-slate-400 text-slate-500 mb-0.5">Date &amp; Time</p>
+                    <p className="text-sm font-medium dark:text-white text-slate-900">
+                      {new Date(attr.date).toLocaleDateString('en-US', {
+                        weekday: 'short',
+                        month: 'long',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })}
+                      {attr.timeStart && (
+                        <span className="dark:text-slate-300 text-slate-600">
+                          {' '}· {attr.timeStart}
+                          {attr.timeEnd && ` – ${attr.timeEnd}`}
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                </div>
+              )}
+              {attr.AppointmentType?.name && (
+                <div className="flex items-center gap-3 px-4 py-3">
+                  <ClipboardList className="h-4 w-4 dark:text-violet-400 text-violet-500 shrink-0" />
+                  <div>
+                    <p className="text-xs dark:text-slate-400 text-slate-500 mb-0.5">Type</p>
+                    <p className="text-sm font-medium dark:text-white text-slate-900">
+                      {attr.AppointmentType.name}
+                    </p>
+                  </div>
+                </div>
+              )}
+              {attr.AppointmentMode?.name && (
+                <div className="flex items-center gap-3 px-4 py-3">
+                  <ActivitySquare className="h-4 w-4 dark:text-teal-400 text-teal-500 shrink-0" />
+                  <div>
+                    <p className="text-xs dark:text-slate-400 text-slate-500 mb-0.5">Mode</p>
+                    <p className="text-sm font-medium dark:text-white text-slate-900">
+                      {attr.AppointmentMode.name}
+                    </p>
+                  </div>
+                </div>
+              )}
+              {attr.Service?.name && (
+                <div className="flex items-center gap-3 px-4 py-3">
+                  <Stethoscope className="h-4 w-4 dark:text-emerald-400 text-emerald-500 shrink-0" />
+                  <div>
+                    <p className="text-xs dark:text-slate-400 text-slate-500 mb-0.5">Service</p>
+                    <p className="text-sm font-medium dark:text-white text-slate-900">
+                      {attr.Service.name}
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
-            <p className="text-sm dark:text-white text-slate-900">
-              {[
-                hp.HPProfile?.title,
-                hp.HPProfile?.name ||
-                  `${hp.User?.firstName ?? ''} ${hp.User?.lastName ?? ''}`.trim(),
-                hp.HPProfile?.suffix,
-              ]
-                .filter(Boolean)
-                .join(' ')}
+          </section>
+        )}
+
+        {/* Assigned Provider */}
+        {hp && (
+          <section>
+            <p className="text-xs font-semibold dark:text-slate-400 text-slate-500 uppercase tracking-widest mb-2.5">
+              Healthcare Provider
+            </p>
+            <div className="flex items-center gap-3 dark:bg-slate-800/40 bg-slate-100/60 rounded-xl px-3.5 py-3">
+              <div className="w-9 h-9 rounded-full bg-violet-500/20 flex items-center justify-center shrink-0">
+                <Stethoscope className="h-4 w-4 text-violet-500" />
+              </div>
+              <p className="text-sm font-medium dark:text-white text-slate-900">
+                {[
+                  hp.HPProfile?.title,
+                  hp.HPProfile?.name ||
+                    `${hp.User?.firstName ?? ''} ${hp.User?.lastName ?? ''}`.trim(),
+                  hp.HPProfile?.suffix,
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+              </p>
+            </div>
+          </section>
+        )}
+
+        {/* Complaint */}
+        {appointment.complaint && (
+          <section>
+            <p className="text-xs font-semibold dark:text-slate-400 text-slate-500 uppercase tracking-widest mb-2.5">
+              Chief Complaint
+            </p>
+            <p className="text-sm dark:text-slate-200 text-slate-800 dark:bg-slate-800/40 bg-slate-100/60 rounded-xl px-4 py-3 leading-relaxed">
+              {appointment.complaint}
+            </p>
+          </section>
+        )}
+
+        {/* No consultation recorded */}
+        {appointment.ConsultationTickets.length === 0 && (
+          <div className="dark:bg-slate-800/30 bg-slate-100/60 rounded-xl p-6 text-center">
+            <Stethoscope className="h-9 w-9 mx-auto dark:text-slate-600 text-slate-400 mb-2.5" />
+            <p className="text-sm dark:text-slate-400 text-slate-500">
+              No consultation notes recorded yet.
             </p>
           </div>
-        </div>
-      )}
-
-      {/* Complaint */}
-      {appointment.complaint && (
-        <div>
-          <p className="text-xs font-semibold dark:text-slate-400 text-slate-500 uppercase tracking-wide mb-1.5">
-            Chief Complaint
-          </p>
-          <p className="text-sm dark:text-slate-200 text-slate-800">
-            {appointment.complaint}
-          </p>
-        </div>
-      )}
-
-      {/* No consultation recorded */}
-      {appointment.ConsultationTickets.length === 0 && (
-        <div className="dark:bg-slate-800/40 bg-slate-100/60 rounded-xl p-6 text-center">
-          <Stethoscope className="h-10 w-10 mx-auto dark:text-slate-500 text-slate-400 mb-3" />
-          <p className="text-sm dark:text-slate-400 text-slate-500">
-            No consultation notes have been recorded for this appointment yet.
-          </p>
-        </div>
-      )}
+        )}
+      </div>
     </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// List item row
+// ---------------------------------------------------------------------------
+
+function ListItemRow({
+  item,
+  isSelected,
+  onSelect,
+}: {
+  item: ListItem
+  isSelected: boolean
+  onSelect: () => void
+}) {
+  if (item.kind === 'consultation') {
+    const ticket = item.data as ConsultationTicket
+    const cfg = getConsultationStatusConfig(
+      ticket.ConsultationTicketAttribute?.status,
+      ticket.isArchived
+    )
+    return (
+      <button
+        type="button"
+        onClick={onSelect}
+        className={`w-full text-left border-b dark:border-white/5 border-slate-200/60 transition-colors dark:hover:bg-white/5 hover:bg-slate-50/60 border-l-[3px] ${
+          isSelected ? `${cfg.selectedBg} ${cfg.accent}` : 'border-l-transparent'
+        }`}
+      >
+        <div className="px-4 py-3.5">
+          <div className="flex items-start justify-between gap-2 mb-1">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <cfg.Icon className={`h-3.5 w-3.5 shrink-0 ${cfg.badge.split(' ').find(c => c.startsWith('text-')) ?? 'text-slate-400'}`} />
+              <p className="text-sm font-semibold dark:text-white text-slate-900 line-clamp-1">
+                {ticket.subject ?? 'Consultation'}
+              </p>
+            </div>
+            <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border shrink-0 font-medium ${cfg.badge}`}>
+              {cfg.label}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap ml-5">
+            {ticket.Clinic && (
+              <span className="text-xs dark:text-slate-500 text-slate-400">{ticket.Clinic.name}</span>
+            )}
+            {ticket.caseNumber && (
+              <span className="text-xs dark:text-slate-500 text-slate-400 font-mono">#{ticket.caseNumber}</span>
+            )}
+            <span className="text-xs dark:text-slate-500 text-slate-400">
+              {new Date(ticket.createdAt).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+              })}
+            </span>
+          </div>
+          {(ticket.ConsultationNotes.length > 0 || ticket.Prescriptions.length > 0) && (
+            <div className="flex items-center gap-2.5 mt-2 ml-5">
+              {ticket.ConsultationNotes.length > 0 && (
+                <span className="inline-flex items-center gap-1 text-xs dark:text-slate-500 text-slate-400">
+                  <FileText className="h-3 w-3" />
+                  {ticket.ConsultationNotes.length} note{ticket.ConsultationNotes.length !== 1 ? 's' : ''}
+                </span>
+              )}
+              {ticket.Prescriptions.length > 0 && (
+                <span className="inline-flex items-center gap-1 text-xs dark:text-emerald-400/70 text-emerald-600">
+                  <Pill className="h-3 w-3" />
+                  {ticket.Prescriptions.length} Rx
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+      </button>
+    )
+  }
+
+  const appt = item.data as Appointment
+  const cfg = getAppointmentStatusConfig(appt.AppointmentAttribute?.status)
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className={`w-full text-left border-b dark:border-white/5 border-slate-200/60 transition-colors dark:hover:bg-white/5 hover:bg-slate-50/60 border-l-[3px] ${
+        isSelected ? `${cfg.selectedBg} ${cfg.accent}` : 'border-l-transparent'
+      }`}
+    >
+      <div className="px-4 py-3.5">
+        <div className="flex items-start justify-between gap-2 mb-1">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <Calendar className={`h-3.5 w-3.5 shrink-0 dark:text-sky-400 text-sky-500`} />
+            <p className="text-sm font-semibold dark:text-white text-slate-900 line-clamp-1">
+              {appt.subject ?? appt.complaint ?? 'Appointment'}
+            </p>
+          </div>
+          {appt.AppointmentAttribute?.status && (
+            <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border shrink-0 font-medium ${cfg.badge}`}>
+              {cfg.label}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2 flex-wrap ml-5">
+          {appt.Clinic && (
+            <span className="text-xs dark:text-slate-500 text-slate-400">{appt.Clinic.name}</span>
+          )}
+          {appt.AppointmentAttribute?.date && (
+            <span className="inline-flex items-center gap-1 text-xs dark:text-slate-500 text-slate-400">
+              <Calendar className="h-3 w-3" />
+              {new Date(appt.AppointmentAttribute.date).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+              })}
+            </span>
+          )}
+        </div>
+      </div>
+    </button>
   )
 }
 
@@ -416,7 +734,11 @@ export default function PatientHistoryClient({
   appointments,
   consultationTickets,
 }: PatientHistoryClientProps) {
-  const listItems: ListItem[] = [
+  const [tab, setTab] = useState<TabFilter>('all')
+  const [selectedKey, setSelectedKey] = useState<string | null>(null)
+  const [mobileView, setMobileView] = useState<'list' | 'detail'>('list')
+
+  const allItems = useMemo<ListItem[]>(() => [
     ...consultationTickets.map(
       (t): ListItem => ({
         kind: 'consultation',
@@ -436,15 +758,19 @@ export default function PatientHistoryClient({
             : new Date(a.createdAt),
         })
       ),
-  ].sort((a, b) => b.date.getTime() - a.date.getTime())
+  ].sort((a, b) => b.date.getTime() - a.date.getTime()), [appointments, consultationTickets])
 
-  const [selectedKey, setSelectedKey] = useState<string | null>(
-    listItems[0] ? `${listItems[0].kind}-${listItems[0].data.id}` : null
-  )
-  const [mobileView, setMobileView] = useState<'list' | 'detail'>('list')
+  const listItems = useMemo<ListItem[]>(() => {
+    if (tab === 'appointments') return allItems.filter((i) => i.kind === 'appointment')
+    if (tab === 'consultations') return allItems.filter((i) => i.kind === 'consultation')
+    return allItems
+  }, [allItems, tab])
+
+  // Auto-select first when tab changes
+  const effectiveKey = selectedKey ?? (listItems[0] ? `${listItems[0].kind}-${listItems[0].data.id}` : null)
 
   const selectedItem = listItems.find(
-    (item) => `${item.kind}-${item.data.id}` === selectedKey
+    (item) => `${item.kind}-${item.data.id}` === effectiveKey
   )
 
   const handleSelect = useCallback((key: string) => {
@@ -452,24 +778,29 @@ export default function PatientHistoryClient({
     setMobileView('detail')
   }, [])
 
+  const tabs: { id: TabFilter; label: string; count: number }[] = [
+    { id: 'all', label: 'All', count: allItems.length },
+    { id: 'appointments', label: 'Appointments', count: appointments.filter(a => a.ConsultationTickets.length === 0).length },
+    { id: 'consultations', label: 'Consultations', count: consultationTickets.length },
+  ]
+
   return (
     <div className="w-full">
       {/* Page Header */}
-      <div className="mb-6 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <div className="mb-5 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
           <Link
             href="/v2/patient"
-            className="flex items-center gap-2 dark:text-slate-400 text-slate-600 dark:hover:text-white hover:text-slate-900 transition-colors"
+            className="flex items-center justify-center w-9 h-9 rounded-xl dark:bg-white/5 bg-slate-100/80 dark:text-slate-400 text-slate-600 dark:hover:text-white hover:text-slate-900 dark:hover:bg-white/10 hover:bg-slate-200/60 transition-colors shrink-0"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="w-4 h-4" />
           </Link>
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold dark:text-white text-slate-900">
-              My Appointments & Consultations
+          <div className="min-w-0">
+            <h1 className="text-xl md:text-2xl font-bold dark:text-white text-slate-900 truncate">
+              My Health Records
             </h1>
-            <p className="text-sm dark:text-slate-400 text-slate-600">
-              {consultationTickets.length} consultation{consultationTickets.length !== 1 ? 's' : ''} ·{' '}
-              {appointments.length} appointment{appointments.length !== 1 ? 's' : ''}
+            <p className="text-xs dark:text-slate-400 text-slate-500 mt-0.5">
+              {patientName} · {allItems.length} record{allItems.length !== 1 ? 's' : ''}
             </p>
           </div>
         </div>
@@ -477,165 +808,67 @@ export default function PatientHistoryClient({
       </div>
 
       {/* Split panel */}
-      <div className="flex h-[calc(100dvh-14rem)] overflow-hidden dark:bg-slate-800/30 bg-white/40 backdrop-blur-xl rounded-2xl dark:border-white/10 border-slate-200/60 border shadow-lg dark:shadow-slate-900/30">
-        {/* Mobile: back button */}
-        {mobileView === 'detail' && (
-          <div className="md:hidden absolute top-0 left-0 right-0 z-10">
-            <button
-              type="button"
-              onClick={() => setMobileView('list')}
-              className="flex items-center gap-1.5 px-4 py-2.5 text-sm dark:text-slate-300 text-slate-600 dark:hover:text-white hover:text-slate-900 transition-colors"
-            >
-              <ChevronLeft className="h-4 w-4" />
-              Back
-            </button>
-          </div>
-        )}
-
+      <div className="flex h-[calc(100dvh-13rem)] overflow-hidden dark:bg-slate-900/50 bg-white/60 backdrop-blur-xl rounded-2xl dark:border-white/8 border-slate-200/70 border shadow-xl dark:shadow-slate-950/40">
         {/* Left: List */}
         <aside
-          className={`shrink-0 flex-col dark:border-r dark:border-white/10 border-r border-slate-200/60 overflow-hidden w-full md:w-80 ${
+          className={`shrink-0 flex-col dark:border-r dark:border-white/8 border-r border-slate-200/70 overflow-hidden w-full md:w-[320px] ${
             mobileView === 'detail' ? 'hidden md:flex' : 'flex'
           }`}
         >
-          <div className="px-4 py-3 dark:border-b dark:border-white/10 border-b border-slate-200/60 shrink-0">
-            <p className="text-sm font-semibold dark:text-white text-slate-900">{patientName}</p>
-            <p className="text-xs dark:text-slate-400 text-slate-500">
-              {listItems.length} total record{listItems.length !== 1 ? 's' : ''}
-            </p>
+          {/* Filter tabs */}
+          <div className="px-3 pt-3 pb-2 shrink-0 dark:border-b dark:border-white/8 border-b border-slate-200/60">
+            <div className="flex gap-1 dark:bg-slate-800/60 bg-slate-100/80 rounded-xl p-1">
+              {tabs.map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => { setTab(t.id); setSelectedKey(null); setMobileView('list'); }}
+                  className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                    tab === t.id
+                      ? 'dark:bg-white/10 bg-white dark:text-white text-slate-900 shadow-sm'
+                      : 'dark:text-slate-400 text-slate-500 dark:hover:text-slate-200 hover:text-slate-700'
+                  }`}
+                >
+                  {t.label}
+                  <span className={`text-xs rounded-full px-1.5 py-0.5 min-w-[20px] text-center ${
+                    tab === t.id
+                      ? 'dark:bg-white/10 bg-slate-100 dark:text-white text-slate-700'
+                      : 'dark:bg-white/5 bg-slate-200/60 dark:text-slate-400 text-slate-500'
+                  }`}>
+                    {t.count}
+                  </span>
+                </button>
+              ))}
+            </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:dark:bg-white/10 [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full">
+          <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:dark:bg-white/10 [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full">
             {listItems.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full gap-3 px-6 text-center">
-                <div className="w-14 h-14 rounded-full dark:bg-white/5 bg-slate-100/60 flex items-center justify-center">
-                  <Calendar className="h-7 w-7 dark:text-slate-500 text-slate-400" />
+                <div className="w-12 h-12 rounded-2xl dark:bg-white/5 bg-slate-100/60 flex items-center justify-center">
+                  <Calendar className="h-6 w-6 dark:text-slate-500 text-slate-400" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium dark:text-slate-300 text-slate-600">
-                    No history yet
+                  <p className="text-sm font-semibold dark:text-slate-300 text-slate-600">
+                    No records
                   </p>
-                  <p className="text-xs dark:text-slate-500 text-slate-400 mt-1">
-                    Your appointments and consultations will appear here.
+                  <p className="text-xs dark:text-slate-500 text-slate-400 mt-0.5">
+                    {tab === 'all'
+                      ? 'Your history will appear here.'
+                      : `No ${tab} found.`}
                   </p>
                 </div>
               </div>
             ) : (
               listItems.map((item) => {
                 const key = `${item.kind}-${item.data.id}`
-                const isSelected = selectedKey === key
-
-                if (item.kind === 'consultation') {
-                  const ticket = item.data as ConsultationTicket
-                  const status = ticket.ConsultationTicketAttribute?.status
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => handleSelect(key)}
-                      className={`w-full text-left px-4 py-3 dark:border-b dark:border-white/5 border-b border-slate-200/60 transition-colors dark:hover:bg-white/5 hover:bg-slate-100/60 ${
-                        isSelected
-                          ? 'dark:bg-purple-500/10 bg-purple-50/60 dark:border-l-2 dark:border-l-purple-400 border-l-2 border-l-purple-500'
-                          : ''
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-2 mb-1">
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          <Stethoscope className="h-3.5 w-3.5 text-purple-400 shrink-0" />
-                          <p className="text-sm font-medium dark:text-white text-slate-900 line-clamp-1">
-                            {ticket.subject ?? 'Consultation'}
-                          </p>
-                        </div>
-                        <span
-                          className={`text-xs px-2 py-0.5 rounded-full border shrink-0 ${getConsultationStatusColor(
-                            status
-                          )}`}
-                        >
-                          {status ?? 'Open'}
-                        </span>
-                      </div>
-                      {ticket.Clinic && (
-                        <p className="text-xs dark:text-slate-500 text-slate-400 ml-5">
-                          {ticket.Clinic.name}
-                        </p>
-                      )}
-                      {ticket.caseNumber && (
-                        <p className="text-xs dark:text-slate-500 text-slate-400 ml-5">
-                          Case #{ticket.caseNumber}
-                        </p>
-                      )}
-                      <p className="text-xs dark:text-slate-500 text-slate-400 mt-1 ml-5">
-                        {new Date(ticket.createdAt).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric',
-                        })}
-                      </p>
-                      {ticket.ConsultationNotes.length > 0 && (
-                        <div className="flex items-center gap-2 mt-1.5 ml-5">
-                          <span className="flex items-center gap-1 text-xs dark:text-slate-500 text-slate-400">
-                            <FileText className="h-3 w-3" />
-                            {ticket.ConsultationNotes.length} note
-                            {ticket.ConsultationNotes.length !== 1 ? 's' : ''}
-                          </span>
-                          {ticket.Prescriptions.length > 0 && (
-                            <span className="flex items-center gap-1 text-xs dark:text-slate-500 text-slate-400">
-                              <Pill className="h-3 w-3" />
-                              {ticket.Prescriptions.length}
-                            </span>
-                          )}
-                        </div>
-                      )}
-                    </button>
-                  )
-                }
-
-                const appt = item.data as Appointment
-                const aptStatus = appt.AppointmentAttribute?.status
                 return (
-                  <button
+                  <ListItemRow
                     key={key}
-                    type="button"
-                    onClick={() => handleSelect(key)}
-                    className={`w-full text-left px-4 py-3 dark:border-b dark:border-white/5 border-b border-slate-200/60 transition-colors dark:hover:bg-white/5 hover:bg-slate-100/60 ${
-                      isSelected
-                        ? 'dark:bg-blue-500/10 bg-blue-50/60 dark:border-l-2 dark:border-l-blue-400 border-l-2 border-l-blue-500'
-                        : ''
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-2 mb-1">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <Calendar className="h-3.5 w-3.5 text-blue-400 shrink-0" />
-                        <p className="text-sm font-medium dark:text-white text-slate-900 line-clamp-1">
-                          {appt.subject ?? appt.complaint ?? 'Appointment'}
-                        </p>
-                      </div>
-                      {aptStatus && (
-                        <span
-                          className={`text-xs px-2 py-0.5 rounded-full border shrink-0 ${getAppointmentStatusColor(
-                            aptStatus
-                          )}`}
-                        >
-                          {aptStatus}
-                        </span>
-                      )}
-                    </div>
-                    {appt.Clinic && (
-                      <p className="text-xs dark:text-slate-500 text-slate-400 ml-5">
-                        {appt.Clinic.name}
-                      </p>
-                    )}
-                    {appt.AppointmentAttribute?.date && (
-                      <p className="text-xs dark:text-slate-500 text-slate-400 mt-0.5 ml-5 flex items-center gap-1">
-                        <Calendar className="h-3 w-3 inline" />
-                        {new Date(appt.AppointmentAttribute.date).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric',
-                        })}
-                      </p>
-                    )}
-                  </button>
+                    item={item}
+                    isSelected={effectiveKey === key}
+                    onSelect={() => handleSelect(key)}
+                  />
                 )
               })
             )}
@@ -645,23 +878,34 @@ export default function PatientHistoryClient({
         {/* Right: Detail */}
         <main
           className={`flex-1 overflow-hidden ${
-            mobileView === 'list' ? 'hidden md:flex' : 'flex'
+            mobileView === 'list' ? 'hidden md:flex md:flex-col' : 'flex flex-col'
           }`}
         >
           {selectedItem ? (
             selectedItem.kind === 'consultation' ? (
-              <ConsultationDetailPanel ticket={selectedItem.data as ConsultationTicket} />
+              <ConsultationDetailPanel
+                ticket={selectedItem.data as ConsultationTicket}
+                onBack={() => setMobileView('list')}
+              />
             ) : (
-              <AppointmentDetailPanel appointment={selectedItem.data as Appointment} />
+              <AppointmentDetailPanel
+                appointment={selectedItem.data as Appointment}
+                onBack={() => setMobileView('list')}
+              />
             )
           ) : (
             <div className="flex flex-col items-center justify-center h-full w-full gap-3 text-center px-6">
-              <div className="w-14 h-14 rounded-full dark:bg-white/5 bg-slate-100/60 flex items-center justify-center">
-                <AlertCircle className="h-7 w-7 dark:text-slate-500 text-slate-400" />
+              <div className="w-14 h-14 rounded-2xl dark:bg-white/5 bg-slate-100/60 flex items-center justify-center">
+                <ClipboardList className="h-7 w-7 dark:text-slate-500 text-slate-400" />
               </div>
-              <p className="text-sm dark:text-slate-400 text-slate-500">
-                Select a record from the list to view details.
-              </p>
+              <div>
+                <p className="text-sm font-semibold dark:text-slate-300 text-slate-600">
+                  Select a record
+                </p>
+                <p className="text-xs dark:text-slate-500 text-slate-400 mt-0.5">
+                  Choose an item from the list to view details.
+                </p>
+              </div>
             </div>
           )}
         </main>

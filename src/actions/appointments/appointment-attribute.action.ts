@@ -243,6 +243,7 @@ type RescheduleAppointmentPayload = {
   date: Date;
   timeStart?: string;
   timeEnd?: string;
+  newHpId?: number;
 };
 
 export const rescheduleAppointmentAction = withErrorHandling(async (payload: RescheduleAppointmentPayload) => {
@@ -256,15 +257,51 @@ export const rescheduleAppointmentAction = withErrorHandling(async (payload: Res
 
   if (!canReschedule) throw new Error("You do not have permission to reschedule this appointment.");
 
-  const { appointmentId, date, timeStart, timeEnd } = payload;
+  const { appointmentId, date, timeStart, timeEnd, newHpId } = payload;
 
-  await prismaClient.appointmentAttribute.update({
-    where: { appointmentId },
-    data: {
-      date,
-      ...(timeStart ? { timeStart } : {}),
-      ...(timeEnd ? { timeEnd } : {}),
-    },
+  await prismaClient.$transaction(async (tx) => {
+    await tx.appointmentAttribute.update({
+      where: { appointmentId },
+      data: {
+        date,
+        ...(timeStart ? { timeStart } : {}),
+        ...(timeEnd ? { timeEnd } : {}),
+      },
+    });
+
+    if (newHpId) {
+      // Cancel any existing active (PENDING or ACCEPTED) routings for this appointment
+      await tx.appointmentRouting.updateMany({
+        where: { appointmentId, status: { in: ["PENDING", "ACCEPTED"] } },
+        data: {
+          status: "CANCELLED",
+          amendedAt: new Date(),
+          amendment: "Rescheduled to a new provider",
+        },
+      });
+
+      // Create new routing to the selected HP
+      const newHp = await tx.healthcareProvider.findUnique({
+        where: { id: newHpId },
+        select: { User: { select: { UserPreference: { select: { autoAcceptAppointmentAssignment: true } } } } },
+      });
+      const autoAccept = newHp?.User?.UserPreference?.autoAcceptAppointmentAssignment ?? false;
+
+      await tx.appointmentRouting.create({
+        data: {
+          RoutedBy: { connect: { userId: session.user.sub } },
+          RoutedTo: { connect: { id: newHpId } },
+          Appointment: { connect: { id: appointmentId } },
+          status: autoAccept ? "ACCEPTED" : "PENDING",
+        },
+      });
+
+      // Ensure appointment is in ROUTED status (new HP assignment pending)
+      await tx.appointmentAttribute.update({
+        where: { appointmentId },
+        data: { status: "ROUTED" },
+      });
+    }
   });
 
   return { message: "Appointment rescheduled", data: undefined };

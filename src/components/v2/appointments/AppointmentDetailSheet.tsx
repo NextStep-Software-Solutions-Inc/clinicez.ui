@@ -578,7 +578,7 @@ export function AppointmentDetailSheet({
                 </>
               )}
 
-              {/* RECEIVED: Assign Doctor (first), Confirm Booking, Tag HPs, Reschedule, Complete, Reject */}
+              {/* RECEIVED: Assign Doctor (first), Confirm Booking, Tag HPs, Complete, Drop */}
               {status === "RECEIVED" && (
                 <>
                   <Button
@@ -612,16 +612,6 @@ export function AppointmentDetailSheet({
                   </Button>
                   <Button
                     size="sm"
-                    variant="outline"
-                    className="gap-1.5 border-amber-400/40 text-amber-600 hover:bg-amber-600 hover:text-white"
-                    disabled={isPending}
-                    onClick={() => onOpenSubPanel("reschedule")}
-                  >
-                    <CalendarClock className="h-4 w-4" />
-                    Reschedule
-                  </Button>
-                  <Button
-                    size="sm"
                     className="gap-1.5 bg-green-600 hover:bg-green-700 text-white"
                     disabled={isPending}
                     onClick={handleComplete}
@@ -638,7 +628,7 @@ export function AppointmentDetailSheet({
                       onClick={() => setShowRejectForm(true)}
                     >
                       <AlertTriangle className="h-4 w-4" />
-                      Reject
+                      Drop
                     </Button>
                   )}
                 </>
@@ -712,7 +702,7 @@ export function AppointmentDetailSheet({
                 </>
               )}
 
-              {/* ACCEPTED: Complete + Tag + Reschedule */}
+              {/* ACCEPTED: Complete + Tag */}
               {status === "ACCEPTED" && (
                 <>
                   <Button
@@ -734,25 +724,15 @@ export function AppointmentDetailSheet({
                     <Tags className="h-4 w-4" />
                     Tag Providers
                   </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="gap-1.5 border-amber-400/40 text-amber-600 hover:bg-amber-600 hover:text-white"
-                    disabled={isPending}
-                    onClick={() => onOpenSubPanel("reschedule")}
-                  >
-                    <CalendarClock className="h-4 w-4" />
-                    Reschedule
-                  </Button>
                 </>
               )}
             </div>
 
-            {/* Inline reject form */}
+            {/* Inline reject/drop form */}
             {showRejectForm && (
               <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 space-y-3">
                 <h4 className="text-xs font-semibold text-destructive uppercase tracking-wide">
-                  Reject Appointment
+                  {status === "PENDING" ? "Reject Appointment" : "Drop Appointment"}
                 </h4>
                 <div className="space-y-1.5">
                   <Label className="text-xs">
@@ -761,7 +741,11 @@ export function AppointmentDetailSheet({
                   <Textarea
                     value={rejectReason}
                     onChange={(e) => setRejectReason(e.target.value)}
-                    placeholder="Please provide a reason for rejection..."
+                    placeholder={
+                      status === "PENDING"
+                        ? "Please provide a reason for rejection..."
+                        : "Please provide a reason for dropping this appointment..."
+                    }
                     rows={3}
                     className="resize-none text-sm"
                     disabled={isPending}
@@ -785,7 +769,10 @@ export function AppointmentDetailSheet({
                     onClick={handleRejectSubmit}
                   >
                     <AlertTriangle className="h-4 w-4" />
-                    {isPending ? "Rejecting..." : "Confirm Reject"}
+                    {isPending
+                      ? (status === "PENDING" ? "Rejecting..." : "Dropping...")
+                      : (status === "PENDING" ? "Confirm Reject" : "Confirm Drop")
+                    }
                   </Button>
                 </div>
               </div>

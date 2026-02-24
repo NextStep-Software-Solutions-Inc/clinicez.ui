@@ -560,6 +560,7 @@ export function AppointmentsClient({
         <RescheduleDialog
           open={activePanel === "reschedule"}
           appointment={selectedAppointment}
+          hps={hps}
           onClose={backToDetail}
           onSuccess={() => {
             refresh();

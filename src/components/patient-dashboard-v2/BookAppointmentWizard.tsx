@@ -25,6 +25,7 @@ import { useClinicAppointmentTypes } from '@/hooks/useOrgAppointmentType'
 import { useClinicAppointmentModes } from '@/hooks/useOrgAppointmentMode'
 import BookingCalendar from '@/components/patient-dashboard-v2/BookingCalendar'
 import BookingTimeSlots from '@/components/patient-dashboard-v2/BookingTimeSlots'
+import { ThemeToggle } from '@/components/patient-dashboard-v2/ThemeToggle'
 import {
   Select,
   SelectContent,
@@ -198,6 +199,8 @@ function ProgressHeader({
             {clinicName}
           </p>
         </div>
+
+        <ThemeToggle />
       </div>
     </div>
   )

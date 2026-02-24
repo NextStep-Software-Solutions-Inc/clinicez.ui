@@ -192,6 +192,18 @@ export function AppointmentsClient({
     setHasMore(initialAppointments.length >= PAGE_SIZE);
   }, [initialAppointments]);
 
+  // Auto-sync the detail sheet: when the appointments list updates (after refresh),
+  // update selectedAppointment so the detail sheet shows the latest data.
+  useEffect(() => {
+    if (selectedAppointment) {
+      const updated = appointments.find((a) => a.id === selectedAppointment.id);
+      if (updated) {
+        setSelectedAppointment(updated);
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appointments]);
+
   // ── Load more ─────────────────────────────────────────────────────────────
 
   const loadMore = useCallback(async () => {

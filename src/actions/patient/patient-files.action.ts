@@ -27,7 +27,8 @@ function generateUniqueDisplayName(originalName: string): string {
   const base = lastDot !== -1 ? originalName.slice(0, lastDot) : originalName;
   const now = new Date();
   const pad = (n: number) => String(n).padStart(2, "0");
-  const ts = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+  const ms = String(now.getMilliseconds()).padStart(3, "0");
+  const ts = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}${ms}`;
   return `${base}_${ts}${ext}`;
 }
 

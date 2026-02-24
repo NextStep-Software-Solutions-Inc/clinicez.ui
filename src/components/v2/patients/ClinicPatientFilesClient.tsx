@@ -456,7 +456,7 @@ export function ClinicPatientFilesClient({
           setShowUpload(open);
         }}
       >
-        <DialogContent className="max-w-md overflow-hidden">
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Upload File</DialogTitle>
             <p className="text-xs text-slate-500 dark:text-slate-400 pt-1">

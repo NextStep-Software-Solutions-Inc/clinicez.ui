@@ -172,7 +172,17 @@ export const getPatientHistoryAction = withErrorHandling(
         isArchived: true,
         caseNumber: true,
         ConsultationTicketAttribute: {
-          select: { status: true },
+          select: {
+            status: true,
+            NoteTemplate: {
+              select: {
+                NoteSections: {
+                  where: { isActive: true },
+                  select: { name: true, label: true },
+                },
+              },
+            },
+          },
         },
         ConsultationTicketHPs: {
           select: {

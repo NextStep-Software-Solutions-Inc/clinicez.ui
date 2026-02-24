@@ -110,6 +110,18 @@ function ConsultationTimelineEntry({
   const hps = ticket.ConsultationTicketHPs.map((h) => h.HealthCareProvider);
   const appointment = ticket.Appointment;
 
+  // Build a lookup map from section name → human-readable label
+  const sectionLabelMap = new Map<string, string>(
+    (ticket.ConsultationTicketAttribute?.NoteTemplate?.NoteSections ?? []).map(
+      (s) => [s.name, s.label || s.name]
+    )
+  );
+  const getSectionLabel = (sectionName: string) =>
+    sectionLabelMap.get(sectionName) ||
+    sectionName
+      .replace(/[_-]/g, " ")
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+
   return (
     <div className="relative flex gap-4">
       {/* Timeline connector */}
@@ -212,7 +224,7 @@ function ConsultationTimelineEntry({
                   className="rounded-md bg-muted/40 border border-border/40 p-3"
                 >
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
-                    {note.section}
+                    {getSectionLabel(note.section)}
                   </p>
                   <p className="text-xs text-foreground/80 whitespace-pre-wrap line-clamp-4">
                     {note.content}

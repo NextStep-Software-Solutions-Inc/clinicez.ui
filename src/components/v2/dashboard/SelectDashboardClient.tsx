@@ -10,7 +10,6 @@ import {
   ArrowRight,
   Lock,
   LogOut,
-  ChevronDown,
 } from "lucide-react";
 import { Button } from "@components/ui/button";
 import { useClerk } from "@clerk/nextjs";
@@ -144,8 +143,11 @@ export default function SelectDashboardClient({
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-white/80 backdrop-blur-sm">
         <div className="flex items-center gap-2">
-          <HeartPulse className="h-6 w-6 text-primary" />
-          <span className="font-bold text-lg text-slate-800">ClinicEZ</span>
+          <img
+            src="/assets/clinic-ez_logo.svg"
+            alt="ClinicEZ"
+            className="h-8 object-contain"
+          />
         </div>
         <Button
           variant="ghost"
@@ -427,7 +429,7 @@ function ExpandableGroupCard({
         value={accordionValue}
         className="rounded-xl border border-slate-200 bg-white overflow-hidden data-[state=open]:shadow-lg data-[state=open]:border-teal-300 transition-all duration-300"
       >
-        <AccordionTrigger className="px-5 py-4 hover:no-underline group [&[data-state=open]>svg]:rotate-180">
+        <AccordionTrigger className="px-5 py-4 hover:no-underline group">
           <div className="flex items-center gap-3 flex-1 min-w-0">
             <div className="p-2.5 rounded-lg bg-gradient-to-br from-teal-100 to-teal-50 text-teal-600 flex-shrink-0 transition-all duration-300 group-hover:from-teal-200 group-hover:to-teal-100">
               {icon}
@@ -441,7 +443,6 @@ function ExpandableGroupCard({
               </p>
             </div>
           </div>
-          <ChevronDown className="h-5 w-5 text-slate-400 group-hover:text-teal-500 transition-all duration-200 shrink-0 mr-1" />
         </AccordionTrigger>
         <AccordionContent className="px-5 pb-4 pt-0">
           <div className="space-y-2 pt-2 border-t border-slate-100">

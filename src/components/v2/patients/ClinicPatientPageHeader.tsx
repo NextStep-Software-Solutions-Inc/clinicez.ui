@@ -1,17 +1,18 @@
 'use client'
 
 import Link from 'next/link'
-import { ArrowLeft, ChevronRight, Stethoscope } from 'lucide-react'
+import { ArrowLeft, ChevronRight, ClipboardList } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 interface ClinicPatientPageHeaderProps {
   clinicUid: string
   patientId: number
   patientName: string
-  /** 'view' shows: Patients > Patient Name
+  /** 'view' shows: Patients > Patient Name (with prominent Appointments & Consultations button)
    *  'edit' shows:  Patients > Patient Name > Edit Profile
-   *  'consultations' shows: Patients > Patient Name > Consultations */
-  mode: 'view' | 'edit' | 'consultations'
+   *  'consultations' shows: Patients > Patient Name > Consultations
+   *  'appointments-consultations' shows: Patients > Patient Name > Appointments & Consultations */
+  mode: 'view' | 'edit' | 'consultations' | 'appointments-consultations'
 }
 
 export function ClinicPatientPageHeader({
@@ -56,17 +57,28 @@ export function ClinicPatientPageHeader({
               <ChevronRight className="w-4 h-4 text-muted-foreground/40 shrink-0" />
               <span className="text-foreground font-semibold">Consultations</span>
             </>
+          ) : mode === 'appointments-consultations' ? (
+            <>
+              <Link
+                href={`/v2/clinic/${clinicUid}/patients/${patientId}`}
+                className="text-muted-foreground hover:text-foreground transition-colors truncate max-w-[200px]"
+              >
+                {patientName}
+              </Link>
+              <ChevronRight className="w-4 h-4 text-muted-foreground/40 shrink-0" />
+              <span className="text-foreground font-semibold">Appointments &amp; Consultations</span>
+            </>
           ) : (
             <span className="text-foreground font-semibold truncate">{patientName}</span>
           )}
         </nav>
 
-        {/* Action links */}
+        {/* Action button – shown on the profile view page */}
         {mode === 'view' && (
-          <Link href={`/v2/clinic/${clinicUid}/patients/${patientId}/consultations`}>
-            <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs shrink-0">
-              <Stethoscope className="h-3.5 w-3.5" />
-              Consultations
+          <Link href={`/v2/clinic/${clinicUid}/patients/${patientId}/appointments-consultations`}>
+            <Button size="sm" className="gap-2 h-9 px-4 text-sm shrink-0">
+              <ClipboardList className="h-4 w-4" />
+              Appointments &amp; Consultations
             </Button>
           </Link>
         )}

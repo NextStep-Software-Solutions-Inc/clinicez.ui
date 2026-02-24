@@ -31,7 +31,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
@@ -270,6 +270,9 @@ export function AppointmentDetailSheet({
             </h3>
             <div className="flex items-center gap-3">
               <Avatar className="h-12 w-12 rounded-full border border-border/50">
+                {requester?.picture && (
+                  <AvatarImage src={requester.picture} alt={fullName} className="object-cover" />
+                )}
                 <AvatarFallback className="text-sm font-semibold bg-primary/10 text-primary">
                   {initials || <User className="h-4 w-4" />}
                 </AvatarFallback>

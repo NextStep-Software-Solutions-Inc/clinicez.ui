@@ -161,6 +161,11 @@ export const getPatientHistoryAction = withErrorHandling(
               },
             },
           },
+          {
+            ClinicPatient: {
+              Patient: { userId: patientUserId },
+            },
+          },
         ],
       },
       orderBy: { createdAt: "desc" },

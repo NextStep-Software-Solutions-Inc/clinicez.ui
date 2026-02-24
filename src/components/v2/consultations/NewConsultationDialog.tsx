@@ -127,6 +127,7 @@ export default function NewConsultationDialog({
         hpIds: [values.hpId],
         subject: values.subject || undefined,
         appointmentId: linkToAppointment ? values.appointmentId : undefined,
+        clinicPatientId: patient.clinicPatientId,
       });
 
       if (result.status && result.data) {

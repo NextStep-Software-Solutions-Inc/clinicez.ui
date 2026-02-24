@@ -5,6 +5,7 @@ import { getClinicWithUserRoleAction, getUserClinicsWithRolesAction } from "@/ac
 import { getAppointmentCountsAction } from "@/actions/appointments/appointments.action";
 import { notFound } from "next/navigation";
 import UnauthorizedWarning from "@/components/UnauthorizedWarning";
+import { NotificationBell } from "@/components/v2/notifications/NotificationBell";
 
 export const dynamic = "force-dynamic";
 
@@ -131,7 +132,7 @@ export default async function ClinicUidLayout(
             uid: c.clinicUid,
             role: c.role,
           }))}
-          headerActions={null}
+          headerActions={<NotificationBell />}
           navItems={navItems}
         >
           {props.children}

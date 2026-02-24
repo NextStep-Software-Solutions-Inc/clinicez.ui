@@ -21,6 +21,7 @@ import { getPatientDashboardData } from '@/actions/patient-dashboard';
 import { bookAppointmentAtom } from '@/state/book-appointment';
 import { checkIsClinicPatientAction } from '@/actions/clinics/clinic-patient.action';
 import BookAppointmentSheet from '@/components/appointment/BookAppointmentSheet';
+import { NotificationBell } from '@/components/v2/notifications/NotificationBell';
 
 // Loading skeleton for initial page load
 function DashboardLoadingSkeleton() {
@@ -155,6 +156,7 @@ function PatientDashboardContent() {
           </p>
         </div>
         <ThemeToggle />
+        <NotificationBell />
       </div>
 
       {/* Main Dashboard Grid - Mobile responsive */}

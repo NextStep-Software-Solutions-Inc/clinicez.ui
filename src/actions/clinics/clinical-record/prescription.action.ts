@@ -6,6 +6,7 @@ import { withErrorHandling } from "@/lib/with-error-handling";
 import { USER_WITH_HEALTHCARE_PROVIDERS_SELECT, validateHealthcareProviderAuth } from "@/lib/healthcare-provider-auth";
 import { generateSerialNumber } from "@/lib/utils";
 import { Prisma } from "@prisma/client";
+import { createNotification } from "@/actions/notifications/notification.action";
 
 export type GetPrescriptionFilters = {
   clinicUid: string;
@@ -281,6 +282,24 @@ export const createPrescriptionAction = withErrorHandling(async (input: CreatePr
 
     return prescription;
   });
+
+  // Notify the patient a prescription was issued
+  try {
+    const clinicPatient = await prisma.clinicPatient.findUnique({
+      where: { id: patientId },
+      select: { patientId: true, Clinic: { select: { name: true } } },
+    });
+    if (clinicPatient) {
+      await createNotification({
+        userId: clinicPatient.patientId,
+        type: "PRESCRIPTION_ISSUED",
+        title: "Prescription Issued",
+        message: `A prescription has been issued for you at ${clinicPatient.Clinic.name}.`,
+      });
+    }
+  } catch {
+    // non-critical
+  }
 
   return { message: "Prescription created successfully", data: result };
 });

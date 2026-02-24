@@ -2,6 +2,7 @@ import React from "react";
 import "@styles/v2-dashboard.css";
 import { DashboardShell } from "@/components/v2/dashboard";
 import type { NavItem } from "@/components/v2/dashboard";
+import { NotificationBell } from "@/components/v2/notifications/NotificationBell";
 
 const navItems: NavItem[] = [
   { name: "Dashboard", href: "/tenant/dashboard", icon: "home" },
@@ -32,6 +33,7 @@ export default function TenantDashboardLayout({
       dashboardType="tenant"
       title="Tenant Console"
       navItems={navItems}
+      headerActions={<NotificationBell />}
     >
       {children}
     </DashboardShell>

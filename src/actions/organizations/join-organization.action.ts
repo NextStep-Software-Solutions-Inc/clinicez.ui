@@ -7,6 +7,7 @@ import path from 'path';
 import { capitalize, hasCodeProperty } from "@lib/utils";
 import { getCachedSession } from "../session.action";
 import { withErrorHandling } from "@/lib/with-error-handling";
+import { createNotification, createNotifications } from "@/actions/notifications/notification.action";
 
 export type JoinOrganizationPayload = {
   userId: string;
@@ -60,6 +61,7 @@ export const joinOrganizationAction = withErrorHandling(async (payload: JoinOrga
             select: {
               User: {
                 select: {
+                  id: true,
                   email: true
                 }
               },
@@ -83,6 +85,30 @@ export const joinOrganizationAction = withErrorHandling(async (payload: JoinOrga
   const applicantName = capitalize(`${userOrganization.User.firstName} ${userOrganization.User.lastName}`);
 
   await sendEmailNotifications(adminEmails, userOrganization.Organization.name, applicantName, applicantEmail);
+
+  // In-app notification: notify the applicant their request was submitted
+  await createNotification({
+    userId: currentUser.id,
+    type: "ORG_MEMBERSHIP_APPLIED",
+    title: "Membership Request Sent",
+    message: `Your membership request to ${userOrganization.Organization.name} has been submitted and is pending review.`,
+  });
+
+  // In-app notification: notify active admins of the new application
+  const adminUserIds = userOrganization.Organization.OrganizationMembers
+    .filter((u) => u.OrganizationRole.name.toUpperCase() === "ADMIN" && u.status === "ACTIVE")
+    .map((u) => u.User.id);
+  if (adminUserIds.length > 0) {
+    await createNotifications(
+      adminUserIds.map((adminId) => ({
+        userId: adminId,
+        type: "ORG_MEMBERSHIP_APPLIED" as const,
+        title: "New Membership Application",
+        message: `${applicantName} has applied to join ${userOrganization.Organization.name}.`,
+      })),
+    );
+  }
+
   message = `Successfully sent membership request to ${userOrganization.Organization.name}`;
   return { message, data: userOrganization }
 

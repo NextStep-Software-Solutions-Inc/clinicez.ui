@@ -14,6 +14,7 @@ import { OrganizationMemberStatus } from "@/types";
 import { withErrorHandling } from "@/lib/with-error-handling";
 import { isSuperAdminAction } from "@actions/super-admin/admin-check.action";
 import { hasOrgPermissionAction } from "@actions/permission.action";
+import { createNotification } from "@/actions/notifications/notification.action";
 
 export const isOrgHealthcareProviderAction = async (userId: string, orgUid: string) => {
   const orgMember = await prisma.organizationMember.findFirst({
@@ -391,6 +392,7 @@ export const setMembershipRequestStatusAction = withErrorHandling(
           },
           User: {
             select: {
+              id: true,
               firstName: true,
               lastName: true,
               email: true
@@ -431,6 +433,38 @@ export const setMembershipRequestStatusAction = withErrorHandling(
         organization: userOrganization.Organization.name,
         status: userOrganization.status as OrganizationMemberStatus,
         orgMail: userOrganization.Organization.email ?? ""
+      });
+
+      // In-app notification for the affected user
+      const notificationType = (() => {
+        switch (status) {
+          case "ACTIVE": return "ORG_MEMBERSHIP_APPROVED" as const;
+          case "SUSPENDED": return "ORG_MEMBERSHIP_SUSPENDED" as const;
+          case "INACTIVE": return "ORG_MEMBERSHIP_DEACTIVATED" as const;
+          default: return "ORG_MEMBERSHIP_REJECTED" as const;
+        }
+      })();
+      const notificationTitle = (() => {
+        switch (status) {
+          case "ACTIVE": return "Membership Approved";
+          case "SUSPENDED": return "Membership Suspended";
+          case "INACTIVE": return "Membership Deactivated";
+          default: return "Membership Update";
+        }
+      })();
+      const notificationMessage = (() => {
+        switch (status) {
+          case "ACTIVE": return `Your membership in ${userOrganization.Organization.name} has been approved.`;
+          case "SUSPENDED": return `Your membership in ${userOrganization.Organization.name} has been suspended.`;
+          case "INACTIVE": return `Your membership in ${userOrganization.Organization.name} has been deactivated.`;
+          default: return `Your membership status in ${userOrganization.Organization.name} has been updated to ${status}.`;
+        }
+      })();
+      await createNotification({
+        userId: userOrganization.User.id,
+        type: notificationType,
+        title: notificationTitle,
+        message: notificationMessage,
       });
     });
     return {

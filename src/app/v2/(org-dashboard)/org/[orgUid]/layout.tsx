@@ -4,6 +4,7 @@ import type { NavItem } from "@/components/v2/dashboard";
 import { getOrganizationAction, getUserOrgsWithRolesAction } from "@/actions/organizations/organization.action";
 import { notFound } from "next/navigation";
 import UnauthorizedWarning from "@/components/UnauthorizedWarning";
+import { NotificationBell } from "@/components/v2/notifications/NotificationBell";
 
 interface OrgLayoutProps {
   children: React.ReactNode;
@@ -86,6 +87,7 @@ export default async function OrgLayout(props: OrgLayoutProps) {
         orgUid: o.orgUid,
         role: o.role,
       }))}
+      headerActions={<NotificationBell />}
     >
       {props.children}
     </DashboardShell>

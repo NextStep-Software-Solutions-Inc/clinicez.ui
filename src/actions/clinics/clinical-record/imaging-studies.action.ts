@@ -10,6 +10,7 @@ import { validateHealthcareProviderAuth, USER_WITH_HEALTHCARE_PROVIDERS_SELECT }
 import { getPermissionsAction } from "@/actions/permission.action";
 import { PERMISSIONS } from "@/lib/permissions";
 import { getHPsAction, GetHPsType } from "@/actions/hp.actions";
+import { createNotification } from "@/actions/notifications/notification.action";
 
 export type GetImagingStudiesFilters = {
   clinicUid?: string;
@@ -335,6 +336,24 @@ export const createImagingStudyAction = withErrorHandling(async (input: CreateIm
 
     return study;
   });
+
+  // Notify the patient an imaging request was issued
+  try {
+    const clinicPatient = await prisma.clinicPatient.findUnique({
+      where: { id: patientId },
+      select: { patientId: true, Clinic: { select: { name: true } } },
+    });
+    if (clinicPatient) {
+      await createNotification({
+        userId: clinicPatient.patientId,
+        type: "DIAGNOSTIC_ISSUED",
+        title: "Imaging Request Issued",
+        message: `An imaging request has been issued for you at ${clinicPatient.Clinic.name}.`,
+      });
+    }
+  } catch {
+    // non-critical
+  }
 
   return { message: "Successfully created imaging study", data: result };
 });

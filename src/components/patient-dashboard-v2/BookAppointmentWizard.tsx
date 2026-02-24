@@ -15,7 +15,14 @@ import { toast } from 'sonner'
 import { mutate } from 'swr'
 import useSound from 'use-sound'
 import dayjs from '@/lib/day-utils'
-import { bookAppointmentAtom, clearBookingDraftAtom } from '@/state/book-appointment'
+import {
+  bookAppointmentAtom,
+  BOOKING_DRAFT_KEY,
+  BOOKING_DRAFT_TTL_MS,
+  type BookAppointmentForm,
+  type PersistedDraft,
+  type StorageEnvelope,
+} from '@/state/book-appointment'
 import { createAppointmentAction } from '@/actions/appointments/appointments.action'
 import { uploadMediaAction } from '@/actions/blob.action'
 import { useHPs } from '@/hooks/useHP'
@@ -1052,6 +1059,45 @@ function SuccessScreen({
 // Main Wizard shell
 // ---------------------------------------------------------------------------
 
+/** Write the serialisable form fields to localStorage with a fresh 30-min TTL. */
+function saveDraft(form: BookAppointmentForm) {
+  try {
+    const draft: PersistedDraft = {
+      clinicUid: form.clinicUid,
+      appointmentTypeId: form.appointmentTypeId,
+      serviceId: form.serviceId,
+      hpId: form.hpId,
+      hpUserId: form.hpUserId,
+      modeId: form.modeId,
+      preferredDate: form.preferredDate?.toISOString(),
+      selectedTimeSlot: form.selectedTimeSlot
+        ? {
+            start: form.selectedTimeSlot.start.toISOString(),
+            end: form.selectedTimeSlot.end.toISOString(),
+          }
+        : undefined,
+      subject: form.subject,
+      chiefComplaint: form.chiefComplaint,
+      certify: form.certify,
+      agreeTerms: form.agreeTerms,
+      agreePrivacy: form.agreePrivacy,
+    }
+    const envelope: StorageEnvelope = { expiresAt: Date.now() + BOOKING_DRAFT_TTL_MS, draft }
+    localStorage.setItem(BOOKING_DRAFT_KEY, JSON.stringify(envelope))
+  } catch {
+    // localStorage may be unavailable (private mode, storage quota exceeded)
+  }
+}
+
+/** Remove the draft from localStorage. */
+function clearDraftFromStorage() {
+  try {
+    localStorage.removeItem(BOOKING_DRAFT_KEY)
+  } catch {
+    // ignore
+  }
+}
+
 export default function BookAppointmentWizard({
   clinicUid,
   clinicName,
@@ -1059,32 +1105,57 @@ export default function BookAppointmentWizard({
   privacyUrl,
 }: BookAppointmentWizardProps) {
   const router = useRouter()
-  const [, setForm] = useAtom(bookAppointmentAtom)
-  const [, clearDraft] = useAtom(clearBookingDraftAtom)
+  const [form, setForm] = useAtom(bookAppointmentAtom)
   const [currentStep, setCurrentStep] = useState(1)
   const [isComplete, setIsComplete] = useState(false)
 
-  // On mount: eagerly clear any expired draft from localStorage so it doesn't
-  // linger indefinitely. bookAppointmentAtom already returns {} for expired
-  // data, but the stale key would remain in storage without this cleanup.
+  // On mount: hydrate form from localStorage draft (if not expired), then
+  // set clinicUid. Any expired envelope is wiped immediately.
   useEffect(() => {
-    const raw = localStorage.getItem('clinicez.v2.booking_draft')
+    const raw = localStorage.getItem(BOOKING_DRAFT_KEY)
     if (raw) {
       try {
-        const envelope = JSON.parse(raw) as { expiresAt?: number }
+        const envelope = JSON.parse(raw) as StorageEnvelope
         if (!envelope.expiresAt || Date.now() > envelope.expiresAt) {
-          clearDraft()
+          clearDraftFromStorage()
+        } else {
+          const d = envelope.draft
+          setForm({
+            clinicUid,
+            appointmentTypeId: d.appointmentTypeId,
+            serviceId: d.serviceId,
+            hpId: d.hpId,
+            hpUserId: d.hpUserId,
+            modeId: d.modeId,
+            preferredDate: d.preferredDate ? new Date(d.preferredDate) : undefined,
+            selectedTimeSlot: d.selectedTimeSlot
+              ? {
+                  start: new Date(d.selectedTimeSlot.start),
+                  end: new Date(d.selectedTimeSlot.end),
+                }
+              : undefined,
+            subject: d.subject,
+            chiefComplaint: d.chiefComplaint,
+            certify: d.certify,
+            agreeTerms: d.agreeTerms,
+            agreePrivacy: d.agreePrivacy,
+          })
+          return
         }
       } catch {
-        clearDraft()
+        clearDraftFromStorage()
       }
     }
+    setForm((prev) => ({ ...prev, clinicUid }))
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Persist form to localStorage whenever it changes (skip initial empty state)
   useEffect(() => {
-    setForm((prev) => ({ ...prev, clinicUid }))
-  }, [clinicUid, setForm])
+    if (form.subject || form.modeId || form.appointmentTypeId) {
+      saveDraft(form)
+    }
+  }, [form])
 
   const goNext = useCallback(() => setCurrentStep((s) => Math.min(s + 1, 5)), [])
 
@@ -1097,18 +1168,16 @@ export default function BookAppointmentWizard({
   }, [currentStep, router])
 
   const handleSuccess = useCallback(() => {
-    // Wipe the persisted draft — booking was sent successfully
-    clearDraft()
+    clearDraftFromStorage()
     setIsComplete(true)
-  }, [clearDraft])
+  }, [])
 
   const handleBookAnother = useCallback(() => {
-    // Wipe the persisted draft before starting a fresh booking
-    clearDraft()
+    clearDraftFromStorage()
     setForm({ clinicUid })
     setCurrentStep(1)
     setIsComplete(false)
-  }, [clinicUid, setForm, clearDraft])
+  }, [clinicUid, setForm])
 
   const currentStepMeta = STEPS[currentStep - 1]
 

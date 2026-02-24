@@ -135,6 +135,8 @@ export function AppointmentDetailSheet({
   const routings = appointment.AppointmentRouting ?? [];
   // Pending routing for accept/decline (only PENDING — not ACCEPTED)
   const pendingRouting = routings.find((r) => r.status === "PENDING");
+  // Accepted routing (HP already accepted the assignment)
+  const acceptedRouting = routings.find((r) => r.status === "ACCEPTED");
 
   const receivedBy = appointment.AppointmentAttribute?.ReceivedBy;
   const receivedByName = receivedBy
@@ -144,6 +146,10 @@ export function AppointmentDetailSheet({
   // Accept/Decline guard: only the assigned HP, and only when routing is PENDING
   const isAssignedToCurrentUser =
     !!pendingRouting && currentUserHpIds.includes(pendingRouting.RoutedTo.id);
+  // True if current user is the catering HP (pending or accepted routing)
+  const isCurrentUserTheCateringHP =
+    isAssignedToCurrentUser ||
+    (!!acceptedRouting && currentUserHpIds.includes(acceptedRouting.RoutedTo.id));
 
   // ── Action handlers ────────────────────────────────────────────────────────
 
@@ -627,9 +633,9 @@ export function AppointmentDetailSheet({
                 </>
               )}
 
-              {status === "ROUTED" && pendingRouting && (
+              {status === "ROUTED" && (pendingRouting ?? acceptedRouting) && (
                 <>
-                  {isAssignedToCurrentUser ? (
+                  {pendingRouting && (isAssignedToCurrentUser ? (
                     <>
                       <Button
                         size="sm"
@@ -660,6 +666,17 @@ export function AppointmentDetailSheet({
                     <p className="text-xs text-muted-foreground italic">
                       Only the assigned provider can accept or decline this assignment.
                     </p>
+                  ))}
+                  {isCurrentUserTheCateringHP && (
+                    <Button
+                      size="sm"
+                      className="gap-1.5 bg-green-600 hover:bg-green-700 text-white"
+                      disabled={isPending}
+                      onClick={handleComplete}
+                    >
+                      <CheckCircle className="h-4 w-4" />
+                      Mark Complete
+                    </Button>
                   )}
                   <Button
                     size="sm"

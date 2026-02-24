@@ -106,23 +106,33 @@ export const completeAppointmentAction = withErrorHandling(async (formData: Form
   if (!canCompleteAppointment) throw new Error("You do not have permission to complete appointment.");
 
   const appointmentId = parseInt(formData.get('appointmentId') as string);
-  await prismaClient.appointmentAttribute.update({
-    where: {
-      appointmentId,
-      status: {
-        not: "COMPLETED"
-      }
-    },
-    data: {
-      status: "COMPLETED",
-      completedAt: new Date(),
-      CompletedBy: {
-        connect: {
-          userId: session.user.sub
+
+  await prismaClient.$transaction(async (tx) => {
+    // Cancel any remaining PENDING or ACCEPTED routings before marking complete
+    await tx.appointmentRouting.updateMany({
+      where: { appointmentId, status: { in: ["PENDING", "ACCEPTED"] } },
+      data: { status: "CANCELLED", amendedAt: new Date(), amendment: "Appointment completed" },
+    });
+
+    await tx.appointmentAttribute.update({
+      where: {
+        appointmentId,
+        status: {
+          not: "COMPLETED"
+        }
+      },
+      data: {
+        status: "COMPLETED",
+        completedAt: new Date(),
+        CompletedBy: {
+          connect: {
+            userId: session.user.sub
+          }
         }
       }
-    }
-  })
+    });
+  });
+
   return { message: 'Appointment completed', data: undefined };
 }, async error => {
   if (error instanceof Error) return error.message;

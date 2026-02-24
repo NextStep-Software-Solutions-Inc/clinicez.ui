@@ -23,6 +23,8 @@ interface ProfileClientProps {
   headerSlot?: React.ReactNode
   /** undefined = use default '/v2/profile/edit'; null = hide edit button; string = navigate to that URL */
   editProfileHref?: string | null
+  /** undefined = use default '/v2/patient/files'; null = hide My Files button; string = navigate to that URL */
+  filesHref?: string | null
 }
 
 const PROFILE_TABS = [
@@ -41,7 +43,7 @@ const PROFILE_TABS = [
   { id: 'insurance', label: 'Insurance & Docs', icon: '📄' },
 ]
 
-export default function ProfileClient({ patient, headerSlot, editProfileHref }: ProfileClientProps) {
+export default function ProfileClient({ patient, headerSlot, editProfileHref, filesHref }: ProfileClientProps) {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState('overview')
   const [vitalsViewMode, setVitalsViewMode] = useState<'list' | 'chart'>('list')
@@ -1797,13 +1799,15 @@ export default function ProfileClient({ patient, headerSlot, editProfileHref }: 
       {/* Edit Profile Button - Floating */}
       {editProfileHref !== null && (
         <div className="fixed bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 md:gap-3">
+          {filesHref !== null && (
           <button
-            onClick={() => router.push('/v2/patient/files')}
+            onClick={() => router.push(filesHref ?? '/v2/patient/files')}
             className="flex items-center gap-1.5 md:gap-2 px-4 md:px-5 py-2.5 md:py-3 rounded-lg bg-gradient-to-br from-yellow-500 to-amber-500 text-white text-sm font-semibold hover:shadow-lg transition-all duration-300 hover:scale-105 shadow-lg"
           >
             <FolderOpen className="w-4 h-4" />
             <span className="hidden sm:inline">My Files</span>
           </button>
+          )}
           <button
             onClick={() => router.push(editProfileHref ?? '/v2/profile/edit')}
             className="flex items-center gap-1.5 md:gap-2 px-4 md:px-6 py-2.5 md:py-3 rounded-lg bg-gradient-to-br from-blue-600 to-blue-500 text-white text-sm font-semibold hover:shadow-lg transition-all duration-300 hover:scale-105 shadow-lg"

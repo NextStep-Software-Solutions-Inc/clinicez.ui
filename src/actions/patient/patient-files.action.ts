@@ -569,3 +569,342 @@ export const getPatientClinicsAction = withErrorHandling(async () => {
   const clinics = clinicPatients.map((cp) => cp.Clinic);
   return { message: "Patient clinics retrieved", data: clinics };
 });
+
+// ─── Healthcare provider actions ────────────────────────────────────────────
+
+const FOLDER_SELECT = {
+  id: true,
+  name: true,
+  createdAt: true,
+  updatedAt: true,
+  FolderSetting: {
+    select: {
+      id: true,
+      privacy: true,
+      isPublic: true,
+      FolderClinicShares: {
+        select: {
+          id: true,
+          clinicId: true,
+          createdAt: true,
+          Clinic: { select: { id: true, clinicUid: true, name: true } },
+        },
+      },
+    },
+  },
+  Files: {
+    where: { isActive: true },
+    orderBy: { updatedAt: "desc" } as const,
+    select: {
+      id: true,
+      name: true,
+      size: true,
+      url: true,
+      mimeType: true,
+      dateTaken: true,
+      createdAt: true,
+      updatedAt: true,
+      FileType: { select: { id: true, name: true } },
+      FileSetting: {
+        select: {
+          id: true,
+          privacy: true,
+          isPublic: true,
+          FileClinicShares: {
+            select: {
+              id: true,
+              clinicId: true,
+              createdAt: true,
+              Clinic: { select: { id: true, clinicUid: true, name: true } },
+            },
+          },
+        },
+      },
+    },
+  },
+} as const;
+
+/**
+ * Verify that the calling user has access to the clinic and that the patient
+ * is registered at that clinic. Returns the clinic DB id.
+ */
+async function requireClinicPatientAccess(
+  providerSub: string,
+  clinicUid: string,
+  patientId: number
+): Promise<{ clinicId: number }> {
+  const clinic = await prismaClient.clinic.findUnique({
+    where: { clinicUid },
+    select: { id: true },
+  });
+  if (!clinic) throw new Error("Clinic not found");
+
+  // Verify the calling user is an active member of the clinic
+  const member = await prismaClient.clinicMember.findFirst({
+    where: {
+      Clinic: { clinicUid },
+      User: { userId: providerSub },
+      isActive: true,
+    },
+    select: { id: true },
+  });
+  if (!member) throw new Error("Unauthorized: not a member of this clinic");
+
+  // Verify the patient is registered at the clinic
+  const clinicPatient = await prismaClient.clinicPatient.findFirst({
+    where: {
+      Clinic: { clinicUid },
+      Patient: { id: patientId },
+      isActive: true,
+    },
+    select: { id: true },
+  });
+  if (!clinicPatient) throw new Error("Patient is not registered at this clinic");
+
+  return { clinicId: clinic.id };
+}
+
+/**
+ * Returns folders/files for a patient that are visible to a given clinic:
+ * - Folders shared with that clinic (privacy=CLINIC + FolderClinicShare)
+ * - Folders that are PUBLIC
+ * Within each folder, only files that are CLINIC-shared with this clinic or PUBLIC.
+ */
+export const getPatientFilesForClinicAction = withErrorHandling(
+  async ({ patientId, clinicUid }: { patientId: number; clinicUid: string }) => {
+    const session = await getCachedSession();
+    if (!session?.user?.sub) throw new Error("Unauthorized");
+
+    const { clinicId } = await requireClinicPatientAccess(
+      session.user.sub,
+      clinicUid,
+      patientId
+    );
+
+    const allFolders = await prismaClient.folder.findMany({
+      where: {
+        userId: patientId,
+        isActive: true,
+        OR: [
+          // Public folders
+          { FolderSetting: { privacy: "PUBLIC" } },
+          // Folders shared with this clinic
+          {
+            FolderSetting: {
+              privacy: "CLINIC",
+              FolderClinicShares: { some: { clinicId } },
+            },
+          },
+        ],
+      },
+      orderBy: { updatedAt: "desc" },
+      select: {
+        ...FOLDER_SELECT,
+        Files: {
+          where: {
+            isActive: true,
+            OR: [
+              { FileSetting: { privacy: "PUBLIC" } },
+              {
+                FileSetting: {
+                  privacy: "CLINIC",
+                  FileClinicShares: { some: { clinicId } },
+                },
+              },
+            ],
+          },
+          orderBy: { updatedAt: "desc" },
+          select: FOLDER_SELECT.Files.select,
+        },
+      },
+    });
+
+    return { message: "Patient files retrieved", data: allFolders };
+  }
+);
+
+/**
+ * Create a folder on the patient's account on behalf of the clinic (provider action).
+ * The folder is automatically shared with the clinic.
+ */
+export const createFolderForPatientAction = withErrorHandling(
+  async ({
+    patientId,
+    clinicUid,
+    name,
+  }: {
+    patientId: number;
+    clinicUid: string;
+    name: string;
+  }) => {
+    const session = await getCachedSession();
+    if (!session?.user?.sub) throw new Error("Unauthorized");
+    if (!name?.trim()) throw new Error("Folder name is required");
+
+    const { clinicId } = await requireClinicPatientAccess(
+      session.user.sub,
+      clinicUid,
+      patientId
+    );
+
+    const folder = await prismaClient.$transaction(async (tx) => {
+      const newFolder = await tx.folder.create({
+        data: {
+          name: name.trim(),
+          userId: patientId,
+          FolderSetting: {
+            create: {
+              privacy: "CLINIC",
+              isPublic: false,
+              FolderClinicShares: { create: { clinicId } },
+            },
+          },
+        },
+        select: {
+          id: true,
+          name: true,
+          createdAt: true,
+          updatedAt: true,
+          FolderSetting: {
+            select: {
+              id: true,
+              privacy: true,
+              isPublic: true,
+              FolderClinicShares: {
+                select: {
+                  id: true,
+                  clinicId: true,
+                  Clinic: { select: { id: true, clinicUid: true, name: true } },
+                },
+              },
+            },
+          },
+          Files: {
+            where: { isActive: true },
+            select: {
+              id: true,
+              name: true,
+              size: true,
+              url: true,
+              mimeType: true,
+              dateTaken: true,
+              createdAt: true,
+              updatedAt: true,
+              FileType: { select: { id: true, name: true } },
+              FileSetting: {
+                select: {
+                  id: true,
+                  privacy: true,
+                  isPublic: true,
+                  FileClinicShares: {
+                    select: {
+                      id: true,
+                      clinicId: true,
+                      Clinic: { select: { id: true, clinicUid: true, name: true } },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+      return newFolder;
+    });
+
+    return { message: "Folder created", data: folder };
+  }
+);
+
+/**
+ * Upload a file into a patient folder on behalf of the clinic (provider action).
+ * The file is automatically shared with the clinic.
+ */
+export const uploadFileForPatientAction = withErrorHandling(
+  async (formData: FormData) => {
+    const session = await getCachedSession();
+    if (!session?.user?.sub) throw new Error("Unauthorized");
+
+    const patientId = Number(formData.get("patientId"));
+    const clinicUid = formData.get("clinicUid") as string | null;
+    const folderId = Number(formData.get("folderId"));
+    const fileTypeId = Number(formData.get("fileTypeId"));
+    const file = formData.get("file") as File | null;
+    const dateTakenRaw = formData.get("dateTaken") as string | null;
+
+    if (!clinicUid) throw new Error("Clinic UID is required");
+    if (!file) throw new Error("No file provided");
+    if (!folderId) throw new Error("Folder ID is required");
+    if (!fileTypeId) throw new Error("File type is required");
+
+    const sizeMB = file.size / 1024 / 1024;
+    if (sizeMB > 25) throw new Error("File size must not exceed 25MB");
+
+    const { clinicId } = await requireClinicPatientAccess(
+      session.user.sub,
+      clinicUid,
+      patientId
+    );
+
+    // Verify folder belongs to the patient
+    const folder = await prismaClient.folder.findFirst({
+      where: { id: folderId, userId: patientId, isActive: true },
+      select: { id: true },
+    });
+    if (!folder) throw new Error("Folder not found");
+
+    const sanitizedName = file.name.replace(/[^a-zA-Z0-9_-]/g, "_");
+    const filepath = `patient-files/${patientId}/${folderId}/${Date.now()}-${sanitizedName}`;
+    const buffer = await file.arrayBuffer();
+    const { url } = await uploadFile(filepath, buffer, file.type);
+
+    const newFile = await prismaClient.$transaction(async (tx) => {
+      const created = await tx.file.create({
+        data: {
+          folderId,
+          fileTypeId,
+          name: file.name,
+          size: file.size,
+          url,
+          mimeType: file.type || null,
+          dateTaken: dateTakenRaw ? new Date(dateTakenRaw) : null,
+          FileSetting: {
+            create: {
+              privacy: "CLINIC",
+              isPublic: false,
+              FileClinicShares: { create: { clinicId } },
+            },
+          },
+        },
+        select: {
+          id: true,
+          name: true,
+          size: true,
+          url: true,
+          mimeType: true,
+          dateTaken: true,
+          createdAt: true,
+          updatedAt: true,
+          FileType: { select: { id: true, name: true } },
+          FileSetting: {
+            select: {
+              id: true,
+              privacy: true,
+              isPublic: true,
+              FileClinicShares: {
+                select: {
+                  id: true,
+                  clinicId: true,
+                  Clinic: { select: { id: true, clinicUid: true, name: true } },
+                },
+              },
+            },
+          },
+        },
+      });
+      return created;
+    });
+
+    return { message: "File uploaded successfully", data: newFile };
+  }
+);

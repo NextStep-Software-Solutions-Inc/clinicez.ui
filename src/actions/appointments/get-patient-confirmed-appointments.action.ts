@@ -9,7 +9,9 @@ export type GetPatientConfirmedAppointments = Awaited<
 >;
 
 /**
- * Returns the CONFIRMED appointments for a given patient at a given clinic.
+ * Returns the active/open appointments for a given patient at a given clinic.
+ * Includes appointments in PENDING, RECEIVED, ROUTED, CONFIRMED, or RESCHEDULED
+ * status — i.e. any appointment that has not been completed, cancelled, or rejected.
  * Used by the new-consultation dialog when the HP wants to link to an existing appointment.
  */
 export const getPatientConfirmedAppointmentsAction = withErrorHandling(
@@ -31,7 +33,7 @@ export const getPatientConfirmedAppointmentsAction = withErrorHandling(
           some: { User: { userId: patientUserId } },
         },
         AppointmentAttribute: {
-          status: "CONFIRMED",
+          status: { in: ["PENDING", "RECEIVED", "ROUTED", "CONFIRMED", "RESCHEDULED"] },
         },
       },
       orderBy: [
@@ -44,6 +46,7 @@ export const getPatientConfirmedAppointmentsAction = withErrorHandling(
         complaint: true,
         AppointmentAttribute: {
           select: {
+            status: true,
             date: true,
             timeStart: true,
             AppointmentType: { select: { name: true } },
@@ -52,6 +55,6 @@ export const getPatientConfirmedAppointmentsAction = withErrorHandling(
       },
     });
 
-    return { message: "Patient confirmed appointments fetched", data: appointments };
+    return { message: "Patient appointments fetched", data: appointments };
   }
 );

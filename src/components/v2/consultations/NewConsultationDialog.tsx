@@ -249,7 +249,7 @@ export default function NewConsultationDialog({
             <div className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5">
               <div className="flex items-center justify-between">
                 <Label htmlFor="link-appointment-toggle" className="text-sm font-medium cursor-pointer">
-                  Link to a confirmed appointment?
+                  Link to an appointment?
                 </Label>
                 <Switch
                   id="link-appointment-toggle"
@@ -291,7 +291,7 @@ export default function NewConsultationDialog({
                             placeholder={
                               loadingAppointments
                                 ? "Loading…"
-                                : "Select a confirmed appointment"
+                                : "Select an appointment"
                             }
                           />
                         </SelectTrigger>
@@ -299,7 +299,7 @@ export default function NewConsultationDialog({
                       <SelectContent>
                         {confirmedAppointments.length === 0 && !loadingAppointments ? (
                           <SelectItem value="none" disabled>
-                            No confirmed appointments found
+                            No active appointments found
                           </SelectItem>
                         ) : (
                           confirmedAppointments.map((appt) => (
@@ -310,6 +310,9 @@ export default function NewConsultationDialog({
                                   {appt.subject ?? appt.complaint ?? "Appointment"}
                                   {appt.AppointmentAttribute?.date
                                     ? ` · ${dayjs(appt.AppointmentAttribute.date).format("MMM D, YYYY")}`
+                                    : ""}
+                                  {appt.AppointmentAttribute?.status
+                                    ? ` [${appt.AppointmentAttribute.status}]`
                                     : ""}
                                 </span>
                               </span>

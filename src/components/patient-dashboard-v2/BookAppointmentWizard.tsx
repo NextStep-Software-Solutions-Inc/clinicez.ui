@@ -23,8 +23,8 @@ import { useTimeSlots } from '@/hooks/useTimeSlots'
 import { useClinicServiceCategories } from '@/hooks/useClinicServiceCategory'
 import { useClinicAppointmentTypes } from '@/hooks/useOrgAppointmentType'
 import { useClinicAppointmentModes } from '@/hooks/useOrgAppointmentMode'
-import AppointmentCalendar from '@/components/appointment/AppointmentCalendar'
-import VacantTimeSlot from '@/components/appointment/VacantTimeSlot'
+import BookingCalendar from '@/components/patient-dashboard-v2/BookingCalendar'
+import BookingTimeSlots from '@/components/patient-dashboard-v2/BookingTimeSlots'
 import {
   Select,
   SelectContent,
@@ -592,18 +592,19 @@ function Step3Schedule({ onNext }: { onNext: () => void }) {
           <span className="text-sm">Loading available slots…</span>
         </div>
       ) : (
-        /* Calendar stacked above time slots — optimised for mobile */
-        <div className="flex flex-col gap-6">
-          <AppointmentCalendar
+        /* Mobile-first calendar stacked above time slot grid */
+        <div className="flex flex-col gap-5">
+          <BookingCalendar
             availableDates={availableDates}
             preferredDate={form.preferredDate}
             onSelect={(date) =>
               setForm((p) => ({ ...p, preferredDate: date, selectedTimeSlot: undefined }))
             }
           />
-          <VacantTimeSlot
+          <BookingTimeSlots
             timeSlots={availableTimeSlots}
             selectedTimeSlot={form.selectedTimeSlot}
+            preferredDate={form.preferredDate}
             onSelect={(ts) => setForm((p) => ({ ...p, selectedTimeSlot: ts }))}
           />
         </div>

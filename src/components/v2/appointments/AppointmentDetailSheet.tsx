@@ -22,6 +22,7 @@ import {
   ExternalLink,
   Pencil,
   CalendarClock,
+  Undo2,
 } from "lucide-react";
 import {
   Sheet,
@@ -43,6 +44,7 @@ import {
   completeAppointmentAction,
   rejectAppointmentAction,
   cancelAppointmentAction,
+  returnAppointmentAction,
 } from "@/actions/appointments/appointment-attribute.action";
 import {
   acceptAppointmentAction,
@@ -97,6 +99,10 @@ export function AppointmentDetailSheet({
   const [cancellingRoutingId, setCancellingRoutingId] = useState<number | null>(null);
   const [cancelRoutingReason, setCancelRoutingReason] = useState("");
 
+  // Inline return-to-queue form state
+  const [showReturnForm, setShowReturnForm] = useState(false);
+  const [returnReason, setReturnReason] = useState("");
+
   // Pre-assessment notes state
   const [preAssessmentNotes, setPreAssessmentNotes] = useState<PreAssessmentNote[]>([]);
   const [notesExpanded, setNotesExpanded] = useState(false);
@@ -125,6 +131,8 @@ export function AppointmentDetailSheet({
     setDecliningRoutingCode(null);
     setCancellingRoutingId(null);
     setCancelRoutingReason("");
+    setShowReturnForm(false);
+    setReturnReason("");
   }, [appointment]);
 
   if (!appointment) return null;
@@ -209,6 +217,26 @@ export function AppointmentDetailSheet({
     const result = status === "PENDING"
       ? await rejectAppointmentAction(fd)
       : await cancelAppointmentAction(fd);
+    setIsPending(false);
+    if (result.status) {
+      toast.success(result.message);
+      onRefresh();
+      onClose();
+    } else {
+      toast.error(result.message);
+    }
+  };
+
+  const handleReturnSubmit = async () => {
+    if (!returnReason.trim()) {
+      toast.error("A reason is required to return this appointment.");
+      return;
+    }
+    setIsPending(true);
+    const fd = new FormData();
+    fd.append("appointmentId", String(appointment.id));
+    fd.append("reason", returnReason.trim());
+    const result = await returnAppointmentAction(fd);
     setIsPending(false);
     if (result.status) {
       toast.success(result.message);
@@ -704,7 +732,7 @@ export function AppointmentDetailSheet({
                     <CheckCircle className="h-4 w-4" />
                     Complete
                   </Button>
-                  {!showRejectForm && (
+                  {!showRejectForm && !showReturnForm && (
                     <Button
                       size="sm"
                       variant="destructive"
@@ -714,6 +742,18 @@ export function AppointmentDetailSheet({
                     >
                       <AlertTriangle className="h-4 w-4" />
                       Cancel
+                    </Button>
+                  )}
+                  {!showRejectForm && !showReturnForm && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="gap-1.5 border-orange-400/40 text-orange-600 hover:bg-orange-600 hover:text-white"
+                      disabled={isPending}
+                      onClick={() => setShowReturnForm(true)}
+                    >
+                      <Undo2 className="h-4 w-4" />
+                      Return
                     </Button>
                   )}
                 </>
@@ -925,6 +965,51 @@ export function AppointmentDetailSheet({
                   >
                     <XCircle className="h-4 w-4" />
                     {isPending ? "Declining..." : "Confirm Decline"}
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Inline return-to-queue form */}
+            {showReturnForm && (
+              <div className="rounded-xl border border-orange-400/30 bg-orange-50/50 dark:bg-orange-950/20 p-4 space-y-3">
+                <h4 className="text-xs font-semibold text-orange-700 uppercase tracking-wide">
+                  Return Appointment to Queue
+                </h4>
+                <p className="text-xs text-muted-foreground">
+                  This will reset the appointment to PENDING so another clinic member can receive it.
+                </p>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">
+                    Reason <span className="text-destructive">*</span>
+                  </Label>
+                  <Textarea
+                    value={returnReason}
+                    onChange={(e) => setReturnReason(e.target.value)}
+                    placeholder="Please provide a reason for returning this appointment..."
+                    rows={3}
+                    className="resize-none text-sm"
+                    disabled={isPending}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="flex-1"
+                    disabled={isPending}
+                    onClick={() => { setShowReturnForm(false); setReturnReason(""); }}
+                  >
+                    Back
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="flex-1 gap-1.5 bg-orange-600 hover:bg-orange-700 text-white"
+                    disabled={isPending || !returnReason.trim()}
+                    onClick={handleReturnSubmit}
+                  >
+                    <Undo2 className="h-4 w-4" />
+                    {isPending ? "Returning..." : "Confirm Return"}
                   </Button>
                 </div>
               </div>

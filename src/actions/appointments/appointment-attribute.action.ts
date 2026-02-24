@@ -364,3 +364,47 @@ export const rescheduleAppointmentAction = withErrorHandling(async (payload: Res
   if (error instanceof Error) return error.message;
   return "An error occurred while rescheduling the appointment.";
 });
+
+export const returnAppointmentAction = withErrorHandling(async (formData: FormData) => {
+  const session = await getCachedSession();
+  if (!session) throw new Error("User not authenticated.");
+
+  const myPermissions = await getPermissionsAction({ userId: session.user.sub });
+  const requiredPermissions = [PERMISSIONS.CLINIC["RECEIVE:CLINIC:APPOINTMENT"].name];
+  const myPermissionArray = myPermissions.map(permission => permission.name);
+  const canReturn = requiredPermissions.some(permission => myPermissionArray.includes(permission));
+
+  if (!canReturn) throw new Error("You do not have permission to return this appointment.");
+
+  const appointmentId = parseInt(formData.get('appointmentId') as string);
+  const reason = formData.get('reason') as string;
+
+  await prismaClient.$transaction(async (tx) => {
+    // Cancel any active routings created during receipt
+    await tx.appointmentRouting.updateMany({
+      where: { appointmentId, status: { in: ["PENDING", "ACCEPTED"] } },
+      data: { status: "CANCELLED", amendedAt: new Date(), amendment: reason },
+    });
+
+    // Reset appointment back to PENDING, clearing receiver fields
+    await tx.appointmentAttribute.update({
+      where: { appointmentId, status: "RECEIVED" },
+      data: {
+        status: "PENDING",
+        receivedAt: null,
+        receivedBy: null,
+        rejectedReason: reason,
+      },
+    });
+  });
+
+  return { message: "Appointment returned to queue", data: undefined };
+}, async (error) => {
+  if (error instanceof Error) {
+    if (error.message.includes("No record was found") || error.message.includes("depends on one or more records")) {
+      return "This appointment is no longer in RECEIVED status.";
+    }
+    return error.message;
+  }
+  return "An error occurred while returning the appointment.";
+});

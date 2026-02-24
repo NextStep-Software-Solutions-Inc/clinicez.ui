@@ -15,7 +15,7 @@ import { toast } from 'sonner'
 import { mutate } from 'swr'
 import useSound from 'use-sound'
 import dayjs from '@/lib/day-utils'
-import { bookAppointmentAtom } from '@/state/book-appointment'
+import { bookAppointmentAtom, clearBookingDraftAtom } from '@/state/book-appointment'
 import { createAppointmentAction } from '@/actions/appointments/appointments.action'
 import { uploadMediaAction } from '@/actions/blob.action'
 import { useHPs } from '@/hooks/useHP'
@@ -1060,8 +1060,27 @@ export default function BookAppointmentWizard({
 }: BookAppointmentWizardProps) {
   const router = useRouter()
   const [, setForm] = useAtom(bookAppointmentAtom)
+  const [, clearDraft] = useAtom(clearBookingDraftAtom)
   const [currentStep, setCurrentStep] = useState(1)
   const [isComplete, setIsComplete] = useState(false)
+
+  // On mount: eagerly clear any expired draft from localStorage so it doesn't
+  // linger indefinitely. bookAppointmentAtom already returns {} for expired
+  // data, but the stale key would remain in storage without this cleanup.
+  useEffect(() => {
+    const raw = localStorage.getItem('clinicez.v2.booking_draft')
+    if (raw) {
+      try {
+        const envelope = JSON.parse(raw) as { expiresAt?: number }
+        if (!envelope.expiresAt || Date.now() > envelope.expiresAt) {
+          clearDraft()
+        }
+      } catch {
+        clearDraft()
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     setForm((prev) => ({ ...prev, clinicUid }))
@@ -1077,13 +1096,19 @@ export default function BookAppointmentWizard({
     }
   }, [currentStep, router])
 
-  const handleSuccess = useCallback(() => setIsComplete(true), [])
+  const handleSuccess = useCallback(() => {
+    // Wipe the persisted draft — booking was sent successfully
+    clearDraft()
+    setIsComplete(true)
+  }, [clearDraft])
 
   const handleBookAnother = useCallback(() => {
+    // Wipe the persisted draft before starting a fresh booking
+    clearDraft()
     setForm({ clinicUid })
     setCurrentStep(1)
     setIsComplete(false)
-  }, [clinicUid, setForm])
+  }, [clinicUid, setForm, clearDraft])
 
   const currentStepMeta = STEPS[currentStep - 1]
 

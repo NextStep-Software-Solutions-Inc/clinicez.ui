@@ -15,18 +15,22 @@ export async function getRecentConsultations(
     // Get clinic context from clinic patient record
     const clinicPatient = await prisma.clinicPatient.findUnique({
       where: { id: clinicPatientId },
-      select: { clinicId: true },
+      select: { clinicId: true, patientId: true },
     })
 
     if (!clinicPatient) {
       return { consultations: [], total: 0 }
     }
 
-    // Get consultation tickets
+    // Get consultation tickets belonging to this patient
     const consultationTickets = await prisma.consultationTicket.findMany({
       where: {
         clinicId: clinicPatient.clinicId,
         isActive: true,
+        OR: [
+          { clinicPatientId: clinicPatientId },
+          { Appointment: { Requesters: { some: { userId: clinicPatient.patientId } } } },
+        ],
       },
       include: {
         ConsultationNotes: {

@@ -30,6 +30,7 @@ export async function getNextAppointment(patientId: number): Promise<NextAppoint
     const appointment = await prisma.appointment.findFirst({
       where: {
         clinicId: clinicPatient.clinicId,
+        Requesters: { some: { userId: patientId } },
         AppointmentAttribute: {
           status: { in: ['PENDING', 'CONFIRMED', 'ROUTED', 'RECEIVED'] },
           date: { gte: new Date() },
@@ -199,6 +200,7 @@ export async function getUpcomingAppointments(
     const appointments = await prisma.appointment.findMany({
       where: {
         clinicId: clinicPatient.clinicId,
+        Requesters: { some: { userId: patientId } },
         AppointmentAttribute: {
           status: { in: ['PENDING', 'CONFIRMED', 'ROUTED', 'RECEIVED', 'RESCHEDULED'] },
           date: { gte: new Date() },

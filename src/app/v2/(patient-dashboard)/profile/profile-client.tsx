@@ -17,6 +17,7 @@ import { PhilHealthRecords } from '@/components/patient-dashboard-v2/PhilHealthR
 import { formatBloodType } from '@/lib/utils'
 import { calculateAgeInMonths, formatAge, getLengthPercentile, getWeightPercentile, getGrowthStatusColor } from '@/lib/pediatric-growth-utils'
 import type { SerializedPatientHealthRecordsResponse } from '@/types/patient-profile'
+import { DownloadPHRButton } from '@/components/v2/phr/DownloadPHRButton'
 
 interface ProfileClientProps {
   patient: SerializedPatientHealthRecordsResponse
@@ -30,6 +31,8 @@ interface ProfileClientProps {
   filesButtonLabel?: string
   /** undefined = hide appointments button; string = navigate to that URL */
   appointmentsHref?: string | null
+  /** URL for the PHR print page. Defaults to '/v2/patient/phr/print' */
+  downloadPHRHref?: string
 }
 
 const PROFILE_TABS = [
@@ -48,7 +51,7 @@ const PROFILE_TABS = [
   { id: 'insurance', label: 'Insurance & Docs', icon: '📄' },
 ]
 
-export default function ProfileClient({ patient, headerSlot, editProfileHref, filesHref, filesButtonLabel = 'My Files', appointmentsHref }: ProfileClientProps) {
+export default function ProfileClient({ patient, headerSlot, editProfileHref, filesHref, filesButtonLabel = 'My Files', appointmentsHref, downloadPHRHref = '/api/phr/patient' }: ProfileClientProps) {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState('overview')
   const [vitalsViewMode, setVitalsViewMode] = useState<'list' | 'chart'>('list')
@@ -1810,7 +1813,7 @@ export default function ProfileClient({ patient, headerSlot, editProfileHref, fi
             className="flex items-center gap-1.5 md:gap-2 px-4 md:px-5 py-2.5 md:py-3 rounded-lg bg-gradient-to-br from-green-600 to-teal-500 text-white text-sm font-semibold hover:shadow-lg transition-all duration-300 hover:scale-105 shadow-lg"
           >
             <ClipboardList className="w-4 h-4" />
-            <span className="hidden sm:inline">Appointments &amp; Consultations</span>
+            <span className="hidden lg:inline">Appts &amp; Consultations</span>
           </button>
           )}
           {filesHref !== null && (
@@ -1819,15 +1822,19 @@ export default function ProfileClient({ patient, headerSlot, editProfileHref, fi
             className="flex items-center gap-1.5 md:gap-2 px-4 md:px-5 py-2.5 md:py-3 rounded-lg bg-gradient-to-br from-yellow-500 to-amber-500 text-white text-sm font-semibold hover:shadow-lg transition-all duration-300 hover:scale-105 shadow-lg"
           >
             <FolderOpen className="w-4 h-4" />
-            <span className="hidden sm:inline">{filesButtonLabel}</span>
+            <span className="hidden lg:inline">{filesButtonLabel}</span>
           </button>
           )}
+          <DownloadPHRButton
+            printHref={downloadPHRHref}
+            patientName={patient.fullName}
+          />
           <button
             onClick={() => router.push(editProfileHref ?? '/v2/profile/edit')}
             className="flex items-center gap-1.5 md:gap-2 px-4 md:px-6 py-2.5 md:py-3 rounded-lg bg-gradient-to-br from-blue-600 to-blue-500 text-white text-sm font-semibold hover:shadow-lg transition-all duration-300 hover:scale-105 shadow-lg"
           >
             <Edit2 className="w-4 h-4" />
-            <span>Edit Profile</span>
+            <span className="hidden lg:inline">Edit Profile</span>
           </button>
         </div>
       )}

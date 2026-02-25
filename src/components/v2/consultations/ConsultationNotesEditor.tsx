@@ -1,10 +1,13 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Save, ChevronDown, ChevronUp } from "lucide-react";
+import { Save, ChevronDown, ChevronUp, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { upsertConsultationNotesAction } from "@/actions/consultation/consultation-notes.action";
+import {
+  upsertConsultationNotesAction,
+  upsertConsultationNotesSettingsAction,
+} from "@/actions/consultation/consultation-notes.action";
 import type { GetPatientConsultationDetail } from "@/actions/consultation/patient-consultations.action";
 import type { GetHPsType } from "@/actions/hp.actions";
 import MarkdownEditor from "./MarkdownEditor";
@@ -33,14 +36,25 @@ export default function ConsultationNotesEditor({
   const myActiveHp =
     myHPs.find((hp) => ticketHpIds.includes(hp.id)) ?? myHPs[0] ?? null;
 
-  // Build initial note map: section name → content
+  // Build initial note map: section name → content and showOnPatient
+  // Prioritize the current HP's notes; fall back to any note for that section
   const initialNoteMap: Record<string, string> = {};
+  const initialShowMap: Record<string, boolean> = {};
   for (const note of consultation.ConsultationNotes) {
-    initialNoteMap[note.section] = note.content;
+    // Use the current HP's note, or any note as fallback when no HP identified
+    if (
+      (myActiveHp && note.hpId === myActiveHp.id) ||
+      (!myActiveHp && !(note.section in initialNoteMap))
+    ) {
+      initialNoteMap[note.section] = note.content;
+      initialShowMap[note.section] = note.showOnPatient;
+    }
   }
 
   const [noteValues, setNoteValues] = useState<Record<string, string>>(initialNoteMap);
+  const [showOnPatient, setShowOnPatient] = useState<Record<string, boolean>>(initialShowMap);
   const [savingSection, setSavingSection] = useState<string | null>(null);
+  const [isTogglingPrivacy, startToggleTransition] = useTransition();
   const [expanded, setExpanded] = useState<Record<string, boolean>>(
     Object.fromEntries(sections.map((s) => [s.name, true]))
   );
@@ -56,6 +70,7 @@ export default function ConsultationNotesEditor({
       section: sectionName,
       content: noteValues[sectionName] ?? "",
       hpId: myActiveHp.id,
+      showOnPatient: showOnPatient[sectionName] ?? false,
     });
     setSavingSection(null);
     if (result.status && result.data) {
@@ -79,6 +94,48 @@ export default function ConsultationNotesEditor({
     } else {
       toast.error(result.message ?? "Failed to save note");
     }
+  };
+
+  const toggleShowOnPatient = (sectionName: string) => {
+    if (!myActiveHp) {
+      toast.error("You must have an HP profile to change privacy settings");
+      return;
+    }
+    const next = !showOnPatient[sectionName];
+    setShowOnPatient((prev) => ({ ...prev, [sectionName]: next }));
+
+    // If the note hasn't been saved yet, just update local state.
+    // The privacy setting will be persisted together with the content when the user saves.
+    const noteExists = consultation.ConsultationNotes.some(
+      (n) => n.section === sectionName && n.hpId === myActiveHp.id
+    );
+    if (!noteExists) return;
+
+    startToggleTransition(async () => {
+      const fd = new FormData();
+      fd.append("consultationTicketId", String(consultation.id));
+      fd.append("hpId", String(myActiveHp.id));
+      fd.append(sectionName, String(next));
+      const result = await upsertConsultationNotesSettingsAction(fd);
+      if (result.status) {
+        // Update the notes array with the new showOnPatient value
+        const existing = consultation.ConsultationNotes;
+        const idx = existing.findIndex(
+          (n) => n.section === sectionName && n.hpId === myActiveHp.id
+        );
+        if (idx >= 0) {
+          onPatchDetail({
+            ConsultationNotes: existing.map((n, i) =>
+              i === idx ? { ...n, showOnPatient: next } : n
+            ),
+          });
+        }
+      } else {
+        // Revert on failure
+        setShowOnPatient((prev) => ({ ...prev, [sectionName]: !next }));
+        toast.error(result.message ?? "Failed to update privacy setting");
+      }
+    });
   };
 
   if (sections.length === 0) {
@@ -121,11 +178,25 @@ export default function ConsultationNotesEditor({
                 <span className="block text-xs text-muted-foreground mt-0.5">{section.description}</span>
               )}
             </div>
-            {expanded[section.name] ? (
-              <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0" />
-            ) : (
-              <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
-            )}
+            <div className="flex items-center gap-2 shrink-0">
+              <span className={`flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${
+                showOnPatient[section.name]
+                  ? "border-emerald-300 text-emerald-700 bg-emerald-50 dark:border-emerald-700 dark:text-emerald-400 dark:bg-emerald-950/30"
+                  : "border-border/50 text-muted-foreground bg-muted/30"
+              }`}>
+                {showOnPatient[section.name] ? (
+                  <Eye className="h-3 w-3" />
+                ) : (
+                  <EyeOff className="h-3 w-3" />
+                )}
+                {showOnPatient[section.name] ? "Patient visible" : "Private"}
+              </span>
+              {expanded[section.name] ? (
+                <ChevronUp className="h-4 w-4 text-muted-foreground" />
+              ) : (
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              )}
+            </div>
           </button>
 
           {expanded[section.name] && (
@@ -137,7 +208,25 @@ export default function ConsultationNotesEditor({
                 }
                 placeholder={`Enter ${section.label || section.name} notes… (supports **bold**, _italic_, ### headings, - lists)`}
               />
-              <div className="flex justify-end">
+              <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => toggleShowOnPatient(section.name)}
+                  disabled={isTogglingPrivacy}
+                  title={showOnPatient[section.name] ? "Hide from patient" : "Show to patient"}
+                  className={`flex items-center gap-1.5 text-xs rounded-md px-2 py-1 border transition-colors ${
+                    showOnPatient[section.name]
+                      ? "border-emerald-300 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:border-emerald-700 dark:text-emerald-400 dark:bg-emerald-950/30"
+                      : "border-border/50 text-muted-foreground hover:border-border hover:text-foreground"
+                  }`}
+                >
+                  {showOnPatient[section.name] ? (
+                    <Eye className="h-3.5 w-3.5" />
+                  ) : (
+                    <EyeOff className="h-3.5 w-3.5" />
+                  )}
+                  {showOnPatient[section.name] ? "Visible to patient" : "Hidden from patient"}
+                </button>
                 <Button
                   size="sm"
                   variant="outline"

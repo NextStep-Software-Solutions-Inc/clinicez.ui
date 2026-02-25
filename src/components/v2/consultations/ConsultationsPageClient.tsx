@@ -188,6 +188,7 @@ export default function ConsultationsPageClient({
         >
           {activeDetail ? (
             <ConsultationWorkspace
+              key={activeDetail.id}
               clinicUid={clinicUid}
               patient={patient}
               consultation={activeDetail}

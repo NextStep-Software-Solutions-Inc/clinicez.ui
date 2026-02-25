@@ -149,6 +149,7 @@ const styles = {
   section: {
     marginBottom: '24px',
     pageBreakInside: 'avoid' as const,
+    breakInside: 'avoid' as const,
   } as React.CSSProperties,
   sectionHeader: {
     display: 'flex',
@@ -348,17 +349,17 @@ export function PHRPrintContent({ patient, sections, generatedAt, theme = 'color
       {/* ── PRINT STYLE OVERRIDES ── */}
       <style>{`
         @page { size: A4; margin: 1in 0 0 0; }
-        @page :first { margin-top: 0; }
         @media print {
           body { margin: 0; }
           .no-print { display: none !important; }
           .phr-root { max-width: 100%; padding: 0; }
           .phr-footer { position: fixed; bottom: 0; left: 0; right: 0; }
+          .phr-header { margin-top: -1in; }
         }
       `}</style>
 
       {/* ── HEADER ── */}
-      <div style={{ ...styles.header, background: t.headerBg, color: t.headerColor }}>
+      <div className="phr-header" style={{ ...styles.header, background: t.headerBg, color: t.headerColor }}>
         <div style={styles.logoArea}>
           {/* Original ClinicEZ logo in a white pill — no colour inversion */}
           <div style={{ background: '#ffffff', borderRadius: '0', padding: '4px 10px', display: 'inline-flex', alignItems: 'center' }}>

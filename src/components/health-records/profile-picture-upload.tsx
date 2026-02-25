@@ -68,11 +68,12 @@ export function ProfilePictureUpload({
 
       const uploadResult = await uploadMediaAction(formData)
       if (uploadResult && uploadResult.url) {
-        // Sync profile image to Clerk
+        // Sync profile image to Clerk for the target user (works for both own
+        // profile and provider-editing-patient scenarios via the Admin API)
         try {
-          const clerkSyncSuccess = await updateClerkProfileImageAction(uploadResult.url)
+          const clerkSyncSuccess = await updateClerkProfileImageAction(uploadResult.url, userId)
           if (clerkSyncSuccess) {
-            toast.success('Profile picture updated and synced to your account')
+            toast.success('Profile picture updated and synced to account')
           } else {
             toast.success('Profile picture updated (Clerk sync pending)')
           }

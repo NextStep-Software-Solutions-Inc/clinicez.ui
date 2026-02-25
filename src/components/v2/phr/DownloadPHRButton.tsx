@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef, useState } from 'react'
-import { ArrowLeft, Download, Eye, FileText, Loader2, Palette } from 'lucide-react'
+import { ArrowLeft, Eye, FileText, Loader2, Palette, Printer } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -14,11 +14,6 @@ interface DownloadPHRButtonProps {
    *  Clinic dashboard:  '/v2/clinic/[clinicUid]/patients/[patientId]/phr/print'
    */
   printHref: string
-  /** URL of the PDF download API route.
-   *  Patient dashboard: '/api/phr/download'
-   *  Clinic dashboard:  '/api/phr/clinic/[clinicUid]/patients/[patientId]/download'
-   */
-  downloadApiHref: string
   /** Button label. Defaults to "Download PHR" */
   label?: string
   /** Additional className for the trigger button */
@@ -30,7 +25,7 @@ const DEFAULT_BUTTON_CLASS =
 
 type Step = 'select' | 'preview'
 
-export function DownloadPHRButton({ printHref, downloadApiHref, label = 'Download PHR', className }: DownloadPHRButtonProps) {
+export function DownloadPHRButton({ printHref, label = 'Download PHR', className }: DownloadPHRButtonProps) {
   const [step, setStep] = useState<Step>('select')
   const [open, setOpen] = useState(false)
   const [selected, setSelected] = useState<Set<PHRSectionId>>(
@@ -38,8 +33,6 @@ export function DownloadPHRButton({ printHref, downloadApiHref, label = 'Downloa
   )
   const [iframeLoading, setIframeLoading] = useState(true)
   const iframeRef = useRef<HTMLIFrameElement>(null)
-  const [downloading, setDownloading] = useState(false)
-  const [downloadError, setDownloadError] = useState(false)
   const [theme, setTheme] = useState<PHRTheme>('colorful')
 
   function toggle(id: PHRSectionId) {
@@ -73,8 +66,9 @@ export function DownloadPHRButton({ printHref, downloadApiHref, label = 'Downloa
     return `${printHref}?${params.toString()}`
   }
 
-  function buildDownloadUrl(): string {
-    return `${downloadApiHref}?sections=${encodeURIComponent(sectionsParam())}&theme=${theme}`
+  function buildPrintUrl(): string {
+    const params = new URLSearchParams({ sections: sectionsParam(), theme })
+    return `${printHref}?${params.toString()}`
   }
 
   function handlePreview() {
@@ -82,35 +76,12 @@ export function DownloadPHRButton({ printHref, downloadApiHref, label = 'Downloa
     setStep('preview')
   }
 
-  async function handleDownload() {
-    setDownloading(true)
-    setDownloadError(false)
-    try {
-      const response = await fetch(buildDownloadUrl())
-      if (!response.ok) throw new Error('PDF generation failed')
-
-      const blob = await response.blob()
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      const cd = response.headers.get('content-disposition')
-      const match = cd?.match(/filename="([^"]+)"/)
-      a.download = match?.[1] ?? 'PHR.pdf'
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
-      setOpen(false)
-    } catch {
-      setDownloadError(true)
-    } finally {
-      setDownloading(false)
-    }
+  function handlePrint() {
+    window.open(buildPrintUrl(), '_blank')
   }
 
   function handleClose() {
     setOpen(false)
-    setDownloadError(false)
     setTimeout(() => setStep('select'), 300)
   }
 
@@ -120,7 +91,7 @@ export function DownloadPHRButton({ printHref, downloadApiHref, label = 'Downloa
         onClick={() => { setStep('select'); setOpen(true) }}
         className={className ?? DEFAULT_BUTTON_CLASS}
       >
-        <Download className="w-4 h-4" />
+        <Printer className="w-4 h-4" />
         <span className="hidden sm:inline">{label}</span>
       </button>
 
@@ -228,9 +199,6 @@ export function DownloadPHRButton({ printHref, downloadApiHref, label = 'Downloa
           </div>
 
           <DialogFooter className="gap-2 sm:gap-0">
-            {downloadError && (
-              <p className="text-xs text-red-600 flex-1 self-center">PDF generation failed. Please try again.</p>
-            )}
             <Button variant="outline" onClick={handleClose}>
               Cancel
             </Button>
@@ -244,16 +212,12 @@ export function DownloadPHRButton({ printHref, downloadApiHref, label = 'Downloa
               Preview
             </Button>
             <Button
-              onClick={handleDownload}
-              disabled={selected.size === 0 || downloading}
+              onClick={handlePrint}
+              disabled={selected.size === 0}
               className="bg-teal-600 hover:bg-teal-700 text-white"
             >
-              {downloading ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <Download className="w-4 h-4 mr-2" />
-              )}
-              {downloading ? 'Generating…' : 'Download PDF'}
+              <Printer className="w-4 h-4 mr-2" />
+              Print / Save PDF
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -280,7 +244,7 @@ export function DownloadPHRButton({ printHref, downloadApiHref, label = 'Downloa
             )}
           </div>
 
-          {/* Preview iframe — fixed A4 width (794 px), auto-height, centered, outer container scrolls */}
+          {/* Preview iframe — fixed A4 width (794 px), allows internal scroll, centered */}
           <div className="flex-1 overflow-auto bg-slate-100" style={{ minHeight: 0 }}>
             <div className="flex justify-center py-4 px-2">
               {iframeLoading && (
@@ -295,7 +259,6 @@ export function DownloadPHRButton({ printHref, downloadApiHref, label = 'Downloa
                 className="border-0 block"
                 style={{ width: '794px', minWidth: '794px', height: '1200px' }}
                 title="PHR Preview"
-                scrolling="no"
                 onLoad={() => {
                   setIframeLoading(false)
                   try {
@@ -314,23 +277,15 @@ export function DownloadPHRButton({ printHref, downloadApiHref, label = 'Downloa
 
           {/* Footer */}
           <div className="flex items-center justify-between px-4 py-2 border-t bg-slate-50 shrink-0 rounded-b-lg">
-            {downloadError
-              ? <p className="text-xs text-red-600">PDF generation failed. Please try again.</p>
-              : <p className="text-xs text-slate-500">
-                  This is a read-only preview. Click <strong>Download PDF</strong> to save the file.
-                </p>
-            }
+            <p className="text-xs text-slate-500">
+              This is a read-only preview. Click <strong>Print / Save PDF</strong> to open the print dialog.
+            </p>
             <Button
-              onClick={handleDownload}
-              disabled={downloading}
+              onClick={handlePrint}
               className="bg-teal-600 hover:bg-teal-700 text-white h-8 px-4 gap-1.5"
             >
-              {downloading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Download className="w-4 h-4" />
-              )}
-              {downloading ? 'Generating…' : 'Download PDF'}
+              <Printer className="w-4 h-4" />
+              Print / Save PDF
             </Button>
           </div>
         </DialogContent>

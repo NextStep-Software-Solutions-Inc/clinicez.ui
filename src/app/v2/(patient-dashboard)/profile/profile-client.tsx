@@ -31,7 +31,7 @@ interface ProfileClientProps {
   filesButtonLabel?: string
   /** undefined = hide appointments button; string = navigate to that URL */
   appointmentsHref?: string | null
-  /** URL for the PHR HTML API. Defaults to '/api/phr/html' */
+  /** URL for the PHR print page. Defaults to '/v2/patient/phr/print' */
   downloadPHRHref?: string
 }
 
@@ -51,7 +51,7 @@ const PROFILE_TABS = [
   { id: 'insurance', label: 'Insurance & Docs', icon: '📄' },
 ]
 
-export default function ProfileClient({ patient, headerSlot, editProfileHref, filesHref, filesButtonLabel = 'My Files', appointmentsHref, downloadPHRHref = '/api/phr/html' }: ProfileClientProps) {
+export default function ProfileClient({ patient, headerSlot, editProfileHref, filesHref, filesButtonLabel = 'My Files', appointmentsHref, downloadPHRHref = '/v2/patient/phr/print' }: ProfileClientProps) {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState('overview')
   const [vitalsViewMode, setVitalsViewMode] = useState<'list' | 'chart'>('list')

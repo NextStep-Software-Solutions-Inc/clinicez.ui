@@ -347,7 +347,7 @@ export function PHRPrintContent({ patient, sections, generatedAt, theme = 'color
     <div style={styles.page}>
       {/* ── PRINT STYLE OVERRIDES ── */}
       <style>{`
-        @page { size: A4; margin: 1in 10mm 22mm 10mm; }
+        @page { size: A4; margin: 1in 0 0 0; }
         @page :first { margin-top: 0; }
         @media print {
           body { margin: 0; }

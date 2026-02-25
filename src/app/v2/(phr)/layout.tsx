@@ -1,5 +1,5 @@
-import React from 'react'
+import 'server-only'
 
 export default function PHRPrintLayout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>
+  return children
 }

@@ -292,7 +292,7 @@ interface PHRPrintContentProps {
 
 function SectionHeader({ icon, title, sectionHeaderBg, sectionHeaderText }: { icon: string; title: string; sectionHeaderBg: string; sectionHeaderText: string }) {
   return (
-    <div style={{ ...styles.sectionHeader, background: sectionHeaderBg, color: sectionHeaderText }}>
+    <div className="phr-section-header" style={{ ...styles.sectionHeader, background: sectionHeaderBg, color: sectionHeaderText }}>
       <span style={styles.sectionIcon}>{icon}</span>
       {title}
     </div>
@@ -346,13 +346,36 @@ export function PHRPrintContent({ patient, sections, generatedAt, theme = 'color
     <div style={styles.page}>
       {/* ── PRINT STYLE OVERRIDES ── */}
       <style>{`
-        @page { size: A4; margin: 1in 0 0 0; }
-        @page :first { margin-top: 0; }
+        @media screen {
+          .phr-footer { position: relative; margin-top: 24px; }
+        }
+
+        /* Page margins: no top margin on page 1, 0.5in top on pages 2+         */
+        /* margin-bottom: 0.5in reserved for Puppeteer footerTemplate on all pages */
+        @page { margin-top: 0.5in; margin-bottom: 0.5in; }
+        @page :first { margin-top: 0; margin-bottom: 0.5in; }
+
         @media print {
           body { margin: 0; }
           .no-print { display: none !important; }
-          .phr-root { max-width: 100%; padding: 0; }
-          .phr-footer { position: fixed; bottom: 0; left: 0; right: 0; }
+
+          /* Keep header/patient-bar together, never split */
+          .phr-header, .phr-patient-bar { page-break-inside: avoid; break-inside: avoid; }
+
+          /* Each section: keep together on page */
+          .phr-body > div { 
+            page-break-inside: avoid; 
+            break-inside: avoid;
+          }
+          .phr-section-header { page-break-after: avoid; break-after: avoid; }
+
+          /* Prevent individual table rows from splitting */
+          tr { page-break-inside: avoid; break-inside: avoid; }
+          thead { display: table-header-group; }
+          tfoot { display: table-footer-group; }
+
+          /* Footer is rendered by Puppeteer footerTemplate — hide from print flow */
+          .phr-footer { display: none !important; }
         }
       `}</style>
 
@@ -377,7 +400,7 @@ export function PHRPrintContent({ patient, sections, generatedAt, theme = 'color
       </div>
 
       {/* ── PATIENT BAR ── */}
-      <div style={{ ...styles.patientBar, background: t.patientBarBg, color: t.patientBarText }}>
+      <div className="phr-patient-bar" style={{ ...styles.patientBar, background: t.patientBarBg, color: t.patientBarText }}>
         {patient.picture ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -431,7 +454,7 @@ export function PHRPrintContent({ patient, sections, generatedAt, theme = 'color
       </div>
 
       {/* ── BODY ── */}
-      <div style={styles.body} className="phr-root">
+      <div style={styles.body} className="phr-root phr-body">
 
         {/* DEMOGRAPHICS */}
         {has('demographics') && (
@@ -477,82 +500,165 @@ export function PHRPrintContent({ patient, sections, generatedAt, theme = 'color
           </div>
         )}
 
-        {/* VITAL SIGNS */}
-        {has('vitals') && (
+        {/* ADDRESSES */}
+        {has('addresses') && (
           <div style={styles.section}>
-            <SectionHeader icon="❤️" title="Vital Signs" sectionHeaderBg={t.sectionHeaderBg} sectionHeaderText={t.sectionHeaderText} />
+            <SectionHeader icon="📍" title="Addresses" sectionHeaderBg={t.sectionHeaderBg} sectionHeaderText={t.sectionHeaderText} />
             <div style={{ ...styles.sectionBody, border: `1px solid ${t.sectionBodyBorder}`, borderTop: 'none' }}>
-              {lv ? (
-                <>
-                  <p style={{ ...styles.fieldLabel, marginBottom: '8px' }}>
-                    Latest Reading — {formatDateTime(lv.dateTaken)}
-                  </p>
-                  <table style={{ ...styles.table, marginBottom: '8px' }}>
-                    <thead>
-                      <tr>
-                        {lv.bpSystolic && <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>BP (mmHg)</th>}
-                        {lv.pulseRate && <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>HR (bpm)</th>}
-                        {lv.temp && <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Temp (°C)</th>}
-                        {lv.spo2 && <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>SpO2</th>}
-                        {lv.respRate && <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>RR (/min)</th>}
-                        {displayBMI && <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>BMI</th>}
-                        {lv.height && <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Height (cm)</th>}
-                        {lv.weight && <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Weight (kg)</th>}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        {lv.bpSystolic && <td style={styles.td}>{lv.bpSystolic}/{lv.bpDiastolic}</td>}
-                        {lv.pulseRate && <td style={styles.td}>{lv.pulseRate}</td>}
-                        {lv.temp && <td style={styles.td}>{lv.temp}</td>}
-                        {lv.spo2 && <td style={styles.td}>{lv.spo2}%</td>}
-                        {lv.respRate && <td style={styles.td}>{lv.respRate}</td>}
-                        {displayBMI && <td style={styles.td}>{displayBMI}</td>}
-                        {lv.height && <td style={styles.td}>{lv.height}</td>}
-                        {lv.weight && <td style={styles.td}>{lv.weight}</td>}
-                      </tr>
-                    </tbody>
-                  </table>
-                </>
+              {patient.userAddresses.length === 0 ? (
+                <EmptyRecord message="No addresses recorded." />
               ) : (
-                <EmptyRecord message="No vital signs recorded." />
-              )}
-
-              {patient.vitalSigns.length > 1 && (
-                <>
-                  <p style={{ ...styles.fieldLabel, marginTop: '12px', marginBottom: '6px' }}>Vital Signs History</p>
-                  <table style={styles.table}>
-                    <thead>
-                      <tr>
-                        <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Date</th>
-                        <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>BP (mmHg)</th>
-                        <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>HR (bpm)</th>
-                        <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Temp (°C)</th>
-                        <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>SpO2</th>
-                        <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Weight (kg)</th>
-                        <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Height (cm)</th>
-                        <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>BMI</th>
+                <table style={styles.table}>
+                  <thead>
+                    <tr>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Type</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Street / Address Line</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Barangay</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>City</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>State / Province</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Region</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Zip</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Country</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {patient.userAddresses.map((a, i) => (
+                      <tr key={a.id}>
+                        <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>
+                          {a.isPrimary
+                            ? <span style={{ ...styles.badge, background: '#dbeafe', color: '#1d4ed8' }}>Primary</span>
+                            : <span style={{ ...styles.badge, background: '#f1f5f9', color: TEXT_MUTED }}>Other</span>}
+                        </td>
+                        <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{a.address}</td>
+                        <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{val(a.barangay)}</td>
+                        <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{a.city}</td>
+                        <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{a.state}</td>
+                        <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{val(a.region)}</td>
+                        <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{a.zipCode}</td>
+                        <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{a.country}</td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {patient.vitalSigns.map((v, i) => {
-                        const rowBmi = v.bmi ?? bmi(v.weight, v.height)
-                        return (
-                          <tr key={v.id}>
-                            <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{formatDate(v.dateTaken)}</td>
-                            <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{v.bpSystolic ? `${v.bpSystolic}/${v.bpDiastolic}` : '—'}</td>
-                            <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{val(v.pulseRate)}</td>
-                            <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{val(v.temp)}</td>
-                            <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{v.spo2 ? `${v.spo2}%` : '—'}</td>
-                            <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{val(v.weight)}</td>
-                            <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{val(v.height)}</td>
-                            <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{rowBmi ?? '—'}</td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
-                </>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* EMERGENCY CONTACTS */}
+        {has('contacts') && (
+          <div style={styles.section}>
+            <SectionHeader icon="🆘" title="Emergency Contacts" sectionHeaderBg={t.sectionHeaderBg} sectionHeaderText={t.sectionHeaderText} />
+            <div style={{ ...styles.sectionBody, border: `1px solid ${t.sectionBodyBorder}`, borderTop: 'none' }}>
+              {patient.userEmergencyContacts.length === 0 ? (
+                <EmptyRecord message="No emergency contacts recorded." />
+              ) : (
+                <table style={styles.table}>
+                  <thead>
+                    <tr>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Name</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Relationship</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Phone</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Primary</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Address</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {patient.userEmergencyContacts.map((c, i) => (
+                      <tr key={c.id}>
+                        <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{c.name}</td>
+                        <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{c.relationship}</td>
+                        <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{c.phone}</td>
+                        <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>
+                          {c.isPrimary ? (
+                            <span style={{ ...styles.badge, background: '#dcfce7', color: '#166534' }}>Primary</span>
+                          ) : 'No'}
+                        </td>
+                        <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{val(c.address)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* DISABILITIES */}
+        {has('disabilities') && (
+          <div style={styles.section}>
+            <SectionHeader icon="♿" title="Disabilities & Chronic Conditions" sectionHeaderBg={t.sectionHeaderBg} sectionHeaderText={t.sectionHeaderText} />
+            <div style={{ ...styles.sectionBody, border: `1px solid ${t.sectionBodyBorder}`, borderTop: 'none' }}>
+              {patient.userDisabilities.length === 0 ? (
+                <EmptyRecord message="No disabilities or chronic conditions recorded." />
+              ) : (
+                <table style={styles.table}>
+                  <thead>
+                    <tr>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Condition</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Date Diagnosed</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Severity</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Managed</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Diagnosed By</th>
+                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {patient.userDisabilities.map((d, i) => (
+                      <tr key={d.id}>
+                        <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{d.disability}</td>
+                        <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{formatDate(d.dateDiagnosed)}</td>
+                        <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{capitalize(d.severity)}</td>
+                        <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{d.isManaged === null ? '—' : d.isManaged ? 'Yes' : 'No'}</td>
+                        <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{val(d.diagnosedBy)}</td>
+                        <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{val(d.notes)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* LIFESTYLE */}
+        {has('lifestyle') && (
+          <div style={styles.section}>
+            <SectionHeader icon="👤" title="Lifestyle & Social History" sectionHeaderBg={t.sectionHeaderBg} sectionHeaderText={t.sectionHeaderText} />
+            <div style={{ ...styles.sectionBody, border: `1px solid ${t.sectionBodyBorder}`, borderTop: 'none' }}>
+              {!patient.personalHistory ? (
+                <EmptyRecord message="No lifestyle / social history recorded." />
+              ) : (
+                <table style={styles.table}>
+                  <tbody>
+                    {((): Array<[string, string]> => {
+                      const ph = patient.personalHistory!
+                      const fields: Array<[string, string]> = [
+                        ['Smoking Status', capitalize(ph.smokingStatus)],
+                      ]
+                      if (ph.numberOfPacksPerYear !== null && ph.numberOfPacksPerYear !== undefined) fields.push(['Packs / Year', String(ph.numberOfPacksPerYear)])
+                      fields.push(['Alcohol Use', capitalize(ph.alcoholStatus)])
+                      if (ph.numberOfBottlesPerDay !== null && ph.numberOfBottlesPerDay !== undefined) fields.push(['Bottles / Day', String(ph.numberOfBottlesPerDay)])
+                      fields.push(['Illicit Drug Use', capitalize(ph.illicitDrugUse)])
+                      fields.push(['Sexually Active', capitalize(ph.sexuallyActive)])
+                      return fields
+                    })().reduce<Array<Array<[string, string]>>>((rows, item, i) => {
+                      if (i % 3 === 0) rows.push([])
+                      rows[rows.length - 1].push(item)
+                      return rows
+                    }, []).map((row, ri) => (
+                      <tr key={ri}>
+                        {row.map(([label, value]) => (
+                          <td key={label} style={{ ...styles.td, width: '33%' }}>
+                            <div style={styles.fieldLabel}>{label}</div>
+                            <div style={styles.fieldValue}>{value}</div>
+                          </td>
+                        ))}
+                        {row.length < 3 && Array.from({ length: 3 - row.length }).map((_, j) => <td key={`empty-${j}`} style={styles.td} />)}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               )}
             </div>
           </div>
@@ -702,165 +808,82 @@ export function PHRPrintContent({ patient, sections, generatedAt, theme = 'color
           </div>
         )}
 
-        {/* DISABILITIES */}
-        {has('disabilities') && (
+        {/* VITAL SIGNS */}
+        {has('vitals') && (
           <div style={styles.section}>
-            <SectionHeader icon="♿" title="Disabilities & Chronic Conditions" sectionHeaderBg={t.sectionHeaderBg} sectionHeaderText={t.sectionHeaderText} />
+            <SectionHeader icon="❤️" title="Vital Signs" sectionHeaderBg={t.sectionHeaderBg} sectionHeaderText={t.sectionHeaderText} />
             <div style={{ ...styles.sectionBody, border: `1px solid ${t.sectionBodyBorder}`, borderTop: 'none' }}>
-              {patient.userDisabilities.length === 0 ? (
-                <EmptyRecord message="No disabilities or chronic conditions recorded." />
-              ) : (
-                <table style={styles.table}>
-                  <thead>
-                    <tr>
-                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Condition</th>
-                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Date Diagnosed</th>
-                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Severity</th>
-                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Managed</th>
-                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Diagnosed By</th>
-                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Notes</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {patient.userDisabilities.map((d, i) => (
-                      <tr key={d.id}>
-                        <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{d.disability}</td>
-                        <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{formatDate(d.dateDiagnosed)}</td>
-                        <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{capitalize(d.severity)}</td>
-                        <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{d.isManaged === null ? '—' : d.isManaged ? 'Yes' : 'No'}</td>
-                        <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{val(d.diagnosedBy)}</td>
-                        <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{val(d.notes)}</td>
+              {lv ? (
+                <>
+                  <p style={{ ...styles.fieldLabel, marginBottom: '8px' }}>
+                    Latest Reading — {formatDateTime(lv.dateTaken)}
+                  </p>
+                  <table style={{ ...styles.table, marginBottom: '8px' }}>
+                    <thead>
+                      <tr>
+                        {lv.bpSystolic && <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>BP (mmHg)</th>}
+                        {lv.pulseRate && <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>HR (bpm)</th>}
+                        {lv.temp && <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Temp (°C)</th>}
+                        {lv.spo2 && <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>SpO2</th>}
+                        {lv.respRate && <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>RR (/min)</th>}
+                        {displayBMI && <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>BMI</th>}
+                        {lv.height && <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Height (cm)</th>}
+                        {lv.weight && <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Weight (kg)</th>}
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        {lv.bpSystolic && <td style={styles.td}>{lv.bpSystolic}/{lv.bpDiastolic}</td>}
+                        {lv.pulseRate && <td style={styles.td}>{lv.pulseRate}</td>}
+                        {lv.temp && <td style={styles.td}>{lv.temp}</td>}
+                        {lv.spo2 && <td style={styles.td}>{lv.spo2}%</td>}
+                        {lv.respRate && <td style={styles.td}>{lv.respRate}</td>}
+                        {displayBMI && <td style={styles.td}>{displayBMI}</td>}
+                        {lv.height && <td style={styles.td}>{lv.height}</td>}
+                        {lv.weight && <td style={styles.td}>{lv.weight}</td>}
+                      </tr>
+                    </tbody>
+                  </table>
+                </>
+              ) : (
+                <EmptyRecord message="No vital signs recorded." />
               )}
-            </div>
-          </div>
-        )}
 
-        {/* EMERGENCY CONTACTS */}
-        {has('contacts') && (
-          <div style={styles.section}>
-            <SectionHeader icon="🆘" title="Emergency Contacts" sectionHeaderBg={t.sectionHeaderBg} sectionHeaderText={t.sectionHeaderText} />
-            <div style={{ ...styles.sectionBody, border: `1px solid ${t.sectionBodyBorder}`, borderTop: 'none' }}>
-              {patient.userEmergencyContacts.length === 0 ? (
-                <EmptyRecord message="No emergency contacts recorded." />
-              ) : (
-                <table style={styles.table}>
-                  <thead>
-                    <tr>
-                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Name</th>
-                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Relationship</th>
-                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Phone</th>
-                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Primary</th>
-                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Address</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {patient.userEmergencyContacts.map((c, i) => (
-                      <tr key={c.id}>
-                        <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{c.name}</td>
-                        <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{c.relationship}</td>
-                        <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{c.phone}</td>
-                        <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>
-                          {c.isPrimary ? (
-                            <span style={{ ...styles.badge, background: '#dcfce7', color: '#166534' }}>Primary</span>
-                          ) : 'No'}
-                        </td>
-                        <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{val(c.address)}</td>
+              {patient.vitalSigns.length > 1 && (
+                <>
+                  <p style={{ ...styles.fieldLabel, marginTop: '12px', marginBottom: '6px' }}>Vital Signs History</p>
+                  <table style={styles.table}>
+                    <thead>
+                      <tr>
+                        <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Date</th>
+                        <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>BP (mmHg)</th>
+                        <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>HR (bpm)</th>
+                        <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Temp (°C)</th>
+                        <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>SpO2</th>
+                        <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Weight (kg)</th>
+                        <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Height (cm)</th>
+                        <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>BMI</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* ADDRESSES */}
-        {has('addresses') && (
-          <div style={styles.section}>
-            <SectionHeader icon="📍" title="Addresses" sectionHeaderBg={t.sectionHeaderBg} sectionHeaderText={t.sectionHeaderText} />
-            <div style={{ ...styles.sectionBody, border: `1px solid ${t.sectionBodyBorder}`, borderTop: 'none' }}>
-              {patient.userAddresses.length === 0 ? (
-                <EmptyRecord message="No addresses recorded." />
-              ) : (
-                <table style={styles.table}>
-                  <thead>
-                    <tr>
-                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Type</th>
-                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Street / Address Line</th>
-                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Barangay</th>
-                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>City</th>
-                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>State / Province</th>
-                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Region</th>
-                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Zip</th>
-                      <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Country</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {patient.userAddresses.map((a, i) => (
-                      <tr key={a.id}>
-                        <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>
-                          {a.isPrimary
-                            ? <span style={{ ...styles.badge, background: '#dbeafe', color: '#1d4ed8' }}>Primary</span>
-                            : <span style={{ ...styles.badge, background: '#f1f5f9', color: TEXT_MUTED }}>Other</span>}
-                        </td>
-                        <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{a.address}</td>
-                        <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{val(a.barangay)}</td>
-                        <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{a.city}</td>
-                        <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{a.state}</td>
-                        <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{val(a.region)}</td>
-                        <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{a.zipCode}</td>
-                        <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{a.country}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* LIFESTYLE */}
-        {has('lifestyle') && (
-          <div style={styles.section}>
-            <SectionHeader icon="👤" title="Lifestyle & Social History" sectionHeaderBg={t.sectionHeaderBg} sectionHeaderText={t.sectionHeaderText} />
-            <div style={{ ...styles.sectionBody, border: `1px solid ${t.sectionBodyBorder}`, borderTop: 'none' }}>
-              {!patient.personalHistory ? (
-                <EmptyRecord message="No lifestyle / social history recorded." />
-              ) : (
-                <table style={styles.table}>
-                  <tbody>
-                    {((): Array<[string, string]> => {
-                      const ph = patient.personalHistory!
-                      const fields: Array<[string, string]> = [
-                        ['Smoking Status', capitalize(ph.smokingStatus)],
-                      ]
-                      if (ph.numberOfPacksPerYear !== null && ph.numberOfPacksPerYear !== undefined) fields.push(['Packs / Year', String(ph.numberOfPacksPerYear)])
-                      fields.push(['Alcohol Use', capitalize(ph.alcoholStatus)])
-                      if (ph.numberOfBottlesPerDay !== null && ph.numberOfBottlesPerDay !== undefined) fields.push(['Bottles / Day', String(ph.numberOfBottlesPerDay)])
-                      fields.push(['Illicit Drug Use', capitalize(ph.illicitDrugUse)])
-                      fields.push(['Sexually Active', capitalize(ph.sexuallyActive)])
-                      return fields
-                    })().reduce<Array<Array<[string, string]>>>((rows, item, i) => {
-                      if (i % 3 === 0) rows.push([])
-                      rows[rows.length - 1].push(item)
-                      return rows
-                    }, []).map((row, ri) => (
-                      <tr key={ri}>
-                        {row.map(([label, value]) => (
-                          <td key={label} style={{ ...styles.td, width: '33%' }}>
-                            <div style={styles.fieldLabel}>{label}</div>
-                            <div style={styles.fieldValue}>{value}</div>
-                          </td>
-                        ))}
-                        {row.length < 3 && Array.from({ length: 3 - row.length }).map((_, j) => <td key={`empty-${j}`} style={styles.td} />)}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {patient.vitalSigns.map((v, i) => {
+                        const rowBmi = v.bmi ?? bmi(v.weight, v.height)
+                        return (
+                          <tr key={v.id}>
+                            <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{formatDate(v.dateTaken)}</td>
+                            <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{v.bpSystolic ? `${v.bpSystolic}/${v.bpDiastolic}` : '—'}</td>
+                            <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{val(v.pulseRate)}</td>
+                            <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{val(v.temp)}</td>
+                            <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{v.spo2 ? `${v.spo2}%` : '—'}</td>
+                            <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{val(v.weight)}</td>
+                            <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{val(v.height)}</td>
+                            <td style={i % 2 === 0 ? styles.td : styles.tdAlt}>{rowBmi ?? '—'}</td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </>
               )}
             </div>
           </div>

@@ -46,10 +46,19 @@ export default async function ClinicPatientPHRPrintPage({ params, searchParams }
     hour: '2-digit', minute: '2-digit',
   })
 
-  return (
+  const isPreview = preview === '1'
+
+  return isPreview ? (
+    <PHRPrintContent
+      patient={patient as SerializedPatientHealthRecordsResponse}
+      sections={sections}
+      generatedAt={generatedAt}
+      theme={theme}
+      showClinicName={true}
+    />
+  ) : (
     <>
-      {/* Suppress auto-print in preview mode so iframe renders without a print dialog */}
-      {preview !== '1' && <PHRAutoPrint />}
+      <PHRAutoPrint />
       <PHRPrintContent
         patient={patient as SerializedPatientHealthRecordsResponse}
         sections={sections}

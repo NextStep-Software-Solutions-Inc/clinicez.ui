@@ -1,20 +1,21 @@
 'use client'
 
 import { useState } from 'react'
-import { FileText, Loader2, Palette, Printer } from 'lucide-react'
+import { FileText, Loader2, Palette, Download } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
 import { PHR_SECTIONS, type PHRSectionId, type PHRTheme } from './phr-sections'
-import { handlePrintHtmlToPDF } from '@/lib/print-pdf'
 
 interface DownloadPHRButtonProps {
-  /** URL of the HTML print/preview page.
-   *  Patient dashboard: '/v2/patient/phr/print'
-   *  Clinic dashboard:  '/v2/clinic/[clinicUid]/patients/[patientId]/phr/print'
+  /** API endpoint that returns PDF
+   *  Patient dashboard: '/api/phr/patient'
+   *  Clinic dashboard:  '/api/phr/clinic/[clinicUid]/patients/[patientId]'
    */
   printHref: string
+  /** Full name of the patient, used in the downloaded filename */
+  patientName?: string
   /** Button label. Defaults to "Download PHR" */
   label?: string
   /** Additional className for the trigger button */
@@ -24,13 +25,13 @@ interface DownloadPHRButtonProps {
 const DEFAULT_BUTTON_CLASS =
   'flex items-center gap-1.5 md:gap-2 px-4 md:px-5 py-2.5 md:py-3 rounded-lg bg-gradient-to-br from-teal-600 to-cyan-500 text-white text-sm font-semibold hover:shadow-lg transition-all duration-300 hover:scale-105 shadow-lg'
 
-export function DownloadPHRButton({ printHref, label = 'Download PHR', className }: DownloadPHRButtonProps) {
+export function DownloadPHRButton({ printHref, patientName, label = 'Download PHR', className }: DownloadPHRButtonProps) {
   const [open, setOpen] = useState(false)
   const [selected, setSelected] = useState<Set<PHRSectionId>>(
     new Set(PHR_SECTIONS.map(s => s.id))
   )
   const [theme, setTheme] = useState<PHRTheme>('colorful')
-  const [fetching, setFetching] = useState(false)
+  const [downloading, setDownloading] = useState(false)
 
   function toggle(id: PHRSectionId) {
     setSelected(prev => {
@@ -58,17 +59,35 @@ export function DownloadPHRButton({ printHref, label = 'Download PHR', className
       : Array.from(selected).join(',')
   }
 
-  async function openOverlay() {
-    setFetching(true)
+  async function downloadPdf() {
+    setDownloading(true)
     try {
-      const params = new URLSearchParams({ sections: sectionsParam(), preview: '1', theme })
-      const html = await fetch(`${printHref}?${params.toString()}`).then(r => r.text())
-      handlePrintHtmlToPDF(html)
+      const params = new URLSearchParams({ sections: sectionsParam(), theme })
+      const response = await fetch(`${printHref}?${params.toString()}`)
+      
+      if (!response.ok) {
+        throw new Error(`Failed to download PHR: ${response.statusText}`)
+      }
+
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      const date = new Date()
+      const timestamp = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}_${String(date.getHours()).padStart(2, '0')}${String(date.getMinutes()).padStart(2, '0')}`
+      const safeName = patientName ? `_${patientName.replace(/[^a-zA-Z0-9]/g, '_')}` : ''
+      link.download = `PHR${safeName}_${timestamp}.pdf`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+      
       setOpen(false)
-    } catch {
-      // silent fail — user can retry
+    } catch (error) {
+      console.error('Failed to download PHR:', error)
+      // Could show a toast notification here
     } finally {
-      setFetching(false)
+      setDownloading(false)
     }
   }
 
@@ -78,8 +97,8 @@ export function DownloadPHRButton({ printHref, label = 'Download PHR', className
         onClick={() => setOpen(true)}
         className={className ?? DEFAULT_BUTTON_CLASS}
       >
-        <Printer className="w-4 h-4" />
-        <span className="hidden sm:inline">{label}</span>
+        <Download className="w-4 h-4" />
+        <span className="hidden lg:inline">{label}</span>
       </button>
 
       {/* ── Section Selection ── */}
@@ -190,19 +209,19 @@ export function DownloadPHRButton({ printHref, label = 'Download PHR', className
               Cancel
             </Button>
             <Button
-              onClick={openOverlay}
-              disabled={selected.size === 0 || fetching}
+              onClick={downloadPdf}
+              disabled={selected.size === 0 || downloading}
               className="bg-teal-600 hover:bg-teal-700 text-white"
             >
-              {fetching ? (
+              {downloading ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Loading…
+                  Generating…
                 </>
               ) : (
                 <>
-                  <Printer className="w-4 h-4 mr-2" />
-                  Preview &amp; Print
+                  <Download className="w-4 h-4 mr-2" />
+                  Download PDF
                 </>
               )}
             </Button>

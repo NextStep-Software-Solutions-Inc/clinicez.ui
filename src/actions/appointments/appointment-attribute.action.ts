@@ -6,6 +6,7 @@ import { getPermissionsAction } from '@actions/permission.action';
 import { PERMISSIONS } from '@lib/permissions';
 import { withErrorHandling } from '@/lib/with-error-handling';
 import { hasCodeProperty } from '@lib/utils';
+import { createNotifications } from '@/actions/notifications/notification.action';
 
 export const receiveAppointmentAction = withErrorHandling(async (formData: FormData) => {
   const session = await getCachedSession();
@@ -84,6 +85,28 @@ export const receiveAppointmentAction = withErrorHandling(async (formData: FormD
       })
     }
   })
+  // Notify the appointment requesters that the appointment is being processed
+  try {
+    const appointment = await prismaClient.appointment.findUnique({
+      where: { id: appointmentId },
+      select: {
+        subject: true,
+        Requesters: { select: { User: { select: { id: true } } } },
+      },
+    });
+    if (appointment) {
+      await createNotifications(
+        appointment.Requesters.map((r) => ({
+          userId: r.User.id,
+          type: "APPOINTMENT_RECEIVED" as const,
+          title: "Appointment Received",
+          message: `Your appointment "${appointment.subject}" is now being processed by our staff.`,
+        })),
+      );
+    }
+  } catch {
+    // non-critical
+  }
   return { message: 'Appointment received', data: undefined };
 }, async error => {
   if (hasCodeProperty(error) && error.code === 'P2025') {
@@ -195,7 +218,28 @@ export const confirmAppointmentBookingAction = withErrorHandling(async (payload:
       });
     }
   });
-
+  // Notify requesters their appointment booking is confirmed
+  try {
+    const appointment = await prismaClient.appointment.findUnique({
+      where: { id: appointmentId },
+      select: {
+        subject: true,
+        Requesters: { select: { User: { select: { id: true } } } },
+      },
+    });
+    if (appointment) {
+      await createNotifications(
+        appointment.Requesters.map((r) => ({
+          userId: r.User.id,
+          type: "APPOINTMENT_CONFIRMED" as const,
+          title: "Appointment Confirmed",
+          message: `Your appointment "${appointment.subject}" has been confirmed.`,
+        })),
+      );
+    }
+  } catch {
+    // non-critical
+  }
   return { message: "Appointment booking confirmed", data: undefined };
 }, async (error) => {
   if (error instanceof Error) return error.message;
@@ -235,6 +279,28 @@ export const rejectAppointmentAction = withErrorHandling(async (formData: FormDa
       }
     }
   })
+  // Notify requesters their appointment was rejected
+  try {
+    const appointment = await prismaClient.appointment.findUnique({
+      where: { id: appointmentId },
+      select: {
+        subject: true,
+        Requesters: { select: { User: { select: { id: true } } } },
+      },
+    });
+    if (appointment) {
+      await createNotifications(
+        appointment.Requesters.map((r) => ({
+          userId: r.User.id,
+          type: "APPOINTMENT_REJECTED" as const,
+          title: "Appointment Rejected",
+          message: `Your appointment "${appointment.subject}" has been rejected.${reason ? ` Reason: ${reason}` : ""}`,
+        })),
+      );
+    }
+  } catch {
+    // non-critical
+  }
   return { message: 'Appointment rejected', data: undefined };
 
 }, async error => {

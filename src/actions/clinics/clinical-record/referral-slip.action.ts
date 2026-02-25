@@ -7,6 +7,7 @@ import { withErrorHandling } from "@/lib/with-error-handling";
 import { Prisma } from "@prisma/client";
 import { generateSerialNumber } from "@/lib/utils";
 import { validateHealthcareProviderAuth, USER_WITH_HEALTHCARE_PROVIDERS_SELECT } from "@/lib/healthcare-provider-auth";
+import { createNotification } from "@/actions/notifications/notification.action";
 
 export type GetReferralSlipFilters = {
   clinicUid: string;
@@ -240,6 +241,24 @@ export const createReferralSlipAction = withErrorHandling(async (input: CreateRe
 
     return referralSlip;
   });
+
+  // Notify the patient a referral slip was issued
+  try {
+    const clinicPatient = await prisma.clinicPatient.findUnique({
+      where: { id: patientId },
+      select: { patientId: true, Clinic: { select: { name: true } } },
+    });
+    if (clinicPatient) {
+      await createNotification({
+        userId: clinicPatient.patientId,
+        type: "REFERRAL_ISSUED",
+        title: "Referral Slip Issued",
+        message: `A referral slip has been issued for you at ${clinicPatient.Clinic.name}.${referredTo ? ` Referred to: ${referredTo}.` : ""}`,
+      });
+    }
+  } catch {
+    // non-critical
+  }
 
   return { message: "Referral slip created successfully", data: result };
 });

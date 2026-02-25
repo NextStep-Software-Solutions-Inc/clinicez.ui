@@ -14,6 +14,7 @@ import path from "path";
 import fs from "fs/promises";
 import { sendMail } from "@actions/email.action";
 import { withErrorHandling } from "@/lib/with-error-handling";
+import { createNotification, createNotifications } from "@/actions/notifications/notification.action";
 
 type CreateAppointmentPayload = {
   clinicUid: string;
@@ -272,6 +273,7 @@ export const createAppointmentAction = withErrorHandling(async (payload: CreateA
           select: {
             User: {
               select: {
+                id: true,
                 email: true,
                 firstName: true,
                 middleName: true,
@@ -303,6 +305,23 @@ export const createAppointmentAction = withErrorHandling(async (payload: CreateA
     await sendAppointmentRequestSent({ users: mappedUsers });
   } else {
     console.warn("Skipping email notification - no valid users found");
+  }
+
+  // Notify requesters that their appointment was submitted
+  try {
+    const requesterIds = newAppointment.Requesters
+      .filter((r) => r.User?.id)
+      .map((r) => r.User.id);
+    await createNotifications(
+      requesterIds.map((userId) => ({
+        userId,
+        type: "APPOINTMENT_CREATED" as const,
+        title: "Appointment Submitted",
+        message: `Your appointment "${subject}" has been submitted and is pending review.`,
+      })),
+    );
+  } catch {
+    // non-critical
   }
 
   return { message: "Appointment created", data: newAppointment };
@@ -1553,6 +1572,28 @@ export const rescheduleAppointmentAction = withErrorHandling(async ({ appointmen
       maxWait: 10000,
       isolationLevel: Prisma.TransactionIsolationLevel.Serializable
     });
+    // Notify requesters their appointment was rescheduled
+    try {
+      const appointment = await prisma.appointment.findUnique({
+        where: { id: appointmentId },
+        select: {
+          subject: true,
+          Requesters: { select: { User: { select: { id: true } } } },
+        },
+      });
+      if (appointment) {
+        await createNotifications(
+          appointment.Requesters.map((r) => ({
+            userId: r.User.id,
+            type: "APPOINTMENT_RESCHEDULED" as const,
+            title: "Appointment Rescheduled",
+            message: `Your appointment "${appointment.subject}" has been rescheduled.`,
+          })),
+        );
+      }
+    } catch {
+      // non-critical
+    }
     return { message: "Appointment rescheduled", data: undefined }
   } catch (error) {
     if (hasCodeProperty(error) && error.code === "P2025") {

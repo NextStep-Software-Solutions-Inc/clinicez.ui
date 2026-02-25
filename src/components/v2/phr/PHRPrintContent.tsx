@@ -354,7 +354,6 @@ export function PHRPrintContent({ patient, sections, generatedAt, theme = 'color
           .no-print { display: none !important; }
           .phr-root { max-width: 100%; padding: 0; }
           .phr-footer { position: fixed; bottom: 0; left: 0; right: 0; }
-          .phr-header { margin-top: -1in; }
         }
       `}</style>
 

@@ -296,8 +296,8 @@ export function DownloadPHRButton({ printHref, downloadApiHref, label = 'Downloa
             </div>
           </div>
 
-          {/* Preview iframe — fixed A4 width so layout matches the hard copy */}
-          <div className="relative flex-1 overflow-auto bg-slate-100">
+          {/* Preview iframe — fixed A4 width (794 px) with explicit horizontal scroll */}
+          <div className="relative flex-1 overflow-x-auto overflow-y-auto bg-slate-100">
             {iframeLoading && (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-slate-50 z-10">
                 <Loader2 className="w-8 h-8 animate-spin text-teal-600" />
@@ -307,7 +307,7 @@ export function DownloadPHRButton({ printHref, downloadApiHref, label = 'Downloa
             <iframe
               src={buildPreviewUrl()}
               className="h-full border-0"
-              style={{ width: 'max(100%, 794px)', minWidth: '794px' }}
+              style={{ width: '794px', minWidth: '794px', display: 'block' }}
               title="PHR Preview"
               onLoad={() => setIframeLoading(false)}
             />

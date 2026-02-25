@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
       sections,
       generatedAt,
       theme,
-    })
+    }) as unknown as Parameters<typeof renderToBuffer>[0]
   )
 
   const filename = `PHR_${patient.fullName.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.pdf`

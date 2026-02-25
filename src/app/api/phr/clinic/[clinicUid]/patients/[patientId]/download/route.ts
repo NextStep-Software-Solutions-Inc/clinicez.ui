@@ -54,7 +54,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       generatedAt,
       theme,
       showClinicName: true,
-    })
+    }) as unknown as Parameters<typeof renderToBuffer>[0]
   )
 
   const filename = `PHR_${patient.fullName.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.pdf`

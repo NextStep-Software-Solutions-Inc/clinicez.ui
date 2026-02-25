@@ -21,13 +21,20 @@ import {
 import type { GetNotificationsResult } from "@/actions/notifications/notification.action";
 import { NotificationType } from "@prisma/client";
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// ── Constants ─────────────────────────────────────────────────────────────────
 
-const POLL_INTERVAL_MS = 30_000; // poll every 30 s
+/** Fallback polling interval when SSE is unavailable */
+const FALLBACK_POLL_INTERVAL_MS = 30_000;
+/** URL of the SSE stream endpoint */
+const SSE_ENDPOINT = "/api/notifications/stream";
+
+// ── Types ─────────────────────────────────────────────────────────────────────
 
 type NotificationItem = NonNullable<
   NonNullable<GetNotificationsResult["data"]>[number]
 >;
+
+// ── Icon map ──────────────────────────────────────────────────────────────────
 
 const NOTIFICATION_ICONS: Record<NotificationType, string> = {
   APPOINTMENT_CREATED: "📅",
@@ -58,10 +65,15 @@ export function NotificationBell() {
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Refs for SSE and fallback polling cleanup
+  const esRef = useRef<EventSource | null>(null);
+  const fallbackRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const reconnectRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
+  // ── Fetch via server action (used as fallback + on-demand) ─────────────────
   const fetchNotifications = useCallback(async () => {
     const result = await getNotificationsAction();
     if (result.status && result.data) {
@@ -69,20 +81,87 @@ export function NotificationBell() {
     }
   }, []);
 
-  // Initial fetch + polling
-  useEffect(() => {
-    fetchNotifications();
-    intervalRef.current = setInterval(fetchNotifications, POLL_INTERVAL_MS);
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, [fetchNotifications]);
+  // ── SSE helpers ────────────────────────────────────────────────────────────
+  const stopSSE = useCallback(() => {
+    if (esRef.current) {
+      esRef.current.close();
+      esRef.current = null;
+    }
+    if (reconnectRef.current) {
+      clearTimeout(reconnectRef.current);
+      reconnectRef.current = null;
+    }
+  }, []);
 
-  // Fetch fresh data each time the popover opens
+  const stopFallback = useCallback(() => {
+    if (fallbackRef.current) {
+      clearInterval(fallbackRef.current);
+      fallbackRef.current = null;
+    }
+  }, []);
+
+  const startSSE = useCallback(() => {
+    // Don't open a second connection
+    if (esRef.current) return;
+
+    const es = new EventSource(SSE_ENDPOINT);
+    esRef.current = es;
+
+    es.addEventListener("notifications", (ev) => {
+      try {
+        const data = JSON.parse(ev.data) as NotificationItem[];
+        setNotifications(data);
+      } catch {
+        // malformed payload — ignore
+      }
+    });
+
+    // "ping" events keep the connection alive — no action needed
+    es.addEventListener("ping", () => {});
+
+    es.onerror = () => {
+      // Connection dropped — close, start fallback polling, and schedule reconnect
+      stopSSE();
+      if (!fallbackRef.current) {
+        fetchNotifications(); // immediate fetch
+        fallbackRef.current = setInterval(fetchNotifications, FALLBACK_POLL_INTERVAL_MS);
+      }
+      // Reconnect after 5 s (server closes at ~55 s; client reconnects naturally)
+      reconnectRef.current = setTimeout(() => {
+        stopFallback();
+        startSSE();
+      }, 5_000);
+    };
+
+    es.onopen = () => {
+      // SSE connected — stop fallback polling if it was running
+      stopFallback();
+    };
+  }, [fetchNotifications, stopSSE, stopFallback]);
+
+  // ── Bootstrap SSE on mount ─────────────────────────────────────────────────
+  useEffect(() => {
+    // EventSource is not available in SSR
+    if (typeof EventSource === "undefined") {
+      // Fallback: plain polling
+      fetchNotifications();
+      fallbackRef.current = setInterval(fetchNotifications, FALLBACK_POLL_INTERVAL_MS);
+      return () => stopFallback();
+    }
+
+    startSSE();
+    return () => {
+      stopSSE();
+      stopFallback();
+    };
+  }, [startSSE, stopSSE, stopFallback, fetchNotifications]);
+
+  // ── Refresh on popover open ────────────────────────────────────────────────
   useEffect(() => {
     if (open) fetchNotifications();
   }, [open, fetchNotifications]);
 
+  // ── Handlers ──────────────────────────────────────────────────────────────
   const handleMarkRead = async (id: number) => {
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)),
@@ -107,6 +186,7 @@ export function NotificationBell() {
     }
   };
 
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>

@@ -148,8 +148,6 @@ const styles = {
   } as React.CSSProperties,
   section: {
     marginBottom: '24px',
-    pageBreakInside: 'avoid' as const,
-    breakInside: 'avoid' as const,
   } as React.CSSProperties,
   sectionHeader: {
     display: 'flex',
@@ -440,23 +438,41 @@ export function PHRPrintContent({ patient, sections, generatedAt, theme = 'color
           <div style={styles.section}>
             <SectionHeader icon="📋" title="Demographics" sectionHeaderBg={t.sectionHeaderBg} sectionHeaderText={t.sectionHeaderText} />
             <div style={{ ...styles.sectionBody, border: `1px solid ${t.sectionBodyBorder}`, borderTop: 'none' }}>
-              <div style={styles.grid3}>
-                <Field label="Full Name" value={`${patient.fullName}${patient.suffix ? ` ${patient.suffix}` : ''}`} />
-                <Field label="Nickname" value={patient.nickname} />
-                <Field label="Date of Birth" value={formatDate(patient.dob)} />
-                <Field label="Age" value={patient.age ? `${patient.age} years` : null} />
-                <Field label="Gender" value={capitalize(patient.gender)} />
-                <Field label="Civil Status" value={capitalize(patient.civilStatus)} />
-                <Field label="Blood Type" value={formatBloodType(patient.bloodType)} />
-                <Field label="Nationality" value={patient.nationality} />
-                <Field label="Religion" value={patient.religion} />
-                <Field label="Place of Birth" value={patient.placeOfBirth} />
-                <Field label="Email" value={patient.email} />
-                <Field label="Mobile" value={patient.mobile} />
-                <Field label="Telephone" value={patient.telephone} />
-                {patient.caseNumber && <Field label="Patient ID" value={patient.caseNumber} />}
-                <Field label="Member Since" value={formatDate(patient.createdAt)} />
-              </div>
+              <table style={styles.table}>
+                <tbody>
+                  {[
+                    ['Full Name', `${patient.fullName}${patient.suffix ? ` ${patient.suffix}` : ''}`],
+                    ['Nickname', val(patient.nickname)],
+                    ['Date of Birth', formatDate(patient.dob)],
+                    ['Age', patient.age ? `${patient.age} years` : '—'],
+                    ['Gender', capitalize(patient.gender)],
+                    ['Civil Status', capitalize(patient.civilStatus)],
+                    ['Blood Type', formatBloodType(patient.bloodType)],
+                    ['Nationality', val(patient.nationality)],
+                    ['Religion', val(patient.religion)],
+                    ['Place of Birth', val(patient.placeOfBirth)],
+                    ['Email', val(patient.email)],
+                    ['Mobile', val(patient.mobile)],
+                    ['Telephone', val(patient.telephone)],
+                    ...(patient.caseNumber ? [['Patient ID', patient.caseNumber]] : []),
+                    ['Member Since', formatDate(patient.createdAt)],
+                  ].reduce<Array<Array<[string, string]>>>((rows, item, i) => {
+                    if (i % 3 === 0) rows.push([])
+                    rows[rows.length - 1].push(item as [string, string])
+                    return rows
+                  }, []).map((row, ri) => (
+                    <tr key={ri}>
+                      {row.map(([label, value]) => (
+                        <td key={label} style={{ ...styles.td, width: '33%' }}>
+                          <div style={styles.fieldLabel}>{label}</div>
+                          <div style={styles.fieldValue}>{value}</div>
+                        </td>
+                      ))}
+                      {row.length < 3 && Array.from({ length: 3 - row.length }).map((_, j) => <td key={`empty-${j}`} style={styles.td} />)}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         )}
@@ -471,58 +487,32 @@ export function PHRPrintContent({ patient, sections, generatedAt, theme = 'color
                   <p style={{ ...styles.fieldLabel, marginBottom: '8px' }}>
                     Latest Reading — {formatDateTime(lv.dateTaken)}
                   </p>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '8px', marginBottom: '12px' }}>
-                    {lv.bpSystolic && (
-                      <div style={{ ...styles.vitalCard, background: t.vitalCardBg, border: `1px solid ${t.vitalCardBorder}` }}>
-                        <div style={styles.vitalValue}>{lv.bpSystolic}/{lv.bpDiastolic}</div>
-                        <div style={styles.vitalLabel}>BP (mmHg)</div>
-                      </div>
-                    )}
-                    {lv.pulseRate && (
-                      <div style={{ ...styles.vitalCard, background: t.vitalCardBg, border: `1px solid ${t.vitalCardBorder}` }}>
-                        <div style={styles.vitalValue}>{lv.pulseRate}</div>
-                        <div style={styles.vitalLabel}>HR (bpm)</div>
-                      </div>
-                    )}
-                    {lv.temp && (
-                      <div style={{ ...styles.vitalCard, background: t.vitalCardBg, border: `1px solid ${t.vitalCardBorder}` }}>
-                        <div style={styles.vitalValue}>{lv.temp}</div>
-                        <div style={styles.vitalLabel}>Temp (°C)</div>
-                      </div>
-                    )}
-                    {lv.spo2 && (
-                      <div style={{ ...styles.vitalCard, background: t.vitalCardBg, border: `1px solid ${t.vitalCardBorder}` }}>
-                        <div style={styles.vitalValue}>{lv.spo2}%</div>
-                        <div style={styles.vitalLabel}>SpO2</div>
-                      </div>
-                    )}
-                    {lv.respRate && (
-                      <div style={{ ...styles.vitalCard, background: t.vitalCardBg, border: `1px solid ${t.vitalCardBorder}` }}>
-                        <div style={styles.vitalValue}>{lv.respRate}</div>
-                        <div style={styles.vitalLabel}>RR (/min)</div>
-                      </div>
-                    )}
-                    {displayBMI && (
-                      <div style={{ ...styles.vitalCard, background: t.vitalCardBg, border: `1px solid ${t.vitalCardBorder}` }}>
-                        <div style={styles.vitalValue}>{displayBMI}</div>
-                        <div style={styles.vitalLabel}>BMI</div>
-                      </div>
-                    )}
-                  </div>
-                  {lv.height && (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '8px' }}>
-                      <div style={{ ...styles.vitalCard, background: t.vitalCardBg, border: `1px solid ${t.vitalCardBorder}` }}>
-                        <div style={styles.vitalValue}>{lv.height}</div>
-                        <div style={styles.vitalLabel}>Height (cm)</div>
-                      </div>
-                      {lv.weight && (
-                        <div style={{ ...styles.vitalCard, background: t.vitalCardBg, border: `1px solid ${t.vitalCardBorder}` }}>
-                          <div style={styles.vitalValue}>{lv.weight}</div>
-                          <div style={styles.vitalLabel}>Weight (kg)</div>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                  <table style={{ ...styles.table, marginBottom: '8px' }}>
+                    <thead>
+                      <tr>
+                        {lv.bpSystolic && <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>BP (mmHg)</th>}
+                        {lv.pulseRate && <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>HR (bpm)</th>}
+                        {lv.temp && <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Temp (°C)</th>}
+                        {lv.spo2 && <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>SpO2</th>}
+                        {lv.respRate && <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>RR (/min)</th>}
+                        {displayBMI && <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>BMI</th>}
+                        {lv.height && <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Height (cm)</th>}
+                        {lv.weight && <th style={{ ...styles.th, background: t.thBg, color: t.thColor }}>Weight (kg)</th>}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        {lv.bpSystolic && <td style={styles.td}>{lv.bpSystolic}/{lv.bpDiastolic}</td>}
+                        {lv.pulseRate && <td style={styles.td}>{lv.pulseRate}</td>}
+                        {lv.temp && <td style={styles.td}>{lv.temp}</td>}
+                        {lv.spo2 && <td style={styles.td}>{lv.spo2}%</td>}
+                        {lv.respRate && <td style={styles.td}>{lv.respRate}</td>}
+                        {displayBMI && <td style={styles.td}>{displayBMI}</td>}
+                        {lv.height && <td style={styles.td}>{lv.height}</td>}
+                        {lv.weight && <td style={styles.td}>{lv.weight}</td>}
+                      </tr>
+                    </tbody>
+                  </table>
                 </>
               ) : (
                 <EmptyRecord message="No vital signs recorded." />
@@ -841,18 +831,36 @@ export function PHRPrintContent({ patient, sections, generatedAt, theme = 'color
               {!patient.personalHistory ? (
                 <EmptyRecord message="No lifestyle / social history recorded." />
               ) : (
-                <div style={styles.grid3}>
-                  <Field label="Smoking Status" value={capitalize(patient.personalHistory.smokingStatus)} />
-                  {patient.personalHistory.numberOfPacksPerYear !== null && patient.personalHistory.numberOfPacksPerYear !== undefined && (
-                    <Field label="Packs / Year" value={String(patient.personalHistory.numberOfPacksPerYear)} />
-                  )}
-                  <Field label="Alcohol Use" value={capitalize(patient.personalHistory.alcoholStatus)} />
-                  {patient.personalHistory.numberOfBottlesPerDay !== null && patient.personalHistory.numberOfBottlesPerDay !== undefined && (
-                    <Field label="Bottles / Day" value={String(patient.personalHistory.numberOfBottlesPerDay)} />
-                  )}
-                  <Field label="Illicit Drug Use" value={capitalize(patient.personalHistory.illicitDrugUse)} />
-                  <Field label="Sexually Active" value={capitalize(patient.personalHistory.sexuallyActive)} />
-                </div>
+                <table style={styles.table}>
+                  <tbody>
+                    {((): Array<[string, string]> => {
+                      const ph = patient.personalHistory!
+                      const fields: Array<[string, string]> = [
+                        ['Smoking Status', capitalize(ph.smokingStatus)],
+                      ]
+                      if (ph.numberOfPacksPerYear !== null && ph.numberOfPacksPerYear !== undefined) fields.push(['Packs / Year', String(ph.numberOfPacksPerYear)])
+                      fields.push(['Alcohol Use', capitalize(ph.alcoholStatus)])
+                      if (ph.numberOfBottlesPerDay !== null && ph.numberOfBottlesPerDay !== undefined) fields.push(['Bottles / Day', String(ph.numberOfBottlesPerDay)])
+                      fields.push(['Illicit Drug Use', capitalize(ph.illicitDrugUse)])
+                      fields.push(['Sexually Active', capitalize(ph.sexuallyActive)])
+                      return fields
+                    })().reduce<Array<Array<[string, string]>>>((rows, item, i) => {
+                      if (i % 3 === 0) rows.push([])
+                      rows[rows.length - 1].push(item)
+                      return rows
+                    }, []).map((row, ri) => (
+                      <tr key={ri}>
+                        {row.map(([label, value]) => (
+                          <td key={label} style={{ ...styles.td, width: '33%' }}>
+                            <div style={styles.fieldLabel}>{label}</div>
+                            <div style={styles.fieldValue}>{value}</div>
+                          </td>
+                        ))}
+                        {row.length < 3 && Array.from({ length: 3 - row.length }).map((_, j) => <td key={`empty-${j}`} style={styles.td} />)}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               )}
             </div>
           </div>
@@ -866,25 +874,46 @@ export function PHRPrintContent({ patient, sections, generatedAt, theme = 'color
               {!patient.obGyneHistory ? (
                 <EmptyRecord message="No OB/GYN history recorded." />
               ) : (
-                <div style={styles.grid3}>
-                  {patient.obGyneHistory.menarche !== null && patient.obGyneHistory.menarche !== undefined && <Field label="Menarche (age)" value={String(patient.obGyneHistory.menarche)} />}
-                  {patient.obGyneHistory.lastMenstrualPeriod && <Field label="Last Menstrual Period" value={formatDate(patient.obGyneHistory.lastMenstrualPeriod)} />}
-                  {patient.obGyneHistory.menstrualCycleInterval !== null && patient.obGyneHistory.menstrualCycleInterval !== undefined && <Field label="Cycle Interval (days)" value={String(patient.obGyneHistory.menstrualCycleInterval)} />}
-                  {patient.obGyneHistory.menstrualPeriodDuration !== null && patient.obGyneHistory.menstrualPeriodDuration !== undefined && <Field label="Period Duration (days)" value={String(patient.obGyneHistory.menstrualPeriodDuration)} />}
-                  {patient.obGyneHistory.numberOfPadsPerDay !== null && patient.obGyneHistory.numberOfPadsPerDay !== undefined && <Field label="Pads / Day" value={String(patient.obGyneHistory.numberOfPadsPerDay)} />}
-                  {patient.obGyneHistory.gravidity !== null && patient.obGyneHistory.gravidity !== undefined && <Field label="Gravida" value={String(patient.obGyneHistory.gravidity)} />}
-                  {patient.obGyneHistory.parity !== null && patient.obGyneHistory.parity !== undefined && <Field label="Para" value={String(patient.obGyneHistory.parity)} />}
-                  {patient.obGyneHistory.fullTerm !== null && patient.obGyneHistory.fullTerm !== undefined && <Field label="Full Term" value={String(patient.obGyneHistory.fullTerm)} />}
-                  {patient.obGyneHistory.premature !== null && patient.obGyneHistory.premature !== undefined && <Field label="Premature" value={String(patient.obGyneHistory.premature)} />}
-                  {patient.obGyneHistory.abortion !== null && patient.obGyneHistory.abortion !== undefined && <Field label="Abortion" value={String(patient.obGyneHistory.abortion)} />}
-                  {patient.obGyneHistory.livingChildren !== null && patient.obGyneHistory.livingChildren !== undefined && <Field label="Living Children" value={String(patient.obGyneHistory.livingChildren)} />}
-                  {patient.obGyneHistory.typeOfDelivery && <Field label="Type of Delivery" value={patient.obGyneHistory.typeOfDelivery} />}
-                  {patient.obGyneHistory.birthControlMethod && <Field label="Birth Control Method" value={patient.obGyneHistory.birthControlMethod} />}
-                  {patient.obGyneHistory.ageAtFirstSexualIntercourse !== null && patient.obGyneHistory.ageAtFirstSexualIntercourse !== undefined && <Field label="Age at 1st Intercourse" value={String(patient.obGyneHistory.ageAtFirstSexualIntercourse)} />}
-                  {patient.obGyneHistory.menopauseAge !== null && patient.obGyneHistory.menopauseAge !== undefined && <Field label="Menopause Age" value={String(patient.obGyneHistory.menopauseAge)} />}
-                  {patient.obGyneHistory.menopauseStatus && <Field label="Menopause Status" value={patient.obGyneHistory.menopauseStatus} />}
-                  <Field label="Pre-eclampsia History" value={patient.obGyneHistory.hasPreEclampsia ? 'Yes' : 'No'} />
-                </div>
+                <table style={styles.table}>
+                  <tbody>
+                    {((): Array<[string, string]> => {
+                      const og = patient.obGyneHistory!
+                      const fields: Array<[string, string]> = []
+                      if (og.menarche !== null && og.menarche !== undefined) fields.push(['Menarche (age)', String(og.menarche)])
+                      if (og.lastMenstrualPeriod) fields.push(['Last Menstrual Period', formatDate(og.lastMenstrualPeriod)])
+                      if (og.menstrualCycleInterval !== null && og.menstrualCycleInterval !== undefined) fields.push(['Cycle Interval (days)', String(og.menstrualCycleInterval)])
+                      if (og.menstrualPeriodDuration !== null && og.menstrualPeriodDuration !== undefined) fields.push(['Period Duration (days)', String(og.menstrualPeriodDuration)])
+                      if (og.numberOfPadsPerDay !== null && og.numberOfPadsPerDay !== undefined) fields.push(['Pads / Day', String(og.numberOfPadsPerDay)])
+                      if (og.gravidity !== null && og.gravidity !== undefined) fields.push(['Gravida', String(og.gravidity)])
+                      if (og.parity !== null && og.parity !== undefined) fields.push(['Para', String(og.parity)])
+                      if (og.fullTerm !== null && og.fullTerm !== undefined) fields.push(['Full Term', String(og.fullTerm)])
+                      if (og.premature !== null && og.premature !== undefined) fields.push(['Premature', String(og.premature)])
+                      if (og.abortion !== null && og.abortion !== undefined) fields.push(['Abortion', String(og.abortion)])
+                      if (og.livingChildren !== null && og.livingChildren !== undefined) fields.push(['Living Children', String(og.livingChildren)])
+                      if (og.typeOfDelivery) fields.push(['Type of Delivery', og.typeOfDelivery])
+                      if (og.birthControlMethod) fields.push(['Birth Control Method', og.birthControlMethod])
+                      if (og.ageAtFirstSexualIntercourse !== null && og.ageAtFirstSexualIntercourse !== undefined) fields.push(['Age at 1st Intercourse', String(og.ageAtFirstSexualIntercourse)])
+                      if (og.menopauseAge !== null && og.menopauseAge !== undefined) fields.push(['Menopause Age', String(og.menopauseAge)])
+                      if (og.menopauseStatus) fields.push(['Menopause Status', og.menopauseStatus])
+                      fields.push(['Pre-eclampsia History', og.hasPreEclampsia ? 'Yes' : 'No'])
+                      return fields
+                    })().reduce<Array<Array<[string, string]>>>((rows, item, i) => {
+                      if (i % 3 === 0) rows.push([])
+                      rows[rows.length - 1].push(item)
+                      return rows
+                    }, []).map((row, ri) => (
+                      <tr key={ri}>
+                        {row.map(([label, value]) => (
+                          <td key={label} style={{ ...styles.td, width: '33%' }}>
+                            <div style={styles.fieldLabel}>{label}</div>
+                            <div style={styles.fieldValue}>{value}</div>
+                          </td>
+                        ))}
+                        {row.length < 3 && Array.from({ length: 3 - row.length }).map((_, j) => <td key={`empty-${j}`} style={styles.td} />)}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               )}
             </div>
           </div>

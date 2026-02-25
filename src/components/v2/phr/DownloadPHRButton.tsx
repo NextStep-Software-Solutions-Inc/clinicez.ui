@@ -38,6 +38,7 @@ export function DownloadPHRButton({ printHref, downloadApiHref, label = 'Downloa
   )
   const [iframeLoading, setIframeLoading] = useState(true)
   const [downloading, setDownloading] = useState(false)
+  const [downloadError, setDownloadError] = useState(false)
   const [theme, setTheme] = useState<PHRTheme>('colorful')
 
   function toggle(id: PHRSectionId) {
@@ -82,6 +83,7 @@ export function DownloadPHRButton({ printHref, downloadApiHref, label = 'Downloa
 
   async function handleDownload() {
     setDownloading(true)
+    setDownloadError(false)
     try {
       const response = await fetch(buildDownloadUrl())
       if (!response.ok) throw new Error('PDF generation failed')
@@ -99,7 +101,7 @@ export function DownloadPHRButton({ printHref, downloadApiHref, label = 'Downloa
       URL.revokeObjectURL(url)
       setOpen(false)
     } catch {
-      // keep dialog open so user can retry
+      setDownloadError(true)
     } finally {
       setDownloading(false)
     }
@@ -107,6 +109,7 @@ export function DownloadPHRButton({ printHref, downloadApiHref, label = 'Downloa
 
   function handleClose() {
     setOpen(false)
+    setDownloadError(false)
     setTimeout(() => setStep('select'), 300)
   }
 
@@ -224,6 +227,9 @@ export function DownloadPHRButton({ printHref, downloadApiHref, label = 'Downloa
           </div>
 
           <DialogFooter className="gap-2 sm:gap-0">
+            {downloadError && (
+              <p className="text-xs text-red-600 flex-1 self-center">PDF generation failed. Please try again.</p>
+            )}
             <Button variant="outline" onClick={handleClose}>
               Cancel
             </Button>
@@ -309,9 +315,12 @@ export function DownloadPHRButton({ printHref, downloadApiHref, label = 'Downloa
 
           {/* Footer */}
           <div className="flex items-center justify-between px-4 py-2 border-t bg-slate-50 shrink-0 rounded-b-lg">
-            <p className="text-xs text-slate-500">
-              This is a read-only preview. Click <strong>Download PDF</strong> to save the file.
-            </p>
+            {downloadError
+              ? <p className="text-xs text-red-600">PDF generation failed. Please try again.</p>
+              : <p className="text-xs text-slate-500">
+                  This is a read-only preview. Click <strong>Download PDF</strong> to save the file.
+                </p>
+            }
             <Button
               onClick={handleDownload}
               disabled={downloading}

@@ -326,7 +326,8 @@ export function PHRPrintContent({ patient, sections, generatedAt, theme = 'color
   // ── Minimal-theme colour overrides ──────────────────────────────────────────
   const isMinimal = theme === 'minimal'
   const t = {
-    headerBg: isMinimal ? '#1e293b' : TEAL,
+    headerBg: isMinimal ? '#f8fafc' : TEAL,
+    headerColor: isMinimal ? TEXT : '#ffffff',
     patientBarBg: isMinimal ? '#f1f5f9' : TEAL_DARK,
     patientBarText: isMinimal ? TEXT : '#ffffff',
     patientBarBorder: isMinimal ? '#cbd5e1' : 'rgba(255,255,255,0.3)',
@@ -356,14 +357,17 @@ export function PHRPrintContent({ patient, sections, generatedAt, theme = 'color
       `}</style>
 
       {/* ── HEADER ── */}
-      <div style={{ ...styles.header, background: t.headerBg }}>
+      <div style={{ ...styles.header, background: t.headerBg, color: t.headerColor }}>
         <div style={styles.logoArea}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/assets/clinic-ez_logo.svg"
-            alt="ClinicEZ Logo"
-            style={{ height: '30px', display: 'block', filter: 'brightness(0) invert(1)' }}
-          />
+          {/* Original ClinicEZ logo in a white pill — no colour inversion */}
+          <div style={{ background: '#ffffff', borderRadius: '6px', padding: '4px 10px', display: 'inline-flex', alignItems: 'center' }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/assets/clinic-ez_logo.svg"
+              alt="ClinicEZ Logo"
+              style={{ height: '26px', display: 'block' }}
+            />
+          </div>
         </div>
         <div style={styles.headerRight}>
           <div style={styles.docTitle}>Personal Health Record</div>
@@ -398,7 +402,7 @@ export function PHRPrintContent({ patient, sections, generatedAt, theme = 'color
         </div>
         <div style={{ ...styles.patientKeyStats, borderLeft: `1px solid ${t.patientBarBorder}` }}>
           <div style={styles.statItem}>
-            <div style={{ ...styles.statValue, color: '#fca5a5' }}>
+            <div style={{ ...styles.statValue, color: isMinimal ? '#dc2626' : '#fca5a5' }}>
               {formatBloodType(patient.bloodType)}
             </div>
             <div style={styles.statLabel}>Blood Type</div>

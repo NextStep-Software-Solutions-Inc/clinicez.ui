@@ -26,6 +26,7 @@ const WHITE = '#ffffff'
 interface ThemePalette {
   headerBg: string
   headerBorder: string
+  headerColor: string
   patientBarBg: string
   patientBarText: string
   patientBarBorderLeft: string
@@ -44,6 +45,7 @@ interface ThemePalette {
 const COLORFUL: ThemePalette = {
   headerBg: TEAL,
   headerBorder: TEAL,
+  headerColor: WHITE,
   patientBarBg: TEAL_DARK,
   patientBarText: WHITE,
   patientBarBorderLeft: 'rgba(255,255,255,0.3)',
@@ -60,8 +62,9 @@ const COLORFUL: ThemePalette = {
 }
 
 const MINIMAL: ThemePalette = {
-  headerBg: '#1e293b',
-  headerBorder: '#1e293b',
+  headerBg: '#f8fafc',
+  headerBorder: '#cbd5e1',
+  headerColor: TEXT,
   patientBarBg: '#f1f5f9',
   patientBarText: '#1e293b',
   patientBarBorderLeft: '#cbd5e1',
@@ -97,10 +100,11 @@ const s = StyleSheet.create({
     marginBottom: 0,
     borderRadius: 4,
   },
-  logoImg: { height: 22, width: 90 },
+  logoBox: { backgroundColor: WHITE, borderRadius: 4, paddingHorizontal: 8, paddingVertical: 4 },
+  logoText: { fontSize: 12, fontFamily: 'Helvetica-Bold', color: TEAL },
   headerRight: { textAlign: 'right' },
-  docTitle: { fontSize: 11, fontFamily: 'Helvetica-Bold', color: WHITE, letterSpacing: 1 },
-  headerMeta: { fontSize: 7, color: WHITE, opacity: 0.9, marginTop: 2 },
+  docTitle: { fontSize: 11, fontFamily: 'Helvetica-Bold', letterSpacing: 1 },
+  headerMeta: { fontSize: 7, opacity: 0.9, marginTop: 2 },
   // ── Patient bar ──
   patientBar: {
     flexDirection: 'row',
@@ -303,12 +307,15 @@ export function PHRPdfDocument({ patient, sections, generatedAt, theme = 'colorf
       <Page size="A4" style={s.page}>
         {/* ── Header ── */}
         <View style={[s.header, { backgroundColor: tc.headerBg }]}>
-          <Image style={s.logoImg} src="/assets/clinic-ez_logo.svg" />
+          {/* ClinicEZ text logo in a white pill — SVG/Image not supported server-side */}
+          <View style={s.logoBox}>
+            <Text style={s.logoText}>ClinicEZ</Text>
+          </View>
 
           <View style={s.headerRight}>
-            <Text style={s.docTitle}>Personal Health Record</Text>
-            <Text style={s.headerMeta}>Generated: {generatedAt}</Text>
-            <Text style={s.headerMeta}>Comprehensive PHR</Text>
+            <Text style={[s.docTitle, { color: tc.headerColor }]}>Personal Health Record</Text>
+            <Text style={[s.headerMeta, { color: tc.headerColor }]}>Generated: {generatedAt}</Text>
+            <Text style={[s.headerMeta, { color: tc.headerColor }]}>Comprehensive PHR</Text>
           </View>
         </View>
 

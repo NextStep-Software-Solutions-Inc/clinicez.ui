@@ -138,7 +138,8 @@ const s = StyleSheet.create({
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: '5 8',
+    paddingVertical: 5,
+    paddingHorizontal: 8,
     borderTopLeftRadius: 3,
     borderTopRightRadius: 3,
     borderBottomLeftRadius: 0,
@@ -146,7 +147,8 @@ const s = StyleSheet.create({
   },
   sectionTitle: { fontSize: 8, fontFamily: 'Helvetica-Bold', letterSpacing: 0.5 },
   sectionBody: {
-    borderTopWidth: 0,
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
     borderBottomLeftRadius: 3,
     borderBottomRightRadius: 3,
     padding: 8,
@@ -163,11 +165,11 @@ const s = StyleSheet.create({
   tableHead: { flexDirection: 'row' },
   tableRow: { flexDirection: 'row', borderBottomWidth: 0.5, borderBottomColor: BORDER },
   tableRowAlt: { flexDirection: 'row', borderBottomWidth: 0.5, borderBottomColor: BORDER, backgroundColor: BG_ALT },
-  th: { fontSize: 6.5, fontFamily: 'Helvetica-Bold', padding: '4 5', borderRightWidth: 0.5, borderRightColor: BORDER, textTransform: 'uppercase', letterSpacing: 0.3 },
-  td: { fontSize: 7.5, color: TEXT, padding: '3 5', borderRightWidth: 0.5, borderRightColor: BORDER },
+  th: { fontSize: 6.5, fontFamily: 'Helvetica-Bold', paddingVertical: 4, paddingHorizontal: 5, borderRightWidth: 0.5, borderRightColor: BORDER, textTransform: 'uppercase', letterSpacing: 0.3 },
+  td: { fontSize: 7.5, color: TEXT, paddingVertical: 3, paddingHorizontal: 5, borderRightWidth: 0.5, borderRightColor: BORDER },
   // ── Vital cards ──
   vitalRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 6 },
-  vitalCard: { borderWidth: 0.5, borderRadius: 3, padding: '6 10', alignItems: 'center', minWidth: 70 },
+  vitalCard: { borderWidth: 0.5, borderRadius: 3, paddingVertical: 6, paddingHorizontal: 10, alignItems: 'center', minWidth: 70 },
   vitalValue: { fontSize: 14, fontFamily: 'Helvetica-Bold' },
   vitalLabel: { fontSize: 6, color: TEXT_MUTED, textTransform: 'uppercase', marginTop: 1 },
   // ── Badges ──

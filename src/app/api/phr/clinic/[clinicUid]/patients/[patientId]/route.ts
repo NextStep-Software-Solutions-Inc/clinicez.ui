@@ -10,58 +10,58 @@ export const dynamic = 'force-dynamic'
 export const maxDuration = 30
 
 interface RouteParams {
-  params: Promise<{ clinicUid: string; patientId: string }>
+    params: Promise<{ clinicUid: string; patientId: string }>
 }
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
-  try {
-    const session = await getCachedSession()
-    if (!session?.user?.sub) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    try {
+        const session = await getCachedSession()
+        if (!session?.user?.sub) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        }
 
-    const { clinicUid, patientId } = await params
-    const numericPatientId = parseInt(patientId, 10)
-    if (isNaN(numericPatientId)) {
-      return NextResponse.json({ error: 'Invalid patient ID' }, { status: 400 })
-    }
+        const { clinicUid, patientId } = await params
+        const numericPatientId = parseInt(patientId, 10)
+        if (isNaN(numericPatientId)) {
+            return NextResponse.json({ error: 'Invalid patient ID' }, { status: 400 })
+        }
 
-    const patient = await getClinicPatientProfileAction({ clinicUid, patientId: numericPatientId })
-    if (!patient) {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 })
-    }
+        const patient = await getClinicPatientProfileAction({ clinicUid, patientId: numericPatientId })
+        if (!patient) {
+            return NextResponse.json({ error: 'Not found' }, { status: 404 })
+        }
 
-    const { searchParams } = request.nextUrl
-    const rawSections = searchParams.get('sections') ?? 'all'
-    const rawTheme = searchParams.get('theme')
+        const { searchParams } = request.nextUrl
+        const rawSections = searchParams.get('sections') ?? 'all'
+        const rawTheme = searchParams.get('theme')
 
-    const allSectionIds = PHR_SECTIONS.map(s => s.id)
-    const sanitized = rawSections.slice(0, 256).replace(/[^a-z,]/g, '')
-    const sections: PHRSectionId[] = sanitized && sanitized !== 'all'
-      ? (sanitized.split(',').filter(s => allSectionIds.includes(s as PHRSectionId)) as PHRSectionId[])
-      : allSectionIds
+        const allSectionIds = PHR_SECTIONS.map(s => s.id)
+        const sanitized = rawSections.slice(0, 256).replace(/[^a-z,]/g, '')
+        const sections: PHRSectionId[] = sanitized && sanitized !== 'all'
+            ? (sanitized.split(',').filter(s => allSectionIds.includes(s as PHRSectionId)) as PHRSectionId[])
+            : allSectionIds
 
-    const theme: PHRTheme = rawTheme === 'minimal' ? 'minimal' : 'colorful'
+        const theme: PHRTheme = rawTheme === 'minimal' ? 'minimal' : 'colorful'
 
-    const generatedAt = new Date().toLocaleString('en-US', {
-      year: 'numeric', month: 'long', day: 'numeric',
-      hour: '2-digit', minute: '2-digit',
-    })
+        const generatedAt = new Date().toLocaleString('en-US', {
+            year: 'numeric', month: 'long', day: 'numeric',
+            hour: '2-digit', minute: '2-digit',
+        })
 
-    // Import renderToString only when needed
-    const { renderToString } = await import('react-dom/server')
-    
-    const htmlContent = renderToString(
-      React.createElement(PHRPrintContent, {
-        patient: patient as SerializedPatientHealthRecordsResponse,
-        sections,
-        generatedAt,
-        theme,
-        showClinicName: true,
-      })
-    )
+        // Import renderToString only when needed
+        const { renderToString } = await import('react-dom/server')
 
-    const fullHtml = `<!DOCTYPE html>
+        const htmlContent = renderToString(
+            React.createElement(PHRPrintContent, {
+                patient: patient as SerializedPatientHealthRecordsResponse,
+                sections,
+                generatedAt,
+                theme,
+                showClinicName: true,
+            })
+        )
+
+        const fullHtml = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -78,20 +78,20 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 </body>
 </html>`
 
-    // Generate PDF server-side for consistent output
-    const clinicName = patient.clinic?.name ?? undefined
-    const footerTemplate = buildFooterTemplate({ theme, generatedAt, clinicName })
-    const pdfBuffer = await htmlToPdf(fullHtml, { footerTemplate })
+        // Generate PDF server-side for consistent output
+        const clinicName = patient.clinic?.name ?? undefined
+        const footerTemplate = buildFooterTemplate({ theme, generatedAt, clinicName })
+        const pdfBuffer = await htmlToPdf(fullHtml, { footerTemplate })
 
-    return new NextResponse(pdfBuffer, {
-      headers: {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': 'attachment; filename="PHR.pdf"',
-        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-      },
-    })
-  } catch (error) {
-    console.error('[PHR_CLINIC_API] Error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
+        return new NextResponse(pdfBuffer, {
+            headers: {
+                'Content-Type': 'application/pdf',
+                'Content-Disposition': 'attachment; filename="PHR.pdf"',
+                'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+            },
+        })
+    } catch (error) {
+        console.error('[PHR_CLINIC_API] Error:', error)
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    }
 }

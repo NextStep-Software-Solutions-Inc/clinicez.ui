@@ -155,8 +155,10 @@ function PatientDashboardContent() {
             })}
           </p>
         </div>
-        <ThemeToggle />
-        <NotificationBell />
+        <div>
+          <NotificationBell />
+          <ThemeToggle />
+        </div>
       </div>
 
       {/* Main Dashboard Grid - Mobile responsive */}

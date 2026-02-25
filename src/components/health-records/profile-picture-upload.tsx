@@ -14,9 +14,6 @@ export interface ProfilePictureUploadProps {
   currentPicture?: string | null
   onSuccess?: (pictureUrl: string) => void
   onError?: (error: string) => void
-  /** When false, skips syncing the uploaded image to the authenticated user's Clerk profile.
-   * Set to false when editing another user's profile (e.g. a provider editing a patient). Defaults to true. */
-  syncToClerk?: boolean
 }
 
 /**
@@ -28,7 +25,6 @@ export function ProfilePictureUpload({
   currentPicture,
   onSuccess,
   onError,
-  syncToClerk = true,
 }: ProfilePictureUploadProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [preview, setPreview] = useState<string | null>(currentPicture || null)
@@ -72,21 +68,18 @@ export function ProfilePictureUpload({
 
       const uploadResult = await uploadMediaAction(formData)
       if (uploadResult && uploadResult.url) {
-        // Sync profile image to Clerk only when editing the authenticated user's own profile
-        if (syncToClerk) {
-          try {
-            const clerkSyncSuccess = await updateClerkProfileImageAction(uploadResult.url)
-            if (clerkSyncSuccess) {
-              toast.success('Profile picture updated and synced to your account')
-            } else {
-              toast.success('Profile picture updated (Clerk sync pending)')
-            }
-          } catch (clerkError) {
-            console.error('Clerk sync error:', clerkError)
-            toast.success('Profile picture updated (sync may require a moment)')
+        // Sync profile image to Clerk for the target user (works for both own
+        // profile and provider-editing-patient scenarios via the Admin API)
+        try {
+          const clerkSyncSuccess = await updateClerkProfileImageAction(uploadResult.url, userId)
+          if (clerkSyncSuccess) {
+            toast.success('Profile picture updated and synced to account')
+          } else {
+            toast.success('Profile picture updated (Clerk sync pending)')
           }
-        } else {
-          toast.success('Profile picture updated')
+        } catch (clerkError) {
+          console.error('Clerk sync error:', clerkError)
+          toast.success('Profile picture updated (sync may require a moment)')
         }
         onSuccess?.(uploadResult.url)
       } else {

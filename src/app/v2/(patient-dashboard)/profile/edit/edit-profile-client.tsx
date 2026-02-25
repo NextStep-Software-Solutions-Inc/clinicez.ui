@@ -62,8 +62,6 @@ interface EditProfileClientProps {
   headerSlot?: React.ReactNode
   /** Override the data-refresh function called after each section save. Defaults to getPatientHealthRecords() (authed user). */
   refreshFn?: () => Promise<PatientHealthRecordsResponse | null>
-  /** Set to false when a provider is editing a patient's profile to prevent updating the provider's own Clerk avatar. Defaults to true. */
-  isOwnProfile?: boolean
 }
 
 /** Suspense fallback — defined at module level so React preserves its identity across re-renders */
@@ -83,7 +81,7 @@ function FormLoadingFallback() {
  * Handles all interactive features: navigation, state management, data mutations
  * Server component (page.tsx) handles data fetching and initial load
  */
-export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refreshFn, isOwnProfile = true }: EditProfileClientProps) {
+export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refreshFn }: EditProfileClientProps) {
   const router = useRouter()
   const [activeSection, setActiveSection] = useState('demographics')
   const [patientData, setPatientData] = useState<PatientHealthRecordsResponse | null>(initialData)
@@ -426,7 +424,6 @@ export function EditProfileClient({ initialData, onDataRefresh, headerSlot, refr
                     inline={true}
                     currentData={demographicsData}
                     onSuccess={handleSuccess}
-                    syncToClerk={isOwnProfile}
                   />
                 </Suspense>
               )}

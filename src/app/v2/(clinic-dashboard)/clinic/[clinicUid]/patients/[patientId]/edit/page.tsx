@@ -53,7 +53,6 @@ export default async function ClinicPatientEditPage({
   return (
     <EditProfileClient
       initialData={patient as PatientHealthRecordsResponse}
-      isOwnProfile={false}
       headerSlot={
         <ClinicPatientPageHeader
           clinicUid={clinicUid}

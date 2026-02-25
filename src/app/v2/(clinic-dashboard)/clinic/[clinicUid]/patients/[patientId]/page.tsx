@@ -58,7 +58,7 @@ export default async function ClinicPatientProfilePage({
       filesHref={`/v2/clinic/${clinicUid}/patients/${patientId}/files`}
       filesButtonLabel="Patient Files"
       appointmentsHref={`/v2/clinic/${clinicUid}/patients/${patientId}/appointments-consultations`}
-      downloadPHRHref={`/v2/clinic/${clinicUid}/patients/${patientId}/phr/print`}
+      downloadPHRHref={`/api/phr/clinic/${clinicUid}/patients/${patientId}/html`}
     />
   );
 }

@@ -61,7 +61,7 @@ export function DownloadPHRButton({ printHref, label = 'Download PHR', className
   async function openOverlay() {
     setFetching(true)
     try {
-      const params = new URLSearchParams({ sections: sectionsParam(), preview: '1', theme })
+      const params = new URLSearchParams({ sections: sectionsParam(), theme })
       const html = await fetch(`${printHref}?${params.toString()}`).then(r => r.text())
       handlePrintHtmlToPDF(html)
       setOpen(false)

@@ -297,7 +297,7 @@ export function DownloadPHRButton({ printHref, downloadApiHref, label = 'Downloa
           </div>
 
           {/* Preview iframe — fixed A4 width (794 px) with explicit horizontal scroll */}
-          <div className="relative flex-1 overflow-x-auto overflow-y-auto bg-slate-100">
+          <div className="relative flex-1 overflow-x-auto overflow-y-auto bg-slate-100" style={{ minHeight: 0 }}>
             {iframeLoading && (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-slate-50 z-10">
                 <Loader2 className="w-8 h-8 animate-spin text-teal-600" />

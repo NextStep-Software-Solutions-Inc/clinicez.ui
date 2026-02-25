@@ -5,7 +5,7 @@
  * Mirrors the structure of PHRPrintContent.tsx but outputs a proper PDF file
  * without relying on the browser's print dialog.
  */
-import { Document, Page, View, Text, Image, StyleSheet } from '@react-pdf/renderer'
+import { Document, Page, View, Text, StyleSheet } from '@react-pdf/renderer'
 import type { SerializedPatientHealthRecordsResponse } from '@/types/patient-profile'
 import { PHR_SECTIONS, type PHRSectionId, type PHRTheme } from './phr-sections'
 
@@ -62,9 +62,9 @@ const COLORFUL: ThemePalette = {
 }
 
 const MINIMAL: ThemePalette = {
-  headerBg: '#f8fafc',
-  headerBorder: '#cbd5e1',
-  headerColor: TEXT,
+  headerBg: '#64748b',
+  headerBorder: '#475569',
+  headerColor: WHITE,
   patientBarBg: '#f1f5f9',
   patientBarText: '#1e293b',
   patientBarBorderLeft: '#cbd5e1',
@@ -100,7 +100,7 @@ const s = StyleSheet.create({
     marginBottom: 0,
     borderRadius: 4,
   },
-  logoBox: { backgroundColor: WHITE, borderRadius: 4, paddingHorizontal: 8, paddingVertical: 4 },
+  logoBox: { backgroundColor: WHITE, borderRadius: 0, paddingHorizontal: 8, paddingVertical: 4 },
   logoText: { fontSize: 12, fontFamily: 'Helvetica-Bold', color: TEAL },
   headerRight: { textAlign: 'right' },
   docTitle: { fontSize: 11, fontFamily: 'Helvetica-Bold', letterSpacing: 1 },
@@ -322,9 +322,7 @@ export function PHRPdfDocument({ patient, sections, generatedAt, theme = 'colorf
         {/* ── Patient bar ── */}
         <View style={[s.patientBar, { backgroundColor: tc.patientBarBg }]}>
           <View style={[s.avatar, { backgroundColor: theme === 'minimal' ? '#e2e8f0' : 'rgba(255,255,255,0.25)' }]}>
-            {patient.picture
-              ? <Image style={s.avatarImg} src={patient.picture} />
-              : <Text style={[s.avatarText, { color: tc.patientBarText }]}>{initials}</Text>}
+            <Text style={[s.avatarText, { color: tc.patientBarText }]}>{initials}</Text>
           </View>
           <View style={s.patientInfo}>
             <Text style={[s.patientName, { color: tc.patientBarText }]}>{patient.fullName}{patient.suffix ? ` ${patient.suffix}` : ''}</Text>

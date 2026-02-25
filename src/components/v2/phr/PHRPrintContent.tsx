@@ -326,8 +326,8 @@ export function PHRPrintContent({ patient, sections, generatedAt, theme = 'color
   // ── Minimal-theme colour overrides ──────────────────────────────────────────
   const isMinimal = theme === 'minimal'
   const t = {
-    headerBg: isMinimal ? '#f8fafc' : TEAL,
-    headerColor: isMinimal ? TEXT : '#ffffff',
+    headerBg: isMinimal ? '#64748b' : TEAL,
+    headerColor: '#ffffff',
     patientBarBg: isMinimal ? '#f1f5f9' : TEAL_DARK,
     patientBarText: isMinimal ? TEXT : '#ffffff',
     patientBarBorder: isMinimal ? '#cbd5e1' : 'rgba(255,255,255,0.3)',
@@ -360,7 +360,7 @@ export function PHRPrintContent({ patient, sections, generatedAt, theme = 'color
       <div style={{ ...styles.header, background: t.headerBg, color: t.headerColor }}>
         <div style={styles.logoArea}>
           {/* Original ClinicEZ logo in a white pill — no colour inversion */}
-          <div style={{ background: '#ffffff', borderRadius: '6px', padding: '4px 10px', display: 'inline-flex', alignItems: 'center' }}>
+          <div style={{ background: '#ffffff', borderRadius: '0', padding: '4px 10px', display: 'inline-flex', alignItems: 'center' }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/assets/clinic-ez_logo.svg"

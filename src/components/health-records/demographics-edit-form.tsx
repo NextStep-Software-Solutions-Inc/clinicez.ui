@@ -42,6 +42,9 @@ export interface DemographicsEditFormProps {
   currentPicture?: string | null
   onSuccess?: () => void
   inline?: boolean
+  /** When false, skips syncing the uploaded avatar to the authenticated user's Clerk profile.
+   * Set to false when editing another user's profile (e.g. a provider editing a patient). Defaults to true. */
+  syncToClerk?: boolean
 }
 
 /**
@@ -54,6 +57,7 @@ export function DemographicsEditForm({
   currentPicture,
   onSuccess,
   inline = false,
+  syncToClerk = true,
 }: DemographicsEditFormProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -110,6 +114,7 @@ export function DemographicsEditForm({
             userId={userId}
             currentPicture={currentPicture}
             onSuccess={() => onSuccess?.()}
+            syncToClerk={syncToClerk}
           />
         </div>
 

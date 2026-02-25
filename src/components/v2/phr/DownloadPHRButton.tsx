@@ -263,38 +263,21 @@ export function DownloadPHRButton({ printHref, downloadApiHref, label = 'Downloa
       <Dialog open={open && step === 'preview'} onOpenChange={v => { if (!v) handleClose() }}>
         <DialogContent className="max-w-5xl w-[95vw] h-[90vh] flex flex-col p-0 gap-0">
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b bg-teal-600 text-white rounded-t-lg shrink-0">
-            <div className="flex items-center gap-2">
-              <FileText className="w-5 h-5" />
-              <span className="font-semibold text-sm">PHR Preview</span>
-              {theme === 'minimal' && (
-                <span className="text-xs bg-white/20 text-white px-2 py-0.5 rounded-full">Minimal</span>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setStep('select')}
-                className="text-white hover:text-white hover:bg-teal-700 h-8 px-3 gap-1.5"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                <span className="hidden sm:inline">Back</span>
-              </Button>
-              <Button
-                size="sm"
-                onClick={handleDownload}
-                disabled={downloading}
-                className="bg-white text-teal-700 hover:bg-teal-50 h-8 px-3 gap-1.5 font-semibold"
-              >
-                {downloading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Download className="w-4 h-4" />
-                )}
-                <span className="hidden sm:inline">{downloading ? 'Generating…' : 'Download PDF'}</span>
-              </Button>
-            </div>
+          <div className="flex items-center gap-2 px-4 py-3 border-b bg-teal-600 text-white rounded-t-lg shrink-0">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setStep('select')}
+              className="text-white hover:text-white hover:bg-teal-700 h-8 px-3 gap-1.5"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span className="hidden sm:inline">Back</span>
+            </Button>
+            <FileText className="w-5 h-5" />
+            <span className="font-semibold text-sm">PHR Preview</span>
+            {theme === 'minimal' && (
+              <span className="text-xs bg-white/20 text-white px-2 py-0.5 rounded-full">Minimal</span>
+            )}
           </div>
 
           {/* Preview iframe — fixed A4 width (794 px), auto-height, centered, outer container scrolls */}

@@ -1,22 +1,58 @@
 /**
  * Server-side PDF generation utility
- * Converts HTML to PDF using Puppeteer for consistent output across all devices/browsers
+ * Uses puppeteer-core + @sparticuz/chromium for serverless-optimized PDF generation.
+ * Falls back to a local Chrome path in development (Windows).
  */
 
 import fs from 'fs'
 import path from 'path'
 
-let puppeteer: unknown = null
-
-async function getPuppeteer() {
-    if (!puppeteer) {
-        try {
-            puppeteer = await import('puppeteer')
-        } catch {
-            throw new Error('Puppeteer not installed. Run: pnpm add puppeteer')
-        }
+async function getExecutablePath(): Promise<string> {
+    // Allow explicit override via env var (useful for CI / custom deployments)
+    if (process.env.CHROMIUM_EXECUTABLE_PATH) {
+        return process.env.CHROMIUM_EXECUTABLE_PATH
     }
-    return puppeteer as { default: { launch: (opts: unknown) => Promise<unknown> } }
+
+    // In production (Vercel / Linux), use the serverless Chromium binary
+    if (process.env.NODE_ENV === 'production') {
+        const chromium = (await import('@sparticuz/chromium')).default
+        return chromium.executablePath()
+    }
+
+    // In development, try the Puppeteer-managed Chrome cache first
+    const puppeteerCachePath = path.join(
+        process.env.USERPROFILE ?? process.env.HOME ?? '',
+        '.cache', 'puppeteer', 'chrome'
+    )
+    if (fs.existsSync(puppeteerCachePath)) {
+        // Find the first chrome executable recursively
+        const findChrome = (dir: string): string | null => {
+            for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+                const full = path.join(dir, entry.name)
+                if (entry.isDirectory()) {
+                    const found = findChrome(full)
+                    if (found) return found
+                } else if (entry.name === 'chrome.exe' || entry.name === 'chrome') {
+                    return full
+                }
+            }
+            return null
+        }
+        const found = findChrome(puppeteerCachePath)
+        if (found) return found
+    }
+
+    // Last resort: system Chrome on Linux/Mac
+    const chromium = (await import('@sparticuz/chromium')).default
+    return chromium.executablePath()
+}
+
+async function getLaunchArgs(): Promise<string[]> {
+    if (process.env.NODE_ENV === 'production') {
+        const chromium = (await import('@sparticuz/chromium')).default
+        return chromium.args
+    }
+    return ['--no-sandbox', '--disable-setuid-sandbox']
 }
 
 export interface PdfOptions {
@@ -90,23 +126,20 @@ function inlinePublicAssets(html: string): string {
 }
 
 export async function htmlToPdf(htmlContent: string, options: PdfOptions = {}): Promise<Buffer> {
-    const puppeteerModule = await getPuppeteer()
+    const puppeteer = (await import('puppeteer-core')).default
 
     // Inline local public assets as base64 so Puppeteer can render them without a server
     const processedHtml = inlinePublicAssets(htmlContent)
 
-    const browser = await puppeteerModule.default.launch({
-        headless: 'new',
-        args: ['--no-sandbox', '--disable-setuid-sandbox'],
-    }) as { newPage: () => Promise<unknown>; close: () => Promise<void> }
+    const [executablePath, args] = await Promise.all([getExecutablePath(), getLaunchArgs()])
 
+    const browser = await puppeteer.launch({
+        executablePath,
+        args,
+        headless: true,
+    })
     try {
-        const page = await browser.newPage() as {
-            setViewport: (v: unknown) => Promise<void>
-            setContent: (html: string, opts: unknown) => Promise<void>
-            pdf: (opts: unknown) => Promise<Uint8Array>
-            close: () => Promise<void>
-        }
+        const page = await browser.newPage()
 
         // Set viewport for consistent A4 rendering (A4: 210mm × 297mm at 96 DPI)
         await page.setViewport({ width: Math.round(210 * 3.78), height: Math.round(297 * 3.78) })

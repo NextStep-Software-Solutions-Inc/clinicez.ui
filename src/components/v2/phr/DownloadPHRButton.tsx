@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { ArrowLeft, Download, Eye, FileText, Loader2, Palette } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
@@ -37,6 +37,7 @@ export function DownloadPHRButton({ printHref, downloadApiHref, label = 'Downloa
     new Set(PHR_SECTIONS.map(s => s.id))
   )
   const [iframeLoading, setIframeLoading] = useState(true)
+  const iframeRef = useRef<HTMLIFrameElement>(null)
   const [downloading, setDownloading] = useState(false)
   const [downloadError, setDownloadError] = useState(false)
   const [theme, setTheme] = useState<PHRTheme>('colorful')
@@ -296,21 +297,36 @@ export function DownloadPHRButton({ printHref, downloadApiHref, label = 'Downloa
             </div>
           </div>
 
-          {/* Preview iframe — fixed A4 width (794 px) with explicit horizontal scroll */}
-          <div className="relative flex-1 overflow-x-auto overflow-y-auto bg-slate-100" style={{ minHeight: 0 }}>
-            {iframeLoading && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-slate-50 z-10">
-                <Loader2 className="w-8 h-8 animate-spin text-teal-600" />
-                <p className="text-sm text-slate-500 font-medium">Loading preview…</p>
-              </div>
-            )}
-            <iframe
-              src={buildPreviewUrl()}
-              className="h-full border-0"
-              style={{ width: '794px', minWidth: '794px', display: 'block' }}
-              title="PHR Preview"
-              onLoad={() => setIframeLoading(false)}
-            />
+          {/* Preview iframe — fixed A4 width (794 px), auto-height, centered, outer container scrolls */}
+          <div className="flex-1 overflow-auto bg-slate-100" style={{ minHeight: 0 }}>
+            <div className="flex justify-center py-4 px-2">
+              {iframeLoading && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-slate-50 z-10">
+                  <Loader2 className="w-8 h-8 animate-spin text-teal-600" />
+                  <p className="text-sm text-slate-500 font-medium">Loading preview…</p>
+                </div>
+              )}
+              <iframe
+                ref={iframeRef}
+                src={buildPreviewUrl()}
+                className="border-0 block"
+                style={{ width: '794px', minWidth: '794px', height: '1200px' }}
+                title="PHR Preview"
+                scrolling="no"
+                onLoad={() => {
+                  setIframeLoading(false)
+                  try {
+                    const iframe = iframeRef.current
+                    if (iframe?.contentDocument?.body) {
+                      const h = iframe.contentDocument.body.scrollHeight
+                      if (h > 0) iframe.style.height = `${h + 32}px`
+                    }
+                  } catch {
+                    // cross-origin guard — fallback height already set
+                  }
+                }}
+              />
+            </div>
           </div>
 
           {/* Footer */}

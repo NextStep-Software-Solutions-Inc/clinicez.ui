@@ -31,14 +31,20 @@ export async function GET(request: NextRequest) {
     hour: '2-digit', minute: '2-digit',
   })
 
-  const pdfBuffer = await renderToBuffer(
-    React.createElement(PHRPdfDocument, {
-      patient: patient as SerializedPatientHealthRecordsResponse,
-      sections,
-      generatedAt,
-      theme,
-    }) as unknown as Parameters<typeof renderToBuffer>[0]
-  )
+  let pdfBuffer: Buffer
+  try {
+    pdfBuffer = await renderToBuffer(
+      React.createElement(PHRPdfDocument, {
+        patient: patient as SerializedPatientHealthRecordsResponse,
+        sections,
+        generatedAt,
+        theme,
+      }) as unknown as Parameters<typeof renderToBuffer>[0]
+    )
+  } catch (err) {
+    console.error('[PHR_DOWNLOAD] renderToBuffer failed:', err)
+    return NextResponse.json({ error: 'PDF generation failed' }, { status: 500 })
+  }
 
   const filename = `PHR_${patient.fullName.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.pdf`
 

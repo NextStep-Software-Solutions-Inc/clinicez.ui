@@ -28,8 +28,6 @@ interface PendingLabWorkProps {
   isLoading?: boolean;
 }
 
-
-
 function getStatusIcon(status: string) {
   switch (status.toLowerCase()) {
     case 'completed':
@@ -40,40 +38,6 @@ function getStatusIcon(status: string) {
       return <X className="w-5 h-5 text-red-400" />;
     default:
       return <Beaker className="w-5 h-5 text-slate-400" />;
-  }
-}
-
-function getStatusBadge(status: string) {
-  const statusLower = status.toLowerCase();
-  
-  switch (statusLower) {
-    case 'completed':
-      return (
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-500/20 border border-green-400/30 text-green-300 text-xs font-medium">
-          <CheckCircle className="w-3 h-3" />
-          Completed
-        </span>
-      );
-    case 'pending':
-      return (
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-yellow-500/20 border border-yellow-400/30 text-yellow-300 text-xs font-medium">
-          <AlertCircle className="w-3 h-3" />
-          Pending
-        </span>
-      );
-    case 'cancelled':
-      return (
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/20 border border-red-400/30 text-red-300 text-xs font-medium">
-          <X className="w-3 h-3" />
-          Cancelled
-        </span>
-      );
-    default:
-      return (
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-500/20 border border-slate-400/30 text-slate-300 text-xs font-medium">
-          {statusLower}
-        </span>
-      );
   }
 }
 
@@ -176,22 +140,17 @@ export function PendingLabWork({ labRequests, imagingRequests, heartStationReque
           </div>
 
           {/* Header */}
-          <div className="flex items-start justify-between gap-3 mb-3">
-            <div className="flex items-start gap-2 flex-grow min-w-0">
-              <div className="flex-shrink-0 mt-0.5">
-                {getStatusIcon(currentRequest.status)}
-              </div>
-              <div className="flex-grow min-w-0">
-                <h4 className="font-semibold dark:text-white text-slate-900 text-sm mb-1">Request #{currentRequest.serialNumber}</h4>
-                {currentRequest.orderedBy && (
-                  <p className="text-xs dark:text-slate-400 text-slate-600">
-                    {currentRequest.orderedBy.firstName} {currentRequest.orderedBy.lastName}
-                  </p>
-                )}
-              </div>
+          <div className="flex items-start gap-2 mb-3">
+            <div className="flex-shrink-0 mt-0.5">
+              {getStatusIcon(currentRequest.status)}
             </div>
-            <div className="flex-shrink-0">
-              {getStatusBadge(currentRequest.status)}
+            <div className="flex-grow min-w-0">
+              <h4 className="font-semibold dark:text-white text-slate-900 text-sm mb-1">Request #{currentRequest.serialNumber}</h4>
+              {currentRequest.orderedBy && (
+                <p className="text-xs dark:text-slate-400 text-slate-600">
+                  {currentRequest.orderedBy.firstName} {currentRequest.orderedBy.lastName}
+                </p>
+              )}
             </div>
           </div>
 

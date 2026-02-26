@@ -1,8 +1,6 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { Calendar, Clock, MapPin, Video, Stethoscope, CheckCircle, AlertCircle, X, Clock as ClockIcon, Send, Mail } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import type { DashboardAppointment } from '@/types/patient-dashboard-v2.types';
 
 interface UpcomingAppointmentsProps {
@@ -80,7 +78,6 @@ function getStatusBadge(status: string) {
 }
 
 export function UpcomingAppointmentsList({ appointments, isLoading }: UpcomingAppointmentsProps) {
-  const router = useRouter();
 
   if (isLoading) {
     return (
@@ -112,7 +109,7 @@ export function UpcomingAppointmentsList({ appointments, isLoading }: UpcomingAp
           appointmentDate.toDateString() ===
           new Date(today.getTime() + 24 * 60 * 60 * 1000).toDateString();
 
-        const doctorName = `${appointment.doctor.firstName ?? ''} ${appointment.doctor.lastName ?? ''}`.trim();
+        const doctorName = appointment.doctor.hpName ?? `${appointment.doctor.firstName ?? ''} ${appointment.doctor.lastName ?? ''}`.trim();
         const isVirtual = appointment.mode.name === 'VIRTUAL' || appointment.mode.name === 'virtual';
 
         return (
@@ -177,18 +174,8 @@ export function UpcomingAppointmentsList({ appointments, isLoading }: UpcomingAp
               </div>
 
               {/* Right: Status */}
-              <div className="flex-shrink-0 text-right gap-1 flex items-baseline">
+              <div className="flex-shrink-0 text-right">
                 {getStatusBadge(appointment.status)}
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    router.push(`/clinics/${appointment.clinic.uid}/appointments?_appointment=${appointment.id}`);
-                  }}
-                  className="mt-2 focus:outline-none active:outline-none focus-visible:outline-none focus-visible:ring-0"
-                >
-                  View
-                </Button>
               </div>
             </div>
           </div>

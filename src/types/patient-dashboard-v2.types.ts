@@ -31,6 +31,7 @@ export interface DashboardAppointment {
     id: number
     firstName: string | null
     lastName: string | null
+    hpName: string | null
     specialization: string | null
     picture: string | null
   }

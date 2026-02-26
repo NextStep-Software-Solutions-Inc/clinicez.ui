@@ -3,6 +3,14 @@
 import prisma from '@/lib/prisma'
 import type { NextAppointmentData, UpcomingAppointmentsData, DashboardAppointment } from '@/types/patient-dashboard-v2.types'
 
+function buildHpName(hpProfile: { title?: string | null; name?: string | null; suffix?: string | null } | null | undefined): string | null {
+  if (!hpProfile) return null
+  const name = [hpProfile.title, hpProfile.name, hpProfile.suffix]
+    .filter((p): p is string => Boolean(p?.trim()))
+    .join(' ')
+  return name || null
+}
+
 /**
  * Get next upcoming appointment for patient
  * Returns appointment with doctor, clinic, and mode details
@@ -37,6 +45,9 @@ export async function getNextAppointment(patientId: number): Promise<NextAppoint
                 },
                 HPProfile: {
                   select: {
+                    name: true,
+                    title: true,
+                    suffix: true,
                     specialties: true,
                   },
                 },
@@ -97,6 +108,7 @@ export async function getNextAppointment(patientId: number): Promise<NextAppoint
         id: attr.PreferredAppointee.id,
         firstName: attr.PreferredAppointee.User?.firstName ?? null,
         lastName: attr.PreferredAppointee.User?.lastName ?? null,
+        hpName: buildHpName(attr.PreferredAppointee.HPProfile),
         specialization:
           attr.PreferredAppointee.HPProfile?.specialties?.[0] ?? null,
         picture: attr.PreferredAppointee.User?.picture ?? null,
@@ -105,6 +117,7 @@ export async function getNextAppointment(patientId: number): Promise<NextAppoint
         id: 0,
         firstName: 'Unassigned',
         lastName: 'Doctor',
+        hpName: null,
         specialization: null,
         picture: null,
       }
@@ -191,6 +204,9 @@ export async function getUpcomingAppointments(
                 },
                 HPProfile: {
                   select: {
+                    name: true,
+                    title: true,
+                    suffix: true,
                     specialties: true,
                   },
                 },
@@ -226,6 +242,7 @@ export async function getUpcomingAppointments(
             id: attr.PreferredAppointee.id,
             firstName: attr.PreferredAppointee.User?.firstName ?? null,
             lastName: attr.PreferredAppointee.User?.lastName ?? null,
+            hpName: buildHpName(attr.PreferredAppointee.HPProfile),
             specialization:
               attr.PreferredAppointee.HPProfile?.specialties?.[0] ?? null,
             picture: attr.PreferredAppointee.User?.picture ?? null,
@@ -234,6 +251,7 @@ export async function getUpcomingAppointments(
             id: 0,
             firstName: 'Unassigned',
             lastName: 'Doctor',
+            hpName: null,
             specialization: null,
             picture: null,
           }

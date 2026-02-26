@@ -85,9 +85,9 @@ export function NextAppointmentHeroCard({ appointment, isLoading }: NextAppointm
           <p className="text-xs dark:text-blue-300 text-blue-600 font-medium mb-0.5">Next Appointment</p>
           <p
             className="font-semibold dark:text-white text-slate-900 text-sm leading-tight truncate"
-            title={`${apt.doctor.firstName} ${apt.doctor.lastName}`}
+            title={apt.doctor.hpName ?? `${apt.doctor.firstName} ${apt.doctor.lastName}`}
           >
-            {apt.doctor.firstName} {apt.doctor.lastName}
+            {apt.doctor.hpName ?? `${apt.doctor.firstName} ${apt.doctor.lastName}`}
           </p>
           <p
             className="text-xs dark:text-slate-400 text-slate-600 truncate"
@@ -153,7 +153,7 @@ export function NextAppointmentHeroCard({ appointment, isLoading }: NextAppointm
           if (isToday && apt.meetingUrl) {
             window.open(apt.meetingUrl, '_blank');
           } else {
-            router.push(`/clinics/${apt.clinic.uid}/appointments?_appointment=${apt.id}`);
+            router.push(`/v2/appointments-consultations?appointment=${apt.id}`);
           }
         }}
       >

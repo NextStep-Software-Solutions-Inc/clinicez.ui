@@ -1,8 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { Beaker, AlertCircle, CheckCircle, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Beaker, AlertCircle, CheckCircle, X, ChevronLeft, ChevronRight, Download } from 'lucide-react';
 import type { LaboratoryRequestData, ImagingRequestData, HeartStationRequestData } from '@/types/patient-dashboard-v2.types';
+import DownloadLaboratoryRequestAction from '@/components/laboratory-requests/DownloadLaboratoryRequestAction';
+import DownloadImagingStudiesAction from '@/components/imaging-studies/DownloadImagingStudiesAction';
+import DownloadHeartStationRequestAction from '@/components/heart-station-requests/DownloadHeartStationRequestAction';
 
 interface DiagnosticRequest {
   id: number;
@@ -217,9 +220,44 @@ export function PendingLabWork({ labRequests, imagingRequests, heartStationReque
                 day: 'numeric',
               })}
             </span>
-            <span className="text-xs dark:text-slate-400 text-slate-600">
-              {currentIndex + 1} of {allRequests.length}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs dark:text-slate-400 text-slate-600">
+                {currentIndex + 1} of {allRequests.length}
+              </span>
+              {currentRequest.type === 'laboratory' && (
+                <DownloadLaboratoryRequestAction request={{ id: currentRequest.id }}>
+                  <button
+                    type="submit"
+                    className="flex items-center gap-1 px-2 py-1 rounded-md dark:bg-blue-500/20 dark:hover:bg-blue-500/30 dark:text-blue-300 bg-blue-100/60 hover:bg-blue-200/60 text-blue-700 text-xs font-medium transition-colors"
+                  >
+                    <Download className="w-3 h-3" />
+                    Download
+                  </button>
+                </DownloadLaboratoryRequestAction>
+              )}
+              {currentRequest.type === 'imaging' && (
+                <DownloadImagingStudiesAction study={{ id: currentRequest.id }}>
+                  <button
+                    type="submit"
+                    className="flex items-center gap-1 px-2 py-1 rounded-md dark:bg-purple-500/20 dark:hover:bg-purple-500/30 dark:text-purple-300 bg-purple-100/60 hover:bg-purple-200/60 text-purple-700 text-xs font-medium transition-colors"
+                  >
+                    <Download className="w-3 h-3" />
+                    Download
+                  </button>
+                </DownloadImagingStudiesAction>
+              )}
+              {currentRequest.type === 'heart-station' && (
+                <DownloadHeartStationRequestAction request={{ id: currentRequest.id }}>
+                  <button
+                    type="submit"
+                    className="flex items-center gap-1 px-2 py-1 rounded-md dark:bg-red-500/20 dark:hover:bg-red-500/30 dark:text-red-300 bg-red-100/60 hover:bg-red-200/60 text-red-700 text-xs font-medium transition-colors"
+                  >
+                    <Download className="w-3 h-3" />
+                    Download
+                  </button>
+                </DownloadHeartStationRequestAction>
+              )}
+            </div>
           </div>
         </div>
 

@@ -58,14 +58,14 @@ function getStatusBadge(status: string) {
       );
     case 'ROUTED':
       return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/20 border border-amber-400/30 text-amber-600 text-xs font-medium">
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/20 border border-amber-400/30 dark:text-amber-300 text-amber-700 text-xs font-medium">
           <Send className="w-3 h-3" />
           Routed
         </span>
       );
     case 'RECEIVED':
       return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-500/20 border border-slate-400/30 text-slate-300 text-xs font-medium">
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-teal-500/20 border border-teal-400/30 dark:text-teal-300 text-teal-700 text-xs font-medium">
           <Mail className="w-3 h-3" />
           Received
         </span>

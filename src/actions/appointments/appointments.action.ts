@@ -341,6 +341,8 @@ export type GetAppointmentFilter = {
   cursor?: number;
   /** Number of items to fetch per page (default: 20) */
   limit?: number;
+  /** Server-side search by patient name, subject, or complaint */
+  search?: string;
 };
 export type GetAppointments = Awaited<ReturnType<typeof getAppointmentsAction>>;
 export const getAppointmentsAction = withErrorHandling(cache(async (filter?: GetAppointmentFilter) => {
@@ -353,7 +355,7 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
     getHPsAction({ userId: session.user.sub })
   ])
 
-  const { clinicUid, userId, status, routedAptStatus, tagged, sort, cursor, limit, hpIds } = filter || {};
+  const { clinicUid, userId, status, routedAptStatus, tagged, sort, cursor, limit, hpIds, search } = filter || {};
   const PAGE_SIZE = limit ?? 20;
 
   const userPermissionArray = permissions.map(p => p.name);
@@ -417,26 +419,52 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
           }
         }
         : {}),
-      OR: [
-        { ...(canReadAllOrgAppointment ? { Clinic: { clinicUid }, ...userId ? { Requesters: { every: { User: { userId } } } } : {} } : {}) },
-        { ...(canReadAOwnOrgAppointment ? { Requesters: { every: { User: { userId: session.user.sub } } } } : {}) },
+      AND: [
+        // Permissions filter
         {
-          ...(canReadAssignedOrgAppointment ? {
-            AppointmentRouting: {
-              some: {
-                OR: [
-                  {
-                    routedTo: {
-                      in: myHpIds
-                    }
-                  },
-                  { RoutedBy: { userId: session.user.sub } }
-                ]
-              }
-            }
-          } : {})
+          OR: [
+            { ...(canReadAllOrgAppointment ? { Clinic: { clinicUid }, ...userId ? { Requesters: { every: { User: { userId } } } } : {} } : {}) },
+            { ...(canReadAOwnOrgAppointment ? { Requesters: { every: { User: { userId: session.user.sub } } } } : {}) },
+            {
+              ...(canReadAssignedOrgAppointment ? {
+                AppointmentRouting: {
+                  some: {
+                    OR: [
+                      {
+                        routedTo: {
+                          in: myHpIds
+                        }
+                      },
+                      { RoutedBy: { userId: session.user.sub } }
+                    ]
+                  }
+                }
+              } : {})
+            },
+          ]
         },
-      ]
+        // Server-side search filter (patient name, subject, or complaint)
+        ...(search && search.trim()
+          ? [{
+            OR: [
+              { subject: { contains: search.trim(), mode: "insensitive" as const } },
+              { complaint: { contains: search.trim(), mode: "insensitive" as const } },
+              {
+                Requesters: {
+                  some: {
+                    User: {
+                      OR: [
+                        { firstName: { contains: search.trim(), mode: "insensitive" as const } },
+                        { lastName: { contains: search.trim(), mode: "insensitive" as const } },
+                      ],
+                    },
+                  },
+                },
+              },
+            ],
+          }]
+          : []),
+      ],
     },
     select: {
       id: true,

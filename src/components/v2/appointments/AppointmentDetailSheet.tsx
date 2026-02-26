@@ -23,7 +23,6 @@ import {
   Pencil,
   CalendarClock,
   Undo2,
-  Activity,
 } from "lucide-react";
 import {
   Sheet,
@@ -59,6 +58,7 @@ import {
 import { STATUS_CONFIG } from "./AppointmentCard";
 import { isWalkInAppointment, getAppointmentPatientName, getAppointmentInitials } from "./appointment-utils";
 import { MarkdownRenderer } from "@/components/markdown/MarkdownRenderer";
+import { AddVitalsDialog } from "./AddVitalsDialog";
 
 type Appointment = NonNullable<GetAppointments["data"]>[number];
 type SubPanel = "confirm" | "assign" | "preAssessment" | "tag" | "reschedule";
@@ -381,15 +381,9 @@ export function AppointmentDetailSheet({
                   <ExternalLink className="h-3.5 w-3.5" />
                   View Patient Profile
                 </a>
-                <a
-                  href={`/v2/clinic/${clinicUid}/patients/${requester.id}?tab=vitals`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600 hover:underline"
-                >
-                  <Activity className="h-3.5 w-3.5" />
-                  Add Vitals
-                </a>
+                {requester.userId && (
+                  <AddVitalsDialog patientUserId={requester.userId} />
+                )}
               </div>
             )}
           </div>

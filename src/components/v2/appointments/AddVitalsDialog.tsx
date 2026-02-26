@@ -42,6 +42,12 @@ type VitalSignsFormData = z.infer<typeof vitalSignsSchema>;
 
 // ── Component ────────────────────────────────────────────────────────────────
 
+/** Format a Date to the `datetime-local` input format (yyyy-MM-ddTHH:mm) */
+function toDatetimeLocal(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 interface AddVitalsDialogProps {
   /** The Clerk userId of the patient (used by createUserVitalSignAction) */
   patientUserId: string;
@@ -56,17 +62,8 @@ export function AddVitalsDialog({ patientUserId, onSaved }: AddVitalsDialogProps
   const form = useForm<VitalSignsFormData>({
     resolver: zodResolver(vitalSignsSchema),
     defaultValues: {
-      bmi: 0,
-      bpDiastolic: 0,
-      bpSystolic: 0,
       dateTaken: new Date(),
-      height: 0,
       notes: "",
-      pulseRate: 0,
-      respRate: 0,
-      spo2: 0,
-      temp: 0,
-      weight: 0,
     },
   });
 
@@ -220,7 +217,11 @@ export function AddVitalsDialog({ patientUserId, onSaved }: AddVitalsDialogProps
             <Label className="text-xs">Date Taken</Label>
             <Input
               type="datetime-local"
-              {...form.register("dateTaken", { valueAsDate: true })}
+              defaultValue={toDatetimeLocal(new Date())}
+              onChange={(e) => {
+                const val = e.target.value;
+                form.setValue("dateTaken", val ? new Date(val) : new Date());
+              }}
             />
             {form.formState.errors.dateTaken && (
               <p className="text-xs text-destructive">

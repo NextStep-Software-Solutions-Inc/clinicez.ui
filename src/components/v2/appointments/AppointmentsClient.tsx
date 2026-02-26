@@ -226,7 +226,10 @@ export function AppointmentsClient({
   // Clean up debounce timer on unmount
   useEffect(() => {
     return () => {
-      if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+      if (searchTimerRef.current) {
+        clearTimeout(searchTimerRef.current);
+        searchTimerRef.current = null;
+      }
     };
   }, []);
 

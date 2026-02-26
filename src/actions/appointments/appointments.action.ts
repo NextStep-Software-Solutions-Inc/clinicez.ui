@@ -357,6 +357,7 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
 
   const { clinicUid, userId, status, routedAptStatus, tagged, sort, cursor, limit, hpIds, search } = filter || {};
   const PAGE_SIZE = limit ?? 20;
+  const searchTerm = search?.trim() || "";
 
   const userPermissionArray = permissions.map(p => p.name);
 
@@ -444,18 +445,18 @@ export const getAppointmentsAction = withErrorHandling(cache(async (filter?: Get
           ]
         },
         // Server-side search filter (patient name, subject, or complaint)
-        ...(search && search.trim()
+        ...(searchTerm
           ? [{
             OR: [
-              { subject: { contains: search.trim(), mode: "insensitive" as const } },
-              { complaint: { contains: search.trim(), mode: "insensitive" as const } },
+              { subject: { contains: searchTerm, mode: "insensitive" as const } },
+              { complaint: { contains: searchTerm, mode: "insensitive" as const } },
               {
                 Requesters: {
                   some: {
                     User: {
                       OR: [
-                        { firstName: { contains: search.trim(), mode: "insensitive" as const } },
-                        { lastName: { contains: search.trim(), mode: "insensitive" as const } },
+                        { firstName: { contains: searchTerm, mode: "insensitive" as const } },
+                        { lastName: { contains: searchTerm, mode: "insensitive" as const } },
                       ],
                     },
                   },

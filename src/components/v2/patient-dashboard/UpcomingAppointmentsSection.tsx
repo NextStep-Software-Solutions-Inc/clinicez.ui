@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Calendar, Clock, MapPin, User, ChevronRight } from "lucide-react"
 import { AppointmentCard } from "@/types/patient-dashboard.types"
+import Link from "next/link"
 
 interface UpcomingAppointmentsSectionProps {
   userId: string
@@ -67,10 +68,12 @@ export default function UpcomingAppointmentsSection({
             </CardTitle>
             <CardDescription>Your scheduled appointments</CardDescription>
           </div>
-          <Button variant="outline" size="sm">
-            View All
-            <ChevronRight className="h-4 w-4 ml-1" />
-          </Button>
+          <Link href="/v2/appointments-consultations">
+            <Button variant="outline" size="sm">
+              View All
+              <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
+          </Link>
         </div>
       </CardHeader>
       <CardContent>
@@ -134,9 +137,11 @@ export default function UpcomingAppointmentsSection({
                   <Button variant="outline" size="sm">
                     Reschedule
                   </Button>
-                  <Button variant="ghost" size="sm">
-                    Details
-                  </Button>
+                  <Link href="/v2/appointments-consultations">
+                    <Button variant="ghost" size="sm">
+                      Details
+                    </Button>
+                  </Link>
                 </div>
               </div>
             ))

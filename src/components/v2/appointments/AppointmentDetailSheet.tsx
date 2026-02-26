@@ -23,6 +23,7 @@ import {
   Pencil,
   CalendarClock,
   Undo2,
+  Activity,
 } from "lucide-react";
 import {
   Sheet,
@@ -370,15 +371,26 @@ export function AppointmentDetailSheet({
               </div>
             </div>
             {!isWalkIn && requester?.id && (
-              <a
-                href={`/v2/clinic/${clinicUid}/patients/${requester.id}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
-              >
-                <ExternalLink className="h-3.5 w-3.5" />
-                View Patient Profile
-              </a>
+              <div className="flex items-center gap-3">
+                <a
+                  href={`/v2/clinic/${clinicUid}/patients/${requester.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  View Patient Profile
+                </a>
+                <a
+                  href={`/v2/clinic/${clinicUid}/patients/${requester.id}#vitals`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600 hover:underline"
+                >
+                  <Activity className="h-3.5 w-3.5" />
+                  Add Vitals
+                </a>
+              </div>
             )}
           </div>
 

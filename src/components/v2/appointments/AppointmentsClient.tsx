@@ -2,13 +2,14 @@
 
 import { useState, useCallback, useRef, useEffect, startTransition } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarDays, Clock, UserPlus, Loader2, Tag, ChevronDown, Check } from "lucide-react";
+import { CalendarDays, Clock, UserPlus, Loader2, Tag, ChevronDown, Check, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Input } from "@/components/ui/input";
 import { getAppointmentsAction, type GetAppointments } from "@/actions/appointments/appointments.action";
 import type { GetAppointmentModes } from "@/actions/appointments/appointment-mode.action";
 import type { GetAppointmentTypes } from "@/actions/appointments/appointment-type.action";
@@ -96,6 +97,9 @@ export function AppointmentsClient({
 
   // Status tab filter (client-side on loaded items)
   const [activeTab, setActiveTab] = useState<StatusTabKey>("ALL");
+
+  // Client-side search filter
+  const [search, setSearch] = useState("");
 
   // Server-side filters — when changed, reset pagination and re-fetch
   const [hpFilters, setHpFilters] = useState<number[]>([]);
@@ -273,10 +277,22 @@ export function AppointmentsClient({
 
   // ── Filtered list ─────────────────────────────────────────────────────────
 
-  const filtered =
-    activeTab === "ALL"
-      ? appointments
-      : appointments.filter((a) => a.AppointmentAttribute?.status === activeTab);
+  const filtered = appointments.filter((a) => {
+    // Status tab filter
+    if (activeTab !== "ALL" && a.AppointmentAttribute?.status !== activeTab) return false;
+    // Search filter (patient name, subject, complaint)
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      const requester = a.Requesters?.[0]?.User;
+      const patientName = requester
+        ? `${requester.firstName ?? ""} ${requester.lastName ?? ""}`.toLowerCase()
+        : "";
+      const subject = (a.subject ?? "").toLowerCase();
+      const complaint = (a.complaint ?? "").toLowerCase();
+      if (!patientName.includes(q) && !subject.includes(q) && !complaint.includes(q)) return false;
+    }
+    return true;
+  });
 
   const totalCount = counts["ALL"] ?? 0;
 
@@ -308,6 +324,17 @@ export function AppointmentsClient({
             <UserPlus className="h-3.5 w-3.5" />
             Walk-In
           </Button>
+        </div>
+
+        {/* Row 1.5: Search */}
+        <div className="relative mb-3">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+          <Input
+            placeholder="Search by patient name, subject, or complaint…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="h-8 pl-8 text-xs"
+          />
         </div>
 
         {/* Row 2: Status tabs + HP filter + Tagged toggle */}

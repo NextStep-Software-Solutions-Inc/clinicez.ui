@@ -90,16 +90,25 @@ export const getPatientSelfHistoryAction = withErrorHandling(async () => {
   })
 
   // ------------------------------------------------------------------
-  // Consultation tickets linked to this patient's appointments
+  // Consultation tickets linked to this patient (via appointment OR direct link)
   // ------------------------------------------------------------------
   const consultationTickets = await prisma.consultationTicket.findMany({
     where: {
       isActive: true,
-      Appointment: {
-        Requesters: {
-          some: { User: { userId } },
+      OR: [
+        {
+          Appointment: {
+            Requesters: {
+              some: { User: { userId } },
+            },
+          },
         },
-      },
+        {
+          ClinicPatient: {
+            Patient: { userId },
+          },
+        },
+      ],
     },
     orderBy: { createdAt: 'desc' },
     select: {

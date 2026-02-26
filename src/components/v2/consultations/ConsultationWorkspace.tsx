@@ -68,6 +68,7 @@ export default function ConsultationWorkspace({
   const hasPatient = patient !== null;
   /** True when the consultation can still be resolved (not yet done). */
   const canBeResolved = status !== "RESOLVED";
+  const isResolved = status === "RESOLVED";
 
   const handleResolve = () => {
     startResolveTransition(async () => {
@@ -299,6 +300,7 @@ export default function ConsultationWorkspace({
                 consultation={consultation}
                 myHPs={myHPs}
                 onPatchDetail={onPatchDetail}
+                isResolved={isResolved}
               />
             </TabsContent>
 
@@ -310,6 +312,7 @@ export default function ConsultationWorkspace({
                   consultation={consultation}
                   myHPs={myHPs}
                   onPatchDetail={onPatchDetail}
+                  isResolved={isResolved}
                 />
               ) : (
                 <NoPatientPlaceholder />
@@ -324,6 +327,7 @@ export default function ConsultationWorkspace({
                   consultation={consultation}
                   myHPs={myHPs}
                   onPatchDetail={onPatchDetail}
+                  isResolved={isResolved}
                 />
               ) : (
                 <NoPatientPlaceholder />
@@ -338,6 +342,7 @@ export default function ConsultationWorkspace({
                   consultation={consultation}
                   myHPs={myHPs}
                   onPatchDetail={onPatchDetail}
+                  isResolved={isResolved}
                 />
               ) : (
                 <NoPatientPlaceholder />
@@ -352,6 +357,7 @@ export default function ConsultationWorkspace({
                   consultation={consultation}
                   myHPs={myHPs}
                   onPatchDetail={onPatchDetail}
+                  isResolved={isResolved}
                 />
               ) : (
                 <NoPatientPlaceholder />

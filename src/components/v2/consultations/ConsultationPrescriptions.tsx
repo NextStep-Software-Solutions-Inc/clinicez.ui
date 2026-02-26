@@ -39,6 +39,7 @@ interface ConsultationPrescriptionsProps {
   consultation: Detail;
   myHPs: NonNullable<GetHPsType>;
   onPatchDetail: (patch: Partial<Detail>) => void;
+  isResolved?: boolean;
 }
 
 interface NewMedicineForm {
@@ -73,6 +74,7 @@ export default function ConsultationPrescriptions({
   consultation,
   myHPs,
   onPatchDetail,
+  isResolved = false,
 }: ConsultationPrescriptionsProps) {
   const ticketHpIds = consultation.ConsultationTicketHPs.map((h) => h.HealthCareProvider.id);
   const myActiveHp = myHPs.find((hp) => ticketHpIds.includes(hp.id)) ?? myHPs[0] ?? null;
@@ -192,7 +194,7 @@ export default function ConsultationPrescriptions({
           <Pill className="h-4 w-4 text-primary" />
           Prescriptions
         </h3>
-        {!showForm && (
+        {!showForm && !isResolved && (
           <Button
             size="sm"
             variant="outline"
@@ -373,8 +375,8 @@ export default function ConsultationPrescriptions({
               onToggle={() =>
                 setExpandedRx((prev) => ({ ...prev, [rx.id]: !prev[rx.id] }))
               }
-              onDeleteMedicine={handleDeleteMedicine}
-              onReplace={() => openReplaceForm(rx.id)}
+              onDeleteMedicine={isResolved ? () => {} : handleDeleteMedicine}
+              onReplace={isResolved ? undefined : () => openReplaceForm(rx.id)}
             />
           ))}
         </div>

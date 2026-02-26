@@ -49,6 +49,7 @@ interface ConsultationDiagnosticsProps {
   consultation: Detail;
   myHPs: NonNullable<GetHPsType>;
   onPatchDetail: (patch: Partial<Detail>) => void;
+  isResolved?: boolean;
 }
 
 export default function ConsultationDiagnostics({
@@ -57,6 +58,7 @@ export default function ConsultationDiagnostics({
   consultation,
   myHPs,
   onPatchDetail,
+  isResolved = false,
 }: ConsultationDiagnosticsProps) {
   const ticketHpIds = consultation.ConsultationTicketHPs.map((h) => h.HealthCareProvider.id);
   const myActiveHp = myHPs.find((hp) => ticketHpIds.includes(hp.id)) ?? myHPs[0] ?? null;
@@ -109,7 +111,7 @@ export default function ConsultationDiagnostics({
           <FlaskConical className="h-4 w-4 text-primary" />
           Diagnostic Requests
         </h3>
-        {activeForm === null && (
+        {!isResolved && activeForm === null && (
           <div className="flex gap-2">
             <Button
               size="sm" variant="outline" className="gap-1.5 h-7 text-xs"
@@ -191,6 +193,7 @@ export default function ConsultationDiagnostics({
                 (p) => p.LaboratoryProcedure?.name ?? ""
               ) ?? []}
               onReplace={() => openLabForm(req.id)}
+              isResolved={isResolved}
             />
           ))}
           {consultation.ImagingRequests?.map((req) => (
@@ -205,6 +208,7 @@ export default function ConsultationDiagnostics({
                 (p) => p.ImagingProcedure?.name ?? ""
               ) ?? []}
               onReplace={() => openImagingForm(req.id)}
+              isResolved={isResolved}
             />
           ))}
           {consultation.HeartStationRequests?.map((req) => (
@@ -219,6 +223,7 @@ export default function ConsultationDiagnostics({
                 (p) => p.HeartStationProcedure?.name ?? ""
               ) ?? []}
               onReplace={() => openHeartStationForm(req.id)}
+              isResolved={isResolved}
             />
           ))}
         </div>
@@ -696,6 +701,7 @@ function DiagnosticCard({
   createdAt,
   procedures,
   onReplace,
+  isResolved = false,
 }: {
   id: number;
   type: "lab" | "imaging" | "heartStation";
@@ -704,6 +710,7 @@ function DiagnosticCard({
   createdAt: Date;
   procedures: string[];
   onReplace: () => void;
+  isResolved?: boolean;
 }) {
   const Icon = type === "lab" ? FlaskConical : type === "imaging" ? ImageIcon : Heart;
   const label = type === "lab" ? "Laboratory Request" : type === "imaging" ? "Imaging Request" : "Heart Station Request";
@@ -737,6 +744,7 @@ function DiagnosticCard({
           <Button
             size="sm" variant="ghost" className="h-7 w-7 p-0" title="Void & Replace"
             onClick={onReplace}
+            disabled={isResolved}
           >
             <RefreshCw className="h-3.5 w-3.5 text-amber-500" />
           </Button>

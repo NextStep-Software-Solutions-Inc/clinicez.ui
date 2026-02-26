@@ -66,7 +66,7 @@ export const PatientCard = memo(function PatientCard({
 
   const initials = `${firstName?.charAt(0) ?? ""}${lastName?.charAt(0) ?? ""}`;
   const fullName = `${firstName ?? ""} ${middleName ? middleName + " " : ""}${lastName ?? ""}${suffix ? " " + suffix : ""}`.trim();
-  const age = calculateAge(dob);
+  const age = calculateAge(dob) ?? 0;
   const genderLabel = gender
     ? `${gender.charAt(0).toUpperCase()}${gender.slice(1).toLowerCase()}`
     : null;
@@ -107,9 +107,7 @@ export const PatientCard = memo(function PatientCard({
                   {genderLabel}
                 </span>
               )}
-              {age !== null && (
-                <span className="text-xs text-muted-foreground">• {age}y</span>
-              )}
+              <span className="text-xs text-muted-foreground">• {age}y</span>
               {bloodType && (
                 <Badge
                   variant="outline"
@@ -189,9 +187,7 @@ export const PatientCard = memo(function PatientCard({
           {genderLabel && (
             <span className="text-xs text-muted-foreground">{genderLabel}</span>
           )}
-          {age !== null && (
-            <span className="text-xs text-muted-foreground">• {age}y</span>
-          )}
+          <span className="text-xs text-muted-foreground">• {age}y</span>
           {bloodType && (
             <Badge
               variant="outline"

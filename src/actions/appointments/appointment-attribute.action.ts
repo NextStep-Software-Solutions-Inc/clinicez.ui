@@ -186,6 +186,10 @@ export const confirmAppointmentBookingAction = withErrorHandling(async (payload:
 
   const { appointmentId, modeId, typeId, serviceId, hpId, date, timeStart, timeEnd } = payload;
 
+  if (timeStart && timeEnd && timeEnd <= timeStart) {
+    throw new Error("End time must be later than start time.");
+  }
+
   await prismaClient.$transaction(async (tx) => {
     const user = await tx.user.findUniqueOrThrow({
       where: { userId: session.user.sub },
@@ -379,6 +383,10 @@ export const rescheduleAppointmentAction = withErrorHandling(async (payload: Res
   if (!canReschedule) throw new Error("You do not have permission to reschedule this appointment.");
 
   const { appointmentId, date, timeStart, timeEnd, newHpId } = payload;
+
+  if (timeStart && timeEnd && timeEnd <= timeStart) {
+    throw new Error("End time must be later than start time.");
+  }
 
   await prismaClient.$transaction(async (tx) => {
     await tx.appointmentAttribute.update({

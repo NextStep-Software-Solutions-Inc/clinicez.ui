@@ -62,6 +62,11 @@ export function RescheduleDialog({
       return;
     }
 
+    if (timeStart && timeEnd && timeEnd <= timeStart) {
+      toast.error("End time must be later than start time.");
+      return;
+    }
+
     setIsPending(true);
     const result = await rescheduleAppointmentAction({
       appointmentId: appointment.id,

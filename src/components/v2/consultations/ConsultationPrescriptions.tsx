@@ -375,8 +375,9 @@ export default function ConsultationPrescriptions({
               onToggle={() =>
                 setExpandedRx((prev) => ({ ...prev, [rx.id]: !prev[rx.id] }))
               }
-              onDeleteMedicine={isResolved ? () => {} : handleDeleteMedicine}
+              onDeleteMedicine={handleDeleteMedicine}
               onReplace={isResolved ? undefined : () => openReplaceForm(rx.id)}
+              isResolved={isResolved}
             />
           ))}
         </div>
@@ -409,12 +410,14 @@ function PrescriptionCard({
   onToggle,
   onDeleteMedicine,
   onReplace,
+  isResolved = false,
 }: {
   rx: Prescription;
   expanded: boolean;
   onToggle: () => void;
   onDeleteMedicine: (id: number) => void;
-  onReplace: () => void;
+  onReplace?: () => void;
+  isResolved?: boolean;
 }) {
   const hpName = rx.HealthcareProvider?.HPProfile?.name
     ? `${rx.HealthcareProvider.HPProfile.title ?? ""} ${rx.HealthcareProvider.HPProfile.name}`.trim()
@@ -483,14 +486,16 @@ function PrescriptionCard({
                   </p>
                   {med.notes && <p className="text-muted-foreground/70 italic">{med.notes}</p>}
                 </div>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-6 w-6 text-destructive/60 hover:text-destructive shrink-0"
-                  onClick={() => onDeleteMedicine(med.id)}
-                >
-                  <Trash2 className="h-3 w-3" />
-                </Button>
+                {!isResolved && (
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-6 w-6 text-destructive/60 hover:text-destructive shrink-0"
+                    onClick={() => onDeleteMedicine(med.id)}
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                )}
               </div>
             ))}
           </div>

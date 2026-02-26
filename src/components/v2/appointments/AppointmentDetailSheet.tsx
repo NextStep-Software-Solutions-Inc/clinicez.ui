@@ -382,7 +382,7 @@ export function AppointmentDetailSheet({
                   View Patient Profile
                 </a>
                 <a
-                  href={`/v2/clinic/${clinicUid}/patients/${requester.id}#vitals`}
+                  href={`/v2/clinic/${clinicUid}/patients/${requester.id}?tab=vitals`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600 hover:underline"

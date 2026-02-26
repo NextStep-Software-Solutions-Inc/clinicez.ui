@@ -5,6 +5,8 @@ import prisma from "@lib/prisma";
 import { cache } from "react";
 import { withErrorHandling } from "@/lib/with-error-handling";
 import { getCachedSession } from "@actions/session.action";
+import { getPermissionsAction } from "@actions/permission.action";
+import { PERMISSIONS } from "@lib/permissions";
 
 /**
  * Fetch comprehensive clinic dashboard data
@@ -15,6 +17,11 @@ export const getClinicDashboardDataAction = withErrorHandling(
     cache(async (clinicUid: string) => {
         const session = await getCachedSession();
         if (!session) throw new Error("User not authenticated");
+
+        const myPermissions = await getPermissionsAction({ userId: session.user.sub, type: "CLINIC" });
+        const myPermissionArray = myPermissions.map(p => p.name);
+        const canViewDashboard = [PERMISSIONS.CLINIC["VIEW:CLINIC:DASHBOARD"].name].some(p => myPermissionArray.includes(p));
+        if (!canViewDashboard) throw new Error("You do not have permission to view the clinic dashboard.");
 
         // Get clinic data
         const clinic = await prisma.clinic.findFirst({

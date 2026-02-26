@@ -3,6 +3,8 @@ import "server-only";
 import prisma from "@lib/prisma";
 import { withErrorHandling } from "@/lib/with-error-handling";
 import { getCachedSession } from "../session.action";
+import { getPermissionsAction } from "@actions/permission.action";
+import { PERMISSIONS } from "@lib/permissions";
 
 export type UpsertUserScheduleArgs = {
   id: number;
@@ -21,6 +23,15 @@ export const upsertUserScheduleAction = withErrorHandling(async (args: UpsertUse
 
   const session = await getCachedSession();
   if (!session) throw new Error("User not authenticated");
+
+  const myPermissions = await getPermissionsAction({ userId: session.user.sub, type: "CLINIC" });
+  const myPermissionArray = myPermissions.map(p => p.name);
+  const isOwnSchedule = args.userId === session.user.sub;
+  const canWriteOwn = [PERMISSIONS.CLINIC["WRITE:CLINIC:SCHEDULE:OWN"].name].some(p => myPermissionArray.includes(p));
+  const canWriteAll = [PERMISSIONS.CLINIC["WRITE:CLINIC:SCHEDULE:ALL"].name].some(p => myPermissionArray.includes(p));
+
+  if (isOwnSchedule && !canWriteOwn && !canWriteAll) throw new Error("You do not have permission to manage your schedule.");
+  if (!isOwnSchedule && !canWriteAll) throw new Error("You do not have permission to manage other users' schedules.");
 
   const { id, type, startDate, endDate, startTime, endTime, isRecurring, pattern, daysOfWeek, weekOfMonth, userId } = args;
 
@@ -153,6 +164,22 @@ export const deleteUserScheduleAction = withErrorHandling(async (id: number) => 
 
   const session = await getCachedSession();
   if (!session) throw new Error("User not authenticated");
+
+  // Check that the schedule belongs to the user, or the user can manage all schedules
+  const schedule = await prisma.userSchedule.findUnique({
+    where: { id, isActive: true },
+    select: { User: { select: { userId: true } } }
+  });
+  if (!schedule) throw new Error("Schedule not found.");
+
+  const myPermissions = await getPermissionsAction({ userId: session.user.sub, type: "CLINIC" });
+  const myPermissionArray = myPermissions.map(p => p.name);
+  const isOwnSchedule = schedule.User.userId === session.user.sub;
+  const canWriteOwn = [PERMISSIONS.CLINIC["WRITE:CLINIC:SCHEDULE:OWN"].name].some(p => myPermissionArray.includes(p));
+  const canWriteAll = [PERMISSIONS.CLINIC["WRITE:CLINIC:SCHEDULE:ALL"].name].some(p => myPermissionArray.includes(p));
+
+  if (isOwnSchedule && !canWriteOwn && !canWriteAll) throw new Error("You do not have permission to delete your schedule.");
+  if (!isOwnSchedule && !canWriteAll) throw new Error("You do not have permission to delete other users' schedules.");
 
   await prisma.userSchedule.delete({
     where: {

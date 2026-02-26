@@ -2,9 +2,15 @@
 
 import "server-only";
 import prisma from "@lib/prisma";
+import { getCachedSession } from "@actions/session.action";
+import { getPermissionsAction } from "@actions/permission.action";
+import { PERMISSIONS } from "@lib/permissions";
 
 export type GetClinicAppointmentConfig = Awaited<ReturnType<typeof getClinicAppointmentConfigAction>>
 export const getClinicAppointmentConfigAction = async (clinicUid: string) => {
+  const session = await getCachedSession();
+  if (!session) throw new Error("User not authenticated.");
+
   const clinicAppointmentConfig = await prisma.appointmentConfig.findFirst({
     where: {
       Clinic: {
@@ -25,6 +31,14 @@ type UpsertAppointmentConfig = {
 }
 export const upsertClinicAppointmentConfigAction = async (appointmentConfigId: number, data: UpsertAppointmentConfig) => {
   try {
+    const session = await getCachedSession();
+    if (!session) throw new Error("User not authenticated.");
+
+    const myPermissions = await getPermissionsAction({ userId: session.user.sub, type: "CLINIC" });
+    const myPermissionArray = myPermissions.map(p => p.name);
+    const canUpdateSettings = [PERMISSIONS.CLINIC["UPDATE:CLINIC:SETTINGS"].name].some(p => myPermissionArray.includes(p));
+    if (!canUpdateSettings) throw new Error("You do not have permission to update appointment settings.");
+
     const clinicAppointmentConfig = await prisma.appointmentConfig.upsert({
       where: {
         id: appointmentConfigId
@@ -56,9 +70,11 @@ export const upsertClinicAppointmentConfigAction = async (appointmentConfigId: n
     }
   } catch (error) {
     console.error(error);
+    let message = "Failed to update appointment settings";
+    if (error instanceof Error) message = error.message;
     return {
       status: false,
-      message: "Failed to update appointment settings",
+      message,
       data: null
     }
   }

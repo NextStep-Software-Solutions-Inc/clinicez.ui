@@ -6,6 +6,7 @@ import { withErrorHandling } from "@/lib/with-error-handling";
 import { withRetry } from "@/lib/database-health";
 import { findUserSafely } from "@/lib/user-sync";
 import { Prisma } from "@prisma/client";
+import { getCachedSession } from "@actions/session.action";
 
 const calculateBMI = (weight: number, height: number) => {
   return weight / Math.pow(height / 100, 2);
@@ -66,6 +67,9 @@ export const createUserVitalSignAction = withErrorHandling(async (payload: BaseV
 
 export type GetUserVitalSigns = Awaited<ReturnType<typeof getUserVitalSignsAction>>;
 export const getUserVitalSignsAction = cache(async (unique: string) => {
+  const session = await getCachedSession();
+  if (!session) throw new Error("User not authenticated.");
+
   return await prisma.vitalSign.findMany({
     orderBy: {
       createdAt: "asc"
@@ -82,6 +86,9 @@ export const getUserVitalSignsAction = cache(async (unique: string) => {
 })
 
 export const getUserVitalSignAction = cache(async (vitalsId: number) => {
+  const session = await getCachedSession();
+  if (!session) throw new Error("User not authenticated.");
+
   return await prisma.vitalSign.findUnique({
     where: {
       isActive: true,
@@ -91,6 +98,9 @@ export const getUserVitalSignAction = cache(async (vitalsId: number) => {
 })
 
 export const updateUserVitalSignAction = async (vitalsId: number, payload: BaseVitalSign) => {
+  const session = await getCachedSession();
+  if (!session) throw new Error("User not authenticated.");
+
   return await prisma.vitalSign.update({
     where: {
       isActive: true,
@@ -104,6 +114,9 @@ export const updateUserVitalSignAction = async (vitalsId: number, payload: BaseV
 }
 
 export const deleteUserVitalSignAction = async (vitalsId: number) => {
+  const session = await getCachedSession();
+  if (!session) throw new Error("User not authenticated.");
+
   return await prisma.vitalSign.update({
     where: {
       isActive: true,

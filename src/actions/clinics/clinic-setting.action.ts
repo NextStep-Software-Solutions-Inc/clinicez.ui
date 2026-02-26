@@ -5,6 +5,8 @@ import prisma from "@lib/prisma";
 import { cache } from "react";
 import { hasCodeProperty } from "@lib/utils";
 import { getCachedSession } from "@actions/session.action";
+import { getPermissionsAction } from "@actions/permission.action";
+import { PERMISSIONS } from "@lib/permissions";
 
 export type GetClinicSetting = Awaited<ReturnType<typeof getClinicSettingAction>>
 export const getClinicSettingAction = cache(async (clinicUid: string) => {
@@ -12,6 +14,9 @@ export const getClinicSettingAction = cache(async (clinicUid: string) => {
   let message = "Clinic settings fetched successfully";
 
   try {
+    const session = await getCachedSession();
+    if (!session) throw new Error("User not authenticated.");
+
     const clinicSetting = await prisma.clinicSetting.findFirst({
       where: { Clinic: { clinicUid } },
       include: {
@@ -47,6 +52,11 @@ export const updateClinicSettingsAction = async (clinicSettingId: number, { enab
 
     const session = await getCachedSession();
     if(!session) throw new Error("User not authenticated.");
+
+    const myPermissions = await getPermissionsAction({ userId: session.user.sub, type: "CLINIC" });
+    const myPermissionArray = myPermissions.map(p => p.name);
+    const canUpdateSettings = [PERMISSIONS.CLINIC["UPDATE:CLINIC:SETTINGS"].name].some(p => myPermissionArray.includes(p));
+    if (!canUpdateSettings) throw new Error("You do not have permission to update clinic settings.");
 
     const clinicSetting = await prisma.clinicSetting.update({
       where: { 
@@ -101,6 +111,11 @@ export const updatePhilHealthSettingsAction = async (clinicUid: string, data: Up
 
     const session = await getCachedSession();
     if(!session) throw new Error("User not authenticated.");
+
+    const myPermissions = await getPermissionsAction({ userId: session.user.sub, type: "CLINIC" });
+    const myPermissionArray = myPermissions.map(p => p.name);
+    const canUpdateSettings = [PERMISSIONS.CLINIC["UPDATE:CLINIC:SETTINGS"].name].some(p => myPermissionArray.includes(p));
+    if (!canUpdateSettings) throw new Error("You do not have permission to update PhilHealth settings.");
 
     // Get the clinic first to ensure it exists and user has access
     const clinic = await prisma.clinic.findFirst({

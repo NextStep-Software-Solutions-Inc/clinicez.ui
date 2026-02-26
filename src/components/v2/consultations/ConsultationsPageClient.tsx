@@ -107,6 +107,16 @@ export default function ConsultationsPageClient({
     setActiveDetail((prev) => (prev ? { ...prev, ...patch } : prev));
   }, []);
 
+  const handleReloadDetail = useCallback(() => {
+    if (!selectedId) return;
+    startDetailTransition(async () => {
+      const result = await getPatientConsultationDetailAction({ clinicUid, ticketId: selectedId });
+      if (result.status && result.data) {
+        setActiveDetail(result.data);
+      }
+    });
+  }, [clinicUid, selectedId]);
+
   return (
     <div className="flex flex-col h-[calc(100dvh-16rem)] overflow-hidden">
       {/* ── Mobile back button (workspace → list) ── */}
@@ -194,6 +204,7 @@ export default function ConsultationsPageClient({
               consultation={activeDetail}
               myHPs={myHPs}
               onPatchDetail={handlePatchDetail}
+              onReloadDetail={handleReloadDetail}
             />
           ) : loadingDetail ? (
             <div className="flex items-center justify-center h-full w-full">

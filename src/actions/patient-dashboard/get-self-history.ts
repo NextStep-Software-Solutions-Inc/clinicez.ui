@@ -163,6 +163,14 @@ export const getPatientSelfHistoryAction = withErrorHandling(async () => {
         where: { isActive: true, deletedAt: null },
         select: { id: true },
       },
+      HeartStationRequests: {
+        where: { isActive: true, deletedAt: null },
+        select: { id: true },
+      },
+      ClinicReferralSlips: {
+        where: { isActive: true, deletedAt: null },
+        select: { id: true },
+      },
       Appointment: {
         select: {
           id: true,

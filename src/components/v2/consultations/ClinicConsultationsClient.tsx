@@ -238,6 +238,20 @@ export default function ClinicConsultationsClient({
     setActiveDetail((prev) => (prev ? { ...prev, ...patch } : prev));
   }, []);
 
+  /* ── Reload the active consultation detail from server ── */
+  const handleReloadDetail = useCallback(() => {
+    if (!selectedId) return;
+    startDetailTransition(async () => {
+      const result = await getPatientConsultationDetailAction({
+        clinicUid,
+        ticketId: selectedId,
+      });
+      if (result.status && result.data) {
+        setActiveDetail(result.data);
+      }
+    });
+  }, [clinicUid, selectedId]);
+
   /* ── Update queue item status after resolve ── */
   const handleResolved = useCallback((id: number) => {
     setItems((prev) =>
@@ -424,6 +438,7 @@ export default function ClinicConsultationsClient({
               myHPs={myHPs}
               onPatchDetail={handlePatchDetail}
               onResolved={handleResolved}
+              onReloadDetail={handleReloadDetail}
             />
           ) : loadingDetail ? (
             <div className="flex items-center justify-center h-full w-full">

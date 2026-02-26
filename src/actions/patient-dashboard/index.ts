@@ -40,13 +40,15 @@ export async function getPatientDashboardData(): Promise<PatientDashboardData | 
 
     if (!patient) return null
 
-    // Get clinic patient record - ClinicPatient uses patientId, not userId
-    const clinicPatient = await prisma.clinicPatient.findFirst({
+    // Get ALL clinic patient records for this patient (across all clinics)
+    const clinicPatients = await prisma.clinicPatient.findMany({
       where: { patientId: patient.id },
-      select: { id: true, clinicId: true },
+      select: { id: true },
     })
 
-    if (!clinicPatient) return null
+    if (clinicPatients.length === 0) return null
+
+    const clinicPatientIds = clinicPatients.map(cp => cp.id)
 
     // Fetch all dashboard data in parallel
     const [
@@ -64,11 +66,11 @@ export async function getPatientDashboardData(): Promise<PatientDashboardData | 
       getUpcomingAppointments(patient.id, 3),
       getLatestVitals(patient.id),
       getVitalsHistory(patient.id, 7),
-      getActivePrescriptions(clinicPatient.id),
-      getRecentConsultations(clinicPatient.id, 5),
-      getPendingLabWork(clinicPatient.id),
-      getImagingRequests(clinicPatient.id),
-      getHeartStationRequests(clinicPatient.id),
+      getActivePrescriptions(clinicPatientIds),
+      getRecentConsultations(clinicPatientIds, patient.id, 5),
+      getPendingLabWork(clinicPatientIds),
+      getImagingRequests(clinicPatientIds),
+      getHeartStationRequests(clinicPatientIds),
     ])
 
     return {

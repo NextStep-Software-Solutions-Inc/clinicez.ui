@@ -9,27 +9,9 @@ import type { NextAppointmentData, UpcomingAppointmentsData, DashboardAppointmen
  */
 export async function getNextAppointment(patientId: number): Promise<NextAppointmentData> {
   try {
-    // Get patient's clinic first
-    const clinicPatient = await prisma.clinicPatient.findFirst({
-      where: { patientId },
-      select: { clinicId: true },
-    })
-
-    if (!clinicPatient) {
-      return {
-        appointment: null,
-        daysUntil: null,
-        hoursUntil: null,
-        isToday: false,
-        isUpcoming: false,
-        isPast: false,
-      }
-    }
-
-    // Get next appointment for this patient at their clinic
+    // Get next appointment for this patient across all clinics
     const appointment = await prisma.appointment.findFirst({
       where: {
-        clinicId: clinicPatient.clinicId,
         Requesters: { some: { userId: patientId } },
         AppointmentAttribute: {
           status: { in: ['PENDING', 'CONFIRMED', 'ROUTED', 'RECEIVED'] },
@@ -186,20 +168,9 @@ export async function getUpcomingAppointments(
   limit: number = 3
 ): Promise<UpcomingAppointmentsData> {
   try {
-    // Get patient's clinic first
-    const clinicPatient = await prisma.clinicPatient.findFirst({
-      where: { patientId },
-      select: { clinicId: true },
-    })
-
-    if (!clinicPatient) {
-      return { appointments: [], total: 0 }
-    }
-
-    // Get upcoming appointments at patient's clinic, sorted by date
+    // Get upcoming appointments across all clinics, sorted by date
     const appointments = await prisma.appointment.findMany({
       where: {
-        clinicId: clinicPatient.clinicId,
         Requesters: { some: { userId: patientId } },
         AppointmentAttribute: {
           status: { in: ['PENDING', 'CONFIRMED', 'ROUTED', 'RECEIVED', 'RESCHEDULED'] },

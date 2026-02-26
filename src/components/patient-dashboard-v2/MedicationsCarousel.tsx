@@ -1,7 +1,8 @@
 'use client';
 
-import { Pill, AlertCircle, ChevronRight } from 'lucide-react';
+import { Pill, AlertCircle, Download } from 'lucide-react';
 import type { PrescriptionData, Medicine } from '@/types/patient-dashboard-v2.types';
+import DownloadPrescriptionAction from '@/components/clinic/clinical-records/prescription/DownloadPrescriptionAction';
 
 interface MedicationCardData {
   medicine: Medicine;
@@ -44,41 +45,46 @@ export function MedicationsCarousel({ prescriptions, lowRefillCount = 0, isLoadi
       {medications.map(({ medicine, prescription }) => {
         const isLow = medicine.qty !== null && medicine.qty < 5;
         return (
-          <div
+          <DownloadPrescriptionAction
             key={`${prescription.id}-${medicine.id}`}
-            className="flex items-center gap-3 px-4 py-3 rounded-lg dark:bg-slate-800/40 dark:hover:bg-slate-700/50 bg-white/60 hover:bg-slate-50/80 dark:border-white/10 border-slate-200/70 border transition-colors"
+            prescription={{ id: prescription.id }}
           >
-            {/* Icon */}
-            <div className="flex-shrink-0">
-              <div className="w-8 h-8 rounded-full dark:bg-emerald-500/20 bg-emerald-100/70 flex items-center justify-center">
-                <Pill className="w-4 h-4 dark:text-emerald-400 text-emerald-600" />
+            <button
+              type="submit"
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg dark:bg-slate-800/40 dark:hover:bg-slate-700/50 bg-white/60 hover:bg-slate-50/80 dark:border-white/10 border-slate-200/70 border transition-colors cursor-pointer text-left"
+            >
+              {/* Icon */}
+              <div className="flex-shrink-0">
+                <div className="w-8 h-8 rounded-full dark:bg-emerald-500/20 bg-emerald-100/70 flex items-center justify-center">
+                  <Pill className="w-4 h-4 dark:text-emerald-400 text-emerald-600" />
+                </div>
               </div>
-            </div>
 
-            {/* Name + meta */}
-            <div className="flex-grow min-w-0">
-              <div className="flex items-center gap-1.5">
-                <p className="font-semibold dark:text-white text-slate-900 text-sm truncate">
-                  {medicine.name}
+              {/* Name + meta */}
+              <div className="flex-grow min-w-0 text-left">
+                <div className="flex items-center gap-1.5">
+                  <p className="font-semibold dark:text-white text-slate-900 text-sm truncate">
+                    {medicine.name}
+                  </p>
+                  {isLow && (
+                    <AlertCircle className="w-3.5 h-3.5 text-yellow-500 flex-shrink-0" />
+                  )}
+                </div>
+                <p className="text-xs dark:text-slate-400 text-slate-600 truncate">
+                  {[
+                    medicine.dosage ? `${medicine.dosage}${medicine.unit ? ` ${medicine.unit}` : ''}` : null,
+                    medicine.frequency || null,
+                  ]
+                    .filter(Boolean)
+                    .join(' · ') || 'See prescription'}
+                  {' '}·{' '}{prescription.clinic.name}
                 </p>
-                {isLow && (
-                  <AlertCircle className="w-3.5 h-3.5 text-yellow-500 flex-shrink-0" />
-                )}
               </div>
-              <p className="text-xs dark:text-slate-400 text-slate-600 truncate">
-                {[
-                  medicine.dosage ? `${medicine.dosage}${medicine.unit ? ` ${medicine.unit}` : ''}` : null,
-                  medicine.frequency || null,
-                ]
-                  .filter(Boolean)
-                  .join(' · ') || 'See prescription'}
-                {' '}·{' '}{prescription.clinic.name}
-              </p>
-            </div>
 
-            {/* Arrow hint */}
-            <ChevronRight className="w-4 h-4 dark:text-slate-500 text-slate-400 flex-shrink-0" />
-          </div>
+              {/* Download hint */}
+              <Download className="w-4 h-4 dark:text-slate-500 text-slate-400 flex-shrink-0" />
+            </button>
+          </DownloadPrescriptionAction>
         );
       })}
 

@@ -138,7 +138,7 @@ export function PatientCard({ patient, viewMode = 'grid' }: PatientCardProps) {
   const nameInitials = `${firstName?.charAt(0) ?? ''}${lastName?.charAt(0) ?? ''}`;
   const fullName = `${firstName || '-'} ${middleName ?? ''} ${lastName || '-'}`.trim();
   const displayName = `${lastName || '-'}, ${firstName || '-'} ${middleName ?? ''} ${suffix ?? ''}`.trim();
-  const age = calculateAge(dob);
+  const age = calculateAge(dob) ?? 0;
 
   // List view - horizontal compact layout with improved design
   if (viewMode === 'list') {

@@ -14,6 +14,7 @@ interface MarkdownEditorProps {
   placeholder?: string;
   className?: string;
   minHeight?: string;
+  disabled?: boolean;
 }
 
 export default function MarkdownEditor({
@@ -21,6 +22,7 @@ export default function MarkdownEditor({
   onChange,
   placeholder = "Write notes using **markdown**…",
   minHeight = "min-h-36",
+  disabled = false,
 }: MarkdownEditorProps) {
   const [mode, setMode] = useState<"edit" | "preview">("edit");
 
@@ -54,25 +56,25 @@ export default function MarkdownEditor({
             icon={<Bold className="h-3.5 w-3.5" />}
             label="Bold"
             onClick={() => insertMarkdown("**", "**")}
-            disabled={mode === "preview"}
+            disabled={mode === "preview" || disabled}
           />
           <ToolbarButton
             icon={<Italic className="h-3.5 w-3.5" />}
             label="Italic"
             onClick={() => insertMarkdown("_", "_")}
-            disabled={mode === "preview"}
+            disabled={mode === "preview" || disabled}
           />
           <ToolbarButton
             icon={<Hash className="h-3.5 w-3.5" />}
             label="Heading"
             onClick={() => insertMarkdown("### ")}
-            disabled={mode === "preview"}
+            disabled={mode === "preview" || disabled}
           />
           <ToolbarButton
             icon={<List className="h-3.5 w-3.5" />}
             label="List"
             onClick={() => insertMarkdown("- ")}
-            disabled={mode === "preview"}
+            disabled={mode === "preview" || disabled}
           />
         </div>
         <div className="flex items-center gap-1">
@@ -105,6 +107,7 @@ export default function MarkdownEditor({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
+          disabled={disabled}
           className={`${minHeight} resize-y text-sm bg-transparent border-0 rounded-none focus-visible:ring-1 focus-visible:ring-primary font-mono`}
         />
       )}

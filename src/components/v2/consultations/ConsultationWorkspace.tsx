@@ -49,6 +49,8 @@ interface ConsultationWorkspaceProps {
   onPatchDetail: (patch: Partial<Detail>) => void;
   /** Called with the consultation id after it has been resolved. */
   onResolved?: (id: number) => void;
+  /** Called to trigger a full re-fetch of the consultation detail from the server. */
+  onReloadDetail?: () => void;
 }
 
 export default function ConsultationWorkspace({
@@ -58,6 +60,7 @@ export default function ConsultationWorkspace({
   myHPs,
   onPatchDetail,
   onResolved,
+  onReloadDetail,
 }: ConsultationWorkspaceProps) {
   const [activeTab, setActiveTab] = useState("notes");
   const [resolving, startResolveTransition] = useTransition();
@@ -68,6 +71,7 @@ export default function ConsultationWorkspace({
   const hasPatient = patient !== null;
   /** True when the consultation can still be resolved (not yet done). */
   const canBeResolved = status !== "RESOLVED";
+  const isResolved = status === "RESOLVED";
 
   const handleResolve = () => {
     startResolveTransition(async () => {
@@ -75,6 +79,7 @@ export default function ConsultationWorkspace({
       if (result.status) {
         toast.success("Consultation marked as resolved");
         onResolved?.(consultation.id);
+        onReloadDetail?.();
       } else {
         toast.error(result.message ?? "Failed to resolve consultation");
       }
@@ -299,6 +304,7 @@ export default function ConsultationWorkspace({
                 consultation={consultation}
                 myHPs={myHPs}
                 onPatchDetail={onPatchDetail}
+                isResolved={isResolved}
               />
             </TabsContent>
 
@@ -310,6 +316,7 @@ export default function ConsultationWorkspace({
                   consultation={consultation}
                   myHPs={myHPs}
                   onPatchDetail={onPatchDetail}
+                  isResolved={isResolved}
                 />
               ) : (
                 <NoPatientPlaceholder />
@@ -324,6 +331,7 @@ export default function ConsultationWorkspace({
                   consultation={consultation}
                   myHPs={myHPs}
                   onPatchDetail={onPatchDetail}
+                  isResolved={isResolved}
                 />
               ) : (
                 <NoPatientPlaceholder />
@@ -338,6 +346,7 @@ export default function ConsultationWorkspace({
                   consultation={consultation}
                   myHPs={myHPs}
                   onPatchDetail={onPatchDetail}
+                  isResolved={isResolved}
                 />
               ) : (
                 <NoPatientPlaceholder />
@@ -352,6 +361,7 @@ export default function ConsultationWorkspace({
                   consultation={consultation}
                   myHPs={myHPs}
                   onPatchDetail={onPatchDetail}
+                  isResolved={isResolved}
                 />
               ) : (
                 <NoPatientPlaceholder />

@@ -2,13 +2,14 @@
 
 import { useState, useCallback, useRef, useEffect, startTransition } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarDays, Clock, UserPlus, Loader2, Tag, ChevronDown, Check } from "lucide-react";
+import { CalendarDays, Clock, UserPlus, Loader2, Tag, ChevronDown, Check, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Input } from "@/components/ui/input";
 import { getAppointmentsAction, type GetAppointments } from "@/actions/appointments/appointments.action";
 import type { GetAppointmentModes } from "@/actions/appointments/appointment-mode.action";
 import type { GetAppointmentTypes } from "@/actions/appointments/appointment-type.action";
@@ -97,6 +98,12 @@ export function AppointmentsClient({
   // Status tab filter (client-side on loaded items)
   const [activeTab, setActiveTab] = useState<StatusTabKey>("ALL");
 
+  // Client-side search input value (debounced before sending to server)
+  const [search, setSearch] = useState("");
+  // The search term currently applied on the server
+  const [activeSearch, setActiveSearch] = useState("");
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Server-side filters — when changed, reset pagination and re-fetch
   const [hpFilters, setHpFilters] = useState<number[]>([]);
   const [taggedOnly, setTaggedOnly] = useState(false);
@@ -154,13 +161,14 @@ export function AppointmentsClient({
   // ── Server-side filter reload ───────────────────────────────────────────────
 
   const reloadWithFilters = useCallback(
-    async (opts: { hpIds: number[]; tagged: boolean }) => {
+    async (opts: { hpIds: number[]; tagged: boolean; search?: string }) => {
       setIsReloading(true);
       try {
         const result = await getAppointmentsAction({
           clinicUid,
           ...(opts.hpIds.length > 0 ? { hpIds: opts.hpIds } : {}),
           ...(opts.tagged ? { tagged: "true" } : {}),
+          ...(opts.search ? { search: opts.search } : {}),
         });
         if (result.status && result.data) {
           setAppointments(result.data);
@@ -183,23 +191,47 @@ export function AppointmentsClient({
         : [...hpFilters, id];
       setHpFilters(next);
       setActiveTab("ALL");
-      void reloadWithFilters({ hpIds: next, tagged: taggedOnly });
+      void reloadWithFilters({ hpIds: next, tagged: taggedOnly, search: activeSearch });
     },
-    [hpFilters, taggedOnly, reloadWithFilters]
+    [hpFilters, taggedOnly, activeSearch, reloadWithFilters]
   );
 
   const handleClearHpFilters = useCallback(() => {
     setHpFilters([]);
     setActiveTab("ALL");
-    void reloadWithFilters({ hpIds: [], tagged: taggedOnly });
-  }, [taggedOnly, reloadWithFilters]);
+    void reloadWithFilters({ hpIds: [], tagged: taggedOnly, search: activeSearch });
+  }, [taggedOnly, activeSearch, reloadWithFilters]);
 
   const handleTaggedToggle = useCallback(() => {
     const next = !taggedOnly;
     setTaggedOnly(next);
     setActiveTab("ALL");
-    void reloadWithFilters({ hpIds: hpFilters, tagged: next });
-  }, [taggedOnly, hpFilters, reloadWithFilters]);
+    void reloadWithFilters({ hpIds: hpFilters, tagged: next, search: activeSearch });
+  }, [taggedOnly, hpFilters, activeSearch, reloadWithFilters]);
+
+  // ── Debounced search ──────────────────────────────────────────────────────
+
+  const handleSearchChange = useCallback(
+    (value: string) => {
+      setSearch(value);
+      if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+      searchTimerRef.current = setTimeout(() => {
+        setActiveSearch(value);
+        void reloadWithFilters({ hpIds: hpFilters, tagged: taggedOnly, search: value });
+      }, 400);
+    },
+    [hpFilters, taggedOnly, reloadWithFilters]
+  );
+
+  // Clean up debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimerRef.current) {
+        clearTimeout(searchTimerRef.current);
+        searchTimerRef.current = null;
+      }
+    };
+  }, []);
 
   // ── Refresh ────────────────────────────────────────────────────────────────
 
@@ -239,6 +271,7 @@ export function AppointmentsClient({
         cursor: lastId,
         ...(hpFilters.length > 0 ? { hpIds: hpFilters } : {}),
         ...(taggedOnly ? { tagged: "true" } : {}),
+        ...(activeSearch ? { search: activeSearch } : {}),
       });
       if (result.status && result.data) {
         const newItems = result.data;
@@ -255,7 +288,7 @@ export function AppointmentsClient({
     } finally {
       setIsLoadingMore(false);
     }
-  }, [clinicUid, appointments, hasMore, isLoadingMore, hpFilters, taggedOnly]);
+  }, [clinicUid, appointments, hasMore, isLoadingMore, hpFilters, taggedOnly, activeSearch]);
 
   // IntersectionObserver for scroll-to-load-more
   useEffect(() => {
@@ -271,7 +304,7 @@ export function AppointmentsClient({
     return () => observer.disconnect();
   }, [loadMore]);
 
-  // ── Filtered list ─────────────────────────────────────────────────────────
+  // ── Filtered list (status tab is still client-side; search is server-side) ─
 
   const filtered =
     activeTab === "ALL"
@@ -308,6 +341,20 @@ export function AppointmentsClient({
             <UserPlus className="h-3.5 w-3.5" />
             Walk-In
           </Button>
+        </div>
+
+        {/* Row 1.5: Search */}
+        <div className="relative mb-3">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+          {isReloading && search.trim() && (
+            <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground animate-spin" />
+          )}
+          <Input
+            placeholder="Search by patient name, subject, or complaint…"
+            value={search}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            className="h-8 pl-8 text-xs"
+          />
         </div>
 
         {/* Row 2: Status tabs + HP filter + Tagged toggle */}

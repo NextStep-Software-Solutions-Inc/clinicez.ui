@@ -35,6 +35,7 @@ interface ConsultationReferralsProps {
   consultation: Detail;
   myHPs: NonNullable<GetHPsType>;
   onPatchDetail: (patch: Partial<Detail>) => void;
+  isResolved?: boolean;
 }
 
 export default function ConsultationReferrals({
@@ -43,6 +44,7 @@ export default function ConsultationReferrals({
   consultation,
   myHPs,
   onPatchDetail,
+  isResolved = false,
 }: ConsultationReferralsProps) {
   const ticketHpIds = consultation.ConsultationTicketHPs.map((h) => h.HealthCareProvider.id);
   const myActiveHp = myHPs.find((hp) => ticketHpIds.includes(hp.id)) ?? myHPs[0] ?? null;
@@ -141,7 +143,7 @@ export default function ConsultationReferrals({
           <GitFork className="h-4 w-4 text-primary" />
           Referral Slips
         </h3>
-        {!showForm && (
+        {!isResolved && !showForm && (
           <Button
             size="sm"
             variant="outline"
@@ -241,6 +243,7 @@ export default function ConsultationReferrals({
               key={slip.id}
               slip={slip}
               onReplace={() => openReplaceForm(slip.id)}
+              isResolved={isResolved}
             />
           ))}
         </div>
@@ -252,9 +255,11 @@ export default function ConsultationReferrals({
 function ReferralCard({
   slip,
   onReplace,
+  isResolved = false,
 }: {
   slip: ReferralSlip;
   onReplace: () => void;
+  isResolved?: boolean;
 }) {
   return (
     <div className="rounded-lg border border-border/50 bg-background px-4 py-3">
@@ -281,6 +286,7 @@ function ReferralCard({
           <Button
             size="sm" variant="ghost" className="h-7 w-7 p-0" title="Void & Replace"
             onClick={onReplace}
+            disabled={isResolved}
           >
             <RefreshCw className="h-3.5 w-3.5 text-amber-500" />
           </Button>

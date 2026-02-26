@@ -823,6 +823,12 @@ export const updateConsultationTicketAction = withErrorHandling(async ({ consult
             }
           }
         }
+      },
+      // Block updates on resolved consultations
+      NOT: {
+        ConsultationTicketAttribute: {
+          status: "RESOLVED"
+        }
       }
     },
     data: { subject }
@@ -830,7 +836,7 @@ export const updateConsultationTicketAction = withErrorHandling(async ({ consult
   return { message: "Consultation Ticket updated successfully", data: undefined }
 
 }, async error => {
-  if (hasCodeProperty(error) && error.code === 'P2025') return "Consultation record not found or you do not have permission to update it";
+  if (hasCodeProperty(error) && error.code === 'P2025') return "Consultation record not found, already resolved, or you do not have permission to update it";
 })
 
 export const deleteConsultationTicketAction = withErrorHandling(async (consultationId: number) => {

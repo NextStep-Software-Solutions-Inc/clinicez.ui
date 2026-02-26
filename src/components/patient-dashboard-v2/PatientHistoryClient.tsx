@@ -23,9 +23,16 @@ import {
   Mail,
   CalendarCheck,
   ActivitySquare,
+  Download,
 } from 'lucide-react'
 import type { GetPatientSelfHistory } from '@/actions/patient-dashboard/get-self-history'
 import { ThemeToggle } from '@/components/patient-dashboard-v2/ThemeToggle'
+import DownloadPrescriptionAction from '@/components/clinic/clinical-records/prescription/DownloadPrescriptionAction'
+import DownloadMedicalCertificateAction from '@/components/medical-certificate/DownloadMedicalCertificateAction'
+import DownloadLaboratoryRequestAction from '@/components/laboratory-requests/DownloadLaboratoryRequestAction'
+import DownloadImagingStudiesAction from '@/components/imaging-studies/DownloadImagingStudiesAction'
+import DownloadHeartStationRequestAction from '@/components/heart-station-requests/DownloadHeartStationRequestAction'
+import DownloadReferralSlipAction from '@/components/referral-slip/DownloadReferralSlipAction'
 
 type HistoryData = NonNullable<GetPatientSelfHistory['data']>
 type Appointment = HistoryData['appointments'][number]
@@ -382,60 +389,102 @@ function ConsultationDetailPanel({ ticket, onBack }: { ticket: ConsultationTicke
           )}
         </section>
 
-        {/* Attachments summary */}
+        {/* Downloadable Documents */}
         {(ticket.Prescriptions.length > 0 ||
           ticket.MedicalCertificates.length > 0 ||
           ticket.LaboratoryRequests.length > 0 ||
-          ticket.ImagingRequests.length > 0) && (
+          ticket.ImagingRequests.length > 0 ||
+          (ticket.HeartStationRequests?.length ?? 0) > 0 ||
+          (ticket.ClinicReferralSlips?.length ?? 0) > 0) && (
           <section>
             <p className="text-xs font-semibold dark:text-slate-400 text-slate-500 uppercase tracking-widest mb-2.5">
               From This Visit
             </p>
             <div className="grid grid-cols-2 gap-2">
-              {ticket.Prescriptions.length > 0 && (
-                <div className="flex items-center gap-2 dark:bg-emerald-500/10 bg-emerald-50 rounded-xl px-3 py-2.5 border dark:border-emerald-400/20 border-emerald-200/60">
-                  <Pill className="h-4 w-4 dark:text-emerald-400 text-emerald-600 shrink-0" />
-                  <div>
-                    <p className="text-xs font-semibold dark:text-emerald-300 text-emerald-700">
-                      {ticket.Prescriptions.length} Rx
-                    </p>
-                    <p className="text-xs dark:text-emerald-400/70 text-emerald-600/70">Prescriptions</p>
-                  </div>
-                </div>
-              )}
-              {ticket.MedicalCertificates.length > 0 && (
-                <div className="flex items-center gap-2 dark:bg-sky-500/10 bg-sky-50 rounded-xl px-3 py-2.5 border dark:border-sky-400/20 border-sky-200/60">
-                  <FileCheck className="h-4 w-4 dark:text-sky-400 text-sky-600 shrink-0" />
-                  <div>
-                    <p className="text-xs font-semibold dark:text-sky-300 text-sky-700">
-                      {ticket.MedicalCertificates.length}
-                    </p>
-                    <p className="text-xs dark:text-sky-400/70 text-sky-600/70">Certificates</p>
-                  </div>
-                </div>
-              )}
-              {ticket.LaboratoryRequests.length > 0 && (
-                <div className="flex items-center gap-2 dark:bg-purple-500/10 bg-purple-50 rounded-xl px-3 py-2.5 border dark:border-purple-400/20 border-purple-200/60">
-                  <TestTube className="h-4 w-4 dark:text-purple-400 text-purple-600 shrink-0" />
-                  <div>
-                    <p className="text-xs font-semibold dark:text-purple-300 text-purple-700">
-                      {ticket.LaboratoryRequests.length}
-                    </p>
-                    <p className="text-xs dark:text-purple-400/70 text-purple-600/70">Lab Requests</p>
-                  </div>
-                </div>
-              )}
-              {ticket.ImagingRequests.length > 0 && (
-                <div className="flex items-center gap-2 dark:bg-orange-500/10 bg-orange-50 rounded-xl px-3 py-2.5 border dark:border-orange-400/20 border-orange-200/60">
-                  <Scan className="h-4 w-4 dark:text-orange-400 text-orange-600 shrink-0" />
-                  <div>
-                    <p className="text-xs font-semibold dark:text-orange-300 text-orange-700">
-                      {ticket.ImagingRequests.length}
-                    </p>
-                    <p className="text-xs dark:text-orange-400/70 text-orange-600/70">Imaging</p>
-                  </div>
-                </div>
-              )}
+              {ticket.Prescriptions.map((rx) => (
+                <DownloadPrescriptionAction key={rx.id} prescription={rx}>
+                  <button
+                    type="submit"
+                    className="w-full flex items-center gap-2 dark:bg-emerald-500/10 bg-emerald-50 rounded-xl px-3 py-2.5 border dark:border-emerald-400/20 border-emerald-200/60 hover:opacity-80 transition-opacity text-left"
+                  >
+                    <Pill className="h-4 w-4 dark:text-emerald-400 text-emerald-600 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold dark:text-emerald-300 text-emerald-700">Prescription</p>
+                    </div>
+                    <Download className="h-3 w-3 dark:text-emerald-400 text-emerald-600 shrink-0" />
+                  </button>
+                </DownloadPrescriptionAction>
+              ))}
+              {ticket.MedicalCertificates.map((cert) => (
+                <DownloadMedicalCertificateAction key={cert.id} certificate={cert}>
+                  <button
+                    type="submit"
+                    className="w-full flex items-center gap-2 dark:bg-sky-500/10 bg-sky-50 rounded-xl px-3 py-2.5 border dark:border-sky-400/20 border-sky-200/60 hover:opacity-80 transition-opacity text-left"
+                  >
+                    <FileCheck className="h-4 w-4 dark:text-sky-400 text-sky-600 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold dark:text-sky-300 text-sky-700">Certificate</p>
+                    </div>
+                    <Download className="h-3 w-3 dark:text-sky-400 text-sky-600 shrink-0" />
+                  </button>
+                </DownloadMedicalCertificateAction>
+              ))}
+              {ticket.LaboratoryRequests.map((lab) => (
+                <DownloadLaboratoryRequestAction key={lab.id} request={lab}>
+                  <button
+                    type="submit"
+                    className="w-full flex items-center gap-2 dark:bg-purple-500/10 bg-purple-50 rounded-xl px-3 py-2.5 border dark:border-purple-400/20 border-purple-200/60 hover:opacity-80 transition-opacity text-left"
+                  >
+                    <TestTube className="h-4 w-4 dark:text-purple-400 text-purple-600 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold dark:text-purple-300 text-purple-700">Lab Request</p>
+                    </div>
+                    <Download className="h-3 w-3 dark:text-purple-400 text-purple-600 shrink-0" />
+                  </button>
+                </DownloadLaboratoryRequestAction>
+              ))}
+              {ticket.ImagingRequests.map((img) => (
+                <DownloadImagingStudiesAction key={img.id} study={img}>
+                  <button
+                    type="submit"
+                    className="w-full flex items-center gap-2 dark:bg-orange-500/10 bg-orange-50 rounded-xl px-3 py-2.5 border dark:border-orange-400/20 border-orange-200/60 hover:opacity-80 transition-opacity text-left"
+                  >
+                    <Scan className="h-4 w-4 dark:text-orange-400 text-orange-600 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold dark:text-orange-300 text-orange-700">Imaging</p>
+                    </div>
+                    <Download className="h-3 w-3 dark:text-orange-400 text-orange-600 shrink-0" />
+                  </button>
+                </DownloadImagingStudiesAction>
+              ))}
+              {(ticket.HeartStationRequests ?? []).map((hs) => (
+                <DownloadHeartStationRequestAction key={hs.id} request={hs}>
+                  <button
+                    type="submit"
+                    className="w-full flex items-center gap-2 dark:bg-rose-500/10 bg-rose-50 rounded-xl px-3 py-2.5 border dark:border-rose-400/20 border-rose-200/60 hover:opacity-80 transition-opacity text-left"
+                  >
+                    <ClipboardList className="h-4 w-4 dark:text-rose-400 text-rose-600 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold dark:text-rose-300 text-rose-700">Heart Station</p>
+                    </div>
+                    <Download className="h-3 w-3 dark:text-rose-400 text-rose-600 shrink-0" />
+                  </button>
+                </DownloadHeartStationRequestAction>
+              ))}
+              {(ticket.ClinicReferralSlips ?? []).map((ref) => (
+                <DownloadReferralSlipAction key={ref.id} referralSlip={ref}>
+                  <button
+                    type="submit"
+                    className="w-full flex items-center gap-2 dark:bg-teal-500/10 bg-teal-50 rounded-xl px-3 py-2.5 border dark:border-teal-400/20 border-teal-200/60 hover:opacity-80 transition-opacity text-left"
+                  >
+                    <FileText className="h-4 w-4 dark:text-teal-400 text-teal-600 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold dark:text-teal-300 text-teal-700">Referral</p>
+                    </div>
+                    <Download className="h-3 w-3 dark:text-teal-400 text-teal-600 shrink-0" />
+                  </button>
+                </DownloadReferralSlipAction>
+              ))}
             </div>
           </section>
         )}

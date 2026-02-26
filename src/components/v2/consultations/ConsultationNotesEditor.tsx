@@ -19,12 +19,14 @@ interface ConsultationNotesEditorProps {
   consultation: Detail;
   myHPs: NonNullable<GetHPsType>;
   onPatchDetail: (patch: Partial<Detail>) => void;
+  isResolved?: boolean;
 }
 
 export default function ConsultationNotesEditor({
   consultation,
   myHPs,
   onPatchDetail,
+  isResolved = false,
 }: ConsultationNotesEditorProps) {
   const sections =
     consultation.ConsultationTicketAttribute?.NoteTemplate?.NoteSections ?? [];
@@ -60,6 +62,10 @@ export default function ConsultationNotesEditor({
   );
 
   const saveSection = async (sectionName: string) => {
+    if (isResolved) {
+      toast.error("Cannot edit notes on a resolved consultation.");
+      return;
+    }
     if (!myActiveHp) {
       toast.error("You must have an HP profile to add notes");
       return;
@@ -97,6 +103,10 @@ export default function ConsultationNotesEditor({
   };
 
   const toggleShowOnPatient = (sectionName: string) => {
+    if (isResolved) {
+      toast.error("Cannot change settings on a resolved consultation.");
+      return;
+    }
     if (!myActiveHp) {
       toast.error("You must have an HP profile to change privacy settings");
       return;
@@ -207,37 +217,40 @@ export default function ConsultationNotesEditor({
                   setNoteValues((prev) => ({ ...prev, [section.name]: v }))
                 }
                 placeholder={`Enter ${section.label || section.name} notes… (supports **bold**, _italic_, ### headings, - lists)`}
+                disabled={isResolved}
               />
-              <div className="flex items-center justify-between">
-                <button
-                  type="button"
-                  onClick={() => toggleShowOnPatient(section.name)}
-                  disabled={isTogglingPrivacy}
-                  title={showOnPatient[section.name] ? "Hide from patient" : "Show to patient"}
-                  className={`flex items-center gap-1.5 text-xs rounded-md px-2 py-1 border transition-colors ${
-                    showOnPatient[section.name]
-                      ? "border-emerald-300 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:border-emerald-700 dark:text-emerald-400 dark:bg-emerald-950/30"
-                      : "border-border/50 text-muted-foreground hover:border-border hover:text-foreground"
-                  }`}
-                >
-                  {showOnPatient[section.name] ? (
-                    <Eye className="h-3.5 w-3.5" />
-                  ) : (
-                    <EyeOff className="h-3.5 w-3.5" />
-                  )}
-                  {showOnPatient[section.name] ? "Visible to patient" : "Hidden from patient"}
-                </button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="gap-1.5 h-7 text-xs"
-                  disabled={savingSection === section.name}
-                  onClick={() => saveSection(section.name)}
-                >
-                  <Save className="h-3.5 w-3.5" />
-                  {savingSection === section.name ? "Saving…" : "Save"}
-                </Button>
-              </div>
+              {!isResolved && (
+                <div className="flex items-center justify-between">
+                  <button
+                    type="button"
+                    onClick={() => toggleShowOnPatient(section.name)}
+                    disabled={isTogglingPrivacy}
+                    title={showOnPatient[section.name] ? "Hide from patient" : "Show to patient"}
+                    className={`flex items-center gap-1.5 text-xs rounded-md px-2 py-1 border transition-colors ${
+                      showOnPatient[section.name]
+                        ? "border-emerald-300 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:border-emerald-700 dark:text-emerald-400 dark:bg-emerald-950/30"
+                        : "border-border/50 text-muted-foreground hover:border-border hover:text-foreground"
+                    }`}
+                  >
+                    {showOnPatient[section.name] ? (
+                      <Eye className="h-3.5 w-3.5" />
+                    ) : (
+                      <EyeOff className="h-3.5 w-3.5" />
+                    )}
+                    {showOnPatient[section.name] ? "Visible to patient" : "Hidden from patient"}
+                  </button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1.5 h-7 text-xs"
+                    disabled={savingSection === section.name}
+                    onClick={() => saveSection(section.name)}
+                  >
+                    <Save className="h-3.5 w-3.5" />
+                    {savingSection === section.name ? "Saving…" : "Save"}
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </div>

@@ -39,6 +39,7 @@ interface ConsultationPrescriptionsProps {
   consultation: Detail;
   myHPs: NonNullable<GetHPsType>;
   onPatchDetail: (patch: Partial<Detail>) => void;
+  isResolved?: boolean;
 }
 
 interface NewMedicineForm {
@@ -73,6 +74,7 @@ export default function ConsultationPrescriptions({
   consultation,
   myHPs,
   onPatchDetail,
+  isResolved = false,
 }: ConsultationPrescriptionsProps) {
   const ticketHpIds = consultation.ConsultationTicketHPs.map((h) => h.HealthCareProvider.id);
   const myActiveHp = myHPs.find((hp) => ticketHpIds.includes(hp.id)) ?? myHPs[0] ?? null;
@@ -192,7 +194,7 @@ export default function ConsultationPrescriptions({
           <Pill className="h-4 w-4 text-primary" />
           Prescriptions
         </h3>
-        {!showForm && (
+        {!showForm && !isResolved && (
           <Button
             size="sm"
             variant="outline"
@@ -207,7 +209,7 @@ export default function ConsultationPrescriptions({
       </div>
 
       {/* New Prescription Form */}
-      {showForm && (
+      {showForm && !isResolved && (
         <div className="rounded-lg border border-border/50 bg-muted/20 p-4 space-y-4">
           <h4 className="text-xs font-semibold text-foreground/80 uppercase tracking-wide">
             {replacingId ? "Replace Prescription" : "New Prescription"}
@@ -374,7 +376,8 @@ export default function ConsultationPrescriptions({
                 setExpandedRx((prev) => ({ ...prev, [rx.id]: !prev[rx.id] }))
               }
               onDeleteMedicine={handleDeleteMedicine}
-              onReplace={() => openReplaceForm(rx.id)}
+              onReplace={isResolved ? undefined : () => openReplaceForm(rx.id)}
+              isResolved={isResolved}
             />
           ))}
         </div>
@@ -407,12 +410,14 @@ function PrescriptionCard({
   onToggle,
   onDeleteMedicine,
   onReplace,
+  isResolved = false,
 }: {
   rx: Prescription;
   expanded: boolean;
   onToggle: () => void;
   onDeleteMedicine: (id: number) => void;
-  onReplace: () => void;
+  onReplace?: () => void;
+  isResolved?: boolean;
 }) {
   const hpName = rx.HealthcareProvider?.HPProfile?.name
     ? `${rx.HealthcareProvider.HPProfile.title ?? ""} ${rx.HealthcareProvider.HPProfile.name}`.trim()
@@ -449,12 +454,14 @@ function PrescriptionCard({
           )}
         </button>
         <div className="shrink-0 pr-3 flex items-center gap-1">
-          <Button
-            size="sm" variant="ghost" className="h-7 w-7 p-0" title="Void & Replace"
-            onClick={(e) => { e.stopPropagation(); onReplace(); }}
-          >
-            <RefreshCw className="h-3.5 w-3.5 text-amber-500" />
-          </Button>
+          {onReplace && (
+            <Button
+              size="sm" variant="ghost" className="h-7 w-7 p-0" title="Void & Replace"
+              onClick={(e) => { e.stopPropagation(); onReplace(); }}
+            >
+              <RefreshCw className="h-3.5 w-3.5 text-amber-500" />
+            </Button>
+          )}
           <DownloadPrescriptionAction prescription={{ id: rx.id }}>
             <Button size="sm" variant="ghost" className="h-7 w-7 p-0" title="Preview PDF">
               <FileDown className="h-3.5 w-3.5" />
@@ -481,14 +488,16 @@ function PrescriptionCard({
                   </p>
                   {med.notes && <p className="text-muted-foreground/70 italic">{med.notes}</p>}
                 </div>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-6 w-6 text-destructive/60 hover:text-destructive shrink-0"
-                  onClick={() => onDeleteMedicine(med.id)}
-                >
-                  <Trash2 className="h-3 w-3" />
-                </Button>
+                {!isResolved && (
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-6 w-6 text-destructive/60 hover:text-destructive shrink-0"
+                    onClick={() => onDeleteMedicine(med.id)}
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                )}
               </div>
             ))}
           </div>

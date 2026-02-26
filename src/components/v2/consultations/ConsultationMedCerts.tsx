@@ -44,6 +44,7 @@ interface ConsultationMedCertsProps {
   consultation: Detail;
   myHPs: NonNullable<GetHPsType>;
   onPatchDetail: (patch: Partial<Detail>) => void;
+  isResolved?: boolean;
 }
 
 type Reason = { id: number; name: string; documentTemplateId: number };
@@ -56,6 +57,7 @@ export default function ConsultationMedCerts({
   consultation,
   myHPs,
   onPatchDetail,
+  isResolved = false,
 }: ConsultationMedCertsProps) {
   const ticketHpIds = consultation.ConsultationTicketHPs.map((h) => h.HealthCareProvider.id);
   const myActiveHp = myHPs.find((hp) => ticketHpIds.includes(hp.id)) ?? myHPs[0] ?? null;
@@ -167,7 +169,7 @@ export default function ConsultationMedCerts({
           <Award className="h-4 w-4 text-primary" />
           Medical Certificates
         </h3>
-        {!showForm && (
+        {!isResolved && !showForm && (
           <Button
             size="sm"
             variant="outline"
@@ -290,7 +292,7 @@ export default function ConsultationMedCerts({
       ) : (
         <div className="space-y-2">
           {consultation.MedicalCertificates.map((cert) => (
-            <CertCard key={cert.id} cert={cert} onReplace={() => openReplaceForm(cert.id)} />
+            <CertCard key={cert.id} cert={cert} onReplace={() => openReplaceForm(cert.id)} isResolved={isResolved} />
           ))}
         </div>
       )}
@@ -298,7 +300,7 @@ export default function ConsultationMedCerts({
   );
 }
 
-function CertCard({ cert, onReplace }: { cert: MedCert; onReplace: () => void }) {
+function CertCard({ cert, onReplace, isResolved = false }: { cert: MedCert; onReplace: () => void; isResolved?: boolean }) {
   return (
     <div className="rounded-lg border border-border/50 bg-background px-4 py-3">
       <div className="flex items-start gap-3">
@@ -325,6 +327,7 @@ function CertCard({ cert, onReplace }: { cert: MedCert; onReplace: () => void })
           <Button
             size="sm" variant="ghost" className="h-7 w-7 p-0" title="Void & Replace"
             onClick={onReplace}
+            disabled={isResolved}
           >
             <RefreshCw className="h-3.5 w-3.5 text-amber-500" />
           </Button>

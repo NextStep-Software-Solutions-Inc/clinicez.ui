@@ -20,6 +20,7 @@ export const upsertConsultationNotesAction = async (data: UpsertConsultationNote
     const { consultationTicketId, section, content, hpId, showOnPatient } = data
 
     // Authorize: verify the current user's HP is assigned to this consultation ticket
+    // Also check that the consultation is not resolved
     const ticket = await prisma.consultationTicket.findFirst({
       where: {
         id: consultationTicketId,
@@ -29,10 +30,15 @@ export const upsertConsultationNotesAction = async (data: UpsertConsultationNote
               User: { userId: session.user.sub }
             }
           }
+        },
+        NOT: {
+          ConsultationTicketAttribute: {
+            status: "RESOLVED"
+          }
         }
       }
     })
-    if (!ticket) throw new Error("Consultation record not found or you do not have permission to update it")
+    if (!ticket) throw new Error("Consultation record not found, already resolved, or you do not have permission to update it")
 
     const updatedNotes = await prisma.consultationNote.upsert({
       where: {

@@ -812,6 +812,13 @@ export const updateConsultationTicketAction = withErrorHandling(async ({ consult
 
   if (!canUpdateConsultationTicket) throw new Error("You do not have permission to update consultation tickets")
 
+  // Check if consultation is resolved
+  const existing = await prismaClient.consultationTicket.findFirst({
+    where: { id: consultationId },
+    select: { ConsultationTicketAttribute: { select: { status: true } } }
+  })
+  if (existing?.ConsultationTicketAttribute?.status === "RESOLVED") throw new Error("Cannot modify a resolved consultation")
+
   await prismaClient.consultationTicket.update({
     where: {
       id: consultationId,

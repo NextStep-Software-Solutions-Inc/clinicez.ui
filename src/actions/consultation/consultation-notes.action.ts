@@ -30,9 +30,15 @@ export const upsertConsultationNotesAction = async (data: UpsertConsultationNote
             }
           }
         }
+      },
+      include: {
+        ConsultationTicketAttribute: {
+          select: { status: true }
+        }
       }
     })
     if (!ticket) throw new Error("Consultation record not found or you do not have permission to update it")
+    if (ticket.ConsultationTicketAttribute?.status === "RESOLVED") throw new Error("Cannot modify a resolved consultation")
 
     const updatedNotes = await prisma.consultationNote.upsert({
       where: {

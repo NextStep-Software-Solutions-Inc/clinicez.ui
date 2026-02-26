@@ -209,7 +209,7 @@ export default function ConsultationPrescriptions({
       </div>
 
       {/* New Prescription Form */}
-      {showForm && (
+      {showForm && !isResolved && (
         <div className="rounded-lg border border-border/50 bg-muted/20 p-4 space-y-4">
           <h4 className="text-xs font-semibold text-foreground/80 uppercase tracking-wide">
             {replacingId ? "Replace Prescription" : "New Prescription"}
@@ -454,12 +454,14 @@ function PrescriptionCard({
           )}
         </button>
         <div className="shrink-0 pr-3 flex items-center gap-1">
-          <Button
-            size="sm" variant="ghost" className="h-7 w-7 p-0" title="Void & Replace"
-            onClick={(e) => { e.stopPropagation(); onReplace(); }}
-          >
-            <RefreshCw className="h-3.5 w-3.5 text-amber-500" />
-          </Button>
+          {onReplace && (
+            <Button
+              size="sm" variant="ghost" className="h-7 w-7 p-0" title="Void & Replace"
+              onClick={(e) => { e.stopPropagation(); onReplace(); }}
+            >
+              <RefreshCw className="h-3.5 w-3.5 text-amber-500" />
+            </Button>
+          )}
           <DownloadPrescriptionAction prescription={{ id: rx.id }}>
             <Button size="sm" variant="ghost" className="h-7 w-7 p-0" title="Preview PDF">
               <FileDown className="h-3.5 w-3.5" />

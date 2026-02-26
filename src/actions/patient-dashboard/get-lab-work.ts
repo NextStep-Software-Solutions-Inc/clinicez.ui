@@ -8,12 +8,15 @@ import type { PendingLabWorkData } from '@/types/patient-dashboard-v2.types'
  * clinicPatientId refers to ClinicPatient.id
  */
 export async function getPendingLabWork(
-  clinicPatientId: number
+  clinicPatientIds: number[]
 ): Promise<PendingLabWorkData> {
   try {
+    if (clinicPatientIds.length === 0) {
+      return { requests: [], total: 0, pendingCount: 0 }
+    }
     const labRequests = await prisma.clinicLaboratoryRequest.findMany({
       where: {
-        clinicPatientId: clinicPatientId,
+        clinicPatientId: { in: clinicPatientIds },
         isActive: true,
         deletedAt: null,
       },

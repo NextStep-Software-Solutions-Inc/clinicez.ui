@@ -8,13 +8,16 @@ import type { ActivePrescriptionsData, PrescriptionData, Medicine } from '@/type
  * clinicPatientId refers to ClinicPatient.id (PK), which is what patientId field uses in Prescription
  */
 export async function getActivePrescriptions(
-  clinicPatientId: number
+  clinicPatientIds: number[]
 ): Promise<ActivePrescriptionsData> {
   try {
-    // Query prescriptions directly using clinicPatientId (which is stored in patientId field)
+    if (clinicPatientIds.length === 0) {
+      return { prescriptions: [], total: 0, lowRefillCount: 0 }
+    }
+    // Query prescriptions directly using clinicPatientIds (stored in patientId field)
     const prescriptions = await prisma.prescription.findMany({
       where: {
-        patientId: clinicPatientId,
+        patientId: { in: clinicPatientIds },
         isActive: true,
         isArchived: false,
       },

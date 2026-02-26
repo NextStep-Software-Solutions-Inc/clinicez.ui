@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, Calendar, Beaker, Pill, Stethoscope, X, FolderOpen, ClipboardList } from 'lucide-react';
+import { LayoutGrid, Calendar, Beaker, Pill, Stethoscope, X, FolderOpen, ClipboardList } from 'lucide-react';
 
 interface FloatingActionMenuProps {
   onScheduleAppointment?: () => void;
@@ -144,7 +144,7 @@ export function FloatingActionMenu({
         {isOpen ? (
           <X className="w-6 h-6" />
         ) : (
-          <Plus className="w-6 h-6" />
+          <LayoutGrid className="w-6 h-6" />
         )}
       </button>
 

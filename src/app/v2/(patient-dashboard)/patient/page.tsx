@@ -238,8 +238,7 @@ function PatientDashboardContent() {
           </div>
           <ConsultationNotes
             consultations={
-              dashboardData?.recentConsultations?.consultations
-                ?.flatMap(summary => summary.notes) || null
+              dashboardData?.recentConsultations?.consultations || null
             }
             isLoading={isLoading}
           />

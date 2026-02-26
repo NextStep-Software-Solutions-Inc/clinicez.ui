@@ -1,8 +1,6 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { Calendar, Clock, MapPin, Video, Stethoscope, CheckCircle, AlertCircle, X, Clock as ClockIcon, Send, Mail } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import type { DashboardAppointment } from '@/types/patient-dashboard-v2.types';
 
 interface UpcomingAppointmentsProps {
@@ -58,14 +56,14 @@ function getStatusBadge(status: string) {
       );
     case 'ROUTED':
       return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/20 border border-amber-400/30 text-amber-600 text-xs font-medium">
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/20 border border-amber-400/30 dark:text-amber-300 text-amber-700 text-xs font-medium">
           <Send className="w-3 h-3" />
           Routed
         </span>
       );
     case 'RECEIVED':
       return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-500/20 border border-slate-400/30 text-slate-300 text-xs font-medium">
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-teal-500/20 border border-teal-400/30 dark:text-teal-300 text-teal-700 text-xs font-medium">
           <Mail className="w-3 h-3" />
           Received
         </span>
@@ -80,7 +78,6 @@ function getStatusBadge(status: string) {
 }
 
 export function UpcomingAppointmentsList({ appointments, isLoading }: UpcomingAppointmentsProps) {
-  const router = useRouter();
 
   if (isLoading) {
     return (
@@ -112,7 +109,7 @@ export function UpcomingAppointmentsList({ appointments, isLoading }: UpcomingAp
           appointmentDate.toDateString() ===
           new Date(today.getTime() + 24 * 60 * 60 * 1000).toDateString();
 
-        const doctorName = `${appointment.doctor.firstName ?? ''} ${appointment.doctor.lastName ?? ''}`.trim();
+        const doctorName = appointment.doctor.hpName ?? `${appointment.doctor.firstName ?? ''} ${appointment.doctor.lastName ?? ''}`.trim();
         const isVirtual = appointment.mode.name === 'VIRTUAL' || appointment.mode.name === 'virtual';
 
         return (
@@ -177,18 +174,8 @@ export function UpcomingAppointmentsList({ appointments, isLoading }: UpcomingAp
               </div>
 
               {/* Right: Status */}
-              <div className="flex-shrink-0 text-right gap-1 flex items-baseline">
+              <div className="flex-shrink-0 text-right">
                 {getStatusBadge(appointment.status)}
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    router.push(`/clinics/${appointment.clinic.uid}/appointments?_appointment=${appointment.id}`);
-                  }}
-                  className="mt-2 focus:outline-none active:outline-none focus-visible:outline-none focus-visible:ring-0"
-                >
-                  View
-                </Button>
               </div>
             </div>
           </div>

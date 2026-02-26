@@ -8,25 +8,23 @@ import type { RecentConsultationsData } from '@/types/patient-dashboard-v2.types
  * patientId here actually refers to ClinicPatient.id
  */
 export async function getRecentConsultations(
-  clinicPatientId: number,
+  clinicPatientIds: number[],
+  patientId: number,
   limit: number = 5
 ): Promise<RecentConsultationsData> {
   try {
-    // Get clinic context from clinic patient record
-    const clinicPatient = await prisma.clinicPatient.findUnique({
-      where: { id: clinicPatientId },
-      select: { clinicId: true },
-    })
-
-    if (!clinicPatient) {
+    if (clinicPatientIds.length === 0) {
       return { consultations: [], total: 0 }
     }
 
-    // Get consultation tickets
+    // Get consultation tickets belonging to this patient across all clinics
     const consultationTickets = await prisma.consultationTicket.findMany({
       where: {
-        clinicId: clinicPatient.clinicId,
         isActive: true,
+        OR: [
+          { clinicPatientId: { in: clinicPatientIds } },
+          { Appointment: { Requesters: { some: { userId: patientId } } } },
+        ],
       },
       include: {
         ConsultationNotes: {

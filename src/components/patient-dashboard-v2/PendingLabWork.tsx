@@ -1,8 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { Beaker, AlertCircle, CheckCircle, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Beaker, AlertCircle, CheckCircle, X, ChevronLeft, ChevronRight, Download } from 'lucide-react';
 import type { LaboratoryRequestData, ImagingRequestData, HeartStationRequestData } from '@/types/patient-dashboard-v2.types';
+import DownloadLaboratoryRequestAction from '@/components/laboratory-requests/DownloadLaboratoryRequestAction';
+import DownloadImagingStudiesAction from '@/components/imaging-studies/DownloadImagingStudiesAction';
+import DownloadHeartStationRequestAction from '@/components/heart-station-requests/DownloadHeartStationRequestAction';
 
 interface DiagnosticRequest {
   id: number;
@@ -25,8 +28,6 @@ interface PendingLabWorkProps {
   isLoading?: boolean;
 }
 
-
-
 function getStatusIcon(status: string) {
   switch (status.toLowerCase()) {
     case 'completed':
@@ -37,40 +38,6 @@ function getStatusIcon(status: string) {
       return <X className="w-5 h-5 text-red-400" />;
     default:
       return <Beaker className="w-5 h-5 text-slate-400" />;
-  }
-}
-
-function getStatusBadge(status: string) {
-  const statusLower = status.toLowerCase();
-  
-  switch (statusLower) {
-    case 'completed':
-      return (
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-500/20 border border-green-400/30 text-green-300 text-xs font-medium">
-          <CheckCircle className="w-3 h-3" />
-          Completed
-        </span>
-      );
-    case 'pending':
-      return (
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-yellow-500/20 border border-yellow-400/30 text-yellow-300 text-xs font-medium">
-          <AlertCircle className="w-3 h-3" />
-          Pending
-        </span>
-      );
-    case 'cancelled':
-      return (
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/20 border border-red-400/30 text-red-300 text-xs font-medium">
-          <X className="w-3 h-3" />
-          Cancelled
-        </span>
-      );
-    default:
-      return (
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-500/20 border border-slate-400/30 text-slate-300 text-xs font-medium">
-          {statusLower}
-        </span>
-      );
   }
 }
 
@@ -173,22 +140,17 @@ export function PendingLabWork({ labRequests, imagingRequests, heartStationReque
           </div>
 
           {/* Header */}
-          <div className="flex items-start justify-between gap-3 mb-3">
-            <div className="flex items-start gap-2 flex-grow min-w-0">
-              <div className="flex-shrink-0 mt-0.5">
-                {getStatusIcon(currentRequest.status)}
-              </div>
-              <div className="flex-grow min-w-0">
-                <h4 className="font-semibold dark:text-white text-slate-900 text-sm mb-1">Request #{currentRequest.serialNumber}</h4>
-                {currentRequest.orderedBy && (
-                  <p className="text-xs dark:text-slate-400 text-slate-600">
-                    {currentRequest.orderedBy.firstName} {currentRequest.orderedBy.lastName}
-                  </p>
-                )}
-              </div>
+          <div className="flex items-start gap-2 mb-3">
+            <div className="flex-shrink-0 mt-0.5">
+              {getStatusIcon(currentRequest.status)}
             </div>
-            <div className="flex-shrink-0">
-              {getStatusBadge(currentRequest.status)}
+            <div className="flex-grow min-w-0">
+              <h4 className="font-semibold dark:text-white text-slate-900 text-sm mb-1">Request #{currentRequest.serialNumber}</h4>
+              {currentRequest.orderedBy && (
+                <p className="text-xs dark:text-slate-400 text-slate-600">
+                  {currentRequest.orderedBy.firstName} {currentRequest.orderedBy.lastName}
+                </p>
+              )}
             </div>
           </div>
 
@@ -217,9 +179,44 @@ export function PendingLabWork({ labRequests, imagingRequests, heartStationReque
                 day: 'numeric',
               })}
             </span>
-            <span className="text-xs dark:text-slate-400 text-slate-600">
-              {currentIndex + 1} of {allRequests.length}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs dark:text-slate-400 text-slate-600">
+                {currentIndex + 1} of {allRequests.length}
+              </span>
+              {currentRequest.type === 'laboratory' && (
+                <DownloadLaboratoryRequestAction request={{ id: currentRequest.id }}>
+                  <button
+                    type="submit"
+                    className="flex items-center gap-1 px-2 py-1 rounded-md dark:bg-blue-500/20 dark:hover:bg-blue-500/30 dark:text-blue-300 bg-blue-100/60 hover:bg-blue-200/60 text-blue-700 text-xs font-medium transition-colors"
+                  >
+                    <Download className="w-3 h-3" />
+                    Download
+                  </button>
+                </DownloadLaboratoryRequestAction>
+              )}
+              {currentRequest.type === 'imaging' && (
+                <DownloadImagingStudiesAction study={{ id: currentRequest.id }}>
+                  <button
+                    type="submit"
+                    className="flex items-center gap-1 px-2 py-1 rounded-md dark:bg-purple-500/20 dark:hover:bg-purple-500/30 dark:text-purple-300 bg-purple-100/60 hover:bg-purple-200/60 text-purple-700 text-xs font-medium transition-colors"
+                  >
+                    <Download className="w-3 h-3" />
+                    Download
+                  </button>
+                </DownloadImagingStudiesAction>
+              )}
+              {currentRequest.type === 'heart-station' && (
+                <DownloadHeartStationRequestAction request={{ id: currentRequest.id }}>
+                  <button
+                    type="submit"
+                    className="flex items-center gap-1 px-2 py-1 rounded-md dark:bg-red-500/20 dark:hover:bg-red-500/30 dark:text-red-300 bg-red-100/60 hover:bg-red-200/60 text-red-700 text-xs font-medium transition-colors"
+                  >
+                    <Download className="w-3 h-3" />
+                    Download
+                  </button>
+                </DownloadHeartStationRequestAction>
+              )}
+            </div>
           </div>
         </div>
 

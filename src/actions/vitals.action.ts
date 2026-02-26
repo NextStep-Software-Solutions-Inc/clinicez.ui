@@ -101,6 +101,17 @@ export const updateUserVitalSignAction = async (vitalsId: number, payload: BaseV
   const session = await getCachedSession();
   if (!session) throw new Error("User not authenticated.");
 
+  // Verify the vital sign exists and belongs to the user
+  const vitalSign = await prisma.vitalSign.findUnique({
+    where: { isActive: true, id: vitalsId },
+    select: { User: { select: { userId: true } } }
+  });
+  if (!vitalSign) throw new Error("Vital sign not found.");
+
+  if (vitalSign.User.userId !== session.user.sub) {
+    throw new Error("You do not have permission to update this vital sign.");
+  }
+
   return await prisma.vitalSign.update({
     where: {
       isActive: true,
@@ -116,6 +127,18 @@ export const updateUserVitalSignAction = async (vitalsId: number, payload: BaseV
 export const deleteUserVitalSignAction = async (vitalsId: number) => {
   const session = await getCachedSession();
   if (!session) throw new Error("User not authenticated.");
+
+  // Verify the vital sign exists and belongs to the user OR user has delete permission
+  const vitalSign = await prisma.vitalSign.findUnique({
+    where: { isActive: true, id: vitalsId },
+    select: { User: { select: { userId: true } } }
+  });
+  if (!vitalSign) throw new Error("Vital sign not found.");
+
+  // Only the owner can delete their own vital signs
+  if (vitalSign.User.userId !== session.user.sub) {
+    throw new Error("You do not have permission to delete this vital sign.");
+  }
 
   return await prisma.vitalSign.update({
     where: {

@@ -103,10 +103,6 @@ export default function ConsultationNotesEditor({
   };
 
   const toggleShowOnPatient = (sectionName: string) => {
-    if (isResolved) {
-      toast.error("Cannot change settings on a resolved consultation.");
-      return;
-    }
     if (!myActiveHp) {
       toast.error("You must have an HP profile to change privacy settings");
       return;
@@ -219,26 +215,26 @@ export default function ConsultationNotesEditor({
                 placeholder={`Enter ${section.label || section.name} notes… (supports **bold**, _italic_, ### headings, - lists)`}
                 disabled={isResolved}
               />
-              {!isResolved && (
-                <div className="flex items-center justify-between">
-                  <button
-                    type="button"
-                    onClick={() => toggleShowOnPatient(section.name)}
-                    disabled={isTogglingPrivacy}
-                    title={showOnPatient[section.name] ? "Hide from patient" : "Show to patient"}
-                    className={`flex items-center gap-1.5 text-xs rounded-md px-2 py-1 border transition-colors ${
-                      showOnPatient[section.name]
-                        ? "border-emerald-300 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:border-emerald-700 dark:text-emerald-400 dark:bg-emerald-950/30"
-                        : "border-border/50 text-muted-foreground hover:border-border hover:text-foreground"
-                    }`}
-                  >
-                    {showOnPatient[section.name] ? (
-                      <Eye className="h-3.5 w-3.5" />
-                    ) : (
-                      <EyeOff className="h-3.5 w-3.5" />
-                    )}
-                    {showOnPatient[section.name] ? "Visible to patient" : "Hidden from patient"}
-                  </button>
+              <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => toggleShowOnPatient(section.name)}
+                  disabled={isTogglingPrivacy}
+                  title={showOnPatient[section.name] ? "Hide from patient" : "Show to patient"}
+                  className={`flex items-center gap-1.5 text-xs rounded-md px-2 py-1 border transition-colors ${
+                    showOnPatient[section.name]
+                      ? "border-emerald-300 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:border-emerald-700 dark:text-emerald-400 dark:bg-emerald-950/30"
+                      : "border-border/50 text-muted-foreground hover:border-border hover:text-foreground"
+                  }`}
+                >
+                  {showOnPatient[section.name] ? (
+                    <Eye className="h-3.5 w-3.5" />
+                  ) : (
+                    <EyeOff className="h-3.5 w-3.5" />
+                  )}
+                  {showOnPatient[section.name] ? "Visible to patient" : "Hidden from patient"}
+                </button>
+                {!isResolved && (
                   <Button
                     size="sm"
                     variant="outline"
@@ -249,8 +245,8 @@ export default function ConsultationNotesEditor({
                     <Save className="h-3.5 w-3.5" />
                     {savingSection === section.name ? "Saving…" : "Save"}
                   </Button>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           )}
         </div>

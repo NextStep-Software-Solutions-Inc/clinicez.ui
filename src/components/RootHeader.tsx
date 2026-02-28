@@ -52,7 +52,7 @@ export default function RootHeader({ className = "", version = "v1", ...rest }: 
           <div className=" lg:inline-flex items-center justify-center gap-2">
             <Suspend>
               <SignedOut>
-                <SignInButton />
+                <SignInButton forceRedirectUrl="/?signin=1" />
                 <SignUpButton>
                   <Button className="mx-auto ~text-xs/sm ~h-8/10">Sign Up</Button>
                 </SignUpButton>

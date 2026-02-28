@@ -494,6 +494,7 @@ export function PatientFilesClient({
                 const fileCount = folder.Files.length;
                 // A folder was created by a provider if createdByUserId differs from userId (the patient owner)
                 const isProviderCreated = folder.createdByUserId !== null && folder.createdByUserId !== folder.userId;
+                const creatorClinicId = folder.FolderSetting?.scopeClinicId ?? null;
                 const creatorName = isProviderCreated && folder.CreatedByUser
                   ? [folder.CreatedByUser.firstName, folder.CreatedByUser.lastName].filter(Boolean).join(" ")
                   : null;
@@ -553,14 +554,17 @@ export function PatientFilesClient({
                               <Edit className="w-4 h-4 mr-2" /> Rename
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={() =>
-                                handleFolderPrivacy(folder, "PRIVATE")
-                              }
-                              disabled={privacy === "PRIVATE"}
-                            >
-                              <Lock className="w-4 h-4 mr-2" /> Set Private
-                            </DropdownMenuItem>
+                            {/* Patient cannot set a provider-created folder to PRIVATE */}
+                            {!isProviderCreated && (
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  handleFolderPrivacy(folder, "PRIVATE")
+                                }
+                                disabled={privacy === "PRIVATE"}
+                              >
+                                <Lock className="w-4 h-4 mr-2" /> Set Private
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuItem
                               onClick={() =>
                                 handleFolderPrivacy(folder, "PUBLIC")
@@ -611,9 +615,12 @@ export function PatientFilesClient({
                             (share) => (
                               <Badge
                                 key={share.id}
-                                className="text-xs bg-blue-600 text-white hover:bg-blue-600"
+                                className={`text-xs text-white hover:bg-blue-600 ${share.clinicId === creatorClinicId ? "bg-blue-700" : "bg-blue-600"}`}
                               >
                                 {share.Clinic.name}
+                                {share.clinicId === creatorClinicId && (
+                                  <Lock className="w-2.5 h-2.5 ml-1 inline" />
+                                )}
                               </Badge>
                             )
                           )}
@@ -653,6 +660,7 @@ export function PatientFilesClient({
                 const privacy = file.FileSetting?.privacy ?? "PRIVATE";
                 // Show creator info if file was uploaded by a provider (not the patient)
                 const isProviderUploaded = file.createdByUserId !== null && file.createdByUserId !== currentFolder.userId;
+                const fileCreatorClinicId = file.FileSetting?.scopeClinicId ?? null;
                 const fileCreatorName = isProviderUploaded && file.CreatedByUser
                   ? [file.CreatedByUser.firstName, file.CreatedByUser.lastName].filter(Boolean).join(" ")
                   : null;
@@ -704,14 +712,17 @@ export function PatientFilesClient({
                               </a>
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={() =>
-                                handleFilePrivacy(file, "PRIVATE")
-                              }
-                              disabled={privacy === "PRIVATE"}
-                            >
-                              <Lock className="w-4 h-4 mr-2" /> Set Private
-                            </DropdownMenuItem>
+                            {/* Patient cannot set a provider-uploaded file to PRIVATE */}
+                            {!isProviderUploaded && (
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  handleFilePrivacy(file, "PRIVATE")
+                                }
+                                disabled={privacy === "PRIVATE"}
+                              >
+                                <Lock className="w-4 h-4 mr-2" /> Set Private
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuItem
                               onClick={() =>
                                 handleFilePrivacy(file, "PUBLIC")
@@ -761,9 +772,12 @@ export function PatientFilesClient({
                           {file.FileSetting.FileClinicShares.map((share) => (
                             <Badge
                               key={share.id}
-                              className="text-xs bg-blue-600 text-white hover:bg-blue-600"
+                              className={`text-xs text-white hover:bg-blue-600 ${share.clinicId === fileCreatorClinicId ? "bg-blue-700" : "bg-blue-600"}`}
                             >
                               {share.Clinic.name}
+                              {share.clinicId === fileCreatorClinicId && (
+                                <Lock className="w-2.5 h-2.5 ml-1 inline" />
+                              )}
                             </Badge>
                           ))}
                         </div>
@@ -1003,20 +1017,28 @@ export function PatientFilesClient({
               clinics.map((clinic) => {
                 const isShared = sharedFolderClinicIds.has(clinic.id);
                 const isPendingThis = pendingFolderClinicIds.has(clinic.id);
+                const isCreatorClinic = shareFolderTarget?.FolderSetting?.scopeClinicId === clinic.id;
                 return (
                   <div
                     key={clinic.id}
                     className="flex items-center justify-between p-3 rounded-lg border border-slate-200 dark:border-slate-700"
                   >
                     <div className="flex flex-col min-w-0 mr-3">
-                      <span className="font-medium text-sm truncate">{clinic.name}</span>
-                      <span className={`text-xs ${isShared ? "text-blue-600 dark:text-blue-400" : "text-slate-400"}`}>
-                        {isShared ? "Shared" : "Not shared"}
+                      <div className="flex items-center gap-1">
+                        <span className="font-medium text-sm truncate">{clinic.name}</span>
+                        {isCreatorClinic && (
+                          <span title="Always shared — created by this clinic">
+                            <Lock className="w-3 h-3 text-slate-400 shrink-0" />
+                          </span>
+                        )}
+                      </div>
+                      <span className={`text-xs ${isCreatorClinic ? "text-blue-600 dark:text-blue-400" : isShared ? "text-blue-600 dark:text-blue-400" : "text-slate-400"}`}>
+                        {isCreatorClinic ? "Always shared (creator)" : isShared ? "Shared" : "Not shared"}
                       </span>
                     </div>
                     <Switch
                       checked={isShared}
-                      disabled={isPendingThis}
+                      disabled={isPendingThis || isCreatorClinic}
                       onCheckedChange={() => handleToggleFolderShare(clinic.id)}
                     />
                   </div>
@@ -1053,20 +1075,28 @@ export function PatientFilesClient({
               clinics.map((clinic) => {
                 const isShared = sharedFileClinicIds.has(clinic.id);
                 const isPendingThis = pendingFileClinicIds.has(clinic.id);
+                const isCreatorClinic = shareFileTarget?.FileSetting?.scopeClinicId === clinic.id;
                 return (
                   <div
                     key={clinic.id}
                     className="flex items-center justify-between p-3 rounded-lg border border-slate-200 dark:border-slate-700"
                   >
                     <div className="flex flex-col min-w-0 mr-3">
-                      <span className="font-medium text-sm truncate">{clinic.name}</span>
-                      <span className={`text-xs ${isShared ? "text-blue-600 dark:text-blue-400" : "text-slate-400"}`}>
-                        {isShared ? "Shared" : "Not shared"}
+                      <div className="flex items-center gap-1">
+                        <span className="font-medium text-sm truncate">{clinic.name}</span>
+                        {isCreatorClinic && (
+                          <span title="Always shared — uploaded by this clinic">
+                            <Lock className="w-3 h-3 text-slate-400 shrink-0" />
+                          </span>
+                        )}
+                      </div>
+                      <span className={`text-xs ${isCreatorClinic ? "text-blue-600 dark:text-blue-400" : isShared ? "text-blue-600 dark:text-blue-400" : "text-slate-400"}`}>
+                        {isCreatorClinic ? "Always shared (uploader)" : isShared ? "Shared" : "Not shared"}
                       </span>
                     </div>
                     <Switch
                       checked={isShared}
-                      disabled={isPendingThis}
+                      disabled={isPendingThis || isCreatorClinic}
                       onCheckedChange={() => handleToggleFileShare(clinic.id)}
                     />
                   </div>

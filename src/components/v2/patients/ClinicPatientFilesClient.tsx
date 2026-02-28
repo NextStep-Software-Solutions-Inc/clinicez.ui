@@ -13,6 +13,7 @@ import {
   Building2,
   MoreVertical,
   Trash2,
+  Edit,
   X,
   ChevronRight,
   ArrowLeft,
@@ -51,6 +52,8 @@ import {
   uploadFileForPatientAction,
   deletePatientFolderAction,
   deletePatientFileAction,
+  renamePatientFolderAction,
+  renamePatientFileAction,
 } from "@/actions/patient/patient-files.action";
 
 type FileType = { id: number; name: string };
@@ -123,6 +126,16 @@ export function ClinicPatientFilesClient({
   const [showCreateFolder, setShowCreateFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
 
+  // Rename folder dialog
+  const [showRenameFolder, setShowRenameFolder] = useState(false);
+  const [renameFolderTarget, setRenameFolderTarget] = useState<PatientFolder | null>(null);
+  const [renameFolderName, setRenameFolderName] = useState("");
+
+  // Rename file dialog
+  const [showRenameFile, setShowRenameFile] = useState(false);
+  const [renameFileTarget, setRenameFileTarget] = useState<PatientFolder["Files"][number] | null>(null);
+  const [renameFileName, setRenameFileName] = useState("");
+
   // Upload dialog
   const [showUpload, setShowUpload] = useState(false);
   const [uploadFileTypeId, setUploadFileTypeId] = useState<string>("");
@@ -156,6 +169,40 @@ export function ClinicPatientFilesClient({
         toast.success("Folder created");
       } else {
         toast.error(result.message || "Failed to create folder");
+      }
+    });
+  };
+
+  const handleRenameFolder = () => {
+    if (!renameFolderTarget || !renameFolderName.trim()) return;
+    startTransition(async () => {
+      const result = await renamePatientFolderAction({
+        folderId: renameFolderTarget.id,
+        name: renameFolderName,
+      });
+      if (result.status) {
+        refreshFolders();
+        setShowRenameFolder(false);
+        toast.success("Folder renamed");
+      } else {
+        toast.error(result.message || "Failed to rename folder");
+      }
+    });
+  };
+
+  const handleRenameFile = () => {
+    if (!renameFileTarget || !renameFileName.trim()) return;
+    startTransition(async () => {
+      const result = await renamePatientFileAction({
+        fileId: renameFileTarget.id,
+        name: renameFileName,
+      });
+      if (result.status) {
+        refreshFolders();
+        setShowRenameFile(false);
+        toast.success("File renamed");
+      } else {
+        toast.error(result.message || "Failed to rename file");
       }
     });
   };
@@ -390,6 +437,16 @@ export function ClinicPatientFilesClient({
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-44">
                               <DropdownMenuItem
+                                onClick={() => {
+                                  setRenameFolderTarget(folder);
+                                  setRenameFolderName(folder.name);
+                                  setShowRenameFolder(true);
+                                }}
+                              >
+                                <Edit className="w-4 h-4 mr-2" /> Rename
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
                                 className="text-red-600 dark:text-red-400"
                                 onClick={() => handleDeleteFolder(folder)}
                               >
@@ -473,6 +530,16 @@ export function ClinicPatientFilesClient({
                               >
                                 View File
                               </a>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setRenameFileTarget(file);
+                                setRenameFileName(file.name);
+                                setShowRenameFile(true);
+                              }}
+                            >
+                              <Edit className="w-4 h-4 mr-2" /> Rename
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
@@ -640,6 +707,62 @@ export function ClinicPatientFilesClient({
               disabled={!uploadFile || !uploadFileTypeId || isPending}
             >
               {isPending ? "Uploading..." : "Upload"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Rename Folder Dialog */}
+      <Dialog open={showRenameFolder} onOpenChange={setShowRenameFolder}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Rename Folder</DialogTitle>
+          </DialogHeader>
+          <div className="py-2">
+            <Input
+              value={renameFolderName}
+              onChange={(e) => setRenameFolderName(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") handleRenameFolder(); }}
+              autoFocus
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowRenameFolder(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleRenameFolder}
+              disabled={!renameFolderName.trim() || isPending}
+            >
+              {isPending ? "Renaming..." : "Rename"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Rename File Dialog */}
+      <Dialog open={showRenameFile} onOpenChange={setShowRenameFile}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Rename File</DialogTitle>
+          </DialogHeader>
+          <div className="py-2">
+            <Input
+              value={renameFileName}
+              onChange={(e) => setRenameFileName(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") handleRenameFile(); }}
+              autoFocus
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowRenameFile(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleRenameFile}
+              disabled={!renameFileName.trim() || isPending}
+            >
+              {isPending ? "Renaming..." : "Rename"}
             </Button>
           </DialogFooter>
         </DialogContent>

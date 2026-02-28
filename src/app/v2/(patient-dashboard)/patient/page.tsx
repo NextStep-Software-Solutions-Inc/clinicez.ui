@@ -91,6 +91,18 @@ function PatientDashboardContent() {
     return 'Good evening';
   };
 
+  const getCurrentUserName = () => {
+    if (!dashboardData?.patient) return 'Patient';
+    
+    // Prefer nickname if available, then firstName/lastName, then fallback
+    if (dashboardData.patient.nickname) {
+      return dashboardData.patient.nickname;
+    }
+    
+    const fullName = `${dashboardData.patient.firstName || ''} ${dashboardData.patient.lastName || ''}`.trim();
+    return fullName || 'Patient';
+  };
+
   // FAB handlers
   const handleScheduleAppointment = () => {
     setShowClinicDialog(true);
@@ -135,17 +147,13 @@ function PatientDashboardContent() {
   const handleViewHistory = () => {
     router.push('/v2/appointments-consultations');
   };
-
   return (
     <div className="w-full">
       {/* Header with greeting and theme toggle */}
       <div className="mb-8 flex items-center justify-between">
         <div>
           <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-2">
-            {getGreeting()},{' '}
-            {dashboardData?.patient?.firstName || dashboardData?.patient?.lastName
-              ? `${dashboardData.patient.firstName || ''} ${dashboardData.patient.lastName || ''}`.trim()
-              : 'Patient'}
+            {getGreeting()}, {getCurrentUserName()}
           </h1>
           <p className="text-slate-600 dark:text-slate-400">
             {new Date().toLocaleDateString('en-US', {

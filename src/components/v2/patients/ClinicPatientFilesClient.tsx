@@ -278,7 +278,6 @@ export function ClinicPatientFilesClient({
                 <span className="hidden sm:inline">Upload</span>
               </Button>
             )}
-            <ThemeToggle />
           </div>
         </div>
       </div>

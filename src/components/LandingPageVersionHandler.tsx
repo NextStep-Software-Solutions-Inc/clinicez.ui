@@ -20,7 +20,7 @@ export default function LandingPageContent({ authenticated, onboardingStatus, is
     if (!authenticated || !isPostSignIn || version !== "v2") return
 
     const isIncomplete =
-      onboardingStatus === "NOT_STARTED" || onboardingStatus === "IN_PROGRESS"
+      !onboardingStatus || onboardingStatus === "NOT_STARTED" || onboardingStatus === "IN_PROGRESS"
     if (isIncomplete) {
       router.replace("/onboarding")
     } else {

@@ -394,11 +394,14 @@ export function ClinicPatientFilesClient({
                   const privacy =
                     (folder.FolderSetting?.privacy as FilePrivacy | undefined) ?? "PRIVATE";
                   const fileCount = folder.Files.length;
-                  const creatorName = folder.CreatedByUser
+                  // Only show creator info if the folder was made by a provider (not the patient owner)
+                  const isProviderCreated = folder.createdByUserId !== null && folder.createdByUserId !== folder.userId;
+                  const creatorName = isProviderCreated && folder.CreatedByUser
                     ? [folder.CreatedByUser.firstName, folder.CreatedByUser.lastName].filter(Boolean).join(" ")
                     : null;
-                  const creatorClinic = folder.FolderSetting?.FolderClinicShares
-                    ?.map((s) => s.Clinic.name).join(", ") ?? null;
+                  const creatorClinic = isProviderCreated
+                    ? folder.FolderSetting?.FolderClinicShares?.map((s) => s.Clinic.name).join(", ") ?? null
+                    : null;
                   // Only allow manage actions if this clinic created the folder
                   const isCreatedByThisClinic = folder.FolderSetting?.scopeClinicId === clinicId;
                   return (
@@ -497,11 +500,14 @@ export function ClinicPatientFilesClient({
                 {currentFolderFiles.map((file) => {
                   const privacy =
                     (file.FileSetting?.privacy as FilePrivacy | undefined) ?? "PRIVATE";
-                  const fileCreatorName = file.CreatedByUser
+                  // Only show creator info if the file was uploaded by a provider (not the patient owner)
+                  const isProviderUploaded = file.createdByUserId !== null && file.createdByUserId !== selectedFolder.userId;
+                  const fileCreatorName = isProviderUploaded && file.CreatedByUser
                     ? [file.CreatedByUser.firstName, file.CreatedByUser.lastName].filter(Boolean).join(" ")
                     : null;
-                  const fileCreatorClinic = file.FileSetting?.FileClinicShares
-                    ?.map((s) => s.Clinic.name).join(", ") ?? null;
+                  const fileCreatorClinic = isProviderUploaded
+                    ? file.FileSetting?.FileClinicShares?.map((s) => s.Clinic.name).join(", ") ?? null
+                    : null;
                   // Only allow manage actions if this clinic uploaded the file
                   const isUploadedByThisClinic = file.FileSetting?.scopeClinicId === clinicId;
                   return (

@@ -92,15 +92,16 @@ function PatientDashboardContent() {
   };
 
   const getCurrentUserName = () => {
-    if (!dashboardData?.patient) return 'Patient';
+    let name = 'Patient';
+    if (!dashboardData?.patient) return name;
     
     // Prefer nickname if available, then firstName/lastName, then fallback
     if (dashboardData.patient.nickname) {
-      return dashboardData.patient.nickname;
+      name = dashboardData.patient.nickname;
     }
     
-    const fullName = `${dashboardData.patient.firstName || ''} ${dashboardData.patient.lastName || ''}`.trim();
-    return fullName || 'Patient';
+    name = `${dashboardData.patient.firstName || ''} ${dashboardData.patient.lastName || ''}`.trim();
+    return name.charAt(0).toUpperCase() + name.slice(1);
   };
 
   // FAB handlers

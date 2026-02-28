@@ -2,6 +2,7 @@ import { getCachedSession } from "@/actions/session.action";
 import { getClinicDashboardDataAction } from "@/actions/clinics/clinic-dashboard.action";
 import { ClinicDashboardClient } from "@/components/v2/dashboard/ClinicDashboardClient";
 import prisma from "@lib/prisma";
+import UnauthorizedWarning from "@/components/UnauthorizedWarning";
 
 export const dynamic = "force-dynamic";
 
@@ -16,13 +17,16 @@ export default async function ClinicDashboardPage({
   const session = await getCachedSession();
 
   if (!session?.user?.sub) {
-    throw new Error("User not authenticated");
+    return <UnauthorizedWarning />;
   }
 
   // Fetch dashboard data from server action
   const dashboardResult = await getClinicDashboardDataAction(clinicUid);
 
   if (!dashboardResult.status || !dashboardResult.data) {
+    if (dashboardResult.message?.toLowerCase().includes('permission')) {
+      return <UnauthorizedWarning />;
+    }
     throw new Error(dashboardResult.message);
   }
 

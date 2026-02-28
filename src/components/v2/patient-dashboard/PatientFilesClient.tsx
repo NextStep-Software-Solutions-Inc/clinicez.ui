@@ -612,17 +612,18 @@ export function PatientFilesClient({
                       folder.FolderSetting.FolderClinicShares.length > 0 && (
                         <div className="mt-2 flex flex-wrap gap-1">
                           {folder.FolderSetting.FolderClinicShares.map(
-                            (share) => (
-                              <Badge
-                                key={share.id}
-                                className={`text-xs text-white hover:bg-blue-600 ${share.clinicId === creatorClinicId ? "bg-blue-700" : "bg-blue-600"}`}
-                              >
-                                {share.Clinic.name}
-                                {share.clinicId === creatorClinicId && (
-                                  <Lock className="w-2.5 h-2.5 ml-1 inline" />
-                                )}
-                              </Badge>
-                            )
+                            (share) => {
+                              const isCreator = share.clinicId === creatorClinicId;
+                              const badgeClassName = `text-xs text-white hover:bg-blue-600 ${isCreator ? "bg-blue-700" : "bg-blue-600"}`;
+                              return (
+                                <Badge key={share.id} className={badgeClassName}>
+                                  {share.Clinic.name}
+                                  {isCreator && (
+                                    <Lock className="w-2.5 h-2.5 ml-1 inline" />
+                                  )}
+                                </Badge>
+                              );
+                            }
                           )}
                         </div>
                       )}
@@ -769,17 +770,18 @@ export function PatientFilesClient({
                     {file.FileSetting?.FileClinicShares &&
                       file.FileSetting.FileClinicShares.length > 0 && (
                         <div className="mt-2 flex flex-wrap gap-1">
-                          {file.FileSetting.FileClinicShares.map((share) => (
-                            <Badge
-                              key={share.id}
-                              className={`text-xs text-white hover:bg-blue-600 ${share.clinicId === fileCreatorClinicId ? "bg-blue-700" : "bg-blue-600"}`}
-                            >
-                              {share.Clinic.name}
-                              {share.clinicId === fileCreatorClinicId && (
-                                <Lock className="w-2.5 h-2.5 ml-1 inline" />
-                              )}
-                            </Badge>
-                          ))}
+                          {file.FileSetting.FileClinicShares.map((share) => {
+                            const isCreator = share.clinicId === fileCreatorClinicId;
+                            const badgeClassName = `text-xs text-white hover:bg-blue-600 ${isCreator ? "bg-blue-700" : "bg-blue-600"}`;
+                            return (
+                              <Badge key={share.id} className={badgeClassName}>
+                                {share.Clinic.name}
+                                {isCreator && (
+                                  <Lock className="w-2.5 h-2.5 ml-1 inline" />
+                                )}
+                              </Badge>
+                            );
+                          })}
                         </div>
                       )}
                   </div>
@@ -1018,6 +1020,8 @@ export function PatientFilesClient({
                 const isShared = sharedFolderClinicIds.has(clinic.id);
                 const isPendingThis = pendingFolderClinicIds.has(clinic.id);
                 const isCreatorClinic = shareFolderTarget?.FolderSetting?.scopeClinicId === clinic.id;
+                const shareStatusText = isCreatorClinic ? "Always shared (creator)" : isShared ? "Shared" : "Not shared";
+                const shareStatusClass = isCreatorClinic || isShared ? "text-blue-600 dark:text-blue-400" : "text-slate-400";
                 return (
                   <div
                     key={clinic.id}
@@ -1032,8 +1036,8 @@ export function PatientFilesClient({
                           </span>
                         )}
                       </div>
-                      <span className={`text-xs ${isCreatorClinic ? "text-blue-600 dark:text-blue-400" : isShared ? "text-blue-600 dark:text-blue-400" : "text-slate-400"}`}>
-                        {isCreatorClinic ? "Always shared (creator)" : isShared ? "Shared" : "Not shared"}
+                      <span className={`text-xs ${shareStatusClass}`}>
+                        {shareStatusText}
                       </span>
                     </div>
                     <Switch
@@ -1076,6 +1080,8 @@ export function PatientFilesClient({
                 const isShared = sharedFileClinicIds.has(clinic.id);
                 const isPendingThis = pendingFileClinicIds.has(clinic.id);
                 const isCreatorClinic = shareFileTarget?.FileSetting?.scopeClinicId === clinic.id;
+                const shareStatusText = isCreatorClinic ? "Always shared (uploader)" : isShared ? "Shared" : "Not shared";
+                const shareStatusClass = isCreatorClinic || isShared ? "text-blue-600 dark:text-blue-400" : "text-slate-400";
                 return (
                   <div
                     key={clinic.id}
@@ -1090,8 +1096,8 @@ export function PatientFilesClient({
                           </span>
                         )}
                       </div>
-                      <span className={`text-xs ${isCreatorClinic ? "text-blue-600 dark:text-blue-400" : isShared ? "text-blue-600 dark:text-blue-400" : "text-slate-400"}`}>
-                        {isCreatorClinic ? "Always shared (uploader)" : isShared ? "Shared" : "Not shared"}
+                      <span className={`text-xs ${shareStatusClass}`}>
+                        {shareStatusText}
                       </span>
                     </div>
                     <Switch

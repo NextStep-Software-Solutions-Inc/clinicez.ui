@@ -72,6 +72,9 @@ export const upsertConsultationNotesAction = async (data: UpsertConsultationNote
 
 export type GetConsultationNotes = Awaited<ReturnType<typeof getConsultationNotesAction>>
 export const getConsultationNotesAction = async (consultationTicketId: number) => {
+  const session = await getCachedSession()
+  if (!session) throw new Error("User not authenticated.")
+
   return await prisma.consultationNote.findMany({
     where: { consultationTicketId }
   })

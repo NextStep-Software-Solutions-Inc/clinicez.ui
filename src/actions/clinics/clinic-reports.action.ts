@@ -3,6 +3,8 @@
 import prisma from "@lib/prisma";
 import { withErrorHandling } from "@/lib/with-error-handling";
 import { getCachedSession } from "@actions/session.action";
+import { getPermissionsAction } from "@actions/permission.action";
+import { PERMISSIONS } from "@lib/permissions";
 
 export type ClinicReportParams = {
   clinicUid: string;
@@ -16,6 +18,11 @@ export const getClinicReportsAction = withErrorHandling(
   async ({ clinicUid, from, to }: ClinicReportParams) => {
     const session = await getCachedSession();
     if (!session) throw new Error("User not authenticated");
+
+    const myPermissions = await getPermissionsAction({ userId: session.user.sub, type: "CLINIC" });
+    const myPermissionArray = myPermissions.map(p => p.name);
+    const canViewReports = [PERMISSIONS.CLINIC["VIEW:CLINIC:REPORTS"].name].some(p => myPermissionArray.includes(p));
+    if (!canViewReports) throw new Error("You do not have permission to view clinic reports.");
 
     const clinic = await prisma.clinic.findFirst({
       where: { clinicUid, isActive: true },

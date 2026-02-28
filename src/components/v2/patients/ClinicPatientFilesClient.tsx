@@ -345,8 +345,6 @@ export function ClinicPatientFilesClient({
                   const privacy =
                     (folder.FolderSetting?.privacy as FilePrivacy | undefined) ?? "PRIVATE";
                   const fileCount = folder.Files.length;
-                  const isProviderCreated =
-                    folder.createdByUserId !== null && folder.createdByUserId !== folder.userId;
                   const creatorName = folder.CreatedByUser
                     ? [folder.CreatedByUser.firstName, folder.CreatedByUser.lastName].filter(Boolean).join(" ")
                     : null;
@@ -384,23 +382,21 @@ export function ClinicPatientFilesClient({
                             {PRIVACY_ICONS[privacy]}
                             <span className="hidden sm:inline">{PRIVACY_LABELS[privacy]}</span>
                           </Badge>
-                          {isProviderCreated && (
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <button className="p-1 rounded-md hover:bg-white/50 dark:hover:bg-slate-700/50 transition-colors opacity-0 group-hover:opacity-100">
-                                  <MoreVertical className="w-4 h-4 text-slate-500" />
-                                </button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-44">
-                                <DropdownMenuItem
-                                  className="text-red-600 dark:text-red-400"
-                                  onClick={() => handleDeleteFolder(folder)}
-                                >
-                                  <Trash2 className="w-4 h-4 mr-2" /> Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          )}
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button className="p-1 rounded-md hover:bg-white/50 dark:hover:bg-slate-700/50 transition-colors opacity-0 group-hover:opacity-100">
+                                <MoreVertical className="w-4 h-4 text-slate-500" />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-44">
+                              <DropdownMenuItem
+                                className="text-red-600 dark:text-red-400"
+                                onClick={() => handleDeleteFolder(folder)}
+                              >
+                                <Trash2 className="w-4 h-4 mr-2" /> Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
                       </div>
                       <p className="font-medium text-slate-900 dark:text-white truncate mb-1">
@@ -438,9 +434,6 @@ export function ClinicPatientFilesClient({
                 {currentFolderFiles.map((file) => {
                   const privacy =
                     (file.FileSetting?.privacy as FilePrivacy | undefined) ?? "PRIVATE";
-                  // Provider-uploaded: createdByUserId set and different from the patient (folder owner)
-                  const isProviderUploaded =
-                    file.createdByUserId !== null && file.createdByUserId !== selectedFolder?.userId;
                   const fileCreatorName = file.CreatedByUser
                     ? [file.CreatedByUser.firstName, file.CreatedByUser.lastName].filter(Boolean).join(" ")
                     : null;
@@ -481,17 +474,13 @@ export function ClinicPatientFilesClient({
                                 View File
                               </a>
                             </DropdownMenuItem>
-                            {isProviderUploaded && (
-                              <>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  className="text-red-600 dark:text-red-400"
-                                  onClick={() => handleDeleteFile(file)}
-                                >
-                                  <Trash2 className="w-4 h-4 mr-2" /> Delete
-                                </DropdownMenuItem>
-                              </>
-                            )}
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-red-600 dark:text-red-400"
+                              onClick={() => handleDeleteFile(file)}
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" /> Delete
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>

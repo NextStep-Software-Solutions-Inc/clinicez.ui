@@ -1,15 +1,34 @@
 "use client"
 
+import { useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { useLandingPageVersion } from "./VersionSwitcher"
 import FeatureItems, { HeroImage, HeroTitle } from "@components/FeatureItems"
 import HeroBackground from "@components/HeroBackground"
 
 interface LandingPageContentProps {
   authenticated: boolean
+  onboardingStatus?: string | null
 }
 
-export default function LandingPageContent({ authenticated }: LandingPageContentProps) {
+export default function LandingPageContent({ authenticated, onboardingStatus }: LandingPageContentProps) {
   const version = useLandingPageVersion()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (!authenticated || version !== "v2") return
+
+    const isIncomplete =
+      onboardingStatus === "NOT_STARTED" || onboardingStatus === "IN_PROGRESS"
+    if (isIncomplete) {
+      router.replace("/onboarding")
+    } else {
+      router.replace("/v2/select-dashboard")
+    }
+  }, [authenticated, version, onboardingStatus, router])
+
+  // While redirecting authenticated v2 users, render nothing to avoid a flash
+  if (authenticated && version === "v2") return null
 
   if (version === "v2") {
     return (
